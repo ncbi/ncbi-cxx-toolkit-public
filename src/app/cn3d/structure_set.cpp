@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/11 13:45:31  thiessen
+* add modules to parse chemical graph; many improvements
+*
 * Revision 1.5  2000/07/01 15:43:50  thiessen
 * major improvements to StructureBase functionality
 *
@@ -56,11 +59,10 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb1/Biostruc_descr.hpp>
 #include <objects/mmdb2/Biostruc_model.hpp>
-#include <objects/mmdb2/Model_coordinate_set.hpp>
-#include <objects/mmdb2/Coordinates.hpp>
 
 #include "cn3d/structure_set.hpp"
-#include "cn3d/atom_set.hpp"
+#include "cn3d/coord_set.hpp"
+#include "cn3d/chemical_graph.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -68,7 +70,7 @@ using namespace objects;
 BEGIN_SCOPE(Cn3D)
 
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-	StructureBase(NULL)
+    StructureBase(NULL, false)
 {
     StructureObject *object;
     
@@ -100,14 +102,10 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     }
 }
 
-StructureSet::~StructureSet(void)
-{
-    TESTMSG("deleting StructureSet");
-}
-
-void StructureSet::Draw(void) const
+bool StructureSet::Draw(void) const
 {
     TESTMSG("drawing StructureSet");
+    return true;
 }
 
 StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
@@ -133,7 +131,7 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     }
     TESTMSG("PDB id " << pdbID);
 
-    // get atom coordinates
+    // get atom and feature spatial coordinates
     if (biostruc.IsSetModel()) {
 
         // iterate SEQUENCE OF Biostruc-model
@@ -141,35 +139,21 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
         for (i=biostruc.GetModel().begin(); i!=ie; i++) {
             const CBiostruc_model& models = (*i).GetObject();
             if (models.IsSetModel_coordinates()) {
-                const CBiostruc_model::TModel_coordinates&
-                    modelCoords = models.GetModel_coordinates();
-
-                // iterate SEQUENCE OF Model-coordinate-set
-                CBiostruc_model::TModel_coordinates::const_iterator j, je=modelCoords.end();
-                for (j=modelCoords.begin(); j!=je; j++) {
-                    const CModel_coordinate_set::C_Coordinates& 
-                        coordSet = (*j).GetObject().GetCoordinates();
-                    if (coordSet.IsLiteral() && coordSet.GetLiteral().IsAtomic()) {
-                        AtomSet *atomSet =
-                            new AtomSet(this, coordSet.GetLiteral().GetAtomic());
-                        atomSets.push_back(atomSet);
-                        break;
-                    }
-                    // will eventually unpack 3d-object coordinates here
-                }
+                CoordSet *coordSet =
+                    new CoordSet(this, models.GetModel_coordinates());
+                coordSets.push_back(coordSet);
             }
         }
     }
+
+    // get bonds
+    graph = new ChemicalGraph(this, biostruc.GetChemical_graph());
 }
 
-StructureObject::~StructureObject(void)
-{
-    TESTMSG("deleting StructureObject " << pdbID);
-}
-
-void StructureObject::Draw(void) const
+bool StructureObject::Draw(void) const
 {
     TESTMSG("drawing StructureObject " << pdbID);
+    return true;
 }
 
 END_SCOPE(Cn3D)

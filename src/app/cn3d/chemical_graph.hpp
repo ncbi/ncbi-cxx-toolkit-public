@@ -26,88 +26,58 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of structure data
+*      Classes to hold the graph of chemical bonds
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  2000/07/11 13:49:30  thiessen
+* Revision 1.1  2000/07/11 13:49:27  thiessen
 * add modules to parse chemical graph; many improvements
-*
-* Revision 1.5  2000/07/01 15:44:23  thiessen
-* major improvements to StructureBase functionality
-*
-* Revision 1.4  2000/06/29 19:18:19  thiessen
-* improved atom map
-*
-* Revision 1.3  2000/06/29 14:35:20  thiessen
-* new atom_set files
-*
-* Revision 1.2  2000/06/28 13:08:13  thiessen
-* store alt conf ensembles
-*
-* Revision 1.1  2000/06/27 20:08:14  thiessen
-* initial checkin
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_STRUCTURESET__HPP
-#define CN3D_STRUCTURESET__HPP
+#ifndef CN3D_CHEMICALGRAPH__HPP
+#define CN3D_CHEMICALGRAPH__HPP
 
-#include <string>
+#include <map>
 
-#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb1/Biostruc_graph.hpp>
 
 #include "cn3d/structure_base.hpp"
+#include "cn3d/molecule.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-// StructureSet is the top-level container. It holds a set of SturctureObjects;
-// A SturctureObject is basically the contents of one PDB entry.
+// The ChemicalGraph is the set of bonds that link the atoms (from CoordSets).
+// The graph is divided into essentially physically separate molecules (e.g.,
+// protein chains, hets, solvents), occasionally joined by inter-molecule
+// bonds ("connections" in Cn3D jargon).
 
-class StructureObject;
+class Bond;
 
-class StructureSet : public StructureBase
+class ChemicalGraph : public StructureBase
 {
 public:
-    StructureSet(const CNcbi_mime_asn1& mime);
-    //~StructureSet(void);
+    ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph);
+    //~ChemicalGraph(void);
 
     // public data
-    typedef LIST_TYPE < const StructureObject * > ObjectList;
-    ObjectList objects;
+    typedef std::map < int, const Molecule * > MoleculeMap;
+    MoleculeMap molecules;
+    typedef LIST_TYPE < const Bond * > BondList;
+    BondList interMoleculeBonds;
 
     // public methods
-    bool Draw(void) const;
-
-private:
-};
-
-class ChemicalGraph;
-class CoordSet;
-
-class StructureObject : public StructureBase
-{
-public:
-    StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master);
-    //~StructureObject(void);
-
-    // public data
-    const bool isMaster;
-    int mmdbID;
-    std::string pdbID;
-
-    // an object has one ChemicalGraph that can be applied to one or more 
-    // CoordSets to generate the object's model(s)
-    ChemicalGraph *graph;
-    typedef LIST_TYPE < const CoordSet * > CoordSetList;
-    CoordSetList coordSets;
-
-    // public methods
+    const Residue::AtomInfo * GetAtomInfo(int mID, int rID, int aID) const
+    { 
+        MoleculeMap::const_iterator info=molecules.find(rID);
+        if (info != molecules.end()) return (*info).second->GetAtomInfo(rID, aID);
+        ERR_POST(Warning << "Graph: can't find molecule #" << mID);
+        return NULL;
+    }
     bool Draw(void) const;
 
 private:
@@ -115,4 +85,4 @@ private:
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_STRUCTURESET__HPP
+#endif // CN3D_CHEMICALGRAPH__HPP

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/11 13:49:29  thiessen
+* add modules to parse chemical graph; many improvements
+*
 * Revision 1.4  2000/07/01 15:44:23  thiessen
 * major improvements to StructureBase functionality
 *
@@ -48,11 +51,11 @@
 #ifndef CN3D_STRUCTUREBASE__HPP
 #define CN3D_STRUCTUREBASE__HPP
 
-#include <map>
-
 // container type used for various lists
-#include <deque>
-#define LIST_TYPE deque
+#include <list>
+#define LIST_TYPE std::list
+
+#include <map>
 
 #include <corelib/ncbidiag.hpp>
 
@@ -68,7 +71,7 @@ class StructureBase
 {
 public:
     // will store StructureBase-derived children in parent upon construction
-    StructureBase(StructureBase *parent);
+    StructureBase(StructureBase *parent, bool warnOnNULL = true);
 
     // will automatically delete children upon destruction with this desctuctor.
     // But note that derived classes can have their own constructors that will
@@ -77,13 +80,14 @@ public:
     virtual ~StructureBase(void);
 
     // Draws the object (if visible) and all its children - do not override!
-    void DrawAll(void) const;
+    bool DrawAll(void) const;
 
-    // function to draw this object, called before children are Drawn
-    virtual void Draw(void) const { ERR_POST(Fatal << "in StructureBase::Draw()"); }
+    // function to draw this object, called before children are Drawn. Return
+    // false to halt recursive drawing process
+    virtual bool Draw(void) const { ERR_POST(Fatal << "in StructureBase::Draw()"); return false; }
 
     // called after this object and its children have been Drawn
-    virtual void PostDraw(void) const { TESTMSG("in PostDraw()"); }
+    //virtual bool PostDraw(void) const { TESTMSG("in PostDraw()"); return true; }
 
 private:
     // no default construction
@@ -91,24 +95,32 @@ private:
 
     // keep track of StructureBase-derived children, so that top-down operations
     // like drawing or deconstructing can trickle down automatically
-    typedef map < StructureBase * , int > _ChildList;
+    typedef std::map < StructureBase * , int > _ChildList;
     _ChildList _children;
     void _AddChild(StructureBase *child);
     void _RemoveChild(StructureBase *child);
+    StructureBase* _parent;
 
+#if 0  // don't know if we'll actually need/want these
     // misc flags
     enum _eFlags {
         _eVisible = 1
     };
-    unsigned char _flags;
+    typedef unsigned char FlagType;
+    FlagType _flags;
+
+    // to set/query all flags
+    bool GetFlag(FlagType flag) const { return ((_flags & flag) > 0); }
+    void SetFlag(FlagType flag, bool on)
+    {
+        if (on) _flags |= flag; else _flags &= ~flag;
+    }
 
 public:
-    // to set/query flags
-    bool IsVisible(void) const { return (_flags & _eVisible); }
-    void SetVisible(bool on)
-    {
-        _flags = (on ? (_flags | _eVisible) : (_flags & ~_eVisible));
-    }
+    // to set/query specific flags
+    bool IsVisible(void) const { return GetFlag(_eVisible); }
+    void SetVisible(bool on) { SetFlag(_eVisible, on); }
+#endif
 };
 
 END_SCOPE(Cn3D)

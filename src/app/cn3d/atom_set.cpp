@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/11 13:45:28  thiessen
+* add modules to parse chemical graph; many improvements
+*
 * Revision 1.3  2000/07/01 15:43:50  thiessen
 * major improvements to StructureBase functionality
 *
@@ -55,6 +58,7 @@
 #include <objects/mmdb2/Conformation_ensemble.hpp>
 
 #include "cn3d/atom_set.hpp"
+#include "cn3d/vector_math.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -170,15 +174,19 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
             }
         }
 
-        // store pointer in map - key must be unique
+        // store pointer in map - key+altConfID must be unique
         const AtomPntrKey& key = MakeKey(
             (*(i_mID++)).GetObject().Get(),
             (*(i_rID++)).GetObject().Get(),
-            (*(i_aID++)).GetObject().Get(),
-            atom->altConfID);
-        if (atomMap.find(key) != atomMap.end())
-            ERR_POST(Fatal << "confused by repeated atom pntr");
-        atomMap[key] = atom;
+            (*(i_aID++)).GetObject().Get());
+        if (atomMap.find(key) != atomMap.end()) {
+            AtomAltList::const_iterator i_atom, e=atomMap[key].end();
+            for (i_atom=atomMap[key].begin(); i_atom!=e; i_atom++) {
+                if ((*i_atom)->altConfID == atom->altConfID)
+                    ERR_POST(Fatal << "confused by multiple atoms of same pntr+altConfID");
+            }
+        }
+        atomMap[key].push_back(atom);
 
         if (i==0) TESTMSG("first atom: x " << atom->site.x << 
                 ", y " << atom->site.y << 
@@ -210,40 +218,48 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 
 AtomSet::~AtomSet(void)
 {
-    TESTMSG("deleting AtomSet");
+    EnsembleList::iterator i, e=ensembles.end();
+    for (i=ensembles.begin(); i!=e; i++)
+        delete const_cast<std::string *>(*i);
 }
 
-void AtomSet::Draw(void) const
-{
-    TESTMSG("drawing AtomSet");
-}
+const double Atom::NO_TEMPERATURE = -1.0;
+const double Atom::NO_OCCUPANCY = -1.0;
+const double Atom::NO_ALTCONFID = '-';
 
-const Atom* AtomSet::GetAtomPntr(int mID, int rID, int aID, char altID) const
+const Atom* AtomSet::GetAtom(int mID, int rID, int aID, 
+                             const std::string *ensemble, bool suppressWarning) const
 {
-    AtomMap::const_iterator atom = atomMap.find(MakeKey(mID, rID, aID, altID));
-    if (atom != atomMap.end())
-        return (*atom).second;
-    ERR_POST(Warning << "can't find atom (" << mID << ',' 
-                     << rID << ',' << aID << ',' << altID << ')');
+    AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(mID, rID, aID));
+    if (atomConfs == atomMap.end()) {
+        ERR_POST(Warning << "can't find atom(s) from pointer (" << mID << ',' 
+                        << rID << ',' << aID << ')');
+        return NULL;
+    }
+    AtomAltList::const_iterator atom = (*atomConfs).second.begin();
+
+    // if no ensemble specified, just return first one
+    if (!ensemble) return *atom;
+
+    // otherwise, return first atom whose altConfID is in the ensemble
+    AtomAltList::const_iterator e = (*atomConfs).second.end();
+    for (; atom!=e; atom++) {
+        if (ensemble->find((*atom)->altConfID) != ensemble->npos)
+            return *atom;
+    }
+    if (!suppressWarning)
+        ERR_POST(Warning << "atom (" << mID << ',' 
+                         << rID << ',' << aID << ") is not in ensemble '"
+                         << *ensemble << '\'');
     return NULL;
 }
 
 Atom::Atom(StructureBase *parent) : 
 	StructureBase(parent),
-    averageTemperature(ATOM_NO_TEMPERATURE),
-    occupancy(ATOM_NO_OCCUPANCY),
-    altConfID(ATOM_NO_ALTCONFID)
+    averageTemperature(NO_TEMPERATURE),
+    occupancy(NO_OCCUPANCY),
+    altConfID(NO_ALTCONFID)
 {
-}
-
-Atom::~Atom(void)
-{
-    TESTMSG("deleting Atom");
-}
-
-void Atom::Draw(void) const
-{
-    TESTMSG("drawing Atom");
 }
 
 END_SCOPE(Cn3D)

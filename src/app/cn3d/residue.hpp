@@ -26,38 +26,23 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of structure data
+*      Classes to hold residues
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  2000/07/11 13:49:30  thiessen
+* Revision 1.1  2000/07/11 13:49:29  thiessen
 * add modules to parse chemical graph; many improvements
-*
-* Revision 1.5  2000/07/01 15:44:23  thiessen
-* major improvements to StructureBase functionality
-*
-* Revision 1.4  2000/06/29 19:18:19  thiessen
-* improved atom map
-*
-* Revision 1.3  2000/06/29 14:35:20  thiessen
-* new atom_set files
-*
-* Revision 1.2  2000/06/28 13:08:13  thiessen
-* store alt conf ensembles
-*
-* Revision 1.1  2000/06/27 20:08:14  thiessen
-* initial checkin
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_STRUCTURESET__HPP
-#define CN3D_STRUCTURESET__HPP
+#ifndef CN3D_RESIDUE__HPP
+#define CN3D_RESIDUE__HPP
 
-#include <string>
+#include <map>
 
-#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb1/Residue_graph.hpp>
+#include <objects/mmdb1/Residue.hpp>
 
 #include "cn3d/structure_base.hpp"
 
@@ -66,53 +51,58 @@ using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-// StructureSet is the top-level container. It holds a set of SturctureObjects;
-// A SturctureObject is basically the contents of one PDB entry.
+typedef list< CRef< CResidue_graph > > ResidueGraphList;
 
-class StructureObject;
+// a Residue is a set of bonds that connect one residue of a larger Molecule.
+// Its constructor is where most of the work of decoding the ASN1 graph is done,
+// based on the standard and local residue dictionaries. Each Residue also holds
+// information (AtomInfo) about the nature of the atoms it contains.
 
-class StructureSet : public StructureBase
+class Bond;
+
+class Residue : public StructureBase
 {
 public:
-    StructureSet(const CNcbi_mime_asn1& mime);
-    //~StructureSet(void);
+    Residue(StructureBase *parent,
+        const CResidue& residue, int moleculeID,
+        const ResidueGraphList& standardDictionary,
+        const ResidueGraphList& localDictionary);
+    ~Residue(void);
 
     // public data
-    typedef LIST_TYPE < const StructureObject * > ObjectList;
-    ObjectList objects;
+    int id;
+    static const char NO_CODE;
+    char code;
+    std::string name;
+
+    typedef struct {
+        std::string name, code;
+        int atomicNumber;
+        bool isIonizableProton;
+    } AtomInfo;
+
+    typedef LIST_TYPE < const Bond * > BondList;
+    BondList bonds;
 
     // public methods
+    bool HasCode(void) const { return (code != NO_CODE); }
+    bool HasName(void) const { return (!name.empty()); }
     bool Draw(void) const;
 
 private:
-};
+    typedef std::map < int , const AtomInfo * > AtomInfoMap;
+    AtomInfoMap atomInfos;
 
-class ChemicalGraph;
-class CoordSet;
-
-class StructureObject : public StructureBase
-{
 public:
-    StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master);
-    //~StructureObject(void);
-
-    // public data
-    const bool isMaster;
-    int mmdbID;
-    std::string pdbID;
-
-    // an object has one ChemicalGraph that can be applied to one or more 
-    // CoordSets to generate the object's model(s)
-    ChemicalGraph *graph;
-    typedef LIST_TYPE < const CoordSet * > CoordSetList;
-    CoordSetList coordSets;
-
-    // public methods
-    bool Draw(void) const;
-
-private:
+    const AtomInfo * GetAtomInfo(int aID) const
+    { 
+        AtomInfoMap::const_iterator info=atomInfos.find(aID);
+        if (info != atomInfos.end()) return (*info).second;
+        ERR_POST(Warning << "Residue #" << id << ": can't find atom #" << aID);
+        return NULL;
+    }
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_STRUCTURESET__HPP
+#endif // CN3D_RESIDUE__HPP

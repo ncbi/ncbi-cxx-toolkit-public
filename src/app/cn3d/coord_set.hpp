@@ -26,38 +26,20 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of structure data
+*      Classes to hold sets of coordinates for atoms and features
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  2000/07/11 13:49:30  thiessen
+* Revision 1.1  2000/07/11 13:49:28  thiessen
 * add modules to parse chemical graph; many improvements
-*
-* Revision 1.5  2000/07/01 15:44:23  thiessen
-* major improvements to StructureBase functionality
-*
-* Revision 1.4  2000/06/29 19:18:19  thiessen
-* improved atom map
-*
-* Revision 1.3  2000/06/29 14:35:20  thiessen
-* new atom_set files
-*
-* Revision 1.2  2000/06/28 13:08:13  thiessen
-* store alt conf ensembles
-*
-* Revision 1.1  2000/06/27 20:08:14  thiessen
-* initial checkin
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_STRUCTURESET__HPP
-#define CN3D_STRUCTURESET__HPP
+#ifndef CN3D_COORDSET__HPP
+#define CN3D_COORDSET__HPP
 
-#include <string>
-
-#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb2/Biostruc_model.hpp>
 
 #include "cn3d/structure_base.hpp"
 
@@ -66,46 +48,24 @@ using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-// StructureSet is the top-level container. It holds a set of SturctureObjects;
-// A SturctureObject is basically the contents of one PDB entry.
+class AtomSet;
+class FeatureCoord;
 
-class StructureObject;
+// a CoordSet contains one set of atomic coordinates, plus any accompanying
+// feature (helix, strand, ...) coordinates - basically the contents of
+// an ASN1 Biostruc-model
 
-class StructureSet : public StructureBase
+class CoordSet : public StructureBase
 {
 public:
-    StructureSet(const CNcbi_mime_asn1& mime);
-    //~StructureSet(void);
+    CoordSet(StructureBase *parent, 
+                const CBiostruc_model::TModel_coordinates& modelCoords);
+    //~CoordSet(void);
 
     // public data
-    typedef LIST_TYPE < const StructureObject * > ObjectList;
-    ObjectList objects;
-
-    // public methods
-    bool Draw(void) const;
-
-private:
-};
-
-class ChemicalGraph;
-class CoordSet;
-
-class StructureObject : public StructureBase
-{
-public:
-    StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master);
-    //~StructureObject(void);
-
-    // public data
-    const bool isMaster;
-    int mmdbID;
-    std::string pdbID;
-
-    // an object has one ChemicalGraph that can be applied to one or more 
-    // CoordSets to generate the object's model(s)
-    ChemicalGraph *graph;
-    typedef LIST_TYPE < const CoordSet * > CoordSetList;
-    CoordSetList coordSets;
+    AtomSet *atomSet;
+    typedef LIST_TYPE < const FeatureCoord * > FeatureCoordList;
+    FeatureCoordList featureCoords;
 
     // public methods
     bool Draw(void) const;
@@ -115,4 +75,4 @@ private:
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_STRUCTURESET__HPP
+#endif // CN3D_COORDSET__HPP

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/11 13:45:30  thiessen
+* add modules to parse chemical graph; many improvements
+*
 * Revision 1.4  2000/07/01 15:43:50  thiessen
 * major improvements to StructureBase functionality
 *
@@ -81,7 +84,7 @@ int CCn3DApp::Run() {
     // Create StructureSet from mime data
     StructureSet strucSet(mime);
 
-    strucSet.DrawAll();
+    //strucSet.DrawAll();
 
     return 0;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/11 13:45:31  thiessen
+* add modules to parse chemical graph; many improvements
+*
 * Revision 1.1  2000/07/01 15:47:18  thiessen
 * major improvements to StructureBase functionality
 *
@@ -43,35 +46,37 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 // store children in parent upon construction
-StructureBase::StructureBase(StructureBase *parent) :
-    _flags(_eVisible)
+StructureBase::StructureBase(StructureBase *parent, bool warnOnNULL)
+    //: _flags(_eVisible)
 {
-    //TESTMSG("in StructureBase::StructureBase()");
     if (parent)
         parent->_AddChild(this);
-//    else
-//        ERR_POST(Warning << "NULL parent passed to StructureBase constructor");
+    // should really allow NULL parent only for topmost class (StructureSet)
+    else if (warnOnNULL)
+        ERR_POST(Warning << "NULL parent passed to StructureBase constructor");
+    _parent = parent;
 }
 
-// delete children then own data upon destruction
+// delete children upon destruction
 StructureBase::~StructureBase(void)
 {
-    TESTMSG("in StructureBase::~StructureBase(), _children.size()=" << _children.size());
+    //TESTMSG("in StructureBase::~StructureBase(), _children.size()=" << _children.size());
     _ChildList::iterator i, e=_children.end();
     for (i=_children.begin(); i!=e; i++) 
         delete (*i).first;
 }
 
-// draws the object and all its children
-void StructureBase::DrawAll(void) const
+// draws the object and all its children - halt upon false return from Draw or DrawAll
+bool StructureBase::DrawAll(void) const
 {
-    if (IsVisible()) {
-        Draw();
+    //if (IsVisible()) {
+        if (!Draw()) return true;
         _ChildList::const_iterator i, e=_children.end();
         for (i=_children.begin(); i!=e; i++) 
-            ((*i).first)->DrawAll();
-        PostDraw();
-    }
+            if (!(((*i).first)->DrawAll())) return true;
+        //PostDraw();
+    //}
+	return true;
 }
 
 // every StructureBase object stored will get a unique ID (although it's
