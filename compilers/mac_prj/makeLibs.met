@@ -440,9 +440,8 @@ on SetProjectData()
 		AddGuiProject("gui_objutils", {}, "objutils")
 		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"})}))
 		
-		AddGuiProject("gui_dlg_basic", {}, "dialogs:basic")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
 		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
@@ -521,7 +520,7 @@ on SetProjectData()
 			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "context_factory", "data_store", "dload_factory", "doc_manager", "docmgr_view", "document", "message_history", "message_queue", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "selection_buffer", "version", "view", "obj_menu", "plugin_dlg", "project_manager"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg_basic", "gui_dlg_config", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg_config", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
@@ -823,7 +822,21 @@ on CopyHeaders()
 		my UpdateHeader("MW-BSD-limits-fix.h", prefixFolder)
 		
 	end tell
+	
+	my makeSoftLink("etc", gRsrcsDir, "../../src/gui/res/etc")
+	my makeSoftLink("share", gRsrcsDir, "../../src/gui/res/share")
+	
 end CopyHeaders
+
+on makeSoftLink(slName, locat, toPath)
+	tell application "Finder"
+		if not (exists alias file slName of folder locat) then
+			set s to "cd " & POSIX path of locat & ";"
+			set s to s & "ln -s " & toPath & " " & slName
+			do shell script s
+		end if
+	end tell
+end makeSoftLink
 
 on AppendAccessPath(aPath, isRecursive, isUserPath)
 	tell application "CodeWarrior IDE"
