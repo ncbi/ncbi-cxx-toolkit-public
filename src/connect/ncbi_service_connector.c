@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2002/03/11 22:00:22  lavr
+ * Support encoding in MIME content type for server data
+ *
  * Revision 6.30  2001/12/04 15:56:47  lavr
  * Use strdup() instead of explicit strcpy(malloc(...), ...)
  *
@@ -276,16 +279,17 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
 }
 
 
-static char* s_AdjustNetParams(SConnNetInfo* net_info,
-                               EReqMethod    req_method,
-                               const char*   cgi_name,
-                               const char*   first_arg,
-                               const char*   first_val,
-                               const char*   cgi_args,
-                               const char*   static_header,
-                               EMIME_Type    mime_t,
-                               EMIME_SubType mime_s,
-                               char*         dynamic_header /*will be freed!*/)
+static char* s_AdjustNetParams(SConnNetInfo*   net_info,
+                               EReqMethod      req_method,
+                               const char*     cgi_name,
+                               const char*     first_arg,
+                               const char*     first_val,
+                               const char*     cgi_args,
+                               const char*     static_header,
+                               EMIME_Type      mime_t,
+                               EMIME_SubType   mime_s,
+                               EMIME_Encoding  mime_e,
+                               char*           dynamic_header/*will be freed*/)
 {
     char content_type[MAX_CONTENT_TYPE_LEN], *retval;
 
@@ -326,7 +330,7 @@ static char* s_AdjustNetParams(SConnNetInfo* net_info,
 
     if (mime_t == SERV_MIME_TYPE_UNDEFINED ||
         mime_s == SERV_MIME_SUBTYPE_UNDEFINED ||
-        !MIME_ComposeContentTypeEx(mime_t, mime_s, eENCOD_None,
+        !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e,
                                    content_type, sizeof(content_type))) {
         *content_type = 0;
     }
@@ -400,8 +404,8 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
                                             NCBID_NAME,
                                             "service", uuu->service,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
-                                            user_header,
-                                            info->mime_t, info->mime_s,
+                                            user_header, info->mime_t,
+                                            info->mime_s, info->mime_e,
                                             iter_header);
             break;
         case fSERV_Http:
@@ -417,8 +421,8 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
                                             SERV_HTTP_PATH(&info->u.http),
                                             0, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
-                                            user_header,
-                                            info->mime_t, info->mime_s,
+                                            user_header, info->mime_t,
+                                            info->mime_s, info->mime_e,
                                             iter_header);
             break;
         case fSERV_Standalone:
@@ -428,8 +432,8 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
                                             uuu->net_info->path,
                                             "service", uuu->service,
                                             uuu->net_info->args,
-                                            user_header,
-                                            info->mime_t, info->mime_s,
+                                            user_header, info->mime_t,
+                                            info->mime_s, info->mime_e,
                                             iter_header);
             break;
         default:
@@ -494,8 +498,8 @@ static CONNECTOR s_Open
                                             NCBID_NAME,
                                             "service", uuu->service,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
-                                            user_header,
-                                            info->mime_t, info->mime_s, 0);
+                                            user_header, info->mime_t,
+                                            info->mime_s, info->mime_e, 0);
             if (!user_header)
                 return 0;
             break;
@@ -513,8 +517,8 @@ static CONNECTOR s_Open
                                             SERV_HTTP_PATH(&info->u.http),
                                             0, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
-                                            user_header,
-                                            info->mime_t, info->mime_s, 0);
+                                            user_header, info->mime_t,
+                                            info->mime_s, info->mime_e, 0);
             if (!user_header)
                 return 0;
             break;
@@ -526,8 +530,8 @@ static CONNECTOR s_Open
                                                 0,
                                                 "service", uuu->service,
                                                 0,
-                                                user_header,
-                                                info->mime_t, info->mime_s, 0);
+                                                user_header, info->mime_t,
+                                                info->mime_s, info->mime_e, 0);
                 if (!user_header)
                     return 0;
             }
@@ -549,7 +553,8 @@ static CONNECTOR s_Open
                                         uuu->service, 0,
                                         user_header,
                                         SERV_MIME_TYPE_UNDEFINED,
-                                        SERV_MIME_SUBTYPE_UNDEFINED, 0);
+                                        SERV_MIME_SUBTYPE_UNDEFINED,
+                                        eENCOD_None, 0);
         if (!user_header)
             return 0;
     }
