@@ -34,7 +34,10 @@
 * ===========================================================================
 */
 
-#include <objmgr/gbloader.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -195,6 +198,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.2  2003/12/02 00:08:15  vasilche
+ * Fixed segfault in multithreaded apps.
+ *
  * Revision 1.1  2003/11/26 17:55:55  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.
