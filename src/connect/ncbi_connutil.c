@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/01/08 22:35:56  lavr
+ * Client-Mode removed; replaced by 2 separate boolean fields:
+ * stateless and firewall
+ *
  * Revision 6.10  2000/12/29 17:54:11  lavr
  * NCBID stuff removed; ConnNetInfo_SetUserHeader added;
  * modifications to ConnNetInfo_Print output.
@@ -175,16 +179,16 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* request method */
     REG_VALUE(REG_CONN_REQUEST_METHOD, str, DEF_CONN_REQUEST_METHOD);
     if (strcasecmp(str, "ANY") == 0)
-        info->req_method = eReqMethodAny;
+        info->req_method = eReqMethod_Any;
     else if (strcasecmp(str, "POST") == 0)
-        info->req_method = eReqMethodPost;
+        info->req_method = eReqMethod_Post;
     else if (strcasecmp(str, "GET") == 0)
-        info->req_method = eReqMethodGet;
+        info->req_method = eReqMethod_Get;
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     dbl = atof(str);
-    if (dbl <= 0)
+    if (dbl <= 0.0)
         dbl = DEF_CONN_TIMEOUT;
     info->timeout.sec  = (unsigned int) dbl;
     info->timeout.usec = (unsigned int) ((dbl - info->timeout.sec) * 1000000);
@@ -197,7 +201,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* HTTP proxy server? */
     REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
               DEF_CONN_HTTP_PROXY_HOST);
-    if ( *info->http_proxy_host ) {
+    if (*info->http_proxy_host) {
         /* yes, use the specified HTTP proxy server */
         REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, 0);
         val = atoi(str);
@@ -208,28 +212,34 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     }
 
     /* non-transparent CERN-like firewall proxy server? */
-    REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
+    REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
+              DEF_CONN_HTTP_PROXY_HOST);
 
     /* turn on debug printout? */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
     info->debug_printout = (*str  &&
-                            (strcmp(str, "1"   ) == 0  ||
+                            (strcmp(str, "1") == 0  ||
                              strcasecmp(str, "true") == 0  ||
                              strcasecmp(str, "yes" ) == 0));
 
-    /* what is a client mode? */
-    REG_VALUE(REG_CONN_CLIENT_MODE, str, DEF_CONN_CLIENT_MODE);
-    if (*str && strcasecmp(str, "firewall") == 0)
-        info->client_mode = eClientModeFirewall;
-    else if (*str && strcasecmp(str, "stateful_capable") == 0)
-        info->client_mode = eClientModeStatefulCapable;
-    else
-        info->client_mode = eClientModeStatelessOnly;
+    /* stateless client? */
+    REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
+    info->stateless = (*str  &&
+                       (strcmp(str, "1") == 0  ||
+                        strcasecmp(str, "true") == 0  ||
+                        strcasecmp(str, "yes" ) == 0));
+
+    /* firewall mode? */
+    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
+    info->firewall = (*str  &&
+                      (strcmp(str, "1") == 0  ||
+                       strcasecmp(str, "true") == 0  ||
+                       strcasecmp(str, "yes" ) == 0));
 
     /* prohibit the use of local load balancer? */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
     info->lb_disable = (*str  &&
-                        (strcmp(str, "1"   ) == 0  ||
+                        (strcmp(str, "1") == 0  ||
                          strcasecmp(str, "true") == 0  ||
                          strcasecmp(str, "yes" ) == 0));
 
@@ -302,16 +312,24 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
 
 static void s_PrintString(FILE* fp, const char* name, const char* str) {
-    if ( str )
-        fprintf(fp, "%-16s: \"%s\"\n", name, str);
-    else
-        fprintf(fp, "%-16s: <NULL>\n", name);
+    if ( str ) {
+        size_t i, n = strlen(str);
+        fprintf(fp, "%-16.16s: \"", name);
+        for (i = 0; i < n; i++)
+            if (str[i] != '\n') {
+                if (str[i] != '\r')
+                    fputc(str[i], fp);
+            } else if (i != n - 1)
+                fprintf(fp, "\n%16c:  ", ' ');
+        fprintf(fp, "\"\n");
+    } else
+        fprintf(fp, "%-16.16s: <NULL>\n", name);
 }
 static void s_PrintULong(FILE* fp, const char* name, unsigned long lll) {
-    fprintf(fp, "%-16s: %lu\n", name, lll);
+    fprintf(fp, "%-16.16s: %lu\n", name, lll);
 }
 static void s_PrintBool(FILE* fp, const char* name, int/*bool*/ bbb) {
-    fprintf(fp, "%-16s: %s\n", name, bbb ? "TRUE" : "FALSE");
+    fprintf(fp, "%-16.16s: %s\n", name, bbb ? "TRUE" : "FALSE");
 }
 
 extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
@@ -327,6 +345,13 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
         s_PrintULong (fp, "port",            info->port);
         s_PrintString(fp, "path",            info->path);
         s_PrintString(fp, "args",            info->args);
+        s_PrintString(fp, "req_method",
+                      info->req_method == eReqMethod_Any
+                      ? DEF_CONN_REQUEST_METHOD :
+                      (info->req_method == eReqMethod_Get
+                       ? "GET" :
+                       (info->req_method == eReqMethod_Post
+                        ? "POST" : "Unknown")));
         s_PrintULong (fp, "timeout(sec)",    info->timeout.sec);
         s_PrintULong (fp, "timeout(usec)",   info->timeout.usec);
         s_PrintULong (fp, "max_try",         info->max_try);
@@ -334,14 +359,8 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
         s_PrintULong (fp, "http_proxy_port", info->http_proxy_port);
         s_PrintString(fp, "proxy_host",      info->proxy_host);
         s_PrintBool  (fp, "debug_printout",  info->debug_printout);
-        s_PrintString(fp, "client_mode",   
-                      info->client_mode == eClientModeStatelessOnly
-                      ? "Stateless_Only" :
-                      (info->client_mode == eClientModeStatefulCapable
-                       ? "Stateful_Capable" :
-                       (info->client_mode == eClientModeFirewall
-                        ? "Firewall"
-                        : "Unknown")));
+        s_PrintBool  (fp, "stateless",       info->stateless);   
+        s_PrintBool  (fp, "firewal",         info->firewall);
         s_PrintBool  (fp, "lb_disable",      info->lb_disable);
         s_PrintString(fp, "user_header",     info->http_user_header);
         s_PrintBool  (fp, "proxy_adjusted",  info->http_proxy_adjusted);
@@ -392,19 +411,40 @@ extern SOCK URL_Connect
         return 0/*error*/;
     }
 
+    switch (req_method) {
+    case eReqMethod_Any:
+        X_REQ_R = DEF_CONN_REQUEST_METHOD " ";
+        break;
+    case eReqMethod_Post:
+        X_REQ_R = "POST ";
+        break;
+    case eReqMethod_Get:
+        X_REQ_R = "GET ";
+        if (content_length) {
+            CORE_LOG(eLOG_Warning,
+                     "[URL_Connect]  Content length ignored with GET");
+            content_length = 0;
+        }
+        break;
+    default:
+        CORE_LOG(eLOG_Error, "[URL_Connect]  Unrecognized request method");
+        assert(0);
+        return 0/*error*/;
+    }
+
     /* connect to HTTPD */
     if (SOCK_Create(host, port, c_timeout, &sock) != eIO_Success) {
         CORE_LOG(eLOG_Error, "[URL_Connect]  Socket connect failed");
         return 0/*error*/;
     }
-
+    
     /* setup i/o timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
         CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot setup connection timeout");
         SOCK_Close(sock);
         return 0;
     }
-
+    
     /* URL-encode "args", if any specified */
     if (args  &&  *args) {
         size_t src_size = strlen(args);
@@ -422,16 +462,6 @@ extern SOCK URL_Connect
         }
     }
 
-    if (req_method == eReqMethodGet) {
-        X_REQ_R = "GET ";
-        if (content_length) {
-            CORE_LOG(eLOG_Warning,
-                     "[URL_Connect]  Content length ignored with GET");
-            content_length = 0;
-        }
-    } else
-        X_REQ_R = "POST ";
-
     /* compose and send HTTP header */
     if (
         /* {POST|GET} <path>?<args> HTTP/1.0\r\n */
@@ -446,7 +476,7 @@ extern SOCK URL_Connect
           != eIO_Success
           )
          )  ||
-        SOCK_Write(sock, (const void*) X_REQ_E,  strlen(X_REQ_E ), 0)
+        SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E), 0)
         != eIO_Success  ||
 
         /*  <user_header> */
@@ -455,7 +485,7 @@ extern SOCK URL_Connect
          != eIO_Success)  ||
 
         /*  Content-Length: <content_length>\r\n\r\n */
-        (req_method != eReqMethodGet  &&
+        (req_method != eReqMethod_Get  &&
          (sprintf(buffer, "Content-Length: %lu\r\n",
                   (unsigned long) content_length) <= 0  ||
           SOCK_Write(sock, (const void*) buffer, strlen(buffer), 0)
@@ -471,7 +501,7 @@ extern SOCK URL_Connect
         }
 
     /* success */
-    if ( x_args )
+    if (x_args)
         free(x_args);
     return sock;
 }
