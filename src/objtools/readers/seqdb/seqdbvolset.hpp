@@ -43,6 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Import definitions from the ncbi::objects namespace.
 USING_SCOPE(objects);
 
 /// CSeqDBVolSet
@@ -487,9 +488,6 @@ private:
         /// 
         /// The volume is marked as unfiltered (all OIDs are
         /// included), and any existing filters are cleared.
-        /// 
-        /// @param gilist_file
-        ///   The file name of GI list file.
         void SetIncludeAll()
         {
             m_AllOIDs = true;
