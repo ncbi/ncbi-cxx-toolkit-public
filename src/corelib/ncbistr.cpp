@@ -228,12 +228,13 @@ int NStr::StringToNumeric(const string& str)
 
 
 # define CHECK_ENDPTR() \
-    if (*endptr != '\0') { \
+    if (check_endptr == eCheck_Need  &&  *endptr != '\0') { \
         THROW1_TRACE(runtime_error, "no symbols should be after number"); \
     }
 
 
-int NStr::StringToInt(const string& str, int base /* = 10 */ )
+int NStr::StringToInt(const string& str, int base /* = 10 */, 
+                      ECheckEndPtr check_endptr   /* = eCheck_Need */ )
 {
     errno = 0;
     char* endptr = 0;
@@ -246,7 +247,8 @@ int NStr::StringToInt(const string& str, int base /* = 10 */ )
 }
 
 
-unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
+unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */, 
+                                ECheckEndPtr check_endptr   /* = eCheck_Need */ )
 {
     errno = 0;
     char* endptr = 0;
@@ -258,7 +260,9 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
     return (unsigned int) value;
 }
 
-long NStr::StringToLong(const string& str, int base /* = 10 */ )
+
+long NStr::StringToLong(const string& str, int base /* = 10 */,
+                        ECheckEndPtr check_endptr   /* = eCheck_Need */ )
 {
     errno = 0;
     char* endptr = 0;
@@ -270,7 +274,8 @@ long NStr::StringToLong(const string& str, int base /* = 10 */ )
 }
 
 
-unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
+unsigned long NStr::StringToULong(const string& str, int base /* = 10 */, 
+                                  ECheckEndPtr check_endptr   /* = eCheck_Need */ )
 {
     errno = 0;
     char* endptr = 0;
@@ -282,7 +287,8 @@ unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
 }
 
 
-double NStr::StringToDouble(const string& str)
+double NStr::StringToDouble(const string& str,
+                            ECheckEndPtr check_endptr /* = eCheck_Need */ )
 {
     errno = 0;
     char* endptr = 0;
@@ -469,6 +475,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2002/05/02 15:25:37  ivanov
+ * Added new parameter to String-to-X functions for skipping the check
+ * the end of string on zero
+ *
  * Revision 1.47  2002/04/11 21:08:03  ivanov
  * CVS log moved to end of the file
  *

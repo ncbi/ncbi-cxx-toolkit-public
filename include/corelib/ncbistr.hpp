@@ -81,12 +81,22 @@ public:
     /// if it represents a number that does not fit into "int".
     static int StringToNumeric(const string& str);
 
+    /// Using of check end ptr in the String-to-X conversion functions
+    enum ECheckEndPtr {
+        eCheck_Need,   /// Check is necessary
+        eCheck_Skip    /// Skip this check
+    };
     /// String-to-X conversion functions (throw exception if conversion error)
-    static int           StringToInt    (const string& str, int base = 10);
-    static unsigned int  StringToUInt   (const string& str, int base = 10);
-    static long          StringToLong   (const string& str, int base = 10);
-    static unsigned long StringToULong  (const string& str, int base = 10);
-    static double        StringToDouble (const string& str);
+    static int           StringToInt    (const string& str, int base = 10, 
+                                         ECheckEndPtr = eCheck_Need);
+    static unsigned int  StringToUInt   (const string& str, int base = 10,
+                                         ECheckEndPtr = eCheck_Need);
+    static long          StringToLong   (const string& str, int base = 10,
+                                         ECheckEndPtr = eCheck_Need);
+    static unsigned long StringToULong  (const string& str, int base = 10,
+                                         ECheckEndPtr = eCheck_Need);
+    static double        StringToDouble (const string& str,
+                                         ECheckEndPtr = eCheck_Need);
 
     /// X-to-String conversion functions
     static string IntToString(long value, bool sign=false);
@@ -498,6 +508,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2002/05/02 15:25:51  ivanov
+ * Added new parameter to String-to-X functions for skipping the check
+ * the end of string on zero
+ *
  * Revision 1.13  2002/04/11 20:39:19  ivanov
  * CVS log moved to end of the file
  *
