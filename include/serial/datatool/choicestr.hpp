@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/17 16:47:38  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+*
 * Revision 1.3  2000/03/07 14:06:04  vasilche
 * Added generation of reference counted objects.
 *
@@ -78,13 +82,13 @@ public:
     enum EMemberType {
         eSimpleMember,
         eStringMember,
-        ePointerMember
+        ePointerMember,
+        eObjectPointerMember
     };
     struct SVariantInfo {
         string externalName;
         string cName;
         EMemberType memberType;
-        string memberRef;
         AutoPtr<CTypeStrings> type;
         string cType;
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/17 16:47:38  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+*
 * Revision 1.3  2000/02/17 21:26:22  vasilche
 * Inline methods now will be at the end of *_Base.hpp files.
 *
@@ -69,6 +73,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/tool/classctx.hpp>
 #include <map>
+#include <set>
 
 USING_NCBI_SCOPE;
 
@@ -124,6 +129,11 @@ public:
     bool GenerateUserHPP(const string& path) const;
     bool GenerateUserCPP(const string& path) const;
 
+    CNcbiOstream& WriteSourceFile(CNcbiOstream& out) const;
+    CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out) const;
+    CNcbiOstream& WriteCopyright(CNcbiOstream& out) const;
+    CNcbiOstream& WriteUserCopyright(CNcbiOstream& out) const;
+
 private:
     // file names
     string m_BaseName;
@@ -134,6 +144,7 @@ private:
     TForwards m_ForwardDeclarations;
     CNcbiOstrstream m_HPPCode, m_INLCode, m_CPPCode;
 
+    set<string> m_SourceFiles;
     // classes code
     TAddedClasses m_AddedClasses;
     TClasses m_Classes;

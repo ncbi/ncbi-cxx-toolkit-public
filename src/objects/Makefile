@@ -2,7 +2,7 @@ MODULES = general biblio medline medlars pub pubmed seqloc seqalign seqblock seq
 
 new_module = ../../../scripts/new_module.sh
 
-all all_files sources makefiles directories clean_all_sources:
+all all_files sources makefiles directories purge_sources purge_all_sources:
 	for i in $(MODULES); do \
 		( cd $$i && $(new_module) $$i $@; ) || exit 2; \
 	done

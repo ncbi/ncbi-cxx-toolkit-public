@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/03/17 16:47:48  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+*
 * Revision 1.9  2000/03/07 14:10:52  vasilche
 * Fixed for reference counting.
 *
@@ -69,7 +73,6 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
-#include <serial/choiceptr.hpp>
 #include <serial/serial.hpp>
 
 class CNcbiDiagStream
