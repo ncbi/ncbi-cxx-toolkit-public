@@ -37,7 +37,7 @@
 * ==========================================================================
 */
 
-#include <blast_def.h>
+#include <blast_dust.h>
 #include <blastkar.h>
 
 /* local, file scope, structures and variables */
@@ -64,7 +64,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
 		       Int4 level, Int4 windowsize, Int4 minwin, Int4 linker)
 {
    Int4    len;
-   Int4	i, invrescount;
+   Int4	i;
    Int4 retlen;
    UcharPtr seq;
    DREGION	PNTR regold = NULL;
@@ -203,7 +203,6 @@ static void wo1 (Int4 len, UcharPtr seq, Int4 iwo, DCURLOC PNTR cloc)
 static Int4 
 dust_triplet_find (Uint1Ptr seq_start, Int4 icur, Int4 max, Uint1Ptr s1)
 {
-   Int4 pos;
    Int4 n;
    Uint1Ptr s2, s3;
    Int2 c;
@@ -289,8 +288,7 @@ Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
 {
 	DREGION	PNTR reg, PNTR regold;
 	Int4 nreg;
-	Int2 loopDustMax = 0;
-        Int2 status = 0;
+   Int2 status = 0;
 
         /* place for dusted regions */
 	regold = reg = MemNew (sizeof (DREGION));

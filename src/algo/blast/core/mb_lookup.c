@@ -61,7 +61,7 @@ MBLookupTablePtr MBLookupTableDestruct(MBLookupTablePtr mb_lt)
 /** Convert weight, template length and template type from input options into
     an MBTemplateType enum
 */
-DiscTemplateType GetDiscTemplateType(Int2 weight, Int2 length, 
+DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length, 
                                      DiscWordType type)
 {
    if (weight == 11) {

@@ -658,87 +658,90 @@ BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop,
     
     NlmMutexLockEx(&thr_info->db_mutex);
     if (thr_info->realdb_done) {
-        if (virtual_oidlist = BlastGetVirtualOIDList(rdfp)) {
-	    /* Virtual database.   Create id_list using mask file */
-	    Int4 gi_end       = 0;
+        if ((virtual_oidlist = BlastGetVirtualOIDList(rdfp))) {
+           /* Virtual database.   Create id_list using mask file */
+           Int4 gi_end       = 0;
 	    
-	    thr_info->final_db_seq = MIN(thr_info->final_db_seq, virtual_oidlist->total);
+           thr_info->final_db_seq = 
+              MIN(thr_info->final_db_seq, virtual_oidlist->total);
 	    
-	    gi_end = thr_info->final_db_seq;
+           gi_end = thr_info->final_db_seq;
 
-	    if (thr_info->oid_current < gi_end) {
-		Int4 oidindex  = 0;
-		Int4 gi_start  = thr_info->oid_current;
-		Int4 bit_start = gi_start % MASK_WORD_SIZE;
-		Int4 gi;
-		
-		for(gi = gi_start; (gi < gi_end) && (oidindex < thr_info->db_chunk_size);) {
-		    Int4 bit_end = ((gi_end - gi) < MASK_WORD_SIZE) ? (gi_end - gi) : MASK_WORD_SIZE;
-		    Int4 bit;
-		    
-		    Uint4 mask_index = gi / MASK_WORD_SIZE;
-		    Uint4 mask_word  = Nlm_SwapUint4(virtual_oidlist->list[mask_index]);
-		    
-		    if ( mask_word ) {
-			for(bit = bit_start; bit<bit_end; bit++) {
-			    Uint4 bitshift = (MASK_WORD_SIZE-1)-bit;
-			    
-			    if ((mask_word >> bitshift) & 1) {
-				id_list[ oidindex++ ] = (gi - bit_start) + bit;
-			    }
-			}
-		    }
-		    
-		    gi += bit_end - bit_start;
-		    bit_start = 0;
-		}
-		
-		thr_info->oid_current = gi;
-		*id_list_number = oidindex;
-	    } else {
-		done = TRUE;
-	    }
-	    
-	} else {
-	    done = TRUE;
+           if (thr_info->oid_current < gi_end) {
+              Int4 oidindex  = 0;
+              Int4 gi_start  = thr_info->oid_current;
+              Int4 bit_start = gi_start % MASK_WORD_SIZE;
+              Int4 gi;
+              
+              for(gi = gi_start; (gi < gi_end) && 
+                     (oidindex < thr_info->db_chunk_size);) {
+                 Int4 bit_end = ((gi_end - gi) < MASK_WORD_SIZE) ? 
+                    (gi_end - gi) : MASK_WORD_SIZE;
+                 Int4 bit;
+                 
+                 Uint4 mask_index = gi / MASK_WORD_SIZE;
+                 Uint4 mask_word  = 
+                    Nlm_SwapUint4(virtual_oidlist->list[mask_index]);
+                 
+                 if ( mask_word ) {
+                    for(bit = bit_start; bit<bit_end; bit++) {
+                       Uint4 bitshift = (MASK_WORD_SIZE-1)-bit;
+                       
+                       if ((mask_word >> bitshift) & 1) {
+                          id_list[ oidindex++ ] = (gi - bit_start) + bit;
+                       }
+                    }
+                 }
+                 
+                 gi += bit_end - bit_start;
+                 bit_start = 0;
+              }
+              
+              thr_info->oid_current = gi;
+              *id_list_number = oidindex;
+           } else {
+              done = TRUE;
+           }
+        } else {
+           done = TRUE;
         }
     } else {
-	int real_readdb_entries;
-	int total_readdb_entries;
-	int final_real_seq;
-
-	real_readdb_entries  = readdb_get_num_entries_total_real(rdfp);
-	total_readdb_entries = readdb_get_num_entries_total(rdfp);
-	final_real_seq       = MIN( real_readdb_entries, thr_info->final_db_seq );
-	
-	/* we have real database with start/stop specified */
-        if (thr_info->db_mutex) {
-            *start = thr_info->db_chunk_last;
-            if (thr_info->db_chunk_last < final_real_seq) {
-                *stop = MIN((thr_info->db_chunk_last + 
-                    thr_info->db_chunk_size), final_real_seq);
-            } else {/* Already finished. */
-                *stop = thr_info->db_chunk_last;
-
-		/* Change parameters for oidlist processing. */
-                thr_info->realdb_done  = TRUE;
-            }
-            thr_info->db_chunk_last = *stop;
-        } else {
-            if (*stop != final_real_seq) {
-                done = FALSE;
-                *start = thr_info->last_db_seq;
-                *stop  = final_real_seq;
-            } else {
-                thr_info->realdb_done = TRUE;
-		
-		if (total_readdb_entries == real_readdb_entries) {
-		    done = TRUE;
-		} else {
-		    thr_info->oid_current = final_real_seq;
-		}
-            }
-        }
+       int real_readdb_entries;
+       int total_readdb_entries;
+       int final_real_seq;
+       
+       real_readdb_entries  = readdb_get_num_entries_total_real(rdfp);
+       total_readdb_entries = readdb_get_num_entries_total(rdfp);
+       final_real_seq = MIN( real_readdb_entries, thr_info->final_db_seq );
+       
+       /* we have real database with start/stop specified */
+       if (thr_info->db_mutex) {
+          *start = thr_info->db_chunk_last;
+          if (thr_info->db_chunk_last < final_real_seq) {
+             *stop = MIN((thr_info->db_chunk_last + 
+                          thr_info->db_chunk_size), final_real_seq);
+          } else {/* Already finished. */
+             *stop = thr_info->db_chunk_last;
+             
+             /* Change parameters for oidlist processing. */
+             thr_info->realdb_done  = TRUE;
+          }
+          thr_info->db_chunk_last = *stop;
+       } else {
+          if (*stop != final_real_seq) {
+             done = FALSE;
+             *start = thr_info->last_db_seq;
+             *stop  = final_real_seq;
+          } else {
+             thr_info->realdb_done = TRUE;
+             
+             if (total_readdb_entries == real_readdb_entries) {
+                done = TRUE;
+             } else {
+                thr_info->oid_current = final_real_seq;
+             }
+          }
+       }
     }
     
     NlmMutexUnlock(thr_info->db_mutex);

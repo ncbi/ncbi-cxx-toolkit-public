@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.23  2003/06/05 18:33:16  dondosha
+* Compiler warning fixes
+*
 * Revision 1.22  2003/06/05 17:15:23  dondosha
 * SeqLoc is no longer used for query masking/filtering
 *
@@ -942,21 +945,15 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
    Int2 context=0;	/* Loop variable. */
    Int2 total_num_contexts=0;/* number of different strands, sequences, etc. */
    Int2 status=0;	/* return value */
-   Int2 total_iterations;/* loop variable for different strands. */
    Int4 query_length=0;	/* Length of query described by SeqLocPtr. */
-   Int4 dna_length=0;   /* Length of the underlying nucleotide sequence if
-                           queries are translated */
    BlastSeqLocPtr filter_slp=NULL;/* SeqLocPtr computed for filtering. */
    BlastSeqLocPtr filter_slp_combined;/* Used to hold combined SeqLoc's */
    BlastSeqLocPtr loc; /* Iterator variable */
    BlastMaskPtr last_filter_out = NULL; 
    Uint1Ptr buffer;	/* holds sequence for plus strand or protein. */
-   Uint1Ptr buffer_var = NULL;/* holds offset of buffer to be worked on. */
    Boolean reverse; /* Indicates the strand when masking filtered locations */
    BlastMaskPtr mask_slp, next_mask_slp;/* Auxiliary locations for lower 
                                               case masks */
-   Int4 seqid = -1, mask_seqid = -1, next_mask_seqid = -1;
-   Int4 buffer_length;
    Int4 context_offset;
    
    if ((status=

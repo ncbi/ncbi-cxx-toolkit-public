@@ -552,7 +552,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
 
                hsp->evalue = 
                   BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
-                     query_info->eff_searchsp_array[hsp->context]);
+                     (FloatHi)query_info->eff_searchsp_array[hsp->context]);
                if (hsp->evalue > hit_options->expect_value) 
                   /* put in for comp. based stats. */
                   keep = FALSE;
@@ -568,7 +568,8 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             
             if (scalingFactor != 0.0 && scalingFactor != 1.0) {
                /* Scale down score for blastp and tblastn. */
-               hsp->score = (hsp->score+(0.5*scalingFactor))/scalingFactor;
+               hsp->score = (Int4)
+                  (hsp->score+(0.5*scalingFactor))/scalingFactor;
             }
             /* only one alignment considered for blast[np]. */
             /* This may be changed by LinkHsps for blastx or tblastn. */
@@ -578,7 +579,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                 hit_options->longest_intron > 0) {
                hsp->evalue = 
                   BlastKarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
-                     query_info->eff_searchsp_array[hsp->context]);
+                     (FloatHi) query_info->eff_searchsp_array[hsp->context]);
             }
 
             for (index2=0; index2<index && keep == TRUE; index2++) {

@@ -37,9 +37,8 @@
 * ==========================================================================
 */
 
-#include <blast_def.h>
-#include <blastkar.h>
 #include <blast_seg.h>
+#include <blastkar.h>
 #include <lnfact.h>
 
 /*---------------------------------------------------------------(SeqNew)---*/
@@ -528,7 +527,7 @@ static FloatHi lnass(Int4Ptr sv, Int4 alphasize)
 static FloatHi getprob(Int4Ptr sv, Int4 total, AlphaPtr palpha)
 
   {
-   FloatHi ans, ans1, ans2, totseq;
+   FloatHi ans, ans1, ans2 = 0, totseq;
 
    /* #define LN20	2.9957322735539909 */
    /* #define LN4	1.3862943611198906 */
@@ -764,8 +763,7 @@ static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
 static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr PNTR seg_locs)
 {
    DoubleIntPtr dip;
-   Int4 start, stop;
-   BlastSeqLocPtr slp, last_slp = NULL, head_slp = NULL;
+   BlastSeqLocPtr last_slp = NULL, head_slp = NULL;
 
    for ( ; segs; segs = segs->next) {
       dip = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
@@ -780,6 +778,7 @@ static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr PNTR seg_
    }
 
    *seg_locs = head_slp;
+   return 0;
 }
 
 /*------------------------------------------------------------(AA20alpha)---*/
@@ -914,13 +913,11 @@ static AlphaPtr AlphaCopy (AlphaPtr palpha)
    return(pbeta);
 }
 
-Int2 SeqBufferSegAa (Uint1Ptr sequence, Int4 length, Int4 offset,
+Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
                      SegParametersPtr sparamsp, BlastSeqLocPtr PNTR seg_locs)
 {
    SequencePtr seqwin;
    SegPtr segs;
-   Int4 index;
-   Int4 temp;
    Boolean params_allocated = FALSE;
    
    SegParametersCheck (sparamsp);

@@ -106,7 +106,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    Int4 num_init_hsps = 0;
    Int4 num_hsps = 0;
    Int4 num_good_hsps = 0;
-   BlastThrInfoPtr thr_info;
+   BlastThrInfoPtr thr_info = NULL;
    Int4Ptr oid_list = NULL;
    Int4 start = 0, stop = 0, oid_list_length = 0;
    Boolean done = FALSE, use_oid_list = FALSE;

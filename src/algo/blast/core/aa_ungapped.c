@@ -151,7 +151,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
             } else if (diff < window + level) {
                /* Extend this pair of hits */
                hsp_len = 0;
-               score = BlastAaExtendTwoHit(diag, matrix, subject, query,
+               score = BlastAaExtendTwoHit(matrix, subject, query,
                           last_hit, subject_offsets[i], query_offsets[i],
                           dropoff, &hsp_q, &hsp_s, &hsp_len);
                /* if the hsp meets the score threshold, report it */
@@ -451,8 +451,7 @@ right_score = BlastAaExtendRight(matrix, subject, query, s_off, q_off, dropoff,&
 return left_score + right_score;
 }
 
-Int4 BlastAaExtendTwoHit(const BLAST_DiagTablePtr diag,
-			 Int4 ** matrix,
+Int4 BlastAaExtendTwoHit(Int4 ** matrix,
                          const BLAST_SequenceBlkPtr subject,
                          const BLAST_SequenceBlkPtr query,
                          Int4 s_left_off,

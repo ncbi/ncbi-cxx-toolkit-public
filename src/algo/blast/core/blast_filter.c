@@ -112,8 +112,7 @@ BlastMaskPtr BlastMaskFromSeqLoc(SeqLocPtr mask_slp, Int4 index)
 SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc, 
                             SeqLocPtr slp)
 {
-   BlastMaskPtr new_mask = (BlastMaskPtr) MemNew(sizeof(BlastMask));
-   BlastSeqLocPtr loc, last_loc = NULL, head_loc = NULL;
+   BlastSeqLocPtr loc;
    SeqIntPtr si;
    SeqLocPtr mask_head = NULL, last_mask = NULL;
    SeqLocPtr mask_slp_last, mask_slp_head, new_mask_slp;
@@ -205,7 +204,6 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
    DoubleIntPtr di = NULL, di_next = NULL, di_tmp;
    BlastSeqLocPtr loc_head=NULL, last_loc, loc_var;
    BlastSeqLocPtr new_loc = NULL, new_loc_last = NULL;
-   BlastSeqLocPtr mask_out_last = NULL;
    
    if (!mask_loc) {
       *mask_loc_out = NULL;
@@ -280,7 +278,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
    Int4 start_offset, end_offset, filter_start, filter_end;
    Int4 context;
    BlastSeqLocPtr loc, last_loc = NULL;
-   DoubleIntPtr double_int, di;
+   DoubleIntPtr double_int = NULL, di;
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
    Boolean is_na, reverse = FALSE;
@@ -638,34 +636,30 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
    Int4 offset, CharPtr instructions, BoolPtr mask_at_hash, 
    BlastSeqLocPtr *seqloc_retval)
 {
-/* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
-#ifdef TEMP_BLAST_OPTIONS
-	BLAST_OptionsBlkPtr repeat_options, vs_options;
-#endif
 	Boolean do_default=FALSE, do_seg=FALSE, do_coil_coil=FALSE, do_dust=FALSE; 
-#ifdef TEMP_BLAST_OPTIONS
-	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
-	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
-	Boolean myslp_allocated;
-	CharPtr repeat_database=NULL, vs_database=NULL, error_msg;
-#endif
 	CharPtr buffer=NULL;
-        const Char *ptr;
+   const Char *ptr;
 	Int2 seqloc_num;
 	Int2 status=0;		/* return value. */
 	Int4 window_cc, linker_cc, window_dust, level_dust, minwin_dust, linker_dust;
-	SeqLocPtr cc_slp=NULL, seqloc_head=NULL, repeat_slp=NULL, vs_slp=NULL;
    BlastSeqLocPtr dust_loc = NULL, seg_loc = NULL;
+   BlastSeqLocPtr cc_loc = NULL, vs_loc = NULL, repeat_loc = NULL;
 	PccDatPtr pccp;
 	Nlm_FloatHiPtr scores;
 	Nlm_FloatHi cutoff_cc;
 	SegParametersPtr sparamsp=NULL;
 #ifdef TEMP_BLAST_OPTIONS
+   /* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
+	BLAST_OptionsBlkPtr repeat_options, vs_options;
+	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
+	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
+	Boolean myslp_allocated;
+	CharPtr repeat_database=NULL, vs_database=NULL, error_msg;
+	SeqLocPtr repeat_slp=NULL, vs_slp=NULL;
 	SeqAlignPtr seqalign;
 	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
 	ValNodePtr vnp=NULL, vnp_var;
 #endif
-	SeqIdPtr sip;
 
 	cutoff_cc = CC_CUTOFF;
 
@@ -780,12 +774,11 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	}
 
 	seqloc_num = 0;
-	seqloc_head = NULL;
 	if (program_number != blast_type_blastn)
 	{
 		if (do_default || do_seg)
 		{
-			SeqBufferSegAa(sequence, length, offset, sparamsp, &seg_loc);
+			SeqBufferSeg(sequence, length, offset, sparamsp, &seg_loc);
 			SegParametersFree(sparamsp);
 			sparamsp = NULL;
 			seqloc_num++;
@@ -795,12 +788,12 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 			pccp = PccDatNew ();
 			pccp->window = window_cc;
 			ReadPccData (pccp);
-#if 0
+#if CC_FILTER_ALLOWED
 			scores = PredictCCSeqLoc(slp, pccp);
 			cc_slp = FilterCC(scores, cutoff_cc, length, linker_cc,
                                           SeqIdDup(sip), FALSE);
-#endif
 			MemFree(scores);
+#endif
 			PccDatFree (pccp);
 			seqloc_num++;
 		}
