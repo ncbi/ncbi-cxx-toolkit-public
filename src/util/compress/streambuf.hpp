@@ -126,7 +126,7 @@ inline CCompressionProcessor*
         CCompressionStream::EDirection dir) const
 {
     return dir == CCompressionStream::eRead ? m_Reader->m_Processor :
-											  m_Writer->m_Processor;
+                                              m_Writer->m_Processor;
 }
 
 
@@ -134,14 +134,14 @@ inline CCompressionStreamProcessor*
     CCompressionStreambuf::GetStreamProcessor(
         CCompressionStream::EDirection dir) const
 {
-	return dir == CCompressionStream::eRead ? m_Reader : m_Writer;
+    return dir == CCompressionStream::eRead ? m_Reader : m_Writer;
 }
 
 
 inline bool CCompressionStreambuf::IsOkay(void) const
 {
     return !!m_Stream  &&  !!m_Buf;
-};
+}
 
 
 inline bool CCompressionStreambuf::IsStreamProcessorOkey(
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/06 18:59:39  ivanov
+ * Removed the extra semicolon
+ *
  * Revision 1.4  2003/06/17 15:47:31  ivanov
  * The second Compression API redesign. Rewritten CCompressionStreambuf to use
  * I/O stream processors of class CCompressionStreamProcessor.
