@@ -74,7 +74,7 @@
  * address (if any) of expanded heap area, and where the exact copy of
  * the current heap is made.
  *
- * Note that all heap base pointers must be aligned on a long boundary.
+ * Note that all heap base pointers must be aligned on a 'double' boundary.
  * Please also be warned not to store pointers to the heap area, as a
  * garbage collection can clobber them.  Within a blocks, however,
  * it is possible to use local pointers (offsets), which remain same
@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/23 21:41:07  lavr
+ * Alignment changed to 'double'
+ *
  * Revision 6.3  2000/05/17 14:22:30  lavr
  * Small cosmetic changes
  *
@@ -157,7 +160,7 @@ HEAP HEAP_Create(char *base, size_t size, size_t chunk, FHEAP_Expand expand)
     if ((!base && size) || (base && !size) ||
         !(heap = (HEAP)malloc(sizeof(*heap))))
         return 0;
-    if ((char *)HEAP_ALIGN(base, sizeof(unsigned long)) != base)
+    if ((char *)HEAP_ALIGN(base, sizeof(double)) != base)
         Warning(0, "Heap Create: Unaligned base (0x%08lX)", (long)base);
     chunk = (chunk <= 1 ? 1 : chunk);
     if (!base) {
@@ -190,7 +193,7 @@ HEAP HEAP_Attach(char *base)
 
     if (!base || !(heap = (HEAP)malloc(sizeof(*heap))))
         return 0;
-    if ((char *)HEAP_ALIGN(base, sizeof(unsigned long)) != base)
+    if ((char *)HEAP_ALIGN(base, sizeof(double)) != base)
         Warning(0, "Heap Attach: Unaligned base (0x%08lX)", (long)base);
     heap->size = 0;
     for (b = (SHEAP_Block *)base; ; b = (SHEAP_Block *)((char *)b + b->size)) {
@@ -291,7 +294,7 @@ SHEAP_Block *HEAP_Alloc(HEAP heap, size_t size)
         return 0;
     }
     
-    size = (size_t)HEAP_ALIGN(size + sizeof(*b), sizeof(unsigned long));
+    size = (size_t)HEAP_ALIGN(size + sizeof(*b), sizeof(double));
 
     b = (SHEAP_Block *)heap->base;
     while ((char *)b < heap->base + heap->size) {
@@ -388,7 +391,7 @@ SHEAP_Block *HEAP_Walk(HEAP heap, const SHEAP_Block *p)
         b = (SHEAP_Block *)(p ? (char *)p + p->size : heap->base);
         if ((char *)b < heap->base + heap->size) {
             if (b->size > sizeof(*b) &&
-                b->size == HEAP_ALIGN(b->size, sizeof(unsigned long)) &&
+                b->size == HEAP_ALIGN(b->size, sizeof(double)) &&
                 (char *)b + b->size <= heap->base + heap->size &&
                 (HEAP_ISFREE(b) || HEAP_ISUSED(b))) {
                 /* Block 'b' seems valid, but... */

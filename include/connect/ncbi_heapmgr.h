@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/23 21:41:05  lavr
+ * Alignment changed to 'double'
+ *
  * Revision 6.3  2000/05/12 18:28:40  lavr
  * First working revision
  *
@@ -61,7 +64,7 @@ typedef struct {
 
 
 /* Callback to expand the heap (a la 'realloc').
- * NOTE: the returned address must be aligned on a 'long' boundary!
+ * NOTE: the returned address must be aligned on a 'double' boundary!
  */
 typedef char* (*FHEAP_Expand)
 (char*  old_base,  /* current base of the heap to be expanded */
@@ -70,7 +73,7 @@ typedef char* (*FHEAP_Expand)
 
 
 /* Create new heap.
- * NOTE: the initial heap base must be aligned on a 'long' boundary!
+ * NOTE: the initial heap base must be aligned on a 'double' boundary!
  */
 HEAP HEAP_Create
 (char*        base,        /* initial heap base (use "expand" if NULL) */
