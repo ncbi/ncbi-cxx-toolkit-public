@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/29 16:46:16  thiessen
+* use NCBI streams correctly
+*
 * Revision 1.1  2000/06/27 20:08:13  thiessen
 * initial checkin
 *
@@ -39,7 +42,7 @@
 #ifndef CN3D_STRUCTUREBASE__HPP
 #define CN3D_STRUCTUREBASE__HPP
 
-#define TESTMSG(stream) cout << "test: " << stream << '\n'
+#define TESTMSG(stream) ERR_POST(Info << stream);
 //#define TESTMSG(stream)
 
 // container type used for various lists

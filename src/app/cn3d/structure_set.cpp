@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/29 16:46:07  thiessen
+* use NCBI streams correctly
+*
 * Revision 1.3  2000/06/29 14:35:06  thiessen
 * new atom_set files
 *
@@ -51,21 +54,6 @@
 #include <objects/mmdb2/Biostruc_model.hpp>
 #include <objects/mmdb2/Model_coordinate_set.hpp>
 #include <objects/mmdb2/Coordinates.hpp>
-/*
-#include <objects/mmdb2/Atomic_coordinates.hpp>
-#include <objects/mmdb2/Coordinates.hpp>
-#include <objects/mmdb1/Molecule_id.hpp>
-#include <objects/mmdb1/Residue_id.hpp>
-#include <objects/mmdb1/Atom_id.hpp>
-#include <objects/mmdb2/Model_space_points.hpp>
-#include <objects/mmdb2/Atomic_temperature_factors.hpp>
-#include <objects/mmdb2/Atomic_occupancies.hpp>
-#include <objects/mmdb2/Alternate_conformation_ids.hpp>
-#include <objects/mmdb2/Alternate_conformation_id.hpp>
-#include <objects/mmdb2/Anisotro_temperatu_factors.hpp>
-#include <objects/mmdb2/Isotropi_temperatu_factors.hpp>
-#include <objects/mmdb2/Conformation_ensemble.hpp>
-*/
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/atom_set.hpp"

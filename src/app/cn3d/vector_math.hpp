@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/29 16:46:16  thiessen
+* use NCBI streams correctly
+*
 * Revision 1.1  2000/06/27 20:08:15  thiessen
 * initial checkin
 *
@@ -39,9 +42,9 @@
 #ifndef CN3D_VECTORMATH__HPP
 #define CN3D_VECTORMATH__HPP
 
-#include <ostream>
 #include <math.h>
 
+#include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
 USING_NCBI_SCOPE;
 
@@ -115,7 +118,7 @@ public:
     }
 };
 
-inline ostream& operator << (ostream& s, const Vector& v)
+inline CNcbiOstream& operator << (CNcbiOstream& s, const Vector& v)
 {
     return s << '<' << v.x << ',' << v.y << ',' << v.z << '>';
 }

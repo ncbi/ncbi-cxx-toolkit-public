@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/29 16:46:07  thiessen
+* use NCBI streams correctly
+*
 * Revision 1.1  2000/06/27 20:09:39  thiessen
 * initial checkin
 *
@@ -36,6 +39,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbienv.hpp>
 #include <serial/serial.hpp>            
 #include <serial/objistrasnb.hpp>       
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
@@ -49,11 +53,16 @@ using namespace Cn3D;
 
 int CCn3DApp::Run() {
 
+    // get file name from command line for now
+    if (GetArguments().Size() != 2)
+        ERR_POST(Fatal << "\nUsage: cn3d <filename>");
+    const char *filename = GetArguments()[1].c_str();
+
     // initialize the binary input stream 
     auto_ptr<CNcbiIstream> inStream;
-    inStream.reset(new CNcbiIfstream("input.asn1", IOS_BASE::in | IOS_BASE::binary));
+    inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if ( !*inStream )
-      ERR_POST(Fatal << "Cannot open input file");
+        ERR_POST(Fatal << "Cannot open input file '" << filename << "'");
 
     // Associate ASN.1 binary serialization methods with the input 
     auto_ptr<CObjectIStream> inObject;
@@ -73,11 +82,11 @@ int CCn3DApp::Run() {
 
 int main(int argc, const char* argv[]) 
 {
-#ifdef _DEBUG
-    // Initialize the diagnostic stream 
-    CNcbiOfstream diag("Cn3D.log");
+    // Initialize the diagnostic stream (to cout for now)
+    CNcbiOstream diag(cout);
     SetDiagStream(&diag);
-#endif
+
+    SetDiagPostLevel(eDiag_Info); // report all messages
 
     // Run the application 
     CCn3DApp theApp;
