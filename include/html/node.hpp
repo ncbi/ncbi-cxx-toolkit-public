@@ -226,18 +226,20 @@ public:
     // Exception handling.
 
     /// Flags defining how to catch and process exceptions.
+    /// By default flags are unsettled.
     /// Note that without the fCatchAll flag only CHTMLExceptions and
     /// all derived exceptons can be traced.
     enum EExceptionFlags {
-        fAddTrace = 0x1,         ///< Enable trace.
-        fCatchAll = 0x2,         ///< Catch all other exceptions and
-                                 ///< rethrow CHTMLException.
-        fDefault  = fAddTrace
+        fAddTrace              = 0x1, ///< Enable tag trace.
+        fCatchAll              = 0x2, ///< Catch all other exceptions and
+                                      ///< rethrow CHTMLException.
+        fDisableCheckRecursion = 0x4, ///< Disable to throw exception if
+                                      ///<  nodes tree have endless recursion.
     };
-    typedef int TExceptionFlags; ///< Binary OR of "EExceptionFlags"
+    typedef int TExceptionFlags;      ///< Binary OR of "EExceptionFlags"
 
     // Set/get global exception handling flags.
-    static void SetExceptionFlags(TExceptionFlags flags = fDefault);
+    static void SetExceptionFlags(TExceptionFlags flags);
     static TExceptionFlags GetExceptionFlags(void);
 
 protected:
@@ -285,6 +287,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/03/10 20:14:44  ivanov
+ * Added new exception flag fDisableCheckRecursion.
+ * By default endless nodes recursion check is enabled.
+ *
  * Revision 1.24  2004/02/02 14:26:04  ivanov
  * CNCBINode: added ability to repeat stored context
  *
