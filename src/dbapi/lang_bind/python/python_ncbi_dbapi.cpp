@@ -150,6 +150,12 @@ CConnection::CConnection(
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e.Message());
     }
+//    try {
+//        m_DS = CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
+//    }
+//    catch(const CDB_Exception& e) {
+//        throw CDatabaseError(e.Message());
+//    }
 
     PrepareForPython(this);
 
@@ -2245,6 +2251,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/03/01 15:22:58  ssikorsk
+* Database driver manager revamp to use "core" CPluginManager
+*
 * Revision 1.9  2005/02/17 18:39:23  ssikorsk
 * Improved the "callproc" function
 *

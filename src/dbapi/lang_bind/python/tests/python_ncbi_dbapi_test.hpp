@@ -53,7 +53,7 @@ class CPythonDBAPITest : public CPPUNIT_NS::TestFixture
   CPPUNIT_TEST( TestParameters );
   CPPUNIT_TEST( TestExecuteMany );
   CPPUNIT_TEST( TestTransaction );
-  CPPUNIT_TEST( TestFromFile );
+  // CPPUNIT_TEST( TestFromFile );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/03/01 15:22:58  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.4  2005/02/17 14:03:36  ssikorsk
  * Added database parameters to the unit-test (handled via CNcbiApplication)
  *

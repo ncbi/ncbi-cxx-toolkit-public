@@ -3,5 +3,5 @@
 APP = msdbl_lang
 SRC = msdbl_lang
 
-LIB  = dbapi_driver_msdblib dbapi_driver xncbi
+LIB  = ncbi_xdbapi_msdblib dbapi_driver xncbi
 

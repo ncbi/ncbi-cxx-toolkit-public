@@ -30,8 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock.h>
@@ -847,9 +851,6 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
     CS_INT version= CS_VERSION_110;
 
     if ( attr ) {
-        // Old code ...
-//       reuse_context= (*attr)["reuse_context"] != "false";
-//       string vers= (*attr)["version"];
         map<string,string>::const_iterator citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
             reuse_context = (citer->second != "false");
@@ -870,8 +871,6 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
     }
     CTLibContext* cntx= new CTLibContext(reuse_context, version);
     if ( cntx && attr ) {
-        // Old code ...
-//       string page_size= (*attr)["packet"];
         string page_size;
         map<string,string>::const_iterator citer = attr->find("packet");
         if ( citer != attr->end() ) {
@@ -881,8 +880,6 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
             CS_INT s= atoi(page_size.c_str());
             cntx->CTLIB_SetPacketSize(s);
         }
-        // Old code ...
-//      string prog_name= (*attr)["prog_name"];
         string prog_name;
         citer = attr->find("prog_name");
         if ( citer != attr->end() ) {
@@ -891,8 +888,6 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
         if ( !prog_name.empty() ) {
             cntx->CTLIB_SetApplicationName(prog_name);
         }
-        // Old code ...
-//      string host_name= (*attr)["host_name"];
         string host_name;
         citer = attr->find("host_name");
         if ( citer != attr->end() ) {
@@ -918,6 +913,120 @@ extern "C" {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+const string kDBAPI_CTLIB_DriverName("ctlib");
+
+class CDbapiCtlibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CTLibContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CTLibContext> TParent;
+
+public:
+    CDbapiCtlibCF2(void);
+    ~CDbapiCtlibCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiCtlibCF2::CDbapiCtlibCF2(void)
+    : TParent( kDBAPI_CTLIB_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiCtlibCF2::~CDbapiCtlibCF2(void)
+{
+    return ;
+}
+
+CDbapiCtlibCF2::TInterface*
+CDbapiCtlibCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = 0;
+    if ( !driver.empty()  &&  driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        bool reuse_context = true;
+        CS_INT version = CS_VERSION_110;
+
+        // Optional parameters ...
+        CS_INT page_size = 0;
+        string prog_name;
+        string host_name;
+
+        if ( params != NULL ) {
+            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
+            typedef TPluginManagerParamTree::TTreeValueType TValue;
+
+            // Get parameters ...
+            TCIter cit = params->SubNodeBegin();
+            TCIter cend = params->SubNodeEnd();
+
+            for (; cit != cend; ++cit) {
+                const TValue& v = (*cit)->GetValue();
+
+                if ( v.id == "reuse_context" ) {
+                    reuse_context = (v.value != "false");
+                } else if ( v.id == "version" ) {
+                    version = NStr::StringToInt( v.value );
+                    if ( version == 100 ) {
+                        version = CS_VERSION_100;
+                    }
+                } else if ( v.id == "packet" ) {
+                    page_size = NStr::StringToInt( v.value );
+                } else if ( v.id == "prog_name" ) {
+                    prog_name = v.value;
+                } else if ( v.id == "host_name" ) {
+                    host_name = v.value;
+                }
+            }
+        }
+
+        // Create a driver ...
+        drv = new CTLibContext(reuse_context, version);
+
+        // Set parameters ...
+        if ( page_size ) {
+            drv->CTLIB_SetPacketSize( page_size );
+        }
+        if ( !prog_name.empty() ) {
+            drv->CTLIB_SetApplicationName( prog_name );
+        }
+        if ( !host_name.empty() ) {
+            drv->CTLIB_SetHostName( host_name );
+        }
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_ctlib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiCtlibCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+DBAPI_RegisterDriver_CTLIB(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ctlib );
+}
+
 
 END_NCBI_SCOPE
 
@@ -926,6 +1035,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/03/01 15:22:55  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.33  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

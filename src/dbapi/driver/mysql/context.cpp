@@ -31,6 +31,10 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
+
 #include <dbapi/driver/mysql/interfaces.hpp>
 
 
@@ -105,6 +109,46 @@ extern "C" {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+const string kDBAPI_MYSQL_DriverName("mysql");
+
+class CDbapiMySqlCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CMySQLContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CMySQLContext> TParent;
+
+public:
+    CDbapiMySqlCF2(void);
+    ~CDbapiMySqlCF2(void);
+
+};
+
+CDbapiMySqlCF2::CDbapiMySqlCF2(void)
+    : TParent( kDBAPI_MYSQL_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiMySqlCF2::~CDbapiMySqlCF2(void)
+{
+    return ;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_mysql(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiMySqlCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+DBAPI_RegisterDriver_MYSQL(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_mysql );
+}
+
 
 END_NCBI_SCOPE
 
@@ -113,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/01 15:22:55  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.8  2004/12/20 17:13:13  ucko
  * Const-correctness fix for latest RegisterDriver interface.
  *

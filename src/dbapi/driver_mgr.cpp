@@ -1,46 +1,51 @@
 /* $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
 *  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
 *
 * ===========================================================================
 *
 * File Name:  $Id$
 *
 * Author:  Michael Kholodov, Denis Vakatov
-*   
+*
 * File Description:  Driver Manager implementation
 *
 */
 
 #include <ncbi_pch.hpp>
-#include <dbapi/driver_mgr.hpp>
-#include "ds_impl.hpp"
 
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
+#include <dbapi/driver_mgr.hpp>
+
+#include "ds_impl.hpp"
+#include "dbexception.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
+///////////////////////////////////////////////////////////////////////////////
 CDriverManager* CDriverManager::sm_Instance = 0;
 
 
@@ -85,20 +90,14 @@ CDriverManager::~CDriverManager()
 
 
 IDataSource* CDriverManager::CreateDs(const string&        driver_name,
-                                      map<string, string>* attr)
+                                      const map<string, string>* attr)
 {
     map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
         return (*i_ds).second;
     }
 
-    string err;
-    FDBAPI_CreateContext ctx_func = GetDriver(driver_name, &err);
-    if ( !ctx_func ) {
-        throw CDbapiException(err);
-    }
-
-    I_DriverContext* ctx = ctx_func(attr);
+    I_DriverContext* ctx = Get_I_DriverContext( driver_name, attr );
     if ( !ctx ) {
         throw CDbapiException
             ("CDriverManager::CreateDs() -- Failed to get context for driver: "
@@ -108,7 +107,6 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
     return RegisterDs(driver_name, ctx);
 }
 
-
 IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
                                           const IRegistry* reg)
 {
@@ -117,27 +115,23 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
 
     list<string>::iterator i_name = names.begin();
     for( ; i_name != names.end(); ++i_name ) {
-        FDBAPI_CreateContext ctx_func = GetDriver(*i_name);
-        if( ctx_func != 0 ) {
-            I_DriverContext *ctx = 0;
-            if( reg != 0 ) {
-                // Get parameters from registry, if any
-                map<string, string> attr;
-                list<string> entries;
-                reg->EnumerateEntries(*i_name, &entries);
-                list<string>::iterator i_param = entries.begin();
-                for( ; i_param != entries.end(); ++i_param ) {
-                    attr[*i_param] = reg->Get(*i_name, *i_param);
-                }
-                ctx = ctx_func(&attr);
+        I_DriverContext* ctx = NULL;
+        if( reg != NULL ) {
+            // Get parameters from registry, if any
+            map<string, string> attr;
+            list<string> entries;
+            reg->EnumerateEntries(*i_name, &entries);
+            list<string>::iterator i_param = entries.begin();
+            for( ; i_param != entries.end(); ++i_param ) {
+                attr[*i_param] = reg->Get(*i_name, *i_param);
             }
-            else {
-                ctx = ctx_func(0);
-            }
+            ctx = Get_I_DriverContext( *i_name, &attr );
+        } else {
+            ctx = Get_I_DriverContext( *i_name, NULL );
+        }
 
-            if( ctx != 0 ) { 
-                return RegisterDs(*i_name, ctx);
-            }
+        if( ctx != 0 ) {
+            return RegisterDs( *i_name, ctx );
         }
     }
     return 0;
@@ -160,12 +154,14 @@ void CDriverManager::DestroyDs(const string& driver_name)
     }
 }
 
-
 END_NCBI_SCOPE
 
 /*
 *
 * $Log$
+* Revision 1.15  2005/03/01 15:22:55  ssikorsk
+* Database driver manager revamp to use "core" CPluginManager
+*
 * Revision 1.14  2004/12/20 16:45:34  ucko
 * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
 * Move CVS log to end.

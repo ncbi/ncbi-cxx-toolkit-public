@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = dbapi_driver_mysql
+LIB_PROJ = ncbi_xdbapi_mysql
 SUB_PROJ = samples
 
 REQUIRES = MySQL

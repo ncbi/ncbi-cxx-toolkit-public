@@ -1,5 +1,5 @@
 [AddToProject]
-LIB=dbapi_driver_odbc
+LIB=ncbi_xdbapi_odbc
 
 [Linker]
 AdditionalOptions=odbc32.lib odbccp32.lib odbcbcp.lib

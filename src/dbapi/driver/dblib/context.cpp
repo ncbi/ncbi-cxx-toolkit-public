@@ -30,7 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbimtx.hpp>
+
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
+
 #ifndef USE_MS_DBLIB
 #  include <dbapi/driver/dblib/interfaces.hpp>
 #  include <dbapi/driver/dblib/interfaces_p.hpp>
@@ -439,8 +444,6 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
     DBINT version= DBVERSION_46;
 
     if ( attr ) {
-        // Old code
-//         string vers= (*attr)["version"];
         string vers;
         map<string,string>::const_iterator citer = attr->find("version");
         if ( citer != attr->end() ) {
@@ -455,8 +458,6 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
 
     CDBLibContext* cntx= new CDBLibContext(version);
     if ( cntx && attr ) {
-        // Old code
-//       string page_size= (*attr)["packet"];
         string page_size;
         map<string,string>::const_iterator citer = attr->find("packet");
         if ( citer != attr->end() ) {
@@ -507,6 +508,185 @@ extern "C" {
 
 #endif
 
+
+///////////////////////////////////////////////////////////////////////////////
+#ifndef MS_DBLIB_IN_USE
+
+const string kDBAPI_DBLIB_DriverName("dblib");
+
+class CDbapiDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
+
+public:
+    CDbapiDblibCF2(void);
+    ~CDbapiDblibCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiDblibCF2::CDbapiDblibCF2(void)
+    : TParent( kDBAPI_DBLIB_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiDblibCF2::~CDbapiDblibCF2(void)
+{
+    return ;
+}
+
+CDbapiDblibCF2::TInterface*
+CDbapiDblibCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = 0;
+    if ( !driver.empty() && driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        DBINT version = DBVERSION_46;
+
+        // Optional parameters ...
+        CS_INT page_size = 0;
+
+        if ( params != NULL ) {
+            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
+            typedef TPluginManagerParamTree::TTreeValueType TValue;
+
+            // Get parameters ...
+            TCIter cit = params->SubNodeBegin();
+            TCIter cend = params->SubNodeEnd();
+
+            for (; cit != cend; ++cit) {
+                const TValue& v = (*cit)->GetValue();
+
+                if ( v.id == "version" ) {
+                    version = NStr::StringToInt( v.value );
+                    switch ( version ) {
+                    case 46 :
+                        version = DBVERSION_46;
+                        break;
+                    case 100 :
+                        version = DBVERSION_100;
+                    }
+                } else if ( v.id == "packet" ) {
+                    page_size = NStr::StringToInt( v.value );
+                }
+            }
+
+            // Create a driver ...
+            drv = new CDBLibContext(version);
+
+            // Set parameters ...
+            if ( page_size ) {
+                drv->DBLIB_SetPacketSize( page_size );
+            }
+        }
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_dblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiDblibCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+DBAPI_RegisterDriver_DBLIB(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_dblib );
+}
+
+#else
+
+///////////////////////////////////////////////////////////////////////////////
+const string kDBAPI_MSDBLIB_DriverName("msdblib");
+
+class CDbapiMSDblibCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
+
+public:
+    CDbapiMSDblibCF2(void);
+    ~CDbapiMSDblibCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiMSDblibCF2::CDbapiMSDblibCF2(void)
+    : TParent( kDBAPI_MSDBLIB_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiMSDblibCF2::~CDbapiMSDblibCF2(void)
+{
+    return ;
+}
+
+CDbapiMSDblibCF2::TInterface*
+CDbapiMSDblibCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = NULL;
+
+    if ( !driver.empty()  &&  driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        DBINT version = DBVERSION_46;
+
+        drv = new CDBLibContext(version);
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_msdblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiMSDblibCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+DBAPI_RegisterDriver_MSDBLIB(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
+}
+
+#endif
+
 END_NCBI_SCOPE
 
 
@@ -514,6 +694,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/03/01 15:22:55  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.32  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

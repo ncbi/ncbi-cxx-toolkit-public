@@ -581,6 +581,20 @@ protected:
 	bool m_EOR;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+extern NCBI_DBAPIDRIVER_ODBC_EXPORT const string kDBAPI_ODBC_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void
+NCBI_EntryPoint_xdbapi_odbc(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
 
 END_NCBI_SCOPE
 
@@ -592,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.10  2005/02/23 21:36:24  soussov
  * Adds Abort() method to connection
  *

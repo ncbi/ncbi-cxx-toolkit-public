@@ -338,9 +338,9 @@ protected:
     virtual bool BindParam(const string& param_name, CDB_Object* pVal);
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 				 bool log_it = true);
-    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
 					 bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
@@ -660,6 +660,19 @@ protected:
     bool     m_TimeStamp_is_NULL;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+extern NCBI_DBAPIDRIVER_MSDBLIB_EXPORT const string kDBAPI_MSDBLIB_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_msdblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
 
 END_NCBI_SCOPE
 
@@ -671,6 +684,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.8  2005/02/23 21:33:00  soussov
  * Adds Abort() method to connection
  *

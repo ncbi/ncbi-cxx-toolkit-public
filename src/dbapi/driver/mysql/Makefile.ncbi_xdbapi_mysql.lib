@@ -1,0 +1,13 @@
+# $Id$
+
+SRC = connection context lang_cmd result
+LIB = ncbi_xdbapi_mysql
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(MYSQL_INCLUDE)
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = dbapi_driver
+LIBS = $(MYSQL_LIBS) $(ORIG_LIBS)

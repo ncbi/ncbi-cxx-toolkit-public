@@ -30,8 +30,14 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <dbapi/driver/driver_mgr.hpp>
 #include <corelib/ncbidll.hpp>
+#include <corelib/ncbireg.hpp>
+
+#include <corelib/plugin_manager.hpp>
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
+
+#include <dbapi/driver/driver_mgr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -45,9 +51,6 @@ public:
         m_NofDrvs= 0;
     }
 
-    FDBAPI_CreateContext GetDriver(const string& driver_name,
-                                   string* err_msg= 0);
-
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
@@ -56,7 +59,7 @@ public:
     }
 
 protected:
-    bool LoadDriverDll(const string& driver_name, string* err_msg);
+    // bool LoadDriverDll(const string& driver_name, string* err_msg);
 
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
@@ -73,82 +76,14 @@ private:
     CFastMutex m_Mutex2;
 };
 
-
-void C_xDriverMgr::RegisterDriver(const string&        driver_name,
-                                  FDBAPI_CreateContext driver_ctx_func)
+void C_xDriverMgr::RegisterDriver(const string&        /*driver_name*/,
+                                  FDBAPI_CreateContext /*driver_ctx_func*/ )
 {
-    if(m_NofDrvs < m_NofRoom) {
-        CFastMutexGuard mg(m_Mutex2);
-        for(unsigned int i= m_NofDrvs; i--; ) {
-            if(m_Drivers[i].drv_name == driver_name) {
-                m_Drivers[i].drv_func= driver_ctx_func;
-                return;
-            }
-        }
-        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
-        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
-    }
-    else {
-        throw CDB_ClientEx(eDB_Error, 101, "C_xDriverMgr::RegisterDriver",
-                           "No space left for driver registration");
-    }
+    // Kept for compatibility purposes only.
+    // Do not use it.
 
+    _ASSERT(false);
 }
-
-
-FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
-                                             string* err_msg)
-{
-    CFastMutexGuard mg(m_Mutex1);
-    unsigned int i;
-
-    for(i= m_NofDrvs; i--; ) {
-        if(m_Drivers[i].drv_name == driver_name) {
-            return m_Drivers[i].drv_func;
-        }
-    }
-
-    if (!LoadDriverDll(driver_name, err_msg)) {
-        return 0;
-    }
-
-    for(i= m_NofDrvs; i--; ) {
-        if(m_Drivers[i].drv_name == driver_name) {
-            return m_Drivers[i].drv_func;
-        }
-    }
-
-    throw CDB_ClientEx(eDB_Error, 200, "C_DriverMgr::GetDriver",
-                       "internal error");
-}
-
-
-bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
-{
-    try {
-        CDll drv_dll("dbapi_driver_" + driver_name);
-
-        FDllEntryPoint entry_point;
-        if ( !drv_dll.GetEntryPoint_Func("DBAPI_E_" + driver_name,
-                                         &entry_point) ) {
-            drv_dll.Unload();
-            return false;
-        }
-        FDriverRegister reg = entry_point();
-        if(!reg) {
-            throw CDB_ClientEx(eDB_Fatal, 300, "C_DriverMgr::LoadDriverDll",
-                               "driver reports an unrecoverable error "
-                               "(e.g. conflict in libraries)");
-        }
-        reg(*this);
-        return true;
-    }
-    catch (exception& e) {
-        if(err_msg) *err_msg= e.what();
-        return false;
-    }
-}
-
 
 static C_xDriverMgr* s_DrvMgr= 0;
 static int           s_DrvCount= 0;
@@ -175,13 +110,6 @@ C_DriverMgr::~C_DriverMgr()
 }
 
 
-FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
-                                            string* err_msg)
-{
-    return s_DrvMgr->GetDriver(driver_name, err_msg);
-}
-
-
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
                                  FDBAPI_CreateContext driver_ctx_func)
 {
@@ -192,13 +120,62 @@ I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
                                                string*             err_msg,
                                                const map<string,string>* attr)
 {
-    FDBAPI_CreateContext create_context_func= GetDriver(driver_name, err_msg);
+    return Get_I_DriverContext( driver_name, attr );
+}
 
-    if(!create_context_func)
-        return 0;
+///////////////////////////////////////////////////////////////////////////////
+TPluginManagerParamTree*
+MakePluginManagerParamTree(const string& driver_name, const map<string, string>* attr)
+{
+    typedef map<string, string>::const_iterator TCIter;
+    CMemoryRegistry reg;
+    TCIter citer = attr->begin();
+    TCIter cend = attr->end();
 
-    return create_context_func(attr);
+    for ( ; citer != cend; ++citer ) {
+        reg.Set( driver_name, citer->first, citer->second );
+    }
 
+    TPluginManagerParamTree* const tr = CConfig::ConvertRegToTree(reg);
+
+    return tr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+I_DriverContext*
+Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
+{
+    typedef CPluginManager<I_DriverContext> TReaderManager;
+    typedef CPluginManagerStore::CPMMaker<I_DriverContext> TReaderManagerStore;
+    bool created = false;
+    I_DriverContext* drv = NULL;
+
+    CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get(&created));
+    _ASSERT(ReaderManager);
+
+    try {
+        TPluginManagerParamTree* pt = MakePluginManagerParamTree(driver_name, attr);
+        _ASSERT(pt);
+        const TPluginManagerParamTree* nd = pt->FindNode(driver_name);
+        drv = ReaderManager->CreateInstance(
+            driver_name,
+            NCBI_INTERFACE_VERSION(I_DriverContext),
+            nd
+            );
+    }
+    catch( const CPluginManagerException& e ) {
+        throw CDB_ClientEx(eDB_Fatal, 300, "Get_I_DriverContext", e.GetMsg() );
+    }
+    catch ( const exception& e ) {
+        throw CDB_ClientEx(eDB_Fatal, 300, "Get_I_DriverContext",
+            driver_name + " is not available :: " + e.what() );
+    }
+    catch ( ... ) {
+        throw CDB_ClientEx(eDB_Fatal, 300, "Get_I_DriverContext",
+            driver_name + " was unable to load due an unknown error" );
+    }
+
+    return drv;
 }
 
 END_NCBI_SCOPE
@@ -208,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/01 15:22:55  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.16  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

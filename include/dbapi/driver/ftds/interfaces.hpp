@@ -148,6 +148,8 @@ class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDSContext : public I_DriverContext
 {
     friend class CDB_Connection;
     friend I_DriverContext* FTDS_CreateContext(const map<string,string>* attr);
+    friend class CDbapiFtdsCF2;
+
 public:
     CTDSContext(DBINT version = DBVERSION_UNKNOWN);
 
@@ -739,6 +741,20 @@ protected:
     bool     m_TimeStamp_is_NULL;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+extern NCBI_DBAPIDRIVER_FTDS_EXPORT const string kDBAPI_FTDS_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_FTDS_EXPORT
+void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
 
 END_NCBI_SCOPE
 
@@ -750,6 +766,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.19  2005/02/23 21:33:11  soussov
  * Adds Abort() method to connection
  *

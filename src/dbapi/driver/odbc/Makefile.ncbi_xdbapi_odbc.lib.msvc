@@ -1,0 +1,6 @@
+[Common]
+ExcludeProject = FALSE
+
+[AddToProject]
+SourceFiles    = bcp
+

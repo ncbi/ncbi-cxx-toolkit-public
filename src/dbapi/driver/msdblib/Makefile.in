@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = dbapi_driver_msdblib
+LIB_PROJ = ncbi_xdbapi_msdblib
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -50,20 +50,35 @@ class NCBI_DBAPIDRIVER_EXPORT C_DriverMgr : public I_DriverMgr
 public:
     C_DriverMgr(unsigned int nof_drivers = 16);
 
-    FDBAPI_CreateContext GetDriver(const string& driver_name,
-                                   string*       err_msg = 0);
-
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
     I_DriverContext* GetDriverContext(const string&       driver_name,
                                       string*             err_msg = 0,
-                                      const map<string,string>* attr = 0);
+                                      const map<string, string>* attr = 0);
 
     virtual ~C_DriverMgr();
 };
 
+/////////////////////////////////////////////////////////////////////////////
+template<>
+class CDllResolver_Getter<I_DriverContext>
+{
+public:
+    CPluginManager_DllResolver* operator()(void)
+    {
+        CPluginManager_DllResolver* resolver =
+            new CPluginManager_DllResolver(
+            CInterfaceVersion<I_DriverContext>::GetName());
+        resolver->SetDllNamePrefix("ncbi");
+        return resolver;
+    }
+};
 
+
+NCBI_DBAPIDRIVER_EXPORT
+I_DriverContext*
+Get_I_DriverContext(const string& driver_name, const map<string, string>* attr);
 
 END_NCBI_SCOPE
 
@@ -74,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.12  2004/12/20 16:20:47  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

@@ -247,6 +247,20 @@ private:
     SMySQL_ColDescr*   m_ColFmt;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+extern NCBI_DBAPIDRIVER_MYSQL_EXPORT const string kDBAPI_MYSQL_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_MYSQL_EXPORT
+void
+NCBI_EntryPoint_xdbapi_mysql(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
 
 END_NCBI_SCOPE
 
@@ -258,6 +272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.12  2005/02/23 21:32:00  soussov
  * Adds Abort() method to connection
  *

@@ -27,13 +27,14 @@
  * ===========================================================================
  *
  * Author:  Michael Kholodov, Denis Vakatov
- *   
+ *
  * File Description:  Driver Manager definition
  *
  */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <map>
 
@@ -65,7 +66,7 @@ public:
 
     // Create datasource object
     class IDataSource* CreateDs(const string& driver_name,
-				map<string, string> *attr = 0);
+                const map<string, string> *attr = 0);
 
     class IDataSource* CreateDsFrom(const string& drivers,
 				    const IRegistry* reg = 0);
@@ -90,7 +91,6 @@ private:
     DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 };
 
-
 END_NCBI_SCOPE
 
 
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.8  2004/12/20 16:45:27  ucko
  * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
  *

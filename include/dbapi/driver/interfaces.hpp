@@ -32,12 +32,14 @@
  *
  */
 
+#include <map>
+
 #include <corelib/ncbimtx.hpp>
+
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
-#include <map>
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -489,8 +491,6 @@ private:
     friend class CDB_Connection;
 };
 
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  I_Connection::
@@ -610,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.34  2005/02/25 16:07:38  soussov
  * removes wrapper for _close out of this file
  *

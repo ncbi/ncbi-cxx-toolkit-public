@@ -21,8 +21,8 @@
  *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
  *  purpose.
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
@@ -32,8 +32,8 @@
  *
  */
 
+#include <corelib/plugin_manager.hpp>
 #include <dbapi/driver/interfaces.hpp>
-
 
 /** @addtogroup DbPubInterfaces
  *
@@ -43,6 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 1, 1, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -308,7 +309,7 @@ public:
 
     // Destructor
     virtual ~CDB_RPCCmd();
-    
+
 private:
     I_RPCCmd* m_Cmd;
 
@@ -376,9 +377,9 @@ public:
     // Update the last fetched row.
     // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true);
-    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true);
 
     // Delete the last fetched row.
@@ -441,10 +442,10 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_ITDescriptor : public I_ITDescriptor
 {
 public:
     CDB_ITDescriptor(const string& table_name,
-                     const string& column_name, 
+                     const string& column_name,
                      const string& search_conditions)
         : m_TableName(table_name),
-          m_ColumnName(column_name), 
+          m_ColumnName(column_name),
           m_SearchConditions(search_conditions)
     {}
 
@@ -493,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/01 15:21:52  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.11  2005/02/23 21:36:38  soussov
  * Adds Abort() method to connection
  *

@@ -178,7 +178,7 @@ CPythonDBAPITest::TestBasic()
     m_Engine.ExecuteStr("cursor.nextset()\n");
     m_Engine.ExecuteStr("cursor.setinputsizes()\n");
     m_Engine.ExecuteStr("cursor.setoutputsize()\n");
-    // m_Engine.ExecuteStr("cursor.callproc('test_sp')\n");
+    // m_Engine.ExecuteStr("print cursor.callproc('test_sp')\n");
     // m_Engine.ExecuteStr("print cursor.fetchall()\n");
 
     m_Engine.ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
@@ -278,6 +278,7 @@ CPythonDBAPITest::TestTransaction()
 void
 CPythonDBAPITest::TestFromFile()
 {
+    m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample9.py");
 }
 
 
@@ -371,29 +372,6 @@ CUnitTestApp::Exit(void)
 
 END_NCBI_SCOPE
 
-//int
-//main(int argc, char *argv[])
-//{
-//    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample1.py");
-//    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample5.py");
-//    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\tests\\python_ncbi_dbapi_test.py");
-
-//  // Get the top level suite from the registry
-//  CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
-
-//  // Adds the test to the list of test to run
-//  CPPUNIT_NS::TextUi::TestRunner runner;
-//  runner.addTest( suite );
-
-//  // Change the default outputter to a compiler error format outputter
-//  runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(), std::cerr ) );
-//  // Run the test.
-//  bool wasSucessful = runner.run();
-
-//  // Return error code 1 if the one of test failed.
-//  return wasSucessful ? 0 : 1;
-//}
-
 int main(int argc, const char* argv[])
 {
     return ncbi::CUnitTestApp().AppMain(argc, argv);
@@ -402,6 +380,9 @@ int main(int argc, const char* argv[])
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/03/01 15:22:58  ssikorsk
+* Database driver manager revamp to use "core" CPluginManager
+*
 * Revision 1.6  2005/02/17 14:03:36  ssikorsk
 * Added database parameters to the unit-test (handled via CNcbiApplication)
 *

@@ -31,8 +31,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
+
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+
 #ifdef HAVE_ODBCSS_H
 #include <odbcss.h>
 #endif
@@ -53,7 +57,7 @@ void CODBC_Reporter::ReportErrors()
     if(!m_HStack) return;
 
     for(SQLSMALLINT i= 1; i < 128; i++) {
-        switch(SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError, 
+        switch(SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError,
                              Msg, sizeof(Msg), &MsgLen)) {
         case SQL_SUCCESS:
             if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
@@ -65,7 +69,7 @@ void CODBC_Reporter::ReportErrors()
                 m_HStack->PostMsg(&dl);
             }
             else if(NativeError != 5701 && NativeError != 5703){
-                CDB_SQLEx se(eDB_Unknown, NativeError, "odbc", (const char*)Msg, 
+                CDB_SQLEx se(eDB_Unknown, NativeError, "odbc", (const char*)Msg,
 					(const char*)SqlState, 0);
                 m_HStack->PostMsg(&se);
             }
@@ -112,8 +116,8 @@ CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) : m_Reporter(0, SQL
     m_Reporter.SetHandlerStack(&m_CntxHandlers);
 
     SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
-	
-    
+
+
     m_PacketSize= 0;
     m_LoginTimeout= 0;
     m_Timeout= 0;
@@ -156,7 +160,7 @@ bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
             = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
         t_con->ODBC_SetTextImageSize(m_TextImageSize);
     }
-    
+
     for (int i = m_InUse.NofItems(); i--;) {
         CODBC_Connection* t_con
             = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
@@ -198,12 +202,12 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
 
             if ( srv_name.empty() )
                 return 0;
-            
+
             // try to use a server name
             for (int i = m_NotInUse.NofItems();  i--; ) {
                 CODBC_Connection* t_con
                     = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
-                
+
                 if (srv_name.compare(t_con->ServerName()) == 0) {
                     m_NotInUse.Remove(i);
                     if(t_con->Refresh()) {
@@ -292,15 +296,15 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     if(m_Timeout) {
         SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (void*)m_Timeout, 0);
     }
-    
+
     if(m_LoginTimeout) {
         SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (void*)m_LoginTimeout, 0);
     }
-    
+
     if(m_PacketSize) {
         SQLSetConnectAttr(con, SQL_ATTR_PACKET_SIZE, (void*)m_PacketSize, 0);
     }
-    
+
 #ifdef SQL_COPT_SS_BCP
     if((mode & fBcpIn) != 0) {
         SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (void*) SQL_BCP_ON, SQL_IS_INTEGER);
@@ -319,7 +323,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         connect_str+= user_name;
         connect_str+= ";PWD=";
         connect_str+= passwd;
-        r= SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS, 
+        r= SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
                             0, 0, 0, SQL_DRIVER_NOPROMPT);
     }
     else {
@@ -331,7 +335,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     case SQL_SUCCESS_WITH_INFO:
         xReportConError(con);
     case SQL_SUCCESS: return con;
-        
+
     case SQL_ERROR:
         xReportConError(con);
         SQLFreeHandle(SQL_HANDLE_DBC, con);
@@ -340,7 +344,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         m_Reporter.ReportErrors();
         break;
     }
-    
+
     return 0;
 }
 
@@ -371,8 +375,6 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
     map<string,string>::const_iterator citer;
 
     if(attr) {
-        // Old code ...
-//         string vers= (*attr)["version"];
         string vers;
         citer = attr->find("version");
         if (citer != attr->end()) {
@@ -382,8 +384,6 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
             version= SQL_OV_ODBC3;
         else if(vers.find("2") != string::npos)
             version= SQL_OV_ODBC2;
-        // Old code ...
-//         use_dsn= (*attr)["use_dsn"] == "true";
         citer = attr->find("use_dsn");
         if (citer != attr->end()) {
             use_dsn = citer->second == "true";
@@ -392,8 +392,6 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
 
     CODBCContext* cntx=  new CODBCContext(version, use_dsn);
     if(cntx && attr) {
-        // Old code ...
-//       string page_size= (*attr)["packet"];
         string page_size;
         citer = attr->find("packet");
         if (citer != attr->end()) {
@@ -424,6 +422,115 @@ extern "C" {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+const string kDBAPI_ODBC_DriverName("odbc");
+
+class CDbapiOdbcCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CODBCContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CODBCContext> TParent;
+
+public:
+    CDbapiOdbcCF2(void);
+    ~CDbapiOdbcCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiOdbcCF2::CDbapiOdbcCF2(void)
+    : TParent( kDBAPI_ODBC_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiOdbcCF2::~CDbapiOdbcCF2(void)
+{
+    return ;
+}
+
+CDbapiOdbcCF2::TInterface*
+CDbapiOdbcCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = 0;
+    if ( !driver.empty()  &&  driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        SQLINTEGER version = SQL_OV_ODBC3;
+        bool use_dsn = false;
+
+        // Optional parameters ...
+        int page_size = 0;
+
+        if ( params != NULL ) {
+            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
+            typedef TPluginManagerParamTree::TTreeValueType TValue;
+
+            // Get parameters ...
+            TCIter cit = params->SubNodeBegin();
+            TCIter cend = params->SubNodeEnd();
+
+            for (; cit != cend; ++cit) {
+                const TValue& v = (*cit)->GetValue();
+
+                if ( v.id == "use_dsn" ) {
+                    use_dsn = (v.value != "false");
+                } else if ( v.id == "version" ) {
+                    version = NStr::StringToInt( v.value );
+
+                    switch ( version ) {
+                    case 3 :
+                        version = SQL_OV_ODBC3;
+                        break;
+                    case 2 :
+                        version = SQL_OV_ODBC3;
+                        break;
+                    }
+                } else if ( v.id == "packet" ) {
+                    page_size = NStr::StringToInt( v.value );
+                }
+            }
+        }
+
+        // Create a driver ...
+        drv = new CODBCContext(version, use_dsn);
+
+        // Set parameters ...
+        if ( page_size ) {
+            drv->ODBC_SetPacketSize( page_size );
+        }
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_odbc(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiOdbcCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+DBAPI_RegisterDriver_ODBC(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -431,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/01 15:22:55  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.15  2004/12/20 19:17:33  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

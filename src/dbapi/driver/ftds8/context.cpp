@@ -30,9 +30,15 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbimtx.hpp>
+
+#include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
+
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
+
 #ifdef NCBI_FTDS
 #ifdef _WIN32
 #include <winsock2.h>
@@ -289,7 +295,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
             hs->PostMsg(&dl);
             return INT_CANCEL;
         }
-            
+
         break;
     }
 
@@ -408,11 +414,6 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
     map<string,string>::const_iterator citer;
 
     if ( attr ) {
-        // Old code
-//         if((*attr)["reuse_context"] == "true" &&
-//            CTDSContext::m_pTDSContext) {
-//             return CTDSContext::m_pTDSContext;
-//         }
         citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
             if ( citer->second == "true" &&
@@ -421,8 +422,6 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
             }
         }
 
-        // Old code
-//         string vers= (*attr)["version"];
         string vers;
         citer = attr->find("version");
         if ( citer != attr->end() ) {
@@ -440,8 +439,6 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
     }
     CTDSContext* cntx=  new CTDSContext(version);
     if ( cntx && attr ) {
-        // Old code
-//       string page_size= (*attr)["packet"];
         string page_size;
         citer = attr->find("packet");
         if ( citer != attr->end() ) {
@@ -496,6 +493,122 @@ extern "C" {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+const string kDBAPI_FTDS_DriverName("ftds");
+
+class CDbapiFtdsCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CTDSContext>
+{
+public:
+    typedef CSimpleClassFactoryImpl<I_DriverContext, CTDSContext> TParent;
+
+public:
+    CDbapiFtdsCF2(void);
+    ~CDbapiFtdsCF2(void);
+
+public:
+    virtual TInterface*
+    CreateInstance(
+        const string& driver  = kEmptyStr,
+        CVersionInfo version =
+        NCBI_INTERFACE_VERSION(I_DriverContext),
+        const TPluginManagerParamTree* params = 0) const;
+
+};
+
+CDbapiFtdsCF2::CDbapiFtdsCF2(void)
+    : TParent( kDBAPI_FTDS_DriverName, 0 )
+{
+    return ;
+}
+
+CDbapiFtdsCF2::~CDbapiFtdsCF2(void)
+{
+    return ;
+}
+
+CDbapiFtdsCF2::TInterface*
+CDbapiFtdsCF2::CreateInstance(
+    const string& driver,
+    CVersionInfo version,
+    const TPluginManagerParamTree* params) const
+{
+    TImplementation* drv = 0;
+    if ( !driver.empty() && driver != m_DriverName ) {
+        return 0;
+    }
+    if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
+                        != CVersionInfo::eNonCompatible) {
+        // Mandatory parameters ....
+        bool reuse_context = true;
+        DBINT version = DBVERSION_UNKNOWN;
+
+        // Optional parameters ...
+        CS_INT page_size = 0;
+
+        if ( params != NULL ) {
+            typedef TPluginManagerParamTree::TNodeList_CI TCIter;
+            typedef TPluginManagerParamTree::TTreeValueType TValue;
+
+            // Get parameters ...
+            TCIter cit = params->SubNodeBegin();
+            TCIter cend = params->SubNodeEnd();
+
+            for (; cit != cend; ++cit) {
+                const TValue& v = (*cit)->GetValue();
+
+                if ( v.id == "reuse_context" ) {
+                    reuse_context = (v.value != "false");
+                    if ( reuse_context && CTDSContext::m_pTDSContext ) {
+                        return CTDSContext::m_pTDSContext;
+                    }
+                } else if ( v.id == "version" ) {
+                    version = NStr::StringToInt( v.value );
+
+                    switch ( version ) {
+                    case 42 :
+                        version = DBVERSION_42;
+                        break;
+                    case 46 :
+                        version = DBVERSION_46;
+                        break;
+                    case 70 :
+                        version = DBVERSION_70;
+                        break;
+                    case 100 :
+                        version = DBVERSION_100;
+                        break;
+                    }
+                } else if ( v.id == "packet" ) {
+                    page_size = NStr::StringToInt( v.value );
+                }
+            }
+        }
+
+        // Create a driver ...
+        drv = new CTDSContext( version );
+
+        // Set parameters ...
+        if ( page_size ) {
+            drv->TDS_SetPacketSize( page_size );
+        }
+    }
+    return drv;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiFtdsCF2>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+DBAPI_RegisterDriver_FTDS(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
+}
 
 END_NCBI_SCOPE
 
@@ -504,6 +617,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/03/01 15:22:55  ssikorsk
+ * Database driver manager revamp to use "core" CPluginManager
+ *
  * Revision 1.31  2005/02/22 22:30:56  soussov
  * Adds check for deadlock for err handler
  *

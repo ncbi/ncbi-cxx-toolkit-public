@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = dbapi_driver_dblib
+LIB_PROJ = ncbi_xdbapi_dblib
 SUB_PROJ = samples
 
 srcdir = @srcdir@

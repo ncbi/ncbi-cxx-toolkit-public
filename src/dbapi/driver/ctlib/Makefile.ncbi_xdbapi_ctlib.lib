@@ -1,0 +1,16 @@
+# $Id$
+
+SRC = bcp connection context cursor lang_cmd rpc result
+
+LIB    = ncbi_xdbapi_ctlib
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
+
+REQUIRES = Sybase
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = dbapi_driver
+LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(NETWORK_LIBS) $(ORIG_LIBS)
