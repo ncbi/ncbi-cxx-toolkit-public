@@ -38,11 +38,6 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
-#include <connect/services/grid_client.hpp>
-#include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
-#include <connect/services/grid_default_factories.hpp>
-
 #include <misc/grid_cgi/grid_cgiapp.hpp>
 
 #include <vector>
@@ -333,8 +328,8 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2005/03/31 15:38:35  didenko
- * Initial version
+ * Revision 1.2  2005/03/31 15:57:14  didenko
+ * Code cleanup
  *
  * ===========================================================================
  */
