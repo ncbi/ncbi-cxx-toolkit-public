@@ -88,6 +88,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -143,7 +144,7 @@ void CValidError_bioseq::ValidateSeqIds
     ITERATE( CBioseq::TId, i, seq.GetId() ) {
 
         // Check that no two CSeq_ids for same CBioseq are same type
-        list< CRef < CSeq_id > >::const_iterator j;
+        CBioseq::TId::const_iterator j;
         for (j = i, ++j; j != seq.GetId().end(); ++j) {
             if ((**i).Compare(**j) != CSeq_id::e_DIFF) {
                 CNcbiOstrstream os;
@@ -176,6 +177,8 @@ void CValidError_bioseq::ValidateSeqIds
     }
 
     // Loop thru CSeq_ids to check formatting
+    bool is_wgs = false;
+    bool is_gb_embl_ddbj = false;
     unsigned int gi_count = 0;
     unsigned int accn_count = 0;
     ITERATE (CBioseq::TId, k, seq.GetId()) {
@@ -201,6 +204,8 @@ void CValidError_bioseq::ValidateSeqIds
                 bool letter_after_digit = false;
                 bool bad_id_chars = false;       
                     
+                is_wgs = acc.length() == 12  ||  acc.length() == 13;
+
                 ITERATE(string, s, acc) {
                     if (isupper(*s)) {
                         num_letters++;
@@ -213,6 +218,9 @@ void CValidError_bioseq::ValidateSeqIds
                         bad_id_chars = true;
                     }
                 }
+                is_gb_embl_ddbj = 
+                    (**k).IsGenbank()  ||  (**k).IsEmbl()  ||  (**k).IsDdbj();
+
                 if ( letter_after_digit || bad_id_chars ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession: " + acc, seq);
@@ -221,9 +229,10 @@ void CValidError_bioseq::ValidateSeqIds
                 } else if (num_letters == 3 && num_digits == 5 && seq.IsAa()) {
                 } else if (num_letters == 2 && num_digits == 6 && seq.IsAa() &&
                     repr == CSeq_inst::eRepr_seg) {
-                } else if (num_letters == 4  &&  num_digits == 8  &&
-                    ((**k).IsGenbank()  ||  (**k).IsEmbl()  ||
-                    (**k).IsDdbj())) {
+                } else if ( num_letters == 4  && 
+                            (num_digits == 8  ||  num_digits == 9)  && 
+                            seq.IsNa()  &&
+                            is_gb_embl_ddbj ) {
                 } else {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession: " + acc, seq);
@@ -351,6 +360,19 @@ void CValidError_bioseq::ValidateSeqIds
         default:
             break;
         }
+    }
+
+    CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
+    if ( is_wgs ) {
+        if ( !mi  ||  !mi->CanGetTech()  ||  
+            mi->GetTech() != CMolInfo::eTech_wgs ) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
+                "WGS accession should have Mol-info.tech of wgs", seq);
+        }
+    } else if ( mi  &&  mi->CanGetTech()  &&  
+                mi->GetTech() == CMolInfo::eTech_wgs  &&  is_gb_embl_ddbj ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Mol-info.tech of wgs should have WGS accession", seq);
     }
 
     // Check that a sequence with a gi number has exactly one accession
@@ -1164,27 +1186,30 @@ void CValidError_bioseq::ValidateProteinTitle(const CBioseq& seq)
 
 void CValidError_bioseq::ValidateNs(const CBioseq& seq)
 {
-    const CSeq_inst& inst = seq.GetInst();
-    if ( (inst.GetRepr() != CSeq_inst::eRepr_raw)  ||
-         (inst.IsSetLength() && inst.GetLength() <= 5) ) {
-        return;
-    }
-
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( !bsh ) {
-        return;
-    }
-
-    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-
-    if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
-        PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
-            "N at beginning of sequence", seq);
-    }
-
-    if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
-        PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
-            "N at end of sequence", seq);
+    try {
+        const CSeq_inst& inst = seq.GetInst();
+        if ( (inst.GetRepr() != CSeq_inst::eRepr_raw)  ||
+            (inst.IsSetLength() && inst.GetLength() <= 5) ) {
+            return;
+        }
+        
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        if ( !bsh ) {
+            return;
+        }
+        
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        
+        if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
+                "N at beginning of sequence", seq);
+        }
+        
+        if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
+                "N at end of sequence", seq);
+        }
+    } catch ( exception& ) {
     }
 }
 
@@ -1274,7 +1299,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
         return;
     }
     TSeqPos calc_len = inst.IsSetLength() ? inst.GetLength() : 0;
-    string s_len = NStr::IntToString(calc_len);
+    
     switch (seqtyp) {
     case CSeq_data::e_Ncbipna:
     case CSeq_data::e_Ncbipaa:
@@ -1286,6 +1311,8 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
         }
         calc_len /= factor;
     }
+    string s_len = NStr::UIntToString(calc_len);
+
     TSeqPos data_len = GetDataLen(inst);
     string data_len_str = NStr::IntToString(data_len);
     if (calc_len > data_len) {
@@ -1318,44 +1345,39 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
 
         CSeqVector sv = 
             m_Scope->GetBioseqHandle(seq).GetSeqVector();
-        if ( inst.IsAa() ) {
-            sv.SetCoding(CSeq_data::e_Ncbieaa);
-        }
 
         size_t bad_cnt = 0;
         size_t seq_size = sv.size();
-        for (TSeqPos pos = 0; pos < seq_size; ++pos) {
-            if (sv[pos] > 250) {
-                if (++bad_cnt > 10) {
+        TSeqPos pos = 0;
+        for ( CSeqVector_CI sv_iter(sv); sv_iter; ++sv_iter ) {
+            CSeqVector::TResidue res = *sv_iter;
+            if ( !IsResidue(res) ) {
+                if ( ++bad_cnt > 10 ) {
                     PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
                         "More than 10 invalid residues. Checking stopped",
                         seq);
                     return;
                 } else {
-                    if (seqtyp == CSeq_data::e_Ncbistdaa) {
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
-                            "Invalid residue [" +
-                            NStr::IntToString((int)sv[pos]) +
-                            "] in position [" +
-                            NStr::IntToString((int)pos) + "]",
-                            seq);
+                    string msg = "Invalid residue [";
+                    if ( seqtyp == CSeq_data::e_Ncbistdaa ) {
+                        msg += NStr::UIntToString(res);
                     } else {
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
-                            "Invalid residue [" +
-                            NStr::IntToString((int)sv[pos]) +
-                            "] in position [" +
-                            NStr::IntToString((int)pos) + "]",
-                            seq);
+                        msg += res;
                     }
+                    msg += "] in position [" + NStr::UIntToString(pos) + "]";
+
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue, 
+                        msg, seq);
                 }
-            } else if (sv[pos] == termination) {
+            } else if ( res == termination ) {
                 terminations++;
                 trailingX = 0;
-            } else if (sv[pos] == 'X') {
+            } else if ( res == 'X' ) {
                 trailingX++;
             } else {
                 trailingX = 0;
             }
+            ++pos;
         }
 
         if ( trailingX > 0 && !SuppressTrailingXMsg(seq) ) {
@@ -1520,8 +1542,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
 
     TSeqPos len = 0;
-    ITERATE(list< CRef<CDelta_seq> >, sg, inst.GetExt().GetDelta().Get()) {
-        switch ((**sg).Which()) {
+    ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+        switch ( (**sg).Which() ) {
         case CDelta_seq::e_Loc:
             try {
                 len += GetLength((**sg).GetLoc(), m_Scope);
@@ -1598,7 +1620,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 
     // Get CMolInfo and tech used for validating technique and gap positioning
     CTypeConstIterator<CMolInfo> mi(ConstBegin(seq.GetDescr()));
-    int tech = mi->IsSetTech() ? mi->GetTech() : 0;
+    int tech = mi  &&  mi->IsSetTech() ? mi->GetTech() : 0;
 
     // Validate technique
     if ( mi  &&  !m_Imp.IsNT()  &&  !m_Imp.IsNC()  &&  !m_Imp.IsGPS() ) {
@@ -1617,10 +1639,18 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         }
     }
 
+    EDiagSev sev = eDiag_Error;
+    if ( tech != CMolInfo::eTech_htgs_0  &&
+         tech != CMolInfo::eTech_htgs_1  &&
+         tech != CMolInfo::eTech_htgs_2  &&
+         tech != CMolInfo::eTech_htgs_3  ) {
+        sev = eDiag_Warning;
+    }
+
     // Validate positioning of gaps
     CTypeConstIterator<CDelta_seq> ds(ConstBegin(inst));
     if (ds  &&  (*ds).IsLiteral()  &&  !(*ds).GetLiteral().IsSetSeq_data()) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq,
+        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
             "First delta seq component is a gap", seq);
     }
     bool last_is_gap = false;
@@ -1647,7 +1677,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             " adjacent gap(s) in delta seq", seq);
     }
     if (last_is_gap) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq,
+        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
             "Last delta seq component is a gap", seq);
     }
     if (num_gaps == 0  &&  mi) {
@@ -1812,7 +1842,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
         if ( !IsOneBioseq(loc) ) {  // skip segmented 
             continue;
         }
-        CSeq_loc_CI si(fi->GetLocation());
+        CSeq_loc_CI si(loc);
         if ( !(++si) ) {  // if only a single interval
             continue;
         }
@@ -2479,26 +2509,6 @@ void CValidError_bioseq::ValidateOrgContext
                 "] and [" + org.GetTaxname() + "]", seq, desc);
         }
     }
-
-    CSeqdesc_CI iter = curr;
-    for ( ++iter; iter; ++iter ) {
-        const COrg_ref* that_org = 0;
-        if ( iter->IsSource() ) {
-            that_org = &(iter->GetSource().GetOrg());
-        } else if ( iter->IsOrg() ) {
-             that_org = &(iter->GetOrg());
-        }
-        
-        if ( that_org ) {
-            if ( this_org.IsSetTaxname()  &&  that_org->IsSetTaxname() ) {
-                if ( this_org.GetTaxname() == that_org->GetTaxname() ) {
-                    PostErr(eDiag_Error,
-                        eErr_SEQ_DESCR_MultipleBioSources,
-                        "Undesired multiple source descriptors", seq, desc);
-                }
-            }
-        }
-    }
 }
 
 
@@ -2806,17 +2816,22 @@ void CValidError_bioseq::ValidateGraphValues
                                          CBioseq_Handle::eCoding_Ncbi,
                                          GetStrand(gloc, m_Scope));
     vec.SetCoding(CSeq_data::e_Ncbi4na);
-    SIZE_TYPE size = vec.size();
 
-    const vector< char >& values = bg.GetValues();
-    SIZE_TYPE numvals = graph.GetNumval() <= values.size() ? 
-        graph.GetNumval() : values.size();
+    string sequence;
+    vec.GetSeqData(0, vec.size(), sequence);
+    string::const_iterator seq_iter = sequence.begin();
+    string::const_iterator seq_begin = sequence.begin();
+    string::const_iterator seq_end = sequence.end();
 
-    for ( SIZE_TYPE pos = 0; pos < size && pos < numvals; ++pos ) {
-        CSeqVector::TResidue res = vec[pos];
+    const CByte_graph::TValues& values = bg.GetValues();
+    CByte_graph::TValues::const_iterator val_iter = values.begin();
+    CByte_graph::TValues::const_iterator val_end = values.end();
+    
+    while ( (seq_iter != seq_end)  &&  (val_iter != val_end) ) {
+        CSeqVector::TResidue res = *seq_iter;
         int val;
         if ( IsResidue(res) ) {
-            val = values[pos];
+            val = *val_iter;
             if ( (val < min)  ||  (val < 0) ) {
                 vals_below_min++;
             }
@@ -2838,7 +2853,7 @@ void CValidError_bioseq::ValidateGraphValues
                 if ( val == 0 ) {
                     ACGTs_without_score++;
                     if ( first_ACGT == numeric_limits<TSeqPos>::min() ) {
-                        first_ACGT = pos;
+                        first_ACGT = seq_iter - seq_begin;
                     }
                 }
                 break;
@@ -2847,12 +2862,14 @@ void CValidError_bioseq::ValidateGraphValues
                 if ( val > 0 ) {
                     Ns_with_score++;
                     if ( first_N == numeric_limits<TSeqPos>::min() ) {
-                        first_N = pos;
+                        first_N = seq_iter - seq_begin;
                     }
                 }
                 break;
             }
         }
+        ++seq_iter;
+        ++val_iter;
     }
 
     if ( ACGTs_without_score > 0 ) {
@@ -2918,16 +2935,13 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
     CDelta_ext::Tdata::const_iterator curr = delta.Get().begin(),
         next = curr,
         end = delta.Get().end();
-    ++next;
-    
 
-    SIZE_TYPE   num_delta_seq = delta.Get().size(), 
-                num_graph = 0;
+    SIZE_TYPE   num_delta_seq = 0;
     TSeqPos offset = 0;
 
     CGraph_CI grp(m_Scope->GetBioseqHandle(seq), 0, 0);
     while ( curr != end  &&  grp ) {
-        num_graph++;
+        ++next;
         const CSeq_loc& loc = grp->GetLoc();
         switch ( (*curr)->Which() ) {
             case CDelta_seq::e_Loc:
@@ -2941,6 +2955,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
                             ") length mismatch", grp->GetOriginalGraph());
                     }
                     offset += loclen;
+                    ++num_delta_seq;
                 }
                 ++grp;
                 break;
@@ -2986,9 +3001,9 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
                             }
                         }
                         ++grp;
+                        ++num_delta_seq;
                     }
                     offset += litlen;
-                    
                 }
                 break;
 
@@ -2996,15 +3011,19 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
                 break;
         }
         curr = next;
-        ++next;
-        
     }
-    if ( num_delta_seq != num_graph ) {
+
+    SIZE_TYPE num_graphs = 0;
+    for ( CGraph_CI i(m_Scope->GetBioseqHandle(seq), 0, 0); i; ++i ) {
+        ++num_graphs;
+    }
+
+    if ( num_delta_seq != num_graphs ) {
         validate_values = false;
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphDiffNumber,
             "Different number of SeqGraph (" + 
             NStr::IntToString(num_delta_seq) + ") and SeqLit (" +
-            NStr::IntToString(num_graph) + ") components",
+            NStr::IntToString(num_graphs) + ") components",
             seq);
     }
 }
@@ -3069,6 +3088,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/06/17 13:40:30  shomrat
+* Use SeqVector_CI to improve performance
+*
 * Revision 1.36  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -711,22 +711,34 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     bool partial_first = location.IsPartialLeft();
     bool partial_last = location.IsPartialRight();
 
+
     size_t counter = 0;
     const CSeq_id* last_id = 0;
-
     CBioseq_Handle bsh;
     size_t seq_len = 0;
+    ENa_strand last_strand = eNa_strand_unknown;
+    CSeqVector seq_vec;
+    string label;
+
     for (CSeq_loc_CI citer(location); citer; ++citer) {
         ++counter;
 
         const CSeq_id& seq_id = citer.GetSeq_id();
-        
-        if ( last_id == 0 || !last_id->Match(seq_id) ) {
+        if ( last_id == 0  ||  !last_id->Match(seq_id) ) {
             bsh = m_Scope->GetBioseqHandle(seq_id);
             if ( !bsh ) {
                 break;
             }
-            seq_len = bsh.GetSeqVector().size();
+            seq_vec = 
+                bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+                                 citer.GetStrand());
+            seq_len = seq_vec.size();
+
+            // get the label. if m_SuppressContext flag in true, 
+            // get the worst label.
+            const CBioseq& bsq = bsh.GetBioseq();
+            bsq.GetLabel(&label, CBioseq::eContent, m_Imp.IsSuppressContext());
+
             last_id = &seq_id;
         }
 
@@ -751,22 +763,16 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
             sev = eDiag_Error;
         }
 
-        // get the label. if m_SuppressContext flag in true, get the worst label.
-        const CBioseq& bsq = bsh.GetBioseq();
-        string label;
-        bsq.GetLabel(&label, CBioseq::eContent, m_Imp.IsSuppressContext());
-        
-        CSeqVector seq_vec =
-            bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, citer.GetStrand());
-        if ( !m_Imp.CheckSeqVector(seq_vec) ) {
-            break;
-        }
-
         // check donor on all but last exon and on sequence
         if ( ((check_all && !partial_last)  ||  counter < num_of_parts)  &&
              (stop < seq_len - 2) ) {
-            CSeqVector::TResidue res1 = seq_vec[stop + 1];    
-            CSeqVector::TResidue res2 = seq_vec[stop + 2];
+            CSeqVector::TResidue res1, res2;
+            try {
+                res1 = seq_vec[stop + 1];    
+                res2 = seq_vec[stop + 2];
+            } catch ( exception& ) {
+                break;
+            }
 
             if ( IsResidue(res1)  &&  IsResidue(res2) ) {
                 if ( (res1 != 'G')  || (res2 != 'T' ) ) {
@@ -788,8 +794,12 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
         if ( ((check_all && !partial_first)  ||  counter != 1)  &&
              (start > 1) ) {
-            CSeqVector::TResidue res1 = seq_vec[start - 2];
-            CSeqVector::TResidue res2 = seq_vec[start - 1];
+            CSeqVector::TResidue res1, res2;
+            try {
+                res1 = seq_vec[start - 2];
+                res2 = seq_vec[start - 1];
+            } catch ( exception& ) {
+            }
 
             if ( IsResidue(res1)  &&  IsResidue(res2) ) {
                 if ( (res1 != 'A')  ||  (res2 != 'G') ) {
@@ -1682,6 +1692,7 @@ static const string s_BypassCdsTransCheck[] = {
   "reasons given in citation",
   "artificial frameshift",
   "unclassified translation discrepancy",
+  "rearrangement required for product"
 };
 
 
@@ -2089,9 +2100,6 @@ bool CValidError_feat::IsPartialAtSpliceSite
 
     CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
         temp.GetStrand());
-    if ( !m_Imp.CheckSeqVector(vec) ) {
-        return false;
-    }
     TSeqPos len = vec.size();
 
     if ( temp.GetStrand() == eNa_strand_minus ) {
@@ -2102,9 +2110,14 @@ bool CValidError_feat::IsPartialAtSpliceSite
 
     bool result = false;
 
+    CSeqVector::TResidue res1, res2;
     if ( (tag == eSeqlocPartial_Nostop)  &&  (stop < len - 2) ) {
-        CSeqVector::TResidue res1 = vec[stop + 1];    
-        CSeqVector::TResidue res2 = vec[stop + 2];
+        try {
+            res1 = vec[stop + 1];    
+            res2 = vec[stop + 2];
+        } catch ( exception& ) {
+            return false;
+        }
 
         if ( IsResidue(res1)  &&  IsResidue(res2) ) {
             if ( (res1 == 'G'  &&  res2 == 'T')  || 
@@ -2113,8 +2126,12 @@ bool CValidError_feat::IsPartialAtSpliceSite
             }
         }
     } else if ( (tag == eSeqlocPartial_Nostart)  &&  (start > 1) ) {
-        CSeqVector::TResidue res1 = vec[start - 2];    
-        CSeqVector::TResidue res2 = vec[start - 1];
+        try {
+            res1 = vec[start - 2];    
+            res2 = vec[start - 1];
+        } catch ( exception& ) {
+            return false;
+        }
 
         if ( IsResidue(res1)  &&  IsResidue(res2) ) {
             if ( (res1 == 'A')  &&  (res2 == 'G') ) { 
@@ -2251,6 +2268,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/06/17 13:40:48  shomrat
+* Use SeqVector_CI to improve performance
+*
 * Revision 1.31  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
