@@ -211,9 +211,10 @@ NCBI_C_ncbi = @NCBI_C_ncbi@
 WXWIN_INCLUDE = @WXWIN_INCLUDE@
 WXWIN_LIBS    = @WXWIN_LIBS@
 
-# FLTK:  headers and libs
+# FLTK:  headers and libs (both with and without OpenGL support).
 FLTK_INCLUDE = @FLTK_INCLUDE@
 FLTK_LIBS    = @FLTK_LIBS@
+FLTK_LIBS_GL = @FLTK_LIBS_GL@
 
 # Fast-CGI lib:  headers and libs
 FASTCGI_INCLUDE = @FASTCGI_INCLUDE@

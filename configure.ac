@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.114 2002/08/06 16:16:43 ucko Exp $
+#  $Id: configure.ac,v 1.115 2002/08/07 17:18:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1869,8 +1869,9 @@ if test "$with_fltk" != "no"; then
    FLTK_INCLUDE=
    AC_CACHE_CHECK([for FLTK in $FLTK_ARCH_PATH], ncbi_cv_lib_fltk,
       [if test -x "$FLTK_BINPATH/fltk-config" ; then
-          FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags`
+          FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
           FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
+          FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
     
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
@@ -1890,13 +1891,15 @@ if test "$with_fltk" = "no" ; then
    FLTK_LIBPATH="No_FLTK"
    FLTK_INCLUDE=
    FLTK_LIBS=
+   FLTK_LIBS_GL=
    WithoutPackages="$WithoutPackages FLTK"
 else
    WithPackages="$WithPackages FLTK"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$FLTK_INCLUDE"; then
-      FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags`
+      FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
       FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
+      FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
    fi
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
@@ -2744,6 +2747,7 @@ AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
+AC_SUBST(FLTK_LIBS_GL)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
 AC_SUBST(FASTCGI_INCLUDE)
