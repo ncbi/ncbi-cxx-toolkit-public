@@ -55,7 +55,7 @@ CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
 
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
 {
-    m_Opts->SetInclusionThreshold( PSI_ETHRESH );
+    m_Opts->SetInclusionThreshold( PSI_INCLUSION_ETHRESH );
     m_Opts->SetPseudoCount( PSI_PSEUDO_COUNT_CONST );
 }
 
@@ -69,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/17 19:33:23  bealer
+ * - Update sources to new macro spelling.
+ *
  * Revision 1.1  2004/05/17 18:55:46  bealer
  * - Add PSI-Blast support.
  *
