@@ -50,10 +50,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// ??? Temporary ...
-static PyObject *ErrorObject = NULL;
-static PyObject *ProgrammingErrorObject = NULL;
-
 namespace python
 {
 
@@ -129,12 +125,14 @@ CConnParam::~CConnParam(void)
 
 //////////////////////////////////////////////////////////////////////////////
 CConnection::CConnection(
-    const CConnParam& conn_param
+    const CConnParam& conn_param,
+    EConnectionMode conn_mode
     )
 : m_ConnParam(conn_param)
 , m_DM(CDriverManager::GetInstance())
 , m_DS(NULL)
-, m_DefTransaction(NULL)
+, m_DefTransaction( NULL )
+, m_ConnectionMode( conn_mode )
 {
     try {
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName() );
@@ -147,7 +145,7 @@ CConnection::CConnection(
 
     try {
         // Create a default transaction ...
-        m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed);
+        m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
     }
     catch(const CDB_Exception& e) {
         throw pythonpp::CError(e.Message());
@@ -156,9 +154,9 @@ CConnection::CConnection(
 
 CConnection::~CConnection(void)
 {
-    DecRefCount(m_DefTransaction);
+    DecRefCount( m_DefTransaction );
 
-    _ASSERT(m_TransList.empty());
+    _ASSERT( m_TransList.empty() );
 
     m_DM.DestroyDs( m_ConnParam.GetDriverName() );
     m_DS = NULL;                        // ;-)
@@ -167,7 +165,8 @@ CConnection::~CConnection(void)
 IConnection*
 CConnection::MakeDBConnection(void) const
 {
-    IConnection* connection = m_DS->CreateConnection(eTakeOwnership);
+    // !!! eTakeOwnership !!!
+    IConnection* connection = m_DS->CreateConnection( eTakeOwnership );
     connection->Connect(
         m_ConnParam.GetUserName(),
         m_ConnParam.GetUserPswd(),
@@ -180,7 +179,9 @@ CConnection::MakeDBConnection(void) const
 CTransaction*
 CConnection::CreateTransaction(void)
 {
-    CTransaction* trans = new CTransaction(this);
+    CTransaction* trans = NULL;
+
+    trans = new CTransaction(this, pythonpp::eOwned, m_ConnectionMode);
 
     m_TransList.insert(trans);
     return trans;
@@ -189,12 +190,8 @@ CConnection::CreateTransaction(void)
 void
 CConnection::DestroyTransaction(CTransaction* trans)
 {
-    // Python will take care about object deallocation ...
-    TTransList::iterator iter = m_TransList.find(trans);
-
-    if ( iter != m_TransList.end() ) {
-        m_TransList.erase(iter);
-    }
+    // Python will take care of the object deallocation ...
+    m_TransList.erase(trans);
 }
 
 pythonpp::CObject
@@ -292,10 +289,14 @@ CSelectConnPool::Clear(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-CDMLConnPool::CDMLConnPool(CTransaction* trans)
-: m_Transaction(trans)
-, m_NumOfActive(0)
-, m_Started(false)
+CDMLConnPool::CDMLConnPool(
+    CTransaction* trans,
+    ETransType trans_type
+    )
+: m_Transaction( trans )
+, m_NumOfActive( 0 )
+, m_Started( false )
+, m_TransType( trans_type )
 {
 }
 
@@ -306,10 +307,13 @@ CDMLConnPool::Create(void)
     if ( m_DMLConnection.get() == NULL ) {
         m_DMLConnection.reset( GetConnection().MakeDBConnection() );
         _ASSERT( m_LocalStmt.get() == NULL );
-        m_LocalStmt.reset( m_DMLConnection->GetStatement() );
-        // Begin transaction ...
-        GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
-        m_Started = true;
+
+        if ( m_TransType == eImplicitTrans ) {
+            m_LocalStmt.reset( m_DMLConnection->GetStatement() );
+            // Begin transaction ...
+            GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
+            m_Started = true;
+        }
     }
 
     ++m_NumOfActive;
@@ -345,7 +349,7 @@ CDMLConnPool::GetLocalStmt(void) const
 void
 CDMLConnPool::commit(void) const
 {
-    if ( m_Started && m_DMLConnection.get() != NULL ) {
+    if ( m_TransType == eImplicitTrans && m_Started && m_DMLConnection.get() != NULL ) {
         try {
             GetLocalStmt().ExecuteUpdate( "COMMIT TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -359,7 +363,7 @@ CDMLConnPool::commit(void) const
 void
 CDMLConnPool::rollback(void) const
 {
-    if ( m_Started && m_DMLConnection.get() != NULL ) {
+    if ( m_TransType == eImplicitTrans && m_Started && m_DMLConnection.get() != NULL ) {
         try {
             GetLocalStmt().ExecuteUpdate( "ROLLBACK TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -373,11 +377,13 @@ CDMLConnPool::rollback(void) const
 //////////////////////////////////////////////////////////////////////////////
 CTransaction::CTransaction(
     CConnection* conn,
-    pythonpp::EOwnershipFuture ownnership
+    pythonpp::EOwnershipFuture ownnership,
+    EConnectionMode conn_mode
     )
-: m_ParentConnection(conn)
-, m_DMLConnPool(this)
-, m_SelectConnPool(this)
+: m_ParentConnection( conn )
+, m_DMLConnPool( this, (conn_mode == eSimpleMode ? eExplicitTrans : eImplicitTrans) )
+, m_SelectConnPool( this )
+, m_ConnectionMode( conn_mode )
 {
     if ( conn == NULL ) {
         throw pythonpp::CError("Invalid CConnection object");
@@ -391,7 +397,7 @@ CTransaction::CTransaction(
 
 CTransaction::~CTransaction(void)
 {
-    close_internal();
+    CloseInternal();
 
     // Unregister this transaction with the parent connection ...
     GetParentConnection().DestroyTransaction(this);
@@ -400,7 +406,7 @@ CTransaction::~CTransaction(void)
 pythonpp::CObject
 CTransaction::close(const pythonpp::CTuple& args)
 {
-    close_internal();
+    CloseInternal();
 
     // Unregister this transaction with the parent connection ...
     // I'm not absolutely shure about this ... 1/24/2005 5:31PM
@@ -418,7 +424,7 @@ CTransaction::cursor(const pythonpp::CTuple& args)
 pythonpp::CObject
 CTransaction::commit(const pythonpp::CTuple& args)
 {
-    commit_internal();
+    CommitInternal();
 
     return pythonpp::CNone();
 }
@@ -426,13 +432,13 @@ CTransaction::commit(const pythonpp::CTuple& args)
 pythonpp::CObject
 CTransaction::rollback(const pythonpp::CTuple& args)
 {
-    rollback_internal();
+    RollbackInternal();
 
     return pythonpp::CNone();
 }
 
 void
-CTransaction::close_internal(void)
+CTransaction::CloseInternal(void)
 {
     // Close all cursors ...
     CloseOpenCursors();
@@ -444,7 +450,7 @@ CTransaction::close_internal(void)
     }
 
     // Rollback transaction ...
-    rollback_internal();
+    RollbackInternal();
 
     // Close all open connections ...
     m_SelectConnPool.Clear();
@@ -479,8 +485,31 @@ CTransaction::CreateCursor(void)
 void
 CTransaction::DestroyCursor(CCursor* cursor)
 {
-    // Python will take care about object deallocation ...
+    // Python will take care of the object deallocation ...
     m_CursorList.erase(cursor);
+}
+
+IConnection*
+CTransaction::CreateSelectConnection(void)
+{
+    IConnection* conn = NULL;
+
+    if ( m_ConnectionMode == eSimpleMode ) {
+        conn = m_DMLConnPool.Create();
+    } else {
+        conn = m_SelectConnPool.Create();
+    }
+    return conn;
+}
+
+void
+CTransaction::DestroySelectConnection(IConnection* db_conn)
+{
+    if ( m_ConnectionMode == eSimpleMode ) {
+        m_DMLConnPool.Destroy(db_conn);
+    } else {
+        m_SelectConnPool.Destroy(db_conn);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -527,7 +556,7 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
 CStmtHelper::CStmtHelper(CTransaction* trans)
 : m_ParentTransaction( trans )
 , m_StmtType( estNone )
-, m_Executed(false)
+, m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
         throw pythonpp::CError("Invalid CTransaction object");
@@ -684,6 +713,15 @@ CStmtHelper::Execute(void)
     catch(const exception&) {
         throw pythonpp::CError("std::exception exception within 'CStmtHelper::Execute'");
     }
+}
+
+long
+CStmtHelper::GetRowCount(void) const
+{
+    if ( m_Executed ) {
+        return m_Stmt->GetRowCount();
+    }
+    return -1;                          // As required by the specification ...
 }
 
 IResultSet&
@@ -870,6 +908,15 @@ CCallableStmtHelper::Execute(void)
     }
 }
 
+long
+CCallableStmtHelper::GetRowCount(void) const
+{
+    if ( m_Executed ) {
+        return m_Stmt->GetRowCount();
+    }
+    return -1;                          // As required by the specification ...
+}
+
 IResultSet&
 CCallableStmtHelper::GetRS(void)
 {
@@ -993,17 +1040,19 @@ MakeTupleFromResult(IResultSet& rs)
 //////////////////////////////////////////////////////////////////////////////
 CCursor::CCursor(CTransaction* trans)
 : m_PythonConnection( &trans->GetParentConnection() )
-, m_PythonTransaction(trans)
-, m_ParentTransaction(trans)
-, m_NumOfArgs(0)
-, m_RowsNum(0)
-, m_ArraySize(1)
-, m_StmtHelper(trans)
-, m_CallableStmtHelper(trans)
+, m_PythonTransaction( trans )
+, m_ParentTransaction( trans )
+, m_NumOfArgs( 0 )
+, m_RowsNum( -1 )
+, m_ArraySize( 1 )
+, m_StmtHelper( trans )
+, m_CallableStmtHelper( trans )
 {
     if ( trans == NULL ) {
         throw pythonpp::CError("Invalid CTransaction object");
     }
+
+    ROAttr( "rowcount", m_RowsNum );
 
     PrepareForPython(this);
 }
@@ -1021,6 +1070,7 @@ CCursor::CloseInternal(void)
 {
     m_StmtHelper.Close();
     m_CallableStmtHelper.Close();
+    m_RowsNum = -1;                     // As required by the specification ...
 }
 
 pythonpp::CObject
@@ -1028,6 +1078,8 @@ CCursor::callproc(const pythonpp::CTuple& args)
 {
     int num_of_arguments = 0;
     size_t args_size = args.size();
+
+    m_RowsNum = -1;                     // As required by the specification ...
 
     if ( args_size == 0 ) {
         throw pythonpp::CError("A stored procedure name is expected as a parameter");
@@ -1067,6 +1119,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
     }
 
     m_CallableStmtHelper.Execute();
+    m_RowsNum = m_StmtHelper.GetRowCount();
 
     return pythonpp::CNone();
 }
@@ -1126,6 +1179,7 @@ CCursor::execute(const pythonpp::CTuple& args)
     }
 
     m_StmtHelper.Execute();
+    m_RowsNum = m_StmtHelper.GetRowCount();
 
     return pythonpp::CNone();
 }
@@ -1213,10 +1267,12 @@ CCursor::executemany(const pythonpp::CTuple& args)
                 //
                 m_CallableStmtHelper.Close();
                 m_StmtHelper.SetStr( m_StmtStr.GetStr() );
+                m_RowsNum = 0;
 
                 for ( citer = params.begin(); citer != cend; ++citer ) {
                     SetupParameters(*citer, m_StmtHelper);
                     m_StmtHelper.Execute();
+                    m_RowsNum += m_StmtHelper.GetRowCount();
                 }
             } else {
                 throw pythonpp::CError("Sequence of parameters should be provided either as a list or as a tuple data type");
@@ -1232,11 +1288,21 @@ CCursor::executemany(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::fetchone(const pythonpp::CTuple& args)
 {
-    IResultSet& rs = (m_StmtStr.GetType() == estFunction ? m_CallableStmtHelper.GetRS() : m_StmtHelper.GetRS() );
-
     try {
-        if ( rs.Next() ) {
-            return MakeTupleFromResult(rs);
+        if ( m_StmtStr.GetType() == estFunction ) {
+            IResultSet& rs = m_CallableStmtHelper.GetRS();
+
+            if ( rs.Next() ) {
+                m_RowsNum = m_CallableStmtHelper.GetRowCount();
+                return MakeTupleFromResult( rs );
+            }
+        } else {
+            IResultSet& rs = m_StmtHelper.GetRS();
+
+            if ( rs.Next() ) {
+                m_RowsNum = m_StmtHelper.GetRowCount();
+                return MakeTupleFromResult( rs );
+            }
         }
     }
     catch(const CDB_Exception& e) {
@@ -1249,7 +1315,6 @@ CCursor::fetchone(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::fetchmany(const pythonpp::CTuple& args)
 {
-    IResultSet& rs = (m_StmtStr.GetType() == estFunction ? m_CallableStmtHelper.GetRS() : m_StmtHelper.GetRS() );
     size_t array_size = m_ArraySize;
 
     try {
@@ -1261,8 +1326,27 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
     }
 
     pythonpp::CList py_list;
-    for ( size_t i = 0; i < array_size && rs.Next(); ++i ) {
-        py_list.Append(MakeTupleFromResult(rs));
+    try {
+        if ( m_StmtStr.GetType() == estFunction ) {
+            IResultSet& rs = m_CallableStmtHelper.GetRS();
+
+            for ( size_t i = 0; i < array_size && rs.Next(); ++i ) {
+                py_list.Append(MakeTupleFromResult(rs));
+            }
+
+            m_RowsNum = m_CallableStmtHelper.GetRowCount();
+        } else {
+            IResultSet& rs = m_StmtHelper.GetRS();
+
+            for ( size_t i = 0; i < array_size && rs.Next(); ++i ) {
+                py_list.Append(MakeTupleFromResult(rs));
+            }
+
+            m_RowsNum = m_StmtHelper.GetRowCount();
+        }
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
     }
 
     return py_list;
@@ -1271,12 +1355,25 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::fetchall(const pythonpp::CTuple& args)
 {
-    IResultSet& rs = (m_StmtStr.GetType() == estFunction ? m_CallableStmtHelper.GetRS() : m_StmtHelper.GetRS() );
-
     pythonpp::CList py_list;
+
     try {
-        while ( rs.Next() ) {
-            py_list.Append(MakeTupleFromResult(rs));
+        if ( m_StmtStr.GetType() == estFunction ) {
+            IResultSet& rs = m_CallableStmtHelper.GetRS();
+
+            while ( rs.Next() ) {
+                py_list.Append(MakeTupleFromResult(rs));
+            }
+
+            m_RowsNum = m_CallableStmtHelper.GetRowCount();
+        } else {
+            IResultSet& rs = m_StmtHelper.GetRS();
+
+            while ( rs.Next() ) {
+                py_list.Append(MakeTupleFromResult(rs));
+            }
+
+            m_RowsNum = m_StmtHelper.GetRowCount();
         }
     }
     catch(const CDB_Exception& e) {
@@ -1289,14 +1386,20 @@ CCursor::fetchall(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::nextset(const pythonpp::CTuple& args)
 {
-    if ( m_StmtStr.GetType() == estFunction ) {
-        if ( m_CallableStmtHelper.NextRS() ) {
-            return pythonpp::CBool(true);
+    try {
+        m_RowsNum = 0;
+        if ( m_StmtStr.GetType() == estFunction ) {
+            if ( m_CallableStmtHelper.NextRS() ) {
+                return pythonpp::CBool(true);
+            }
+        } else {
+            if ( m_StmtHelper.NextRS() ) {
+                return pythonpp::CBool(true);
+            }
         }
-    } else {
-        if ( m_StmtHelper.NextRS() ) {
-            return pythonpp::CBool(true);
-        }
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
     }
 
     return pythonpp::CNone();
@@ -1314,6 +1417,7 @@ CCursor::setoutputsize(const pythonpp::CTuple& args)
     return pythonpp::CNone();
 }
 
+/* Future development ... 2/4/2005 12:05PM
 //////////////////////////////////////////////////////////////////////////////
 // Future development ...
 class CModuleDBAPI : public pythonpp::CExtModule<CModuleDBAPI>
@@ -1322,16 +1426,320 @@ public:
     CModuleDBAPI(const char* name, const char* descr = 0)
     : pythonpp::CExtModule<CModuleDBAPI>(name, descr)
     {
+        PrepareForPython(this);
     }
 
 public:
-    pythonpp::CObject connect(const pythonpp::CTuple& args)
-    {
-        // return pythonpp::CObject(new CConnection(), false);
-        return pythonpp::CNone();
-    }
+    // connect(driver_name, db_type, db_name, user_name, user_pswd)
+    pythonpp::CObject connect(const pythonpp::CTuple& args);
+    pythonpp::CObject Binary(const pythonpp::CTuple& args);
+    pythonpp::CObject TimestampFromTicks(const pythonpp::CTuple& args);
+    pythonpp::CObject TimeFromTicks(const pythonpp::CTuple& args);
+    pythonpp::CObject DateFromTicks(const pythonpp::CTuple& args);
+    pythonpp::CObject Timestamp(const pythonpp::CTuple& args);
+    pythonpp::CObject Time(const pythonpp::CTuple& args);
+    pythonpp::CObject Date(const pythonpp::CTuple& args);
 };
 
+pythonpp::CObject
+CModuleDBAPI::connect(const pythonpp::CTuple& args)
+{
+    string driver_name;
+    string db_type;
+    string server_name;
+    string db_name;
+    string user_name;
+    string user_pswd;
+
+    try {
+        try {
+            const pythonpp::CTuple func_args(args);
+
+            driver_name = pythonpp::CString(func_args[0]);
+            db_type = pythonpp::CString(func_args[1]);
+            server_name = pythonpp::CString(func_args[2]);
+            db_name = pythonpp::CString(func_args[3]);
+            user_name = pythonpp::CString(func_args[4]);
+            user_pswd = pythonpp::CString(func_args[5]);
+        } catch (const pythonpp::CError&) {
+            throw pythonpp::CError("Invalid parameters within 'connect' function");
+        }
+
+        CConnection* conn = new CConnection( CConnParam(
+            driver_name,
+            db_type,
+            server_name,
+            db_name,
+            user_name,
+            user_pswd
+            ));
+
+        // Feef the object to the Python interpreter ...
+        return pythonpp::CObject(conn, pythonpp::eTakeOwnership);
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object holding a date value.
+// Date(year,month,day)
+pythonpp::CObject
+CModuleDBAPI::Date(const pythonpp::CTuple& args)
+{
+    try {
+        int year;
+        int month;
+        int day;
+
+        try {
+            const pythonpp::CTuple func_args(args);
+
+            year = pythonpp::CInt(func_args[0]);
+            month = pythonpp::CInt(func_args[1]);
+            day = pythonpp::CInt(func_args[2]);
+        } catch (const pythonpp::CError&) {
+            throw pythonpp::CError("Invalid parameters within 'Date' function");
+        }
+
+        // Feef the object to the Python interpreter ...
+        return pythonpp::CDate(year, month, day);
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object holding a time value.
+// Time(hour,minute,second)
+pythonpp::CObject
+CModuleDBAPI::Time(const pythonpp::CTuple& args)
+{
+    try {
+        int hour;
+        int minute;
+        int second;
+
+        try {
+            const pythonpp::CTuple func_args(args);
+
+            hour = pythonpp::CInt(func_args[0]);
+            minute = pythonpp::CInt(func_args[1]);
+            second = pythonpp::CInt(func_args[2]);
+        } catch (const pythonpp::CError&) {
+            throw pythonpp::CError("Invalid parameters within 'Time' function");
+        }
+
+        // Feef the object to the Python interpreter ...
+        return pythonpp::CTime(hour, minute, second, 0);
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object holding a time stamp
+// value.
+// Timestamp(year,month,day,hour,minute,second)
+pythonpp::CObject
+CModuleDBAPI::Timestamp(const pythonpp::CTuple& args)
+{
+    try {
+        int year;
+        int month;
+        int day;
+        int hour;
+        int minute;
+        int second;
+
+        try {
+            const pythonpp::CTuple func_args(args);
+
+            year = pythonpp::CInt(func_args[0]);
+            month = pythonpp::CInt(func_args[1]);
+            day = pythonpp::CInt(func_args[2]);
+            hour = pythonpp::CInt(func_args[3]);
+            minute = pythonpp::CInt(func_args[4]);
+            second = pythonpp::CInt(func_args[5]);
+        } catch (const pythonpp::CError&) {
+            throw pythonpp::CError("Invalid parameters within 'Timestamp' function");
+        }
+
+        // Feef the object to the Python interpreter ...
+        return pythonpp::CDateTime(year, month, day, hour, minute, second, 0);
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object holding a date value
+// from the given ticks value (number of seconds since the
+// epoch; see the documentation of the standard Python time
+// module for details).
+// DateFromTicks(ticks)
+pythonpp::CObject
+CModuleDBAPI::DateFromTicks(const pythonpp::CTuple& args)
+{
+    try {
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object holding a time value
+// from the given ticks value (number of seconds since the
+// epoch; see the documentation of the standard Python time
+// module for details).
+// TimeFromTicks(ticks)
+pythonpp::CObject
+CModuleDBAPI::TimeFromTicks(const pythonpp::CTuple& args)
+{
+    try {
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object holding a time stamp
+// value from the given ticks value (number of seconds since
+// the epoch; see the documentation of the standard Python
+// time module for details).
+// TimestampFromTicks(ticks)
+pythonpp::CObject
+CModuleDBAPI::TimestampFromTicks(const pythonpp::CTuple& args)
+{
+    try {
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    // Return a dummy object ...
+    return pythonpp::CNone();
+}
+
+// This function constructs an object capable of holding a
+// binary (long) string value.
+// Binary(string)
+pythonpp::CObject
+CModuleDBAPI::Binary(const pythonpp::CTuple& args)
+{
+
+    try {
+        string value;
+
+        try {
+            const pythonpp::CTuple func_args(args);
+
+            value = pythonpp::CString(func_args[0]);
+        } catch (const pythonpp::CError&) {
+            throw pythonpp::CError("Invalid parameters within 'Binary' function");
+        }
+
+        CBinary* obj = new CBinary(
+            );
+
+        // Feef the object to the Python interpreter ...
+        return pythonpp::CObject(obj, pythonpp::eTakeOwnership);
+    }
+    catch (const CDB_Exception& e) {
+        pythonpp::CError::SetString(e.Message());
+    }
+
+    return pythonpp::CNone();
+}
+
+*/
+
+}
+
+/* Future development ... 2/4/2005 12:05PM
+// Module initialization
+PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
+{
+    // Initialize DateTime module ...
+    PyDateTime_IMPORT;
+
+    // Declare CBinary
+    python::CBinary::Declare("python_ncbi_dbapi.BINARY");
+
+    // Declare CNumber
+    python::CNumber::Declare("python_ncbi_dbapi.NUMBER");
+
+    // Declare CRowID
+    python::CRowID::Declare("python_ncbi_dbapi.ROWID");
+
+    // Declare CConnection
+    python::CConnection::
+        Def("close",        &python::CConnection::close,        "close").
+        Def("commit",       &python::CConnection::commit,       "commit").
+        Def("rollback",     &python::CConnection::rollback,     "rollback").
+        Def("cursor",       &python::CConnection::cursor,       "cursor").
+        Def("transaction",  &python::CConnection::transaction,  "transaction");
+    python::CConnection::Declare("python_ncbi_dbapi.Connection");
+
+    // Declare CTransaction
+    python::CTransaction::
+        Def("close",        &python::CTransaction::close,        "close").
+        Def("cursor",       &python::CTransaction::cursor,       "cursor").
+        Def("commit",       &python::CTransaction::commit,       "commit").
+        Def("rollback",     &python::CTransaction::rollback,     "rollback");
+    python::CTransaction::Declare("python_ncbi_dbapi.Transaction");
+
+    // Declare CCursor
+    python::CCursor::
+        Def("callproc",     &python::CCursor::callproc,     "callproc").
+        Def("close",        &python::CCursor::close,        "close").
+        Def("execute",      &python::CCursor::execute,      "execute").
+        Def("executemany",  &python::CCursor::executemany,  "executemany").
+        Def("fetchone",     &python::CCursor::fetchone,     "fetchone").
+        Def("fetchmany",    &python::CCursor::fetchmany,    "fetchmany").
+        Def("fetchall",     &python::CCursor::fetchall,     "fetchall").
+        Def("nextset",      &python::CCursor::nextset,      "nextset").
+        Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
+        Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize");
+    python::CCursor::Declare("python_ncbi_dbapi.Cursor");
+
+
+    // Declare CModuleDBAPI
+    python::CModuleDBAPI::
+        Def("connect",    &python::CModuleDBAPI::connect, "connect").
+        Def("Date", &python::CModuleDBAPI::Date, "Date").
+        Def("Time", &python::CModuleDBAPI::Time, "Time").
+        Def("Timestamp", &python::CModuleDBAPI::Timestamp, "Timestamp").
+        Def("DateFromTicks", &python::CModuleDBAPI::DateFromTicks, "DateFromTicks").
+        Def("TimeFromTicks", &python::CModuleDBAPI::TimeFromTicks, "TimeFromTicks").
+        Def("TimestampFromTicks", &python::CModuleDBAPI::TimestampFromTicks, "TimestampFromTicks").
+        Def("Binary", &python::CModuleDBAPI::Binary, "Binary");
+//    python::CModuleDBAPI module_("python_ncbi_dbapi");
+    // Python interpreter will tale care of deleting module object ...
+    python::CModuleDBAPI* module2 = new python::CModuleDBAPI("python_ncbi_dbapi");
+}
+*/
+
+namespace python
+{
 //////////////////////////////////////////////////////////////////////////////
 // connect(driver_name, db_type, db_name, user_name, user_pswd)
 static
@@ -1347,6 +1755,7 @@ Connect(PyObject *self, PyObject *args)
         string db_name;
         string user_name;
         string user_pswd;
+        bool support_standard_interface = false;
 
         try {
             const pythonpp::CTuple func_args(args);
@@ -1357,6 +1766,9 @@ Connect(PyObject *self, PyObject *args)
             db_name = pythonpp::CString(func_args[3]);
             user_name = pythonpp::CString(func_args[4]);
             user_pswd = pythonpp::CString(func_args[5]);
+            if ( func_args.size() > 6 ) {
+                support_standard_interface = pythonpp::CBool(func_args[6]);
+            }
         } catch (const pythonpp::CError&) {
             throw pythonpp::CError("Invalid parameters within 'connect' function");
         }
@@ -1368,7 +1780,9 @@ Connect(PyObject *self, PyObject *args)
             db_name,
             user_name,
             user_pswd
-            ));
+            ),
+            ( support_standard_interface ? eStandardMode : eSimpleMode )
+            );
     }
     catch (const CDB_Exception& e) {
         pythonpp::CError::SetString(e.Message());
@@ -1614,6 +2028,21 @@ Binary(PyObject *self, PyObject *args)
     return obj;
 }
 
+class CDBAPIModule
+{
+public:
+    static Declare(const char* name, PyMethodDef* methods);
+
+private:
+    static PyObject* m_Module;
+};
+PyObject* CDBAPIModule::m_Module = NULL;
+
+CDBAPIModule::Declare(const char* name, PyMethodDef* methods)
+{
+    m_Module = Py_InitModule(const_cast<char*>(name), methods);
+}
+
 }
 
 static struct PyMethodDef python_ncbi_dbapi_methods[] = {
@@ -1632,30 +2061,36 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
 	{ NULL, NULL }
 };
 
+
 // Module initialization
 PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
 {
+    char* rev_str = "$Revision$";
     PyObject *module;
-    // char *rev = "$Revision$";
-    PyObject *dict;
-    PyObject *eo;
+
+    pythonpp::CModuleExt::Declare("python_ncbi_dbapi", python_ncbi_dbapi_methods);
+
+    // Define module attributes ...
+    pythonpp::CModuleExt::AddConst("apilevel", "2.0");
+    pythonpp::CModuleExt::AddConst("__version__", string( rev_str + 11, strlen( rev_str + 11 ) - 2 ));
+    pythonpp::CModuleExt::AddConst("threadsafety", 0);
+    pythonpp::CModuleExt::AddConst("paramstyle", "named");
+
+    module = pythonpp::CModuleExt::GetPyModule();
+
+    ///////////////////////////////////
 
     // Initialize DateTime module ...
     PyDateTime_IMPORT;
 
-    // Declare CModuleDBAPI
-//    python::CModuleDBAPI::
-//        def("close",    &python::CModuleDBAPI::connect, "connect");
-//    python::CModuleDBAPI module_("python_ncbi_dbapi");
-
     // Declare CBinary
-    python::CBinary::Declare("BINARY");
+    python::CBinary::Declare("python_ncbi_dbapi.BINARY");
 
     // Declare CNumber
-    python::CNumber::Declare("NUMBER");
+    python::CNumber::Declare("python_ncbi_dbapi.NUMBER");
 
     // Declare CRowID
-    python::CRowID::Declare("ROWID");
+    python::CRowID::Declare("python_ncbi_dbapi.ROWID");
 
     // Declare CConnection
     python::CConnection::
@@ -1664,7 +2099,7 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("rollback",     &python::CConnection::rollback,     "rollback").
         Def("cursor",       &python::CConnection::cursor,       "cursor").
         Def("transaction",  &python::CConnection::transaction,  "transaction");
-    python::CConnection::Declare("Connection");
+    python::CConnection::Declare("python_ncbi_dbapi.Connection");
 
     // Declare CTransaction
     python::CTransaction::
@@ -1672,7 +2107,7 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("cursor",       &python::CTransaction::cursor,       "cursor").
         Def("commit",       &python::CTransaction::commit,       "commit").
         Def("rollback",     &python::CTransaction::rollback,     "rollback");
-    python::CTransaction::Declare("Transaction");
+    python::CTransaction::Declare("python_ncbi_dbapi.Transaction");
 
     // Declare CCursor
     python::CCursor::
@@ -1686,74 +2121,48 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("nextset",      &python::CCursor::nextset,      "nextset").
         Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
         Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize");
-    python::CCursor::Declare("Cursor");
+    python::CCursor::Declare("python_ncbi_dbapi.Cursor");
 
+    ///////////////////////////////////
+    // Dclare types ...
 
-    module = Py_InitModule("python_ncbi_dbapi", python_ncbi_dbapi_methods);
-
-    dict = PyModule_GetDict(module);
-
-    eo = PyErr_NewException("python_ncbi_dbapi.Warning", PyExc_StandardError,
-        NULL);
-    PyDict_SetItemString(dict, "Warning", eo);
-    Py_DECREF(eo);
-
-    if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("python_ncbi_dbapi.Error",
-            PyExc_StandardError, NULL);
+    // Declare BINARY
+    if ( PyType_Ready(&python::CBinary::GetType()) == -1 ) {
+        return;
     }
-    PyDict_SetItemString(dict, "Error", ErrorObject);
-
-    eo = PyErr_NewException("python_ncbi_dbapi.InterfaceError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "InterfaceError", eo);
-    Py_DECREF(eo);
-
-    eo = PyErr_NewException("python_ncbi_dbapi.DatabaseError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "DatabaseError", eo);
-
-    Py_DECREF(ErrorObject);
-    ErrorObject = eo;
-
-    eo = PyErr_NewException("python_ncbi_dbapi.InternalError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "InternalError", eo);
-    Py_DECREF(eo);
-
-    eo = PyErr_NewException("python_ncbi_dbapi.OperationalError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "OperationalError", eo);
-    Py_DECREF(eo);
-
-    if (ProgrammingErrorObject == NULL) {
-        ProgrammingErrorObject =
-            PyErr_NewException("python_ncbi_dbapi.ProgrammingError",
-            ErrorObject, NULL);
+    if ( PyModule_AddObject(module, "BINARY", (PyObject*)&python::CBinary::GetType() ) == -1 ) {
+        return;
     }
-    PyDict_SetItemString(dict, "ProgrammingError", ProgrammingErrorObject);
 
-    eo = PyErr_NewException("python_ncbi_dbapi.IntegrityError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "IntegrityError", eo);
-    Py_DECREF(eo);
+    // Declare NUMBER
+    if ( PyType_Ready(&python::CNumber::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, "NUMBER", (PyObject*)&python::CNumber::GetType() ) == -1 ) {
+        return;
+    }
 
-    eo = PyErr_NewException("python_ncbi_dbapi.DataError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "DataError", eo);
-    Py_DECREF(eo);
+    // Declare ROWID
+    if ( PyType_Ready(&python::CRowID::GetType()) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, "ROWID", (PyObject*)&python::CRowID::GetType() ) == -1 ) {
+        return;
+    }
 
-    eo = PyErr_NewException("python_ncbi_dbapi.NotSupportedError", ErrorObject,
-        NULL);
-    PyDict_SetItemString(dict, "NotSupportedError", eo);
-    Py_DECREF(eo);
+    ///////////////////////////////////
+    // Add exceptions ...
 
-    /*
-	PyDict_SetItemString(dict, "__version__",
-		PyString_FromStringAndSize(rev+11,strlen(rev+11)-2));
-
-    */
-
+    python::CWarning::Declare("Warning");
+    python::CError::Declare("Error");
+    python::CInterfaceError::Declare("InterfaceError");
+    python::CDatabaseError::Declare("DatabaseError");
+    python::CInternalError::Declare("InternalError");
+    python::COperationalError::Declare("OperationalError");
+    python::CProgrammingError::Declare("ProgrammingError");
+    python::CIntegrityError::Declare("IntegrityError");
+    python::CDataError::Declare("DataError");
+    python::CNotSupportedError::Declare("NotSupportedError");
 }
 
 END_NCBI_SCOPE
@@ -1761,6 +2170,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/02/08 19:18:19  ssikorsk
+* Added a "simple mode" database interface
+*
 * Revision 1.4  2005/01/28 16:24:14  ssikorsk
 * Fixed: transactional behavior bug
 *
@@ -1773,7 +2185,6 @@ END_NCBI_SCOPE
 *
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
-*
 *
 * ===========================================================================
 */

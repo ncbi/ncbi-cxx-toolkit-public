@@ -43,6 +43,13 @@ namespace python
 {
 
 //////////////////////////////////////////////////////////////////////////////
+// eStandardMode stands for Python DB API specification mode
+// as defined in http://www.python.org/peps/pep-0249.html
+// eSimpleMode is a simplified mode as it is supported by the
+// NCBI DBAPI. The eSimpleMode was introduced by a request.
+enum EConnectionMode { eSimpleMode, eStandardMode };
+
+//////////////////////////////////////////////////////////////////////////////
 class CBinary : public pythonpp::CExtObject<CBinary>
 {
 public:
@@ -149,6 +156,7 @@ public:
 
     void Execute(void);
     void Close(void);
+    long GetRowCount(void) const;
 
     bool NextRS(void);
     IResultSet& GetRS(void);
@@ -183,6 +191,7 @@ public:
 
     void Execute(void);
     void Close(void);
+    long GetRowCount(void) const;
 
     bool NextRS(void);
     IResultSet& GetRS(void);
@@ -338,16 +347,16 @@ private:
     }
 
 private:
-    pythonpp::CObject               m_PythonConnection;  //< For reference counting purposes only
-    pythonpp::CObject               m_PythonTransaction; //< For reference counting purposes only
-    CTransaction*                   m_ParentTransaction; //< A transaction to which belongs this cursor object
-    int                             m_NumOfArgs;         //< Number of arguments in a callable statement
-    int                             m_RowsNum;
-    auto_ptr<IResultSet>            m_RS;
-    size_t                          m_ArraySize;
-    CStmtStr                        m_StmtStr;
-    CStmtHelper                     m_StmtHelper;
-    CCallableStmtHelper             m_CallableStmtHelper;
+    pythonpp::CObject       m_PythonConnection;  //< For reference counting purposes only
+    pythonpp::CObject       m_PythonTransaction; //< For reference counting purposes only
+    CTransaction*           m_ParentTransaction; //< A transaction to which belongs this cursor object
+    int                     m_NumOfArgs;         //< Number of arguments in a callable statement
+    long                    m_RowsNum;
+    auto_ptr<IResultSet>    m_RS;
+    size_t                  m_ArraySize;
+    CStmtStr                m_StmtStr;
+    CStmtHelper             m_StmtHelper;
+    CCallableStmtHelper     m_CallableStmtHelper;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -382,12 +391,19 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////
+
+// eImplicitTrans meant that a transaction will be started automaticaly,
+// without your help.
+// eExplicitTrans means that you have to start a transaction manualy by calling
+// the "BEGIN TRANSACTION" statement.
+enum ETransType { eImplicitTrans, eExplicitTrans };
+
 // A pool with one connection only ...
 // Strange but useful ...
 class CDMLConnPool
 {
 public:
-    CDMLConnPool(CTransaction* trans);
+    CDMLConnPool( CTransaction* trans, ETransType trans_type = eImplicitTrans );
 
 public:
     IConnection* Create(void);
@@ -414,6 +430,7 @@ private:
     size_t                  m_NumOfActive;
     auto_ptr<IStatement>    m_LocalStmt;      //< DBAPI SQL statement interface
     bool                    m_Started;
+    const ETransType        m_TransType;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -424,7 +441,11 @@ class CTransaction : public pythonpp::CExtObject<CTransaction>
     friend class CDMLConnPool;
 
 protected:
-    CTransaction(CConnection* conn, pythonpp::EOwnershipFuture ownnership = pythonpp::eOwned);
+    CTransaction(
+        CConnection* conn,
+        pythonpp::EOwnershipFuture ownnership = pythonpp::eOwned,
+        EConnectionMode conn_mode = eSimpleMode
+        );
 
 public:
     ~CTransaction(void);
@@ -453,14 +474,8 @@ public:
 
 public:
     // Factory for "data-retrieval" connections
-    IConnection* CreateSelectConnection(void)
-    {
-        return m_SelectConnPool.Create();
-    }
-    void DestroySelectConnection(IConnection* db_conn)
-    {
-        m_SelectConnPool.Destroy(db_conn);
-    }
+    IConnection* CreateSelectConnection(void);
+    void DestroySelectConnection(IConnection* db_conn);
 
 public:
     const CConnection& GetParentConnection(void) const
@@ -473,24 +488,25 @@ public:
     }
 
 protected:
-    void close_internal(void);
-    void commit_internal(void) const
+    void CloseInternal(void);
+    void CommitInternal(void) const
     {
         m_DMLConnPool.commit();
     }
-    void rollback_internal(void) const
+    void RollbackInternal(void) const
     {
         m_DMLConnPool.rollback();
     }
     void CloseOpenCursors(void);
 
 private:
-    pythonpp::CObject               m_PythonConnection; //< For reference counting purposes only
-    CConnection*                    m_ParentConnection; //< A connection to which belongs this transaction object
-    TCursorList                     m_CursorList;
+    pythonpp::CObject       m_PythonConnection; //< For reference counting purposes only
+    CConnection*            m_ParentConnection; //< A connection to which belongs this transaction object
+    TCursorList             m_CursorList;
 
-    CDMLConnPool                    m_DMLConnPool;    //< A pool of connections for DML statements
-    CSelectConnPool                 m_SelectConnPool; //< A pool of connections for SELECT statements
+    CDMLConnPool            m_DMLConnPool;    //< A pool of connections for DML statements
+    CSelectConnPool         m_SelectConnPool; //< A pool of connections for SELECT statements
+    const EConnectionMode   m_ConnectionMode;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -564,11 +580,13 @@ private:
 // CConnection does not represent an "physical" connection to a database.
 // In current implementation CConnection is a factory of CTransaction.
 // CTransaction owns and manages "physical" connections to a database.
+
 class CConnection : public pythonpp::CExtObject<CConnection>
 {
 public:
     CConnection(
-        const CConnParam& conn_param
+        const CConnParam& conn_param,
+        EConnectionMode conn_mode = eSimpleMode
         );
     ~CConnection(void);
 
@@ -598,11 +616,131 @@ protected:
 private:
     typedef set<CTransaction*> TTransList;
 
-    CConnParam      m_ConnParam;
-    CDriverManager& m_DM;
-    IDataSource*    m_DS;
-    CTransaction*   m_DefTransaction;   //< The lifetime of the default transaction will be managed by Python
-    TTransList      m_TransList;        //< List of user-defined transactions
+    CConnParam              m_ConnParam;
+    CDriverManager&         m_DM;
+    IDataSource*            m_DS;
+    CTransaction*           m_DefTransaction;   //< The lifetime of the default transaction will be managed by Python
+    TTransList              m_TransList;        //< List of user-defined transactions
+    const EConnectionMode   m_ConnectionMode;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Python Database API exception classes ... 2/4/2005 8:18PM
+
+//   This is the exception inheritance layout:
+//
+//    StandardError
+//    |__Warning
+//    |__Error
+//        |__InterfaceError
+//        |__DatabaseError
+//            |__DataError
+//            |__OperationalError
+//            |__IntegrityError
+//            |__InternalError
+//            |__ProgrammingError
+//            |__NotSupportedError
+
+class CWarning : public pythonpp::CUserError<CWarning>
+{
+public:
+    CWarning(const string& msg)
+    : pythonpp::CUserError<CWarning>( msg )
+    {
+    }
+};
+
+class CError : public pythonpp::CUserError<CError>
+{
+public:
+    CError(const string& msg)
+    : pythonpp::CUserError<CError>( msg )
+    {
+    }
+
+protected:
+    CError(const string& msg, PyObject* err_type)
+    : pythonpp::CUserError<CError>(msg, err_type)
+    {
+    }
+};
+
+class CInterfaceError : public pythonpp::CUserError<CInterfaceError, CError>
+{
+public:
+    CInterfaceError(const string& msg)
+    : pythonpp::CUserError<CInterfaceError, CError>( msg )
+    {
+    }
+};
+
+class CDatabaseError : public pythonpp::CUserError<CDatabaseError, CError>
+{
+public:
+    CDatabaseError(const string& msg)
+    : pythonpp::CUserError<CDatabaseError, CError>( msg )
+    {
+    }
+
+protected:
+    CDatabaseError(const string& msg, PyObject* err_type)
+    : pythonpp::CUserError<CDatabaseError, CError>(msg, err_type)
+    {
+    }
+};
+
+class CInternalError : public pythonpp::CUserError<CInternalError, CDatabaseError>
+{
+public:
+    CInternalError(const string& msg)
+    : pythonpp::CUserError<CInternalError, CDatabaseError>( msg )
+    {
+    }
+};
+
+class COperationalError : public pythonpp::CUserError<COperationalError, CDatabaseError>
+{
+public:
+    COperationalError(const string& msg)
+    : pythonpp::CUserError<COperationalError, CDatabaseError>( msg )
+    {
+    }
+};
+
+class CProgrammingError : public pythonpp::CUserError<CProgrammingError, CDatabaseError>
+{
+public:
+    CProgrammingError(const string& msg)
+    : pythonpp::CUserError<CProgrammingError, CDatabaseError>( msg )
+    {
+    }
+};
+
+class CIntegrityError : public pythonpp::CUserError<CIntegrityError, CDatabaseError>
+{
+public:
+    CIntegrityError(const string& msg)
+    : pythonpp::CUserError<CIntegrityError, CDatabaseError>( msg )
+    {
+    }
+};
+
+class CDataError : public pythonpp::CUserError<CDataError, CDatabaseError>
+{
+public:
+    CDataError(const string& msg)
+    : pythonpp::CUserError<CDataError, CDatabaseError>( msg )
+    {
+    }
+};
+
+class CNotSupportedError : public pythonpp::CUserError<CNotSupportedError, CDatabaseError>
+{
+public:
+    CNotSupportedError(const string& msg)
+    : pythonpp::CUserError<CNotSupportedError, CDatabaseError>( msg )
+    {
+    }
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -642,13 +780,15 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/02/08 19:18:19  ssikorsk
+* Added a "simple mode" database interface
+*
 * Revision 1.2  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object
 *
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
-*
 *
 * ===========================================================================
 */
