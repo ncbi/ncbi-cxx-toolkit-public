@@ -23,9 +23,10 @@
  *
  * ===========================================================================
  *
- * Author: Webb Miller and Co. Adopted for NCBI libraries by Sergey Shavirin
+ * Functions to perform greedy affine and non-affine gapped alignment; see
  *
- * Initial Creation Date: 10/27/1999
+ * Zhang et. al., "A Greedy Algorithm for Aligning DNA Sequences"
+ * Journal of Computational Biology vol 7 pp 203-214
  *
  */
 
