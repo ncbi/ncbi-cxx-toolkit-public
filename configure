@@ -6766,7 +6766,8 @@ fi
 
 
 
-for ac_header in dlfcn.h poll.h sys/sockio.h sys/sysinfo.h
+
+for ac_header in dlfcn.h ieeefp.h poll.h sys/sockio.h sys/sysinfo.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
