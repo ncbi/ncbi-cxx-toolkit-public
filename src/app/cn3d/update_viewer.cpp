@@ -337,10 +337,12 @@ void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSe
             if (!bioseq.Empty()) {
                 // create Sequence
                 const Sequence *sequence = sSet->CreateNewSequence(*bioseq);
-                if (sequence->isProtein)
-                    newSequences->push_back(sequence);
-                else
-                    ERRORMSG("The sequence must be a protein");
+                if (sequence) {
+                    if (sequence->isProtein)
+                        newSequences->push_back(sequence);
+                    else
+                        ERRORMSG("The sequence must be a protein");
+                }
             }
         } else {
             ERRORMSG("UpdateViewer::FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed");
@@ -369,7 +371,9 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
                 } else {
                     // create Sequence - just one from each Seq-entry for now
                     if (se.IsSeq()) {
-                        newSequences->push_back(sSet->CreateNewSequence(se.SetSeq()));
+                        const Sequence *sequence = sSet->CreateNewSequence(se.SetSeq());
+                        if (sequence)
+                            newSequences->push_back(sequence);
                     } else {
                         ERRORMSG("FastaToSeqEntry() returned Bioseq-set in Seq-entry");
                     }
@@ -764,10 +768,13 @@ void UpdateViewer::ImportStructure(void)
                         break;
                 }
                 if (i != ie) {
-                    TRACEMSG("found Bioseq for " << sids[j]->GetSeqIdString());
-                    newSequences.push_back(master->parentSet->CreateNewSequence(**b));
-                    seq2id[newSequences.back()] = sids[j];
-                    break;
+                    const Sequence *sequence = master->parentSet->CreateNewSequence(**b);
+                    if (sequence) {
+                        TRACEMSG("found Bioseq for " << sids[j]->GetSeqIdString());
+                        newSequences.push_back(sequence);
+                        seq2id[sequence] = sids[j];
+                        break;
+                    }
                 }
             }
             if (b == be) {
@@ -1173,6 +1180,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/01/05 17:09:16  thiessen
+* abort import and warn if same accession different gi
+*
 * Revision 1.67  2003/11/06 18:52:32  thiessen
 * make geometry violations shown on/off; allow multiple pmid entry in ref dialog
 *

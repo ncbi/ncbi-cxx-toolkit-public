@@ -994,6 +994,11 @@ const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
     // add Sequence to SequenceSet
     SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
     const Sequence *newSeq = new Sequence(modifiableSet, bioseq);
+    if (!newSeq->identifier) {
+        ERRORMSG("StructureSet::CreateNewSequence() - identifier conflict, no new sequence created");
+        delete newSeq;
+        return NULL;
+    }
     modifiableSet->sequences.push_back(newSeq);
 
     // add asn sequence to asn data
@@ -1476,6 +1481,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.136  2004/01/05 17:09:16  thiessen
+* abort import and warn if same accession different gi
+*
 * Revision 1.135  2003/10/21 13:48:48  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

@@ -175,8 +175,19 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     }
     if (_gi != VALUE_NOT_SET) {
         if (identifier->gi != VALUE_NOT_SET) {
-            if (identifier->gi != _gi)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
+            if (identifier->gi != _gi) {
+                if (identifier->accession.size() > 0 && identifier->accession == _accession) {
+                    // special case where accession is same, gi is different: two versions of same sequence
+                    ERRORMSG("The sequence being loaded (gi " << _gi << ") has the same accession code "
+                        "as a sequence already present (gi " << identifier->gi << "). Cn3D does not "
+                        "allow two versions of the same sequence to be present simultaneously. If you want "
+                        "to import gi " << _gi << ", you need to delete gi " << identifier->gi << " from "
+                        "the alignment and import windows, save & reload, then import again.");
+                    return NULL;
+                } else {
+                    ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
+                }
+            }
         } else {
             identifier->gi = _gi;
         }
@@ -319,6 +330,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/01/05 17:09:15  thiessen
+* abort import and warn if same accession different gi
+*
 * Revision 1.9  2003/09/03 18:14:01  thiessen
 * hopefully fix Seq-id issues
 *

@@ -328,7 +328,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
         return;
     }
 
-    // get identifier
+    // get identifier (may be NULL if there's a problem!)
     identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
 }
 
@@ -615,6 +615,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/01/05 17:09:16  thiessen
+* abort import and warn if same accession different gi
+*
 * Revision 1.62  2003/11/26 20:37:54  thiessen
 * prefer gi for URLs
 *
