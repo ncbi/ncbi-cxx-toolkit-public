@@ -192,7 +192,7 @@ void* CBlastTabularFormatThread::Main(void)
                if ((status = 
                     BLAST_OneSubjectUpdateParameters(m_Program, 
                         seq_arg.seq->length, m_ipScoreParams->options, 
-                        m_ipQueryInfo, m_ipGapAlign->sbp, m_ipExtParams, 
+                        m_ipQueryInfo, m_ipGapAlign->sbp, 
                         m_ipHitParams, NULL, m_ipEffLenParams)) != 0) {
                    continue;
                }
@@ -273,6 +273,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/02 20:16:20  madden
+* BLAST_OneSubjectUpdateParameters no longer requires BlastExtensionParameters
+*
 * Revision 1.9  2004/11/02 17:53:02  camacho
 * Add SKIP_DOXYGEN_PROCESSING to rcsid string
 *
