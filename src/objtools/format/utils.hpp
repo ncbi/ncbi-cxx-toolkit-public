@@ -1,0 +1,115 @@
+#ifndef OBJTOOLS_FLAT___UTILS_HPP
+#define OBJTOOLS_FLAT___UTILS_HPP
+
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Mati Shomrat
+*
+* File Description:
+*   Flat-file generator shared utility functions
+*/
+#include <corelib/ncbistd.hpp>
+
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+class CDate;
+class CBioseq;
+class CScope;
+
+
+enum ETildeStyle {
+    eTilde_tilde,  // no-op
+    eTilde_space,  // '~' -> ' ', except before /[ (]?\d/
+    eTilde_newline // '~' -> '\n' but "~~" -> "~"
+};
+string ExpandTildes(const string& s, ETildeStyle style);
+
+
+// Strips all spaces in string in following manner. If the function
+// meet several spaces (spaces and tabs) in succession it replaces them
+// with one space. Strips all spaces after '(' and before ')'
+void StripSpaces(string& str);
+
+bool ValidateAccession(const string& accn);
+void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
+
+struct SDeltaSeqSummary
+{
+    string text;
+    size_t num_segs;        // total number of segments
+    size_t num_gaps;        // total number of segments representing gaps
+    size_t residues;        // number of real residues in the sequence (not gaps)
+    size_t num_faked_gaps;  // number of gaps where real length is not known,
+                            // but where a length was guessed by spreading the
+                            // total gap length out over all gaps evenly.
+
+    SDeltaSeqSummary(void) :
+        text(kEmptyStr),
+        num_segs(0), num_gaps(0), residues(0), num_faked_gaps(0)
+    {}
+};
+
+void GetDeltaSeqSummary(const CBioseq& seq, CScope& scope,
+                        SDeltaSeqSummary& summary);
+
+const string& GetTechString(int tech);
+
+
+struct SModelEvidance
+{
+    string name;
+    string method;
+    bool mrnaEv;
+    bool estEv;
+
+    SModelEvidance(void) :
+        name(kEmptyStr), method(kEmptyStr), mrnaEv(false), estEv(false)
+    {}
+};
+
+bool GetModelEvidance(const CBioseq_Handle& bsh, CScope& scope, 
+                      SModelEvidance& me);
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.1  2003/12/17 20:25:10  shomrat
+* Initial Revision (adapted from flat lib)
+*
+*
+* ===========================================================================
+*/
+
+
+#endif  /* OBJTOOLS_FLAT___UTILS_HPP */

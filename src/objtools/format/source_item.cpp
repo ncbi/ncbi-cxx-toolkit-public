@@ -1,0 +1,305 @@
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Mati Shomrat, NCBI
+*
+* File Description:
+*   flat-file generator -- source item implementation
+*
+*/
+#include <corelib/ncbistd.hpp>
+
+#include <objects/seqblock/GB_block.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/util/sequence.hpp>
+
+#include <objtools/format/flat_file_generator.hpp>
+#include <objtools/format/formatter.hpp>
+#include <objtools/format/text_ostream.hpp>
+#include <objtools/format/items/source_item.hpp>
+#include "context.hpp"
+
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// SOURCE
+//   ORGANISM
+
+CSourceItem::CSourceItem(CFFContext& ctx) :
+    CFlatItem(ctx),
+    m_Taxname(&scm_Unknown), m_Common(&kEmptyStr),
+    m_Organelle(&kEmptyStr), m_Lineage(&scm_Unclassified),
+    m_SourceLine(&kEmptyStr), m_Mod(&scm_EmptyList),
+    m_UsingAnamorph(false)
+{
+    x_GatherInfo(ctx);
+}
+
+
+void CSourceItem::Format
+(IFormatter& formatter,
+ IFlatTextOStream& text_os) const
+
+{
+    formatter.FormatSource(*this, text_os);
+}
+
+
+/***************************************************************************/
+/*                                  PRIVATE                                */
+/***************************************************************************/
+
+
+// static members initialization
+const string       CSourceItem::scm_Unknown        = "Unknown.";
+const string       CSourceItem::scm_Unclassified   = "Unclassified.";
+const list<string> CSourceItem::scm_EmptyList;
+
+
+void CSourceItem::x_GatherInfo(CFFContext& ctx)
+{
+    // For DDBJ format first try a GB-Block descriptor (old style)
+    if ( ctx.GetFormat() == CFlatFileGenerator::eFormat_DDBJ ) {
+        CSeqdesc_CI gb_it(ctx.GetHandle(), CSeqdesc::e_Genbank);
+        if ( gb_it ) {
+            const CGB_block& gb = gb_it->GetGenbank();
+            if ( gb.CanGetSource()  &&  !gb.GetSource().empty() ) {
+                x_SetSource(gb, *gb_it);
+                return;
+            }
+        }
+    }
+    
+    // find a biosource descriptor
+    CSeqdesc_CI dsrc_it(ctx.GetHandle(), CSeqdesc::e_Source);
+    if ( dsrc_it ) {
+        x_SetSource(dsrc_it->GetSource(), *dsrc_it);
+        return;
+    } 
+    
+    // if no descriptor was found, try a source feature
+    CFeat_CI fsrc_it(ctx.GetHandle(), 0, 0, CSeqFeatData::e_Biosrc);
+    if ( fsrc_it ) {
+        const CSeq_feat& src_feat = fsrc_it->GetOriginalFeature();
+        x_SetSource(src_feat.GetData().GetBiosrc(), src_feat);
+    }   
+}
+
+// for old-style
+void CSourceItem::x_SetSource
+(const CGB_block&  gb,
+ const CSeqdesc& desc)
+{
+    x_SetObject(desc);
+
+    // set source line
+    if ( gb.CanGetSource() ) {
+        m_SourceLine = &(gb.GetSource());
+    }
+}
+
+
+static const string s_old_organelle_prefix[] = {
+  kEmptyStr,
+  kEmptyStr,
+  "Chloroplast ",
+  "Chromoplast ",
+  "Kinetoplast ",
+  "Mitochondrion ",
+  "Plastid ",
+  kEmptyStr,
+  kEmptyStr,
+  kEmptyStr,
+  kEmptyStr,
+  kEmptyStr,
+  "Cyanelle ",
+  kEmptyStr,
+  kEmptyStr,
+  "Nucleomorph ",
+  "Apicoplast ",
+  "Leucoplast ",
+  "Proplastid ",
+  kEmptyStr
+};
+
+static const string s_organelle_prefix[] = {
+  kEmptyStr,
+  kEmptyStr,
+  "chloroplast ",
+  "chromoplast ",
+  "kinetoplast ",
+  "mitochondrion ",
+  "plastid ",
+  kEmptyStr,
+  kEmptyStr,
+  kEmptyStr,
+  kEmptyStr,
+  kEmptyStr,
+  "cyanelle ",
+  kEmptyStr,
+  kEmptyStr,
+  "nucleomorph ",
+  "apicoplast ",
+  "leucoplast ",
+  "proplastid ",
+  kEmptyStr
+};
+
+
+void CSourceItem::x_SetSource
+(const CBioSource& bsrc,
+ const CSerialObject& obj)
+{
+    x_SetObject(obj);
+
+    if ( !bsrc.CanGetOrg() ) {
+        return;
+    }
+
+    const COrg_ref& org = bsrc.GetOrg();
+    
+    // Taxname
+    {{
+        if ( org.CanGetTaxname() ) {
+            m_Taxname = &(org.GetTaxname());
+        }
+    }}
+
+    // Organelle
+    {{
+        CBioSource::TGenome genome = bsrc.CanGetGenome() ? bsrc.GetGenome() 
+            : CBioSource::eGenome_unknown;
+        
+        m_Organelle = &(s_old_organelle_prefix[genome]);
+        
+        // If the organelle prefix is already on the  name, don't add it.
+        if ( NStr::StartsWith(*m_Taxname, *m_Organelle, NStr::eNocase) ) {
+            m_Organelle = &(kEmptyStr);
+        }
+    }}
+
+    // Mod
+    {{
+        m_Mod = &org.GetMod();
+    }}
+
+    // Common
+    {{
+        if ( org.CanGetCommon() ) {
+            m_Common = &(org.GetCommon());
+        }
+        
+        if ( org.CanGetOrgname() ) {
+            const COrgName& org_name = org.GetOrgname();
+            
+            const string *com = 0, *acr = 0, *syn = 0, *ana = 0,
+                *gbacr = 0, *gbana = 0, *gbsyn = 0;
+            ITERATE( COrgName::TMod, mod, org_name.GetMod() ) {
+                if ( (*mod)->CanGetSubtype()  &&  (*mod)->CanGetSubname() ) {
+                    switch ( (*mod)->GetSubtype() ) {
+                    case COrgMod::eSubtype_common:
+                        com = &((*mod)->GetSubname());
+                        break;
+                    case COrgMod::eSubtype_acronym:
+                        acr = &((*mod)->GetSubname());
+                        break;
+                    case COrgMod::eSubtype_synonym:
+                        syn = &((*mod)->GetSubname());
+                        break;
+                    case COrgMod::eSubtype_anamorph:
+                        ana = &((*mod)->GetSubname());
+                        break;
+                    case COrgMod::eSubtype_gb_acronym:
+                        gbacr = &((*mod)->GetSubname());
+                        break;
+                    case COrgMod::eSubtype_gb_anamorph:
+                        gbana = &((*mod)->GetSubname());
+                        break;
+                    case COrgMod::eSubtype_gb_synonym:
+                        gbsyn = &((*mod)->GetSubname());
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            
+            if ( syn != 0 ) {
+                m_Common = syn;
+            } else if ( acr != 0 ) {
+                m_Common = acr;
+            } else if ( ana != 0 ) {
+                m_Common = ana;
+                m_UsingAnamorph = true;
+            } else if ( com != 0 ) {
+                m_Common = com;
+            } else if ( gbsyn != 0 ) {
+                m_Common = gbsyn;
+            } else if ( gbacr != 0 ) {
+                m_Common = acr;
+            } else if ( gbacr != 0 ) {
+                m_Common = acr;
+            } else if ( gbana != 0 ) {
+                m_Common = gbana;
+                m_UsingAnamorph = true;
+            }
+        }
+    }}
+
+    // Lineage
+    {{
+        if ( org.CanGetOrgname() ) {
+            const COrgName& org_name = org.GetOrgname();
+            if ( org_name.CanGetLineage() ) {
+                m_Lineage = &(org_name.GetLineage());
+            }
+        }
+    }}
+}
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.1  2003/12/17 20:24:48  shomrat
+* Initial Revision (adapted from flat lib)
+*
+*
+* ===========================================================================
+*/
