@@ -44,6 +44,11 @@
 
 int main(void)
 {
+    const char custom_body[] =
+        "Subject: Custom sized body\n"
+        "\n"
+        "Custom sized body\n"
+        "0123456789\n"; /* these 11 chars to ignore */
     const char* body[] = {
         "This is a simple test",
         "This is a test with\n.",
@@ -204,6 +209,18 @@ int main(void)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     CORE_LOG(eLOG_Note, "Test passed");
 
+    CORE_LOG(eLOG_Note, "Testing AS-IS custom sized message");
+    info.body_size = strlen(custom_body) - 11/*to ignore*/;
+    retval = CORE_SendMailEx("<lavr@pavo>",
+                             "BAD SUBJECT SHOULD NOT APPEAR BUT IGNORED",
+                             custom_body,
+                             &info);
+    if (retval)
+        CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
+    CORE_LOG(eLOG_Note, "Test passed");
+
+    info.body_size = 0;
+    info.mx_no_header = 0;
     info.mx_host = mx_host;
 
     CORE_LOG(eLOG_Note, "Testing bad from");
@@ -229,6 +246,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/12/09 15:39:30  lavr
+ * Added new test of custom-sized message body
+ *
  * Revision 6.10  2003/12/05 18:39:35  lavr
  * Test multiple recipients and as-is message
  *
