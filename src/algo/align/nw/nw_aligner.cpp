@@ -411,8 +411,8 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
                              (ts == eDelete)? 2: 0);
 
             if(seg_type0 != seg_type) {
-                starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 + 1 );
-                starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 + 1 );
+                starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 );
+                starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 );
                 lens.push_back(seg_len);
                 strands.push_back(eNa_strand_plus);
                 strands.push_back(eNa_strand_plus);
@@ -430,8 +430,8 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
             if(seg_type != 2) ++seq2;
         }
         // the last one
-        starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 + 1 );
-        starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 + 1 );
+        starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 );
+        starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 );
         lens.push_back(seg_len);
         strands.push_back(eNa_strand_plus);
         strands.push_back(eNa_strand_plus);
@@ -847,6 +847,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/03/07 13:51:11  kapustin
+ * Use zero-based indices to specify seq coordinates in ASN
+ *
  * Revision 1.14  2003/03/05 20:13:48  kapustin
  * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets to capitals
  *
