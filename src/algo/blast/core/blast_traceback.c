@@ -659,7 +659,8 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
         BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
         ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
         BlastGapAlignStructPtr gap_align,
-        BlastScoringOptionsPtr score_options, 
+        BlastScoringOptionsPtr score_options,
+        BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params)
 {
    Int2 status = 0;
@@ -668,11 +669,22 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
    BlastHSPListPtr hsp_list;
    BLAST_ScoreBlkPtr sbp;
    Uint1 encoding=ERROR_ENCODING;
-
+   Boolean db_is_na;
+   
    if (!results || !query_info || (!rdfp && !subject)) {
       return 0;
    }
    
+   db_is_na = (gap_align->program != blast_type_blastp && 
+               gap_align->program != blast_type_blastx);
+
+   /* Set the raw X-dropoff value for the final gapped extension with 
+      traceback */
+   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+   /* For traceback, dynamic programming structure will be allocated on
+      the fly, proportionally to the subject length */
+   gap_align->dyn_prog = MemFree(gap_align->dyn_prog);
+
    sbp = gap_align->sbp;
 
    switch (gap_align->program) {
@@ -693,6 +705,16 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
       break;
    default:
       break;
+   }
+
+   if (rdfp) {
+      /* Allocate subject sequence block once */
+      subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
+   } else if (db_is_na) {
+      /* Two sequences case: free the compressed sequence */
+      MemFree(subject->sequence);
+      subject->sequence = subject->sequence_start + 1;
+      subject->sequence_allocated = FALSE;
    }
 
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
@@ -716,9 +738,13 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
                gap_align, sbp, score_options, hit_params);
 
             if (rdfp)
-               subject = BLAST_SequenceBlkDestruct(subject);
+               BlastSequenceBlkClean(subject);
          }
       }
+   }
+
+   if (rdfp) {
+      subject = MemFree(subject);
    }
 
    /* Re-sort the hit lists according to their best e-values, because
