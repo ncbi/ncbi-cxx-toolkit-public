@@ -285,7 +285,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
  *                      of out-of-frame gapping; buffer filled only if argument
  *                      not NULL. [out]
  */
-void GetPartialTranslation(const Uint1* nucl_seq,
+int GetPartialTranslation(const Uint1* nucl_seq,
         Int4 nucl_length, Int2 frame, Uint1* genetic_code,
         Uint1** translation_buffer_ptr, Int4* protein_length, 
         Uint1** mixed_seq_ptr);
