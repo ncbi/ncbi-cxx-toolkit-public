@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/03/06 22:08:40  ucko
+* Add code to calculate protein weights.
+*
 * Revision 1.15  2002/01/16 18:56:33  grichenk
 * Removed CRef<> argument from choice variant setter, updated sources to
 * use references instead of CRef<>s
@@ -977,78 +980,264 @@ string FormatArticleSource(const CCit_art& art)
 }
 
 
-struct SReference {
-    const CPub_equiv* pub;
-    string            location;
-    string            remark;
-    unsigned int      serial_number;
+class CReference : public CObject
+{
+public:
+    enum ECategory {
+        eCategory_unknown,
+        eCategory_published,
+        eCategory_unpublished,
+        eCategory_submission
+    };
 
-    SReference(const CPubdesc& desc, const CSeq_loc& loc,
-               const string& length_unit);
+    CReference(const CPubdesc& pub, const CSeq_loc& loc);
+
+    const CPubdesc& GetPub(void) const { return *m_Pub; }
+    string          GetLocString(const string& length_unit) const;
+    int             GetPmid(void) const { return m_Pmid; }
+    int             GetMuid(void) const { return m_Muid; }
+    ECategory       GetCategory(void) const { return m_Category; }
+    const string&   GetAuthors(void) const { return m_Authors; }
+
+    friend class CRefLess;
+
+private:
+    CConstRef<CPubdesc>  m_Pub;
+    CConstRef<CSeq_loc>  m_Loc;
+
+    // Everything that follows is technically redundant but very
+    // useful when sorting.
+    int                  m_Serial;
+    int                  m_Pmid;
+    int                  m_Muid;
+    CConstRef<CDate_std> m_Date;
+    ECategory            m_Category;
+    string               m_Authors;
 };
 
 
-SReference::SReference(const CPubdesc& desc, const CSeq_loc& loc,
-                       const string& length_unit)
+CReference::CReference(const CPubdesc& pub, const CSeq_loc& loc)
+    : m_Pub(&pub), m_Loc(&loc), m_Serial(0), m_Pmid(0), m_Muid(0),
+      m_Category(eCategory_unknown)
 {
-    pub = &desc.GetPub();
-
-    switch (desc.GetReftype()) {
-    case CPubdesc::eReftype_sites:
-        location = "sites";
-        break;
-    default:
-        switch (loc.Which()) {
-        case CSeq_loc::e_Mix:
+    // Extract IDs
+    iterate (CPub_equiv::Tdata, it, pub.GetPub().Get()) {
+        switch ((*it)->Which()) {
+        case CPub::e_Gen:
         {
-            location = length_unit + ' ';
-            iterate (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
-                if (it != loc.GetMix().Get().begin()) {
-                    location += "; ";
-                }
-                CSeq_loc::TRange range = (*it)->GetTotalRange();
-                location += (NStr::IntToString(range.GetFrom() + 1) + " to "
-                             + NStr::IntToString(range.GetTo() + 1));
+            const CCit_gen& gen = (*it)->GetGen();
+            if (gen.IsSetSerial_number()  &&  m_Serial == 0) {
+                m_Serial = gen.GetSerial_number();
+            } else if (gen.IsSetPmid()  &&  m_Pmid == 0) {
+                m_Serial = gen.GetPmid();
+            } else if (gen.IsSetMuid()  &&  m_Muid == 0) {
+                m_Serial = gen.GetMuid();
             }
             break;
         }
+
+        case CPub::e_Sub:
+            m_Category = eCategory_submission;
+            break;
+
+        case CPub::e_Medline:
+        {
+            const CMedline_entry& medline = (*it)->GetMedline();
+            if (medline.IsSetUid()  &&  !m_Muid) {
+                m_Muid = medline.GetUid();
+            }
+            if (medline.IsSetPmid()  &&  !m_Pmid) {
+                m_Pmid = medline.GetPmid().Get();
+            }
+            break;
+        }
+        
+        case CPub::e_Muid:
+            if (!m_Muid) {
+                m_Muid = (*it)->GetMuid();
+            }
+            break;
+
+        case CPub::e_Pmid:
+            if (!m_Pmid) {
+                m_Pmid = (*it)->GetPmid().Get();
+            }
+            break;
+
         default:
-            CSeq_loc::TRange range = loc.GetTotalRange();
-            location = (length_unit + ' '
-                        + NStr::IntToString(range.GetFrom() + 1) + " to "
-                        + NStr::IntToString(range.GetTo() + 1));
+            break;
+        }
+    }
+        
+
+    for (CTypeConstIterator<CDate_std> it = ConstBegin(pub);  it;  ++it) {
+        m_Date = &*it;
+        BREAK(it);
+    }
+
+    {{
+        list<string> author_list;
+        for (CTypeConstIterator<CAuth_list> it = ConstBegin(pub);  it;  ++it) {
+            switch (it->GetNames().Which()) {
+            case CAuth_list::C_Names::e_Ml:
+                author_list = it->GetNames().GetMl();
+                break;
+            case CAuth_list::C_Names::e_Str:
+                author_list = it->GetNames().GetStr();
+                break;
+            case CAuth_list::C_Names::e_Std:
+                for (CTypeConstIterator<CName_std> it2
+                         = ConstBegin(it->GetNames());
+                     it2;  ++it2) {
+                    string author = it2->GetLast();
+                    if (it2->IsSetInitials()) {
+                        author += ',' + it2->GetInitials();
+                    } else if (it2->IsSetFirst()) {
+                        author += ',';
+                        author += it2->GetFirst()[0];
+                        author += '.';
+                        if (it2->IsSetMiddle()) {
+                            author += it2->GetMiddle()[0];
+                            author += '.';
+                        }
+                    }
+                    author_list.push_back(author);
+                }
+                break;
+            default:
+                // skip, for lack of better information
+                break;
+            }
+        }
+            
+        SIZE_TYPE count = author_list.size();
+        iterate (list<string>, it, author_list) {
+            m_Authors += *it;
+            switch (--count) {
+            case 0:
+                break; // last entry
+            case 1:
+                m_Authors += " and "; // next-to-last
+                break;
+            default:
+                m_Authors += ", ";
+                break;
+            }
+        }
+    }}
+}
+
+
+string CReference::GetLocString(const string& length_unit) const
+{
+    switch (m_Pub->GetReftype()) {
+    case CPubdesc::eReftype_sites:
+        return "sites";
+        break;
+
+    default:
+        switch (m_Loc->Which()) {
+        case CSeq_loc::e_Mix:
+        {
+            string result = length_unit + ' ';
+            iterate (CSeq_loc_mix::Tdata, it, m_Loc->GetMix().Get()) {
+                if (it != m_Loc->GetMix().Get().begin()) {
+                    result += "; ";
+                }
+                CSeq_loc::TRange range = (*it)->GetTotalRange();
+                result += (NStr::IntToString(range.GetFrom() + 1) + " to "
+                             + NStr::IntToString(range.GetTo() + 1));
+            }
+            return result;
+        }
+
+        default:
+            CSeq_loc::TRange range = m_Loc->GetTotalRange();
+            return (length_unit + ' ' + NStr::IntToString(range.GetFrom() + 1)
+                    + " to " + NStr::IntToString(range.GetTo() + 1));
             break;
         }
         break;
-    }
-
-    if (desc.IsSetComment()) {
-        remark = desc.GetComment();
-    } else {
-        remark = kEmptyStr;
-    }
-
-    serial_number = kMax_UInt;
-    for (CTypeConstIterator<CCit_gen> it = ConstBegin(*pub);  it;  ++it) {
-        if (it->IsSetSerial_number()) {
-            serial_number = it->GetSerial_number();
-            BREAK(it);
-        }
     }
 }
 
 
-bool operator<(const SReference& ref1, const SReference& ref2) {
-    return ref1.serial_number < ref2.serial_number;
+class CRefLess
+  : public binary_function<CConstRef<CReference>, CConstRef<CReference>, bool>
+{
+public:
+    explicit CRefLess(bool serial_first) : m_SerialFirst(serial_first) {}
+    bool operator()(CConstRef<CReference> ref1, CConstRef<CReference> ref2);
+
+private:
+    bool m_SerialFirst;
+};
+
+
+// Modeled after SortReferences from the C toolkit.
+
+bool CRefLess::operator()(CConstRef<CReference> ref1,
+                          CConstRef<CReference> ref2)
+{
+    if (m_SerialFirst  &&  ref1->m_Serial != ref2->m_Serial) {
+        return ref1->m_Serial < ref2->m_Serial;
+    }
+
+    if (ref1->m_Category != ref2->m_Category) {
+        return ref1->m_Category < ref2->m_Category;
+    }
+
+    if (ref1->m_Date.NotEmpty()  &&  ref2->m_Date.NotEmpty()) {
+        switch (ref1->m_Date->Compare(*ref2->m_Date)) {
+        case CDate::eCompare_before: return true;
+        case CDate::eCompare_after:  return false;
+        default:                     break;
+        }
+    }
+
+    {{
+        bool used_uids;
+        if (ref1->m_Pmid  &&  ref2->m_Pmid) {
+            used_uids = true;
+            if (ref1->m_Pmid != ref2->m_Pmid) {
+                return ref1->m_Pmid < ref2->m_Pmid;
+            }
+        }
+        if (ref1->m_Muid  &&  ref2->m_Muid) {
+            used_uids = true;
+            if (ref1->m_Muid != ref2->m_Muid) {
+                return ref1->m_Muid < ref2->m_Muid;
+            }
+        }
+        if (used_uids
+            &&  ref1->m_Authors.empty() != ref2->m_Authors.empty()) {
+            return ref2->m_Authors.empty();
+        }
+    }}
+
+    {{
+        bool sites1 = (ref1->m_Pub->GetReftype() == CPubdesc::eReftype_sites);
+        bool sites2 = (ref2->m_Pub->GetReftype() == CPubdesc::eReftype_sites);
+        if (sites1 != sites2) {
+            return sites2;
+        }
+    }}
+
+    // No explore indices to compare.
+    
+    // ...
+
+    return false;
 }
 
 
 bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
 {
     const CBioseq& seq = m_Scope.GetBioseq(handle);
-    vector<SReference> v;
+    CSeq_loc everywhere;
+    vector< CConstRef<CReference> > v;
+
     {{
-        CSeq_loc everywhere;
         CRef<CSeq_id> id = seq.GetId().front();
         
         // everywhere.SetWhole(id);
@@ -1061,98 +1250,35 @@ bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
 
         for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Pub);
              it;  ++it) {
-            v.push_back(SReference(it->GetPub(), everywhere, m_LengthUnit));
+            v.push_back(new CReference(it->GetPub(), everywhere));
         }
 
         // get references from features
         for (CFeat_CI pub = m_Scope.BeginFeat(everywhere, CSeqFeatData::e_Pub);
              pub;  ++pub) {
-            v.push_back(SReference(pub->GetData().GetPub(), pub->GetLocation(),
-                                   m_LengthUnit));
+            v.push_back(new CReference(pub->GetData().GetPub(),
+                                       pub->GetLocation()));
         }
     }}
 
-    sort(v.begin(), v.end());
+    sort(v.begin(), v.end(), CRefLess(false));
 
-    unsigned int serial_number = 0;
-    iterate (vector<SReference>, ref, v) {
-        if (ref->serial_number < kMax_UInt) {
-            serial_number = ref->serial_number;
-        } else {
-            ++serial_number;
-        }
-        m_Stream << s_Pad("REFERENCE", sm_KeywordWidth) << serial_number
-                 << "  (" << ref->location << ')' << NcbiEndl;
+    // prune dups
+
+    sort(v.begin(), v.end(), CRefLess(true));
+
+    for (unsigned int n = 0;  n < v.size();  ++n) {
+        m_Stream << s_Pad("REFERENCE", sm_KeywordWidth) << n + 1 << "  ("
+                 << v[n]->GetLocString(m_LengthUnit) << ')' << NcbiEndl;
+        Wrap("  AUTHORS", v[n]->GetAuthors());
         
         {{
-            list<string> author_list;
-            for (CTypeConstIterator<CAuth_list> it = ConstBegin(*ref->pub);
-                 it;  ++it) {
-                switch (it->GetNames().Which()) {
-                case CAuth_list::C_Names::e_Ml:
-                    author_list = it->GetNames().GetMl();
-                    break;
-                case CAuth_list::C_Names::e_Str:
-                    author_list = it->GetNames().GetStr();
-                    break;
-                case CAuth_list::C_Names::e_Std:
-                    for (CTypeConstIterator<CName_std> it2
-                             = ConstBegin(it->GetNames());
-                         it2;  ++it2) {
-                        string author = it2->GetLast();
-                        if (it2->IsSetInitials()) {
-                            author += ',' + it2->GetInitials();
-                        } else if (it2->IsSetFirst()) {
-                            author += ',';
-                            author += it2->GetFirst()[0];
-                            author += '.';
-                            if (it2->IsSetMiddle()) {
-                                author += it2->GetMiddle()[0];
-                                author += '.';
-                            }
-                        }
-                        author_list.push_back(author);
-                    }
-                    break;
-                default:
-                    // skip, for lack of better information
-                    break;
-                }
-            }
-            
-            string authors;
-            SIZE_TYPE count = author_list.size();
-            iterate (list<string>, it, author_list) {
-                authors += *it;
-                switch (--count) {
-                case 0:
-                    break; // last entry
-                case 1:
-                    authors += " and "; // next-to-last
-                    break;
-                default:
-                    authors += ", ";
-                    break;
-                }
-            }
-            Wrap("  AUTHORS", authors);
-        }}
-        
-        {{
-            int pubmed = 0;
-            int medline = 0;
             bool seen_main = false;
-            iterate (CPub_equiv::Tdata, it, ref->pub->Get()) {
+            iterate (CPub_equiv::Tdata, it, v[n]->GetPub().GetPub().Get()) {
                 switch ((*it)->Which()) {
                 case CPub::e_Gen:
                 {
                     const CCit_gen& gen = (*it)->GetGen();
-                    if (gen.IsSetMuid()  &&  !medline) {
-                        medline = gen.GetMuid();
-                    }
-                    if (gen.IsSetPmid()  &&  !pubmed) {
-                        pubmed = gen.GetPmid().Get();
-                    }
                     if (seen_main) {
                         break;
                     }
@@ -1203,28 +1329,15 @@ bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
 
                 case CPub::e_Medline:
                 {
-                    const CMedline_entry& entry = (*it)->GetMedline();
-                    if (entry.IsSetUid()  &&  !medline) {
-                        medline = entry.GetUid();
-                    }
-                    if (entry.IsSetPmid()  &&  !pubmed) {
-                        pubmed = entry.GetPmid().Get();
-                    }
                     if (seen_main) {
                         break;
                     }
                     seen_main = true;
-                    const CCit_art& art = entry.GetCit();
+                    const CCit_art& art = (*it)->GetMedline().GetCit();
                     Wrap("  TITLE", s_StripDot(s_FormatTitle(art.GetTitle())));
                     Wrap("  JOURNAL", FormatArticleSource(art));
                     break;
                 }
-
-                case CPub::e_Muid:
-                    if (!medline) {
-                        medline = (*it)->GetMuid();
-                    }
-                    break;
 
                 case CPub::e_Article:
                 {
@@ -1341,28 +1454,26 @@ bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
                     break;
                 }
                     
-                case CPub::e_Pmid:
-                    if (!pubmed) {
-                        pubmed = (*it)->GetPmid().Get();
-                    }
-                    break;
-
                 default:
                     break;
                 }
             }
 
-            if (medline) {
-                m_Stream << s_Pad("  MEDLINE", sm_KeywordWidth) << medline
-                         << NcbiEndl;
+            if (v[n]->GetMuid()) {
+                m_Stream << s_Pad("  MEDLINE", sm_KeywordWidth)
+                         << v[n]->GetMuid() << NcbiEndl;
             }
-            if (pubmed) {
-                m_Stream << s_Pad("   PUBMED", sm_KeywordWidth) << pubmed
-                         << NcbiEndl;
+            if (v[n]->GetPmid()) {
+                m_Stream << s_Pad("   PUBMED", sm_KeywordWidth)
+                         << v[n]->GetPmid() << NcbiEndl;
             }
         }}
-        Wrap("  REMARK", ref->remark);
+        
+        if (v[n]->GetPub().IsSetComment()) {
+            Wrap("  REMARK", v[n]->GetPub().GetComment());
+        }
     }
+
     return true;
 }
 

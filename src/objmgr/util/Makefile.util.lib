@@ -3,5 +3,5 @@
 # Build library "xobjutil"
 ###############################
 
-SRC = genbank gbqual
+SRC = genbank gbqual weight
 LIB    = xobjutil
