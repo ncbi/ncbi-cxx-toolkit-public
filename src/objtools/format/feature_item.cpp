@@ -746,10 +746,13 @@ void CFeatureItem::x_AddRnaQuals
                     aa = s_ToIupacaa(aa);
                 }
                 const string& aa_str = s_AaName(aa);
-                // !!! ....
-                if ( trna.CanGetAnticodon()  &&  !aa_str.empty() ) {
-                    x_AddQual(eFQ_anticodon,
-                        new CFlatAnticodonQVal(trna.GetAnticodon(), aa_str));
+                if ( !aa_str.empty() ) {
+                    x_AddQual(eFQ_product, new CFlatStringQVal(aa_str));
+                    if ( trna.CanGetAnticodon()  &&  !aa_str.empty() ) {
+                        x_AddQual(eFQ_anticodon,
+                            new CFlatAnticodonQVal(trna.GetAnticodon(),
+                                                   aa_str.substr(5, NPOS)));
+                    }
                 }
                 if ( trna.IsSetCodon() ) {
                     x_AddQual(eFQ_trna_codons, new CFlatTrnaCodonsQVal(trna));
@@ -1096,6 +1099,23 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
 
     // the product id (transcript or protein) is set to the best id
     const CSeq_id* best = FindBestChoice(ids, CSeq_id::Score);
+    if ( best != 0 ) {
+        switch ( best->Which() ) {
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Gi:
+        case CSeq_id::e_Other:
+        case CSeq_id::e_General:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            // these are the only types we allow as product ids
+            break;
+        default:
+            best = 0;
+        }
+    }
     if ( best == 0 ) {
         return;
     }
@@ -1226,6 +1246,9 @@ void CFeatureItem::x_AddQuals(const CGene_ref& gene) const
     }
     if ( gene.IsSetDb() ) {
         x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(gene.GetDb()));
+    }
+    if ( gene.GetPseudo() ) {
+        x_AddQual(eFQ_pseudo, new CFlatBoolQVal(true));
     }
 }
 
@@ -2075,6 +2098,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/10 21:30:18  shomrat
+* + product tRNA qual; limit Seq-is types for product ids
+*
 * Revision 1.10  2004/03/10 16:22:18  shomrat
 * Fixed product-id qualifiers
 *
