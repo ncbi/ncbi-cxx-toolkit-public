@@ -414,12 +414,34 @@ void CBDB_RawFile::Sync()
     BDB_CHECK(ret, FileName().c_str());
 }
 
+
+// check BDB version 4.3 changed DB->stat signature
+
+#ifndef BDB_USE_NEW_STAT
+#if DB_VERSION_MAJOR >= 4 
+    #if DB_VERSION_MINOR >= 3
+        #define BDB_USE_NEW_STAT
+    #endif
+#endif
+#endif
+    
+
 unsigned CBDB_RawFile::CountRecs()
 {
     DB_BTREE_STAT* stp;
+#ifdef BDB_USE_NEW_STAT
+    CBDB_Transaction* trans = GetTransaction();
+    DB_TXN* txn = trans ? trans->GetTxn() : 0;
+    int ret = m_DB->stat(m_DB, txn, &stp, 0);
+#else
     int ret = m_DB->stat(m_DB, &stp, 0);
+#endif
+
     BDB_CHECK(ret, FileName().c_str());
     u_int32_t rc = stp->bt_ndata;
+
+    ::free(stp);
+
     return rc;
 }
 
@@ -633,6 +655,14 @@ void CBDB_File::Verify(const char* filename,
     m_DB->verify(m_DB, filename, database, backup, backup ? DB_SALVAGE: 0);
 }
 
+// v 4.3.xx introduced new error code DB_BUFFER_SMALL
+#if DB_VERSION_MAJOR >= 4 
+    #if DB_VERSION_MINOR >= 3
+        #define BDB_CHECK_BUFFER_SMALL
+    #endif
+#endif
+
+
 EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 {
     x_StartRead();
@@ -645,11 +675,22 @@ EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
                         m_DBT_Data,
                         flags);
                         
-    if (ret == DB_NOTFOUND)
+    if (ret == DB_NOTFOUND) {
         return eBDB_NotFound;
+    }
+    
     // Disable error reporting for custom m_DBT_data management
-    if (ret == ENOMEM && m_DataBufDisabled && m_DBT_Data->data == 0)
+
+# ifdef BDB_CHECK_BUFFER_SMALL
+    if ((ret == ENOMEM || ret == DB_BUFFER_SMALL) 
+           && m_DataBufDisabled && m_DBT_Data->data == 0) {
         ret = 0;
+    }
+# else
+    if (ret == ENOMEM && m_DataBufDisabled && m_DBT_Data->data == 0) {
+        ret = 0;
+    }
+# endif
     BDB_CHECK(ret, FileName().c_str());
 
     x_EndRead();
@@ -1019,6 +1060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/12/07 16:09:17  kuznets
+ * Compatibility changes (berkelye db v4.3)
+ *
  * Revision 1.45  2004/11/23 17:09:11  kuznets
  * Implemented BLOB update in cursor
  *
