@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/12/26 22:24:53  vasilche
+* Updated for new behaviour of CNcbiArgs.
+*
 * Revision 1.48  2000/12/12 17:57:06  vasilche
 * Avoid using of new C++ keywords ('or' in this case).
 *
@@ -199,9 +202,9 @@ void CDataTool::Init(void)
     d->AddKey("m", "moduleFile",
               "module file(s)",
               CArgDescriptions::eInputFile);
-    d->AddOptionalKey("M", "externalModuleFile",
-                      "external module file(s)",
-                      CArgDescriptions::eInputFile);
+    d->AddDefaultKey("M", "externalModuleFile",
+                     "external module file(s)",
+                     CArgDescriptions::eInputFile, NcbiEmptyString);
     d->AddFlag("i",
                "ignore unresolved symbols");
     d->AddOptionalKey("f", "moduleFile",
