@@ -82,7 +82,7 @@ user-defined restrictions imposed on the argument <i>values</i></a></li>
 arguments</a></li>
 
 <li>
-<a href="#ref_CArgDescriptions_Usage">Generating a <i>USAGE </i>message</a></li>
+<a href="#ref_CArgDescriptions_Usage">Generating a <i>usage </i>message</a></li>
 </ul>
 
 <li>
@@ -117,7 +117,7 @@ validate the values of arguments passed to the program against these description
 validate the number of positional arguments occurring in the command line</li>
 
 <li>
-generate a <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i> message
+generate a <i><a href="#ref_CArgDescriptions_Usage">usage</a></i> message
 based on the argument descriptions</li>
 
 <li>
@@ -130,18 +130,17 @@ description</li>
 <i>CArgs</i>,
 and <i>CArgValue</i> classes</h4>
 The <i><a href="#argdescr">CArgDescriptions</a></i> class provides an interface
-to describe the data type and attributes of expected command-line arguments.
-The descriptions, constraints and restrictions specified in the
-<i><a href="#argdescr">CArgDescriptions</a></i>
-object will be used to parse the arguments passed in the command-line,
-verifying their overall syntactic structure and matching their values against
-the stored descriptions. If the arguments are parsed successfully,&nbsp;
-a <i><a href="#cargs">CArgs</a></i> object can be generated using the <i>CreateArgs()
-</i>method.
+to describe the data type and attributes of&nbsp; command-line arguments.,
+<br>via a set of <i>Add</i> methods. The <i>CreateArgs()
+</i>method is
+used to read the command line arguments at runtime, verifying their overall
+syntactic structure and matching their values against the stored descriptions.
+If the arguments are parsed successfully,&nbsp; a new <i><a href="#cargs">CArgs</a></i>
+object is returned by <i>CreateArgs()</i>.
 <p>The resulting
 <i><a href="#cargs">CArgs</a></i> object will contain
-verified and ready-to-use argument values which are stored as <i><a href="#ref_CArgValue">CArgValues</a></i>.The
-value of&nbsp; a particular argument can be accessed using the argument's
+verified and ready-to-use argument values which are stored as <i><a href="#ref_CArgValue">CArgValues</a></i>.
+The value of&nbsp; a particular argument can be accessed using the argument's
 name (as it was specified in&nbsp; the <i><a href="#argdescr">CArgDescriptions</a></i>
 object),&nbsp; and the returned&nbsp; <i>CArgValue</i> object can then
 be safely type-cast to the right C++ type (<i>int</i>, <i>string</i>, <i>stream</i>,
@@ -180,11 +179,11 @@ arg_key_opt, arg_flag</font>}&nbsp; {<font color="#008080">arg_plain</font>}&nbs
 := -&lt;flag>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 -- (always optional)
 <br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_plain</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (dep. on the constraint
-policy)
+:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (depends on the
+constraint policy)
 <br>//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#008080">arg_extra</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (dep. on the constraint
-policy)
+:= &lt;value> | [value]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- (depends on the
+constraint policy)
 <br>//
 <br>//&nbsp;&nbsp;&nbsp; &lt;key> must be followed by &lt;value>
 <br>//&nbsp;&nbsp;&nbsp; &lt;flag> and &lt;key> are case-sensitive, and
@@ -214,25 +213,63 @@ class</h3>
 <h4>
 <a NAME="ref_CArgDescriptions_Attr"></a>Argument description attributes</h4>
 Methods <i>AddXxx() </i>are used to describe the following argument attributes:
-<ul>
-<li>
-<i>name</i> --</li>
+<dl>
+<dt>
+<i><font color="#0000B4">name</font></i></dt>
 
-<li>
-<i>synopsis</i> --</li>
+<dd>
+The string that will be used to identify the variable, as in: <i>CArgs[name].
+</i>For
+all tagged variables on the command line, name is also the key to be used
+there, as in: &lt;<i>-name valu</i>e>.</dd>
 
-<li>
-<i>comment</i> --</li>
+<dt>
+<i><font color="#0000B4">synopsis</font></i></dt>
 
-<li>
-<i>value type</i> --</li>
+<dd>
+The automatically generated <i><a href="#ref_CArgDescriptions_Usage">usage</a></i>
+messages include a description for each argument, with the format:</dd>
 
-<li>
-<i>value type dependent flags</i> --</li>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
-<li>
-<i>default value</i> --</li>
-</ul>
+<i>-name [synopsis] type [mandatory | optional]</i>
+<dt>
+<i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+comment</i></dt>
+
+<dt>
+<i><font color="#0000B4">comment</font></i></dt>
+
+<dd>
+Displayed in the <i><a href="#ref_CArgDescriptions_Usage">usage</a></i>
+message, as described above.</dd>
+
+<dt>
+<i><font color="#0000B4">value<b> </b>type</font></i></dt>
+
+<dd>
+One of the scalar values defined in the <i><a href="argdescr.html#ref_etype">EType</a></i>&nbsp;
+enumeration, defining the type category of the argument.</dd>
+
+<dt>
+<i><font color="#0000B4">flags</font></i></dt>
+
+<dd>
+The <i>lags </i>argument, which occurs optionally in all but the <i>AddFlag()</i>
+method, has meaning only when <i>EType is eInputFile</i> or
+<i>eOutputFile</i>,
+and constrains the mode in which the file should be opened.</dd>
+
+<dt>
+<i><font color="#0000B4">default</font></i></dt>
+
+<dd>
+A default value to be used if the argument is not included on the command
+line - only available for optional program arguments.</dd>
+
+<dd>
+</dd>
+</dl>
 
 <h4>
 <a NAME="ref_CArgDescriptions_Types"></a>Argument <i>types</i></h4>
@@ -319,12 +356,8 @@ named descriptions, but share a single "unnamed" description.</dd>
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddExtra">AddExtra(comment,
 type, flags)</a></i></dd>
 </dl>
-The <i>flags </i>argument, which occurs optionally in all but the <i>AddFlag()</i>
-method,&nbsp; has meaning only when <i>EType</i> is <i>eInputFile</i> or
-<i>eOutputFile</i>,
-and constrains the mode in which the file should be opened.
-<p>Any of the registered descriptions can be tested for existance and/or
-deleted using:
+Any of the registered descriptions can be tested for existance and/or deleted
+using:
 <p><font color="#008080">&nbsp;&nbsp; bool Exist(const string&amp; name)
 const;</font>
 <br><font color="#008080">&nbsp;&nbsp; void Delete(const string&amp; name);</font>
@@ -335,10 +368,11 @@ restrictions imposed on the input arguments</h4>
 Although each argument's input value is initially loaded as a simple character
 string, the argument's specified <i>type</i> entails a restricted set of
 possible values. For example, if the type is <i>eInteger</i>, then any
-fixed point numerical value is acceptable, but floating point and non-numerical
-values are not. The <i>EType</i> enumeration quantifies the allowed types
-and is defined as:
-<p>&nbsp;<font color="#008080">&nbsp; enum EType {</font>
+integer value is acceptable, but floating point and non-numerical values
+are not. The <i>EType</i> enumeration quantifies the allowed types and
+is defined as:
+<br><a NAME="ref_etype"></a>
+<br>&nbsp;<font color="#008080">&nbsp; enum EType {</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eString
 = 0,&nbsp;&nbsp;&nbsp; // an arbitrary string</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eAlnum,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -473,7 +507,7 @@ be used with an output operator. The output generated when an exception
 occurs might look something like:
 <pre><font color="#000080">Must specify mandatory argument:&nbsp; "-i &lt;InputFile>"&nbsp;
 SYNOPSIS
-&nbsp;&nbsp; ./myApplic -text -i inputFile [-l logFile]&nbsp;
+&nbsp;&nbsp; ./myApplic -text -i InputFile [-l LogFile]&nbsp;
 
 DESCRIPTION&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp; (program description)
@@ -483,14 +517,20 @@ OPERANDS&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp; Use text input format
 &nbsp;-i InputFile&nbsp;&nbsp;&nbsp; InpFile, mandatory
 &nbsp;&nbsp; Input data file
-&nbsp;[-l logFile]&nbsp;&nbsp;&nbsp; OutFile, optional
+&nbsp;[-l LogFile]&nbsp;&nbsp;&nbsp; OutFile, optional
 &nbsp;&nbsp; Log errors to &lt;logfile></font></pre>
 The usage message prints a synopsis of the program and its arguments, a
 description of the program, and a summary of each argument, as obtained
 from its description. In this example, the input file argument's description
 was registered as:
-<pre><font color="#008080">argDesc.AddKey("i", "InputFile", "Input data file", argDesc.eInputFile, 0);</font></pre>
-<a NAME="ref_CArgs"></a>
+<pre><font color="#008080">argDesc.AddKey("i", "InputFile", "Input data file", CArgDescriptions::eInputFile, 0);</font></pre>
+The information generated for each argument is desplayed in the format:
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+<i>-name [synopsis] type [mandatory | optional]</i>
+<br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+comment</i>
+<p><a NAME="ref_CArgs"></a>
 <h3>
 The <i>CArgs</i> class: A container class and interface for <i>CArgValue</i>
 objects</h3>
@@ -500,14 +540,16 @@ can be stored, and includes access routines in its public interface:
 {
 public:
 
-&nbsp;&nbsp;&nbsp; bool Exist(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // TRUE if name has a description
+&nbsp;&nbsp;&nbsp; bool Exist(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // true if name has a description
 &nbsp;&nbsp;&nbsp; unsigned GetNExtra(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // number of extra arguments
 
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](string&amp; name);&nbsp;&nbsp;&nbsp;&nbsp; // retrieve value by argument name
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](unsigned idx);&nbsp;&nbsp;&nbsp;&nbsp; // retrieve value by unnamed arg's index
 
-&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Print all agruments to "str"
-};</font></pre>
+&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // print all agruments to "str"
+&nbsp;&nbsp;&nbsp; bool IsProvided(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // true if argument was present</font></pre>
+
+<pre><font color="#008080">};</font></pre>
 One of the most important capabilities of this class is not shown here
 however, as it is a public method implemented by private data members of
 the <i>CArgs</i> class:
@@ -535,26 +577,38 @@ public:
 &nbsp;&nbsp;&nbsp; bool&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AsBoolean&nbsp;&nbsp;&nbsp;&nbsp; (void) const;
 &nbsp;&nbsp;&nbsp; CNcbiIstream&amp;&nbsp; AsInputFile&nbsp; (EFlags) const;
 &nbsp;&nbsp;&nbsp; CNcbiOstream&amp;&nbsp; AsOutputFile (EFlags) const;
-
-&nbsp;&nbsp;&nbsp; bool IsDefaultValue(void) const;
 };</font></pre>
-
+Each of these <i>AsXxx()</i> methods will access the string storing the
+requested variable's value, and attempt
+<br>to convert that string to the specified type, using built-in functions
+such as <i>atoi() </i>or<i> atof()</i>.&nbsp; The last two methods
+<br>assume the string is a filename, and attempt to open a file of that
+name, using <i>EFlags</i> to determine the mode it is to be
+<br>opened with. The <i>EFlags</i> enumeration is defined in the <i>CArgValue</i>
+class as:
+<p><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp; enum EFlags {</font></tt>
+<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+fUnchanged = 0x1, // do not change open mode</font></tt>
+<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+fToText&nbsp;&nbsp;&nbsp; = 0x2, // change file open mode to text</font></tt>
+<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+fToBinary&nbsp; = 0x4&nbsp; // change file open mode to binary</font></tt>
+<br><tt><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp; };</font></tt>
+<p>If the conversion fails, an exception will be thrown with an appropriate
+error message. If desired, this exception can be caught and diisplayed
+along with a <i>usage</i> message.
 <h1>
 <a NAME="ref_CodeExamples"></a></h1>
 
-<h1>
-Code examples</h1>
+<h3>
+Code examples</h3>
 A simple application program, <i><a href="applic_cpp.html">applic.cpp</a></i>
 demonstrates the usage of these classes for argument processing. See also
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
 and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
-<p>
-<a href="applic.html"> <i> previous </i> </a> 
-&nbsp;&nbsp;&nbsp; 
-<a href="../index.html"><i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="diag.html"> <i> next </i> </a>
+<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i>
+<i><a href="diag.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
