@@ -226,9 +226,9 @@ private:
     // format
     void x_FormatQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
-    void x_FormatQual(EFeatureQualifier slot, const string& name,
+    void x_FormatQual(EFeatureQualifier slot, const char* name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatNoteQual(EFeatureQualifier slot, const string& name, 
+    void x_FormatNoteQual(EFeatureQualifier slot, const char* name, 
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
 
     // data
@@ -281,7 +281,7 @@ private:
     void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(ESourceQualifier slot, const string& name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatNoteQual(ESourceQualifier slot, const string& name,
+    void x_FormatNoteQual(ESourceQualifier slot, const char* name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const {
         x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote);
     }
@@ -302,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/04/05 14:40:54  vasilche
+* Use const char* for qualifier names.
+*
 * Revision 1.24  2005/03/28 17:14:50  shomrat
 * Chenged GetQual to return lower bound instead of equal range
 *

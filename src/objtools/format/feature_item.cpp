@@ -2235,7 +2235,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
 void CFeatureItem::x_FormatQual
 (EFeatureQualifier slot,
- const string& name,
+ const char* name,
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
@@ -2254,7 +2254,7 @@ void CFeatureItem::x_FormatQual
 
 void CFeatureItem::x_FormatNoteQual
 (EFeatureQualifier slot,
- const string& name, 
+ const char* name, 
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
@@ -3563,6 +3563,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2005/04/05 14:40:59  vasilche
+* Use const char* for qualifier names.
+*
 * Revision 1.50  2005/03/29 18:58:15  shomrat
 * Added old_locus_tag qualifier
 *
