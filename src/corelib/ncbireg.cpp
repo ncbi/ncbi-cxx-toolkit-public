@@ -789,8 +789,12 @@ void CNcbiRegistry::EnumerateEntries(const string& section,
 
     entries->clear();
 
+    string x_section = NStr::TruncateSpaces(section);
+    if (x_section.empty())
+        return;
+
     // find section
-    TRegistry::const_iterator find_section = m_Registry.find(section);
+    TRegistry::const_iterator find_section = m_Registry.find(x_section);
     if (find_section == m_Registry.end())
         return;
 
@@ -875,6 +879,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/07/28 18:59:53  kuznets
+ * Fixed CNcbiRegistry::EnumerateEntries (added section name trim)
+ *
  * Revision 1.40  2004/07/19 20:35:16  gouriano
  * Allow forward slash in section and entry names
  *
