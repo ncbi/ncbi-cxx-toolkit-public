@@ -34,14 +34,14 @@
 */
 
 
-#include <objects/objmgr/seq_id_handle.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
+#include <objects/objmgr/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CTSE_Info;
 class CDataSource;
 
 
@@ -53,7 +53,7 @@ class CDataSource;
 //
 
 
-class CSeqMatch_Info {
+class NCBI_XOBJMGR_EXPORT CSeqMatch_Info {
 public:
     CSeqMatch_Info(void);
     CSeqMatch_Info(const CSeq_id_Handle& h, CTSE_Info& tse, CDataSource& ds);
@@ -78,6 +78,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/26 20:41:22  dicuccio
+* Added Win32 export specifier.  Converted predeclaration (CTSE_Info) into
+* #include for tse_info.hpp.
+*
 * Revision 1.6  2002/12/26 16:39:22  vasilche
 * Object manager class CSeqMap rewritten.
 *
