@@ -18,6 +18,7 @@ DEP = \
 
 OBJ  = corelib.o
 LIBS = -lxncbi
+LIBS_DEP = ../src/libxncbi.a
 EXE  = corelib
 
 
@@ -38,7 +39,7 @@ CXX       = /netopt/SUNWspro6/bin/CC
 CPPFLAGS  = -I../include -I$(I_INCLUDE) -D_DEBUG
 # -DNCBI_USE_NEW_IOSTREAM
 CXXFLAGS  = +w2 -g
-LFLAGS    = -L../src -L$(I_LIB)
+LFLAGS    = -xildoff -L../src -L$(I_LIB)
 
 .SUFFIXES:
 .SUFFIXES:  .o .c .h .hpp .cpp
@@ -51,7 +52,7 @@ LFLAGS    = -L../src -L$(I_LIB)
 #################################
 
 
-$(EXE): $(LIB) $(OBJ)
+$(EXE): $(LIBS_DEP) $(OBJ)
 	$(CXX) $(OBJ) -o $(EXE) $(CXXFLAGS) $(LFLAGS) $(LIBS)
 
 
