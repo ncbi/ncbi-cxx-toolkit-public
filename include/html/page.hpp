@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/08/14 16:57:14  ivanov
+* Added support for work HTML templates with JavaScript popup menu.
+* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
+*
 * Revision 1.20  1999/10/28 13:40:31  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -129,8 +133,8 @@ public:
     virtual CNCBINode* MapTag(const string& name);
 
     // add tag resolver
-    void AddTagMap(const string& name, BaseTagMapper* mapper);
-    void AddTagMap(const string& name, CNCBINode* node);
+    virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
+    virtual void AddTagMap(const string& name, CNCBINode*     node);
 
 protected:
     CCgiApplication* m_CgiApplication;  // pointer to runtime information
@@ -151,21 +155,23 @@ class CHTMLPage : public CHTMLBasicPage
     typedef CHTMLBasicPage CParent;
 
 public:
+    // style flags
+    enum EFlags {
+        fNoTITLE      = 0x1,
+        fNoVIEW       = 0x2,
+        fNoTEMPLATE   = 0x4,
+        fUsePopupMenu = 0x8
+    };
+    typedef int TFlags;  // binary AND of "EFlags"
+
     // 'tors
     CHTMLPage(const string& title         = NcbiEmptyString,
               const string& template_file = NcbiEmptyString);
     CHTMLPage(CCgiApplication* app,
-              int              style         = 0,  // see "enum flags" beneath
+              TFlags           style         = 0,
               const string&    title         = NcbiEmptyString,
               const string&    template_file = NcbiEmptyString);
     static CHTMLBasicPage* New(void);
-
-    // style flags
-    enum flags {
-        kNoTITLE    = 0x1,
-        kNoVIEW     = 0x2,
-        kNoTEMPLATE = 0x4
-    };
 
     // create the individual sub pages
     virtual void CreateSubNodes(void);
@@ -181,15 +187,73 @@ public:
     void SetTitle       (const string& title);
     void SetTemplateFile(const string& template_file);
 
+    // Enable using popup menus.
+    // Set (if "menu_lib_url" is defined) URL of the popup menu library;
+    // if "menu_lib_url" is not defined, then use default URL.
+    // In most cases (except if popup menus are defined only in the page
+    // template or printed by non-CNCBINode tag mapper), you can omit this
+    // function call.
+    void EnablePopupMenu(const string& menu_script_url = kEmptyStr);
+
+    virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
+    virtual void AddTagMap(const string& name, CNCBINode* node);
+
 private:
     void Init(void);
 
     string m_Title;
     string m_TemplateFile;
+    string m_PopupMenuLibUrl;
 };
 
-#include <html/page.inl>
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////
+//  CHTMLBasicPage::
+//
+
+
+inline CCgiApplication* CHTMLBasicPage::GetApplication(void) const
+{
+    return m_CgiApplication;
+}
+
+inline int CHTMLBasicPage::GetStyle(void) const
+{
+    return m_Style;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CHTMLPage::
+//
+
+
+inline CHTMLBasicPage* CHTMLPage::New(void)
+{
+    return new CHTMLPage;
+}
+
+inline void CHTMLPage::SetTitle(const string& title)
+{
+    m_Title = title;
+}
+
+inline void CHTMLPage::SetTemplateFile(const string& template_file)
+{
+    m_TemplateFile = template_file;
+}
+
 
 END_NCBI_SCOPE
 
-#endif
+#endif  /* PAGE__HPP */

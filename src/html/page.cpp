@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/08/14 16:56:42  ivanov
+* Added support for work HTML templates with JavaScript popup menu.
+* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
+*
 * Revision 1.24  2000/03/31 17:08:43  kans
 * cast ifstr.rdstate() to int
 *
@@ -97,6 +101,7 @@
 
 #include <html/components.hpp>
 #include <html/page.hpp>
+#include <html/jsmenu.hpp>
 #include <corelib/ncbiutil.hpp>
 
 #include <errno.h>
@@ -149,6 +154,11 @@ CNCBINode* CHTMLBasicPage::MapTag(const string& name)
     return CParent::MapTag(name);
 }
 
+void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode* node)
+{
+    AddTagMap(name, CreateTagMapper(node));
+}
+
 void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 {
     delete m_TagMap[name];
@@ -163,7 +173,8 @@ template struct TagMapper<CHTMLPage>;
 
 CHTMLPage::CHTMLPage(const string& title, const string& template_file)
     : m_Title(title),
-      m_TemplateFile(template_file)
+      m_TemplateFile(template_file),
+      m_PopupMenuLibUrl(kEmptyStr)
 {
     Init();
 }
@@ -203,11 +214,10 @@ CNCBINode* CHTMLPage::CreateTemplate(void)
 		ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror( errno ) );
 	  }
 	  
-	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(ifstr.rdstate()) );	  
+	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " 
+                << int(ifstr.rdstate()) );	  
 	  
-	  // //
-
-        THROW1_TRACE(runtime_error, "\
+      THROW1_TRACE(runtime_error, "\
 CHTMLPage::CreateTemplate():  failed to open template file " + m_TemplateFile);
     }
 
@@ -220,13 +230,38 @@ CHTMLPage::CreateTemplate():  failed to open template file " + m_TemplateFile);
         THROW1_TRACE(runtime_error, "\
 CHTMLPage::CreateTemplate():  error reading template file" + m_TemplateFile);
     }
+
+    // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
+    if ( GetStyle() & fUsePopupMenu ) {
+        string strl = str;
+        NStr::ToLower(strl);
+        // Search </HEAD> tag
+        SIZE_TYPE pos = strl.find("/head");
+        if ( pos == NPOS) goto done;
+        pos = strl.rfind("<", pos);
+        if ( pos == NPOS) goto done;
+        // Insert code for load popup menu library
+        string script = CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl);
+        SIZE_TYPE length = script.length();
+        str.insert(pos, script);
+        
+        // Search </BODY> tag
+        pos = strl.rfind("/body");
+        if ( pos == NPOS) goto done;
+        pos = strl.rfind("<", pos);
+        if ( pos == NPOS) goto done;
+        // Insert code for init popup menus
+        script = CHTMLPopupMenu::GetCodeBody();
+        str.insert(pos+length, script);
+    }
+done:
     return new CHTMLText(str);
 }
 
 
 CNCBINode* CHTMLPage::CreateTitle(void) 
 {
-    if ( GetStyle() & kNoTITLE )
+    if ( GetStyle() & fNoTITLE )
         return 0;
 
     return new CHTMLText(m_Title);
@@ -236,5 +271,55 @@ CNCBINode* CHTMLPage::CreateView(void)
 {
     return 0;
 }
+
+
+void CHTMLPage::EnablePopupMenu(const string& menu_script_url)
+{
+    SetStyle(GetStyle() | fUsePopupMenu);
+    if ( !menu_script_url.empty() ) {
+        m_PopupMenuLibUrl = menu_script_url;
+    }
+}
+
+
+static bool s_CheckUsePopupMenus(CNCBINode* node)
+{
+    if ( !node  ||  !node->HaveChildren() ) {
+        return false;
+    }
+    non_const_iterate ( CNCBINode::TChildren, i, node->Children() ) {
+        CNCBINode* cnode = node->Node(i);
+        if ( dynamic_cast<CHTMLPopupMenu*>(cnode) ) {
+            return true;
+        }
+        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CHTMLPage::AddTagMap(const string& name, CNCBINode* node)
+{
+    CParent::AddTagMap(name, node);
+
+    // If already defined usage popup menus
+    if ( GetStyle() & fUsePopupMenu ) {
+        return;
+    }
+
+    // If "node" contains popup menu, then automaticly enable it
+    if ( s_CheckUsePopupMenus(node) ) {
+        EnablePopupMenu();
+    }
+}
+
+
+void CHTMLPage::AddTagMap(const string& name, BaseTagMapper* mapper)
+{
+    CParent::AddTagMap(name,mapper);
+}
+
 
 END_NCBI_SCOPE
