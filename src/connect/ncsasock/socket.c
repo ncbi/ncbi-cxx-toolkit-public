@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.4  1995/06/02 16:29:03  kans
-* *** empty log message ***
+* Revision 4.0  1995/07/26 13:56:09  ostell
+* force revision to 4.0
 *
+ * Revision 1.4  1995/06/02  16:29:03  kans
+ * *** empty log message ***
+ *
  * Revision 1.3  1995/05/23  15:31:16  kans
  * new CodeWarrior 6 errors and warnings fixed
  *

@@ -22,9 +22,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:56:41  epstein
-* add RCS log revision history
+* Revision 4.0  1995/07/26 13:56:09  ostell
+* force revision to 4.0
 *
+ * Revision 1.2  1995/05/17  17:56:41  epstein
+ * add RCS log revision history
+ *
  */
 
 #ifndef	_MACHTYPES_H_

@@ -21,7 +21,10 @@
  *
  * RCS Modification History:
  * $Log$
- * Revision 1.4  1995/05/18 08:23:22  epstein
+ * Revision 4.0  1995/07/26 13:56:09  ostell
+ * force revision to 4.0
+ *
+ * Revision 1.4  1995/05/18  08:23:22  epstein
  * add RCS modification history (after PowerPC port)
  *
  */
