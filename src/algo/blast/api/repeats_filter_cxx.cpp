@@ -62,34 +62,6 @@ static char const rcsid[] = "$Id$";
  * @{
  */
 
-/** Parses a filter string option and retrieves part of it dealing with 
- * repeats filtering.
- * @param filter_string Filter string option [in]
- * @return Filter string corresponding to repeats filtering only.
- */
-char* GetRepeatsFilterOption(const char* filter_string)
-{
-    if (!filter_string)
-        return NULL;
-
-    char* repeat_filter_string = NULL;
-    const char* ptr = strchr(filter_string, 'R');
-    
-    if (ptr) {
-        const char* end = strstr(ptr, ";");
-        ptrdiff_t length;
-        if (end)
-            length = end - ptr;
-        else
-            length = strlen(ptr);
-        repeat_filter_string = (char*) malloc(length+1);
-        strncpy(repeat_filter_string, ptr, length);
-        repeat_filter_string[length] = NULLB;
-    }
-    
-    return repeat_filter_string;
-}
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(blast);
@@ -115,8 +87,6 @@ s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
    return seqloc;
 }
 
-#define MASK_LINK_VALUE 5
-
 /** Fills the mask locations in the query SSeqLoc structures, as if it was a 
  * lower case mask, given the results of a BLAST search against a database of 
  * repeats.
@@ -127,24 +97,21 @@ s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
 static void
 s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
 {
-    BlastSeqLoc* loc_list = NULL, *ordered_loc_list = NULL;
-    BlastSeqLoc* last_loc = NULL;
-    Int4 hit_index, hsp_index;
-    BlastHSPList* hsp_list;
-    BlastHSP* hsp;
-    Int4 query_index;
-    Int4 query_length;
-    BlastHitList* hit_list;
+    ASSERT(results->num_queries == (Int4)query.size());
     
-    for (query_index = 0; query_index < (Int4)query.size(); ++query_index) {
-        hit_list = results->hitlist_array[query_index];
+    for (Int4 query_index = 0; query_index < (Int4)query.size(); ++query_index) {
+        BlastSeqLoc* loc_list = NULL, *ordered_loc_list = NULL;
+        BlastSeqLoc* last_loc = NULL;
+        BlastHitList* hit_list = results->hitlist_array[query_index];
        
         if (!hit_list) {
             continue;
         }
-        query_length = sequence::GetLength(*query[query_index].seqloc, 
-                                           query[query_index].scope);
- 
+        Int4 query_length = sequence::GetLength(*query[query_index].seqloc, 
+                                                query[query_index].scope);
+        Int4 query_start = sequence::GetStart(*query[query_index].seqloc,
+                                              query[query_index].scope);
+        
         // Get the previous mask locations
         loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
         // Find the last location in the list
@@ -152,15 +119,17 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
              last_loc = last_loc->next);
         
         /* Find all HSP intervals in query */
-        for (hit_index = 0; hit_index < hit_list->hsplist_count; ++hit_index) {
-            Int4 left, right;
-            hsp_list = hit_list->hsplist_array[hit_index];
+        for (Int4 hit_index = 0; hit_index < hit_list->hsplist_count; 
+             ++hit_index) {
+            BlastHSPList* hsp_list = hit_list->hsplist_array[hit_index];
             /* HSP lists cannot be NULL! */
             ASSERT(hsp_list);
-            for (hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
-                hsp = hsp_list->hsp_array[hsp_index];
+            for (Int4 hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
+                BlastHSP* hsp = hsp_list->hsp_array[hsp_index];
                 /* HSP cannot be NULL! */
                 ASSERT(hsp);
+
+                Int4 left, right;
                 if (hsp->query.frame == hsp->subject.frame) {
                     left = hsp->query.offset;
                     right = hsp->query.end - 1;
@@ -168,6 +137,12 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
                     left = query_length - hsp->query.end;
                     right = query_length - hsp->query.offset - 1;
                 }
+
+                // Shift the coordinates so they correspond to the full 
+                // sequence.
+                left += query_start;
+                right += query_start;
+
                 // If this is the first mask, create a new BlastSeqLoc, 
                 // otherwise append to the end of the list.
                 if (!last_loc)
@@ -177,7 +152,8 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
             }
         }
         // Make the intervals unique
-        CombineMaskLocations(loc_list, &ordered_loc_list, MASK_LINK_VALUE);
+        CombineMaskLocations(loc_list, &ordered_loc_list, 
+                             REPEAT_MASK_LINK_VALUE);
 
         // Free the list of locations that's no longer needed.
         loc_list = BlastSeqLocFree(loc_list);
@@ -194,45 +170,36 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
     }
 }
 
-/** Parses repeat filtering option string and retrieves the repeats database 
- * name.
- * @param repeat_options Repeat filtering option string [in]
- * @param dbname Repeats database name [out]
- */
-static void ParseRepeatOptions(char* repeat_options, char** dbname)
+/// Sets the default options for a search for repeats.
+/// @param opts Nucleotide BLAST options handle [in] [out]
+static void 
+s_SetRepeatsSearchDefaults(CBlastNucleotideOptionsHandle& opts)
 {
-    if (!dbname)
-        return;
-    if (!repeat_options || (*repeat_options != 'R')) {
-        *dbname = NULL;
-        return;
-    }
-    
-    char* ptr = strstr(repeat_options, "-d");
-    if (!ptr) {
-        *dbname = strdup("humrep");
-    } else {
-        ptr += 2;
-        while (*ptr == ' ' || *ptr == '\t')
-            ++ptr;
-        *dbname = strdup(ptr);
-    }
-
-
+    opts.SetTraditionalBlastnDefaults();
+    opts.SetMismatchPenalty(REPEATS_SEARCH_PENALTY);
+    opts.SetEvalueThreshold(REPEATS_SEARCH_EVALUE);
+    opts.SetGapXDropoffFinal(REPEATS_SEARCH_XDROP_FINAL);
+    opts.SetXDropoff(REPEATS_SEARCH_XDROP_UNGAPPED);
+    opts.SetGapOpeningCost(REPEATS_SEARCH_GAP_OPEN);
+    opts.SetGapExtensionCost(REPEATS_SEARCH_GAP_EXTEND);
+    opts.SetFilterString(REPEATS_SEARCH_FILTER_STRING);
+    opts.SetWordSize(REPEATS_SEARCH_WORD_SIZE);
 }
 
-/** Given a repeats filtering option, performs a BLAST search against a repeats 
- * database and fills repeats locations into the query SSeqLoc structures.
- * @param query Vector of query sequence location structures [in] [out]
- * @param repeats_filter_string Repeats filtering option string [in]
- */
 void
-FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
+Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_string)
 {
     char* dbname = NULL;
     const Boolean is_prot = FALSE;
+    char* repeats_filter_string = NULL;
 
-    ParseRepeatOptions(repeats_filter_string, &dbname);
+    /* If filter string does not contain a repeat option, just return with 
+       successful status. */
+    if (!(repeats_filter_string = Blast_GetRepeatsFilterOption(filter_string)))
+        return;
+
+    Blast_ParseRepeatOptions(repeats_filter_string, &dbname);
+    sfree(repeats_filter_string);
 
     BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(dbname, is_prot);
     char* error_str = BlastSeqSrcGetInitError(seq_src);
@@ -242,14 +209,8 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
         NCBI_THROW(CBlastException, eSeqSrc, msg);
     }
     CBlastNucleotideOptionsHandle opts;
-    opts.SetTraditionalBlastnDefaults();
-    opts.SetMismatchPenalty(-1);
-    opts.SetEvalueThreshold(0.1);
-    opts.SetGapXDropoffFinal(90);
-    opts.SetXDropoff(40);
-    opts.SetGapOpeningCost(2);
-    opts.SetGapExtensionCost(1);
-    opts.SetFilterString("F");
+
+    s_SetRepeatsSearchDefaults(opts);
 
     // Remove any lower case masks, because they should not be used for the 
     // repeat locations search.
@@ -283,6 +244,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.15  2005/02/08 20:35:37  dondosha
+ *  Moved auxiliary functions and definitions for repeats filtering from C++ api into core; renamed FindRepeatFilterLoc into Blast_FindRepeatFilterLoc
+ *
  *  Revision 1.14  2005/01/26 18:38:40  camacho
  *  Fix compiler error
  *

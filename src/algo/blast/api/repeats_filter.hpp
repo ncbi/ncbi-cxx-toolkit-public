@@ -50,26 +50,16 @@ USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/// Parses out thre repeats filtering option from a filter string option.
-NCBI_XBLAST_EXPORT
-char* GetRepeatsFilterOption(const char* filter_string);
-
-#ifdef __cplusplus
-}
-#endif
-
 /** Finds repeats locations for a given set of sequences. The locations are
- * saved in the respective fields of the SSeqLoc structures.
+ * saved in the respective fields of the SSeqLoc structures. If previous masks
+ * exist, they are combined with the new masks.
  * @param query_loc Vector of sequence locations. [in] [out]
- * @param repeats_filter_string Repeats filtering options. [in]
+ * @param filter_string Filtering option for a BLAST search, e.g. 
+ *                      "m L;R -d rodents.lib" [in]
  */
 NCBI_XBLAST_EXPORT
 void
-FindRepeatFilterLoc(TSeqLocVector& query_loc, char* repeats_filter_sting);
+Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, const char* filter_sting);
 
 /* @} */
 
@@ -77,6 +67,9 @@ FindRepeatFilterLoc(TSeqLocVector& query_loc, char* repeats_filter_sting);
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/08 20:34:49  dondosha
+* Moved auxiliary functions and definitions for repeats filtering from C++ api into core; renamed FindRepeatFilterLoc into Blast_FindRepeatFilterLoc
+*
 * Revision 1.3  2004/08/11 11:59:07  ivanov
 * Added export specifier NCBI_XBLAST_EXPORT
 *
