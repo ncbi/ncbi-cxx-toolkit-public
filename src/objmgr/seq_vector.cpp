@@ -313,7 +313,7 @@ void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
     TCoding needCoding = GetCoding();
     TCache_I dst = m_Cache + (pos - m_CachePos);
     for ( CSeqMap::const_iterator seg =
-              m_SeqMap->ResolvedRangeIterator(m_Scope, pos, end-pos, m_Strand);
+              m_SeqMap->ResolvedRangeIterator(m_Scope, m_Strand, pos, end-pos);
           seg; ++seg ) {
         _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
         TSeqPos count = seg.GetLength();
@@ -609,6 +609,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/01/28 17:17:06  vasilche
+* Fixed bug processing minus strands.
+* Used CSeqMap::ResolvedRangeIterator with strand coordinate translation.
+*
 * Revision 1.40  2003/01/23 19:33:57  vasilche
 * Commented out obsolete methods.
 * Use strand argument of CSeqVector instead of creation reversed seqmap.
