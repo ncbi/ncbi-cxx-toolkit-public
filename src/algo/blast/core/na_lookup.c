@@ -39,6 +39,7 @@ Contents: Functions for accessing the lookup tables for nucleotide BLAST
 #include <algo/blast/core/aa_lookup.h>
 #include <algo/blast/core/na_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
+#include <algo/blast/core/phi_lookup.h>
 
 static char const rcsid[] = "$Id$";
 
@@ -420,6 +421,10 @@ LookupTableWrap* BlastLookupTableDestruct(LookupTableWrap* lookup)
    if (lookup->lut_type == MB_LOOKUP_TABLE) {
       lookup->lut = (void*) 
          MBLookupTableDestruct((MBLookupTable*)lookup->lut);
+   } else if (lookup->lut_type == PHI_AA_LOOKUP || 
+              lookup->lut_type == PHI_NA_LOOKUP) {
+      lookup->lut = (void*)
+         PHILookupTableDestruct((PHILookupTable*)lookup->lut);
    } else {
       lookup->lut = (void*) 
          LookupTableDestruct((LookupTable*)lookup->lut);
