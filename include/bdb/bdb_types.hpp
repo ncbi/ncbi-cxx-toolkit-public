@@ -1326,6 +1326,9 @@ public:
     size_t GetDBT_Size() const { return m_DBT_Size; }
 
     ~CBDB_BufferManager();
+	
+	/// Check if any field is NULL
+	bool HasNull() const;
 
 protected:
     CBDB_BufferManager();
@@ -1911,6 +1914,18 @@ inline void CBDB_BufferManager::SetAllNull()
 }
 
 
+inline bool CBDB_BufferManager::HasNull() const
+{
+	if (IsNullable()) {
+    	for (size_t i = 0;  i < m_NullSetSize;  ++i) {
+        	if (m_Buffer[i])
+				return true;
+    	}
+	}
+	return false;
+}
+
+
 inline bool CBDB_BufferManager::IsNull(unsigned field_idx) const
 {
     if ( !IsNullable() )
@@ -2016,6 +2031,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/06/28 14:33:39  kuznets
+ * +CBDB_BufferManager::HasNull()
+ *
  * Revision 1.42  2004/06/28 12:15:08  kuznets
  * Added uint1 to the types class factory
  *
