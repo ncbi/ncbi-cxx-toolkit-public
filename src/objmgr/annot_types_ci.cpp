@@ -336,8 +336,10 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
         CTSE_Info& tse_info = const_cast<CTSE_Info&>(tse_it->GetObject());
         CAnnot_CI annot_it(tse_info, loc, m_Selector, m_OverlapType);
         for ( ; annot_it; ++annot_it ) {
-            if (bool(m_SingleEntry)  &&  (m_SingleEntry != &annot_it->GetSeq_entry()))
+            if (bool(m_SingleEntry)  &&
+                (m_SingleEntry != &annot_it->GetSeq_entry())) {
                 continue;
+            }
             m_AnnotSet.insert(CRef<CAnnotObject>(&(*annot_it)));
         }
     }
@@ -600,6 +602,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/12/19 20:15:28  grichenk
+* Fixed code formatting
+*
 * Revision 1.28  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *
