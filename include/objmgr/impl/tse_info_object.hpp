@@ -113,12 +113,14 @@ public:
         fNeedUpdate_annot             = 1<<1, //< annot of this object
         fNeedUpdate_seq_data          = 1<<2, //< seq-data of this object
         fNeedUpdate_core              = 1<<3, //< core
+        fNeedUpdate_assembly          = 1<<4, //< assembly of this object
 
         /// specific fields of children
         fNeedUpdate_children_descr    = fNeedUpdate_descr   <<kNeedUpdate_bits,
         fNeedUpdate_children_annot    = fNeedUpdate_annot   <<kNeedUpdate_bits,
         fNeedUpdate_children_seq_data = fNeedUpdate_seq_data<<kNeedUpdate_bits,
-        fNeedUpdate_children_core     = fNeedUpdate_core    <<kNeedUpdate_bits
+        fNeedUpdate_children_core     = fNeedUpdate_core    <<kNeedUpdate_bits,
+        fNeedUpdate_children_assembly = fNeedUpdate_assembly<<kNeedUpdate_bits
     };
     typedef int TNeedUpdateFlags;
     bool x_NeedUpdate(ENeedUpdate flag) const;
@@ -196,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/10/18 13:57:43  vasilche
+ * Added support for split history assembly.
+ *
  * Revision 1.5  2004/10/07 14:03:32  vasilche
  * Use shared among TSEs CTSE_Split_Info.
  * Use typedefs and methods for TSE and DataSource locking.
