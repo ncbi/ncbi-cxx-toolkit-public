@@ -48,7 +48,12 @@ CSeq_annot_CI::CSeq_annot_CI(CScope& scope,
         throw runtime_error(
             "CSeq_annot_CI -- can not find seq-entry in the scope");
     }
-    m_Level.m_Child = m_Level.m_Seq_entry->m_Children.begin();
+    if (m_Flags == eSearch_recursive) {
+        m_Level.m_Child = m_Level.m_Seq_entry->m_Children.begin();
+    }
+    else {
+        m_Level.m_Child = m_Level.m_Seq_entry->m_Children.end();
+    }
     m_Annot = m_Level.m_Seq_entry->m_Annots.begin();
     while ( !x_Found() ) {
         x_Next();
@@ -110,6 +115,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/07/25 21:41:30  grichenk
+* Implemented non-recursive mode for CSeq_annot_CI,
+* fixed friend declaration in CSeq_entry_Info.
+*
 * Revision 1.1  2003/07/25 15:23:42  grichenk
 * Initial revision
 *

@@ -738,7 +738,17 @@ int CDemoApp::Run(void)
                  ai; ++ai) {
                 ++count;
             }
-            NcbiCout << "Seq_annot count: " << count << NcbiEndl;
+            NcbiCout << "Seq_annot count (recursive): " << count << NcbiEndl;
+
+            count = 0;
+            for (CSeq_annot_CI ai(scope,
+                                  handle.GetTopLevelSeqEntry(),
+                                  CSeq_annot_CI::eSearch_entry);
+                 ai; ++ai) {
+                ++count;
+            }
+            NcbiCout << "Seq_annot count (non-recursive): "
+                     << count << NcbiEndl;
         }
 
         // CSeq_feat iterator: iterates all features which can be found in the
@@ -901,6 +911,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/07/25 21:41:32  grichenk
+* Implemented non-recursive mode for CSeq_annot_CI,
+* fixed friend declaration in CSeq_entry_Info.
+*
 * Revision 1.33  2003/07/25 15:25:27  grichenk
 * Added CSeq_annot_CI class
 *

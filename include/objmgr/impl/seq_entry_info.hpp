@@ -87,7 +87,7 @@ protected:
     friend class CDataSource;
     friend class CBioseq_Info;
     friend class CSeq_annot_Info;
-    friend class SAnnotILevel;
+    friend struct SAnnotILevel;
     friend class CSeq_annot_CI;
 
     CSeq_entry_Info(CSeq_entry& entry);
@@ -184,6 +184,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/25 21:41:29  grichenk
+* Implemented non-recursive mode for CSeq_annot_CI,
+* fixed friend declaration in CSeq_entry_Info.
+*
 * Revision 1.2  2003/07/25 15:25:24  grichenk
 * Added CSeq_annot_CI class
 *

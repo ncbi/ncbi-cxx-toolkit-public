@@ -65,8 +65,8 @@ private:
 
 
 struct SAnnotILevel {
-    typedef CSeq_entry_Info::TChildren               TEntries;
-    typedef TEntries::const_iterator                 TEntry_I;
+    typedef CSeq_entry_Info::TChildren TEntries;
+    typedef TEntries::const_iterator   TEntry_I;
 
     CConstRef<CSeq_entry_Info> m_Seq_entry;
     TEntry_I                   m_Child;
@@ -223,6 +223,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/07/25 21:41:27  grichenk
+* Implemented non-recursive mode for CSeq_annot_CI,
+* fixed friend declaration in CSeq_entry_Info.
+*
 * Revision 1.1  2003/07/25 15:23:41  grichenk
 * Initial revision
 *
