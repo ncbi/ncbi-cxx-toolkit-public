@@ -225,8 +225,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
 }
 
 int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned int lastBlockPos,
-    const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
-    DP_AlignmentResult **alignment)
+    unsigned int queryFrom, DP_AlignmentResult **alignment)
 {
     // trace backwards from last block/pos
     deque < unsigned int > blockPositions;
@@ -269,9 +268,7 @@ int TracebackGlobalAlignment(const Matrix& matrix,
     }
     INFO_MESSAGE("Score of best global alignment: " << score);
 
-    return TracebackAlignment(
-        matrix, blocks->nBlocks - 1, lastBlockPos, blocks, 
-        queryFrom, queryTo, alignment);
+    return TracebackAlignment(matrix, blocks->nBlocks - 1, lastBlockPos, queryFrom, alignment);
 }
 
 END_SCOPE(struct_dp)
@@ -353,6 +350,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/06/18 21:55:15  thiessen
+* remove unused params
+*
 * Revision 1.3  2003/06/18 21:46:09  thiessen
 * add traceback, alignment return structure
 *
