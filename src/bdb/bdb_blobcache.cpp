@@ -163,7 +163,8 @@ private:
 };
 
 
-static const int s_WriterBufferSize = 1 * (1024 * 1024);
+static const int s_WriterBufferSize = 256 * 1024;
+//static const int s_WriterBufferSize = 1 * (1024 * 1024);
 
 class CBDB_BLOB_CacheIWriter : public IWriter
 {
@@ -450,23 +451,21 @@ bool CBDB_BLOB_Cache::Read(const string& key,
         if (!*overflow_file) {
             return false;
         }
-        x_UpdateAccessTime(key, version);
     }
-
-
-    m_BlobDB.key = key;
-    m_BlobDB.version = version;
-    ret = m_BlobDB.Fetch();
-    if (ret != eBDB_Ok) {
-        return false;
-    }
-    ret = m_BlobDB.GetData(buf, buf_size);
-    if (ret != eBDB_Ok) {
-        return false;
+    else {
+        m_BlobDB.key = key;
+        m_BlobDB.version = version;
+        ret = m_BlobDB.Fetch();
+        if (ret != eBDB_Ok) {
+            return false;
+        }
+        ret = m_BlobDB.GetData(buf, buf_size);
+        if (ret != eBDB_Ok) {
+            return false;
+        }
     }
 
     x_UpdateAccessTime(key, version);
-
     return true;
 }
 
@@ -843,6 +842,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/10/20 20:44:20  vasilche
+ * Added return true for overflow file read.
+ *
  * Revision 1.19  2003/10/20 20:41:37  kuznets
  * Fixed bug in BlobCache::Read
  *
