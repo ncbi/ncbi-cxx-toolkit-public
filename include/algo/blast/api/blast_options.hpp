@@ -101,7 +101,6 @@ enum EBlastOptIdx {
     eBlastOpt_SumStatisticsMode,
     eBlastOpt_LongestIntronLength,
     eBlastOpt_GappedMode,
-    eBlastOpt_NeighboringMode,
     eBlastOpt_MatrixName,
     eBlastOpt_MatrixPath,
     eBlastOpt_MatchReward,
@@ -265,11 +264,6 @@ public:
     /// Returns true if gapped BLAST is set, false otherwise
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
-
-    // Deprecated
-    bool GetNeighboringMode() const;
-    // Deprecated
-    void SetNeighboringMode(bool m = true);
 
     /************************ Scoring options ************************/
     const char* GetMatrixName() const;
@@ -1284,25 +1278,6 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_GappedMode, m);
-        }
-    }
-
-    // Deprecated
-    bool GetNeighboringMode() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetNeighboringMode() not available.");
-        }
-        return m_Local->GetNeighboringMode();
-    }
-    // Deprecated
-    void SetNeighboringMode(bool m = true)
-    {
-        if (m_Local) {
-            m_Local->SetNeighboringMode(m);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_NeighboringMode, m);
         }
     }
 
@@ -2444,6 +2419,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2004/06/08 17:56:14  dondosha
+* Removed neighboring mode declarations, getters and setters
+*
 * Revision 1.64  2004/06/08 15:18:47  dondosha
 * Skip traceback option has been moved to the traceback extension method enum
 *
