@@ -43,7 +43,6 @@ static char const rcsid[] =
 #include <algo/blast/core/lookup_util.h>
 #include "blast_inline.h"
 
-
 BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
 {
    if (!mb_lt)
@@ -112,7 +111,8 @@ s_GetDiscTemplateType(Int4 weight, Uint1 length,
  *
  * @param query the query sequence [in]
  * @param location locations on the query to be indexed in table [in]
- * @param mb_lt the (already allocated) megablast lookup table structure [in|out]
+ * @param mb_lt the (already allocated) megablast lookup 
+ *              table structure [in|out]
  * @param width number of bytes in megablast word (2 or 3) [in]
  * @param lookup_options specifies the word_size and template options [in]
  * @return zero on success, negative number on failure. 
@@ -133,39 +133,48 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
       (lookup_options->mb_template_type == MB_TWO_TEMPLATES);
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
-   /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
-      So we use a helper_array to keep track of this, but compress it by kCompressionFactor so it stays 
-      in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
-      not seem to affect the overall performance of the rest of the program. */
-   Uint4 longest_chain=0;
-   Uint4* helper_array;     /* Helps to estimate longest chain. */
-   const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
+   Int4 index;
+   /* The calculation of the longest chain can be cpu intensive for 
+      long queries or sets of queries. So we use a helper_array to 
+      keep track of this, but compress it by kCompressionFactor so 
+      it stays in cache.  Hence we only end up with a conservative 
+      (high) estimate for longest_chain, but this does not seem to 
+      affect the overall performance of the rest of the program. */
+   Uint4 longest_chain;
+   Uint4* helper_array = NULL;     /* Helps to estimate longest chain. */
+   Uint4* helper_array2 = NULL;    /* Helps to estimate longest chain. */
+   const Int4 kCompressionFactor=2048; /* compress helper_array by this much */
 
    ASSERT(mb_lt);
    ASSERT(lookup_options->mb_template_length > 0);
+
+   mb_lt->next_pos = (Int4 *)calloc(query->length + 1, sizeof(Int4));
+   helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, 
+                                  sizeof(Uint4));
+   if (mb_lt->next_pos == NULL || helper_array == NULL)
+      return -1;
 
    template_type = s_GetDiscTemplateType(lookup_options->word_size,
                       lookup_options->mb_template_length, 
                       (DiscWordType)lookup_options->mb_template_type);
 
-
    mb_lt->template_type = template_type;
    mb_lt->two_templates = kTwoTemplates;
-   if (kTwoTemplates) /* For now leave only one possibility for the second template */
+   /* For now leave only one possibility for the second template.
+      Note that the intention here is to select both the coding
+      and the optimal templates for one combination of word size
+      and template length. */
+   if (kTwoTemplates) {
       mb_lt->second_template_type = template_type + 1;
 
-
-   if (kTwoTemplates) {
-      if ((mb_lt->hashtable2 = (Int4*) 
-           calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
-         MBLookupTableDestruct(mb_lt);
+      mb_lt->hashtable2 = (Int4*)calloc(mb_lt->hashsize, sizeof(Int4));
+      mb_lt->next_pos2 = (Int4*)calloc(query->length + 1, sizeof(Int4));
+      helper_array2 = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, 
+                                      sizeof(Uint4));
+      if (mb_lt->hashtable2 == NULL ||
+          mb_lt->next_pos2 == NULL ||
+          helper_array2 == NULL)
          return -1;
-      }
-      if ((mb_lt->next_pos2 = (Int4*) 
-           calloc((query->length+1), sizeof(Int4))) == NULL) {
-         MBLookupTableDestruct(mb_lt);
-         return -1;
-      }
    }
 
    mb_lt->discontiguous = TRUE;
@@ -179,23 +188,17 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
 
-   helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, sizeof(Uint4));
-   if (helper_array == NULL)
-	return -1;
-
    for (loc = location; loc; loc = loc->next) {
       Boolean amb_cond = TRUE;
       /* We want index to be always pointing to the start of the word.
          Since sequence pointer points to the end of the word, subtract
-         word length from the loop boundaries. 
-      */
+         word length from the loop boundaries.  */
       Int4 from = loc->ssr->left;
       Int4 to = loc->ssr->right - word_length;
       Int4 ecode = 0;
       Int4 ecode1 = 0;
       Int4 ecode2 = 0;
       Int4 last_offset;
-      Int4 index;
       Uint1* pos;
       Uint1* seq;
       Uint1 val;
@@ -213,156 +216,160 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
          if ((val & kNucMask) != 0) { /* ambiguity or gap */
             ecode = 0;
             pos = seq + word_length;
-         } else {
-            /* get next base */
-            ecode = ((ecode & mask) << 2) + val;
-            if (seq >= pos) {
-               if (extra_length) {
-                  switch (template_type) {
-                  case TEMPL_11_18: case TEMPL_12_18:
-                     amb_cond = !GET_AMBIG_CONDITION_18(seq);
-                     break;
-                  case TEMPL_11_18_OPT: case TEMPL_12_18_OPT:
-                     amb_cond = !GET_AMBIG_CONDITION_18_OPT(seq);
-                     break;
-                  case TEMPL_11_21: case TEMPL_12_21:
-                     amb_cond = !GET_AMBIG_CONDITION_21(seq);
-                     break;
-                  case TEMPL_11_21_OPT: case TEMPL_12_21_OPT:
-                     amb_cond = !GET_AMBIG_CONDITION_21_OPT(seq);
-                     break;
-                  default:
-                     break;
-                  }
-               }
-                     
-               if (amb_cond) {
-                  switch (template_type) {
-                  case TEMPL_11_16:
-                     ecode1 = GET_WORD_INDEX_11_16(ecode);
-                     break;
-                  case TEMPL_12_16:
-                     ecode1 = GET_WORD_INDEX_12_16(ecode);
-                     break;
-                  case TEMPL_11_16_OPT:
-                     ecode1 = GET_WORD_INDEX_11_16_OPT(ecode);
-                     break;
-                  case TEMPL_12_16_OPT:
-                     ecode1 = GET_WORD_INDEX_12_16_OPT(ecode);
-                     break;
-                  case TEMPL_11_18:
-                     ecode1 = (GET_WORD_INDEX_11_18(ecode)) |
-                               (GET_EXTRA_CODE_18(seq));
-                     break;
-                  case TEMPL_12_18:
-                     ecode1 = (GET_WORD_INDEX_12_18(ecode)) |
-                               (GET_EXTRA_CODE_18(seq));
-                     break;
-                  case TEMPL_11_18_OPT:
-                     ecode1 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
-                               (GET_EXTRA_CODE_18_OPT(seq));
-                     break;
-                  case TEMPL_12_18_OPT:
-                     ecode1 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
-                               (GET_EXTRA_CODE_18_OPT(seq));
-                     break;
-                  case TEMPL_11_21:
-                     ecode1 = (GET_WORD_INDEX_11_21(ecode)) |
-                               (GET_EXTRA_CODE_21(seq));
-                     break;
-                  case TEMPL_12_21:
-                     ecode1 = (GET_WORD_INDEX_12_21(ecode)) |
-                               (GET_EXTRA_CODE_21(seq));
-                     break;
-                  case TEMPL_11_21_OPT:
-                     ecode1 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
-                               (GET_EXTRA_CODE_21_OPT(seq));
-                     break;
-                  case TEMPL_12_21_OPT:
-                     ecode1 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
-                               (GET_EXTRA_CODE_21_OPT(seq));
-                     break;
-                  default: /* Contiguous word */
-                     ecode1 = ecode;
-                     break;
-                  }
-                     
-                  if (kTwoTemplates) {
-                     switch (template_type) {
-                     case TEMPL_11_16:
-                        ecode2 = GET_WORD_INDEX_11_16_OPT(ecode);
-                        break;
-                     case TEMPL_12_16:
-                        ecode2 = GET_WORD_INDEX_12_16_OPT(ecode);
-                        break;
-                     case TEMPL_11_18:
-                        ecode2 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
-                           (GET_EXTRA_CODE_18_OPT(seq));
-                        break;
-                     case TEMPL_12_18:
-                        ecode2 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
-                           (GET_EXTRA_CODE_18_OPT(seq));
-                        break;
-                     case TEMPL_11_21:
-                        ecode2 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
-                           (GET_EXTRA_CODE_21_OPT(seq));
-                        break;
-                     case TEMPL_12_21:
-                        ecode2 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
-                           (GET_EXTRA_CODE_21_OPT(seq));
-                        break;
-                     default:
-                        ecode2 = 0; break;
-                     }
-                     
-                     if (mb_lt->hashtable[ecode1] == 0 ||
-                         mb_lt->hashtable2[ecode2] == 0)
-                     {
-                        mb_lt->num_unique_pos_added++;
-                     }
+            continue;
+         }
 
-                     if (mb_lt->hashtable2[ecode2] == 0)
-                     {
-                        pv_array[ecode2>>pv_array_bts] |= 
-                                    (((PV_ARRAY_TYPE) 1)<<(ecode2&PV_ARRAY_MASK));
-                     }
-                     else
-                        longest_chain = MAX(longest_chain, helper_array[ecode2/kCompressionFactor]++); 
+         /* get next base */
+         ecode = ((ecode & mask) << 2) + val;
+         if (seq < pos)
+            continue;
 
-                     if (mb_lt->hashtable[ecode1] == 0)
-                     {
-                        pv_array[ecode1>>pv_array_bts] |= 
-                                    (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
-                     }
-                     else
-                        longest_chain = MAX(longest_chain, helper_array[ecode1/kCompressionFactor]++); 
-
-                     /* This could overestimate the longest chain again by a factor of 2. */
-                     /* Are two helper_arrays needed, or is that overkill? */
-                     mb_lt->next_pos2[index] = mb_lt->hashtable2[ecode2];
-                     mb_lt->hashtable2[ecode2] = index;
-                  } else {
-                     if (mb_lt->hashtable[ecode1] == 0)
-                     {
-                        mb_lt->num_unique_pos_added++;
-                        pv_array[ecode1>>pv_array_bts] |= 
-                                    (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
-                     }
-                     else
-                        longest_chain = MAX(longest_chain, helper_array[ecode1/kCompressionFactor]++); 
-                  }
-                  mb_lt->next_pos[index] = mb_lt->hashtable[ecode1];
-                  mb_lt->hashtable[ecode1] = index;
-               }
+         if (extra_length) {
+            switch (template_type) {
+            case TEMPL_11_18: case TEMPL_12_18:
+               amb_cond = !GET_AMBIG_CONDITION_18(seq);
+               break;
+            case TEMPL_11_18_OPT: case TEMPL_12_18_OPT:
+               amb_cond = !GET_AMBIG_CONDITION_18_OPT(seq);
+               break;
+            case TEMPL_11_21: case TEMPL_12_21:
+               amb_cond = !GET_AMBIG_CONDITION_21(seq);
+               break;
+            case TEMPL_11_21_OPT: case TEMPL_12_21_OPT:
+               amb_cond = !GET_AMBIG_CONDITION_21_OPT(seq);
+               break;
+            default:
+               break;
             }
          }
+               
+         if (!amb_cond)
+            continue;
+
+         /* compute the hashtable index for the first template
+            and add 'index' at that position */
+         switch (template_type) {
+         case TEMPL_11_16:
+            ecode1 = GET_WORD_INDEX_11_16(ecode);
+            break;
+         case TEMPL_12_16:
+            ecode1 = GET_WORD_INDEX_12_16(ecode);
+            break;
+         case TEMPL_11_16_OPT:
+            ecode1 = GET_WORD_INDEX_11_16_OPT(ecode);
+            break;
+         case TEMPL_12_16_OPT:
+            ecode1 = GET_WORD_INDEX_12_16_OPT(ecode);
+            break;
+         case TEMPL_11_18:
+            ecode1 = (GET_WORD_INDEX_11_18(ecode)) |
+                      (GET_EXTRA_CODE_18(seq));
+            break;
+         case TEMPL_12_18:
+            ecode1 = (GET_WORD_INDEX_12_18(ecode)) |
+                      (GET_EXTRA_CODE_18(seq));
+            break;
+         case TEMPL_11_18_OPT:
+            ecode1 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
+                      (GET_EXTRA_CODE_18_OPT(seq));
+            break;
+         case TEMPL_12_18_OPT:
+            ecode1 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
+                      (GET_EXTRA_CODE_18_OPT(seq));
+            break;
+         case TEMPL_11_21:
+            ecode1 = (GET_WORD_INDEX_11_21(ecode)) |
+                      (GET_EXTRA_CODE_21(seq));
+            break;
+         case TEMPL_12_21:
+            ecode1 = (GET_WORD_INDEX_12_21(ecode)) |
+                      (GET_EXTRA_CODE_21(seq));
+            break;
+         case TEMPL_11_21_OPT:
+            ecode1 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
+                      (GET_EXTRA_CODE_21_OPT(seq));
+            break;
+         case TEMPL_12_21_OPT:
+            ecode1 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
+                      (GET_EXTRA_CODE_21_OPT(seq));
+            break;
+         default:
+            ecode1 = ecode; /* unknown template; assume contiguous word */
+            break;
+         }
+            
+         if (mb_lt->hashtable[ecode1] == 0) {
+            mb_lt->num_unique_pos_added++;
+            pv_array[ecode1>>pv_array_bts] |= 
+                         (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
+         }
+         else {
+            helper_array[ecode1/kCompressionFactor]++; 
+         }
+         mb_lt->next_pos[index] = mb_lt->hashtable[ecode1];
+         mb_lt->hashtable[ecode1] = index;
+
+         if (!kTwoTemplates)
+            continue;
+
+         /* repeat for the second template, if applicable */
+         switch (template_type) {
+         case TEMPL_11_16:
+            ecode2 = GET_WORD_INDEX_11_16_OPT(ecode);
+            break;
+         case TEMPL_12_16:
+            ecode2 = GET_WORD_INDEX_12_16_OPT(ecode);
+            break;
+         case TEMPL_11_18:
+            ecode2 = (GET_WORD_INDEX_11_18_OPT(ecode)) |
+               (GET_EXTRA_CODE_18_OPT(seq));
+            break;
+         case TEMPL_12_18:
+            ecode2 = (GET_WORD_INDEX_12_18_OPT(ecode)) |
+               (GET_EXTRA_CODE_18_OPT(seq));
+            break;
+         case TEMPL_11_21:
+            ecode2 = (GET_WORD_INDEX_11_21_OPT(ecode)) |
+               (GET_EXTRA_CODE_21_OPT(seq));
+            break;
+         case TEMPL_12_21:
+            ecode2 = (GET_WORD_INDEX_12_21_OPT(ecode)) |
+               (GET_EXTRA_CODE_21_OPT(seq));
+            break;
+         default:
+            ecode2 = 0; /* incorrect template; make hashtable ignore it */
+            break;
+         }
+         
+         if (mb_lt->hashtable2[ecode2] == 0) {
+            mb_lt->num_unique_pos_added++;
+            pv_array[ecode2>>pv_array_bts] |= 
+                         (((PV_ARRAY_TYPE) 1)<<(ecode2&PV_ARRAY_MASK));
+         }
+         else {
+            helper_array2[ecode2/kCompressionFactor]++; 
+         }
+         mb_lt->next_pos2[index] = mb_lt->hashtable2[ecode2];
+         mb_lt->hashtable2[ecode2] = index;
       }
    }
-   sfree(helper_array);
-   mb_lt->longest_chain = (Int4) (longest_chain+2);
 
+   longest_chain = 2;
+   for (index = 0; index < mb_lt->hashsize / kCompressionFactor; index++)
+       longest_chain = MAX(longest_chain, helper_array[index]);
+   mb_lt->longest_chain = longest_chain;
+   sfree(helper_array);
+
+   if (kTwoTemplates) {
+      longest_chain = 2;
+      for (index = 0; index < mb_lt->hashsize / kCompressionFactor; index++)
+         longest_chain = MAX(longest_chain, helper_array2[index]);
+      mb_lt->longest_chain += longest_chain;
+      sfree(helper_array2);
+   }
    return 0;
 }
+
 /** Fills in the hashtable and next_pos fields of BlastMBLookupTable*
  * for the contiguous case.
  *
@@ -382,23 +389,33 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 {
    BlastSeqLoc* loc;
    const Uint1 kNucMask = 0xfc;
-   /* 12-mers (or perhaps 8-mers) are used to build the lookup table and this is what kWordLength specifies. */
+   /* 12-mers (or perhaps 8-mers) are used to build the lookup table 
+      and this is what kWordLength specifies. */
    const Int4 kWordLength = COMPRESSION_RATIO*width;   
-   /* The user probably specified a much larger word size (like 28) and this is what full_word_size is. */
+   /* The user probably specified a much larger word size (like 28) 
+      and this is what full_word_size is. */
    Int4 full_word_size;
-   const Int4 kMask = (1 << (8*width - 2)) - 1;
-   const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
+   Int4 index;
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
-   /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
-      So we use a helper_array to keep track of this, but compress it by kCompressionFactor so it stays 
-      in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
-      not seem to affect the overall performance of the rest of the program. */
-   Uint4 longest_chain=0;
-   Uint4* helper_array;     /* Helps to estimate longest chain. */
+   const Int4 kMask = (1 << (8*width - 2)) - 1;
+   /* The calculation of the longest chain can be cpu intensive for 
+      long queries or sets of queries. So we use a helper_array to 
+      keep track of this, but compress it by kCompressionFactor so 
+      it stays in cache.  Hence we only end up with a conservative 
+      (high) estimate for longest_chain, but this does not seem to 
+      affect the overall performance of the rest of the program. */
+   const Int4 kCompressionFactor=2048; /* compress helper_array by this much */
+   Uint4 longest_chain;
+   Uint4* helper_array;
 
 
    ASSERT(mb_lt);
+
+   /* The next_pos array begins small and will grow dynamically */
+   mb_lt->next_pos = (Int4 *)calloc(query->length + 1, sizeof(Int4));
+   if (mb_lt->next_pos == NULL)
+      return -1;
 
    mb_lt->compressed_wordsize = width;
    full_word_size = mb_lt->word_length = lookup_options->word_size;
@@ -407,26 +424,27 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
 
-   helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, sizeof(Uint4));
+   helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, 
+                                  sizeof(Uint4));
    if (helper_array == NULL)
 	return -1;
 
    for (loc = location; loc; loc = loc->next) {
       /* We want index to be always pointing to the start of the word.
          Since sequence pointer points to the end of the word, subtract
-         word length from the loop boundaries. 
-      */
+         word length from the loop boundaries.  */
       Int4 from = loc->ssr->left;
       Int4 to = loc->ssr->right - kWordLength;
       Int4 ecode = 0;
       Int4 last_offset;
-      Int4 index;
       Uint1* pos;
       Uint1* seq;
       Uint1 val;
-     
+
+     /* case of unmasked region >=  kWordLength but < full_word_size,
+        so no hits should be generated. */
       if (full_word_size > (loc->ssr->right - loc->ssr->left + 1))
-         continue; /* case of unmasked region >=  kWordLength but < full_word_size  so no hits should be generated. */
+         continue; 
 
       seq = query->sequence_start + from;
       pos = seq + kWordLength;
@@ -441,29 +459,33 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
          if ((val & kNucMask) != 0) { /* ambiguity or gap */
             ecode = 0;
             pos = seq + kWordLength;
-         } else {
-            /* get next base */
-            ecode = ((ecode & kMask) << 2) + val;
-            if (seq >= pos) {
-                  if (mb_lt->hashtable[ecode] == 0)
-                  {
-                        mb_lt->num_unique_pos_added++;
-                        pv_array[ecode>>pv_array_bts] |= 
-                                    (((PV_ARRAY_TYPE) 1)<<(ecode&PV_ARRAY_MASK));
-                  }
-                  else
-                  {
-                        longest_chain = MAX(longest_chain, helper_array[ecode/kCompressionFactor]++); 
-                  }
-                  mb_lt->next_pos[index] = mb_lt->hashtable[ecode];
-                  mb_lt->hashtable[ecode] = index;
-            }
+            continue;
          }
+
+         /* get next base */
+         ecode = ((ecode & kMask) << 2) + val;
+         if (seq < pos) 
+            continue;
+
+         if (mb_lt->hashtable[ecode] == 0) {
+            mb_lt->num_unique_pos_added++;
+            pv_array[ecode>>pv_array_bts] |= 
+                         (((PV_ARRAY_TYPE) 1)<<(ecode&PV_ARRAY_MASK));
+         }
+         else {
+            helper_array[ecode/kCompressionFactor]++; 
+         }
+         mb_lt->next_pos[index] = mb_lt->hashtable[ecode];
+         mb_lt->hashtable[ecode] = index;
       }
    }
-   mb_lt->longest_chain = (Int4) (longest_chain+2);
-   sfree(helper_array);
 
+   longest_chain = 2;
+   for (index = 0; index < mb_lt->hashsize / kCompressionFactor; index++)
+       longest_chain = MAX(longest_chain, helper_array[index]);
+
+   mb_lt->longest_chain = longest_chain;
+   sfree(helper_array);
    return 0;
 }
 
@@ -543,7 +565,6 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
       }
    }
 
-
    if (lookup_options->mb_template_length)
    {
         mb_lt->full_byte_scan = lookup_options->full_byte_scan;  /* Only applies to discontiguous megablast. */
@@ -566,12 +587,6 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
       return -1;
    }
 
-   if ((mb_lt->next_pos = (Int4*) 
-        calloc((query->length+1), sizeof(Int4))) == NULL) {
-      MBLookupTableDestruct(mb_lt);
-      return -1;
-   }
-
    mb_lt->pv_array_bts = PV_ARRAY_BTS + pv_shift; 
 
    pv_size = mb_lt->hashsize>>(mb_lt->pv_array_bts);
@@ -587,11 +602,12 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    else
      status = s_FillContigMBTable(query, location, mb_lt, width, lookup_options);
 
-   if (status > 0)
+   if (status > 0) {
+      MBLookupTableDestruct(mb_lt);
       return status;
+   }
 
    *mb_lt_ptr = mb_lt;
-
    return 0;
 }
 
@@ -638,10 +654,10 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          BlastNaLookupInitIndex(compressed_wordsize, s, &index);
          
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
+            if (total_hits >= max_hits)
+               break;
             q_off = mb_lt->hashtable[index];
             s_off = (s - abs_start)*COMPRESSION_RATIO;
-            if (q_off && (total_hits >= max_hits))
-               break;
             while (q_off) {
                q_offsets[total_hits] = q_off - 1;
                s_offsets[total_hits++] = s_off;
@@ -662,15 +678,14 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
          /* Compute index for a word made of full bytes */
          s = BlastNaLookupInitIndex(compressed_wordsize, s, &index);
          /* Adjust the word index by the base within a byte */
-         adjusted_index = BlastNaLookupAdjustIndex(s, index, mb_lt->mask,
-                                                   bit);
+         adjusted_index = BlastNaLookupAdjustIndex(s, index, mb_lt->mask, bit);
          if (NA_PV_TEST(pv_array, adjusted_index, pv_array_bts)) {
-            q_off = mb_lt->hashtable[adjusted_index];
-            if (q_off && (total_hits >= max_hits))
+            if (total_hits >= max_hits)
                break;
+            q_off = mb_lt->hashtable[adjusted_index];
             while (q_off) {
                q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off; 
+               s_offsets[total_hits++] = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
@@ -688,11 +703,10 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
 {
    Uint1* abs_start,* s_end;
    Uint1* s;
-   Int4 hitsfound = 0;
-   Uint4 query_offset, subject_offset;
+   Int4 total_hits = 0;
+   Uint4 q_off, s_off;
    Int4 index;
    BlastMBLookupTable* mb_lt;
-   Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    PV_ARRAY_TYPE *pv_array;
    Uint1 pv_array_bts;
    Int4 compressed_wordsize;
@@ -719,16 +733,14 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
       the word. */
    while (s <= s_end) {
       if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-         query_offset = mb_lt->hashtable[index];
-         subject_offset = 
-            ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-         if (query_offset && (hitsfound >= max_hits))
+         if (total_hits >= max_hits)
             break;
-         while (query_offset) {
-            *(q_ptr++) = query_offset - 1;
-            *(s_ptr++) = subject_offset;
-            ++hitsfound;
-            query_offset = mb_lt->next_pos[query_offset];
+         q_off = mb_lt->hashtable[index];
+         s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
+         while (q_off) {
+            q_offsets[total_hits] = q_off - 1;
+            s_offsets[total_hits++] = s_off;
+            q_off = mb_lt->next_pos[q_off];
          }
       }
       /* Compute the next value of the lookup index 
@@ -740,7 +752,7 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    *end_offset = 
      ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
 
-   return hitsfound;
+   return total_hits;
 }
 
 Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup, 
@@ -750,8 +762,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
 {
    Uint1* s;
    Uint1* s_start,* abs_start;
-   Int4 hitsfound = 0;
-   Uint4 query_offset, subject_offset;
+   Int4 total_hits = 0;
+   Uint4 q_off, s_off;
    Int4 word, index, index2=0;
    BlastMBLookupTable* mb_lt;
    Boolean two_templates;
@@ -786,43 +798,40 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    /* s now points to the byte right after the end of the current word */
    if (mb_lt->full_byte_scan) {
 
-     while (word_end_offset <= last_end_offset) {
-       index = ComputeDiscontiguousIndex(s, word, template_type);
-
-       if (two_templates) {
-          index2 = ComputeDiscontiguousIndex(s, word, second_template_type);
-       }
-       if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-          query_offset = mb_lt->hashtable[index];
-          subject_offset = 
-             ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-
-          while (query_offset) {
-             q_offsets[hitsfound] = query_offset - 1;
-             s_offsets[hitsfound++] = subject_offset;
-             query_offset = mb_lt->next_pos[query_offset];
-          }
-       }
-       if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
-          query_offset = mb_lt->hashtable2[index2];
-          subject_offset = 
-             ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-          while (query_offset) {
-             q_offsets[hitsfound] = query_offset - 1;
-             s_offsets[hitsfound++] = subject_offset;
-             query_offset = mb_lt->next_pos2[query_offset];
-          }
-       }
-       word_end_offset += COMPRESSION_RATIO;
-       /* test for buffer full. This test counts 
-          for both templates (they both add hits 
-          or neither one does) */
-       if (hitsfound >= max_hits)
-          break;
-
-       word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
-                           mb_lt->mask, s++, word);
-     }
+      while (word_end_offset <= last_end_offset) {
+         index = ComputeDiscontiguousIndex(s, word, template_type);
+  
+         if (two_templates) {
+            index2 = ComputeDiscontiguousIndex(s, word, second_template_type);
+         }
+         if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
+            q_off = mb_lt->hashtable[index];
+            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
+            while (q_off) {
+               q_offsets[total_hits] = q_off - 1;
+               s_offsets[total_hits++] = s_off;
+               q_off = mb_lt->next_pos[q_off];
+            }
+         }
+         if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
+            q_off = mb_lt->hashtable2[index2];
+            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
+            while (q_off) {
+               q_offsets[total_hits] = q_off - 1;
+               s_offsets[total_hits++] = s_off;
+               q_off = mb_lt->next_pos2[q_off];
+            }
+         }
+         word_end_offset += COMPRESSION_RATIO;
+         /* test for buffer full. This test counts 
+            for both templates (they both add hits 
+            or neither one does) */
+         if (total_hits >= max_hits)
+            break;
+  
+         word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
+                             mb_lt->mask, s++, word);
+      }
    } else {
       const Int4 kScanStep = 1; /* scan one letter at a time. */
       const Int4 kScanShift = 2; /* scan 2 bits (that is, one letter) at a time. */
@@ -842,32 +851,30 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
                         second_template_type);
 
          if (NA_PV_TEST(pv_array, index, pv_array_bts)) {
-            query_offset = mb_lt->hashtable[index];
-            subject_offset = 
-               ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
+            q_off = mb_lt->hashtable[index];
+            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
-            while (query_offset) {
-               q_offsets[hitsfound] = query_offset - 1;
-               s_offsets[hitsfound++] = subject_offset;
-               query_offset = mb_lt->next_pos[query_offset];
+            while (q_off) {
+               q_offsets[total_hits] = q_off - 1;
+               s_offsets[total_hits++] = s_off;
+               q_off = mb_lt->next_pos[q_off];
             }
          }
          if (two_templates && NA_PV_TEST(pv_array, index2, pv_array_bts)) {
-            query_offset = mb_lt->hashtable2[index2];
-            subject_offset = 
-               ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
+            q_off = mb_lt->hashtable2[index2];
+            s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
-            while (query_offset) {
-               q_offsets[hitsfound] = query_offset - 1;
-               s_offsets[hitsfound++] = subject_offset;
-               query_offset = mb_lt->next_pos2[query_offset];
+            while (q_off) {
+               q_offsets[total_hits] = q_off - 1;
+               s_offsets[total_hits++] = s_off;
+               q_off = mb_lt->next_pos2[q_off];
             }
          }
          word_end_offset += kScanStep;
          /* test for buffer full. This test counts 
             for both templates (they both add hits 
             or neither one does) */
-         if (hitsfound >= max_hits)
+         if (total_hits >= max_hits)
             break;
 
          bit += kScanShift;
@@ -881,6 +888,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    }
    *end_offset = word_end_offset - mb_lt->word_length;
 
-   return hitsfound;
+   return total_hits;
 }
 
