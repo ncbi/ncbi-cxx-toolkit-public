@@ -146,6 +146,8 @@ CXXFLAGS_DLL  = @CXXFLAGS_DLL@
 LDFLAGS_DLL   = $(LDFLAGS)
 
 ### To enable extra, potentially unsafe, optimization
+### Note: If you have compiled any files with $(FAST_CXXFLAGS), you may
+### need to pass the same flags to the linker for consistency.
 FAST_CFLAGS   = @FAST_CFLAGS@
 FAST_CXXFLAGS = @FAST_CXXFLAGS@
 
