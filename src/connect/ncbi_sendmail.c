@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/03/26 18:39:24  lavr
+ * Casting to (unsigned char) instead of (int) for ctype char.class macros
+ *
  * Revision 6.6  2001/03/06 04:32:00  lavr
  * Better custom header processing
  *
@@ -99,7 +102,7 @@ static int s_SockRead(SOCK sock, char* reply, size_t reply_len)
         if (m != 4)
             return SMTP_REPLYERR;
 
-        if (buf[3] == '-' || (done = isspace((int)buf[3]))) {
+        if (buf[3] == '-' || (done = isspace((unsigned char)buf[3]))) {
             buf[3] = 0;
             if (!code) {
                 if (!(code = atoi(buf)))

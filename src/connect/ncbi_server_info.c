@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2001/03/26 18:39:38  lavr
+ * Casting to (unsigned char) instead of (int) for ctype char.class macros
+ *
  * Revision 6.23  2001/03/06 23:53:07  lavr
  * SERV_ReadInfo can now consume either hostname or IP address
  *
@@ -200,7 +203,7 @@ static const char* s_Read_HostPort(const char* str,
     *host = 0;
     *port = 0;
     for (s = str; *s; s++) {
-        if (isspace((unsigned int)(*s)) || *s == ':')
+        if (isspace((unsigned char)(*s)) || *s == ':')
             break;
     }
     if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
