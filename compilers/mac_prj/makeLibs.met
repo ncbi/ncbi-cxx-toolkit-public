@@ -369,7 +369,7 @@ on SetProjectData()
 	end if
 	
 	if pCreateObjToolsLibs then
-		AddSimpleProject("xobjmgr", {}, "objmgr")
+		AddSimpleProjectExceptFiles("xobjmgr", {}, "objmgr", {"reader_id1_cache.cpp"})
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
