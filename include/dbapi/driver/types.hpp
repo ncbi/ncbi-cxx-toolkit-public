@@ -86,6 +86,10 @@ public:
     virtual EDB_Type    GetType() const = 0;
     virtual CDB_Object* Clone()   const = 0;
 
+    // Returns a new object of a given type;
+    // size matters only for eDB_Char, eDB_Binary.
+    static CDB_Object* create(EDB_Type type, size_t size=-1);
+
 protected:
     bool m_Null;
 };
@@ -597,13 +601,13 @@ public:
     CDB_SmallDateTime(const CTime& t) {
         m_NCBITime = t;
         m_Status   = 0x1;
-	m_Null     = false;
+        m_Null     = false;
     }
     CDB_SmallDateTime(Uint2 days, Uint2 minutes) {
         m_DBTime.days = days;
         m_DBTime.time = minutes;
         m_Status      = 0x2;
-	m_Null        = false;
+        m_Null        = false;
     }
 
     CDB_SmallDateTime& Assign(Uint2 days, Uint2 minutes) {
@@ -617,7 +621,7 @@ public:
     CDB_SmallDateTime& operator= (const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
-	m_Null= false;
+        m_Null= false;
         return *this;
     }
 
@@ -666,19 +670,19 @@ public:
     CDB_DateTime(const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
-	m_Null= false;
+        m_Null= false;
     }
     CDB_DateTime(Int4 d, Int4 s300) {
         m_DBTime.days = d;
         m_DBTime.time = s300;
         m_Status = 0x2;
-	m_Null= false;
+        m_Null= false;
     }
 
     CDB_DateTime& operator= (const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
-	m_Null= false;
+        m_Null= false;
         return *this;
     }
 
@@ -825,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/02/13 22:37:27  sapojnik
+ * new_CDB_Object() renamed to CDB_Object::create()
+ *
  * Revision 1.6  2002/02/13 22:14:50  sapojnik
  * new_CDB_Object() (needed for rdblib)
  *

@@ -555,7 +555,7 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
 	    if(scale > 1) --scale;
 	}
     }
-	    
+
     if (!precision  ||  precision > kMaxPrecision) {
         throw CDB_ClientEx(eDB_Error, 100, "CDB_Numeric::x_MakeFromString",
                         "illegal precision");
@@ -639,7 +639,7 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
     m_Null      = false;
 }
 
-CDB_Object* new_CDB_Object(EDB_Type type, size_t size)
+CDB_Object* CDB_Object::create(EDB_Type type, size_t size)
 {
     switch(type) {
         case eDB_Int          : return new CDB_Int          ();
@@ -681,6 +681,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/02/13 22:37:26  sapojnik
+ * new_CDB_Object() renamed to CDB_Object::create()
+ *
  * Revision 1.5  2002/02/13 22:14:50  sapojnik
  * new_CDB_Object() (needed for rdblib)
  *
