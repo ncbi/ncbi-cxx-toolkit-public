@@ -1,4 +1,4 @@
---$Revision: 1.2 $********************************************
+--$Revision: 1.3 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -238,8 +238,9 @@ Entrez2-docsum ::= SEQUENCE {
   record-status VisibleString OPTIONAL,
   no-abstract BOOLEAN OPTIONAL,         -- no abstract in system
   translated-title BOOLEAN OPTIONAL,    -- real title not English
-  no-authors BOOLEAN OPTIONAL }         -- no authors listed
-
+  no-authors BOOLEAN OPTIONAL,          -- no authors listed
+  taxid     INTEGER OPTIONAL  }         -- Taxonomy ID
+  
 Entrez2-term-list ::= SEQUENCE {
   pos INTEGER,                          -- position of first term in list
   num INTEGER,                          -- number of terms in list
