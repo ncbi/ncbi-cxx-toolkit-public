@@ -122,25 +122,25 @@ int CTestSerial::Run(void)
             }
         }
         {
-            for ( CTypeConstIterator<CSerialObject> oi = Begin(cwrite); oi;
+            for ( CTypeConstIterator<CSerialObject> oi = ConstBegin(cwrite); oi;
                   ++oi ) {
                 const CSerialObject& obj = *oi;
                 NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
                 //oi.Erase();
-                CTypeConstIterator<CSerialObject> oi1(Begin(cwrite));
+                CTypeConstIterator<CSerialObject> oi1(ConstBegin(cwrite));
                 CTypeConstIterator<CSerialObject> oi2;
-                oi2 = Begin(cwrite);
+                oi2 = ConstBegin(cwrite);
             }
         }
 
         {
-            for ( CStdTypeConstIterator<string> si = Begin(cwrite); si; ++si ) {
+            for ( CStdTypeConstIterator<string> si = ConstBegin(cwrite); si; ++si ) {
                 NcbiCerr <<"String: \""<<*si<<"\""<<NcbiEndl;
             }
         }
 
         {
-            for ( CObjectsConstIterator oi = Begin(cwrite); oi; ++oi ) {
+            for ( CObjectsConstIterator oi = ConstBegin(cwrite); oi; ++oi ) {
                 const CObject& obj = *oi;
                 NcbiCerr <<"CObject: @ "<<NStr::PtrToString(&obj)<<NcbiEndl;
             }

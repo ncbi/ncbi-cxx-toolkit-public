@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/29 17:22:34  vasilche
+* Fixed ambiguity in Begin() template function.
+*
 * Revision 1.1  2000/03/29 15:55:19  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -227,13 +230,6 @@ public:
             return *this;
         }
 
-protected:
-    // post condition: Valid() || End()
-    void x_Begin(const TObjectInfo& object);
-    virtual bool CanSelect(TTypeInfo type) const = 0;
-    virtual bool CanEnter(TTypeInfo type) const;
-
-private:
     class CTreeLevel : public TIteratorType {
     public:
         CTreeLevel(const TObjectInfo& owner, CTreeLevel* previousLevel)
@@ -251,6 +247,14 @@ private:
     private:
         CTreeLevel* m_PreviousLevel;
     };
+
+protected:
+    // post condition: Valid() || End()
+    void x_Begin(const TObjectInfo& object);
+    virtual bool CanSelect(TTypeInfo type) const = 0;
+    virtual bool CanEnter(TTypeInfo type) const;
+
+private:
     
     friend class CTreeIterator; // for Erase
 
@@ -512,6 +516,13 @@ pair<TObjectPtr, TTypeInfo> Begin(C& obj)
 template<class C>
 inline
 pair<TConstObjectPtr, TTypeInfo> Begin(const C& obj)
+{
+    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
+}
+
+template<class C>
+inline
+pair<TConstObjectPtr, TTypeInfo> ConstBegin(const C& obj)
 {
     return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
 }
