@@ -75,14 +75,11 @@ imposed on the input arguments</a></li>
 
 <li>
 <a href="#ref_CArgDescriptions_UserValueTypes"><i>CArgAllow</i> class:
-user-defined restrictions imposed on the argument <i>values</i></a></li>
+user-defined restrictions on the range of allowed values</a></li>
 
 <li>
 <a href="#ref_CArgDescriptions_Number">Constraining the number of positional
 arguments</a></li>
-
-<li>
-<a href="#ref_CArgDescriptions_Usage">Generating a <i>USAGE </i>message</a></li>
 </ul>
 
 <li>
@@ -133,13 +130,12 @@ The <i><a href="#ref_CArgDescriptions">CArgDescriptions</a></i> class provides
 an interface to describe the data type and attributes of&nbsp; command-line
 arguments, via a set of <i>AddXxx()</i> methods.&nbsp; Additional constraints
 on the number of arguments and their acceptable ranges of values can be
-imposed using the <i>Allow()</i> and <i>SetConstraint()</i> methods.&nbsp;
-The <i>CreateArgs()
-</i>method is passed the values of all command line
-arguments at runtime. It verifies their overall syntactic structure and
-matches their values against the stored descriptions. If the arguments
-are parsed successfully,&nbsp; a new <i><a href="#ref_CArgs">CArgs</a></i>
-object is returned by <i>CreateArgs()</i>.
+imposed using the <i>SetConstraint()</i> methods.&nbsp; The <i>CreateArgs()
+</i>method
+is passed the values of all command line arguments at runtime. It verifies
+their overall syntactic structure and matches their values against the
+stored descriptions. If the arguments are parsed successfully,&nbsp; a
+new <i><a href="#ref_CArgs">CArgs</a></i> object is returned by <i>CreateArgs()</i>.
 <p>The resulting
 <i><a href="#ref_CArgs">CArgs</a></i> object will contain
 verified and ready-to-use argument values which are stored as <i><a href="#ref_CArgValue">CArgValue</a></i>'s.
@@ -229,8 +225,7 @@ to be used there, as in: "<i>-name value</i>" (or "<i>-name"</i>).</dd>
 The automatically generated <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i>
 messages include a description for each argument, with the format:</dd>
 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-<i>-name
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>-name
 [synopsis] type [mandatory | optional]</i>
 <dt>
 <i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -393,11 +388,36 @@ is defined as:
 // name of file (must be writeable)</font>
 <br><font color="#008080">&nbsp;&nbsp; };</font>
 <h4>
-<a NAME="ref_CArgDescriptions_UserValueTypes"></a><i>CArgAllow</i> class
--- to impose user-defined restrictions on the argument <i>value</i></h4>
-It is also possible to place further restrictions on the allowed set of
-values using the <i>CArgAllow</i> class.
-<br><i>.............................................</i>
+<a NAME="ref_CArgDescriptions_UserValueTypes"></a><i>CArgAllow</i> class:
+user-defined restrictions on the range of allowed values</h4>
+Further restrictions on the range of allowed values can be specified using
+the <i>CArgDescriptions::SetConstraint() </i>method with the <i><a href="../docxx/CArgAllow.html">CArgAllow</a></i>
+class. For example:
+<blockquote><font color="#008080">CArgAllow* constraint = new CArgAllow_Integers(5,
+10);</font>
+<br><font color="#008080">SetConstraint("firstInt", constraint);</font>
+<br><font color="#008080">SetConstraint("nextInt", constraint);</font></blockquote>
+<font color="#000000">This specifies that the arguments named "firstInt"
+and "nextInt" must both be in the range [5, 10].&nbsp; </font>The <a href="../docxx/CArgAllow_Integers.html"><i>CArgAllow_Integers</i>
+</a>class is derived from the <b>virtual</b> <i>CArgAllow</i> class. The
+constructor takes the two integer arguments as lower and upper bounds for
+allowed values. Similarly, the <i><a href="../docxx/CArgAllow_Doubles.html">CArgAllow_Doubles</a>
+</i>class can be used to specify a range of allowed floating point values.&nbsp;
+For both classes, the order of the numeric arguments does not matter, as
+the constructors will use <i>min/max </i>comparisions to generate a valid
+range.
+<p>A third class derived from the <i>CArgAllow</i> class is the <i><a href="../docxx/CArgAllow_Strings.html">CArgAllow_Strings</a></i>
+class.&nbsp; In this case, the set of allowed values can not specified
+by a <i>range,</i> but the following construct can be used:
+<blockquote><font color="#008080">CArgAllow* constraint = new CArgAllow_Strings()->Allow("this)->Allow("that");</font></blockquote>
+Here, the constructor takes no arguments, and the <i>Allow() </i>method
+returns <i>this</i>. Thus, a list of allowed strings can be specified by
+daisy-chaining a set of calls to Allow() to the constructor.
+<p>If the value provided on the command line is not within the allowed
+range or set of values thus specified for that argument, then an exception
+will be thrown.&nbsp; This exception can be caught and handled in the usual
+manner, as&nbsp; described in the discussion of <a href="#ref_CArgDescriptions_Usage">Generating
+a <i>USAGE </i>message.</a>
 <h4>
 <a NAME="ref_CArgDescriptions_Number"></a>Constraining the number of positional
 arguments</h4>
@@ -574,7 +594,8 @@ and is added to a container managed by the <i>CArgs</i> object.&nbsp; All
 arguments can be accessed&nbsp; using the [] operator, as in: <i>myCArgs["f"]</i>,
 where "f" is the name registered for that argument. There are two ways
 to access the <i>Nth</i> unnamed positional argument: <i>myCArgs["#N"]
-</i>and&nbsp; <i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
+</i>and&nbsp;
+<i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
 <i><a href="../docxx/CArgValue.html">CArgValue </a></i>class:&nbsp; the
@@ -625,7 +646,8 @@ demonstrates the usage of these classes for argument processing. See also
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
 and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
-<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;&nbsp;&nbsp;
+<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;&nbsp;
+
 <i><a href="diag.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
