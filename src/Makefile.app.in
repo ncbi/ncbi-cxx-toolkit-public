@@ -60,8 +60,8 @@ $(XAPP):: $(XOBJ) $(XLIBDEP)
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
 	done
 	$(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
+	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
-	@$(STRIP) $(XAPP)
 	$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)
 
 
