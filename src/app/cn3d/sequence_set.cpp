@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/06/18 21:48:27  thiessen
+* add [PACC] to Entrez query for PDB id's
+*
 * Revision 1.30  2001/06/02 17:22:46  thiessen
 * fixes for GCC
 *
@@ -466,7 +469,7 @@ static void LaunchWebPage(const char *url)
 
 #elif defined(__WXGTK__)
     CNcbiOstrstream oss;
-    oss << "( netscape -raise -remote 'openURL(" << url << ")' || netscape '" << url 
+    oss << "( netscape -raise -remote 'openURL(" << url << ")' || netscape '" << url
         << "' ) >/dev/null 2>&1 &" << '\0';
     system(oss.str());
     delete oss.str();
@@ -483,9 +486,10 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
     CNcbiOstrstream oss;
     oss << "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?form=6&db=p&Dopt=g&uid=";
     if (pdbID.size() > 0) {
-         oss << pdbID.c_str();
+        oss << pdbID.c_str();
         if (pdbChain != ' ')
             oss << (char) pdbChain;
+        oss << "[PACC]";
     } else if (gi != VALUE_NOT_SET)
         oss << gi;
     else if (accession.size() > 0)
