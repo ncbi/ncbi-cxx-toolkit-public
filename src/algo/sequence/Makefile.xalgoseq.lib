@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = cpg nuc_prop prot_prop regexp_loc
+SRC = cpg nuc_prop prot_prop regexp_loc seq_match
 LIB = xalgoseq
 
 CXXFLAGS = $(FAST_CXXFLAGS)

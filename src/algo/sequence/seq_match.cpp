@@ -31,7 +31,7 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include "seq_match.hpp"
+#include <algo/sequence/seq_match.hpp>
 
 #include <algorithm>
 
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/18 19:23:33  jcherry
+ * Moved seq_match to algo/sequence
+ *
  * Revision 1.3  2003/08/13 17:40:26  dicuccio
  * Formatting fixes.  Changes some pass-by-val to pass-by-reference.  Fixed
  * complement table
