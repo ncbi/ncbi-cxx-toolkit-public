@@ -67,7 +67,9 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
         CDirEntry::ConcatPath(root_dir, m_ConfigureDefinesPath);
     LOG_POST(Info << "MSVC site configuration will be in file : " 
                       + ncbi_conf_msvc_site_path);
-    WriteNcbiconfMsvcSite(ncbi_conf_msvc_site_path);
+    string candidate_path = ncbi_conf_msvc_site_path + ".candidate";
+    WriteNcbiconfMsvcSite(candidate_path);
+    PromoteIfDifferent(ncbi_conf_msvc_site_path, candidate_path);
 
     LOG_POST(Info << "Configure finished.");
 }
@@ -206,6 +208,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 18:23:33  gorelenk
+ * Implemented overwriting of site defines file *.h only when new file is
+ * different from already present one.
+ *
  * Revision 1.2  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
