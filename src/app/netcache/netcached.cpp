@@ -35,6 +35,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbi_system.hpp>
 
@@ -68,18 +69,14 @@ public:
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
-          m_BufLength(0),
           m_Shutdown(false)
     {
-        m_Buf = new char[kNetCacheBufSize+1];
         m_MaxThreads = 25;
         m_InitThreads = 10;
+        m_QueueSize = 100;
     }
 
-    ~CNetCacheServer()
-    {
-        delete [] m_Buf;
-    }
+    virtual ~CNetCacheServer() {}
 
     /// Take request code from the socket and process the request
     virtual void  Process(SOCK sock);
@@ -120,11 +117,14 @@ private:
     /// Process "GET" request
     void ProcessGet(CSocket& sock, const Request& req);
 
+    /// Process "SHUTDOWN" request
+    void ProcessShutdown(CSocket& sock, const Request& req);
+
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
 
     /// Read buffer from the socket.
-    bool ReadBuffer(CSocket& sock);
+    bool ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length);
 
     void ParseRequest(const string& reqstr, Request* req);
 
@@ -143,8 +143,8 @@ private:
     unsigned        m_MaxId;
     bm::bvector<>   m_UsedIds;   ///< Set of ids in use
     ICache*         m_Cache;
-    char*           m_Buf;       ///< Temp buffer
-    size_t          m_BufLength; ///< Actual buffer length (in bytes)
+//    char*           m_Buf;       ///< Temp buffer
+//    size_t          m_BufLength; ///< Actual buffer length (in bytes)
     bool            m_Shutdown;  ///< Shutdown request
 };
 
@@ -227,16 +227,7 @@ void CNetCacheServer::Process(SOCK sock)
                     ProcessGet(socket, req);
                     break;
                 case eShutdown:
-                    {
-                    m_Shutdown = true;
-
-                    // self reconnect to force the listening thread to rescan
-                    // shutdown flag
-                    unsigned port = GetPort();
-                    STimeout to;
-                    to.sec = 10; to.usec = 0;
-                    CSocket shut_sock("localhost", port, &to);
-                    }
+                    ProcessShutdown(socket, req);
                     break;
                 case eError:
                     WriteMsg(socket, "ERR:", req.err_msg);
@@ -265,11 +256,23 @@ void CNetCacheServer::Process(SOCK sock)
     } 
     catch (exception& ex)
     {
+cerr << "Exception in command processing!" << endl;
         ERR_POST(ex.what());
     }
 //LOG_POST("Connection closed.");
 }
 
+void CNetCacheServer::ProcessShutdown(CSocket& sock, const Request& req)
+{    
+    m_Shutdown = true;
+ 
+    // self reconnect to force the listening thread to rescan
+    // shutdown flag
+    unsigned port = GetPort();
+    STimeout to;
+    to.sec = 10; to.usec = 0;
+    CSocket shut_sock("localhost", port, &to);    
+}
 
 void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
 {
@@ -308,6 +311,8 @@ format_err:
     }
 
     WaitForId(blob_id.id);
+    
+
 
 //LOG_POST(Info << "GET request key=" << req_id);
     auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
@@ -318,12 +323,14 @@ blob_not_found:
 
         return;
     }
+    
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[kNetCacheBufSize+1]);
 
     bool read_flag = false;
     size_t bytes_read;
     do {
         ERW_Result io_res =
-         rdr->Read(m_Buf, kNetCacheBufSize, &bytes_read);
+         rdr->Read(buf.get(), kNetCacheBufSize, &bytes_read);
         if (io_res == eRW_Success) {
             if (bytes_read) {
                 if (!read_flag) {
@@ -334,7 +341,7 @@ blob_not_found:
                 size_t n_written;
 
                 EIO_Status io_st = 
-                  sock.Write(m_Buf, bytes_read, &n_written);
+                  sock.Write(buf.get(), bytes_read, &n_written);
                 if (io_st != eIO_Success) {
                     break;
                 }
@@ -369,12 +376,15 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
     to.sec = to.usec = 0;
     sock.SetTimeout(eIO_Read, &to);
 
-    while (ReadBuffer(sock)) {
-        if (m_BufLength) {
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[kNetCacheBufSize+1]);
+    size_t buffer_length = 0;
+
+    while (ReadBuffer(sock, buf.get(), &buffer_length)) {
+        if (buffer_length) {
 
             size_t bytes_written;
             ERW_Result res = 
-                iwrt->Write(m_Buf, m_BufLength, &bytes_written);
+                iwrt->Write(buf.get(), buffer_length, &bytes_written);
             if (res != eRW_Success) {
                 WriteMsg(sock, "Err:", "Server I/O error");
                 return;
@@ -513,21 +523,21 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
     req->err_msg = "Unknown request";
 }
 
-bool CNetCacheServer::ReadBuffer(CSocket& sock)
+bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length)
 {
     if (!s_WaitForReadSocket(sock)) {
-        m_BufLength = 0;
+        *buffer_length = 0;
         return true;
     }
 
     _ASSERT(m_Buf);
-    EIO_Status io_st = sock.Read(m_Buf, kNetCacheBufSize, &m_BufLength);
+    EIO_Status io_st = sock.Read(buf, kNetCacheBufSize, buffer_length);
     switch (io_st) 
     {
     case eIO_Success:
         break;
     case eIO_Timeout:
-        m_BufLength = 0;
+        *buffer_length = 0;
         break;
     default: // invalid socket or request
         return false;
@@ -696,8 +706,8 @@ int CNetCacheDApp::Run(void)
         LOG_POST(Info << "Running server on port " << port);
         m_PurgeThread->Run();
 
-        CNetCacheServer thr_srv(port, cache.get());
-        thr_srv.Run();
+        CNetCacheServer* thr_srv = new CNetCacheServer(port, cache.get());
+        thr_srv->Run();
 
         LOG_POST(Info << "Stopping cache maintanace thread...");
         if (bdb_cache) {
@@ -707,6 +717,8 @@ int CNetCacheDApp::Run(void)
         m_PurgeThread->RequestStop();
         m_PurgeThread->Join();
         LOG_POST(Info << "Stopped.");
+        
+        delete thr_srv;
 
     }
     catch (CBDB_ErrnoException& ex)
@@ -732,6 +744,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/18 13:46:57  kuznets
+ * Removed common buffer (was shared between threads)
+ *
  * Revision 1.5  2004/10/15 14:34:46  kuznets
  * Fine tuning of networking, cleaning thread interruption, etc
  *
