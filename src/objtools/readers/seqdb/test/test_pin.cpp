@@ -1842,11 +1842,13 @@ int test1(int argc, char ** argv)
         } else desc += " [-lib]";
         
         if (s == "-summary") {
-            CSeqDB phil("month", 'n');
+            CSeqDB phil(dbname, seqtype);
             cout << "dbpath: " << dbpath            << endl;
             cout << "title:  " << phil.GetTitle()   << endl;
             cout << "nseqs:  " << phil.GetNumSeqs() << endl;
+            cout << "noids:  " << phil.GetNumOIDs() << endl;
             cout << "tleng:  " << phil.GetTotalLength() << endl;
+            cout << "vleng:  " << phil.GetVolumeLength() << endl;
             return 0;
         } else desc += " [-summary]";
         
@@ -2344,20 +2346,17 @@ int test1(int argc, char ** argv)
             }
             
             continue;
-        } else desc += " [-num <seqs to get]";
+        } else desc += " [-num <seqs to get>]";
         
         if (s == "-oid-at-offset") {
-            cout << "What db?" << endl;
-            
-            string dbname1;
-            cin >> dbname1;
-            
-            CSeqDB db(dbname1, '-');
+            CSeqDB db(dbname, '-');
             
             while(1) {
-                Uint4 indx(0);
+                string indx_str;
+                Uint8 indx(0);
                 cout << "\nWhat index (0 to end): " << flush;
-                cin >> indx;
+                cin >> indx_str;
+                indx = NStr::StringToUInt8(indx_str);
                 
                 if (cin && (indx != 0)) {
                     Uint4 oid = db.GetOidAtOffset(0, indx);
