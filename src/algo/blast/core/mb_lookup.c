@@ -386,7 +386,7 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
       So we use a helper_array to keep track of this, but compress it by k_compression_factor so it stays 
       in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
       not seem to affect the overall performance of the rest of the program. */
-   Int4 longest_chain=0;
+   Uint4 longest_chain=0;
    Uint4* helper_array;     /* Helps to estimate longest chain. */
    const Int4 k_compression_factor=2048; /* compress helper_array by factor of 2048. */
 
@@ -454,7 +454,7 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
          }
       }
    }
-   mb_lt->longest_chain = longest_chain+2;
+   mb_lt->longest_chain = (Int4) (longest_chain+2);
    sfree(helper_array);
 
    return 0;
@@ -678,10 +678,6 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
    Int4 compressed_wordsize = mb_lt->compressed_wordsize;
 
-#ifdef DEBUG_LOG
-   FILE *logfp0 = fopen("new0.log", "a");
-#endif   
-
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size.
    */
@@ -703,10 +699,6 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
          if (query_offset && (hitsfound >= max_hits))
             break;
          while (query_offset) {
-#ifdef DEBUG_LOG
-            fprintf(logfp0, "%ld\t%ld\t%ld\n", query_offset, 
-                    subject_offset, index);
-#endif
             *(q_ptr++) = query_offset - 1;
             *(s_ptr++) = subject_offset;
             ++hitsfound;
@@ -721,9 +713,6 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
 
    *end_offset = 
      ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-#ifdef DEBUG_LOG
-   fclose(logfp0);
-#endif
 
    return hitsfound;
 }
@@ -734,7 +723,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        Int4* end_offset)
 {
    Uint1* s;
-   Uint1* s_start,* abs_start,* s_end;
+   Uint1* s_start,* abs_start;
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 word, index, index2=0;
@@ -747,25 +736,23 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
    Int4 compressed_wordsize = mb_lt->compressed_wordsize;
+   Uint4 word_end_offset = start_offset + mb_lt->word_length;
+   Uint4 last_end_offset = *end_offset;
+   Uint4 scan_step = mb_lt->scan_step;
 
-#ifdef DEBUG_LOG
-   FILE *logfp0 = fopen("new0.log", "a");
-#endif   
-   
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size. */
    max_hits -= mb_lt->longest_chain;
 
    abs_start = subject->sequence;
    s_start = abs_start + start_offset/COMPRESSION_RATIO;
-   s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
 
    s = BlastNaLookupInitIndex(mb_lt->compressed_wordsize, s_start, &word);
 
    /* s now points to the byte right after the end of the current word */
    if (full_byte_scan) {
 
-     while (s <= s_end) {
+     while (word_end_offset <= last_end_offset) {
        index = ComputeDiscontiguousIndex(s, word, template_type);
 
        if (two_templates) {
@@ -778,10 +765,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
           if (query_offset && (hitsfound >= max_hits))
              break;
           while (query_offset) {
-#ifdef DEBUG_LOG
-             fprintf(logfp0, "%ld\t%ld\t%ld\n", query_offset, 
-                     subject_offset, index);
-#endif
              *(q_ptr++) = query_offset - 1;
              *(s_ptr++) = subject_offset;
              ++hitsfound;
@@ -802,13 +785,14 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        }
        word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
                            mb_lt->mask, s++, word);
+       word_end_offset += COMPRESSION_RATIO;
      }
    } else {
       Int4 scan_shift = 2*mb_lt->scan_step;
       Uint1 bit = 2*(start_offset % COMPRESSION_RATIO);
       Int4 adjusted_word;
 
-      while (s <= s_end) {
+      while (word_end_offset <= last_end_offset) {
          /* Adjust the word index by the base within a byte */
          adjusted_word = BlastNaLookupAdjustIndex(s, word, mb_lt->mask,
                                          bit);
@@ -828,10 +812,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             if (query_offset && (hitsfound >= max_hits))
                break;
             while (query_offset) {
-#ifdef DEBUG_LOG
-               fprintf(logfp0, "%ld\t%ld\t%ld\n", query_offset, 
-                       subject_offset, index);
-#endif
                *(q_ptr++) = query_offset - 1;
                *(s_ptr++) = subject_offset;
                ++hitsfound;
@@ -852,6 +832,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             }
          }
          bit += scan_shift;
+         word_end_offset += scan_step;
+
          if (bit >= FULL_BYTE_SHIFT) {
             /* Advance to the next full byte */
             bit -= FULL_BYTE_SHIFT;
@@ -860,11 +842,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
          }
       }
    }
-   *end_offset = 
-     ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-#ifdef DEBUG_LOG
-   fclose(logfp0);
-#endif
+   *end_offset = word_end_offset - mb_lt->word_length;
 
    return hitsfound;
 }
