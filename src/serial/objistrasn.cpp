@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/11/18 20:19:01  vakatov
+* ExpectString() -- get rid of the CodeWarrior(MAC) C++ compiler warning
+*
 * Revision 1.28  1999/10/25 20:19:51  vasilche
 * Fixed strings representation in text ASN.1 files.
 *
@@ -292,7 +295,7 @@ void CObjectIStreamAsn::ExpectString(const char* s, bool skipWhiteSpace)
     if ( skipWhiteSpace )
         SkipWhiteSpace();
     char c;
-    while ( (c = *s++) ) {
+    while ((c = *s++) != 0) {
         Expect(c);
     }
 }
