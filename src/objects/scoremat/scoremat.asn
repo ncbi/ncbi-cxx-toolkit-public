@@ -1,4 +1,4 @@
---$Id: scoremat.asn,v 1.5 2003/06/16 12:19:56 madden Exp $
+--$Id: scoremat.asn,v 1.6 2003/08/25 19:03:28 bauer Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,9 @@
 --
 -- ===========================================================================
 -- $Log: scoremat.asn,v $
+-- Revision 1.6  2003/08/25 19:03:28  bauer
+-- added raw frequencies and weights as optional score-matrix components
+--
 -- Revision 1.5  2003/06/16 12:19:56  madden
 -- Do not use Blast4-ka-block, other changes worked out with structure group
 --
@@ -122,7 +125,12 @@ Score-matrix ::= SEQUENCE {
                          } OPTIONAL,           -- frequencies used in pseudocount method
     gapOpen      INTEGER OPTIONAL,             -- scaled by score-scale-factor (above)
     gapExtend    INTEGER OPTIONAL,             -- scaled by score-scale-factor (above)
-    query        Seq-entry OPTIONAL            -- PSSM representative sequence 
+    query        Seq-entry OPTIONAL,           -- PSSM representative sequence 
+    rawFreqs     SEQUENCE OF INTEGER OPTIONAL, -- frequencies observed in alignment
+    rawFreqs-scale-factor INTEGER OPTIONAL,    -- scaling factor for frequencies
+    weights      SEQUENCE OF INTEGER OPTIONAL, -- sequence weights for individual cells
+    weights-scale-factor INTEGER OPTIONAL,     -- and their scaling factor
+    byrow        BOOLEAN OPTIONAL              -- are matrices stored row by row?
 }
 
 -- Envelope containing matrix or pssm, Karlin-Altschul parameters, and block constraints.
