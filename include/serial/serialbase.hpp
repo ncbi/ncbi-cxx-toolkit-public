@@ -325,19 +325,19 @@ bool SerialEquals(const C& object1, const C& object2)
 //
 
 // Formatting
-CNcbiIos& MSerial_AsnText(CNcbiIos& io);
-CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
-CNcbiIos& MSerial_Xml(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_AsnText(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_AsnBinary(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_Xml(CNcbiIos& io);
 
 // Class member assignment verification
-CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io);
-CNcbiIos& MSerial_VerifyNo(CNcbiIos& io);
-CNcbiIos& MSerial_VerifyYes(CNcbiIos& io);
-CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyDefault(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyNo(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyYes(CNcbiIos& io);
+CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyDefValue(CNcbiIos& io);
 
 // Input/output
-CNcbiOstream& operator<< (CNcbiOstream& str, const CSerialObject& obj);
-CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject& obj);
+CNcbiOstream& NCBI_XSERIAL_EXPORT operator<< (CNcbiOstream& str, const CSerialObject& obj);
+CNcbiIstream& NCBI_XSERIAL_EXPORT operator>> (CNcbiIstream& str, CSerialObject& obj);
 
 
 
@@ -424,8 +424,8 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.26  2004/01/16 19:55:23  gouriano
-* Added I/O stream manipulators for serializable objects
+* Revision 1.27  2004/01/16 21:50:41  gouriano
+* added export specifiers to i/o manipulators
 *
 * Revision 1.25  2003/11/13 14:06:44  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
