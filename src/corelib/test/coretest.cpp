@@ -742,24 +742,24 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, "Message");
     }
     catch (...) {
-        CNcbiDiag(CDiagCompileInfo(__FILE__, __LINE__ - 3), eDiag_Trace) <<
-            "runtime_error: Message";
+        CDiagCompileInfo dci(__FILE__, __LINE__ - 3);
+        CNcbiDiag(dci, eDiag_Trace) << "runtime_error: Message";
     }
     string mess = "ERROR";
     try {
         THROW1_TRACE(runtime_error, mess);
     }
     catch (...) {
-        CNcbiDiag(CDiagCompileInfo(__FILE__, __LINE__ - 3), eDiag_Trace) <<
-            "runtime_error: ERROR";
+        CDiagCompileInfo dci(__FILE__, __LINE__ - 3);
+        CNcbiDiag(dci, eDiag_Trace) << "runtime_error: ERROR";
     }
     int i = 123;
     try {
         THROW0p_TRACE(i);
     }
     catch (...) {
-        CNcbiDiag(CDiagCompileInfo(__FILE__, __LINE__ - 3), eDiag_Trace) <<
-            "i: 123";
+        CDiagCompileInfo dci(__FILE__, __LINE__ - 3);
+        CNcbiDiag(dci, eDiag_Trace) << "i: 123";
     }
     SetDiagTrace(eDT_Default);
 }
@@ -891,6 +891,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2004/09/22 16:57:35  ucko
+ * Tweak TestThrowTrace to avoid confusing older GCC versions.
+ *
  * Revision 1.91  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
