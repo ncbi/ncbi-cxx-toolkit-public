@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2002/05/13 19:08:11  ucko
+ * Use get{addr,name}info in favor of gethostby{name,addr}(_r) when available.
+ *
  * Revision 6.45  2002/05/06 19:19:43  lavr
  * Remove unnecessary inits of fields returned from s_Select()
  *
@@ -216,10 +219,22 @@
 #endif
 
 
+/* Uncomment these (or specify "-DHAVE_GETADDRINFO -DHAVE_GETNAMEINFO") only if:
+ * 0) you are compiling this outside of the NCBI C or C++ Toolkits
+ *    (USE_NCBICONF is not #define'd), and
+ * 1) your platform has "getaddrinfo()" and "getnameinfo()", and
+ * 2) you are going to use this API code in multi-thread application, and
+ * 3) "gethostbyname()" gets called somewhere else in your code
+ */
+
+/* #define HAVE_GETADDRINFO 1 */
+/* #define HAVE_GETNAMEINFO 1 */
+
+
 /* Uncomment this (or specify "-DHAVE_GETHOSTBY***_R=") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
  *    (USE_NCBICONF is not #define'd), and
- * 1) your platform has "gethostbyname_r()", and
+ * 1) your platform has "gethostbyname_r()" but not "getnameinfo()", and
  * 2) you are going to use this API code in multi-thread application, and
  * 3) "gethostbyname()" gets called somewhere else in your code
  */
@@ -1857,36 +1872,52 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 
     host = inet_addr(hostname);
     if (host == htonl(INADDR_NONE)) {
+#if defined(HAVE_GETADDRINFO)
+	struct addrinfo hints, *out = NULL;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_INET; /* We only handle IPv4. */
+	if (getaddrinfo(hostname, NULL, &hints, &out) == 0  &&  out) {
+	    struct sockaddr_in* addr = (struct sockaddr_in *) out->ai_addr;
+	    assert(addr->sin_family == AF_INET);
+	    host = addr->sin_addr.s_addr;
+	} else {
+	    host = 0;
+	}
+	if (out) {
+	    freeaddrinfo(out);
+	}
+#else /* Use some variant of gethostbyname */
         struct hostent* he;
-#if defined(HAVE_GETHOSTBYNAME_R)
+# if defined(HAVE_GETHOSTBYNAME_R)
         struct hostent x_he;
         char           x_buf[1024];
         int            x_err;
-#  if (HAVE_GETHOSTBYNAME_R == 5)
+#   if (HAVE_GETHOSTBYNAME_R == 5)
         he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                              &x_err);
-#  elif (HAVE_GETHOSTBYNAME_R == 6)
+#   elif (HAVE_GETHOSTBYNAME_R == 6)
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                             &he, &x_err) != 0) {
             assert(he == 0);
             he = 0;
         }
-#  else
-#    error "Unknown HAVE_GETHOSTBYNAME_R value"
-#  endif
-#else
+#   else
+#     error "Unknown HAVE_GETHOSTBYNAME_R value"
+#   endif
+# else
         CORE_LOCK_WRITE;
         he = gethostbyname(hostname);
-#endif
+# endif
         if ( he ) {
             memcpy(&host, he->h_addr, sizeof(host));
         } else {
             host = 0;
         }
 
-#if !defined(HAVE_GETHOSTBYNAME_R)
+# if !defined(HAVE_GETHOSTBYNAME_R)
         CORE_UNLOCK;
-#endif
+# endif
+#endif /* HAVE_GETADDR_INFO */
     }
 
     return host;
@@ -1900,41 +1931,53 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
     if (host  &&  name  &&  namelen) {
+#if defined(HAVE_GETNAMEINFO)
+	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = host;
+	if (getnameinfo((struct sockaddr *) &addr, sizeof(addr), name, namelen,
+			0, 0, NI_NAMEREQD) == 0) {
+	    return name;
+	} else {
+	    return 0;
+	}
+#else
         struct hostent* he;
-#if defined(HAVE_GETHOSTBYADDR_R)
+# if defined(HAVE_GETHOSTBYADDR_R)
         struct hostent x_he;
         char           x_buf[1024];
         int            x_errno;
 
-#  if (HAVE_GETHOSTBYADDR_R == 7)
+#   if (HAVE_GETHOSTBYADDR_R == 7)
         he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                              x_buf, sizeof(x_buf), &x_errno);
-#  elif (HAVE_GETHOSTBYADDR_R == 8)
+#   elif (HAVE_GETHOSTBYADDR_R == 8)
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                             x_buf, sizeof(x_buf), &he, &x_errno) != 0) {
             assert(he == 0);
             he = 0;
         }
-#  else
+#   else
 #    error "Unknown HAVE_GETHOSTBYADDR_R value"
-#  endif
-#else
+#   endif
+# else
         CORE_LOCK_WRITE;
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-#endif
+# endif
 
         if (!he  ||  strlen(he->h_name) > namelen - 1) {
-#if !defined(HAVE_GETHOSTBYADDR_R)
+# if !defined(HAVE_GETHOSTBYADDR_R)
             CORE_UNLOCK;
-#endif
+# endif
             return 0;
         }
         strncpy(name, he->h_name, namelen - 1);
-#if !defined(HAVE_GETHOSTBYADDR_R)
+# if !defined(HAVE_GETHOSTBYADDR_R)
         CORE_UNLOCK;
-#endif
+# endif
         name[namelen - 1] = '\0';
         return name;
+#endif /* HAVE_GETNAMEINFO */
     }
 
     return 0;
