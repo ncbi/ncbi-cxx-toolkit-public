@@ -472,23 +472,27 @@ Int4 MakeAllWordSequence(LookupTable* lookup)
 
 Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset)
 {
-  Uint1* w = NULL;
-
-  ASSERT(query != NULL);
-
-  w = query->sequence + offset;
   
-  if (lookup->threshold == 0)
+  if (lookup->use_pssm)
+  {
+      AddPSSMWordHits(lookup, matrix, offset);
+  }
+  else
+  {
+    Uint1* w = NULL;
+    ASSERT(query != NULL);
+    w = query->sequence + offset;
+  
+    if (lookup->threshold == 0)
     {
       BlastAaLookupAddWordHit(lookup, w, offset);
       lookup->exact_matches++;
-      return 0;
     }
-  
-  if (lookup->use_pssm)
-      AddPSSMWordHits(lookup, matrix, offset);
-  else
+    else
+    {
       AddWordHits(lookup, matrix, w, offset);
+    }
+  }
   return 0;
 }
 
