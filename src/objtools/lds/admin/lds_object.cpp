@@ -35,6 +35,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 
 #include <bdb/bdb_cursor.hpp>
 
@@ -359,6 +360,42 @@ int CLDS_Object::SaveObject(int file_id,
         
         ++m_MaxAnnRecId;
         
+        // Set of seq ids referenced in the annotation
+        //
+        set<string> ref_seq_ids;
+
+        // Check for alignment in annotation
+        //
+        const CSeq_annot* annot = 
+            CType<CSeq_annot>().Get(obj_info->info);
+        if (annot && annot->CanGetData()) {
+            const CSeq_annot_Base::C_Data& adata = annot->GetData();
+            if (adata.Which() == CSeq_annot_Base::C_Data::e_Align) {
+                const CSeq_annot_Base::C_Data::TAlign& al_list =
+                                            adata.GetAlign();
+                ITERATE(CSeq_annot_Base::C_Data::TAlign, it, al_list){
+                    if (!(*it)->CanGetSegs())
+                        continue;
+
+                    const CSeq_align::TSegs& segs = (*it)->GetSegs();
+                    const CSeq_align_Base::C_Segs::TStd& std_list =
+                                                segs.GetStd();
+                    ITERATE(CSeq_align_Base::C_Segs::TStd, it2, std_list) {
+                        const CRef<CStd_seg>& seg = *it2;
+                        const CStd_seg::TIds& ids = seg->GetIds();
+
+                        ITERATE(CStd_seg::TIds, it3, ids) {
+                            ref_seq_ids.insert((*it3)->AsFastaString());
+
+                        } // ITERATE
+
+                    } // ITERATE
+
+                } // ITERATE
+            }
+        }
+
+        
         obj_info->ext_id = m_MaxAnnRecId; // Keep external id for the next scan
                 
         m_db.annot_db.annot_id = m_MaxAnnRecId;
@@ -366,7 +403,7 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.annot_db.annot_type = type_id;
         m_db.annot_db.file_offset = obj_info->offset;
 
-//        LOG_POST(Info << "Saving annotation: " << type_name << " " << id_str);
+        LOG_POST(Info << "Saving annotation: " << type_name << " " << id_str);
 
         EBDB_ErrCode err = m_db.annot_db.Insert();
         BDB_CHECK(err, "LDS::Annotation");
@@ -474,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/01 19:27:06  kuznets
+ * Added code fragment reading sequence ids from an alignment.
+ *
  * Revision 1.8  2003/06/26 16:22:15  kuznets
  * Uppercased all sequence ids before writing into the database.
  *
