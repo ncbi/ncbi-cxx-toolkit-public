@@ -310,7 +310,7 @@ void SAnnotSelector::x_InitializeAnnotTypesSet(void)
         // Copy current state to the set
         CAnnotType_Index::TIndexRange range = 
             CAnnotType_Index::GetIndexRange(*this);
-        for (int i = range.first; i < range.second; ++i) {
+        for (size_t i = range.first; i < range.second; ++i) {
             m_AnnotTypesSet[i] = true;
         }
     }
@@ -327,7 +327,7 @@ SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
         x_InitializeAnnotTypesSet();
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
-        for (int i = range.first; i < range.second; ++i) {
+        for (size_t i = range.first; i < range.second; ++i) {
             m_AnnotTypesSet[i] = true;
         }
     }
@@ -342,7 +342,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
         x_InitializeAnnotTypesSet();
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
-        for (int i = range.first; i < range.second; ++i) {
+        for (size_t i = range.first; i < range.second; ++i) {
             m_AnnotTypesSet[i] = false;
         }
     }
@@ -377,7 +377,7 @@ bool SAnnotSelector::IncludedFeatType(TFeatType type) const
     if (m_AnnotTypesSet.size() > 0) {
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
-        for (int i = range.first; i < range.second; ++i) {
+        for (size_t i = range.first; i < range.second; ++i) {
             if (!m_AnnotTypesSet[i]) {
                 return false;
             }
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/02/05 16:05:49  vasilche
+* Fixed int <-> unsigned warning.
+*
 * Revision 1.5  2004/02/04 18:05:38  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.
