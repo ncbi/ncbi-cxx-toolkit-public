@@ -1111,9 +1111,9 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 
 if test "$GCC" = "yes" ; then
    # GNU compiler
-   CFLAGS="-Wall -ansi $CFLAGS"
+   CFLAGS="-Wall -ansi -D__EXTENSIONS__ $CFLAGS"
    CXXFLAGS=`echo $CXXFLAGS | sed 's/-O.//g'`
-   CXXFLAGS="-Wall -ansi $CXXFLAGS"
+   CXXFLAGS="-Wall -ansi -D__EXTENSIONS__ $CXXFLAGS"
    LDFLAGS="-g $LDFLAGS"
 elif test "$CXX" = "cl.exe /TP" ; then
    # MSVC++ compiler
