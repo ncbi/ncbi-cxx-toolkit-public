@@ -340,7 +340,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
 
     // Look for starting gaps in alignments
     unsigned int i = 
-        m_PssmInput->GetOptions()->nsg_ignore_consensus == TRUE ? 1 : 0;
+        m_PssmInput->GetOptions()->nsg_compatibility_mode == TRUE ? 1 : 0;
     for ( ; i < msa->dimensions->num_seqs + 1; i++) {
         // find the first aligned residue
         for (unsigned int j = 0; j < m_PssmInput->GetQueryLength(); j++) {
@@ -355,7 +355,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
     }
 
     // Look for ending gaps in alignments
-    i = m_PssmInput->GetOptions()->nsg_ignore_consensus == TRUE ? 1 : 0;
+    i = m_PssmInput->GetOptions()->nsg_compatibility_mode == TRUE ? 1 : 0;
     for ( ; i < msa->dimensions->num_seqs + 1; i++) {
         // find the last aligned residue
         for (unsigned int j = m_PssmInput->GetQueryLength() - 1; j >= 0; j--) {
@@ -377,7 +377,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
 void
 CPssmEngine::x_ValidateNoGapsInQuery()
 {
-    if (m_PssmInput->GetOptions()->nsg_ignore_consensus) {
+    if (m_PssmInput->GetOptions()->nsg_compatibility_mode) {
         return;
     }
 
@@ -413,7 +413,7 @@ CPssmEngine::x_ValidateAlignedColumns()
         bool found_non_gap_residue = false;
 
         unsigned int j = 
-            m_PssmInput->GetOptions()->nsg_ignore_consensus == TRUE ? 1 : 0;
+            m_PssmInput->GetOptions()->nsg_compatibility_mode == TRUE ? 1 : 0;
         for ( ; j < msa->dimensions->num_seqs + 1; j++) {
             if (msa->data[j][i].is_aligned) {
                 found_aligned_sequence = true;
@@ -527,6 +527,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2004/12/13 22:27:06  camacho
+ * Consolidated structure group customizations in option: nsg_compatibility_mode
+ *
  * Revision 1.25  2004/12/09 15:23:30  dondosha
  * BlastSetup_GetScoreBlock renamed to BlastSetup_ScoreBlkInit
  *

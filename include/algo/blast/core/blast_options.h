@@ -483,22 +483,24 @@ typedef struct PSIBlastOptions {
      */
     Boolean use_best_alignment;
 
-    /* The following are advanced options, provided for NCBI's structure 
-       group (note nsg_ prefix, stands for NCBI's structure group) */
-
-    /** Setting this option to TRUE enables a customization of the PSSM 
-     * engine implemented for the structure group. It forces the PSSM engine to
-     * ignore the query while building the PSSM. It is FALSE by default. */
-    Boolean nsg_ignore_consensus;
-
-    /** Purge percent identity threshold: determines when similar sequences in
-     * the multiple sequence alignment are to be purged before the creation of
-     * the PSSM. In the past, this was a constant, but for experimentation 
-     * purposes it is being made a variable to allow certain multiple sequence 
-     * alignments to be processed by the PSSM engine. Its default value remains
-     * the constant used by the PSI-BLAST PSSM engine (kPSINearIdentical)
+    /** Compatibility option for the NCBI's structure group (note 
+     * nsg_ prefix, stands for NCBI's structure group). When set to true, the
+     * PSSM engine will function in the same way the C toolkit PSSM engine did
+     * in the structure group's cddumper application. This option should be 
+     * set to FALSE by default as it enables the following behavior in the 
+     * PSSM engine:
+     * <pre>
+     * 1) Ignores the query sequence
+     * 2) Skips validation of multiple sequence alignment data
+     * 3) Disables assertions and validation in _PSICheckSequenceWeights
+     * 4) If no aligned sequences are provided in the multiple sequence
+     * alignment, NULL PSSM frequency ratios are returned and the PSSM is built
+     * based on the underlying substitution matrix.
+     * </pre>
+     * Do not set this to TRUE unless you know what you are doing.
      */
-    double nsg_identity_threshold;
+    Boolean nsg_compatibility_mode;
+
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 

@@ -1443,8 +1443,8 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
    options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
    options->use_best_alignment = TRUE;
-   options->nsg_ignore_consensus = FALSE;
-   options->nsg_identity_threshold = kPSINearIdentical;
+
+   options->nsg_compatibility_mode = FALSE;
    
    return 0;
 }
@@ -1455,13 +1455,6 @@ Int2 PSIBlastOptionsValidate(const PSIBlastOptions* psi_options,
     Int2 retval = 1;    /* assume failure */
 
     if ( !psi_options ) {
-        return retval;
-    }
-
-    if (psi_options->nsg_identity_threshold <= 0.0) {
-        Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 0, 0,
-                           "Purge percent identity threshold must be greater "
-                           "than 0");
         return retval;
     }
 
@@ -1682,6 +1675,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.147  2004/12/13 22:26:59  camacho
+ * Consolidated structure group customizations in option: nsg_compatibility_mode
+ *
  * Revision 1.146  2004/12/09 15:22:56  dondosha
  * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
  *

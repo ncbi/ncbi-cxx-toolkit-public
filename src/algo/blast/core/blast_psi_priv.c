@@ -507,19 +507,14 @@ __printMsa(const char* filename, const _PSIMsa* msa)
 
 /** Validate that there are no gaps in the query sequence
  * @param msa multiple sequence alignment data structure [in]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
  * @return PSIERR_GAPINQUERY if validation fails, else PSI_SUCCESS
  */
 static int
-s_PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
+s_PSIValidateNoGapsInQuery(const _PSIMsa* msa)
 {
     const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 p = 0;            /* index on positions sequences */
     ASSERT(msa);
-
-    if (ignore_consensus) {
-        return PSI_SUCCESS;
-    }
 
     for (p = 0; p < msa->dimensions->query_length; p++) {
         if (msa->cell[kQueryIndex][p].letter == kGapResidue || 
@@ -651,7 +646,7 @@ s_PSIValidateParticipatingSequences(const _PSIMsa* msa)
 }
 
 int
-_PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
+_PSIValidateMSA(const _PSIMsa* msa)
 {
     int retval = PSI_SUCCESS;
 
@@ -669,7 +664,7 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
         return retval;
     }
 
-    retval = s_PSIValidateNoGapsInQuery(msa, ignore_consensus);
+    retval = s_PSIValidateNoGapsInQuery(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
@@ -696,7 +691,7 @@ s_PSIPurgeSelfHits(_PSIMsa* msa);
  * @param msa multiple sequence alignment data structure [in]
  */
 static void
-s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa, double identity_threshold);
+s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa);
 
 /** This function compares the sequences in the msa->cell
  * structure indexed by sequence_index1 and seq_index2. If it finds aligned 
@@ -719,14 +714,14 @@ s_PSIPurgeSimilarAlignments(_PSIMsa* msa,
 
 /**************** PurgeMatches stage of PSSM creation ***********************/
 int
-_PSIPurgeBiasedSegments(_PSIMsa* msa, double identity_threshold)
+_PSIPurgeBiasedSegments(_PSIMsa* msa)
 {
-    if ( !msa || identity_threshold <= 0.0 ) {
+    if ( !msa ) {
         return PSIERR_BADPARAM;
     }
 
     s_PSIPurgeSelfHits(msa);
-    s_PSIPurgeNearIdenticalAlignments(msa, identity_threshold);
+    s_PSIPurgeNearIdenticalAlignments(msa);
     _PSIUpdatePositionCounts(msa);
 
     return PSI_SUCCESS;
@@ -745,7 +740,7 @@ s_PSIPurgeSelfHits(_PSIMsa* msa)
 }
 
 static void
-s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa, double identity_threshold)
+s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
 {
     Uint4 i = 0;
     Uint4 j = 0;
@@ -757,7 +752,7 @@ s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa, double identity_threshold)
             /* N.B.: The order of comparison of sequence pairs is deliberate,
              * tests on real data indicated that this approach allowed more
              * sequences to be purged */
-            s_PSIPurgeSimilarAlignments(msa, j, (i + j), identity_threshold);
+            s_PSIPurgeSimilarAlignments(msa, j, (i + j), kPSINearIdentical);
         }
     }
 }
@@ -771,8 +766,8 @@ _PSIUpdatePositionCounts(_PSIMsa* msa)
     ASSERT(msa);
 
     /* Reset the data in case this function is being called multiple times
-     * after the initial counts were done (i.e.: structure group's ignore
-     * consensus option) */
+     * after the initial counts were done (i.e.: structure group's
+     * compatibility mode) */
     memset((void*) msa->num_matching_seqs, 0, 
            sizeof(Uint4)*msa->dimensions->query_length);
     for (p = 0; p < msa->dimensions->query_length; p++) {
@@ -1056,10 +1051,14 @@ _PSIComputePositionExtents(const _PSIMsa* msa,
 /** Calculates the aligned blocks lengths in the multiple sequence alignment
  * data structure.
  * @param msa multiple sequence alignment data structure [in]
+ * @param nsg_compatibility_mode set to true to emulate the structure group's
+ * use of PSSM engine in the cddumper application. By default should be FALSE
+ * [in]
  * @param aligned_blocks aligned regions' extents [in|out]
  */
 static void
 _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
+                                Boolean nsg_compatibility_mode,
                                 _PSIAlignedBlock* aligned_blocks);
 
 /****************************************************************************/
@@ -1067,6 +1066,7 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
 /* posComputeExtents in posit.c */
 int
 _PSIComputeAlignmentBlocks(const _PSIMsa* msa,                  /* [in] */
+                           Boolean nsg_compatibility_mode,      /* [in] */
                            _PSIAlignedBlock* aligned_blocks)    /* [out] */
 {
     Uint4 s = 0;     /* index on aligned sequences */
@@ -1085,7 +1085,8 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,                  /* [in] */
         _PSIComputePositionExtents(msa, s, aligned_blocks);
     }
 
-    _PSIComputeAlignedRegionLengths(msa, aligned_blocks);
+    _PSIComputeAlignedRegionLengths(msa, nsg_compatibility_mode,
+                                    aligned_blocks);
 
     return PSI_SUCCESS;
 }
@@ -1197,6 +1198,7 @@ _PSIComputePositionExtents(const _PSIMsa* msa,
 
 static void
 _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
+                                Boolean nsg_compatibility_mode,
                                 _PSIAlignedBlock* aligned_blocks)
 {
     const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
@@ -1209,9 +1211,11 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
         aligned_blocks->size[i] = aligned_blocks->pos_extnt[i].right - 
                                    aligned_blocks->pos_extnt[i].left + 1;
 
-        /* Sanity check: if aligned_blocks->pos_extnt[i].{right,left} was not
-         * modified after initialization, this assertion will fail */
-        ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
+        if ( !nsg_compatibility_mode ) {
+            /* Sanity check: if aligned_blocks->pos_extnt[i].{right,left} was
+               not modified after initialization, this assertion will fail */
+            ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
+        }
     }
 
     /* Do not include X's in aligned region lengths */
@@ -1298,25 +1302,29 @@ _PSICalculateMatchWeights(
 /** Uses disperse method of spreading the gap weights
  * @param msa multiple sequence alignment data structure [in]
  * @param seq_weights sequence weights data structure [in|out]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @param nsg_compatibility_mode set to true to emulate the structure group's
+ * use of PSSM engine in the cddumper application. By default should be FALSE
+ * [in]
  */
 static void
 _PSISpreadGapWeights(const _PSIMsa* msa,
                      _PSISequenceWeights* seq_weights,
-                     Boolean ignore_consensus);
+                     Boolean nsg_compatibility_mode);
 
 /** Verifies that the sequence weights for each column of the PSSM add up to
  * 1.0.
  * @param msa multiple sequence alignment data structure [in]
  * @param seq_weights sequence weights data structure [in]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @param nsg_compatibility_mode set to true to emulate the structure group's
+ * use of PSSM engine in the cddumper application. By default should be FALSE
+ * [in]
  * @return PSIERR_BADSEQWEIGHTS in case of failure, PSI_SUCCESS otherwise
  */
 static int
 _PSICheckSequenceWeights(
     const _PSIMsa* msa,
     const _PSISequenceWeights* seq_weights,
-    Boolean ignore_consensus);
+    Boolean nsg_compatibility_mode);
 
 /****************************************************************************/
 /******* Calculate sequence weights stage of PSSM creation ******************/
@@ -1326,7 +1334,7 @@ _PSICheckSequenceWeights(
 int
 _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
                            const _PSIAlignedBlock* aligned_blocks,  /* [in] */
-                           Boolean ignore_consensus,                /* [in] */
+                           Boolean nsg_compatibility_mode,          /* [in] */
                            _PSISequenceWeights* seq_weights)        /* [out] */
 {
     Uint4* aligned_seqs = NULL;     /* list of indices of sequences
@@ -1334,7 +1342,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
                                        aligned position */
     Uint4 pos = 0;                  /* position index */
     int retval = PSI_SUCCESS;       /* return value */
-    const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
+    const Uint4 kExpectedNumMatchingSeqs = nsg_compatibility_mode ? 0 : 1;
 
     if ( !msa || !aligned_blocks || !seq_weights ) {
         return PSIERR_BADPARAM;
@@ -1384,14 +1392,16 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
     sfree(aligned_seqs);
 
     /* Check that the sequence weights add up to 1 in each column */
-    retval = _PSICheckSequenceWeights(msa, seq_weights, ignore_consensus);
+    retval = _PSICheckSequenceWeights(msa, seq_weights, 
+                                      nsg_compatibility_mode);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
 
 #ifndef PSI_IGNORE_GAPS_IN_COLUMNS
-    _PSISpreadGapWeights(msa, seq_weights, ignore_consensus);
-    retval = _PSICheckSequenceWeights(msa, seq_weights, ignore_consensus);
+    _PSISpreadGapWeights(msa, seq_weights, nsg_compatibility_mode);
+    retval = _PSICheckSequenceWeights(msa, seq_weights, 
+                                      nsg_compatibility_mode);
 #endif
 
     /* Return seq_weights->match_weigths, should free others? FIXME: need to
@@ -1589,13 +1599,13 @@ _PSIGetAlignedSequencesForPosition(const _PSIMsa* msa,
 static void
 _PSISpreadGapWeights(const _PSIMsa* msa,
                      _PSISequenceWeights* seq_weights,
-                     Boolean ignore_consensus)
+                     Boolean nsg_compatibility_mode)
 {
     const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 pos = 0;   /* residue position (ie: column number) */
     Uint4 res = 0;   /* residue */
-    const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
+    const Uint4 kExpectedNumMatchingSeqs = nsg_compatibility_mode ? 0 : 1;
 
     ASSERT(msa);
     ASSERT(seq_weights);
@@ -1625,12 +1635,12 @@ _PSISpreadGapWeights(const _PSIMsa* msa,
 static int
 _PSICheckSequenceWeights(const _PSIMsa* msa,
                          const _PSISequenceWeights* seq_weights,
-                         Boolean ignore_consensus)
+                         Boolean nsg_compatibility_mode)
 {
     const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 pos = 0;   /* residue position (ie: column number) */
     Boolean check_performed = FALSE;  /* were there any sequences checked? */
-    const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
+    const Uint4 kExpectedNumMatchingSeqs = nsg_compatibility_mode ? 0 : 1;
 
     ASSERT(msa);
     ASSERT(seq_weights);
@@ -1657,7 +1667,8 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
 
     /* This condition should never happen because it means that no sequences
      * were selected to calculate the sequence weights! */
-    if ( !check_performed ) {
+    if ( !check_performed &&
+         !nsg_compatibility_mode ) {    /* old code didn't check for this... */
         assert(!"Did not perform sequence weights check");
     }
 
@@ -2234,13 +2245,12 @@ _PSIPurgeAlignedRegion(_PSIMsa* msa,
     _PSIMsaCell* sequence_position = NULL;
     unsigned int i = 0;
 
-    if (!msa)
+    if ( !msa ||
+        seq_index == 0 ||
+        seq_index > msa->dimensions->num_seqs + 1 ||
+        stop > msa->dimensions->query_length) {
         return PSIERR_BADPARAM;
-
-    if (seq_index > msa->dimensions->num_seqs + 1 ||
-        stop > msa->dimensions->query_length)
-        return PSIERR_BADPARAM;
-
+    }
 
     sequence_position = msa->cell[seq_index];
     for (i = start; i < stop; i++) {
@@ -2360,6 +2370,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/12/13 22:26:59  camacho
+ * Consolidated structure group customizations in option: nsg_compatibility_mode
+ *
  * Revision 1.41  2004/12/09 15:22:56  dondosha
  * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
  *

@@ -298,39 +298,36 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
 /** Main function for keeping only those selected sequences for PSSM
  * construction (stage 2). After this function the multiple sequence alignment
  * data will not be modified.
- * N.B.: If ignore_consensus is TRUE, the function _PSIPurgeAlignedRegion
- * should have been called before this function 
  * @sa implementation of PSICreatePssmWithDiagnostics
  * @param msa multiple sequence alignment data structure [in]
- * @param identity_threshold percent identity threshold after which sequences
- * similar to the query and each other are purged from the multiple sequence
- * alignment [in]
- * @return PSIERR_BADPARAM if alignment is NULL or if identity_threshold is
- *         less than or equal to 0; PSI_SUCCESS otherwise
+ * @return PSIERR_BADPARAM if alignment is NULL; PSI_SUCCESS otherwise
  */
 int 
-_PSIPurgeBiasedSegments(_PSIMsa* msa, double identity_threshold);
+_PSIPurgeBiasedSegments(_PSIMsa* msa);
 
 /** Main validation function for multiple sequence alignment structure. Should
  * be called after _PSIPurgeBiasedSegments.
  * @param msa multiple sequence alignment data structure [in]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
  * @return One of the errors defined above if validation fails or bad
  * parameter is passed in, else PSI_SUCCESS
  */
 int
-_PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus);
+_PSIValidateMSA(const _PSIMsa* msa);
 
 /** Main function to compute aligned blocks' properties for each position 
  * within multiple alignment (stage 3) 
  * @param msa multiple sequence alignment data structure [in]
  * @param aligned_block data structure describing the aligned blocks'
  * properties for each position of the multiple sequence alignment [out]
+ * @param nsg_compatibility_mode set to true to emulate the structure group's
+ * use of PSSM engine in the cddumper application. By default should be FALSE
+ * [in]
  * @return PSIERR_BADPARAM if arguments are NULL
  *         PSI_SUCCESS otherwise
  */
 int
 _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
+                           Boolean nsg_compatibility_mode,
                            _PSIAlignedBlock* aligned_block);
 
 /** Main function to calculate the sequence weights. Should be called with the
@@ -338,7 +335,9 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
  * @param msa multiple sequence alignment data structure [in]
  * @param aligned_blocks data structure describing the aligned blocks'
  * properties for each position of the multiple sequence alignment [in]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @param nsg_compatibility_mode set to true to emulate the structure group's
+ * use of PSSM engine in the cddumper application. By default should be FALSE
+ * [in]
  * @param seq_weights data structure containing the data needed to compute the
  * sequence weights [out]
  * @return PSIERR_BADPARAM if arguments are NULL, PSIERR_OUTOFMEM in case of
@@ -348,7 +347,7 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
 int
 _PSIComputeSequenceWeights(const _PSIMsa* msa,
                            const _PSIAlignedBlock* aligned_blocks,
-                           Boolean ignore_consensus,
+                           Boolean nsg_compatibility_mode,
                           _PSISequenceWeights* seq_weights);
 
 /** Main function to compute the PSSM's frequency ratios (stage 5).
@@ -414,6 +413,7 @@ _PSIScaleMatrix(const Uint1* query,
 
 /** Marks the (start, stop] region corresponding to sequence seq_index in
  * alignment so that it is not further considered for PSSM calculation.
+ * Note that the query sequence cannot be purged.
  * @param   msa multiple sequence alignment data  [in|out]
  * @param   seq_index index of the sequence of interested in alignment [in]
  * @param   start start of the region to remove [in]
@@ -541,6 +541,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2004/12/13 22:26:59  camacho
+ * Consolidated structure group customizations in option: nsg_compatibility_mode
+ *
  * Revision 1.20  2004/12/08 15:06:02  camacho
  * Call _PSIUpdatePositionCounts is needed after purging query sequence for
  * structure group customization, thus this function has been changed to reset the

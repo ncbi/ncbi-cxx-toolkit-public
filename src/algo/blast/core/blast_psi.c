@@ -103,7 +103,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     }
 
     /*** Run the engine's stages ***/
-    status = _PSIPurgeBiasedSegments(msa, options->nsg_identity_threshold);
+    status = _PSIPurgeBiasedSegments(msa);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
@@ -111,21 +111,25 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     }
 
     /*** Enable structure group customization if needed ***/
-    if (options->nsg_ignore_consensus) {
-        _PSIPurgeAlignedRegion(msa, kQueryIndex, 0,
-                               msa->dimensions->query_length);
-        ASSERT(msa->use_sequence[kQueryIndex] == FALSE);
+    if (options->nsg_compatibility_mode) {
+        int i;
+        for (i = 0; i < msa->dimensions->query_length; i++) {
+            msa->cell[kQueryIndex][i].letter = 0;
+            msa->cell[kQueryIndex][i].is_aligned = FALSE;
+        }
+        msa->use_sequence[kQueryIndex] = FALSE;
         _PSIUpdatePositionCounts(msa);
+    } else {
+        status = _PSIValidateMSA(msa);
+        if (status != PSI_SUCCESS) {
+            s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
+                                  internal_pssm);
+            return status;
+        }
     }
 
-    status = _PSIValidateMSA(msa, options->nsg_ignore_consensus);
-    if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
-        return status;
-    }
-
-    status = _PSIComputeAlignmentBlocks(msa, aligned_block);
+    status = _PSIComputeAlignmentBlocks(msa, options->nsg_compatibility_mode,
+                                        aligned_block);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
@@ -133,7 +137,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     }
 
     status = _PSIComputeSequenceWeights(msa, aligned_block, 
-                                        options->nsg_ignore_consensus,
+                                        options->nsg_compatibility_mode,
                                         seq_weights);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
