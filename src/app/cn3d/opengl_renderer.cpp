@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/08/08 02:26:18  thiessen
+* fixes for gnu ; make DrawHelix more logical
+*
 * Revision 1.42  2001/08/06 20:22:00  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -251,9 +254,9 @@ OpenGLRenderer::OpenGLRenderer(void) :
     if (!qobj) { // initialize global qobj
         qobj = gluNewQuadric();
         if (!qobj) ERR_POST(Fatal << "unable to allocate GLUQuadricObj");
-        gluQuadricDrawStyle(qobj, GLU_FILL);
-        gluQuadricNormals(qobj, GLU_SMOOTH);
-        gluQuadricOrientation(qobj, GLU_OUTSIDE);
+        gluQuadricDrawStyle(qobj, (GLenum) GLU_FILL);
+        gluQuadricNormals(qobj, (GLenum) GLU_SMOOTH);
+        gluQuadricOrientation(qobj, (GLenum) GLU_OUTSIDE);
     }
 }
 
@@ -704,10 +707,10 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
             } else {
                 ERR_POST(Error << "don't know how to handle material type " << type);
             }
-            pt = type;
+            pt = (GLenum) type;
         }
         GLfloat rgba[4] = { red, green, blue, alpha };
-        glMaterialfv(GL_FRONT_AND_BACK, type, rgba);
+        glMaterialfv(GL_FRONT_AND_BACK, (GLenum) type, rgba);
         // this is necessary so that fonts are rendered in correct
         // color in SGI's OpenGL implementation, and maybe others
         if (type == GL_AMBIENT) glColor4fv(rgba);
@@ -1247,47 +1250,58 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     SetColor(GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
     glLoadName(static_cast<GLuint>(NO_NAME));
 
-    double length = (Nterm - Cterm).length();
-    if (length <= 0.000001) return;
+    double wholeLength = (Nterm - Cterm).length();
+    if (wholeLength <= 0.000001) return;
 
+    // transformation for whole helix
     glPushMatrix();
-    DoCylinderPlacementTransform(Nterm, Cterm, length);
-    if (style.style == StyleManager::eObjectWithArrow)
-        length -= style.arrowLength;
-    gluCylinder(qobj, style.radius, style.radius, length, helixSides, 1);
+    DoCylinderPlacementTransform(Nterm, Cterm, wholeLength);
+    
+    // helix body
+    double shaftLength = 
+        (style.style == StyleManager::eObjectWithArrow && style.arrowLength < wholeLength) ?
+            wholeLength - style.arrowLength : wholeLength;
+    gluCylinder(qobj, style.radius, style.radius, shaftLength, helixSides, 1);
 
     // Nterm cap
     glPushMatrix();
     glRotated(180.0, 0.0, 1.0, 0.0);
     gluDisk(qobj, 0.0, style.radius, helixSides, 1);
     glPopMatrix();
-
+        
     // Cterm Arrow
-    if (style.style == StyleManager::eObjectWithArrow) {
-        glPushMatrix();
-        glTranslated(0.0, 0.0, length);
+    if (style.style == StyleManager::eObjectWithArrow && style.arrowLength < wholeLength) {
+        // arrow base
         if (style.arrowBaseWidthProportion > 1.0) {
             glPushMatrix();
+            glTranslated(0.0, 0.0, shaftLength);
             glRotated(180.0, 0.0, 1.0, 0.0);
-            gluDisk(qobj, 0.0, style.radius * style.arrowBaseWidthProportion, helixSides, 1);
+            gluDisk(qobj, style.radius, style.radius * style.arrowBaseWidthProportion, helixSides, 1);
             glPopMatrix();
         }
+        // arrow body
+        glPushMatrix();
+        glTranslated(0.0, 0.0, shaftLength);
         gluCylinder(qobj, style.radius * style.arrowBaseWidthProportion,
             style.radius * style.arrowTipWidthProportion, style.arrowLength, helixSides, 10);
-        if (style.arrowTipWidthProportion > 0.0) {
-            glTranslated(0.0, 0.0, style.arrowLength);
-            gluDisk(qobj, 0.0, style.radius * style.arrowTipWidthProportion, helixSides, 1);
-        }
         glPopMatrix();
-
+        // arrow tip
+        if (style.arrowTipWidthProportion > 0.0) {
+            glPushMatrix();
+            glTranslated(0.0, 0.0, wholeLength);
+            gluDisk(qobj, 0.0, style.radius * style.arrowTipWidthProportion, helixSides, 1);
+            glPopMatrix();
+        }
+    }
+    
     // Cterm cap
-    } else {
+    else {
         glPushMatrix();
-        glTranslated(0.0, 0.0, length);
+        glTranslated(0.0, 0.0, wholeLength);
         gluDisk(qobj, 0.0, style.radius, helixSides, 1);
         glPopMatrix();
     }
-
+                
     glPopMatrix();
     displayListEmpty[currentDisplayList] = false;
 }
