@@ -181,7 +181,8 @@ size_t CRegexpUtil::Replace(
             break;
         }
 
-        // Substitute all subpatterns "$<digit>" to values in the "replace" string.
+        // Substitute all subpatterns "$<digit>" to values in the "replace"
+        // string.
         const int* result;
         string     x_replace = replace;
         size_t     pos = 0;
@@ -212,7 +213,8 @@ size_t CRegexpUtil::Replace(
             if ( n > 0  &&  n < num_found ) {
                 result = re.GetResults(n);
                 if (result[0] >= 0  &&  result[1] >= 0) {
-                    subpattern = m_Content.substr(result[0], result[1] - result[0]);
+                    subpattern = m_Content.substr(result[0],
+                                                  result[1] - result[0]);
                 }
             }
 
@@ -221,7 +223,8 @@ size_t CRegexpUtil::Replace(
             size_t sp_end   = endptr - x_replace.c_str();
             if ( sp_start > 0  &&  x_replace[sp_start-1] == '{') {
                 sp_start--;
-                if ( sp_end <  x_replace.length()  &&  x_replace[sp_end] == '}') {
+                if ( sp_end <  x_replace.length()  &&
+                     x_replace[sp_end] == '}') {
                     sp_end++;
                 } else {
                     // Format error -- missed closed brace.
@@ -281,7 +284,8 @@ size_t CRegexpUtil::ReplaceRange(
         if ( (inside  &&  process_inside == eInside)  ||
              (!inside  &&  process_inside == eOutside) ) {
             CRegexpUtil re(line);
-            n_replace += re.Replace(search, replace, compile_flags, match_flags, max_replace);
+            n_replace += re.Replace(search, replace,
+                                    compile_flags, match_flags, max_replace);
             *i = re;
         }
 
@@ -321,7 +325,8 @@ void CRegexpUtil::x_Divide(const string& delimiter)
             m_ContentList.push_back(m_Content.substr(start_pos));
             break;
         } else {
-            m_ContentList.push_back(m_Content.substr(start_pos, pos - start_pos));
+            m_ContentList.push_back(m_Content.substr(start_pos,
+                                                     pos - start_pos));
             start_pos = pos + x_delimiter.length();
         }
     }
@@ -346,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/07 13:39:56  ivanov
+ * Fixed lines wrapped at 79th columns
+ *
  * Revision 1.4  2003/11/06 16:13:04  ivanov
  * Added CRegexpUtil class. Some formal code rearrangement.
  *
