@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.4  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -107,7 +110,6 @@ public:
         ERR_POST(ncbi::Warning << "Molecule #" << id << ": can't find residue #" << rID);
         return NULL;
     }
-    //bool Draw(const StructureBase *data) const;
 
 private:
 };

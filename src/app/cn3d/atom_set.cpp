@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/03 15:12:22  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.8  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -187,10 +190,10 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
         }
 
         // store pointer in map - key+altConfID must be unique
-        const AtomPntrKey& key = MakeKey(
+        const AtomPntrKey& key = MakeKey(AtomPntr(
             (i_mID++)->GetObject().Get(),
             (i_rID++)->GetObject().Get(),
-            (i_aID++)->GetObject().Get());
+            (i_aID++)->GetObject().Get()));
         if (atomMap.find(key) != atomMap.end()) {
             AtomAltList::const_iterator i_atom, e=atomMap[key].end();
             for (i_atom=atomMap[key].begin(); i_atom!=e; i_atom++) {
@@ -256,14 +259,14 @@ bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
     return true;
 }
 
-const Atom* AtomSet::GetAtom(int mID, int rID, int aID, 
+const Atom* AtomSet::GetAtom(const AtomPntr& ap, 
     bool getAny, bool suppressWarning) const
 {
-    AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(mID, rID, aID));
+    AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(ap));
     if (atomConfs == atomMap.end()) {
         if (!suppressWarning)
-            ERR_POST(Warning << "can't find atom(s) from pointer (" << mID << ',' 
-                             << rID << ',' << aID << ')');
+            ERR_POST(Warning << "can't find atom(s) from pointer (" << ap.mID << ',' 
+                             << ap.rID << ',' << ap.aID << ')');
         return NULL;
     }
     AtomAltList::const_iterator atom = atomConfs->second.begin();

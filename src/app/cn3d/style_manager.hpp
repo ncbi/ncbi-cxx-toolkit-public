@@ -26,59 +26,90 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of coordinates for atoms and features
+*      manager object to track drawing style of objects at various levels
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2000/08/03 15:12:29  thiessen
+* Revision 1.1  2000/08/03 15:14:18  thiessen
 * add skeleton of style and show/hide managers
-*
-* Revision 1.3  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.2  2000/07/16 23:18:34  thiessen
-* redo of drawing system
-*
-* Revision 1.1  2000/07/11 13:49:28  thiessen
-* add modules to parse chemical graph; many improvements
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_COORDSET__HPP
-#define CN3D_COORDSET__HPP
+#ifndef CN3D_STYLE_MANAGER__HPP
+#define CN3D_STYLE_MANAGER__HPP
 
-#include <objects/mmdb2/Biostruc_model.hpp>
-
+#include "cn3d/vector_math.hpp"
 #include "cn3d/structure_base.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
-class AtomSet;
-class FeatureCoord;
+class StructureObject;
+class BondStyle;
+class AtomStyle;
 
-// a CoordSet contains one set of atomic coordinates, plus any accompanying
-// feature (helix, strand, ...) coordinates - basically the contents of
-// an ASN1 Biostruc-model
-
-class CoordSet : public StructureBase
+class StyleManager
 {
 public:
-    CoordSet(StructureBase *parent, 
-                const ncbi::objects::CBiostruc_model::TModel_coordinates& modelCoords);
-    //~CoordSet(void);
 
-    // public data
-    AtomSet *atomSet;
-    typedef LIST_TYPE < const FeatureCoord * > FeatureCoordList;
-    FeatureCoordList featureCoords;
+    // display styles
+    enum eDisplayStyle {
+        eSphereAtom,
+        eLineBond,
+        eCylinderBond,
+        eWormBond,
+        eNotDisplayed
+    };
 
-    // public methods
-    bool Draw(const AtomSet *atomSet) const;
+    // style accessors
+    bool GetAtomStyle(const StructureObject *object, const AtomPntr& atom, AtomStyle *atomStyle);
+    bool GetBondStyle(const StructureObject *object,
+            const AtomPntr& atom1, const AtomPntr& atom2,
+            BondStyle *bondStyle);
 
 private:
 };
 
+class AtomStyle
+{
+public:
+    StyleManager::eDisplayStyle style;
+    Vector color;
+    double radius;
+    int slices, stacks;
+
+    AtomStyle(void)
+    {
+        style = StyleManager::eNotDisplayed;
+        color = Vector(0,0,0);
+        radius = 0.0;
+        slices = stacks = 3;
+    }
+};
+
+class BondStyle
+{
+public:
+    struct _endstyle {
+        StyleManager::eDisplayStyle style;
+        Vector color;
+        double radius;
+        bool atomCap;
+        int sides, segments;
+    } end1, end2;
+    bool midCap;
+
+    BondStyle(void)
+    {
+        end1.style = end2.style = StyleManager::eNotDisplayed;
+        end1.color = end2.color = Vector(0,0,0);
+        end1.radius = end2.radius = 0.0;
+        end1.atomCap = end2.atomCap = midCap = false;
+        end1.sides = end2.sides = 3;
+        end1.segments = end2.segments = 2;
+    }
+};
+
 END_SCOPE(Cn3D)
 
-#endif // CN3D_COORDSET__HPP
+#endif // CN3D_STYLE_MANAGER__HPP

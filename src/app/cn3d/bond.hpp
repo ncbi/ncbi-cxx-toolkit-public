@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.3  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -67,21 +70,19 @@ public:
         eDouble = ncbi::objects::CInter_residue_bond::eBond_order_double,
         eTriple = ncbi::objects::CInter_residue_bond::eBond_order_triple,
         eOther = ncbi::objects::CInter_residue_bond::eBond_order_other,
-        eUnknown = ncbi::objects::CInter_residue_bond::eBond_order_unknown 
+        eUnknown = ncbi::objects::CInter_residue_bond::eBond_order_unknown,
+        eVirtual // special identifier for virtual bonds (no "normal" bond order) 
     };
 
     Bond(StructureBase *parent) : StructureBase(parent) { }
     //~Bond(void);
 
     // public data
-    typedef struct {
-        int mID, rID, aID;
-    } AtomPntr;
     AtomPntr atom1, atom2;
     eBondOrder order;
 
     // public methods
-    bool Draw(const StructureBase *data) const;
+    bool Draw(const AtomSet *data) const;
 
 private:
 };

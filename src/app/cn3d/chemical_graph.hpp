@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.5  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -81,14 +84,13 @@ public:
     BondList interMoleculeBonds;
 
     // public methods
-    const Residue::AtomInfo * GetAtomInfo(int mID, int rID, int aID) const
+    const Residue::AtomInfo * GetAtomInfo(const AtomPntr& atom) const
     { 
-        MoleculeMap::const_iterator info=molecules.find(mID);
-        if (info != molecules.end()) return (*info).second->GetAtomInfo(rID, aID);
-        ERR_POST(ncbi::Warning << "Graph: can't find molecule #" << mID);
+        MoleculeMap::const_iterator info=molecules.find(atom.mID);
+        if (info != molecules.end()) return (*info).second->GetAtomInfo(atom.rID, atom.aID);
+        ERR_POST(ncbi::Warning << "Graph: can't find molecule #" << atom.mID);
         return NULL;
     }
-    //bool Draw(const StructureBase *data) const;
 
 private:
 };

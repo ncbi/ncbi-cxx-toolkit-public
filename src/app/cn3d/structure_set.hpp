@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.13  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -91,18 +94,23 @@ BEGIN_SCOPE(Cn3D)
 
 class StructureObject;
 class OpenGLRenderer;
+class ShowHideManager;
+class StyleManager;
 
 class StructureSet : public StructureBase
 {
 public:
     StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime);
-    //~StructureSet(void);
+    ~StructureSet(void);
 
     // public data
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;
 
     OpenGLRenderer *renderer;
+    ShowHideManager *showHideManager;
+    StyleManager *styleManager;
+
     Vector center; // center of structure (relative to Master's coordinates)
     double maxDistFromCenter; // max distance of any atom from center
     Vector rotationCenter; // center of rotation (relative to Master's coordinates)
@@ -113,7 +121,7 @@ public:
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
 
-    bool Draw(const StructureBase *data) const;
+    bool Draw(const AtomSet *atomSet) const;
 
 private:
 };
@@ -141,7 +149,7 @@ public:
     CoordSetList coordSets;
 
     // public methods
-    bool DrawAll(const StructureBase *data) const;
+    bool DrawAll(const AtomSet *atomSet) const;
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);
 
 private:

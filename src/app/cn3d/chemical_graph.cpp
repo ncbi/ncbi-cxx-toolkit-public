@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.4  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -115,12 +118,6 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         }
     }
 }
-
-//bool ChemicalGraph::Draw(const StructureBase *data) const
-//{
-//    TESTMSG("drawing ChemicalGraph");
-//    return false;
-//}
 
 END_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.8  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -73,11 +76,14 @@
 
 BEGIN_SCOPE(Cn3D)
 
+class StructureSet;
+class AtomSet;
+
 class StructureBase
 {
 public:
     // will store StructureBase-derived children in parent upon construction
-    StructureBase(StructureBase *parent, bool warnOnNULL = true);
+    StructureBase(StructureBase *parent);
 
     // will automatically delete children upon destruction with this desctuctor.
     // But note that derived classes can have their own constructors that will
@@ -87,11 +93,16 @@ public:
 
     // overridable default Draws the object and all its children; 'data' will
     // be passed along to self and children's Draw methods
-    virtual bool DrawAll(const StructureBase *data = NULL) const;
+    virtual bool DrawAll(const AtomSet *atomSet = NULL) const;
 
     // function to draw this object, called before children are Drawn. Return
-    // false to halt recursive drawing process
-    virtual bool Draw(const StructureBase *data = NULL) const { return true; }
+    // false to halt recursive drawing process. An AtomSet can be passed along
+    // for cases (e.g. NMR structures) where a graph can be applied to multiple
+    // sets of atom coordinates
+    virtual bool Draw(const AtomSet *atomSet = NULL) const { return true; }
+
+    // for convenience/efficiency accessing stuff attached to StructureSet
+    StructureSet *parentSet;
 
 private:
     // no default construction
@@ -119,6 +130,20 @@ public:
         return false;
     }
 };
+
+
+// for convenience when passing around atom pointers
+class AtomPntr
+{
+public:
+    static int NO_ID;
+    int mID, rID, aID;
+
+    AtomPntr(int m = NO_ID, int r = NO_ID, int a = NO_ID) : mID(m), rID(r), aID(a) { }
+    AtomPntr& operator = (const AtomPntr& a)
+        { mID = a.mID; rID = a.rID; aID = a.aID; return *this; }     
+};
+
 
 END_SCOPE(Cn3D)
 

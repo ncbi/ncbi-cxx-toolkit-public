@@ -26,59 +26,22 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of coordinates for atoms and features
+*      manager object to track show/hide status of objects at various levels
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2000/08/03 15:12:29  thiessen
+* Revision 1.1  2000/08/03 15:13:59  thiessen
 * add skeleton of style and show/hide managers
-*
-* Revision 1.3  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.2  2000/07/16 23:18:34  thiessen
-* redo of drawing system
-*
-* Revision 1.1  2000/07/11 13:49:28  thiessen
-* add modules to parse chemical graph; many improvements
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_COORDSET__HPP
-#define CN3D_COORDSET__HPP
+#include "cn3d/show_hide_manager.hpp"
 
-#include <objects/mmdb2/Biostruc_model.hpp>
-
-#include "cn3d/structure_base.hpp"
+USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-class AtomSet;
-class FeatureCoord;
-
-// a CoordSet contains one set of atomic coordinates, plus any accompanying
-// feature (helix, strand, ...) coordinates - basically the contents of
-// an ASN1 Biostruc-model
-
-class CoordSet : public StructureBase
-{
-public:
-    CoordSet(StructureBase *parent, 
-                const ncbi::objects::CBiostruc_model::TModel_coordinates& modelCoords);
-    //~CoordSet(void);
-
-    // public data
-    AtomSet *atomSet;
-    typedef LIST_TYPE < const FeatureCoord * > FeatureCoordList;
-    FeatureCoordList featureCoords;
-
-    // public methods
-    bool Draw(const AtomSet *atomSet) const;
-
-private:
-};
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_COORDSET__HPP

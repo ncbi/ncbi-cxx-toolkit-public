@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.3  2000/07/16 23:19:11  thiessen
 * redo of drawing system
 *
@@ -48,15 +51,18 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
+int AtomPntr::NO_ID = -1;
+
 // store children in parent upon construction
-StructureBase::StructureBase(StructureBase *parent, bool warnOnNULL)
-    //: _flags(_eVisible)
+StructureBase::StructureBase(StructureBase *parent)
 {
-    if (parent)
+    if (parent) {
         parent->_AddChild(this);
-    // should really allow NULL parent only for topmost class (StructureSet)
-    else if (warnOnNULL)
-        ERR_POST(Warning << "NULL parent passed to StructureBase constructor");
+        if (!(parentSet = parent->parentSet))
+            ERR_POST(Error << "NULL parent->parentSet");
+    } else {
+        parentSet = NULL;
+    }
     _parent = parent;
 }
 
@@ -69,12 +75,12 @@ StructureBase::~StructureBase(void)
 }
 
 // draws the object and all its children - halt upon false return from Draw or DrawAll
-bool StructureBase::DrawAll(const StructureBase *data) const
+bool StructureBase::DrawAll(const AtomSet *atomSet) const
 {
-    if (!Draw(data)) return true;
+    if (!Draw(atomSet)) return true;
     _ChildList::const_iterator i, e=_children.end();
     for (i=_children.begin(); i!=e; i++) 
-        if (!((i->first)->DrawAll(data))) return true;
+        if (!((i->first)->DrawAll(atomSet))) return true;
 	return true;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.6  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -66,6 +69,7 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/periodic_table.hpp"
 #include "cn3d/opengl_renderer.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -156,13 +160,15 @@ Residue::Residue(StructureBase *parent,
     for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
         const CAtom& atom = a->GetObject();
 
+        AtomPntr ap(moleculeID, id, atom.GetId().Get());
+
         // first see if this atom is present each CoordSet; if not, don't
         // bother storing info. This forces an intersection on CoordSets - e.g.,
         // from a multi-model NMR structure, only those atoms present in *all*
         // models will be displayed.
         StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
         for (c=object->coordSets.begin(); c!=ce; c++) {
-            if (!((*c)->atomSet->GetAtom(moleculeID, id, atom.GetId().Get(), true, true))) break;
+            if (!((*c)->atomSet->GetAtom(ap, true, true))) break;
         }
         if (c != ce) continue;
 
@@ -212,12 +218,10 @@ Residue::~Residue(void)
 }
 
 // draw atom spheres here
-bool Residue::Draw(const StructureBase *data) const
+bool Residue::Draw(const AtomSet *atomSet) const
 {
-    // at this point 'data' should be an AtomSet*
-    const AtomSet *atomSet;
-    if ((atomSet = dynamic_cast<const AtomSet *>(data)) == NULL) {
-        ERR_POST(Error << "Residue::Draw(data) - data not AtomSet*");
+    if (!atomSet) {
+        ERR_POST(Error << "Residue::Draw(data) - NULL AtomSet*");
         return false;
     }
 
@@ -228,24 +232,39 @@ bool Residue::Draw(const StructureBase *data) const
         return false;
     }
 
-    // get OpenGLRenderer
-    const StructureSet *set;
-    if (!GetParentOfType(&set) || !set->renderer) {
+    // verify presense of OpenGLRenderer
+    if (!parentSet->renderer) {
         ERR_POST(Warning << "Residue::Draw() - no renderer");
         return false;
     }
 
+    // get object parent
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "Residue::Draw() - can't get StructureObject parent");
+        return false;
+    }
+
+    bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
+    AtomStyle atomStyle;
+
+    // iterate atoms; key is atomID
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
     for (a=atomInfos.begin(); a!=ae; a++) {
 
+        AtomPntr ap(molecule->id, id, a->first);
+
         // get Atom* for appropriate altConf
-        static bool overlayEnsembles = true;
-        const Atom *atom = atomSet->GetAtom(molecule->id, id, a->first, overlayEnsembles);
+        const Atom *atom = atomSet->GetAtom(ap, overlayEnsembles);
         if (!atom) continue; // skip atom if no altConf
 
-        // draw sphere
-        const Element *element = PeriodicTable.GetElement(a->second->atomicNumber);
-        //set->renderer->DrawSphere(atom->site, 0.4 /*element->vdWRadius*/, element->color);
+        // get Style
+        if (!parentSet->styleManager->GetAtomStyle(object, ap, &atomStyle))
+            return false;
+
+        // draw the atom
+        if (atomStyle.style != StyleManager::eNotDisplayed)
+            parentSet->renderer->DrawAtom(atom->site, atomStyle);
     }
 
     return true;

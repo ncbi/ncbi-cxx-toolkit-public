@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.7  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -65,6 +68,8 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/periodic_table.hpp"
+#include "cn3d/show_hide_manager.hpp"
+#include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -83,22 +88,20 @@ const Bond* MakeBond(StructureBase *parent,
         return NULL;
     }
 
+    AtomPntr ap1(mID1, rID1, aID1), ap2(mID2, rID2, aID2);
+
     // check for presence of both atoms
     StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
     for (c=object->coordSets.begin(); c!=ce; c++) {
-        if (!((*c)->atomSet->GetAtom(mID1, rID1, aID1, true, true)) ||
-            !((*c)->atomSet->GetAtom(mID2, rID2, aID2, true, true))) 
+        if (!((*c)->atomSet->GetAtom(ap1, true, true)) ||
+            !((*c)->atomSet->GetAtom(ap2, true, true))) 
             break;
     }
     if (c != ce) return NULL;
 
     Bond *bond = new Bond(parent);
-    bond->atom1.mID = mID1;
-    bond->atom1.rID = rID1;
-    bond->atom1.aID = aID1;
-    bond->atom2.mID = mID2;
-    bond->atom2.rID = rID2;
-    bond->atom2.aID = aID2;
+    bond->atom1 = ap1;
+    bond->atom2 = ap2;
     bond->order = static_cast<Bond::eBondOrder>(bondOrder);
     return bond;
 }
@@ -117,58 +120,37 @@ const Bond* MakeBond(StructureBase *parent,
     );
 }
 
-bool Bond::Draw(const StructureBase *data) const
+bool Bond::Draw(const AtomSet *atomSet) const
 {
-    // at this point 'data' should be an AtomSet*
-    const AtomSet *atomSet;
-    if ((atomSet = dynamic_cast<const AtomSet *>(data)) == NULL) {
-        ERR_POST(Error << "Bond::Draw(data) - data not AtomSet*");
-        return false;
-    }
-
-    // get OpenGLRenderer
-    const StructureSet *set;
-    if (!GetParentOfType(&set) || !set->renderer) {
-        ERR_POST(Warning << "Bond::Draw() - no renderer");
-        return false;
-    }
-
     // get Atom* for appropriate altConf
-    static bool overlayEnsembles = true;
-    const Atom *a1 = atomSet->GetAtom(atom1.mID, atom1.rID, atom1.aID, overlayEnsembles);
+    if (!atomSet) {
+        ERR_POST(Error << "Bond::Draw(data) - NULL AtomSet*");
+        return false;
+    }
+    bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
+    const Atom *a1 = atomSet->GetAtom(atom1, overlayEnsembles);
     if (!a1) return true;
-    const Atom *a2 = atomSet->GetAtom(atom2.mID, atom2.rID, atom2.aID, overlayEnsembles);
+    const Atom *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
     if (!a2) return true;
 
-    // draw line
-    if (atom1.mID != atom2.mID) {
-        static const Vector connectionColor(1,1,0);
-        set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, connectionColor, connectionColor);
-
-    } else {
-        // color by object for now
-        const StructureObject *object;
-        GetParentOfType(&object);
-        Vector color;
-        if (object->IsMaster())
-            color = Vector(1,0,1); // magenta master
-        else
-            color = Vector(0,1,0); // green slaves
-        set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, color, color);
-        /*
-        const ChemicalGraph *graph;
-        if (!GetParentOfType(&graph)) {
-            ERR_POST(Warning << "Bond::Draw() - can't get ChemicalGraph parent");
-            return false;
-        }
-        // color by element for now
-        const Residue::AtomInfo *info = graph->GetAtomInfo(atom1.mID, atom1.rID, atom1.aID);
-        const Element *element1 = PeriodicTable.GetElement(info->atomicNumber);
-        info = graph->GetAtomInfo(atom2.mID, atom2.rID, atom2.aID);
-        const Element *element2 = PeriodicTable.GetElement(info->atomicNumber);
-        set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, element1->color, element2->color);
-        */
+    // get Style
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "Bond::Draw() - can't get StructureObject parent");
+        return false;
     }
+    BondStyle bondStyle;
+    if (!parentSet->styleManager->GetBondStyle(object, atom1, atom2, &bondStyle))
+        return false;
+
+    // draw the bond
+    if (!parentSet->renderer) {
+        ERR_POST(Error << "Bond::Draw() - no renderer");
+        return false;
+    }
+    if (bondStyle.end1.style != StyleManager::eNotDisplayed &&
+        bondStyle.end2.style != StyleManager::eNotDisplayed)
+        parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle);
 
     return true;
 }

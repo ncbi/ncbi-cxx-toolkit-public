@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.5  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -94,7 +97,7 @@ Molecule::Molecule(StructureBase *parent,
             const Bond *bond = MakeBond(this, 
                 id, prevResidue->id, prevResidue->alphaID,
                 id, residue->id, residue->alphaID,
-                Bond::eOther);
+                Bond::eVirtual);
             if (bond) virtualBonds.push_back(bond);
         }
         prevResidue = residue;
@@ -115,12 +118,6 @@ Molecule::Molecule(StructureBase *parent,
         }
     }
 }
-
-//bool Molecule::Draw(const StructureBase *data) const
-//{
-//    TESTMSG("drawing Molecule #" << id);
-//    return true;
-//}
 
 END_SCOPE(Cn3D)
 

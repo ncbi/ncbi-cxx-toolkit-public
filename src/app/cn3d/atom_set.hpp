@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.9  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -122,15 +125,15 @@ public:
     bool SetActiveEnsemble(const std::string *ensemble);
     // get Atom based on Atom-pntr. If 'getAny' is true, then will return arbitrary
     // altConf; if false, will only return one from active ensemble
-    const Atom* GetAtom(int moleculeID, int residueID, int atomID, 
+    const Atom* GetAtom(const AtomPntr& atom, 
         bool getAny = false, bool suppressWarning = false) const;
 
 private:
     // this provides a convenient way to look up atoms from Atom-pntr info
     typedef std::pair < int, std::pair < int, int > > AtomPntrKey;
-    AtomPntrKey MakeKey(int moleculeID, int residueID, int atomID) const
+    AtomPntrKey MakeKey(const AtomPntr& ap) const
     {
-        return std::make_pair(moleculeID, std::make_pair(residueID, atomID)); 
+        return std::make_pair(ap.mID, std::make_pair(ap.rID, ap.aID)); 
     }
     typedef LIST_TYPE < const Atom * > AtomAltList;
     typedef std::map < AtomPntrKey, AtomAltList > AtomMap;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.13  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -93,6 +96,7 @@
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/atom_set.hpp"
 #include "cn3d/opengl_renderer.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -100,9 +104,16 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-    StructureBase(NULL, false), renderer(NULL)
+    StructureBase(NULL), renderer(NULL)
 {
     StructureObject *object;
+    parentSet = this;
+    showHideManager = new ShowHideManager();
+    styleManager = new StyleManager();
+    if (!showHideManager || !styleManager) {
+        ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
+        return;
+    }
     
     // create StructureObjects from (list of) biostruc
     if (mime.IsStrucseq()) { 
@@ -137,6 +148,12 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     } else {
         ERR_POST(Fatal << "Can't (yet) handle that Ncbi-mime-asn1 type");
     }
+}
+
+StructureSet::~StructureSet(void)
+{
+    if (showHideManager) delete showHideManager;
+    if (styleManager) delete styleManager;
 }
 
 void StructureSet::SetCenter(const Vector *given)
@@ -182,7 +199,7 @@ void StructureSet::SetCenter(const Vector *given)
     if (renderer) renderer->ResetCamera();
 }
 
-bool StructureSet::Draw(const StructureBase *data) const
+bool StructureSet::Draw(const AtomSet *atomSet) const
 {
     TESTMSG("drawing StructureSet");
     return true;
@@ -191,7 +208,7 @@ bool StructureSet::Draw(const StructureBase *data) const
 const int StructureObject::NO_MMDB_ID = -1;
 
 StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
-    StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID)
+    StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL)
 {
     // get MMDB id
     CBiostruc::TId::const_iterator j, je=biostruc.GetId().end();
@@ -293,16 +310,11 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
 }
 
 // override DrawAll so that the graph will be applied to each CoordSet
-bool StructureObject::DrawAll(const StructureBase *data) const
+bool StructureObject::DrawAll(const AtomSet *ignored) const
 {
     TESTMSG("drawing StructureObject " << pdbID);
     
     // apply relative transformation if this is a slave structure
-    const StructureSet *parentSet;
-    if (!GetParentOfType(&parentSet)) {
-        ERR_POST(Error << "StructureObject::DrawAll(): can't get StructureSet parent");
-        return false;
-    }
     if (!isMaster && parentSet->renderer)
         parentSet->renderer->PushMatrix(transformToMaster);
 

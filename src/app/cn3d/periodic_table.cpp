@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.1  2000/07/12 23:27:50  thiessen
 * now draws basic CPK model
 *
@@ -85,7 +88,7 @@ PeriodicTableClass::PeriodicTableClass(void)
     AddElement(   16,        "Sulfur",   "S",    0.95,  0.9,  0.2,    1.85  );
     AddElement(   17,      "Chlorine",  "Cl",    0.15,  0.5,  0.1,    1.81  );
     AddElement(   18,         "Argon",  "Ar",     0.8, 0.37, 0.08,    1.91  );
-    AddElement(   19,     "Potassium",   "K",     0.5,  0.5,  0.5,    2.31  );
+    AddElement(   19,     "Potassium",   "K",     0.8,  0.5,  0.7,    2.31  );
     AddElement(   20,       "Calcium",  "Ca",     0.8,  0.8,  0.7,   1.973  );
     AddElement(   21,      "Scandium",  "Sc",     0.5,  0.5,  0.5,     1.7  );
     AddElement(   22,      "Titanium",  "Ti",     0.5,  0.5,  0.5,     1.7  );

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.9  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -496,36 +499,87 @@ void OpenGLRenderer::PopMatrix(void) const
     glPopMatrix();
 }
 
-void OpenGLRenderer::DrawSphere(const Vector& site, double radius, const Vector& color)
+void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
 {
-    SetColor(GL_DIFFUSE, color[0], color[1], color[2]);
+    if (atomStyle.radius <= 0.0) return;
+    SetColor(GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
     glPushMatrix();
     glTranslated(site.x, site.y, site.z);
-    gluSphere(qobj, radius, sphereSides, sphereStacks);
+    gluSphere(qobj, atomStyle.radius, atomStyle.slices, atomStyle.stacks);
     glPopMatrix();
 }
 
-static inline void DrawLine(const Vector& a, const Vector& b)
+static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, double length)
 {
-    glBegin(GL_LINES);
-    glVertex3d(a.x, a.y, a.z);
-    glVertex3d(b.x, b.y, b.z);
-    glEnd();
+    /* to translate into place */
+    glTranslated(a.x, a.y, a.z);
+
+    /* to rotate from initial position, so bond points right direction;
+       handle special case where both ends share ~same x,y */
+    if (fabs(a.y - b.y) < 0.000001 && fabs(a.x - b.x) < 0.000001) {
+        if (b.z - a.z < 0.0) glRotated(180.0, 1.0, 0.0, 0.0);
+    } else {
+        glRotated(RadToDegrees(acos((b.z - a.z) / length)),
+                  a.y - b.y, b.x - a.x, 0.0);
+    }
 }
 
-void OpenGLRenderer::DrawStraightBond(const Vector& site1, const Vector& site2, 
-    double radius, const Vector& color1, const Vector& color2)
+static void DrawHalfBond(const Vector& site1, const Vector& site2,
+    StyleManager::eDisplayStyle style, double radius, 
+    bool cap1, bool cap2, int sides, int segments)
+{
+    // straight line bond
+    if (style == StyleManager::eLineBond || (style == StyleManager::eCylinderBond && radius <= 0.0)) {
+        glBegin(GL_LINES);
+        glVertex3d(site1.x, site1.y, site1.z);
+        glVertex3d(site2.x, site2.y, site2.z);
+        glEnd();
+    }
+
+    // cylinder bond
+    else if (style == StyleManager::eCylinderBond) {
+        double length = (site1 - site2).length();
+        if (length <= 0.000001 || sides <= 0) return;
+        glPushMatrix();
+        DoCylinderPlacementTransform(site1, site2, length);
+        gluCylinder(qobj, radius, radius, length, sides, 1);
+        if (cap1) {
+            glPushMatrix();
+            glRotated(180.0, 0.0, 1.0, 0.0);
+            gluDisk(qobj, 0.0, radius, sides, 1);
+            glPopMatrix();
+        }
+        if (cap2) {
+            glPushMatrix();
+            glTranslated(0.0, 0.0, length);
+            gluDisk(qobj, 0.0, radius, sides, 1);
+            glPopMatrix();
+        }
+        glPopMatrix();
+    }
+
+    // worm bond
+    else if (style == StyleManager::eWormBond) {
+    }
+}
+
+void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style)
 {
     Vector midpoint = (site1 + site2) / 2;
 
-    SetColor(GL_AMBIENT, color1[0], color1[1], color1[2]);
-    if (radius <= 0.0)
-        DrawLine(site1, midpoint);
-    // ... will eventually draw cylinders for thick (radius>0) bonds
-    
-    SetColor(GL_AMBIENT, color2[0], color2[1], color2[2]);
-    if (radius <= 0.0)
-        DrawLine(midpoint, site2);
+    GLenum colorType =
+        (style.end1.style == StyleManager::eLineBond || style.end1.radius <= 0.0)
+        ? GL_AMBIENT : GL_DIFFUSE;
+    SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
+    DrawHalfBond(site1, midpoint, style.end1.style, style.end1.radius,
+        style.end1.atomCap, style.midCap, style.end1.sides, style.end1.segments);
+
+    colorType =
+        (style.end2.style == StyleManager::eLineBond || style.end2.radius <= 0.0)
+        ? GL_AMBIENT : GL_DIFFUSE;
+    SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
+    DrawHalfBond(midpoint, site2, style.end2.style, style.end2.radius,
+        style.midCap, style.end2.atomCap, style.end2.sides, style.end2.segments);
 }
 
 END_SCOPE(Cn3D)

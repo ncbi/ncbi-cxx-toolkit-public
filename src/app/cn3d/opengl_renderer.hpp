@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.6  2000/07/18 00:05:45  thiessen
 * allow arbitrary rotation center
 *
@@ -58,6 +61,7 @@
 // access this without potential name conflicts
 
 #include "cn3d/vector_math.hpp"
+#include "cn3d/style_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -115,9 +119,8 @@ public:
     void PopMatrix(void) const;
 
     // drawing methods
-    void DrawSphere(const Vector& site, double radius, const Vector& color);
-    void DrawStraightBond(const Vector& site1, const Vector& site2, 
-        double radius, const Vector& color1, const Vector& color2);
+    void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
+    void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& bondStyle);
 
 
 private:

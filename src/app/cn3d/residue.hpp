@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
 * Revision 1.5  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -108,7 +111,7 @@ public:
     bool HasName(void) const { return (!name.empty()); }
     bool IsNucleotide(void) const { return (type == eDNA || type == eRNA); }
     bool IsAminoAcid(void) const { return (type == eAminoAcid); }
-    bool Draw(const StructureBase *data) const;
+    bool Draw(const AtomSet *atomSet) const;
 
 private:
     // mapped by Atom-id
