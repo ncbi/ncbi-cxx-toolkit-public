@@ -45,6 +45,12 @@ Contents: BLAST parameters dependent on the ncbiobj library
 extern "C" {
 #endif
 
+/** Find a genetic code string in ncbistdaa encoding, given an integer 
+ * genetic code value.
+ */
+Int2 BLAST_GeneticCodeFind(Int4 gc, Uint1Ptr PNTR genetic_code);
+
+
 /** Initialize database parameters,including calculation of the 
  * database genetic code string.
  * @param program Type of BLAST program [in]
