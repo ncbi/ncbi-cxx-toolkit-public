@@ -54,7 +54,7 @@ BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 static BlastCoreAuxStruct* 
 BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
 {
-   BLAST_ExtendWordFree(aux_struct->ewp);
+   BlastExtendWordFree(aux_struct->ewp);
    BLAST_InitHitListDestruct(aux_struct->init_hitlist);
    BlastHSPListFree(aux_struct->hsp_list);
    sfree(aux_struct->query_offsets);
@@ -394,7 +394,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    else
      avg_subj_length = subject_length;
 
-   if ((status = BLAST_ExtendWordNew(query->length, word_options, 
+   if ((status = BlastExtendWordNew(query->length, word_options, 
                     avg_subj_length, &aux_struct->ewp)) != 0)
       return status;
 
@@ -561,8 +561,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       search; we need a diag table that can fit the entire
       concatenated DB */
    avg_subj_length = (Uint4) (dbsize / num_db_seqs);
-   BLAST_ExtendWordFree(aux_struct->ewp);
-   BLAST_ExtendWordNew(concat_db.length, word_options, 
+   BlastExtendWordFree(aux_struct->ewp);
+   BlastExtendWordNew(concat_db.length, word_options, 
 			avg_subj_length, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned

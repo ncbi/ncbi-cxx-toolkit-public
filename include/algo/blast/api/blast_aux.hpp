@@ -106,7 +106,7 @@ template<>
 struct CDeleter<BLAST_ExtendWord>
 {
     static void Delete(BLAST_ExtendWord* p)
-    { BLAST_ExtendWordFree(p); }
+    { BlastExtendWordFree(p); }
 };
 
 template<>
@@ -250,7 +250,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordOptions,
 DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordParameters,
                            BlastInitialWordParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BLAST_ExtendWord, BLAST_ExtendWordFree);
+DECLARE_AUTO_CLASS_WRAPPER(BLAST_ExtendWord, BlastExtendWordFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionOptions, BlastExtensionOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionParameters,
                            BlastExtensionParametersFree);
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/03/12 16:33:22  camacho
+* Rename BLAST_ExtendWord functions to avoid collisions with C toolkit libraries
+*
 * Revision 1.28  2004/03/12 15:57:59  camacho
 * Make consistent use of New/Free functions for BLAST_ExtendWord structure
 *

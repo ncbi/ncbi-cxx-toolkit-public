@@ -99,7 +99,7 @@ typedef struct BLAST_DiagTable {
                    to be zeroed out every time. */
    Int4 window; /**< The "window" size, within which two (or more)
                    hits must be found in order to be extended. */
-   Boolean multiple_hits;/**< Used by BLAST_ExtendWordNew to decide whether
+   Boolean multiple_hits;/**< Used by BlastExtendWordNew to decide whether
                             or not to prepare the structure for multiple-hit
                             type searches. If TRUE, multiple hits are not
                             neccessary, but possible. */
@@ -128,7 +128,7 @@ typedef struct BLAST_ExtendWord {
  *                       calculate average search space. [in]
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
-Int2 BLAST_ExtendWordNew(Uint4 query_length,
+Int2 BlastExtendWordNew(Uint4 query_length,
    const BlastInitialWordOptions* word_options,
    Uint4 subject_length, BLAST_ExtendWord** ewp_ptr);
 
@@ -251,7 +251,7 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
            Int4 q_off, Int4 s_off, BlastUngappedData* ungapped_data); 
 
 /** Deallocate memory for the word extension structure */
-BLAST_ExtendWord* BLAST_ExtendWordFree(BLAST_ExtendWord* ewp);
+BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp);
 
 void 
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
