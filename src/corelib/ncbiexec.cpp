@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_OS_MSWIN)
 // Convert CExec class mode to the real mode
-static int s_GetRealMode(const CExec::EMode mode)
+static int s_GetRealMode(CExec::EMode mode)
 {
     static const int s_Mode[] =  { 
         P_OVERLAY, P_WAIT, P_NOWAIT, P_DETACH 
@@ -66,7 +66,7 @@ static int s_GetRealMode(const CExec::EMode mode)
 // Type function to call
 enum ESpawnFunc {eV, eVE, eVP, eVPE};
 
-static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode, 
+static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode, 
                        const char *cmdname, const char *const *argv, 
                        const char *const *envp = 0)
 {
@@ -172,7 +172,7 @@ int CExec::System(const char *cmdline)
 }
 
 
-int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
+int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
 #if defined(NCBI_OS_MSWIN)
@@ -188,7 +188,7 @@ int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
 }
 
 
-int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...)
+int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
 {
     int status;
     GET_EXEC_ARGS;
@@ -205,8 +205,7 @@ int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...
 }
 
 
-int CExec::SpawnLP(const EMode mode, const char *cmdname, 
-                   const char *argv, ...)
+int CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
 #if defined(NCBI_OS_MSWIN)
@@ -222,8 +221,7 @@ int CExec::SpawnLP(const EMode mode, const char *cmdname,
 }
 
 
-int CExec::SpawnLPE(const EMode mode, const char *cmdname,
-                    const char *argv, ...)
+int CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
     GET_EXEC_ARGS;
@@ -240,8 +238,7 @@ int CExec::SpawnLPE(const EMode mode, const char *cmdname,
 }
 
 
-int CExec::SpawnV(const EMode mode, const char *cmdname,
-                  const char *const *argv)
+int CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
 {
     int status;
     char** argp = const_cast<char**>(argv);
@@ -258,7 +255,7 @@ int CExec::SpawnV(const EMode mode, const char *cmdname,
 }
 
 
-int CExec::SpawnVE(const EMode mode, const char *cmdname, 
+int CExec::SpawnVE(EMode mode, const char *cmdname, 
                    const char *const *argv, const char * const *envp)
 {
     int status;
@@ -276,8 +273,7 @@ int CExec::SpawnVE(const EMode mode, const char *cmdname,
 }
 
 
-int CExec::SpawnVP(const EMode mode, const char *cmdname,
-                   const char *const *argv)
+int CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
 {
     int status;
     char** argp = const_cast<char**>(argv);
@@ -294,7 +290,7 @@ int CExec::SpawnVP(const EMode mode, const char *cmdname,
 }
 
 
-int CExec::SpawnVPE(const EMode mode, const char *cmdname,
+int CExec::SpawnVPE(EMode mode, const char *cmdname,
                     const char *const *argv, const char * const *envp)
 {
     int status;
@@ -312,7 +308,7 @@ int CExec::SpawnVPE(const EMode mode, const char *cmdname,
 }
 
 
-int CExec::Wait(const int pid)
+int CExec::Wait(int pid)
 {
     int status;
 #if defined(NCBI_OS_MSWIN)
@@ -333,6 +329,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/16 17:48:08  ucko
+ * Remove redundant "const"s from arguments passed by value.
+ *
  * Revision 1.13  2003/08/12 16:57:55  ivanov
  * s_SpawnUnix(): use execv() instead execvp() for the eV-mode
  *

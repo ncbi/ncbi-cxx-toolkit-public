@@ -147,7 +147,7 @@ public:
     /// @sa
     ///   SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
-    static int SpawnL(const EMode mode, const char *cmdname, 
+    static int SpawnL(EMode mode, const char *cmdname, 
                       const char *argv, ... /*, NULL */);
 
     /// Spawn a new process with specified command-line arguments and
@@ -186,7 +186,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
-    static int SpawnLE (const EMode mode, const char *cmdname, 
+    static int SpawnLE (EMode mode, const char *cmdname, 
                         const char *argv, ... /*, NULL, const char *envp[] */);
 
     /// Spawn a new process with variable number of command-line arguments and
@@ -226,7 +226,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
-    static int SpawnLP(const EMode mode, const char *cmdname,
+    static int SpawnLP(EMode mode, const char *cmdname,
                         const char *argv, ... /*, NULL */);
 
     /// Spawn a new process with specified command-line arguments, 
@@ -272,7 +272,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
-    static int SpawnLPE(const EMode mode, const char *cmdname,
+    static int SpawnLPE(EMode mode, const char *cmdname,
                         const char *argv, ... /*, NULL, const char *envp[] */);
 
     /// Spawn a new process with variable number of command-line arguments. 
@@ -304,7 +304,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
-    static int SpawnV(const EMode mode, const char *cmdname,
+    static int SpawnV(EMode mode, const char *cmdname,
                       const char *const *argv);
 
     /// Spawn a new process with variable number of command-line arguments
@@ -342,7 +342,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVP(), 
     ///   SpawnVPE().
-    static int SpawnVE(const EMode mode, const char *cmdname,
+    static int SpawnVE(EMode mode, const char *cmdname,
                        const char *const *argv, const char *const *envp);
 
     /// Spawn a new process with variable number of command-line arguments and
@@ -381,7 +381,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), 
     ///   SpawnVPE().
-    static int SpawnVP(const EMode mode, const char *cmdname,
+    static int SpawnVP(EMode mode, const char *cmdname,
                        const char *const *argv);
 
     /// Spawn a new process with variable number of command-line arguments
@@ -424,7 +424,7 @@ public:
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(),
     ///   SpawnVP(), 
-    static int SpawnVPE(const EMode mode, const char *cmdname,
+    static int SpawnVPE(EMode mode, const char *cmdname,
                         const char *const *argv, const char *const *envp);
 
     /// Wait until child process terminates.
@@ -449,6 +449,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/09/16 17:48:03  ucko
+ * Remove redundant "const"s from arguments passed by value.
+ *
  * Revision 1.9  2003/09/16 15:22:31  ivanov
  * Minor comments changes
  *
