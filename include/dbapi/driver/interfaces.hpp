@@ -70,7 +70,7 @@ class CDB_SendDataCmd;
 // Image or Text descriptor.
 //
 
-class I_ITDescriptor
+class NCBI_DBAPIDRIVER_EXPORT I_ITDescriptor
 {
 public:
     virtual int DescriptorType() const = 0;
@@ -78,7 +78,7 @@ public:
 };
 
 
-class C_ITDescriptorGuard
+class NCBI_DBAPIDRIVER_EXPORT C_ITDescriptorGuard
 {
 public:
     C_ITDescriptorGuard(I_ITDescriptor* d) {
@@ -120,7 +120,7 @@ enum EDB_ResType {
 // (used by others to access this object) on the object destruction.
 //
 
-class CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT CDB_BaseEnt
 {
 public:
     CDB_BaseEnt() {
@@ -148,7 +148,7 @@ protected:
 // Abstract base class for most "command" interface classes.
 //
 
-class I_BaseCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd : public CDB_BaseEnt
 {
 public:
     // Send command to the server
@@ -189,7 +189,7 @@ public:
 //
 
 
-class I_LangCmd : public I_BaseCmd
+class NCBI_DBAPIDRIVER_EXPORT I_LangCmd : public I_BaseCmd
 {
 protected:
     // Add more text to the language command
@@ -231,7 +231,7 @@ public:
 
 
 
-class I_BCPInCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_BCPInCmd : public CDB_BaseEnt
 {
 protected:
     // Binding
@@ -259,7 +259,7 @@ public:
 
 
 
-class I_CursorCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_CursorCmd : public CDB_BaseEnt
 {
 protected:
     // Binding
@@ -300,7 +300,7 @@ public:
 
 
 
-class I_SendDataCmd : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_SendDataCmd : public CDB_BaseEnt
 {
 protected:
     // Send chunk of data to the server.
@@ -320,7 +320,7 @@ public:
 //  I_Result::
 //
 
-class I_Result : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_Result : public CDB_BaseEnt
 {
 protected:
     // Get type of the result
@@ -383,7 +383,7 @@ public:
 //  I_DriverContext::
 //
 
-class I_DriverContext
+class NCBI_DBAPIDRIVER_EXPORT I_DriverContext
 {
 public:
     // Connection mode
@@ -472,7 +472,7 @@ private:
 //  I_Connection::
 //
 
-class I_Connection : public CDB_BaseEnt
+class NCBI_DBAPIDRIVER_EXPORT I_Connection : public CDB_BaseEnt
 {
 protected:
     // Check out if connection is alive (this function doesn't ping the server,
@@ -555,7 +555,7 @@ public:
 
 typedef I_DriverContext* (*FDBAPI_CreateContext)(map<string,string>* attr);
 
-class I_DriverMgr
+class NCBI_DBAPIDRIVER_EXPORT I_DriverMgr
 {
 public:
     virtual void RegisterDriver(const string& driver_name,
@@ -571,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/12/26 19:29:12  dicuccio
+ * Added Win32 export specifier for base DBAPI library
+ *
  * Revision 1.15  2002/12/20 17:52:47  soussov
  * renames the members of ECapability enum
  *

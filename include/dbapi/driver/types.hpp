@@ -74,7 +74,7 @@ enum EDB_Type {
 // and provide the means to get the type and to clone the object.
 //
 
-class CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Object
 {
 public:
     CDB_Object(bool is_null = true) : m_Null(is_null)  { return; }
@@ -121,7 +121,7 @@ protected:
 //
 
 
-class CDB_Int : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Int : public CDB_Object
 {
 public:
     CDB_Int()              : CDB_Object(true)             { return; }
@@ -146,7 +146,7 @@ protected:
 
 
 
-class CDB_SmallInt : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_SmallInt : public CDB_Object
 {
 public:
     CDB_SmallInt()              : CDB_Object(true)             { return; }
@@ -171,7 +171,7 @@ protected:
 
 
 
-class CDB_TinyInt : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_TinyInt : public CDB_Object
 {
 public:
     CDB_TinyInt()               : CDB_Object(true)             { return; }
@@ -196,7 +196,7 @@ protected:
 
 
 
-class CDB_BigInt : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_BigInt : public CDB_Object
 {
 public:
     CDB_BigInt()              : CDB_Object(true)             { return; }
@@ -221,7 +221,7 @@ protected:
 };
 
 
-class CDB_VarChar : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_Object
 {
 public:
     // constructors
@@ -285,7 +285,7 @@ protected:
 
 
 
-class CDB_Char : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Char : public CDB_Object
 {
 public:
     enum { kMaxCharSize = 255 };
@@ -402,7 +402,7 @@ protected:
 
 
 
-class CDB_VarBinary : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
 {
 public:
     CDB_VarBinary()                         : CDB_Object(true)  { return; }
@@ -434,7 +434,7 @@ protected:
 
 
 
-class CDB_Binary : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Binary : public CDB_Object
 {
 public:
     enum { kMaxBinSize = 255 };
@@ -497,7 +497,7 @@ protected:
 
 
 
-class CDB_Float : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Float : public CDB_Object
 {
 public:
     CDB_Float()        : CDB_Object(true)             { return; }
@@ -522,7 +522,7 @@ protected:
 
 
 
-class CDB_Double : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Double : public CDB_Object
 {
 public:
     CDB_Double()         : CDB_Object(true)             { return; }
@@ -550,7 +550,7 @@ protected:
 class CMemStore;
 
 
-class CDB_Stream : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Stream : public CDB_Object
 {
 public:
     // assignment
@@ -579,7 +579,7 @@ private:
 
 
 
-class CDB_Image : public CDB_Stream
+class NCBI_DBAPIDRIVER_EXPORT CDB_Image : public CDB_Stream
 {
 public:
     CDB_Image& operator= (const CDB_Image& image);
@@ -590,7 +590,7 @@ public:
 
 
 
-class CDB_Text : public CDB_Stream
+class NCBI_DBAPIDRIVER_EXPORT CDB_Text : public CDB_Stream
 {
 public:
     virtual size_t Append(const void* buff, size_t nof_bytes = 0/*strlen*/);
@@ -604,7 +604,7 @@ public:
 
 
 
-class CDB_SmallDateTime : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_SmallDateTime : public CDB_Object
 {
 public:
     CDB_SmallDateTime() : m_NCBITime(CTime::eCurrent) {
@@ -674,7 +674,7 @@ protected:
 
 
 
-class CDB_DateTime : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_DateTime : public CDB_Object
 {
 public:
     CDB_DateTime() : m_NCBITime(CTime::eCurrent) {
@@ -744,7 +744,7 @@ protected:
 
 
 
-class CDB_Bit : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Bit : public CDB_Object
 {
 public:
     CDB_Bit()       : CDB_Object(true)   { return; }
@@ -776,7 +776,7 @@ protected:
 
 
 
-class CDB_Numeric : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Numeric : public CDB_Object
 {
 public:
     CDB_Numeric() : CDB_Object(true)  { m_Precision= m_Scale= 0; return; }
@@ -871,6 +871,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/12/26 19:29:12  dicuccio
+ * Added Win32 export specifier for base DBAPI library
+ *
  * Revision 1.11  2002/10/07 13:08:32  kans
  * repaired inconsistent newlines caught by Mac compiler
  *

@@ -48,7 +48,7 @@ enum EDB_Severity {
 
 
 
-class CDB_Exception : public exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public exception
 {
 public:
     // exception type
@@ -96,7 +96,7 @@ protected:
 
 
 
-class CDB_DSEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_DSEx : public CDB_Exception
 {
 public:
     CDB_DSEx(EDB_Severity severity, int err_code,
@@ -110,7 +110,7 @@ public:
 
 
 
-class CDB_RPCEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_RPCEx : public CDB_Exception
 {
 public:
     CDB_RPCEx(EDB_Severity severity, int err_code,
@@ -130,7 +130,7 @@ private:
 
 
 
-class CDB_SQLEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_SQLEx : public CDB_Exception
 {
 public:
     CDB_SQLEx(EDB_Severity severity, int err_code,
@@ -150,7 +150,7 @@ private:
 
 
 
-class CDB_DeadlockEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_DeadlockEx : public CDB_Exception
 {
 public:
     CDB_DeadlockEx(const string& originated_from, const string& msg)
@@ -163,7 +163,7 @@ public:
 
 
 
-class CDB_TimeoutEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_TimeoutEx : public CDB_Exception
 {
 public:
     CDB_TimeoutEx(int err_code,
@@ -177,7 +177,7 @@ public:
 
 
 
-class CDB_ClientEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_ClientEx : public CDB_Exception
 {
 public:
     CDB_ClientEx(EDB_Severity severity, int err_code,
@@ -192,7 +192,7 @@ public:
 
 
 
-class CDB_MultiEx : public CDB_Exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_MultiEx : public CDB_Exception
 {
 public:
     CDB_MultiEx(const string& originated_from = kEmptyStr,
@@ -248,7 +248,7 @@ private:
 //
 
 
-class CDB_UserHandler
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler
 {
 public:
     // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
@@ -273,7 +273,7 @@ public:
 
 
 
-class CDB_UserHandler_Stream : public CDB_UserHandler
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Stream : public CDB_UserHandler
 {
 public:
     CDB_UserHandler_Stream(ostream*      os,
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/12/26 19:29:12  dicuccio
+ * Added Win32 export specifier for base DBAPI library
+ *
  * Revision 1.11  2002/09/26 14:24:20  soussov
  * raises the severity of deadlock and timeout from warning to error
  *

@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class C_DriverMgr : public I_DriverMgr
+class NCBI_DBAPIDRIVER_EXPORT C_DriverMgr : public I_DriverMgr
 {
 public:
     C_DriverMgr(unsigned int nof_drivers = 16);
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/12/26 19:29:12  dicuccio
+ * Added Win32 export specifier for base DBAPI library
+ *
  * Revision 1.9  2002/04/23 16:45:28  soussov
  * GetDriverContext added
  *

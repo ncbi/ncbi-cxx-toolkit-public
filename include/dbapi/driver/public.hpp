@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CDB_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
 public:
     // Check out if connection is alive (this function doesn't ping the server,
@@ -122,7 +122,7 @@ private:
 
 
 
-class CDB_Result : public I_Result
+class NCBI_DBAPIDRIVER_EXPORT CDB_Result : public I_Result
 {
 public:
     // Get type of the result
@@ -191,7 +191,7 @@ private:
 
 
 
-class CDB_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_EXPORT CDB_LangCmd : public I_LangCmd
 {
 public:
     // Add more text to the language command
@@ -241,7 +241,7 @@ private:
 
 
 
-class CDB_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_EXPORT CDB_RPCCmd : public I_RPCCmd
 {
 public:
     // Binding
@@ -298,7 +298,7 @@ private:
 
 
 
-class CDB_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_EXPORT CDB_BCPInCmd : public I_BCPInCmd
 {
 public:
     // Binding
@@ -336,7 +336,7 @@ private:
 
 
 
-class CDB_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_EXPORT CDB_CursorCmd : public I_CursorCmd
 {
 public:
     // Binding
@@ -386,7 +386,7 @@ private:
 
 
 
-class CDB_SendDataCmd : public I_SendDataCmd
+class NCBI_DBAPIDRIVER_EXPORT CDB_SendDataCmd : public I_SendDataCmd
 {
 public:
     // Send chunk of data to the server.
@@ -409,7 +409,7 @@ private:
     CDB_SendDataCmd();
 };
 
-class CDB_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_EXPORT CDB_ITDescriptor : public I_ITDescriptor
 {
 public:
     CDB_ITDescriptor(const string& table_name, const string& column_name, 
@@ -443,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/12/26 19:29:12  dicuccio
+ * Added Win32 export specifier for base DBAPI library
+ *
  * Revision 1.5  2002/03/26 15:25:17  soussov
  * new image/text operations added
  *
