@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2002/01/25 15:39:29  ucko
+* Completely reorganized threaded servers.
+*
 * Revision 6.3  2002/01/24 20:19:18  ucko
 * Add magic TemporarilyStopListening overflow processor
 * More cleanups
@@ -45,55 +48,55 @@
 */
 
 #include <connect/threaded_server.hpp>
-#include <connect/ncbi_socket.h>
 #include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// GENERIC CODE:
-
-/* abstract */ class ISockRequestFactory
+class CSocketRequest : public CStdRequest
 {
 public:
-    virtual CStdRequest* New(SOCK sock) const = 0;
+    CSocketRequest(CThreadedServer& server, SOCK sock)
+        : m_Server(server), m_Sock(sock) {}
+    virtual void Process(void)
+        { m_Server.Process(m_Sock); }
+
+private:
+    CThreadedServer& m_Server;
+    SOCK             m_Sock;
 };
 
 
-void TemporarilyStopListening(SOCK sock)
+void CThreadedServer::Run(void)
 {
-    // This function is just a standin; see below
-}
+    SetParams();
 
+    if (m_InitThreads <= 0  ||  m_MaxThreads < m_InitThreads
+        ||  m_MaxThreads > 1000  ||  m_Port > 65535) {
+        ERR_POST("CThreadedServer::Run: Bad parameters!");
+        return;
+    }
 
-void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
-                         unsigned int init_threads, unsigned int max_threads,
-                         unsigned int queue_size, int spawn_threshold,
-                         FSockProcessor overflow_proc)
-{
     LSOCK             lsock;
-    CStdPoolOfThreads pool(max_threads, queue_size, spawn_threshold);
+    CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
 
-    pool.Spawn(init_threads);
-    LSOCK_Create(port, 5, &lsock);
+    pool.Spawn(m_InitThreads);
+    LSOCK_Create(m_Port, 5, &lsock);
 
     for (;;) {
         SOCK sock;
         EIO_Status status = LSOCK_Accept(lsock, NULL, &sock);
         if (status == eIO_Success) {
             try {
-                pool.AcceptRequest(factory.New(sock));
-            } catch (CBlockingQueue<CRef<CStdRequest> >::CException) {
-                if (overflow_proc == TemporarilyStopListening) {
+                pool.AcceptRequest(new CSocketRequest(*this, sock));
+                if (pool.IsFull()  &&  m_TemporarilyStopListening) {
                     LSOCK_Close(lsock);
                     pool.WaitForRoom();
-                    LSOCK_Create(port, 5, &lsock);                    
-                } else if (overflow_proc) {
-                    overflow_proc(sock);
+                    LSOCK_Create(m_Port, 5, &lsock);
                 }
-                SOCK_Close(sock);
+            } catch (CBlockingQueue<CRef<CStdRequest> >::CException) {
+                _ASSERT(!m_TemporarilyStopListening);
+                ProcessOverflow(sock);
             }            
         } else {
             ERR_POST("accept failed: " << IO_StatusStr(status));
@@ -103,164 +106,5 @@ void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
     LSOCK_Close(lsock);
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// CONNECTION STREAMS:
-
-class CConnStreamRequest : public CStdRequest
-{
-public:
-    CConnStreamRequest(SOCK sock, FConnStreamProcessor proc)
-        : m_Sock(sock), m_Proc(proc) {}
-
-protected:
-    virtual void Process(void);
-
-private:
-    SOCK                 m_Sock;
-    FConnStreamProcessor m_Proc;
-};
-
-
-void CConnStreamRequest::Process(void)
-{
-    CConn_SocketStream stream(m_Sock, 0);
-    m_Proc(stream);
-}
-
-
-class CConnStreamRequestFactory : public ISockRequestFactory
-{
-public:
-    CConnStreamRequestFactory(FConnStreamProcessor proc) : m_Proc(proc) {}
-    virtual CStdRequest* New(SOCK sock) const
-        { return new CConnStreamRequest(sock, m_Proc); }
-
-private:
-    FConnStreamProcessor m_Proc;
-};
-
-
-void RunThreadedServer(FConnStreamProcessor proc, unsigned int port,
-                       unsigned int init_threads, unsigned int max_threads,
-                       unsigned int queue_size, int spawn_threshold,
-                       FSockProcessor overflow_proc)
-{
-    s_RunThreadedServer(CConnStreamRequestFactory(proc), port, init_threads,
-                        max_threads, queue_size, spawn_threshold,
-                        overflow_proc);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// CONNECTIONS:
-
-class CConnectionRequest : public CStdRequest
-{
-public:
-    CConnectionRequest(SOCK sock, FConnectionProcessor proc)
-        : m_Sock(sock), m_Proc(proc) {}
-
-protected:
-    virtual void Process(void);
-
-private:
-    SOCK                 m_Sock;
-    FConnectionProcessor m_Proc;
-};
-
-
-void CConnectionRequest::Process(void)
-{
-    CONN conn;
-    CONN_Create(SOCK_CreateConnectorOnTop(m_Sock, 0), &conn);
-    // Too bad C++ lacks try...finally
-    try {
-        m_Proc(conn);
-    } catch (...) {
-        CONN_Close(conn);
-        throw;
-    }
-    CONN_Close(conn);
-}
-
-
-class CConnectionRequestFactory : public ISockRequestFactory
-{
-public:
-    CConnectionRequestFactory(FConnectionProcessor proc) : m_Proc(proc) {}
-    virtual CStdRequest* New(SOCK sock) const
-        { return new CConnectionRequest(sock, m_Proc); }
-
-private:
-    FConnectionProcessor m_Proc;
-};
-
-
-void RunThreadedServer(FConnectionProcessor proc, unsigned int port,
-                       unsigned int init_threads, unsigned int max_threads,
-                       unsigned int queue_size, int spawn_threshold,
-                       FSockProcessor overflow_proc)
-{
-    s_RunThreadedServer(CConnectionRequestFactory(proc), port, init_threads,
-                        max_threads, queue_size, spawn_threshold,
-                        overflow_proc);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// SOCKETS:
-
-class CSockRequest : public CStdRequest
-{
-public:
-    CSockRequest(SOCK sock, FSockProcessor proc)
-        : m_Sock(sock), m_Proc(proc) {}
-
-protected:
-    virtual void Process(void);
-
-private:
-    SOCK           m_Sock;
-    FSockProcessor m_Proc;
-};
-
-void CSockRequest::Process(void)
-{
-    // Too bad C++ lacks try...finally
-    try {
-        m_Proc(m_Sock);
-    } catch (...) {
-        SOCK_Close(m_Sock);
-        throw;
-    }
-    SOCK_Close(m_Sock);
-}
-
-
-class CSockRequestFactory : public ISockRequestFactory
-{
-public:
-    CSockRequestFactory(FSockProcessor proc) : m_Proc(proc) {}
-    virtual CStdRequest* New(SOCK sock) const
-        { return new CSockRequest(sock, m_Proc); }
-
-private:
-    FSockProcessor m_Proc;
-};
-
-
-void RunThreadedServer(FSockProcessor proc, unsigned int port,
-                       unsigned int init_threads, unsigned int max_threads,
-                       unsigned int queue_size, int spawn_threshold,
-                       FSockProcessor overflow_proc)
-{
-    s_RunThreadedServer(CSockRequestFactory(proc), port, init_threads,
-                        max_threads, queue_size, spawn_threshold,
-                        overflow_proc);
-}
 
 END_NCBI_SCOPE

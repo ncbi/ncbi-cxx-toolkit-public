@@ -31,8 +31,70 @@
 * File Description:
 *   Framework for a multithreaded network server
 *
+* ===========================================================================
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <connect/ncbi_socket.h>
+
+BEGIN_NCBI_SCOPE
+
+// CThreadedServer - abstract class for network servers using thread pools.
+//   This code maintains a pool of threads (initially m_InitThreads, but
+//   potentially as many as m_MaxThreads) to deal with incoming connections;
+//   each connection gets assigned to one of the worker threads, allowing
+//   the server to handle multiple requests in parallel while still checking
+//   for new requests.
+//
+//   You must define Process() to indicate what to do with each incoming
+//   connection; .../src/connect/test_threaded_server.cpp illustrates
+//   how you might do this.
+
+class CThreadedServer
+{
+public:
+    CThreadedServer(unsigned int port) :
+        m_InitThreads(5), m_MaxThreads(10), m_QueueSize(20),
+        m_SpawnThreshold(1), m_TemporarilyStopListening(false), m_Port(port)
+        {}
+
+    void Run(void);
+
+    // Runs asynchronously (from a separate thread) for each request
+    // Implementor must take care of closing socket when done
+    virtual void Process(SOCK sock) = 0;
+
+protected:
+    // Runs synchronously when request queue is full
+    // Implementor must take care of closing socket when done
+    virtual void ProcessOverflow(SOCK sock) { SOCK_Close(sock); }
+
+    // Called at the beginning of Run, before creating thread pool
+    virtual void SetParams() {}
+
+    // Settings for thread pool
+    unsigned int m_InitThreads;     // Number of initial threads
+    unsigned int m_MaxThreads;      // Maximum simultaneous threads
+    unsigned int m_QueueSize;       // Maximum size of request queue
+    unsigned int m_SpawnThreshold;  // Controls when to spawn more threads
+
+    // Temporarily close listener when queue fills?
+    bool         m_TemporarilyStopListening;
+
+private:
+    unsigned int m_Port; // TCP port to listen on
+};
+
+END_NCBI_SCOPE
+
+
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2002/01/25 15:39:29  ucko
+* Completely reorganized threaded servers.
+*
 * Revision 6.3  2002/01/24 20:18:56  ucko
 * Add comments
 * Add magic TemporarilyStopListening overflow processor
@@ -43,58 +105,6 @@
 * Revision 6.1  2001/12/11 19:55:21  ucko
 * Introduce thread-pool-based servers.
 *
-* ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <connect/ncbi_conn_stream.hpp>
-
-BEGIN_NCBI_SCOPE
-
-// Callback types, from highest- to lowest-level
-
-typedef void (*FConnStreamProcessor)(CConn_IOStream& stream);
-typedef void (*FConnectionProcessor)(CONN conn);
-typedef void (*FSockProcessor)(SOCK sock);
-
-void TemporarilyStopListening(SOCK sock);
-
-// Arguments to RunThreadedServer:
-//  proc - What to do with each incoming connection in normal circumstances
-//       - Runs asynchronously, in a separate thread from RunThreadedServer
-//       - Use whichever argument type is most convenient
-//       - Do NOT close anything; this happens automatically
-//
-//  port - TCP port to listen on
-//
-//  init_threads, max_threads, queue_size, spawn_threshold
-//       - Passed directly to thread pool constructor
-//
-//  overflow_proc - What to do with each incoming connection when queue is full
-//                - Runs synchronously, from within RunThreadedServer
-//                - The special value TemporarilyStopListening closes the
-//                  listening socket until the queue has room again
-//                - Do NOT close the socket; this happens automatically
-//                - Default is a no-op (aside from automatic socket closing)
-
-void RunThreadedServer(FConnStreamProcessor proc, unsigned int port,
-                       unsigned int init_threads = 5,
-                       unsigned int max_threads = 10,
-                       unsigned int queue_size = 20, int spawn_threshold = 1,
-                       FSockProcessor overflow_proc = 0);
-
-void RunThreadedServer(FConnectionProcessor proc, unsigned int port,
-                       unsigned int init_threads = 5,
-                       unsigned int max_threads = 10,
-                       unsigned int queue_size = 20, int spawn_threshold = 1,
-                       FSockProcessor overflow_proc = 0);
-
-void RunThreadedServer(FSockProcessor proc, unsigned int port,
-                       unsigned int init_threads = 5,
-                       unsigned int max_threads = 10,
-                       unsigned int queue_size = 20, int spawn_threshold = 1,
-                       FSockProcessor overflow_proc = 0);
-
-END_NCBI_SCOPE
 
 #endif  /* THREADED_SERVER__HPP */

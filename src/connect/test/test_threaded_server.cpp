@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2002/01/25 15:39:30  ucko
+* Completely reorganized threaded servers.
+*
 * Revision 6.2  2002/01/15 22:24:43  ucko
 * Take advantage of MT_LOCK_cxx2c
 *
@@ -42,6 +45,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <connect/threaded_server.hpp>
@@ -49,8 +53,24 @@
 BEGIN_NCBI_SCOPE
 
 
-static void Process(CConn_IOStream& stream)
+class CTestThreadedServer : public CThreadedServer
 {
+public:
+    CTestThreadedServer(unsigned int port, unsigned int threads,
+                        unsigned int max, unsigned int queue_size)
+        : CThreadedServer(port)
+        {
+            m_InitThreads = threads;
+            m_MaxThreads  = max;
+            m_QueueSize   = queue_size;
+        }
+    virtual void Process(SOCK sock);
+};
+
+
+void CTestThreadedServer::Process(SOCK sock)
+{
+    CConn_SocketStream stream(sock);
     string junk;
     
     stream << "Hello!" << endl;
@@ -105,10 +125,11 @@ int CThreadedServerApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    RunThreadedServer(Process, args["port"].AsInteger(),
-                      args["threads"].AsInteger(),
-                      args["maxThreads"].AsInteger(),
-                      args["queue"].AsInteger());
+    CTestThreadedServer server(args["port"].AsInteger(),
+                               args["threads"].AsInteger(),
+                               args["maxThreads"].AsInteger(),
+                               args["queue"].AsInteger());
+    server.Run();
 
     return 0;
 }
