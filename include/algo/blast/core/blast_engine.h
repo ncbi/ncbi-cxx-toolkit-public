@@ -44,6 +44,10 @@ extern "C" {
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_diagnostics.h>   
+#include <algo/blast/core/blast_hspstream.h>
+
+/** How many subject sequences to process in one database chunk. */
+#define BLAST_DB_CHUNK_SIZE 1024
 
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.
@@ -63,6 +67,7 @@ extern "C" {
  * @param results Structure holding all saved results [in] [out]
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search [out]
+ * @param results Results of the BLAST search [out]
  */
 Int4 
 BLAST_SearchEngine(Uint1 program_number, 
@@ -76,7 +81,8 @@ BLAST_SearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastDiagnostics* diagnostics);
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics,
+   BlastHSPResults** results);
 
 /** The high level function performing an RPS BLAST search 
  * @param program_number Type of BLAST program [in]
@@ -92,9 +98,10 @@ BLAST_SearchEngine(Uint1 program_number,
  * @param eff_len_options Options for setting effective lengths [in]
  * @param psi_options Options specific to PSI-BLAST [in]
  * @param db_options Options for handling BLAST database [in]
- * @param results Structure holding all saved results [in] [out]
+ * @param hsp_stream Placeholder for saving results [in]
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search [out]
+ * @param results Structure holding all saved results [in] [out]
  */
 Int4 
 BLAST_RPSSearchEngine(Uint1 program_number, 
@@ -108,7 +115,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastDiagnostics* diagnostics);
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
+   BlastHSPResults** results);
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 

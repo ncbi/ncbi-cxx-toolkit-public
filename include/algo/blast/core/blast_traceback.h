@@ -40,6 +40,7 @@ extern "C" {
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_hspstream.h>
 
 /** Compute gapped alignment with traceback for all HSPs from a single
  * query/subject sequence pair. 
@@ -72,7 +73,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
 /** Given the preliminary alignment results from a database search, redo 
  * the gapped alignment with traceback, if it has not yet been done.
  * @param program_number Type of the BLAST program [in]
- * @param results Results of this BLAST search [in] [out]
+ * @param hsp_stream A stream for reading HSP lists [in]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]
  * @param bssp BLAST database structure [in]
@@ -85,9 +86,10 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
  *                       space. Can change if not a database search. [in]
  * @param db_options Options containing database genetic code string [in]
  * @param psi_options Options for iterative searches [in]
+ * @param results All results from the BLAST search [out]
  * @return nonzero indicates failure, otherwise zero
  */
-Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
+Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
         BlastScoringParameters* score_params,
@@ -95,7 +97,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
         BlastHitSavingParameters* hit_params,
         BlastEffectiveLengthsParameters* eff_len_params,
         const BlastDatabaseOptions* db_options,
-        const PSIBlastOptions* psi_options);
+        const PSIBlastOptions* psi_options, BlastHSPResults** results);
 
 /** Compute traceback information for alignments found by an
  *  RPS blast search. This function performs two major tasks:
@@ -109,9 +111,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
  * exists to compute E-values for alignments that are found.
  *
  * @param program_number Type of the BLAST program [in]
- * @param results Structure containing the single HSPList 
- *                that is the result of a call to Blast_HSPResultsRPSUpdate.
- *                Traceback information is added to HSPs in list [in] [out]
+ * @param hsp_stream A stream for reading HSP lists [in]
  * @param concat_db The concatentation of all RPS DB sequences. 
  *                  The sequence data itself is not needed, 
  *                  only its size [in]
@@ -128,10 +128,12 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
  * @param db_options Options containing database genetic code string [in]
  * @param karlin_k Array of Karlin values, one for each database 
  *                 sequence. Used for E-value calculation [in]
+ * @param results Results structure containing all HSPs, with added
+ *                traceback information. [out]
  * @return nonzero indicates failure, otherwise zero
  */
 Int2 BLAST_RPSTraceback(Uint1 program_number,
-        BlastHSPResults* results,
+        BlastHSPStream* hsp_stream, 
         BLAST_SequenceBlk* concat_db,
         BlastQueryInfo* concat_db_info,
         BLAST_SequenceBlk* query,
@@ -141,7 +143,13 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options,
-        const double* karlin_k);
+        const double* karlin_k,
+        BlastHSPResults** results);
+
+/** Get the subject sequence encoding type for the traceback,
+ * given a program number.
+ */
+Uint1 Blast_TracebackGetEncoding(Uint1 program_number);
 
 #ifdef __cplusplus
 }

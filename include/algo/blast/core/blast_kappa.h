@@ -39,6 +39,10 @@
 extern "C" {
 #endif
 
+#include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_hspstream.h>
+
 /** Top level routine to recompute alignments for each
  *  match found by the gapped BLAST algorithm
  *  A linked list of alignments is returned (param hitList); the alignments 
@@ -51,12 +55,12 @@ extern "C" {
  * @param queryBlk query sequence [in]
  * @param query_info query information [in]
  * @param sbp (Karlin-Altschul) information for search [in]
- * @param hitList input hits for further investigation, output results [in][out]
  * @param seqSrc used to fetch database/match sequences [in]
  * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
  * @param extendParams parameters used for extension [in]
  * @param hitsavingParams parameters used for saving hits [in]
  * @param psiOptions options related to psi-blast [in]
+ * @param results All HSP results from previous stages of the search [in] [out]
  * @return 0 on success, otherwise failure.
 */
 
@@ -64,12 +68,13 @@ Int2
 Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
-                  BlastHitList* hitList,
-                  const BlastSeqSrc* seqSrc,
+                  BlastHSPStream* hsp_stream,
+                  const BlastSeqSrc* seq_src,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
                   const BlastHitSavingParameters* hitsavingParams,
-                  const PSIBlastOptions* psiOptions);
+                  const PSIBlastOptions* psi_options,
+                  BlastHSPResults* results);
 
 #ifdef __cplusplus
 
@@ -80,6 +85,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/06/08 15:09:33  dondosha
+ * Use BlastHSPStream interface in the engine instead of saving hits directly
+ *
  * Revision 1.5  2004/05/24 17:27:37  madden
  * Doxygen fix
  *

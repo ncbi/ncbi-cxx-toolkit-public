@@ -53,18 +53,18 @@ typedef struct BlastSeg {
 
 /** Structure holding all information about an HSP */
 typedef struct BlastHSP {
-   Int4 score;         /**< This HSP's raw score */
-   Int4 num_ident;         /**< Number of identical base pairs in this HSP */
+   Int4 score;           /**< This HSP's raw score */
+   Int4 num_ident;       /**< Number of identical base pairs in this HSP */
    double bit_score;     /**< Bit score, calculated from score */
    double evalue;        /**< This HSP's e-value */
-   BlastSeg query;            /**< Query sequence info. */
-   BlastSeg subject;          /**< Subject sequence info. */
-   Int4     context;          /**< Context number of query */
-   GapEditBlock* gap_info; /**< ALL gapped alignment is here */
+   BlastSeg query;       /**< Query sequence info. */
+   BlastSeg subject;     /**< Subject sequence info. */
+   Int4     context;     /**< Context number of query */
+   GapEditBlock* gap_info;/**< ALL gapped alignment is here */
    Int2 splice_junction; /**< Splice junction count in a linked set of
                             HSPs. Each present splice junction counts as +1, 
                             absent as -1. */
-   Int4 num;            /**< How many HSP's make up this (sum) segment? */
+   Int4 num;             /**< How many HSP's make up this (sum) segment? */
    Uint4 pattern_length; /**< Length of pattern occurrence in this HSP, in 
                             PHI BLAST */
 } BlastHSP;
@@ -74,13 +74,13 @@ typedef struct BlastHSP {
  */
 typedef struct BlastHSPList {
    Int4 oid;/**< The ordinal id of the subject sequence this HSP list is for */
+   Int4 query_index; /**< Index of the query which this HSPList corresponds to.
+                        Set to 0 if not applicable */
    BlastHSP** hsp_array; /**< Array of pointers to individual HSPs */
    Int4 hspcnt; /**< Number of HSPs saved */
    Int4 allocated; /**< The allocated size of the hsp_array */
    Int4 hsp_max; /**< The maximal number of HSPs allowed to be saved */
    Boolean do_not_reallocate; /**< Is reallocation of the hsp_array allowed? */
-   Boolean traceback_done; /**< Has the traceback already been done on HSPs in
-                              this list? */
 } BlastHSPList;
 
 /** The structure to contain all BLAST results for one query sequence */
@@ -391,7 +391,6 @@ Int2 Blast_HitListHSPListsFree(BlastHitList* hitlist);
 */
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
 
-
 /********************************************************************************
           HSPResults API.
 ********************************************************************************/
@@ -408,18 +407,49 @@ BlastHSPResults* Blast_HSPResultsFree(BlastHSPResults* results);
 
 /** Sort each hit list in the BLAST results by best e-value */
 Int2 Blast_HSPResultsSortByEvalue(BlastHSPResults* results);
+/** Sort each hit list in the BLAST results by best e-value, in reverse
+    order. */
+Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
 
-/** Blast_HSPResultsSaveHitList
- *  Save the current hit list to appropriate places in the results structure
+/** Blast_HSPResultsSaveRPSHSPList
+ *  Save the HSPs from an HSPList obtained on the preliminary stage of 
+ * RPS BLAST to appropriate places in the results structure. Input HSPList
+ * contains HSPs from a single query, but from all RPS BLAST database 
+ * sequences. 
  * @param program The type of BLAST search [in]
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for the current subject sequence; in case of 
  *                 multiple queries, offsets are still in the concatenated 
  *                 sequence coordinates [in]
- * @param hit_parameters The options/parameters related to saving hits [in]
+ * @param hit_options The options related to saving hits [in]
  */
-Int2 Blast_HSPResultsSaveHitList(Uint1 program, BlastHSPResults* results, 
-        BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters);
+Int2 Blast_HSPResultsSaveRPSHSPList(Uint1 program, BlastHSPResults* results, 
+        BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
+
+/** Blast_HSPResultsSaveHSPList
+ *  Save the current HSP list to appropriate places in the results structure.
+ * The input HSPList contains HSPs from a single BLAST database sequence, but
+ * possibly from multiple queries.
+ * @param program The type of BLAST search [in]
+ * @param results The structure holding results for all queries [in] [out]
+ * @param hsp_list The results for the current subject sequence; in case of 
+ *                 multiple queries, offsets are still in the concatenated 
+ *                 sequence coordinates [in]
+ * @param hit_options The options related to saving hits [in]
+ */
+Int2 Blast_HSPResultsSaveHSPList(Uint1 program, BlastHSPResults* results, 
+        BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
+
+/** Blast_HSPResultsSaveHSPList
+ * Insert an HSP list to the appropriate place in the results structure.
+ * All HSPs in this list must be from the same query, and the query index
+ * must be set in the BlastHSPList input structure.
+ * @param results The structure holding results for all queries [in] [out]
+ * @param hsp_list The results for one query-subject sequence pair. [in]
+ * @param hitlist_size Maximal allowed hit list size. [in]
+ */
+Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
+        BlastHSPList* hsp_list, Int4 hitlist_size);
 
 /** Convert a prelimiary list of HSPs, that are the result of
  * an RPS blast search, to a format compatible with the rest
