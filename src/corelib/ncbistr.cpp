@@ -496,30 +496,36 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     };
 
     while (pos < len) {
-        SIZE_TYPE raw_limit  = pos + width - pfx->size();
-        SIZE_TYPE limit      = min(raw_limit, len - 1);
-        SIZE_TYPE best_pos   = limit; // will start the next line
+        SIZE_TYPE column     = pfx->size();
+        // the next line will start at best_pos
+        SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
-        for (SIZE_TYPE pos2 = pos;  pos2 <= limit;  pos2++) {
-            char c = str[pos2];
+        for (SIZE_TYPE pos2 = pos;  pos2 < len && column <= width;
+             pos2++, column++) {
+            EScore score = eForced;
+            char   c     = str[pos2];
+
             if (c == '\n') {
                 best_pos   = pos2;
                 best_score = eNewline;
                 break;
-            } else if (best_score <= eSpace  &&  isspace(c)) {
-                EScore score = eSpace;
+            } else if (isspace(c)) {
                 if (pos2 > 0  &&  isspace(str[pos2 - 1])) {
                     continue; // take the first space of a group
                 }
+                score = eSpace;
+            } else if (ispunct(c)) {
+                score = ePunct;
+            }
+
+            if (score >= best_score) {
                 best_pos   = pos2;
                 best_score = score;
-            } else if (best_score <= ePunct  &&  ispunct(c)) {
-                best_pos   = pos2;
-                best_score = ePunct;
             }
         }
 
-        if (len < raw_limit) {
+        if (best_score != eNewline  &&  column < width) {
+            // If the whole remaining text can fit, don't split it...
             best_pos = len;
         } else if (best_score == eForced  &&  (flags & fWrap_Hyphenate)) {
             hyphen = "-";
@@ -604,6 +610,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2002/10/11 19:41:48  ucko
+ * Clean up NStr::Wrap a bit more, doing away with the "limit" variables
+ * for ease of potential extension.
+ *
  * Revision 1.53  2002/10/03 14:44:35  ucko
  * Tweak the interfaces to NStr::Wrap* to avoid publicly depending on
  * kEmptyStr, removing the need for fWrap_UsePrefix1 in the process; also
