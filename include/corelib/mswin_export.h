@@ -279,15 +279,6 @@
 #endif
 
 /*
- * Export specifier for library dbapi_driver_blobstore
- */
-#ifdef NCBI_DBAPIDRIVER_BLOBSTORE_EXPORTS
-#  define NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT __declspec(dllimport)
-#endif
-
-/*
  * Export specifier for library dbapi_driver_dblib
  */
 #ifdef NCBI_DBAPIDRIVER_DBLIB_EXPORTS
@@ -330,6 +321,15 @@
 #  define NCBI_DBAPI_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_DBAPI_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library dbapi_util_blobstore
+ */
+#ifdef NCBI_DBAPIUTIL_BLOBSTORE_EXPORTS
+#  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT __declspec(dllimport)
 #endif
 
 /*
@@ -1017,12 +1017,12 @@
 #  define NCBI_CN3D_EXPORT
 #  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
-#  define NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
 #  define NCBI_DBAPI_EXPORT
+#  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
 #  define NCBI_ENTREZGENE_EXPORT
@@ -1123,6 +1123,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.86  2004/10/20 16:53:20  ivanov
+ * Renamed NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT->NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
+ *
  * Revision 1.85  2004/10/20 16:10:52  ivanov
  * + NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT export specifier
  *
