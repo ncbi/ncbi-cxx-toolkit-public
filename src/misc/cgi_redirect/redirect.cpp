@@ -95,14 +95,25 @@ void s_AssignEntryValue(const string& name,
                         TCgiEntries&  old_entries,
                         TCgiEntries&  new_entries)
 {
-    if ( value[0] == '&' ) {
-        TCgiEntriesCI ci = old_entries.find(value.substr(1));
-        if (ci != old_entries.end()) {
-            new_entries.insert(TCgiEntries::value_type(name, ci->second));
-            return;
+    SIZE_TYPE pos = 0;
+    string s(value);
+
+    while ( (pos = s.find("&{", pos)) != NPOS ) {
+        SIZE_TYPE pos_end = s.find("}", pos + 2);
+        if ( pos_end == NPOS ) {
+            break;
         }
+        string name = value.substr(pos + 2, pos_end - pos - 2);
+        TCgiEntriesCI ci = old_entries.find(name);
+        if (ci != old_entries.end()) {
+            s.replace(pos, pos_end - pos + 1, URL_EncodeString((ci->second).GetValue()));
+        } else {
+            s.erase(pos, pos_end - pos + 1);
+        }
+        pos++;
     }
-    CCgiEntry entry(value);
+    s = URL_DecodeString(s);
+    CCgiEntry entry(s);
     new_entries.insert(TCgiEntries::value_type(name, entry));
 }
 
@@ -227,12 +238,18 @@ TCgiEntries& CCgiRedirectApplication::RemapEntries(CCgiContext& ctx,
 
     // Add new empty entries.
     ITERATE(list<string>, i, add_empty_entries) {
-        new_entries.insert(TCgiEntries::value_type(*i, empty_entry));
+        TCgiEntriesCI ci = entries.find(*i);
+        if (ci == entries.end()) {
+            new_entries.insert(TCgiEntries::value_type(*i, empty_entry));
+        }
     }
     // Add new values entries.
     ITERATE(list<string>, i, add_value_entries) {
-        str = reg.Get("Add", *i);
-        s_AssignEntryValue(*i, str, entries, new_entries);
+        TCgiEntriesCI ci = entries.find(*i);
+        if (ci == entries.end()) {
+            str = reg.Get("Add", *i);
+            s_AssignEntryValue(*i, str, entries, new_entries);
+        }
     }
 
     return new_entries;
@@ -245,6 +262,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/17 16:21:38  ivanov
+ * Changed method of using another variables from "&var" to "&{var}".
+ * Also, all new string values in the registry file must be specified
+ * in the URL-encoded format.
+ *
  * Revision 1.3  2004/02/10 15:25:37  ivanov
  * Enclosed mapped tag names with undescores to avoid conflicts default tags
  * with names of automaticaly mapped entries.
