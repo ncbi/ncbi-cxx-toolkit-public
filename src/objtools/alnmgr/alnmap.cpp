@@ -270,6 +270,9 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
 TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos) const
 {
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
+    if (raw_seg < 0) { // out of seq range
+        return -1;
+    }
     CNumSegWithOffset seg = x_GetSegFromRawSeg(raw_seg);
     if (seg.GetOffset()) {
         return -1; // it is offset
@@ -675,6 +678,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2002/11/13 16:40:56  todorov
+* out of range check for GetAlnPosFromSeqPos
+*
 * Revision 1.16  2002/11/04 21:29:08  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
