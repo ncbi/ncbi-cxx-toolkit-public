@@ -205,7 +205,7 @@ struct Check
         {
             return member;
         }
-    static const void* ObjectPtrPtr(CObject*const* member)
+    static const void* ObjectPtrPtr(CSerialObject*const* member)
         {
             return member;
         }

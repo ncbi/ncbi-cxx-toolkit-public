@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/05/15 20:22:02  grichenk
+* Added CSerialObject -- base class for all generated ASN.1 classes
+*
 * Revision 1.10  2001/07/25 19:15:27  grichenk
 * Added comments. Added type checking before dynamic cast.
 *
@@ -111,6 +114,16 @@ public:
         {
             static_cast<const Class*>(object)->PreWrite();
         }
+};
+
+
+// Base class for all serializable objects
+class CSerialObject : public CObject
+{
+public:
+    virtual const CTypeInfo* GetThisTypeInfo(void) const = 0;
+    virtual void Assign(const CSerialObject& source);
+    virtual bool Equals(const CSerialObject& object) const;
 };
 
 
@@ -196,6 +209,8 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 }
 
 #define DECLARE_INTERNAL_TYPE_INFO() \
+    virtual const NCBI_NS_NCBI::CTypeInfo* GetThisTypeInfo(void) const \
+    { return GetTypeInfo(); } \
     static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void)
 
 #define ENUM_METHOD_NAME(EnumName) \

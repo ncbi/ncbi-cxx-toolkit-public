@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/05/15 20:22:04  grichenk
+* Added CSerialObject -- base class for all generated ASN.1 classes
+*
 * Revision 1.30  2002/01/16 18:56:34  grichenk
 * Removed CRef<> argument from choice variant setter, updated sources to
 * use references instead of CRef<>s
@@ -189,8 +192,8 @@ BEGIN_NCBI_SCOPE
 #define STRING_TYPE_FULL "NCBI_NS_STD::string"
 #define STRING_TYPE "string"
 #define STRING_MEMBER "m_string"
-#define OBJECT_TYPE_FULL "NCBI_NS_NCBI::CObject"
-#define OBJECT_TYPE "CObject"
+#define OBJECT_TYPE_FULL "NCBI_NS_NCBI::CSerialObject"
+#define OBJECT_TYPE "CSerialObject"
 #define OBJECT_MEMBER "m_object"
 #define STATE_PREFIX "e_"
 #define STATE_NOT_SET "e_not_set"

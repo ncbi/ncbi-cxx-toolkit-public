@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/05/15 20:22:04  grichenk
+* Added CSerialObject -- base class for all generated ASN.1 classes
+*
 * Revision 1.36  2001/12/12 17:47:35  grichenk
 * Updated setters/getters generator to avoid using CRef<>s
 *
@@ -356,7 +359,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             code.HPPIncludes().insert(m_ParentClassFileName);
     }
     else if ( GetKind() == eKindObject ) {
-        code.SetParentClass("CObject", CNamespace::KNCBINamespace);
+        code.SetParentClass("CSerialObject", CNamespace::KNCBINamespace);
     }
     string methodPrefix = code.GetMethodPrefix();
 
