@@ -98,6 +98,11 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 #define LOG_WRITE(lg, level, message) \
   LOG_Write(lg, level, THIS_MODULE, THIS_FILE, __LINE__, message)
 
+/* AIX's <pthread.h> defines LOG_DATA to be an integer constant; we must
+   explicitly drop such definitions to avoid trouble. */
+#ifdef LOG_DATA
+#  undef LOG_DATA
+#endif
 #define LOG_DATA(lg, data, size, message) \
   LOG_Data(lg, eLOG_Trace, THIS_MODULE, THIS_FILE, __LINE__, \
            data, size, message)
@@ -244,6 +249,10 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2004/01/27 17:05:59  ucko
+ * #undef LOG_DATA if necessary before #defining it with arguments to
+ * avoid trouble on AIX.
+ *
  * Revision 6.20  2003/10/21 11:17:17  lavr
  * Add location information in LOG_DATA()
  *
