@@ -1,4 +1,4 @@
---$Revision: 6.4 $
+--$Revision: 6.5 $
 --**********************************************************************
 --
 --  NCBI Taxonomy Server
@@ -34,8 +34,8 @@ Taxon1-req ::= CHOICE {
 	fini    	NULL,    	-- close the server
 	id4gi		INTEGER,  	-- get taxid by gi
 	taxachildren	INTEGER,	-- get children
-	taxalineage     INTEGER}        -- get extended lineage for org
-
+	taxalineage     INTEGER,        -- get extended lineage for org
+	maxtaxid        NULL}           -- get max taxid
 
 Taxon1-resp ::= CHOICE {
 	error		Taxon1-error,	-- sent on any error
@@ -58,7 +58,8 @@ Taxon1-resp ::= CHOICE {
 	id4gi           INTEGER,
 	taxabyid	Taxon2-data,
 	taxachildren	SEQUENCE OF Taxon1-name,
-	taxalineage	SEQUENCE OF Taxon1-name}
+	taxalineage	SEQUENCE OF Taxon1-name,
+	maxtaxid        INTEGER}
 
 Taxon1-info ::= SEQUENCE {
 	ival1	INTEGER,
