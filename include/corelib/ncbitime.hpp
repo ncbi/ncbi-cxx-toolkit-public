@@ -956,8 +956,17 @@ public:
     ///   Second part of time.
     /// @param nanoseconds
     ///   Nanosecond part of time.
-    CTimeSpan(long days, long hours = 0, long minutes = 0,
-              long seconds = 0, long nanoseconds = 0);
+    CTimeSpan(long days, long hours, long minutes, long seconds,
+              long nanoseconds = 0);
+
+    /// Constructor.
+    ///
+    /// Construct time span given the number of seconds and nanoseconds.
+    /// @param seconds
+    ///   Second part of time.
+    /// @param nanoseconds
+    ///   Nanosecond part of time.
+    explicit CTimeSpan(long seconds, long nanoseconds = 0);
 
     /// Constructor.
     ///
@@ -968,7 +977,7 @@ public:
     /// @param seconds
     ///   Second part of time. The fractional part is used to compute
     ///   nanoseconds.
-    CTimeSpan(double seconds);
+    explicit CTimeSpan(double seconds);
 
     /// Explicit conversion constructor for string representation of time span.
     ///
@@ -1041,19 +1050,19 @@ public:
     // Get various components of time span.
     //
 
-    /// Get total number of complete days.
-    long GetTotalDays(void) const;
+    /// Get number of complete days.
+    long GetCompleteDays(void) const;
 
-    /// Get total number of complete hours.
-    long GetTotalHours(void) const;
+    /// Get number of complete hours.
+    long GetCompleteHours(void) const;
 
-    /// Get total number of complete minutes.
-    long GetTotalMinutes(void) const;
+    /// Get number of complete minutes.
+    long GetCompleteMinutes(void) const;
 
-    /// Get total number of complete seconds.
-    long GetTotalSeconds(void) const;
+    /// Get number of complete seconds.
+    long GetCompleteSeconds(void) const;
 
-    /// Get total number of nanoseconds.
+    /// Get number of nanoseconds.
     long GetNanoSecondsAfterSecond(void) const;
 
     /// Return span time as number of seconds.
@@ -1062,7 +1071,7 @@ public:
     ///   Return representative of time span as type double. 
     ///   The fractional part represents nanoseconds part of time span.
     ///   The double representation of the time span is aproximate.
-    double Get(void) const;
+    double GetAsDouble(void) const;
 
     //
     // Arithmetic
@@ -1628,6 +1637,14 @@ CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
 }
 
 inline
+CTimeSpan::CTimeSpan(long seconds, long nanoseconds)
+{
+    m_Sec = seconds + nanoseconds/kNanoSecondsPerSecond;
+    m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
+    x_Normalize();
+}
+
+inline
 CTimeSpan::CTimeSpan(double seconds)
 {
     m_Sec = long(seconds);
@@ -1672,22 +1689,22 @@ inline
 int CTimeSpan::x_Second(void) const { return int(m_Sec % 60L); }
 
 inline
-long CTimeSpan::GetTotalDays(void) const { return m_Sec / 86400L; }
+long CTimeSpan::GetCompleteDays(void) const { return m_Sec / 86400L; }
 
 inline
-long CTimeSpan::GetTotalHours(void) const { return m_Sec / 3600L; }
+long CTimeSpan::GetCompleteHours(void) const { return m_Sec / 3600L; }
 
 inline
-long CTimeSpan::GetTotalMinutes(void) const { return m_Sec / 60L; }
+long CTimeSpan::GetCompleteMinutes(void) const { return m_Sec / 60L; }
 
 inline
-long CTimeSpan::GetTotalSeconds(void) const { return m_Sec; }
+long CTimeSpan::GetCompleteSeconds(void) const { return m_Sec; }
 
 inline
 long CTimeSpan::GetNanoSecondsAfterSecond(void) const { return m_NanoSec; }
 
 inline
-double CTimeSpan::Get(void) const
+double CTimeSpan::GetAsDouble(void) const
 {
     double t = abs(m_Sec) + double(abs(m_NanoSec)) / kNanoSecondsPerSecond;
     return (GetSign() == eNegative) ? -t : t;
@@ -1849,6 +1866,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/09/07 18:47:04  ivanov
+ * CTimeSpan::
+ *   - added new constructor CTimeSpan(long sec, long nanosec)
+ *   - rename GetTotal*() -> GetComplete*()
+ *   - renamed Get() - > GetAsDouble()
+ *
  * Revision 1.36  2004/09/07 16:31:22  ivanov
  * Added CTimeSpan class and its support to CTime class (addition/subtraction)
  * CTime:: added new format letter support 'd', day without leading zero.
