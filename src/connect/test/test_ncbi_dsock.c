@@ -73,7 +73,7 @@ static int s_Server(int x_port)
     STimeout       timeout;
     unsigned int   peeraddr;
     unsigned short peerport, port;
-    size_t         msgsize, n, len;
+    size_t         msglen, n, len;
     char           minibuf[255];
 
     if (x_port <= 0) {
@@ -105,30 +105,30 @@ static int s_Server(int x_port)
     }
 
     len = (size_t)(((double) rand()/(double) RAND_MAX)*sizeof(minibuf));
-    if ((status = DSOCK_RecvMsg(server, 0, minibuf, len, &msgsize,
+    if ((status = DSOCK_RecvMsg(server, minibuf, len, 0, &msglen,
                                 &peeraddr, &peerport)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Server]  Error reading from DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
-    if (len > msgsize)
-        len = msgsize;
+    if (len > msglen)
+        len = msglen;
 
     if (SOCK_ntoa(peeraddr, addr, sizeof(addr)) != 0)
         strcpy(addr, "<unknown>");
 
     CORE_LOGF(eLOG_Note, ("[Server]  Message received from %s:%hu, %lu bytes",
-                          addr, peerport, (unsigned long) msgsize));
+                          addr, peerport, (unsigned long) msglen));
 
-    if (!(buf = (char*) malloc(msgsize ? msgsize : 1))) {
+    if (!(buf = (char*) malloc(msglen ? msglen : 1))) {
         CORE_LOG_ERRNO(eLOG_Error, errno, "[Server]  Cannot alloc msg buf");
         return 1;
     }
     if (len)
         memcpy(buf, minibuf, len);
 
-    while (len < msgsize) {
-        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len) +0.5);
+    while (len < msglen) {
+        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msglen - len) + 0.5);
         if ((status = SOCK_Read(server, buf + len, n, &n, eIO_ReadPlain))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error,("[Server]  Error reading msg @ byte %lu: %s",
@@ -149,8 +149,8 @@ static int s_Server(int x_port)
         return 1;
     }
 
-    for (len = 0; len < msgsize; len += n) {
-        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len) +0.5);
+    for (len = 0; len < msglen; len += n) {
+        n = (size_t)(((double) rand()/(double) RAND_MAX)*(msglen - len) + 0.5);
         if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error,("[Server]  Error writing msg @ byte %lu: %s",
@@ -181,11 +181,11 @@ static int s_Server(int x_port)
 
 static int s_Client(int x_port)
 {
-    unsigned short port;
-    size_t         msgsize, n;
+    size_t         msglen, n;
     STimeout       timeout;
     EIO_Status     status;
     SOCK           client;
+    unsigned short port;
     char*          buf;
 
     if (x_port <= 0) {
@@ -202,19 +202,19 @@ static int s_Client(int x_port)
         return 1;
     }
 
-    msgsize = (size_t)(((double)rand()/(double)RAND_MAX)*(MAX_DGRAM_SIZE-10));
+    msglen = (size_t)(((double)rand()/(double)RAND_MAX)*(MAX_DGRAM_SIZE - 10));
     CORE_LOGF(eLOG_Note, ("[Client]  Generating a message %lu bytes long",
-                          (unsigned long) msgsize));
+                          (unsigned long) msglen));
 
-    if (!(buf = (char*) malloc(2*msgsize + 9))) {
+    if (!(buf = (char*) malloc(2*msglen + 9))) {
         CORE_LOG_ERRNO(eLOG_Error, errno, "[Client]  Cannot alloc msg buf");
-        return 1;        
+        return 1;
     }
 
-    for (n = 0; n < msgsize; n++)
+    for (n = 0; n < msglen; n++)
         buf[n] = rand() % 0xFF;
 
-    if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msgsize))
+    if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msglen))
         != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Client]  Error sending to DSOCK: %s",
                                IO_StatusStr(status)));
@@ -229,15 +229,14 @@ static int s_Client(int x_port)
         return 1;
     }
 
-    if ((status = DSOCK_RecvMsg(client, 0, &buf[msgsize],
-                                msgsize + 9, &n, 0, 0))
+    if ((status = DSOCK_RecvMsg(client, &buf[msglen], msglen + 9, 0, &n, 0, 0))
         != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Client]  Error reading from DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
 
-    if (n != msgsize + 9) {
+    if (n != msglen + 9) {
         CORE_LOGF(eLOG_Error, ("[Client]  Received message of wrong size: %lu",
                                (unsigned long) n));
         return 1;
@@ -247,20 +246,20 @@ static int s_Client(int x_port)
     }
     assert(SOCK_Read(client, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
 
-    for (n = 0; n < msgsize; n++) {
-        if (buf[n] != buf[msgsize + n])
+    for (n = 0; n < msglen; n++) {
+        if (buf[n] != buf[msglen + n])
             break;
     }
 
-    if (n < msgsize) {
+    if (n < msglen) {
         CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupted, off=%lu",
                                (unsigned long) n));
         return 1;
     }
 
-    if (strncmp(&buf[msgsize*2], "--Reply--", 9) != 0) {
+    if (strncmp(&buf[msglen*2], "--Reply--", 9) != 0) {
         CORE_LOGF(eLOG_Error, ("[Client]  No signature in the message: %.9s",
-                               &buf[msgsize*2]));
+                               &buf[msglen*2]));
         return 1;
     }
 
@@ -321,6 +320,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/04/30 17:04:01  lavr
+ * Conformance to slightly modified datagram socket API
+ *
  * Revision 6.8  2003/03/25 15:07:21  lavr
  * Protect macros' values by enclosing in parentheses
  *
