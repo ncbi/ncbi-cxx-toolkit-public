@@ -332,15 +332,6 @@ private:
     void x_AddSynonym(const CSeq_id_Handle& idh,
                       CSynonymsSet& syn_set, CBioseq_ScopeInfo& info);
 
-    // Conflict reporting function
-    enum EConflict {
-        eConflict_History,
-        eConflict_Live
-    };
-    void x_ThrowConflict(EConflict conflict_type,
-                         const SSeqMatch_Scope& info1,
-                         const SSeqMatch_Scope& info2) const;
-
     TSeq_idMapValue& x_GetSeq_id_Info(const CSeq_id_Handle& id);
     TSeq_idMapValue& x_GetSeq_id_Info(const CBioseq_Handle& bh);
     TSeq_idMapValue* x_FindSeq_id_Info(const CSeq_id_Handle& id);

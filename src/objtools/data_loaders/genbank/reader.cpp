@@ -254,7 +254,6 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
                 ids.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
-                ids->SetState(CBioseq_Handle::fState_conn_failed);
                 throw;
             }
             else {
@@ -296,8 +295,7 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
                 ids.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
-                ids->SetState(CBioseq_Handle::fState_conn_failed|
-                              CBioseq_Handle::fState_no_data);
+                ids->SetState(CBioseq_Handle::fState_no_data);
                 throw;
             }
             else {
@@ -389,8 +387,7 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
-                blob->SetBlobState(CBioseq_Handle::fState_conn_failed|
-                                   CBioseq_Handle::fState_no_data);
+                blob->SetBlobState(CBioseq_Handle::fState_no_data);
                 throw;
             }
             else {

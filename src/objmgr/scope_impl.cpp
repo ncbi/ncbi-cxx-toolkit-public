@@ -966,7 +966,9 @@ SSeqMatch_Scope CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
         if ( new_ret ) {
             _ASSERT(&new_ret.m_TSE_Lock->GetScopeImpl() == this);
             if ( ret && ret.m_Bioseq != new_ret.m_Bioseq ) {
-                x_ThrowConflict(eConflict_Live, ret, new_ret);
+                ret.m_BlobState = CBioseq_Handle::fState_conflict;
+                ret.m_Bioseq.Reset();
+                return ret;
             }
             ret = new_ret;
         }
@@ -1155,22 +1157,6 @@ namespace {
     {
         return match.m_TSE_Lock->GetDSInfo().GetDataSource().GetName();
     }
-}
-
-
-void CScope_Impl::x_ThrowConflict(EConflict conflict_type,
-                                  const SSeqMatch_Scope& info1,
-                                  const SSeqMatch_Scope& info2) const
-{
-    const char* msg_type =
-        conflict_type == eConflict_History? "history": "live TSE";
-    CNcbiOstrstream s;
-    s << "CScope_Impl -- multiple " << msg_type << " matches: " <<
-        sx_GetDSName(info1) << "::" << info1.m_Seq_id.AsString() <<
-        " vs " <<
-        sx_GetDSName(info2) << "::" << info2.m_Seq_id.AsString();
-    string msg = CNcbiOstrstreamToString(s);
-    NCBI_THROW(CObjMgrException, eFindConflict, msg);
 }
 
 
