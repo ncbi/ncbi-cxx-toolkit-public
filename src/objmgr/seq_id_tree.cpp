@@ -273,9 +273,9 @@ CSeq_id_Handle CSeq_id_int_Tree::FindInfo(const CSeq_id& id) const
     TReadLockGuard guard(m_TreeLock);
     TIntMap::const_iterator it = m_IntMap.find(value);
     if (it != m_IntMap.end()) {
-        return it->second;
+        return CSeq_id_Handle(it->second);
     }
-    return 0;
+    return CSeq_id_Handle();
 }
 
 
@@ -547,7 +547,7 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
     const CTextseq_id& tid = x_Get(id);
     // Can not compare if no accession given
     TReadLockGuard guard(m_TreeLock);
-    return x_FindInfo(tid);
+    return CSeq_id_Handle(x_FindInfo(tid));
 }
 
 CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
@@ -945,7 +945,7 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsLocal() );
     const CObject_id& oid = id.GetLocal();
     TReadLockGuard guard(m_TreeLock);
-    return x_FindInfo(oid);
+    return CSeq_id_Handle(x_FindInfo(oid));
 }
 
 
@@ -1080,7 +1080,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsGeneral() );
     const CDbtag& dbid = id.GetGeneral();
     TReadLockGuard guard(m_TreeLock);
-    return x_FindInfo(dbid);
+    return CSeq_id_Handle(x_FindInfo(dbid));
 }
 
 
@@ -1224,7 +1224,7 @@ CSeq_id_Handle CSeq_id_Giim_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsGiim() );
     const CGiimport_id& gid = id.GetGiim();
     TReadLockGuard guard(m_TreeLock);
-    return x_FindInfo(gid);
+    return CSeq_id_Handle(x_FindInfo(gid));
 }
 
 
@@ -1357,7 +1357,7 @@ CSeq_id_Handle CSeq_id_Patent_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsPatent() );
     const CPatent_seq_id& pid = id.GetPatent();
     TReadLockGuard guard(m_TreeLock);
-    return x_FindInfo(pid);
+    return CSeq_id_Handle(x_FindInfo(pid));
 }
 
 CSeq_id_Handle CSeq_id_Patent_Tree::FindOrCreate(const CSeq_id& id)
@@ -1527,7 +1527,7 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsPdb() );
     const CPDB_seq_id& pid = id.GetPdb();
     TReadLockGuard guard(m_TreeLock);
-    return x_FindInfo(pid);
+    return CSeq_id_Handle(x_FindInfo(pid));
 }
 
 
@@ -1616,6 +1616,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/19 17:53:09  vasilche
+* Explicit creation of CSeq_id_Handle.
+*
 * Revision 1.8  2004/02/19 17:25:35  vasilche
 * Use CRef<> to safely hold pointer to CSeq_id_Info.
 * CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
