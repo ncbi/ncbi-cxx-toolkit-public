@@ -1343,6 +1343,12 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 	return 0;
 }
 
+typedef struct Blast_ResComp {
+    Uint1	alphabet_code;
+    Int4*	comp; 	/* composition of alphabet, array starts at beginning of alphabet. */
+    Int4*   comp0;	/* Same array as above, starts at zero. */
+} Blast_ResComp;
+
 static Blast_ResComp*
 BlastResCompDestruct(Blast_ResComp* rcp)
 {
@@ -3511,6 +3517,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2004/05/19 15:34:38  dondosha
+ * Moved Blast_ResComp definition from header file
+ *
  * Revision 1.73  2004/05/19 14:52:03  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
