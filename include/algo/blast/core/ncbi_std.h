@@ -52,11 +52,8 @@ Detailed Contents:
 #include <ctype.h>
 #include <assert.h>
 
-#ifndef NCBI_C_TOOLKIT
-#include <corelib/ncbitype.h>
-#else
-#include <ncbistd.h>
-#endif
+/* which toolkit are we using? */
+#include "ncbi_config.h"
 
 #include <algo/blast/core/ncbi_math.h>
 
@@ -88,7 +85,7 @@ extern "C" {
 #define strdup _strdup
 #endif
 
-#ifndef NCBI_C_TOOLKIT
+#ifndef _NCBISTD_ /* if we're not in the C toolkit... */
 typedef Uint1 Boolean;
 #ifndef TRUE
 #define TRUE 1
@@ -120,7 +117,7 @@ typedef Uint1 Boolean;
 
 /* low-level ANSI-style functions */
 
-#ifndef NCBI_C_TOOLKIT
+#ifndef _NCBISTD_ /* if we're not in the C toolkit ... */
 #define UINT4_MAX     4294967295U
 #define INT4_MAX    2147483647
 #define INT4_MIN    (-2147483647-1)
@@ -142,7 +139,7 @@ typedef Uint1 Boolean;
 
 #else
 
-#endif /* NCBI_C_TOOLKIT */
+#endif /* _NCBISTD_ */
 
 extern void* MemDup (const void *orig, size_t size);
 
