@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/18 17:26:32  grichenk
+* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
+*
 * Revision 1.5  2002/03/15 18:10:05  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -110,6 +113,7 @@ private:
     bool x_Match(const CSeq_id_Handle& handle) const;
 
     const CSeq_id* x_GetSeqId(void) const;
+
     // Seq-id mapper (to lock/unlock the handle)
     CSeq_id_Mapper* m_Mapper;
     // Handle value
@@ -120,6 +124,7 @@ private:
     friend class CSeq_id_Mapper;
     friend class CSeq_id_Which_Tree;
     friend class CBioseq_Handle;
+    friend class CDataLoader;
 };
 
 

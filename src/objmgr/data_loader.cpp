@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/18 17:26:35  grichenk
+* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
+*
 * Revision 1.1  2002/01/11 19:06:17  gouriano
 * restructured objmgr
 *
@@ -39,6 +42,7 @@
 
 
 #include <objects/objmgr1/data_loader.hpp>
+#include "seq_id_mapper.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -90,6 +94,24 @@ string CDataLoader::GetName(void) const
 {
     return m_Name;
 }
+
+
+TSeq_id_Key CDataLoader::x_GetSeq_id_Key(const CSeq_id_Handle& handle)
+{
+    if ( !m_Mapper ) {
+        m_Mapper = handle.m_Mapper;
+    }
+    _ASSERT(m_Mapper.GetPointer() == handle.m_Mapper);
+    return handle.m_Value;
+}
+
+
+CSeq_id_Handle CDataLoader::x_GetSeq_id_Handle(TSeq_id_Key key)
+{
+    _ASSERT( m_Mapper );
+    return CSeq_id_Handle(*m_Mapper, key);
+}
+
 
 
 END_SCOPE(objects)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/18 17:26:32  grichenk
+* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
+*
 * Revision 1.3  2002/03/11 21:10:11  grichenk
 * +CDataLoader::ResolveConflict()
 *
@@ -116,12 +119,23 @@ protected:
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
 
+    TSeq_id_Key    x_GetSeq_id_Key(const CSeq_id_Handle& handle);
+    CSeq_id_Handle x_GetSeq_id_Handle(TSeq_id_Key key);
+    const CSeq_id* x_GetSeq_id(const CSeq_id_Handle& handle) const;
+
 private:
     string m_Name;
     CDataSource* m_DataSource;
-
+    CRef<CSeq_id_Mapper> m_Mapper;
     friend class CObjectManager;
 };
+
+
+inline
+const CSeq_id* CDataLoader::x_GetSeq_id(const CSeq_id_Handle& handle) const
+{
+    return handle.x_GetSeqId();
+}
 
 
 END_SCOPE(objects)
