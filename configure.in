@@ -530,7 +530,7 @@ if test "$x_have_windows" = "yes" ; then
 elif test "$x_have_unistd" = "yes" ; then
    AC_DEFINE_UNQUOTED(NCBI_OS_UNIX, 1)
    AC_DEFINE_UNQUOTED(NCBI_OS, "UNIX")
-   UNIX_SRC="$(UNIX_SRC)"
+   UNIX_SRC='$(UNIX_SRC)'
 else
    AC_DEFINE_UNQUOTED(NCBI_OS_MAC, 1)
    AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")

@@ -1799,7 +1799,7 @@ EOF
 #define NCBI_OS "UNIX"
 EOF
 
-   UNIX_SRC="$(UNIX_SRC)"
+   UNIX_SRC='$(UNIX_SRC)'
 else
    cat >> confdefs.h <<EOF
 #define NCBI_OS_MAC 1
