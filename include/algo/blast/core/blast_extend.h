@@ -105,6 +105,8 @@ typedef struct BLAST_DiagTable {
                           hits method was used and a hit was found. */
 } BLAST_DiagTable;
 
+/** Structure containing an array of stacks for keeping track of the 
+ * initial word matches. Can be used in megablast. */
 typedef struct MB_StackTable {
    Int4 num_stacks; /**< Number of stacks to be used for storing hit offsets
                        by MegaBLAST */
@@ -260,6 +262,15 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
 /** Deallocate memory for the word extension structure */
 Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp);
 
+/** Add a new initial (ungapped) HSP to an initial hit list.
+ * @param ungapped_hsps Hit list where to save a new HSP [in] [out]
+ * @param q_start Starting offset in query [in]
+ * @param s_start Starting offset in subject [in]
+ * @param q_off Offset in query, where lookup table hit was found. [in]
+ * @param s_off Offset in subject, where lookup table hit was found. [in]
+ * @param len Length of the ungapped match [in]
+ * @param score Score of the ungapped match [in]
+ */
 void 
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
                  Int4 q_off, Int4 s_off, Int4 len, Int4 score);
