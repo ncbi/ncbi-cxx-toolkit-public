@@ -888,9 +888,7 @@ x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 
 
 static void
-x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp, 
-                      EProgram program,
-                      const BlastScoringOptions* score_options)
+x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
@@ -1083,8 +1081,7 @@ BLASTHspListToSeqAlign(EProgram program,
                     query_id, subject_id);
         }
         
-        x_AddScoresToSeqAlign(seqalign, hsp, program, 
-                              score_options);
+        x_AddScoresToSeqAlign(seqalign, hsp);
         retval->SetSegs().SetDisc().Set().push_back(seqalign);
     }
     
@@ -1122,6 +1119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/06/07 20:11:02  dondosha
+* Removed no longer used arguments in x_AddScoresToSeqAlign
+*
 * Revision 1.45  2004/06/07 19:21:17  dondosha
 * Removed arguments from x_BuildScoreList that are no longer used
 *
