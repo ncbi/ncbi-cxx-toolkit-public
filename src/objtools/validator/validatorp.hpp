@@ -39,7 +39,7 @@
 
 #include <util/strsearch.hpp>
 
-#include <validator.hpp>
+#include <objects/validator/validator.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -663,6 +663,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/24 16:52:15  shomrat
+* Changes to include directives
+*
 * Revision 1.2  2002/12/23 20:09:02  shomrat
 * Added static functions as private members; Added base class for specific validation classes
 *

@@ -30,8 +30,9 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include <validator.hpp>
-#include <validatorp.hpp>
+#include <objects/validator/validator.hpp>
+#include "validatorp.hpp"
+
 #include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -994,6 +995,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/24 16:51:41  shomrat
+* Changes to include directives
+*
 * Revision 1.2  2002/12/23 20:19:22  shomrat
 * Redundan character removed
 *

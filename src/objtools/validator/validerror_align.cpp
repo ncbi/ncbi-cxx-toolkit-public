@@ -31,7 +31,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include <validatorp.hpp>
+#include "validatorp.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -64,6 +64,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/12/24 16:52:42  shomrat
+* Changes to include directives
+*
 * Revision 1.1  2002/12/23 20:15:59  shomrat
 * Initial submission after splitting former implementation
 *

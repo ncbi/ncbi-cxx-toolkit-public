@@ -32,8 +32,8 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
-#include <validatorp.hpp>
-#include <utilities.hpp>
+#include "validatorp.hpp"
+#include "utilities.hpp"
 
 #include <serial/serialbase.hpp>
 
@@ -1453,6 +1453,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/12/24 16:54:02  shomrat
+* Changes to include directives
+*
 * Revision 1.1  2002/12/23 20:16:34  shomrat
 * Initial submission after splitting former implementation
 *

@@ -31,7 +31,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include <validatorp.hpp>
+#include "validatorp.hpp"
 
 #include <objects/util/sequence.hpp>
 
@@ -390,6 +390,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/12/24 16:53:24  shomrat
+* Changes to include directives
+*
 * Revision 1.1  2002/12/23 20:16:16  shomrat
 * Initial submission after splitting former implementation
 *
