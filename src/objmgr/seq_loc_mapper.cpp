@@ -401,7 +401,6 @@ void CSeq_loc_Mapper::PreserveDestinationLocs(void)
 }
 
 
-inline
 CSeq_loc_Mapper::TMappedRanges&
 CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
                                    int strand_idx) const
@@ -414,7 +413,6 @@ CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
 }
 
 
-inline
 void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
 {
     if (m_MappedLocs.size() == 0) {
@@ -1833,6 +1831,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/05/10 20:22:24  grichenk
+* Fixed more warnings (removed inlines)
+*
 * Revision 1.17  2004/05/10 18:26:37  grichenk
 * Fixed 'not used' warnings
 *

@@ -41,6 +41,26 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+SAlignment_Segment::SAlignment_Segment(int len)
+    : m_Len(len),
+      m_HaveStrands(false)
+{
+    return;
+}
+
+
+SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow(const CSeq_id& id,
+                                                               int start,
+                                                               bool is_set_strand,
+                                                               ENa_strand strand,
+                                                               int width)
+{
+    m_Rows.push_back(SAlignment_Row(id, start, is_set_strand, strand, width));
+    m_HaveStrands |= is_set_strand;
+    return m_Rows.back();
+}
+
+
 CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align)
     : m_OrigAlign(&align),
       m_DstAlign(0),
@@ -725,6 +745,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/10 20:22:24  grichenk
+* Fixed more warnings (removed inlines)
+*
 * Revision 1.4  2004/04/12 14:35:59  grichenk
 * Fixed mapping of alignments between nucleotides and proteins
 *
