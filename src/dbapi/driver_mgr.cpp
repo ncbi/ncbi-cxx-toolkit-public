@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2004/04/22 11:29:53  ivanov
+* Use pointer to driver manager instance instead auto_ptr
+*
 * Revision 1.11  2003/12/17 14:56:33  ivanov
 * Changed type of the Driver Manager instance to auto_ptr.
 * Added RemoveInstance() method.
@@ -79,17 +82,19 @@
 BEGIN_NCBI_SCOPE
 
 
-auto_ptr<CDriverManager> CDriverManager::sm_Instance;
+CDriverManager* CDriverManager::sm_Instance = 0;
+
+
 DEFINE_CLASS_STATIC_MUTEX(CDriverManager::sm_Mutex);
 
 
 CDriverManager& CDriverManager::GetInstance()
 {
-    if ( !sm_Instance.get() ) {
+    if ( !sm_Instance ) {
         CMutexGuard GUARD(sm_Mutex);
         // Check again with the lock to avoid races
-        if ( !sm_Instance.get() ) {
-            sm_Instance.reset(new CDriverManager);
+        if ( !sm_Instance ) {
+            sm_Instance = new CDriverManager;
         }
     }
     return *sm_Instance;
@@ -99,7 +104,8 @@ CDriverManager& CDriverManager::GetInstance()
 void CDriverManager::RemoveInstance()
 {
     CMutexGuard GUARD(sm_Mutex);
-    sm_Instance.reset(0);
+    delete sm_Instance;
+    sm_Instance = 0;
 }
 
 

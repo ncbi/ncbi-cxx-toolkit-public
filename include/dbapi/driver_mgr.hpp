@@ -86,10 +86,8 @@ protected:
     map<string, class IDataSource*> m_ds_list;
 
 private:
-    static auto_ptr<CDriverManager> sm_Instance;
+    static CDriverManager* sm_Instance;
     DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
-
-    friend class auto_ptr<CDriverManager>;
 };
 
 
@@ -102,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/22 11:28:41  ivanov
+ * Use pointer to driver manager instance instead auto_ptr
+ *
  * Revision 1.6  2003/12/17 14:57:00  ivanov
  * Changed type of the Driver Manager instance to auto_ptr.
  * Added RemoveInstance() method.
