@@ -547,6 +547,15 @@ static int s_Div256(const char* value, char* product, int base)
 void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
                                    const char* val)
 {
+
+    if((m_Precision == 0) && (precision == 0) && val) {
+	precision= strlen(val);
+	if(scale == 0) {
+	    scale= precision - (Uint1)strcspn(val, ".");
+	    if(scale > 1) --scale;
+	}
+    }
+	    
     if (!precision  ||  precision > kMaxPrecision) {
         throw CDB_ClientEx(eDB_Error, 100, "CDB_Numeric::x_MakeFromString",
                         "illegal precision");
@@ -638,6 +647,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/02/06 22:22:54  soussov
+ * fixes the string to numeric assignment
+ *
  * Revision 1.3  2001/11/06 17:59:54  lavr
  * Formatted uniformly as the rest of the library
  *
