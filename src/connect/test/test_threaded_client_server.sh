@@ -2,8 +2,7 @@
 # $Id$
 
 status=0
-port="`echo $$|sed 's/./ &/g'|tr ' ' '\n'|tail -2|tr '\n' ' '`"
-port="555`echo $port|sed 's/ //g'`"
+port="555`expr $$ % 100`"
 
 ./test_threaded_server -port $port -queue 50 &
 server_pid=$!
