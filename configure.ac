@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.349 2005/02/03 20:59:21 vakatov Exp $
+#  $Id: configure.ac,v 1.350 2005/02/03 21:47:42 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3698,7 +3698,7 @@ test -d "$vpath"  &&  LIBXML_PATH=$vpath
 NCBI_CHECK_THIRD_PARTY_LIB_(libxml, LIBXML, xml2,
  AC_LANG_PROGRAM([#include <libxml/parser.h>],
     [xmlDocPtr doc = xmlParseFile("foo.xml");]))
-if test -f "${LIBXML_PATH}/lib${bit64_sfx}/libxml-static.a"; then
+if test -f "${LIBXML_PATH}/lib${bit64_sfx}/libxml2-static.a"; then
    LIBXML_STATIC_LIBS="-L${LIBXML_PATH}/lib -lxml2-static"
 else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}

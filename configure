@@ -21064,7 +21064,7 @@ _ACEOF
 
 
 
-if test -f "${LIBXML_PATH}/lib${bit64_sfx}/libxml-static.a"; then
+if test -f "${LIBXML_PATH}/lib${bit64_sfx}/libxml2-static.a"; then
    LIBXML_STATIC_LIBS="-L${LIBXML_PATH}/lib -lxml2-static"
 else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}
