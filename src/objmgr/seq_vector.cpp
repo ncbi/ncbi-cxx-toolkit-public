@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/04/29 16:23:28  grichenk
+* GetSequenceView() reimplemented in CSeqVector.
+* CSeqVector optimized for better performance.
+*
 * Revision 1.16  2002/04/26 14:37:21  grichenk
 * Limited CSeqVector cache size
 *
@@ -97,6 +101,7 @@
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -111,30 +116,37 @@ BEGIN_SCOPE(objects)
 CSeqVector::CSeqVector(const CBioseq_Handle& handle,
                        bool use_iupac_coding,
                        bool plus_strand,
-                       CScope& scope)
+                       CScope& scope,
+                       CConstRef<CSeq_loc> view_loc)
     : m_Scope(&scope),
       m_Handle(handle),
       m_PlusStrand(plus_strand),
       m_Size(-1),
-      m_Coding(CSeq_data::e_not_set)
+      m_Coding(CSeq_data::e_not_set),
+      m_RangeSize(-1),
+      m_CurFrom(-1),
+      m_CurTo(-1),
+      m_OrgTo(0)
 {
     m_CurData.dest_start = -1;
     m_CurData.length = 0;
     m_SeqMap.Reset(&m_Handle.x_GetDataSource().GetSeqMap(m_Handle));
     if (use_iupac_coding)
         SetIupacCoding();
+    if ( view_loc ) {
+        x_SetVisibleArea(*view_loc);
+    }
+    else {
+        m_Ranges[TRange::GetWholeTo()] = TRangeWithStrand(TRange(
+            TRange::GetWholeFrom(), TRange::GetWholeTo()), plus_strand);
+    }
+    m_SelRange = m_Ranges.end();
 }
 
 
 CSeqVector::~CSeqVector(void)
 {
     return;
-}
-
-
-CSeqVector::CSeqVector(const CSeqVector& vec)
-{
-    *this = vec;
 }
 
 
@@ -152,15 +164,43 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
     m_SeqMap = vec.m_SeqMap;
     m_Size = vec.m_Size;
     m_Coding = vec.m_Coding;
+    m_Ranges.clear();
+    m_SelRange = m_Ranges.end();
+    iterate(TRanges, rit, vec.m_Ranges) {
+        TRanges::const_iterator tmp = m_Ranges.insert(*rit).first;
+        if (vec.m_SelRange == rit)
+            m_SelRange = tmp;
+    }
+    m_RangeSize = vec.m_RangeSize;
+    m_CurFrom = vec.m_CurFrom;
+    m_CurTo = vec.m_CurTo;
+    m_OrgTo = vec.m_OrgTo;
     return *this;
 }
 
 
-size_t CSeqVector::size(void)
+void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 {
-    if ( m_Size < 0 )
-    {
-        // Calculate sequence size only once
+    int rg_end = 0;
+    CSeq_loc_CI lit(view_loc);
+    for ( ; lit; lit++) {
+        if ( lit.IsEmpty() )
+            continue;
+        int from = lit.GetRange().IsWholeFrom() ?
+            0 : lit.GetRange().GetFrom();
+        int to = lit.GetRange().IsWholeTo() ?
+            x_GetTotalSize()-1 : lit.GetRange().GetTo();
+        rg_end += to - from + 1;
+        m_Ranges[rg_end] = TRangeWithStrand(TRange(from, to + 1),
+            lit.GetStrand() != eNa_strand_minus);
+    }
+}
+
+
+size_t CSeqVector::x_GetTotalSize(void)
+{
+    if (m_Size < 0) {
+        // Calculate total sequence size
         m_Size = 0;
         for (size_t i = 0; i < m_SeqMap->size(); i++) {
             if ((*m_SeqMap)[i].m_Length > 0) {
@@ -206,21 +246,59 @@ size_t CSeqVector::size(void)
 }
 
 
-CSeqVector::TResidue CSeqVector::operator[] (int pos)
+size_t CSeqVector::x_GetVisibleSize(void)
 {
-    if ( !m_PlusStrand ) {
-        pos = size() - pos - 1;
+    if (m_Size < 0)
+        x_GetTotalSize();
+    if (m_RangeSize < 0) {
+        // Calculate the visible area size
+        m_RangeSize = 0;
+        iterate (TRanges, rit, m_Ranges) {
+            int from = rit->second.first.IsWholeFrom() ?
+                0 : rit->second.first.GetFrom();
+            int to = rit->second.first.IsWholeTo() ?
+                m_Size : rit->second.first.GetTo();
+            m_RangeSize += to - from;
+        }
+        // Change whole-to position, if any, to the sequence length
+        TRanges::iterator whole_to = m_Ranges.find(TRange::GetWholeTo());
+        if (whole_to != m_Ranges.end()) {
+            TRangeWithStrand last_rg = whole_to->second;
+            m_Ranges.erase(whole_to);
+            m_Ranges[m_RangeSize] = last_rg;
+        }
     }
-    if (m_CurData.dest_start > pos  ||
-        m_CurData.dest_start+m_CurData.length <= pos) {
-        m_CurData.src_data = 0; // Reset data
-        m_Scope->x_GetSequence(m_Handle, pos, &m_CurData);
-        m_CachedPos = -1; // Reset cached data
-        m_CachedData = "";
-    }
-    return x_GetResidue(pos);
+    return m_RangeSize;
 }
 
+
+void CSeqVector::x_UpdateVisibleRange(int pos)
+{
+    // Find a range, containing the "pos" point. Ranges are
+    // mapped by ends, not starts, so that we can use lower_bound()
+    m_SelRange = m_Ranges.upper_bound(pos);
+    if ( m_SelRange == m_Ranges.end() ) {
+        throw runtime_error("CSeqVector -- position beyond vector end");
+    }
+    int sel_from = m_SelRange->second.first.IsWholeFrom() ?
+        0 : m_SelRange->second.first.GetFrom();
+    int sel_to = m_SelRange->second.first.IsWholeTo() ?
+        x_GetTotalSize() : m_SelRange->second.first.GetTo();
+    m_CurTo = m_SelRange->first;
+    m_CurFrom = m_SelRange->first - (sel_to - sel_from);
+    m_OrgTo = m_SelRange->second.first.GetTo();
+    if ( m_SelRange->second.first.IsWholeTo() )
+        m_OrgTo = m_Size;
+}
+
+
+void CSeqVector::x_UpdateSeqData(int pos)
+{
+    m_CurData.src_data = 0; // Reset data
+    m_Scope->x_GetSequence(m_Handle, pos, &m_CurData);
+    m_CachedPos = -1; // Reset cached data
+    m_CachedData = "";
+}
 
 
 CSeqVector::TResidue CSeqVector::GetGapChar(void)
@@ -299,7 +377,9 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
                 start = 0;
             }
 
-            if ( !m_PlusStrand ) {
+            // XOR current range strand and destination strand -- do not
+            // need to convert if both plus or both minus.
+            if ( m_PlusStrand != m_SelRange->second.second ) {
                 CSeq_data* tmp = new CSeq_data;
                 CSeqportUtil::Complement(*out, tmp);
                 out.Reset(tmp);
@@ -404,6 +484,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
 void CSeqVector::SetIupacCoding(void)
 {
     // force instantiantion
+    size();
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, 0, &m_CurData);
     m_CachedPos = -1; // Reset cached data

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/29 16:23:25  grichenk
+* GetSequenceView() reimplemented in CSeqVector.
+* CSeqVector optimized for better performance.
+*
 * Revision 1.8  2002/04/25 16:37:19  grichenk
 * Fixed gap coding, added GetGapChar() function
 *
@@ -66,12 +70,14 @@
 #include <objects/objmgr1/seq_map.hpp>
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <util/range.hpp>
 #include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CScope;
+class CSeq_loc;
 
 class CSeqVector : public CObject
 {
@@ -101,14 +107,32 @@ public:
 private:
     friend class CBioseq_Handle;
 
-    // Created by CScope only
+    // Created by CBioseq_Handle only.
     CSeqVector(const CBioseq_Handle& handle,
-        bool use_iupac_coding,
-        bool plus_strand,
-        CScope& scope);
+        bool use_iupac_coding,               // Set coding to IUPACna or IUPACaa?
+        bool plus_strand,                    // Use plus strand coordinates?
+        CScope& scope,
+        CConstRef<CSeq_loc> view_loc);       // Restrict visible area with a seq-loc
 
+    // Process seq-loc, create visible area ranges
+    void x_SetVisibleArea(const CSeq_loc& view_loc);
+    // Calculate sequence and visible area size
+    size_t x_GetTotalSize(void);
+    size_t x_GetVisibleSize(void);
+
+    void x_UpdateVisibleRange(int pos);
+    void x_UpdateSeqData(int pos);
     // Get residue assuming the data in m_CurrentData are valid
     TResidue x_GetResidue(int pos);
+
+    // Single visible interval
+    typedef CRange<int> TRange;
+    // Interval with the plus strand flag (true = plus)
+    typedef pair<TRange, bool> TRangeWithStrand;
+    // Map visible interval end (not start!) to an interval with strand.
+    // E.g. if there is only one visible interval [20..30], it will be
+    // mapped with 10 (=30-20) key.
+    typedef map<int, TRangeWithStrand> TRanges;
 
     CScope*            m_Scope;
     CBioseq_Handle     m_Handle;
@@ -120,6 +144,14 @@ private:
     int                m_CachedPos;
     int                m_CachedLen;
     TCoding            m_Coding;
+    TRanges            m_Ranges;    // Set of visible ranges
+    int                m_RangeSize; // Visible area size
+    TRanges::const_iterator m_SelRange;  // Selected range from the visible area
+    // Current visible range limits -- for faster checks in []
+    int                m_CurFrom;   // visible segment start
+    int                m_CurTo;     // visible segment end
+    // End of visible segment on the original sequence
+    int                m_OrgTo;
 };
 
 
@@ -129,6 +161,20 @@ private:
 //
 /////////////////////////////////////////////////////////////////////
 
+
+inline
+CSeqVector::CSeqVector(const CSeqVector& vec)
+{
+    *this = vec;
+}
+
+inline
+size_t CSeqVector::size(void)
+{
+    if (m_RangeSize < 0)
+        x_GetVisibleSize();
+    return m_RangeSize;
+}
 
 inline
 CSeqVector::TCoding CSeqVector::GetCoding(void)
@@ -153,6 +199,32 @@ void CSeqVector::SetCoding(TCoding coding)
     m_CachedLen = 0;
     m_CachedData = "";
 }
+
+inline
+CSeqVector::TResidue CSeqVector::operator[] (int pos)
+{
+    // Force size calculation
+    size_t seq_size = size();
+    // Convert position to destination strand
+    if ( !m_PlusStrand ) {
+        pos = seq_size - pos - 1;
+    }
+
+    if (pos >= m_CurTo  ||  pos < m_CurFrom) {
+        x_UpdateVisibleRange(pos);
+    }
+
+    // Recalculate position from visible area to the whole sequence
+    pos += m_OrgTo - m_CurTo;
+    // Check and update current data segment
+    if (m_CurData.dest_start > pos  ||
+        m_CurData.dest_start+m_CurData.length <= pos) {
+        x_UpdateSeqData(pos);
+    }
+    // Get the residue
+    return x_GetResidue(pos);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -29,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/29 16:23:28  grichenk
+* GetSequenceView() reimplemented in CSeqVector.
+* CSeqVector optimized for better performance.
+*
 * Revision 1.11  2002/04/23 19:01:07  grichenk
 * Added optional flag to GetSeqVector() and GetSequenceView()
 * for switching to IUPAC encoding.
@@ -154,7 +158,7 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
                                         bool plus_strand) const
 {
-    return CSeqVector(*this, use_iupac_coding, plus_strand, *m_Scope);;
+    return CSeqVector(*this, use_iupac_coding, plus_strand, *m_Scope, 0);
 }
 
 
@@ -237,24 +241,8 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
         seg_loc->SetInt().SetTo(rit->first.GetTo());
         view_loc->SetMix().Set().push_back(seg_loc);
     }
-    // Index for virtual bioseq id
-    static int s_ViewIndex = 0;
-    static CFastMutex s_ViewIdxMtx;
-    int view_index;
-    {{
-        CFastMutexGuard guard(s_ViewIdxMtx);
-        view_index = s_ViewIndex++;
-    }}
-    // Construct the bioseq
-    string bs_id = "bs_view_" + NStr::IntToString(view_index);
-    CRef<CBioseq> bioseq(new CBioseq(*view_loc, bs_id));
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq(*bioseq);
-    m_Scope->AddTopLevelSeqEntry(*entry);
-    CSeq_id id;
-    id.SetLocal().SetStr(bs_id);
-    CBioseq_Handle view_handle = m_Scope->GetBioseqHandle(id);
-    return CSeqVector(view_handle, use_iupac_coding, plus_strand, *m_Scope);
+    return CSeqVector(*this, use_iupac_coding, plus_strand,
+        *m_Scope, view_loc);
 }
 
 
