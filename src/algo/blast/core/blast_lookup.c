@@ -521,7 +521,13 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
         while (s < s_end)
           {
             if ( (s[0] == w[0]) || (p0[s[0]] >= threshold) )
+	    {
                 BlastAaLookupAddWordHit(lookup,s,offset);
+		if (s[0] == w[0])
+		    lookup->exact_matches++;
+		else
+		    lookup->neighbor_matches++;
+	    }
             s++;
   	  }
 
@@ -537,7 +543,13 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
 	    different = (w[0] ^ s[0]) | (w[1] ^ s[1]);
   
             if ( !different || (score >= threshold) )
+	    {
                 BlastAaLookupAddWordHit(lookup,s,offset);
+		if (!different)
+		    lookup->exact_matches++;
+		else
+		    lookup->neighbor_matches++;
+	    }
             s++;
 	  }
 
@@ -554,7 +566,13 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
 	    different = (w[0] ^ s[0]) | (w[1] ^ s[1]) | (w[2] ^ s[2]);
   
             if ( !different || (score >= threshold) )
+	    {
                 BlastAaLookupAddWordHit(lookup,s,offset);
+		if (!different)
+		    lookup->exact_matches++;
+		else
+		    lookup->neighbor_matches++;
+	    }
             s++;
   	  }
 
@@ -572,7 +590,13 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
               }
   
             if ( !different || (score >= threshold) )
+	    {
                 BlastAaLookupAddWordHit(lookup,s,offset);
+		if (!different)
+		    lookup->exact_matches++;
+		else
+		    lookup->neighbor_matches++;
+	    }
             s++;
   	  }
 
