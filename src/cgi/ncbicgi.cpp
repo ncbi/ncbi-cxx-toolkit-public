@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/06/21 16:04:17  vakatov
+* CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
+* "TFlags" rather than the former "bool"
+*
 * Revision 1.30  1999/05/11 03:11:51  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -653,9 +657,10 @@ CCgiRequest::~CCgiRequest(void)
 
 CCgiRequest::CCgiRequest(int argc, char* argv[],
                          const CNcbiEnvironment* env, CNcbiIstream* istr,
-                         bool indexes_as_entries)
+                         TFlags flags)
     : m_Env(env)
 {
+    // create a dummy environment, if is not specified
     if ( !m_Env ) {
         m_OwnEnv.reset(new CNcbiEnvironment);
         m_Env = m_OwnEnv.get();
@@ -673,13 +678,15 @@ CCgiRequest::CCgiRequest(int argc, char* argv[],
     const string* query_string = 0;
     string arg_string;
     if ( GetProperty(eCgi_RequestMethod).empty() ) {
-        // special case("$REQUEST METHOD" undefined, so use cmd.-line args)
+        // special case("$REQUEST_METHOD" undefined, so use cmd.-line args)
         if (argc > 1  &&  argv  &&  argv[1]  &&  *argv[1])
             arg_string = argv[1];
         query_string = &arg_string;
     }
-    else // regular case -- read from "$QUERY_STRING"
+    else if ( !(flags & fIgnoreQueryString) ) {
+        // regular case -- read from "$QUERY_STRING"
         query_string = &GetProperty(eCgi_QueryString);
+    }
 
     // POST method?
     if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase())) {
@@ -706,7 +713,8 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
     }
     else {
         // parse "$QUERY_STRING"(or cmd.-line arg)
-        s_ParseQuery(*query_string, m_Entries, m_Indexes, indexes_as_entries);
+        s_ParseQuery(*query_string, m_Entries, m_Indexes,
+                     (flags & fIndexesAsEntries) != 0);
     }
 
     if ( m_Entries.find(NcbiEmptyString) != m_Entries.end() ) {

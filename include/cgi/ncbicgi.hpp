@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  1999/06/21 16:04:15  vakatov
+* CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
+* "TFlags" rather than the former "bool"
+*
 * Revision 1.36  1999/05/11 03:11:46  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -300,11 +304,11 @@ enum ECgiProp {
 
 
 // Typedefs
-typedef map<string, string>      TCgiProperties;
-typedef multimap<string, string> TCgiEntries;
-typedef TCgiEntries::iterator    TCgiEntriesI;
-typedef TCgiEntries::const_iterator    TCgiEntriesCI;
-typedef list<string>             TCgiIndexes;
+typedef map<string, string>          TCgiProperties;
+typedef multimap<string, string>     TCgiEntries;
+typedef TCgiEntries::iterator        TCgiEntriesI;
+typedef TCgiEntries::const_iterator  TCgiEntriesCI;
+typedef list<string>                 TCgiIndexes;
 
 
 //
@@ -312,17 +316,23 @@ class CCgiRequest {
 public:
     // Startup initialization:
     //   retrieve request's properties and cookies from environment
-    //   retrieve request's entries from environment and/or stream "istr"
-    // By default(when "istr" is null) use standard input stream("NcbiCin")
-    // If "indexes_as_entries" is "true" then interpret indexes as regular
-    // FORM entries(with empty value)
-    // (Mostly for the debugging) If "$REQUEST_METHOD" is undefined then
-    // try to retrieve request's entries from the 1st cmd.-line argument, and
-    // do not use "$QUERY_STRING" and "istr" at all
-    // See above for description of "istr" and "indexes_as_entries"
+    //   retrieve request's entries from "$QUERY_STRING"
+    // If "$REQUEST_METHOD" == "POST" then add entries from stream "istr"
+    // If "$REQUEST_METHOD" is undefined then try to retrieve the request's
+    // entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
+    // and "istr" at all
+    typedef int TFlags;
+    enum Flags {
+        // handle indexes as regular FORM entries(with empty value)
+        fIndexesAsEntries  = 0x1,
+        // do not parse $QUERY_STRING
+        fIgnoreQueryString = 0x2
+    };
     CCgiRequest(int argc = 0, char* argv[] = 0,
-                const CNcbiEnvironment* env = 0, CNcbiIstream* istr = 0,
-                bool indexes_as_entries = true);
+                const         CNcbiEnvironment* env = 0,
+                CNcbiIstream* istr = 0,  // use standard input if zero
+                TFlags        flags = fIndexesAsEntries);
+
     // Destructor
     ~CCgiRequest(void);
 
