@@ -51,8 +51,9 @@ public:
         m_SubjId = id2;
     }
 
-    string AsText(void) const;
-    CRef<objects::CSeq_align_set> AsSeqAlignSet(void) const;
+    string AsText(const CSplign::TResults* results = 0) const;
+    CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults*
+                                                results = 0) const;
 
 private:
 
@@ -75,6 +76,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/06/21 17:44:46  kapustin
+ * Add result param to AsText and AsSeqAlignSet with zero default
+ *
  * Revision 1.7  2004/05/04 15:23:44  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
