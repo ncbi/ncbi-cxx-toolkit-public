@@ -464,6 +464,9 @@ private:
 };
 
 
+// Must be in correspondence with variables checked in NcbiGetClientIP[Ex]()
+// (header: <connect/ext/ncbi_localnet.h>, source: connect/ext/ncbi_localnet.c,
+// library: connext)
 static const char* s_TrackingVars[] = 
 {
 	"HTTP_X_FORWARDED_FOR",
@@ -475,6 +478,7 @@ static const char* s_TrackingVars[] =
 	NULL
 };
 
+
 CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
 	: m_Env(env),
      m_TrackingEnv(NULL)
@@ -484,7 +488,7 @@ CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
 
     try {
         int array_size = sizeof(s_TrackingVars) / sizeof(s_TrackingVars[0]);
-        m_TrackingEnv = new char*[array_size];   
+        m_TrackingEnv = new char*[array_size];
         memset(m_TrackingEnv, 0, sizeof(char*) * array_size);
 
         int i = 0;
@@ -1374,6 +1378,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.85  2005/03/02 05:00:09  lavr
+* NcbiGetClientIP() API noted
+*
 * Revision 1.84  2005/02/25 17:28:51  didenko
 * + CCgiRequest::GetClientTrackingEnv
 *
