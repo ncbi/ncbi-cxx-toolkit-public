@@ -303,21 +303,22 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 
         case 'B':
             switch (pfx[1]) {
-            case 'A':                     return eAcc_ddbj_con;
-            case 'B': case 'J': case 'P': return eAcc_ddbj_est;
-            case 'C': case 'T':           return eAcc_gb_cdna;
-            case 'D':                     return eAcc_ddbj_patent;
+            case 'A':                               return eAcc_ddbj_con;
+            case 'B': case 'J': case 'P':           return eAcc_ddbj_est;
+            case 'C': case 'T':                     return eAcc_gb_cdna;
+            case 'D':                               return eAcc_ddbj_patent;
             case 'E': case 'F': case 'G':
-            case 'I': case 'M': case 'Q': return eAcc_gb_est;
-            case 'H':                     return eAcc_gb_gss;
-            case 'K': case 'L':           return eAcc_gb_tpa_nuc;
-            case 'N':                     return eAcc_embl_tpa_nuc;
-            case 'R':                     return eAcc_ddbj_tpa_nuc;
-            case 'S':                     return eAcc_ddbj_genome; // chimp
-            default:                      return eAcc_unreserved_nuc;
+            case 'I': case 'M': case 'Q': case 'U': return eAcc_gb_est;
+            case 'H':                               return eAcc_gb_gss;
+            case 'K': case 'L':                     return eAcc_gb_tpa_nuc;
+            case 'N':                               return eAcc_embl_tpa_nuc;
+            case 'R':                               return eAcc_ddbj_tpa_nuc;
+            case 'S':                               return eAcc_ddbj_genome;
+                // BS is actually chimp genomes.
+            default:                                return eAcc_unreserved_nuc;
             }
 
-        default:                          return eAcc_unreserved_nuc;
+        default: return eAcc_unreserved_nuc;
         }
 
     case 3:
@@ -814,6 +815,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.29  2002/08/19 15:42:14  ucko
+ * IdentifyAccession: add BU (eAcc_gb_est).
+ *
  * Revision 6.28  2002/08/16 19:27:01  ucko
  * Recognize new WGS RefSeq accessions.
  *
