@@ -12,10 +12,14 @@
 /* Define if you have the ANSI C header files.  */
 #undef STDC_HEADERS
 
+/* Host info */
 #undef HOST
 #undef HOST_CPU
 #undef HOST_VENDOR
 #undef HOST_OS
+
+/* Define if C++ namespaces are supported */
+#undef HAVE_NAMESPACE
 
 /* The number of bytes in a char.  */
 #undef SIZEOF_CHAR
