@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/11/15 20:33:12  gouriano
+* support of XML attributes of empty elements
+*
 * Revision 1.26  2002/11/14 20:58:54  gouriano
 * added support of XML attribute lists
 *
@@ -328,6 +331,12 @@ void CObjectIStreamXml::EndTag(void)
             m_TagState = eTagInsideOpening;
             return;
         }
+        if (c == '/' && m_Input.PeekChar(1) == '>' ) {
+            m_Input.SkipChars(2);
+            m_TagState = eTagInsideOpening;
+            Found_slash_gt();
+            return;
+        }
     }
     if ( c != '>' ) {
         ThrowError(fFormatError, "'>' expected");
@@ -339,7 +348,7 @@ void CObjectIStreamXml::EndTag(void)
 bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 {
     if (TopFrame().GetNotag()) {
-        return false;
+        return SelfClosedTag();
     }
     _ASSERT(InsideOpeningTag());
     char c = SkipWS();
@@ -1136,7 +1145,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     return first;
                 }
             }
-            if (m_Attlist) {
+            if (m_Attlist && !SelfClosedTag()) {
                 m_Attlist = false;
                 if (!NextIsTag()) {
                     TMemberIndex ind = classType->GetMembers().FirstIndex();
@@ -1153,6 +1162,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     TopFrame().SetNotag();
                     return pos;
                 }
+            }
+            if ( SelfClosedTag()) {
+                m_Attlist = false;
+                return kInvalidMember;
             }
             if ( NextTagIsClosing() )
                 return kInvalidMember;
