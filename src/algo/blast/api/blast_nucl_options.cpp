@@ -47,7 +47,7 @@ BEGIN_SCOPE(blast)
 
 CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(EAPILocality locality)
     : CBlastOptionsHandle(locality),
-      m_FactorySetting(eBlastn)
+      m_FactorySetting(eMegablast)
 {
     SetDefaults();
 }
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/24 20:53:57  bealer
+ * - Set default to megablast (should have no effect).
+ *
  * Revision 1.15  2004/08/05 20:41:18  dondosha
  * Implemented stacks initial word container for all blastn extension methods
  *
