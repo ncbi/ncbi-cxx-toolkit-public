@@ -93,9 +93,9 @@ void CLDS_Database::Create()
                     CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "objectattr");
-    m_db.object_db.Open(m_LDS_DbName.c_str(),
-                        "objectattr",
-                        CBDB_RawFile::eCreate);
+    m_db.object_attr_db.Open(m_LDS_DbName.c_str(),
+                             "objectattr",
+                             CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "annotation");
     m_db.annot_db.Open(m_LDS_DbName.c_str(),
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/25 18:30:11  kuznets
+ * Fixed bug with creation of object attributes table
+ *
  * Revision 1.4  2003/06/16 16:24:43  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *
