@@ -104,6 +104,8 @@ public:
 
     /// Get process identifier for a current running process.
     static TPid GetCurrentPid(void);
+    /// Get process identifier for a parent of the current process.
+    static TPid GetParentPid(void);
 
     /// Check process existence.
     ///
@@ -255,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/11 04:39:49  lavr
+ * +GetParentPid()
+ *
  * Revision 1.11  2004/11/15 22:21:48  grichenk
  * Doxygenized comments, fixed group names.
  *

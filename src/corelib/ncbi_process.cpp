@@ -35,14 +35,15 @@
 #include <corelib/ncbi_safe_static.hpp>
 
 
-#if defined(NCBI_OS_MSWIN)
-#  include <process.h>
-#elif defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 #  include <sys/types.h>
 #  include <signal.h>
 #  include <sys/wait.h>
 #  include <errno.h>
 #  include <unistd.h>
+#elif defined(NCBI_OS_MSWIN)
+#  include <process.h>
+#  include <tlhelp32.h>
 #endif
 
 
@@ -80,7 +81,7 @@ CProcess::CProcess(HANDLE process, EProcessType type)
 
 TPid CProcess::GetCurrentPid(void)
 {
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
     return getpid();
 #elif defined(NCBI_OS_MSWIN)
     return GetCurrentProcessId();
@@ -90,9 +91,43 @@ TPid CProcess::GetCurrentPid(void)
 }
 
 
+TPid CProcess::GetParentPid(void)
+{
+#if defined(NCBI_OS_UNIX)
+    return getppid();
+#elif defined(NCBI_OS_MSWIN)
+    TPid ppid = (TPid)(-1);
+    // open snapshot handle
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (hSnapshot != -1) {
+        PROCESSENTRY32 pe;
+        DWORD pid = GetCurrentProcessId();
+        pe.dwSize = sizeof(PROCESSENTRY32);
+
+        BOOL retval = Process32First(hSnapshot, &pe);
+        while (retval) {
+            if (pe.th32ProcessID == pid) {
+                ppid = pe.th32ParentProcessID;
+                break;
+            }
+            pe.dwSize = sizeof(PROCESSENTRY32);
+            retval = Process32Next(hSnapshot, &pe);
+        }
+
+        // close snapshot handle
+        CloseHandle(hSnapshot);
+    }
+    return ppid;
+#else
+#  error "Not implemented on this platform"
+#endif
+}
+
+
 bool CProcess::IsAlive(void) const
 {
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
     if ( kill((TPid)m_Process, 0) < 0  &&  errno != EPERM ) {
         return false;
     }
@@ -124,7 +159,7 @@ bool CProcess::IsAlive(void) const
 
 bool CProcess::Kill(unsigned long timeout) const
 {
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
     TPid pid = (TPid)m_Process;
     int status;
 
@@ -459,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/11 04:39:49  lavr
+ * +GetParentPid()
+ *
  * Revision 1.9  2004/07/12 16:46:56  ivanov
  * Added implementation CPIDGuard::Remove()
  *
