@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/12/02 13:37:09  thiessen
+* add seqrow format export
+*
 * Revision 1.23  2002/10/07 18:51:53  thiessen
 * add abbreviated taxonomy tree
 *
@@ -143,6 +146,7 @@ private:
         MID_EXPORT,
             MID_EXPORT_FASTA,
             MID_EXPORT_A2M,
+            MID_EXPORT_SEQROW,
             MID_EXPORT_TEXT,
             MID_EXPORT_HTML,
         // edit menu

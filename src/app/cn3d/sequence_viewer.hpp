@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/12/02 13:37:08  thiessen
+* add seqrow format export
+*
 * Revision 1.28  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -117,6 +120,7 @@ public:
     enum eExportType {
         asFASTA,    // plain FASTA with gaps and all uppercase
         asFASTAa2m, // a2m variant of FASTA, lowercase unaligned and '.' as unaligned gap
+        asSeqrow,   // simple format with one sequence per row
         asText,     // plain text with id's and locations
         asHTML      // HTML, like text but with color
     };

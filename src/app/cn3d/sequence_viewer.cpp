@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2002/12/02 13:37:08  thiessen
+* add seqrow format export
+*
 * Revision 1.56  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -588,12 +591,42 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     }
 }
 
+static void DumpSeqrow(const BlockMultipleAlignment *alignment,
+    BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
+{
+    int row, column;
+    char ch;
+    Vector color, bgColor;
+    bool highlighted, drawBG;
+
+    for (row=0; row<alignment->NRows(); row++) {
+
+        // write title + tab
+        os << alignment->GetSequenceOfRow(row)->identifier->ToString() << '\t';
+
+        // write residues in uppercase
+        for (column=0; column<alignment->AlignmentWidth(); column++) {
+            if (alignment->GetCharacterTraitsAt(column, row, justification,
+                    &ch, &color, &highlighted, &drawBG, &bgColor))
+            {
+                if (ch == '~')
+                    os << '-';
+                else
+                    os << (char) toupper(ch);
+            } else
+                ERR_POST("GetCharacterTraitsAt() failed!");
+        }
+        os << '\n';
+    }
+}
+
 void SequenceViewer::ExportAlignment(eExportType type)
 {
     // get filename
     wxString extension, wildcard;
     if (type == asFASTA) { extension = ".fsa"; wildcard = "FASTA Files (*.fsa)|*.fsa"; }
     else if (type == asFASTAa2m) { extension = ".a2m"; wildcard = "A2M FASTA (*.a2m)|*.a2m"; }
+    else if (type == asSeqrow) { extension = ".ali"; wildcard = "Seqrow (*.ali)|*.ali"; }
     else if (type == asText) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
     else if (type == asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
 
@@ -625,9 +658,13 @@ void SequenceViewer::ExportAlignment(eExportType type)
             TESTMSG("exporting" << (type == asFASTAa2m ? " A2M " : " ") << "FASTA to " << outputFile.c_str());
             DumpFASTA((type == asFASTAa2m), alignmentManager->GetCurrentMultipleAlignment(),
                 sequenceWindow->GetCurrentJustification(), *ofs);
-        } else {
+        } else if (type == asText || type == asHTML) {
             TESTMSG("exporting " << (type == asText ? "text" : "HTML") << " to " << outputFile.c_str());
             DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
+                sequenceWindow->GetCurrentJustification(), *ofs);
+        } else {
+            TESTMSG("exporting seqrow to " << outputFile.c_str());
+            DumpSeqrow(alignmentManager->GetCurrentMultipleAlignment(),
                 sequenceWindow->GetCurrentJustification(), *ofs);
         }
     }

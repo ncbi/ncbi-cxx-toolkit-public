@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/12/02 13:37:09  thiessen
+* add seqrow format export
+*
 * Revision 1.43  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -218,6 +221,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_EXPORT_FASTA, "&FASTA");
     subMenu->Append(MID_EXPORT_A2M, "&A2M FASTA");
+    subMenu->Append(MID_EXPORT_SEQROW, "&Seqrow");
     subMenu->Append(MID_EXPORT_TEXT, "&Text");
     subMenu->Append(MID_EXPORT_HTML, "&HTML");
     viewMenu->Append(MID_EXPORT, "&Export...", subMenu);
@@ -561,6 +565,7 @@ void SequenceViewerWindow::OnExport(wxCommandEvent& event)
     SequenceViewer::eExportType type;
     if (event.GetId() == MID_EXPORT_FASTA) type = SequenceViewer::asFASTA;
     else if (event.GetId() == MID_EXPORT_A2M) type = SequenceViewer::asFASTAa2m;
+    else if (event.GetId() == MID_EXPORT_SEQROW) type = SequenceViewer::asSeqrow;
     else if (event.GetId() == MID_EXPORT_TEXT) type = SequenceViewer::asText;
     else if (event.GetId() == MID_EXPORT_HTML) type = SequenceViewer::asHTML;
     sequenceViewer->ExportAlignment(type);
