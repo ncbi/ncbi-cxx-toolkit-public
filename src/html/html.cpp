@@ -750,14 +750,11 @@ void CHTML_tr::ResetTableCache(void)
 CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
-    if ( mode == ePlainText  &&  HaveChildren() ) {
-        size_t seplen = GetTextLength(mode);
-        if (seplen > m_Parent->m_ColSepL.length() + m_Parent->m_ColSepR.length()) {
-            out << CHTMLHelper::GetNL();
-            if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
-                out << string(seplen, m_Parent->m_RowSepChar)
-                    << CHTMLHelper::GetNL();
-            }
+    if ( mode == ePlainText ) {
+        out << CHTMLHelper::GetNL();
+        if (m_Parent->m_IsRowSep == CHTML_table::ePrintRowSep) {
+            out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
+                << CHTMLHelper::GetNL();
         }
     }
     return out;
@@ -800,7 +797,7 @@ size_t CHTML_tr::GetTextLength(TMode mode)
         Node(i)->Print(sout, mode);
         cols++;
     }
-    sout << '\0';
+    sout.put('\0');
 
     size_t textlen = strlen(sout.str());
     if ( mode == ePlainText ) {
@@ -1141,7 +1138,7 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
 
 CHTML_table::CHTML_table(void)
     : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1)),
-      m_ColSepL(kEmptyStr), m_ColSepM("\t"), m_ColSepR(kEmptyStr),
+      m_ColSepL(kEmptyStr), m_ColSepM((kEmptyStr), m_ColSepR(kEmptyStr),
       m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
 }
@@ -1988,6 +1985,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2002/01/29 19:20:47  ivanov
+ * (plain text) CHTML_table:: set def. medium sep. to "" instead of "\t".
+ * Restored functionality of CHTML_tr::PrintEnd().
+ * Fixed CHTML_tr::GetTextLength() -- ".put('\0')" instead of "<< '\0'".
+ *
  * Revision 1.69  2002/01/28 17:54:50  vakatov
  * (plain text) CHTML_table:: set def. medium sep. to "\t" instead of "\t|\t"
  *
