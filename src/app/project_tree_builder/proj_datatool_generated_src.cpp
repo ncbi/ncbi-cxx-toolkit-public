@@ -111,19 +111,24 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
 
     {{
         // module file
-        CSimpleMakeFileContents fc(CDirEntry::ConcatPath(dir, 
-                                                         base + ".module"));
-    
-        CSimpleMakeFileContents::TContents::const_iterator p = 
-            fc.m_Contents.find("MODULE_IMPORT");
-        if (p != fc.m_Contents.end()) {
-            const list<string>& modules = p->second;
-            ITERATE(list<string>, p, modules) {
-                // add ext from source file to all modules to import
-                const string& module = *p;
-                src->m_ImportModules.push_back
-                                      (CDirEntry::NormalizePath(module + ext));
+        string module_path = CDirEntry::ConcatPath(dir, 
+                                                  base + ".module");
+        if ( CDirEntry(module_path).Exists() ) {
+            CSimpleMakeFileContents fc(module_path);
+            CSimpleMakeFileContents::TContents::const_iterator p = 
+                fc.m_Contents.find("MODULE_IMPORT");
+            if (p != fc.m_Contents.end()) {
+                const list<string>& modules = p->second;
+                ITERATE(list<string>, p, modules) {
+                    // add ext from source file to all modules to import
+                    const string& module = *p;
+                    src->m_ImportModules.push_back
+                                        (CDirEntry::NormalizePath(module + ext));
+                }
             }
+        } else {
+            LOG_POST(Warning << "Can not find file : " 
+                                + module_path + " for datatool source");
         }
     }}
 
@@ -234,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/11/17 19:54:30  gouriano
+ * Ignore missing module file
+ *
  * Revision 1.5  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
