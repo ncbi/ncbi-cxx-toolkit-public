@@ -346,20 +346,6 @@ typedef struct BlastDatabaseParameters {
                                  tblast[nx] only */
 } BlastDatabaseParameters, *BlastDatabaseParametersPtr;
 
-/** Options for formatting BLAST results 
- */
-typedef struct BlastFormattingOptions {
-   Uint1 align_view;
-   Uint4 align_options;
-   Uint4 print_options;
-   Boolean believe_query;
-   Boolean html;
-   FILE *outfp;
-   Int4 number_of_descriptions;
-   Int4 number_of_alignments;
-   Boolean ungapped; /**< Should this be here????? */
-} BlastFormattingOptions, *BlastFormattingOptionsPtr;
-
 /********************************************************************************
 
 	Functions to create options blocks with default values
@@ -665,25 +651,6 @@ Int2 BlastHitSavingParametersNew(Uint1 program_number,
                            VoidPtr, VoidPtr), 
         BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
         BlastHitSavingParametersPtr *parameters);
-
-/** Initialize the formatting options structure.
- * @param program Number of the BLAST program [in]
- * @param file_out Name of the file where output is printed [in]
- * @param num_descriptions Number of definition lines to report per query [in]
- * @param num_alignments Number of alignments to show per query [in]
- * @param align_view What kind of formatted output to show? [in]
- * @param format_options_ptr The initialized structure [out]
-*/
-Int2 BlastFormattingOptionsNew(Uint1 program, CharPtr file_out, 
-        Int4 num_descriptions, Int4 num_alignments, Int4 align_view,
-        BlastFormattingOptionsPtr PNTR format_options_ptr);
-
-/** Deallocate memory for formatting options. In particular,
- * close the output file.
- * @param format_options Structure to free [in]
- */
-BlastFormattingOptionsPtr 
-BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options);
 
 /** Initialize default options for PSI BLAST */
 Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options);
