@@ -36,21 +36,21 @@
 
 BEGIN_NCBI_SCOPE
 
-CBDB_Transaction::CBDB_Transaction(CBDB_Env& env, ETransSync tsync)
+CBDB_Transaction::CBDB_Transaction(CBDB_Env&            env, 
+                                   ETransSync           tsync,
+                                   EKeepFileAssociation assoc)
  : m_Env(env),
    m_TSync(tsync),
+   m_Assoc(assoc),
    m_Txn(0)
 {}
 
 CBDB_Transaction::~CBDB_Transaction()
 {
     if (m_Txn) {       // Active transaction is in progress
-        x_Abort(true); // Abort - ignore errors (no except. from constructor)
+        x_Abort(true); // Abort - ignore errors (no except. from destructor)
     }
-    NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
-        CBDB_RawFile* dbfile = *it;
-        dbfile->x_RemoveTransaction(this);
-    }
+    x_DetachFromFiles();
 }
 
 DB_TXN* CBDB_Transaction::GetTxn()
@@ -72,11 +72,13 @@ void CBDB_Transaction::Commit()
         m_Txn = 0;
         BDB_CHECK(ret, "DB_TXN::commit");
     }
+    x_DetachFromFiles();
 }
 
 void CBDB_Transaction::Abort()
 {
     x_Abort(false); // abort with full error processing
+    x_DetachFromFiles();
 }
 
 void CBDB_Transaction::x_Abort(bool ignore_errors)
@@ -90,18 +92,34 @@ void CBDB_Transaction::x_Abort(bool ignore_errors)
     }
 }
 
+void CBDB_Transaction::x_DetachFromFiles()
+{
+    if (m_Assoc == eFullAssociation) {
+        NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
+            CBDB_RawFile* dbfile = *it;
+            dbfile->x_RemoveTransaction(this);
+        }
+    }
+    m_TransFiles.resize(0);
+}
+
+
 void CBDB_Transaction::AddFile(CBDB_RawFile* dbfile) 
 {
-    m_TransFiles.push_back(dbfile);
+    if (m_Assoc == eFullAssociation) {
+        m_TransFiles.push_back(dbfile);
+    }
 }
 
 
 void CBDB_Transaction::RemoveFile(CBDB_RawFile* dbfile)
 {
-    NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
-        if (dbfile == *it) {
-            m_TransFiles.erase(it);
-            break;
+    if (m_Assoc == eFullAssociation) {
+        NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
+            if (dbfile == *it) {
+                m_TransFiles.erase(it);
+                break;
+            }
         }
     }
 }
@@ -113,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/23 18:35:30  kuznets
+ * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
+ *
  * Revision 1.4  2004/09/03 13:32:52  kuznets
  * + support of async. transactions
  *

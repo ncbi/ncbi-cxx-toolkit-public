@@ -208,6 +208,7 @@ protected:
     DBT*              m_DBT_Data;
     CBDB_Env*         m_Env;
     CBDB_Transaction* m_Trans;
+    int               m_TransAssociation;
 
 private:
     bool             m_DB_Attached;  //!< TRUE if m_DB doesn't belong here
@@ -532,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/02/23 18:34:44  kuznets
+ * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
+ *
  * Revision 1.37  2004/11/23 17:08:53  kuznets
  * Implemented BLOB update in cursor
  *

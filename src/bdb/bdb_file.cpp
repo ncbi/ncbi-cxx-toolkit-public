@@ -77,6 +77,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
   m_DBT_Data(0),
   m_Env(0),
   m_Trans(0),
+  m_TransAssociation(CBDB_Transaction::eFullAssociation),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_PageSize(0),
@@ -258,12 +259,17 @@ void CBDB_RawFile::SetCacheSize(unsigned int cache_size)
 void CBDB_RawFile::SetTransaction(CBDB_Transaction* trans)
 {
     if (m_Trans) {
-        m_Trans->RemoveFile(this);
+        if (m_TransAssociation == (int) CBDB_Transaction::eFullAssociation) {
+            m_Trans->RemoveFile(this);
+        }
     }
 
     m_Trans = trans;
     if (m_Trans) {
-        m_Trans->AddFile(this);
+        m_TransAssociation = m_Trans->GetAssociationMode();
+        if (m_TransAssociation == (int) CBDB_Transaction::eFullAssociation) {
+            m_Trans->AddFile(this);
+        }
     }
 }
 
@@ -1060,6 +1066,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/02/23 18:35:30  kuznets
+ * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
+ *
  * Revision 1.47  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
