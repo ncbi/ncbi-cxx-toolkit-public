@@ -118,17 +118,17 @@ SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc,
    SeqIdPtr seqid;
    DoubleIntPtr di;
    Int4 index;
-   Uint1 num_frames;
+   Boolean translated_query;
+   Uint1 num_frames, index_offset;
    
-   if (program_number == blast_type_blastx || 
-       program_number == blast_type_tblastx)
-      num_frames = NUM_FRAMES;
-   else
-      num_frames = 1;
+   translated_query = (program_number == blast_type_blastx || 
+                       program_number == blast_type_tblastx);
+
+   num_frames = (translated_query ? NUM_FRAMES : 1);
 
    for (index = 0; slp; ++index, slp = slp->next) {
       /* Find the mask locations for this query */
-      for ( ; mask_loc && (mask_loc->index/NUM_FRAMES < index); 
+      for ( ; mask_loc && (mask_loc->index/num_frames < index); 
             mask_loc = mask_loc->next);
       if (!mask_loc)
          /* No more masks */
@@ -157,9 +157,13 @@ SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc,
          }
 
          if (mask_slp_head) {
-            Uint1 frame_index = (mask_loc->index % num_frames) + 1;
+            Uint1 frame_index;
             new_mask_slp = ValNodeAddPointer(NULL, SEQLOC_PACKED_INT, 
                                              mask_slp_head);
+
+            frame_index = 
+               (translated_query ? (mask_loc->index % num_frames) + 1 : 0);
+
             /* The 'choice' of the SeqLoc in masks should show the frame,
                with values 1..6 when queries are translated; otherwise
                it does not matter. */
