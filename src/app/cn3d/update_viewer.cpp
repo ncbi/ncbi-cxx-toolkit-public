@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2002/09/26 18:31:24  thiessen
+* allow simultaneous import of multiple chains from single PDB
+*
 * Revision 1.46  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -560,9 +563,13 @@ void UpdateViewer::FetchSequences(StructureSet *sSet, SequenceList *newSequences
     // choose import type
     static const wxString choiceStrings[] = { "From a FASTA File", "Network via GI/Accession" };
     enum choiceValues { FROM_FASTA=0, FROM_GI, N_CHOICES };
-    int importFrom = wxGetSingleChoiceIndex(
-        "From what source would you like to import sequences?", "Select Import Source",
-        N_CHOICES, choiceStrings, *viewerWindow);
+    wxString message;
+    if (specificGI > 0)
+        message.Printf("From what source would you like to import gi %i?", specificGI);
+    else
+        message = "From what source would you like to import sequences?";
+    int importFrom = wxGetSingleChoiceIndex(message,
+        "Select Import Source", N_CHOICES, choiceStrings, *viewerWindow);
     if (importFrom < 0) return;     // cancelled
 
     // network import
@@ -688,17 +695,14 @@ void UpdateViewer::ImportStructure(void)
     }
 
     // make list of protein chains in this structure
-    int gi;
-    char name;
-    bool isProtein;
     std::vector < std::pair < int , char > > chains;    // holds gi and chain name
     CBiostruc_graph::TDescr::const_iterator d, de;
     CBiostruc_graph::TMolecule_graphs::const_iterator
         m, me = biostruc->GetChemical_graph().GetMolecule_graphs().end();
     for (m=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); m!=me; m++) {
-        isProtein = false;
-        gi = -1;
-        name = 0;
+        bool isProtein = false;
+        int gi = -1;
+        char name = 0;
 
         // check descr for chain name/type
         de = (*m)->GetDescr().end();
@@ -734,66 +738,75 @@ void UpdateViewer::ImportStructure(void)
         }
     }
 
-    // which chain to align?
+    // which chains to align?
+    std::vector < int > gis;
     if (chains.size() == 1) {
-        gi = chains[0].first;
+        gis.push_back(chains[0].first);
     } else {
         wxString *choices = new wxString[chains.size()];
         int choice;
         for (choice=0; choice<chains.size(); choice++)
             choices[choice].Printf("%s_%c gi %i",
                 pdbID.c_str(), chains[choice].second, chains[choice].first);
-        choice = wxGetSingleChoiceIndex("Which chain do you want to align?",
+        wxArrayInt selections;
+        int nsel = wxGetMultipleChoices(selections, "Which chain do you want to align?",
             "Select Chain", chains.size(), choices, *viewerWindow);
-        if (choice < 0)
-            return;
-        else
-            gi = chains[choice].first;
+        if (nsel == 0) return;
+        for (choice=0; choice<nsel; choice++)
+            gis.push_back(chains[selections[choice]].first);
     }
 
     // first check to see if this sequence is already present
     SequenceList newSequences;
     SequenceSet::SequenceList::const_iterator s, se = master->parentSet->sequenceSet->sequences.end();
-    for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
-        if ((*s)->identifier->gi == gi) {
-            newSequences.push_back(*s);
-            TESTMSG("using existing sequence for gi " << gi);
-            break;
+    for (int j=0; j<gis.size(); j++) {
+        for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
+            if ((*s)->identifier->gi == gis[j]) {
+                newSequences.push_back(*s);
+                TESTMSG("using existing sequence for gi " << gis[j]);
+                break;
+            }
         }
-    }
-    if (s == se) {
-        // if not, import the new sequence
-        FetchSequences(master->parentSet, &newSequences, gi);
-        if (newSequences.size() != 1) {
-            ERR_POST(Error << "Failed to import matching sequence!");
-            return;
+        if (s == se) {
+            // if not, import the new sequence
+            SequenceList newSequence;
+            FetchSequences(master->parentSet, &newSequence, gis[j]);
+            if (newSequence.size() != 1) {
+                ERR_POST(Error << "Failed to import matching sequence!");
+                return;
+            }
+            newSequences.push_back(newSequence.front());
         }
     }
 
     // add MMDB id tag to Bioseq if not present already
-    CBioseq::TAnnot::const_iterator a, ae = newSequences.front()->bioseqASN->GetAnnot().end();
-    CSeq_annot::C_Data::TIds::const_iterator i, ie;
-    bool found = false;
-    for (a=newSequences.front()->bioseqASN->GetAnnot().begin(); a!=ae; a++) {
-        if ((*a)->GetData().IsIds()) {
-            for (i=(*a)->GetData().GetIds().begin(), ie=(*a)->GetData().GetIds().end(); i!=ie; i++) {
-                if ((*i)->IsGeneral() && (*i)->GetGeneral().GetDb() == "mmdb" &&
-                    (*i)->GetGeneral().GetTag().IsId() && (*i)->GetGeneral().GetTag().GetId() == mmdbID) {
-                    found = true;
-                    TESTMSG("mmdb link already present in sequence gi " << gi);
-                    break;
+    SequenceList::const_iterator w, we = newSequences.end();
+    for (w=newSequences.begin(); w!=we; w++) {
+        CBioseq::TAnnot::const_iterator a, ae = (*w)->bioseqASN->GetAnnot().end();
+        CSeq_annot::C_Data::TIds::const_iterator i, ie;
+        bool found = false;
+        for (a=(*w)->bioseqASN->GetAnnot().begin(); a!=ae; a++) {
+            if ((*a)->GetData().IsIds()) {
+                for (i=(*a)->GetData().GetIds().begin(), ie=(*a)->GetData().GetIds().end(); i!=ie; i++) {
+                    if ((*i)->IsGeneral() && (*i)->GetGeneral().GetDb() == "mmdb" &&
+                            (*i)->GetGeneral().GetTag().IsId() &&
+                            (*i)->GetGeneral().GetTag().GetId() == mmdbID) {
+                        found = true;
+                        TESTMSG("mmdb link already present in sequence " << (*w)->identifier->ToString());
+                        break;
+                    }
                 }
             }
+            if (found) break;
         }
-        if (found) break;
-    }
-    if (!found) {
-        CRef < CSeq_id > seqid(new CSeq_id());
-        seqid->SetGeneral().SetDb("mmdb");
-        seqid->SetGeneral().SetTag().SetId(mmdbID);
-        CRef < CSeq_annot > annot(new CSeq_annot());
-        annot->SetData().SetIds().push_back(seqid);
-        (const_cast<Sequence*>(newSequences.front()))->bioseqASN->SetAnnot().push_back(annot);
+        if (!found) {
+            CRef < CSeq_id > seqid(new CSeq_id());
+            seqid->SetGeneral().SetDb("mmdb");
+            seqid->SetGeneral().SetTag().SetId(mmdbID);
+            CRef < CSeq_annot > annot(new CSeq_annot());
+            annot->SetData().SetIds().push_back(seqid);
+            (const_cast<Sequence*>(*w))->bioseqASN->SetAnnot().push_back(annot);
+        }
     }
 
     // create null-alignment
@@ -801,7 +814,7 @@ void UpdateViewer::ImportStructure(void)
     MakeNewAlignments(newSequences, master, &newAlignments);
 
     // add new alignment to update list
-    if (newAlignments.size() == 1)
+    if (newAlignments.size() == newSequences.size())
         AddAlignments(newAlignments);
     else {
         ERR_POST(Error << "UpdateViewer::ImportStructure() - no new alignments were created");
