@@ -415,6 +415,58 @@ int CBlastApplication::BlastSearch()
     return status;
 }
 
+#define NUM_FRAMES 6
+
+static TSeqLocInfoVector
+BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector &slp,
+    EProgram program)
+{
+    TSeqLocInfoVector retval;
+    int index, frame, num_frames;
+    bool translated_query;
+
+    if (!mask)
+        return retval;
+
+    translated_query = (program == eBlastx ||
+                        program == eTblastx);
+
+    num_frames = (translated_query ? NUM_FRAMES : 1);
+
+    TSeqLocInfo mask_info_list;
+
+    for (index = 0; index < slp.size(); ++index) {
+        for ( ; mask && mask->index < index*num_frames;
+              mask = mask->next);
+        CDisplaySeqalign::SeqlocInfo* seqloc_info =
+            new CDisplaySeqalign::SeqlocInfo;
+        BlastSeqLoc* loc;
+
+        mask_info_list.clear();
+
+        for ( ; mask && mask->index < (index+1)*num_frames;
+              mask = mask->next) {
+            frame = (translated_query ? (mask->index % num_frames) + 1 : 0);
+
+
+            for (loc = mask->loc_list; loc; loc = loc->next) {
+                seqloc_info->frame = frame;
+                CRef<CSeq_loc> seqloc(new CSeq_loc());
+                seqloc->SetInt().SetFrom(((DoubleInt*) loc->ptr)->i1);
+                seqloc->SetInt().SetTo(((DoubleInt*) loc->ptr)->i2);
+                seqloc->SetInt().SetId(*(const_cast<CSeq_id*>(&sequence::GetId(*
+slp[index].seqloc, slp[index].scope))));
+
+                seqloc_info->seqloc = seqloc;
+                mask_info_list.push_back(seqloc_info);
+            }
+        }
+        retval.push_back(mask_info_list);
+    }
+
+    return retval;
+}
+
 int CBlastApplication::Run(void)
 {
     Uint1 program_number;
@@ -510,8 +562,11 @@ int CBlastApplication::Run(void)
 
     RegisterBlastDbLoader(readdb_args.dbname, !readdb_args.is_protein);
     /* Format the results */
+    TSeqLocInfoVector maskv =
+        BlastMask2CSeqLoc(m_filter_loc, m_query, e_program);
+
     status = BLAST_FormatResults(m_seqalign, 
-                 e_program, m_query, m_filter_loc, 
+                 e_program, m_query, maskv, 
                  m_format_options, 
                  m_pOptions->GetOutOfFrameMode());
     
