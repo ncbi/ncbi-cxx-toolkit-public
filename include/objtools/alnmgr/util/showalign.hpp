@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE BEGIN_SCOPE(objects)
 
-
+  
 class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
 
   public:
@@ -77,10 +77,9 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         string featureId;       // ID for feature
     };
 
-    static const int m_PMatrixSize = 23;        // number of amino acid
-                                                // symbol in matrix
-    static const int m_NumAsciiChar = 128;      // number of ASCII char
-    static const int m_NumColor = 3;
+    enum {
+        kPMatrixSize = 23       // number of amino acid for matrix
+    };
 
     enum DisplayOption {
         eHtml = (1 << 0),               // Html output. Default text.
@@ -136,7 +135,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
     enum SeqLocColorOption {
         eBlack = 0,             // Default
         eGrey,
-        ePurple
+        eRed
     };
 
 
@@ -151,7 +150,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
     CDisplaySeqalign(const CSeq_align_set & seqalign,
                      list < SeqlocInfo * >&maskSeqloc,
                      list < FeatureInfo * >&externalFeature,
-                     const int matrix[][m_PMatrixSize], CScope & scope);
+                     const int matrix[][kPMatrixSize], CScope & scope);
 
     // Destructor
     ~CDisplaySeqalign();
@@ -260,12 +259,12 @@ private:
     struct alnFeatureInfo {
         FeatureInfo *feature;
         string featureString;
-         CRange < TSignedSeqPos > alnRange;
+        CRange < TSignedSeqPos > alnRange;
     };
 
     struct alnSeqlocInfo {
         SeqlocInfo *seqloc;
-         CRange < TSignedSeqPos > alnRange;
+        CRange < TSignedSeqPos > alnRange;
     };
     CConstRef < CSeq_align_set > m_SeqalignSetRef;  // reference to seqalign set
                                                     // for displaying
@@ -274,14 +273,11 @@ private:
     list < FeatureInfo * >&m_QueryFeature;  // external feature such as phiblast
                                             // pattern
     CScope & m_Scope;
-
     CAlnVec *m_AV;                  // current aln vector
     int **m_Matrix;                 // matrix used to compute the midline
-    static const char m_PSymbol[m_PMatrixSize + 1]; // Amino acid symbol
     int m_AlignOption;              // Display options
-    static const string color[m_NumColor];
-    AlignType m_AlignType;          // alignment type, used for displaying blast
-                                    // info
+    AlignType m_AlignType;          // alignment type, used for displaying
+                                    //blast info
     int m_NumAlignToShow;           // number of alignment to display
     SeqLocCharOption m_SeqLocChar;  // character for seqloc display
     SeqLocColorOption m_SeqLocColor;        // clolor for seqloc display
@@ -358,6 +354,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.17  2004/02/10 22:00:05  jianye
+*Clean up some defs
+*
 *Revision 1.16  2003/12/29 18:37:22  jianye
 *Added nuc to nuc translation
 *

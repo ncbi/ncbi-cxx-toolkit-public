@@ -100,28 +100,29 @@ static const int k_GetSubseqThreshhold = 10000;
 static const int k_ColorMismatchIdentity = 0;  /*threshhold to color mismatch.  98 means 98% */
 static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
+static const int k_NumAsciiChar = 128;
+const string color[]={"#000000", "#808080", "#FF0000"};
+static const char k_PSymbol[CDisplaySeqalign::kPMatrixSize+1] = "ARNDCQEGHILKMFPSTWYVBZX";
 
-#define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>"
-#define TRACE_URL  "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">"
 
 /* url for linkout*/
-#define URL_LocusLink "<a href=\"http://www.ncbi.nlm.nih.gov/LocusLink/list.cgi?Q=%d%s\"><img border=0 height=16 width=16 src=\"/blast/images/L.gif\" alt=\"LocusLink info\"></a>"
-#define URL_Unigene "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 height=16 width=16 src=\"/blast/images/U.gif\" alt=\"UniGene info\"></a>"
+static const string k_EntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 
-#define URL_Structure "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Related structures\"></a>"
+static const string k_TraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
 
-#define URL_Structure_Overview "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>"
+static const string k_LocusLinkUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/LocusLink/list.cgi?Q=%d%s\"><img border=0 height=16 width=16 src=\"/blast/images/L.gif\" alt=\"LocusLink info\"></a>";
 
-#define URL_Geo "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Geo\"></a>"
+static const string k_UnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 height=16 width=16 src=\"/blast/images/U.gif\" alt=\"UniGene info\"></a>";
 
-const int CDisplaySeqalign::m_NumAsciiChar;
-const int CDisplaySeqalign::m_NumColor;
-const string CDisplaySeqalign::color[m_NumColor]={"#000000", "#808080", "#FF0000"};
-const int CDisplaySeqalign::m_PMatrixSize;
-const char CDisplaySeqalign::m_PSymbol[m_PMatrixSize+1] = "ARNDCQEGHILKMFPSTWYVBZX";
+static const string k_StructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Related structures\"></a>";
+
+static const string k_StructureOverviewUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
+
+static const string k_GeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Geo\"></a>";
+
 
 //Constructor
-CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
+CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][kPMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
   m_AlignOption = 0;
   m_SeqLocChar = eX;
   m_SeqLocColor = eBlack;
@@ -147,27 +148,27 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocI
   SNCBIFullScoreMatrix blosumMatrix;
   NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
  
-  int** temp = new int*[m_NumAsciiChar];
-  for(int i = 0; i<m_NumAsciiChar; ++i) {
-    temp[i] = new int[m_NumAsciiChar];
+  int** temp = new int*[k_NumAsciiChar];
+  for(int i = 0; i<k_NumAsciiChar; ++i) {
+    temp[i] = new int[k_NumAsciiChar];
   }
-  for (int i=0; i<m_NumAsciiChar; i++){
-    for (int j=0; j<m_NumAsciiChar; j++){
+  for (int i=0; i<k_NumAsciiChar; i++){
+    for (int j=0; j<k_NumAsciiChar; j++){
       temp[i][j] = -1000;
     }
   }
-  for(int i = 0; i < m_PMatrixSize; ++i){
-    for(int j = 0; j < m_PMatrixSize; ++j){
+  for(int i = 0; i < kPMatrixSize; ++i){
+    for(int j = 0; j < kPMatrixSize; ++j){
       if(matrix){
-	temp[m_PSymbol[i]][m_PSymbol[j]] = matrix[i][j];
+	temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] = matrix[i][j];
       } else {
-	temp[m_PSymbol[i]][m_PSymbol[j]] = blosumMatrix.s[m_PSymbol[i]][m_PSymbol[j]];
+	temp[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]] = blosumMatrix.s[(size_t)k_PSymbol[i]][(size_t)k_PSymbol[j]];
       }
      
     }
   }
-  for(int i = 0; i < m_PMatrixSize; ++i) {
-    temp[m_PSymbol[i]]['*'] = temp['*'][m_PSymbol[i]] = -4;
+  for(int i = 0; i < kPMatrixSize; ++i) {
+    temp[(size_t)k_PSymbol[i]]['*'] = temp['*'][(size_t)k_PSymbol[i]] = -4;
   }
   temp['*']['*'] = 1;
  
@@ -177,7 +178,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocI
 
 //Destructor
 CDisplaySeqalign::~CDisplaySeqalign(){
-  for(int i = 0; i<m_NumAsciiChar; ++i) {
+  for(int i = 0; i<k_NumAsciiChar; ++i) {
     delete [] m_Matrix[i];
   }
   delete [] m_Matrix;
@@ -416,7 +417,7 @@ string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int row) const{
  
     char urlBuf[1024];
     if (gi > 0) {
-      sprintf(urlBuf, ENTREZ_URL, db, gi, dopt, (m_AlignOption & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "");
+      sprintf(urlBuf, k_EntrezUrl.c_str(), db, gi, dopt, (m_AlignOption & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "");
       urlLink = urlBuf;
     } else {//seqid general, dbtag specified
       const CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
@@ -424,7 +425,7 @@ string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int row) const{
         const CDbtag& dtg = wid->GetGeneral();
         const string& dbName = dtg.GetDb();
         if(NStr::CompareNocase(dbName, "TI") == 0){
-          sprintf(urlBuf, TRACE_URL, wid->GetSeqIdString().c_str());
+          sprintf(urlBuf, k_TraceUrl.c_str(), wid->GetSeqIdString().c_str());
           urlLink = urlBuf;
         } else { //future use
 
@@ -472,19 +473,19 @@ void CDisplaySeqalign::AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bd
     for (list< int >::const_iterator iter = bdl.GetLinks().begin(); iter != bdl.GetLinks().end(); iter ++){
       char buf[1024];
       if((*iter) & eLocuslink){
-        sprintf(buf, URL_LocusLink, gi, molType);
+        sprintf(buf, k_LocusLinkUrl.c_str(), gi, molType);
         out << buf;
       }
       if ((*iter) & eUnigene) {
-	sprintf(buf, URL_Unigene,  gi);
+	sprintf(buf, k_UnigeneUrl.c_str(),  gi);
 	out << buf;
       }
       if ((*iter) & eStructure){
-        sprintf(buf, URL_Structure, m_Rid.c_str(), firstGi, gi, m_CddRid.c_str(), "onepair", (m_EntrezTerm == NcbiEmptyString) ? "none":((char*) m_EntrezTerm.c_str()));
+        sprintf(buf, k_StructureUrl.c_str(), m_Rid.c_str(), firstGi, gi, m_CddRid.c_str(), "onepair", (m_EntrezTerm == NcbiEmptyString) ? "none":((char*) m_EntrezTerm.c_str()));
 	out << buf;
       }
       if ((*iter) & eGeo){
-         sprintf(buf, URL_Geo, gi);
+         sprintf(buf, k_GeoUrl.c_str(), gi);
          out << buf;
       }
     }
@@ -1992,6 +1993,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.32  2004/02/10 21:59:36  jianye
+*Clean up some defs
+*
 *Revision 1.31  2004/01/29 23:13:20  jianye
 *Wrap defline
 *
