@@ -190,6 +190,7 @@ void CGFFFormatter::FormatFeature
         frame = max(cds.GetFrame() - 1, 0);
     }
 
+    CConstRef<CSeq_loc> feat_loc(&f.GetLoc());
     CRef<CSeq_loc> tentative_stop;
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
@@ -213,6 +214,14 @@ void CGFFFormatter::FormatFeature
                     (s, ctx.GetHandle(), *tentative_stop, cds);
                 if (s != "*") {
                     tentative_stop.Reset();
+                } else {
+                    // valid stop, we can trim the CDS
+                    SRelLoc::TRange range;
+                    range.SetFrom(0);
+                    range.SetTo(frame + 3 * prod_len - 1);
+                    SRelLoc::TRanges ranges;
+                    ranges.push_back(CRef<SRelLoc::TRange>(&range));
+                    feat_loc = SRelLoc(f.GetLoc(), ranges).Resolve(scope);
                 }
             } else {
                 tentative_stop.Reset();
@@ -220,7 +229,7 @@ void CGFFFormatter::FormatFeature
         }
     }
 
-    x_AddFeature(l, f.GetLoc(), source, key, "." /*score*/, frame, attrs,
+    x_AddFeature(l, *feat_loc, source, key, "." /*score*/, frame, attrs,
                  gtf, ctx, tentative_stop);
 
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
@@ -526,7 +535,6 @@ void CGFFFormatter::x_AddFeature
  CBioseqContext& ctx,
  bool tentative_stop) const
 {
-    
     int num_exons = 0;
     for (CSeq_loc_CI it(loc);  it;  ++it) {
         ++num_exons;
@@ -546,13 +554,6 @@ void CGFFFormatter::x_AddFeature
 
         if (it.GetRange().IsWhole()) {
             to = sequence::GetLength(it.GetSeq_id(), &ctx.GetScope()) - 1;
-        }
-        if (tentative_stop) { // XXX - assumes not split across exons
-            if (strand == '+'  &&  exon_number == num_exons) {
-                to -= 3;
-            } else if (strand == '-'  &&  exon_number == 1) {
-                from += 3;
-            }
         }
 
         string extra_attrs;
@@ -611,6 +612,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/09/03 16:59:20  dicuccio
+* Altered handling of stop codon: remap original CDS location to original
+* location minus three bases to account for stop codons that span exon
+* boundaries.
+*
 * Revision 1.9  2004/09/01 18:49:26  ucko
 * x_AddFeature: take strand into account when subtracting stop codons.
 *
