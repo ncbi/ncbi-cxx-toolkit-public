@@ -98,7 +98,7 @@ protected:
             eInFile
         };
 
-        iterator_base(const map_file_type* db_file)
+        iterator_base(map_file_type* db_file)
         : m_ParentFile(db_file),
           m_CursorFile(0),
           m_Cur(0),
@@ -141,10 +141,15 @@ protected:
                          CBDB_FileCursor::ECondition cursor_condition) const
         {
             delete m_Cur; m_Cur = 0;
+            if (!m_CursorFile->IsAttached()) {
+                m_CursorFile->Attach(*m_ParentFile);
+            }
+/*
             if (!m_CursorFile->IsOpen()) {
                 m_CursorFile->Open(m_ParentFile->GetFileName().c_str(), 
                                    open_mode);
             }
+*/
             m_Cur = new CBDB_FileCursor(*m_CursorFile);
             m_Cur->SetCondition(cursor_condition);
         }
@@ -270,7 +275,7 @@ protected:
             return true;
         }
     protected:
-        const map_file_type*               m_ParentFile;
+        mutable map_file_type*             m_ParentFile;
         mutable map_file_type*             m_CursorFile;
         mutable CBDB_FileCursor*           m_Cur;
 
@@ -288,7 +293,7 @@ public:
     class const_iterator : public iterator_base
     {
     public:
-        const_iterator(const map_file_type* db_file)
+        const_iterator(map_file_type* db_file)
         : iterator_base(db_file)
         {
             m_SearchFlag = false;
@@ -371,8 +376,11 @@ public:
     db_map_base(CBDB_File::EDuplicateKeys dup_keys) : m_Dbf(dup_keys) {}
 
     void open(const char* fname, 
-              ios_base::openmode mode=ios_base::in|ios_base::out);
-    void open(const char* fname, CBDB_RawFile::EOpenMode db_mode);
+              ios_base::openmode mode=ios_base::in|ios_base::out,
+              unsigned int cache_size=0);
+    void open(const char* fname, 
+              CBDB_RawFile::EOpenMode db_mode,
+              unsigned int cache_size=0);
 
     const_iterator begin() const;
     const_iterator end() const;
@@ -489,16 +497,20 @@ CBDB_RawFile::EOpenMode iosbase2BDB(ios_base::openmode mode)
 
 template<class K, class T>
 void db_map_base<K, T>::open(const char* fname,
-                             ios_base::openmode mode)
+                             ios_base::openmode mode,
+                             unsigned int cache_size)
 {
     CBDB_RawFile::EOpenMode db_mode = iosbase2BDB(mode);
-    open(fname, db_mode);
+    open(fname, db_mode, cache_size);
 }
 
 template<class K, class T>
 void db_map_base<K, T>::open(const char* fname, 
-                             CBDB_RawFile::EOpenMode db_mode)
+                             CBDB_RawFile::EOpenMode db_mode,
+                             unsigned int cache_size)
 {
+    if (cache_size) 
+        m_Dbf.SetCacheSize(cache_size);
     m_Dbf.Open(fname, db_mode);
 }
 
@@ -580,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/23 18:09:51  kuznets
+ * + "cache size" parameter for bdb_map bdb_multimap
+ *
  * Revision 1.3  2003/07/22 16:38:00  kuznets
  * Fixing compilation problems
  *
