@@ -1200,13 +1200,24 @@ void CValidError_bioseq::ValidateNs(const CBioseq& seq)
         
         CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         
+        EDiagSev sev;
+        string sequence;
+
         if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
+            // if 10 or more Ns flag as error, otherwise just warning
+            vec.GetSeqData(0, 10, sequence);
+            sev = NStr::CompareNocase(sequence, "NNNNNNNNNN") ? 
+                eDiag_Warning : eDiag_Error;
+            PostErr(sev, eErr_SEQ_INST_TerminalNs, 
                 "N at beginning of sequence", seq);
         }
         
         if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
+            // if 10 or more Ns flag as error, otherwise just warning
+            vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
+            sev = NStr::CompareNocase(sequence, "NNNNNNNNNN") ? 
+                eDiag_Warning : eDiag_Error;
+            PostErr(sev, eErr_SEQ_INST_TerminalNs, 
                 "N at end of sequence", seq);
         }
     } catch ( exception& ) {
@@ -3135,6 +3146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/07/07 18:48:46  shomrat
+* SEQ_INST_TerminalNs is eDiag_Error if 10 or more Ns at either end
+*
 * Revision 1.40  2003/07/02 21:05:25  shomrat
 * removed unused variables
 *
