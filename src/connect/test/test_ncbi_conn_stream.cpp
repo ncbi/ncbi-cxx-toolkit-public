@@ -55,7 +55,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     reg->Set("ID1", "CONN_" REG_CONN_HOST, DEF_CONN_HOST);
     reg->Set("ID1", "CONN_" REG_CONN_PATH, DEF_CONN_PATH);
     reg->Set("ID1", "CONN_" REG_CONN_ARGS, DEF_CONN_ARGS);
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "yar.ncbi.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "www.ncbi.nlm.nih.gov");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
@@ -239,6 +239,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2004/11/22 20:25:11  lavr
+ * "yar" replaced with "www"
+ *
  * Revision 6.34  2004/10/26 17:56:42  lavr
  * 'Bounce' does not allow more than 1M, so send less (512k) of test data
  *
