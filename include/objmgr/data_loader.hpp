@@ -247,7 +247,7 @@ protected:
         CObjectManager::TPriority  priority);
 
     void SetName(const string& loader_name);
-    CDataSource* GetDataSource(void);
+    CDataSource* GetDataSource(void) const;
 
     friend class CGBReaderRequestResult;
     
@@ -273,6 +273,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/08/19 16:54:04  vasilche
+* CDataLoader::GetDataSource() made const.
+*
 * Revision 1.32  2004/08/05 18:24:36  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *

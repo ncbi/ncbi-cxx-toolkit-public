@@ -86,7 +86,7 @@ void CDataLoader::SetTargetDataSource(CDataSource& data_source)
 }
 
 
-CDataSource* CDataLoader::GetDataSource(void)
+CDataSource* CDataLoader::GetDataSource(void) const
 {
     return m_DataSource;
 }
@@ -322,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/08/19 16:54:04  vasilche
+* CDataLoader::GetDataSource() made const.
+*
 * Revision 1.19  2004/08/05 18:26:25  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *
