@@ -916,6 +916,12 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
             BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
          }
 
+         /* Free HSP list structure if all HSPs have been deleted. */
+         if (hsp_list->hspcnt == 0) {
+             hsp_list = Blast_HSPListFree(hsp_list);
+             continue;
+         }
+
          Blast_HSPResultsInsertHSPList(results, hsp_list, 
                                        hit_params->options->hitlist_size);
       }
