@@ -537,6 +537,7 @@ void CBDB_File::Attach(CBDB_File& db_file)
 {
     CBDB_RawFile::Attach(db_file);
     x_CheckConstructBuffers();
+    SetLegacyStringsCheck(db_file.m_LegacyString);
 }
 
 void CBDB_File::SetLegacyStringsCheck(bool value) 
@@ -784,6 +785,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/02/11 17:56:20  kuznets
+ * Assign legacy strings checking flag when attaching to a file
+ *
  * Revision 1.31  2003/12/29 13:23:53  kuznets
  * Added support for transaction protected cursors.
  *
