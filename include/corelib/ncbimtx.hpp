@@ -30,7 +30,6 @@
  *
  * File Description:
  *   Multi-threading -- fast mutexes;  platform-specific headers and defines
- *   Note:  non-inline implementation is in "ncbithr.cpp".
  *
  *   MUTEX:
  *      CInternalMutex   -- platform-dependent mutex functionality
@@ -39,13 +38,17 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/03/26 21:11:37  vakatov
+ * Allow use of not yet initialized mutexes (with A.Grichenko)
+ *
  * Revision 1.1  2001/03/13 22:34:24  vakatov
  * Initial revision
  *
  * ===========================================================================
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
+#include <stdexcept>
 
 
 #if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
@@ -129,7 +132,7 @@ private:
 
     // Platform-dependent mutex handle, also used by CRWLock
     TMutex m_Handle;
-
+    bool m_Initialized;
     // Disallow assignment and copy constructor
     CInternalMutex(const CInternalMutex&);
     CInternalMutex& operator= (const CInternalMutex&);
@@ -169,6 +172,7 @@ public:
 private:
     // Platform-dependent mutex handle, also used by CRWLock
     CRITICAL_SECTION m_Handle;
+    bool             m_Initialized;
 
     // Disallow assignment and copy constructor
     CFastMutex(const CFastMutex&);
@@ -237,6 +241,10 @@ private:
 inline
 void CInternalMutex::Lock(void)
 {
+    if ( !m_Initialized ) {
+        return;
+    }
+
     // Aquire system mutex
 #if defined(NCBI_NO_THREADS)
     return;
@@ -258,6 +266,10 @@ void CInternalMutex::Lock(void)
 inline
 void CInternalMutex::Unlock(void)
 {
+    if ( !m_Initialized ) {
+        return;
+    }
+
     // Release system mutex
 #if defined(NCBI_NO_THREADS)
     return;
@@ -279,6 +291,10 @@ void CInternalMutex::Unlock(void)
 inline
 bool CInternalMutex::TryLock(void)
 {
+    if ( !m_Initialized ) {
+        return true;
+    }
+
     // Check if the system mutex is aquired.
     // If not, aquire for the current thread.
 #if defined(NCBI_WIN32_THREADS)
@@ -289,6 +305,7 @@ bool CInternalMutex::TryLock(void)
     else if (status == WAIT_TIMEOUT) {
         return false;
     }
+    throw runtime_error("CInternalMutex::TryLock() -- sys.err checking mutex");
 #elif defined(NCBI_POSIX_THREADS)
     int status = pthread_mutex_trylock(&m_Handle);
     if (status == 0) {
@@ -297,11 +314,10 @@ bool CInternalMutex::TryLock(void)
     else if (status == EBUSY) {
         return false;
     }
+    throw runtime_error("CInternalMutex::TryLock() -- sys.err checking mutex");
 #else
     return true;
 #endif
-
-    throw runtime_error("CInternalMutex::TryLock() -- sys.err checking mutex");
 }
 
 
@@ -317,6 +333,7 @@ CFastMutex::CFastMutex(void)
 {
     // Create platform-dependent mutex handle
     InitializeCriticalSection(&m_Handle);
+    m_Initialized = true;
 }
 
 
@@ -325,20 +342,25 @@ CFastMutex::~CFastMutex(void)
 {
     // Delete platform-dependent mutex handle
     DeleteCriticalSection(&m_Handle);
+    m_Initialized = false;
 }
 
 
 inline
 void CFastMutex::Lock(void)
 {
-    EnterCriticalSection(&m_Handle);
+    if ( m_Initialized ) {
+        EnterCriticalSection(&m_Handle);
+    }
 }
 
 
 inline
 void CFastMutex::Unlock(void)
 {
-    LeaveCriticalSection(&m_Handle);
+    if ( !m_Initialized ) {
+        LeaveCriticalSection(&m_Handle);
+    }
 }
 
 #endif /* End of Win32 CFastMutex */
