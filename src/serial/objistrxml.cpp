@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2004/03/23 15:39:23  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.57  2004/03/05 20:29:38  gouriano
 * make it possible to skip unknown data fields
 *
@@ -1734,7 +1737,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers()) {
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
             string value;
             ReadAnyContentTo(m_CurrNsPrefix,value, tagName);
             return BeginClassMember(classType);
@@ -1853,7 +1856,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             TopFrame().SetNotag();
             return first;
         }
-        if (GetSkipUnknownMembers() &&
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes &&
             pos <= classType->GetMembers().LastIndex()) {
             string value;
             ReadAnyContentTo(m_CurrNsPrefix,value, RejectedName());
@@ -1864,7 +1867,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers()) {
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
             string value;
             ReadAnyContentTo(m_CurrNsPrefix,value, tagName);
             return BeginClassMember(classType, pos);

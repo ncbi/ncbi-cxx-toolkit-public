@@ -232,12 +232,72 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// skip unknown members setup
+
+ESerialSkipUnknown CObjectIStream::ms_SkipUnknownDefault = eSerialSkipUnknown_Default;
+static CSafeStaticRef< CTls<int> > s_SkipTLS;
+
+
+void CObjectIStream::SetSkipUnknownThread(ESerialSkipUnknown skip)
+{
+    x_GetSkipUnknownDefault();
+    ESerialSkipUnknown tls_skip = ESerialSkipUnknown(long(s_SkipTLS->GetValue()));
+    if (tls_skip != eSerialSkipUnknown_Never &&
+        tls_skip != eSerialSkipUnknown_Always) {
+        s_SkipTLS->SetValue(reinterpret_cast<int*>(skip));
+    }
+}
+
+void CObjectIStream::SetSkipUnknownGlobal(ESerialSkipUnknown skip)
+{
+    x_GetSkipUnknownDefault();
+    if (ms_SkipUnknownDefault != eSerialSkipUnknown_Never &&
+        ms_SkipUnknownDefault != eSerialSkipUnknown_Always) {
+        ms_SkipUnknownDefault = skip;
+    }
+}
+
+ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownDefault(void)
+{
+    ESerialSkipUnknown skip;
+    if (ms_SkipUnknownDefault == eSerialSkipUnknown_Never ||
+        ms_SkipUnknownDefault == eSerialSkipUnknown_Always) {
+        skip = ms_SkipUnknownDefault;
+    } else {
+        skip = ESerialSkipUnknown(long(s_SkipTLS->GetValue()));
+        if (skip == eSerialSkipUnknown_Default) {
+            if (ms_SkipUnknownDefault == eSerialSkipUnknown_Default) {
+
+                // change the default here, if you wish
+                ms_SkipUnknownDefault = eSerialSkipUnknown_No;
+                //ms_SkipUnknownDefault = eSerialSkipUnknown_Yes;
+
+                const char* str = getenv(SERIAL_SKIP_UNKNOWN_MEMBERS);
+                if (str) {
+                    if (NStr::CompareNocase(str,"YES") == 0) {
+                        ms_SkipUnknownDefault = eSerialSkipUnknown_Yes;
+                    } else if (NStr::CompareNocase(str,"NO") == 0) {
+                        ms_SkipUnknownDefault = eSerialSkipUnknown_No;
+                    } else if (NStr::CompareNocase(str,"NEVER") == 0) {
+                        ms_SkipUnknownDefault = eSerialSkipUnknown_Never;
+                    } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
+                        ms_SkipUnknownDefault = eSerialSkipUnknown_Always;
+                    }
+                }
+            }
+            skip = ms_SkipUnknownDefault;
+        }
+    }
+    return skip;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 CObjectIStream::CObjectIStream(ESerialDataFormat format)
     : m_DiscardCurrObject(false),
       m_DataFormat(format),
       m_VerifyData(x_GetVerifyDataDefault()),
-      m_SkipUnknown(false),
+      m_SkipUnknown(x_GetSkipUnknownDefault()),
       m_Fail(fNotOpen),
       m_Flags(fFlagNone)
 {
@@ -1458,6 +1518,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.128  2004/03/23 15:39:23  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.127  2004/03/18 20:18:05  gouriano
 * remove redundant diagnostic message
 *

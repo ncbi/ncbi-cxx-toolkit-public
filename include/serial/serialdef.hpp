@@ -89,6 +89,15 @@ enum ESerialVerifyData {
     eSerialVerifyData_DefValueAlways // initialize field with default
 };
 
+#define SERIAL_SKIP_UNKNOWN_MEMBERS    "SERIAL_SKIP_UNKNOWN_MEMBERS"
+enum ESerialSkipUnknown {
+    eSerialSkipUnknown_Default = 0, // use current default
+    eSerialSkipUnknown_No,          // do not skip (throw exception)
+    eSerialSkipUnknown_Never,       // never skip (even if set to skip later on)
+    eSerialSkipUnknown_Yes,         // do skip
+    eSerialSkipUnknown_Always       // always skip (even if set not to later on)
+};
+
 enum ESerialOpenFlags {
     eSerial_StdWhenEmpty = 1 << 0, // use std stream when filename is empty
     eSerial_StdWhenDash  = 1 << 1, // use std stream when filename is "-"
@@ -173,6 +182,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/03/23 15:39:52  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.27  2003/12/01 19:04:22  grichenk
 * Moved Add and Sub from serialutil to ncbimisc, made them methods
 * of CRawPointer class.

@@ -121,10 +121,13 @@ public:
     // for streams created by the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
-    // if true - ignore unknown members when parsing the input data
-    // otherwise - throw an exception
-    void SetSkipUnknownMembers(bool skip=true);
-    bool GetSkipUnknownMembers(void);
+    // for this particular stream
+    void SetSkipUnknownMembers(ESerialSkipUnknown skip);
+    ESerialSkipUnknown GetSkipUnknownMembers(void);
+    // for streams created by the current thread
+    static  void SetSkipUnknownThread(ESerialSkipUnknown skip);
+    // for streams created by the current process
+    static  void SetSkipUnknownGlobal(ESerialSkipUnknown skip);
 
     // constructors
 protected:
@@ -586,7 +589,9 @@ private:
     ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
     static ESerialVerifyData x_GetVerifyDataDefault(void);
-    bool m_SkipUnknown;
+    ESerialSkipUnknown m_SkipUnknown;
+    static ESerialSkipUnknown ms_SkipUnknownDefault;
+    static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
 
     AutoPtr<CReadObjectList> m_Objects;
 
@@ -667,6 +672,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2004/03/23 15:39:52  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.101  2004/03/05 20:28:37  gouriano
 * make it possible to skip unknown data fields
 *

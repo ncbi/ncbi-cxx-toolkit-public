@@ -470,14 +470,30 @@ ESerialVerifyData CObjectIStream::GetVerifyData(void) const
 }
 
 inline
-void CObjectIStream::SetSkipUnknownMembers(bool skip)
+void CObjectIStream::SetSkipUnknownMembers(ESerialSkipUnknown skip)
 {
-    m_SkipUnknown = skip;
+    if (m_SkipUnknown == eSerialSkipUnknown_Never ||
+        m_SkipUnknown == eSerialSkipUnknown_Always) {
+        return;
+    }
+    m_SkipUnknown = (skip == eSerialSkipUnknown_Default) ?
+                    x_GetSkipUnknownDefault() : skip;
 }
+
 inline
-bool CObjectIStream::GetSkipUnknownMembers(void)
+ESerialSkipUnknown CObjectIStream::GetSkipUnknownMembers(void)
 {
-    return m_SkipUnknown;
+    switch (m_SkipUnknown) {
+    default:
+        break;
+    case eSerialSkipUnknown_No:
+    case eSerialSkipUnknown_Never:
+        return eSerialSkipUnknown_No;
+    case eSerialSkipUnknown_Yes:
+    case eSerialSkipUnknown_Always:
+        return eSerialSkipUnknown_Yes;
+    }
+    return ms_SkipUnknownDefault;
 }
 
 inline
@@ -526,6 +542,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/03/23 15:39:52  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.29  2004/03/05 20:28:37  gouriano
 * make it possible to skip unknown data fields
 *

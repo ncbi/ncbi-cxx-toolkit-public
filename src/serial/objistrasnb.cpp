@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/03/23 15:39:23  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.68  2004/03/16 17:48:21  gouriano
 * make it possible to skip unknown data members
 *
@@ -1026,7 +1029,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag);
     if ( index == kInvalidMember )
-        if (GetSkipUnknownMembers()) {
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
             ReadAnyContent();
             ExpectEndOfContent();
             return BeginClassMember(classType);
@@ -1047,7 +1050,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag, pos);
     if ( index == kInvalidMember )
-        if (GetSkipUnknownMembers()) {
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
             ReadAnyContent();
             ExpectEndOfContent();
             return BeginClassMember(classType, pos);

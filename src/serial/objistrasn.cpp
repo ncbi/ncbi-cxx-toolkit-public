@@ -998,7 +998,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType)
     CLightString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers()) {
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
             string value;
             ReadAnyContent(value);
             return BeginClassMember(classType);
@@ -1019,7 +1019,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
     CLightString id = ReadMemberId(SkipWhiteSpace());
     TMemberIndex index = GetMemberIndex(classType, id, pos);
     if ( index == kInvalidMember ) {
-        if (GetSkipUnknownMembers()) {
+        if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes) {
             string value;
             ReadAnyContent(value);
             return BeginClassMember(classType, pos);
@@ -1298,6 +1298,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2004/03/23 15:39:23  gouriano
+* Added setup options for skipping unknown data members
+*
 * Revision 1.89  2004/03/09 16:16:59  gouriano
 * Corrected reading of sequential data
 *
