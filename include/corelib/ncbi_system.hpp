@@ -36,6 +36,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 
+#ifdef NCBI_OS_UNIX
+#include <sys/types.h>
+#elif defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -107,6 +112,88 @@ extern void SleepMilliSec(unsigned long ml_sec);
 NCBI_XNCBI_EXPORT
 extern void SleepMicroSec(unsigned long mc_sec);
 
+/// Process identifier
+#ifdef NCBI_OS_UNIX
+typedef pid_t TPid;
+#elif defined(NCBI_OS_MSWIN)
+typedef DWORD TPid;
+#else
+typedef int TPid;
+#endif
+
+NCBI_XNCBI_EXPORT
+extern TPid GetPID(void);
+
+class NCBI_XNCBI_EXPORT CPIDGuardException
+    : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    enum EErrCode {
+        eStillRunning, ///< The process listed in the file is still around.
+        eCouldntOpen   ///< Unable to open the PID file for writing
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eStillRunning: return "eStillRunning";
+        case eCouldntOpen:  return "eCouldntOpen";
+        default:            return CException::GetErrCodeString();
+        }
+    }
+
+    /// Constructor.
+    CPIDGuardException(const char* file, int line, const CException* prev,
+                       EErrCode err_code, const string& message, TPid pid = 0)
+        throw()
+        : CException(file, line, prev, CException::eInvalid, message),
+          m_PID(pid)
+    {
+        x_Init(file, line,
+               message + " [pid " + NStr::IntToString(m_PID) + ']', prev);
+        x_InitErrCode((CException::EErrCode) err_code);
+    }
+
+#if 0 // redundant
+    virtual void ReportExtra(ostream& out) const
+        { out << "m_PID = " << m_PID; }
+#endif
+    TPid GetPID(void) const throw() { return m_PID; }
+
+    /// Unused dummy constructor so we can use N_E_D_I...
+    CPIDGuardException(double, const char* file, int line,
+                       const CException* prev_exception, EErrCode err_code,
+                       const string& message)
+        NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
+
+protected:
+    void x_Assign(const CPIDGuardException& src)
+        { CException::x_Assign(src);  m_PID = src.m_PID; }
+
+private:
+    TPid m_PID;
+};
+
+class NCBI_XNCBI_EXPORT CPIDGuard
+{
+public:
+    /// If "filename" contains no path, make it relative to "dir"
+    /// (which defaults to /tmp on Unix and %HOME% on Windows).
+    /// If the file already exists and identifies a live process,
+    /// throws CPIDGuardException.
+    CPIDGuard(const string& filename, const string& dir = kEmptyStr);
+
+    ~CPIDGuard() { Release(); }
+
+    /// Returns non-zero if there was a stale file.
+    TPid GetOldPID(void) { return m_OldPID; }
+
+    /// Removes the file.
+    void Release(void);
+
+private:
+    string m_Path;
+    TPid   m_OldPID;
+};
 
 END_NCBI_SCOPE
 
@@ -114,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/08/12 17:24:51  ucko
+ * Add support for PID files.
+ *
  * Revision 1.10  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp

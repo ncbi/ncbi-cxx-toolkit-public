@@ -31,10 +31,7 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
-
-#ifdef NCBI_OS_MSWIN
-#  include <corelib/ncbi_os_mswin.hpp>
-#endif
+#include <corelib/ncbifile.hpp>
 
 #ifdef NCBI_OS_MAC
 #  include <OpenTransport.h>
@@ -44,6 +41,7 @@
 #  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
+#  include <errno.h>
 #  include <limits.h>
 #  include <unistd.h>
 #  define USE_SETHEAPLIMIT
@@ -413,12 +411,93 @@ void SleepSec(unsigned long sec)
 }
 
 
+TPid GetPID(void)
+{
+#ifdef NCBI_OS_UNIX
+    return getpid();
+#elif defined(NCBI_OS_MSWIN)
+    return GetCurrentProcessId();
+#else
+#  error How do I get my PID?
+#endif
+}
+
+
+CPIDGuard::CPIDGuard(const string& filename, const string& dir)
+    : m_OldPID(0)
+{
+    string real_dir;
+    CDirEntry::SplitPath(filename, &real_dir, 0, 0);
+    if (real_dir.empty()) {
+        if (dir.empty()) {
+#ifdef NCBI_OS_UNIX
+            real_dir = "/tmp";
+#else
+            real_dir = CDir::GetHome();
+#endif
+        } else {
+            real_dir = dir;
+        }
+        m_Path = CDirEntry::MakePath(real_dir, filename);
+    } else {
+        m_Path = filename;
+    }
+
+    {{
+        CNcbiIfstream in(m_Path.c_str());
+        if (in.good()) {
+            in >> m_OldPID;
+            bool alive = true; // be conservative
+#ifdef NCBI_OS_UNIX
+            if ( kill(m_OldPID, 0) < 0  &&  errno != EPERM ) {
+                alive = false;
+            }
+#elif defined(NCBI_OS_MSWIN)
+            DWORD status;
+            HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_OldPID);
+            GetExitCodeProcess(h, &status);
+            CloseHandle(h);
+            if (status != STILL_ACTIVE) {
+                alive = false;
+            }
+#endif
+            if (alive) {
+                NCBI_THROW2(CPIDGuardException, eStillRunning,
+                            "Process is still running", m_OldPID);
+            }
+        }
+    }}
+    {{
+        CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+        if (out.good()) {
+            out << GetPID() << endl;
+        } else {
+            NCBI_THROW(CPIDGuardException, eCouldntOpen,
+                       "Unable to open PID file " + m_Path + " for writing: "
+                       + strerror(errno));
+        }
+    }}
+}
+
+
+void CPIDGuard::Release(void)
+{
+    if ( !m_Path.empty() ) {
+        CDirEntry(m_Path).Remove();
+        m_Path.erase();
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/08/12 17:24:58  ucko
+ * Add support for PID files.
+ *
  * Revision 1.30  2003/05/19 21:07:51  vakatov
  * s_SignalHandler() -- get rid of "unused func arg" compilation warning
  *
