@@ -61,6 +61,8 @@ class NCBI_XALGOALIGN_EXPORT CMMAligner: public CNWAligner
 {
 public:
 
+    CMMAligner();
+
     CMMAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
                EScoringMatrixType matrix_type)
@@ -141,8 +143,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.11  2003/08/04 15:43:19  dicuccio
- * Modified export specifiers to be more flexible
+ * Revision 1.12  2003/09/02 22:29:19  kapustin
+ * Add default constructor
  *
  * Revision 1.10  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
