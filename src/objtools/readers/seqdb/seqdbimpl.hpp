@@ -102,9 +102,7 @@ public:
     
     char GetSeqType() const;
     
-    CRef<CBioseq> GetBioseq(Uint4 oid,
-                            bool  use_objmgr,
-                            bool  insert_ctrlA) const;
+    CRef<CBioseq> GetBioseq(Uint4 oid, Uint4 target_gi) const;
     
     Uint4 GetSequence(Uint4 oid, const char ** buffer) const;
     

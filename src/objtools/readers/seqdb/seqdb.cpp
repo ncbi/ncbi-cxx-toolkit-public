@@ -115,11 +115,15 @@ char CSeqDB::GetSeqType(void) const
 }
 
 CRef<CBioseq>
-CSeqDB::GetBioseq(TOID oid,
-                  bool use_objmgr,
-                  bool insert_ctrlA) const
+CSeqDB::GetBioseq(TOID oid) const
 {
-    return m_Impl->GetBioseq(oid, use_objmgr, insert_ctrlA);
+    return m_Impl->GetBioseq(oid, 0);
+}
+
+CRef<CBioseq>
+CSeqDB::GetBioseq(TOID oid, TGI target_gi) const
+{
+    return m_Impl->GetBioseq(oid, target_gi);
 }
 
 void CSeqDB::RetSequence(const char ** buffer) const

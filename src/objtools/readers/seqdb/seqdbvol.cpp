@@ -710,12 +710,18 @@ CSeqDBVol::x_GetTaxDefline(Uint4            oid,
         
         TBDLL & dl = BDLS->Set();
         
-        for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
+        CRef<CBlast_def_line> moved;
+        
+        for(TBDLLIter iter = dl.begin(); iter != dl.end(); iter++) {
             if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
-                dl.push_front(*iter);
+                moved = *iter;
                 dl.erase(iter);
                 break;
             }
+        }
+        
+        if (! moved.Empty()) {
+            dl.push_front(moved);
         }
     }
     
@@ -912,10 +918,11 @@ CRef<CBioseq>
 CSeqDBVol::GetBioseq(Uint4                 oid,
                      bool                  have_oidlist,
                      Uint4                 memb_bit,
-                     Uint4                 pref_gi,
+                     Uint4                 target_gi,
                      CRef<CSeqDBTaxInfo>   tax_info,
                      CSeqDBLockHold      & locked) const
 {
+    typedef list< CRef<CBlast_def_line> > TDeflines;
     CRef<CBioseq> null_result;
     
     // Get the defline set.  Probably this is like the function above
@@ -924,6 +931,29 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
     CRef<CBlast_def_line_set> defline_set(x_GetHdrText(oid, locked));
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
+    
+    if (target_gi != 0) {
+        CSeq_id seqid(CSeq_id::e_Gi, target_gi);
+        
+        TDeflines & dl = defline_set->Set();
+        
+        CRef<CBlast_def_line> filt_dl;
+        
+        ITERATE(TDeflines, iter, dl) {
+            if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), seqid)) {
+                filt_dl = *iter;
+                break;
+            }
+        }
+        
+        if (filt_dl.Empty()) {
+            NCBI_THROW(CSeqDBException, eArgErr,
+                       "Error: oid headers do not contain target gi.");
+        } else {
+            dl.clear();
+            dl.push_back(filt_dl);
+        }
+    }
     
     if (defline_set.Empty() ||
         (! defline_set->CanGet())) {
@@ -1024,7 +1054,7 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
         x_GetTaxonomy(oid,
                       have_oidlist,
                       memb_bit,
-                      pref_gi,
+                      target_gi,
                       tax_info,
                       locked);
     

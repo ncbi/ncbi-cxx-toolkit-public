@@ -245,22 +245,19 @@ Uint4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
 }
 
 CRef<CBioseq>
-CSeqDBImpl::GetBioseq(Uint4 oid,
-                      bool  /*use_objmgr  */,
-                      bool  /*insert_ctrlA*/) const
+CSeqDBImpl::GetBioseq(Uint4 oid, Uint4 target_gi) const
 {
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
     bool have_oidlist = m_OIDList.NotEmpty();
     Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
-    Uint4 pref_gi = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetBioseq(vol_oid,
                               have_oidlist,
                               memb_bit,
-                              pref_gi,
+                              target_gi,
                               m_TaxInfo,
                               locked);
     }
