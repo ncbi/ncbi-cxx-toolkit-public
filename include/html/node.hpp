@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/04/25 13:45:33  siyan
+* Added doxygen groupings
+*
 * Revision 1.19  2001/05/17 14:55:37  lavr
 * Typos corrected
 *
@@ -106,6 +109,13 @@
 #include <map>
 #include <list>
 #include <memory>
+
+
+/** @addtogroup HTMLcomp
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -293,6 +303,10 @@ private:
     // return attributes map (create if needed)
     TAttributes& GetAttributes(void);
 };
+
+
+/* @} */
+
 
 // inline functions are defined here:
 #include <html/node.inl>

@@ -36,6 +36,13 @@
 #include <corelib/ncbistd.hpp>
 #include <html/html.hpp>
 
+
+/** @addtogroup PagerClass
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CCgiRequest;
@@ -176,5 +183,9 @@ private:
 };
 
 END_NCBI_SCOPE
+
+
+/* @} */
+
 
 #endif  /* PAGER__HPP */

@@ -36,6 +36,12 @@
 #include <html/node.hpp>
 
 
+/** @addtogroup HTMLcomp
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -197,10 +203,17 @@ private:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2003/04/25 13:45:32  siyan
+ * Added doxygen groupings
+ *
  * Revision 1.9  2002/12/12 17:20:21  ivanov
  * Renamed GetAttribute() -> GetMenuAttributeValue,
  *         GetAttributeName() -> GetMenuAttributeName().

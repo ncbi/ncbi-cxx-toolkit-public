@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/04/25 13:45:21  siyan
+* Added doxygen groupings
+*
 * Revision 1.1  2001/11/19 15:20:22  ucko
 * Switch CGI stuff to new diagnostics interface.
 *
@@ -41,6 +44,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <html/html.hpp>
+
+
+/** @addtogroup DiagHandler
+ *
+ * @{
+ */
+
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -84,5 +94,9 @@ CCommentDiagHandler* SetDiagNode(CNCBINode* node, CDiagHandler* handler = NULL)
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
+
+
+/* @} */
+
 
 #endif  /* COMMENTDIAG__HPP */

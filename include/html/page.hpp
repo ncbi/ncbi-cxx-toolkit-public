@@ -38,6 +38,13 @@
 #include <html/nodemap.hpp>
 #include <html/jsmenu.hpp>
 
+
+/** @addtogroup HTMLcomp
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CCgiApplication;
@@ -184,6 +191,8 @@ private:
 };
 
 
+/* @} */
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -263,6 +272,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/04/25 13:45:37  siyan
+* Added doxygen groupings
+*
 * Revision 1.25  2002/12/09 22:12:45  ivanov
 * Added support for Sergey Kurdin's popup menu.
 *

@@ -35,6 +35,13 @@
 
 #include <corelib/ncbistd.hpp>
 
+
+/** @addtogroup HTMLStream
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CIndentingOstream : public CNcbiOstream
@@ -46,10 +53,17 @@ public:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/25 13:45:30  siyan
+* Added doxygen groupings
+*
 * Revision 1.1  2003/02/14 16:16:39  ucko
 * Introduce CIndentingOstream (to be used by CHTMLListElement in text mode).
 *

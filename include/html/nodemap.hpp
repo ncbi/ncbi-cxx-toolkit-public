@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/04/25 13:45:35  siyan
+* Added doxygen groupings
+*
 * Revision 1.10  1999/10/28 13:40:31  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -70,6 +73,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <html/node.hpp>
+
+
+/** @addtogroup TagMapper
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -206,5 +216,9 @@ BaseTagMapper* CreateTagMapper(const C*,
 }
 
 END_NCBI_SCOPE
+
+
+/* @} */
+
 
 #endif  /* NODEMAP__HPP */

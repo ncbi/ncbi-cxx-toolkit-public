@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/25 13:45:40  siyan
+* Added doxygen groupings
+*
 * Revision 1.4  2001/05/17 14:55:48  lavr
 * Typos corrected
 *
@@ -51,6 +54,13 @@
 #include <corelib/ncbistd.hpp>
 #include <html/node.hpp>
 #include <html/htmlhelper.hpp>
+
+
+/** @addtogroup HTMLcomp
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -71,6 +81,10 @@ public:
 private:
     const string m_SaveName;
 };
+
+
+/* @} */
+
 
 #include <html/selection.inl>
 

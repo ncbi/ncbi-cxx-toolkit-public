@@ -35,6 +35,13 @@
 #include <cgi/ncbicgi.hpp>
 #include <map>
 
+
+/** @addtogroup CreationFactory
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -93,10 +100,17 @@ int CFactory<Type>::CgiFactory(const TCgiEntries& Cgi,
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/04/25 13:45:24  siyan
+* Added doxygen groupings
+*
 * Revision 1.7  2002/07/10 18:42:59  ucko
 * Use proper typedefs in order to work with CCgiEntry.
 *

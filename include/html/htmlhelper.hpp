@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/25 13:45:28  siyan
+* Added doxygen groupings
+*
 * Revision 1.9  2002/09/25 01:24:29  dicuccio
 * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
 * string
@@ -75,6 +78,13 @@
 #include <set>
 #include <list>
 #include <algorithm>
+
+
+/** @addtogroup HTMLHelper
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -160,6 +170,10 @@ protected:
     static string sm_newline;
 
 };
+
+
+/* @} */
+
 
 #include <html/htmlhelper.inl>
 

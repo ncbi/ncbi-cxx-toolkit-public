@@ -38,6 +38,13 @@
 #include <html/jsmenu.hpp>
 #include <html/htmlhelper.hpp>
 
+
+/** @addtogroup HTMLcomp
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -1289,6 +1296,9 @@ DECLARE_HTML_SPECIAL_CHAR( copy, "(c)");
 DECLARE_HTML_SPECIAL_CHAR( reg,  "(r)");
 
 
+/* @} */
+
+
 #include <html/html.inl>
 
 END_NCBI_SCOPE
@@ -1297,6 +1307,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2003/04/25 13:45:26  siyan
+ * Added doxygen groupings
+ *
  * Revision 1.63  2003/02/14 16:18:29  ucko
  * Override CHTMLListItem::PrintChildren (so we can indent them in text
  * mode); make <li> a block element for proper text display.

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/04/25 13:45:23  siyan
+* Added doxygen groupings
+*
 * Revision 1.21  1999/10/28 13:40:29  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -112,6 +115,13 @@
 */
 
 #include <html/html.hpp>
+
+
+/** @addtogroup HTMLcomp
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -287,6 +297,10 @@ public:
     
     virtual void CreateSubNodes(void);
 };
+
+
+/* @} */
+
 
 #include <html/components.inl>
 
