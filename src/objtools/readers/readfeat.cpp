@@ -198,6 +198,8 @@ public:
     typedef map< string, EQual > TQualReaderMap;
     typedef map< string, ESubSrc > TSubSrcReaderMap;
     typedef map< string, EOrgMod > TOrgModReaderMap;
+    typedef map< string, CSeqFeatData::EBond > TBondReaderMap;
+    typedef map< string, CSeqFeatData::ESite > TSiteReaderMap;
 
     // constructor
     CFeature_table_reader_imp(void);
@@ -225,19 +227,21 @@ private:
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
 
-    bool x_AddQualifierToGene (CSeqFeatData& sfdata,
-                               EQual qtype, const string& val);
+    bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
+                                   EQual qtype, const string& val);
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
-    bool x_AddQualifierToRna (CSeqFeatData& sfdata,
-                              EQual qtype, const string& val);
-    bool x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
-                              EQual qtype, const string& qual, const string& val);
+    bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
+                                   EQual qtype, const string& val);
+    bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
+                                   EQual qtype, const string& qual, const string& val);
 
-    TFeatReaderMap m_FeatKeys;
-    TQualReaderMap m_QualKeys;
+    TFeatReaderMap   m_FeatKeys;
+    TQualReaderMap   m_QualKeys;
     TSubSrcReaderMap m_SubSrcKeys;
     TOrgModReaderMap m_OrgModKeys;
+    TBondReaderMap   m_BondKeys;
+    TSiteReaderMap   m_SiteKeys;
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -482,6 +486,53 @@ static OrgModInit orgmod_key_to_subtype [] = {
     { "",                 CFeature_table_reader_imp::eOrgMod_bad              }
 };
 
+typedef struct bondinit {
+    const char *        key;
+    CSeqFeatData::EBond subtype;
+} BondInit;
+
+static BondInit bond_key_to_subtype [] = {
+    { "disulfide",         CSeqFeatData::eBond_disulfide  },
+    { "thiolester",        CSeqFeatData::eBond_thiolester },
+    { "xlink",             CSeqFeatData::eBond_xlink      },
+    { "thioether",         CSeqFeatData::eBond_thioether  },
+    { "",                  CSeqFeatData::eBond_other      }
+};
+
+typedef struct siteinit {
+    const char *        key;
+    CSeqFeatData::ESite subtype;
+} SiteInit;
+
+static SiteInit site_key_to_subtype [] = {
+    { "active",                      CSeqFeatData::eSite_active                      },
+    { "binding",                     CSeqFeatData::eSite_binding                     },
+    { "cleavage",                    CSeqFeatData::eSite_cleavage                    },
+    { "inhibit",                     CSeqFeatData::eSite_inhibit                     },
+    { "modified",                    CSeqFeatData::eSite_modified                    },
+    { "glycosylation",               CSeqFeatData::eSite_glycosylation               },
+    { "myristoylation",              CSeqFeatData::eSite_myristoylation              },
+    { "mutagenized",                 CSeqFeatData::eSite_mutagenized                 },
+    { "metal binding",               CSeqFeatData::eSite_metal_binding               },
+    { "phosphorylation",             CSeqFeatData::eSite_phosphorylation             },
+    { "acetylation",                 CSeqFeatData::eSite_acetylation                 },
+    { "amidation",                   CSeqFeatData::eSite_amidation                   },
+    { "methylation",                 CSeqFeatData::eSite_methylation                 },
+    { "hydroxylation",               CSeqFeatData::eSite_hydroxylation               },
+    { "sulfatation",                 CSeqFeatData::eSite_sulfatation                 },
+    { "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       },
+    { "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid },
+    { "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  },
+    { "blocked",                     CSeqFeatData::eSite_blocked                     },
+    { "lipid binding",               CSeqFeatData::eSite_lipid_binding               },
+    { "np binding",                  CSeqFeatData::eSite_np_binding                  },
+    { "DNA binding",                 CSeqFeatData::eSite_dna_binding                 },
+    { "signal peptide",              CSeqFeatData::eSite_signal_peptide              },
+    { "transit peptide",             CSeqFeatData::eSite_transit_peptide             },
+    { "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        },
+    { "",                            CSeqFeatData::eSite_other                       }
+};
+
 // constructor
 CFeature_table_reader_imp::CFeature_table_reader_imp(void)
 {
@@ -504,6 +555,16 @@ CFeature_table_reader_imp::CFeature_table_reader_imp(void)
     for (int i = 0; i < sizeof (orgmod_key_to_subtype) / sizeof (OrgModInit); i++) {
         string str = string (orgmod_key_to_subtype [i].key);
         m_OrgModKeys [string (orgmod_key_to_subtype [i].key)] = orgmod_key_to_subtype [i].subtype;
+    }
+
+    for (int i = 0; i < sizeof (bond_key_to_subtype) / sizeof (BondInit); i++) {
+        string str = string (bond_key_to_subtype [i].key);
+        m_BondKeys [string (bond_key_to_subtype [i].key)] = bond_key_to_subtype [i].subtype;
+    }
+
+    for (int i = 0; i < sizeof (site_key_to_subtype) / sizeof (SiteInit); i++) {
+        string str = string (site_key_to_subtype [i].key);
+        m_SiteKeys [string (site_key_to_subtype [i].key)] = site_key_to_subtype [i].subtype;
     }
 }
 
@@ -758,15 +819,27 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
 {
     switch (qtype) {
         eQual_allele:
+        eQual_bound_moiety:
         eQual_clone:
         eQual_cons_splice:
+        eQual_direction:
+        eQual_EC_number:
+        eQual_frequency:
         eQual_function:
+        eQual_insertion_seq:
         eQual_label:
+        eQual_map:
+        eQual_number:
+        eQual_organism:
+        eQual_PCR_conditions:
+        eQual_phenotype:
+        eQual_product:
         eQual_replace:
         eQual_rpt_family:
         eQual_rpt_type:
         eQual_rpt_unit:
         eQual_standard_name:
+        eQual_transposon:
         eQual_usedin:
             {
                 CSeq_feat::TQual& qlist = sfp->SetQual ();
@@ -807,9 +880,33 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     break;
                 case CSeqFeatData::e_Imp:
                     if (x_AddQualifierToImp (sfp, sfdata, qtyp, qual, val)) return true;
-                   break;
+                    break;
+                case CSeqFeatData::e_Region:
+                    if (qtyp == eQual_region_name) {
+                        sfdata.SetRegion (val);
+                        return true;
+                    }
+                    break;
+                case CSeqFeatData::e_Bond:
+                    if (qtyp == eQual_bond_type) {
+                        if (m_BondKeys.find (val) != m_BondKeys.end ()) {
+                            CSeqFeatData::EBond btyp = m_BondKeys [val];
+                            sfdata.SetBond (btyp);
+                            return true;
+                        }
+                    }
+                    break;
+                case CSeqFeatData::e_Site:
+                    if (qtyp == eQual_site_type) {
+                        if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
+                            CSeqFeatData::ESite styp = m_SiteKeys [val];
+                            sfdata.SetSite (styp);
+                            return true;
+                        }
+                    }
+                    break;
                 default:
-                   break;
+                    break;
             }
             switch (qtyp) {
                 eQual_pseudo:
@@ -831,7 +928,47 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     }
                     return true;
                 eQual_note:
-                    break;
+                    {
+                        CSeq_feat::TComment& comment = sfp->SetComment ();
+                        if (comment.empty ()) {
+                            sfp->SetComment (val);
+                        } else {
+                            comment += "; " + val;
+                            sfp->SetComment (comment);
+                        }
+                        return true;
+                    }
+                eQual_allele:
+                eQual_bound_moiety:
+                eQual_clone:
+                eQual_cons_splice:
+                eQual_direction:
+                eQual_EC_number:
+                eQual_frequency:
+                eQual_function:
+                eQual_insertion_seq:
+                eQual_label:
+                eQual_map:
+                eQual_number:
+                eQual_organism:
+                eQual_PCR_conditions:
+                eQual_phenotype:
+                eQual_product:
+                eQual_replace:
+                eQual_rpt_family:
+                eQual_rpt_type:
+                eQual_rpt_unit:
+                eQual_standard_name:
+                eQual_transposon:
+                eQual_usedin:
+                    {
+                        CSeq_feat::TQual& qlist = sfp->SetQual ();
+                        CRef<CGb_qual> gbq (new CGb_qual);
+                        gbq->SetQual (qual);
+                        gbq->SetVal (val);
+                        qlist.push_back (gbq);
+                        return true;
+                    }
                 default:
                     break;
             }
