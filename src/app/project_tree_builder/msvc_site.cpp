@@ -170,6 +170,13 @@ bool CMsvcSite::Is3PartyLibWithChoice(const string& lib3party_id) const
     return false;
 }
 
+
+CMsvcSite::SLibChoice::SLibChoice(void)
+ :m_Choice(eUnknown)
+{
+}
+
+
 CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
                                   const string&    lib,
                                   const string&    lib_3party)
@@ -193,23 +200,23 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
 }
 
 
-CMsvcSite::ELibChoice CMsvcSite::GetChoiceForLib(const string& lib) const
+CMsvcSite::ELibChoice CMsvcSite::GetChoiceForLib(const string& lib_id) const
 {
     ITERATE(list<SLibChoice>, p, m_LibChoices) {
 
         const SLibChoice& choice = *p;
-        if (choice.m_LibId == lib) 
+        if (choice.m_LibId == lib_id) 
             return choice.m_Choice;
     }
     return eUnknown;
 }
 
-CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(const string& lib_3party) const
+CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(const string& lib3party_id) const
 {
     ITERATE(list<SLibChoice>, p, m_LibChoices) {
 
         const SLibChoice& choice = *p;
-        if (choice.m_3PartyLib == lib_3party) 
+        if (choice.m_3PartyLib == lib3party_id) 
             return choice.m_Choice;
     }
     return eUnknown;
@@ -259,6 +266,19 @@ void CMsvcSite::GetLibChoiceIncludes (const string& cpp_flags_define,
             lib_id.erase();
         }
     }
+}
+
+
+CMsvcSite::SLibChoice CMsvcSite::GetLibChoiceForLib(const string& lib_id) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+
+        const SLibChoice& choice = *p;
+        if (choice.m_LibId == lib_id) 
+            return choice;
+    }
+    return SLibChoice();
+
 }
 
 
@@ -323,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/06/01 16:03:54  gorelenk
+ * Implemented CMsvcSite::GetLibChoiceForLib and SLibChoice::SLibChoice .
+ *
  * Revision 1.15  2004/05/24 14:41:59  gorelenk
  * Implemented member-functions supporting auto-install of third-party libs:
  * CMsvcSite::GetThirdPartyLibsToInstall,
