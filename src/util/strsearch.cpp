@@ -175,9 +175,9 @@ void CBoyerMooreMatcher::x_InitPattern(void)
 }
 
 
-int CBoyerMooreMatcher::Search(const char*  text, 
-                               unsigned int shift,
-                               unsigned int text_len) const
+size_t CBoyerMooreMatcher::Search(const char*  text, 
+                                  SIZE_TYPE shift,
+                                  SIZE_TYPE text_len) const
 {
     // Implementation note.
     // Case sensitivity check has been taken out of loop. 
@@ -185,11 +185,11 @@ int CBoyerMooreMatcher::Search(const char*  text,
     // (Anatoliy)
     if (m_CaseSensitive == NStr::eCase) {
         while (shift + m_PatLen <= text_len) {
-            int j = (int)m_PatLen - 1;
+            SIZE_TYPE j = (int)m_PatLen - 1;
 
-            for (char text_char = text[shift + j];
-                 j >= 0  &&  m_Pattern[j] == text_char;
-                 text_char = text[shift + j] ) { --j; }
+            for(char text_char = text[shift + j];
+                j >= 0 && m_Pattern[j]==(text_char=text[shift + j]);
+                --j) {}
 
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
@@ -201,9 +201,9 @@ int CBoyerMooreMatcher::Search(const char*  text,
         while (shift + m_PatLen <= text_len) {
             int j = (int)m_PatLen - 1;
 
-            for (char text_char = toupper(text[shift + j]);
-                 j >= 0  &&  m_Pattern[j] == text_char;
-                 text_char = toupper(text[shift + j]) ) { --j; }
+            for(char text_char = toupper(text[shift + j]);
+                j >= 0 && m_Pattern[j]==(text_char=toupper(text[shift + j]));
+                --j) {}
 
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
@@ -225,10 +225,10 @@ const int CBoyerMooreMatcher::sm_AlphabetSize = 256;     // assuming ASCII
 
 // Member Functions
 bool CBoyerMooreMatcher::IsWholeWord(const char*  text, 
-                                     unsigned int pos,
-                                     unsigned int text_len) const
+                                     SIZE_TYPE    pos,
+                                     SIZE_TYPE    text_len) const
 {
-    int left, right;
+    SIZE_TYPE left, right;
     left = right = 1;
 
     // Words at the begging and end of text are also considered "whole"
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/05 15:46:02  kuznets
+* fixed crash on 64-bit (sun)
+*
 * Revision 1.10  2004/03/04 18:25:20  ucko
 * Fix compilation errors in previous revision.
 *
