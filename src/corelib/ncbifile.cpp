@@ -30,6 +30,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2001/12/26 20:58:22  juran
+ * Use an FSSpec* member instead of an FSSpec, so a forward declaration can be used.
+ * Add copy constructor and assignment operator for CDirEntry on Mac OS,
+ * thus avoiding memberwise copy which would blow up upon deleting the pointer twice.
+ *
  * Revision 1.9  2001/12/18 21:36:38  juran
  * Remove unneeded Mac headers.
  * (Required functions copied to ncbi_os_mac.cpp)
@@ -132,13 +137,30 @@ static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode,
 
 CDirEntry::CDirEntry()
 #ifdef NCBI_OS_MAC
-    : m_FSS(sNullFSS)
+    : m_FSS(new FSSpec(sNullFSS))
 #endif
 {
 }
 
 #ifdef NCBI_OS_MAC
-CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(fss)
+CDirEntry::CDirEntry(const CDirEntry& other) : m_FSS(new FSSpec(*other.m_FSS))
+{
+    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
+    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
+    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+}
+
+CDirEntry&
+CDirEntry::operator=(const CDirEntry& other)
+{
+	*m_FSS = *other.m_FSS;
+    m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
+    m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
+    m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
+    return *this;
+}
+
+CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(new FSSpec(fss))
 {
     m_DefaultMode[eUser]  = m_DefaultModeGlobal[eFile][eUser];
     m_DefaultMode[eGroup] = m_DefaultModeGlobal[eFile][eGroup];
@@ -147,6 +169,9 @@ CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(fss)
 #endif
 
 CDirEntry::CDirEntry(const string& name)
+#ifdef NCBI_OS_MAC
+    : m_FSS(new FSSpec(sNullFSS))
+#endif
 {
     Reset(name);
     m_DefaultMode[eUser]  = m_DefaultModeGlobal[eFile][eUser];
@@ -158,13 +183,13 @@ CDirEntry::CDirEntry(const string& name)
 bool
 CDirEntry::operator== (const CDirEntry& other) const
 {
-    return m_FSS == other.m_FSS;
+    return *m_FSS == *other.m_FSS;
 }
 
 const FSSpec&
 CDirEntry::FSS() const
 {
-    return m_FSS;
+    return *m_FSS;
 }
 #endif
 
@@ -214,9 +239,9 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 #ifdef NCBI_OS_MAC
 void CDirEntry::Reset(const string& path)
 {
-    OSErr err = MacPathname2FSSpec(path.c_str(), &m_FSS);
+    OSErr err = MacPathname2FSSpec(path.c_str(), m_FSS);
     if (err != noErr && err != fnfErr) {
-        m_FSS = sNullFSS;
+        *m_FSS = sNullFSS;
     }
 }
 
@@ -235,6 +260,7 @@ string CDirEntry::GetPath(void) const
 
 CDirEntry::~CDirEntry(void)
 {
+	delete m_FSS;
 }
 
 void CDirEntry::SplitPath(const string& path, string* dir,
@@ -720,7 +746,7 @@ CDir::~CDir(void)
 
 
 #if defined(NCBI_OS_MAC)
-static const CDirEntry& MacGetIndexedItem(const CDir& container, SInt16 index)
+static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
 {
     FSSpec dir = container.FSS();
     FSSpec fss;  // FSSpec of item gotten.

@@ -33,6 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/12/26 20:58:23  juran
+ * Use an FSSpec* member instead of an FSSpec, so a forward declaration can be used.
+ * Add copy constructor and assignment operator for CDirEntry on Mac OS,
+ * thus avoiding memberwise copy which would blow up upon deleting the pointer twice.
+ *
  * Revision 1.6  2001/12/13 20:14:34  juran
  * Add forward declaration of struct FSSpec for Mac OS.
  *
@@ -64,7 +69,6 @@
 
 #ifdef NCBI_OS_MAC
 struct FSSpec;
-#include <Files.h>
 #endif
 
 
@@ -92,6 +96,8 @@ class CDirEntry
 public:
     CDirEntry();
 #ifdef NCBI_OS_MAC
+    CDirEntry(const CDirEntry& other);
+    CDirEntry& operator=(const CDirEntry& other);
     CDirEntry(const FSSpec& fss);
 #endif
     CDirEntry(const string& path);
@@ -221,7 +227,7 @@ protected:
 
 private:
 #ifdef NCBI_OS_MAC
-    FSSpec m_FSS;
+    FSSpec* m_FSS;
 #else
     // Full entry path
     string m_Path;
