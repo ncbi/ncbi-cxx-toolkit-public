@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2001/12/07 21:03:47  ucko
+ * Add #includes required by new datatool version.
+ *
  * Revision 1.24  2001/11/16 16:06:45  ucko
  * Handle new Entrez docsum interface properly.
  *
@@ -129,9 +132,12 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/iterator.hpp>
 
+#include <objects/entrez2/E2Reply.hpp>
+#include <objects/entrez2/E2Request.hpp>
 #include <objects/entrez2/Entrez2_boolean_element.hpp>
 #include <objects/entrez2/Entrez2_boolean_exp.hpp>
 #include <objects/entrez2/Entrez2_boolean_reply.hpp>
+#include <objects/entrez2/Entrez2_db_id.hpp>
 #include <objects/entrez2/Entrez2_docsum.hpp>
 #include <objects/entrez2/Entrez2_docsum_data.hpp>
 #include <objects/entrez2/Entrez2_docsum_list.hpp>
