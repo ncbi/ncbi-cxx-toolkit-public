@@ -325,7 +325,7 @@ bool CConstResizingIterator<TSeq, TOut>::AtEnd() const
          ++it2) {
         avail += x_BitsPerElement(m_RawIterator);
     }
-    return avail >= goal;
+    return avail < goal;
 }
 
 
@@ -391,7 +391,7 @@ bool CResizingIterator<TSeq, TVal>::AtEnd() const
          ++it2) {
         avail += x_BitsPerElement(m_RawIterator);
     }
-    return avail >= goal;
+    return avail < goal;
 }
 
 
@@ -401,6 +401,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/05 18:25:26  dicuccio
+* Fixed logic in AtEnd(): return avail < goal
+*
 * Revision 1.7  2004/02/12 21:42:45  ucko
 * Rework AtEnd() to avoid distance(), which has no portable form.
 *
