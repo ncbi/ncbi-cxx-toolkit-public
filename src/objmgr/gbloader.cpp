@@ -160,7 +160,7 @@ bool
 CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
                           TTSESet* tse_set)
 {
-    //GC();
+  GC();
 
   bool unreleased_mutex_run;
   int count=0;
@@ -204,6 +204,34 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
   return true;
 }
 
+#if !defined(_DEBUG)
+inline
+#endif
+void
+CGBDataLoader::x_Check(STSEinfo *_DEBUG_ARG(me))
+{
+#if defined(_DEBUG)
+    unsigned c = 0;
+    bool tse_found=false;
+    STSEinfo *tse2 = m_UseListHead, *t1=0;
+    while ( tse2 ) {
+        c++;
+        if( tse2 == me )
+            tse_found = true;
+        t1 = tse2;
+        tse2 = tse2->next;
+    }
+    _VERIFY(t1 == m_UseListTail);
+    _VERIFY(m_Sr2TseInfo.size() == m_TseCount);
+    _VERIFY(c  <= m_TseCount);
+    _VERIFY(m_Tse2TseInfo.size() <= m_TseCount);
+    if(me) {
+        //GBLOG_POST("check tse " << me << " by " << CThread::GetSelf() );
+        _VERIFY(tse_found);
+    }
+#endif
+}
+
 bool
 CGBDataLoader::DropTSE(const CSeq_entry *sep)
 {
@@ -220,25 +248,6 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
   x_DropTSEinfo(tse);
   return true;
 }
-
-void
-CGBDataLoader::x_Check(STSEinfo *me)
-{
-  unsigned c = 0;
-  bool tse_found=false;
-  STSEinfo *tse2 = m_UseListHead, *t1=0;
-  while(tse2) { c++; if(tse2==me) tse_found = true; t1=tse2; tse2=tse2->next; }
-  _VERIFY(t1 == m_UseListTail);
-  _VERIFY(m_Sr2TseInfo.size() == m_TseCount);
-  _VERIFY(c  <= m_TseCount);
-  _VERIFY(m_Tse2TseInfo.size() <= m_TseCount);
-  if(me)
-   {
-     //GBLOG_POST("check tse " << me << " by " << CThread::GetSelf() );
-     _VERIFY(tse_found);
-   }
-}
-
 
 CTSE_Info*
 CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_set)
@@ -387,62 +396,64 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
 void
 CGBDataLoader::GC(void)
 {
-  // GBLOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
-  // dirty read - but that ok for garbage collector
-  if(m_TseCount<m_TseGC_Threshhold) return;
-  if(!m_InvokeGC) return ;
-  GBLOG_POST( "X_GC " << m_TseCount);
-  //GetDataSource()->x_CleanupUnusedEntries();
+    GBLOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
+    // dirty read - but that ok for garbage collector
+    if(m_TseCount<m_TseGC_Threshhold) return;
+    if(!m_InvokeGC) return ;
+    GBLOG_POST( "X_GC " << m_TseCount);
+    //GetDataSource()->x_CleanupUnusedEntries();
 
-  unsigned skip=0;
-  CGBLGuard g(m_Locks,"GC");
-  x_Check(0);
-  while(skip<m_TseCount && skip<0.6*m_TseGC_Threshhold && m_TseCount > 0.9*m_TseGC_Threshhold)
-    {
-      int i=skip;
-      STSEinfo *tse_to_drop=m_UseListHead;
-      while(tse_to_drop && i-->0)
-        tse_to_drop = tse_to_drop->next;
-      _VERIFY(tse_to_drop);
-      bool do_call_drop = true;
-      g.Lock(tse_to_drop);
-      const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
-      if (tse_to_drop->locked)
-        {
-          skip++;
-          do_call_drop = false;
+    CGBLGuard g(m_Locks,"GC");
+    x_Check(0);
+
+    unsigned skip=0;
+    STSEinfo *cur_tse = m_UseListHead;
+    while ( cur_tse && skip<m_TseCount &&
+            skip<0.6*m_TseGC_Threshhold &&
+            m_TseCount > 0.9*m_TseGC_Threshhold ) {
+        STSEinfo *tse_to_drop = cur_tse;
+        cur_tse = cur_tse->next;
+        ++skip;
+        // fast checks
+        if (tse_to_drop->locked) {
+            continue;
         }
-      else if(!sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone)
-        {
-          GBLOG_POST("X_GC:: drop nonexistent tse " << tse_to_drop);
-          x_DropTSEinfo(tse_to_drop);
-          do_call_drop = false;
+        if (tse_to_drop->tseinfop && tse_to_drop->tseinfop->CounterLocked()) {
+            continue;
         }
-      else if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end())
-        { 
-	  skip++;
-          do_call_drop = false;
+
+        const CSeq_entry *sep = tse_to_drop->m_upload.m_tse;
+        bool do_call_drop = true;
+        if ( !sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone ) {
+            g.Lock(tse_to_drop);
+            GBLOG_POST("X_GC:: drop nonexistent tse " << tse_to_drop);
+            x_DropTSEinfo(tse_to_drop);
+            do_call_drop = false;
+            g.Unlock(tse_to_drop);
+            --skip;
+            continue;
         }
-      else if (tse_to_drop->tseinfop->CounterLocked())
-        {
-          skip++;
-          do_call_drop = false;
+
+        if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end()) {
+            continue;
         }
-      g.Unlock(tse_to_drop);
-      if(!do_call_drop) 
-        continue ;
-      
+
+        if( !do_call_drop ) {
+            ++skip;
+            continue;
+        }
+        
 #ifdef DEBUG_SYNC
-      char b[100];
-      GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
+        char b[100];
+        GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
 #endif
-      CConstRef<CSeq_entry> se(sep);
-      g.Unlock();
-      if(GetDataSource()->DropTSE(*se))
-        m_InvokeGC=false;
-      else
-        skip++;
-      g.Lock();
+        CConstRef<CSeq_entry> se(sep);
+        g.Unlock();
+        if ( GetDataSource()->DropTSE(*se) )
+            m_InvokeGC=false;
+        else
+            ++skip;
+        g.Lock();
     }
 }
 
@@ -827,6 +838,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/02/27 21:58:26  vasilche
+* Fixed performance of Object Manager's garbage collector.
+*
 * Revision 1.48  2003/02/26 18:03:31  vasilche
 * Added some error check.
 * Fixed formatting.
