@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/04/02 18:16:03  ucko
+* More fixes to CDriverManager::LoadDriverDll.
+*
 * Revision 1.2  2002/04/01 22:31:40  kholodov
 * Fixed DLL entry point names
 *
@@ -112,9 +115,10 @@ CDriverManager::GetDriver(const string& driver_name)
 
 bool CDriverManager::LoadDriverDll(const string& driver_name)
 {
-  typedef void (*FEntryPoint)(I_DriverMgr& mgr);
+  typedef void (*FRegistrationFunction)(I_DriverMgr& mgr);
+  typedef FRegistrationFunction (*FEntryPoint)(void);
 
-  CDll dll(driver_name);
+  CDll dll("dbapi_driver_" + driver_name);
 
   FEntryPoint func = 0;
   if( driver_name == "ctlib" ) {
@@ -128,7 +132,7 @@ bool CDriverManager::LoadDriverDll(const string& driver_name)
   }
 
   if( func != 0 ) {
-    func(*this);
+    func()(*this);
     return true;
   }
 
