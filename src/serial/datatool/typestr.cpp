@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/02/02 14:57:07  vasilche
+* Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
+*
 * Revision 1.9  2000/02/01 21:48:09  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -126,7 +129,7 @@ void CTypeStrings::GenerateCode(CClassContext& ctx) const
     GenerateTypeCode(ctx);
 }
 
-void CTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+void CTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
 {
 }
 
@@ -135,11 +138,11 @@ void CTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
     GenerateTypeCode(ctx);
 }
 
-void CTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
+void CTypeStrings::GenerateUserHPPCode(CNcbiOstream& /*out*/) const
 {
 }
 
-void CTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
+void CTypeStrings::GenerateUserCPPCode(CNcbiOstream& /*out*/) const
 {
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/02 14:57:06  vasilche
+* Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
+*
 * Revision 1.1  2000/02/01 21:48:07  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -93,7 +96,7 @@ CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
 
 string CTemplate1TypeStrings::GetCType(void) const
 {
-    return GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
+    return GetTemplateNamespace()+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
 }
 
 string CTemplate1TypeStrings::GetRef(void) const
@@ -138,6 +141,16 @@ void CTemplate1TypeStrings::AddTemplateInclude(TIncludes& hpp) const
     else
         header = '<'+header+'>';
     hpp.insert(header);
+}
+
+string CTemplate1TypeStrings::GetTemplateNamespace(void) const
+{
+    const char* ns;
+    if ( GetTemplateName() == "AutoPtr" )
+        ns = "NCBI_NS_NCBI::";
+    else
+        ns = "NCBI_NS_STD::";
+    return ns;
 }
 
 void CTemplate1TypeStrings::GenerateTypeCode(CClassContext& ctx) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/02 14:57:06  vasilche
+* Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
+*
 * Revision 1.1  2000/02/01 21:47:54  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -290,7 +293,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "void "<<methodPrefix<<"InvalidSelection("<<ENUM_NAME<<" index) const\n"
             "{\n"
-            "    throw runtime_error(\""<<GetExternalName()<<": invalid selection \"+SelectionName("<<STATE_MEMBER<<")+\". Expected: \"+SelectionName(index));\n"
+            "    throw NCBI_NS_STD::runtime_error(\""<<GetExternalName()<<": invalid selection \"+SelectionName("<<STATE_MEMBER<<")+\". Expected: \"+SelectionName(index));\n"
             "}\n"
             "\n";
     }
