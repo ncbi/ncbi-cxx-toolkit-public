@@ -25,7 +25,7 @@
  *
  * Author:  Anton Lavrentiev
  *
- * File description:
+ * File Description:
  *   C++->C conversion functions for basic CORE connect stuff:
  *     Registry
  *     Logging
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/09/24 15:07:13  lavr
+ * File description indented uniformly
+ *
  * Revision 6.10  2002/06/10 19:50:02  lavr
  * +CONNECT_Init(). Log moved to the end
  *
