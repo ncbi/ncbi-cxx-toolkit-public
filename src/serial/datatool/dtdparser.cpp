@@ -51,6 +51,7 @@
 
 BEGIN_NCBI_SCOPE
 
+const string& s_SpecialName = "#PCDATA";
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDParser
@@ -337,7 +338,7 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
             }
             break;
         case K_PCDATA:
-            node.SetType(DTDElement::eString);
+            id_name = s_SpecialName;
             break;
         case T_SYMBOL:
             switch (symbol = NextToken().GetSymbol()) {
@@ -380,18 +381,34 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
 void DTDParser::AddElementContent(DTDElement& node, string& id_name,
     char separator)
 {
-    // id_name could be empty if the prev token was K_PCDATA
-    if (!id_name.empty()) {
-        node.AddContent(id_name);
-        if (separator != 0) {
-            node.SetType(separator == ',' ?
-                DTDElement::eSequence : DTDElement::eChoice);
-        } else {
-            node.SetTypeIfUnknown(DTDElement::eSequence);
-        }
-        m_MapElement[ id_name].SetReferenced();
-        id_name.erase();
+    DTDElement::EType type = node.GetType();
+    if (type != DTDElement::eUnknown &&
+        type != DTDElement::eSequence &&
+        type != DTDElement::eChoice) {
+        ParseError("Unexpected element contents", "");
     }
+    if (id_name == s_SpecialName) {
+        if (type == DTDElement::eUnknown && separator == 0) {
+            node.SetType(DTDElement::eString);
+        } else {
+            node.AddContent(id_name);
+            if (separator != 0) {
+                node.SetType(separator == ',' ?
+                    DTDElement::eSequence : DTDElement::eChoice);
+            }
+        }
+        id_name.erase();
+        return;
+    }
+    node.AddContent(id_name);
+    if (separator != 0) {
+        node.SetType(separator == ',' ?
+            DTDElement::eSequence : DTDElement::eChoice);
+    } else {
+        node.SetTypeIfUnknown(DTDElement::eSequence);
+    }
+    m_MapElement[ id_name].SetReferenced();
+    id_name.erase();
 }
 
 void DTDParser::EndElementContent(DTDElement& node)
@@ -682,7 +699,7 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
     map<string,DTDElement>::iterator i;
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
-        if (i->second.GetName().empty()) {
+        if (i->second.GetName().empty() && i->first != s_SpecialName) {
             ParseError(i->first.c_str(),"definition");
         }
         DTDElement::EType type = i->second.GetType();
@@ -803,6 +820,14 @@ CDataType* DTDParser::TypesBlock(
     }
     const list<string>& refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
+        if (*i == s_SpecialName) {
+            AutoPtr<CDataType> stype(new CStringDataType());
+            AutoPtr<CDataMember> smember(new CDataMember("_CharData", stype));
+            smember->SetNotag();
+            smember->SetNoPrefix();
+            container->AddMember(smember);
+            continue;
+        }
         DTDElement& refNode = m_MapElement[*i];
         if (refNode.GetName().empty()) {
             ParseError(i->c_str(),"definition");
@@ -1083,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.24  2005/02/09 14:37:39  gouriano
+ * Implemented elements with mixed content
+ *
  * Revision 1.23  2005/01/12 18:05:10  gouriano
  * Corrected generation of XML schema for sequence of choice types,
  * and simple types with default
