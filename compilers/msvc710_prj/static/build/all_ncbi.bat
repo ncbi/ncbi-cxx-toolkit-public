@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_ncbi.bat,v 1.2 2004/03/01 19:14:26 ivanov Exp $
+REM $Id: all_ncbi.bat,v 1.3 2004/03/02 16:56:41 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -58,7 +58,7 @@ GOTO EXIT
 
 :CONTINUE
 ECHO INFO: Building "all - %CFG%"
-devenv ncbi_cpp.sln /rebuild %CFG% /project "-BUILD-ALL-"
+devenv ncbi_cpp.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 
 SHIFT
