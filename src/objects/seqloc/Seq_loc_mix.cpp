@@ -92,8 +92,18 @@ void CSeq_loc_mix::SetPartialRight(bool val)
 
 bool CSeq_loc_mix::IsReverseStrand(void) const
 {
-    bool res = Get().front()->IsReverseStrand();
-    ITERATE(CSeq_loc_mix::Tdata, li, Get()) {
+    CSeq_loc_mix::Tdata::const_iterator li = Get().begin();
+    while ( li != Get().end()  &&  (*li)->IsNull() ) {
+        ++li;
+    }
+    if ( li != Get().end() ) {
+        return false;
+    }
+    bool res = (*li)->IsReverseStrand();
+    for ( ; li != Get().end(); ++li) {
+        if ( (*li)->IsNull() ) {
+            continue;
+        }
         if (res != (*li)->IsReverseStrand()) {
             return false;
         }
@@ -114,9 +124,9 @@ TSeqPos CSeq_loc_mix::GetStart(TSeqPos /*circular_length*/) const
 TSeqPos CSeq_loc_mix::GetEnd(TSeqPos /*circular_length*/) const
 {
     if ( IsReverseStrand() ) {
-        return Get().front()->GetStart();
+        return Get().front()->GetEnd();
     }
-    return Get().back()->GetStart();
+    return Get().back()->GetEnd();
 }
 
 
@@ -194,6 +204,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.18  2004/12/15 16:26:56  grichenk
+ * Ignore NULLs in IsReverseStrand()
+ *
  * Revision 6.17  2004/11/19 15:42:33  shomrat
  * + SetStrand
  *
