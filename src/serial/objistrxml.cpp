@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/05/05 20:09:10  gouriano
+* fixed "skipping" an object
+*
 * Revision 1.38  2003/03/26 16:14:23  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -1711,7 +1714,7 @@ void CObjectIStreamXml::SkipFNumber(void)
 void CObjectIStreamXml::SkipString(void)
 {
     BeginData();
-    while ( ReadEscapedChar('<') >= 0 )
+    while ( ReadEscapedChar(m_Attlist ? '\"' : '<') >= 0 )
         continue;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2003/05/05 20:09:10  gouriano
+* fixed "skipping" an object
+*
 * Revision 1.103  2003/03/26 16:14:22  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -1020,10 +1023,16 @@ void CObjectIStream::ReadNamedType(TTypeInfo
 #endif
 }
 
-void CObjectIStream::SkipNamedType(TTypeInfo /*namedTypeInfo*/,
+void CObjectIStream::SkipNamedType(TTypeInfo namedTypeInfo,
                                    TTypeInfo typeInfo)
 {
+    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+
     SkipObject(typeInfo);
+
+    EndNamedType();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::EndContainerElement(void)
