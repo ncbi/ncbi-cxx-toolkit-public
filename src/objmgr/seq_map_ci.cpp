@@ -80,7 +80,7 @@ bool CSeqMap_CI_SegmentInfo::x_Move(bool minusStrand, CScope* scope)
     const CSeqMap::CSegment& old_seg = seqMap.x_GetSegment(index);
     if ( !minusStrand ) {
         if ( old_seg.m_Position > m_LevelRangeEnd ||
-             index == seqMap.x_GetSegmentsCount() )
+             index >= seqMap.x_GetLastEndSegmentIndex() )
             return false;
         m_Index = ++index;
         seqMap.x_GetSegmentLength(index, scope); // Update length of segment
@@ -88,7 +88,7 @@ bool CSeqMap_CI_SegmentInfo::x_Move(bool minusStrand, CScope* scope)
     }
     else {
         if ( old_seg.m_Position + old_seg.m_Length < m_LevelRangePos ||
-             index == 0 )
+             index <= seqMap.x_GetFirstEndSegmentIndex() )
             return false;
         m_Index = --index;
         return old_seg.m_Position > m_LevelRangePos;
@@ -363,11 +363,31 @@ void CSeqMap_CI::x_Push(const CConstRef<CSeqMap>& seqMap,
     TSeqPos findOffset = !minusStrand? pos: length - 1 - pos;
     push.m_Index = seqMap->x_FindSegment(from + findOffset, GetScope());
     if ( push.m_Index == size_t(-1) ) {
-        _ASSERT(length == 0);
-        push.m_Index = !minusStrand? seqMap->x_GetSegmentsCount(): 0;
+        push.m_Index = !minusStrand?
+            seqMap->x_GetLastEndSegmentIndex():
+            seqMap->x_GetFirstEndSegmentIndex();
     }
     else {
-        _ASSERT(push.m_Index < seqMap->x_GetSegmentsCount());
+        _ASSERT(push.m_Index > seqMap->x_GetFirstEndSegmentIndex() &&
+                push.m_Index < seqMap->x_GetLastEndSegmentIndex());
+        if ( pos >= length ) {
+            if ( !minusStrand ) {
+                if ( seqMap->x_GetSegmentPosition(push.m_Index, 0) <
+                     push.m_LevelRangeEnd ) {
+                    ++push.m_Index;
+                    _ASSERT(seqMap->x_GetSegmentPosition(push.m_Index, 0) >=
+                            push.m_LevelRangeEnd);
+                }
+            }
+            else {
+                if ( seqMap->x_GetSegmentEndPosition(push.m_Index, 0) >
+                     push.m_LevelRangePos ) {
+                    --push.m_Index;
+                    _ASSERT(seqMap->x_GetSegmentEndPosition(push.m_Index, 0) <=
+                            push.m_LevelRangePos);
+                }
+            }
+        }
     }
     // update length of current segment
     seqMap->x_GetSegmentLength(push.m_Index, GetScope());
@@ -537,6 +557,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/09/30 18:37:24  vasilche
+* Fixed CSeqMap::End().
+*
 * Revision 1.28  2004/09/30 15:03:41  grichenk
 * Fixed segments resolving
 *
