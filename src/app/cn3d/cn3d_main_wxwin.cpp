@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2001/11/09 15:19:19  thiessen
+* wxFindFirst file fixed on wxMac; call glViewport() from OnSize()
+*
 * Revision 1.104  2001/11/01 19:01:42  thiessen
 * use meta key instead of ctrl on Mac
 *
@@ -1772,14 +1775,18 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
 
 void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
-    if (suspended) return;
+    if (suspended || !GetContext()) return;
     SetCurrent();
+    
+    // this is necessary to update the context on some platforms
     wxGLCanvas::OnSize(event);
+
+    // set GL viewport (not called by wxGLCanvas::OnSize on all platforms...)
+	int w, h;
+	GetClientSize(&w, &h);
+    glViewport(0, 0, (GLint) w, (GLint) h);
+    
     renderer->NewView();
-#ifdef __WXMAC__
-    // seems this should not be necessary, but until Mac wxGLCanvas move/resize fixed...
-    Refresh(false);
-#endif
 }
 
 void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)

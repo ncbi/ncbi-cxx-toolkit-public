@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/11/09 15:19:16  thiessen
+* wxFindFirst file fixed on wxMac; call glViewport() from OnSize()
+*
 * Revision 1.2  2001/11/01 19:01:40  thiessen
 * use meta key instead of ctrl on Mac
 *
@@ -171,11 +174,6 @@ bool LoadBiostrucViaCache(int mmdbID, int modelType, ncbi::objects::CBiostruc *b
 
 void TruncateCache(int maxSize)
 {
-#ifdef __WXMAC__
-    // doesn't work, until wxFindFirstFile() is fixed...
-    return;
-#endif
-
     std::string cacheFolder;
     if (!RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cacheFolder) ||
         !wxDirExists(cacheFolder.c_str())) {
