@@ -70,6 +70,7 @@ CSeq_entry_Info::CSeq_entry_Info(CSeq_entry& entry, CSeq_entry_Info& parent)
     }
     catch ( exception& ) {
         _ASSERT(parent.m_Entries.back().GetPointer() == this);
+        parent.m_Entries.back().Release();
         parent.m_Entries.pop_back();
         throw;
     }
@@ -456,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/11 17:02:50  grichenk
+ * Fixed CRef resetting in constructors.
+ *
  * Revision 1.4  2003/11/19 22:18:03  grichenk
  * All exceptions are now CException-derived. Catch "exception" rather
  * than "runtime_error".

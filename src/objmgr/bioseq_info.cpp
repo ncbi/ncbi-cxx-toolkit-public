@@ -89,7 +89,7 @@ CBioseq_Info::CBioseq_Info(CBioseq& seq, CSeq_entry_Info& entry_info)
         }
     }
     catch ( exception& ) {
-        entry_info.m_Bioseq.Reset();
+        entry_info.m_Bioseq.Release();
         throw;
     }
 }
@@ -382,6 +382,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/12/11 17:02:50  grichenk
+* Fixed CRef resetting in constructors.
+*
 * Revision 1.14  2003/11/19 22:18:02  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".
