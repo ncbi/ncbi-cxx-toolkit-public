@@ -77,6 +77,13 @@ public:
     /// Destructor.
     virtual ~CVersionInfo() {}
 
+    /// Take version info from string
+    void FromStr(const string& version);
+
+    void SetVersion(int  ver_major,
+               int  ver_minor,
+               int  patch_level = 0);
+
     /// Print version information.
     ///
     /// Version information is printed in the following forms:
@@ -206,6 +213,20 @@ typename TClass::const_iterator FindVersion(const TClass& cont,
     return FindVersion(it, it_end, info);
 }
 
+/// Parse string, extract version info and program name
+/// (case insensitive)
+///
+/// Examples:
+///   MyProgram 1.2.3
+///   MyProgram version 1.2.3
+///   MyProgram v. 1.2.3
+///   MyProgram ver. 1.2.3
+///   version 1.2.3
+///
+void ParseVersionString(const string&  vstr, 
+                        string*        program_name, 
+                        CVersionInfo*  ver);
+
 /* @} */
 
 
@@ -217,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/04 16:16:51  kuznets
+ * Added functions to parse various version strings
+ *
  * Revision 1.13  2005/01/03 16:39:08  kuznets
  * Added constructor taking a rcs formatted string
  *

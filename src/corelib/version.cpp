@@ -56,6 +56,55 @@ CVersionInfo::CVersionInfo(int ver_major,
 CVersionInfo::CVersionInfo(const string& version,
                            const string& /* name */)
 {
+    FromStr(version);
+}
+
+static
+void s_ConvertVersionInfo(CVersionInfo* vi, const char* str)
+{
+    int major, minor, patch = 0;
+    if (!isdigit(*str)) {
+        NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+    }
+    major = atoi(str);
+    if (major < 0) {
+        NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+    }
+    for (; *str && isdigit(*str); ++str) {}
+    if (*str != '.') {
+        NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+    }
+    ++str;
+    if (!isdigit(*str)) {
+        NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+    }
+
+    minor = atoi(str);
+    if (minor < 0) {
+        NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+    }
+    for (; *str && isdigit(*str); ++str) {}
+
+    if (*str != 0) {
+        if (*str != '.') {
+            NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+        }
+        ++str;
+        patch = atoi(str);
+        if (patch < 0) {
+            NCBI_THROW2(CStringException, eFormat, "Invalid version format", 0);
+        }
+    }
+
+    vi->SetVersion(major, minor, patch);
+
+}
+
+
+void CVersionInfo::FromStr(const string& version)
+{
+    s_ConvertVersionInfo(this, version.c_str());
+/*
     vector<string> lst;
     NStr::Tokenize(version, ".", lst, NStr::eNoMergeDelims);
 
@@ -86,6 +135,7 @@ CVersionInfo::CVersionInfo(const string& version,
             break;
         } 
     } // for
+*/
 }
 
 
@@ -129,6 +179,16 @@ CVersionInfo::Match(const CVersionInfo& version_info) const
     return eConditionallyCompatible;
 
 }
+
+void CVersionInfo::SetVersion(int  ver_major,
+                              int  ver_minor,
+                              int  patch_level)
+{
+    m_Major      = ver_major;
+    m_Minor      = ver_minor;
+    m_PatchLevel = patch_level;
+}
+
 
 
 bool IsBetterVersion(const CVersionInfo& info, 
@@ -178,12 +238,84 @@ bool IsBetterVersion(const CVersionInfo& info,
 }
 
 
+void ParseVersionString(const string&  vstr, 
+                        string*        program_name, 
+                        CVersionInfo*  ver)
+{
+    _ASSERT(program_name);
+    _ASSERT(ver);
+    _ASSERT(!vstr.empty());
+
+    *program_name = kEmptyStr;
+
+
+    string lo_vstr(vstr); NStr::ToLower(lo_vstr);
+    string::size_type pos;
+
+    const char* vstr_str = vstr.c_str();
+
+    const char* version_pattern = "version";
+
+    pos = lo_vstr.find(version_pattern);
+    if (pos == string::npos) {
+        version_pattern = "v.";
+        pos = lo_vstr.find(version_pattern);
+
+        if (pos == string::npos) {
+            version_pattern = "ver";
+            pos = lo_vstr.find(version_pattern);
+
+            if (pos == string::npos) {
+                // find the first digit and assume it's version
+                version_pattern = "";
+                pos = vstr.find_first_of("0123456789");
+            }
+        }
+    }
+
+
+    if (pos != string::npos) {
+        int pname_end = pos - 1;
+        for (; pname_end >= 0; --pname_end) {
+            char ch = vstr[pname_end];
+            if (!isspace(ch)) 
+                break;
+        } // for
+        if (pname_end <= 0) {
+        } else {
+            program_name->append(vstr.c_str(), pname_end + 1);
+        }
+
+        pos += strlen(version_pattern);
+        for(; pos < vstr.length(); ++pos) {
+            char ch = vstr[pos];
+            if (ch == '.') 
+                continue;
+            if (!isspace(ch)) 
+                break;            
+        } // for
+
+        const char* ver_str = vstr_str + pos;
+        s_ConvertVersionInfo(ver, ver_str);
+        return;
+    }
+
+
+    NCBI_THROW2(CStringException, eFormat, "Version string not found", 0);
+
+}
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 16:16:57  kuznets
+ * Added functions to parse various version strings
+ *
  * Revision 1.9  2005/02/01 21:47:14  grichenk
  * Fixed warnings
  *
