@@ -1,0 +1,43 @@
+<!--#set var="TITLE" value="MAC OS X Installation and configuration" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
+
+<a name="ref_MacProjTree"></a><h2>Mac OS X (Darwin):  Building the whole NCBI C++ tree locally</h2>
+
+<p>We have build NCBI C++ Toolkit using the prerelease GCC 3.1 compiler from the April 2002 Preview of Apple Developers Tools.</p>
+
+
+<p>There are a few extra steps one have to follow before building the Toolkit on Mac OS X version 10.1. The future (10.2) version does not require these steps.</p>
+<ul>
+	<li>Download dlCompat library patch from (http://prdownloads.sourceforge.net/gnu-darwin). Copy the <b>dlfcn.h</b> include file into /usr/include directory. Copy <b>libdl.dylib</b> and <b>libdl.a</b> libraries into /usr/lib directory.
+   	<li>Select GCC 3.1 as a primary compiler (run "gcc_select 3").
+	<li>Apply patch for C++ exceptions handling bug (Apple Radar bug <a href="http://web.mit.edu/darwin/src/modules/Csu/notes">#2466821</a>). Replace crt1.o in /usr/lib with the latest version. The source code of <b>crt1</b> (the Csu project) is avaliable from the Apple CVS. Please visit <a href="http://developer.apple.com/darwin/tools/cvs/read-only.html">Apple Developer's page</a> for information on how to obtaing Darwin source code from CVS. The <b>indr</b> utility is required for Csu build and is avaliable as a part of <b>cctools</b> project in Darwin CVS repository.
+</ul>
+
+<p>After these steps the procedure of configuring and building NCBI C++ Toolkit is the same as destribed in "Building NCBI C++ Toolkit: Running the configure script".</p>
+
+     <br>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Joshua Juran</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+
+<td align=right><i>$Date$</i></td>
+</tr>
+<!--
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a> (Part of MSVC++ support)</address>
+</td>
+</tr>
+-->
+</table>
+
+<!--#include virtual="./ssi/footer.shtml" -->
