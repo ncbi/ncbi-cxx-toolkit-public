@@ -43,23 +43,21 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /// @internal
 static
-void ParamTree_ConvertSubNodes(const CNcbiRegistry&     reg,
-                                   const list<string>&      sub_nodes,
-                                   CConfig::TParamTree* node);
+void s_ParamTree_ConvertSubNodes(const CNcbiRegistry&  reg,
+                                 const list<string>&   sub_nodes,
+                                 CConfig::TParamTree*  node);
 /// @internal
 static
-void ParamTree_SplitConvertSubNodes(const CNcbiRegistry&     reg,
-                                    const string&            sub_nodes,
-                                    CConfig::TParamTree* node);
-
-
+void s_ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
+                                      const string&         sub_nodes,
+                                      CConfig::TParamTree*  node);
 
 static const string kSubNode    = ".SubNode";
 static const string kSubSection = ".SubSection";
 static const string kNodeName   = ".NodeName";
-
 
 
 /// @internal
@@ -71,13 +69,13 @@ void s_List2Set(const list<string>& src, set<string>* dst)
     }
 }
 
-
+/// @internal
 static 
 bool s_IsSubNode(const string& str)
 {
     const string* aliases[] = { &kSubNode, &kSubSection };
 
-    for (unsigned i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
+    for (unsigned int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
         const string& element_name = *aliases[i];
         if (NStr::CompareNocase(element_name, str) == 0) {
             return true;
@@ -86,14 +84,15 @@ bool s_IsSubNode(const string& str)
     return false;
 }
 
+/// @internal
 static
-void s_GetSubNodes(const CNcbiRegistry&   reg, 
-                   const string&          section, 
-                   set<string>*           dst)
+void s_GetSubNodes(const CNcbiRegistry&  reg, 
+                   const string&         section, 
+                   set<string>*          dst)
 {
     const string* aliases[] = { &kSubNode, &kSubSection };
 
-    for (unsigned i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
+    for (unsigned int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
         const string& element_name = *aliases[i];
         const string& element = reg.Get(section, element_name);
         if (!element.empty()) {
@@ -104,12 +103,9 @@ void s_GetSubNodes(const CNcbiRegistry&   reg,
     }
 }
 
-
-
-
 /// @internal
 static
-void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
+void s_ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
                               const string&             sub_node_name,
                               CConfig::TParamTree*               node)
 {
@@ -129,25 +125,23 @@ void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
             return; // skip the offending subnode
         }
         parent_node = (CConfig::TParamTree*)parent_node->GetParent();
-
     } // while
 
     list<string> entries;
     reg.EnumerateEntries(section_name, &entries);
-    if (entries.empty())
+    if (entries.empty()) {
         return;
-
+    }
 
     CConfig::TParamTree* sub_node_ptr;
     {{
-    auto_ptr<CConfig::TParamTree> sub_node(new CConfig::TParamTree);
-    sub_node->SetId(node_name);
-    sub_node_ptr = sub_node.release();
-    node->AddNode(sub_node_ptr);
+        auto_ptr<CConfig::TParamTree> sub_node(new CConfig::TParamTree);
+        sub_node->SetId(node_name);
+        sub_node_ptr = sub_node.release();
+        node->AddNode(sub_node_ptr);
     }}
 
     // convert elements
-
     ITERATE(list<string>, eit, entries) {
         const string& element_name = *eit;
 
@@ -157,54 +151,45 @@ void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
         const string& element_value = reg.Get(section_name, element_name);
 
         if (s_IsSubNode(element_name)) {
-            ParamTree_SplitConvertSubNodes(reg, element_value, sub_node_ptr);
+            s_ParamTree_SplitConvertSubNodes(reg, element_value,sub_node_ptr);
             continue;
         }
-
         sub_node_ptr->AddNode(element_name, element_value);
-
     } // ITERATE eit
-
 }
 
 
 /// @internal
 static
-void ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
-                                    const string&         sub_nodes,
-                                    CConfig::TParamTree*  node)
+void s_ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
+                                      const string&         sub_nodes,
+                                      CConfig::TParamTree*  node)
 {
     list<string> sub_node_list;
     NStr::Split(sub_nodes, ",; ", sub_node_list);
-
-    ParamTree_ConvertSubNodes(reg, sub_node_list, node);
+    s_ParamTree_ConvertSubNodes(reg, sub_node_list, node);
 }
+
 
 /// @internal
 static
-void ParamTree_ConvertSubNodes(const CNcbiRegistry&     reg,
-                                   const list<string>&  sub_nodes,
-                                   CConfig::TParamTree* node)
+void s_ParamTree_ConvertSubNodes(const CNcbiRegistry&  reg,
+                                 const list<string>&   sub_nodes,
+                                 CConfig::TParamTree*  node)
 {
     _ASSERT(node);
-
     ITERATE(list<string>, it, sub_nodes) {
         const string& sub_node = *it;
-        ParamTree_ConvertSubNode(reg, sub_node, node);
+        s_ParamTree_ConvertSubNode(reg, sub_node, node);
     }
 }
 
-
-
-
-CConfig::TParamTree* 
-CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
+CConfig::TParamTree* CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
 {
     auto_ptr<TParamTree> tree_root(new TParamTree);
 
     list<string> sections;
     reg.EnumerateSections(&sections);
-
 
     // find the non-redundant set of top level sections
 
@@ -225,16 +210,14 @@ CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
                        ins);
     }}
 
-
     ITERATE(set<string>, sit, top_sections) {
         const string& section_name = *sit;
 
         TParamTree* node_ptr;
         {{
-        auto_ptr<TParamTree> node(new TParamTree);
-        node->SetId(section_name);
-
-        tree_root->AddNode(node_ptr = node.release());
+            auto_ptr<TParamTree> node(new TParamTree);
+            node->SetId(section_name);
+            tree_root->AddNode(node_ptr = node.release());
         }}
 
         // Get section components
@@ -250,18 +233,12 @@ CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
                 node_ptr->SetId(element_value);
                 continue;
             }
-
             if (s_IsSubNode(element_name)) {
-                ParamTree_SplitConvertSubNodes(reg,
-                                               element_value,
-                                               node_ptr);
+                s_ParamTree_SplitConvertSubNodes(reg, element_value,node_ptr);
                 continue;
             }
-
             node_ptr->AddNode(element_name, element_value);
-
         } // ITERATE eit
-
 
     } // ITERATE sit
 
@@ -270,11 +247,11 @@ CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
 
 
 CConfig::CConfig(TParamTree* param_tree, EOwnership own)
-: m_ParamTree(param_tree),
-  m_OwnTree(own)
+    : m_ParamTree(param_tree), m_OwnTree(own)
 {
     _ASSERT(param_tree);
 }
+
 
 CConfig::CConfig(const CNcbiRegistry& reg)
 {
@@ -283,25 +260,27 @@ CConfig::CConfig(const CNcbiRegistry& reg)
     m_OwnTree = eTakeOwnership;
 }
 
+
 CConfig::CConfig(const TParamTree* param_tree)
 {
     _ASSERT(param_tree);
-
     m_ParamTree = const_cast<TParamTree*>(param_tree);
     m_OwnTree = eNoOwnership;
 }
 
+
 CConfig::~CConfig()
 {
-    if (m_OwnTree == eTakeOwnership)
+    if (m_OwnTree == eTakeOwnership) {
         delete m_ParamTree;
+    }
 }
 
-const string& 
-CConfig::GetString(const string&         driver_name,
-                   const string&         param_name, 
-                   EErrAction            on_error,
-                   const string&         default_value)
+
+const string& CConfig::GetString(const string&  driver_name,
+                                 const string&  param_name, 
+                                 EErrAction     on_error,
+                                 const string&  default_value)
 {
     const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
 
@@ -309,30 +288,26 @@ CConfig::GetString(const string&         driver_name,
         if (on_error == eErr_NoThrow) {
             return default_value;
         }
-        string msg = 
-            "Cannot init plugin " + driver_name 
-                            + ", missing parameter:" + param_name;
+        string msg = "Cannot init plugin " + driver_name +
+                     ", missing parameter:" + param_name;
         NCBI_THROW(CConfigException, eParameterMissing, msg);
     }
     return tn->GetValue();
 }
 
-int CConfig::GetInt(const string&         driver_name,
-                    const string&         param_name, 
-                    EErrAction            on_error,
-                    int                   default_value)
+
+int CConfig::GetInt(const string&  driver_name,
+                    const string&  param_name, 
+                    EErrAction     on_error,
+                    int            default_value)
 {
-    const string& param =
-                  GetString(driver_name,
-                            param_name,
-                            on_error,
-                            kEmptyStr);
+    const string& param = GetString(driver_name, param_name, on_error,
+                                    kEmptyStr);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
-            string msg = 
-                "Cannot init " + driver_name 
-                                + ", empty parameter:" + param_name;
+            string msg = "Cannot init " + driver_name +
+                         ", empty parameter:" + param_name;
             NCBI_THROW(CConfigException, eParameterMissing, msg);
         } else {
             return default_value;
@@ -345,34 +320,28 @@ int CConfig::GetInt(const string&         driver_name,
     catch (CStringException& ex)
     {
         if (on_error == eErr_NoThrow) {
-            string msg = 
-                "Cannot init " + driver_name 
-                                + ", incorrect parameter format:" 
-                                + param_name  + " : " + param
-                                + " " + ex.what();
+            string msg = "Cannot init " + driver_name +
+                          ", incorrect parameter format:" +
+                          param_name  + " : " + param +
+                          " " + ex.what();
             NCBI_THROW(CConfigException, eParameterMissing, msg);
         }
     }
     return default_value;
 }
 
-unsigned int 
-CConfig::GetDataSize(const string&         driver_name,
-                     const string&         param_name, 
-                     EErrAction            on_error,
-                     unsigned int          default_value)
+Uint8 CConfig::GetDataSize(const string&  driver_name,
+                           const string&  param_name, 
+                           EErrAction     on_error,
+                           unsigned int   default_value)
 {
-    const string& param =
-                  GetString(driver_name,
-                            param_name,
-                            on_error,
-                            kEmptyStr);
+    const string& param = GetString(driver_name, param_name, on_error,
+                                    kEmptyStr);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
-            string msg = 
-                "Cannot init " + driver_name 
-                                + ", empty parameter:" + param_name;
+            string msg = "Cannot init " + driver_name +
+                         ", empty parameter:" + param_name;
             NCBI_THROW(CConfigException, eParameterMissing, msg);
         } else {
             return default_value;
@@ -380,16 +349,15 @@ CConfig::GetDataSize(const string&         driver_name,
     }
 
     try {
-        return NStr::StringToUInt_DataSize(param, 10, NStr::eCheck_Need);
+        return NStr::StringToUInt8_DataSize(param, 10, NStr::eCheck_Need);
     }
     catch (CStringException& ex)
     {
         if (on_error == eErr_Throw) {
-            string msg = 
-                "Cannot init " + driver_name 
-                                + ", incorrect parameter format:" 
-                                + param_name  + " : " + param
-                                + " " + ex.what();
+            string msg = "Cannot init " + driver_name +
+                         ", incorrect parameter format:" +
+                         param_name  + " : " + param +
+                         " " + ex.what();
             NCBI_THROW(CConfigException, eParameterMissing, msg);
         }
     }
@@ -397,22 +365,18 @@ CConfig::GetDataSize(const string&         driver_name,
 }
 
 
-bool CConfig::GetBool(const string&         driver_name,
-                      const string&         param_name, 
-                      EErrAction            on_error,
-                      bool                  default_value)
+bool CConfig::GetBool(const string&  driver_name,
+                      const string&  param_name, 
+                      EErrAction     on_error,
+                      bool           default_value)
 {
-    const string& param =
-                  GetString(driver_name,
-                            param_name,
-                            on_error,
-                            kEmptyStr);
+    const string& param = GetString(driver_name, param_name, on_error,
+                                    kEmptyStr);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
-            string msg = 
-                "Cannot init " + driver_name 
-                               + ", empty parameter:" + param_name;
+            string msg = "Cannot init " + driver_name +
+                         ", empty parameter:" + param_name;
             NCBI_THROW(CConfigException, eParameterMissing, msg);
         } else {
             return default_value;
@@ -425,22 +389,28 @@ bool CConfig::GetBool(const string&         driver_name,
     catch (CStringException& ex)
     {
         if (on_error == eErr_Throw) {
-            string msg = 
-                "Cannot init " + driver_name 
-                               + ", incorrect parameter format:" 
-                               + param_name  + " : " + param 
-                               + ". " + ex.what();
+            string msg = "Cannot init " + driver_name +
+                         ", incorrect parameter format:" +
+                         param_name  + " : " + param +
+                         ". " + ex.what();
             NCBI_THROW(CConfigException, eParameterMissing, msg);
         }
     }
     return default_value;
 }
 
+
 END_NCBI_SCOPE
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/15 12:01:51  ivanov
+ * Changed return type for CConfig::GetDataSize to Uint8.
+ * Added 's_' to names of local static functions.
+ * Some cosmetics.
+ *
  * Revision 1.8  2004/09/28 14:06:40  kuznets
  * Bug fix. Throwing exception when NoThrow requested
  *
