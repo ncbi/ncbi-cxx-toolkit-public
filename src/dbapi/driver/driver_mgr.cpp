@@ -278,6 +278,11 @@ C_DriverMgr::~C_DriverMgr()
     }
 }
 
+FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
+                                            string* err_msg)
+{
+    return s_DrvMgr->GetDriver(driver_name, err_msg);
+}
 
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
                                  FDBAPI_CreateContext driver_ctx_func)
@@ -366,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/03/09 17:06:33  ssikorsk
+ * Implemented C_DriverMgr::GetDriver
+ *
  * Revision 1.21  2005/03/08 21:06:17  ucko
  * Work around a bizarre bug in Compaq's compiler.
  *
