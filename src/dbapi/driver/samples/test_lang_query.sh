@@ -25,7 +25,7 @@ RunTest()
   if test $? -eq 0 ; then
     if grep "$reg_exp" $res_file > /dev/null 2>&1 ; then
       echo "OK:"
-      grep "$reg_exp" $res_file | tail -n 1
+      grep "$reg_exp" $res_file
       n_ok=`expr $n_ok + 1`
       sum_list="$sum_list XXX_SEPARATOR +  $cmd '$sql'"
       return
