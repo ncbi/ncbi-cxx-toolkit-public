@@ -45,42 +45,245 @@ BEGIN_NCBI_SCOPE
 template <class V> class CTreeNWay
 {
 public:
+    typedef V                          value_type;
     typedef CTreeNWay<V>               TTreeType;
     typedef list<TTreeType*>           TNodeList;
     typedef TNodeList::iterator        nodelist_iterator;
     typedef TNodeList::const_iterator  const_nodelist_iterator;
-    
-    CTreeNWay();
+
+    /// Tree node construction
+    ///
+    /// @param
+    ///   value - node value
+    CTreeNWay(const V& value = V());
     ~CTreeNWay();
 
-    const TTreeType* GetParent() const;
-    TTreeType* GetParent();
+    CTreeNWay(const TTreeType& tree);
+    CTreeNWay& operator =(const TTreeType& tree);
 
-    const_nodelist_iterator SubNodeBegin() const;
-    nodelist_iterator SubNodeBegin();    
-    const_nodelist_iterator SubNodeEnd() const;
-    nodelist_iterator SubNodeEnd();
+    /// Get node's parent
+    ///
+    /// @return parent to the current node, NULL if it is a top
+    /// of the tree
+    const TTreeType* GetParent() const { return m_Parent; }
 
-    const V& GetValue() const;
-    V& GetValue();
+    /// Get node's parent
+    ///
+    /// @return parent to the current node, NULL if it is a top
+    /// of the tree
+    TTreeType* GetParent() { return m_Parent; }
 
+    /// Return first const iterator on subnode list
+    const_nodelist_iterator SubNodeBegin() const { return m_Nodes.begin(); }
+
+    /// Return first iterator on subnode list
+    nodelist_iterator SubNodeBegin() { return m_Nodes.begin(); }
+
+    /// Return last const iterator on subnode list
+    const_nodelist_iterator SubNodeEnd() const { return m_Nodes.end(); }
+
+    /// Return last iterator on subnode list
+    nodelist_iterator SubNodeEnd() { return m_Nodes.end(); }
+
+    /// Return node's value
+    const V& GetValue() const { return m_Value; }
+
+    /// Return node's value
+    V& GetValue() { return m_Value; }
+
+    /// Set value for the node
+    void SetValue(const V& value) { m_Value = value; }
+
+    /// Remove subnode of the current node. Must be direct subnode.
+    ///
+    /// If subnode is not connected directly with the current node
+    /// the call has no effect.
+    ///
+    /// @param 
+    ///    subnode  direct subnode pointer
     void RemoveNode(TTreeType* subnode);
+
+    /// Remove subnode of the current node. Must be direct subnode.
+    ///
+    /// If subnode is not connected directly with the current node
+    /// the call has no effect.
+    ///
+    /// @param 
+    ///    it  subnode iterator
     void RemoveNode(nodelist_iterator it);
 
+    /// Remove the subtree from the tree without freeing it
+    ///
+    /// If subnode is not connected directly with the current node
+    /// the call has no effect. The caller is responsible for deletion
+    /// of the returned subtree.
+    ///
+    /// @param 
+    ///    subnode  direct subnode pointer
+    ///
+    /// @return subtree pointer or NULL if requested subnode does not exist
     TTreeType* DetachNode(TTreeType* subnode);
+
+    /// Remove the subtree from the tree without freeing it
+    ///
+    /// If subnode is not connected directly with the current node
+    /// the call has no effect. The caller is responsible for deletion
+    /// of the returned subtree.
+    ///
+    /// @param 
+    ///    subnode  direct subnode pointer
+    ///
+    /// @return subtree pointer or NULL if requested subnode does not exist
     TTreeType* DetachNode(nodelist_iterator it);
 
+    /// Add new subnode
+    ///
+    /// @param 
+    ///    subnode subnode pointer
     void AddNode(TTreeType* subnode);
+
+
+    /// Insert new subnode before the specified location in the subnode list
+    ///
+    /// @param
+    ///    it subnote iterator idicates the location of the new subtree
+    /// @param 
+    ///    subnode subtree pointer
     void InsertNode(nodelist_iterator it, TTreeType* subnode);
 
 protected:
-    Destroy(TTreeType*  node);
+    CopyFrom(const TTreeType& tree);
+    SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
 
 protected:
     CTree*             m_Parent; ///< Pointer on the parent node
-    list<TTreeType*>   m_Nodes;  ///< List of dependent node
+    TNodeList          m_Nodes;  ///< List of dependent nodes
     V                  m_Value;  ///< Node value
 };
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTreeNWay<V>
+//
+
+template<class V>
+CTreeNWay<V>::CTreeNWay(const V& value)
+: m_Parent(0),
+  m_Value(value)
+{}
+
+template<class V>
+CTreeNWay<V>::~CTreeNWay()
+{
+    ITERATE(TNodeList, it, m_Nodes) {
+        CTreeNWay* node = *it;
+        delete node;
+    }
+}
+
+template<class V>
+CTreeNWay<V>::CTreeNWay(const TTreeType& tree)
+{
+    CopyFrom(tree);
+}
+
+template<class V>
+CTreeNWay<V>& CTreeNWay::operator=(const TTreeType& tree)
+{
+    ITERATE(TNodeList, it, m_Nodes) {
+        CTreeNWay* node = *it;
+        delete node;
+    }
+    m_Nodes.clear();
+    CopyFrom(tree);
+}
+
+template<class V>
+CTreeNWay<V>::CopyFrom(const TTreeType& tree)
+{
+    ITERATE(TNodeList, it, tree.m_Nodes) {
+        CTreeNWay* src_node = *it;
+        CTreeNWay* new_node = new CTreeNWay(*src_node);
+        AddNode(new_node);
+    }
+}
+
+template<class V>
+const CTreeNWay<V>::TTreeType* CTreeNWay<V>::GetParent() const
+{
+    return m_Parent;
+}
+
+template<class V>
+CTreeNWay<V>::TTreeType* CTreeNWay<V>::GetParent()
+{
+    return m_Parent;
+}
+
+template<class V>
+void CTreeNWay<V>::RemoveNode(TTreeType* subnode)
+{
+    ITERATE(TNodeList, it, m_Nodes) {
+        CTreeNWay* node = *it;
+        if (node == subnode) {
+            m_Nodes.erase(it);
+            delete node;
+            break;
+        }
+    }    
+}
+
+template<class V>
+void CTreeNWay<V>::RemoveNode(nodelist_iterator it)
+{
+    CTreeNWay* node = *it;
+    m_Nodes.erase(it);
+    delete node;
+}
+
+
+template<class V>
+CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(TTreeType* subnode)
+{
+    ITERATE(TNodeList, it, m_Nodes) {
+        CTreeNWay* node = *it;
+        if (node == subnode) {
+            m_Nodes.erase(it);
+            node->SetParent(0);
+            return node;
+        }
+    }        
+    return 0;
+}
+
+
+template<class V>
+CTreeNWay<V>::TTreeType* CTreeNWay<V>::DetachNode(nodelist_iterator it)
+{
+    CTreeNWay* node = *it;
+    m_Nodes.erase(it);
+    node->SetParent(0);
+
+    return node;
+}
+
+
+template<class V>
+void CTreeNWay<V>::AddNode(TTreeType* subnode)
+{
+    m_Nodes.push_back(subnode);
+    subnode->SetParent(this);
+}
+
+
+template<class V>
+void CTreeNWay<V>::InsertNode(nodelist_iterator it,
+                              TTreeType* subnode)
+{
+    m_Nodes.insert(it, subnode);
+    subnode->SetParent(this);
+}
+
 
 END_NCBI_SCOPE
 
@@ -88,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/07 17:21:53  kuznets
+ * + template implementation
+ *
  * Revision 1.1  2004/01/07 13:17:10  kuznets
  * Initial revision
  *
