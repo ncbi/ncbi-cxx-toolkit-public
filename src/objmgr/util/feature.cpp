@@ -181,6 +181,26 @@ static void s_GetCdregionLabel
 }
 
 
+inline
+static void s_GetRnaRefLabelFromComment
+(const CSeq_feat& feat, 
+ string*          label,
+ ELabelType       label_type,
+ const string*    type_label)
+{
+    if (feat.IsSetComment() & !feat.GetComment().empty()) {
+        if (label_type == eContent  &&  type_label != 0
+            &&  feat.GetComment().find(*type_label) == string::npos) {
+            *label += *type_label + "-" + feat.GetComment();
+        } else {
+            *label += feat.GetComment();
+        }
+    } else if (type_label) {
+        *label += *type_label;
+    }
+}
+
+
 // Appends a label onto "label" for a CRNA_ref
 inline
 static void s_GetRnaRefLabel
@@ -199,16 +219,7 @@ static void s_GetRnaRefLabel
     // Append the feature comment, the type label, or both  and return 
     // if Ext is not set
     if (!rna.IsSetExt()) {
-        if (feat.IsSetComment() & !feat.GetComment().empty()) {
-            if (label_type == eContent  &&  type_label != 0  &&
-                    feat.GetComment().find(*type_label) == string::npos) {
-                *label += *type_label + "-" + feat.GetComment();
-            } else {
-                *label += feat.GetComment();
-            }
-        } else if (type_label) {
-            *label += *type_label;
-        }
+        s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
         return;
     }
     
@@ -217,16 +228,7 @@ static void s_GetRnaRefLabel
     string tmp_label;
     switch (rna.GetExt().Which()) {
     case CRNA_ref::C_Ext::e_not_set:
-        if (feat.IsSetComment() & !feat.GetComment().empty()) {
-            if (label_type == eContent  &&  type_label != 0  &&
-                    feat.GetComment().find(*type_label) == string::npos) {
-                *label += *type_label + "-" + feat.GetComment();
-            } else {
-                *label += feat.GetComment();
-            }
-        } else if (type_label) {
-            *label += *type_label;
-        }
+        s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
         break;
     case CRNA_ref::C_Ext::e_Name:
         tmp_label = rna.GetExt().GetName();
@@ -241,51 +243,60 @@ static void s_GetRnaRefLabel
         break;
     case CRNA_ref::C_Ext::e_TRNA:
     {
-        CTrna_ext::C_Aa::E_Choice aa_code_type = 
-            rna.GetExt().GetTRNA().GetAa().Which();
-        int aa_code;
-        CSeq_data in_seq, out_seq;
-        string str_aa_code;
-        switch (aa_code_type) {
-        case CTrna_ext::C_Aa::e_Iupacaa:        
-            // Convert an e_Iupacaa code to an Iupacaa3 code for the label
-            aa_code = rna.GetExt().GetTRNA().GetAa().GetIupacaa();
-            str_aa_code = CSeqportUtil::GetCode(CSeq_data::e_Iupacaa, aa_code); 
-            in_seq.SetIupacaa().Set() = str_aa_code;
-            CSeqportUtil::Convert(in_seq, &out_seq, CSeq_data::e_Ncbistdaa);
-            aa_code = out_seq.GetNcbistdaa().Get()[0];
-            tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
-            break;
-        case CTrna_ext::C_Aa::e_Ncbieaa:
-            // Convert an e_Ncbieaa code to an Iupacaa3 code for the label
-            aa_code = rna.GetExt().GetTRNA().GetAa().GetNcbieaa();
-            str_aa_code = CSeqportUtil::GetCode(CSeq_data::e_Ncbieaa, aa_code);
-            in_seq.SetNcbieaa().Set() = str_aa_code;
-            CSeqportUtil::Convert(in_seq, &out_seq, CSeq_data::e_Ncbistdaa);
-            aa_code = out_seq.GetNcbistdaa().Get()[0];
-            tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
-            break;
-        case CTrna_ext::C_Aa::e_Ncbi8aa:
-            // Convert an e_Ncbi8aa code to an Iupacaa3 code for the label
-            aa_code = rna.GetExt().GetTRNA().GetAa().GetNcbi8aa();
-            tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
-            break;
-        case CTrna_ext::C_Aa::e_Ncbistdaa:
-            // Convert an e_Ncbistdaa code to an Iupacaa3 code for the label
-            aa_code = rna.GetExt().GetTRNA().GetAa().GetNcbistdaa();
-            tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
-            break;
-        default:
-            break;
-        }
+        try {
+            CTrna_ext::C_Aa::E_Choice aa_code_type = 
+                rna.GetExt().GetTRNA().GetAa().Which();
+            int aa_code;
+            CSeq_data in_seq, out_seq;
+            string str_aa_code;
+            switch (aa_code_type) {
+            case CTrna_ext::C_Aa::e_Iupacaa:        
+                // Convert an e_Iupacaa code to an Iupacaa3 code for the label
+                aa_code = rna.GetExt().GetTRNA().GetAa().GetIupacaa();
+                str_aa_code = CSeqportUtil::GetCode(CSeq_data::e_Iupacaa,
+                                                    aa_code); 
+                in_seq.SetIupacaa().Set() = str_aa_code;
+                CSeqportUtil::Convert(in_seq, &out_seq,
+                                      CSeq_data::e_Ncbistdaa);
+                aa_code = out_seq.GetNcbistdaa().Get()[0];
+                tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                break;
+            case CTrna_ext::C_Aa::e_Ncbieaa:
+                // Convert an e_Ncbieaa code to an Iupacaa3 code for the label
+                aa_code = rna.GetExt().GetTRNA().GetAa().GetNcbieaa();
+                str_aa_code = CSeqportUtil::GetCode(CSeq_data::e_Ncbieaa,
+                                                    aa_code);
+                in_seq.SetNcbieaa().Set() = str_aa_code;
+                CSeqportUtil::Convert(in_seq, &out_seq,
+                                      CSeq_data::e_Ncbistdaa);
+                aa_code = out_seq.GetNcbistdaa().Get()[0];
+                tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                break;
+            case CTrna_ext::C_Aa::e_Ncbi8aa:
+                // Convert an e_Ncbi8aa code to an Iupacaa3 code for the label
+                aa_code = rna.GetExt().GetTRNA().GetAa().GetNcbi8aa();
+                tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                break;
+            case CTrna_ext::C_Aa::e_Ncbistdaa:
+                // Convert an e_Ncbistdaa code to an Iupacaa3 code for the label
+                aa_code = rna.GetExt().GetTRNA().GetAa().GetNcbistdaa();
+                tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                break;
+            default:
+                break;
+            }
         
-        // Append to label, depending on ELabelType
-        if (label_type == eContent  &&  type_label != 0) {
-            *label += *type_label + "-" + tmp_label;
-        } else if (!tmp_label.empty()) {
-            *label += tmp_label;
-        } else if (type_label) {
-            *label += *type_label;
+            // Append to label, depending on ELabelType
+            if (label_type == eContent  &&  type_label != 0) {
+                *label += *type_label + "-" + tmp_label;
+            } else if (!tmp_label.empty()) {
+                *label += tmp_label;
+            } else if (type_label) {
+                *label += *type_label;
+            }
+        } catch (CSeqportUtil::CBadIndex&) {
+            // fall back to comment (if any)
+            s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
         }
         
         break;
@@ -582,6 +593,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/08/20 20:01:50  ucko
+* s_GetRnaRefLabel: factor out code to look at comments, and fall back
+* on it for bogus TRNA extensions.
+*
 * Revision 1.2  2002/06/07 16:11:21  ucko
 * Move everything into the "feature" namespace.
 *
