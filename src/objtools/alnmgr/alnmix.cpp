@@ -200,7 +200,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     if (flags & fCalcScore) {
         if ( !x_CalculateScore ) {
             // provide the default calc method
-            x_CalculateScore = CAlnVec::CalculateScore;
+            x_CalculateScore = &CAlnVec::CalculateScore;
         }
     }
     if ( !m_Scope  &&  x_CalculateScore) {
@@ -2244,6 +2244,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.119  2005/02/17 14:45:15  ucko
+* Tweak to fix compilation with GCC 2.95.
+*
 * Revision 1.118  2005/02/16 21:27:16  todorov
 * Abstracted the CalculateScore method so that it could be delegated to
 * the caller.
