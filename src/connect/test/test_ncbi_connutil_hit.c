@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/04/15 19:21:44  lavr
+ * +#include "../test/test_assert.h"
+ *
  * Revision 6.9  2002/03/22 19:48:56  lavr
  * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
  *
@@ -63,6 +66,8 @@
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 int main(int argc, char** argv)

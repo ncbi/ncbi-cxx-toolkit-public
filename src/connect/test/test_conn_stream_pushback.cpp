@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/04/15 19:21:44  lavr
+ * +#include "../test/test_assert.h"
+ *
  * Revision 1.5  2002/01/29 16:03:17  lavr
  * Redesigned to use xpbacktest
  *
@@ -49,10 +52,11 @@
  */
 
 #include "../../util/test/pbacktest.hpp"
-
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 int main(int argc, char* argv[])

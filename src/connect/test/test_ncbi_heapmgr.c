@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/04/15 19:21:44  lavr
+ * +#include "../test/test_assert.h"
+ *
  * Revision 6.8  2001/07/03 20:53:38  lavr
  * HEAP_Copy() test added
  *
@@ -61,6 +64,8 @@
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
 #include <time.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 #if 0

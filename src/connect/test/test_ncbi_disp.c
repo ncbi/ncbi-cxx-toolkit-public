@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/04/15 19:21:44  lavr
+ * +#include "../test/test_assert.h"
+ *
  * Revision 6.11  2002/03/22 19:48:57  lavr
  * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
  *
@@ -70,6 +73,8 @@
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_service.h>
 #include <stdlib.h>
+/* This header must go last */
+#include "test_assert.h"
 
 
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
