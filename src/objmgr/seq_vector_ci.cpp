@@ -535,6 +535,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/08/21 18:51:34  vasilche
+* Fixed compilation errors on translation with reverse.
+*
 * Revision 1.23  2003/08/21 17:04:10  vasilche
 * Fixed bug in making conversion tables.
 *
@@ -662,53 +665,6 @@ BEGIN_SCOPE(objects)
 
 static const TSeqPos kCacheSize = 1024;
 
-// we define reverse iterator for char pointers
-template<class DstIter>
-class CReverseIterator
-{
-public:
-    typedef char& reference;
-
-    CReverseIterator(const DstIter& iter)
-        : m_Iterator(iter)
-        {
-        }
-    CReverseIterator(const DstIter& iter, size_t size)
-        : m_Iterator(iter + (size - 1))
-        {
-        }
-
-    const CReverseIterator<DstIter>& operator++(void)
-        {
-            --m_Iterator;
-            return *this;
-        }
-    CReverseIterator<DstIter> operator+(size_t distance) const
-        {
-            return CReverseIterator<DstIter>(m_Iterator - distance);
-        }
-    const CReverseIterator<DstIter>& operator+=(size_t distance)
-        {
-            m_Iterator -= distance;
-            return *this;
-        }
-
-    reference operator*(void) const
-        {
-            return *m_Iterator;
-        }
-private:
-    DstIter m_Iterator;
-};
-
-
-template<typename DstIter>
-CReverseIterator<DstIter> reversed(const DstIter& iter, size_t size)
-{
-    return CReverseIterator<DstIter>(iter, size);
-}
-
-
 template<class DstIter, class SrcCont>
 inline
 void copy_8bit(DstIter dst, size_t count,
@@ -725,10 +681,35 @@ void copy_8bit_table(DstIter dst, size_t count,
                      const SrcCont& srcCont, size_t srcPos,
                      const char* table)
 {
-    typedef typename SrcCont::const_iterator SrcIter;
-    for ( SrcIter src(srcCont.begin() + srcPos), end(src + count);
-          src != end;
-          ++src, ++dst ) {
+    typename SrcCont::const_iterator src = srcCont.begin() + srcPos;
+    for ( DstIter dst_end(dst + count); dst != dst_end; ++src, ++dst ) {
+        *dst = table[static_cast<unsigned char>(*src)];
+    }
+}
+
+
+template<class DstIter, class SrcCont>
+inline
+void copy_8bit_reverse(DstIter dst, size_t count,
+                       const SrcCont& srcCont, size_t srcPos)
+{
+    typename SrcCont::const_iterator src =
+        srcCont.begin() + (srcPos + count - 1);
+    for ( DstIter dst_end(dst + count); dst != dst_end; --src, ++dst ) {
+        *dst = *src;
+    }
+}
+
+
+template<class DstIter, class SrcCont>
+inline
+void copy_8bit_table_reverse(DstIter dst, size_t count,
+                             const SrcCont& srcCont, size_t srcPos,
+                             const char* table)
+{
+    typename SrcCont::const_iterator src =
+        srcCont.begin() + (srcPos + count - 1);
+    for ( DstIter end(dst + count); dst != end; --src, ++dst ) {
         *dst = table[static_cast<unsigned char>(*src)];
     }
 }
@@ -741,18 +722,19 @@ void copy_4bit(DstIter dst, size_t count,
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 2;
     if ( srcPos % 2 ) {
         // odd char first
-        *dst = *src++ & 0x0f;
+        char c = *src++;
+        *(dst++) = (c     ) & 0x0f;
         --count;
-        ++dst;
     }
-    for ( size_t count2 = count/2; count2; --count2, dst += 2, ++src ) {
+    for ( DstIter end(dst + (count & ~1)); dst != end; dst += 2, ++src ) {
         char c = *src;
         *(dst  ) = (c >> 4) & 0x0f;
         *(dst+1) = (c     ) & 0x0f;
     }
     if ( count % 2 ) {
         // remaining odd char
-        *dst = (*src >> 4) & 0x0f;
+        char c = *src;
+        *(dst  ) = (c >> 4) & 0x0f;
     }
 }
 
@@ -765,42 +747,71 @@ void copy_4bit_table(DstIter dst, size_t count,
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 2;
     if ( srcPos % 2 ) {
         // odd char first
-        *dst = table[*src++ & 0x0f];
+        char c = *src++;
+        *(dst++) = table[(c    ) & 0x0f];
         --count;
-        ++dst;
     }
-    for ( size_t count2 = count/2; count2; --count2, dst += 2, ++src ) {
+    for ( DstIter end(dst + (count & ~1)); dst != end; dst += 2, ++src ) {
         char c = *src;
         *(dst  ) = table[(c >> 4) & 0x0f];
         *(dst+1) = table[(c     ) & 0x0f];
     }
     if ( count % 2 ) {
         // remaining odd char
-        *dst = table[(*src >> 4) & 0x0f];
+        char c = *src;
+        *(dst  ) = table[(c >> 4) & 0x0f];
     }
 }
 
-/*
-struct SStats
+
+template<class DstIter, class SrcCont>
+void copy_4bit_reverse(DstIter dst, size_t count,
+                       const SrcCont& srcCont, size_t srcPos)
 {
-    SStats(void)
-        : count(0), count_rev(0), count_tbl(0), count_tbl_rev(0)
-    {
+    typename SrcCont::const_iterator src = srcCont.begin() + (srcPos + count - 1) / 2;
+    if ( srcPos % 2 ) {
+        // odd char first
+        char c = *src--;
+        *(dst++) = (c >> 4) & 0x0f;
+        --count;
     }
-    ~SStats(void)
-    {
-        NcbiCout << " CSeqVector_CI conversion statistics:\n";
-        NcbiCout << "      ~table ~reverse: " << count << "\n";
-        NcbiCout << "      ~table  reverse: " << count_rev << "\n";
-        NcbiCout << "       table ~reverse: " << count_tbl << "\n";
-        NcbiCout << "       table  reverse: " << count_tbl_rev << NcbiEndl;
+    for ( DstIter end(dst + (count & ~1)); dst != end; dst += 2, --src ) {
+        char c = *src;
+        *(dst  ) = (c     ) & 0x0f;
+        *(dst+1) = (c >> 4) & 0x0f;
     }
+    if ( count % 2 ) {
+        // remaining odd char
+        char c = *src;
+        *(dst  ) = (c     ) & 0x0f;
+    }
+}
 
-    double count, count_rev, count_tbl, count_tbl_rev;
-};
 
-static SStats cp2;
-*/
+template<class DstIter, class SrcCont>
+void copy_4bit_table_reverse(DstIter dst, size_t count,
+                             const SrcCont& srcCont, size_t srcPos,
+                             const char* table)
+{
+    typename SrcCont::const_iterator src = srcCont.begin() + (srcPos + count - 1) / 2;
+    if ( srcPos % 2 ) {
+        // odd char first
+        char c = *src--;
+        *(dst++) = table[(c >> 4) & 0x0f];
+        --count;
+    }
+    for ( DstIter end(dst + (count & ~1)); dst != end; dst += 2, --src ) {
+        char c = *src;
+        *(dst  ) = table[(c     ) & 0x0f];
+        *(dst+1) = table[(c >> 4) & 0x0f];
+    }
+    if ( count % 2 ) {
+        // remaining odd char
+        char c = *src;
+        *(dst  ) = table[(c     ) & 0x0f];
+    }
+}
+
 
 template<class DstIter, class SrcCont>
 void copy_2bit(DstIter dst, size_t count,
@@ -808,24 +819,26 @@ void copy_2bit(DstIter dst, size_t count,
 {
     //cp2.count += count;
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 4;
-    // odd chars first
-    switch ( srcPos % 4 ) {
-    case 1:
-        *dst++ = (*src >> 4) & 0x03;
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 2:
-        *dst++ = (*src >> 2) & 0x03;
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 3:
-        *dst++ = (*src++  ) & 0x03;
-        --count;
-        break;
+    {
+        // odd chars first
+        char c = *src;
+        switch ( srcPos % 4 ) {
+        case 1:
+            *(dst++) = (c >> 4) & 0x03;
+            if ( --count == 0 ) return;
+            // intentional fall through 
+        case 2:
+            *(dst++) = (c >> 2) & 0x03;
+            if ( --count == 0 ) return;
+            // intentional fall through 
+        case 3:
+            *(dst++) = (c     ) & 0x03;
+            ++src;
+            --count;
+            break;
+        }
     }
-    for ( DstIter dst_end = dst + (count & ~3); dst != dst_end; dst += 4, ++src ) {
+    for ( DstIter end = dst + (count & ~3); dst != end; dst += 4, ++src ) {
         char c3 = *src;
         char c0 = c3 >> 6;
         char c1 = c3 >> 4;
@@ -838,13 +851,6 @@ void copy_2bit(DstIter dst, size_t count,
         *(dst+1) = c1;
         *(dst+2) = c2;
         *(dst+3) = c3;
-        /*
-        char c = *src;
-        *(dst  ) = (c >> 6) & 0x03;
-        *(dst+1) = (c >> 4) & 0x03;
-        *(dst+2) = (c >> 2) & 0x03;
-        *(dst+3) = (c     ) & 0x03;
-        */
     }
     // remaining odd chars
     switch ( count % 4 ) {
@@ -868,25 +874,26 @@ void copy_2bit_table(DstIter dst, size_t count,
 {
     //cp2.count_tbl += count;
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 4;
-    // odd chars first
-    switch ( srcPos % 4 ) {
-    case 1:
-        *dst++ = table[(*src >> 4) & 0x03];
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 2:
-        *dst++ = table[(*src >> 2) & 0x03];
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 3:
-        *dst++ = table[(*src     ) & 0x03];
-        ++src;
-        --count;
-        break;
+    {
+        // odd chars first
+        char c = *src;
+        switch ( srcPos % 4 ) {
+        case 1:
+            *(dst++) = table[(c >> 4) & 0x03];
+            if ( --count == 0 ) return;
+            // intentional fall through 
+        case 2:
+            *(dst++) = table[(c >> 2) & 0x03];
+            if ( --count == 0 ) return;
+            // intentional fall through 
+        case 3:
+            *(dst++) = table[(c     ) & 0x03];
+            ++src;
+            --count;
+            break;
+        }
     }
-    for ( DstIter dst_end = dst + (count & ~3); dst != dst_end; dst += 4, ++src ) {
+    for ( DstIter end = dst + (count & ~3); dst != end; dst += 4, ++src ) {
         char c3 = *src;
         char c0 = c3 >> 6;
         char c1 = c3 >> 4;
@@ -899,13 +906,6 @@ void copy_2bit_table(DstIter dst, size_t count,
         c3 = table[c3 & 0x03];
         *(dst+2) = c2;
         *(dst+3) = c3;
-        /*
-        char c = *src;
-        *(dst  ) = table[(c >> 6) & 0x03];
-        *(dst+1) = table[(c >> 4) & 0x03];
-        *(dst+2) = table[(c >> 2) & 0x03];
-        *(dst+3) = table[(c     ) & 0x03];
-        */
     }
     // remaining odd chars
     switch ( count % 4 ) {
@@ -929,25 +929,26 @@ void copy_2bit_reverse(DstIter dst, size_t count,
     //cp2.count_rev += count;
     dst += (count - 1);
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 4;
-    // odd chars first
-    switch ( srcPos % 4 ) {
-    case 1:
-        *dst-- = (*src >> 4) & 0x03;
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 2:
-        *dst-- = (*src >> 2) & 0x03;
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 3:
-        *dst-- = (*src    ) & 0x03;
-        ++src;
-        --count;
-        break;
+    {
+        // odd chars first
+        char c = *src;
+        switch ( srcPos % 4 ) {
+        case 1:
+            *(dst--) = (c >> 4) & 0x03;
+            if ( --count == 0 ) return;
+            // intentional fall through 
+        case 2:
+            *(dst--) = (c >> 2) & 0x03;
+            if ( --count == 0 ) return;
+            // intentional fall through 
+        case 3:
+            *(dst--) = (c    ) & 0x03;
+            ++src;
+            --count;
+            break;
+        }
     }
-    for ( DstIter dst_end = dst - (count & ~3); dst != dst_end; dst -= 4, ++src ) {
+    for ( DstIter end = dst - (count & ~3); dst != end; dst -= 4, ++src ) {
         char c3 = *src;
         char c0 = c3 >> 6;
         char c1 = c3 >> 4;
@@ -960,12 +961,6 @@ void copy_2bit_reverse(DstIter dst, size_t count,
         *(dst-1) = c1;
         *(dst-2) = c2;
         *(dst-3) = c3;
-        /*
-        *(dst  ) = (c >> 6) & 0x03;
-        *(dst-1) = (c >> 4) & 0x03;
-        *(dst-2) = (c >> 2) & 0x03;
-        *(dst-3) = (c     ) & 0x03;
-        */
     }
     // remaining odd chars
     switch ( count % 4 ) {
@@ -990,25 +985,26 @@ void copy_2bit_table_reverse(DstIter dst, size_t count,
     //cp2.count_tbl_rev += count;
     srcPos += (count - 1);
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 4;
-    // odd chars first
-    switch ( srcPos % 4 ) {
-    case 2:
-        *dst++ = table[(*src >> 2) & 0x03];
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 1:
-        *dst++ = table[(*src >> 4) & 0x03];
-        if ( --count == 0 )
-            return;
-        // intentional fall through
-    case 0:
-        *dst++ = table[(*src >> 6) & 0x03];
-        --src;
-        --count;
-        break;
+    {
+        // odd chars first  
+        char c = *src;
+        switch ( srcPos % 4 ) {
+        case 2:
+            *(dst++) = table[(c >> 2) & 0x03];
+            if ( --count == 0 ) return;
+            // intentional fall thro    ugh
+        case 1:
+            *(dst++) = table[(c >> 4) & 0x03];
+            if ( --count == 0 ) return;
+            // intentional fall thro    ugh
+        case 0:
+            *(dst++) = table[(c >> 6) & 0x03];
+            --src;
+            --count;
+            break;
+        }
     }
-    for ( DstIter dst_end = dst + (count & ~3); dst != dst_end; dst += 4, --src ) {
+    for ( DstIter end = dst + (count & ~3); dst != end; dst += 4, --src ) {
         char c0 = *src;
         char c1 = c0 >> 2;
         char c2 = c0 >> 4;
@@ -1021,12 +1017,6 @@ void copy_2bit_table_reverse(DstIter dst, size_t count,
         c3 = table[c3 & 0x03];
         *(dst+2) = c2;
         *(dst+3) = c3;
-        /*
-        *(dst  ) = table[(c >> 6) & 0x03];
-        *(dst-1) = table[(c >> 4) & 0x03];
-        *(dst-2) = table[(c >> 2) & 0x03];
-        *(dst-3) = table[(c     ) & 0x03];
-        */
     }
     // remaining odd chars
     switch ( count % 4 ) {
@@ -1042,63 +1032,6 @@ void copy_2bit_table_reverse(DstIter dst, size_t count,
     }
 }
 
-
-template<class DstIter, class SrcCont>
-inline
-void copy_8bit_reverse(DstIter dst, size_t count,
-                       const SrcCont& srcCont, size_t srcPos)
-{
-    copy_8bit(reversed(dst, count), count, srcCont, srcPos);
-}
-
-
-template<class DstIter, class SrcCont>
-inline
-void copy_8bit_table_reverse(DstIter dst, size_t count,
-                             const SrcCont& srcCont, size_t srcPos,
-                             const char* table)
-{
-    copy_8bit_table(reversed(dst, count), count, srcCont, srcPos, table);
-}
-
-
-template<class DstIter, class SrcCont>
-inline
-void copy_4bit_reverse(DstIter dst, size_t count,
-                       const SrcCont& srcCont, size_t srcPos)
-{
-    copy_4bit(reversed(dst, count), count, srcCont, srcPos);
-}
-
-
-template<class DstIter, class SrcCont>
-inline
-void copy_4bit_table_reverse(DstIter dst, size_t count,
-                             const SrcCont& srcCont, size_t srcPos,
-                             const char* table)
-{
-    copy_4bit_table(reversed(dst, count), count, srcCont, srcPos, table);
-}
-
-/*
-template<class DstIter, class SrcCont>
-inline
-void copy_2bit_reverse(DstIter dst, size_t count,
-                       const SrcCont& srcCont, size_t srcPos)
-{
-    copy_2bit(reversed(dst, count), count, srcCont, srcPos);
-}
-
-
-template<class DstIter, class SrcCont>
-inline
-void copy_2bit_table_reverse(DstIter dst, size_t count,
-                             const SrcCont& srcCont, size_t srcPos,
-                             const char* table)
-{
-    copy_2bit_table(reversed(dst, count), count, srcCont, srcPos, table);
-}
-*/
 
 template<class DstIter, class SrcCont>
 inline
@@ -1171,15 +1104,6 @@ void copy_2bit_any(DstIter dst, size_t count,
         else {
             copy_2bit(dst, count, srcCont, srcPos);
         }
-    }
-}
-
-
-inline
-void translate(char* dst, size_t count, const char* table)
-{
-    for ( ; count; ++dst, --count ) {
-        *dst = table[static_cast<unsigned char>(*dst)];
     }
 }
 
@@ -1583,6 +1507,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/08/21 18:51:34  vasilche
+* Fixed compilation errors on translation with reverse.
+*
 * Revision 1.23  2003/08/21 17:04:10  vasilche
 * Fixed bug in making conversion tables.
 *
