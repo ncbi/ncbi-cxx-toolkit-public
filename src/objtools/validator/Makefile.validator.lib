@@ -4,6 +4,6 @@
 ###############################
 
 SRC = validator validatorp validerror_align validerror_annot validerror_bioseq \
-	validerror_bioseqset validerror_desc validerror_descr validerror_descr \
+	validerror_bioseqset validerror_desc validerror_descr \
 	validerror_feat validerror_graph utilities
 LIB    = xvalidate
