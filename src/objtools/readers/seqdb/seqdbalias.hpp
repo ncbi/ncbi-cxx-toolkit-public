@@ -149,6 +149,10 @@ private:
                         string & dbname_path,
                         char     prot_nucl);
     
+    void x_SetOIDMask(CSeqDBVolSet & volset);
+    void x_SetGiListMask(CSeqDBVolSet & volset);
+    
+    
     // --- Data ---
     
     typedef map<string, string>             TVarList;

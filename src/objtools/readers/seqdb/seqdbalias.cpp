@@ -384,12 +384,7 @@ public:
     
     virtual void AddString(const string & value)
     {
-        if (! value.empty()) {
-            if (! m_Value.empty()) {
-                m_Value += "; ";
-            }
-            m_Value += value;
-        }
+        SeqDB_JoinDelim(m_Value, value, "; ");
     }
     
     string GetTitle(void)
@@ -596,42 +591,85 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
     }
 }
 
+void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset)
+{
+    vector<string> namevec;
+    NStr::Tokenize(m_Values["DBLIST"], " ", namevec, NStr::eMergeDelims);
+    
+    if (namevec.size() != 1) {
+        string msg =
+            string("Alias file (") + m_DBPath +
+            ") uses oid list (" + m_Values["OIDLIST"] +
+            ") but has " + NStr::UIntToString(namevec.size())
+            + " volumes (" + m_Values["DBLIST"] + ").";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+    }
+    
+    string vol_path(SeqDB_CombinePath(m_DBPath, namevec[0]));
+    string mask_path(SeqDB_CombinePath(m_DBPath, m_Values["OIDLIST"]));
+    
+    volset.AddMaskedVolume(vol_path, mask_path);
+}
+
+void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset)
+{
+    string resolved_gilist;
+    
+    vector<string> gils;
+    NStr::Tokenize(m_Values["GILIST"], " ", gils, NStr::eMergeDelims);
+    
+    ITERATE(vector<string>, iter, gils) {
+        SeqDB_JoinDelim(resolved_gilist,
+                        SeqDB_CombinePath(m_DBPath, *iter),
+                        " ");
+    }
+    
+    ITERATE(TVolNames, vn, m_VolNames) {
+        volset.AddGiListVolume(*vn, resolved_gilist);
+    }
+    
+    NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
+        SeqDB_JoinDelim((**an).m_Values["GILIST"],
+                        resolved_gilist,
+                        " ");
+    }
+    
+    NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
+        (**an).SetMasks( volset );
+    }
+}
+
 void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
     TVarList::iterator gil_iter = m_Values.find(string("GILIST"));
     TVarList::iterator oid_iter = m_Values.find(string("OIDLIST"));
     TVarList::iterator db_iter  = m_Values.find(string("DBLIST"));
     
+    bool filtered = false;
+    
     if (db_iter != m_Values.end()) {
-        bool filtered = false;
-        
-        string vol_path (SeqDB_CombinePath(m_DBPath, (*db_iter).second));
-        
         if (oid_iter != m_Values.end()) {
-            string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
-            volset.AddMaskedVolume(vol_path, mask_path);
+            x_SetOIDMask(volset);
             filtered = true;
         }
         
         if (gil_iter != m_Values.end()) {
-            string gilist_path(SeqDB_CombinePath(m_DBPath, (*gil_iter).second));
-            volset.AddGiListVolume(vol_path, gilist_path);
+            x_SetGiListMask(volset);
             filtered = true;
         }
-        
-        if (filtered) {
-            return;
-        }
     }
     
-    Uint4 i;
-    
-    for(i = 0; i < m_SubNodes.size(); i++) {
-        m_SubNodes[i]->SetMasks( volset );
+    if (filtered) {
+        return;
     }
     
-    for(i = 0; i < m_VolNames.size(); i++) {
-        if (CSeqDBVol * vptr = volset.GetVol(m_VolNames[i])) {
+    NON_CONST_ITERATE(TSubNodeList, sn, m_SubNodes) {
+        (**sn).SetMasks(volset);
+    }
+    
+    ITERATE(TVolNames, vn, m_VolNames) {
+        if (CSeqDBVol * vptr = volset.GetVol(*vn)) {
             // We did NOT find an OIDLIST entry; therefore, any db
             // volumes mentioned here are included unfiltered.
             
