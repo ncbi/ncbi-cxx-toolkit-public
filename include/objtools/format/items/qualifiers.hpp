@@ -63,7 +63,7 @@ class CBioseqContext;
 /////////////////////////////////////////////////////////////////////////////
 // low-level formatted qualifier
 
-class CFlatQual : public CObject
+class CFormatQual : public CObject
 {
 public:
     enum EStyle {
@@ -73,15 +73,14 @@ public:
     };
     typedef EStyle  TStyle;
 
-    CFlatQual(const string& name, const string& value, 
-        const string& prefix, const string& suffix, TStyle style = eQuoted)
-        : m_Name(name), m_Value(value), m_Prefix(prefix),
-          m_Suffix(suffix), m_Style(style)
-        { }
-    CFlatQual(const string& name, const string& value, TStyle style = eQuoted)
-        : m_Name(name), m_Value(value), m_Prefix(kEmptyStr), m_Suffix(kEmptyStr),
-          m_Style(style)
-        { }
+    CFormatQual(const string& name,
+              const string& value, 
+              const string& prefix,
+              const string& suffix,
+              TStyle style = eQuoted);
+    CFormatQual(const string& name,
+              const string& value,
+              TStyle style = eQuoted);
 
     const string& GetName  (void) const { return m_Name;   }
     const string& GetValue (void) const { return m_Value;  }
@@ -93,7 +92,8 @@ private:
     string m_Name, m_Value, m_Prefix, m_Suffix;
     TStyle m_Style;
 };
-typedef CRef<CFlatQual>      TFlatQual;
+
+typedef CRef<CFormatQual>      TFlatQual;
 typedef vector<TFlatQual>    TFlatQuals;
 
 
@@ -117,7 +117,7 @@ public:
         CBioseqContext& ctx, TFlags flags = 0) const = 0;
 
 protected:
-    typedef CFlatQual::TStyle   TStyle;
+    typedef CFormatQual::TStyle   TStyle;
 
     IFlatQVal(const string* pfx = &kEmptyStr, const string* sfx = &kEmptyStr)
         : m_Prefix(pfx), m_Suffix(sfx)
@@ -125,13 +125,13 @@ protected:
     /*
     static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
         const srting& sfx, const string& pfx
-        TStyle st = CFlatQual::eQuoted) {
-        q.push_back(TFlatQual(new CFlatQual(n, v, pfx, sfx, st))); 
+        TStyle st = CFormatQual::eQuoted) {
+        q.push_back(TFlatQual(new CFormatQual(n, v, pfx, sfx, st))); 
     }
     */  
     void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-        TStyle st = CFlatQual::eQuoted) const {
-        q.push_back(TFlatQual(new CFlatQual(n, v, *m_Prefix, *m_Suffix, st))); 
+        TStyle st = CFormatQual::eQuoted) const {
+        q.push_back(TFlatQual(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st))); 
     }
 
     mutable const string* m_Prefix;
@@ -201,7 +201,7 @@ class CFlatBoolQVal : public IFlatQVal
 public:
     CFlatBoolQVal(bool value) : m_Value(value) { }
     void Format(TFlatQuals& q, const string& n, CBioseqContext&, TFlags) const
-        { if (m_Value) { x_AddFQ(q, n, kEmptyStr, CFlatQual::eEmpty); } }
+        { if (m_Value) { x_AddFQ(q, n, kEmptyStr, CFormatQual::eEmpty); } }
 private:
     bool m_Value;
 };
@@ -212,7 +212,7 @@ class CFlatIntQVal : public IFlatQVal
 public:
     CFlatIntQVal(int value) : m_Value(value) { }
     void Format(TFlatQuals& q, const string& n, CBioseqContext&, TFlags) const
-        { x_AddFQ(q, n, NStr::IntToString(m_Value), CFlatQual::eUnquoted); }
+        { x_AddFQ(q, n, NStr::IntToString(m_Value), CFormatQual::eUnquoted); }
 private:
     int m_Value;
 };
@@ -225,9 +225,9 @@ private:
 class CFlatStringQVal : public IFlatQVal
 {
 public:
-    CFlatStringQVal(const string& value, TStyle style = CFlatQual::eQuoted);
+    CFlatStringQVal(const string& value, TStyle style = CFormatQual::eQuoted);
     CFlatStringQVal(const string& value, const string& pfx, const string& sfx,
-        TStyle style = CFlatQual::eQuoted);
+        TStyle style = CFormatQual::eQuoted);
         
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
@@ -244,7 +244,7 @@ class CFlatStringListQVal : public IFlatQVal
 {
 public:
     CFlatStringListQVal(const list<string>& value,
-        TStyle style = CFlatQual::eQuoted)
+        TStyle style = CFormatQual::eQuoted)
         :   m_Value(value), m_Style(style) { }
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
@@ -309,7 +309,7 @@ class CFlatLabelQVal : public CFlatStringQVal
 {
 public:
     CFlatLabelQVal(const string& value)
-        : CFlatStringQVal(value, CFlatQual::eUnquoted) { }
+        : CFlatStringQVal(value, CFormatQual::eUnquoted) { }
     // XXX - should override Format to check syntax
 };
 
@@ -496,6 +496,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/05/06 17:43:00  shomrat
+* CFlatQual -> CFormatQual to prevent name collisions in ncbi_seqext lib
+*
 * Revision 1.10  2004/04/26 21:11:23  ucko
 * Tweak previous fix so that it compiles with MSVC.
 *
@@ -521,7 +524,7 @@ END_NCBI_SCOPE
 * Added new qualifier classes
 *
 * Revision 1.2  2004/02/11 16:37:20  shomrat
-* added CFlatStringListQVal class and an optional suffix to CFlatQual
+* added CFlatStringListQVal class and an optional suffix to CFormatQual
 *
 * Revision 1.1  2003/12/17 19:49:19  shomrat
 * Initial revision (adapted from flat lib)
