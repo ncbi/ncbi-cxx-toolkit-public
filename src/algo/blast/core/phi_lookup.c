@@ -36,7 +36,6 @@ Contents: Functions for accessing the lookup table for PHI-BLAST
  * */
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/aa_lookup.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/pattern.h>
 #include <algo/blast/core/phi_lookup.h>

@@ -36,7 +36,6 @@ Contents: Functions for finding pattern matches in sequence.
  * */
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/aa_lookup.h>
 #include <algo/blast/core/pattern.h>
 
 static char const rcsid[] = "$Id$";
