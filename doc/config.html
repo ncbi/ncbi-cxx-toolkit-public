@@ -1036,19 +1036,51 @@ we have a manually maintained <i><b>compilers/ncbiconf.mac</b></i>
 </a>
 
 <p>
-Sometimes, after you have done some changes in your existing <i>*.in</i>
-files (e.g. makefiles) in the <i>source tree</i>, you may want to reconfigure
-one of your <i>build trees</i> to pick up your fixes. To do this, just
-just run script <i><b>status/config.status</i></b> located in
-the relevant <i>build tree</i>.
-<br>
-This technique also helps if some <i>*.in</i> files have been modified
-in the result of CVS update in your <i>source tree</i>.
+Sometimes, you change or add <i>configurables</i> (<i><b>*.in</b></i>
+files, such as <i><b>Makefile.in</i></b> meta-makefiles) in the <i>source tree</i>.
 
 <p>
-If you <b>added</b> or <b>removed</b> any of <i>*.in</i> files then you must
-reconfigure your <i>build tree</i> all anew by calling the configuration script
-again, just like you did for the original configuration.
+For the <i>build tree</i> to pick up these changes,
+go to the appropriate build directory and run script <i><b>reconfigure.sh</i></b>.
+It will automagically use just the same command-line arguments that you
+used for the original configuration of that <i>build tree</i>.
+
+<p>
+Run <i><b>reconfigure.sh</i></b> with argument:
+<ul>
+		<li> <b>update</b> --
+		  if you did not add or remove any <i>configurables</i> in the
+		  <i>source tree</i>, but only modified some of them.
+		</li>
+
+		<li> <b>reconf</b> --
+		  if you changed, added, and/or removed any <i>configurables</i> in
+        the <i>source tree</i>.
+		</li>
+
+		<li> <b>recheck</b> --
+		  if you also suspect that your working environment (compiler features,
+		  accessibility of 3rd-party packages, etc.) might have changed since
+		  your last (re)configuration of the <i>build tree</i>, and therefore you
+		  do not want to use cached check results obtained during the last
+		  (re)configuration.
+		</li>
+		<li> <i><b>without arguments</b></i> --
+			 printout script usage info.
+		</li>
+</ul>
+
+<p>
+Example:
+<pre>
+    cd /home/foobar/c++/GCC-Debug/build
+    ./reconfigure.sh reconf
+</pre>
+
+Naturally, <b>update</b> is the fastest of these methods,
+<b>reconf</b> is slower, and <b>recheck</b> (which is an exact equivalent
+of re-running <b><i>configure</i></b> script with the same command-line
+arguments as were provided during the original configuration) is the slowest.
 
 
 <p>
