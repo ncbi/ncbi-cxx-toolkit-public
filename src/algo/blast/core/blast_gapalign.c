@@ -1962,7 +1962,7 @@ static void SavePatternLengthInBlastHSP(BlastInitHSP* init_hsp,
 
 #define BLAST_SAVE_ITER_MAX 20
 
-/** Saves full nucleotide BLAST HSP information into a BlastHSPList 
+/** Saves full BLAST HSP information into a BlastHSPList 
  * structure
  * @param gap_align The structure holding gapped alignment information [in]
  * @param init_hsp The initial HSP information [in]
