@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/12 02:14:32  thiessen
+* working block boundary editing
+*
 * Revision 1.5  2000/10/04 17:40:45  thiessen
 * rearrange STL #includes
 *
@@ -77,7 +80,7 @@ public:
     // only one redraw as appropriate will be done at idle time.
     void PostRedrawSequenceViewers(void);
     void PostRedrawAllStructures(void);
-    void PostRedrawMolecule(const StructureObject *object, int moleculeID);
+    void PostRedrawMolecule(const Molecule *molecule);
 
     // should be called only by Cn3DApp at idle time; processes any redraws
     // that have been posted by prior event(s)
@@ -108,8 +111,7 @@ private:
     StructureWindowList structureWindows;
 
     // to keep track of messages posted
-    typedef std::pair < const StructureObject *, int > MoleculeIdentifier;
-    typedef std::list < MoleculeIdentifier > RedrawMoleculeList;
+    typedef std::list < const Molecule * > RedrawMoleculeList;
     RedrawMoleculeList redrawMolecules;
 
     bool redrawAllStructures;

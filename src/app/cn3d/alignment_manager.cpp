@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/12 02:14:56  thiessen
+* working block boundary editing
+*
 * Revision 1.14  2000/10/05 18:34:43  thiessen
 * first working editing operation
 *
@@ -225,10 +228,19 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
 
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList, Messenger *mesg) :
     sequences(sequenceList), currentJustification(eRight),
-    prevRow(-1), prevBlock(NULL), messenger(mesg), conservationColorer(NULL)
+    messenger(mesg), conservationColorer(NULL)
 {
+    InitCache();
+
     // create conservation colorer
     conservationColorer = new ConservationColorer();
+}
+
+void BlockMultipleAlignment::InitCache(void)
+{
+    prevRow = -1;
+    prevBlock = NULL;
+    blockIterator = blocks.begin();
 }
 
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
@@ -607,6 +619,19 @@ Block * BlockMultipleAlignment::GetBlockBefore(Block *block) const
     return prevBlock;
 }
 
+Block * BlockMultipleAlignment::GetBlockAfter(Block *block) const
+{
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        if (*b == block) {
+            b++;
+            if (b == be) break;
+            return *b;
+        }
+    }
+    return NULL;
+}
+
 void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, Block *insertAt)
 {
     BlockList::iterator b, be = blocks.end();
@@ -617,6 +642,33 @@ void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, Block *insertAt)
         }
     }
     ERR_POST(Warning << "BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
+}
+
+void BlockMultipleAlignment::InsertBlockAfter(Block *newBlock, Block *insertAt)
+{
+    BlockList::iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        if (*b == insertAt) {
+            b++;
+            blocks.insert(b, newBlock);
+            return;
+        }
+    }
+    ERR_POST(Warning << "BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
+}
+
+void BlockMultipleAlignment::RemoveBlock(Block *block)
+{
+    BlockList::iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        if (*b == block) {
+            blocks.erase(b);
+            delete *b;
+            InitCache();
+            return;
+        }
+    }
+    ERR_POST(Warning << "BlockMultipleAlignment::RemoveBlock() - couldn't find block");
 }
 
 bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
@@ -650,6 +702,89 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         } else {
             Block *newUnalignedBlock = CreateNewUnalignedBlockBetween(prevBlock, info.block);
             if (newUnalignedBlock) InsertBlockBefore(newUnalignedBlock, info.block);
+            TESTMSG("added new unaligned block");
+        }
+    }
+
+    // shrink block from right (requestedShift < 0)
+    else if (blockColumn == info.block->width - 1 &&
+                requestedShift < 0 && requestedShift > -info.block->width) {
+        actualShift = requestedShift;
+        TESTMSG("shrinking block from right");
+        for (row=0; row<NRows(); row++) {
+            range = info.block->GetRangeOfRow(row);
+            info.block->SetRangeOfRow(row, range->from, range->to + requestedShift);
+        }
+        info.block->width += requestedShift;
+        Block *nextBlock = GetBlockAfter(info.block);
+        if (nextBlock && !nextBlock->IsAligned()) {
+            for (row=0; row<NRows(); row++) {
+                range = nextBlock->GetRangeOfRow(row);
+                nextBlock->SetRangeOfRow(row, range->from + requestedShift, range->to);
+            }
+            nextBlock->width -= requestedShift;
+        } else {
+            Block *newUnalignedBlock = CreateNewUnalignedBlockBetween(info.block, nextBlock);
+            if (newUnalignedBlock) InsertBlockAfter(newUnalignedBlock, info.block);
+            TESTMSG("added new unaligned block");
+        }
+    }
+
+    // grow block to right
+    else if (blockColumn == info.block->width - 1 && requestedShift > 0) {
+        Block *nextBlock = GetBlockAfter(info.block);
+        if (nextBlock && !nextBlock->IsAligned()) {
+            int nRes;
+            actualShift = requestedShift;
+            for (row=0; row<NRows(); row++) {
+                range = nextBlock->GetRangeOfRow(row);
+                nRes = range->to - range->from + 1;
+                if (nRes < actualShift) actualShift = nRes;
+            }
+            if (actualShift) {
+                TESTMSG("growing block to right");
+                for (row=0; row<NRows(); row++) {
+                    range = info.block->GetRangeOfRow(row);
+                    info.block->SetRangeOfRow(row, range->from, range->to + actualShift);
+                    range = nextBlock->GetRangeOfRow(row);
+                    nextBlock->SetRangeOfRow(row, range->from + actualShift, range->to);
+                }
+                info.block->width += actualShift;
+                nextBlock->width -= actualShift;
+                if (nextBlock->width == 0) {
+                    RemoveBlock(nextBlock);
+                    TESTMSG("removed empty block");
+                }
+            }
+        }
+    }
+
+    // grow block to left (requestedShift < 0)
+    else if (blockColumn == 0 && requestedShift < 0) {
+        Block *prevBlock = GetBlockBefore(info.block);
+        if (prevBlock && !prevBlock->IsAligned()) {
+            int nRes;
+            actualShift = requestedShift;
+            for (row=0; row<NRows(); row++) {
+                range = prevBlock->GetRangeOfRow(row);
+                nRes = range->to - range->from + 1;
+                if (nRes < -actualShift) actualShift = -nRes;
+            }
+            if (actualShift) {
+                TESTMSG("growing block to left");
+                for (row=0; row<NRows(); row++) {
+                    range = info.block->GetRangeOfRow(row);
+                    info.block->SetRangeOfRow(row, range->from + actualShift, range->to);
+                    range = prevBlock->GetRangeOfRow(row);
+                    prevBlock->SetRangeOfRow(row, range->from, range->to + actualShift);
+                }
+                info.block->width -= actualShift;
+                prevBlock->width += actualShift;
+                if (prevBlock->width == 0) {
+                    RemoveBlock(prevBlock);
+                    TESTMSG("removed empty block");
+                }
+            }
         }
     }
 

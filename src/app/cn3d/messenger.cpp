@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/12 02:14:56  thiessen
+* working block boundary editing
+*
 * Revision 1.6  2000/10/02 23:25:21  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -74,14 +77,13 @@ void Messenger::PostRedrawAllStructures(void)
     redrawMolecules.clear();
 }
 
-void Messenger::PostRedrawMolecule(const StructureObject *object, int moleculeID)
+void Messenger::PostRedrawMolecule(const Molecule *molecule)
 {
     if (!redrawAllStructures) {
-        MoleculeIdentifier mid = std::make_pair(object, moleculeID);
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
         for (m=redrawMolecules.begin(); m!=me; m++)
-            if (*m == mid) break;
-        if (m == me) redrawMolecules.push_back(mid);
+            if (*m == molecule) break;
+        if (m == me) redrawMolecules.push_back(molecule);
     }
 }
 
@@ -110,8 +112,11 @@ void Messenger::ProcessRedraws(void)
 
     else if (redrawMolecules.size() > 0) {
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
-        for (m=redrawMolecules.begin(); m!=me; m++)
-            m->first->graph->RedrawMolecule(m->second);
+        for (m=redrawMolecules.begin(); m!=me; m++) {
+            const StructureObject *object;
+            if (!(*m)->GetParentOfType(&object)) continue;
+            object->graph->RedrawMolecule((*m)->id);
+        }
         redrawMolecules.clear();
 
         StructureWindowList::const_iterator t, te = structureWindows.end();
@@ -184,9 +189,7 @@ void Messenger::RedrawMoleculesOfSameSequence(const Sequence *sequence)
         se = sequence->molecule->parentSet->sequenceSet->sequences.end();
     for (s=sequence->molecule->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
         if ((*s)->molecule && SAME_SEQUENCE(sequence, *s)) {
-            const StructureObject *object;
-            if (!(*s)->molecule->GetParentOfType(&object)) return;
-            PostRedrawMolecule(object, (*s)->molecule->id);
+            PostRedrawMolecule((*s)->molecule);
         }
     }
 }
@@ -245,9 +248,6 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
 
 void Messenger::ToggleHighlightOnAnyResidue(const Molecule *molecule, int residueID)
 {
-    const StructureObject *object;
-    if (!molecule->GetParentOfType(&object)) return;
-
     // use sequence-wise highlight stores
     if (molecule->sequence) {
         int seqIndex = residueID - 1;
@@ -267,7 +267,7 @@ void Messenger::ToggleHighlightOnAnyResidue(const Molecule *molecule, int residu
             residueHighlights[rid] = true;  // add highlight
     }
 
-    PostRedrawMolecule(object, molecule->id);
+    PostRedrawMolecule(molecule);
 }
 
 bool Messenger::RemoveAllHighlights(bool postRedraws)
@@ -276,7 +276,6 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
 
     if (postRedraws) {
         if (anyRemoved) PostRedrawSequenceViewers();
-        const StructureObject *object;
 
         PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
         for (sh=sequenceHighlights.begin(); sh!=she; sh++) {
@@ -285,8 +284,7 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
 
         PerResidueHighlightStore::const_iterator rh, rhe = residueHighlights.end();
         for (rh = residueHighlights.begin(); rh!=rhe; rh++) {
-            if (!rh->first.first->GetParentOfType(&object)) continue;
-            PostRedrawMolecule(object, rh->first.first->id);
+            PostRedrawMolecule(rh->first.first);
         }
     }
 

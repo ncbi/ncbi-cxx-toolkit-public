@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/12 02:14:32  thiessen
+* working block boundary editing
+*
 * Revision 1.9  2000/10/05 18:34:35  thiessen
 * first working editing operation
 *
@@ -99,6 +102,9 @@ public:
     void AddBlockBoundaryRow(void);
     void RemoveBlockBoundaryRow(void);
     void UpdateBlockBoundaryRow(void);
+
+    // redraw all molecules associated with the SequenceDisplay
+    void RedrawAlignedMolecules(void) const;
 
     void Refresh(void);
     void ClearGUI(void);

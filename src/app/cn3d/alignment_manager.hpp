@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/12 02:14:32  thiessen
+* working block boundary editing
+*
 * Revision 1.12  2000/10/05 18:34:35  thiessen
 * first working editing operation
 *
@@ -179,7 +182,10 @@ private:
 
     Block * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
     Block * GetBlockBefore(Block *block) const;
+    Block * GetBlockAfter(Block *block) const;
     void InsertBlockBefore(Block *newBlock, Block *insertAt);
+    void InsertBlockAfter(Block *newBlock, Block *insertAt);
+    void RemoveBlock(Block *block);
     
     eUnalignedJustification currentJustification;
 
@@ -187,6 +193,7 @@ private:
     int prevRow;
     const Block *prevBlock;
     BlockList::const_iterator blockIterator;
+    void InitCache(void);
 
     // given a row and seqIndex, find block that contains that residue
     const Block * GetBlock(int row, int seqIndex) const;

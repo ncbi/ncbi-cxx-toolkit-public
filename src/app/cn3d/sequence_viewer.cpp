@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/12 02:14:56  thiessen
+* working block boundary editing
+*
 * Revision 1.16  2000/10/05 18:34:43  thiessen
 * first working editing operation
 *
@@ -139,6 +142,8 @@ public:
 
         // edit menu
         MID_ENABLE_EDIT,
+        MID_SYNC_STRUCS,
+        MID_SYNC_STRUCS_ON,
 
         // mouse mode
         MID_SELECT_RECT,
@@ -172,12 +177,15 @@ public:
     void Refresh(void) { viewerWidget->Refresh(false); }
 
     bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
+
+    bool SyncStructures(void) { Command(MID_SYNC_STRUCS); }
+    bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
 };
 
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_CLOSE     (                                     SequenceViewerWindow::OnCloseWindow)
     EVT_MENU_RANGE(MID_SHOW_TITLES, MID_HIDE_TITLES,    SequenceViewerWindow::OnTitleView)
-    EVT_MENU_RANGE(MID_ENABLE_EDIT, MID_ENABLE_EDIT,    SequenceViewerWindow::OnEditMenu)
+    EVT_MENU_RANGE(MID_ENABLE_EDIT, MID_SYNC_STRUCS_ON, SequenceViewerWindow::OnEditMenu)
     EVT_MENU_RANGE(MID_SELECT_RECT, MID_DRAG_HORIZ,     SequenceViewerWindow::OnMouseMode)
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          SequenceViewerWindow::OnJustification)
 END_EVENT_TABLE()
@@ -204,6 +212,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->Append(MID_ENABLE_EDIT, "&Enable Editor", noHelp, true);
     menu->AppendSeparator();
     menu->Append(MID_DRAG_HORIZ, "Edit &Row", noHelp, true);
+    menu->Append(MID_SYNC_STRUCS, "&Sync Structure Colors");
+    menu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", noHelp, true);
     menuBar->Append(menu, "&Edit");
 
     menu = new wxMenu;
@@ -226,6 +236,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
     menuBar->Check(MID_SPLIT, true);
     viewerWidget->TitleAreaOff();
+    menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
 
     SetMenuBar(menuBar);
@@ -278,11 +289,19 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             }
             EnableEditorMenuItems(!editorOn);
             break;
+        case MID_SYNC_STRUCS:
+            viewer->RedrawAlignedMolecules();
+            break;
+        case MID_SYNC_STRUCS_ON:
+            break;
     }
 }
 
 void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
 {
+    int i;
+    for (i=MID_SYNC_STRUCS; i<=MID_SYNC_STRUCS_ON; i++)
+        menuBar->Enable(i, enabled);
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
 }
 
@@ -767,8 +786,11 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
             if (GetRowTitle(rowFrom, &title, &ignored) && title == blockBoundaryStringTitle.c_str()) {
                 char ch = strRow->theString[columnFrom];
                 if (ch == blockRightEdgeChar || ch == blockLeftEdgeChar || ch == blockOneColumnChar) {
-                    if (alignment->MoveBlockBoundary(columnFrom, columnTo))
+                    if (alignment->MoveBlockBoundary(columnFrom, columnTo)) {
                         (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                        if ((*viewerWindow)->AlwaysSyncStructures())
+                            (*viewerWindow)->SyncStructures();
+                    }
                 }
             }
         }
@@ -926,6 +948,15 @@ void SequenceViewer::RemoveBlockBoundaryRow(void)
         display->RemoveRow(blockBoundaryRow);
         blockBoundaryRow = NULL;
         NewAlignment(display);
+    }
+}
+
+void SequenceViewer::RedrawAlignedMolecules(void) const
+{
+    for (int i=0; i<display->rows.size(); i++) {
+        const Sequence *sequence = display->rows[i]->GetSequence();
+        if (sequence && sequence->molecule)
+            messenger->PostRedrawMolecule(sequence->molecule);
     }
 }
 
