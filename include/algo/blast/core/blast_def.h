@@ -48,15 +48,18 @@ void __sfree(void** x); /* implemented in lib/util.c */
 
 /******************** Preprocessor definitions ******************************/
 
-/** Program type */
-#define blast_type_blastn 0
-#define blast_type_blastp 1
-#define blast_type_blastx 2
-#define blast_type_tblastn 3
-#define blast_type_tblastx 4
-#define blast_type_rpsblast 5
-#define blast_type_rpstblastn 6
-#define blast_type_undefined 255
+/** Program type: defines the engine's notion of the different                  
+ * applications of the BLAST algorithm */
+typedef enum {
+    eBlastTypeBlastn,
+    eBlastTypeBlastp,
+    eBlastTypeBlastx,
+    eBlastTypeTblastn,
+    eBlastTypeTblastx,
+    eBlastTypeRpsBlast,
+    eBlastTypeRpsTblastn,
+    eBlastTypeUndefined
+} EBlastProgramType;
 
 /** Codons are always of length 3 */
 #ifndef CODON_LENGTH

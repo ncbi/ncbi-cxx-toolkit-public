@@ -418,8 +418,8 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
       for the e-value calculations, because scores are scaled; for PSI-BLAST
       Lambda is already divided by scaling factor, so there is no need to do 
       it again. In all other programs, scaling factor is 1 anyway. */
-   if (program_number == blast_type_rpsblast ||
-       program_number == blast_type_rpstblastn)
+   if (program_number == eBlastTypeRpsBlast ||
+       program_number == eBlastTypeRpsTblastn)
       scale_factor = score_params->scale_factor;
 
    /* Calculate alignment length and number of identical letters. 
@@ -475,8 +475,8 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
       /* only one alignment considered for blast[np]. */
       /* This may be changed by LinkHsps for blastx or tblastn. */
       hsp->num = 1;
-      if ((program_number == blast_type_tblastn ||
-           program_number == blast_type_rpstblastn) && 
+      if ((program_number == eBlastTypeTblastn ||
+           program_number == eBlastTypeRpsTblastn) && 
           hit_options->longest_intron > 0) {
          /* For uneven version of LinkHsps, the individual e-values
             need to be calculated for each HSP. */
@@ -595,8 +595,8 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
    const Boolean k_is_ooframe = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
    const Boolean kTranslateSubject = 
-      (program_number == blast_type_tblastn ||
-       program_number == blast_type_rpstblastn); 
+      (program_number == eBlastTypeTblastn ||
+       program_number == eBlastTypeRpsTblastn); 
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -629,8 +629,8 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
 
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_array[index];
-      if (program_number == blast_type_blastx || 
-          program_number == blast_type_tblastx) {
+      if (program_number == eBlastTypeBlastx || 
+          program_number == eBlastTypeTblastx) {
          Int4 context = hsp->context - hsp->context % 3;
          context_offset = query_info->context_offsets[context];
          query_length_orig = 
@@ -655,7 +655,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
          we cannot reliably check whether an HSP is contained
          within another */
 
-      if (program_number == blast_type_rpsblast ||
+      if (program_number == eBlastTypeRpsBlast ||
           !HSPContainedInHSPCheck(hsp_array, hsp, index, k_is_ooframe)) {
 
          Int4 start_shift = 0;
@@ -741,10 +741,10 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
                    hsp->gap_info->frame2 = hsp->subject.frame;
                    hsp->gap_info->original_length1 = query_length_orig;
                    hsp->gap_info->original_length2 = subject_blk->length;
-                   if (program_number == blast_type_blastx)
+                   if (program_number == eBlastTypeBlastx)
                       hsp->gap_info->translate1 = TRUE;
-                   if (program_number == blast_type_tblastn ||
-                       program_number == blast_type_rpstblastn)
+                   if (program_number == eBlastTypeTblastn ||
+                       program_number == eBlastTypeRpsTblastn)
                       hsp->gap_info->translate2 = TRUE;
             }
 
@@ -815,21 +815,21 @@ Uint1 Blast_TracebackGetEncoding(Uint1 program_number)
    Uint1 encoding;
 
    switch (program_number) {
-   case blast_type_blastn:
+   case eBlastTypeBlastn:
       encoding = BLASTNA_ENCODING;
       break;
-   case blast_type_blastp:
-   case blast_type_rpsblast:
+   case eBlastTypeBlastp:
+   case eBlastTypeRpsBlast:
       encoding = BLASTP_ENCODING;
       break;
-   case blast_type_blastx:
+   case eBlastTypeBlastx:
       encoding = BLASTP_ENCODING;
       break;
-   case blast_type_tblastn:
-   case blast_type_rpstblastn:
+   case eBlastTypeTblastn:
+   case eBlastTypeRpsTblastn:
       encoding = NCBI4NA_ENCODING;
       break;
-   case blast_type_tblastx:
+   case eBlastTypeTblastx:
       encoding = NCBI4NA_ENCODING;
       break;
    default:
@@ -896,7 +896,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream,
 
    Blast_HSPResultsInit(query_info->num_queries, &results);
 
-   if (program_number == blast_type_blastp && 
+   if (program_number == eBlastTypeBlastp && 
          (ext_params->options->compositionBasedStats == TRUE || 
             ext_params->options->eTbackExt == eSmithWatermanTbck)) {
          Kappa_RedoAlignmentCore(query, query_info, sbp, hsp_stream, seq_src, 
@@ -1081,7 +1081,7 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
       /* Update the statistics for this database sequence
          (if not a translated search) */
       
-      if (program_number == blast_type_rpstblastn) {
+      if (program_number == eBlastTypeRpsTblastn) {
          sbp->posMatrix = orig_pssm + db_seq_start[0];
       } else {
          /* replace the PSSM and the Karlin values for this DB sequence. */
@@ -1103,7 +1103,7 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
          query, &one_db_seq_info, gap_align, sbp, score_params, 
          ext_params->options, hit_params, db_options->gen_code_string);
 
-      if (program_number != blast_type_rpstblastn)
+      if (program_number != eBlastTypeRpsTblastn)
          _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length+1);
 
       /* Revert query and subject to their traditional meanings. 

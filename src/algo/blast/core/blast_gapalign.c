@@ -2930,7 +2930,7 @@ Blast_GappedScorePrelimTest(Uint1 program_number,
 
    gap_trigger = ext_params->gap_trigger;
    cutoff_score = hit_params->cutoff_score;
-   is_prot = (program_number != blast_type_blastn);
+   is_prot = (program_number != eBlastTypeBlastn);
    orig_pssm = gap_align->sbp->posMatrix;
 
    qsort(init_hsp_array, init_hsp_count,
@@ -3051,7 +3051,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    if (init_hitlist->total == 0)
       return 0;
 
-   is_prot = (program_number != blast_type_blastn);
+   is_prot = (program_number != eBlastTypeBlastn);
    orig_pssm = gap_align->sbp->posMatrix;
 
    if (*hsp_list_ptr == NULL)
@@ -3198,7 +3198,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
       blast, because the alignments can change during the traceback
       and thus may not share any diagonals later */
 
-   if (is_prot && program_number != blast_type_rpsblast) {
+   if (is_prot && program_number != eBlastTypeRpsBlast) {
       hsp_list->hspcnt = 
          CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
             hsp_list->hspcnt, frame);
@@ -3309,13 +3309,13 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
       q_length = init_hsp->q_off;
       s_length = init_hsp->s_off;
 
-      if (program == blast_type_blastx) {
+      if (program == eBlastTypeBlastx) {
          subject = subject_blk->sequence + s_length;
          query = query_blk->oof_sequence + CODON_LENGTH + q_length;
          query_length -= CODON_LENGTH - 1;
          switch_seq = TRUE;
-      } else if (program == blast_type_tblastn ||
-                 program == blast_type_rpstblastn) {
+      } else if (program == eBlastTypeTblastn ||
+                 program == eBlastTypeRpsTblastn) {
          subject = subject_blk->oof_sequence + CODON_LENGTH + s_length;
          query = query_blk->sequence + q_length;
          subject_length -= CODON_LENGTH - 1;
@@ -3501,7 +3501,7 @@ BLAST_OOFTracebackToGapEditBlock(Int4* S, Int4 q_length,
     
     *edit_block_ptr = edit_block = GapEditBlockNew(q_start, s_start);
     edit_block->is_ooframe = TRUE;
-    if (program == blast_type_blastx) {
+    if (program == eBlastTypeBlastx) {
         M = s_length;
         N = q_length;
     } else {
@@ -3578,7 +3578,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
        /* The mixed frame sequence is shifted to the 3rd position, so its 
           maximal available length for extension is less by 2 than its 
           total length. */
-       switch_seq = (program == blast_type_blastx);
+       switch_seq = (program == eBlastTypeBlastx);
        if (switch_seq) {
           q_length -= CODON_LENGTH - 1;
        } else {

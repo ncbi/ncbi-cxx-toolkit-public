@@ -604,7 +604,7 @@ void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc,
        last_mask->index = NUM_FRAMES * mask_loc->index + context;
        prot_loc_last = prot_loc_head = NULL;
        
-       frame = BLAST_ContextToFrame(blast_type_blastx, context);
+       frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
        
        for (dna_loc = mask_loc->loc_list; dna_loc; 
             dna_loc = dna_loc->next) {
@@ -649,7 +649,7 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
       dna_length = 
          sequence::GetLength(*slp[mask_loc->index/NUM_FRAMES].seqloc, 
                              slp[mask_loc->index/NUM_FRAMES].scope);
-      frame = BLAST_ContextToFrame(blast_type_blastx, 
+      frame = BLAST_ContextToFrame(eBlastTypeBlastx, 
                                    mask_loc->index % NUM_FRAMES);
       
       for (loc = mask_loc->loc_list; loc; loc = loc->next) {
@@ -952,6 +952,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/06/22 16:45:14  camacho
+* Changed the blast_type_* definitions for the EBlastProgramType enumeration.
+*
 * Revision 1.6  2004/06/21 15:28:16  jcherry
 * Guard against trying to access unset strand of a Seq-interval
 *

@@ -53,7 +53,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
 
     /* At this stage query sequences are nucleotide only for blastn */
 
-    if (program == blast_type_blastn) {
+    if (program == eBlastTypeBlastn) {
 
         /* for blastn, duplicate the ungapped Karlin 
            structures for use in gapped alignments */
@@ -335,7 +335,7 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
    if (!sbp || !scoring_options)
       return 1;
 
-   if (program_number == blast_type_blastn) {
+   if (program_number == eBlastTypeBlastn) {
 
       BLAST_ScoreSetAmbigRes(sbp, 'N');
       sbp->penalty = scoring_options->penalty;
@@ -388,7 +388,7 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     if (sbpp == NULL)
        return 1;
 
-    if (program_number == blast_type_blastn)
+    if (program_number == eBlastTypeBlastn)
        sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, query_info->last_context + 1);
     else
        sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, query_info->last_context + 1);
@@ -445,17 +445,17 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     }
 
     /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
-    if (program_number == blast_type_blastx ||
-        program_number == blast_type_tblastx ||
-        program_number == blast_type_rpstblastn) {
+    if (program_number == eBlastTypeBlastx ||
+        program_number == eBlastTypeTblastx ||
+        program_number == eBlastTypeRpsTblastn) {
         /* Adjust the ungapped Karlin parameters */
         sbp->kbp = sbp->kbp_std;
         Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                     query_info->last_context);
     }
 
-    if (program_number == blast_type_blastx ||
-        program_number == blast_type_tblastx) {
+    if (program_number == eBlastTypeBlastx ||
+        program_number == eBlastTypeTblastx) {
         /* Adjust the gapped Karlin parameters, if it is a gapped search */
         if (scoring_options->gapped_calculation) {
            sbp->kbp = sbp->kbp_gap_std;
@@ -519,7 +519,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     else 
         filter_maskloc = BlastMaskLocFree(filter_maskloc);
 
-    if (program_number == blast_type_blastx && scoring_options->is_ooframe) {
+    if (program_number == eBlastTypeBlastx && scoring_options->is_ooframe) {
         BLAST_InitDNAPSequence(query_blk, query_info);
     }
 
@@ -569,8 +569,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    if (db_length == 0)
       return 0;
 
-   if (program_number == blast_type_tblastn || 
-       program_number == blast_type_tblastx)
+   if (program_number == eBlastTypeTblastn || 
+       program_number == eBlastTypeTblastx)
       db_length = db_length/3;	
 
    if (eff_len_options->dbseq_num > 0)
@@ -578,7 +578,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    else
       db_num_seqs = eff_len_params->real_num_seqs;
    
-   if (program_number != blast_type_blastn) {
+   if (program_number != eBlastTypeBlastn) {
       if (scoring_options->gapped_calculation) {
          BLAST_GetAlphaBeta(sbp->name,&alpha,&beta,TRUE, 
             scoring_options->gap_open, scoring_options->gap_extend);
@@ -602,7 +602,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
              blocks are allocated for each sequence (one per strand), but we
              only need one of them.
           */
-          if (program_number != blast_type_blastn &&
+          if (program_number != eBlastTypeBlastn &&
               scoring_options->gapped_calculation) {
              BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK,
                                            alpha/kbp->Lambda, beta,
@@ -625,7 +625,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
              /* For translated RPS blast, the DB size is left unchanged
                 and the query size is divided by 3 (for conversion to 
                 a protein sequence) and multiplied by 6 (for 6 frames) */
-             if (program_number == blast_type_rpstblastn)
+             if (program_number == eBlastTypeRpsTblastn)
                 effective_search_space *= (Int8)(NUM_FRAMES / CODON_LENGTH);
           }
        }

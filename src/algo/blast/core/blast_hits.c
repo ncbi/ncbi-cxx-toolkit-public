@@ -394,8 +394,8 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
       return -1;
 
 
-   if (program == blast_type_tblastn ||
-       program == blast_type_rpstblastn) {
+   if (program == eBlastTypeTblastn ||
+       program == eBlastTypeRpsTblastn) {
        q = &query[hsp->query.offset];
        s = &subject[hsp->subject.offset];
    } else {
@@ -1071,7 +1071,7 @@ Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list,
 
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
-      if (is_ooframe && program_number == blast_type_blastx) {
+      if (is_ooframe && program_number == eBlastTypeBlastx) {
          /* Query offset is in mixed-frame coordinates */
          hsp->query.frame = hsp->query.offset % CODON_LENGTH + 1;
          if ((hsp->context % NUM_FRAMES) >= CODON_LENGTH)

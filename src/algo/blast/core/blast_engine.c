@@ -103,7 +103,7 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
    for (index = 0; index < init_hitlist->total; ++index) {
       init_hsp = &init_hitlist->init_hsp_array[index];
 
-      if (program == blast_type_blastx) {
+      if (program == eBlastTypeBlastx) {
          context = 
             BSearchInt4(init_hsp->q_off, context_offsets,
                              query_info->last_context+1);
@@ -188,9 +188,9 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    Boolean prelim_traceback = 
       (ext_params->options->ePrelimGapExt == eGreedyWithTracebackExt);
 
-   const Boolean k_translated_subject = (program_number == blast_type_tblastn
-                         || program_number == blast_type_tblastx
-                         || program_number == blast_type_rpstblastn);
+   const Boolean k_translated_subject = (program_number == eBlastTypeTblastn
+                         || program_number == eBlastTypeTblastx
+                         || program_number == eBlastTypeRpsTblastn);
 
    if (k_translated_subject) {
       first_context = 0;
@@ -205,7 +205,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
             orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, NULL);
       }
-   } else if (program_number == blast_type_blastn) {
+   } else if (program_number == eBlastTypeBlastn) {
       first_context = 1;
       last_context = 1;
    } else {
@@ -235,7 +235,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       Int4 total_subject_length; /* Length of subject sequence used when split. */
 
       if (k_translated_subject) {
-         subject->frame = BLAST_ContextToFrame(blast_type_blastx, context);
+         subject->frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
          subject->sequence = 
             translation_buffer + frame_offsets[context] + 1;
          subject->length = 
@@ -252,7 +252,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       for (chunk = 0; chunk < num_chunks; ++chunk) {
          if (chunk > 0) {
             offset += subject->length - DBSEQ_CHUNK_OVERLAP;
-            if (program_number == blast_type_blastn) {
+            if (program_number == eBlastTypeBlastn) {
                subject->sequence += 
                   (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
             } else {
@@ -340,8 +340,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       /* Calculate e-values for all HSPs. Skip this step
          for RPS blast, since calculating the E values 
          requires precomputation that has not been done yet */
-      if (program_number != blast_type_rpsblast &&
-          program_number != blast_type_rpstblastn)
+      if (program_number != eBlastTypeRpsBlast &&
+          program_number != eBlastTypeRpsTblastn)
          status = Blast_HSPListGetEvalues(query_info, hsp_list, 
                      score_options->gapped_calculation, gap_align->sbp);
    }
@@ -525,8 +525,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    Uint1 *orig_query_seq = NULL;
    BlastRawCutoffs* raw_cutoffs = NULL;
 
-   if (program_number != blast_type_rpsblast &&
-       program_number != blast_type_rpstblastn)
+   if (program_number != eBlastTypeRpsBlast &&
+       program_number != eBlastTypeRpsTblastn)
       return -1;
 
    if ((status =
@@ -557,7 +557,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       ncbi2na format (exclude the starting sentinel); otherwise 
       just use the input query */
 
-   if (program_number == blast_type_rpstblastn) {
+   if (program_number == eBlastTypeRpsTblastn) {
        orig_query_seq = query->sequence_start;
        query->sequence_start++;
        if (BLAST_PackDNA(query->sequence_start, query->length,
@@ -619,7 +619,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       of the query and replace with the original (excluding the
       starting sentinel) */
 
-   if (program_number == blast_type_rpstblastn) {
+   if (program_number == eBlastTypeRpsTblastn) {
        sfree(query->sequence);
        query->sequence = query->sequence_start;
    }
@@ -635,7 +635,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    /* free the internal structures used */
    /* Do not destruct score block here */
 
-   if (program_number == blast_type_rpstblastn) {
+   if (program_number == eBlastTypeRpsTblastn) {
       query->sequence_start = orig_query_seq;
       query->sequence = orig_query_seq + 1;
    }
@@ -727,7 +727,7 @@ BLAST_SearchEngine(Uint1 program_number,
 
       /* Calculate cutoff scores for linking HSPs. Do this only for ungapped
          translated searches. */
-      if (hit_params->do_sum_stats && program_number != blast_type_blastn &&
+      if (hit_params->do_sum_stats && program_number != eBlastTypeBlastn &&
           !score_options->gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
             hit_params, ext_params, db_length, seq_arg.seq->length); 
@@ -739,7 +739,7 @@ BLAST_SearchEngine(Uint1 program_number,
          &hsp_list);
  
       if (hsp_list && hsp_list->hspcnt > 0) {
-         if (program_number == blast_type_blastn) {
+         if (program_number == eBlastTypeBlastn) {
             if (prelim_traceback || !score_options->gapped_calculation) {
                status = 
                   Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 

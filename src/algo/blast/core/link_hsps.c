@@ -113,7 +113,7 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
 
    subject_eff_length = 
       MAX((subject->length - length_adjustment), 1);
-   if (program_number == blast_type_tblastn) 
+   if (program_number == eBlastTypeTblastn) 
       subject_eff_length /= 3;
    subject_eff_length = MAX(subject_eff_length, 1);
 	
@@ -545,10 +545,10 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	gap_prob = hit_params->gap_prob;
 	gap_decay_rate = hit_params->gap_decay_rate;
 
-	translated_query = (program_number == blast_type_blastx || 
-                       program_number == blast_type_tblastx);
-   if (program_number == blast_type_tblastn ||
-       program_number == blast_type_tblastx)
+	translated_query = (program_number == eBlastTypeBlastx || 
+                       program_number == eBlastTypeTblastx);
+   if (program_number == eBlastTypeTblastn ||
+       program_number == eBlastTypeTblastx)
       num_subject_frames = NUM_STRANDS;
    else
       num_subject_frames = 1;
@@ -637,8 +637,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       subject_length = subject->length; /* in nucleotides even for tblast[nx] */
       /* If subject is translated, length adjustment is given in nucleotide
          scale. */
-      if (program_number == blast_type_tblastn || 
-          program_number == blast_type_tblastx)
+      if (program_number == eBlastTypeTblastn || 
+          program_number == eBlastTypeTblastx)
       {
          length_adjustment /= CODON_LENGTH;
          subject_length /= CODON_LENGTH;
@@ -1391,7 +1391,7 @@ BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list,
 	if (hsp_list && hsp_list->hspcnt > 0)
 	{
       /* Link up the HSP's for this hsp_list. */
-      if (program_number != blast_type_tblastn ||
+      if (program_number != eBlastTypeTblastn ||
           hit_params->options->longest_intron <= 0)
       {
          link_hsps(program_number, hsp_list, query_info, subject, sbp, 

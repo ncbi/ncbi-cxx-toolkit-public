@@ -1799,7 +1799,7 @@ Kappa_MatchingSequenceInitialize(Kappa_MatchingSequence * self,
   amino acid string and return the filtered string*/
   {{
      BlastSeqLoc* mask_seqloc;
-     const Uint1 k_program_name = blast_type_blastp;
+     const Uint1 k_program_name = eBlastTypeBlastp;
 
      BlastSetUp_Filter(k_program_name, self->sequence, self->length,
         0, BLASTP_MASK_INSTRUCTIONS, NULL, &mask_seqloc);
@@ -2462,7 +2462,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                   BlastHSPResults* results)
 {
 
-  const Uint1 k_program_name = blast_type_blastp;
+  const Uint1 k_program_name = eBlastTypeBlastp;
   Boolean adjustParameters = FALSE; /* If true take match composition into account
                                                           and seg match sequence. */
   Boolean SmithWaterman = FALSE; /* USe smith-waterman to get scores.*/

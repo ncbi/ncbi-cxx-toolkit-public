@@ -140,8 +140,8 @@ BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
 
    /* For RPS BLAST saving procedure is different, because HSPs from different
       subjects are bundled in one HSP list */
-   if (stream_data->program == blast_type_rpsblast || 
-       stream_data->program == blast_type_rpstblastn) {
+   if (stream_data->program == eBlastTypeRpsBlast || 
+       stream_data->program == eBlastTypeRpsTblastn) {
       Blast_HSPResultsSaveRPSHSPList(stream_data->program, 
          stream_data->results, *hsp_list, stream_data->hit_options);
    } else {
@@ -189,7 +189,7 @@ Blast_HSPListCollectorInit(Uint1 program, BlastHitSavingOptions* hit_options,
 
     stream_data->program = program;
     stream_data->hit_options = hit_options;
-    if (program == blast_type_rpsblast || program == blast_type_rpstblastn) {
+    if (program == eBlastTypeRpsBlast || program == eBlastTypeRpsTblastn) {
        /* For RPS BLAST, there is only one query, and num_queries variable
         * is in fact the number of database sequences. */
        Blast_HSPResultsInit(1, &stream_data->results);

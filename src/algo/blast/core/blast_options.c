@@ -65,15 +65,15 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
       return 1;
    
    if (strand_option && 
-       (program == blast_type_blastn || program == blast_type_blastx ||
-       program == blast_type_tblastx)) {
+       (program == eBlastTypeBlastn || program == eBlastTypeBlastx ||
+       program == eBlastTypeTblastx)) {
       options->strand_option = strand_option;
    }
 
    /* "L" indicates low-complexity (seg for proteins, 
       dust for nucleotides). */
    if (!filter_string || !strcasecmp(filter_string, "T")) {
-      if (program == blast_type_blastn)
+      if (program == eBlastTypeBlastn)
          options->filter_string = strdup("D");
       else
          options->filter_string = strdup("S");
@@ -104,7 +104,7 @@ BlastInitialWordOptionsNew(Uint1 program,
    if (*options == NULL)
       return 1;
 
-   if (program != blast_type_blastn) {	/* protein-protein options. */
+   if (program != eBlastTypeBlastn) {	/* protein-protein options. */
       (*options)->window_size = BLAST_WINDOW_SIZE_PROT;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
    } else {
@@ -125,7 +125,7 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
 
    /* Ungapped extension is performed in all cases except when greedy
       gapped extension is used */
-   if (program != blast_type_blastn) {
+   if (program != eBlastTypeBlastn) {
       options->ungapped_extension = TRUE;
       options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
    } else if (!greedy) {
@@ -173,17 +173,17 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
 static double GetUngappedCutoff(Uint1 program)
 {
    switch(program) {
-   case blast_type_blastn:
+   case eBlastTypeBlastn:
       return UNGAPPED_CUTOFF_E_BLASTN;
-   case blast_type_blastp: 
-   case blast_type_rpsblast: 
+   case eBlastTypeBlastp: 
+   case eBlastTypeRpsBlast: 
       return UNGAPPED_CUTOFF_E_BLASTP;
-   case blast_type_blastx: 
+   case eBlastTypeBlastx: 
       return UNGAPPED_CUTOFF_E_BLASTX;
-   case blast_type_tblastn:
-   case blast_type_rpstblastn:
+   case eBlastTypeTblastn:
+   case eBlastTypeRpsTblastn:
       return UNGAPPED_CUTOFF_E_TBLASTN;
-   case blast_type_tblastx:
+   case eBlastTypeTblastx:
       return UNGAPPED_CUTOFF_E_TBLASTX;
    }
    return 0;
@@ -252,7 +252,7 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
    ASSERT(kbp);
    /* For non-blastn programs cutoff score should not be larger than 
       gap trigger. */
-   if (gapped_calculation && program_number != blast_type_blastn) {
+   if (gapped_calculation && program_number != eBlastTypeBlastn) {
       parameters->cutoff_score = 
          MIN(ext_params->gap_trigger, hit_params->cutoff_score);
    } else {
@@ -303,7 +303,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
 	if (*options == NULL)
 		return 1;
 
-	if (program != blast_type_blastn) /* protein-protein options. */
+	if (program != eBlastTypeBlastn) /* protein-protein options. */
 	{
 		(*options)->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
 		(*options)->gap_x_dropoff_final = 
@@ -327,7 +327,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    if (!options)
       return 1;
 
-   if (program == blast_type_blastn) {
+   if (program == eBlastTypeBlastn) {
       switch (greedy) {
       case 1:
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
@@ -371,7 +371,7 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 	if (options == NULL)
 		return 1;
 
-	if (program_number != blast_type_blastn)
+	if (program_number != eBlastTypeBlastn)
 	{
 		if (options->ePrelimGapExt == eGreedyWithTracebackExt || 
           options->ePrelimGapExt == eGreedyExt ||
@@ -464,7 +464,7 @@ BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptions* *options)
    if (*options == NULL)
       return 1;
    
-   if (program_number != blast_type_blastn) {	/* protein-protein options. */
+   if (program_number != eBlastTypeBlastn) {	/* protein-protein options. */
       (*options)->shift_pen = INT2_MAX;
       (*options)->is_ooframe = FALSE;
       (*options)->gap_open = BLAST_GAP_OPEN_PROT;
@@ -487,7 +487,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
    if (!options)
       return 1;
 
-   if (program_number != blast_type_blastn) {	/* protein-protein options. */
+   if (program_number != eBlastTypeBlastn) {	/* protein-protein options. */
       if (matrix) {
          unsigned int i;
          options->matrix = strdup(matrix);
@@ -527,7 +527,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 	if (options == NULL)
 		return 1;
 
-   if (program_number == blast_type_tblastx && 
+   if (program_number == eBlastTypeTblastx && 
               options->gapped_calculation)
    {
 		Int4 code=2;
@@ -537,7 +537,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 		return (Int2) code;
    }
 
-	if (program_number == blast_type_blastn)
+	if (program_number == eBlastTypeBlastn)
 	{
 		if (options->penalty >= 0)
 		{
@@ -596,8 +596,8 @@ BlastScoringOptionsValidate(Uint1 program_number,
 		
 	}
 
-	if (program_number != blast_type_blastx && 
-       program_number != blast_type_tblastn && options->is_ooframe)
+	if (program_number != eBlastTypeBlastx && 
+       program_number != eBlastTypeTblastn && options->is_ooframe)
 	{
       Int4 code=2;
       Int4 subcode=1;
@@ -749,20 +749,20 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
    if (*options == NULL)
       return 1;
    
-   if (program_number != blast_type_blastn) {
+   if (program_number != eBlastTypeBlastn) {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
       (*options)->alphabet_size = BLASTAA_SIZE;
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
-      if (program_number == blast_type_blastp ||
-          program_number == blast_type_rpsblast)
+      if (program_number == eBlastTypeBlastp ||
+          program_number == eBlastTypeRpsBlast)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-      else if (program_number == blast_type_blastx)
+      else if (program_number == eBlastTypeBlastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-      else if (program_number == blast_type_tblastn ||
-               program_number == blast_type_rpstblastn)
+      else if (program_number == eBlastTypeTblastn ||
+               program_number == eBlastTypeRpsTblastn)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-      else if (program_number == blast_type_tblastx)
+      else if (program_number == eBlastTypeTblastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
       
    } else {
@@ -809,7 +809,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (!options)
       return 1;
 
-   if (program_number == blast_type_blastn) {
+   if (program_number == eBlastTypeBlastn) {
       if (is_megablast)	{
          options->word_size = BLAST_WORDSIZE_MEGABLAST;
          options->lut_type = MB_LOOKUP_TABLE;
@@ -834,12 +834,12 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    if (use_pssm)
       options->use_pssm = use_pssm;
-   if (program_number == blast_type_rpsblast ||
-       program_number == blast_type_rpstblastn)
+   if (program_number == eBlastTypeRpsBlast ||
+       program_number == eBlastTypeRpsTblastn)
       options->lut_type = RPS_LOOKUP_TABLE;
    if (word_size)
       options->word_size = word_size;
-   if (program_number == blast_type_blastn) {
+   if (program_number == eBlastTypeBlastn) {
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;
       } else {
@@ -887,11 +887,11 @@ LookupTableOptionsValidate(Uint1 program_number,
 	if (options == NULL)
 		return 1;
 
-        if (program_number == blast_type_rpsblast ||
-            program_number == blast_type_rpstblastn)
+        if (program_number == eBlastTypeRpsBlast ||
+            program_number == eBlastTypeRpsTblastn)
                 return 0;
 
-	if (program_number != blast_type_blastn && options->threshold <= 0)
+	if (program_number != eBlastTypeBlastn && options->threshold <= 0)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Non-zero threshold required");
@@ -903,13 +903,13 @@ LookupTableOptionsValidate(Uint1 program_number,
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Word-size must be greater than zero");
 		return (Int2) code;
-	} else if (program_number == blast_type_blastn && options->word_size < 7)
+	} else if (program_number == eBlastTypeBlastn && options->word_size < 7)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Word-size must be 7" 
                          "or greater for nucleotide comparison");
 		return (Int2) code;
-	} else if (program_number != blast_type_blastn && options->word_size > 5)
+	} else if (program_number != eBlastTypeBlastn && options->word_size > 5)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Word-size must be less"
@@ -918,7 +918,7 @@ LookupTableOptionsValidate(Uint1 program_number,
 	}
 
 
-	if (program_number != blast_type_blastn && 
+	if (program_number != eBlastTypeBlastn && 
        options->lut_type == MB_LOOKUP_TABLE)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
@@ -934,7 +934,7 @@ LookupTableOptionsValidate(Uint1 program_number,
       return (Int2) code;
    }
 
-   if (program_number == blast_type_blastn && 
+   if (program_number == eBlastTypeBlastn && 
        options->mb_template_length > 0) {
       if (!DiscWordOptionsValidate(options->word_size,
             options->mb_template_length, options->mb_template_type)) {
@@ -1078,13 +1078,13 @@ BlastHitSavingParametersNew(Uint1 program_number,
        * (except RPS BLAST), and for ungapped blastn.
        */
       if (!gapped_calculation ||  
-          (program_number == blast_type_blastx) ||
-          (program_number == blast_type_tblastn) ||
-          (program_number == blast_type_tblastx))
+          (program_number == eBlastTypeBlastx) ||
+          (program_number == eBlastTypeTblastn) ||
+          (program_number == eBlastTypeTblastx))
          params->do_sum_stats = TRUE;
    }
 
-   if (program_number == blast_type_blastn || !gapped_calculation) {
+   if (program_number == eBlastTypeBlastn || !gapped_calculation) {
       params->gap_prob = BLAST_GAP_PROB;
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE;
    } else {
@@ -1136,7 +1136,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
       Int8 searchsp = query_info->eff_searchsp_array[context];
 
       /* translated RPS searches must scale the search space down */
-      if (program_number == blast_type_rpstblastn)
+      if (program_number == eBlastTypeRpsTblastn)
          searchsp = searchsp / NUM_FRAMES;
 
       params->cutoff_score = 0;
@@ -1296,9 +1296,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
 	Blast_KarlinBlk* kbp;
 	Int4 expected_length, gap_size, query_length;
 	Int8 search_sp;
-        Boolean translated_subject = (program == blast_type_tblastn || 
-                                 program == blast_type_rpstblastn || 
-                                 program == blast_type_tblastx);
+        Boolean translated_subject = (program == eBlastTypeTblastn || 
+                                 program == eBlastTypeRpsTblastn || 
+                                 program == eBlastTypeTblastx);
 
 	/* Do this for the first context, should this be changed?? */
 	kbp = sbp->kbp[query_info->first_context];
@@ -1368,6 +1368,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.118  2004/06/22 16:45:14  camacho
+ * Changed the blast_type_* definitions for the EBlastProgramType enumeration.
+ *
  * Revision 1.117  2004/06/17 20:46:25  camacho
  * Use consistent return values for errors
  *

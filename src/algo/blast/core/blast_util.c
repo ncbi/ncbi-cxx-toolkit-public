@@ -180,24 +180,24 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
 
 Int2 BlastProgram2Number(const char *program, Uint1 *number)
 {
-	*number = blast_type_undefined;
+	*number = eBlastTypeUndefined;
 	if (program == NULL)
 		return 1;
 
 	if (strcasecmp("blastn", program) == 0)
-		*number = blast_type_blastn;
+		*number = eBlastTypeBlastn;
 	else if (strcasecmp("blastp", program) == 0)
-		*number = blast_type_blastp;
+		*number = eBlastTypeBlastp;
 	else if (strcasecmp("blastx", program) == 0)
-		*number = blast_type_blastx;
+		*number = eBlastTypeBlastx;
 	else if (strcasecmp("tblastn", program) == 0)
-		*number = blast_type_tblastn;
+		*number = eBlastTypeTblastn;
 	else if (strcasecmp("tblastx", program) == 0)
-		*number = blast_type_tblastx;
+		*number = eBlastTypeTblastx;
 	else if (strcasecmp("rpsblast", program) == 0)
-		*number = blast_type_rpsblast;
+		*number = eBlastTypeRpsBlast;
 	else if (strcasecmp("rpstblastn", program) == 0)
-		*number = blast_type_rpstblastn;
+		*number = eBlastTypeRpsTblastn;
 
 	return 0;
 }
@@ -209,25 +209,25 @@ Int2 BlastNumber2Program(Uint1 number, char* *program)
 		return 1;
 
 	switch (number) {
-		case blast_type_blastn:
+		case eBlastTypeBlastn:
 			*program = strdup("blastn");
 			break;
-		case blast_type_blastp:
+		case eBlastTypeBlastp:
 			*program = strdup("blastp");
 			break;
-		case blast_type_blastx:
+		case eBlastTypeBlastx:
 			*program = strdup("blastx");
 			break;
-		case blast_type_tblastn:
+		case eBlastTypeTblastn:
 			*program = strdup("tblastn");
 			break;
-		case blast_type_tblastx:
+		case eBlastTypeTblastx:
 			*program = strdup("tblastx");
 			break;
-		case blast_type_rpsblast:
+		case eBlastTypeRpsBlast:
 			*program = strdup("rpsblast");
 			break;
-		case blast_type_rpstblastn:
+		case eBlastTypeRpsTblastn:
 			*program = strdup("rpstblastn");
 			break;
 		default:
@@ -651,19 +651,19 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
 {
    Int2 frame=255;
 
-   if (prog_number == blast_type_blastn) {
+   if (prog_number == eBlastTypeBlastn) {
       if (context_number % 2 == 0)
          frame = 1;
       else
          frame = -1;
-   } else if (prog_number == blast_type_blastp ||
-              prog_number == blast_type_rpsblast ||
-              prog_number == blast_type_tblastn ||
-              prog_number == blast_type_rpstblastn) { 
+   } else if (prog_number == eBlastTypeBlastp ||
+              prog_number == eBlastTypeRpsBlast ||
+              prog_number == eBlastTypeTblastn ||
+              prog_number == eBlastTypeRpsTblastn) { 
       /* Query and subject are protein, no frame. */
       frame = 0;
-   } else if (prog_number == blast_type_blastx || 
-              prog_number == blast_type_tblastx) {
+   } else if (prog_number == eBlastTypeBlastx || 
+              prog_number == eBlastTypeTblastx) {
       context_number = context_number % 6;
       frame = (context_number < 3) ? context_number+1 : -context_number+2;
    }
@@ -676,12 +676,12 @@ Blast_GetQueryIndexFromContext(Int4 context, Uint1 program)
 {
    Int4 index = 0;
    switch (program) {
-   case blast_type_blastn:
+   case eBlastTypeBlastn:
       index = context/NUM_STRANDS; break;
-   case blast_type_blastp: case blast_type_tblastn: 
-   case blast_type_rpsblast: case blast_type_rpstblastn:
+   case eBlastTypeBlastp: case eBlastTypeTblastn: 
+   case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn:
       index = context; break;
-   case blast_type_blastx: case blast_type_tblastx:
+   case eBlastTypeBlastx: case eBlastTypeTblastx:
       index = context/NUM_FRAMES; break;
    default:
       break;
@@ -906,7 +906,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
    frame_offsets[0] = 0;
    
    for (context = 0; context < NUM_FRAMES; ++context) {
-      frame = BLAST_ContextToFrame(blast_type_blastx, context);
+      frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
       if (encoding == NCBI2NA_ENCODING) {
          if (frame > 0) {
             length = 

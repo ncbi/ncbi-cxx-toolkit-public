@@ -190,7 +190,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
    Boolean reverse = FALSE;
-   const Boolean k_is_na = (program_number == blast_type_blastn);
+   const Boolean k_is_na = (program_number == eBlastTypeBlastn);
 
    if (complement_mask == NULL)
 	return -1;
@@ -706,7 +706,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 	}
 
 	seqloc_num = 0;
-	if (program_number != blast_type_blastn)
+	if (program_number != eBlastTypeBlastn)
 	{
 		if (do_default || do_seg)
 		{
@@ -843,7 +843,7 @@ GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo*
         BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
         Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
-        Boolean is_na = (program_number == blast_type_blastn);
+        Boolean is_na = (program_number == eBlastTypeBlastn);
         Int2 index = (is_na ? context / 2 : context);
 
         context_offset = query_info->context_offsets[context];
@@ -903,7 +903,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
 
     Int2 status = 0;
     Int2 context = 0; /* loop variable. */
-    const Boolean k_is_na = (program_number == blast_type_blastn);
+    const Boolean k_is_na = (program_number == eBlastTypeBlastn);
     BlastMaskLoc *last_maskloc = NULL;
     BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */
     Boolean no_forward_strand = (query_info->first_context > 0);  /* filtering needed on reverse strand. */
@@ -996,7 +996,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 Int2 
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, Uint1 program_number)
 {
-    const Boolean k_is_na = (program_number == blast_type_blastn);
+    const Boolean k_is_na = (program_number == eBlastTypeBlastn);
     Int4 context; /* loop variable. */
     Int2 status=0;
 
