@@ -5,7 +5,7 @@
 # 
 #
 
-#include ../NewBlast.mk
+include ../NewBlast.mk
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
 builddir = $(NCBI)/$(VERSION_STABILITY)/$(BUILD_TYPE)/build
