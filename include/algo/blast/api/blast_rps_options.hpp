@@ -65,11 +65,6 @@ public:
     int GetWordSize() const { return m_Opts->GetWordSize(); }
 
     /******************* Initial word options ***********************/
-    /// Returns WindowSize
-    int GetWindowSize() const { return m_Opts->GetWindowSize(); }
-    /// Sets WindowSize
-    /// @param ws WindowSize [in]
-    void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
 
     /// Returns XDropoff
     double GetXDropoff() const { return m_Opts->GetXDropoff(); } 
@@ -117,16 +112,6 @@ public:
     /// Returns GapExtensionCost
     int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
 
-    /// Returns EffectiveSearchSpace
-    Int8 GetEffectiveSearchSpace() const { 
-        return m_Opts->GetEffectiveSearchSpace(); 
-    }
-    /// Sets EffectiveSearchSpace
-    /// @param eff EffectiveSearchSpace [in]
-    void SetEffectiveSearchSpace(Int8 eff) {
-        m_Opts->SetEffectiveSearchSpace(eff);
-    }
-
 protected:
     /// Overrides LookupTableDefaults for RPS-BLAST options
     virtual void SetLookupTableDefaults();
@@ -162,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/10 13:20:22  madden
+ * Moved [GS]etWindowSize and [GS]etEffectiveSearchSpace to CBlastOptionsHandle
+ *
  * Revision 1.9  2005/03/02 16:45:24  camacho
  * Remove use_real_db_size
  *

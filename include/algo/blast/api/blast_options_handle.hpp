@@ -130,6 +130,14 @@ public:
     
     /// Returns true if this object needs default values set.
     void DoneDefaults() { m_Opts->DoneDefaults(); }
+
+   /******************** Initial Word options **********************/
+
+    /// Returns WindowSize
+    int GetWindowSize() const { return m_Opts->GetWindowSize(); }
+    /// Sets WindowSize
+    /// @param ws WindowSize [in]
+    void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
     
     /******************* Query setup options ************************/
     /// Returns FilterString
@@ -212,6 +220,17 @@ public:
     /// @param num DbSeqNum [in]
     void SetDbSeqNum(unsigned int num) { m_Opts->SetDbSeqNum(num); }
 
+    /// Returns EffectiveSearchSpace
+    Int8 GetEffectiveSearchSpace() const {
+        return m_Opts->GetEffectiveSearchSpace();
+    }
+    /// Sets EffectiveSearchSpace
+    /// @param eff EffectiveSearchSpace [in]
+    void SetEffectiveSearchSpace(Int8 eff) {
+        m_Opts->SetEffectiveSearchSpace(eff);
+    }
+
+
 protected:
 
     /// Data type this class controls access to
@@ -246,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/10 13:20:22  madden
+ * Moved [GS]etWindowSize and [GS]etEffectiveSearchSpace to CBlastOptionsHandle
+ *
  * Revision 1.18  2005/02/24 13:46:20  madden
  * Add setters and getters for filtering options
  *

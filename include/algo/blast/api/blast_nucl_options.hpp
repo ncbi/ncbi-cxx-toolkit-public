@@ -139,11 +139,6 @@ public:
     void SetRepeatFilteringDB(const char* db) { m_Opts->SetRepeatFilteringDB(db); }
 
     /******************* Initial word options ***********************/
-    /// Returns WindowSize
-    int GetWindowSize() const { return m_Opts->GetWindowSize(); }
-    /// Sets WindowSize
-    /// @param ws WindowSize [in]
-    void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
 
     /// Returns VariableWordSize
     bool GetVariableWordSize() const { return m_Opts->GetVariableWordSize(); }
@@ -248,16 +243,6 @@ public:
     /// @param e GapExtensionCost [in]
     void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
 
-    /// Returns EffectiveSearchSpace
-    Int8 GetEffectiveSearchSpace() const { 
-        return m_Opts->GetEffectiveSearchSpace(); 
-    }
-    /// Sets EffectiveSearchSpace
-    /// @param eff EffectiveSearchSpace [in]
-    void SetEffectiveSearchSpace(Int8 eff) {
-        m_Opts->SetEffectiveSearchSpace(eff);
-    }
-
     /// Sets TraditionalBlastnDefaults
     void SetTraditionalBlastnDefaults();
     /// Sets TraditionalMegablastDefaults
@@ -313,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/03/10 13:20:22  madden
+ * Moved [GS]etWindowSize and [GS]etEffectiveSearchSpace to CBlastOptionsHandle
+ *
  * Revision 1.23  2005/03/02 16:45:24  camacho
  * Remove use_real_db_size
  *
