@@ -253,6 +253,7 @@ int CNcbiApplication::AppMain
 
     // Get program executable's name & path.
     string exepath = FindProgramExecutablePath(argc, argv);
+    m_ExePath = exepath;
 
     // Get program display name
     string appname = name;
@@ -947,6 +948,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2004/08/06 11:19:47  ivanov
+ * + CNcbiApplication::GetProgramExecutablePath()
+ *
  * Revision 1.91  2004/07/08 14:10:11  lavr
  * Some comment spellings
  *

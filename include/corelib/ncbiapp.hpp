@@ -262,6 +262,12 @@ public:
     /// or argv[0].
     string GetProgramDisplayName(void) const;
 
+    /// Get the application's executable path.
+    ///
+    /// The path to executable file of this application. 
+    /// Return empty string if not possible to determine this path.
+    string GetProgramExecutablePath(void) const;
+
 protected:
     /// Disable argument descriptions.
     ///
@@ -439,6 +445,7 @@ private:
     TStdioSetupFlags           m_StdioFlags; ///< Std C++ I/O adjustments
     char*                      m_CinBuffer;  ///< Cin buffer if changed
     string                     m_ProgramDisplayName;  ///< Display name of app
+    string                     m_ExePath;    ///< Program executable path
 };
 
 
@@ -483,6 +490,10 @@ inline string  CNcbiApplication::GetProgramDisplayName(void) const {
     return m_ProgramDisplayName;
 }
 
+inline string  CNcbiApplication::GetProgramExecutablePath(void) const {
+    return m_ExePath;
+}
+
 
 END_NCBI_SCOPE
 
@@ -491,6 +502,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/08/06 11:19:31  ivanov
+ * + CNcbiApplication::GetProgramExecutablePath()
+ *
  * Revision 1.41  2004/07/04 18:34:41  vakatov
  * HonorDebugSettings() --> x_HonorStandardSettings()
  * the latter also allows to limit max CPU usage and max heap size
