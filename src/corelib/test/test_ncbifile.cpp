@@ -327,6 +327,7 @@ static void s_TEST_File(void)
 
     // Get file size
     assert( f.GetLength() == 9);
+    CFile("file_2").Remove();
     assert( CFile("file_2").GetLength() == -1);
 
     // Check the file exists
@@ -354,11 +355,25 @@ static void s_TEST_File(void)
          << ((other & CDirEntry::fWrite)   ? "w" : "-")
          << ((other & CDirEntry::fExecute) ? "x" : "-")
          << endl;
-    CTime ftime;
-    assert( f.GetTime(&ftime) );
-    cout << "File modification time : " << 
-        ftime.AsString("M/D/Y h:m:s Z") << endl;
-    
+
+    // Get/set file modification time
+    CTime::SetFormat("M/D/Y h:m:s Z");
+    CTime ftime, ctime, atime;
+    assert( f.GetTime(&ftime, &ctime , &atime) );
+    cout << "File creation time     : " << ctime.AsString() << endl;
+    cout << "File modification time : " << ftime.AsString() << endl;
+    cout << "File last access time  : " << atime.AsString() << endl;
+    assert( f.GetTime(&ftime, 0 , &atime) );
+    CTime ftime_new(ftime), atime_new(atime);
+    ftime_new.AddDay(-2);
+    atime_new.AddDay(-1);
+    assert( f.SetTime(&ftime_new, &atime_new) );
+    assert( f.GetTime(&ftime, &atime) );
+    cout << "File modification time : " << ftime.AsString() << endl;
+    cout << "File last access time  : " << atime.AsString() << endl;
+    assert( ftime == ftime_new );
+    assert( atime == ctime );
+
     // Remove the file
     assert( f.Remove() );
 
@@ -485,7 +500,6 @@ static void s_TEST_Dir(void)
         assert(ep1 == ep2);
         assert(ep1 == f);
     }
-
 
     // Create dir structure for deletion
     assert( CDir("dir_3").Create() );
@@ -676,6 +690,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/11/28 16:23:42  ivanov
+ * Added tests for CDirEntry::SetTime()
+ *
  * Revision 1.29  2003/11/05 16:27:45  kuznets
  * + test for FindFile
  *
