@@ -649,7 +649,8 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     };
 
     while (pos < len) {
-        SIZE_TYPE column     = s_VisibleWidth(*pfx, (flags & fWrap_HTMLPre)!=0);
+        SIZE_TYPE column     = s_VisibleWidth(*pfx, 
+                                              (flags & fWrap_HTMLPre)!=0);
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
@@ -719,11 +720,14 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 {
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
-    SIZE_TYPE     column   = s_VisibleWidth(s,     (flags & fWrap_HTMLPre)!=0);
-    SIZE_TYPE     delwidth = s_VisibleWidth(delim, (flags & fWrap_HTMLPre)!=0);
+    SIZE_TYPE     column   = s_VisibleWidth(s,     
+                                            (flags & fWrap_HTMLPre)!=0);
+    SIZE_TYPE     delwidth = s_VisibleWidth(delim, 
+                                            (flags & fWrap_HTMLPre)!=0);
     bool          at_start = true;
     iterate (list<string>, it, l) {
-        SIZE_TYPE term_width = s_VisibleWidth(*it, (flags & fWrap_HTMLPre)!=0);
+        SIZE_TYPE term_width = s_VisibleWidth(*it, 
+                                              (flags & fWrap_HTMLPre)!=0);
         if (at_start) {
             if (column + term_width <= width) {
                 s += *it;
@@ -777,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2003/01/10 16:49:54  kuznets
+ * Cosmetics
+ *
  * Revision 1.60  2003/01/10 15:27:12  kuznets
  * Eliminated int -> bool performance warning
  *
