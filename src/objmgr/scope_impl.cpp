@@ -522,7 +522,7 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     CRef<CBioseq_ScopeInfo> info = x_FindBioseq_Info(id);
     if ( bool(info)  &&  info->HasBioseq() ) {
         if ( &info->GetTSE_Info() == &tse ) {
-            ret.m_Bioseq_Info = info;
+            ret.m_Bioseq_Info = info.GetPointer();
         }
     }
     else {
@@ -569,7 +569,7 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id)
     if ( id )  {
         {{
             TReadLockGuard rguard(m_Scope_Conf_RWLock);
-            ret.m_Bioseq_Info = x_GetBioseq_Info(id);
+            ret.m_Bioseq_Info = x_GetBioseq_Info(id).GetPointer();
         }}
         if ( !ret.x_GetScopeInfo().HasBioseq() ) {
             ret.m_Bioseq_Info.Reset();
@@ -1162,6 +1162,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/16 18:09:10  vasilche
+* Use GetPointer() to avoid ambiguity
+*
 * Revision 1.1  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

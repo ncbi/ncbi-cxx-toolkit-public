@@ -297,7 +297,7 @@ void CSeq_loc::SetId(const CSeq_id& id)
     CRef<CSeq_id> nc_id(new CSeq_id);
     nc_id->Assign(id);
     SetId(*nc_id);
-    m_IdCache = nc_id;
+    m_IdCache = nc_id.GetPointer();
 }
 
 
@@ -434,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/03/16 18:08:56  vasilche
+ * Use GetPointer() to avoid ambiguity
+ *
  * Revision 1.34  2004/02/17 21:10:58  vasilche
  * Fixed possible race condition in CSeq_loc::CheckId().
  *
