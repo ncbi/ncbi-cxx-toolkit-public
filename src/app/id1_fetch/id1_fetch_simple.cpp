@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2002/01/17 17:22:21  vakatov
+ * It should be okay to use "CObjectIStreamAsnBinary" instead of
+ * CObjectIStream::Open() for non-blocking streams now (so rollback R1.4)
+ *
  * Revision 1.8  2001/09/25 14:04:06  ucko
  * Update call to CConn_ServiceStream constructor for new interface.
  *
@@ -174,7 +178,7 @@ int CId1FetchApp::Run(void)
 
     // Open connection to ID1 server
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
-    CConn_ServiceStream     id1_server("ID1", fSERV_Any, 0, 0, &tmout);
+    CConn_ServiceStream id1_server("ID1", fSERV_Any, 0, 0, &tmout);
     {{
         CObjectOStreamAsnBinary id1_server_output(id1_server);
 
@@ -197,10 +201,7 @@ int CId1FetchApp::Run(void)
     CID1server_back id1_response;
     {{
         // Read server response in ASN.1 binary format
-        //### Use CObjectIStream::Open() since only this function
-        //### supports opening streams with non-blocking read.
-        CObjectIStream& id1_server_input = *CObjectIStream::Open
-            (eSerial_AsnBinary, id1_server, false);
+        CObjectIStreamAsnBinary id1_server_input(id1_server, false);
         id1_server_input >> id1_response;
     }}
 
@@ -244,5 +245,5 @@ void CId1FetchApp::Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    return CId1FetchApp().AppMain(argc, argv);
+    return CId1FetchApp().AppMain(argc, argv /*, 0, eDS_Default, 0*/);
 }
