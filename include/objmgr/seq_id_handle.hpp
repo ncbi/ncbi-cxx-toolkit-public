@@ -59,27 +59,29 @@ class CSeq_id_Which_Tree;
 class NCBI_XOBJMGR_EXPORT CSeq_id_Info
 {
 public:
-    CConstRef<CSeq_id> GetGiSeqId(int gi) const;
+    explicit CSeq_id_Info(CSeq_id_Which_Tree* tree);
+    CSeq_id_Info(CSeq_id_Which_Tree* tree, const CConstRef<CSeq_id>& seq_id);
+    ~CSeq_id_Info(void);
+
     CConstRef<CSeq_id> GetSeqId(void) const
         {
             return m_Seq_id;
         }
+    CConstRef<CSeq_id> GetGiSeqId(int gi) const;
 
-    void AddReference(void);
-    void RemoveReference(void);
-    void RemoveLastReference(void);
+    void AddReference(void) const;
+    void RemoveReference(void) const;
+
+    int GetCounter(void) const;
+
+    CSeq_id_Which_Tree* GetTree(void) const;
 
 protected:
-    explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
-    ~CSeq_id_Info(void);
+    void x_RemoveLastReference(void) const;
 
-    friend class CSeq_id_Mapper;       // for creation/deletion
-    friend class CSeq_id_Which_Tree;   // for creation/deletion
-    friend class CSeq_id_Textseq_Tree; // for m_NoVersionId
-
-    CAtomicCounter     m_Counter;
-    CConstRef<CSeq_id> m_Seq_id;
-    CSeq_id_Info*      m_NoVersionId;
+    mutable CAtomicCounter m_Counter;
+    CSeq_id_Which_Tree*    m_Tree;
+    CConstRef<CSeq_id>     m_Seq_id;
 
 private:
     CSeq_id_Info(const CSeq_id_Info&);
@@ -92,14 +94,11 @@ class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
 public:
     // 'ctors
     CSeq_id_Handle(void);
-    CSeq_id_Handle(CSeq_id_Info* info, int gi = 0);
-    CSeq_id_Handle(const CSeq_id_Handle& handle);
-    ~CSeq_id_Handle(void);
+    explicit CSeq_id_Handle(const CSeq_id_Info* info, int gi = 0);
 
     static CSeq_id_Handle GetGiHandle(int gi);
     static CSeq_id_Handle GetHandle(const CSeq_id& id);
 
-    const CSeq_id_Handle& operator= (const CSeq_id_Handle& handle);
     bool operator== (const CSeq_id_Handle& handle) const;
     bool operator!= (const CSeq_id_Handle& handle) const;
     bool operator<  (const CSeq_id_Handle& handle) const;
@@ -123,15 +122,15 @@ public:
     CConstRef<CSeq_id> GetSeqId(void) const;
     CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
 
+    static void DumpRegister(const char* msg);
+
 private:
     void x_Register(void);
     void x_Deregister(void);
-    static void x_DumpRegister(const char* msg);
+    
+    friend class CSeq_id_Mapper;
 
-    void x_AddReference(void);
-    void x_AddReferenceIfSet(void);
-    void x_RemoveReference(void);
-    void x_RemoveReferenceIfSet(void);
+    CSeq_id_Which_Tree* x_GetTree(void) const;
 
     // Comparison methods
     // True if handles are strictly equal
@@ -140,12 +139,8 @@ private:
     bool x_Match(const CSeq_id_Handle& handle) const;
 
     // Seq-id info
-    CSeq_id_Info* m_Info;
-    int           m_Gi;
-
-    friend class CSeq_id_Mapper;
-    friend class CSeq_id_Which_Tree;
-    friend class CSeq_id_Textseq_Tree;
+    CConstRef<CSeq_id_Info>    m_Info;
+    int                        m_Gi;
 };
 
 
@@ -163,36 +158,54 @@ private:
 
 
 inline
-CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
-    : m_Seq_id(seq_id), m_NoVersionId(0)
+CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree)
+    : m_Tree(tree)
 {
+    _ASSERT(tree);
     m_Counter.Set(0);
 }
 
 
 inline
-CSeq_id_Info::~CSeq_id_Info(void)
+CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree, const CConstRef<CSeq_id>& seq_id)
+    : m_Tree(tree),
+      m_Seq_id(seq_id)
 {
-    _ASSERT(m_Counter.Get() == 0);
-    if ( m_NoVersionId ) {
-        m_NoVersionId->RemoveReference();
+    _ASSERT(tree);
+    m_Counter.Set(0);
+}
+
+
+inline
+void CSeq_id_Info::AddReference(void) const
+{
+    _VERIFY(m_Counter.Add(1) > 0);
+}
+
+
+inline
+void CSeq_id_Info::RemoveReference(void) const
+{
+    if ( m_Counter.Add(-1) <= 0 ) {
+        x_RemoveLastReference();
     }
 }
 
 
 inline
-void CSeq_id_Info::AddReference(void)
+int CSeq_id_Info::GetCounter(void) const
 {
-    m_Counter.Add(1);
+    int counter = m_Counter.Get();
+    _ASSERT(counter >= 0);
+    return counter;
 }
 
 
 inline
-void CSeq_id_Info::RemoveReference(void)
+CSeq_id_Which_Tree* CSeq_id_Info::GetTree(void) const
 {
-    if ( m_Counter.Add(-1) == 0 ) {
-        RemoveLastReference();
-    }
+    _ASSERT(m_Tree);
+    return m_Tree;
 }
 
 
@@ -204,52 +217,14 @@ void CSeq_id_Info::RemoveReference(void)
 inline
 CSeq_id_Handle::operator bool (void) const
 {
-    return m_Info != 0;
+    return m_Info;
 }
 
 
 inline
-bool CSeq_id_Handle::operator! (void) const
+bool CSeq_id_Handle::operator!(void) const
 {
-    return m_Info == 0;
-}
-
-
-inline
-void CSeq_id_Handle::x_AddReference(void)
-{
-    m_Info->AddReference();
-#ifdef _DEBUG
-    x_Register();
-#endif
-}
-
-
-inline
-void CSeq_id_Handle::x_RemoveReference(void)
-{
-#ifdef _DEBUG
-    x_Deregister();
-#endif
-    m_Info->RemoveReference();
-}
-
-
-inline
-void CSeq_id_Handle::x_AddReferenceIfSet(void)
-{
-    if ( m_Info ) {
-        x_AddReference();
-    }
-}
-
-
-inline
-void CSeq_id_Handle::x_RemoveReferenceIfSet(void)
-{
-    if ( m_Info ) {
-        x_RemoveReference();
-    }
+    return !m_Info;
 }
 
 
@@ -261,49 +236,17 @@ CSeq_id_Handle::CSeq_id_Handle(void)
 
 
 inline
-CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Info* info, int gi)
+CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Info* info, int gi)
     : m_Info(info), m_Gi(gi)
 {
     _ASSERT(info);
-    x_AddReference();
-}
-
-
-inline
-CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& h)
-    : m_Info(h.m_Info), m_Gi(h.m_Gi)
-{
-    x_AddReferenceIfSet();
-}
-
-
-inline
-CSeq_id_Handle::~CSeq_id_Handle(void)
-{
-    x_RemoveReferenceIfSet();
-}
-
-
-inline
-const CSeq_id_Handle& CSeq_id_Handle::operator=(const CSeq_id_Handle& h)
-{
-    if ( m_Info != h.m_Info ) {
-        x_RemoveReferenceIfSet();
-        m_Info = h.m_Info;
-        x_AddReferenceIfSet();
-    }
-    m_Gi = h.m_Gi;
-    return *this;
 }
 
 
 inline
 void CSeq_id_Handle::Reset(void)
 {
-    if ( m_Info ) {
-        x_RemoveReference();
-        m_Info = 0;
-    }
+    m_Info.Reset();
     m_Gi = 0;
 }
 
@@ -362,6 +305,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/02/19 17:25:33  vasilche
+* Use CRef<> to safely hold pointer to CSeq_id_Info.
+* CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
+* Reduce number of calls to CSeq_id_Handle.GetSeqId().
+*
 * Revision 1.21  2004/01/22 20:10:38  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

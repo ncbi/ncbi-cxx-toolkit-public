@@ -78,16 +78,23 @@ bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& /*h1*/,
 }
 
 
+inline
+CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(void)
+{
+    return new CSeq_id_Info(this);
+}
+
+
 bool CSeq_id_Which_Tree::HaveReverseMatch(const CSeq_id_Handle& ) const
 {
     return false; // Assume no reverse matches by default
 }
 
 
-void CSeq_id_Which_Tree::FindReverseMatchingHandles(const CSeq_id_Handle& id,
-                                                    TSeq_id_MatchList& id_list)
+void CSeq_id_Which_Tree::FindReverseMatch(const CSeq_id_Handle& id,
+                                          TSeq_id_MatchList& id_list)
 {
-    id_list.push_back(id);
+    id_list.insert(id);
     return;
 }
 
@@ -96,19 +103,31 @@ CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 {
     CRef<CSeq_id> id_ref(new CSeq_id);
     id_ref->Assign(id);
-    return new CSeq_id_Info(id_ref);
+    return new CSeq_id_Info(this, id_ref);
 }
 
 
-void CSeq_id_Which_Tree::DropInfo(CSeq_id_Info* info)
+void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 {
-    if ( info->m_Counter.Get() == 0 ) {
-        TWriteLockGuard guard(m_TreeLock);
-        if ( info->m_Counter.Get() == 0 ) {
-            x_Unindex(info);
-            delete info;
-        }
+    if ( info->GetCounter() > 0 ) {
+        return;
     }
+
+    {{
+        TWriteLockGuard guard(m_TreeLock);
+        if ( info->GetCounter() > 0 ) {
+            return;
+        }
+        x_Unindex(info);
+    }}
+
+    delete info;
+}
+
+
+CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(int /*gi*/)
+{
+    NCBI_THROW(CObjMgrException, eIdMapperError, "Invalid seq-id type");
 }
 
 
@@ -145,7 +164,6 @@ void CSeq_id_Which_Tree::Initialize(vector<CRef<CSeq_id_Which_Tree> >& v)
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_not_set_Tree::CSeq_id_not_set_Tree(void)
-    : m_Info(0)
 {
 }
 
@@ -157,67 +175,72 @@ CSeq_id_not_set_Tree::~CSeq_id_not_set_Tree(void)
 
 bool CSeq_id_not_set_Tree::Empty(void) const
 {
-    return !m_Info;
+    return true;
 }
 
 
 inline
 bool CSeq_id_not_set_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.Which() == CSeq_id::e_not_set);
     return id.Which() == CSeq_id::e_not_set;
+}
+
+
+void CSeq_id_not_set_Tree::DropInfo(const CSeq_id_Info* /*info*/)
+{
+}
+
+
+void CSeq_id_not_set_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
+{
 }
 
 
 CSeq_id_Handle CSeq_id_not_set_Tree::FindInfo(const CSeq_id& /*id*/) const
 {
-    //_ASSERT(x_Check(id));
-    TReadLockGuard guard(m_TreeLock);
-    return m_Info;
+    LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+    return CSeq_id_Handle();
 }
 
 
-CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& id)
+CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& /*id*/)
 {
-    TWriteLockGuard guard(m_TreeLock);
-    if ( !m_Info ) {
-        m_Info = CreateInfo(id);
-    }
-    return m_Info;
-}
-
-
-void CSeq_id_not_set_Tree::x_Unindex(CSeq_id_Info* info)
-{
-    x_Check(*info->GetSeqId());
-    _ASSERT(info && info == m_Info);
-    m_Info = 0;
+    LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+    return CSeq_id_Handle();
 }
 
 
 bool CSeq_id_not_set_Tree::HaveMatch(const CSeq_id_Handle& ) const
 {
-    // Only one instance of each id
     return false;
 }
 
 
-void CSeq_id_not_set_Tree::FindMatch(const CSeq_id_Handle& id,
-                                     TSeq_id_MatchList& id_list) const
+void CSeq_id_not_set_Tree::FindMatch(const CSeq_id_Handle& /*id*/,
+                                     TSeq_id_MatchList& /*id_list*/) const
 {
-    // Only one instance of each id
-    _ASSERT(id && id == m_Info);
-    id_list.push_back(id);
+    LOG_POST(Warning << "CSeq_id_Mapper::GetMatchingHandles() -- "
+             "uninitialized seq-id");
 }
 
 
-void CSeq_id_not_set_Tree::FindMatchStr(string sid,
-                                        TSeq_id_MatchList& id_list) const
+void CSeq_id_not_set_Tree::FindMatchStr(string /*sid*/,
+                                        TSeq_id_MatchList& /*id_list*/) const
 {
-    TReadLockGuard guard(m_TreeLock);
-    if ( m_Info && sid.empty() ) {
-        id_list.push_back(m_Info);
-    }
+}
+
+
+bool CSeq_id_not_set_Tree::HaveReverseMatch(const CSeq_id_Handle& /*id*/) const
+{
+    return false;
+}
+
+
+void CSeq_id_not_set_Tree::FindReverseMatch(const CSeq_id_Handle& /*id*/,
+                                            TSeq_id_MatchList& /*id_list*/)
+{
+    LOG_POST(Warning << "CSeq_id_Mapper::GetReverseMatchingHandles() -- "
+             "uninitialized seq-id");
 }
 
 
@@ -244,7 +267,7 @@ bool CSeq_id_int_Tree::Empty(void) const
 
 CSeq_id_Handle CSeq_id_int_Tree::FindInfo(const CSeq_id& id) const
 {
-    x_Check(id);
+    _ASSERT(x_Check(id));
     int value = x_Get(id);
 
     TReadLockGuard guard(m_TreeLock);
@@ -267,11 +290,11 @@ CSeq_id_Handle CSeq_id_int_Tree::FindOrCreate(const CSeq_id& id)
     if ( ins.second ) {
         ins.first->second = CreateInfo(id);
     }
-    return ins.first->second;
+    return CSeq_id_Handle(ins.first->second);
 }
 
 
-void CSeq_id_int_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_int_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     _ASSERT(x_Check(*info->GetSeqId()));
     int value = x_Get(*info->GetSeqId());
@@ -292,7 +315,7 @@ void CSeq_id_int_Tree::FindMatch(const CSeq_id_Handle& id,
 {
     // Only one instance of each int id
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    id_list.push_back(id);
+    id_list.insert(id);
 }
 
 
@@ -310,26 +333,8 @@ void CSeq_id_int_Tree::FindMatchStr(string sid,
     TReadLockGuard guard(m_TreeLock);
     TIntMap::const_iterator it = m_IntMap.find(value);
     if (it != m_IntMap.end()) {
-        id_list.push_back(it->second);
+        id_list.insert(CSeq_id_Handle(it->second));
     }
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_id_Gi_Tree
-/////////////////////////////////////////////////////////////////////////////
-
-bool CSeq_id_Gi_Tree::x_Check(const CSeq_id& id) const
-{
-    _ASSERT(id.IsGi());
-    return id.IsGi();
-}
-
-
-int CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
-{
-    _ASSERT(id.IsGi());
-    return id.GetGi();
 }
 
 
@@ -339,14 +344,12 @@ int CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Gibbsq_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsGibbsq());
     return id.IsGibbsq();
 }
 
 
 int CSeq_id_Gibbsq_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsGibbsq());
     return id.GetGibbsq();
 }
 
@@ -357,15 +360,111 @@ int CSeq_id_Gibbsq_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Gibbmt_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsGibbmt());
     return id.IsGibbmt();
 }
 
 
 int CSeq_id_Gibbmt_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsGibbmt());
     return id.GetGibbmt();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_Gi_Tree
+/////////////////////////////////////////////////////////////////////////////
+
+CSeq_id_Gi_Tree::CSeq_id_Gi_Tree(void)
+    : m_Info(CreateInfo())
+{
+}
+
+
+CSeq_id_Gi_Tree::~CSeq_id_Gi_Tree(void)
+{
+    _ASSERT(m_Info);
+    m_Info.Reset();
+}
+
+
+bool CSeq_id_Gi_Tree::Empty(void) const
+{
+    return true;
+}
+
+
+inline
+bool CSeq_id_Gi_Tree::x_Check(const CSeq_id& id) const
+{
+    return id.IsGi();
+}
+
+
+inline
+int CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
+{
+    return id.GetGi();
+}
+
+
+void CSeq_id_Gi_Tree::DropInfo(const CSeq_id_Info* info)
+{
+    _ASSERT(!m_Info);
+    delete info;
+}
+
+
+void CSeq_id_Gi_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
+{
+}
+
+
+CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(int gi)
+{
+    return CSeq_id_Handle(m_Info, gi);
+}
+
+
+CSeq_id_Handle CSeq_id_Gi_Tree::FindInfo(const CSeq_id& id) const
+{
+    _ASSERT(x_Check(id));
+    return CSeq_id_Handle(m_Info, x_Get(id));
+}
+
+
+CSeq_id_Handle CSeq_id_Gi_Tree::FindOrCreate(const CSeq_id& id)
+{
+    _ASSERT(x_Check(id));
+    return CSeq_id_Handle(m_Info, x_Get(id));
+}
+
+
+bool CSeq_id_Gi_Tree::HaveMatch(const CSeq_id_Handle& ) const
+{
+    // Only one instance of each int id
+    return false;
+}
+
+
+void CSeq_id_Gi_Tree::FindMatch(const CSeq_id_Handle& id, TSeq_id_MatchList& id_list) const
+{
+    // Only one instance of each int id
+    id_list.insert(id);
+}
+
+
+void CSeq_id_Gi_Tree::FindMatchStr(string sid,
+                                    TSeq_id_MatchList& id_list) const
+{
+    int value;
+    try {
+        value = NStr::StringToInt(sid);
+    }
+    catch (const CStringException& /*ignored*/) {
+        // Not an integer value
+        return;
+    }
+    id_list.insert(CSeq_id_Handle(m_Info, value));
 }
 
 
@@ -444,7 +543,7 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
 {
     // Note: if a record is found by accession, no name is checked
     // even if it is also set.
-    x_Check(id);
+    _ASSERT(x_Check(id));
     const CTextseq_id& tid = x_Get(id);
     // Can not compare if no accession given
     TReadLockGuard guard(m_TreeLock);
@@ -453,7 +552,7 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
 
 CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
 {
-    x_Check(id);
+    _ASSERT(x_Check(id));
     const CTextseq_id& tid = x_Get(id);
     TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Info* info = x_FindInfo(tid);
@@ -461,22 +560,6 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
         info = CreateInfo(id);
 
         if ( tid.IsSetAccession() ) {
-            if (tid.IsSetVersion()
-                ||  tid.IsSetRelease()
-                ||  tid.IsSetName()) {
-                CRef<CSeq_id> id_nover(new CSeq_id);
-                id_nover->Assign(id);
-                CTextseq_id& tid_nover =
-                    const_cast<CTextseq_id&>(x_Get(*id_nover));
-                tid_nover.ResetVersion();
-                tid_nover.ResetRelease();
-                tid_nover.ResetName();
-                CSeq_id_Handle h_nover = FindOrCreate(*id_nover);
-                _ASSERT(h_nover);
-                info->m_NoVersionId = h_nover.m_Info;
-                info->m_NoVersionId->AddReference();
-            }
-
             TVersions& ver = m_ByAccession[tid.GetAccession()];
             ITERATE(TVersions, vit, ver) {
                 _ASSERT(!x_Get(*(*vit)->GetSeqId()).Equals(tid));
@@ -491,14 +574,15 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
             ver.push_back(info);
         }
     }
-    return info;
+    return CSeq_id_Handle(info);
 }
 
 
-void CSeq_id_Textseq_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_Textseq_Tree::x_Unindex(const CSeq_id_Info* info)
 {
-    x_Check(*info->GetSeqId());
+    _ASSERT(x_Check(*info->GetSeqId()));
     const CTextseq_id& tid = x_Get(*info->GetSeqId());
+
     if ( tid.IsSetAccession() ) {
         TStringMap::iterator it =
             m_ByAccession.find(tid.GetAccession());
@@ -553,7 +637,7 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
         if (!rel.empty() && rel != rel_it) {
             continue;
         }
-        id_list.push_back(*vit);
+        id_list.insert(CSeq_id_Handle(*vit));
     }
 }
 
@@ -594,7 +678,7 @@ void CSeq_id_Textseq_Tree::FindMatchStr(string sid,
             return;
     }
     ITERATE(TVersions, vit, it->second) {
-        id_list.push_back(*vit);
+        id_list.insert(CSeq_id_Handle(*vit));
     }
 }
 
@@ -603,9 +687,9 @@ bool CSeq_id_Textseq_Tree::IsBetterVersion(const CSeq_id_Handle& h1,
                                            const CSeq_id_Handle& h2) const
 {
     CConstRef<CSeq_id> id1 = h1.GetSeqId();
-    x_Check(*id1);
+    _ASSERT(x_Check(*id1));
     CConstRef<CSeq_id> id2 = h2.GetSeqId();
-    x_Check(*id2);
+    _ASSERT(x_Check(*id2));
     const CTextseq_id& tid1 = x_Get(*id1);
     const CTextseq_id& tid2 = x_Get(*id2);
     // Compare versions. If only one of the two ids has version,
@@ -626,10 +710,10 @@ bool CSeq_id_Textseq_Tree::HaveReverseMatch(const CSeq_id_Handle&) const
 }
 
 
-void CSeq_id_Textseq_Tree::FindReverseMatchingHandles(const CSeq_id_Handle& id,
-                                                      TSeq_id_MatchList& id_list)
+void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
+                                            TSeq_id_MatchList& id_list)
 {
-    id_list.push_back(id);
+    id_list.insert(id);
 
     CConstRef<CSeq_id> orig_id = id.GetSeqId();
     const CTextseq_id& orig_tid = x_Get(*orig_id);
@@ -652,27 +736,27 @@ void CSeq_id_Textseq_Tree::FindReverseMatchingHandles(const CSeq_id_Handle& id,
         // A only
         tid.Reset();
         tid.SetAccession(orig_tid.GetAccession());
-        id_list.push_back(FindOrCreate(*tmp));
+        id_list.insert(FindOrCreate(*tmp));
         if ( v && r ) {
             // A.r (without v)
             tid.SetRelease(orig_tid.GetRelease());
-            id_list.push_back(FindOrCreate(*tmp));
+            id_list.insert(FindOrCreate(*tmp));
         }
     }
     if ( A && N ) {
         // N only
         tid.Reset();
         tid.SetName(orig_tid.GetName());
-        id_list.push_back(FindOrCreate(*tmp));
+        id_list.insert(FindOrCreate(*tmp));
         if ( v ) {
             // N.v
             tid.SetVersion(orig_tid.GetVersion());
-            id_list.push_back(FindOrCreate(*tmp));
+            id_list.insert(FindOrCreate(*tmp));
             if ( r ) {
                 // N.r (without v)
                 tid.ResetVersion();
                 tid.SetRelease(orig_tid.GetRelease());
-                id_list.push_back(FindOrCreate(*tmp));
+                id_list.insert(FindOrCreate(*tmp));
             }
         }
     }
@@ -685,14 +769,12 @@ void CSeq_id_Textseq_Tree::FindReverseMatchingHandles(const CSeq_id_Handle& id,
 
 bool CSeq_id_GB_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsGenbank()  ||  id.IsEmbl()  ||  id.IsDdbj());
     return id.IsGenbank()  ||  id.IsEmbl()  ||  id.IsDdbj();
 }
 
 
 const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsGenbank()  ||  id.IsEmbl()  ||  id.IsDdbj());
     switch ( id.Which() ) {
     case CSeq_id::e_Genbank:
         return id.GetGenbank();
@@ -701,8 +783,7 @@ const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
     case CSeq_id::e_Ddbj:
         return id.GetDdbj();
     default:
-        NCBI_THROW(CObjMgrException, eIdMapperError,
-                   "Invalid seq-id type");
+        NCBI_THROW(CObjMgrException, eIdMapperError, "Invalid seq-id type");
     }
 }
 
@@ -713,14 +794,12 @@ const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Pir_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsPir());
     return id.IsPir();
 }
 
 
 const CTextseq_id& CSeq_id_Pir_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsPir());
     return id.GetPir();
 }
 
@@ -731,14 +810,12 @@ const CTextseq_id& CSeq_id_Pir_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Swissprot_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsSwissprot());
     return id.IsSwissprot();
 }
 
 
 const CTextseq_id& CSeq_id_Swissprot_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsSwissprot());
     return id.GetSwissprot();
 }
 
@@ -749,14 +826,12 @@ const CTextseq_id& CSeq_id_Swissprot_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Prf_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsPrf());
     return id.IsPrf();
 }
 
 
 const CTextseq_id& CSeq_id_Prf_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsPrf());
     return id.GetPrf();
 }
 
@@ -767,14 +842,12 @@ const CTextseq_id& CSeq_id_Prf_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Tpg_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsTpg());
     return id.IsTpg();
 }
 
 
 const CTextseq_id& CSeq_id_Tpg_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsTpg());
     return id.GetTpg();
 }
 
@@ -785,14 +858,12 @@ const CTextseq_id& CSeq_id_Tpg_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Tpe_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsTpe());
     return id.IsTpe();
 }
 
 
 const CTextseq_id& CSeq_id_Tpe_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsTpe());
     return id.GetTpe();
 }
 
@@ -803,14 +874,12 @@ const CTextseq_id& CSeq_id_Tpe_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Tpd_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsTpd());
     return id.IsTpd();
 }
 
 
 const CTextseq_id& CSeq_id_Tpd_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsTpd());
     return id.GetTpd();
 }
 
@@ -821,14 +890,12 @@ const CTextseq_id& CSeq_id_Tpd_Tree::x_Get(const CSeq_id& id) const
 
 bool CSeq_id_Other_Tree::x_Check(const CSeq_id& id) const
 {
-    _ASSERT(id.IsOther());
     return id.IsOther();
 }
 
 
 const CTextseq_id& CSeq_id_Other_Tree::x_Get(const CSeq_id& id) const
 {
-    _ASSERT(id.IsOther());
     return id.GetOther();
 }
 
@@ -903,15 +970,16 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
                        "Can not create index for an empty local seq-id");
         }
     }
-    return info;
+    return CSeq_id_Handle(info);
 }
 
 
-void CSeq_id_Local_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_Local_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     CConstRef<CSeq_id> id = info->GetSeqId();
     _ASSERT(id->IsLocal());
     const CObject_id& oid = id->GetLocal();
+
     if ( oid.IsStr() ) {
         _VERIFY(m_ByStr.erase(oid.GetStr()));
     }
@@ -933,7 +1001,7 @@ void CSeq_id_Local_Tree::FindMatch(const CSeq_id_Handle& id,
 {
     // Only one entry can match each id
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    id_list.push_back(id);
+    id_list.insert(id);
 }
 
 
@@ -944,14 +1012,14 @@ void CSeq_id_Local_Tree::FindMatchStr(string sid,
     // In any case search in strings
     TByStr::const_iterator str_it = m_ByStr.find(sid);
     if (str_it != m_ByStr.end()) {
-        id_list.push_back(str_it->second);
+        id_list.insert(CSeq_id_Handle(str_it->second));
     }
     else {
         try {
             int value = NStr::StringToInt(sid);
             TById::const_iterator int_it = m_ById.find(value);
             if (int_it != m_ById.end()) {
-                id_list.push_back(int_it->second);
+                id_list.insert(CSeq_id_Handle(int_it->second));
             }
         }
         catch (const CStringException& /*ignored*/) {
@@ -1039,15 +1107,16 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                        "Can not create index for an empty db-tag");
         }
     }
-    return info;
+    return CSeq_id_Handle(info);
 }
 
 
-void CSeq_id_General_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_General_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     CConstRef<CSeq_id> id = info->GetSeqId();
     _ASSERT( id->IsGeneral() );
     const CDbtag& dbid = id->GetGeneral();
+
     TDbMap::iterator db_it = m_DbMap.find(dbid.GetDb());
     _ASSERT(db_it != m_DbMap.end());
     STagMap& tm = db_it->second;
@@ -1074,7 +1143,7 @@ void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
                                      TSeq_id_MatchList& id_list) const
 {
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    id_list.push_back(id);
+    id_list.insert(id);
 }
 
 
@@ -1098,13 +1167,13 @@ void CSeq_id_General_Tree::FindMatchStr(string sid,
         STagMap::TByStr::const_iterator str_it =
             db_it->second.m_ByStr.find(sid);
         if (str_it != db_it->second.m_ByStr.end()) {
-            id_list.push_back(str_it->second);
+            id_list.insert(CSeq_id_Handle(str_it->second));
         }
         if ( ok ) {
             STagMap::TById::const_iterator int_it =
                 db_it->second.m_ById.find(value);
             if (int_it != db_it->second.m_ById.end()) {
-                id_list.push_back(int_it->second);
+                id_list.insert(CSeq_id_Handle(int_it->second));
             }
         }
     }
@@ -1169,15 +1238,16 @@ CSeq_id_Handle CSeq_id_Giim_Tree::FindOrCreate(const CSeq_id& id)
         info = CreateInfo(id);
         m_IdMap[gid.GetId()].push_back(info);
     }
-    return info;
+    return CSeq_id_Handle(info);
 }
 
 
-void CSeq_id_Giim_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_Giim_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     CConstRef<CSeq_id> id = info->GetSeqId();
     _ASSERT( id->IsGiim() );
     const CGiimport_id& gid = id->GetGiim();
+
     TIdMap::iterator id_it = m_IdMap.find(gid.GetId());
     _ASSERT(id_it != m_IdMap.end());
     TGiimList& giims = id_it->second;
@@ -1203,7 +1273,7 @@ void CSeq_id_Giim_Tree::FindMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list) const
 {
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    id_list.push_back(id);
+    id_list.insert(id);
 }
 
 
@@ -1217,7 +1287,7 @@ void CSeq_id_Giim_Tree::FindMatchStr(string sid,
         if (it == m_IdMap.end())
             return;
         ITERATE(TGiimList, git, it->second) {
-            id_list.push_back(*git);
+            id_list.insert(CSeq_id_Handle(*git));
         }
     }
     catch (CStringException) {
@@ -1319,15 +1389,16 @@ CSeq_id_Handle CSeq_id_Patent_Tree::FindOrCreate(const CSeq_id& id)
                        "Cannot index empty patent number");
         }
     }
-    return info;
+    return CSeq_id_Handle(info);
 }
 
 
-void CSeq_id_Patent_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_Patent_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     CConstRef<CSeq_id> id = info->GetSeqId();
     _ASSERT( id->IsPatent() );
     const CPatent_seq_id& pid = id->GetPatent();
+
     TByCountry::iterator country_it =
         m_CountryMap.find(pid.GetCit().GetCountry());
     _ASSERT(country_it != m_CountryMap.end());
@@ -1373,7 +1444,7 @@ void CSeq_id_Patent_Tree::FindMatch(const CSeq_id_Handle& id,
                                     TSeq_id_MatchList& id_list) const
 {
     //_ASSERT(id && id == FindInfo(id.GetSeqId()));
-    id_list.push_back(id);
+    id_list.insert(id);
 }
 
 
@@ -1386,14 +1457,14 @@ void CSeq_id_Patent_Tree::FindMatchStr(string sid,
             cit->second.m_ByNumber.find(sid);
         if (nit != cit->second.m_ByNumber.end()) {
             ITERATE(SPat_idMap::TBySeqid, iit, nit->second) {
-                id_list.push_back(iit->second);
+                id_list.insert(CSeq_id_Handle(iit->second));
             }
         }
         SPat_idMap::TByNumber::const_iterator ait =
             cit->second.m_ByApp_number.find(sid);
         if (ait != cit->second.m_ByApp_number.end()) {
             ITERATE(SPat_idMap::TBySeqid, iit, nit->second) {
-                id_list.push_back(iit->second);
+                id_list.insert(CSeq_id_Handle(iit->second));
             }
         }
     }
@@ -1475,15 +1546,16 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindOrCreate(const CSeq_id& id)
         }
         sub.push_back(info);
     }
-    return info;
+    return CSeq_id_Handle(info);
 }
 
 
-void CSeq_id_PDB_Tree::x_Unindex(CSeq_id_Info* info)
+void CSeq_id_PDB_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     CConstRef<CSeq_id> id = info->GetSeqId();
     _ASSERT( id->IsPdb() );
     const CPDB_seq_id& pid = id->GetPdb();
+
     TMolMap::iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     _ASSERT(mol_it != m_MolMap.end());
     NON_CONST_ITERATE(TSubMolList, it, mol_it->second) {
@@ -1518,7 +1590,7 @@ void CSeq_id_PDB_Tree::FindMatch(const CSeq_id_Handle& id,
                 !pid.GetRel().Equals(pid2.GetRel()) )
                 continue;
         }
-        id_list.push_back(*it);
+        id_list.insert(CSeq_id_Handle(*it));
     }
 }
 
@@ -1531,7 +1603,7 @@ void CSeq_id_PDB_Tree::FindMatchStr(string sid,
     if (mit == m_MolMap.end())
         return;
     ITERATE(TSubMolList, sub_it, mit->second) {
-        id_list.push_back(*sub_it);
+        id_list.insert(CSeq_id_Handle(*sub_it));
     }
 }
 
@@ -1544,6 +1616,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/02/19 17:25:35  vasilche
+* Use CRef<> to safely hold pointer to CSeq_id_Info.
+* CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
+* Reduce number of calls to CSeq_id_Handle.GetSeqId().
+*
 * Revision 1.7  2004/02/10 21:15:16  grichenk
 * Added reverse ID matching.
 *

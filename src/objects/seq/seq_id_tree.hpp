@@ -54,7 +54,7 @@
 #include <objmgr/seq_id_handle.hpp>
 
 #include <vector>
-#include <list>
+#include <set>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -90,10 +90,11 @@ public:
     // Find exaclty the same seq-id
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const = 0;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id) = 0;
-    void DropInfo(CSeq_id_Info* info);
-    virtual void x_Unindex(CSeq_id_Info* info) = 0;
+    virtual CSeq_id_Handle GetGiHandle(int gi);
 
-    typedef list<CSeq_id_Handle> TSeq_id_MatchList;
+    virtual void DropInfo(const CSeq_id_Info* info);
+
+    typedef set<CSeq_id_Handle> TSeq_id_MatchList;
 
     // Get the list of matching seq-id.
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
@@ -107,12 +108,15 @@ public:
 
     // Reverse matching
     virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
-    virtual void FindReverseMatchingHandles(const CSeq_id_Handle& id,
-                                            TSeq_id_MatchList& id_list);
+    virtual void FindReverseMatch(const CSeq_id_Handle& id,
+                                  TSeq_id_MatchList& id_list);
 protected:
     friend class CSeq_id_Mapper;
 
-    static CSeq_id_Info* CreateInfo(const CSeq_id& id);
+    CSeq_id_Info* CreateInfo(void);
+    CSeq_id_Info* CreateInfo(const CSeq_id& id);
+
+    virtual void x_Unindex(const CSeq_id_Info* info) = 0;
 
 /*
     typedef CRWLockPosix TRWLock;
@@ -146,19 +150,21 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
+
+    virtual void DropInfo(const CSeq_id_Info* info);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
+    virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
+    virtual void FindReverseMatch(const CSeq_id_Handle& id,
+                                  TSeq_id_MatchList& id_list);
 
 protected:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     bool x_Check(const CSeq_id& id) const;
-
-private:
-    CSeq_id_Info* m_Info;
 };
 
 
@@ -176,7 +182,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
@@ -185,24 +190,13 @@ public:
                               TSeq_id_MatchList& id_list) const;
 
 protected:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     virtual bool x_Check(const CSeq_id& id) const = 0;
     virtual int  x_Get(const CSeq_id& id) const = 0;
 
 private:
     typedef map<int, CSeq_id_Info*> TIntMap;
     TIntMap m_IntMap;
-};
-
-
-////////////////////////////////////////////////////////////////////
-// Gi tree
-
-
-class CSeq_id_Gi_Tree : public CSeq_id_int_Tree
-{
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual int  x_Get(const CSeq_id& id) const;
 };
 
 
@@ -231,6 +225,39 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////
+// Gi tree
+
+
+class CSeq_id_Gi_Tree : public CSeq_id_Which_Tree
+{
+public:
+    CSeq_id_Gi_Tree(void);
+    ~CSeq_id_Gi_Tree(void);
+
+    virtual bool Empty(void) const;
+
+    virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
+    virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
+    virtual CSeq_id_Handle GetGiHandle(int gi);
+
+    virtual void DropInfo(const CSeq_id_Info* info);
+
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
+    virtual void FindMatchStr(string sid,
+                              TSeq_id_MatchList& id_list) const;
+
+protected:
+    virtual void x_Unindex(const CSeq_id_Info* info);
+    bool x_Check(const CSeq_id& id) const;
+    int  x_Get(const CSeq_id& id) const;
+
+    CConstRef<CSeq_id_Info> m_Info;
+};
+
+
+////////////////////////////////////////////////////////////////////
 // Base class for e_Genbank, e_Embl, e_Pir, e_Swissprot, e_Other,
 // e_Ddbj, e_Prf, e_Tpg, e_Tpe, e_Tpd trees
 
@@ -245,7 +272,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
@@ -256,15 +282,16 @@ public:
                                  const CSeq_id_Handle& h2) const;
 
     virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
-    virtual void FindReverseMatchingHandles(const CSeq_id_Handle& id,
-                                            TSeq_id_MatchList& id_list);
+    virtual void FindReverseMatch(const CSeq_id_Handle& id,
+                                  TSeq_id_MatchList& id_list);
 protected:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     virtual bool x_Check(const CSeq_id& id) const = 0;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const = 0;
     CSeq_id_Info* x_FindInfo(const CTextseq_id& tid) const;
 
 private:
-    typedef list<CSeq_id_Info*>   TVersions;
+    typedef vector<CSeq_id_Info*>   TVersions;
     typedef map<string, TVersions, PNocase> TStringMap;
 
     CSeq_id_Info* x_FindVersionEqual(const TVersions& ver_list,
@@ -389,7 +416,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
@@ -398,6 +424,7 @@ public:
                               TSeq_id_MatchList& id_list) const;
 
 private:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
 
     typedef map<string, CSeq_id_Info*, PNocase> TByStr;
@@ -422,7 +449,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
@@ -431,6 +457,7 @@ public:
                               TSeq_id_MatchList& id_list) const;
 
 private:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CDbtag& dbid) const;
 
     struct STagMap {
@@ -461,7 +488,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual bool HaveMatch(const CSeq_id_Handle& ) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
@@ -470,10 +496,11 @@ public:
                               TSeq_id_MatchList& id_list) const;
 
 private:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CGiimport_id& gid) const;
 
     // 2-level indexing: first by Id, second by Db+Release
-    typedef list<CSeq_id_Info*> TGiimList;
+    typedef vector<CSeq_id_Info*> TGiimList;
     typedef map<int, TGiimList>  TIdMap;
 
     TIdMap m_IdMap;
@@ -494,7 +521,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual bool HaveMatch(const CSeq_id_Handle& ) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
@@ -503,6 +529,7 @@ public:
                               TSeq_id_MatchList& id_list) const;
 
 private:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CPatent_seq_id& pid) const;
 
     // 3-level indexing: country, (number|app_number), seqid.
@@ -534,7 +561,6 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual void x_Unindex(CSeq_id_Info* info);
 
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
@@ -542,12 +568,13 @@ public:
                               TSeq_id_MatchList& id_list) const;
 
 private:
+    virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CPDB_seq_id& pid) const;
 
     string x_IdToStrKey(const CPDB_seq_id& id) const;
 
     // Index by mol+chain, no date - too complicated
-    typedef list<CSeq_id_Info*>  TSubMolList;
+    typedef vector<CSeq_id_Info*>  TSubMolList;
     typedef map<string, TSubMolList, PNocase> TMolMap;
 
     TMolMap m_MolMap;
@@ -567,6 +594,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/02/19 17:25:34  vasilche
+* Use CRef<> to safely hold pointer to CSeq_id_Info.
+* CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
+* Reduce number of calls to CSeq_id_Handle.GetSeqId().
+*
 * Revision 1.4  2004/02/10 21:15:15  grichenk
 * Added reverse ID matching.
 *

@@ -50,9 +50,7 @@ CSeq_id_Mapper& CSeq_id_Mapper::GetSeq_id_Mapper(void)
 }
 
 CSeq_id_Mapper::CSeq_id_Mapper(void)
-    : m_GiInfo(new CSeq_id_Info(CConstRef<CSeq_id>()))
 {
-    m_GiInfo->m_Counter.Add(1);
     CSeq_id_Which_Tree::Initialize(m_Trees);
 }
 
@@ -60,17 +58,11 @@ CSeq_id_Mapper::CSeq_id_Mapper(void)
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
 #ifdef _DEBUG
-    CSeq_id_Handle::x_DumpRegister("~CSeq_id_Mapper");
+    CSeq_id_Handle::DumpRegister("~CSeq_id_Mapper");
 #endif
 
     ITERATE ( TTrees, it, m_Trees ) {
         _ASSERT((*it)->Empty());
-    }
-    if ( m_GiInfo ) {
-        _ASSERT(m_GiInfo->m_Counter.Get() == 1);
-        m_GiInfo->m_Counter.Add(-1);
-        delete m_GiInfo;
-        m_GiInfo = 0;
     }
 }
 
@@ -87,43 +79,19 @@ CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
 inline
 CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id_Handle& idh)
 {
-    return x_GetTree(*idh.GetSeqId());
+    return idh? *idh.m_Info->GetTree(): *m_Trees[CSeq_id::e_not_set];
 }
 
 
-inline
-const CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id) const
+CSeq_id_Handle CSeq_id_Mapper::GetGiHandle(int gi)
 {
-    CSeq_id::E_Choice type = id.Which();
-    _ASSERT(size_t(type) < m_Trees.size());
-    return *m_Trees[type];
+    _ASSERT(size_t(CSeq_id::e_Gi) < m_Trees.size());
+    return m_Trees[CSeq_id::e_Gi]->GetGiHandle(gi);
 }
 
 
-inline
-const CSeq_id_Which_Tree&
-CSeq_id_Mapper::x_GetTree(const CSeq_id_Handle& idh) const
+CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id, bool do_not_create)
 {
-    return x_GetTree(*idh.GetSeqId());
-}
-
-
-CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
-                                         bool do_not_create)
-{
-    CSeq_id::E_Choice type = id.Which();
-    if ( type == CSeq_id::e_Gi ) {
-        int gi = id.GetGi();
-        if ( gi != 0 ) {
-            return GetGiHandle(gi);
-        }
-    }
-    else if ( type == CSeq_id::e_not_set ) {
-        LOG_POST(Warning <<
-            "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
-        return CSeq_id_Handle();
-    }
-
     CSeq_id_Which_Tree& tree = x_GetTree(id);
     return do_not_create? tree.FindInfo(id): tree.FindOrCreate(id);
 }
@@ -131,16 +99,6 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
 
 bool CSeq_id_Mapper::HaveMatchingHandles(const CSeq_id_Handle& idh)
 {
-    if ( idh.m_Gi != 0 ) {
-        _ASSERT(idh.m_Info == m_GiInfo);
-        return false;
-    }
-    else if ( !idh ) {
-        LOG_POST(Warning <<
-            "CSeq_id_Mapper::GetMatchingHandles() -- uninitialized seq-id");
-        return false;
-    }
-
     return x_GetTree(idh).HaveMatch(idh);
 }
 
@@ -148,38 +106,12 @@ bool CSeq_id_Mapper::HaveMatchingHandles(const CSeq_id_Handle& idh)
 void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id_Handle& idh,
                                         TSeq_id_HandleSet& h_set)
 {
-    if ( idh.m_Gi != 0 ) {
-        _ASSERT(idh.m_Info == m_GiInfo);
-        h_set.insert(idh);
-        return;
-    }
-    else if ( !idh ) {
-        LOG_POST(Warning <<
-            "CSeq_id_Mapper::GetMatchingHandles() -- uninitialized seq-id");
-        return;
-    }
-
-    CSeq_id_Which_Tree::TSeq_id_MatchList match_list;
-    x_GetTree(idh).FindMatch(idh, match_list);
-
-    ITERATE(CSeq_id_Which_Tree::TSeq_id_MatchList, it, match_list) {
-        h_set.insert(*it);
-    }
+    x_GetTree(idh).FindMatch(idh, h_set);
 }
 
 
 bool CSeq_id_Mapper::HaveReverseMatch(const CSeq_id_Handle& idh)
 {
-    if ( idh.m_Gi != 0 ) {
-        _ASSERT(idh.m_Info == m_GiInfo);
-        return false;
-    }
-    else if ( !idh ) {
-        LOG_POST(Warning <<
-            "CSeq_id_Mapper::HaveReverseMatch() -- uninitialized seq-id");
-        return false;
-    }
-
     return x_GetTree(idh).HaveReverseMatch(idh);
 }
 
@@ -187,23 +119,7 @@ bool CSeq_id_Mapper::HaveReverseMatch(const CSeq_id_Handle& idh)
 void CSeq_id_Mapper::GetReverseMatchingHandles(const CSeq_id_Handle& idh,
                                                TSeq_id_HandleSet& h_set)
 {
-    if ( idh.m_Gi != 0 ) {
-        _ASSERT(idh.m_Info == m_GiInfo);
-        h_set.insert(idh);
-        return;
-    }
-    else if ( !idh ) {
-        LOG_POST(Warning <<
-            "CSeq_id_Mapper::GetReverseMatchingHandles() -- uninitialized seq-id");
-        return;
-    }
-
-    CSeq_id_Which_Tree::TSeq_id_MatchList match_list;
-    x_GetTree(idh).FindReverseMatchingHandles(idh, match_list);
-
-    ITERATE(CSeq_id_Which_Tree::TSeq_id_MatchList, it, match_list) {
-        h_set.insert(*it);
-    }
+    x_GetTree(idh).FindReverseMatch(idh, h_set);
 }
 
 
@@ -215,30 +131,16 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                    "Symbol \'|\' is not supported here");
     }
 
-    CSeq_id_Which_Tree::TSeq_id_MatchList match_list;
-
     ITERATE(TTrees, tree_it, m_Trees) {
-        (*tree_it)->FindMatchStr(sid, match_list);
-    }
-
-    ITERATE(CSeq_id_Which_Tree::TSeq_id_MatchList, it, match_list) {
-        h_set.insert(*it);
+        (*tree_it)->FindMatchStr(sid, h_set);
     }
 }
 
 
-void CSeq_id_Mapper::x_RemoveLastReference(CSeq_id_Info* info)
+bool CSeq_id_Mapper::x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2)
 {
-    _ASSERT(info);
-    x_GetTree(*info->m_Seq_id).DropInfo(info);
-}
-
-
-bool CSeq_id_Mapper::x_IsBetter(const CSeq_id_Handle& h1,
-                                const CSeq_id_Handle& h2) const
-{
-    const CSeq_id_Which_Tree& tree1 = x_GetTree(h1);
-    const CSeq_id_Which_Tree& tree2 = x_GetTree(h2);
+    CSeq_id_Which_Tree& tree1 = x_GetTree(h1);
+    CSeq_id_Which_Tree& tree2 = x_GetTree(h2);
     if ( &tree1 != &tree2 )
         return false;
 
@@ -255,6 +157,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/02/19 17:25:35  vasilche
+* Use CRef<> to safely hold pointer to CSeq_id_Info.
+* CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
+* Reduce number of calls to CSeq_id_Handle.GetSeqId().
+*
 * Revision 1.42  2004/02/10 21:15:16  grichenk
 * Added reverse ID matching.
 *

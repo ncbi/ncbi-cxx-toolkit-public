@@ -74,7 +74,7 @@ public:
     
     // Get seq-id handle. Create new handle if not found and
     // do_not_create is false. Get only the exactly equal seq-id handle.
-    CSeq_id_Handle GetGiHandle(int gi) const;
+    CSeq_id_Handle GetGiHandle(int gi);
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
 
     // Get the list of matching handles, do not create new handles
@@ -101,17 +101,11 @@ private:
     // References to each handle must be tracked to re-use their values
     // Each CSeq_id_Handle locks itself in the constructor and
     // releases in the destructor.
-    void x_RemoveLastReference(CSeq_id_Info* info);
-    //static void sx_RemoveLastReference(CSeq_id_Info* info);
-    bool x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
-    //static bool sx_IsBetter(const CSeq_id_Handle& h1,
-    //const CSeq_id_Handle& h2);
+    bool x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2);
 
 
     CSeq_id_Which_Tree& x_GetTree(const CSeq_id_Handle& idh);
     CSeq_id_Which_Tree& x_GetTree(const CSeq_id& id);
-    const CSeq_id_Which_Tree& x_GetTree(const CSeq_id_Handle& idh) const;
-    const CSeq_id_Which_Tree& x_GetTree(const CSeq_id& id) const;
 
     // Hide copy constructor and operator
     CSeq_id_Mapper(const CSeq_id_Mapper&);
@@ -123,8 +117,6 @@ private:
     TTrees          m_Trees;
     mutable CMutex  m_IdMapMutex;
     
-    CSeq_id_Info*   m_GiInfo;
-
     static CSafeStaticRef<CSeq_id_Mapper> s_Seq_id_Mapper;
 };
 
@@ -143,19 +135,17 @@ CConstRef<CSeq_id> CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& h)
 }
 
 
-inline
-CSeq_id_Handle CSeq_id_Mapper::GetGiHandle(int gi) const
-{
-    return CSeq_id_Handle(m_GiInfo, gi);
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/02/19 17:25:33  vasilche
+* Use CRef<> to safely hold pointer to CSeq_id_Info.
+* CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
+* Reduce number of calls to CSeq_id_Handle.GetSeqId().
+*
 * Revision 1.22  2004/02/10 21:15:14  grichenk
 * Added reverse ID matching.
 *

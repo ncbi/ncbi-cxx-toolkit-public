@@ -35,6 +35,7 @@
 #include <corelib/ncbiatomic.hpp>
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/seq_id_mapper.hpp>
+#include <objmgr/impl/seq_id_tree.hpp>
 #include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -45,6 +46,7 @@ BEGIN_SCOPE(objects)
 // CSeq_id_Info
 //
 
+//#define NCBI_SLOW_ATOMIC_SWAP
 #ifdef NCBI_SLOW_ATOMIC_SWAP
 DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
 #endif
@@ -73,9 +75,16 @@ CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
 }
 
 
-void CSeq_id_Info::RemoveLastReference(void)
+CSeq_id_Info::~CSeq_id_Info(void)
 {
-    CSeq_id_Mapper::GetSeq_id_Mapper().x_RemoveLastReference(this);
+    _ASSERT(m_Counter.Get() == 0 && m_Tree);
+    m_Tree = 0;
+}
+
+
+void CSeq_id_Info::x_RemoveLastReference(void) const
+{
+    m_Tree->DropInfo(this);
 }
 
 
@@ -89,8 +98,8 @@ CConstRef<CSeq_id> CSeq_id_Handle::GetSeqId(void) const
 {
     _ASSERT(m_Info);
     CConstRef<CSeq_id> ret;
-    if ( m_Gi ) {
-        ret = m_Info->GetGiSeqId(m_Gi);
+    if ( IsGi() ) {
+        ret = m_Info->GetGiSeqId(GetGi());
     }
     else {
         ret = m_Info->GetSeqId();
@@ -102,9 +111,9 @@ CConstRef<CSeq_id> CSeq_id_Handle::GetSeqId(void) const
 CConstRef<CSeq_id> CSeq_id_Handle::GetSeqIdOrNull(void) const
 {
     CConstRef<CSeq_id> ret;
-    if ( m_Gi ) {
+    if ( IsGi() ) {
         _ASSERT(m_Info);
-        ret = m_Info->GetGiSeqId(m_Gi);
+        ret = m_Info->GetGiSeqId(GetGi());
     }
     else if ( m_Info ) {
         ret = m_Info->GetSeqId();
@@ -160,7 +169,9 @@ static int s_DebugSeqIdsCounter(void)
 
 DEFINE_STATIC_FAST_MUTEX(s_RegisterMutex);
 typedef map<const CSeq_id_Handle*, int> TRegisterSet;
+typedef map<const CSeq_id_Info*, int> TRegisterSet2;
 static TRegisterSet* s_RegisterSet = 0;
+static TRegisterSet2* s_RegisterSet2 = 0;
 static int s_Counter = 0;
 #endif
 
@@ -210,7 +221,7 @@ void CSeq_id_Handle::x_Deregister(void)
 }
 
 
-void CSeq_id_Handle::x_DumpRegister(const char* _DEBUG_ARG(msg))
+void CSeq_id_Handle::DumpRegister(const char* _DEBUG_ARG(msg))
 {
 #ifdef _DEBUG
     if ( s_DebugSeqIds() ) {
@@ -275,6 +286,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/02/19 17:25:34  vasilche
+* Use CRef<> to safely hold pointer to CSeq_id_Info.
+* CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.
+* Reduce number of calls to CSeq_id_Handle.GetSeqId().
+*
 * Revision 1.18  2004/01/22 20:10:41  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
