@@ -59,7 +59,8 @@ public:
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
-          m_BufLength(0)
+          m_BufLength(0),
+          m_Shutdown(false)
     {
         m_Buf = new char[kNetCacheBufSize+1];
     }
@@ -71,12 +72,14 @@ public:
 
     /// Take request code from the socket and process the request
     virtual void  Process(SOCK sock);
+    virtual bool ShutdownRequested(void) { return m_Shutdown; }
 
 private:
     typedef enum {
         eError,
         ePut,
-        eGet
+        eGet,
+        eShutdown
     } ERequestType;
 
     struct Request
@@ -87,8 +90,24 @@ private:
         string          err_msg;      
     };
 
+    /// Request id string can be parsed into this structure
+    struct BlobId
+    {
+        string    prefix;
+        unsigned  version;
+        unsigned  id;
+        string    hostname;
+        unsigned  timeout;
+    };
+
+    /// Return TRUE if request parsed correctly
+    bool ParseBlobId(const string& rid, BlobId* req_id);
+
     /// Process "PUT" request
     void ProcessPut(CSocket& sock, const Request& req);
+
+    /// Process "GET" request
+    void ProcessGet(CSocket& sock, const Request& req);
 
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
@@ -110,6 +129,7 @@ private:
     ICache*    m_Cache;
     char*      m_Buf;       /// Temp buffer
     size_t     m_BufLength; ///< Actual buffer length (in bytes)
+    bool       m_Shutdown;  ///< Shutdown request
 };
 
 
@@ -125,7 +145,7 @@ void CNetCacheServer::Process(SOCK sock)
         string auth, request;
 
         if (ReadStr(socket, &auth)) {
-            if (ReadStr(socket, &request)) {
+            if (ReadStr(socket, &request)) {                
                 Request req;
                 ParseRequest(request, &req);
 
@@ -134,6 +154,19 @@ void CNetCacheServer::Process(SOCK sock)
                     ProcessPut(socket, req);
                     break;
                 case eGet:
+                    ProcessGet(socket, req);
+                    break;
+                case eShutdown:
+                    {
+                    m_Shutdown = true;
+
+                    // self reconnect to force the listening thread to rescan
+                    // shutdown flag
+                    unsigned port = GetPort();
+                    STimeout to;
+                    to.sec = 10; to.usec = 0;
+                    CSocket shut_sock("localhost", port, &to);
+                    }
                     break;
                 case eError:
                     WriteMsg(socket, "ERR:", req.err_msg);
@@ -143,10 +176,103 @@ void CNetCacheServer::Process(SOCK sock)
                 } // switch
             }
         }
+
+        // cleaning up the input wire, in case if there is some
+        // trailing input.
+        // i don't want to know wnat is it, but if i don't read it
+        // some clients will receive PEER RESET error trying to read
+        // servers answer.
+        //
+        // I'm reading fixed length sized buffer, so any huge ill formed 
+        // request still will end up with an error on the client side
+        // (considered a client's fault (DDOS attempt))
+        STimeout to;
+        to.sec = to.usec = 0;
+        char buf[1024];
+        socket.SetTimeout(eIO_Read, &to);
+        size_t n_read;
+        socket.Read(buf, sizeof(buf), &n_read);
     } 
     catch (exception& ex)
     {
         ERR_POST(ex.what());
+    }
+}
+
+
+void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
+{
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+
+    BlobId blob_id;
+    bool res = ParseBlobId(req_id, &blob_id);
+    if (!res) {
+format_err:
+        WriteMsg(sock, "ERR:", "BLOB id format error.");
+        return;
+    }
+
+    if (blob_id.prefix != "NCID" || 
+        blob_id.version != 1     ||
+        blob_id.hostname.empty() ||
+        blob_id.id == 0          ||
+        blob_id.timeout == 0) 
+    {
+        goto format_err;
+    }
+
+    // check timeout
+
+    CTime time_stamp(CTime::eCurrent);
+    unsigned tm = (unsigned)time_stamp.GetTimeT();
+
+    if (tm > blob_id.timeout) {
+        WriteMsg(sock, "ERR:", "BLOB expired.");
+        return;
+    }
+//cerr << "Retrieving:'" << req_id << "'" << endl;
+
+    auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
+    if (!rdr.get()) {
+blob_not_found:
+        WriteMsg(sock, "ERR:", "BLOB not found.");
+        return;
+    }
+
+    bool read_flag = false;
+    size_t bytes_read;
+    do {
+        ERW_Result io_res =
+         rdr->Read(m_Buf, kNetCacheBufSize, &bytes_read);
+        if (io_res == eRW_Success) {
+            if (bytes_read) {
+                if (!read_flag) {
+                    read_flag = true;
+                    WriteMsg(sock, "OK:", "BLOB found.");
+                }
+                // translate cache to the client
+                size_t n_written;
+
+                EIO_Status io_st = 
+                  sock.Write(m_Buf, bytes_read, &n_written);
+                if (io_st != eIO_Success) {
+                    break;
+                }
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    } while(1);
+
+    if (!read_flag) {
+        goto blob_not_found;
     }
 }
 
@@ -156,11 +282,83 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
     GenerateRequestId(req, &rid);
     WriteMsg(sock, "ID:", rid);
 
+    auto_ptr<IWriter> 
+        iwrt(m_Cache->GetWriteStream(rid, 0, kEmptyStr));
+
     while (ReadBuffer(sock)) {
         if (m_BufLength) {
-            // translate it to ICache
+            size_t bytes_written;
+            ERW_Result res = 
+                iwrt->Write(m_Buf, m_BufLength, &bytes_written);
+            if (res != eRW_Success) {
+                WriteMsg(sock, "Err:", "Server I/O error");
+                return;
+            }
         }
     } // while
+
+    iwrt->Flush();
+    iwrt.reset(0);
+
+/*
+        auto_ptr<IReader> rdr;
+        IReader* r = m_Cache->GetReadStream(rid, 0, "");
+        rdr.reset(r);
+        if (rdr.get() == 0) {
+            cerr << "Cannot retrieve BLOB" << endl;
+        }
+*/
+}
+
+bool CNetCacheServer::ParseBlobId(const string& rid, BlobId* req_id)
+{
+    _ASSERT(req_id);
+
+    // NCID_01_1_DIDIMO_1096382642
+
+    const char* ch = rid.c_str();
+    req_id->hostname = req_id->prefix = kEmptyStr;
+
+    // prefix
+
+    for (;*ch && *ch != '_'; ++ch) {
+        req_id->prefix += *ch;
+    }
+    if (*ch == 0)
+        return false;
+    ++ch;
+
+    // version
+    req_id->version = atoi(ch);
+    while (*ch && *ch != '_') {
+        ++ch;
+    }
+    if (*ch == 0)
+        return false;
+    ++ch;
+
+    // id
+    req_id->id = atoi(ch);
+    while (*ch && *ch != '_') {
+        ++ch;
+    }
+    if (*ch == 0)
+        return false;
+    ++ch;
+
+
+    // hostname
+    for (;*ch && *ch != '_'; ++ch) {
+        req_id->hostname += *ch;
+    }
+    if (*ch == 0)
+        return false;
+    ++ch;
+
+    // timeout
+    req_id->timeout = atoi(ch);
+
+    return true;
 }
 
 
@@ -168,15 +366,13 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
                                const string&  prefix, 
                                const string&  msg)
 {
+    string err_msg(prefix);
+    err_msg.append(msg);
+    err_msg.append("\r\n");
+
     size_t n_written;
     /* EIO_Status io_st = */
-        sock.Write(prefix.c_str(), prefix.length(), &n_written);
-    if (msg.length()) {
-        /* EIO_Status io_st = */
-            sock.Write(msg.c_str(), msg.length(), &n_written);
-    }
-    /* EIO_Status io_st = */
-       sock.Write("\n", 1, &n_written);
+        sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
 }
 
 void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
@@ -215,6 +411,11 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
         return;
     } // PUT
 
+    if (strncmp(s, "SHUTDOWN", 7) == 0) {
+        req->req_type = eShutdown;
+        return;
+    } // PUT
+
     req->req_type = eError;
     req->err_msg = "Unknown request";
 }
@@ -244,24 +445,30 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
     char ch;
     EIO_Status io_st;
     size_t  bytes_read;
+    unsigned loop_cnt = 0;
 
     do {
-        io_st = sock.Read(&ch, 1, &bytes_read);
-        switch (io_st) 
-        {
-        case eIO_Success:
-            if (ch == 0 || ch == '\n') { // end of AUTH
-                return true;
-            }
-            *str += ch;
-            break;
-        case eIO_Timeout:
-            // TODO: add repetition counter or another protector here
-            break;
-        default: // invalid socket or request, bailing out
+        do {
+            io_st = sock.Read(&ch, 1, &bytes_read);
+            switch (io_st) 
+            {
+            case eIO_Success:
+                if (ch == 0 || ch == '\n' || ch == 13) {
+                    goto out_of_loop;
+                }
+                *str += ch;
+                break;
+            case eIO_Timeout:
+                // TODO: add repetition counter or another protector here
+                break;
+            default: // invalid socket or request, bailing out
+                return false;
+            };
+        } while (true);
+out_of_loop:
+        if (++loop_cnt > 10) // protection from a client feeding empty strings
             return false;
-        };
-    } while (true);
+    } while (str->empty());
 
     return true;
 
@@ -372,12 +579,30 @@ int CNetCacheDApp::Run(void)
             ERR_POST("Configuration error. Cache not open.");
             return 1;
         }
+/*
+        const char* key = "NCID_01_1_DIDIMO_1096464360";
+        {{
+        const char* buf = "ASDFQWERTRY";
+        auto_ptr<IWriter> wrt(cache->GetWriteStream(key, 0, ""));
+        wrt->Write(buf, 5);
+        wrt->Flush();
+        }}
+        auto_ptr<IReader> rdr;
+        IReader* r = cache->GetReadStream(key, 0, "");
+        rdr.reset(r);
+        if (rdr.get() == 0) {
+            cerr << "Cannot retrieve BLOB" << endl;
+        }
+*/
+
+        
 
         int port = 
             reg.GetInt("server", "port", 9000, CNcbiRegistry::eReturn);
 
         CNetCacheServer thr_srv(port, cache.get());
         thr_srv.Run();
+
 
     }
     catch (CBDB_ErrnoException& ex)
@@ -403,6 +628,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/04 12:33:24  kuznets
+ * Complete implementation of GET/PUT
+ *
  * Revision 1.3  2004/09/23 16:37:21  kuznets
  * Reflected changes in ncbi_config.hpp
  *
