@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/07/22 19:48:57  vasilche
+* Reversed hack with embedding old ASN.1 output to new.
+*
 * Revision 1.19  1999/07/22 19:40:57  vasilche
 * Fixed bug with complex object graphs (pointers to members of other objects).
 *
@@ -366,6 +369,7 @@ void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 
 void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
 {
+#if 0
     // dirty hack to skip structure name with '::='
     if ( length > 3 ) {
         const char* p = (const char*)memchr(data, ':', length - 3);
@@ -376,6 +380,7 @@ void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
             length -= skip;
         }
     }
+#endif
     if ( !m_Output.write(data, length) )
         THROW1_TRACE(runtime_error, "write fault");
 }
