@@ -401,7 +401,7 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
                 out << ' ' << i->first;
                 if ( !i->second.IsOptional() ||
                      !i->second.GetValue().empty() ) {
-                    out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
+                    out << "=\"" << i->second.GetValue() << '"';
                 }
             }
         }
@@ -2062,6 +2062,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2003/04/22 15:04:05  ivanov
+ * Removed HTMLEncode() for tags attributes in CHTMLOpenElement::PrintBegin()
+ *
  * Revision 1.81  2003/03/11 15:28:57  kuznets
  * iterate -> ITERATE
  *
