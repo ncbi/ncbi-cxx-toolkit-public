@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/08/03 20:21:10  golikov
+* Added predicate PCase for AStrEquiv
+* PNocase, PCase goes through NStr::Compare now
+*
 * Revision 1.40  2000/07/19 19:03:52  vakatov
 * StringToBool() -- short and case-insensitive versions of "true"/"false"
 * ToUpper/ToLower(string&) -- fixed
@@ -268,8 +272,14 @@ struct NStr {
 
 // predicates
 
-// case-insensitive string comparison
+// case-INsensitive string comparison
 struct PNocase
+{
+    bool operator() ( const string&, const string& ) const;
+};
+
+// case-sensitive string comparison
+struct PCase
 {
     bool operator() ( const string&, const string& ) const;
 };

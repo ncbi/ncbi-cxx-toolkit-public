@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2000/08/03 20:21:35  golikov
+* Added predicate PCase for AStrEquiv
+* PNocase, PCase goes through NStr::Compare now
+*
 * Revision 1.65  2000/06/26 20:56:35  vakatov
 * TestDiag() -- using user-istalled message posting handler
 *
@@ -933,10 +937,10 @@ static void TestUtilities(void)
     dst = NStr::Replace(src, search, replace, src.size() - 1);
     _ASSERT(dst == "aaabbbaaccczzcccXx");
 
-    NcbiCout << " completed successfully!" << NcbiEndl << NcbiEndl;
+    NcbiCout << " completed successfully!" << NcbiEndl;
 
 
-    NcbiCout << NcbiEndl << "NStr::Compare() tests..." << NcbiEndl;
+    NcbiCout << NcbiEndl << "NStr::Compare() tests...";
 
     size_t j;
     const SStrCompare* rec;
@@ -978,7 +982,10 @@ static void TestUtilities(void)
     _ASSERT(NStr::Compare("0123", 2, 2, "12") >  0);
     _ASSERT(NStr::Compare("0123", 3, 2,  "3") == 0);
 
-    NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests..." << NcbiEndl;
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
+
+    NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests...";
 
     static const struct {
         const char* orig;
@@ -1051,8 +1058,26 @@ static void TestUtilities(void)
             _ASSERT(NStr::Compare(x_lower, NStr::ToLower(x_str)) == 0);
         }}
     }
+    NcbiCout << " completed successfully!" << NcbiEndl;
 
-    NcbiCout << "TestUtilities finished" << NcbiEndl;
+    NcbiCout << NcbiEndl << "AStrEquiv tests...";
+
+    string as1("abcdefg ");
+    string as2("abcdefg ");
+    string as3("aBcdEfg ");
+    string as4("lsekfu");
+
+    _ASSERT( AStrEquiv(as1, as2, PNocase()) == true );
+    _ASSERT( AStrEquiv(as1, as3, PNocase()) == true );
+    _ASSERT( AStrEquiv(as3, as4, PNocase()) == false );
+    _ASSERT( AStrEquiv(as1, as2, PCase())   == true );
+    _ASSERT( AStrEquiv(as1, as3, PCase())   == false );
+    _ASSERT( AStrEquiv(as2, as4, PCase())   == false );
+
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
+
+    NcbiCout << NcbiEndl << "TestUtilities finished" << NcbiEndl;
 }
 
 
@@ -1106,9 +1131,13 @@ int CTestApplication::Run(void)
     TestException();
     TestException_AuxTrace();
     TestIostream();
-    TestRegistry();
     TestUtilities();
+    TestRegistry();
     TestThrowTrace();
+
+    NcbiCout << NcbiEndl << "CORETEST execution completed successfully!"
+             << NcbiEndl << NcbiEndl << NcbiEndl;
+
     return 0;
 }
 

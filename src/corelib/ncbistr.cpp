@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/08/03 20:21:29  golikov
+* Added predicate PCase for AStrEquiv
+* PNocase, PCase goes through NStr::Compare now
+*
 * Revision 1.31  2000/07/19 19:03:55  vakatov
 * StringToBool() -- short and case-insensitive versions of "true"/"false"
 * ToUpper/ToLower(string&) -- fixed
@@ -461,24 +465,19 @@ string NStr::Replace(const string& src, const string& search, const string& repl
 
 // predicates
 
-// case-insensitive string comparison
+// case-INsensitive string comparison
 // operator() meaning is the same as operator<
 bool PNocase::operator() (const string& x, const string& y) const
 {
-    string::const_iterator x_ptr = x.begin();
-    string::const_iterator y_ptr = y.begin();
-    
-    while ( x_ptr != x.end() ) {
-        if ( y_ptr == y.end() )
-            return false;
-        int diff = toupper(*x_ptr) - toupper(*y_ptr);
-        if ( diff != 0 )
-            return diff < 0;
-        ++x_ptr; ++y_ptr;
-    }
-    return y_ptr != y.end();
+    return NStr::Compare(x, y, NStr::eNocase) < 0;
 }
 
+// case-sensitive string comparison
+// operator() meaning is the same as operator<
+bool PCase::operator() (const string& x, const string& y) const
+{
+    return NStr::Compare(x, y, NStr::eCase) < 0;
+}
 
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str)
