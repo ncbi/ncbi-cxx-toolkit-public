@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqloc/Packed_seqint_.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 #include <util/range.hpp>
 
 // generated classes
@@ -60,7 +61,8 @@ public:
 
     // constructor
     CPacked_seqint(void);
-    CPacked_seqint(TId& id, const TRanges& ivals, TStrand strand = eNa_strand_unknown);
+    CPacked_seqint(TId& id, const TRanges& ivals,
+                   TStrand strand = eNa_strand_unknown);
 
     // destructor
     ~CPacked_seqint(void);
@@ -71,7 +73,7 @@ public:
     /// for convenience
     void AddInterval(const CSeq_interval& ival);
     void AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
-                     ENa_strand strand = eNa_strand_unknown);
+                     TStrand strand = eNa_strand_unknown);
     void AddIntervals(const CPacked_seqint& ivals);
     void AddIntervals(const Tdata& ivals);
 
@@ -102,6 +104,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/08/19 13:05:20  dicuccio
+ * Added include for ENa_strand.  Use typedef instead of ENa_strand
+ *
  * Revision 1.6  2004/01/28 17:14:55  shomrat
  * Added methods to ease the construction of objects
  *
