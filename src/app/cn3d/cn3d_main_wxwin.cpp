@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.149  2002/07/24 12:34:22  thiessen
+* hack around no wxFileName in wx2.2
+*
 * Revision 1.148  2002/07/23 17:39:53  thiessen
 * use wxFileDialog for save dialog
 *
@@ -575,7 +578,9 @@
 #include <wx/fontdlg.h>
 #include <wx/confbase.h>
 #include <wx/fileconf.h>
+#if wxVERSION_NUMBER >= 2302
 #include <wx/filename.h>
+#endif
 
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -2135,6 +2140,9 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     GlobalMessenger()->SequenceWindowsSave();
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
+    wxString outputFilename;
+
+#if wxVERSION_NUMBER >= 2302
     wxFileName fn(currentFile.c_str());
     wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
 #ifdef __WXGTK__
@@ -2146,9 +2154,9 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         wxSAVE | wxOVERWRITE_PROMPT);
     dialog.SetFilterIndex(fn.GetExt() == "val" ? 1 : (fn.GetExt() == "acd" ? 2 :
         (fn.GetExt() == "prt" ? 3 : 0)));
-    wxString outputFilename;
     if (dialog.ShowModal() == wxID_OK)
         outputFilename = dialog.GetPath();
+#endif
 
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
 
