@@ -84,6 +84,8 @@ CPssmEngine::Run()
 {
     m_PssmInput->Process();
 
+    x_Validate();
+
     // Note: currently there is no way for users to request diagnostics through
     // this interface
     PSIDiagnosticsRequest request;
@@ -220,6 +222,78 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     return retval;
 }
 
+void
+CPssmEngine::x_Validate()
+{
+    x_ValidateNoFlankingGaps();
+    x_ValidateNoGapsInQuery();
+}
+
+void
+CPssmEngine::x_ValidateNoFlankingGaps()
+{
+    const PSIMsa* msa = m_PssmInput->GetData();
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
+    ostringstream os;
+
+    ASSERT(msa);
+
+    // Look for starting gaps in alignments
+    for (unsigned int i = 0; i < msa->dimensions->num_seqs + 1; i++) {
+        // find the first aligned residue
+        for (unsigned int j = 0; j < m_PssmInput->GetQueryLength(); j++) {
+            if (msa->data[i][j].is_aligned) {
+                if (msa->data[i][j].letter == GAP) {
+                    os << "Gap at start of alignment is not allowed: "
+                       << "sequence " << i << " position " << j << endl;
+                }
+                break;
+            }
+        }
+    }
+
+    // Look for ending gaps in alignments
+    for (unsigned int i = 0; i < msa->dimensions->num_seqs + 1; i++) {
+        // find the last aligned residue
+        for (unsigned int j = m_PssmInput->GetQueryLength() - 1; j >= 0; j--) {
+            if (msa->data[i][j].is_aligned) {
+                if (msa->data[i][j].letter == GAP) {
+                    os << "Gap at end of alignment is not allowed: "
+                       << "sequence " << i << " position " << j << endl;
+                }
+                break;
+            }
+        }
+    }
+
+    if (os.str().length() != 0) {
+        NCBI_THROW(CBlastException, eBadParameter, os.str().c_str());
+    }
+}
+
+void
+CPssmEngine::x_ValidateNoGapsInQuery()
+{
+    const PSIMsa* msa = m_PssmInput->GetData();
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
+    ostringstream os;
+
+    ASSERT(msa);
+
+    // Look for gaps in query sequence
+    for (unsigned int i = 0; i < m_PssmInput->GetQueryLength(); i++) {
+        if (m_PssmInput->GetQuery()[i] == GAP ||
+            msa->data[kQueryIndex][i].letter == GAP) {
+            os << "Found GAP at query position " << i << endl;
+            break;
+        }
+    }
+
+    if (os.str().length() != 0) {
+        NCBI_THROW(CBlastException, eBadParameter, os.str().c_str());
+    }
+}
+
 CRef<CPssmWithParameters>
 CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
                               const PSIBlastOptions* opts,
@@ -310,6 +384,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/10/12 21:22:59  camacho
+ * + validation methods
+ *
  * Revision 1.14  2004/10/12 14:19:18  camacho
  * Update for scoremat.asn reorganization
  *

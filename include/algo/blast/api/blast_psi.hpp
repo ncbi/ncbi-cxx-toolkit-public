@@ -115,6 +115,23 @@ private:
     x_InitializeScoreBlock(const unsigned char* query,
                            unsigned int query_length);
 
+    /// Performs validation on data provided before invoking the CORE PSSM
+    /// engine.
+    /// @throws CBlastException if validation fails
+    void
+    x_Validate();
+
+    /// Make sure that there are no flanking gaps in multiple sequence
+    /// alignment data structure.
+    /// @throws CBlastException if validation fails
+    void
+    x_ValidateNoFlankingGaps();
+
+    /// Make sure that there are no gaps in the query sequence.
+    /// @throws CBlastException if validation fails
+    void
+    x_ValidateNoGapsInQuery();
+
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
     /// @param matrix_name underlying scoring matrix name [in]
@@ -147,6 +164,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/10/12 21:22:00  camacho
+ * + validation methods
+ *
  * Revision 1.12  2004/10/12 14:18:31  camacho
  * Update for scoremat.asn reorganization
  *
