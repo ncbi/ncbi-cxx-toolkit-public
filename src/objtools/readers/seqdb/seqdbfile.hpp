@@ -116,7 +116,7 @@ private:
     {
         if (! m_Mapped) {
             _ASSERT(m_Regions.end() == m_Regions.find((Uint4*)region));
-            ifdebug_rh << "RH insert region [" << int(region) << "]" << endl;
+            ifdebug_rh << "RH insert region [" << (void*)(region) << "]" << endl;
             m_Regions.insert((Uint4*) region);
         }
     }
@@ -128,7 +128,7 @@ private:
                 return false;
             }
             
-            ifdebug_rh << "RH delete region [" << int(region) << "]" << endl;
+            ifdebug_rh << "RH delete region [" << (void*)(region) << "]" << endl;
             delete [] region;
             m_Regions.erase((Uint4*) region);
         }
@@ -140,7 +140,7 @@ private:
     {
         for(TRHIter i = m_Regions.begin(); i != m_Regions.end(); i++) {
             Uint4 * rh = *i;
-            ifdebug_rh << "RH delete(clear) [" << int(rh) << "]" << endl;
+            ifdebug_rh << "RH delete(clear) [" << (void*)(rh) << "]" << endl;
             delete [] rh;
         }
         
@@ -455,7 +455,7 @@ public:
             NCBI_THROW(CSeqDBException, eFileErr, "Could not open [sequence data] file.");
         }
         
-        return x_ReadBytes(x, start, end);
+        x_ReadBytes(x, start, end);
     }
     
     const char * GetRegion(Uint4 start, Uint4 end)
@@ -516,7 +516,7 @@ public:
             NCBI_THROW(CSeqDBException, eFileErr, "Could not open [header data] file.");
         }
         
-        return x_ReadBytes(x, start, end);
+        x_ReadBytes(x, start, end);
     }
     
     const char * GetRegion(Uint4 start, Uint4 end)
