@@ -176,7 +176,8 @@ public:
     CDBAPI_CacheIReader(IConnection*             conn,
                         const string&            key,
                         int                      version,
-                        const string&            subkey)
+                        const string&            subkey,
+                        unsigned                 buf_size = s_WriterBufferSize)
     : m_GoodStateFlag(true),
       m_Conn(conn),
       m_Key(key),
@@ -185,7 +186,8 @@ public:
       m_Buffer(0),
       m_BytesInBuffer(0),
       m_BlobSize(0),
-      m_ReadPos(0)
+      m_ReadPos(0),
+      m_MemBufferSize(buf_size)
     {
         string sel_blob_sql = 
             "SELECT datalength(\"data\"), data FROM dbo.cache_data WHERE ";
@@ -205,7 +207,7 @@ public:
                            "BLOB data is NULL");
             }
             if (m_BlobSize) {
-                if (m_BlobSize < s_WriterBufferSize) {
+                if (m_BlobSize <= m_MemBufferSize) {
                     m_Buffer = new unsigned char[m_BlobSize];
                     m_BytesInBuffer = (unsigned)rs->Read(m_Buffer, m_BlobSize);
                 } else { // use temp file instead
@@ -295,6 +297,7 @@ private:
     unsigned int          m_BytesInBuffer;
     unsigned int          m_BlobSize;
     unsigned int          m_ReadPos;
+    unsigned int          m_MemBufferSize;
 };
 
 
@@ -305,7 +308,8 @@ public:
     CBDB_CacheIWriter(CDBAPI_Cache*            cache,
                       const string&            key,
                       int                      version,
-                      const string&            subkey)
+                      const string&            subkey,
+                      unsigned int             buffer_size = s_WriterBufferSize)
     : m_Cache(cache),
       m_TmpFile(0),
       m_GoodStateFlag(true),
@@ -314,9 +318,10 @@ public:
       m_Key(key),
       m_Version(version),
       m_SubKey(subkey),
-      m_BytesInBuffer(0)
+      m_BytesInBuffer(0),
+      m_MemBufferSize(buffer_size)
     {
-        m_Buffer = new unsigned char[s_WriterBufferSize];
+        m_Buffer = new unsigned char[m_MemBufferSize];
     }
 
     ~CBDB_CacheIWriter()
@@ -356,7 +361,7 @@ public:
 
         if (m_Buffer) {
             // Filling the buffer while we can
-            if (new_buf_length <= s_WriterBufferSize) {
+            if (new_buf_length <= m_MemBufferSize) {
                 ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
                 m_BytesInBuffer = new_buf_length;
                 *bytes_written = count;
@@ -530,6 +535,7 @@ private:
 
     unsigned char*        m_Buffer;
     unsigned int          m_BytesInBuffer;
+    unsigned int          m_MemBufferSize;
 };
 
 
@@ -538,7 +544,8 @@ private:
 
 
 CDBAPI_Cache::CDBAPI_Cache()
-: m_Conn(0)
+: m_Conn(0),
+  m_MemBufferSize(s_WriterBufferSize)
 {
 }
 
@@ -546,9 +553,15 @@ CDBAPI_Cache::~CDBAPI_Cache()
 {
 }
 
+void CDBAPI_Cache::SetMemBufferSize(unsigned int buf_size)
+{
+    const unsigned min_buffer = 256 * 1024;
+    m_MemBufferSize = (buf_size < min_buffer) ? min_buffer : buf_size;
+}
+
 void CDBAPI_Cache::Open(IConnection* conn,
-              const string& temp_dir,
-              const string& temp_prefix)
+                        const string& temp_dir,
+                        const string& temp_prefix)
 {
     m_Conn = conn;
     m_TempDir = temp_dir;
@@ -753,7 +766,9 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 
     auto_ptr<CDBAPI_CacheIReader> rdr;
     try {
-        rdr.reset(new CDBAPI_CacheIReader(m_Conn, key, version, subkey));
+        rdr.reset(new CDBAPI_CacheIReader(m_Conn, 
+                                          key, version, subkey, 
+                                          GetMemBufferSize()));
     } catch (CDBAPI_ICacheException&) {
         return 0;
     }
@@ -775,11 +790,11 @@ IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
-    CBDB_CacheIWriter* wrt = 
-        new CBDB_CacheIWriter(this, key, version, subkey);
+    auto_ptr<CBDB_CacheIWriter> wrt( 
+        new CBDB_CacheIWriter(this, key, version, subkey, GetMemBufferSize()));
     wrt->SetTemps(m_TempDir, m_TempPrefix);
 
-    return wrt;
+    return wrt.release();
 }
 
 void CDBAPI_Cache::Remove(const string& key)
@@ -1155,6 +1170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/07/21 19:04:16  kuznets
+ * Added functions to change the size of the memory buffer
+ *
  * Revision 1.8  2004/07/21 16:04:10  kuznets
  * Fixed GCC warnings, etc
  *

@@ -113,6 +113,13 @@ public:
               const string& temp_prefix = kEmptyStr);
 
     IConnection* GetConnection() { return m_Conn; }
+    
+    /// @return Size of the intermidiate BLOB memory buffer
+    unsigned GetMemBufferSize() const { return m_MemBufferSize; }
+    
+    /// Set size of the intermidiate BLOB memory buffer
+    void SetMemBufferSize(unsigned int buf_size);
+    
 
     // ICache interface 
 
@@ -225,6 +232,7 @@ private:
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
     string                  m_TempDir;      ///< Directory for temp files
     string                  m_TempPrefix;   ///< Temp prefix
+    unsigned int            m_MemBufferSize;///< Size of temp. buffer for BLOBs
 };
 
 /* @} */
@@ -235,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/21 19:04:33  kuznets
+ * Added functions to change the size of the memory buffer
+ *
  * Revision 1.2  2004/07/19 16:11:51  kuznets
  * + Remove for key,version,subkey
  *
