@@ -34,6 +34,7 @@
 #define GUI_CORE_ALGO_BASIC___RESTRICTION__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include "seq_match.hpp"
 
 
@@ -303,7 +304,7 @@ const vector<CRSpec>& CREnzyme::GetSpecs(void) const
 /// definite sites, and a vector of possible sites
 ///
 
-class CREnzResult
+class CREnzResult : public CObject
 {
 public:
     CREnzResult(const string& enzyme_name,
@@ -357,7 +358,7 @@ public:
     template<class T>
     static void Find(const T& seq,
                      const vector<CREnzyme>& enzymes,
-                     vector<CREnzResult>& results)
+                     vector<CRef<CREnzResult> >& results)
     {
         // iterate over enzymes
         vector<CRSite> definite_sites;
@@ -390,9 +391,10 @@ public:
             }
 
             // store the results for this enzyme
-            results.push_back(CREnzResult(enzyme->GetName(),
-                                          definite_sites,
-                                          possible_sites));
+            CRef<CREnzResult> result(new CREnzResult(enzyme->GetName(),
+                                                     definite_sites,
+                                                     possible_sites));
+            results.push_back(result);
         }
     }
 
@@ -443,7 +445,6 @@ public:
 
         // if the pattern is not pallindromic,
         // do a search with its complement
-        // FIX CUT SITE CALCULATION
         string comp = pattern;
         CSeqMatch::CompNcbi8na(comp);
         if (comp != pattern) {
@@ -462,11 +463,13 @@ public:
                 // figure out cleavage locations
                 const vector<int>& plus_cuts = spec.GetPlusCuts();
                 ITERATE (vector<int>, cut, plus_cuts) {
-                    site.SetPlusCuts().push_back(*match + comp.length() - *cut);
+                    site.SetPlusCuts()
+                        .push_back(*match + comp.length() - *cut);
                 }
                 const vector<int>& minus_cuts = spec.GetMinusCuts();
                 ITERATE (vector<int>, cut, minus_cuts) {
-                    site.SetMinusCuts().push_back(*match + comp.length() - *cut);
+                    site.SetMinusCuts()
+                        .push_back(*match + comp.length() - *cut);
                 }
 
                 definite_sites.push_back(site);
@@ -477,11 +480,13 @@ public:
                 // figure out cleavage locations
                 const vector<int>& plus_cuts = spec.GetPlusCuts();
                 ITERATE (vector<int>, cut, plus_cuts) {
-                    site.SetPlusCuts().push_back(*match + comp.length() - *cut);
+                    site.SetPlusCuts()
+                        .push_back(*match + comp.length() - *cut);
                 }
                 const vector<int>& minus_cuts = spec.GetMinusCuts();
                 ITERATE (vector<int>, cut, minus_cuts) {
-                    site.SetMinusCuts().push_back(*match + comp.length() - *cut);
+                    site.SetMinusCuts()
+                        .push_back(*match + comp.length() - *cut);
                 }
 
                 possible_sites.push_back(site);
@@ -515,6 +520,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/15 15:26:12  jcherry
+ * Changed so that restriction site searching (CFindRSites::Find) returns
+ * a vector of CRefs rather than a vector of objects.  This speeds sorting.
+ *
  * Revision 1.4  2003/08/13 17:40:26  dicuccio
  * Formatting fixes.  Changes some pass-by-val to pass-by-reference.  Fixed
  * complement table
