@@ -370,7 +370,8 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
             x_UpdateCache(start);
         }
         do {
-            size_t end_offset = min(m_CacheData.size(), stop - m_CachePos);
+            size_t end_offset = min(m_CacheData.size(),
+                                    static_cast<size_t>(stop - m_CachePos));
             TCache_I cacheEnd = m_CacheData.begin() + end_offset;
             buffer.append(m_Cache, cacheEnd);
             m_Cache = cacheEnd;
@@ -441,6 +442,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/05/31 01:42:51  ucko
+* Avoid min(size_t, TSeqPos), as they may be different types.
+*
 * Revision 1.4  2003/05/30 19:30:08  vasilche
 * Fixed compilation on GCC 3.
 *
