@@ -140,6 +140,7 @@ const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
     // for now, use threader's SeqMtf
     BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
     Seq_Mtf *seqMtf = Threader::CreateSeqMtf(this, 1.0, karlinBlock);
+    if (!seqMtf) return NULL;
 
     pssm = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
     pssm->is_prot = TRUE;
@@ -1625,6 +1626,11 @@ int BlockMultipleAlignment::NAlignedBlocks(void) const
     return n;
 }
 
+bool BlockMultipleAlignment::HasNoAlignedBlocks(void) const
+{
+    return (blocks.size() == 0 || (blocks.size() == 1 && !blocks.front()->IsAligned()));
+}
+
 int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification)
 {
     if (row < 0 || row >= NRows() || seqIndex < 0 || seqIndex >= GetSequenceOfRow(row)->Length()) {
@@ -1825,6 +1831,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/07/27 17:38:12  thiessen
+* don't call GetPSSM() w/ no aligned blocks
+*
 * Revision 1.58  2004/06/23 00:15:47  thiessen
 * fix row addition/deletion problem with vector synchronization
 *

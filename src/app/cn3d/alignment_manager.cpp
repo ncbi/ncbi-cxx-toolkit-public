@@ -220,23 +220,29 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
         }
 
         // check for PSSM change
-        const BLAST_Matrix *originalPSSM = originalMultiple->GetPSSM(), *currentPSSM = multiple->GetPSSM();
-        TRACEMSG("checking for PSSM changes... " << originalPSSM << ' ' << currentPSSM);
-        if (originalPSSM->rows != currentPSSM->rows ||
-            originalPSSM->columns != currentPSSM->columns ||
-            originalPSSM->karlinK != currentPSSM->karlinK)
-        {
-            TRACEMSG("PSSM changed");
+        if ((multiple->HasNoAlignedBlocks() && !originalMultiple->HasNoAlignedBlocks()) ||
+                (originalMultiple->HasNoAlignedBlocks() && !multiple->HasNoAlignedBlocks())) {
+            TRACEMSG("PSSM changed - zero blocks before or after");
             alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
-        } else {
-            int i, j;
-            for (i=0; i<originalPSSM->rows; ++i) {
-                for (j=0; j<originalPSSM->columns; ++j) {
-                    if (originalPSSM->matrix[i][j] != currentPSSM->matrix[i][j]) {
-                        TRACEMSG("PSSM changed");
-                        alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
-                        i = originalPSSM->rows;
-                        break;
+        } else if (!multiple->HasNoAlignedBlocks() && !originalMultiple->HasNoAlignedBlocks()) {
+            const BLAST_Matrix *originalPSSM = originalMultiple->GetPSSM(), *currentPSSM = multiple->GetPSSM();
+            TRACEMSG("checking for PSSM changes... " << originalPSSM << ' ' << currentPSSM);
+            if (originalPSSM->rows != currentPSSM->rows ||
+                originalPSSM->columns != currentPSSM->columns ||
+                originalPSSM->karlinK != currentPSSM->karlinK)
+            {
+                TRACEMSG("PSSM changed");
+                alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
+            } else {
+                int i, j;
+                for (i=0; i<originalPSSM->rows; ++i) {
+                    for (j=0; j<originalPSSM->columns; ++j) {
+                        if (originalPSSM->matrix[i][j] != currentPSSM->matrix[i][j]) {
+                            TRACEMSG("PSSM changed");
+                            alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
+                            i = originalPSSM->rows;
+                            break;
+                        }
                     }
                 }
             }
@@ -956,6 +962,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2004/07/27 17:38:12  thiessen
+* don't call GetPSSM() w/ no aligned blocks
+*
 * Revision 1.95  2004/06/23 00:15:47  thiessen
 * fix row addition/deletion problem with vector synchronization
 *

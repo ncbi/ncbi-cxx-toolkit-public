@@ -284,6 +284,7 @@ public:
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
 
     int NBlocks(void) const { return blocks.size(); }
+    bool HasNoAlignedBlocks(void) const;
     int NAlignedBlocks(void) const;
     int NRows(void) const { return sequences->size(); }
     int AlignmentWidth(void) const { return totalWidth; }
@@ -421,6 +422,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/07/27 17:38:12  thiessen
+* don't call GetPSSM() w/ no aligned blocks
+*
 * Revision 1.41  2004/06/23 00:15:47  thiessen
 * fix row addition/deletion problem with vector synchronization
 *

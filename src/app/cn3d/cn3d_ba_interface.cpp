@@ -220,6 +220,10 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     newAlignments->clear();
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() == 0) {
+        ERRORMSG("Must have at least one aligned block to use the block aligner");
+        return false;
+    }
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     if (nRowsAddedToMultiple) *nRowsAddedToMultiple = 0;
     int i;
@@ -511,6 +515,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/07/27 17:38:12  thiessen
+* don't call GetPSSM() w/ no aligned blocks
+*
 * Revision 1.34  2004/06/14 17:58:47  thiessen
 * fix error in block score reporting
 *

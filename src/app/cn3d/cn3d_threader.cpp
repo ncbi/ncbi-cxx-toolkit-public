@@ -133,6 +133,12 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
         return seqMtf;
     }
 
+    // can't calculate PSSM with no blocks
+    if (multiple->HasNoAlignedBlocks()) {
+        ERRORMSG("Can't create PSSM with no aligned blocks");
+        return NULL;
+    }
+
     // convert all sequences to Bioseqs
     multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
 
@@ -1238,6 +1244,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/07/27 17:38:12  thiessen
+* don't call GetPSSM() w/ no aligned blocks
+*
 * Revision 1.43  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

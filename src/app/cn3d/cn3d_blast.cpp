@@ -125,8 +125,8 @@ static void SetEffectiveSearchSpaceSize(BLAST_OptionsBlkPtr bob, Int4 queryLengt
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM)
 {
-    if (usePSSM && !multiple) {
-        ERRORMSG("usePSSM true, but NULL multiple alignment");
+    if (usePSSM && (!multiple || multiple->HasNoAlignedBlocks())) {
+        ERRORMSG("usePSSM true, but NULL or zero-aligned block multiple alignment");
         return;
     }
 
@@ -513,6 +513,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/07/27 17:38:12  thiessen
+* don't call GetPSSM() w/ no aligned blocks
+*
 * Revision 1.34  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
