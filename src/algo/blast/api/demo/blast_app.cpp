@@ -674,12 +674,7 @@ int CBlastApplication::Run(void)
     ProcessCommandLineArgs(opts, seq_src);
 
     // Perform repeats filtering if required
-    char* repeat_filter_string = 
-        GetRepeatsFilterOption(opts->GetOptions().GetFilterString());
-    if (repeat_filter_string) {
-        FindRepeatFilterLoc(query_loc, repeat_filter_string);
-        sfree(repeat_filter_string);
-    }
+    Blast_FindRepeatFilterLoc(query_loc, opts->GetOptions().GetFilterString());
 
     BlastHSPStream* hsp_stream = NULL;
     bool tabular_output = args["tabular"].AsBoolean();
