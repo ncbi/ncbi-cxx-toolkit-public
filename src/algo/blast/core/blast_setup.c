@@ -435,7 +435,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     BlastScoreBlk *sbp = NULL;
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Boolean is_na;              /* Is this nucleotide? */
-    Int2 context = 0, index;    /* Loop variables. */
+    Int4 context = 0, index;    /* Loop variables. */
     Int2 status = 0;            /* return value */
     Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
     BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */

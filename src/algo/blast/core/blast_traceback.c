@@ -873,7 +873,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
          Int4 start_shift = 0;
          if (kTranslateSubject) {
             if (!k_is_ooframe && !partial_translation) {
-               Int2 context = FrameToContext(hsp->subject.frame);
+               Int4 context = FrameToContext(hsp->subject.frame);
                subject = translation_buffer + frame_offsets[context] + 1;
                subject_length = 
                   frame_offsets[context+1] - frame_offsets[context] - 1;

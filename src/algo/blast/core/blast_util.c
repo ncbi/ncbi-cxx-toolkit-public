@@ -43,7 +43,7 @@ Contents: Various BLAST utilities
 static char const rcsid[] = "$Id$";
 
 Int2
-BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
+BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
    BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated)
 {
    /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
@@ -625,7 +625,7 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
    return 0;
 }
 
-Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number)
+Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
 {
    Int2 frame=255;
 
@@ -825,8 +825,9 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
    Uint1* translation_table = NULL,* translation_table_rc;
    Uint1* nucl_seq_rev;
    Int4 offset = 0, length;
-   Int2 context, frame;
+   Int4 context; 
    Int4* frame_offsets;
+   Int2 frame;
    
    if (encoding != NCBI2NA_ENCODING && encoding != NCBI4NA_ENCODING)
       return -1;
@@ -967,7 +968,7 @@ int GetPartialTranslation(const Uint1* nucl_seq,
 }
 
 
-Int2 FrameToContext(Int2 frame) 
+Int4 FrameToContext(Int2 frame) 
 {
    if (frame > 0)
       return frame - 1;

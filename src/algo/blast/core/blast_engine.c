@@ -149,7 +149,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    BlastHSPList* combined_hsp_list;
    Int2 status = 0;
    Boolean translated_subject;
-   Int2 context, first_context, last_context;
+   Int4 context, first_context, last_context;
    Int4 orig_length = subject->length, prot_length = 0;
    Uint1* orig_sequence = subject->sequence;
    Int4 **matrix;

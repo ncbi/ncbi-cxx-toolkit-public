@@ -179,7 +179,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
                     **kbp_gap_std,
                     **kbp_gap_psi;
 	BLAST_KarlinBlk* 	kbp_ideal;	/* Ideal values (for query with average database composition). */
-	Int2 number_of_contexts;	/* Used by sfp and kbp, how large are these*/
+	Int4 number_of_contexts;	/* Used by sfp and kbp, how large are these*/
 	Int2		matid;		/* id number of matrix. */
 	char* 	name;		/* name of matrix. */
 	Uint1* 	ambiguous_res;	/* Array of ambiguous res. (e.g, 'X', 'N')*/
@@ -221,14 +221,14 @@ typedef struct BLAST_ResFreq {
     double* prob0; /* probs, zero offset. */
 } BLAST_ResFreq;
 
-BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int2 number_of_contexts);
+BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
 
 BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
 
 Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
-Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int2 context_number);
+Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int4 context_number);
  
 /** This function fills in the BlastScoreBlk structure.  
  * Tasks are:
@@ -248,8 +248,8 @@ BLAST_KarlinBlk* BLAST_KarlinBlkCreate (void);
 Int2 BLAST_KarlinBlkGappedCalc (BLAST_KarlinBlk* kbp, Int4 gap_open, 
         Int4 gap_extend, Int4 decline_align, char* matrix_name, 
         Blast_Message** error_return);
-Int2 BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int2 context_start, 
-                                 Int2 context_end);
+Int2 BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
+                                 Int4 context_end);
 
 /*
         Attempts to fill KarlinBlk for given gap opening, extensions etc.

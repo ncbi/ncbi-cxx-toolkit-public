@@ -117,8 +117,8 @@ typedef struct BLAST_SequenceBlk {
 /** The query related information 
  */
 typedef struct BlastQueryInfo {
-   Int2 first_context; /**< Index of the first element of the context array */
-   Int2 last_context;  /**< Index of the last element of the context array */
+   Int4 first_context; /**< Index of the first element of the context array */
+   Int4 last_context;  /**< Index of the last element of the context array */
    int num_queries;   /**< Number of query sequences */
    Int4* context_offsets; /**< Offsets of the individual queries in the
                                concatenated super-query */

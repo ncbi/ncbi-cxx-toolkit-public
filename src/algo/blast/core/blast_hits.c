@@ -393,7 +393,7 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    Int4 index, new_hspcnt, index1, q_off, s_off, q_end, s_end, index2;
    BlastHSP** hsp_array = hsp_list->hsp_array;
    Boolean shift_needed = FALSE;
-   Int2 context;
+   Int4 context;
    double evalue;
 
    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 

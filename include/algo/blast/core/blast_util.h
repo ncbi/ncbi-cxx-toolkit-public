@@ -91,7 +91,7 @@ Int2 BlastNumber2Program(Uint1 number, char* *program);
  *        the start of the sequence, otherwise it is 'sequence'. [in]
 */
 Int2
-BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
+BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
 	BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated);
 
 /** Allocates a new sequence block structure. 
@@ -192,7 +192,7 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
  * @param context_number Context number 
  * @return Sequence frame (+-1 for nucleotides, -3..3 for translations)
 */
-Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number);
+Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number);
 
 /** Find the length of an individual query within a concatenated set of 
  * queries.
@@ -261,7 +261,7 @@ int GetPartialTranslation(const Uint1* nucl_seq,
 /** Convert translation frame into a context for the concatenated translation
  * buffer.
  */
-Int2 FrameToContext(Int2 frame);
+Int4 FrameToContext(Int2 frame);
 
 
 /** The following binary search routine assumes that array A is filled. */

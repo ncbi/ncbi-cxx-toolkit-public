@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.48  2004/03/05 17:52:33  papadopo
+ * Allow 32-bit context numbers for queries
+ *
  * Revision 1.47  2004/03/04 21:07:51  papadopo
  * add RPS BLAST functionality
  *
@@ -770,7 +773,7 @@ BLAST_MATRIX_NOMINAL
 */
 
 BlastScoreBlk*
-BlastScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
+BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 
 {
 	BlastScoreBlk* sbp;
@@ -2288,7 +2291,7 @@ ErrExit:
 */
 
 Int2
-BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int2 context_number)
+BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 context_number)
 {
 	BLAST_ResFreq* rfp,* stdrfp;
 	Int2 retval=0;
@@ -2343,11 +2346,11 @@ BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
 }
 
 Int2
-BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int2 context_start, Int2 context_end)
+BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context_end)
 {
 
 	BLAST_KarlinBlk* kbp_ideal,* kbp;
-	Int2 index;
+	Int4 index;
 
 	kbp_ideal = BlastKarlinBlkStandardCalcEx(sbp);
 /* Replace the calculated values with ideal ones for blastx, tblastx. */
