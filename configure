@@ -13887,8 +13887,8 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_kstat_open" = no; then
-  for ac_lib in kstat; do
-    LIBS="-l$ac_lib $KSTAT_LIBS $ac_func_search_save_LIBS"
+  for ac_lib in "$KSTAT_LIBS" kstat; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -14001,8 +14001,8 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_rstat" = no; then
-  for ac_lib in rpcsvc; do
-    LIBS="-l$ac_lib $RPCSVC_LIBS $ac_func_search_save_LIBS"
+  for ac_lib in "$RPCSVC_LIBS" rpcsvc; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -14123,8 +14123,8 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_setkey" = no; then
-  for ac_lib in crypt crypt_i; do
-    LIBS="-l$ac_lib $CRYPT_LIBS $ac_func_search_save_LIBS"
+  for ac_lib in "$CRYPT_LIBS" crypt crypt_i; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -14246,8 +14246,8 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_dlopen" = no; then
-  for ac_lib in dl; do
-    LIBS="-l$ac_lib $DL_LIBS $ac_func_search_save_LIBS"
+  for ac_lib in "$DL_LIBS" dl; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -14365,8 +14365,8 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_clock_gettime" = no; then
-  for ac_lib in rt posix4; do
-    LIBS="-l$ac_lib $RT_LIBS $ac_func_search_save_LIBS"
+  for ac_lib in "$RT_LIBS" rt posix4; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -14428,34 +14428,29 @@ fi
 
  LIBS=$saved_LIBS
 
-# For FreeTDS, which normally uses a somewhat more elaborate test
-saved_LIBS=$LIBS
- echo "$as_me:$LINENO: checking for library containing iconv" >&5
+# We need to include <iconv.h>, since some implementations rename the symbols.
+# This logic adapted from Bruno Haible's iconv.m4.
+echo "$as_me:$LINENO: checking for library containing iconv" >&5
 echo $ECHO_N "checking for library containing iconv... $ECHO_C" >&6
 if test "${ac_cv_search_iconv+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_func_search_save_LIBS=$LIBS
-ac_cv_search_iconv=no
-cat >conftest.$ac_ext <<_ACEOF
+
+   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char iconv ();
+#include <stdlib.h>
+#include <iconv.h>
 int
 main ()
 {
-iconv ();
+iconv_t cd = iconv_open("","");
+      iconv(cd,NULL,NULL,NULL,NULL);
+      iconv_close(cd);
   ;
   return 0;
 }
@@ -14479,28 +14474,24 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_iconv" = no; then
-  for ac_lib in iconv; do
-    LIBS="-l$ac_lib $ICONV_LIBS $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
+   if test "$am_cv_search_iconv" != "none required"; then
+      for l in iconv; do
+         LIBS="-l$l $orig_LIBS"
+         cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char iconv ();
+#include <stdlib.h>
+#include <iconv.h>
 int
 main ()
 {
-iconv ();
+iconv_t cd = iconv_open("","");
+            iconv(cd,NULL,NULL,NULL,NULL);
+            iconv_close(cd);
   ;
   return 0;
 }
@@ -14517,32 +14508,29 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_search_iconv="-l$ac_lib"
-break
+  ac_cv_search_iconv=-l$l
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-  done
-fi
-LIBS=$ac_func_search_save_LIBS
+         LIBS="$orig_LIBS"
+      done
+   fi
 fi
 echo "$as_me:$LINENO: result: $ac_cv_search_iconv" >&5
 echo "${ECHO_T}$ac_cv_search_iconv" >&6
-if test "$ac_cv_search_iconv" != no; then
-  test "$ac_cv_search_iconv" = "none required" || LIBS="$ac_cv_search_iconv $LIBS"
+if test "x$ac_cv_search_iconv" != xno; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBICONV 1
 _ACEOF
 
-   test "x$ac_cv_search_iconv" = "xnone required" || ICONV_LIBS=$ac_cv_search_iconv
+   if test "x$ac_cv_search_iconv" != "xnone required"; then
+      ICONV_LIBS=$ac_cv_search_iconv
+   fi
 fi
-
- LIBS=$saved_LIBS
-
 
 
 ### Third-party libraries
@@ -14643,6 +14631,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
    WithPackages="$WithPackages Z LocalZ"
+   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ Z//'`
 fi
 
 if test "$with_bz2" != "no"; then
@@ -14743,6 +14732,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
    WithPackages="$WithPackages BZ2 LocalBZ2"
+   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ BZ2//'`
 fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
@@ -14847,6 +14837,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
    WithPackages="$WithPackages PCRE LocalPCRE"
+   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ PCRE//'`
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi

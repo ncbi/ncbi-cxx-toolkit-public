@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.295 2004/04/22 21:47:07 ucko Exp $
+#  $Id: configure.ac,v 1.296 2004/04/27 14:49:07 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2196,8 +2196,36 @@ case "$host_os:$libnsl" in
      solaris*:-lnsl ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
-# For FreeTDS, which normally uses a somewhat more elaborate test
-NCBI_CHECK_LIBS(ICONV, iconv, iconv)
+dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
+# We need to include <iconv.h>, since some implementations rename the symbols.
+# This logic adapted from Bruno Haible's iconv.m4.
+AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
+   AC_TRY_LINK([#include <stdlib.h>
+#include <iconv.h>],
+     [iconv_t cd = iconv_open("","");
+      iconv(cd,NULL,NULL,NULL,NULL);
+      iconv_close(cd);],
+     ac_cv_search_iconv="none required")
+   if test "$am_cv_search_iconv" != "none required"; then
+      for l in iconv; do
+         LIBS="-l$l $orig_LIBS"
+         AC_TRY_LINK([#include <stdlib.h>
+#include <iconv.h>],
+           [iconv_t cd = iconv_open("","");
+            iconv(cd,NULL,NULL,NULL,NULL);
+            iconv_close(cd);],
+           ac_cv_search_iconv=-l$l)
+         LIBS="$orig_LIBS"
+      done
+   fi])
+if test "x$ac_cv_search_iconv" != xno; then
+   AC_DEFINE(HAVE_LIBICONV, 1,
+   [Define to 1 if ICONV is available, either in its own library or as part
+    of the standard libraries.])
+   if test "x$ac_cv_search_iconv" != "xnone required"; then
+      ICONV_LIBS=$ac_cv_search_iconv
+   fi
+fi
 
 
 ### Third-party libraries
@@ -2213,6 +2241,7 @@ if test -z "$Z_LIBS"; then
    Z_LIB="z"
    AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
    WithPackages="$WithPackages Z LocalZ"
+   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ Z//'`
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(bz2,
@@ -2228,6 +2257,7 @@ if test -z "$BZ2_LIBS"; then
    BZ2_LIB="bz2"
    AC_DEFINE(USE_LOCAL_BZLIB, 1, [Define to 1 if using a local copy of bzlib.])
    WithPackages="$WithPackages BZ2 LocalBZ2"
+   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ BZ2//'`
 fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
@@ -2247,6 +2277,7 @@ if test -z "$PCRE_LIBS"; then
    PCRE_LIB="regexp"
    AC_DEFINE(USE_LOCAL_PCRE, 1, [Define to 1 if using a local copy of PCRE.])
    WithPackages="$WithPackages PCRE LocalPCRE"
+   WithoutPackages=`echo "$WithoutPackages" | sed -e 's/ PCRE//'`
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
