@@ -75,9 +75,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-#define ALLOW_CACHE 1
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Demo application
@@ -90,6 +87,7 @@ public:
     virtual void Init(void);
     virtual int  Run (void);
 
+    CRef<CGBDataLoader> gb_loader;
     auto_ptr<CBDB_BLOB_Cache> bdb_cache;
     auto_ptr<CBDB_Cache> blob_cache;
     auto_ptr<CBDB_Cache> id_cache;
@@ -174,7 +172,6 @@ void CDemoApp::Init(void)
                             "Subtype of features to select",
                             CArgDescriptions::eInteger, "-1");
 
-#if ALLOW_CACHE
     arg_desc->AddFlag("cache",
                       "use BDB cache");
     arg_desc->AddDefaultKey("cache_mode", "CacheMode",
@@ -186,7 +183,6 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
                             "number of days to keep gi->sat/satkey cache",
                             CArgDescriptions::eInteger, "1");
-#endif
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -287,7 +283,6 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
 
-#if ALLOW_CACHE
     if ( args["cache"] ) {
         // caching options
         CNcbiRegistry& reg = GetConfig();
@@ -387,21 +382,15 @@ int CDemoApp::Run(void)
             LOG_POST(Info << "ID1 cache disabled.");
         }
 
-        CRef<CGBDataLoader> loader(new CGBDataLoader("GenBank",
-                                                     id1_reader.release(),
-                                                     2));
-        pOm->RegisterDataLoader(*loader, CObjectManager::eDefault);
+        gb_loader = new CGBDataLoader("GenBank", id1_reader.release(), 2);
     }
-    else
-#endif
-        {
-            // Create genbank data loader and register it with the OM.
-            // The last argument "eDefault" informs the OM that the loader
-            // must be included in scopes during the CScope::AddDefaults() call
-            pOm->RegisterDataLoader(
-                *new CGBDataLoader("ID", 0, 2),
-                CObjectManager::eDefault);
-        }
+    else {
+        // Create genbank data loader and register it with the OM.
+        // The last argument "eDefault" informs the OM that the loader
+        // must be included in scopes during the CScope::AddDefaults() call
+        gb_loader = new CGBDataLoader("ID", 0, 2);
+    }
+    pOm->RegisterDataLoader(*gb_loader, CObjectManager::eDefault);
 
     // Create a new scope.
     CScope scope(*pOm);
@@ -443,6 +432,16 @@ int CDemoApp::Run(void)
             }
         }
     }
+    {{
+        CConstRef<CSeqref> sr = gb_loader->GetSatSatkey(*id);
+        if ( !sr ) {
+            ERR_POST("Cannot determine TSE sat/satkey");
+        }
+        else {
+            NcbiCout << "TSE sat="<<sr->GetSat()<<
+                " satkey="<<sr->GetSatKey()<<NcbiEndl;
+        }
+    }}
 
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
@@ -714,6 +713,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/12/30 19:51:54  vasilche
+* Test CGBDataLoader::GetSatSatkey() method.
+*
 * Revision 1.49  2003/12/30 16:01:41  vasilche
 * Added possibility to specify type of cache to use: -cache_mode (old|newid|new).
 *

@@ -40,6 +40,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/gbloader.hpp>
+#include <objmgr/reader.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/feat_ci.hpp>
 
@@ -74,25 +75,35 @@ int CTestApplication::Run()
     CORE_SetLOG(LOG_cxx2c());
 
     {{
-      CObjectManager *x = new CObjectManager;
-      // x->DoDeleteThisObject();
-      CRef< CObjectManager> pOm(x);
+      CRef<CObjectManager> pOm(new CObjectManager);
     }}
+
     CObjectManager Om, *pOm=&Om;
 
-    // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
-    // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-    pOm->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),CObjectManager::eDefault);
+    CRef<CGBDataLoader> pLoader(new CGBDataLoader("ID", 0, 2));
+    pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
 
-    for (int i = 1;  i < 2;  i++) {
+    for ( int gi = 18565540;  gi < 18565650; gi++ ) {
+        CSeq_id id;
+        id.SetGi(gi);
+        CConstRef<CSeqref> sr = pLoader->GetSatSatkey(id);
+        if ( !sr ) {
+            ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
+        }
+        else {
+            LOG_POST("Gi (" << gi << "):: sat="<<sr->GetSat()<<
+                     " satkey="<<sr->GetSatKey());
+        }
+    }
+
+    for ( int gi = 18565530;  gi < 18565550; gi++ ) {
         CScope scope(*pOm);
         scope.AddDefaults();
-        int gi = i  + 18565551 - 5  ; 
-        CSeq_id x;
-        x.SetGi(gi);
-        CBioseq_Handle h = scope.GetBioseqHandle(x);
+        CSeq_id id;
+        id.SetGi(gi);
+        CBioseq_Handle h = scope.GetBioseqHandle(id);
         if ( !h ) {
-            LOG_POST("Gi (" << gi << "):: not found in ID");
+            ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
         } else {
 //          scope.ResetHistory();
           ITERATE (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
@@ -137,7 +148,7 @@ int CTestApplication::Run()
         }
     }
 
-    NcbiCout << "==================================================" << NcbiEndl;
+    NcbiCout << "=================================================="<<NcbiEndl;
     NcbiCout << "Test completed (" << (time(0)-start) << " sec ) " << NcbiEndl;
     return 0;
 }
@@ -164,6 +175,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/12/30 19:51:55  vasilche
+* Test CGBDataLoader::GetSatSatkey() method.
+*
 * Revision 1.29  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
