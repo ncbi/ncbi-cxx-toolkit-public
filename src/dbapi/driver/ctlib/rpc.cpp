@@ -321,6 +321,7 @@ bool CTL_RPCCmd::x_AssignParams()
 
     for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
 
+        if(m_Params.GetParamStatus(i) == 0) continue;
         CDB_Object&   param      = *m_Params.GetParam(i);
         const string& param_name = m_Params.GetParamName(i);
         CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
@@ -346,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/16 20:24:24  soussov
+ * adds code to skip parameters if it was not set
+ *
  * Revision 1.4  2003/01/31 16:49:38  lavr
  * Remove unused variable "e" from catch() clause
  *

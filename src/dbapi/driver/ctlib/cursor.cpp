@@ -633,6 +633,7 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
     param_fmt.status  = CS_INPUTVALUE;
 
     for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
+        if(m_Params.GetParamStatus(i) == 0) continue;
 
         CDB_Object&   param = *m_Params.GetParam(i);
         const string& param_name = m_Params.GetParamName(i);
@@ -655,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/05/16 20:24:24  soussov
+ * adds code to skip parameters if it was not set
+ *
  * Revision 1.6  2002/09/16 16:34:16  soussov
  * add try catch when canceling in Release method
  *
