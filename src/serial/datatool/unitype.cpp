@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/01/26 18:53:36  gouriano
+* Undo the previous change - it introduced other problems
+*
 * Revision 1.32  2004/12/10 15:13:39  gouriano
 * Create unnamed TypeInfo in CUniSequenceDataType::CreateTypeInfo
 *
@@ -331,8 +334,8 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
     return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(
-        m_ElementType->GetTypeInfo().Get()));
-//        m_ElementType->GetTypeInfo().Get(), GlobalName()));
+//        m_ElementType->GetTypeInfo().Get()));
+        m_ElementType->GetTypeInfo().Get(), GlobalName()));
 }
 
 bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
