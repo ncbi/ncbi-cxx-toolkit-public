@@ -372,7 +372,8 @@ void s_ReadUpdateCharTest(const string& host, unsigned short port)
     assert(blob_size == 1);
 }
 
-static
+
+
 void s_TestAlive(const string& host, unsigned short port)
 {
     CNetCacheClient ncc (host, port, "test");
@@ -387,12 +388,13 @@ void s_TestAlive(const string& host, unsigned short port)
     }
 }
 
-static
+        
+
 void s_TestClientLB(const string& service_name)
 {
     CNetCacheClient_LB nc_client("test", service_name, 2, 1);
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
-    const char test_data2[] = "New data.";
+//    const char test_data2[] = "New data.";
     string key = nc_client.PutData(test_data, sizeof(test_data));
     NcbiCout << key << NcbiEndl;
 
@@ -635,6 +637,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/01/27 14:56:29  kuznets
+ * Fixed GCC warnings
+ *
  * Revision 1.24  2005/01/19 12:22:24  kuznets
  * + Test for LB client
  *
