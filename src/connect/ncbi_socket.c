@@ -780,7 +780,7 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
     if (handle_size != sizeof(lsock->sock)) {
         CORE_LOG(eLOG_Error, "[LSOCK::GetOSHandle]  Invalid handle size");
         assert(0);
-        return eIO_Unknown;
+        return eIO_InvalidArg;
     }
 
     memcpy(handle_buf, &lsock->sock, handle_size);
@@ -1609,7 +1609,7 @@ extern EIO_Status SOCK_SetTimeout(SOCK            sock,
     default:
         CORE_LOG(eLOG_Error, "[SOCK::SetTimeout]  Invalid argument");
         assert(0);
-        return eIO_Unknown;
+        return eIO_InvalidArg;
     }
     return eIO_Success;
 }
@@ -1664,9 +1664,10 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         break;
 
     default:
+        CORE_LOG(eLOG_Error, "[SOCK::Read]  Invalid argument");
         assert(0);
         x_read = 0;
-        status = eIO_Unknown;
+        status = eIO_InvalidArg;
         break;
     }
 
@@ -1732,9 +1733,10 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         break;
 
     default:
+        CORE_LOG(eLOG_Error, "[SOCK::Write]  Invalid argument");
         assert(0);
         x_written = 0;
-        status = eIO_Unknown;
+        status = eIO_InvalidArg;
         break;
     }
 
@@ -1767,7 +1769,7 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
     if (handle_size != sizeof(sock->sock)) {
         CORE_LOG(eLOG_Error, "[SOCK::GetOSHandle]  Invalid handle size");
         assert(0);
-        return eIO_Unknown;
+        return eIO_InvalidArg;
     }
 
     memcpy(handle_buf, &sock->sock, handle_size);
@@ -1996,6 +1998,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2002/09/06 15:45:03  lavr
+ * Return eIO_InvalidArg instead of generic eIO_Unknown where appropriate
+ *
  * Revision 6.62  2002/09/04 15:11:00  lavr
  * Print ERRNO with failed connection attempt
  *
