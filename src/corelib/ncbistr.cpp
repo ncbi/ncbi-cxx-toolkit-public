@@ -712,9 +712,7 @@ string NStr::PrintableString(const string&      str,
 {
     string s;
     ITERATE (string, it, str) {
-        if (*it == '\0') {
-            s += "\\0";
-        } else if (*it == '\\') {
+        if (*it == '\\') {
             s += "\\\\";
         } else if (*it == '\n') {
             s += nl_mode == eNewLine_Quote ? "\\n" : "\n";
@@ -1014,6 +1012,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2003/03/25 22:15:40  lavr
+ * NStr::PrintableString():: Print NUL char as \x00 instead of \0
+ *
  * Revision 1.89  2003/03/20 13:27:52  dicuccio
  * Oops.  Removed old code wrapped in #if 0...#endif.
  *
