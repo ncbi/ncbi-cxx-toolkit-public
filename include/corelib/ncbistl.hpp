@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/04/14 19:41:19  vakatov
+* [MSVC++] Added pragma's to get rid of some warnings
+*
 * Revision 1.9  1998/12/03 15:47:50  vakatov
 * Scope fixes for #NPOS and #SIZE_TYPE;  redesigned the std:: and ncbi::
 * scope usage policy definitions(also, added #NCBI_NS_STD and #NCBI_NS_NCBI)
@@ -40,7 +43,7 @@
 * Revision 1.8  1998/12/01 01:18:42  vakatov
 * [HAVE_NAMESPACE]  Added an empty fake "ncbi" namespace -- MSVC++ 6.0
 * compiler starts to recognize "std::" scope only after passing through at
-* least one "namespace ncbi {}" statement(???)
+* least one "namespace ncbi {}" statement(?!)
 *
 * Revision 1.7  1998/11/13 00:13:51  vakatov
 * Decide whether it NCBI_OS_UNIX or NCBI_OS_MSWIN
@@ -90,10 +93,19 @@
 #  endif
 #endif
 
-// get rid of long identifier warning in visual c++ 5 and 6
-#if (_MSC_VER <= 1200)
-#  pragma warning(disable: 4786)  
-#endif
+// get rid of some warnings in MSVC++ 6.00 and higher
+#if (_MSC_VER >= 1200)
+// too long identificator name in the debug info;  truncated
+#  pragma warning(disable: 4786)
+// too long decorated name;  truncated
+#  pragma warning(disable: 4503)
+// default copy constructor cannot be generated
+#  pragma warning(disable: 4511)
+// default assignment operator cannot be generated
+#  pragma warning(disable: 4512)
+// synonymous name used
+#  pragma warning(disable: 4097)
+#endif /* _MSC_VER >= 1200 */
 
 // Check if this compiler supports namespaces at all... (see in <ncbiconf.h>)
 #if !defined(NCBI_NO_NAMESPACES)  &&  !defined(HAVE_NAMESPACE)
