@@ -31,6 +31,7 @@
 
 
 #include <bdb/bdb_blob.hpp>
+#include <bdb/bdb_trans.hpp>
 
 #include <db.h>
 
@@ -142,6 +143,16 @@ CBDB_BLobStream::~CBDB_BLobStream()
 {
     CBDB_File::DestroyDBT_Clone(m_DBT_Key);
     delete m_DBT_Data;
+}
+
+
+void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans)
+{
+    if (trans) {
+        m_Txn = trans->GetTxn();
+    } else {
+        m_Txn = 0;
+    }
 }
 
 void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read)
@@ -351,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/12/29 17:06:24  kuznets
+ * +CBDB_BlobStream::SetTransaction()
+ *
  * Revision 1.14  2003/12/29 16:52:29  kuznets
  * Added transaction support for BLOB stream
  *

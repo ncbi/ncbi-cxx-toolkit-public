@@ -123,6 +123,9 @@ public:
 
     ~CBDB_BLobStream();
 
+    /// Set current transaction for BLOB stream
+    void SetTransaction(CBDB_Transaction* trans);
+
     /// Read data from BLOB
     void Read(void *buf, size_t buf_size, size_t *bytes_read);
     /// Write data into BLOB
@@ -224,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/12/29 17:06:04  kuznets
+ * +CBDB_BlobStream::SetTransaction()
+ *
  * Revision 1.13  2003/12/29 16:51:21  kuznets
  * Added transaction support for BLOB stream
  *
