@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/08/28 13:22:03  vasilche
+* Fixed reference to undefined kEmptyChoice.
+*
 * Revision 1.22  2000/08/25 15:59:20  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -282,7 +285,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() <<
             "    // choice state enum\n"
             "    enum "STATE_ENUM" {\n"
-            "        "STATE_NOT_SET" = "<<ncbiNamespace<<"kEmptyChoice";
+            "        "STATE_NOT_SET" = "<<kEmptyChoice;
         iterate ( TVariants, i, m_Variants ) {
             code.ClassPublic() << ",\n"
                 "        "STATE_PREFIX<<i->cName;
