@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/02/05 18:53:26  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.11  2001/08/14 17:18:22  thiessen
 * add user font selection, store in registry
 *
@@ -231,6 +234,16 @@ bool ViewerBase::EditorIsOn(void) const
 void ViewerBase::NewFont(void)
 {
     if (*viewerWindow) (*viewerWindow)->SetupFontFromRegistry();
+}
+
+void ViewerBase::MakeResidueVisible(const Molecule *molecule, int seqIndex)
+{
+    if (!(*viewerWindow) || displayStack.size() == 0) return;
+
+    int column, row;
+    if (displayStack.back()->GetDisplayCoordinates(molecule, seqIndex,
+            (*viewerWindow)->GetCurrentJustification(), &column, &row))
+        (*viewerWindow)->MakeCellVisible(column, row);
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/02/05 18:53:24  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.23  2001/09/27 15:36:47  thiessen
 * decouple sequence import and BLAST
 *
@@ -173,7 +176,7 @@ public:
     const Sequence * GetSequenceOfRow(int row) const
     {
         if (row >= 0 && row < sequences->size())
-            return (*sequences)[static_cast<size_t>(row)];
+            return (*sequences)[row];
         else
             return NULL;
     }
@@ -208,6 +211,9 @@ public:
     // get sequence and index (if any) at given position, and whether that residue is aligned
     bool GetSequenceAndIndexAt(int alignmentColumn, int row, eUnalignedJustification justification,
         const Sequence **sequence, int *index, bool *isAligned) const;
+
+    // given row and sequence index, return alignment index; not the most efficient function - use sparingly
+    int GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification);
 
     // called when user selects some part of a row
     void SelectedRange(int row, int from, int to,
@@ -336,20 +342,20 @@ public:
     int AlignmentWidth(void) const { return totalWidth; }
 
     // return a number from 1..n for aligned blocks, -1 for unaligned
-    int GetAlignedBlockNumber(int alignmentIndex) const { return blockMap[static_cast<size_t>(alignmentIndex)].alignedBlockNum; }
+    int GetAlignedBlockNumber(int alignmentIndex) const { return blockMap[alignmentIndex].alignedBlockNum; }
 
     // for storing/querying info
-    double GetRowDouble(int row) const { return rowDoubles[static_cast<size_t>(row)]; }
-    void SetRowDouble(int row, double value) const { rowDoubles[static_cast<size_t>(row)] = value; }
-    const std::string& GetRowStatusLine(int row) const { return rowStrings[static_cast<size_t>(row)]; }
-    void SetRowStatusLine(int row, std::string value) const { rowStrings[static_cast<size_t>(row)] = value; }
+    double GetRowDouble(int row) const { return rowDoubles[row]; }
+    void SetRowDouble(int row, double value) const { rowDoubles[row] = value; }
+    const std::string& GetRowStatusLine(int row) const { return rowStrings[row]; }
+    void SetRowStatusLine(int row, std::string value) const { rowStrings[row] = value; }
 
     // empties all rows' infos
     void ClearRowInfo(void) const
     {
         for (int r=0; r<NRows(); r++) {
-            rowDoubles[static_cast<size_t>(r)] = 0.0;
-            rowStrings[static_cast<size_t>(r)].erase();
+            rowDoubles[r] = 0.0;
+            rowStrings[r].erase();
         }
     }
 };
@@ -385,7 +391,7 @@ public:
 
 protected:
     Block(const BlockMultipleAlignment *multiple) :
-        parentAlignment(multiple), ranges(static_cast<size_t>(multiple->NRows())) { }
+        parentAlignment(multiple), ranges(multiple->NRows()) { }
 
     typedef std::vector < Range > RangeList;
     RangeList ranges;
@@ -396,13 +402,13 @@ public:
     virtual ~Block(void) { }    // virtual destructor for base class
 
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
-    const Range* GetRangeOfRow(int row) const { return &(ranges[static_cast<size_t>(row)]); }
+    const Range* GetRangeOfRow(int row) const { return &(ranges[row]); }
 
     // set range
     void SetRangeOfRow(int row, int from, int to)
     {
-        ranges[static_cast<size_t>(row)].from = from;
-        ranges[static_cast<size_t>(row)].to = to;
+        ranges[row].from = from;
+        ranges[row].to = to;
     }
 
     // resize - add new (empty) rows at end

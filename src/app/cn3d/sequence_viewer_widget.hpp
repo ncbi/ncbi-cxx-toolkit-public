@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/02/05 18:53:25  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.16  2001/05/22 19:09:10  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -176,13 +179,16 @@ public:
     // get current uppermost row & leftmost column
     void GetScroll(int *vsX, int *vsY) const;
 
+    // make character visible (in sequence area) if it's not already
+    void MakeCharacterVisible(int column, int row) const;
+
     // turn on/off the title area
     void TitleAreaOn(void);
     void TitleAreaOff(void);
     void TitleAreaToggle(void);
 
     void Refresh(bool eraseBackground = TRUE, const wxRect *rect = NULL);
-    
+
 private:
     SequenceViewerWidget_SequenceArea *sequenceArea;
     SequenceViewerWidget_TitleArea *titleArea;

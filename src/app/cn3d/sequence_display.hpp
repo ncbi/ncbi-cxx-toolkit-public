@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/02/05 18:53:25  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.19  2001/11/27 16:26:09  thiessen
 * major update to data management system
 *
@@ -233,6 +236,7 @@ public:
 class SequenceViewer;
 class UpdateViewer;
 class ViewerWindowBase;
+class Molecule;
 
 class SequenceDisplay : public ViewableAlignment
 {
@@ -318,6 +322,10 @@ public:
 
     // redraw all molecules associated with the SequenceDisplay
     void RedrawAlignedMolecules(void) const;
+
+    // find coordinates of this residue in the display; returns false if not found
+    bool GetDisplayCoordinates(const Molecule *molecule, int seqIndex,
+        BlockMultipleAlignment::eUnalignedJustification justification, int *column, int *row);
 
     // column to scroll to when this display is first shown
     void SetStartingColumn(int column) { startingColumn = column; }

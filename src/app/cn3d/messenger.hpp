@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/02/05 18:53:25  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.18  2001/10/01 16:03:58  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -169,7 +172,7 @@ public:
     void ToggleHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
 
     // highlight any 'ole residue, regardless of molecule type
-    void ToggleHighlight(const Molecule *molecule, int residueID);
+    void ToggleHighlight(const Molecule *molecule, int residueID, bool scrollViewersTo = false);
 
     // set a bunch of highlights all at once - copies highlight list from given set
     void SetHighlights(const MoleculeHighlightMap& newHighlights);

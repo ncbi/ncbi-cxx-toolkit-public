@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2002/02/05 18:53:26  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.93  2002/01/19 02:34:50  thiessen
 * fixes for changes in asn serialization API
 *
@@ -1093,7 +1096,7 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     // add highlight
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return;
-    GlobalMessenger()->ToggleHighlight(molecule, residue->id);
+    GlobalMessenger()->ToggleHighlight(molecule, residue->id, true);
     TESTMSG("selected " << molecule->identifier->ToString()
         << " residue " << residue->id << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
         << ") atom " << atomID << " (PDB: " << residue->GetAtomInfo(atomID)->name << ')');

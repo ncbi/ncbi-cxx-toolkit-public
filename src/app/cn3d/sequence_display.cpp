@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/02/05 18:53:25  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.37  2001/12/05 17:16:56  thiessen
 * fix row insert bug
 *
@@ -1231,6 +1234,47 @@ void SequenceDisplay::RowsRemoved(const std::vector < int >& rowsRemoved,
     VectorRemoveElements(rows, removeDisplayRows, rowsRemoved.size());
 
     UpdateAfterEdit(multiple);
+}
+
+bool SequenceDisplay::GetDisplayCoordinates(const Molecule *molecule, int seqIndex,
+    BlockMultipleAlignment::eUnalignedJustification justification, int *column, int *row)
+{
+    if (!molecule || seqIndex < 0) return false;
+
+    int displayRow;
+    const Sequence *seq;
+
+    // first search by Molecule*
+    for (displayRow=0; displayRow<NRows(); displayRow++) {
+        seq = rows[displayRow]->GetSequence();
+        if (seq && seq->molecule == molecule)
+            break;
+    }
+
+    // if not found by Molecule*, search by identifier
+    if (displayRow == NRows()) {
+        for (displayRow=0; displayRow<NRows(); displayRow++) {
+            seq = rows[displayRow]->GetSequence();
+            if (seq && seq->identifier == molecule->identifier)
+                break;
+        }
+    }
+    if (displayRow == NRows()) return false;
+    *row = displayRow;
+
+    const DisplayRowFromSequence *seqRow = dynamic_cast<DisplayRowFromSequence*>(rows[displayRow]);
+    if (seqRow) {
+        *column = seqIndex;
+        return (*column < seq->Length());
+    }
+
+    const DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[displayRow]);
+    if (alnRow) {
+        *column = alnRow->alignment->GetAlignmentIndex(alnRow->row, seqIndex, justification);
+        return (*column >= 0);
+    }
+
+    return false;
 }
 
 END_SCOPE(Cn3D)

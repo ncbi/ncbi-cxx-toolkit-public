@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/02/05 18:53:24  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.25  2002/01/19 02:34:42  thiessen
 * fixes for changes in asn serialization API
 *
@@ -377,10 +380,17 @@ void Messenger::ToggleHighlights(const Sequence *sequence, int seqIndexFrom, int
     ToggleHighlights(sequence->identifier, seqIndexFrom, seqIndexTo, sequence->parentSet);
 }
 
-void Messenger::ToggleHighlight(const Molecule *molecule, int residueID)
+void Messenger::ToggleHighlight(const Molecule *molecule, int residueID, bool scrollViewersTo)
 {
     // assume index = id - 1
     ToggleHighlights(molecule->identifier, residueID - 1, residueID - 1, molecule->parentSet);
+
+    if (scrollViewersTo) {
+        // make selected residue visible in sequence viewers if residue is in displayed sequence
+        SequenceViewerList::iterator t, te = sequenceViewers.end();
+        for (t=sequenceViewers.begin(); t!=te; t++)
+            (*t)->MakeResidueVisible(molecule, residueID - 1);
+    }
 }
 
 bool Messenger::RemoveAllHighlights(bool postRedraws)

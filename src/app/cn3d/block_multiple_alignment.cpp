@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/02/05 18:53:24  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.32  2001/12/06 23:13:44  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -583,8 +586,8 @@ bool BlockMultipleAlignment::IsAligned(int row, int seqIndex) const
 const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 {
     // make sure we're in range for this sequence
-    if (seqIndex < 0 || seqIndex >= (*sequences)[row]->Length()) {
-        ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - seqIndex out of range");
+    if (row < 0 || seqIndex < 0 || row >= NRows() || seqIndex >= (*sequences)[row]->Length()) {
+        ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - coordinate out of range");
         return NULL;
     }
 
@@ -1529,6 +1532,49 @@ int BlockMultipleAlignment::NAlignedBlocks(void) const
     BlockList::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) if ((*b)->IsAligned()) n++;
     return n;
+}
+
+int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification)
+{
+    if (row < 0 || row >= NRows() || seqIndex < 0 || seqIndex >= GetSequenceOfRow(row)->Length()) {
+        ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - coordinate out of range");
+        return -1;
+    }
+
+    int alignmentIndex, blockColumn;
+    const Block *block = NULL;
+    const Block::Range *range;
+
+    for (alignmentIndex=0; alignmentIndex<totalWidth; alignmentIndex++) {
+
+        // check each block to see if index is in range
+        if (block != blockMap[alignmentIndex].block) {
+            block = blockMap[alignmentIndex].block;
+
+            range = block->GetRangeOfRow(row);
+            if (seqIndex >= range->from && seqIndex <= range->to) {
+
+                // override requested justification for end blocks
+                if (block == blocks.back()) // also true if there's a single aligned block
+                    justification = eLeft;
+                else if (block == blocks.front())
+                    justification = eRight;
+
+                // search block columns to find index (inefficient, but avoids having to write
+                // inverse functions of Block::GetIndexAt()
+                for (blockColumn=0; blockColumn<block->width; blockColumn++) {
+                    if (seqIndex == block->GetIndexAt(blockColumn, row, justification))
+                        return alignmentIndex + blockColumn;
+                }
+                ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - can't find index in block");
+                return -1;
+            }
+        }
+    }
+
+    // should never get here...
+    ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - confused");
+    return -1;
 }
 
 

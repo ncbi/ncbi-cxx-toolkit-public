@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/02/05 18:53:26  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.16  2001/12/06 23:13:47  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -127,6 +130,9 @@ public:
     // scroll to specific column
     void ScrollToColumn(int column) { viewerWidget->ScrollTo(column, -1); }
     void ScrollToRow(int row) { viewerWidget->ScrollTo(-1, row); }
+
+    // scroll so that this cell is visible, if it's not already
+    void MakeCellVisible(int column, int row) { viewerWidget->MakeCharacterVisible(column, row); }
 
     // set the font for the characters from registry values; refreshes automatically.
     void SetupFontFromRegistry(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/02/05 18:53:26  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.9  2001/12/06 23:13:47  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -78,6 +81,7 @@ class SequenceDisplay;
 class BlockMultipleAlignment;
 class Vector;
 class AlignmentManager;
+class Molecule;
 
 class ViewerBase
 {
@@ -108,6 +112,9 @@ public:
 
     // override to set customized window title
     virtual void SetWindowTitle(const std::string& title) const = 0;
+
+    // make residue visible, if present
+    void MakeResidueVisible(const Molecule *molecule, int seqIndex);
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 

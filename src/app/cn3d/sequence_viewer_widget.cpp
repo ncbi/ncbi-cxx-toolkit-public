@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/02/05 18:53:25  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
 * Revision 1.29  2001/11/01 19:01:45  thiessen
 * use meta key instead of ctrl on Mac
 *
@@ -186,6 +189,8 @@ public:
 
 class SequenceViewerWidget_SequenceArea : public wxScrolledWindow
 {
+    friend class SequenceViewerWidget;
+
 public:
     // constructor (same as wxScrolledWindow)
     SequenceViewerWidget_SequenceArea(
@@ -355,10 +360,8 @@ void SequenceViewerWidget_SequenceArea::SetRubberbandColor(const wxColor& rubber
 void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 {
     // adjust bitmap size to match client area size
-//    ERR_POST(Info << "client size: " << GetClientSize().GetWidth() << 'x' << GetClientSize().GetHeight());
     if (!bitmap || bitmap->GetWidth() != GetClientSize().GetWidth() ||
                    bitmap->GetHeight() != GetClientSize().GetHeight()) {
-//        ERR_POST(Info << "creating new bitmap");
         if (bitmap) delete bitmap;
         bitmap = new wxBitmap(GetClientSize().GetWidth(), GetClientSize().GetHeight());
     }
@@ -1122,6 +1125,28 @@ void SequenceViewerWidget::ScrollTo(int column, int row)
 void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
 {
     sequenceArea->GetViewStart(vsX, vsY);
+}
+
+void SequenceViewerWidget::MakeCharacterVisible(int column, int row) const
+{
+    int vsX, vsY, newX = -1, newY = -1, nCells;
+    sequenceArea->GetViewStart(&vsX, &vsY);
+
+    // scroll horizontally if necessary
+    nCells = sequenceArea->GetClientSize().GetWidth() / sequenceArea->cellWidth;
+    if (column < vsX || column >= vsX + nCells) {
+        vsX = column - nCells / 2;
+        if (vsX < 0) vsX = 0;
+    }
+
+    // scroll vertically if necessary
+    nCells = sequenceArea->GetClientSize().GetHeight() / sequenceArea->cellHeight;
+    if (row < vsY || row >= vsY + nCells) {
+        vsY = row - nCells / 2;
+        if (vsY < 0) vsY = 0;
+    }
+
+    sequenceArea->Scroll(vsX, vsY);
 }
 
 void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
