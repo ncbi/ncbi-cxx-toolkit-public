@@ -135,7 +135,7 @@ void CEmblFormatter::FormatAccession
     x_AddXX(text_os);
 
     list<string> l;
-    Wrap(l, "AC", x_FormatAccession(acc, ';'));
+    Wrap(l, "AC", acc_line);
     text_os.AddParagraph(l);
 }
 
