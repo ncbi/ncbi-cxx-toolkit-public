@@ -84,6 +84,35 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
    return 0;
 }
 
+/** Looks for a "valid" Karlin Blk within the list of blocks.
+ * Valid means that Lambda, K, and H are not all -1.
+ * Invalid blocks are often caused by completely masked sequences.
+ * @param kbp_in array of Karlin blocks to be searched [in]
+ * @param query_info information on number of queries [in]
+ * @param kbp_ret the object to be pointed at [out]
+ * @return zero on success, 1 if no valid block found
+ */
+
+static Int2
+BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_info, Blast_KarlinBlk** kbp_ret)
+{
+        Int4 index;   /* Look for the first valid kbp. */
+        Int2 status=1;  /* 1 means no valid block found. */
+
+        ASSERT(kbp_in && query_info && kbp_ret);
+
+        for (index=query_info->first_context; index<=query_info->last_context; index++)
+        {
+             if (kbp_in[index]->Lambda > 0 && kbp_in[index]->K > 0 && kbp_in[index]->H > 0)
+             {
+                  *kbp_ret = kbp_in[index];
+                  status = 0;
+                  break;
+             }
+        }
+        return status;
+}
+
 BlastInitialWordOptions*
 BlastInitialWordOptionsFree(BlastInitialWordOptions* options)
 
@@ -277,6 +306,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    Uint4 subject_length,
    BlastInitialWordParameters* *parameters)
 {
+   Blast_KarlinBlk* kbp_std;
    Int2 status = 0;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
@@ -284,19 +314,20 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    if (!parameters)
       return 0;
 
-   ASSERT(sbp);
    ASSERT(word_options);
+   ASSERT(sbp);
+   ASSERT(sbp->kbp_std[query_info->first_context]);
+   if (BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_std) != 0)
+         return -1;
 
    *parameters = (BlastInitialWordParameters*) 
       calloc(1, sizeof(BlastInitialWordParameters));
 
    (*parameters)->options = (BlastInitialWordOptions *) word_options;
 
-   ASSERT(sbp->kbp_std[query_info->first_context]);
-
    (*parameters)->x_dropoff_init = (Int4)
       ceil(sbp->scale_factor * word_options->x_dropoff * NCBIMATH_LN2/
-           sbp->kbp_std[query_info->first_context]->Lambda);
+           kbp_std->Lambda);
 
    status = BlastInitialWordParametersUpdate(program_number,
                hit_params, ext_params, sbp, query_info,
@@ -323,9 +354,11 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
    /* kbp_gap is only non-NULL for gapped searches! */
    if (sbp->kbp_gap) {
-      kbp = sbp->kbp_gap[query_info->first_context];
+      if (BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
+         return -1;
    } else {
-      kbp = sbp->kbp_std[query_info->first_context];
+      if (BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp) != 0)
+         return -1;
       gapped_calculation = FALSE;
    }
 
@@ -478,7 +511,8 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
         const BlastExtensionOptions* options, BlastScoreBlk* sbp,
         BlastQueryInfo* query_info, BlastExtensionParameters* *parameters)
 {
-   Blast_KarlinBlk* kbp,* kbp_gap;
+   Blast_KarlinBlk* kbp=NULL;
+   Blast_KarlinBlk* kbp_gap=NULL;
    BlastExtensionParameters* params;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
@@ -486,8 +520,11 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
    if (!parameters)
       return 0;
 
+       
+ 
    if (sbp->kbp) {
-      kbp = sbp->kbp[query_info->first_context];
+      if (BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
+         return -1;
    } else {
       /* The Karlin block is not found, can't do any calculations */
       *parameters = NULL;
@@ -506,7 +543,8 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
 
    /* Set gapped X-dropoffs only if it is a gapped search. */
    if (sbp->kbp_gap) {
-      kbp_gap = sbp->kbp_gap[query_info->first_context];
+      if (BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp_gap) != 0)
+         return -1;
       params->gap_x_dropoff = 
          (Int4) (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
       params->gap_x_dropoff_final = (Int4) 
@@ -1264,9 +1302,11 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       Karlin blocks have been set. */
    gapped_calculation = (sbp->kbp_gap != NULL);
    if (gapped_calculation) {
-      kbp = sbp->kbp_gap[query_info->first_context];
+      if (BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
+         return -1;
    } else {
-      kbp = sbp->kbp[query_info->first_context];
+      if (BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
+         return -1;
    }
 
    /* Calculate cutoffs based on the current effective lengths information */
@@ -1509,6 +1549,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.129  2004/08/12 13:01:02  madden
+ * Add static function BlastFindValidKarlinBlk to look for valid Karlin blocks in an array of them, prevents use of bogus (-1) Karlin-Altschul parameters
+ *
  * Revision 1.128  2004/08/06 16:22:56  dondosha
  * In initial word options validation, return after first encountered error
  *
