@@ -2376,7 +2376,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from2 <= from1  &&  to2 >= to1) ?
-                            (from1 - from2) - (to2 - to1) : -1;
+                            (from1 - from2) + (to2 - to1) : -1;
                     }
                     else {
                         // Non-circular location can not contain a circular one
@@ -2608,6 +2608,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2004/12/16 19:26:39  shomrat
+* Fixed difference calculation for circular bioseqs
+*
 * Revision 1.14  2004/12/13 12:56:31  shomrat
 * x_TestForOverlap_MultiStrand doesn't handle eOverlap_CheckIntervals
 *
