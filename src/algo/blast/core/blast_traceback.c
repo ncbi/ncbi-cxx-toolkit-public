@@ -28,7 +28,22 @@
  */
 
 /** @file blast_traceback.c
- * Functions responsible for the traceback stage of the BLAST algorithm
+ * Functions responsible for the traceback stage of the BLAST algorithm.
+ * <pre>
+ * The hierarchy of function calls for performing traceback is:
+ *    Blast_RunTracebackSearch 
+ *        BLAST_GapAlignSetUp
+ *        BLAST_ComputeTraceback
+ *            if ( RPS BLAST ) 
+ *                BLAST_RPSTraceback
+ *                    for ( all HSP lists )
+ *                        Blast_TracebackFromHSPList
+ *            else if ( composition based statistics )
+ *                Kappa_RedoAlignmentCore
+ *            else
+ *                for ( all HSP lists )
+ *                    Blast_TracebackFromHSPList
+ * </pre>
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -840,119 +855,54 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
    }
 }
 
-Int2 
-BLAST_ComputeTraceback(EBlastProgramType program_number, 
-   BlastHSPStream* hsp_stream, BLAST_SequenceBlk* query, 
-   BlastQueryInfo* query_info, const BlastSeqSrc* seq_src, 
-   BlastGapAlignStruct* gap_align, BlastScoringParameters* score_params,
-   const BlastExtensionParameters* ext_params,
-   BlastHitSavingParameters* hit_params,
-   BlastEffectiveLengthsParameters* eff_len_params,
-   const BlastDatabaseOptions* db_options,
-   const PSIBlastOptions* psi_options, BlastHSPResults** results_out)
+/** Prepares an auxiliary BlastQueryInfo structure for the concatenated 
+ * database and creates a memory mapped PSSM for RPS BLAST traceback.
+ * @param concat_db_info BlastQueryInfo structure to fill. [out]
+ * @param gap_align Gapped alignment structure to modify [in] [out]
+ * @param rps_info RPS BLAST information structure [in]
+ */
+static Int2 
+s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info, 
+                         BlastGapAlignStruct* gap_align, 
+                         const BlastRPSInfo* rps_info)
 {
-   Int2 status = 0;
-   BlastHSPResults* results = NULL;
-   BlastHSPList* hsp_list = NULL;
-   BlastScoreBlk* sbp;
-   Uint1 encoding;
-   GetSeqArg seq_arg;
-   Uint1* gen_code_string = NULL;
- 
-   if (!query_info || !seq_src || !hsp_stream || !results_out) {
-      return 0;
-   }
-   
-   /* Set the raw X-dropoff value for the final gapped extension with 
-      traceback */
-   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+   Int4** rps_pssm = NULL;
+   Int4 num_profiles;
+   Int4 num_pssm_rows;
+   Int4* pssm_start;
+   BlastRPSProfileHeader *profile_header;
+   Int4 index;
 
-   sbp = gap_align->sbp;
-  
-   if (db_options)
-      gen_code_string = db_options->gen_code_string;
- 
-   encoding = Blast_TracebackGetEncoding(program_number);
-   memset((void*) &seq_arg, 0, sizeof(seq_arg));
+   if (!rps_info)
+      return -1;
 
-   results = Blast_HSPResultsNew(query_info->num_queries);
+   memset(concat_db_info, 0, sizeof(BlastQueryInfo)); /* fill in QueryInfo */
 
-   if (program_number == eBlastTypeBlastp && 
-         (ext_params->options->compositionBasedStats == TRUE || 
-            ext_params->options->eTbackExt == eSmithWatermanTbck)) {
-          Kappa_RedoAlignmentCore(program_number, query, query_info,
-              sbp, hsp_stream, seq_src, gen_code_string,
-              score_params, ext_params, hit_params, psi_options, results); 
-   } else {
-      Boolean perform_traceback = 
-         (score_params->options->gapped_calculation && 
-          (ext_params->options->ePrelimGapExt != eGreedyWithTracebackExt) &&
-          (ext_params->options->eTbackExt != eSkipTbck));
+   profile_header = rps_info->profile_header;
+   num_profiles = profile_header->num_profiles;
 
-      /* Retrieve all HSP lists from the HSPStream. */
-      while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
-             != kBlastHSPStream_Eof) {
+   /* Construct an auxiliary BlastQueryInfo structure for the concatenated
+      database. */
+   concat_db_info->num_queries = num_profiles;
+   concat_db_info->first_context = 0;
+   concat_db_info->last_context = num_profiles - 1;
+   OffsetArrayToContextOffsets(concat_db_info,
+                               rps_info->profile_header->start_offsets,
+                               eBlastTypeRpsBlast);
 
-         /* Perform traceback here, if necessary. */
-         if (perform_traceback) {
-            seq_arg.oid = hsp_list->oid;
-            seq_arg.encoding = encoding;
-            BlastSequenceBlkClean(seq_arg.seq);
-            if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
-               continue;
-            
-            if (BLASTSeqSrcGetTotLen(seq_src) == 0) {
-               /* This is not a database search, so effective search spaces
-                * need to be recalculated based on this subject sequence 
-                * length.
-                * NB: The initial word parameters structure is not available 
-                * here, so the small gap cutoff score for linking of HSPs will 
-                * not be updated. Since by default linking is done with uneven 
-                * gap statistics, this can only influence a corner non-default 
-                * case, and is a tradeoff for a benefit of not having to deal 
-                * with ungapped extension parameters in the traceback stage.
-                */
-               if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
-                                seq_arg.seq->length, score_params->options, 
-                                query_info, sbp, hit_params, 
-                                NULL, eff_len_params)) != 0)
-                  return status;
-            }
+   num_pssm_rows = profile_header->start_offsets[num_profiles];
+   rps_pssm = (Int4 **)malloc((num_pssm_rows+1) * sizeof(Int4 *));
+   pssm_start = profile_header->start_offsets + num_profiles + 1;
 
-            Blast_TracebackFromHSPList(program_number, hsp_list, query, 
-               seq_arg.seq, query_info, gap_align, sbp, score_params, 
-               ext_params->options, hit_params, gen_code_string);
-
-            BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
-         }
-
-         /* Free HSP list structure if all HSPs have been deleted. */
-         if (hsp_list->hspcnt == 0) {
-             hsp_list = Blast_HSPListFree(hsp_list);
-             continue;
-         }
-
-         Blast_HSPResultsInsertHSPList(results, hsp_list, 
-                                       hit_params->options->hitlist_size);
-      }
+   for (index = 0; index < num_pssm_rows + 1; index++) {
+      rps_pssm[index] = pssm_start;
+      pssm_start += BLASTAA_SIZE;
    }
 
-   /* Re-sort the hit lists according to their best e-values, because
-      they could have changed. Only do this for a database search. */
-   if (BLASTSeqSrcGetTotLen(seq_src) > 0)
-      Blast_HSPResultsSortByEvalue(results);
+   gap_align->positionBased = TRUE;
+   gap_align->sbp->posMatrix = rps_pssm;
 
-   /* Eliminate extra hits from results, if preliminary hit list size is larger
-      than the final hit list size */
-   if (hit_params->options->hitlist_size < 
-       hit_params->options->prelim_hitlist_size)
-      s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);
-
-   BlastSequenceBlkFree(seq_arg.seq);
-
-   *results_out = results;
-
-   return status;
+   return 0;
 }
 
 /** Factor to multiply the Karlin-Altschul K parameter by for RPS BLAST, to make
@@ -960,58 +910,79 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
  */
 #define RPS_K_MULT 1.2
 
-Int2 BLAST_RPSTraceback(EBlastProgramType program_number, 
-        BlastHSPStream* hsp_stream, 
-        const BlastSeqSrc* seq_src, BlastQueryInfo* concat_db_info, 
-        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-        BlastGapAlignStruct* gap_align,
-        const BlastScoringParameters* score_params,
-        const BlastExtensionParameters* ext_params,
-        BlastHitSavingParameters* hit_params,
-        const double* karlin_k,
-        BlastHSPResults** results_out)
+/** Compute traceback information for alignments found by an
+ *  RPS blast search. This function performs two major tasks:
+ *  - Computes a composition-specific PSSM to be used during the
+ *    traceback computation (non-translated searches only)
+ *  - After traceback is computed, switch query offsets with 
+ *    subject offsets and switch the edit blocks that describe
+ *    the alignment. This is required because the entire RPS search
+ *    was performed with these quatities reversed.
+ * This call is also the first time that enough information 
+ * exists to compute E-values for alignments that are found.
+ *
+ * @param program_number Type of the BLAST program [in]
+ * @param hsp_stream A stream for reading HSP lists [in]
+ * @param concat_db The concatentation of all RPS DB sequences. 
+ *                  The sequence data itself is not needed, 
+ *                  only its size [in]
+ * @param seq_src Source of RPS database consensus sequences; needed only
+ *                to calculate number of identities in alignments [in]
+ * @param query The original query sequence [in]
+ * @param query_info Information associated with the original query. 
+ *                   Only used for the search space [in]
+ * @param gap_align The auxiliary structure for gapped alignment [in]
+ * @param score_params Scoring parameters (esp. scale factor) [in]
+ * @param ext_params Gapped extension parameters [in]
+ * @param hit_params Parameters for saving hits. Can change if not a 
+                     database search [in]
+ * @param db_options Options containing database genetic code string [in]
+ * @param rps_info Extra information about RPS database. [in]
+ * @param results Results structure containing all HSPs, with added
+ *                traceback information. [out]
+ * @return nonzero indicates failure, otherwise zero
+ */
+static 
+Int2 s_RPSTraceback(EBlastProgramType program_number, 
+                    BlastHSPStream* hsp_stream, 
+                    const BlastSeqSrc* seq_src, 
+                    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+                    BlastGapAlignStruct* gap_align,
+                    const BlastScoringParameters* score_params,
+                    const BlastExtensionParameters* ext_params,
+                    BlastHitSavingParameters* hit_params,
+                    const BlastRPSInfo* rps_info,                
+                    BlastHSPResults* results)
 {
    Int2 status = 0;
    BlastHSPList* hsp_list;
    BlastScoreBlk* sbp;
    Int4 **orig_pssm;
    Int4 db_seq_start;
-   BlastHSPResults* results = NULL;
    Uint1 encoding;
    GetSeqArg seq_arg;
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;
-   
+   BlastQueryInfo concat_db_info;
 
-   if (!hsp_stream || !concat_db_info || !seq_src || !results_out) {
-      return 0;
+   if (!hsp_stream || !seq_src || !results) {
+      return -1;
    }
    
-   /* Set the raw X-dropoff value for the final gapped extension with 
-      traceback */
-   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
-
+   if ((status = 
+        s_RPSGapAlignDataPrepare(&concat_db_info, gap_align, rps_info)) != 0)
+      return status;
+      
    sbp = gap_align->sbp;
    orig_pssm = gap_align->sbp->posMatrix;
 
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
-   results = Blast_HSPResultsNew(query_info->num_queries);
-
    while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
           != kBlastHSPStream_Eof) {
       if (!hsp_list)
          continue;
-
-      /* If traceback should be skipped, just save the HSP list into the results
-         structure. */
-      if (ext_params->options->eTbackExt == eSkipTbck) {
-         /* Save this HSP list in the results structure. */
-         Blast_HSPResultsInsertHSPList(results, hsp_list, 
-                                       hit_params->options->hitlist_size);
-         continue;
-      }
 
       /* Restrict the query sequence block and information structures 
          to the one query this HSP list corresponds to. */
@@ -1030,7 +1001,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
-      db_seq_start = concat_db_info->contexts[hsp_list->oid].query_offset;
+      db_seq_start = concat_db_info.contexts[hsp_list->oid].query_offset;
       
       /* Update the statistics for this database sequence
          (if not a translated search) */
@@ -1038,6 +1009,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       if (program_number == eBlastTypeRpsTblastn) {
          sbp->posMatrix = orig_pssm + db_seq_start;
       } else {
+         const double* karlin_k = rps_info->aux_info.karlin_k;
          /* replace the PSSM and the Karlin values for this DB sequence
             and this query sequence. */
          sbp->posMatrix = 
@@ -1097,8 +1069,178 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       to sort the results now */
    Blast_HSPResultsSortByEvalue(results);
 
+   /* Free the allocated array of memory mapped matrix columns and restore
+      the original settings in the gapped alignment structure. */
+   sfree(orig_pssm);
+   gap_align->positionBased = FALSE;
+   gap_align->sbp->posMatrix = NULL;
+
+   return status;
+}
+
+Int2 
+BLAST_ComputeTraceback(EBlastProgramType program_number, 
+   BlastHSPStream* hsp_stream, BLAST_SequenceBlk* query, 
+   BlastQueryInfo* query_info, const BlastSeqSrc* seq_src, 
+   BlastGapAlignStruct* gap_align, BlastScoringParameters* score_params,
+   const BlastExtensionParameters* ext_params,
+   BlastHitSavingParameters* hit_params,
+   BlastEffectiveLengthsParameters* eff_len_params,
+   const BlastDatabaseOptions* db_options,
+   const PSIBlastOptions* psi_options, 
+   const BlastRPSInfo* rps_info, BlastHSPResults** results_out)
+{
+   Int2 status = 0;
+   BlastHSPResults* results = NULL;
+   BlastHSPList* hsp_list = NULL;
+   BlastScoreBlk* sbp;
+   Uint1* gen_code_string = NULL;
+ 
+   if (!query_info || !seq_src || !hsp_stream || !results_out) {
+      return -1;
+   }
+   
+   /* Set the raw X-dropoff value for the final gapped extension with 
+      traceback */
+   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+
+   sbp = gap_align->sbp;
+  
+   if (db_options)
+      gen_code_string = db_options->gen_code_string;
+ 
+
+   results = Blast_HSPResultsNew(query_info->num_queries);
+
+   if (program_number == eBlastTypeRpsBlast ||
+       program_number == eBlastTypeRpsTblastn) {
+      s_RPSTraceback(program_number, hsp_stream, seq_src, query, query_info, 
+                     gap_align, score_params, ext_params, hit_params, rps_info,
+                     results);
+   } else if (program_number == eBlastTypeBlastp && 
+              (ext_params->options->compositionBasedStats == TRUE || 
+               ext_params->options->eTbackExt == eSmithWatermanTbck)) {
+      Kappa_RedoAlignmentCore(program_number, query, query_info,
+                              sbp, hsp_stream, seq_src, gen_code_string,
+                              score_params, ext_params, hit_params, psi_options, 
+                              results); 
+   } else {
+      GetSeqArg seq_arg;
+      Uint1 encoding = Blast_TracebackGetEncoding(program_number);
+      Boolean perform_traceback = 
+         (score_params->options->gapped_calculation && 
+          (ext_params->options->ePrelimGapExt != eGreedyWithTracebackExt));
+
+      memset((void*) &seq_arg, 0, sizeof(seq_arg));
+
+      /* Retrieve all HSP lists from the HSPStream. */
+      while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
+             != kBlastHSPStream_Eof) {
+
+         /* Perform traceback here, if necessary. */
+         if (perform_traceback) {
+            seq_arg.oid = hsp_list->oid;
+            seq_arg.encoding = encoding;
+            BlastSequenceBlkClean(seq_arg.seq);
+            if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+               continue;
+            
+            if (BLASTSeqSrcGetTotLen(seq_src) == 0) {
+               /* This is not a database search, so effective search spaces
+                * need to be recalculated based on this subject sequence 
+                * length.
+                * NB: The initial word parameters structure is not available 
+                * here, so the small gap cutoff score for linking of HSPs will 
+                * not be updated. Since by default linking is done with uneven 
+                * gap statistics, this can only influence a corner non-default 
+                * case, and is a tradeoff for a benefit of not having to deal 
+                * with ungapped extension parameters in the traceback stage.
+                */
+               if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
+                                seq_arg.seq->length, score_params->options, 
+                                query_info, sbp, hit_params, 
+                                NULL, eff_len_params)) != 0)
+                  return status;
+            }
+
+            Blast_TracebackFromHSPList(program_number, hsp_list, query, 
+               seq_arg.seq, query_info, gap_align, sbp, score_params, 
+               ext_params->options, hit_params, gen_code_string);
+
+            BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+         }
+         
+         /* Free HSP list structure if all HSPs have been deleted. */
+         if (hsp_list->hspcnt == 0) {
+             hsp_list = Blast_HSPListFree(hsp_list);
+             continue;
+         }
+
+         Blast_HSPResultsInsertHSPList(results, hsp_list, 
+                                       hit_params->options->hitlist_size);
+      }
+      BlastSequenceBlkFree(seq_arg.seq);
+   }
+
+   /* Re-sort the hit lists according to their best e-values, because
+      they could have changed. Only do this for a database search. */
+   if (BLASTSeqSrcGetTotLen(seq_src) > 0)
+      Blast_HSPResultsSortByEvalue(results);
+
+   /* Eliminate extra hits from results, if preliminary hit list size is larger
+      than the final hit list size */
+   if (hit_params->options->hitlist_size < 
+       hit_params->options->prelim_hitlist_size)
+      s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);
+
    *results_out = results;
 
-   gap_align->sbp->posMatrix = orig_pssm;
+   return status;
+}
+
+Int2 
+Blast_RunTracebackSearch(EBlastProgramType program, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const BlastDatabaseOptions* db_options, 
+   const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
+   BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
+   BlastHSPResults** results)
+{
+   Int2 status = 0;
+   BlastScoringParameters* score_params = NULL; /**< Scoring parameters */
+   BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
+                                                   parameters */
+   BlastHitSavingParameters* hit_params = NULL; /**< Hit saving parameters*/
+   BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters
+                                        for effective lengths calculations */
+   BlastGapAlignStruct* gap_align = NULL; /**< Gapped alignment structure */
+
+   status = 
+      BLAST_GapAlignSetUp(program, seq_src, score_options, eff_len_options, 
+         ext_options, hit_options, query_info, sbp, &score_params, 
+         &ext_params, &hit_params, &eff_len_params, &gap_align);
+   if (status)
+      return status;
+
+   /* Prohibit any subsequent writing to the HSP stream. */
+   BlastHSPStreamClose(hsp_stream);
+
+   status = 
+      BLAST_ComputeTraceback(program, hsp_stream, query, query_info,
+         seq_src, gap_align, score_params, ext_params, hit_params,
+         eff_len_params, db_options, psi_options, rps_info, results);
+
+   /* Do not destruct score block here */
+   gap_align->sbp = NULL;
+   BLAST_GapAlignStructFree(gap_align);
+
+   score_params = BlastScoringParametersFree(score_params);
+   hit_params = BlastHitSavingParametersFree(hit_params);
+   ext_params = BlastExtensionParametersFree(ext_params);
+   eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
    return status;
 }
