@@ -58,18 +58,14 @@ list<string>& CFlatEMBLFormatter::Wrap(list<string>& l, const string& tag,
 }
 
 
-// moved to file scope to avoid becoming a common symbol (unsuitable
-// for inclusion in shared libraries) on Darwin
-static list<string> s_XX;
-
 inline
 void CFlatEMBLFormatter::x_AddXX(void)
 {
-    if (s_XX.empty()) {
+    if (m_XX.empty()) {
         string tmp;
-        s_XX.push_back(Pad("XX", tmp, ePara));
+        m_XX.push_back(Pad("XX", tmp, ePara));
     }
-    m_Stream->AddParagraph(s_XX);
+    m_Stream->AddParagraph(m_XX);
 }
 
 
@@ -370,6 +366,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/10/11 19:29:02  ucko
+* Made the XX paragraph a normal member to avoid trouble when statically
+* linked into multiple plugins.  (The old code wasn't threadsafe anyway.)
+*
 * Revision 1.8  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
