@@ -306,6 +306,17 @@ CPSIDiagnosticsResponse::DebugDump(CDebugDumpContext ddc,
     ddc.Log("alphabet_size", m_Ptr->alphabet_size);
 }
 
+void
+CBlastSeqSrc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlastSeqSrc");
+    if (!m_Ptr)
+        return;
+
+    /** @todo should the BlastSeqSrc API support names for types of
+     * BlastSeqSrc? Might be useful for debugging */
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 BlastSeqLoc*
@@ -532,6 +543,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2004/11/23 23:00:59  camacho
+ * + RAII class for BlastSeqSrc
+ *
  * Revision 1.55  2004/11/12 16:42:53  camacho
  * Add handling of missing EProgram values to ProgramNameToEnum
  *

@@ -182,6 +182,8 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
 
+DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrc, BlastSeqSrcFree);
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 END_SCOPE(blast)
@@ -193,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/11/23 23:00:46  camacho
+* + RAII class for BlastSeqSrc
+*
 * Revision 1.45  2004/11/04 15:51:59  papadopo
 * prepend 'Blast' to RPSInfo and related structures
 *
