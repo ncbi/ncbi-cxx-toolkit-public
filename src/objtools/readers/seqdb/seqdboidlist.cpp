@@ -54,7 +54,9 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
     // Interesting fact: if we add one more _ASSERT(gi_list) before failing _ASSERT without
     // removing it MSCV will compile it without warnings. :-)
     //_ASSERT(volset.HasFilter() || gi_list);
-    _ASSERT(gi_list || volset.HasFilter());
+    //_ASSERT(gi_list || volset.HasFilter());
+    // (A step further: Lets not trust it to convert pointer->bool. -kmb)
+    _ASSERT(gi_list.NotEmpty() || volset.HasFilter());
     
     if (volset.HasSimpleMask() && gi_list.Empty()) {
         x_Setup( volset.GetSimpleMask(), locked );
@@ -230,8 +232,6 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
         return;
     }
     
-    // pair = volume index, number of oids
-    //vector< pair<int,int> > OidsPerVolume;
     typedef SSeqDB_IndexCountPair TIndexCount;
     vector<TIndexCount> OidsPerVolume;
     
