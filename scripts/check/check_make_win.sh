@@ -346,6 +346,10 @@ for build_tree in \$build_trees; do
    # For each configuration
    for x_conf in \$configurations; do
 
+   if test \$build_tree = "dll" -a ! \$x_conf = "DebugDLL" -a ! \$x_conf = "ReleaseDLL" ; then
+      continue
+   fi
+
    # Add current configuration's build and dll build directories to PATH
    PATH=".:\${build_dir}/\${build_tree}bin/\${x_conf}:\${build_dir}/\${build_tree}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
    export PATH
