@@ -302,7 +302,6 @@ void CMainApplication::ProcessFile(const string& file_name)
         string content;  // File content
         string str;      // Temporary string
 
-
         // Read all file into memory.
 
         CNcbiIfstream is(file_name.c_str(), IOS_BASE::in | IOS_BASE::binary);
@@ -567,6 +566,8 @@ void CMainApplication::ProcessFile(const string& file_name)
 
         // Replace original project file (backup kept in .bak).
         string file_backup =  file_name + ".bak";
+        CTime ftime;
+        CFile(file_name).GetTime(&ftime);
         CFile(file_backup).Remove();
         if ( m_CreateBackup ) {
             CFile(file_name).Rename(file_backup);
@@ -576,6 +577,7 @@ void CMainApplication::ProcessFile(const string& file_name)
         if ( !CFile(file_name_new).Rename(file_name) ) {
             throw (string)"cannot rename file";
         }
+        CFile(file_name).SetTime(&ftime, &ftime);
     }
     catch (string& e) {
         ERR_POST(file_name << ": " << e << ".");
@@ -947,6 +949,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/28 16:53:23  ivanov
+ * Keep modification time for conveted file
+ *
  * Revision 1.6  2003/11/10 17:29:05  ivanov
  * Added option "-b" -- create backup files for projects (by default is off).
  * wxWindows: make sure that incremental linking is on except for DLLs
