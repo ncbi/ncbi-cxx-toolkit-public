@@ -303,11 +303,13 @@ Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list,
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param gapped_calculation Is this for a gapped or ungapped search? [in]
  * @param sbp Structure containing statistical information [in]
+ * @param gap_decay_rate Adjustment parameter to compensate for the effects of
+ * performing multiple tests when linking HSPs. No adjustment is made if 0. [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
-        BlastScoreBlk* sbp);
+        BlastScoreBlk* sbp, double gap_decay_rate);
 
 /** Calculate e-values for a PHI BLAST HSP list.
  * @param hsp_list HSP list found by PHI BLAST [in] [out]

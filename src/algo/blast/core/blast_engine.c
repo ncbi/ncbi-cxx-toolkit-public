@@ -350,7 +350,7 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
       if (program_number != eBlastTypeRpsBlast &&
           program_number != eBlastTypeRpsTblastn)
          status = Blast_HSPListGetEvalues(query_info, hsp_list, 
-                     score_options->gapped_calculation, gap_align->sbp);
+                     score_options->gapped_calculation, gap_align->sbp, 0);
    }
    
    /* Discard HSPs that don't pass the e-value test. */
@@ -706,7 +706,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          break;
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
-
       if (db_length == 0) {
          /* This is not a database search, hence need to recalculate and save
             the effective search spaces and length adjustments for all 
@@ -780,7 +779,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
    word_params = BlastInitialWordParametersFree(word_params);
    BlastCoreAuxStructFree(aux_struct);
-
    return status;
 }
 

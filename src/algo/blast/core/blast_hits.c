@@ -1099,13 +1099,14 @@ Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list,
 
 Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
-        BlastScoreBlk* sbp)
+        BlastScoreBlk* sbp, double gap_decay_rate)
 {
    BlastHSP* hsp;
    BlastHSP** hsp_array;
    Blast_KarlinBlk** kbp;
    Int4 hsp_cnt;
    Int4 index;
+   double gap_decay_divisor = 1.;
    
    if (hsp_list == NULL)
       return 0;
@@ -1118,6 +1119,9 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
    hsp_cnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
 
+   if (gap_decay_rate != 0.)
+      gap_decay_divisor = BLAST_GapDecayDivisor(gap_decay_rate, 1);
+   
    for (index=0; index<hsp_cnt; index++) {
       hsp = hsp_array[index];
 
@@ -1133,6 +1137,7 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
             BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                query_info->eff_searchsp_array[hsp->context]);
       }
+      hsp->evalue /= gap_decay_divisor;
    }
    
    return 0;

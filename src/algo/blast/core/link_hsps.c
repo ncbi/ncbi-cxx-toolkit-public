@@ -1459,15 +1459,16 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
       /* Link up the HSP's for this hsp_list. */
       if (link_hsp_params->longest_intron <= 0)
       {
-         Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, subject, sbp, 
-                   link_hsp_params, gapped_calculation);
+         Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, subject, 
+            sbp, link_hsp_params, gapped_calculation);
          /* The HSP's may be in a different order than they were before, 
             but hsp contains the first one. */
       } else {
          /* Calculate individual HSP e-values first - they'll be needed to
-            compare with sum e-values. */
+            compare with sum e-values. Use decay rate to compensate for 
+            multiple tests. */
          Blast_HSPListGetEvalues(query_info, hsp_list, 
-                                 gapped_calculation, sbp);
+            gapped_calculation, sbp, link_hsp_params->gap_decay_rate);
          
          Blast_UnevenGapLinkHSPs(program_number, hsp_list, query_info, 
                                  subject, sbp, link_hsp_params);
