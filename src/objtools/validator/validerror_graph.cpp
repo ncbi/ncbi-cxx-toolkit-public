@@ -31,6 +31,9 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqres/Seq_graph.hpp>
 #include "validatorp.hpp"
 
 
@@ -40,7 +43,7 @@ BEGIN_SCOPE(validator)
 
 
 CValidError_graph::CValidError_graph(CValidError_imp& imp) :
-    CValidError_base(imp)
+    CValidError_base(imp), m_NumMisplaced(0)
 {
 }
 
@@ -52,6 +55,50 @@ CValidError_graph::~CValidError_graph(void)
 
 void CValidError_graph::ValidateSeqGraph(const CSeq_graph& graph)
 {
+    if ( x_IsMisplaced(graph) ) {
+        ++m_NumMisplaced;
+    }
+}
+
+
+bool s_FindGraph(const CSeq_graph& graph, CBioseq_Handle& bsh)
+{
+    if ( !bsh ) {
+        return false;
+    }
+
+    const CBioseq& seq = bsh.GetBioseq();
+
+    ITERATE (CBioseq::TAnnot, annot_it, seq.GetAnnot()) {
+        if ( !(*annot_it)->CanGetData()  ||  !(*annot_it)->GetData().IsGraph() ) {
+            continue;
+        }
+
+        ITERATE(CSeq_annot::C_Data::TGraph, graph_it, (*annot_it)->GetData().GetGraph()) {
+            if ( (*graph_it) == &graph ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+bool CValidError_graph::x_IsMisplaced(const CSeq_graph& graph)
+{
+    if ( !graph.CanGetLoc() ) {
+        return false;
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(graph.GetLoc());
+    if ( s_FindGraph(graph, bsh) ) {
+        return false;
+    }
+
+    // need to test on the master bioseq for segmented?
+
+    return true;
 }
 
 
@@ -64,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/12/17 19:16:57  shomrat
+* Implemented test for graph packaging test
+*
 * Revision 1.3  2003/03/31 14:40:05  shomrat
 * $id: -> $id$
 *
