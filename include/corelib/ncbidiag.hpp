@@ -140,7 +140,7 @@ enum EDiagPostFlag {
     /// Set all flags.
     eDPF_All                = 0x3FFF,
 
-    /// Set all flags for using with __FILE__ and __LINE__.
+    /// Default flags to use when tracing.
     eDPF_Trace              = 0x1F,
 
     /// Print the posted message only; without severity, location, prefix, etc.
@@ -379,6 +379,17 @@ extern void SetDiagPostFlag(EDiagPostFlag flag);
 /// Unset the specified flag (globally).
 NCBI_XNCBI_EXPORT
 extern void UnsetDiagPostFlag(EDiagPostFlag flag);
+
+/// Versions of the above for extra trace flags.
+
+NCBI_XNCBI_EXPORT
+extern TDiagPostFlags SetDiagTraceAllFlags(TDiagPostFlags flags);
+
+NCBI_XNCBI_EXPORT
+extern void SetDiagTraceFlag(EDiagPostFlag flag);
+
+NCBI_XNCBI_EXPORT
+extern void UnsetDiagTraceFlag(EDiagPostFlag flag);
 
 /// Specify a string to prefix all subsequent error postings with.
 NCBI_XNCBI_EXPORT
@@ -869,6 +880,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.63  2003/11/12 20:30:25  ucko
+ * Make extra flags for severity-trace messages tunable.
+ *
  * Revision 1.62  2003/11/07 13:04:45  ivanov
  * Added export specifier for SDiagMessage
  *

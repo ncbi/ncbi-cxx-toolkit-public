@@ -60,6 +60,9 @@ class CDiagBuffer
     NCBI_XNCBI_EXPORT friend TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
     NCBI_XNCBI_EXPORT friend void SetDiagPostFlag(EDiagPostFlag flag);
     NCBI_XNCBI_EXPORT friend void UnsetDiagPostFlag(EDiagPostFlag flag);
+    NCBI_XNCBI_EXPORT friend TDiagPostFlags SetDiagTraceAllFlags(TDiagPostFlags flags);
+    NCBI_XNCBI_EXPORT friend void SetDiagTraceFlag(EDiagPostFlag flag);
+    NCBI_XNCBI_EXPORT friend void UnsetDiagTraceFlag(EDiagPostFlag flag);
     NCBI_XNCBI_EXPORT friend void SetDiagPostPrefix(const char* prefix);
     NCBI_XNCBI_EXPORT friend void PushDiagPostPrefix(const char* prefix);
     NCBI_XNCBI_EXPORT friend void PopDiagPostPrefix();
@@ -134,6 +137,8 @@ private:
 
     // the bitwise OR combination of "EDiagPostFlag"
     static TDiagPostFlags sm_PostFlags;
+    // extra flags ORed in for traces
+    static TDiagPostFlags sm_TraceFlags;
 
     // static members
     static EDiagSev       sm_PostSeverity;
@@ -425,6 +430,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/11/12 20:30:25  ucko
+ * Make extra flags for severity-trace messages tunable.
+ *
  * Revision 1.37  2003/11/06 21:40:34  vakatov
  * A somewhat more natural handling of the 'eDPF_Default' flag -- replace
  * it by the current global flags, then merge these with other flags (if any)

@@ -112,6 +112,7 @@ EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
 TDiagPostFlags CDiagBuffer::sm_PostFlags          =
     eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode | 
     eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation | eDPF_ErrCodeUseSeverity;
+TDiagPostFlags CDiagBuffer::sm_TraceFlags         = eDPF_Trace;
 
 EDiagSev       CDiagBuffer::sm_DieSeverity        = eDiag_Fatal;
 
@@ -195,11 +196,17 @@ void CDiagBuffer::Flush(void)
     if ( ostr->pcount() ) {
         const char* message = ostr->str();
         ostr->rdbuf()->freeze(false);
+        TDiagPostFlags flags = m_Diag->GetPostFlags();
+        if (sev == eDiag_Trace) {
+            flags |= sm_TraceFlags;
+        } else if (sev == eDiag_Fatal) {
+            // normally only happens once, so might as well pull everything
+            // in for the record...
+            flags |= sm_TraceFlags | eDPF_Trace;
+        }
         SDiagMessage mess
             (sev, message, ostr->pcount(),
-             m_Diag->GetFile(), m_Diag->GetLine(),
-             m_Diag->GetPostFlags() | (sev == eDiag_Trace || sev == eDiag_Fatal
-                                       ? eDPF_Trace : 0),
+             m_Diag->GetFile(), m_Diag->GetLine(), flags,
              0, m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
         DiagHandler(mess);
 
@@ -413,37 +420,70 @@ CDiagAutoPrefix::~CDiagAutoPrefix(void)
 //  EXTERN
 
 
-extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags)
+static TDiagPostFlags s_SetDiagPostAllFlags(TDiagPostFlags& flags,
+                                            TDiagPostFlags  new_flags)
 {
     CMutexGuard LOCK(s_DiagMutex);
 
-    TDiagPostFlags prev_flags = CDiagBuffer::sm_PostFlags;
-    if (flags & eDPF_Default) {
-        flags |= prev_flags;
-        flags &= ~eDPF_Default;
+    TDiagPostFlags prev_flags = flags;
+    if (new_flags & eDPF_Default) {
+        new_flags |= prev_flags;
+        new_flags &= ~eDPF_Default;
     }
-    CDiagBuffer::sm_PostFlags = flags;
+    flags = new_flags;
     return prev_flags;
 }
 
 
-extern void SetDiagPostFlag(EDiagPostFlag flag)
+static void s_SetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 {
     if (flag == eDPF_Default)
         return;
 
     CMutexGuard LOCK(s_DiagMutex);
-    CDiagBuffer::sm_PostFlags |= flag;
+    flags |= flag;
 }
 
 
-extern void UnsetDiagPostFlag(EDiagPostFlag flag)
+static void s_UnsetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 {
     if (flag == eDPF_Default)
         return;
 
     CMutexGuard LOCK(s_DiagMutex);
-    CDiagBuffer::sm_PostFlags &= ~flag;
+    flags &= ~flag;
+}
+
+
+extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags)
+{
+    return s_SetDiagPostAllFlags(CDiagBuffer::sm_PostFlags, flags);
+}
+
+extern void SetDiagPostFlag(EDiagPostFlag flag)
+{
+    s_SetDiagPostFlag(CDiagBuffer::sm_PostFlags, flag);
+}
+
+extern void UnsetDiagPostFlag(EDiagPostFlag flag)
+{
+    s_UnsetDiagPostFlag(CDiagBuffer::sm_PostFlags, flag);
+}
+
+
+extern TDiagPostFlags SetDiagTraceAllFlags(TDiagPostFlags flags)
+{
+    return s_SetDiagPostAllFlags(CDiagBuffer::sm_TraceFlags, flags);
+}
+
+extern void SetDiagTraceFlag(EDiagPostFlag flag)
+{
+    s_SetDiagPostFlag(CDiagBuffer::sm_TraceFlags, flag);
+}
+
+extern void UnsetDiagTraceFlag(EDiagPostFlag flag)
+{
+    s_UnsetDiagPostFlag(CDiagBuffer::sm_TraceFlags, flag);
 }
 
 
@@ -1109,6 +1149,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.78  2003/11/12 20:30:26  ucko
+ * Make extra flags for severity-trace messages tunable.
+ *
  * Revision 1.77  2003/11/06 21:40:56  vakatov
  * A somewhat more natural handling of the 'eDPF_Default' flag -- replace
  * it by the current global flags, then merge these with other flags (if any)
