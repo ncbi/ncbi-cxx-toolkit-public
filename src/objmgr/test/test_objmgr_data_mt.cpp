@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/05/20 20:35:09  vasilche
+* Reduced number of threads to make test time reasonably small.
+*
 * Revision 1.8  2003/05/20 15:44:39  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.
@@ -288,5 +291,6 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
+    s_NumThreads = 12;
     return CTestOM().AppMain(argc, argv, 0, eDS_Default, 0);
 }
