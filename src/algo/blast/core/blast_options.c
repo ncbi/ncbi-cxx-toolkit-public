@@ -1162,7 +1162,7 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
 		return (Int2) code;
 	}	
 
-   if (options->longest_intron > 0 && 
+   if (options->longest_intron != 0 && 
        program_number != eBlastTypeTblastn && 
        program_number != eBlastTypeBlastx) {
 		Int4 code=2;
@@ -1296,8 +1296,37 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    if (do_sum_stats) {
       BlastLinkHSPParametersNew(program_number, gapped_calculation,
                                 &params->link_hsp_params);
-      params->link_hsp_params->longest_intron = 
-         options->longest_intron / CODON_LENGTH;
+
+      if(program_number == eBlastTypeBlastx  ||
+         program_number == eBlastTypeTblastn) {
+          /* The program may use Blast_UnevenGapLinkHSPs find significant
+             collections of distinct alignments */
+          Int4 max_protein_gap; /* the largest gap permitted in the
+                               * translated sequence */
+
+          max_protein_gap = (options->longest_intron - 2)/3;
+          if(gapped_calculation) {
+              if(options->longest_intron == 0) {
+                  /* a zero value of longest_intron invokes the
+                   * default behavior, which for gapped calculation is
+                   * to set longest_intron to a predefined value. */
+                  params->link_hsp_params->longest_intron =
+                      (DEFAULT_LONGEST_INTRON - 2) / 3;
+              } else if(max_protein_gap <= 0) {
+                  /* A nonpositive value of max_protein_gap disables linking */
+                  params->link_hsp_params =
+                      BlastLinkHSPParametersFree(params->link_hsp_params);
+              } else { /* the value of max_protein_gap is positive */
+                  params->link_hsp_params->longest_intron = max_protein_gap;
+              }
+          } else { /* This is an ungapped calculation. */
+              /* For ungapped calculations, we preserve the old behavior
+               * of the longest_intron parameter to maintain
+               * backward-compatibility with older versions of BLAST. */
+              params->link_hsp_params->longest_intron =
+                MAX(max_protein_gap, 0);
+          }
+      }
    }
 
    status = BlastHitSavingParametersUpdate(program_number, 
@@ -1577,6 +1606,18 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.134  2004/09/28 16:20:17  papadopo
+ * From Michael Gertz:
+ * 1. Disallow setting longest intron for programs other than tblastn and
+ * 	blastx; previously it was possible to set it to a negative value.
+ * 2. For ungapped blastx and tblastn, if longest_intron is not set
+ *         (i.e. = 0) or (longest_intron - 2)/3 is nonpositive, call
+ *         link_hsps. Otherwise call new_link_hsps.
+ * 3. For gapped blastx or tblastn, if longest_intron is not set
+ *         (i.e. = 0), set it to 122.  Then call new_link_hsps if
+ *         (longest_intron - 2)/3 is positive.  Otherwise turn off sum
+ *         statistics.
+ *
  * Revision 1.133  2004/09/23 15:00:29  dondosha
  * Reset gap_prob in CalculateLinkHSPCutoffs when necessary; fixed a doxygen comment
  *
