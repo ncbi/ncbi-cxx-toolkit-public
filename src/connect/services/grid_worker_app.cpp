@@ -191,6 +191,7 @@ class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
 {
 public:
     CNetScheduleStorageFactory_NetCache(const IRegistry& reg);
+    virtual ~CNetScheduleStorageFactory_NetCache() {}
 
     virtual INetScheduleStorage* CreateInstance(void);
 
@@ -238,6 +239,7 @@ class CNetScheduleClientFactory : public INetScheduleClientFactory
 {
 public:
     CNetScheduleClientFactory(const IRegistry& reg);
+    virtual ~CNetScheduleClientFactory() {}
 
     virtual CNetScheduleClient* CreateInstance(void);
 
@@ -387,6 +389,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/24 15:06:20  didenko
+ * Got rid of warnnings about missing virtual destructors.
+ *
  * Revision 1.3  2005/03/23 21:26:06  didenko
  * Class Hierarchy restructure
  *
