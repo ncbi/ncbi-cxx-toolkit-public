@@ -258,24 +258,22 @@ if test "$proj_name" != `basename $proj_name` ; then
 fi
 
 makefile_name="Makefile.${proj_name}_${proj_type}"
-if test ! -d $proj_name ; then
-  touch tmp$$
-  if test ! -f ../$proj_name/tmp$$ ; then
-     mkdir $proj_name
-  fi
-  if test $proj_type = lib -a -n $proj_subtype ; then
-     if test -f ../../src/$proj_name/tmp$$; then
-        mkdir -p ../../include/$proj_name
-     elif test -f ../src/tmp$$; then
-        mkdir -p ../include/$proj_name
-     else
-        mkdir -p $proj_name/include/$proj_name $proj_name/src/$proj_name
-        cd $proj_name/src
-        rm -f ../../tmp$$
-     fi
-  fi
-  rm -f tmp$$
+touch tmp$$
+if test ! -f ../$proj_name/tmp$$ ; then
+   test -d $proj_name || mkdir $proj_name
 fi
+if test $proj_type = lib -a -n $proj_subtype ; then
+   if test -f ../../src/$proj_name/tmp$$; then
+      mkdir -p ../../include/$proj_name
+   elif test -f ../src/tmp$$; then
+      mkdir -p ../include/$proj_name
+   else
+      mkdir -p $proj_name/include/$proj_name $proj_name/src/$proj_name
+      cd $proj_name/src
+      rm -f ../../tmp$$
+   fi
+fi
+rm -f tmp$$
 test -d $proj_name &&  makefile_name="$proj_name/$makefile_name"
 makefile_name=`pwd`/$makefile_name
 
