@@ -202,16 +202,16 @@ public:
     void SetMatrixPath(const char* path);
 
     int GetMatchReward() const;
-    void SetMatchReward(int r);
+    void SetMatchReward(int r);         // r should be a positive integer
 
     int GetMismatchPenalty() const;
-    void SetMismatchPenalty(int p);
+    void SetMismatchPenalty(int p);     // p should be a negative integer
 
     int GetGapOpeningCost() const;
-    void SetGapOpeningCost(int g);
+    void SetGapOpeningCost(int g);      // g should be a positive integer
 
     int GetGapExtensionCost() const;
-    void SetGapExtensionCost(int e);
+    void SetGapExtensionCost(int e);    // e should be a positive integer
 
     int GetFrameShiftPenalty() const;
     void SetFrameShiftPenalty(int p);
@@ -989,6 +989,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/12/17 21:09:33  camacho
+* Add comments to reward/mismatch; gap open/extension costs
+*
 * Revision 1.35  2003/12/03 16:34:09  dondosha
 * Added setter for skip_traceback option; changed SetDbGeneticCode so it fills both integer and string
 *
