@@ -123,7 +123,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 static int/*bool*/ s_ParseHeader(const char* header, void *data,
-                          int/*bool, ignored*/ server_error)
+                                 int/*ignored*/ server_error)
 {
     SERV_Update((SERV_ITER) data, header);
     return 1/*header parsed okay*/;
@@ -137,16 +137,14 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     static const char platform[] = "platform";
     SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
     CONNECTOR conn = 0;
-    const char *argval;
-    char  node[256];
+    const char *arch;
     char* s;
     CONN c;
 
     /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
-    if ((argval = CORE_GetPlatform()) != 0 && *argval)
-        ConnNetInfo_PreOverrideArg(net_info, platform, argval);
-    if ((argval = SOCK_gethostbyaddr(0, node, sizeof(node))) != 0 && *argval)
-        ConnNetInfo_PreOverrideArg(net_info, address, argval);
+    if ((arch = CORE_GetPlatform()) != 0 && *arch)
+        ConnNetInfo_PreOverrideArg(net_info, platform, arch);
+    ConnNetInfo_PreOverrideArg(net_info, address, net_info->client_host);
     if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
         ConnNetInfo_DeleteArg(net_info, platform);
         if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
@@ -179,8 +177,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         assert(0);
         return 0/*failed*/;
     }
-    CONN_Flush(c);
     /* This will also send all the HTTP data, and trigger header callback */
+    CONN_Flush(c);
     CONN_Close(c);
     return ((SDISPD_Data*) iter->data)->n_node != 0;
 }
@@ -375,6 +373,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2002/11/19 19:21:40  lavr
+ * Use client_host from net_info instead of obtaining it explicitly
+ *
  * Revision 6.49  2002/11/01 20:14:07  lavr
  * Expand hostname buffers to hold up to 256 chars
  *
