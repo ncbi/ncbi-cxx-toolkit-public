@@ -2,7 +2,7 @@
 
 APP = test_netcache_client
 SRC = test_netcache_client
-LIB = xconnect xutil xncbi
+LIB = xconnserv xconnect xutil xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 

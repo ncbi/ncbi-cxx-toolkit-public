@@ -7,5 +7,5 @@ SRC = netcache_check
 
 
 
-LIB = xconnect xutil xncbi
+LIB = xconnserv xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
