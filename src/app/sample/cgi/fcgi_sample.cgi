@@ -5,4 +5,4 @@
 # for more ionformation see http://www.fastcgi.com
 
 
-/netopt/ncbi_tools/fcgi-current/bin/cgi-fcgi -connect localhost:5000
+/netopt/ncbi_tools/fcgi-current/bin/cgi-fcgi -bind -connect localhost:5000
