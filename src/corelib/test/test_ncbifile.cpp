@@ -490,7 +490,7 @@ static void s_TEST_Dir(void)
     CDir dir(CWD);
 
     cout << endl;
-    CDir::TEntries contents = dir.GetEntries("*");
+    CDir::TEntries contents = dir.GetEntries("*", CDir::eIgnoreRecursive);
     ITERATE(CDir::TEntries, i, contents) {
         string entry = (*i)->GetPath();
         cout << entry << endl;
@@ -500,7 +500,7 @@ static void s_TEST_Dir(void)
 
     vector<string> masks;
     masks.push_back("*");
-    CDir::TEntries contents2 = dir.GetEntries(masks);
+    CDir::TEntries contents2 = dir.GetEntries(masks, CDir::eIgnoreRecursive);
     assert(contents.size() == contents2.size());
 
     vector<string> files;
@@ -520,6 +520,18 @@ static void s_TEST_Dir(void)
         assert(ep1 == ep2);
         assert(ep1 == f);
     }
+
+
+    cout << "Recursive content" << endl;
+    files.clear();
+    FindFiles(files, paths.begin(), paths.end(), 
+                     masks.begin(), masks.end(), 
+                     fFF_File | fFF_Dir | fFF_Recursive);
+    ITERATE(vector<string>, fit, files) {
+        cout << *fit << endl;
+    }
+    cout << "-----" << endl;
+
 
     // Create dir structure for deletion
     assert( CDir("dir_3").Create() );
@@ -744,6 +756,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/04/29 15:15:00  kuznets
+ * Modifications of FindFile test
+ *
  * Revision 1.36  2004/03/17 15:41:28  ivanov
  * Expanded temporary file name generation test
  *
