@@ -278,7 +278,7 @@ echo "Configuring plugin cache"
 fltk_config=`sed -ne 's/^FLTK_CONFIG *= *//p' ${src_dir}/build/Makefile.mk`
 fltk_libdir=`$fltk_config --exec-prefix`/lib
 COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
-COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan ${target_dir}/plugins
+COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 
 # Do this last, to be sure the symlink doesn't end up dangling.
 rm -f ${src_dir}/bin/gbench
