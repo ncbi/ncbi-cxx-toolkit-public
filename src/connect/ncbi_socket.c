@@ -99,7 +99,9 @@
 #  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
-#  include <netinet/tcp.h>
+#  ifndef COMP_METRO
+#    include <netinet/tcp.h>
+#  endif
 #  if !defined(NCBI_OS_BEOS) && !defined(NCBI_COMPILER_MW_MSL)
 #    include <arpa/inet.h>
 #  endif /*NCBI_OS_BEOS*/
@@ -4104,6 +4106,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.153  2004/10/19 19:12:52  kans
+ * netinet/tcp.h only included if not COMP_METRO - already includes headers in library project
+ *
  * Revision 6.152  2004/10/19 18:50:16  lavr
  * Heed setsockopt() type mismatch for CodeWarrior
  *
