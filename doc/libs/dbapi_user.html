@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
-   <meta name="GENERATOR" content="Mozilla/4.78 [en] (WinNT; U) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.79 [en] (Windows NT 5.0; U) [Netscape]">
 <!--#set var="TITLE" value="NCBI DBAPI User-Layer Docs" -->
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
@@ -51,7 +51,10 @@ Contents</h2>
 <a href="#ref_Cursors">Cursors</a></li>
 
 <li>
-<a href="#ref_Libraries">Updating BLOBs using cursors</a></li>
+<a href="#ref_Blobs">Updating BLOBs using cursors</a></li>
+
+<li>
+<a href="#ref_BulkInsert">Using bulk insert</a></li>
 </ul>
 
 <hr><!-- List of different sections to get indentation of text from heading
@@ -83,8 +86,8 @@ This is because most of the objects share the same internal structures.
 There is no need to delete every object explicitly, as all created objects
 will be deleted upon program exit. Specifically, all objects are derived
 from the static CDriverManager object, and will be destroyed when CDriverManager
-is destroyed. Thus it is recommended to reuse the objects such as <tt><a href="../docxx/IStatement.html">IStatement,</a><a href="../docxx/ICallableStatement.html">ICallableStatement</a>
-</tt>or delete them explicitly, if otherwise is not possible.
+is destroyed. Thus it is recommended to reuse the objects such as <tt><a href="../docxx/IStatement.html">IStatement,</a><a href="../docxx/ICallableStatement.html">ICallableStatement</a></tt>or
+delete them explicitly, if otherwise is not possible.
 <br><a NAME="ref_CVariant"></a>
 <h3>
 CVariant type</h3>
@@ -202,9 +205,9 @@ to stored procedures and dynamic SQL statements. To ensure the correct
 parameter type it is recommended to use <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
 type factories (static methods) to create a <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
 of the required internal type. Here are a few examples: <tt><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
-*p), <a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p),
-<a href="../docxx/CVariant.html">CVariant</a>::VarChar(const
-char *p, size_t len )</tt> etc.
+*p), <a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p),<br>
+<a href="../docxx/CVariant.html">CVariant</a>::VarChar(const char *p, size_t
+len )</tt> etc.
 <p>There are also corresponding constructors, like <tt><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4
 v), <a href="../docxx/CVariant.html">CVariant</a>::CVariant(const string&amp;
 s), ...</tt>, but the user must ensure the proper type conversion in the
@@ -212,7 +215,9 @@ arguments, and not all internal types can be created using constructors.
 <br>Output parameters are set by the <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetOutputParam(const
 CVariant&amp; v, const string&amp; name)</tt> method, where the first argument
 is a null <tt><a href="../docxx/CVariant.html">CVariant</a></tt> of a particular
-type, e.g. <tt>SetOutputParam(CVariant::SmallInt(0),"@arg")</tt>.<a NAME="ref_StoredProcs"></a>
+type, e.g. <tt>SetOutputParam(CVariant(eDB_SmallInt),"@arg")</tt>.
+<br>&nbsp;
+<p><a NAME="ref_StoredProcs"></a>
 <h3>
 Stored Procedures</h3>
 The <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a></tt>
@@ -224,10 +229,10 @@ in the main loop. Get the status of the stored procedure using the <tt><a href="
 method.
 <blockquote>
 <pre>ICallableStatement *cstmt = conn->PrepareCall("ProcName");
-Uint1 status = 1;
+Uint1 byte = 1;
 cstmt->SetParam(CVariant("test"), "@test_input");
-cstmt->SetParam(CVariant::TinyInt(&amp;status), "@status");
-cstmt->SetOutputParam(CVariant::Int(0), "@result");
+cstmt->SetParam(CVariant::TinyInt(&amp;byte), "@byte");
+cstmt->SetOutputParam(CVariant(eDB_Int), "@result");
 
 cstmt->Execute();
 
@@ -235,14 +240,14 @@ while(cstmt->HasMoreResults()) {
 &nbsp;&nbsp;&nbsp; if( cstmt->HasRows() ) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IResultSet *rs = cstmt->GetResultSet();
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch( rs->GetResultType() ) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eRowResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eDB_RowResult:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(rs->Next()) {
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // retrieve row results
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eParamResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eDB_ParamResult:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(rs->Next()) {
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Retrieve parameter row
@@ -254,11 +259,105 @@ while(cstmt->HasMoreResults()) {
 }
 
 // Get status
-int status = cstmt->GetReturnStatus();
-
-</pre>
+int status = cstmt->GetReturnStatus();</pre>
 </blockquote>
-<a NAME="ref_Cursors"></a>
+It is also possible to use <tt>IStatement</tt> interface to call stored
+procedures using standard SQL language call. The difference from <tt>ICallableStatement</tt>
+is that there is no <tt>SetOutputParam()</tt> call. The output parameter
+is passed as regular <tt>SetParam()</tt> call with the <b>non null</b>
+<tt>CVariant argument</tt>. There is no <tt>GetReturnStatus()</tt> call
+in <tt>IStatement,</tt> so use the result type filter to get it.
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sql = "exec SampleProc
+@id, @f, @o output";</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; stmt->SetParam(CVariant(5),
+"@id");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; stmt->SetParam(CVariant::Float(&amp;f),
+"@f");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; stmt->SetParam(CVariant(5),
+"@o");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; stmt->Execute(sql);</tt>
+<br><tt>&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(stmt->HasMoreResults())
+{</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IResultSet *rs = stmt->GetResultSet();</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if( rs == 0 )</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+continue;</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+switch( rs->GetResultType() ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case eDB_ParamResult:</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+while( rs->Next() ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NcbiCout &lt;&lt; "Output param: "</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(1).GetInt4()</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; endl;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case eDB_StatusResult:</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+while( rs->Next() ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NcbiCout &lt;&lt; "Return status: "</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(1).GetInt4()</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; endl;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case eDB_RowResult:</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+while( rs->Next() ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if( rs->GetVariant(1).GetInt4() == 2121 ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NcbiCout &lt;&lt; rs->GetVariant(2).GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(3).GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(4).GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(5).GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(6).GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(7).GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; endl;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+else {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NcbiCout &lt;&lt; rs->GetVariant(1).GetInt4() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant(2).GetFloat() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; rs->GetVariant("date_val").GetString() &lt;&lt; "|"</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&lt;&lt; endl;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; stmt->ClearParamList();</tt>
+<p><a NAME="ref_Cursors"></a>
 <h3>
 Cursors</h3>
 The library currently supports basic cursor features such as setting parameters
@@ -274,18 +373,17 @@ cur->Close();
 
 </pre>
 </blockquote>
-<a NAME="ref_Libraries"></a>
+<a NAME="ref_Blobs"></a>
 <h3>
 Updating BLOBs using cursors</h3>
 It is recommended to update BLOBs using cursors, because this is the only
 way to work with ODBC driver and no additional connection is open.
-<dl><font face="Courier New,Courier"><font size=-1></font></font>&nbsp;
+<dl>&nbsp;
 <br><font face="Courier New,Courier"><font size=-1>&nbsp; ICursor *blobCur
 = conn->CreateCursor("test",</font></font>
 <br><font face="Courier New,Courier"><font size=-1>&nbsp;&nbsp; "select
 id, blob from BlobSample for update of blob");</font></font>
-<br><font face="Courier New,Courier"><font size=-1>&nbsp;</font></font>
-<br><font face="Courier New,Courier"><font size=-1>&nbsp; IResultSet *blobRs
+<p><font face="Courier New,Courier"><font size=-1>&nbsp; IResultSet *blobRs
 = blobCur->Open();</font></font>
 <br><font face="Courier New,Courier"><font size=-1>&nbsp; while(blobRs->Next())
 {</font></font>
@@ -296,11 +394,41 @@ out.write(buf, blob.size());</font></font>
 <br><font face="Courier New,Courier"><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 out.flush();</font></font>
 <br><font face="Courier New,Courier"><font size=-1>&nbsp; </font></font><font face="Courier New">}</font>
-<br><font face="Courier New"></font>&nbsp;<font face="Courier New"></font>
+<br>&nbsp;
 <p>Note that GetBlobOStream() takes the column number as the first argument
-and this call is invalid untill the cursor is open.
+and this call is invalid untill the cursor is open.</dl>
+<a NAME="ref_BulkInsert"></a>
+<h3>
+Using bulk insert</h3>
+Bulk insert is useful when it is necessary to insert big amounts of data.
+The <tt>IConnection::CreateBulkInsert()</tt> takes two parameters, the
+table name and number of columns. The <tt>CVariant::Truncate(size_t len)</tt>
+method truncates the internal buffer of CDB_Text and CDB_Image object from
+the right. If no paramter specified, it erases the whole buffer.<tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCout &lt;&lt; "Initializing
+BlobSample table..." &lt;&lt; endl;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string im = ......;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IBulkInsert *bi = conn->CreateBulkInsert("BlobSample",
+2);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CVariant col1 = CVariant(eDB_Int);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CVariant col2 = CVariant(eDB_Text);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bi->Bind(1, &amp;col1);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bi->Bind(2, &amp;col2);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(int i = 0; i &lt;
+ROWCOUNT; ++i ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+string im = "BLOB data " + NStr::IntToString(i);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+col1 = i;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+col2.Truncate();</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+col2.Append(im.c_str(), im.size());</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+bi->AddRow();</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bi->Complete();</tt>
 <br>&nbsp;</dl>
-</dl>
 <!--#include virtual="../ssi/navlinks.shtml" --><!-- Begin footer content -->
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
@@ -314,5 +442,6 @@ and this call is invalid untill the cursor is open.
 <td ALIGN=RIGHT><i>$Date$</i></td>
 </tr>
 </table>
-
 <!--#include virtual="../ssi/footer.shtml" -->
+</body>
+</html>
