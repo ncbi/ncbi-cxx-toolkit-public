@@ -100,7 +100,8 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
         if ( !project_path.empty() ) {
             if (project_path.front() == "#include") {
                 project_path.erase( project_path.begin() );
-                string name = NStr::Join(project_path,"/");
+                string tmp = NStr::Join(project_path,"/");
+                string name = NStr::Replace(tmp,"\"","");
                 if (CDirEntry::IsAbsolutePath(name)) {
                     InitFromFile( name );
                 } else {
@@ -199,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/30 21:12:19  gouriano
+ * Added quotes to LST include file name
+ *
  * Revision 1.12  2005/03/30 14:11:30  gouriano
  * Fixed LST file parsing
  *
