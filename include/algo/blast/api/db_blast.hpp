@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/02/24 20:38:20  dondosha
+* Removed irrelevant CVS log comments
+*
 * Revision 1.9  2004/02/24 18:18:54  dondosha
 * Made some private variables and methods protected - needed for derived class; added getters for various options
 *
@@ -280,76 +283,6 @@ END_NCBI_SCOPE
 *
 * Revision 1.1  2003/10/29 22:37:21  dondosha
 * Database BLAST search class
-*
-* Revision 1.21  2003/10/16 03:16:39  camacho
-* Fix to setting queries/subjects
-*
-* Revision 1.20  2003/09/11 17:44:39  camacho
-* Changed CBlastOption -> CBlastOptions
-*
-* Revision 1.19  2003/09/09 20:31:21  camacho
-* Add const type qualifier
-*
-* Revision 1.18  2003/09/09 12:53:31  camacho
-* Moved setup member functions to blast_setup_cxx.cpp
-*
-* Revision 1.17  2003/08/28 17:36:21  camacho
-* Delete options before reassignment
-*
-* Revision 1.16  2003/08/25 17:15:33  camacho
-* Removed redundant typedef
-*
-* Revision 1.15  2003/08/19 22:11:16  dondosha
-* Cosmetic changes
-*
-* Revision 1.14  2003/08/19 20:24:17  dondosha
-* Added TSeqAlignVector type as a return type for results-to-seqalign functions and input for formatting
-*
-* Revision 1.13  2003/08/19 13:45:21  dicuccio
-* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
-* compliant.  Added 'objects::' where necessary.
-*
-* Revision 1.12  2003/08/18 20:58:56  camacho
-* Added blast namespace, removed *__.hpp includes
-*
-* Revision 1.11  2003/08/18 17:07:41  camacho
-* Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
-* Change in function to read seqlocs from files.
-*
-* Revision 1.10  2003/08/15 16:01:02  dondosha
-* TSeqLoc and TSeqLocVector types definitions moved to blast_aux.hpp, so all applications can use them
-*
-* Revision 1.9  2003/08/11 19:55:04  camacho
-* Early commit to support query concatenation and the use of multiple scopes.
-* Compiles, but still needs work.
-*
-* Revision 1.8  2003/08/11 13:58:51  dicuccio
-* Added export specifiers.  Fixed problem with unimplemented private copy ctor
-* (truly make unimplemented)
-*
-* Revision 1.7  2003/08/08 19:42:14  dicuccio
-* Compilation fixes: #include file relocation; fixed use of 'list' and 'vector'
-* as variable names
-*
-* Revision 1.6  2003/08/01 17:40:56  dondosha
-* Use renamed functions and structures from local blastkar.h
-*
-* Revision 1.5  2003/07/31 19:45:33  camacho
-* Eliminate Ptr notation
-*
-* Revision 1.4  2003/07/30 19:58:02  coulouri
-* use ListNode
-*
-* Revision 1.3  2003/07/30 15:00:01  camacho
-* Do not use Malloc/MemNew/MemFree
-*
-* Revision 1.2  2003/07/14 22:16:37  camacho
-* Added interface to retrieve masked regions
-*
-* Revision 1.1  2003/07/10 18:34:19  camacho
-* Initial revision
-*
-*
 * ===========================================================================
 */
 
