@@ -1094,7 +1094,7 @@ Blast_HSPListInsertHSPInHeap(BlastHSPList* hsp_list,
     hsp_array[0] = hsp;
     if (hsp_list->hspcnt >= 2) {
         heapify((char*)hsp_array, (char*)hsp_array, 
-                (char*)&hsp_array[(hsp_list->hspcnt-1)/2],
+                (char*)&hsp_array[hsp_list->hspcnt/2 - 1],
                  (char*)&hsp_array[hsp_list->hspcnt-1],
                  sizeof(BlastHSP*), score_compare_hsps);
     }
@@ -1929,7 +1929,7 @@ Blast_HitListInsertHSPListInHeap(BlastHitList* hit_list,
       hit_list->hsplist_array[0] = hsp_list;
       if (hit_list->hsplist_count >= 2) {
          heapify((char*)hit_list->hsplist_array, (char*)hit_list->hsplist_array, 
-                 (char*)&hit_list->hsplist_array[(hit_list->hsplist_count-1)/2],
+                 (char*)&hit_list->hsplist_array[hit_list->hsplist_count/2 - 1],
                  (char*)&hit_list->hsplist_array[hit_list->hsplist_count-1],
                  sizeof(BlastHSPList*), evalue_compare_hsp_lists);
       }
