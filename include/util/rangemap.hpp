@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/01/05 16:29:02  vasilche
+* Fixed incompatibility with MIPS C++ compiler.
+*
 * Revision 1.6  2001/01/05 13:59:04  vasilche
 * Reduced CRangeMap* templates size.
 * Added CRangeMultimap template.
@@ -276,8 +279,9 @@ class CRangeMapIteratorTraits : public CRangeMapTraits<Position, Mapped>
 public:
 	typedef typename TParent::TRangeMap& TRangeMapRef;
 	typedef typename TParent::TSelectMap& TSelectMapRef;
-	typedef typename TSelectMap::iterator TSelectIter;
-	typedef typename TLevelMap::iterator TLevelIter;
+	typedef typename TParent::TLevelMap& TLevelMapRef;
+	typedef typename TParent::TSelectMap::iterator TSelectIter;
+	typedef typename TParent::TLevelMap::iterator TLevelIter;
 	typedef typename TParent::value_type& reference;
 	typedef typename TParent::value_type* pointer;
     typedef CRangeMapIteratorTraits<Position, Mapped> TIteratorTraits;
@@ -293,8 +297,9 @@ class CRangeMapConstIteratorTraits : public CRangeMapTraits<Position, Mapped>
 public:
 	typedef const typename TParent::TRangeMap& TRangeMapRef;
 	typedef const typename TParent::TSelectMap& TSelectMapRef;
-	typedef typename TSelectMap::const_iterator TSelectIter;
-	typedef typename TLevelMap::const_iterator TLevelIter;
+	typedef const typename TParent::TLevelMap& TLevelMapRef;
+	typedef typename TParent::TSelectMap::const_iterator TSelectIter;
+	typedef typename TParent::TLevelMap::const_iterator TLevelIter;
 	typedef const typename TParent::value_type& reference;
 	typedef const typename TParent::value_type* pointer;
     typedef CRangeMapConstIteratorTraits<Position, Mapped> TIteratorTraits;
@@ -320,8 +325,9 @@ class CRangeMultimapIteratorTraits : public CRangeMultimapTraits<Position, Mappe
 public:
 	typedef typename TParent::TRangeMap& TRangeMapRef;
 	typedef typename TParent::TSelectMap& TSelectMapRef;
-	typedef typename TSelectMap::iterator TSelectIter;
-	typedef typename TLevelMap::iterator TLevelIter;
+	typedef typename TParent::TLevelMap& TLevelMapRef;
+	typedef typename TParent::TSelectMap::iterator TSelectIter;
+	typedef typename TParent::TLevelMap::iterator TLevelIter;
 	typedef typename TParent::value_type& reference;
 	typedef typename TParent::value_type* pointer;
     typedef CRangeMultimapIteratorTraits<Position, Mapped> TIteratorTraits;
@@ -337,8 +343,9 @@ class CRangeMultimapConstIteratorTraits : public CRangeMultimapTraits<Position, 
 public:
 	typedef const typename TParent::TRangeMap& TRangeMapRef;
 	typedef const typename TParent::TSelectMap& TSelectMapRef;
-	typedef typename TSelectMap::const_iterator TSelectIter;
-	typedef typename TLevelMap::const_iterator TLevelIter;
+	typedef const typename TParent::TLevelMap& TLevelMapRef;
+	typedef typename TParent::TSelectMap::const_iterator TSelectIter;
+	typedef typename TParent::TLevelMap::const_iterator TLevelIter;
 	typedef const typename TParent::value_type& reference;
 	typedef const typename TParent::value_type* pointer;
     typedef CRangeMultimapConstIteratorTraits<Position, Mapped> TIteratorTraits;
