@@ -64,18 +64,12 @@ public:
     bool SetOptions(wxWindow* parent);
 
     typedef struct {
-        int singleBlockThreshold;
-        int multipleBlockThreshold;
-        int allowedGapExtension;
-        double gapLengthPercentile;
-        double lambda;
-        double K;
-        int databaseLength;
-        int searchSpaceLength;
+        double loopPercentile;
+        int loopExtension;
+        int loopCutoff;
         bool globalAlignment;
-        bool mergeAfterEachSequence;
         bool keepExistingBlocks;
-        bool allowLongGaps;
+        bool mergeAfterEachSequence;
     } BlockAlignerOptions;
 
 private:
@@ -89,6 +83,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/08/23 22:26:23  thiessen
+* switch to new dp block aligner, remove Alejandro's
+*
 * Revision 1.9  2003/03/27 18:46:00  thiessen
 * update blockaligner code
 *

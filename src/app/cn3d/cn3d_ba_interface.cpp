@@ -46,6 +46,8 @@
 #endif
 #include <wx/wx.h>
 
+#include <struct_dp/struct_dp.h>
+
 #include "cn3d/cn3d_ba_interface.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
@@ -55,46 +57,6 @@
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/cn3d_blast.hpp"
-
-#include "struct_dp/struct_dp.h"
-
-// necessary C-toolkit headers
-#include <ncbi.h>
-#include <blastkar.h>
-#include <posit.h>
-#include "cn3d/cn3d_blocka.h"
-
-// functions from cn3d_blockalign.c accessed herein (no header for these yet...)
-extern "C" {
-extern void allocateAlignPieceMemory(Int4 numBlocks);
-void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks, Int4 *allowedGaps,
-    Nlm_FloatHi percentile, Int4 gapAddition);
-extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
-    Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 masterLength, BLAST_Score **posMatrix, Int4 *scoreThresholds,
-    Int4 *frozenBlocks, Boolean localAlignment);
-extern void LIBCALL sortAlignPieces(Int4 numBlocks);
-extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 queryLength, Uint1Ptr seq,
-    Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps, Int4 scoreThresholdMultipleBlock,
-    SeqIdPtr subject_id, SeqIdPtr query_id, Int4* bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda,
-    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment, Nlm_FloatHi Ethreshold);
-extern void freeBestPairs(Int4 numBlocks);
-extern void freeAlignPieceLists(Int4 numBlocks);
-extern void freeBestScores(Int4 numBlocks);
-extern Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
-   Int4 numBlocks, Int4 startQueryRegion, Int4 endQueryRegion,
-   Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps);
-extern int *parseBlockThresholds(Char *stringToParse, Int4 numBlocks, Boolean localAlignment);
-extern Int4 getSearchSpaceSize(Int4 masterLength, Int4 queryLength, Int4 databaseLength, Int4 initSearchSpaceSize);
-}
-
-// hack so I can catch memory leaks specific to this module, at the line where allocation occurs
-#ifdef _DEBUG
-#ifdef MemNew
-#undef MemNew
-#endif
-#define MemNew(sz) memset(malloc(sz), 0, (sz))
-#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -111,9 +73,9 @@ public:
     bool GetValues(BlockAligner::BlockAlignerOptions *options);
 
 private:
-    IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iDataLen, *iSearchLen;
-    FloatingPointSpinCtrl *fpPercent, *fpLambda, *fpK;
-    wxCheckBox *cGlobal, *cMerge, *cKeepBlocks, *cLongGaps;
+    IntegerSpinCtrl *iExtension, *iCutoff;
+    FloatingPointSpinCtrl *fpPercent;
+    wxCheckBox *cGlobal, *cKeep, *cMerge;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
@@ -123,167 +85,16 @@ private:
 BlockAligner::BlockAligner(void)
 {
     // default options
-    currentOptions.singleBlockThreshold = -99;
-    currentOptions.multipleBlockThreshold = -99;
-    currentOptions.allowedGapExtension = 10;
-    currentOptions.gapLengthPercentile = 0.6;
-    currentOptions.lambda = 0.0;
-    currentOptions.K = 0.0;
-    currentOptions.databaseLength = 0;
-    currentOptions.searchSpaceLength = 0;
-    currentOptions.globalAlignment = true;
-    currentOptions.mergeAfterEachSequence = false;
+    currentOptions.loopPercentile = 0.6;
+    currentOptions.loopExtension = 10;
+    currentOptions.loopCutoff = 0;
+    currentOptions.globalAlignment = false;
     currentOptions.keepExistingBlocks = false;
-    currentOptions.allowLongGaps = true;
-}
-
-static Int4 Round(double d)
-{
-    if (d >= 0.0)
-        return (Int4) (d + 0.5);
-    else
-        return (Int4) (d - 0.5);
-}
-
-static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
-    const Sequence *master, const Sequence *query)
-{
-    auto_ptr<BlockMultipleAlignment> bma;
-
-    // make sure the overall structure of this SeqAlign is what we expect
-    if (!sa.IsSetDim() || sa.GetDim() != 2 ||
-        !((sa.GetSegs().IsDisc() && sa.GetSegs().GetDisc().Get().size() > 0) || sa.GetSegs().IsDenseg()))
-    {
-        ERRORMSG("Confused by block aligner's result format");
-        return NULL;
-    }
-
-    // create new alignment structure
-    BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
-    (*seqs)[0] = master;
-    (*seqs)[1] = query;
-    bma.reset(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
-
-    // get list of segs (can be a single or a set)
-    list < CRef < CSeq_align > > segs;
-    if (sa.GetSegs().IsDisc())
-        segs = sa.GetSegs().GetDisc().Get();
-    else
-        segs.push_back(CRef<CSeq_align>(&sa));
-
-    // loop through segs, adding aligned block for each starts pair that doesn't describe a gap
-    CSeq_align_set::Tdata::const_iterator s, se = segs.end();
-    CDense_seg::TStarts::const_iterator i_start;
-    CDense_seg::TLens::const_iterator i_len;
-    for (s=segs.begin(); s!=se; s++) {
-
-        // check to make sure query is first id, master is second id
-        if ((*s)->GetDim() != 2 || !(*s)->GetSegs().IsDenseg() || (*s)->GetSegs().GetDenseg().GetDim() != 2 ||
-            (*s)->GetSegs().GetDenseg().GetIds().size() != 2 ||
-            !query->identifier->MatchesSeqId(*((*s)->GetSegs().GetDenseg().GetIds().front())) ||
-            !master->identifier->MatchesSeqId(*((*s)->GetSegs().GetDenseg().GetIds().back())))
-        {
-            ERRORMSG("Confused by seg format in block aligner's result");
-            return NULL;
-        }
-
-        int i, queryStart, masterStart, length;
-        i_start = (*s)->GetSegs().GetDenseg().GetStarts().begin();
-        i_len = (*s)->GetSegs().GetDenseg().GetLens().begin();
-        for (i=0; i<(*s)->GetSegs().GetDenseg().GetNumseg(); i++) {
-
-            // if either start is -1, this is a gap -> skip
-            queryStart = *(i_start++);
-            masterStart = *(i_start++);
-            length = *(i_len++);
-            if (queryStart < 0 || masterStart < 0 || length <= 0) continue;
-
-            // add aligned block
-            UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
-            newBlock->SetRangeOfRow(0, masterStart, masterStart + length - 1);
-            newBlock->SetRangeOfRow(1, queryStart, queryStart + length - 1);
-            newBlock->width = length;
-            bma->AddAlignedBlockAtEnd(newBlock);
-        }
-    }
-
-    // finalize the alignment
-    if (!bma->AddUnalignedBlocks() || !bma->UpdateBlockMapAndColors(false)) {
-        ERRORMSG("Error finalizing alignment!");
-        return NULL;
-    }
-
-    // get scores
-    wxString score;
-    CSeq_align::TScore::const_iterator c, ce = sa.GetScore().end();
-    for (c=sa.GetScore().begin(); c!=ce; c++) {
-        if ((*c)->IsSetId() && (*c)->GetId().IsStr()) {
-
-            // raw score
-            if ((*c)->GetValue().IsInt() && (*c)->GetId().GetStr() == "score") {
-                wxString tmp = score;
-                score.Printf("%s raw score: %i", tmp.c_str(), (*c)->GetValue().GetInt());
-            }
-
-            // E-value
-            if ((*c)->GetValue().IsReal() && (*c)->GetId().GetStr() == "e_value"
-                    && (*c)->GetValue().GetReal() > 0.0) {
-                wxString tmp = score;
-                score.Printf("%s E-value: %g", tmp.c_str(), (*c)->GetValue().GetReal());
-            }
-        }
-    }
-    if (score.size() > 0) {
-        bma->SetRowStatusLine(0, score.c_str());
-        bma->SetRowStatusLine(1, score.c_str());
-    }
-
-    // success
-    return bma.release();
-}
-
-static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_AlignmentResult *result,
-    const Sequence *master, const Sequence *query)
-{
-
-    // create new alignment structure
-    BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
-    (*seqs)[0] = master;
-    (*seqs)[1] = query;
-    auto_ptr<BlockMultipleAlignment>
-        bma(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
-
-    // unpack result blocks
-    for (int b=0; b<result->nBlocks; b++) {
-        UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
-        newBlock->width = blocks->blockSizes[b + result->firstBlock];
-        newBlock->SetRangeOfRow(0,
-            blocks->blockPositions[b + result->firstBlock],
-            blocks->blockPositions[b + result->firstBlock] + newBlock->width - 1);
-        newBlock->SetRangeOfRow(1,
-            result->blockPositions[b],
-            result->blockPositions[b] + newBlock->width - 1);
-        bma->AddAlignedBlockAtEnd(newBlock);
-    }
-
-    // finalize the alignment
-    if (!bma->AddUnalignedBlocks() || !bma->UpdateBlockMapAndColors(false)) {
-        ERRORMSG("Error finalizing alignment!");
-        return NULL;
-    }
-
-    // get scores
-    wxString score;
-    score.Printf(" raw score: %i", result->score);
-    bma->SetRowStatusLine(0, score.c_str());
-    bma->SetRowStatusLine(1, score.c_str());
-
-    // success
-    return bma.release();
+    currentOptions.mergeAfterEachSequence = false;
 }
 
 static void FreezeBlocks(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment *pairwise, Int4 *frozenBlocks)
+    const BlockMultipleAlignment *pairwise, DP_BlockInfo *blockInfo)
 {
     BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
     multiple->GetUngappedAlignedBlocks(&multipleABlocks);
@@ -302,57 +113,18 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
             if (pairwiseRangeMaster->from <= multipleRangeMaster->from &&
                     pairwiseRangeMaster->to >= multipleRangeMaster->to) {
                 pairwiseRangeSlave = (*p)->GetRangeOfRow(1);
-                frozenBlocks[i] = pairwiseRangeSlave->from +
+                blockInfo->freezeBlocks[i] = pairwiseRangeSlave->from +
                     (multipleRangeMaster->from - pairwiseRangeMaster->from);
                 break;
             }
         }
-        if (p == pe) frozenBlocks[i] = -1;
-//        if (frozenBlocks[i] >= 0)
-//            TESTMSG("block " << (i+1) << " frozen at query " << (frozenBlocks[i]+1));
+        if (p == pe)
+            blockInfo->freezeBlocks[i] = -1;
+//        if (blockInfo->freezeBlocks[i] >= 0)
+//            TESTMSG("block " << (i+1) << " frozen at query pos " << (blockInfo->freezeBlocks[i]+1));
 //        else
 //            TESTMSG("block " << (i+1) << " unfrozen");
     }
-}
-
-static bool SameAlignments(const BlockMultipleAlignment *a, const BlockMultipleAlignment *b)
-{
-    try {
-        if (a->NRows() != b->NRows())
-            throw "different # rows";
-
-        int row;
-        for (row=0; row<a->NRows(); row++)
-            if (a->GetSequenceOfRow(row) != b->GetSequenceOfRow(row))
-                throw "different sequences (or different order)";
-
-        if (a->GetRowStatusLine(0) != b->GetRowStatusLine(0))
-            throw "different status (score)";
-
-        if (a->NBlocks() != b->NBlocks())
-            throw "different # blocks";
-
-        BlockMultipleAlignment::UngappedAlignedBlockList au, bu;
-        a->GetUngappedAlignedBlocks(&au);
-        b->GetUngappedAlignedBlocks(&bu);
-        if (au.size() != bu.size())
-            throw "different # aligned blocks";
-
-        for (int block=0; block<au.size(); block++) {
-            for (row=0; row<a->NRows(); row++) {
-                const Block::Range *ar = au[block]->GetRangeOfRow(row), *br = bu[block]->GetRangeOfRow(row);
-                if (ar->from != br->from || ar->to != br->to)
-                    throw "different block ranges";
-            }
-        }
-    }
-
-    catch (const char *err) {
-        ERRORMSG("Alignments are different: " << err);
-        return false;
-    }
-
-    return true;
 }
 
 // global stuff for DP block aligner score callback
@@ -378,27 +150,52 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
     return score;
 }
 
+static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_AlignmentResult *result,
+    const Sequence *master, const Sequence *query)
+{
+    // create new alignment structure
+    BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+    (*seqs)[0] = master;
+    (*seqs)[1] = query;
+    auto_ptr<BlockMultipleAlignment>
+        bma(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
+
+    // unpack result blocks
+    for (unsigned int b=0; b<result->nBlocks; b++) {
+        UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
+        newBlock->width = blocks->blockSizes[b + result->firstBlock];
+        newBlock->SetRangeOfRow(0,
+            blocks->blockPositions[b + result->firstBlock],
+            blocks->blockPositions[b + result->firstBlock] + newBlock->width - 1);
+        newBlock->SetRangeOfRow(1,
+            result->blockPositions[b],
+            result->blockPositions[b] + newBlock->width - 1);
+        bma->AddAlignedBlockAtEnd(newBlock);
+        TRACEMSG("block " << (b+1)
+            << " position: " << (result->blockPositions[b]+1)
+            << " score: " << dpScoreFunction(b, result->blockPositions[b]));
+    }
+
+    // finalize the alignment
+    if (!bma->AddUnalignedBlocks() || !bma->UpdateBlockMapAndColors(false)) {
+        ERRORMSG("Error finalizing new alignment!");
+        return NULL;
+    }
+
+    // get scores
+    wxString score;
+    score.Printf(" raw score: %i", result->score);
+    bma->SetRowStatusLine(0, score.c_str());
+    bma->SetRowStatusLine(1, score.c_str());
+
+    // success
+    return bma.release();
+}
+
 bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple,
     bool canMerge)
 {
-    // parameters passed to Alejandro's functions
-    Int4 numBlocks;
-    Uint1Ptr convertedQuery;
-    Int4 queryLength;
-    Int4 *blockStarts;
-    Int4 *blockEnds;
-    Int4 masterLength;
-    BLAST_Score **thisScoreMat;
-    Uint1Ptr masterSequence;
-    Int4 *allowedGaps, *currentAllowedGaps;
-    SeqIdPtr subject_id;
-    SeqIdPtr query_id;
-    Int4 bestFirstBlock, bestLastBlock;
-    SeqAlignPtr results;
-    SeqAlignPtr listOfSeqAligns = NULL;
-    Int4 *perBlockThresholds;
-
     // show options dialog each time block aligner is run
     if (!SetOptions(NULL)) return false;
     if (currentOptions.mergeAfterEachSequence && !canMerge) {
@@ -406,78 +203,41 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         return false;
     }
 
-    // the following would be command-line arguments to Alejandro's standalone program
-    Boolean localAlignment = currentOptions.globalAlignment ? FALSE : TRUE;
-    Char scoreThresholdsMultipleBlockString[20];
-    BLAST_Score scoreThresholdMultipleBlock = currentOptions.multipleBlockThreshold;
-    Nlm_FloatHi Lambda = currentOptions.lambda;
-    Nlm_FloatHi K = currentOptions.K;
-    Nlm_FloatHi percentile = currentOptions.gapLengthPercentile;
-    Int4 gapAddition = currentOptions.allowedGapExtension;
-    Int4 searchSpaceSize;
-    Nlm_FloatHi scaleMult = 1.0;
-    Int4 startQueryPosition;
-    Int4 endQueryPosition;
-    Nlm_FloatHi maxEValue = 10.0;
-
     newAlignments->clear();
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     multiple->GetUngappedAlignedBlocks(&blocks);
-    numBlocks = blocks.size();
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     if (nRowsAddedToMultiple) *nRowsAddedToMultiple = 0;
-
-    // use Alejandro's per-block threshold parser, to make sure same values are used
-    sprintf(scoreThresholdsMultipleBlockString, "%i", currentOptions.singleBlockThreshold);
-    perBlockThresholds = parseBlockThresholds(scoreThresholdsMultipleBlockString, numBlocks, localAlignment);
-
-    // master sequence info
-    masterLength = multiple->GetMaster()->Length();
-    masterSequence = (Uint1Ptr) MemNew(sizeof(Uint1) * masterLength);
     int i;
-    for (i=0; i<masterLength; i++)
-        masterSequence[i] = ResToInt(multiple->GetMaster()->sequenceString[i]);
-    subject_id = multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster())->id;
-
-    // convert all sequences to Bioseqs
-    multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
-
-    // create SeqAlign from this BlockMultipleAlignment
-    listOfSeqAligns = multiple->CreateCSeqAlign();
 
     // set up block info
-    blockStarts = (Int4*) MemNew(sizeof(Int4) * masterLength);
-    blockEnds = (Int4*) MemNew(sizeof(Int4) * masterLength);
-    allowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
-    currentAllowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
+    dpBlocks = DP_CreateBlockInfo(blocks.size());
+    unsigned int *loopLengths = new unsigned int[multiple->NRows()];
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator n;
+    const Block::Range *range, *nextRange;
     for (i=0, b=blocks.begin(); b!=be; i++, b++) {
-        const Block::Range *range = (*b)->GetRangeOfRow(0);
-        blockStarts[i] = range->from;
-        blockEnds[i] = range->to;
-    }
-    if (listOfSeqAligns) {
-        findAllowedGaps(listOfSeqAligns, numBlocks, allowedGaps, percentile, gapAddition);
-    } else {
-        for (i=0; i<numBlocks-1; i++)
-            allowedGaps[i] = blockStarts[i+1] - blockEnds[i] - 1 + gapAddition;
-    }
-//    for (i=0; i<numBlocks-1; i++)
-//        TESTMSG("allowed gap after block " << (i+1) << ": " << allowedGaps[i]);
+        range = (*b)->GetRangeOfRow(0);
+        dpBlocks->blockPositions[i] = range->from;
+        dpBlocks->blockSizes[i] = range->to - range->from + 1;
 
-    // use my own block aligner
-    dpBlocks = DP_CreateBlockInfo(numBlocks);
-    for (i=0; i<numBlocks; i++) {
-        dpBlocks->blockPositions[i] = blockStarts[i];
-        dpBlocks->blockSizes[i] = blockEnds[i] - blockStarts[i] + 1;
-        if (i < numBlocks-1)
-            dpBlocks->maxLoops[i] = allowedGaps[i];
+        // calculate max loop lengths
+        if (i < blocks.size() - 1) {
+            n = b;
+            n++;
+            for (int r=0; r<multiple->NRows(); r++) {
+                range = (*b)->GetRangeOfRow(r);
+                nextRange = (*n)->GetRangeOfRow(r);
+                loopLengths[r] = nextRange->from - range->to - 1;
+            }
+            dpBlocks->maxLoops[i] = DP_CalculateMaxLoopLength(multiple->NRows(), loopLengths,
+                currentOptions.loopPercentile, currentOptions.loopExtension, currentOptions.loopCutoff);
+            TRACEMSG("allowed gap after block " << (i+1) << ": " << dpBlocks->maxLoops[i]);
+        }
     }
+    delete loopLengths;
 
     // set up PSSM
-    const BLAST_Matrix *matrix = multiple->GetPSSM();
-    thisScoreMat = matrix->matrix;
-
-    Int4 *frozenBlocks = (Int4*) MemNew(numBlocks * sizeof(Int4));
+    dpPSSM = multiple->GetPSSM();
 
     AlignmentList::const_iterator s, se = toRealign.end();
     for (s=toRealign.begin(); s!=se; s++) {
@@ -485,137 +245,67 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             ERRORMSG("master sequence mismatch");
 
         // slave sequence info
-        const Sequence *query = (*s)->GetSequenceOfRow(1);
-        queryLength = query->Length();
-        convertedQuery = (Uint1Ptr) MemNew(sizeof(Uint1) * queryLength);
-        for (i=0; i<queryLength; i++)
-            convertedQuery[i] = ResToInt(query->sequenceString[i]);
-        query_id = query->parentSet->GetOrCreateBioseq(query)->id;
-        startQueryPosition =
-            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < query->Length()) ?
+        dpQuery = (*s)->GetSequenceOfRow(1);
+        int startQueryPosition =
+            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < dpQuery->Length()) ?
                 (*s)->alignSlaveFrom : 0;
-        endQueryPosition =
-            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < query->Length()) ?
-                ((*s)->alignSlaveTo + 1) : query->Length();
-
-        // set search space size
-        searchSpaceSize = getSearchSpaceSize(masterLength, queryLength,
-            currentOptions.databaseLength, currentOptions.searchSpaceLength);
+        int endQueryPosition =
+            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < dpQuery->Length()) ?
+                (*s)->alignSlaveTo : dpQuery->Length() - 1;
+        TRACEMSG("query region: " << (startQueryPosition+1) << " to " << (endQueryPosition+1));
 
         // set frozen blocks
-        for (i=0; i<numBlocks-1; i++)
-            currentAllowedGaps[i] = allowedGaps[i];
-        Boolean validFrozenBlocks = TRUE;
         if (!currentOptions.keepExistingBlocks) {
-            for (i=0; i<numBlocks; i++) frozenBlocks[i] = -1;
-        } else {
-            FreezeBlocks(multiple, *s, frozenBlocks);
-            validFrozenBlocks = ValidateFrozenBlockPositions(frozenBlocks,
-                numBlocks, startQueryPosition, endQueryPosition,
-                blockStarts, blockEnds, currentAllowedGaps);
-
-            // if frozen block positions aren't valid as-is, try relaxing gap length restrictions
-            // between adjacent frozen blocks and see if that fixes it
-            if (!validFrozenBlocks && currentOptions.allowLongGaps) {
-                TRACEMSG("trying to relax gap length restrictions between frozen blocks...");
-                for (i=0; i<numBlocks-1; i++)
-                    if (frozenBlocks[i] >= 0 && frozenBlocks[i+1] >= 0)
-                        currentAllowedGaps[i] = 1000000;
-                validFrozenBlocks = ValidateFrozenBlockPositions(frozenBlocks,
-                        numBlocks, startQueryPosition, endQueryPosition,
-                        blockStarts, blockEnds, currentAllowedGaps);
-            }
-        }
-
-        for (i=0; i<numBlocks; i++) {
-            if (frozenBlocks[i] >= 0)
-                dpBlocks->freezeBlocks[i] = frozenBlocks[i];
-            else
+            for (i=0; i<blocks.size(); i++)
                 dpBlocks->freezeBlocks[i] = DP_UNFROZEN_BLOCK;
+        } else {
+            FreezeBlocks(multiple, *s, dpBlocks);
         }
-        DP_AlignmentResult *dpResult = NULL;
-        int dpStatus;
 
         // actually do the block alignment
-        if (validFrozenBlocks) {
+        DP_AlignmentResult *dpResult = NULL;
+        int dpStatus;
+        if (currentOptions.globalAlignment)
+            dpStatus = DP_GlobalBlockAlign(dpBlocks, dpScoreFunction,
+                startQueryPosition, endQueryPosition, &dpResult);
+        else
+            dpStatus = DP_LocalBlockAlign(dpBlocks, dpScoreFunction,
+                startQueryPosition, endQueryPosition, &dpResult);
 
-            // Alejandro's
-            INFOMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
-                << query->identifier->ToString());
-            allocateAlignPieceMemory(numBlocks);
-            findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
-                numBlocks, blockStarts, blockEnds, masterLength, thisScoreMat,
-                perBlockThresholds, frozenBlocks, localAlignment);
-            sortAlignPieces(numBlocks);
-            results = makeMultiPieceAlignments(convertedQuery, numBlocks,
-                queryLength, masterSequence, masterLength,
-                blockStarts, blockEnds, currentAllowedGaps, scoreThresholdMultipleBlock,
-                subject_id, query_id, &bestFirstBlock, &bestLastBlock,
-                Lambda, K, searchSpaceSize, localAlignment, maxEValue);
+        // create new alignment from DP result
+        BlockMultipleAlignment *dpAlignment = NULL;
+        if (dpResult) {
+            dpAlignment = UnpackDPResult(dpBlocks, dpResult, multiple->GetMaster(), dpQuery);
+            if (!dpAlignment)
+                ERRORMSG("Couldn't create BlockMultipleAlignment from DP result");
+        }
 
-            // mine
-            dpPSSM = matrix;
-            dpQuery = query;
-            if (localAlignment)
-                dpStatus = DP_LocalBlockAlign(dpBlocks, dpScoreFunction,
-                    startQueryPosition, endQueryPosition-1, &dpResult);
-            else
-                dpStatus = DP_GlobalBlockAlign(dpBlocks, dpScoreFunction,
-                    startQueryPosition, endQueryPosition-1, &dpResult);
+        if (dpStatus == STRUCT_DP_FOUND_ALIGNMENT && dpAlignment) {
 
-        } else
-            results = NULL;
+            // merge or add alignment to list
+            if (currentOptions.mergeAfterEachSequence && multiple->MergeAlignment(dpAlignment)) {
+                delete dpAlignment; // if merge is successful, we can delete this alignment;
+                if (nRowsAddedToMultiple)
+                    (*nRowsAddedToMultiple)++;
+                else
+                    ERRORMSG("BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
+                        "called with merge on, but NULL nRowsAddedToMultiple pointer");
+                // recalculate PSSM
+                dpPSSM = multiple->GetPSSM();
 
-        // process results; assume first result SeqAlign is the highest scoring
-        BlockMultipleAlignment *newAlignment;
-        if (results) {
-#ifdef _DEBUG
-            AsnIoPtr aip = AsnIoOpen("seqalign-ba.txt", "w");
-            SeqAlignAsnWrite(results, aip, NULL);
-            AsnIoFree(aip, true);
-#endif
-
-            CSeq_align best;
-            string err;
-            if (!ConvertAsnFromCToCPP(results, (AsnWriteFunc) SeqAlignAsnWrite, &best, &err) ||
-                (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
-                ERRORMSG("conversion of results to BlockMultipleAlignment object failed: " << err);
             } else {
-
-                if (currentOptions.mergeAfterEachSequence) {
-                    if (multiple->MergeAlignment(newAlignment)) {
-                        delete newAlignment; // if merge is successful, we can delete this alignment;
-                        if (nRowsAddedToMultiple)
-                            (*nRowsAddedToMultiple)++;
-                        else
-                            ERRORMSG("BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
-                                "called with merge on, but NULL nRowsAddedToMultiple pointer");
-                        // recalculate PSSM
-                        matrix = multiple->GetPSSM();
-                        thisScoreMat = matrix->matrix;
-
-                    } else {                 // otherwise keep it
-                        newAlignments->push_back(newAlignment);
-                    }
-                }
-
-                else {
-                    newAlignments->push_back(newAlignment);
-                }
+                newAlignments->push_back(dpAlignment);
             }
-
-            SeqAlignSetFree(results);
         }
 
         // no alignment or block aligner failed - add old alignment to list so it doesn't get lost
         else {
             string error;
-            if (!validFrozenBlocks)
-                error = "invalid frozen block positions";
+            if (dpStatus == STRUCT_DP_NO_ALIGNMENT)
+                WARNINGMSG("block aligner found no significant alignment - current alignment unchanged");
             else
-                error = "block aligner found no significant alignment";
-            WARNINGMSG(error << " - current alignment unchanged");
-            newAlignment = (*s)->Clone();
+                ERRORMSG("block aligner encountered a problem - current alignment unchanged");
+            BlockMultipleAlignment *newAlignment = (*s)->Clone();
             newAlignment->SetRowDouble(0, -1.0);
             newAlignment->SetRowDouble(1, -1.0);
             newAlignment->SetRowStatusLine(0, error);
@@ -623,55 +313,11 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             newAlignments->push_back(newAlignment);
         }
 
-
-        // add result from DP
-        if (dpResult) {
-            BlockMultipleAlignment *dpAlignment =
-                UnpackDPResult(dpBlocks, dpResult, multiple->GetMaster(), query);
-            if (dpAlignment) {
-                if (!results) {
-                    ERRORMSG("DP aligner found alignment, but Alejandro's didn't");
-                    dpAlignment->SetRowStatusLine(0,
-                        dpAlignment->GetRowStatusLine(0) + " (DP)");
-                    newAlignments->push_back(dpAlignment);
-                } else if (!SameAlignments(newAlignment, dpAlignment)) {
-                    newAlignment->SetRowStatusLine(0,
-                        newAlignment->GetRowStatusLine(0) + " (A)");
-                    dpAlignment->SetRowStatusLine(0,
-                        dpAlignment->GetRowStatusLine(0) + " (DP)");
-                    newAlignments->push_back(dpAlignment);
-                } else {
-                    INFOMSG("Alejandro and DP alignment results are identical");
-                    delete dpAlignment;
-                }
-            }
-            DP_DestroyAlignmentResult(dpResult);
-        } else {
-            if (results)
-                ERRORMSG("DP aligner found no alignment, but Alejandro's did");
-            else
-                WARNINGMSG("DP block aligner returned no alignment");
-        }
-
         // cleanup
-        MemFree(convertedQuery);
-        if (validFrozenBlocks) {
-            freeBestPairs(numBlocks);
-            freeAlignPieceLists(numBlocks);
-            freeBestScores(numBlocks);
-        }
+        DP_DestroyAlignmentResult(dpResult);
     }
 
     // cleanup
-    MemFree(blockStarts);
-    MemFree(blockEnds);
-    MemFree(allowedGaps);
-    MemFree(currentAllowedGaps);
-    if (listOfSeqAligns) SeqAlignSetFree(listOfSeqAligns);
-    MemFree(masterSequence);
-    MemFree(frozenBlocks);
-    MemFree(perBlockThresholds);
-
     DP_DestroyBlockInfo(dpBlocks);
     dpBlocks = NULL;
     dpPSSM = NULL;
@@ -696,26 +342,17 @@ bool BlockAligner::SetOptions(wxWindow* parent)
 /////////////////////////////////////////////////////////////////////////////////////
 
 #define ID_TEXT 10000
-#define ID_T_SINGLE 10001
-#define ID_S_SINGLE 10002
-#define ID_T_MULT 10003
-#define ID_S_MULT 10004
-#define ID_T_EXT 10005
-#define ID_S_EXT 10006
-#define ID_T_PERCENT 10007
-#define ID_S_PERCENT 10008
-#define ID_T_LAMBDA 10009
-#define ID_S_LAMBDA 10010
-#define ID_T_K 10011
-#define ID_S_K 10012
-#define ID_T_SIZE 10013
-#define ID_S_SIZE 10014
-#define ID_C_GLOBAL 10015
-#define ID_C_MERGE 10016
-#define ID_C_KEEP_BLOCKS 10017
-#define ID_C_GAPS 10018
-#define ID_B_OK 10019
-#define ID_B_CANCEL 10020
+#define ID_T_PERCENT 10001
+#define ID_S_EXT 10002
+#define ID_T_EXTENSION 10003
+#define ID_S_PERCENT 10004
+#define ID_T_CUTOFF 10005
+#define ID_S_LAMBDA 10006
+#define ID_C_GLOBAL 10007
+#define ID_C_KEEP 10008
+#define ID_C_MERGE 10009
+#define ID_B_OK 10010
+#define ID_B_CANCEL 10011
 
 BEGIN_EVENT_TABLE(BlockAlignerOptionsDialog, wxDialog)
     EVT_BUTTON(-1,  BlockAlignerOptionsDialog::OnButton)
@@ -729,134 +366,72 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
 {
     wxPanel *panel = new wxPanel(this, -1);
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
-    wxStaticBox *item2 = new wxStaticBox( panel, -1, "Block Aligner Options" );
+    wxStaticBox *item2 = new wxStaticBox( panel, -1, wxT("Block Aligner Options") );
     wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
     wxFlexGridSizer *item3 = new wxFlexGridSizer( 3, 0, 0 );
     item3->AddGrowableCol( 1 );
 
-    wxStaticText *item4 = new wxStaticText( panel, ID_TEXT, "Single block score threshold:", wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item4 = new wxStaticText( panel, ID_TEXT, wxT("Loop percentile:"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    iSingle = new IntegerSpinCtrl(panel,
-        -100, 100, 1, init.singleBlockThreshold,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(iSingle->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iSingle->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    wxStaticText *item7 = new wxStaticText( panel, ID_TEXT, "Multiple block score threshold:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item7, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    iMultiple = new IntegerSpinCtrl(panel,
-        -100, 100, 1, init.multipleBlockThreshold,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(iMultiple->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iMultiple->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    wxStaticText *item10 = new wxStaticText( panel, ID_TEXT, "Allowed gap extension:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item10, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    iExtend = new IntegerSpinCtrl(panel,
-        0, 100, 1, init.allowedGapExtension,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(iExtend->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iExtend->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    wxStaticText *item13 = new wxStaticText( panel, ID_TEXT, "Gap length percentile:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item13, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     fpPercent = new FloatingPointSpinCtrl(panel,
-        0.0, 1.0, 0.1, init.gapLengthPercentile,
+        0.0, 100.0, 0.6, init.loopPercentile,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(fpPercent->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item3->Add(fpPercent->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item7 = new wxStaticText( panel, ID_TEXT, wxT("Loop extension:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item7, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iExtension = new IntegerSpinCtrl(panel,
+        0, 100000, 10, init.loopExtension,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iExtension->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iExtension->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item10 = new wxStaticText( panel, ID_TEXT, wxT("Loop cutoff (0=none):"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item10, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iCutoff = new IntegerSpinCtrl(panel,
+        0, 100000, 0, init.loopCutoff,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iCutoff->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iCutoff->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxStaticText *item16 = new wxStaticText( panel, ID_TEXT, "Lambda:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item16, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    fpLambda = new FloatingPointSpinCtrl(panel,
-        0.0, 10.0, 0.1, init.lambda,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(fpLambda->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(fpLambda->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    wxStaticText *item19 = new wxStaticText( panel, ID_TEXT, "K:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item19, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    fpK = new FloatingPointSpinCtrl(panel,
-        0.0, 1.0, 0.01, init.K,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(fpK->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(fpK->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    wxStaticText *item40 = new wxStaticText( panel, ID_TEXT, "Database length:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item40, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    iDataLen = new IntegerSpinCtrl(panel,
-        0, kMax_Int, 1000, init.databaseLength,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(iDataLen->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iDataLen->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    wxStaticText *item22 = new wxStaticText( panel, ID_TEXT, "Search space length:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item22, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    iSearchLen = new IntegerSpinCtrl(panel,
-        0, kMax_Int, 1000, init.searchSpaceLength,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(iSearchLen->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iSearchLen->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    wxStaticText *item23 = new wxStaticText( panel, ID_TEXT, "Global alignment:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item23, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cGlobal = new wxCheckBox( panel, ID_C_GLOBAL, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item13 = new wxStaticText( panel, ID_TEXT, wxT("Global alignment:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item13, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cGlobal = new wxCheckBox( panel, ID_C_GLOBAL, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     cGlobal->SetValue(init.globalAlignment);
     item3->Add( cGlobal, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
-    wxStaticText *item28 = new wxStaticText( panel, ID_TEXT, "Merge after each row aligned:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item28, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cMerge = new wxCheckBox( panel, ID_C_MERGE, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item15 = new wxStaticText( panel, ID_TEXT, wxT("Keep existing blocks (global only):"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item15, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cKeep = new wxCheckBox( panel, ID_C_KEEP, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    cKeep->SetValue(init.keepExistingBlocks);
+    item3->Add( cKeep, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+
+    wxStaticText *item17 = new wxStaticText( panel, ID_TEXT, wxT("Merge after each row aligned:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cMerge = new wxCheckBox( panel, ID_C_MERGE, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     cMerge->SetValue(init.mergeAfterEachSequence);
     item3->Add( cMerge, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
-    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, "Keep existing blocks:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item24, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cKeepBlocks = new wxCheckBox( panel, ID_C_KEEP_BLOCKS, "", wxDefaultPosition, wxDefaultSize, 0 );
-    cKeepBlocks->SetValue(init.keepExistingBlocks);
-    item3->Add( cKeepBlocks, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
-
-    wxStaticText *item31 = new wxStaticText( panel, ID_TEXT, "Allow long gaps between frozen blocks:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item31, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cLongGaps = new wxCheckBox( panel, ID_C_GAPS, "", wxDefaultPosition, wxDefaultSize, 0 );
-    cLongGaps->SetValue(init.allowLongGaps);
-    item3->Add( cLongGaps, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
-
     item1->Add( item3, 0, wxALIGN_CENTRE, 5 );
-
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    wxBoxSizer *item25 = new wxBoxSizer( wxHORIZONTAL );
-
-    wxButton *item26 = new wxButton( panel, ID_B_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
-    item25->Add( item26, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    item25->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    wxButton *item27 = new wxButton( panel, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item25->Add( item27, 0, wxALIGN_CENTRE|wxALL, 5 );
-
-    item0->Add( item25, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxBoxSizer *item19 = new wxBoxSizer( wxHORIZONTAL );
+    wxButton *item20 = new wxButton( panel, ID_B_OK, wxT("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+    item19->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item19->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item21 = new wxButton( panel, ID_B_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+    item19->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     panel->SetAutoLayout(true);
     panel->SetSizer(item0);
@@ -867,31 +442,20 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
 
 BlockAlignerOptionsDialog::~BlockAlignerOptionsDialog(void)
 {
-    delete iSingle;
-    delete iMultiple;
-    delete iExtend;
-    delete iDataLen;
-    delete iSearchLen;
+    delete iCutoff;
+    delete iExtension;
     delete fpPercent;
-    delete fpLambda;
-    delete fpK;
 }
 
 bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *options)
 {
     options->globalAlignment = cGlobal->IsChecked();
+    options->keepExistingBlocks = cKeep->IsChecked();
     options->mergeAfterEachSequence = cMerge->IsChecked();
-    options->keepExistingBlocks = cKeepBlocks->IsChecked();
-    options->allowLongGaps = cLongGaps->IsChecked();
     return (
-        iSingle->GetInteger(&(options->singleBlockThreshold)) &&
-        iMultiple->GetInteger(&(options->multipleBlockThreshold)) &&
-        iExtend->GetInteger(&(options->allowedGapExtension)) &&
-        iDataLen->GetInteger(&(options->databaseLength)) &&
-        iSearchLen->GetInteger(&(options->searchSpaceLength)) &&
-        fpPercent->GetDouble(&(options->gapLengthPercentile)) &&
-        fpLambda->GetDouble(&(options->lambda)) &&
-        fpK->GetDouble(&(options->K))
+        fpPercent->GetDouble(&(options->loopPercentile)) &&
+        iExtension->GetInteger(&(options->loopExtension)) &&
+        iCutoff->GetInteger(&(options->loopCutoff))
     );
 }
 
@@ -920,6 +484,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/08/23 22:26:23  thiessen
+* switch to new dp block aligner, remove Alejandro's
+*
 * Revision 1.27  2003/07/21 19:54:10  thiessen
 * fix firstBlock error
 *
