@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.22  2002/04/26 19:01:00  thiessen
 * fix display delete bug
 *
@@ -285,6 +288,7 @@ public:
     bool CalculateRowScoresWithThreader(double weightPSSM);
     void SortRowsByIdentifier(void);
     void SortRowsByThreadingScore(double weightPSSM);
+    void SortRowsBySelfHit(void);
     void FloatPDBRowsToTop(void);
 
     // a sort of clustering of similar sequences around a particular row

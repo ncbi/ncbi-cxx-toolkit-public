@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.50  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -209,6 +212,7 @@
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/conservation_colorer.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -1049,6 +1053,13 @@ static bool CompareRowsByScore(const DisplayRowFromAlignment *a, const DisplayRo
     return (a->alignment->GetRowDouble(a->row) > b->alignment->GetRowDouble(b->row));
 }
 
+static bool CompareRowsByEValue(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
+{
+    return ((a->alignment->GetRowDouble(a->row) >= 0.0 &&
+             a->alignment->GetRowDouble(a->row) < b->alignment->GetRowDouble(b->row)) ||
+            b->alignment->GetRowDouble(b->row) < 0.0);
+}
+
 static bool CompareRowsFloatPDB(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
 {
     return (a->alignment->GetSequenceOfRow(a->row)->identifier->pdbID.size() > 0 &&
@@ -1078,6 +1089,24 @@ void SequenceDisplay::FloatPDBRowsToTop(void)
     rowComparisonFunction = CompareRowsFloatPDB;
     SortRows();
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+}
+
+void SequenceDisplay::SortRowsBySelfHit(void)
+{
+    // get alignment
+    for (int row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow) {
+            // do self-hit calculation
+            (*viewerWindow)->viewer->alignmentManager->blaster->CalculateSelfHitScores(alnRow->alignment);
+
+            // then sort by score
+            rowComparisonFunction = CompareRowsByEValue;
+            SortRows();
+            (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+            break;
+        }
+    }
 }
 
 void SequenceDisplay::SortRows(void)

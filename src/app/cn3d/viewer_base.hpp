@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.11  2002/06/05 14:28:42  thiessen
 * reorganize handling of window titles
 *
@@ -89,6 +92,7 @@ class Molecule;
 class ViewerBase
 {
     friend class ViewerWindowBase;
+    friend class SequenceDisplay;
 
 public:
 

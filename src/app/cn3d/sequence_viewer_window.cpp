@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.33  2002/06/13 13:32:39  thiessen
 * add self-hit calculation
 *
@@ -195,6 +198,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
+    subMenu->Append(MID_SORT_SELF_HIT, "By Self-&Hit");
     subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
@@ -256,6 +260,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
         menuBar->Enable(MID_SELF_HIT, editable);
+        menuBar->Enable(MID_SCORE_THREADER, editable);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
@@ -451,6 +456,10 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();
             break;
+        case MID_SORT_SELF_HIT:
+            if (DoProximitySort()) ProximitySortOff();
+            sequenceViewer->GetCurrentDisplay()->SortRowsBySelfHit();
+            break;
         case MID_PROXIMITY_SORT:
             CancelAllSpecialModesExcept(MID_PROXIMITY_SORT);
             if (DoProximitySort())
@@ -510,20 +519,8 @@ void SequenceViewerWindow::OnExport(wxCommandEvent& event)
 void SequenceViewerWindow::OnSelfHit(wxCommandEvent& event)
 {
     if (sequenceViewer->GetCurrentAlignments()) {
-
         const BlockMultipleAlignment *multiple = sequenceViewer->GetCurrentAlignments()->front();
         sequenceViewer->alignmentManager->blaster->CalculateSelfHitScores(multiple);
-
-        // print out overall self-hit rate
-        int nSelfHits = 0;
-        static const double threshold = 0.01;
-        for (int row=0; row<multiple->NRows(); row++) {
-            if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
-                nSelfHits++;
-        }
-        ERR_POST(Info << "Self hits with E-value < " << setprecision(3) << threshold << ": "
-            << (100.0*nSelfHits/multiple->NRows()) << "% ("
-            << nSelfHits << '/' << multiple->NRows() << ')');
     }
 }
 

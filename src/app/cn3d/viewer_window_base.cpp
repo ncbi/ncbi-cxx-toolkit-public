@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.32  2002/06/05 14:28:42  thiessen
 * reorganize handling of window titles
 *
@@ -256,6 +259,8 @@ void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
     if (!enabled) CancelBaseSpecialModesExcept(-1);
     menuBar->Enable(MID_UNDO, false);
+    menuBar->Enable(MID_SHOW_GEOM_VLTNS,
+        viewer->GetCurrentDisplay() && viewer->GetCurrentDisplay()->IsEditable());
     EnableDerivedEditorMenuItems(enabled);
 }
 

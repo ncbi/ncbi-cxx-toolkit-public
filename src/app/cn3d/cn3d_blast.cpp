@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.11  2002/06/13 13:32:39  thiessen
 * add self-hit calculation
 *
@@ -406,7 +409,8 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     BLAST_Matrix *BLASTmatrix = CreateBLASTMatrix(multiple);
 
     std::string err;
-    for (int row=0; row<multiple->NRows(); row++) {
+    int row;
+    for (row=0; row<multiple->NRows(); row++) {
 
         // get C Bioseq for each slave
         const Sequence *slaveSeq = multiple->GetSequenceOfRow(row);
@@ -461,9 +465,20 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         if (score >= 0.0)
             status.Printf("Self hit E-value: %g", score);
         else
-            status = "No significant self hit";
+            status = "No detectable self hit";
         multiple->SetRowStatusLine(row, status.c_str());
     }
+
+    // print out overall self-hit rate
+    int nSelfHits = 0;
+    static const double threshold = 0.01;
+    for (row=0; row<multiple->NRows(); row++) {
+        if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
+            nSelfHits++;
+    }
+    ERR_POST(Info << "Self hits with E-value <= " << setprecision(3) << threshold << ": "
+        << (100.0*nSelfHits/multiple->NRows()) << "% ("
+        << nSelfHits << '/' << multiple->NRows() << ')');
 
     BLASTOptionDelete(options);
     BLAST_MatrixDestruct(BLASTmatrix);

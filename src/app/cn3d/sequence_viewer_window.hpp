@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
 * Revision 1.17  2002/06/13 13:32:39  thiessen
 * add self-hit calculation
 *
@@ -127,6 +130,7 @@ private:
             MID_SORT_IDENT,
             MID_SORT_THREADER,
             MID_FLOAT_PDBS,
+            MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
         // mouse mode
         MID_MOVE_ROW,
