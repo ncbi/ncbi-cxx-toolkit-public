@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/17 18:38:48  vasilche
+* Fixed order of members in class.
+* Added checks for overlapped members.
+*
 * Revision 1.6  1999/06/15 16:20:00  vasilche
 * Added ASN.1 object output stream.
 *
@@ -76,6 +80,7 @@ public:
 
     // default constructor for using in map
     CMemberInfo(void)
+        : m_Offset(0)
         { }
 
     // superclass member
@@ -121,28 +126,21 @@ private:
 class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    typedef map<string, CMemberInfo> TMembers;
-    typedef map<size_t, CMemberInfo> TMembersByOffset;
-    typedef TMembers::const_iterator TMemberIterator;
+    typedef list<CMemberInfo*> TMembers;
+    typedef map<string, const CMemberInfo*> TMembersByName;
+    typedef map<size_t, const CMemberInfo*> TMembersByOffset;
 
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void));
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
                    const CTypeRef& parent, size_t offset);
+    virtual ~CClassInfoTmpl(void);
 
     virtual size_t GetSize(void) const;
 
     virtual TObjectPtr Create(void) const;
 
-    CClassInfoTmpl* AddMember(const CMemberInfo& member);
-
-    TMemberIterator MemberBegin(void) const
-        {
-            return m_Members.begin();
-        }
-    TMemberIterator MemberEnd(void) const
-        {
-            return m_Members.end();
-        }
+    // AddMember will take ownership of member
+    CClassInfoTmpl* AddMember(CMemberInfo* member);
 
     virtual const CMemberInfo* FindMember(const string& name) const;
     virtual const CMemberInfo* LocateMember(TConstObjectPtr object,
@@ -163,6 +161,7 @@ private:
     TObjectPtr (*m_Creator)(void);
 
     TMembers m_Members;
+    TMembersByName m_MembersByName;
     TMembersByOffset m_MembersByOffset;
 };
 

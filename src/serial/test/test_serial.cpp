@@ -15,7 +15,8 @@ int main(int argc, char** argv)
 
 int CTestSerial::Run(void)
 {
-    SetDiagStream(&NcbiCerr);
+    ofstream diag("test.log");
+    SetDiagStream(&diag);
     try {
         CSerialObject write;
 
@@ -34,7 +35,7 @@ int CTestSerial::Run(void)
             {
                 CObjectIStreamBinary(ifstream("test.bin")) >> read;
             }
-            read.Dump(cerr);
+            read.Dump(NcbiCerr);
         }
 
         {
@@ -45,7 +46,7 @@ int CTestSerial::Run(void)
             {
                 CObjectIStreamAsn(ifstream("test.asn")) >> read;
             }
-            read.Dump(cerr);
+            read.Dump(NcbiCerr);
         }
     }
     catch (exception& e) {
@@ -54,5 +55,6 @@ int CTestSerial::Run(void)
     catch (...) {
         ERR_POST("Unknown error");
     }
+    SetDiagStream(&NcbiCerr);
     return 0;
 }

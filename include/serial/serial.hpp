@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/06/17 18:38:49  vasilche
+* Fixed order of members in class.
+* Added checks for overlapped members.
+*
 * Revision 1.10  1999/06/16 20:58:04  vasilche
 * Added GetPtrTypeRef to avoid conflict in MSVS.
 *
@@ -188,12 +192,19 @@ CTypeRef GetStlTypeRef(const list<Data>* )
 // define type info getter for pointers
 template<typename T>
 inline
-CTypeRef GetPtrTypeRef(const T* const* object)
+CTypeRef GetPtrTypeRef(const T* const* object, CTypeRef typeRef)
 {
     typename T* p = 0;
     _TRACE("GetTypeRef(const T*) T: " << typeid(*p).name());
-    return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(p),
-                        GetTypeRef(p)));
+    return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(p), typeRef));
+}
+
+template<typename T>
+inline
+CTypeRef GetPtrTypeRef(const T* const* object)
+{
+    typename T* p = 0;
+    return GetPtrTypeRef(object, GetTypeRef(p));
 }
 
 template<typename Data>
@@ -251,28 +262,36 @@ CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
 
 template<typename T>
 inline
-CMemberInfo MemberInfo(const string& name, const T* member, const CTypeRef typeRef)
+CMemberInfo* MemberInfo(const string& name,
+                        const T* member, const CTypeRef typeRef)
 {
-	return CMemberInfo(name, size_t(member), typeRef);
+	return new CMemberInfo(name, size_t(member), typeRef);
 }
 
 template<typename T>
 inline
-CMemberInfo MemberInfo(const string& name, const T* member)
+CMemberInfo* MemberInfo(const string& name, const T* member)
 {
 	return MemberInfo(name, member, GetTypeRef(member));
 }
 
 template<typename T>
 inline
-CMemberInfo PtrMemberInfo(const string& name, const T* member)
+CMemberInfo* PtrMemberInfo(const string& name, const T* member, CTypeRef typeRef)
+{
+	return MemberInfo(name, member, GetPtrTypeRef(member, typeRef));
+}
+
+template<typename T>
+inline
+CMemberInfo* PtrMemberInfo(const string& name, const T* member)
 {
 	return MemberInfo(name, member, GetPtrTypeRef(member));
 }
 
 template<typename T>
 inline
-CMemberInfo StlMemberInfo(const string& name, const T* member)
+CMemberInfo* StlMemberInfo(const string& name, const T* member)
 {
 	return MemberInfo(name, member, GetStlTypeRef(member));
 }
