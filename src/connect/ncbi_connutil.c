@@ -757,9 +757,9 @@ extern SOCK URL_Connect
  int/*bool*/     encode_args,
  ESwitch         log)
 {
-    static const char *X_REQ_R; /* "POST "/"GET " */
-    static const char  X_REQ_Q[] = "?";
-    static const char  X_REQ_E[] = " HTTP/1.0\r\n";
+    static const char X_REQ_Q[] = "?";
+    static const char X_REQ_E[] = " HTTP/1.0\r\n";
+    static const char X_HOST[]  = "Host: ";
 
     EIO_Status  st;
     BUF         buf;
@@ -768,6 +768,7 @@ extern SOCK URL_Connect
     char        buffer[80];
     size_t      headersize;
     const char* x_args = 0;
+    const char* x_req_r; /* "POST "/"GET " */
 
     /* check the args */
     if (!host  ||  !*host  ||  !port  ||  !path  ||  !*path  ||
@@ -779,13 +780,13 @@ extern SOCK URL_Connect
 
     switch (req_method) {
     case eReqMethod_Any:
-        X_REQ_R = DEF_CONN_REQ_METHOD " ";
+        x_req_r = DEF_CONN_REQ_METHOD " ";
         break;
     case eReqMethod_Post:
-        X_REQ_R = "POST ";
+        x_req_r = "POST ";
         break;
     case eReqMethod_Get:
-        X_REQ_R = "GET ";
+        x_req_r = "GET ";
         break;
     default:
         CORE_LOGF(eLOG_Error, ("[URL_Connect]  Unrecognized request method"
@@ -793,7 +794,7 @@ extern SOCK URL_Connect
         assert(0);
         return 0/*error*/;
     }
-    if (strcasecmp(X_REQ_R, "GET ") == 0  &&  content_length) {
+    if (content_length  &&  strcasecmp(x_req_r, "GET ") == 0) {
         CORE_LOG(eLOG_Warning,
                  "[URL_Connect]  Content length ignored with GET");
         content_length = 0;
@@ -821,25 +822,29 @@ extern SOCK URL_Connect
     errno = 0;
     /* compose HTTP header */
     if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
-        !BUF_Write(&buf,   (const void*) X_REQ_R, strlen(X_REQ_R))    ||
-        !BUF_Write(&buf,   (const void*) path, strlen(path))          ||
+        !BUF_Write(&buf, x_req_r, strlen(x_req_r))            ||
+        !BUF_Write(&buf, path,    strlen(path))               ||
+        (x_args
+         &&  (!BUF_Write(&buf, X_REQ_Q, sizeof(X_REQ_Q) - 1)  ||
+              !BUF_Write(&buf, x_args,  strlen(x_args))))     ||
+        !BUF_Write(&buf,       X_REQ_E, sizeof(X_REQ_E) - 1)  ||
 
-        (x_args  &&
-         (!BUF_Write(&buf, (const void*) X_REQ_Q, strlen(X_REQ_Q))    ||
-          !BUF_Write(&buf, (const void*) x_args, strlen(x_args))))    ||
-        !BUF_Write(&buf, (const void*) X_REQ_E, strlen(X_REQ_E))      ||
+        /* Host: host\r\n */
+        !BUF_Write(&buf, X_HOST, sizeof(X_HOST) - 1)          ||
+        !BUF_Write(&buf, host,   strlen(host))                ||
+        !BUF_Write(&buf, "\r\n", 2)                           ||
 
         /* <user_header> */
-        (user_hdr  &&
-         !BUF_Write(&buf,  (const void*) user_hdr, strlen(user_hdr))) ||
+        (user_hdr
+         &&  !BUF_Write(&buf, user_hdr, strlen(user_hdr)))    ||
 
         /* Content-Length: <content_length>\r\n\r\n */
-        (req_method != eReqMethod_Get  &&
-         (sprintf(buffer, "Content-Length: %lu\r\n",
-                  (unsigned long) content_length) <= 0                ||
-          !BUF_Write(&buf, (const void*) buffer, strlen(buffer))))    ||
+        (req_method != eReqMethod_Get
+         &&  (sprintf(buffer, "Content-Length: %lu\r\n",
+                      (unsigned long) content_length) <= 0    ||
+              !BUF_Write(&buf, buffer, strlen(buffer))))      ||
 
-        !BUF_Write(&buf,   (const void*) "\r\n", 2)) {
+        !BUF_Write(&buf, "\r\n", 2)) {
         CORE_LOGF(eLOG_Error, ("[URL_Connect]  Error composing HTTP header for"
                                " %s:%hu%s%s", host, port, errno ? ": " : "",
                                errno ? strerror(errno) : ""));
@@ -1479,6 +1484,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2003/08/27 16:27:37  lavr
+ * Add "Host:" tag to be able to take advantage of Apache VHosts
+ *
  * Revision 6.59  2003/08/25 14:44:43  lavr
  * Employ new k..Timeout constants
  * URL_Connect():  get rid of one avoidable malloc()
