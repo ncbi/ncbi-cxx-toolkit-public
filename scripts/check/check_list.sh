@@ -17,7 +17,7 @@
 #    date_time    - get check list on specified date/time
 #                   (default is current).
 #                   Note that some tests can be already deleted in the CVS. 
-#    cvs_tree     - internal/production.
+#    cvs_tree     - --internal or --production.
 #
 #    If any parameter is skipped that will be used default value for it.
 #
