@@ -150,7 +150,6 @@ typedef struct LookupTableOptions {
    Int4 max_positions; /**< Max number of positions per word (MegaBlast only);
                          no restriction if 0 */
    Uint1 scan_step; /**< Step at which database sequence should be parsed */
-   Uint1 program_number;	/* number for blastn, blastp, etc. */
 } LookupTableOptions, *LookupTableOptionsPtr;
 
 /** Options required for setting up the query sequence */
@@ -202,7 +201,6 @@ typedef struct BlastExtensionOptions {
    FloatHi gap_trigger;/**< Score in bits for starting gapped extension */
    Int4 algorithm_type; /**< E.g. for blastn: dynamic programming; 
                            greedy without traceback; greedy with traceback */
-   Uint1 program_number; /**< Number for blastn, blastp, etc. */
 } BlastExtensionOptions, *BlastExtensionOptionsPtr;
 
 typedef struct BlastExtensionParameters {
@@ -247,7 +245,6 @@ typedef struct BlastHitSavingOptions {
                            combining via sum statistics with uneven gaps */
    Boolean is_neighboring;/**< Neighboring has different hit saving criteria */
    Boolean is_gapped;	/**< gapping is used. */
-   Uint1 program_number; /**< Number for blastn, blastp, etc. */
    Uint1 handle_results_method; /**< Formatting results on the fly if set to 
                                    non-zero */
 } BlastHitSavingOptions, *BlastHitSavingOptionsPtr;
@@ -288,7 +285,6 @@ typedef struct BlastScoringOptions {
    Int4 decline_align; /**< Cost for declining alignment */
    Boolean is_ooframe; /**< Should out-of-frame gapping be used in a translated
                           search? */
-   Uint1 program_number;	/* Number for blastn, blastp, etc. */
 } BlastScoringOptions, *BlastScoringOptionsPtr;
 
 /** Options for setting up effective lengths and search spaces.  
@@ -328,7 +324,6 @@ typedef struct PSIBlastOptions {
 /** Options used to create the ReadDBFILE structure 
  *  Include database name and various information for restricting the database
  *  to a subset.
- *  THESE SHOULD PROBABLY BE MOVED TO A DIFFERENT HEADER FILE!!!
  */
 typedef struct BlastDatabaseOptions {
    CharPtr database; /**< Name of the database */
@@ -381,7 +376,7 @@ Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options);
  * @param strand_option which strand to search [in]
 */
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
-        const Uint1 program, const char *filter_string, Uint1 strand_option);
+        Uint1 program, const char *filter_string, Uint1 strand_option);
 
 
 /** Deallocate memory for BlastInitialWordOptions.
@@ -395,7 +390,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options);
  * @param options The options that have are being returned [out] 
 */
 Int2
-BlastInitialWordOptionsNew(const Uint1 program, 
+BlastInitialWordOptionsNew(Uint1 program, 
    BlastInitialWordOptionsPtr *options);
 
 /** Fill non-default values in the BlastInitialWordOptions structure.
@@ -413,7 +408,7 @@ BlastInitialWordOptionsNew(const Uint1 program,
 */
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options, 
-   const Uint1 program, Boolean greedy, Int4 window_size, 
+   Uint1 program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    FloatHi xdrop_ungapped);
 
@@ -429,6 +424,7 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
  * raw x_dropoff from the bit x_dropoff and puts it into
  * the x_dropoff field of BlastInitialWordParametersPtr.
  *
+ * @param program_number Type of BLAST program [in]
  * @param word_options The initial word options [in]
  * @param hit_params The hit saving options (needed to calculate cutoff score 
  *                    for ungapped extensions) [in]
@@ -439,7 +435,8 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
  * @param parameters Resulting parameters [out]
 */
 Int2
-BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
+BlastInitialWordParametersNew(Uint1 program_number, 
+   BlastInitialWordOptionsPtr word_options, 
    BlastHitSavingParametersPtr hit_params, 
    BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
    BlastQueryInfoPtr query_info, 
@@ -457,8 +454,7 @@ BlastExtensionOptionsFree(BlastExtensionOptionsPtr options);
  * @param options The options that are being returned [out]
 */
 Int2
-BlastExtensionOptionsNew(const Uint1 program, 
-   BlastExtensionOptionsPtr *options);
+BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptionsPtr *options);
 
 /** Fill non-default values in the BlastExtensionOptions structure.
  * @param options The options structure [in] [out]
@@ -471,15 +467,17 @@ BlastExtensionOptionsNew(const Uint1 program,
 */
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options, 
-   const Uint1 program, Boolean greedy, FloatHi x_dropoff, 
+   Uint1 program, Boolean greedy, FloatHi x_dropoff, 
    FloatHi x_dropoff_final);
 
 
 /** Validate contents of BlastExtensionOptions.
+ * @param program_number Type of BLAST program [in]
  * @param options Options to be validated [in]
  * @param blast_msg Describes any validation problems found [out]
 */
-Int2 BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr *blast_msg);
+Int2 BlastExtensionOptionsValidate(Uint1 program_number, 
+        BlastExtensionOptionsPtr options, Blast_MessagePtr *blast_msg);
 
 /** Calculate the raw values for the X-dropoff parameters 
  * @param blast_program Program number [in]
@@ -489,7 +487,7 @@ Int2 BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_Messa
  *                   context [in]
  * @param parameters Extension parameters [out]
  */
-Int2 BlastExtensionParametersNew(const Uint1 blast_program, 
+Int2 BlastExtensionParametersNew(Uint1 blast_program, 
         BlastExtensionOptionsPtr options, 
         BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
         BlastExtensionParametersPtr *parameters);
@@ -510,8 +508,7 @@ BlastScoringOptionsPtr BlastScoringOptionsFree(BlastScoringOptionsPtr options);
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
-Int2 BlastScoringOptionsNew(const Uint1 program, 
-        BlastScoringOptionsPtr *options);
+Int2 BlastScoringOptionsNew(Uint1 program, BlastScoringOptionsPtr *options);
 
 /** Fill non-default values in the BlastScoringOptions structure. 
  * @param options The options structure [in] [out]
@@ -524,17 +521,19 @@ Int2 BlastScoringOptionsNew(const Uint1 program,
  * @param gap_extend Cost of a gap [in]
 */
 Int2 
-BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Uint1 program, 
+BLAST_FillScoringOptions(BlastScoringOptionsPtr options, Uint1 program, 
    Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend);
 
 
 /** Validate contents of BlastScoringOptions.
+ * @param program_number Type of BLAST program [in]
  * @param options Options to be validated [in]
  * @param blast_msg Describes any validation problems found [out]
 */
 Int2
-BlastScoringOptionsValidate( BlastScoringOptionsPtr options, Blast_MessagePtr *blast_msg);
+BlastScoringOptionsValidate(Uint1 program_number, 
+   BlastScoringOptionsPtr options, Blast_MessagePtr *blast_msg);
 
 /** Deallocate memory for BlastEffectiveLengthsOptionsPtr. 
  * @param options Structure to free [in]
@@ -566,8 +565,7 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
  */
-Int2 LookupTableOptionsNew(const Uint1 program, 
-        LookupTableOptionsPtr *options);
+Int2 LookupTableOptionsNew(Uint1 program, LookupTableOptionsPtr *options);
 
 /** Allocate memory for lookup table options and fill with default values.
  * @param options The options [in] [out]
@@ -581,7 +579,7 @@ Int2 LookupTableOptionsNew(const Uint1 program,
  */
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptionsPtr options, 
-   const Uint1 program, Boolean is_megablast, Int4 threshold,
+   Uint1 program, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize);
 
 
@@ -592,11 +590,13 @@ LookupTableOptionsPtr
 LookupTableOptionsFree(LookupTableOptionsPtr options);
 
 /** Validate LookupTableOptions.
+ * @param program BLAST program [in]
  * @param options The options that have are being returned [in]
  * @param blast_msg The options that have are being returned [out]
 */
 Int2
-LookupTableOptionsValidate(LookupTableOptionsPtr options,  Blast_MessagePtr *blast_msg);
+LookupTableOptionsValidate(Uint1 program_number, 
+   LookupTableOptionsPtr options,  Blast_MessagePtr *blast_msg);
 
 /** Deallocate memory for BlastHitSavingOptions. 
  * @param options Structure to free [in]
@@ -605,20 +605,20 @@ BlastHitSavingOptionsPtr
 BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options);
 
 /** Validate BlastHitSavingOptions
+ * @param program_number BLAST program [in]
  * @param options The options that have are being returned [in]
- * @param program BLAST program [in]
  * @param blast_msg The options that have are being returned [out]
 */
 
 Int2
-BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, 
-   Uint1 program, Blast_MessagePtr *blast_msg);
+BlastHitSavingOptionsValidate(Uint1 program_number,
+   BlastHitSavingOptionsPtr options, Blast_MessagePtr *blast_msg);
 
 /** Allocate memory for BlastHitSavingOptions.
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
-Int2 BlastHitSavingOptionsNew(const Uint1 program, 
+Int2 BlastHitSavingOptionsNew(Uint1 program, 
         BlastHitSavingOptionsPtr *options);
 
 /** Allocate memory for BlastHitSavingOptions.
@@ -641,6 +641,7 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parameters);
  * Calculates the (raw) score cutoff given an expect value and puts
  * it in the "cutoff_score" field of the returned BlastHitSavingParametersPtr
  *
+ * @param program Number of the BLAST program [in]
  * @param options The given hit saving options [in]
  * @param handle_results Callback function for printing results on the fly [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 
@@ -649,7 +650,8 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parameters);
  *                   from e-value [in]
  * @param parameters Resulting parameters [out]
  */
-Int2 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
+Int2 BlastHitSavingParametersNew(Uint1 program_number, 
+        BlastHitSavingOptionsPtr options, 
         int (*handle_results)(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
                            VoidPtr, VoidPtr), 
         BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
@@ -663,7 +665,7 @@ Int2 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
  * @param align_view What kind of formatted output to show? [in]
  * @param format_options_ptr The initialized structure [out]
 */
-Int2 BlastFormattingOptionsNew(const Uint1 program, CharPtr file_out, 
+Int2 BlastFormattingOptionsNew(Uint1 program, CharPtr file_out, 
         Int4 num_descriptions, Int4 num_alignments, Int4 align_view,
         BlastFormattingOptionsPtr PNTR format_options_ptr);
 
@@ -701,7 +703,7 @@ BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options);
  * @param protein_options Protein BLAST options [out]
  * @param db_options BLAST database options [out]
  */
-Int2 BLAST_InitDefaultOptions(const Uint1 blast_program,
+Int2 BLAST_InitDefaultOptions(Uint1 blast_program,
    LookupTableOptionsPtr PNTR lookup_options,
    QuerySetUpOptionsPtr PNTR query_setup_options, 
    BlastInitialWordOptionsPtr PNTR word_options,
