@@ -39,6 +39,19 @@ EOF
 }
 
 
+FindDirPath()
+{
+   path="$1"
+   while [ "$path" != '.' ]; do
+     path=`dirname $path`
+     if [ -d "$path/$2" ]; then
+        echo $path
+        break;
+     fi
+   done
+}
+
+
 MakeDirs()
 {
     mkdir -p $1
@@ -123,7 +136,9 @@ if [ ! -d $src_dir/lib ]; then
     Error "lib directory not found: $src_dir/lib"
 fi
 
-source_dir=`dirname $src_dir`
+
+
+source_dir=`FindDirPath $src_dir /src/gui/gbench`
 source_dir=$source_dir/src/gui/gbench/
 
 
