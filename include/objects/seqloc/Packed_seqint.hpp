@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/25 18:52:01  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.1  2000/11/17 21:35:02  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -66,6 +69,10 @@ public:
 
     // get the length of the pieces
     int GetLength(void) const;
+private:
+    // Prihibit copy constructor & assignment operator
+    CPacked_seqint(const CPacked_seqint&);
+    CPacked_seqint& operator= (const CPacked_seqint&);
 };
 
 

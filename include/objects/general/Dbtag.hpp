@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/25 18:51:58  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.1  2000/11/21 18:58:04  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
@@ -66,6 +69,10 @@ public:
 
     // check for identity
     bool Match(const CDbtag& dbt2) const;
+private:
+    // Prohibit copy constructor & assignment operator
+    CDbtag(const CDbtag&);
+    CDbtag& operator= (const CDbtag&);
 };
 
 

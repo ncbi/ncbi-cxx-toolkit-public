@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/06/25 18:52:02  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.4  2000/12/08 22:18:41  ostell
  * changed MakeFastString to AsFastaString and to use ostream instead of string
  *
@@ -78,6 +81,10 @@ public:
 
     // format the contents FASTA string style
     ostream& AsFastaString(ostream& s) const;
+private:
+    // Prohibit copy constructor & assignment operator
+    CTextseq_id(const CTextseq_id&);
+    CTextseq_id& operator= (const CTextseq_id&);
 };
 
 

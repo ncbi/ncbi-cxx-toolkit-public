@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/06/25 18:52:02  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.3  2001/01/05 20:11:42  vasilche
  * CRange, CRangeMap were moved to util.
  *
@@ -88,6 +91,10 @@ public:
         }
     
 private:
+    // Prohibit copy constructor & assignment operator
+    CSeq_loc_mix(const CSeq_loc_mix&);
+    CSeq_loc_mix& operator= (const CSeq_loc_mix&);
+
     mutable auto_ptr<TRangeMap> m_RangeMap;
     mutable TRange m_TotalRange;
 };

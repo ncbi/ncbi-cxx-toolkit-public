@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/25 18:52:02  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.1  2000/11/17 21:35:02  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -66,6 +69,10 @@ public:
 
     // Get the length of the interval
     int GetLength(void) const;
+private:
+    // Prohibit copy constructor & assignment operator
+    CSeq_interval(const CSeq_interval&);
+    CSeq_interval& operator= (const CSeq_interval&);
 };
 
 

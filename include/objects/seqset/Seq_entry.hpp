@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/06/25 18:52:03  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.2  2001/06/21 19:47:37  grichenk
  * Copy constructor and operator=() moved to "private" section
  *
@@ -70,7 +73,7 @@ public:
     void Parentize(void);
     CSeq_entry* GetParentEntry(void) const;
 private:
-    // Hide copy constructor and assignment operator
+    // Prohibit copy constructor and assignment operator
     CSeq_entry(const CSeq_entry& value);
     CSeq_entry& operator= (const CSeq_entry& value);
 

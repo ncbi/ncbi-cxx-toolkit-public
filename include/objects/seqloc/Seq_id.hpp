@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2001/06/25 18:52:01  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.8  2001/04/17 04:13:03  vakatov
  * Utilize the redesigned "CSerializable" base class.
  * Completely get rid of the non-standard "AsFastaString()" method in
@@ -118,6 +121,10 @@ public:
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
 
 private:
+    // Prohibit copy constructor & assignment operator
+    CSeq_id(const CSeq_id&);
+    CSeq_id& operator= (const CSeq_id&);
+
     CRef<CAbstractObjectManager> m_ObjectManager;
 };
 

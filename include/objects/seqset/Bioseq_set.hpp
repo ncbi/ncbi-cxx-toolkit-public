@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2001/06/25 18:52:03  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.13  2000/11/01 20:35:13  vasilche
  * Removed ECanDelete enum and related constructors.
  *
@@ -63,7 +66,10 @@ public:
     CBioseq_set(void);
     // destructor
     ~CBioseq_set(void);
-
+private:
+    // Prohibit copy constructor & assignment operator
+    CBioseq_set(const CBioseq_set&);
+    CBioseq_set& operator= (const CBioseq_set&);
 };
 
 

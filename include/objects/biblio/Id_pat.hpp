@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/06/25 18:51:55  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.2  2000/12/26 17:28:29  vasilche
  * Simplified and formatted code.
  *
@@ -70,7 +73,10 @@ public:
     // comparison function
     bool Match(const CId_pat& idp2) const;
     static bool Id_Match(const C_Id& id1, const C_Id& id2);
-
+private:
+    // Prohibit copy constructor & assignment operator
+    CId_pat(const CId_pat&);
+    CId_pat& operator= (const CId_pat&);
 };
 
 

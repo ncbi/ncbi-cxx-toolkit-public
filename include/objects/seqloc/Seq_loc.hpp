@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/06/25 18:52:02  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.3  2001/01/05 20:11:41  vasilche
  * CRange, CRangeMap were moved to util.
  *
@@ -85,6 +88,10 @@ public:
 
     typedef CRange<int> TRange;
     TRange GetTotalRange(void) const;
+private:
+    // Prohibit copy constructor & assignment operator
+    CSeq_loc(const CSeq_loc&);
+    CSeq_loc& operator= (const CSeq_loc&);
 };
 
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/06/25 18:51:58  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.3  2000/12/08 21:49:14  ostell
  * changed MakeString to AsString and to use ostream instead of string
  *
@@ -75,6 +78,10 @@ public:
 
     // format contents into a stream
     ostream& AsString(ostream &s) const;
+private:
+    // Prohibit copy constructor & assignment operator
+    CObject_id(const CObject_id&);
+    CObject_id& operator= (const CObject_id&);
 };
 
 

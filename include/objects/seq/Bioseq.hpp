@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/06/25 18:51:59  grichenk
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.2  2001/06/21 19:47:34  grichenk
  * Copy constructor and operator=() moved to "private" section
  *
@@ -71,7 +74,7 @@ public:
     // Manage Seq-entry tree structure
     CSeq_entry* GetParentEntry(void) const;
 private:
-    // Hide copy constructor and assignment operator
+    // Prohibit copy constructor and assignment operator
     CBioseq(const CBioseq& value);
     CBioseq& operator= (const CBioseq& value);
 
