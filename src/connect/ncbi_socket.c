@@ -1849,13 +1849,13 @@ extern int SOCK_ntoa(unsigned int host,
 }
 
 
-extern unsigned int SOCK_htonl(unsigned int value)
+extern unsigned int SOCK_HostToNetLong(unsigned int value)
 {
     return htonl(value);
 }
 
 
-extern unsigned short SOCK_htons(unsigned short value)
+extern unsigned short SOCK_HostToNetShort(unsigned short value)
 {
     return htons(value);
 }
@@ -1995,6 +1995,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2002/08/27 03:16:15  lavr
+ * Rename SOCK_htonl -> SOCK_HostToNetLong, SOCK_htons -> SOCK_HostToNetShort
+ *
  * Revision 6.59  2002/08/15 18:46:52  lavr
  * s_Select(): do not return immediately if given all NULL sockets in "polls"
  *
