@@ -38,9 +38,8 @@
 #############################################################################
 
 
-AC_REVISION($Revision$)
-AC_INIT(${top_srcdir}/include/corelib/ncbitype.h)
-AC_CONFIG_HEADER(${exec_prefix}/include/ncbiconf.h:config.h.in)
+AC_INIT(include/corelib/ncbitype.h)
+AC_CONFIG_HEADER(config.h:config.h.in)
 
 
 #############################################################################
@@ -57,9 +56,39 @@ if test ! -d "${exec_prefix}" ; then
    [Directory \"${exec_prefix}\"(see \"--exec_prefix\") does not exist!])
 fi
 
+#### Make "exec_prefix" absolute
+case "${exec_prefix}" in
+  /* ) ;;
+  . )
+    CDPATH=
+    if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
+    then
+      exec_prefix="$PWD"
+    else
+      exec_prefix="`(cd ${exec_prefix}; pwd)`"
+    fi
+  ;;
+  *  ) exec_prefix="`(cd ${exec_prefix}; pwd)`" ;;
+esac
+
+#### Make "srcdir" absolute
+case "${srcdir}" in
+  /* ) ;;
+  . )
+    CDPATH=
+    if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
+    then
+      srcdir="$PWD"
+    else
+      srcdir="`(cd ${srcdir}; pwd)`"
+    fi
+  ;;
+  *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
+esac
+
 #### Check if the source directory already has a configured system in it.
-if test -f "${exec_prefix}/include/ncbiconf.h" ; then
-  AC_MSG_ERROR([There is already a built "${exec_prefix}/include/ncbiconf.h"!])
+if test -f "${srcdir}/config.h" ; then
+  AC_MSG_ERROR([There is already a built "${srcdir}/config.h"!])
 fi
 
 AC_CANONICAL_HOST
@@ -92,7 +121,7 @@ elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then  ### MSVC++ c
   CXXFLAGS="-W4 $CXXFLAGS"
   CPPFLAGS="/nologo $CPPFLAGS"
 elif test -d /usr/local/lib ; then
-    LDFLAGS="-L/usr/local/lib $LDFLAGS"
+  LDFLAGS="-L/usr/local/lib $LDFLAGS"
 fi
 changequote([, ])dnl
 
@@ -159,22 +188,20 @@ AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 
-AC_OUTPUT(, echo "done")
-
 
 #############################################################################
 ### Compose a list of makefile templates("Makefile.in") in subdirs,
 ### then configure them into regular makefiles("Makefile")
 
-makefiles=`find ${top_srcdir} -name Makefile.in -print | sed 's/Makefile\.in/Makefile/g'`
+makefiles=`find . -name 'Makefile*.in' -print | sed 's/\(Makefile.*\)\.in/\1/g'`
 if test -z "$makefiles" ; then
-  AC_MSG_ERROR([Cannot find any of \"Makefile.in\" below \"${top_srcdir}\"!])
+  AC_MSG_ERROR([Cannot find any of \"Makefile.in\" below \"${srcdir}\"!])
 fi
 
 dnl Makefile substitutions
 dnl ----------------------
 
-AC_SUBST(host)
+AC_SUBST(exec_prefix)
 
 AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
@@ -184,6 +211,7 @@ AC_SUBST(libdir)
 AC_SUBST(CC)
 AC_SUBST(CXX)
 AC_SUBST(CPP)
+AC_SUBST(CXXCPP)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 
@@ -194,4 +222,4 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
 
-AC_OUTPUT(  ${makefiles} )
+AC_OUTPUT( ${makefiles} )
