@@ -333,19 +333,27 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
 
 CAnnotTypes_CI::~CAnnotTypes_CI(void)
 {
+    x_Clear();
+}
+
+
+void CAnnotTypes_CI::x_Clear(void)
+{
+    m_AnnotSet.clear();
 }
 
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
-    if (this != &it) {
+    if ( this != &it ) {
+        x_Clear();
+        // Copy TSE list, set TSE locks
+        m_TSE_LockSet = it.m_TSE_LockSet;
         static_cast<SAnnotSelector&>(*this) = it;
         m_Scope = it.m_Scope;
         m_AnnotSet = it.m_AnnotSet;
         size_t index = it.m_CurAnnot - it.m_AnnotSet.begin();
         m_CurAnnot = m_AnnotSet.begin()+index;
-        // Copy TSE list, set TSE locks
-        m_TSE_LockSet = it.m_TSE_LockSet;
     }
     return *this;
 }
@@ -733,70 +741,75 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
     ref.m_TotalRange = m_TotalRange;
 }
 
-
 void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 {
-    if ( !m_LimitObject )
-        m_LimitObjectType = eLimit_None;
+    try {
+        if ( !m_LimitObject )
+            m_LimitObjectType = eLimit_None;
 
-    x_Search(master_loc, 0);
-    if ( m_ResolveMethod != eResolve_None && m_ResolveDepth > 0 ) {
-        ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-            //### Check for eLoadedOnly
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
-            if ( !bh ) {
-                if (m_IdResolving == eFailUnresolved) {
-                    // resolve by Seq-id only
-                    THROW1_TRACE(runtime_error,
-                                 "CAnnotTypes_CI::x_Initialize -- "
-                                 "Cannot resolve master id");
+        x_Search(master_loc, 0);
+        if ( m_ResolveMethod != eResolve_None && m_ResolveDepth > 0 ) {
+            ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
+                //### Check for eLoadedOnly
+                CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
+                if ( !bh ) {
+                    if (m_IdResolving == eFailUnresolved) {
+                        // resolve by Seq-id only
+                        THROW1_TRACE(runtime_error,
+                                     "CAnnotTypes_CI::x_Initialize -- "
+                                     "Cannot resolve master id");
+                    }
+                    continue; // Do not crash - just skip unresolvable IDs
                 }
-                continue; // Do not crash - just skip unresolvable IDs
-            }
 
-            CHandleRange::TRange idrange = idit->second.GetOverlappingRange();
-            const CSeqMap& seqMap = bh.GetSeqMap();
-            CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
-                                                m_Scope,
-                                                m_ResolveDepth-1,
-                                                CSeqMap::fFindRef));
-            while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
-                _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
-                if ( m_ResolveMethod == eResolve_TSE ) {
-                    if ( !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
+                CHandleRange::TRange idrange =
+                    idit->second.GetOverlappingRange();
+                const CSeqMap& seqMap = bh.GetSeqMap();
+                CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
+                                                    m_Scope,
+                                                    m_ResolveDepth-1,
+                                                    CSeqMap::fFindRef));
+                while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
+                    _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
+                    if ( m_ResolveMethod == eResolve_TSE &&
+                         !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
                                                           bh) ) {
                         smit.Next(false);
                         continue;
                     }
+                    x_SearchMapped(smit, idit->first, idit->second);
+                    ++smit;
                 }
-                x_SearchMapped(smit, idit->first, idit->second);
-                ++smit;
             }
         }
+        switch ( m_SortOrder ) {
+        case eSortOrder_Normal:
+            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CFeat_Less());
+            }
+            else {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CAnnotObject_Less());
+            }
+            break;
+        case eSortOrder_Reverse:
+            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CFeat_Reverse_Less());
+            }
+            else {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CAnnotObject_Reverse_Less());
+            }
+            break;
+        }
+        Rewind();
     }
-    switch ( m_SortOrder ) {
-    case eSortOrder_Normal:
-        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CFeat_Less());
-        }
-        else {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CAnnotObject_Less());
-        }
-        break;
-    case eSortOrder_Reverse:
-        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CFeat_Reverse_Less());
-        }
-        else {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-                 CAnnotObject_Reverse_Less());
-        }
-        break;
+    catch (...) {
+        x_Clear();
+        throw;
     }
-    Rewind();
 }
 
 
@@ -927,7 +940,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
                     continue;
                 }
-            
+                
                 CAnnotObject_Ref annot_ref(annot_info);
                 if ( cvt ) {
                     cvt->Convert(annot_ref, m_FeatProduct);
@@ -938,7 +951,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 }
                 m_AnnotSet.push_back(annot_ref);
 
-#if defined _DEBUG
+#if 0 && defined _DEBUG
                 {{ // some debug checks
                     const CAnnotObject_Ref& obj = m_AnnotSet.back();
                     const CSeq_loc* loc;
@@ -1132,6 +1145,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/07/18 19:32:30  vasilche
+* Workaround for GCC 3.0.4 bug.
+*
 * Revision 1.76  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
