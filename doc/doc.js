@@ -15,7 +15,7 @@ function print_author(username, realname, datestr, hostname)
 	print_mailto(username, realname, hostname);
 	print('</address>\n</td>');
 	if (datestr)
-        print('<td ALIGN=RIGHT><i>' + datestr.replace(/\$Date$/," ") + '</i></td>\n');
+        print('<td ALIGN=RIGHT><i>' + datestr.replace(/Date:/,"Last Updated: ").replace(/\$/g," ") + '</i></td>\n');
 	//if (datestr && Date.parse(document.lastModified) !=0)
 	//    print('<td ALIGN=RIGHT><i>' + document.lastModified + '</i></td>\n');
 	print('</tr>\n');
