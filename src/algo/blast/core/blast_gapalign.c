@@ -1830,8 +1830,6 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
      for (cb = i = tt, dp = &dyn_prog[i]; i < j; i++) {
         Bptr += B_increment;
         score = wa[*Bptr];
-        if (score == MININT)
-           break;
         d = dp->DD;
         if (e < f) e = f;
         if (d < f) d = f;
@@ -1886,6 +1884,8 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
               d = dp->CC+score; dp->CC = c; c = d;
            }
         }
+        if (score == MININT)
+           break;
         dp++;
      }
      if (tt == j) break;
