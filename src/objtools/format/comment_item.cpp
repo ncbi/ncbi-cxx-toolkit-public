@@ -649,14 +649,8 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CFFContext& ctx)
     if ( str.empty() ) {
         return;
     }
-    
-    if ( NStr::EndsWith(str, "..")  &&  !NStr::EndsWith(str, "...") ) {
-        str.erase(str.length() - 1);
-    }
-    if ( !NStr::EndsWith(str, ".") ) {
-        str += ".";
-    }
     x_SetCommentWithURLlinks(prefix, str, suffix);
+    
 }
 
 
@@ -678,7 +672,19 @@ void CCommentItem::x_SetCommentWithURLlinks
  const string& suffix)
 {
     // !!! test for html - find links within the comment string
-    m_Comment = ExpandTildes(prefix + str + suffix, eTilde_newline);
+    string comment = ExpandTildes(prefix + str + suffix, eTilde_newline);
+    size_t pos = comment.find_last_not_of(" \n\t\r");
+    if ( pos != NPOS ) {
+        comment.erase(pos + 1);
+    }
+    if ( NStr::EndsWith(str, "..")  &&  !NStr::EndsWith(str, "...") ) {
+        comment.erase(str.length() - 1);
+    }
+    if ( !NStr::EndsWith(str, ".") ) {
+        comment += ".";
+    }
+    
+    m_Comment =  comment;
 }
 
 
@@ -815,6 +821,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/13 16:45:22  shomrat
+* Fixed comment cleanup
+*
 * Revision 1.4  2004/03/26 17:22:51  shomrat
 * Minor fixes to comment string
 *
