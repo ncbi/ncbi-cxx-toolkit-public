@@ -71,12 +71,14 @@ private:
 };
 
 
+inline
 CBioseq_CI::CBioseq_CI(void)
     : m_Scope(0)
 {
     m_Current = m_Handles.end();
 }
 
+inline
 CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry, CSeq_inst::EMol filter)
     : m_Scope(&scope)
 {
@@ -84,15 +86,18 @@ CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry, CSeq_inst::EMol f
     m_Current = m_Handles.begin();
 }
 
+inline
 CBioseq_CI::CBioseq_CI(const CBioseq_CI& bioseq_ci)
 {
     *this = bioseq_ci;
 }
 
+inline
 CBioseq_CI::~CBioseq_CI(void)
 {
 }
 
+inline
 CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
 {
     if (this != &bioseq_ci) {
@@ -110,6 +115,7 @@ CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
     return *this;
 }
 
+inline
 CBioseq_CI& CBioseq_CI::operator++ (void)
 {
     if ( m_Scope  &&  m_Current != m_Handles.end() ) {
@@ -118,6 +124,7 @@ CBioseq_CI& CBioseq_CI::operator++ (void)
     return *this;
 }
 
+inline
 CBioseq_CI& CBioseq_CI::operator++ (int)
 {
     if ( m_Scope  &&  m_Current != m_Handles.end() ) {
@@ -126,16 +133,19 @@ CBioseq_CI& CBioseq_CI::operator++ (int)
     return *this;
 }
 
+inline
 CBioseq_CI::operator bool (void) const
 {
     return m_Scope  &&  m_Current != m_Handles.end();
 }
 
+inline
 const CBioseq_Handle& CBioseq_CI::operator* (void) const
 {
     return *m_Current;
 }
 
+inline
 const CBioseq_Handle* CBioseq_CI::operator-> (void) const
 {
     return &(*m_Current);
@@ -149,6 +159,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/10/15 13:37:28  grichenk
+* Fixed inline declarations
+*
 * Revision 1.2  2002/10/02 17:58:21  grichenk
 * Added sequence type filter to CBioseq_CI
 *
