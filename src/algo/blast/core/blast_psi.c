@@ -133,10 +133,10 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
     }
     for (s = 0; s < info->num_seqs + 1; s++) {
         for (p = 0; p < info->query_sz; p++) {
-            retval->desc_matrix[s][p].letter = -1;
+            retval->desc_matrix[s][p].letter = (unsigned char) -1;
             retval->desc_matrix[s][p].used = FALSE;
             retval->desc_matrix[s][p].e_value = kDefaultEvalueForPosition;
-            retval->desc_matrix[s][p].extents.left = -1;
+            retval->desc_matrix[s][p].extents.left = (unsigned int) -1;
             retval->desc_matrix[s][p].extents.right = info->query_sz;
         }
     }
