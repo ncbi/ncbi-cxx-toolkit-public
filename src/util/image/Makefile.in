@@ -5,7 +5,7 @@
 #################################
 
 LIB_PROJ = image
-SUB_PROJ = test
+SUB_PROJ = test demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
