@@ -33,17 +33,20 @@
 /// @file gff_reader.hpp
 /// Reader for GFF (including GTF) files.
 ///
-/// These formats are somewhat loosely defined (for the record, at
-/// http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml and
-/// http://genes.cs.wustl.edu/GTF2.html respectively).  As such, the
-/// reader allows heavy application-specific tuning, both via flags
-/// and via virtual methods.
+/// These formats are somewhat loosely defined, so the reader allows
+/// heavy use-specific tuning, both via flags and via virtual methods.
+///
+/// URLs to relevant specifications:
+/// http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml (GFF 2)
+/// http://genes.cs.wustl.edu/GTF2.html
+/// http://song.sourceforge.net/gff3-jan04.shtml (support incomplete)
 
 
 #include <corelib/ncbiutil.hpp>
 #include <util/range_coll.hpp>
 
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -88,6 +91,11 @@ public:
         typedef set<vector<string> > TAttrs;
         typedef vector<SSubLoc>      TLoc;
 
+        enum EType {
+            eFeat,
+            eAlign
+        };
+
         TLoc         loc;       ///< from accession, start, stop, strand
         string       source;
         string       key;
@@ -95,6 +103,7 @@ public:
         int          frame;     ///< 0-based; . maps to -1.
         TAttrs       attrs;
         unsigned int line_no;
+        EType        type;
 
         TAttrs::const_iterator FindAttribute(const string& name,
                                              size_t min_values = 1) const;
@@ -115,14 +124,22 @@ protected:
     virtual void            x_ParseDateComment(const string& date);
     virtual void            x_ParseTypeComment(const string& moltype,
                                                const string& seqname);
+    virtual void            x_ReadFastaSequences(CNcbiIstream& in);
 
-    virtual CRef<SRecord>   x_ParseFeatureInterval(const string& line);
-    virtual CRef<SRecord>   x_NewRecord(void)
+    virtual CRef<SRecord>    x_ParseFeatureInterval(const string& line);
+    virtual CRef<SRecord>    x_NewRecord(void)
         { return CRef<SRecord>(new SRecord); }
-    virtual CRef<CSeq_feat> x_ParseRecord(const SRecord& record);
-    virtual CRef<CSeq_loc>  x_ResolveLoc(const SRecord::TLoc& loc);
-    virtual void            x_AddAttribute(SRecord& record,
-                                           vector<string>& attr);
+    virtual CRef<CSeq_feat>  x_ParseFeatRecord(const SRecord& record);
+    virtual CRef<CSeq_align> x_ParseAlignRecord(const SRecord& record);
+    virtual CRef<CSeq_loc>   x_ResolveLoc(const SRecord::TLoc& loc);
+    virtual void             x_ParseV2Attributes(SRecord& record,
+                                                 const vector<string>& v,
+                                                 SIZE_TYPE& i);
+    virtual void             x_ParseV3Attributes(SRecord& record,
+                                                 const vector<string>& v,
+                                                 SIZE_TYPE& i);
+    virtual void             x_AddAttribute(SRecord& record,
+                                            vector<string>& attr);
 
     /// Returning the empty string indicates that record constitutes
     /// an entire feature.  Returning anything else requests merging
@@ -134,6 +151,9 @@ protected:
                                               const SRecord& src);
     virtual void            x_PlaceFeature(CSeq_feat& feat,
                                            const SRecord& record);
+    virtual void            x_PlaceAlignment(CSeq_align& align,
+                                             const SRecord& record);
+    virtual void            x_ParseAndPlace(const SRecord& record);
 
     /// Falls back to x_ResolveNewSeqName on cache misses.
     virtual CRef<CSeq_id>   x_ResolveSeqName(const string& name);
@@ -154,16 +174,17 @@ private:
     typedef map<string, CRef<CSeq_id>, PNocase>    TSeqNameCache;
     typedef map<CConstRef<CSeq_id>, CRef<CBioseq>,
                 PPtrLess<CConstRef<CSeq_id> > >    TSeqCache;
-    typedef map<string, CRef<SRecord>, PNocase>    TDelayedFeats;
+    typedef map<string, CRef<SRecord>, PNocase>    TDelayedRecords;
 
     CRef<CSeq_entry> m_TSE;
     TSeqNameCache    m_SeqNameCache;
     TSeqCache        m_SeqCache;
-    TDelayedFeats    m_DelayedFeats;
+    TDelayedRecords  m_DelayedRecords;
     string           m_DefMol;
     unsigned int     m_LineNumber;
     TFlags           m_Flags;
     CNcbiIstream*    m_Stream;
+    int              m_Version;
 };
 
 
@@ -177,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/07 20:43:44  ucko
+ * Add initial GFF 3 support.
+ *
  * Revision 1.4  2004/05/08 12:14:16  dicuccio
  * Use set<TRange> instead of CRangeCollection<>
  *
