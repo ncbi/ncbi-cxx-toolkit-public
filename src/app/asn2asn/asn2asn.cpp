@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/26 17:39:02  vasilche
+* Updated hooks implementation.
+*
 * Revision 1.20  2000/09/18 20:47:27  vasilche
 * Updated to new headers.
 *
@@ -133,8 +136,7 @@ public:
         }
 
     void ReadClassMember(CObjectIStream& in,
-                         const CObjectInfo& object,
-                         TMemberIndex memberIndex);
+                         const CObjectInfo::CMemberIterator& member);
 
     class CReadSeqEntryHook : public CReadContainerElementHook
     {
@@ -172,7 +174,7 @@ int CAsn2Asn::Run(void)
         argDesc.AddFlag("C", "Convert data without reading in memory");
         argDesc.AddFlag("S", "Skip data without reading in memory");
         argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
-                               argDesc.eOutputFile);
+                               argDesc.eOutputFile, argDesc.fDelayOpen);
         argDesc.AddOptionalKey("c", "count", "perform command <count> times",
                                argDesc.eInteger, 0, "1");
         
@@ -234,15 +236,15 @@ int CAsn2Asn::Run(void)
                 copier.Copy(Type<CSeq_entry>());
             }
             else {
-                CSeq_entry entry;
+                CRef<CSeq_entry> entry;
                 if ( displayMessages )
                     NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
-                *in >> entry;
-                SeqEntryProcess(entry);     /* do any processing */
+                in->Read(&entry, CSeq_entry::GetRefChoiceTypeInfo());
+                SeqEntryProcess(*entry);     /* do any processing */
                 if ( haveOutput ) {
                     if ( displayMessages )
                         NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
-                    *out << entry;
+                    out->Write(&entry, CSeq_entry::GetRefChoiceTypeInfo());
                 }
             }
         }
@@ -306,17 +308,16 @@ void SeqEntryProcess (CSeq_entry& /*sep*/)
 }
 
 void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
-                                      const CObjectInfo& object,
-                                      TMemberIndex memberIndex)
+                                      const CObjectInfo::CMemberIterator& member)
 {
     ++m_Level;
     //    NcbiCerr << "+Level: " << m_Level << NcbiEndl;
     if ( m_Level == 1 ) {
         CReadSeqEntryHook hook;
-        (*object.GetClassMemberIterator(memberIndex)).ReadContainer(in, hook);
+        (*member).ReadContainer(in, hook);
     }
     else {
-        in.ReadObject(*object.GetClassMemberIterator(memberIndex));
+        in.ReadObject(*member);
     }
     //    NcbiCerr << "-Level: " << m_Level << NcbiEndl;
     --m_Level;
@@ -326,7 +327,7 @@ void CReadSeqSetHook::
 CReadSeqEntryHook::ReadContainerElement(CObjectIStream& in,
                                         const CObjectInfo& /*cont*/)
 {
-    CSeq_entry entry;
-    in.ReadSeparateObject(ObjectInfo(entry));
-    SeqEntryProcess(entry);
+    CRef<CSeq_entry> entry;
+    in.ReadSeparateObject(CObjectInfo(&entry, CSeq_entry::GetRefChoiceTypeInfo()));
+    SeqEntryProcess(*entry);
 }

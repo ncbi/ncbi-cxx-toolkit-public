@@ -27,14 +27,14 @@ do_test() {
     rm out
 }
 
-for i in "set.ent" "set.bin -b" "set.xml -X"; do
-    do_test "$i -e" set.ent
+for i in "set.bin -b" "set.ent" "set.xml -X"; do
     do_test "$i -e -s" set.bin
+    do_test "$i -e" set.ent
     do_test "$i -e -x" set.xml
 done
-for i in "phg.ent" "phg.bin -b" "phg.xml -X"; do
-    do_test "$i" phg.ent.sorted
+for i in "phg.bin -b" "phg.ent" "phg.xml -X"; do
     do_test "$i -s" phg.bin.sorted
+    do_test "$i" phg.ent.sorted
     do_test "$i -x" phg.xml.sorted
 done
 echo "Done!"
