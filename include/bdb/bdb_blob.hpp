@@ -118,7 +118,7 @@ public:
 class NCBI_BDB_EXPORT CBDB_BLobStream
 {
 protected:
-    CBDB_BLobStream(DB* db, DBT* dbt_key);
+    CBDB_BLobStream(DB* db, DBT* dbt_key, size_t blob_size);
 public:
 
     ~CBDB_BLobStream();
@@ -128,6 +128,9 @@ public:
     /// Write data into BLOB
     void Write(const void* buf, size_t buf_size);
 
+    /// Return how much bytes we can read from the blob
+    size_t PendingCount() const { return m_BlobSize > 0 ? (m_BlobSize - m_Pos) : 0; }
+
 private:
     CBDB_BLobStream(const CBDB_BLobStream&);
     CBDB_BLobStream& operator=(const CBDB_BLobStream&);
@@ -136,6 +139,7 @@ private:
     DBT*       m_DBT_Key;
     DBT*       m_DBT_Data;
     unsigned   m_Pos;
+    size_t     m_BlobSize;
 private:
     friend class CBDB_BLobFile;
 };
@@ -219,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/10/24 13:39:59  kuznets
+ * + PendingCount for BlobStream
+ *
  * Revision 1.11  2003/09/29 16:43:40  kuznets
  * Returned back CBDB_LobFile::SetCmp function
  * (was removed before out of good intentions)
