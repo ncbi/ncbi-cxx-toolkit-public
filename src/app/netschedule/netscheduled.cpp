@@ -173,7 +173,12 @@ public:
     void ProcessStatus(CSocket& sock, SThreadData& tdata);
     void ProcessGet(CSocket& sock, SThreadData& tdata);
     void ProcessPut(CSocket& sock, SThreadData& tdata);
-
+protected:
+    virtual void ProcessOverflow(SOCK sock) 
+    { 
+        ERR_POST("ProcessOverflow!");
+        SOCK_Close(sock); 
+    }
 private:
 
     /// TRUE return means we have EOF in the socket (no more data is coming)
@@ -913,6 +918,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/14 14:42:52  kuznets
+ * Overloaded ProcessOverflow to better detect queue shortage
+ *
  * Revision 1.3  2005/02/10 19:59:40  kuznets
  * Implemented GET and PUT
  *
