@@ -33,6 +33,7 @@
 
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
+#include <objmgr/util/obj_sniff.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -60,6 +61,23 @@ public:
     // Scans seq_id_list, search for referred sequence ids .
     void FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids);
 
+    // Structure describes the indexed object
+    struct SObjectDescr
+    {
+        int                     id;
+        bool                    is_object;
+        string                  type_str;
+        CFormatGuess::EFormat   format;
+        string                  file_name;
+        size_t                  offset;
+    };
+
+    // Return object's description.
+    // SObjectDescr.id == 0 if requested object cannot be found.
+    SObjectDescr GetObjectDescr(const map<string, int>& type_map, 
+                                int id,
+                                bool trace_to_top = false);
+
 private:
     SLDS_TablesCollection& m_db;
 };
@@ -70,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/10 20:09:26  kuznets
+ * Implemented GetObjectDescr query. Searches both objects and annotations.
+ *
  * Revision 1.3  2003/07/09 19:31:56  kuznets
  * Added query scanning sequence id list.
  *

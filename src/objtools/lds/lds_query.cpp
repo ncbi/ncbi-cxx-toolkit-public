@@ -39,6 +39,7 @@
 
 #include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds_set.hpp>
+#include <objtools/lds/lds_expt.hpp>
 
 #include <vector>
 
@@ -228,6 +229,19 @@ public:
     }
 };
 
+inline 
+string LDS_TypeMapSearch(const map<string, int>& type_map, int type)
+{
+    typedef map<string, int> TName2Id;
+    ITERATE (TName2Id, it, type_map) {
+        if (it->second == type) {
+            return it->first;
+        }
+    }
+    return kEmptyStr;
+}
+
+
 //////////////////////////////////////////////////////////////////
 //
 // CLDS_Query
@@ -258,12 +272,93 @@ void CLDS_Query::FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids)
     BDB_iterate_file(m_db.seq_id_list, search_func);
 }
 
+
+CLDS_Query::SObjectDescr 
+CLDS_Query::GetObjectDescr(const map<string, int>& type_map, 
+                           int id,
+                           bool trace_to_top)
+{
+    SObjectDescr descr;
+
+    // Check objects
+    //
+    m_db.object_db.object_id = id;
+    if (m_db.object_db.Fetch() == eBDB_Ok) {
+        int tse_id = m_db.object_db.TSE_object_id;
+        
+        if (tse_id && trace_to_top) {
+            // If non-top level entry, call recursively redirected to
+            // the top level object
+            return GetObjectDescr(type_map, tse_id, trace_to_top);
+        }
+
+        descr.id = id;
+        descr.is_object = true;
+
+        int object_type = m_db.object_db.object_type;
+        descr.type_str = LDS_TypeMapSearch(type_map, object_type);
+
+        int file_id = m_db.object_db.file_id;
+
+        m_db.file_db.file_id = file_id;
+        if (m_db.file_db.Fetch() != eBDB_Ok) {
+            LDS_THROW(eRecordNotFound, "File record not found.");
+        }
+
+        descr.format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
+        descr.file_name = m_db.file_db.file_name;
+        descr.offset = m_db.object_db.file_offset;
+
+        return descr;
+    }
+
+    // Check annotations
+    //
+
+    m_db.annot_db.annot_id = id;
+    if (m_db.annot_db.Fetch() == eBDB_Ok) {
+        int top_level_id = m_db.annot_db.top_level_id;
+        
+        if (top_level_id && trace_to_top) {
+            // If non-top level entry, call recursively redirected to
+            // the top level object
+            return GetObjectDescr(type_map, top_level_id, trace_to_top);
+        }
+
+        descr.id = id;
+        descr.is_object = false;
+
+        int object_type = m_db.annot_db.annot_type;
+        descr.type_str = LDS_TypeMapSearch(type_map, object_type);
+
+        int file_id = m_db.annot_db.file_id;
+
+        m_db.file_db.file_id = file_id;
+        if (m_db.file_db.Fetch() != eBDB_Ok) {
+            LDS_THROW(eRecordNotFound, "File record not found.");
+        }
+
+        descr.format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
+        descr.file_name = m_db.file_db.file_name;
+        descr.offset = m_db.annot_db.file_offset;
+
+        return descr;
+    }
+
+    descr.id = 0; // not found
+    return descr;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/10 20:09:53  kuznets
+ * Implemented GetObjectDescr query. Searches both objects and annotations.
+ *
  * Revision 1.6  2003/07/09 19:32:10  kuznets
  * Added query scanning sequence id list.
  *
