@@ -42,13 +42,19 @@ global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
 global libTypeDLL, cpuOptimization, zeroLink, fixContinue
 
 
+(* ==== 3rd party libarary properties ==== *)
+global libScriptTmpDir
+global libScriptPID
+property libScriptWasRun : false
+property libScriptRunning : false
+
+
 (* ==== Properties ==== *)
 property allPaths : {"pathNCBI", "pathFLTK", "pathBDB", "pathSQL", "pathPCRE", "pathOUT"}
 property libDataSource : null
 property toolDataSource : null
 property appDataSource : null
 property curDataSource : null
-(* ==== Event Handlers ==== *)
 
 (* Loading of library scripts *)
 on launched theObject
@@ -69,6 +75,7 @@ on launched theObject
 		
 	end repeat
 	
+	load nib "InstallLibsPanel"
 	show window "Main"
 end launched
 
@@ -129,6 +136,33 @@ on clicked theObject
 		x_SelectAll(false)
 	end if
 	
+	if name of theObject is "otherLibs" then
+		set homePath to the POSIX path of (path to home folder) as string
+		set contents of text field "tmp_dir" of window "install_libs" to homePath & "tmp"
+		set contents of text field "ins_dir" of window "install_libs" to homePath & "sw"
+		display panel window "install_libs" attached to window "Main"
+	end if
+	
+	if name of theObject is "close" then
+		if libScriptWasRun then
+			set new_insdir to contents of text field "ins_dir" of window "install_libs"
+			set contents of text field "pathFLTK" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
+			set contents of text field "pathBDB" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
+			set contents of text field "pathSQL" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
+			set contents of text field "pathPCRE" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
+		end if
+		close panel window "install_libs"
+	end if
+	
+	if name of theObject is "do_it" then
+		if libScriptRunning then -- cancel
+			set enabled of button "do_it" of window "install_libs" to false -- prevent double kill
+			do shell script "kill " & libScriptPID
+		else
+			x_Install3rdPartyLibs() -- launch new script in the background
+		end if
+	end if
+	
 	tell window "Main"
 		(* Handle Generate button *)
 		if theObject is equal to button "generate" then
@@ -181,6 +215,7 @@ on clicked theObject
 			if theObject is equal to button "ChooseOUT" then
 				my ChooseFolder("Select where the project file will be created", "pathOUT")
 			end if
+			
 		end tell
 	end tell
 end clicked
@@ -233,14 +268,54 @@ on selected tab view item theObject tab view item tabViewItem
 	end if
 end selected tab view item
 
-on cell value theObject table column tableColumn row theRow
-	(*Add your script here.*)
-end cell value
 
-on number of rows theObject
-	(*Add your script here.*)
-end number of rows
+on idle theObject
+	if libScriptRunning then
+		log "Checking status..."
+		try
+			set msg to do shell script "tail " & libScriptTmpDir & "/log.txt"
+			set thetext to "Last few lines of " & libScriptTmpDir & "/log.txt:" & return & msg
+			set contents of text view "status" of scroll view "status" of window "install_libs" to thetext
+			set stat to do shell script "ps -p " & libScriptPID & " | grep " & libScriptPID
+		on error
+			tell progress indicator "progress" of window "install_libs" to stop
+			set libScriptRunning to false
+			set enabled of button "close" of window "install_libs" to true
+			set title of button "do_it" of window "install_libs" to "Install third-party libraries"
+			set enabled of button "do_it" of window "install_libs" to true
+		end try
+	end if
+	return 3
+end idle
 
+
+(* Launch shell script to install third party libraries *)
+on x_Install3rdPartyLibs()
+	set libScriptRunning to true
+	set libScriptWasRun to true
+	tell progress indicator "progress" of window "install_libs" to start
+	try
+		set libScriptPID to "0"
+		set toolkit_dir to contents of text field "pathNCBI" of tab view item "tab1" of tab view "theTab" of window "Main"
+		set libScriptTmpDir to contents of text field "tmp_dir" of window "install_libs"
+		set ins_dir to contents of text field "ins_dir" of window "install_libs"
+		set theScript to toolkit_dir & "/compilers/xCode/thirdpartylibs.sh"
+		
+		set theScript to theScript & " " & toolkit_dir -- first argument
+		set theScript to theScript & " " & libScriptTmpDir -- second argument
+		set theScript to theScript & " " & ins_dir -- third argument
+		if content of button "download_it" of window "install_libs" then
+			set theScript to theScript & " download" -- optional download flag
+		end if
+		set theScript to theScript & " > " & libScriptTmpDir & "/log.txt 2>&1 & echo $!" -- to log file
+		
+		set title of button "do_it" of window "install_libs" to "Cancel"
+		set enabled of button "close" of window "install_libs" to false
+		log theScript
+		set libScriptPID to do shell script theScript -- start background process
+		log "Launched PID: " & libScriptPID
+	end try
+end x_Install3rdPartyLibs
 
 
 (* Select a directory with given title *)
@@ -275,7 +350,6 @@ on x_ReloadTable(theDS, thePack)
 		set contents of data cell "name" of theDataRow to name of p
 		if theDS is not equal to libDataSource then set contents of data cell "path" of theDataRow to path of p
 	end repeat
-	
 	
 	set update views of theDS to true
 end x_ReloadTable
@@ -528,7 +602,6 @@ on x_SelectAll(theBool)
 end x_SelectAll
 
 
-
 on x_SaveTableData(theDS, thePack)
 	set c to 1
 	repeat with p in thePack
@@ -543,6 +616,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/24 15:40:12  lebedev
+ * Support for installing third-party libraries added
+ *
  * Revision 1.14  2005/03/21 19:22:51  lebedev
  * Build phase for generating release GBench disk images added
  *

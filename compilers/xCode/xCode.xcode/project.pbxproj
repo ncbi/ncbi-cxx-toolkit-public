@@ -185,6 +185,7 @@
 		};
 		29B97317FDCFA39411CA2CEA = {
 			children = (
+				F018F27307F19F3500903A2C,
 				29B97318FDCFA39411CA2CEA,
 				089C165CFE840E0CC02AAC07,
 				DA206CF4015C4E8B03C91932,
@@ -307,6 +308,7 @@
 			files = (
 				080E96DCFE201CFB7F000001,
 				089C165EFE840E0CC02AAC07,
+				F018F27507F19F3500903A2C,
 			);
 			isa = PBXResourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -440,6 +442,30 @@
 				ATTRIBUTES = (
 					Debug,
 				);
+			};
+		};
+		F018F27307F19F3500903A2C = {
+			children = (
+				F018F27407F19F3500903A2C,
+			);
+			isa = PBXVariantGroup;
+			name = InstallLibsPanel.nib;
+			path = "";
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		F018F27407F19F3500903A2C = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.nib;
+			name = English;
+			path = English.lproj/InstallLibsPanel.nib;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		F018F27507F19F3500903A2C = {
+			fileRef = F018F27307F19F3500903A2C;
+			isa = PBXBuildFile;
+			settings = {
 			};
 		};
 		F0F2A05306899A9200D57C93 = {
