@@ -137,19 +137,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(driver);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CGBDataLoader(name, driver);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    TReaderMaker maker(driver);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
@@ -166,29 +156,14 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(
-        plugin_manager,
-        take_plugin_manager);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CGBDataLoader(name,
-                               plugin_manager,
-                               take_plugin_manager);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    SGBLoaderParam param(plugin_manager, take_plugin_manager);
+    TPluginMaker maker(param);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(
-    TReader_PluginManager* /*plugin_manager*/,
-    EOwnership /*take_plugin_manager*/)
+string CGBDataLoader::GetLoaderNameFromArgs(const SGBLoaderParam& param)
 {
     return "GBLOADER";
 }
@@ -235,12 +210,11 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver)
 }
 
 CGBDataLoader::CGBDataLoader(const string& loader_name,
-                             TReader_PluginManager *plugin_manager,
-                             EOwnership  take_plugin_manager)
+                             const SGBLoaderParam& param)
   : CDataLoader(loader_name),
     m_Driver(0),
-    m_ReaderPluginManager(plugin_manager),
-    m_OwnReaderPluginManager(take_plugin_manager),
+    m_ReaderPluginManager(param.m_PluginManager),
+    m_OwnReaderPluginManager(param.m_TakeManager),
     m_UseListHead(0),
     m_UseListTail(0)
 {
@@ -1223,6 +1197,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2004/07/28 14:02:57  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.109  2004/07/26 14:13:32  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.

@@ -44,6 +44,19 @@ BEGIN_NCBI_SCOPE
 class NCBI_XLOADER_TABLE_EXPORT CSageDataLoader : public objects::CDataLoader
 {
 public:
+    struct SSageParam
+    {
+        SSageParam(const string& input_file,
+                   const string& temp_file,
+                   bool          delete_file = true)
+            : m_InputFile(input_file),
+              m_TempFile(temp_file),
+              m_DeleteFile(delete_file) {}
+        string  m_InputFile;
+        string  m_TempFile;
+        bool    m_DeleteFile;
+    };
+
     typedef objects::SRegisterLoaderInfo<CSageDataLoader> TRegisterLoaderInfo;
     static TRegisterLoaderInfo RegisterInObjectManager(
         objects::CObjectManager& om,
@@ -54,10 +67,7 @@ public:
             = objects::CObjectManager::eNonDefault,
         objects::CObjectManager::TPriority priority
             = objects::CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs(
-        const string& input_file,
-        const string& temp_file,
-        bool delete_file = true);
+    static string GetLoaderNameFromArgs(const SSageParam& param);
 
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
@@ -65,10 +75,11 @@ public:
                             EChoice choice);
 
 private:
-    CSageDataLoader(const string& loader_name,
-                    const string& input_file,
-                    const string& temp_file,
-                    bool delete_file = true);
+    typedef objects::CParamLoaderMaker<CSageDataLoader, SSageParam> TMaker;
+    friend class objects::CParamLoaderMaker<CSageDataLoader, SSageParam>;
+
+    CSageDataLoader(const string&     loader_name,
+                    const SSageParam& param);
 
     enum {
         eUnknown = -1,
@@ -119,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.6  2004/07/26 14:13:31  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

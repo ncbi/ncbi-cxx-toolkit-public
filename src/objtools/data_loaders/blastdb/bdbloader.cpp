@@ -57,33 +57,25 @@ CBlastDbDataLoader::TRegisterLoaderInfo CBlastDbDataLoader::RegisterInObjectMana
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(dbname, dbtype);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CBlastDbDataLoader(name, dbname, dbtype);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    SBlastDbParam param(dbname, dbtype);
+    TMaker maker(param);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
-string CBlastDbDataLoader::GetLoaderNameFromArgs(const string& /*dbname*/,
-                                                 const EDbType /*dbtype*/)
+string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& /*param*/)
 {
     return "BLASTDB";
 }
 
 
-CBlastDbDataLoader::CBlastDbDataLoader(const string& loader_name,
-                                       const string& dbname,
-                                       const EDbType dbtype)
-    : CDataLoader(loader_name), m_dbname(dbname), m_dbtype(dbtype), m_rdfp(0)
+CBlastDbDataLoader::CBlastDbDataLoader(const string&        loader_name,
+                                       const SBlastDbParam& param)
+    : CDataLoader(loader_name),
+      m_dbname(param.m_DbName),
+      m_dbtype(param.m_DbType),
+      m_rdfp(0)
 {
     m_mutex = new CFastMutex();
 }
@@ -210,6 +202,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.8  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.7  2004/07/26 14:13:32  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

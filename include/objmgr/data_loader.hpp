@@ -53,6 +53,79 @@ class CTSE_Chunk_Info;
 struct SAnnotTypeSelector;
 
 
+// Template for data loader construction
+class CLoaderMaker_Base
+{
+public:
+    virtual CDataLoader* CreateLoader(void) const = 0;
+    virtual ~CLoaderMaker_Base(void) {}
+
+protected:
+    typedef SRegisterLoaderInfo<CDataLoader> TRegisterInfo_Base;
+    string             m_Name;
+    TRegisterInfo_Base m_RegisterInfo;
+
+    friend class CObjectManager;
+};
+
+
+// Construction of data loaders without arguments
+template <class TDataLoader>
+class CSimpleLoaderMaker : public CLoaderMaker_Base
+{
+public:
+    CSimpleLoaderMaker(void)
+        {
+            m_Name = TDataLoader::GetLoaderNameFromArgs();
+        }
+
+    virtual ~CSimpleLoaderMaker(void) {}
+
+    virtual CDataLoader* CreateLoader(void) const
+        {
+            return new TDataLoader(m_Name);
+        }
+    typedef SRegisterLoaderInfo<TDataLoader> TRegisterInfo;
+    TRegisterInfo GetRegisterInfo(void)
+        {
+            TRegisterInfo info;
+            info.Set(m_RegisterInfo.GetLoader(), m_RegisterInfo.IsCreated());
+            return info;
+        }
+};
+
+
+// Construction of data loaders with an argument.
+// For multiple arguments a selector class should be used.
+template <class TDataLoader, class TParam>
+class CParamLoaderMaker : public CLoaderMaker_Base
+{
+public:
+    // TParam should have copy method.
+    CParamLoaderMaker(TParam param)
+        : m_Param(param)
+        {
+            m_Name = TDataLoader::GetLoaderNameFromArgs(param);
+        }
+
+    virtual ~CParamLoaderMaker(void) {}
+
+    virtual CDataLoader* CreateLoader(void) const
+        {
+            return new TDataLoader(m_Name, m_Param);
+        }
+    typedef SRegisterLoaderInfo<TDataLoader> TRegisterInfo;
+    TRegisterInfo GetRegisterInfo(void)
+        {
+            TRegisterInfo info;
+            info.Set(m_RegisterInfo.GetLoader(), m_RegisterInfo.IsCreated());
+            return info;
+        }
+private:
+    TParam m_Param;
+};
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CDataLoader::
@@ -116,10 +189,9 @@ public:
 protected:
     // register the loader only if the name is not yet
     // registered in the object manager
-    static CObjectManager::TRegisterLoaderInfo RegisterInObjectManager(
+    static void RegisterInObjectManager(
         CObjectManager&            om,
-        const string&              name,
-        CDataLoader&               loader,
+        CLoaderMaker_Base&         loader_maker,
         CObjectManager::EIsDefault is_default,
         CObjectManager::TPriority  priority);
 
@@ -132,7 +204,7 @@ private:
 
     string       m_Name;
     CDataSource* m_DataSource;
-    
+
     friend class CObjectManager;
 };
 
@@ -145,6 +217,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/07/28 14:02:56  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.28  2004/07/26 14:13:31  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.

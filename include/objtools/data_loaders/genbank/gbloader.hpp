@@ -149,15 +149,22 @@ public:
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(CReader* driver = 0);
 
+    struct SGBLoaderParam
+    {
+        SGBLoaderParam(TReader_PluginManager* plugin_manager,
+                       EOwnership             take_plugin_manager)
+            : m_PluginManager(plugin_manager),
+              m_TakeManager(take_plugin_manager) {}
+        TReader_PluginManager* m_PluginManager;
+        EOwnership             m_TakeManager;
+    };
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         TReader_PluginManager *plugin_manager,
         EOwnership            take_plugin_manager,
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs
-        (TReader_PluginManager* plugin_manager,
-         EOwnership             take_plugin_manager);
+    static string GetLoaderNameFromArgs(const SGBLoaderParam& param);
 
     virtual ~CGBDataLoader(void);
   
@@ -176,12 +183,16 @@ public:
     const CSeqref& GetSeqref(const CTSE_Info& tse_info);
   
 private:
+    typedef CParamLoaderMaker<CGBDataLoader, CReader*>       TReaderMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, SGBLoaderParam> TPluginMaker;
+    friend class CParamLoaderMaker<CGBDataLoader, CReader*>;
+    friend class CParamLoaderMaker<CGBDataLoader, SGBLoaderParam>;
+
     CGBDataLoader(const string& loader_name,
                   CReader*      driver);
 
-    CGBDataLoader(const string&          loader_name,
-                  TReader_PluginManager* plugin_manager,
-                  EOwnership             take_plugin_manager);
+    CGBDataLoader(const string&         loader_name,
+                  const SGBLoaderParam& param);
 
     struct STSEinfo : public CObject
     {
@@ -270,6 +281,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.52  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.51  2004/07/26 14:13:31  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

@@ -44,15 +44,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CObjectManager::TRegisterLoaderInfo
-CDataLoader::RegisterInObjectManager(CObjectManager&            om,
-                                     const string&              name,
-                                     CDataLoader&               loader,
-                                     CObjectManager::EIsDefault is_default,
-                                     CObjectManager::TPriority  priority)
+void CDataLoader::RegisterInObjectManager(
+    CObjectManager&            om,
+    CLoaderMaker_Base&         loader_maker,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
 {
-    // name should be already checked by real loader class
-    return om.RegisterDataLoader(loader, is_default, priority);
+    om.RegisterDataLoader(loader_maker, is_default, priority);
 }
 
 
@@ -137,6 +135,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/07/28 14:02:57  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.16  2004/07/26 14:13:31  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.

@@ -49,19 +49,9 @@ CTraceChromatogramLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs();
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CTraceChromatogramLoader(name);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    TMaker maker;
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
@@ -147,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.4  2004/07/26 14:13:32  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/07/28 14:02:57  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.23  2004/07/26 14:13:32  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.
@@ -165,8 +168,32 @@ public:
         }
 
 private:
-    CTestDataLoader(const string& loader_name) : CDataLoader( loader_name)
+    friend class CTestLoaderMaker;
+
+    CTestDataLoader(const string& loader_name) : CDataLoader(loader_name)
         {
+        }
+};
+
+
+class CTestLoaderMaker : public CLoaderMaker_Base
+{
+public:
+    CTestLoaderMaker(const string& name)
+        {
+            m_Name = name;
+        }
+
+    virtual CDataLoader* CreateLoader(void) const
+        {
+            return new CTestDataLoader(m_Name);
+        }
+    typedef CTestDataLoader::TRegisterLoaderInfo TRegisterInfo;
+    TRegisterInfo GetRegisterInfo(void)
+        {
+            TRegisterInfo info;
+            info.Set(m_RegisterInfo.GetLoader(), m_RegisterInfo.IsCreated());
+            return info;
         }
 };
 
@@ -177,18 +204,9 @@ CTestDataLoader::TRegisterLoaderInfo CTestDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TRegisterLoaderInfo info;
-    CDataLoader* loader = om.FindDataLoader(loader_name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CTestDataLoader(loader_name);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, loader_name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    CTestLoaderMaker maker(loader_name);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 

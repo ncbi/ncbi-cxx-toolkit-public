@@ -147,8 +147,11 @@ inline
 CObjectManager* CDataLoaderFactory::x_GetObjectManager(
     const TPluginManagerParamTree* params) const
 {
-    // Temporary implementation
-    return &*CObjectManager::GetInstance();
+    const string& om_str =
+        GetParam(m_DriverName, params, kObjectManagerPtrName, false, "0");
+    CObjectManager* om = static_cast<CObjectManager*>(
+        const_cast<void*>(NStr::StringToPtr(om_str)));
+    return om ? om : &*CObjectManager::GetInstance();
 }
 
 
@@ -158,6 +161,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/28 14:02:56  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.5  2004/07/26 19:15:39  friedman
 * Templates can not be exported. As per Mike D.
 *

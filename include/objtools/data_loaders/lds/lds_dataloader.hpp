@@ -86,6 +86,13 @@ public:
                      const string&  dl_name);
 
 private:
+    typedef CSimpleLoaderMaker<CLDS_DataLoader>                TSimpleMaker;
+    typedef CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&> TDbMaker;
+    typedef CParamLoaderMaker<CLDS_DataLoader, const string&>  TPathMaker;
+    friend class CSimpleLoaderMaker<CLDS_DataLoader>;
+    friend class CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&>;
+    friend class CParamLoaderMaker<CLDS_DataLoader, const string&>;
+
     CLDS_DataLoader(const string& dl_name);
 
     // Construct dataloader, attach the external LDS database
@@ -109,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.11  2004/07/26 14:13:31  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

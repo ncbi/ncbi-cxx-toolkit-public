@@ -70,48 +70,31 @@ CSageDataLoader::TRegisterLoaderInfo CSageDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(input_file,
-                                        temp_file,
-                                        delete_file);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CSageDataLoader(name,
-                                 input_file,
-                                 temp_file,
-                                 delete_file);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    SSageParam param(input_file, temp_file, delete_file);
+    TMaker maker(param);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
-string CSageDataLoader::GetLoaderNameFromArgs(
-    const string& input_file,
-    const string& temp_file,
-    bool          delete_file)
+string CSageDataLoader::GetLoaderNameFromArgs(const SSageParam& param)
 {
     // This may cause conflicts if some other loader uses the same
     // approach. Probably needs to add some prefix.
-    return input_file;
+    return param.m_InputFile;
 }
 
 
 CSageDataLoader::CSageDataLoader(const string& loader_name,
-                                 const string& input_file,
-                                 const string& temp_file,
-                                 bool          delete_file)
+                                 const SSageParam& param)
     : CDataLoader(loader_name)
 {
     //
     // create our SQLite DB
     //
-    m_Table.Reset(new CSQLiteTable(input_file, temp_file, delete_file));
+    m_Table.Reset(new CSQLiteTable(param.m_InputFile,
+                                   param.m_TempFile,
+                                   param.m_DeleteFile));
 
     //
     // now, store some precalculated info about our table
@@ -338,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.7  2004/07/26 14:13:32  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

@@ -59,6 +59,15 @@ public:
         eUnknown = 2        ///< protein is attempted first, then nucleotide
     };
 
+    struct SBlastDbParam
+    {
+        SBlastDbParam(const string& db_name = "nr",
+                      EDbType       dbtype = eUnknown)
+            : m_DbName(db_name), m_DbType(dbtype) {}
+        string  m_DbName;
+        EDbType m_DbType;
+    };
+
     typedef SRegisterLoaderInfo<CBlastDbDataLoader> TRegisterLoaderInfo;
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
@@ -66,8 +75,7 @@ public:
         const EDbType dbtype = eUnknown,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs(const string& dbname = "nr",
-                                        const EDbType dbtype = eUnknown);
+    static string GetLoaderNameFromArgs(const SBlastDbParam& param);
 
     virtual ~CBlastDbDataLoader(void);
   
@@ -76,9 +84,11 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
 private:
-    CBlastDbDataLoader(const string& loader_name,
-                       const string& dbname,
-                       const EDbType dbtype);
+    typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
+    friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
+
+    CBlastDbDataLoader(const string&        loader_name,
+                       const SBlastDbParam& param);
 
     const string m_dbname;      ///< blast database name
     EDbType m_dbtype;           ///< is this database protein or nucleotide?
@@ -95,6 +105,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.5  2004/07/28 14:02:56  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.4  2004/07/26 14:13:31  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

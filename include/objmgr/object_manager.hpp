@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/07/28 14:02:56  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.25  2004/07/26 14:13:31  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.
@@ -137,6 +140,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/plugin_manager.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 
@@ -149,6 +153,7 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CDataLoader;
+class CLoaderMaker_Base;
 class CDataLoaderFactory;
 class CSeq_entry;
 class CBioseq;
@@ -162,6 +167,9 @@ class CScope_Impl;
 
 
 class CSeq_id_Mapper;
+
+// Name used for object manager in TPluginManagerParamTree
+const string kObjectManagerPtrName = "ObjectManagerPtr";
 
 // Structure returned by RegisterInObjectManager() method
 template<class TLoader>
@@ -211,8 +219,9 @@ public:
         kPriority_NotSet = -1
     };
 
-    // Try to find data loader by name
-    CDataLoader* FindDataLoader(const string& loader_name) const;
+    // Add data loader using plugin manager
+    CDataLoader* RegisterDataLoader(TPluginManagerParamTree* params = 0,
+                                    const string& driver_name = kEmptyStr);
 
     // Get names of all registered loaders.
     typedef vector<string> TRegisteredNames;
@@ -236,20 +245,17 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
-protected:
-// functions for data loaders
-    // Register existing data loader.
-    // NOTE:  data loader must be created in the heap (ie using operator new).
-    TRegisterLoaderInfo RegisterDataLoader
-        (CDataLoader& loader,
-         EIsDefault   is_default = eNonDefault,
-         TPriority    priority = kPriority_NotSet);
 
-    // Register data loader factory.
-    // NOTE:  client has no control on when data loader is created or deleted.
-    void RegisterDataLoader(CDataLoaderFactory& factory,
-                            EIsDefault          is_default = eNonDefault,
-                            TPriority priority = kPriority_NotSet);
+protected:
+    // Try to find data loader by name
+    CDataLoader* FindDataLoader(const string& loader_name) const;
+
+// functions for data loaders
+    // Register an existing data loader.
+    // NOTE:  data loader must be created in the heap (ie using operator new).
+    void RegisterDataLoader(CLoaderMaker_Base& loader_maker,
+                            EIsDefault         is_default = eNonDefault,
+                            TPriority          priority = kPriority_NotSet);
 
     // functions for scopes
     void RegisterScope(CScope_Impl& scope);
@@ -276,7 +282,10 @@ private:
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;
     TDataSourceLock x_FindDataSource(const CObject* key);
     TDataSourceLock x_RevokeDataLoader(CDataLoader* loader);
-    
+
+    typedef CPluginManager<CDataLoader> TPluginManager;
+    TPluginManager& x_GetPluginManager(void);
+
 private:
 
     typedef set< TDataSourceLock >                  TSetDefaultSource;
@@ -299,6 +308,7 @@ private:
     // CSeq_id_Mapper lock to provide a single mapper while OM is running
     CRef<CSeq_id_Mapper> m_Seq_id_Mapper;
 
+    auto_ptr<TPluginManager> m_PluginManager;
     friend class CScope_Impl;
     friend class CDataSource; // To get id-mapper
     friend class CDataLoader; // To register data loaders

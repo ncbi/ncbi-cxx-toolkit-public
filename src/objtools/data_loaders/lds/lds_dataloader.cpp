@@ -164,19 +164,9 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs();
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CLDS_DataLoader(name);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    TSimpleMaker maker;
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
@@ -192,19 +182,9 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(lds_db);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CLDS_DataLoader(name, lds_db);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    TDbMaker maker(lds_db);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
@@ -224,19 +204,9 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(db_path);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CLDS_DataLoader(name, db_path);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    TPathMaker maker(db_path);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
@@ -392,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.17  2004/07/26 14:13:32  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

@@ -60,6 +60,9 @@ public:
     void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
 
 private:
+    typedef CSimpleLoaderMaker<CTraceChromatogramLoader> TMaker;
+    friend class CSimpleLoaderMaker<CTraceChromatogramLoader>;
+
     CTraceChromatogramLoader(const string& loader_name);
 
     // cached map of resolved chromatograms
@@ -90,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.3  2004/07/26 14:13:31  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.

@@ -49,12 +49,12 @@ BEGIN_SCOPE(objects)
 
 
 static CRef<CObjectManager> s_ObjectManager;
-static CMutex s_ObjectManagerInstanceMutex;
+DEFINE_STATIC_FAST_MUTEX(s_ObjectManagerInstanceMutex);
 
 CRef<CObjectManager> CObjectManager::GetInstance(void)
 {
     if (!s_ObjectManager) {
-        CMutexGuard guard(s_ObjectManagerInstanceMutex);
+        CFastMutexGuard guard(s_ObjectManagerInstanceMutex);
         if (!s_ObjectManager) {
             s_ObjectManager.Reset(new CObjectManager);
         }
@@ -101,51 +101,57 @@ CObjectManager::~CObjectManager(void)
 // configuration functions
 
 
-CObjectManager::TRegisterLoaderInfo
-CObjectManager::RegisterDataLoader(CDataLoader&             loader,
-                                   EIsDefault               is_default,
-                                   CPriorityNode::TPriority priority)
+void CObjectManager::RegisterDataLoader(CLoaderMaker_Base& loader_maker,
+                                        EIsDefault         is_default,
+                                        TPriority          priority)
 {
     TWriteLockGuard guard(m_OM_Lock);
-    TRegisterLoaderInfo info;
+    CDataLoader* loader = FindDataLoader(loader_maker.m_Name);
+    if (loader) {
+        loader_maker.m_RegisterInfo.Set(loader, false);
+        return;
+    }
     try {
-        x_RegisterLoader(loader, priority, is_default);
+        loader = loader_maker.CreateLoader();
+        x_RegisterLoader(*loader, priority, is_default);
     }
     catch (CObjMgrException& e) {
         ERR_POST(Warning <<
             "CObjectManager::RegisterDataLoader: " << e.GetMsg());
-        CDataLoader* old_loader = FindDataLoader(loader.GetName());
-        info.Set(old_loader, false);
-        return info;
+        // This can happen only if something is wrong with the new loader.
+        loader_maker.m_RegisterInfo.Set(0, false);
+        return;
     }
-    info.Set(&loader, true);
-    return info;
+    loader_maker.m_RegisterInfo.Set(loader, true);
 }
 
 
-void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
-                                        EIsDefault is_default,
-                                        CPriorityNode::TPriority priority)
+CObjectManager::TPluginManager& CObjectManager::x_GetPluginManager(void)
 {
-/*
-    string loader_name = factory.GetName();
-    _ASSERT(!loader_name.empty());
-    // if already registered
-    TWriteLockGuard guard(m_OM_Lock);
-    if ( x_GetLoaderByName(loader_name) ) {
-        ERR_POST(Warning <<
-            "CObjectManager::RegisterDataLoader: " <<
-            "data loader " << loader_name << " already registered");
-        return;
+    if (!m_PluginManager.get()) {
+        TWriteLockGuard guard(m_OM_Lock);
+        if (!m_PluginManager.get()) {
+            m_PluginManager.reset(new TPluginManager);
+        }
     }
-    // in case factory was not put in a CRef container by the caller
-    // it will be deleted here
-    CRef<CDataLoaderFactory> p(&factory);
-    // create loader
-    CDataLoader* loader = factory.Create();
-    // register
-    x_RegisterLoader(*loader, priority, is_default);
-*/
+    _ASSERT(m_PluginManager.get());
+    return *m_PluginManager;
+}
+
+
+CDataLoader*
+CObjectManager::RegisterDataLoader(TPluginManagerParamTree* params,
+                                   const string& driver_name)
+{
+    // Check params, extract driver name, add pointer to self etc.
+    //
+    //
+    typedef CInterfaceVersion<CDataLoader> TDLVersion;
+    return x_GetPluginManager().CreateInstance(driver_name,
+        CVersionInfo(TDLVersion::eMajor,
+        TDLVersion::eMinor,
+        TDLVersion::ePatchLevel),
+        params);
 }
 
 
@@ -246,14 +252,6 @@ void CObjectManager::SetLoaderOptions(const string& loader_name,
     }
 }
 
-
-/*
-void CObjectManager::RegisterTopLevelSeqEntry(CSeq_entry& top_entry)
-{
-    TWriteLockGuard guard(m_OM_Mutex);
-    x_RegisterTSE(top_entry);
-}
-*/
 
 /////////////////////////////////////////////////////////////////////////////
 // functions for scopes
@@ -368,6 +366,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
         return it->second;
     }
     ins.first->second = &loader;
+
     // create data source
     TDataSourceLock source(new CDataSource(loader, *this));
     source->DoDeleteThisObject();
@@ -488,6 +487,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/07/28 14:02:57  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
 * Revision 1.38  2004/07/26 14:13:31  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.

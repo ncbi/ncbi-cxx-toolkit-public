@@ -76,58 +76,36 @@ CUsrFeatDataLoader::RegisterInObjectManager(
     objects::CObjectManager::EIsDefault is_default,
     objects::CObjectManager::TPriority priority)
 {
-    TRegisterLoaderInfo info;
-    string name = GetLoaderNameFromArgs(input_file,
-                                        temp_file,
-                                        delete_file,
-                                        offset,
-                                        type,
-                                        given_id);
-    CDataLoader* loader = om.FindDataLoader(name);
-    if ( loader ) {
-        info.Set(loader, false);
-        return info;
-    }
-    loader = new CUsrFeatDataLoader(name,
-                                    input_file,
-                                    temp_file,
-                                    delete_file,
-                                    offset,
-                                    type,
-                                    given_id);
-    CObjectManager::TRegisterLoaderInfo base_info =
-        CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                             is_default, priority);
-    info.Set(base_info.GetLoader(), base_info.IsCreated());
-    return info;
+    SUsrFeatParam param(input_file,
+                        temp_file,
+                        delete_file,
+                        offset,
+                        type,
+                        given_id);
+    TMaker maker(param);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
 }
 
 
-string CUsrFeatDataLoader::GetLoaderNameFromArgs(
-    const string& input_file,
-    const string& temp_file,
-    bool delete_file,
-    EOffset offset,
-    const string& type,
-    const objects::CSeq_id* given_id)
+string CUsrFeatDataLoader::GetLoaderNameFromArgs(const SUsrFeatParam& param)
 {
-    return input_file;
+    return param.m_InputFile;
 }
 
 
 CUsrFeatDataLoader::CUsrFeatDataLoader(const string& loader_name,
-                                       const string& input_file,
-                                       const string& temp_file,
-                                       bool delete_file,
-                                       EOffset offset,
-                                       const string& type,
-                                       const CSeq_id* given_id)
-    : CDataLoader(loader_name), m_Offset(offset), m_Type(type)
+                                       const SUsrFeatParam& param)
+    : CDataLoader(loader_name),
+      m_Offset(param.m_Offset),
+      m_Type(param.m_Type)
 {
     //
     // create our SQLite DB
     //
-    m_Table.Reset(new CSQLiteTable(input_file, temp_file, delete_file));
+    m_Table.Reset(new CSQLiteTable(param.m_InputFile,
+                                   param.m_TempFile,
+                                   param.m_DeleteFile));
 
     //
     // now, store some precalculated info about our table
@@ -172,8 +150,8 @@ CUsrFeatDataLoader::CUsrFeatDataLoader(const string& loader_name,
         ++i;
     }
 
-    if (given_id) {
-        m_SeqId.Reset(given_id);
+    if (param.m_GivenId) {
+        m_SeqId.Reset(param.m_GivenId);
     }
 
     if (!m_SeqId && m_ColIdx[eAccession] == -1) {
@@ -389,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/28 14:02:57  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.5  2004/07/26 14:13:32  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.
