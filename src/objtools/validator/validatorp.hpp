@@ -288,6 +288,7 @@ enum EErrType {
     eErr_SEQ_FEAT_DuplicateTranslExcept,
     eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
     eErr_SEQ_FEAT_NoNameForProtein,
+    eErr_SEQ_FEAT_TaxonDbxrefOnFeature,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN),
@@ -961,6 +962,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2004/08/04 17:47:00  shomrat
+* + eErr_SEQ_FEAT_TaxonDbxrefOnFeature
+*
 * Revision 1.72  2004/08/03 13:40:26  shomrat
 * + eErr_GENERIC_MedlineEntryPub
 *

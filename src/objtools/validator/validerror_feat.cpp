@@ -2774,6 +2774,15 @@ void CValidError_feat::ValidateFeatBioSource
             }
         }
     }
+    
+    ITERATE (CSeq_feat::TDbxref, it, feat.GetDbxref()) {
+        if ((*it)->GetType() == CDbtag::eDbtagType_taxon) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_TaxonDbxrefOnFeature,
+                "BioSource feature has taxon xref in common feature db_xref list",
+                feat);
+        }
+    }
+
     m_Imp.ValidateBioSource(bsrc, feat);
 }
 
@@ -2831,6 +2840,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2004/08/04 17:49:03  shomrat
+* + eErr_SEQ_FEAT_TaxonDbxrefOnFeature
+*
 * Revision 1.64  2004/08/03 13:29:53  shomrat
 * TranscriptLen is warning if far, except if Refseq
 *
