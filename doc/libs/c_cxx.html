@@ -4,12 +4,18 @@
 
 <h1>Using NCBI C and C++ Toolkits together</h1>
 
+<font size=1><u><b>Note</b></u>: Due to security issues, not all links in the public version
+of this file could be accessible by outside NCBI users. Unrestricted version of this document is available to
+inside NCBI users at:
+<a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/libs/c_cxx.html">http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/libs/c_cxx.html</a>.
+</font>
+
 <h2>Contents</h2>
 
 <ol>
 <ul>
     <li> <a href="#ref_Overview">Overview</a>
-    <li> <a href="#ref_SharedResources">Shared Resources</a>
+    <li> <a href="#ref_SharedSources">Shared Sources</a>
     <ul>
          <li> <a href="#ref_ConnectLib"><tt>CONNECT</tt> Library</a>
          <li> <a href="#ref_ASN"><tt>ASN.1</tt> Specifications</a>
@@ -34,27 +40,88 @@
 
 <a name="ref_Overview"></a><h2>Overview</h2>
 
-<u>Note</u>:
+When using both C and C++ Toolkits together in a single application,
+it is very important to understand that there are some resources shared between the two.
+This document describes how to safely use both Toolkits together,
+and how to gain from their cooperation.
 
 <p>
 <hr>
 
 
-<a name="ref_SharedResources"></a><h2>Shared Resources</h2>
+<a name="ref_SharedSources"></a><h2>Shared Sources</h2>
+
+To maintain a sort of uniformity and ease in source code maintenance,
+<tt>CONNECT</tt> library is the first library of both Toolkits kept
+same at the source code level. To provide data interoperability,
+<tt>ASN.1</tt> specifications have to be identical in both Toolkits, too.
+
 
 <a name="ref_ConnectLib"></a><h3><tt>CONNECT</tt> Library</h3>
 
+<a href="../lxr/source/src/connect"><tt>CONNECT</tt></a> library is at the moment the only part of C code
+of both Toolkits, which is kept same in its entirety in both Toolkits.
+The old API of <tt>CONNECT</tt> library is still supported by means of
+simple wrapper code, which is situated in the C Toolkit only.
+There is an extrenal <a href="../lxr/source/scripts/internal/c_toolkit/check_sync.sh">safety script</a>,
+which periodically (controlled by a <tt>cron</tt> daemon) checks and maintains source file indentity.
+Conventionally, all development for <tt>CONNECT</tt> library is done within the C++ Toolkit tree.
+When a modified source file is committed to the CVS repository
+but is not yet updated in the C Toolkit tree, the safety script detects
+the discrepancy, and then could be used to eliminate it by copying
+the newer file over. If for some reason the modified version
+is mistakenly checked into C Toolkit tree then the safety
+script alerts the situation.
+
 <p>
 <hr>
 
 
-<a name="ref_ASN"></a><h3><tt>ASN</tt> Specifications</h3>
+<a name="ref_ASN"></a><h3><tt>ASN.1</tt> Specifications</h3>
+
+On a contrary to <tt>CONNECT</tt> library, the <tt>ASN.1</tt> data
+specifications are maintained within C Toolkit
+source structure, and have to be copied over to C++ Toolkit
+tree whenever they are changed. There is the same (as for <tt>CONNECT</tt> library)
+<a href="../lxr/source/scripts/internal/c_toolkit/check_sync.sh">safety script</a>,
+which keeps "an eye" on those changes, and sends an alert when C++ Toolkit <tt>ASN.1</tt>
+specs go out of sync with their C Toolkit counterparts.
+
+<p>
+The full set of tools, which maintain identity of both <tt>CONNECT</tt> library and
+<tt>ASN.1</tt> specifications can be found in directory
+<a href="../lxr/source/scripts/internal/c_toolkit"><b><i>scripts/internal/c_toolkit</i></b></a>.
 
 <p>
 <hr>
 
 
 <a name="ref_RunTimeResources"></a><h2>Run-Time Resources</h2>
+
+Being written with an assumption to be used "as is" in the NCBI C Toolkit and
+yet to be in the C++ Toolkit tree, <tt>CONNECT</tt> library could not
+use directly all the utility objects offered by the C++ Toolkit such as
+message logging <a href="../programming_manual/diag.html"><b><i>CNcbiDiag</i></b></a>,
+registry <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a> etc.
+All <a href="../lxr/source/include/connect/ncbi_core.h">these objects</a> were replaced
+with helper objects coded entirely in C (as tables of function pointers and data).
+
+<p>
+On the other hand, throughout the code <tt>CONNECT</tt> library refers to
+predefined objects <tt>CORE_LOG</tt> and <tt>CORE_REG</tt>,
+which in reality are never initialized by the library, i.e.
+they are empty objects, which do nothing. It is an application's
+resposibility to replace these dummies with real working
+logger and registry. There are two approaches, one for C and another one for C++ application.
+
+<p>
+In a C program, <a href="../lxr/source/connect/ncbi_util.h><b><i>connect/ncbi_util.h</i></b></a>
+module can be used with calls to <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>,
+<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a> to set up the
+logger and registry. There are even convenience routines concerning <tt>CORE_LOG</tt>,
+<a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a>
+<a href="../lxr/ident?i=LOG_ToFILE"><b><i>LOG_ToFILE()</i></b></a>, which
+facilitate redirecting logging messages to either C stream (<tt>FILE*</tt>)
 
 <a name="ref_LOG"></a><h3><tt>LOG</tt> and <tt>CNcbiDiag</tt></h3>
 
