@@ -64,18 +64,15 @@ template <typename TRequest>
 class CBlockingQueue
 {
 public:
-    class CException : public runtime_error
-    {
-    public:
-        CException(const string& s) : runtime_error(s) {}
-    };
-
     CBlockingQueue(unsigned int max_size = kMax_UInt)
         : m_GetSem(0,1), m_PutSem(1,1), m_MaxSize(max_size) {}
 
     void         Put(const TRequest& data); // Throws exception if full
-    void         WaitForRoom(void) const;
-    TRequest     Get(void);                 // Blocks politely if empty
+    void         WaitForRoom(unsigned int timeout_sec  = kMax_UInt,
+                             unsigned int timeout_nsec = kMax_UInt) const;
+    // Blocks politely if empty
+    TRequest     Get(unsigned int timeout_sec  = kMax_UInt,
+                     unsigned int timeout_nsec = kMax_UInt);
     unsigned int GetSize(void) const;
     unsigned int GetMaxSize(void) const { return m_MaxSize; }
     bool         IsEmpty(void) const    { return GetSize() == 0; }
@@ -210,6 +207,23 @@ protected:
 };
 
 
+class CBlockingQueueException : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    enum EErrCode {
+        eFull,    // attempt to insert into a full queue
+        eTimedOut // Put or WaitForRoom timed out
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eFull:     return "eFull";
+        case eTimedOut: return "eTimedOut";
+        default:        return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CBlockingQueueException,CException);
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -231,7 +245,8 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data)
     deque<TRequest>& q = const_cast<deque<TRequest>&>(m_Queue);
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
-        throw CException("Attempt to insert into a full queue");
+        NCBI_THROW(CBlockingQueueException, eFull, "CBlockingQueue<>::Put: "
+                   "attempt to insert into a full queue");
     } else if (q.empty()) {
         m_GetSem.Post();
     }
@@ -240,18 +255,27 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data)
 
 
 template <typename TRequest>
-void CBlockingQueue<TRequest>::WaitForRoom(void) const
+void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
+                                           unsigned int timeout_nsec) const
 {
     // Make sure there's room, but don't actually consume anything
-    m_PutSem.Wait();
-    m_PutSem.Post();
+    if (m_PutSem.TryWait(timeout_sec, timeout_nsec)) {
+        m_PutSem.Post();
+    } else {
+        NCBI_THROW(CBlockingQueueException, eTimedOut,
+                   "CBlockingQueue<>::WaitForRoom: timed out");        
+    }
 }
 
 
 template <typename TRequest>
-TRequest CBlockingQueue<TRequest>::Get(void)
+TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
+                                       unsigned int timeout_nsec)
 {
-    m_GetSem.Wait();
+    if ( !m_GetSem.TryWait(timeout_sec, timeout_nsec) ) {
+        NCBI_THROW(CBlockingQueueException, eTimedOut,
+                   "CBlockingQueue<>::Get: timed out");        
+    }
 
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
@@ -357,6 +381,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/09/13 15:16:03  ucko
+* Give CBlockingQueue<>::{WaitForRoom,Get} optional timeouts (infinite
+* by default); change exceptions to use new setup.
+*
 * Revision 1.6  2002/04/18 15:38:19  ucko
 * Use "deque" instead of "queue" -- more general, and less likely to
 * yield any name conflicts.
