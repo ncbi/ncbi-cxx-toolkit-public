@@ -261,7 +261,10 @@ int CNcbiApplication::AppMain
     }
     string post_level = m_Environ->Get(DIAG_POST_LEVEL);
     if ( !post_level.empty() ) {
-        SetDiagFixedStrPostLevel(post_level.c_str());
+        EDiagSev sev;
+        if (CNcbiDiag::StrToSeverityLevel(post_level.c_str(), sev)) {
+            SetDiagFixedPostLevel(sev);
+        }
     }
     if ( !m_Environ->Get(ABORT_ON_THROW).empty() ) {
         SetThrowTraceAbort(true);
@@ -300,7 +303,10 @@ int CNcbiApplication::AppMain
     }
     post_level = m_Config->Get("DEBUG", DIAG_POST_LEVEL);
     if ( !post_level.empty() ) {
-        SetDiagFixedStrPostLevel(post_level.c_str());
+        EDiagSev sev;
+        if (CNcbiDiag::StrToSeverityLevel(post_level.c_str(), sev)) {
+            SetDiagFixedPostLevel(sev);
+        }
     }
 
     // Call:  Init() + Run() + Exit()
@@ -566,6 +572,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2002/07/10 16:20:13  ivanov
+ * Changes related with renaming SetDiagFixedStrPostLevel()->SetDiagFixedPostLevel()
+ *
  * Revision 1.40  2002/07/09 16:36:52  ivanov
  * s_SetFixedDiagPostLevel() moved to ncbidiag.cpp
  * and renamed to SetDiagFixedStrPostLevel()
