@@ -940,6 +940,9 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                 if (hsp_list->oid == (Int4)subject_index)
                     break;
             }
+            /* If hsp_list for this subject is not found, set it to NULL */
+            if (result_index == hit_list->hsplist_count)
+                hsp_list = NULL;
         }
 
         if (hsp_list) {
@@ -974,6 +977,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/09/08 20:10:35  dondosha
+* Fix for searches against multiple subjects when some query-subject pairs have no hits
+*
 * Revision 1.16  2004/08/17 21:49:36  dondosha
 * Removed unused variable
 *
