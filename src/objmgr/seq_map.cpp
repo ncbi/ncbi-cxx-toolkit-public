@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/30 18:55:41  gouriano
+* added GetRefSeqid function
+*
 * Revision 1.13  2002/04/11 12:07:30  grichenk
 * Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
 *
@@ -223,6 +226,13 @@ void CSeqMap::x_CalculateSegmentLengths(void)
     }
 }
 */
+
+const CSeq_id& CSeqMap::CSegmentInfo::GetRefSeqid(void) const
+{
+    _ASSERT(m_SegType == eSeqRef);
+    _ASSERT((bool)m_RefSeq);
+    return CSeq_id_Mapper::GetSeq_id(m_RefSeq);
+}
 
 
 END_SCOPE(objects)

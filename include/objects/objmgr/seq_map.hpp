@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/30 18:54:50  gouriano
+* added GetRefSeqid function
+*
 * Revision 1.13  2002/04/11 12:07:28  grichenk
 * Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
 *
@@ -146,6 +149,9 @@ public:
         ESegmentType GetType(void) const;
         TSeqPosition GetPosition(void) const;
         TSeqLength   GetLength(void) const;
+        // The following function makes sense only
+        // when the segment is a reference to another seq.
+        const CSeq_id& GetRefSeqid(void) const;
 
     private:
         // Type of map segment
