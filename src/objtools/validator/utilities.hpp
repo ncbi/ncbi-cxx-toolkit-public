@@ -1,6 +1,3 @@
-#ifndef VALIDATOR___UTILITIES__HPP
-#define VALIDATOR___UTILITIES__HPP
-
 /*  $Id:
  * ===========================================================================
  *
@@ -31,6 +28,10 @@
  * File Description:
  *      Definition for utility classes and functions.
  */
+
+#ifndef VALIDATOR___UTILITIES__HPP
+#define VALIDATOR___UTILITIES__HPP
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/SeqFeatData.hpp>
@@ -207,6 +208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/01/02 21:52:43  shomrat
+* Coding style changes
+*
 * Revision 1.2  2002/12/24 16:50:32  shomrat
 * Removal of redundant GBQual types
 *
