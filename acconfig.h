@@ -116,3 +116,6 @@
 
 /* There is no "std::char_traits" type defined */
 #undef HAVE_NO_CHAR_TRAITS
+
+/* Architecture size */
+#undef NCBI_PLATFORM_BITS

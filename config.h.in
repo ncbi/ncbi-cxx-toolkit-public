@@ -137,6 +137,9 @@
 /* There is no "std::char_traits" type defined */
 #undef HAVE_NO_CHAR_TRAITS
 
+/* Architecture size */
+#undef NCBI_PLATFORM_BITS
+
 /* The number of bytes in a __int64.  */
 #undef SIZEOF___INT64
 
@@ -160,6 +163,9 @@
 
 /* The number of bytes in a short.  */
 #undef SIZEOF_SHORT
+
+/* The number of bytes in a size_t.  */
+#undef SIZEOF_SIZE_T
 
 /* The number of bytes in a void*.  */
 #undef SIZEOF_VOIDP

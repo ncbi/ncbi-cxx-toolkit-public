@@ -1898,7 +1898,9 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
-
+AC_CHECK_SIZEOF(size_t)
+bits=`expr 8 \* $ac_cv_sizeof_size_t`
+AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $bits)
 
 
 ### Cleanup

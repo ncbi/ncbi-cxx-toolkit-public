@@ -32,7 +32,9 @@
 #define SIZEOF_LONG_DOUBLE  8
 #define SIZEOF_LONG_LONG    0
 #define SIZEOF_SHORT        2
+#define SIZEOF_SIZE_T       4
 #define SIZEOF_VOIDP        4
+#define NCBI_PLATFORM_BITS  32
 
 #define STDC_HEADERS  1
 
