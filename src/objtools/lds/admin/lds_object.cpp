@@ -450,7 +450,15 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.annot_db.annot_type = type_id;
         m_db.annot_db.file_offset = obj_info->offset;
 
-        LOG_POST(Info << "Saving annotation: " << type_name << " " << id_str);
+        LOG_POST(Info << "Saving annotation: " 
+                      << type_name 
+                      << " " 
+                      << id_str
+                      << " " 
+                      << (const char*)(!top_level_id ? "Top Level. " : " ")
+                      << "offs=" 
+                      << obj_info->offset
+                      );
 
         EBDB_ErrCode err = m_db.annot_db.Insert();
         BDB_CHECK(err, "LDS::Annotation");
@@ -555,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/07/14 19:45:24  kuznets
+ * More detailed LOG_POST message
+ *
  * Revision 1.12  2003/07/09 19:30:51  kuznets
  * Implemented collection of sequence ids from alignments.
  *
