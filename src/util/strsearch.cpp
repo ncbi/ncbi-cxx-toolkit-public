@@ -52,15 +52,60 @@ BEGIN_NCBI_SCOPE
 // Public:
 // =======
 
-CBoyerMooreMatcher::CBoyerMooreMatcher
-(const string& pattern, 
- bool case_sensitive,
- bool whole_word) :
-m_Pattern(pattern), 
-m_PatLen(pattern.length()), 
-m_CaseSensitive(case_sensitive), 
-m_WholeWord(whole_word),
-m_LastOccurance(sm_AlphabetSize)
+CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern, 
+                                       bool          case_sensitive,
+                                       bool          whole_word)
+: m_Pattern(pattern), 
+  m_PatLen(pattern.length()), 
+  m_CaseSensitive(case_sensitive), 
+  m_WholeWord(whole_word),
+  m_LastOccurance(sm_AlphabetSize),
+  m_WordDelimiters(sm_AlphabetSize)
+{
+    x_InitPattern();
+    // Init the word deimiting alphabet
+    if (m_WholeWord) {
+        for (int i = 0; i < sm_AlphabetSize; ++i) {
+            m_WordDelimiters[i] = (isspace(i) != 0);
+        }
+    }
+}
+
+CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
+                                       const string& word_delimeters,
+                                       bool          case_sensitive,
+                                       bool          invert_delimiters)
+: m_Pattern(pattern), 
+  m_PatLen(pattern.length()), 
+  m_CaseSensitive(case_sensitive), 
+  m_WholeWord(true),
+  m_LastOccurance(sm_AlphabetSize),
+  m_WordDelimiters(sm_AlphabetSize)
+{
+    x_InitPattern();
+    SetWordDelimiters(word_delimeters, invert_delimiters);
+}
+
+void CBoyerMooreMatcher::SetWordDelimiters(const string& word_delimeters,
+                                           bool          invert_delimiters)
+{
+    m_WholeWord = true;
+
+    string word_d = word_delimeters;
+    if (!m_CaseSensitive) {
+        NStr::ToUpper(word_d);
+    }
+
+    // Init the word delimiting alphabet
+    for (int i = 0; i < sm_AlphabetSize; ++i) {
+        char ch = m_CaseSensitive ? i : toupper(i);
+        string::size_type n = word_d.find_first_of(ch);
+        m_WordDelimiters[i] = (!invert_delimiters) == (n != string::npos);
+    }
+}
+
+
+void CBoyerMooreMatcher::x_InitPattern(void)
 {
     if ( !m_CaseSensitive ) {
         NStr::ToUpper(m_Pattern);
@@ -82,27 +127,43 @@ m_LastOccurance(sm_AlphabetSize)
 }
 
 
-int CBoyerMooreMatcher::Search(const string& text, unsigned int shift) const
+int CBoyerMooreMatcher::Search(const char*  text, 
+                               unsigned int shift,
+                               unsigned int text_len) const
 {
-    size_t text_len = text.length();
-    
-    while ( shift + m_PatLen <= text_len ) {
-        int j = (int)m_PatLen - 1;
-        
-        for ( char text_char = 
-                m_CaseSensitive ? text[shift + j] : toupper(text[shift + j]);
-              j >= 0  &&  m_Pattern[j] == text_char;
-              text_char = 
-                m_CaseSensitive ? text[shift + j] : toupper(text[shift + j]) ) {
-            --j;
+    // Implementation note.
+    // Case sensitivity check has been taken out of loop. 
+    // Code size for performance optimization. (We generally choose speed).
+    // (Anatoliy)
+    if (m_CaseSensitive) {
+        while (shift + m_PatLen <= text_len) {
+            int j = (int)m_PatLen - 1;
+
+            for (char text_char = text[shift + j];
+                 j >= 0  &&  m_Pattern[j] == text_char;
+                 text_char = text[shift + j] ) { --j; }
+
+            if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
+                return  shift;
+            } else {
+                shift += (unsigned int)m_LastOccurance[text[shift + j]];
+            }
         }
-        if ( (j == -1)  &&  IsWholeWord(text, shift) ) {
-            return  shift;
-        } else {
-            shift += (unsigned int)m_LastOccurance[text[shift + j]];
+    } else { // case insensitive
+        while (shift + m_PatLen <= text_len) {
+            int j = (int)m_PatLen - 1;
+
+            for (char text_char = toupper(text[shift + j]);
+                 j >= 0  &&  m_Pattern[j] == text_char;
+                 text_char = toupper(text[shift + j]) ) { --j; }
+
+            if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
+                return  shift;
+            } else {
+                shift += (unsigned int)m_LastOccurance[text[shift + j]];
+            }
         }
     }
-    
     return -1;
 }
 
@@ -115,27 +176,21 @@ const int CBoyerMooreMatcher::sm_AlphabetSize = 256;     // assuming ASCII
 
 
 // Member Functions
-bool CBoyerMooreMatcher::IsWholeWord(const string& text, unsigned int pos) const
+bool CBoyerMooreMatcher::IsWholeWord(const char*  text, 
+                                     unsigned int pos,
+                                     unsigned int text_len) const
 {
-    if ( !m_WholeWord ) {
+    if ( !m_WholeWord ) 
         return true;
-    }
-    
-    bool left  = true, 
-         right = true;
-    
-    // check on the left
-    if ( pos > 0 ) {
-        left = isspace(text[pos - 1]) != 0;
-    }
-    
+
+    // check on the left  
+    bool left = (pos > 0) && m_WordDelimiters[text[pos - 1]];
+
     // check on the right
     pos += (unsigned int)m_PatLen;
-    if ( pos < text.length() ) {
-        right = isspace(text[pos]) != 0;
-    }
-    
-    return (right  &&  left);
+    bool right = (pos < text_len) && m_WordDelimiters[text[pos]];
+
+    return (right && left);
 }
 
 
@@ -146,6 +201,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/02 20:00:45  kuznets
+* Changes in CBoyerMooreMatcher:
+*   - added work with memory areas
+*   - alternative word delimiters
+*   - performance optimizations
+*
 * Revision 1.5  2003/11/07 17:16:23  ivanov
 * Fixed  warnings on 64-bit Workshop compiler
 *
