@@ -54,6 +54,23 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     copy(not_provided_requests_list.begin(),
          not_provided_requests_list.end(),
          inserter(m_NotProvidedThing, m_NotProvidedThing.end()));
+
+    // Lib choices
+    string lib_choices_str = 
+        m_Registry.GetString("Configure", "LibChoices", "");
+
+    list<string> lib_choices_list;
+    NStr::Split(lib_choices_str, LIST_SEPARATOR, 
+                lib_choices_list);
+    ITERATE(list<string>, p, lib_choices_list) {
+        const string& choice_str = *p;
+        string lib_id;
+        string lib_3party_id;
+        if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
+            m_LibChoices.push_back(SLibChoice(*this, lib_id, lib_3party_id));
+        }
+    }
+
 }
 
 
@@ -130,10 +147,113 @@ void CMsvcSite::GetConfigureDefines(list<string>* defines) const
     NStr::Split(defines_str, LIST_SEPARATOR, *defines);
 }
 
+
+bool CMsvcSite::IsLibWithChoice(const string& lib_id) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+        const SLibChoice& choice = *p;
+        if (lib_id == choice.m_LibId)
+            return true;
+    }
+    return false;
+}
+
+
+bool CMsvcSite::Is3PartyLibWithChoice(const string& lib3party_id) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+        const SLibChoice& choice = *p;
+        if (lib3party_id == choice.m_3PartyLib)
+            return true;
+    }
+    return false;
+}
+
+CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
+                                  const string&    lib,
+                                  const string&    lib_3party)
+ :m_LibId    (lib),
+  m_3PartyLib(lib_3party)
+{
+    m_Choice = e3PartyLib;
+
+    ITERATE(list<SConfigInfo>, p, GetApp().GetRegSettings().m_ConfigInfo) {
+
+        const SConfigInfo& config = *p;
+        SLibInfo lib_info;
+        site.GetLibInfo(m_3PartyLib, config, &lib_info);
+
+        if ( !lib_info.IsEmpty() &&  !IsLibOk(lib_info)) {
+
+            m_Choice = eLib;
+            break;
+        }
+    }
+}
+
+
+CMsvcSite::ELibChoice CMsvcSite::GetChoiceForLib(const string& lib) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+
+        const SLibChoice& choice = *p;
+        if (choice.m_LibId == lib) 
+            return choice.m_Choice;
+    }
+    return eUnknown;
+}
+
+CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(const string& lib_3party) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+
+        const SLibChoice& choice = *p;
+        if (choice.m_3PartyLib == lib_3party) 
+            return choice.m_Choice;
+    }
+    return eUnknown;
+}
+
+
+//-----------------------------------------------------------------------------
+bool IsLibOk(const SLibInfo& lib_info)
+{
+    if ( lib_info.IsEmpty() )
+        return false;
+    if ( !lib_info.m_IncludeDir.empty() &&
+         !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
+        LOG_POST(Warning << "No LIB INCLUDE dir : " + lib_info.m_IncludeDir);
+        return false;
+    }
+    if ( !lib_info.m_LibPath.empty() &&
+         !CDirEntry(lib_info.m_LibPath).Exists() ) {
+        LOG_POST(Warning << "No LIBPATH : " + lib_info.m_LibPath);
+        return false;
+    }
+    ITERATE(list<string>, p, lib_info.m_Libs) {
+        const string& lib = *p;
+        string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
+        if ( !lib_path_abs.empty() &&
+             !CDirEntry(lib_path_abs).Exists() ) {
+            LOG_POST(Warning << "No LIB : " + lib_path_abs);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/04/19 15:39:43  gorelenk
+ * Implemeted choice related members of class CMsvcSite:
+ * struct SLibChoice constructor,functions IsLibWithChoice,
+ * Is3PartyLibWithChoice, GetChoiceForLib and GetChoiceFor3PartyLib .
+ *
  * Revision 1.9  2004/03/22 14:48:38  gorelenk
  * Changed implementation of CMsvcSite::GetLibInfo .
  *
