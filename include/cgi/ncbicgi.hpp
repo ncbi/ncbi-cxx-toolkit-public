@@ -58,45 +58,45 @@ BEGIN_NCBI_SCOPE
 class CTime;
 
 ///////////////////////////////////////////////////////
-//
-//  CCgiCookie::
-//
-// The CGI send-cookie class
-//
+///
+///  CCgiCookie::
+///
+/// The CGI send-cookie class
+///
 
 class NCBI_XCGI_EXPORT CCgiCookie
 {
 public:
-    // Copy constructor
+    /// Copy constructor
     CCgiCookie(const CCgiCookie& cookie);
 
-    // Throw the "invalid_argument" if "name" or "value" have invalid format
-    //  - the "name" must not be empty; it must not contain '='
-    //  - "name", "value", "domain" -- must consist of printable ASCII
-    //    characters, and not: semicolons(;), commas(,), or space characters.
-    //  - "path" -- can have space characters.
+    /// Throw the "invalid_argument" if "name" or "value" have invalid format
+    ///  - the "name" must not be empty; it must not contain '='
+    ///  - "name", "value", "domain" -- must consist of printable ASCII
+    ///    characters, and not: semicolons(;), commas(,), or space characters.
+    ///  - "path" -- can have space characters.
     CCgiCookie(const string& name, const string& value,
                const string& domain = NcbiEmptyString,
                const string& path   = NcbiEmptyString);
 
-    // The cookie name cannot be changed during its whole timelife
+    /// The cookie name cannot be changed during its whole timelife
     const string& GetName(void) const;
 
-    // Compose and write to output stream "os":
-    //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
-    //    secure\n"
-    // Here, only "name=value" is mandatory, and other parts are optional
+    /// Compose and write to output stream "os":
+    ///  "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
+    ///   secure\n"
+    /// Here, only "name=value" is mandatory, and other parts are optional
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
-    // Reset everything(but name!) to default state like CCgiCookie(m_Name, "")
+    /// Reset everything but name to default state like CCgiCookie(m_Name, "")
     void Reset(void);
 
-    // Set all attribute values(but name!) to those from "cookie"
+    /// Set all attribute values(but name!) to those from "cookie"
     void CopyAttributes(const CCgiCookie& cookie);
 
-    // All SetXXX(const string&) methods beneath:
-    //  - set the property to "str" if "str" has valid format
-    //  - throw the "invalid_argument" if "str" has invalid format
+    /// All SetXXX(const string&) methods beneath:
+    ///  - set the property to "str" if "str" has valid format
+    ///  - throw the "invalid_argument" if "str" has invalid format
     void SetValue  (const string& str);
     void SetDomain (const string& str);    // not spec'd by default
     void SetPath   (const string& str);    // not spec'd by default
@@ -104,21 +104,21 @@ public:
     void SetExpTime(const CTime& exp_time);// GMT time (infinite if all zeros)
     void SetSecure (bool secure);          // "false" by default
 
-    // All "const string& GetXXX(...)" methods beneath return reference
-    // to "NcbiEmptyString" if the requested attributre is not set
+    /// All "const string& GetXXX(...)" methods beneath return reference
+    /// to "NcbiEmptyString" if the requested attributre is not set
     const string& GetValue  (void) const;
     const string& GetDomain (void) const;
     const string& GetPath   (void) const;
-    // Day, dd-Mon-yyyy hh:mm:ss GMT  (return empty string if not set)
+    /// Day, dd-Mon-yyyy hh:mm:ss GMT  (return empty string if not set)
     string        GetExpDate(void) const;
-    // If exp.date is not set then return "false" and dont assign "*exp_date"
+    /// If exp.date is not set then return "false" and dont assign "*exp_date"
     bool GetExpDate(tm* exp_date) const;
     bool GetSecure(void)          const;
 
-    // Compare two cookies
+    /// Compare two cookies
     bool operator< (const CCgiCookie& cookie) const;
 
-    // Predicate for the cookie comparison
+    /// Predicate for the cookie comparison
     typedef const CCgiCookie* TCPtr;
     struct PLessCPtr {
         bool operator() (const TCPtr& c1, const TCPtr& c2) const {
@@ -157,15 +157,15 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookie& cookie)
 
 
 ///////////////////////////////////////////////////////
-//
-//  CCgiCookies::
-//
-// Set of CGI send-cookies
-//
-//  The cookie is uniquely identified by {name, domain, path}.
-//  "name" is mandatory and non-empty;  "domain" and "path" are optional.
-//  "name" and "domain" are not case-sensitive;  "path" is case-sensitive.
-//
+///
+///  CCgiCookies::
+///
+/// Set of CGI send-cookies
+///
+///  The cookie is uniquely identified by {name, domain, path}.
+///  "name" is mandatory and non-empty;  "domain" and "path" are optional.
+///  "name" and "domain" are not case-sensitive;  "path" is case-sensitive.
+///
 
 class NCBI_XCGI_EXPORT CCgiCookies
 {
@@ -176,19 +176,19 @@ public:
     typedef pair<TIter,  TIter>    TRange;
     typedef pair<TCIter, TCIter>   TCRange;
 
-    // Empty set of cookies
+    /// Empty set of cookies
     CCgiCookies(void);
-    // Format of the string:  "name1=value1; name2=value2; ..."
+    /// Format of the string:  "name1=value1; name2=value2; ..."
     CCgiCookies(const string& str);
-    // Destructor
+    /// Destructor
     ~CCgiCookies(void);
 
-    // Return "true" if this set contains no cookies
+    /// Return "true" if this set contains no cookies
     bool Empty(void) const;
 
-    // All Add() functions:
-    // if the added cookie has the same {name, domain, path} as an already
-    // existing one then the new cookie will override the old one
+    /// All Add() functions:
+    /// if the added cookie has the same {name, domain, path} as an already
+    /// existing one then the new cookie will override the old one
     CCgiCookie* Add(const string& name, const string& value,
                     const string& domain = NcbiEmptyString,
                     const string& path   = NcbiEmptyString);
@@ -196,47 +196,51 @@ public:
     void Add(const CCgiCookies& cookies);  // update by a set of cookies
     void Add(const string& str); // "name1=value1; name2=value2; ..."
 
-    // Return NULL if cannot find this exact cookie
+    /// Return NULL if cannot find this exact cookie
     CCgiCookie*       Find(const string& name,
                            const string& domain, const string& path);
     const CCgiCookie* Find(const string& name,
                            const string& domain, const string& path) const;
 
-    // Return the first matched cookie with name "name", or NULL if
-    // there is no such cookie(s).
-    // Also, if "range" is non-NULL then assign its "first" and
-    // "second" fields to the beginning and the end of the range
-    // of cookies matching the name "name".
-    // NOTE:  if there is a cookie with empty domain and path then
-    //        this cookie is guaranteed to be returned.
+    /// Return the first matched cookie with name "name", or NULL if
+    /// there is no such cookie(s).
+    /// Also, if "range" is non-NULL then assign its "first" and
+    /// "second" fields to the beginning and the end of the range
+    /// of cookies matching the name "name".
+    /// NOTE:  if there is a cookie with empty domain and path then
+    ///        this cookie is guaranteed to be returned.
     CCgiCookie*       Find(const string& name, TRange*  range=0);
     const CCgiCookie* Find(const string& name, TCRange* range=0) const;
 
-    // Remove "cookie" from this set;  deallocate it if "destroy" is true
-    // Return "false" if can not find "cookie" in this set
+    /// Return the full range [begin():end()] on the underlying container 
+    TCRange GetAll(void) const;
+
+    /// Remove "cookie" from this set;  deallocate it if "destroy" is true
+    /// Return "false" if can not find "cookie" in this set
     bool Remove(CCgiCookie* cookie, bool destroy=true);
 
-    // Remove (and destroy if "destroy" is true) all cookies belonging
-    // to range "range".  Return # of found and removed cookies.
+    /// Remove (and destroy if "destroy" is true) all cookies belonging
+    /// to range "range".  Return # of found and removed cookies.
     size_t Remove(TRange& range, bool destroy=true);
 
-    // Remove (and destroy if "destroy" is true) all cookies with the
-    // given "name".  Return # of found and removed cookies.
+    /// Remove (and destroy if "destroy" is true) all cookies with the
+    /// given "name".  Return # of found and removed cookies.
     size_t Remove(const string& name, bool destroy=true);
 
-    // Remove all stored cookies
+    /// Remove all stored cookies
     void Clear(void);
 
-    // Printout all cookies into the stream "os" (see also CCgiCookie::Write())
+    /// Printout all cookies into the stream "os"
+    /// @sa CCgiCookie::Write
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
 private:
     TSet m_Cookies;
 
-    // prohibit default initialization and assignment
+    /// prohibit default initialization and assignment
     CCgiCookies(const CCgiCookies&);
     CCgiCookies& operator= (const CCgiCookies&);
-};  // CCgiCookies
+};
 
 
 /* @} */
@@ -254,14 +258,8 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookies& cookies)
  */
 
 
-///////////////////////////////////////////////////////
-//
-//  CCgiRequest::
-//
-// The CGI request class
-//
-
-// Set of "standard" HTTP request properties
+/// Set of "standard" HTTP request properties
+/// @sa CCgiRequest
 enum ECgiProp {
     // server properties
     eCgi_ServerSoftware = 0,
@@ -303,6 +301,8 @@ enum ECgiProp {
 };  // ECgiProp
 
 
+
+/// @sa CCgiRequest
 class NCBI_XCGI_EXPORT CCgiEntry // copy-on-write semantics
 {
 private:
@@ -343,7 +343,7 @@ public:
     void          SetValue(const string& v)
         { x_ForceUnique(); m_Data->m_Value = v; }
 
-    // Only available for certain fields of POSTed forms
+    /// Only available for certain fields of POSTed forms
     const string& GetFilename() const
         { return m_Data->m_Filename; }
     string&       SetFilename()
@@ -351,8 +351,8 @@ public:
     void          SetFilename(const string& f)
         { x_ForceUnique(); m_Data->m_Filename = f; }
 
-    // CGI parameter number -- automatic image name parameter is #0,
-    // explicit parameters start at #1
+    /// CGI parameter number -- automatic image name parameter is #0,
+    /// explicit parameters start at #1
     unsigned int  GetPosition() const
         { return m_Data->m_Position; }
     unsigned int& SetPosition()
@@ -360,7 +360,7 @@ public:
     void          SetPosition(int p)
         { x_ForceUnique(); m_Data->m_Position = p; }
 
-    // May be available for some fields of POSTed forms
+    /// May be available for some fields of POSTed forms
     const string& GetContentType() const
         { return m_Data->m_ContentType; }
     string&       SetContentType()
@@ -370,7 +370,7 @@ public:
 
     operator const string&() const     { return GetValue(); }
     operator       string&()           { return SetValue(); }
-    // commonly-requested string:: operations...
+    /// commonly-requested string:: operations...
     SIZE_TYPE size() const             { return GetValue().size(); }
     bool empty() const                 { return GetValue().empty(); }
     const char* c_str() const          { return GetValue().c_str(); }
@@ -472,17 +472,27 @@ class CNcbiArguments;
 class CNcbiEnvironment;
 
 
-//
+
+///////////////////////////////////////////////////////
+///
+///  CCgiRequest::
+///
+/// The CGI request class
+///
+
 class NCBI_XCGI_EXPORT CCgiRequest
 {
 public:
-    /// Startup initialization:
-    ///   retrieve request's properties and cookies from environment;
-    ///   retrieve request's entries from "$QUERY_STRING".
+    /// Startup initialization
+    ///
+    ///  - retrieve request's properties and cookies from environment;
+    ///  - retrieve request's entries from "$QUERY_STRING".
+    ///
     /// If "$REQUEST_METHOD" == "POST" and "$CONTENT_TYPE" is empty or either
     /// "application/x-www-form-urlencoded" or "multipart/form-data",
     /// and "fDoNotParseContent" flag is not set,
     /// then retrieve and parse entries from the input stream "istr".
+    ///
     /// If "$REQUEST_METHOD" is undefined then try to retrieve the request's
     /// entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
     /// and "istr" at all.
@@ -506,7 +516,7 @@ public:
                 TFlags        flags = 0,
                 int           ifd   = -1,
                 size_t        errbuf_size = 256);
-    // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
+    /// args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
     CCgiRequest(int                argc,
                 const char* const* argv,
                 const char* const* envp  = 0,
@@ -515,133 +525,141 @@ public:
                 int                ifd   = -1,
                 size_t             errbuf_size = 256);
 
-    // Destructor
+    /// Destructor
     ~CCgiRequest(void);
 
-    // Get name(not value!) of a "standard" property
+    /// Get name(not value!) of a "standard" property
     static const string& GetPropertyName(ECgiProp prop);
 
-    // Get value of a "standard" property (return empty string if not defined)
+    /// Get value of a "standard" property (return empty string if not defined)
     const string& GetProperty(ECgiProp prop) const;
 
-    // Get value of a random client property;  if "http" is TRUE then add
-    // prefix "HTTP_" to the property name.
-    // NOTE:  usually, the value is extracted from the environment variable
-    //        named "$[HTTP]_<key>". Be advised, however, that in the case of
-    //        FastCGI application, the set (and values) of env.variables change
-    //        from request to request, and they differ from those returned
-    //        by CNcbiApplication::GetEnvironment()!
+    /// Get value of a random client property;  if "http" is TRUE then add
+    /// prefix "HTTP_" to the property name.
+    //
+    /// NOTE: usually, the value is extracted from the environment variable
+    ///       named "$[HTTP]_<key>". Be advised, however, that in the case of
+    ///       FastCGI application, the set (and values) of env.variables change
+    ///       from request to request, and they differ from those returned
+    ///       by CNcbiApplication::GetEnvironment()!
     const string& GetRandomProperty(const string& key, bool http = true) const;
 
-    // Get content length using value of the property 'eCgi_ContentLength'.
-    // Return "kContentLengthUnknown" if Content-Length header is missing.
+    /// Get content length using value of the property 'eCgi_ContentLength'.
+    /// Return "kContentLengthUnknown" if Content-Length header is missing.
     static const size_t kContentLengthUnknown;
     size_t GetContentLength(void) const;
 
-    // Retrieve the request cookies
+    /// Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;
     CCgiCookies& GetCookies(void);
 
-    // Get a set of entries(decoded) received from the client.
-    // Also includes "indexes" if "indexes_as_entries" in the
-    // constructor was "true"(default).
+    /// Get a set of entries(decoded) received from the client.
+    /// Also includes "indexes" if "indexes_as_entries" in the
+    /// constructor was "true"(default).
     const TCgiEntries& GetEntries(void) const;
     TCgiEntries& GetEntries(void);
 
-    // Get entry value by name
-    // NOTE:  There can be more than one entry with the same name;
-    //        only one of these entry will be returned.
-    // To get all matches, use GetEntries() and "multimap::" member functions.
+    /// Get entry value by name
+    ///
+    /// NOTE:  There can be more than one entry with the same name;
+    ///        only one of these entry will be returned.
+    /// To get all matches, use GetEntries() and "multimap::" member functions.
     const CCgiEntry& GetEntry(const string& name, bool* is_found = 0) const;
     
 
-    // Get a set of indexes(decoded) received from the client.
-    // It will always be empty if "indexes_as_entries" in the constructor
-    // was "true"(default).
+    /// Get a set of indexes(decoded) received from the client.
+    ///
+    /// It will always be empty if "indexes_as_entries" in the constructor
+    /// was "true"(default).
     const TCgiIndexes& GetIndexes(void) const;
     TCgiIndexes& GetIndexes(void);
 
-    // Return pointer to the input stream.
-    // Return NULL if the input stream is absent, or if it has been
-    // automagically read and parsed already (the "POST" method, and empty or
-    // "application/x-www-form-urlencoded" or "multipart/form-data" type,
-    // and "fDoNotParseContent" flag was not passed to the constructor).
+    /// Return pointer to the input stream.
+    ///
+    /// Return NULL if the input stream is absent, or if it has been
+    /// automagically read and parsed already (the "POST" method, and empty or
+    /// "application/x-www-form-urlencoded" or "multipart/form-data" type,
+    /// and "fDoNotParseContent" flag was not passed to the constructor).
     CNcbiIstream* GetInputStream(void) const;
-    // Returns file descriptor of input stream, or -1 if unavailable.
+    /// Returns file descriptor of input stream, or -1 if unavailable.
     int           GetInputFD(void) const;
 
-    // Set input stream to "is".
-    // If "own" is set to TRUE then this stream will be destroyed
-    // as soon as SetInputStream() gets called with another stream pointer.
-    // NOTE: SetInputStream(0) will be called in ::~CCgiRequest().
+    /// Set input stream to "is".
+    ///
+    /// If "own" is set to TRUE then this stream will be destroyed
+    /// as soon as SetInputStream() gets called with another stream pointer.
+    /// NOTE: SetInputStream(0) will be called in ::~CCgiRequest().
     void SetInputStream(CNcbiIstream* is, bool own = false, int fd = -1);
 
-    // Decode the URL-encoded(FORM or ISINDEX) string "str" into a set of
-    // entries <"name", "value"> and add them to the "entries" set.
-    // The new entries are added without overriding the original ones, even
-    // if they have the same names.
-    // FORM    format:  "name1=value1&.....", ('=' and 'value' are optional)
-    // ISINDEX format:  "val1+val2+val3+....."
-    // If the "str" is in ISINDEX format then the entry "value" will be empty.
-    // On success, return zero;  otherwise return location(1-based) of error
+    /// Decode the URL-encoded(FORM or ISINDEX) string "str" into a set of
+    /// entries <"name", "value"> and add them to the "entries" set.
+    ///
+    /// The new entries are added without overriding the original ones, even
+    /// if they have the same names.
+    /// FORM    format:  "name1=value1&.....", ('=' and 'value' are optional)
+    /// ISINDEX format:  "val1+val2+val3+....."
+    /// If the "str" is in ISINDEX format then the entry "value" will be empty.
+    /// On success, return zero;  otherwise return location(1-based) of error
     static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
 
-    // Decode the URL-encoded string "str" into a set of ISINDEX-like entries
-    // and add them to the "indexes" set
-    // On success, return zero, otherwise return location(1-based) of error
+    /// Decode the URL-encoded string "str" into a set of ISINDEX-like entries
+    /// and add them to the "indexes" set.
+    /// @return
+    ///   zero on success;  otherwise, 1-based location of error
     static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& indexes);
 
 private:
-    // set of environment variables
+    /// set of environment variables
     const CNcbiEnvironment*    m_Env;
     auto_ptr<CNcbiEnvironment> m_OwnEnv;
-    // set of the request FORM-like entries(already retrieved; cached)
+    /// set of the request FORM-like entries(already retrieved; cached)
     TCgiEntries m_Entries;
-    // set of the request ISINDEX-like indexes(already retrieved; cached)
+    /// set of the request ISINDEX-like indexes(already retrieved; cached)
     TCgiIndexes m_Indexes;
-    // set of the request cookies(already retrieved; cached)
+    /// set of the request cookies(already retrieved; cached)
     CCgiCookies m_Cookies;
-    // input stream
+    /// input stream
     CNcbiIstream* m_Input; 
-    // input file descriptor, if available.
+    /// input file descriptor, if available.
     int           m_InputFD;
     bool          m_OwnInput;
-    // Request initialization error buffer size;
-    // when initialization code hits unexpected EOF it will try to 
-    // add diagnostics and print out accumulated request buffer 
-    // 0 in this variable means no buffer diagnostics
+    /// Request initialization error buffer size;
+    /// when initialization code hits unexpected EOF it will try to 
+    /// add diagnostics and print out accumulated request buffer 
+    /// 0 in this variable means no buffer diagnostics
     size_t        m_ErrBufSize;
 
-    // the real constructor code
+    /// the real constructor code
     void x_Init(const CNcbiArguments*   args,
                 const CNcbiEnvironment* env,
                 CNcbiIstream*           istr,
                 TFlags                  flags,
                 int                     ifd);
 
-    // retrieve(and cache) a property of given name
+    /// retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name) const;
 
-    // prohibit default initialization and assignment
+    /// prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&);
     CCgiRequest& operator= (const CCgiRequest&);
 };  // CCgiRequest
 
 
-// URL encode flags
+
+/// URL encode flags
 enum EUrlEncode {
     eUrlEncode_SkipMarkChars,
     eUrlEncode_ProcessMarkChars
 };
 
-// Decode the URL-encoded string "str";  return the result of decoding
-// If "str" format is invalid then throw CParseException
+/// Decode the URL-encoded string "str";  return the result of decoding
+/// If "str" format is invalid then throw CParseException
 NCBI_XCGI_EXPORT
 extern string URL_DecodeString(const string& str);
 
 
-// URL-encode a string "str" to the "x-www-form-urlencoded" form;
-// return the result of encoding. If 
+/// URL-encode a string "str" to the "x-www-form-urlencoded" form;
+/// return the result of encoding. If 
 NCBI_XCGI_EXPORT
 extern string URL_EncodeString
     (const      string& str,
@@ -781,6 +799,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.67  2005/01/28 17:35:03  vakatov
+* + CCgiCookies::GetAll()
+* Quick-and-dirty Doxygen'ization
+*
 * Revision 1.66  2005/01/06 17:58:42  vasilche
 * Added missing operators !=.
 * All operators == and != moved into class.

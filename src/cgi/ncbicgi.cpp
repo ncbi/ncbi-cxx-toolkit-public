@@ -405,6 +405,14 @@ const CCgiCookie* CCgiCookies::Find(const string& name, TCRange* range)
 }
 
 
+
+CCgiCookies::TCRange CCgiCookies::GetAll(void)
+    const
+{
+    return TCRange(m_Cookies.begin(), m_Cookies.end());
+}
+
+
 bool CCgiCookies::Remove(CCgiCookie* cookie, bool destroy)
 {
     if (!cookie  ||  m_Cookies.erase(cookie) == 0)
@@ -1273,6 +1281,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.81  2005/01/28 17:35:03  vakatov
+* + CCgiCookies::GetAll()
+* Quick-and-dirty Doxygen'ization
+*
 * Revision 1.80  2004/12/13 21:43:44  ucko
 * CCgiEntry: support Content-Type headers from POST submissions.
 *
