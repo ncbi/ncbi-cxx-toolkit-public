@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/21 19:15:53  kimelman
+* GB related bugfixes
+*
 * Revision 1.3  2002/03/21 19:14:55  kimelman
 * GB related bugfixes
 *
@@ -81,7 +84,7 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
 //            pOm->RegisterDataLoader( *pLoader, CObjectManager::eDefault);
             pOm->RegisterDataLoader( *(new CGBDataLoader("ID",new CId1Reader,2)), CObjectManager::eDefault);
             
-            int i = 1;
+            int i = 16;
             while(i<1800)
             {
                 CScope scope(*pOm);
