@@ -33,7 +33,9 @@
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
-#include <unistd.h>
+#if !defined(NCBI_OS_MSWIN)
+#  include <unistd.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -838,6 +840,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/03/17 20:57:09  ivanov
+ *  * #include <unistd.h> everywhere except NCBI_OS_MSWIN platform
+ *
  * Revision 1.18  2003/03/17 19:37:31  ucko
  * #include <unistd.h> for gethostname()
  *
