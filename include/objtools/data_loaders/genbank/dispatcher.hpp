@@ -36,7 +36,6 @@
 #include <objtools/data_loaders/genbank/reader.hpp>
 #include <objtools/data_loaders/genbank/writer.hpp>
 #include <objtools/data_loaders/genbank/processor.hpp>
-#include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

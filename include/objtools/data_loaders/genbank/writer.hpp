@@ -32,7 +32,6 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <vector>
 #include <list>
 
@@ -45,7 +44,6 @@ BEGIN_SCOPE(objects)
 
 class CBlob_id;
 class CSeq_id_Handle;
-class CSeq_annot_SNP_Info;
 class CReaderRequestResult;
 class CProcessor;
 
@@ -57,7 +55,6 @@ public:
     typedef int                                         TBlobState;
     typedef int                                         TBlobVersion;
     typedef int                                         TProcessorTag;
-    typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap    TSNP_InfoMap;
 
     enum EType {
         eBlobWriter,
