@@ -48,7 +48,7 @@ BEGIN_SCOPE(blast)
 
 /// Implementation of the IBlastSeqInfoSrc interface to encapsulate retrieval of
 /// sequence identifiers and lengths from a BLAST database. 
-class CSeqDbSeqInfoSrc : public IBlastSeqInfoSrc
+class NCBI_XBLAST_EXPORT CSeqDbSeqInfoSrc : public IBlastSeqInfoSrc
 {
 public:
     /// Constructor: includes initializing the CSeqDB object.
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/11/29 20:09:08  camacho
+ * + missing export specifier for dll builds
+ *
  * Revision 1.3  2004/10/06 17:47:34  dondosha
  * Removed ncbi_pch.hpp
  *
