@@ -142,11 +142,11 @@ protected:
 /// @param best_patch_level
 ///    Best patch levelfound (reference)
 
-bool IsBetterVersion(const CVersionInfo& info, 
-                     const CVersionInfo& cinfo,
-                     int&  best_major, 
-                     int&  best_minor,
-                     int&  best_patch_level);
+bool NCBI_XNCBI_EXPORT IsBetterVersion(const CVersionInfo& info, 
+                                       const CVersionInfo& cinfo,
+                                       int&  best_major, 
+                                       int&  best_minor,
+                                       int&  best_patch_level);
 
 
 /// Algorithm function to find version in the container
@@ -212,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/03 16:15:00  kuznets
+ * Added missing dll export spec for IsBetterVersion
+ *
  * Revision 1.9  2003/11/17 19:51:31  kuznets
  * + IsBetterVersion service function
  *
