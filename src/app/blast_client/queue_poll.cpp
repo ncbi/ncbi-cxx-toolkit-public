@@ -285,11 +285,11 @@ s_QueueSearch(string              & program,
     string returned_rid;
     
     CRef<CBlast4_subject> subject(new CBlast4_subject);
-    subject->SetDatabase(database.data());
+    subject->SetDatabase(database);
         
     CRef<CBlast4_queue_search_request> qsr(new CBlast4_queue_search_request);
-    qsr->SetProgram(program.data());
-    qsr->SetService(service.data());
+    qsr->SetProgram(program);
+    qsr->SetService(service);
         
     qsr->SetSubject(*subject);
         
@@ -532,6 +532,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2003/11/05 19:17:45  bealer
+ * - Remove .data() from string argument passing.
+ *
  * Revision 1.2  2003/09/26 20:01:43  bealer
  * - Fix Solaris compile errors.
  *
