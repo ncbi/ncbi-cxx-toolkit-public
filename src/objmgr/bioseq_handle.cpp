@@ -120,6 +120,18 @@ CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 }
 
 
+TSeqPos CBioseq_Handle::GetBioseqLength(void) const
+{
+    return GetBioseqCore()->GetInst().GetLength();
+}
+
+
+CSeq_inst::TMol CBioseq_Handle::GetBioseqMolType(void) const
+{
+    return GetBioseqCore()->GetInst().GetMol();
+}
+
+
 const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 {
     return x_GetDataSource().GetSeqMap(x_GetBioseq_Info());
@@ -341,6 +353,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/08/27 14:27:19  vasilche
+* Use Reverse(ENa_strand) function.
+*
 * Revision 1.43  2003/07/15 16:14:08  grichenk
 * CBioseqHandle::IsSynonym() made public
 *

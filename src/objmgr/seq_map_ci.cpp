@@ -135,8 +135,7 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
         m_Stack.push_back(push);
         return;
     }
-    x_Push(seqMap, 0, seqMap->GetLength(scope),
-           strand == eNa_strand_minus, pos);
+    x_Push(seqMap, 0, seqMap->GetLength(scope), IsReverse(strand), pos);
     while ( !x_Found() ) {
         if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
             x_SettleNext();
@@ -157,7 +156,7 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
     x_Push(seqMap,
            m_Selector.m_Position,
            m_Selector.m_Length,
-           strand == eNa_strand_minus, 0);
+           IsReverse(strand), 0);
     while ( !x_Found() ) {
         if ( !x_Push(pos - GetPosition(), m_Selector.m_MaxResolveCount > 0) ) {
             x_SettleNext();
@@ -481,6 +480,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/08/27 14:27:19  vasilche
+* Use Reverse(ENa_strand) function.
+*
 * Revision 1.16  2003/07/17 22:51:31  vasilche
 * Fixed unused variables warnings.
 *

@@ -500,7 +500,7 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
                                size_t maxResolveCount,
                                TFlags flags) const
 {
-    if ( strand == eNa_strand_minus ) {
+    if ( IsReverse(strand) ) {
         from = GetLength(scope) - from - length;
     }
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
@@ -664,7 +664,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
 CConstRef<CSeqMap> CSeqMap::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                                   ENa_strand strand)
 {
-    if ( strand == eNa_strand_minus ) {
+    if ( IsReverse(strand) ) {
         CRef<CSeqMap> ret(new CSeqMap());
         ret->x_AddEnd();
         ret->x_AddSegment(eSeqSubMap,
@@ -703,7 +703,7 @@ CSeqMap::CSegment& CSeqMap::x_AddSegment(ESegmentType type,
 {
     CSegment& ret = x_AddSegment(type, len, object);
     ret.m_RefPosition = refPos;
-    ret.m_RefMinusStrand = strand == eNa_strand_minus;
+    ret.m_RefMinusStrand = IsReverse(strand);
     return ret;
 }
 
@@ -859,6 +859,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/08/27 14:27:19  vasilche
+* Use Reverse(ENa_strand) function.
+*
 * Revision 1.45  2003/07/17 19:10:28  grichenk
 * Added methods for seq-map and seq-vector validation,
 * updated demo.
