@@ -214,7 +214,7 @@ bool CSeqDB::GiToPig(TGI gi, TPIG & pig) const
 
 void CSeqDB::AccessionToOids(const string & acc, vector<TOID> & oids) const
 {
-    return m_Impl->AccessionToOids(acc, oids);
+    m_Impl->AccessionToOids(acc, oids);
 }
 
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
