@@ -513,7 +513,7 @@ echo > confdefs.h
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
-ac_unique_file=include/corelib/ncbitype.h
+ac_unique_file=src/Makefile.mk.in
 
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
@@ -3026,7 +3026,7 @@ MATH_LIBS=${MATH_LIBS:="-lm"}
 LIBS="$MATH_LIBS $LIBS"
 
 
-### Save original compilator/linker flags
+### Save original compiler/linker flags
 orig_CPPFLAGS="$CPPFLAGS"
 orig_LIBS="$LIBS"
 
@@ -3474,7 +3474,7 @@ fi
 echo "$ac_t""$NCBI_PM_PATH" 1>&6
 
 
-### Restore original compilator/linker flags
+### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
 

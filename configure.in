@@ -31,13 +31,13 @@
 #   USAGE:
 #    1) Process this file with "autoconf" to produce a "configure" script.
 #    2) Run the resultant "configure" script to produce
-#      a) ".../inc/ncbiconf.h"
-#      b) ".../build/Makefile.mk"
-#      c) other "Makefile"s and scripts in ".../build"
+#      a) "<builddir>/inc/ncbiconf.h"
+#      b) <builddir>/build/Makefile.mk"
+#      c) other "Makefile"s and scripts in "<builddir>/build"
 #
 #############################################################################
 
-AC_INIT(include/corelib/ncbitype.h)
+AC_INIT(src/Makefile.mk.in)
 
 
 #############################################################################
@@ -1069,7 +1069,7 @@ MATH_LIBS=${MATH_LIBS:="-lm"}
 LIBS="$MATH_LIBS $LIBS"
 
 
-### Save original compilator/linker flags
+### Save original compiler/linker flags
 orig_CPPFLAGS="$CPPFLAGS"
 orig_LIBS="$LIBS"
 
@@ -1366,7 +1366,7 @@ fi
 AC_MSG_RESULT([$NCBI_PM_PATH])
 
 
-### Restore original compilator/linker flags
+### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
 
