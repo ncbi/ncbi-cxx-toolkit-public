@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/03/27 15:07:53  grichenk
+* Fixed CSeqMap::CSegmentInfo::operator==()
+*
 * Revision 1.9  2002/03/15 18:10:05  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -254,6 +257,7 @@ inline
 bool CSeqMap::CSegmentInfo::operator== (const CSegmentInfo& seg) const
 {
     return
+        m_position == seg.m_position &&
         m_SegType == seg.m_SegType  &&
         m_RefSeq == seg.m_RefSeq  &&
         m_RefData == seg.m_RefData  &&
