@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/18 15:54:14  gouriano
+* changed DropTopLevelSeqEntry()
+*
 * Revision 1.2  2002/01/16 16:25:57  gouriano
 * restructured objmgr
 *
@@ -75,12 +78,16 @@ CMutex CScope::sm_Scope_Mutex;
 CScope::CScope(CObjectManager& objmgr)
     : m_pObjMgr(&objmgr), m_FindMode(eFirst)
 {
+    NcbiCout << "Scope " << NStr::PtrToString(this)
+        << " created" << NcbiEndl;
     m_pObjMgr->RegisterScope(*this);
 }
 
 
 CScope::~CScope(void)
 {
+    NcbiCout << "Scope " << NStr::PtrToString(this)
+        << " deleted" << NcbiEndl;
     m_pObjMgr->RevokeScope(*this);
     m_pObjMgr->ReleaseDataSources(m_setDataSrc);
 }
@@ -109,16 +116,7 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
 void CScope::DropTopLevelSeqEntry(CSeq_entry& top_entry)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    set<CDataSource*>::iterator found_ds = m_setDataSrc.end();
-    non_const_iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->DropTSE(top_entry) ) {
-            found_ds = it;
-            break;
-        }
-    }
-    if ( found_ds != m_setDataSrc.end()  &&  (*found_ds)->IsEmpty() ) {
-        m_pObjMgr->RemoveTopLevelSeqEntry( m_setDataSrc, top_entry);
-    }
+    m_pObjMgr->RemoveTopLevelSeqEntry( m_setDataSrc, top_entry);
 }
 
 
