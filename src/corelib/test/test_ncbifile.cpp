@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/11/19 18:13:10  juran
+ * Add s_TEST_MatchesMask().
+ * Use GetEntries() instead of Contents().
+ *
  * Revision 1.3  2001/11/15 16:36:29  ivanov
  * Moved from util to corelib
  *
@@ -59,6 +63,34 @@ USING_NCBI_SCOPE;
 extern int testfiles(int, const char *[]);
 #endif
 
+
+/////////////////////////////////
+// File name spliting tests
+//
+
+static void s_TEST_MatchesMask(void)
+{
+    _ASSERT( CDirEntry::MatchesMask(""        ,""));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"*"));
+    _ASSERT(!CDirEntry::MatchesMask("file"    ,"*.*"));
+    _ASSERT( CDirEntry::MatchesMask("file.cpp","*.cpp"));
+    _ASSERT( CDirEntry::MatchesMask("file.cpp","*.c*"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"file*"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"f*"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"f*le"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"f**l*e"));
+    _ASSERT(!CDirEntry::MatchesMask("file"    ,"???"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"????"));
+    _ASSERT(!CDirEntry::MatchesMask("file"    ,"?????"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"?i??"));
+    _ASSERT(!CDirEntry::MatchesMask("file"    ,"?l??"));
+    _ASSERT(!CDirEntry::MatchesMask("file"    ,"?i?"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"?*?"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"?***?"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"?*"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"*?"));
+    _ASSERT( CDirEntry::MatchesMask("file"    ,"********?"));
+}
 
 /////////////////////////////////
 // File name spliting tests
@@ -115,9 +147,7 @@ static void s_TEST_SplitPath(void)
     //_VERIFY( f.GetName() == "Not likely to exist.tar.gz" );
     //_VERIFY( f.GetBase() == "Not likely to exist.tar" );
     //_VERIFY( f.GetExt()  == ".gz" );
-	
 #endif
-
 }
 
 
@@ -246,9 +276,9 @@ static void s_TEST_Dir(void)
     CDir dir(CWD);
 
     cout << endl;
-    vector<CDirEntry> contents = dir.Contents();
-    iterate(vector<CDirEntry>, i, contents) {
-        string entry = i->GetPath();
+    CDir::TEntries contents = dir.GetEntries("*");
+    iterate(CDir::TEntries, i, contents) {
+        string entry = (*i)->GetPath();
         cout << entry << endl;
     }
     cout << endl;
@@ -307,6 +337,7 @@ int CTest::Run(void)
 {
     cout << "Run test" << endl << endl;
 
+    s_TEST_MatchesMask();
     s_TEST_SplitPath();
     s_TEST_File();
     s_TEST_Dir();
