@@ -573,6 +573,7 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
     m_TranslateIfNoProd((flags & fTranslateIfNoProduct) != 0),
     m_ShowTranscript((flags & fShowTranscriptions) != 0),
     m_ShowPeptides((flags & fShowPeptides) != 0),
+    m_ShowFtableRefs((flags & fShowFtableRefs) != 0),
     m_DoHtml((flags & fProduceHTML) != 0)
 {
     switch ( mode ) {
@@ -594,7 +595,7 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
 
 void CFFContext::CFlags::x_SetReleaseFlags(void)
 {
-    m_SupressLocalId       = true;
+    m_SuppressLocalId      = true;
     m_ValidateFeats        = true;
     m_IgnorePatPubs        = true;
     m_DropShortAA          = true;
@@ -612,7 +613,7 @@ void CFFContext::CFlags::x_SetReleaseFlags(void)
     m_UseEmblMolType       = true;
     m_HideBankItComment    = true;
     m_CheckCDSProductId    = true;
-    m_SupressSegLoc        = true;
+    m_SuppressSegLoc       = true;
     m_SrcQualsToNote       = true;
     m_HideEmptySource      = true;
     m_GoQualsToNote        = true;
@@ -625,7 +626,7 @@ void CFFContext::CFlags::x_SetReleaseFlags(void)
 
 void CFFContext::CFlags::x_SetEntrezFlags(void)
 {
-    m_SupressLocalId       = false;
+    m_SuppressLocalId      = false;
     m_ValidateFeats        = true;
     m_IgnorePatPubs        = true;
     m_DropShortAA          = true;
@@ -643,7 +644,7 @@ void CFFContext::CFlags::x_SetEntrezFlags(void)
     m_UseEmblMolType       = true;
     m_HideBankItComment    = true;
     m_CheckCDSProductId    = false;
-    m_SupressSegLoc        = false;
+    m_SuppressSegLoc       = false;
     m_SrcQualsToNote       = true;
     m_HideEmptySource      = true;
     m_GoQualsToNote        = true;
@@ -656,7 +657,7 @@ void CFFContext::CFlags::x_SetEntrezFlags(void)
 
 void CFFContext::CFlags::x_SetGBenchFlags(void)
 {
-    m_SupressLocalId       = false;
+    m_SuppressLocalId      = false;
     m_ValidateFeats        = false;
     m_IgnorePatPubs        = false;
     m_DropShortAA          = false;
@@ -674,7 +675,7 @@ void CFFContext::CFlags::x_SetGBenchFlags(void)
     m_UseEmblMolType       = false;
     m_HideBankItComment    = false;
     m_CheckCDSProductId    = false;
-    m_SupressSegLoc        = false;
+    m_SuppressSegLoc       = false;
     m_SrcQualsToNote       = false;
     m_HideEmptySource      = false;
     m_GoQualsToNote        = false;
@@ -687,7 +688,7 @@ void CFFContext::CFlags::x_SetGBenchFlags(void)
 
 void CFFContext::CFlags::x_SetDumpFlags(void)
 {
-    m_SupressLocalId       = false;
+    m_SuppressLocalId      = false;
     m_ValidateFeats        = false;
     m_IgnorePatPubs        = false;
     m_DropShortAA          = false;
@@ -705,7 +706,7 @@ void CFFContext::CFlags::x_SetDumpFlags(void)
     m_UseEmblMolType       = false;
     m_HideBankItComment    = false;
     m_CheckCDSProductId    = false;
-    m_SupressSegLoc        = false;
+    m_SuppressSegLoc       = false;
     m_SrcQualsToNote       = false;
     m_HideEmptySource      = false;
     m_GoQualsToNote        = false;
@@ -723,6 +724,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/18 15:36:26  shomrat
+* + new flag ShowFtableRefs
+*
 * Revision 1.8  2004/03/10 21:25:42  shomrat
 * Fix m_RefseqInfo initialization
 *
