@@ -143,7 +143,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     unsigned alpha_content = 0;
 
     if (buf[0] == '>') { // FASTA ?
-        for (; (!isLineEnd(buf[i])) && i < count; ++i) {
+        for (i = 0; (!isLineEnd(buf[i])) && i < count; ++i) {
             // skip the first line (presumed this is free-text information)
             unsigned char ch = buf[i];
             if (isalnum(ch) || isspace(ch)) {
@@ -156,7 +156,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         }
     }
 
-    for (; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         unsigned char ch = buf[i];
         char upch = toupper(ch);
 
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/02 20:06:59  johnson
+ * bug fix: missing loop initializers
+ *
  * Revision 1.11  2004/03/01 15:49:54  dicuccio
  * Added explicit check for binary ASN
  *
