@@ -399,7 +399,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence block");
     }
 
-    BlastSeqBlkSetSequence(*seqblk, buf, buflen - 1);
+    BlastSeqBlkSetSequence(*seqblk, buf, buflen - 2);
 
     (*seqblk)->lcase_mask = head_mask;
     (*seqblk)->lcase_mask_allocated = TRUE;
@@ -929,6 +929,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2004/04/19 19:52:02  papadopo
+* correct off-by-one error in sequence size computation
+*
 * Revision 1.66  2004/04/16 14:28:49  papadopo
 * add use of eRPSBlast and eRPSTblastn programs
 *
