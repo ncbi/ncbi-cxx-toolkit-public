@@ -245,7 +245,7 @@ void CConnection::Close()
 void CConnection::Abort()
 {
     m_connection->Abort();
-    FreeResources();
+    //FreeResources();
 }
 
 void CConnection::FreeResources() 
@@ -511,6 +511,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.38  2005/02/24 19:53:16  kholodov
+* Fixed: CConnection::Abort() method
+*
 * Revision 1.37  2005/02/24 19:51:03  kholodov
 * Added: CConnection::Abort() method
 *
