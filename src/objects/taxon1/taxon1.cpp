@@ -276,6 +276,9 @@ public:
 
     bool operator()( const CRef< COrgMod >& mod ) const {
 	// mod is the destination modifier
+	if( m_nType == COrgMod::eSubtype_other ) {
+	    return true;
+	}
 	if( m_nType == mod->GetSubtype() ) {
 	    return true;
 	}
@@ -299,9 +302,6 @@ public:
 //	case COrgMod::eSubtype_sub_species:
 	    return m_bSubSpecType;
 
-//	    if( (m_nType >= 2 && m_nType <= 17) ) return 1;
- 	case COrgMod::eSubtype_other:
- 	    return true;
 	default:
 	    break;
 	}
@@ -1946,6 +1946,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.26  2005/01/07 15:45:48  domrach
+ * Bad bug with modifier conflicts fixed
+ *
  * Revision 6.25  2004/05/19 17:27:10  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
