@@ -826,7 +826,8 @@ int CDemoApp::Run(void)
                     const CSeq_id* mapped_id = 0;
                     it->GetMappedFeature().GetLocation().CheckId(mapped_id);
                     _ASSERT(mapped_id);
-                    _ASSERT(by_product || CSeq_id_Handle::GetHandle(*mapped_id)==idh);
+                    _ASSERT(by_product ||
+                            CSeq_id_Handle::GetHandle(*mapped_id)==idh);
                 }
                 
                 sout = "";
@@ -892,29 +893,24 @@ int CDemoApp::Run(void)
         }
 
         if ( scan_seq_map ) {
-            size_t name_cnt = 0;
-            TSeqRange range(0, handle.GetBioseqLength()-1);
+            TSeqPos range_length =
+                range_to == 0? kInvalidSeqPos: range_to - range_from + 1;
+            TSeqPos actual_end =
+                range_to == 0? handle.GetBioseqLength(): range_to + 1;
+            TSeqPos actual_length = actual_end - range_from;
+            const CSeqMap& seq_map = handle.GetSeqMap();
             for (size_t levels = 0;  levels < 4;  ++levels) {
-                CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+                TSeqPos total_length = 0;
                 CSeqMap::const_iterator seg =
-                    seq_map->ResolvedRangeIterator(&scope,
-                                                   range.GetFrom(),
-                                                   range.GetLength(),
-                                                   eNa_strand_plus, levels);
-                
+                    seq_map.ResolvedRangeIterator(&scope,
+                                                  range_from,
+                                                  range_length,
+                                                  eNa_strand_plus, levels);
+                _ASSERT(seg.GetPosition() == range_from);
                 for ( ;  seg;  ++seg ) {
                     switch (seg.GetType()) {
                     case CSeqMap::eSeqRef:
-                    {{
-                        CBioseq_Handle bh =
-                            scope.GetBioseqHandle(seg.GetRefSeqid());
-                        CConstRef<CBioseq> seq = bh.GetCompleteBioseq();
-                        for( CTypeConstIterator<CName_std> i(ConstBegin(*seq));
-                             i; ++i ) {
-                            ++name_cnt;
-                        }
                         break;
-                    }}
                     case CSeqMap::eSeqData:
                     case CSeqMap::eSeqGap:
                         break;
@@ -925,9 +921,46 @@ int CDemoApp::Run(void)
                         _ASSERT("Unexpected segment type" && 0);
                         break;
                     }
+                    total_length += seg.GetLength();
                 }
+                _ASSERT(total_length == actual_length);
+                _ASSERT(seg.GetPosition() == actual_end);
+                _ASSERT(seg.GetLength() == 0);
+                total_length = 0;
+                for ( --seg; seg; --seg ) {
+                    _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
+                    total_length += seg.GetLength();
+                }
+                _ASSERT(total_length == actual_length);
+                _ASSERT(seg.GetPosition() == range_from);
+                _ASSERT(seg.GetLength() == 0);
+                total_length = 0;
+                for ( ++seg; seg; ++seg ) {
+                    _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
+                    total_length += seg.GetLength();
+                }
+                _ASSERT(total_length == actual_length);
+                _ASSERT(seg.GetPosition() == actual_end);
+                _ASSERT(seg.GetLength() == 0);
             }
-            NcbiCout << " Name-std count: " << name_cnt << NcbiEndl;
+            CSeqMap::const_iterator begin = seq_map.begin();
+            _ASSERT(begin.GetPosition() == 0);
+            CSeqMap::const_iterator end = seq_map.end();
+            _ASSERT(end.GetType() == CSeqMap::eSeqEnd);
+            _ASSERT(end.GetPosition() == handle.GetBioseqLength());
+            TSeqPos total_length = 0;
+            for ( CSeqMap::const_iterator iter = begin; iter != end; ++iter ) {
+                _ASSERT(iter.GetType() != CSeqMap::eSeqEnd);
+                total_length += iter.GetLength();
+            }
+            _ASSERT(total_length == handle.GetBioseqLength());
+            total_length = 0;
+            for ( CSeqMap::const_iterator iter = end; iter != begin; ) {
+                --iter;
+                _ASSERT(iter.GetType() != CSeqMap::eSeqEnd);
+                total_length += iter.GetLength();
+            }
+            _ASSERT(total_length == handle.GetBioseqLength());
         }
 
         if ( used_memory_check ) {
@@ -964,6 +997,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2004/10/14 17:44:52  vasilche
+* Added bidirectional tests for CSeqMap_CI.
+*
 * Revision 1.86  2004/10/07 14:09:48  vasilche
 * More options to control demo application.
 *
