@@ -424,14 +424,15 @@ int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 }
 
 
-typedef pair<const char*, CReader::ESatellite> TSatPair;
+typedef pair<const char*, int> TSatPair;
 static const TSatPair sc_SatArray[] = {
     TSatPair("SNP",        CReader::eSatellite_SNP),
     TSatPair("ti",         CReader::eSatellite_TRACE),
     TSatPair("TR_ASSM_CH", CReader::eSatellite_TR_ASSM_CH),
-    TSatPair("TRACE_ASSM", CReader::eSatellite_TRACE_ASSM)
+    TSatPair("TRACE_ASSM", CReader::eSatellite_TRACE_ASSM),
+    TSatPair("TRACE_CHGR", 31)
 };
-typedef CStaticArrayMap<const char*, CReader::ESatellite, PNocase> TSatMap;
+typedef CStaticArrayMap<const char*, int, PNocase> TSatMap;
 static const TSatMap sc_SatMap(sc_SatArray, sizeof (sc_SatArray));
 
 
@@ -892,6 +893,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.78  2004/03/05 17:43:52  dicuccio
+ * Added support for satellite 31: TRACE_CHGR
+ *
  * Revision 1.77  2004/03/03 22:59:47  ucko
  * Gracefully handle CNcbiApplication::Instance returning NULL, as it
  * *is* possible to use other frameworks.
