@@ -1539,6 +1539,24 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
                 imp.SetKey (feat);
             }
             sfp->SetLocation (location);
+ 
+        } else {
+
+            // unrecognized feature key
+
+            if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                ERR_POST (Warning << "Unrecognized feature " << feat);
+            }
+
+            if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+                sfp.Reset (new CSeq_feat);
+                sfp->ResetLocation ();
+                sfp->SetData ().Select (CSeqFeatData::e_Imp);
+                CSeqFeatData& sfdata = sfp->SetData ();
+                CImp_feat_Base& imp = sfdata.SetImp ();
+                imp.SetKey (feat);
+                sfp->SetLocation (location);
+            }
         }
     }
 
