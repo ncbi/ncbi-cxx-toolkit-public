@@ -26,67 +26,65 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of sequences
+*      Classes to hold sets of alignments
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2000/08/28 18:52:18  thiessen
+* Revision 1.1  2000/08/28 18:52:16  thiessen
 * start unpacking alignments
-*
-* Revision 1.1  2000/08/27 18:50:56  thiessen
-* extract sequence information
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_SEQUENCE_SET__HPP
-#define CN3D_SEQUENCE_SET__HPP
+#ifndef CN3D_ALIGNMENT_SET__HPP
+#define CN3D_ALIGNMENT_SET__HPP
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Bioseq.hpp>
+#include <vector>
+
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 #include "cn3d/structure_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
-typedef list< ncbi::CRef< ncbi::objects::CSeq_entry > > SeqEntryList;
+typedef list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
 
-class Sequence;
-class Molecule;
 class MasterSlaveAlignment;
+class Sequence;
 
-class SequenceSet : public StructureBase
+class AlignmentSet : public StructureBase
 {
 public:
-    SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
+    AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
 
-    typedef LIST_TYPE < const Sequence * > SequenceList;
-    SequenceList sequences;
+    typedef LIST_TYPE < const MasterSlaveAlignment * > AlignmentList;
+    AlignmentList alignments;
 
-    // there is one and only one sequence in this set that will be the master
-    // for all alignments of sequences from this set
+    // pointer to the master sequence for each pairwise master/slave alignment in this set
     const Sequence *master;
 
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
 };
 
-class Sequence : public StructureBase
+class MasterSlaveAlignment : public StructureBase
 {
 public:
-    Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
+    MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
+        const ncbi::objects::CSeq_align& seqAlign);
 
-    static const int NOT_SET;
-    int gi, pdbChain;
-    std::string pdbID, sequenceString;
+    // pointers to the sequences in this pairwise alignment
+    const Sequence *master, *slave;
 
-    // corresponding protein chain
-    const Molecule *molecule;
-
-    // corresponding alignment with master (if slave)
-    const MasterSlaveAlignment *alignment;
+    // this vector maps slave residues onto the master - e.g., masterToSlave[10] = 5
+    // means that residue #10 in the master is aligned to residue #5 of the slave.
+    // Residues are numbered from zero. masterToSlave[n] = -1 means that master
+    // residue n is unaligned.
+    typedef std::vector < int > ResidueVector;
+    ResidueVector masterToSlave;
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_SEQUENCE_SET__HPP
+#endif // CN3D_ALIGNMENT_SET__HPP

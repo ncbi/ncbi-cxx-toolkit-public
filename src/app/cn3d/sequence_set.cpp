@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/28 18:52:42  thiessen
+* start unpacking alignments
+*
 * Revision 1.1  2000/08/27 18:52:22  thiessen
 * extract sequence information
 *
@@ -44,6 +47,8 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/IUPACaa.hpp>
+#include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI2na.hpp>
 
 #include "cn3d/sequence_set.hpp"
 
@@ -54,7 +59,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) :
-    StructureBase(parent)
+    StructureBase(parent), master(NULL)
 {
     SeqEntryList::const_iterator s, se = seqEntries.end();
     for (s=seqEntries.begin(); s!=se; s++) {
@@ -66,8 +71,11 @@ SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) 
             for (q=s->GetObject().GetSet().GetSeq_set().begin(); q!=qe; q++) {
                 if (q->GetObject().IsSeq()) {
 
-                    // only store amino acid sequences
-                    if (q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_aa)
+                    // only store amino acid or nucleotide sequences
+                    if (q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_aa &&
+                        q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_dna &&
+                        q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_rna &&
+                        q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
                         continue;
 
                     const Sequence *sequence = new Sequence(this, q->GetObject().GetSeq());
@@ -83,8 +91,67 @@ SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) 
 
 const int Sequence::NOT_SET = -1;
 
+#define FIRSTOF2(byte) (((byte) & 0xF0) >> 4)
+#define SECONDOF2(byte) ((byte) & 0x0F)
+
+static void StringFrom4na(const std::vector< char >& vec, std::string *str, bool isDNA)
+{
+    if (SECONDOF2(vec.back()) > 0)
+        str->resize(vec.size() * 2);
+    else
+        str->resize(vec.size() * 2 - 1);
+
+    // first, extract 4-bit values
+    int i;
+    for (i=0; i<vec.size(); i++) {
+        (*str)[2*i] = FIRSTOF2(vec[i]);
+        if (SECONDOF2(vec[i]) > 0) (*str)[2*i + 1] = SECONDOF2(vec[i]);
+    }
+
+    // then convert 4-bit values to ascii characters
+    for (i=0; i<str->size(); i++) {
+        switch ((*str)[i]) {
+            case 1: (*str)[i] = 'A'; break;
+            case 2: (*str)[i] = 'C'; break;
+            case 4: (*str)[i] = 'G'; break;
+            case 8: isDNA ? (*str)[i] = 'T' : (*str)[i] = 'U'; break;
+            default:
+                (*str)[i] = 'X';
+        }
+    }
+}
+
+#define FIRSTOF4(byte) (((byte) & 0xC0) >> 6)
+#define SECONDOF4(byte) (((byte) & 0x30) >> 4)
+#define THIRDOF4(byte) (((byte) & 0x0C) >> 2)
+#define FOURTHOF4(byte) ((byte) & 0x03)
+
+static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool isDNA)
+{
+    str->resize(vec.size() * 4);
+
+    // first, extract 4-bit values
+    int i;
+    for (i=0; i<vec.size(); i++) {
+        (*str)[4*i] = FIRSTOF4(vec[i]);
+        (*str)[4*i + 1] = SECONDOF4(vec[i]);
+        (*str)[4*i + 2] = THIRDOF4(vec[i]);
+        (*str)[4*i + 3] = FOURTHOF4(vec[i]);
+    }
+
+    // then convert 4-bit values to ascii characters
+    for (i=0; i<str->size(); i++) {
+        switch ((*str)[i]) {
+            case 0: (*str)[i] = 'A'; break;
+            case 1: (*str)[i] = 'C'; break;
+            case 2: (*str)[i] = 'G'; break;
+            case 3: isDNA ? (*str)[i] = 'T' : (*str)[i] = 'U'; break;
+        }
+    }
+}
+
 Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), gi(NOT_SET), pdbChain(NOT_SET)
+    StructureBase(parent), gi(NOT_SET), pdbChain(NOT_SET), alignment(NULL), molecule(NULL)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
@@ -105,8 +172,17 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             sequenceString = bioseq.GetInst().GetSeq_data().GetNcbieaa().Get();
         } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbi4na()) {
+            StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi4na().Get(), &sequenceString,
+                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbi2na()) {
+            StringFrom2na(bioseq.GetInst().GetSeq_data().GetNcbi2na().Get(), &sequenceString,
+                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
+            if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() < sequenceString.length())
+                sequenceString.resize(bioseq.GetInst().GetLength());
         } else {
-            ERR_POST(Critical << "Sequence::Sequence() - confused by sequence string format");
+            ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
+                << ": confused by sequence string format");
             return;
         }
         if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() != sequenceString.length()) {
@@ -114,7 +190,8 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             return;
         }
     } else {
-        ERR_POST(Critical << "Sequence::Sequence() - confused by sequence representation");
+        ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
+                << ": confused by sequence representation");
         return;
     }
     TESTMSG(sequenceString);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/28 18:52:42  thiessen
+* start unpacking alignments
+*
 * Revision 1.10  2000/08/27 18:52:21  thiessen
 * extract sequence information
 *
@@ -94,12 +97,12 @@ Molecule::Molecule(StructureBase *parent,
         }
     }
 
-    // get gi for protein chains (for sequence alignment stuff)
-    if (type == eProtein) {
+    // get gi for biopolymer chains (for sequence alignment stuff)
+    if (IsProtein() || IsNucleotide()) {
         if (graph.IsSetSeq_id() && graph.GetSeq_id().IsGi()) {
             gi = graph.GetSeq_id().GetGi();
         } else {
-            ERR_POST(Critical << "Molecule::Molecule() - protein molecule, but can't get gi");
+            ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get gi");
             return;
         }
     }

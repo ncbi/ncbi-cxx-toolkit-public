@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/28 18:52:18  thiessen
+* start unpacking alignments
+*
 * Revision 1.8  2000/08/27 18:50:55  thiessen
 * extract sequence information
 *
@@ -109,6 +112,7 @@ public:
     BondList interResidueBonds;
     BondList virtualBonds;
 
+    // corresponding sequence (if present)
     const Sequence *sequence;
 
     typedef LIST_TYPE < unsigned int > DisplayListList;

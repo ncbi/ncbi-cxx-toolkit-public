@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/28 18:52:41  thiessen
+* start unpacking alignments
+*
 * Revision 1.2  2000/08/27 18:52:20  thiessen
 * extract sequence information
 *
@@ -157,7 +160,9 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
             logText = new wxTextCtrl(logFrame, -1, "", 
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
         }
-        logText->AppendText(errMsg.c_str());
+        // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
+        if (logText->GetLastPosition() > 30000) logText->Clear();
+        *logText << wxString(errMsg.data(), errMsg.size());
         logFrame->Show(TRUE);
     }
 }

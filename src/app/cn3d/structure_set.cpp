@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/08/28 18:52:42  thiessen
+* start unpacking alignments
+*
 * Revision 1.22  2000/08/27 18:52:22  thiessen
 * extract sequence information
 *
@@ -124,6 +127,7 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/sequence_set.hpp"
+#include "cn3d/alignment_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -131,10 +135,87 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+static bool VerifyMatch(const Sequence *sequence, const StructureObject *object, const Molecule *molecule)
+{
+    if (molecule->residues.size() == sequence->sequenceString.size()) {
+        if (molecule->sequence) {
+            ERR_POST(Error << "VerifyMatch() - confused by multiple sequences matching object "
+                << object->pdbID << " moleculeID " << molecule->id);\
+            return false;
+        }
+        TESTMSG("matched sequence gi " << sequence->gi << " with object "
+            << object->pdbID << " moleculeID " << molecule->id);
+        return true;
+    } else {
+        ERR_POST(Error << "VerifyMatch() - length mismatch between sequence gi "
+            << sequence->gi << " and matching molecule");
+    }
+    return false;
+}
+
+void StructureSet::MatchSequencesToMolecules(void)
+{
+    // crossmatch sequences with molecules - at most one molecule per sequence.
+    // Match algorithm: for each molecule, check the sequence list for a matching 
+    // sequence that hasn't already been matched to a previous molecule.
+    if (sequenceSet && objects.size() > 0) {
+
+		SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
+        ObjectList::iterator o, oe = objects.end();
+        int nMolecules, nSequenceMatches;
+
+        for (o=objects.begin(); o!=oe; o++) {
+            nMolecules = nSequenceMatches = 0;
+            ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+            for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+                if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
+                nMolecules++;
+
+                for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+                    if ((*s)->molecule != NULL) continue; // skip already-matched sequences
+
+                    if (m->second->gi != Molecule::NO_GI && m->second->gi == (*s)->gi) {
+                        if (VerifyMatch(*s, *o, m->second)) {
+
+                            (const_cast<Molecule*>(m->second))->sequence = *s;
+                            (const_cast<Sequence*>(*s))->molecule = m->second;
+                            nSequenceMatches++;
+                            
+                            // if this is the master structure of a mutiple-structure alignment,
+                            // then we know that this molecule's sequence must also be the
+                            // master sequence for all sequence alignments
+                            if (objects.size() > 1 && (*o)->IsMaster())
+                                (const_cast<SequenceSet*>(sequenceSet))->master = *s;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // sanity check
+            if (objects.size() == 1) {
+                if (nSequenceMatches != nMolecules) { // must match all biopolymer molecules
+                    ERR_POST(Error << "MatchSequencesToMolecules() - couldn't find sequence for "
+                        "all biopolymers in " << (*o)->pdbID);
+                    return;
+                }
+            } else { // multiple objects
+                if (nSequenceMatches != 1) { // must match at exactly one biopolymer per object
+                    ERR_POST(Error << "MatchSequencesToMolecules() - currently require exactly one "
+                        "sequence per StructureObject (confused by " << (*o)->pdbID
+                        << ", biopolymers: " << nMolecules << ", matches: " << nSequenceMatches << ' ');
+                    return;
+                }
+            }
+        }
+    }
+}
+
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
     lastDisplayList(OpenGLRenderer::NO_LIST),
-    isMultipleStructure(mime.IsAlignstruc()), sequenceSet(NULL)
+    isMultipleStructure(mime.IsAlignstruc()),
+    sequenceSet(NULL), alignmentSet(NULL)
 {
     StructureObject *object;
     parentSet = this;
@@ -150,11 +231,14 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         object = new StructureObject(this, mime.GetStrucseq().GetStructure(), true);
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime.GetStrucseq().GetSequences());
+        MatchSequencesToMolecules();
 
     } else if (mime.IsStrucseqs()) {
         object = new StructureObject(this, mime.GetStrucseqs().GetStructure(), true);
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
+        MatchSequencesToMolecules();
+        alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -173,6 +257,8 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
             objects.push_back(object);
         }
         sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
+        MatchSequencesToMolecules();
+        alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);
@@ -183,32 +269,6 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     }
 
     VerifyFrameMap();
-
-    // crossmatch sequences with molecules - can have more than one molecule
-    // per sequence, but not vise-versa
-    if (sequenceSet) {
-		SequenceSet::SequenceList::iterator s, se = sequenceSet->sequences.end();
-        ObjectList::iterator o, oe = objects.end();
-        for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-            for (o=objects.begin(); o!=oe; o++) {
-                ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-                for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
-                    if (m->second->gi != Molecule::NO_GI && m->second->gi == (*s)->gi) {
-                        // verify sequence length match
-                        if (m->second->residues.size() == (*s)->sequenceString.size()) {
-                            (const_cast<Sequence*>(*s))->molecules.push_back(m->second);
-                            (const_cast<Molecule*>(m->second))->sequence = *s;
-                            TESTMSG("matched sequence " << (*s)->gi << " with object "
-                                << (*o)->pdbID << " moleculeID " << m->second->id);
-                        } else {
-                            ERR_POST(Error << "StructureSet::StructureSet() - length mismatch between "
-                                "sequence gi " << (*s)->gi << " and matching molecule");
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 StructureSet::~StructureSet(void)

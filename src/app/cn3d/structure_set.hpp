@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/08/28 18:52:18  thiessen
+* start unpacking alignments
+*
 * Revision 1.19  2000/08/27 18:50:56  thiessen
 * extract sequence information
 *
@@ -115,6 +118,7 @@ class ShowHideManager;
 class StyleManager;
 class Residue;
 class SequenceSet;
+class AlignmentSet;
 
 class StructureSet : public StructureBase
 {
@@ -130,7 +134,8 @@ public:
     ObjectList objects;
 
     // sequence information
-    SequenceSet *sequenceSet;
+    const SequenceSet *sequenceSet;
+    const AlignmentSet *alignmentSet;
 
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;
@@ -162,6 +167,7 @@ public:
     FrameMap frameMap;
 
 private:
+    void MatchSequencesToMolecules(void);
     void VerifyFrameMap(void) const;
     typedef std::pair < const Residue*, int > NamePair;
     typedef std::map < unsigned int, NamePair > NameMap;
