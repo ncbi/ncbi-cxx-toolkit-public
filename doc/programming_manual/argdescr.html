@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title> Using the CArgDescriptions class </title>
 </head>
 <body bgcolor="#FFFFFF">
@@ -111,7 +111,9 @@ validate the number of positional arguments occurring in the command line</li>
 
 <li>
 generate a <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i> message
-based on the argument descriptions</li>
+based on the argument descriptions (NOTE: <b><i><font color="#FF0000">-h</font>
+</i></b>flag to print the <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i>
+is defined by default)</li>
 
 <li>
 access the input argument values specifically type-cast according to their
@@ -243,7 +245,7 @@ to be used there, as in: "<i>-name value</i>" (or "<i>-name"</i>).</dd>
 
 <dt>
 <i><font color="#0000B4">synopsis&nbsp;&nbsp;&nbsp; </font></i><font color="#000000">(for
-</font><font color="#FF0000">key_***</font><font color="#0000B4"> </font><font color="#000000">arguments
+</font><font color="#FF0000">key_***</font><font color="#000000">arguments
 only)</font></dt>
 
 <dd>
@@ -272,9 +274,9 @@ enumeration, defining the type category of the argument.</dd>
 
 <dt>
 <i><font color="#0000B4">default&nbsp;&nbsp;&nbsp;&nbsp; </font></i><font color="#000000">(for
-</font><font color="#FF0000">key_dflt</font><font color="#0000B4"> </font><font color="#000000">and
-</font><font color="#FF0000">pos_dflt</font><font color="#000000"> arguments
-only)</font></dt>
+</font><font color="#FF0000">key_dflt</font><font color="#000000">and
+</font><font color="#FF0000">pos_dflt</font><font color="#000000">
+arguments only)</font></dt>
 
 <dl>
 <dt>
@@ -311,8 +313,8 @@ Position-independent arguments that <b>must</b> be present in the command
 line.</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddKey">AddKey(key,
-synopsis, comment, value_type, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddKey">AddKey(key, synopsis, comment, value_type,
+flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
@@ -324,16 +326,16 @@ synopsis, comment, value_type, flags)</a></i></dd>
 Position-independent arguments that are <b>optional</b>.</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddKey">AddOptionalKey(key,
-synopsis, comment, value_type, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddKey">AddOptionalKey(key, synopsis, comment,
+value_type, flags)</a></i></dd>
 
 <dd>
 A default value can be specified in the argument's description to cover
 those cases where the argument does not occur in the command line.</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddKey">AddDefaultKey(key,
-synopsis, comment, value_type, default_value, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddKey">AddDefaultKey(key, synopsis, comment,
+value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
@@ -345,14 +347,13 @@ Position-independent boolean (without value) arguments. These arguments
 are <i>always</i> optional.</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddFlag">AddFlag(flag,
-comment, set_value)</a></i></dd>
+<i><a href="../lxr/ident?i=AddFlag">AddFlag(flag, comment, set_value)</a></i></dd>
 
 <br>&nbsp;
 <dt>
 <font color="#000080">Mandatory named positional arguments:&nbsp; <i>&lt;value>
-
-</i></font><i><font color="#FF0000">(example:&nbsp; 12 Feb)</font></i></dt>
+</i></font><i><font color="#FF0000">(example:&nbsp;
+12 Feb)</font></i></dt>
 
 <dd>
 These are position-<i>dependent</i> arguments (of any type), which are
@@ -364,13 +365,14 @@ defines the order in which these arguments should appear on the command
 line.</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddPlain">AddPositional(key,
-comment, value_type, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddPlain">AddPositional(key, comment, value_type,
+flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
 <font color="#000080">Optional named positional arguments:&nbsp; <i>[value]
-</i></font><i><font color="#FF0000">(example:&nbsp; foo.txt&nbsp; bar)</font></i></dt>
+</i></font><i><font color="#FF0000">(example:&nbsp;
+foo.txt&nbsp; bar)</font></i></dt>
 
 <dd>
 Position-<i>dependent</i> arguments that are <b>optional</b>. They always
@@ -380,12 +382,12 @@ object using <i>Add[Optional|Default]Positional()</i> defines the order
 in which these arguments should appear on the command line.</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddPlain">AddOptionalPositional(key,
-comment, value_type, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddPlain">AddOptionalPositional(key, comment,
+value_type, flags)</a></i></dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddPlain">AddDefaultPositional(key,
-comment, value_type, default_value, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddPlain">AddDefaultPositional(key, comment,
+value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
@@ -404,11 +406,12 @@ many optional</dd>
 
 <dd>
 arguments to expect using <font color="#3333FF">n_mandatory</font> and
-<font color="#3333FF">n_optional</font> parameters:</dd>
+<font color="#3333FF">n_optional</font>
+parameters:</dd>
 
 <dd>
-<i><a href="../lxr/ident?i=AddExtra">AddExtra(n_mandatory,
-n_optional, comment, type, flags)</a></i></dd>
+<i><a href="../lxr/ident?i=AddExtra">AddExtra(n_mandatory, n_optional,
+comment, type, flags)</a></i></dd>
 </dl>
 Any of the registered descriptions can be tested for existence and/or deleted
 using:
@@ -536,12 +539,14 @@ The output generated when an exception occurs might look something like:
 <pre><font color="#000080">ERROR: Must specify mandatory argument:&nbsp; "-i &lt;MyInputFile>"</font></pre>
 
 <pre><font color="#000080">SYNOPSIS
-&nbsp;&nbsp; myApplic -text -i MyInputFile [-l MyLogFile]&nbsp;
+&nbsp;&nbsp; myApplic -h -text -i MyInputFile [-l MyLogFile]&nbsp;
 
 DESCRIPTION&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp; (program description)
 
 OPERANDS&nbsp;&nbsp;&nbsp;
+&nbsp;-h
+&nbsp;&nbsp; Print this USAGE message;&nbsp; ignore other arguments
 &nbsp;-text
 &nbsp;&nbsp; Use text input format
 &nbsp;-i MyInputFile&nbsp;&nbsp;&nbsp; /InpFile, mandatory/
@@ -589,7 +594,8 @@ where "f" is the name registered for that argument. There are two ways
 to access the <i><b>N</b>th</i> <i>unnamed</i> positional argument: <i>myCArgs["#<b>N</b>"]
 </i>and
 <i>myCArgs[<b>N</b>],
-</i>where<i> 1 &lt;= <b>N</b> &lt;= GetNExtra().</i>
+</i>where<i>
+1 &lt;= <b>N</b> &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
 <i><a href="../docxx/CArgValue.html">CArgValue </a></i>class:&nbsp; the
@@ -646,16 +652,15 @@ method.</li>
 <h1>
 <a NAME="ref_CodeExamples"></a></h1>
 
-<h3>Code examples</h3>
-A simple application program, 
-<i><a href="../lxr/source/src/corelib/test/test_ncbiargs_sample.cpp">test_ncbiargs_sample.cpp</a></i>
+<h3>
+Code examples</h3>
+A simple application program, <i><a href="../lxr/source/src/corelib/test/test_ncbiargs_sample.cpp">test_ncbiargs_sample.cpp</a></i>
 demonstrates the usage of these classes for argument processing. See also
 <i><a href="../lxr/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>
 (especially <i>main(),</i> <i>s_InitTest0() </i>and<i> s_RunTest0() </i>there),
 and <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
-<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;
-<i><a href="registry.html">next&nbsp;</a></i>
+<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a><a href="registry.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
