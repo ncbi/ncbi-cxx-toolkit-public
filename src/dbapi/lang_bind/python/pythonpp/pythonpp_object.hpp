@@ -226,7 +226,7 @@ public:
         long value = PyObject_Hash (Get());
 
         if ( value == -1) {
-            throw CError ("Invalid hash value");
+            throw CSystemError("Invalid hash value");
         }
         return value;
     }
@@ -307,7 +307,7 @@ public:
     : CObject(obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
 
@@ -322,7 +322,7 @@ public:
     {
         if ( this != &obj) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -364,7 +364,7 @@ public:
     : CObject(obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CType(const CType& obj)
@@ -376,7 +376,7 @@ public:
     {
         if ( this != &obj) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -495,7 +495,7 @@ CObject::GetType(void) const
     // ???
     PyObject* obj = PyObject_Type (Get());
     if ( !obj ) {
-        throw CError ("Type does not exist");
+        throw CTypeError("Type does not exist");
     }
     return CType(obj, eTakeOwnership);
 }
@@ -508,7 +508,7 @@ CObject::GetString(void) const
     // ???
     PyObject* obj = PyObject_Str (Get());
     if ( !obj ) {
-        throw CError ("Unable to convert an object to a string");
+        throw CTypeError("Unable to convert an object to a string");
     }
     return CString(obj, eTakeOwnership);
 }
@@ -520,7 +520,7 @@ CObject::GetRepresentation() const
     // ???
     PyObject* obj = PyObject_Repr(Get());
     if ( !obj ) {
-        throw CError ("Unable to convert an object to a representation");
+        throw CTypeError("Unable to convert an object to a representation");
     }
     return CString(obj, eTakeOwnership);
 }
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/02/10 17:43:56  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.4  2005/02/08 19:19:35  ssikorsk
 * A lot of improvements
 *

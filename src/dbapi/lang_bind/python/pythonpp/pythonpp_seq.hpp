@@ -206,7 +206,7 @@ public:
     {
         if (PySequence_SetItem (Get(), i, obj) == -1)
         {
-            throw CError("Cannot set item with a sequence");
+            throw CSystemError("Cannot set item with a sequence");
         }
         IncRefCount(obj);
     }
@@ -373,7 +373,7 @@ public:
         int operator-(const iterator& other) const
         {
             if (*seq != *other.seq) {
-                throw CError ("CSequnceHelper<T>::iterator comparison error");
+                throw CSystemError("CSequnceHelper<T>::iterator comparison error");
             }
             return position - other.position;
         }
@@ -574,14 +574,14 @@ public:
     : CSequence(obj, ownership)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CTuple(const CObject& obj)
     : CSequence(obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CTuple(const CTuple& obj)
@@ -601,7 +601,7 @@ public:
         for ( size_t i = 0; i < size; ++i ) {
             if ( PyTuple_SetItem (Get(), i, Py_None) == -1 ) {
                 IncRefCount(Py_None);
-                throw CError("PyTuple_SetItem error");
+                throw CSystemError("PyTuple_SetItem error");
             }
             IncRefCount(Py_None);
         }
@@ -613,7 +613,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -623,7 +623,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -641,7 +641,7 @@ public:
 
         if ( PyTuple_SetItem (Get(), offset, obj) == -1 ) {
             IncRefCount(obj);
-            throw CError("");
+            throw CSystemError("");
         }
         IncRefCount(obj);
     }
@@ -649,7 +649,7 @@ public:
     {
         PyObject* obj = PyTuple_GetItem(Get(), offset);
         if ( !obj ) {
-            throw CError("");
+            throw CSystemError("");
         }
         return CObject(obj);
     }
@@ -659,7 +659,7 @@ public:
     {
         if(PyTuple_SetItem (Get(), offset, obj) == -1 ) {
             IncRefCount(obj);
-            throw CError("");
+            throw CSystemError("");
         }
     }
     // Fast version. Does not increment a counter ...
@@ -701,14 +701,14 @@ public:
     : CSequence(obj, ownership)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CList(const CObject& obj)
     : CSequence(obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CList(const CList& obj)
@@ -721,7 +721,7 @@ public:
     {
         for ( size_t i = 0; i < size; ++i ) {
             if ( PyList_SetItem (Get(), i, Py_None) != 0 ) {
-                throw CError("");
+                throw CSystemError("");
             }
             IncRefCount(Py_None);
         }
@@ -733,7 +733,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -743,7 +743,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -760,7 +760,7 @@ public:
 
         if ( PyList_SetItem (Get(), offset, obj) == -1 ) {
             IncRefCount(obj);
-            throw CError("");
+            throw CSystemError("");
         }
         IncRefCount(obj);
     }
@@ -768,7 +768,7 @@ public:
     {
         PyObject* obj = PyList_GetItem(Get(), offset);
         if ( !obj ) {
-            throw CError("");
+            throw CSystemError("");
         }
         return CObject(obj);
     }
@@ -777,7 +777,7 @@ public:
     void SetItemFast (int offset, PyObject* obj)
     {
         if(PyList_SetItem (Get(), offset, obj) != 0) {
-            throw CError("");
+            throw CSystemError("");
         }
     }
     // Fast version. Does not increment a counter ...
@@ -794,7 +794,7 @@ public:
     void SetSlice (int i, int j, const CObject& obj)
     {
         if(PyList_SetSlice (Get(), i, j, obj) != 0) {
-            throw CError("");
+            throw CSystemError("");
         }
     }
 
@@ -802,25 +802,25 @@ public:
     void Append (const CObject& obj)
     {
         if(PyList_Append (Get(), obj) == -1) {
-            throw CError("");
+            throw CSystemError("");
         }
     }
     void Insert (int i, const CObject& obj)
     {
         if(PyList_Insert (Get(), i, obj) == -1) {
-            throw CError("");
+            throw CSystemError("");
         }
     }
     void Sort (void)
     {
         if(PyList_Sort(Get()) == -1) {
-            throw CError("");
+            throw CSystemError("");
         }
     }
     void Reverse (void)
     {
         if(PyList_Reverse(Get()) == -1) {
-            throw CError("");
+            throw CSystemError("");
         }
     }
 
@@ -888,6 +888,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/10 17:43:56  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.3  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object

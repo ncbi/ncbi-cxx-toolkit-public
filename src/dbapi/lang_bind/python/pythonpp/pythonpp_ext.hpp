@@ -270,7 +270,7 @@ public:
     void Set( PyObject* value ) const
     {
         if ( IsReadOnly() ) {
-            throw CError("Read-only property");
+            throw CAttributeError("Read-only property");
         }
         SetInternal( value );
     }
@@ -584,7 +584,7 @@ public:
             this,
             PYTHON_API_VERSION);
         if ( !m_Module ) {
-            throw CError("Cannot initialyze module");
+            throw CSystemError("Cannot initialize module");
         }
     }
     ~CExtModule(void)
@@ -762,7 +762,7 @@ CModuleExt::AddConstValue( const string& name, PyObject* value )
 {
     CError::Check( value );
     if ( PyModule_AddObject(m_Module, const_cast<char*>(name.c_str()), value ) == -1 ) {
-        throw CError("Failed to add a constant value to a module");
+        throw CSystemError("Failed to add a constant value to a module");
     }
 }
 
@@ -810,7 +810,7 @@ public:
         m_Exception = PyErr_NewException( const_cast<char*>(full_name.c_str()), B::GetPyException(), NULL );
         CError::Check( m_Exception );
         if ( PyModule_AddObject( CModuleExt::GetPyModule(), const_cast<char*>(name.c_str()), m_Exception ) == -1 ) {
-            throw CError( "Unable to add an object to a module" );
+            throw CSystemError( "Unable to add an object to a module" );
         }
     }
 
@@ -837,6 +837,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/02/10 17:43:56  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.7  2005/02/08 19:19:34  ssikorsk
 * A lot of improvements
 *

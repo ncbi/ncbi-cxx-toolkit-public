@@ -50,14 +50,14 @@ public:
     : CObject(obj, ownership)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CBool(const CObject& obj)
     : CObject(obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CBool(const CBool& obj)
@@ -72,7 +72,7 @@ public:
     {
         PyObject* tmp_obj = PyBool_FromLong(value);
         if ( !tmp_obj ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(tmp_obj, eTakeOwnership);
     }
@@ -83,7 +83,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -93,7 +93,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -136,7 +136,7 @@ public:
     {
         PyObject* tmp_obj = PyNumber_Int(obj);
         if ( !tmp_obj ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(tmp_obj, eTakeOwnership);
     }
@@ -160,7 +160,7 @@ public:
         if ( this != &obj ) {
             PyObject* tmp_obj = PyNumber_Int(obj);
             if ( !tmp_obj ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(tmp_obj, eTakeOwnership);
         }
@@ -171,7 +171,7 @@ public:
         if ( Get() != obj ) {
             PyObject* tmp_obj = PyNumber_Int(obj);
             if ( !tmp_obj ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(tmp_obj, eTakeOwnership);
         }
@@ -237,7 +237,7 @@ public:
     {
         PyObject* tmp_obj = PyNumber_Long(obj);
         if ( !tmp_obj ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(tmp_obj, eTakeOwnership);
     }
@@ -277,7 +277,7 @@ public:
         if ( this != &obj ) {
             PyObject* tmp_obj = PyNumber_Long(obj);
             if ( !tmp_obj ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(tmp_obj, eTakeOwnership);
         }
@@ -288,7 +288,7 @@ public:
         if ( Get() != obj ) {
             PyObject* tmp_obj = PyNumber_Long(obj);
             if ( !tmp_obj ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(tmp_obj, eTakeOwnership);
         }
@@ -402,7 +402,7 @@ public:
     {
         PyObject* tmp_obj = PyNumber_Float(obj);
         if ( !tmp_obj ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(tmp_obj, eTakeOwnership);
     }
@@ -422,7 +422,7 @@ public:
         if ( this != &obj ) {
             PyObject* tmp_obj = PyNumber_Float(obj);
             if ( !tmp_obj ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(tmp_obj, eTakeOwnership);
         }
@@ -433,7 +433,7 @@ public:
         if ( Get() != obj ) {
             PyObject* tmp_obj = PyNumber_Float(obj);
             if ( !tmp_obj ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(tmp_obj, eTakeOwnership);
         }
@@ -487,7 +487,7 @@ public:
     CComplex(const CObject& obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(obj);
     }
@@ -506,7 +506,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -516,7 +516,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -634,13 +634,13 @@ public:
     : CObject(obj, ownership)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CString(const CObject& obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(obj);
     }
@@ -663,7 +663,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -673,7 +673,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -970,6 +970,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/10 17:43:56  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.3  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object

@@ -223,7 +223,7 @@ public:
     virtual void SetItem (const string& key, const CObject& obj)
     {
         if (PyMapping_SetItemString (Get(), const_cast<char*>(key.c_str()), obj) == -1) {
-            throw CError("SetItem");
+            throw CSystemError("SetItem");
         }
     }
 
@@ -231,7 +231,7 @@ public:
     virtual void SetItem (const CObject& key, const CObject& obj)
     {
         if (PyObject_SetItem (Get(), key, obj) == -1) {
-            throw CError("SetItem");
+            throw CSystemError("SetItem");
         }
     }
 
@@ -239,7 +239,7 @@ public:
     virtual void DelItem (const string& s)
     {
         if (PyMapping_DelItemString (Get(), const_cast<char*>(s.c_str())) == -1) {
-            throw CError("DelItem");
+            throw CSystemError("DelItem");
         }
     }
 
@@ -247,7 +247,7 @@ public:
     virtual void DelItem (const CObject& obj)
     {
         if (PyMapping_DelItem (Get(), obj) == -1) {
-            throw CError("DelItem");
+            throw CSystemError("DelItem");
         }
     }
 
@@ -302,7 +302,7 @@ public:
     CDict(const CObject& obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(obj);
     }
@@ -321,7 +321,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -331,7 +331,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -348,7 +348,7 @@ public:
     void Merge(const CDictHelper<O>& other, bool override = true)
     {
         if( PyDict_Merge ( Get(), other, (override ? 1 : 0) ) == -1 ) {
-            throw CError("Merge");
+            throw CSystemError("Merge");
         }
     }
 
@@ -386,26 +386,26 @@ public:
     void SetItem (const string& key, const CObject& obj)
     {
         if (PyDict_SetItemString (Get(), key.c_str(), obj) == -1) {
-            throw CError("SetItem");
+            throw CSystemError("SetItem");
         }
     }
     void SetItem (const CObject& key, const CObject& obj)
     {
         if (PyDict_SetItem (Get(), key, obj) == -1) {
-            throw CError("SetItem");
+            throw CSystemError("SetItem");
         }
     }
 
     void DelItem (const string& key)
     {
         if (PyDict_DelItemString (Get(), const_cast<char*>(key.c_str())) == -1) {
-            throw CError("DelItem");
+            throw CSystemError("DelItem");
         }
     }
     void DelItem (const CObject& key)
     {
         if (PyDict_DelItem (Get(), key) == -1) {
-            throw CError("DelItem");
+            throw CSystemError("DelItem");
         }
     }
 
@@ -429,6 +429,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/02/10 17:43:56  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.2  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object

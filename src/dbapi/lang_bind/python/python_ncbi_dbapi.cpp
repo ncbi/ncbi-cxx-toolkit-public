@@ -138,7 +138,7 @@ CConnection::CConnection(
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName() );
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     PrepareForPython(this);
@@ -148,7 +148,7 @@ CConnection::CConnection(
         m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 }
 
@@ -270,7 +270,7 @@ void
 CSelectConnPool::Clear(void)
 {
     if ( !Empty() ) {
-        throw pythonpp::CError("Unable to close a transaction. There are open cursors in use.");
+        throw CInternalError("Unable to close a transaction. There are open cursors in use.");
     }
 
     if ( !m_ConnList.empty() )
@@ -330,7 +330,7 @@ void
 CDMLConnPool::Clear(void)
 {
     if ( !Empty() ) {
-        throw pythonpp::CError("Unable to close a transaction. There are open cursors in use.");
+        throw CInternalError("Unable to close a transaction. There are open cursors in use.");
     }
 
     // Close the DML connection ...
@@ -355,7 +355,7 @@ CDMLConnPool::commit(void) const
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
         catch(const CDB_Exception& e) {
-            throw pythonpp::CError(e.Message());
+            throw CDatabaseError(e.Message());
         }
     }
 }
@@ -369,7 +369,7 @@ CDMLConnPool::rollback(void) const
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
         catch(const CDB_Exception& e) {
-            throw pythonpp::CError(e.Message());
+            throw CDatabaseError(e.Message());
         }
     }
 }
@@ -386,7 +386,7 @@ CTransaction::CTransaction(
 , m_ConnectionMode( conn_mode )
 {
     if ( conn == NULL ) {
-        throw pythonpp::CError("Invalid CConnection object");
+        throw CInternalError("Invalid CConnection object");
     }
 
     if ( ownnership != pythonpp::eBorrowed ) {
@@ -446,7 +446,7 @@ CTransaction::CloseInternal(void)
     // Double check ...
     // Check for the DML connection also ...
     if ( !m_SelectConnPool.Empty() || !m_DMLConnPool.Empty() ) {
-        throw pythonpp::CError("Unable to close a transaction. There are open cursors in use.");
+        throw CInternalError("Unable to close a transaction. There are open cursors in use.");
     }
 
     // Rollback transaction ...
@@ -559,7 +559,7 @@ CStmtHelper::CStmtHelper(CTransaction* trans)
 , m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
-        throw pythonpp::CError("Invalid CTransaction object");
+        throw CInternalError("Invalid CTransaction object");
     }
 }
 
@@ -570,7 +570,7 @@ CStmtHelper::CStmtHelper(CTransaction* trans, const string& stmt, EStatementType
 , m_Executed(false)
 {
     if ( m_ParentTransaction == NULL ) {
-        throw pythonpp::CError("Invalid CTransaction object");
+        throw CInternalError("Invalid CTransaction object");
     }
 
     EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
@@ -677,14 +677,14 @@ CStmtHelper::SetParam(const string& name, const CVariant& value)
             param_name = "@" + param_name;
         }
     } else {
-        throw pythonpp::CError("Invalid SQL parameter name");
+        throw CProgrammingError("Invalid SQL parameter name");
     }
 
     try {
         m_Stmt->SetParam( value, param_name );
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError( e.Message() );
+        throw CDatabaseError( e.Message() );
     }
 }
 
@@ -705,13 +705,13 @@ CStmtHelper::Execute(void)
         m_Executed = true;
     }
     catch(const bad_cast&) {
-        throw pythonpp::CError("std::bad_cast exception within 'CStmtHelper::Execute'");
+        throw CInternalError("std::bad_cast exception within 'CStmtHelper::Execute'");
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
     catch(const exception&) {
-        throw pythonpp::CError("std::exception exception within 'CStmtHelper::Execute'");
+        throw CInternalError("std::exception exception within 'CStmtHelper::Execute'");
     }
 }
 
@@ -728,7 +728,7 @@ IResultSet&
 CStmtHelper::GetRS(void)
 {
     if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+        throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
     return *m_RS;
@@ -738,7 +738,7 @@ const IResultSet&
 CStmtHelper::GetRS(void) const
 {
     if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+        throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
     return *m_RS;
@@ -758,7 +758,7 @@ CStmtHelper::NextRS(void)
         }
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return false;
@@ -772,7 +772,7 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
 , m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
-        throw pythonpp::CError("Invalid CTransaction object");
+        throw CInternalError("Invalid CTransaction object");
     }
 }
 
@@ -784,7 +784,7 @@ CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const string& stmt
 , m_Executed( false )
 {
     if ( m_ParentTransaction == NULL ) {
-        throw pythonpp::CError("Invalid CTransaction object");
+        throw CInternalError("Invalid CTransaction object");
     }
 
     EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
@@ -874,14 +874,14 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
             param_name = "@" + param_name;
         }
     } else {
-        throw pythonpp::CError("Invalid SQL parameter name");
+        throw CProgrammingError("Invalid SQL parameter name");
     }
 
     try {
         m_Stmt->SetParam( value, param_name );
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError( e.Message() );
+        throw CDatabaseError( e.Message() );
     }
 }
 
@@ -898,13 +898,13 @@ CCallableStmtHelper::Execute(void)
         m_Executed = true;
     }
     catch(const bad_cast&) {
-        throw pythonpp::CError("std::bad_cast exception within 'CCallableStmtHelper::Execute'");
+        throw CInternalError("std::bad_cast exception within 'CCallableStmtHelper::Execute'");
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
     catch(const exception&) {
-        throw pythonpp::CError("std::exception exception within 'CCallableStmtHelper::Execute'");
+        throw CInternalError("std::exception exception within 'CCallableStmtHelper::Execute'");
     }
 }
 
@@ -921,7 +921,7 @@ IResultSet&
 CCallableStmtHelper::GetRS(void)
 {
     if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+        throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
     return *m_RS;
@@ -931,7 +931,7 @@ const IResultSet&
 CCallableStmtHelper::GetRS(void) const
 {
     if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+        throw CProgrammingError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
     }
 
     return *m_RS;
@@ -951,7 +951,7 @@ CCallableStmtHelper::NextRS(void)
         }
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return false;
@@ -1049,7 +1049,7 @@ CCursor::CCursor(CTransaction* trans)
 , m_CallableStmtHelper( trans )
 {
     if ( trans == NULL ) {
-        throw pythonpp::CError("Invalid CTransaction object");
+        throw CInternalError("Invalid CTransaction object");
     }
 
     ROAttr( "rowcount", m_RowsNum );
@@ -1082,14 +1082,14 @@ CCursor::callproc(const pythonpp::CTuple& args)
     m_RowsNum = -1;                     // As required by the specification ...
 
     if ( args_size == 0 ) {
-        throw pythonpp::CError("A stored procedure name is expected as a parameter");
+        throw CProgrammingError("A stored procedure name is expected as a parameter");
     } else if ( args_size > 0 ) {
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
             m_StmtStr.SetStr(pythonpp::CString(args[0]), estFunction);
         } else {
-            throw pythonpp::CError("A stored procedure name is expected as a parameter");
+            throw CProgrammingError("A stored procedure name is expected as a parameter");
         }
 
         m_StmtHelper.Close();
@@ -1111,7 +1111,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
 //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
 //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
 //            }
-                throw pythonpp::CError("NCBI DBAPI supports pameter binding by name only");
+                throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
             }
         } else {
             m_CallableStmtHelper.SetStr(m_StmtStr.GetStr(), num_of_arguments);
@@ -1134,7 +1134,7 @@ CCursor::close(const pythonpp::CTuple& args)
         GetTransaction().DestroyCursor(this);
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return pythonpp::CNone();
@@ -1147,14 +1147,14 @@ CCursor::execute(const pythonpp::CTuple& args)
 
     // Process function's arguments ...
     if ( args_size == 0 ) {
-        throw pythonpp::CError("A SQL statement string is expected as a parameter");
+        throw CProgrammingError("A SQL statement string is expected as a parameter");
     } else if ( args_size > 0 ) {
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
             m_StmtStr.SetStr(pythonpp::CString(args[0]));
         } else {
-            throw pythonpp::CError("A SQL statement string is expected as a parameter");
+            throw CProgrammingError("A SQL statement string is expected as a parameter");
         }
 
         m_CallableStmtHelper.Close();
@@ -1173,7 +1173,7 @@ CCursor::execute(const pythonpp::CTuple& args)
 //            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
 //            } else if ( pythonpp::CSet::HasSameType(obj) ) {
 //            }
-                throw pythonpp::CError("NCBI DBAPI supports pameter binding by name only");
+                throw CNotSupportedError("NCBI DBAPI supports pameter binding by name only");
             }
         }
     }
@@ -1245,14 +1245,14 @@ CCursor::executemany(const pythonpp::CTuple& args)
 
     // Process function's arguments ...
     if ( args_size == 0 ) {
-        throw pythonpp::CError("A SQL statement string is expected as a parameter");
+        throw CProgrammingError("A SQL statement string is expected as a parameter");
     } else if ( args_size > 0 ) {
         pythonpp::CObject obj(args[0]);
 
         if ( pythonpp::CString::HasSameType(obj) ) {
             m_StmtStr.SetStr(pythonpp::CString(args[0]));
         } else {
-            throw pythonpp::CError("A SQL statement string is expected as a parameter");
+            throw CProgrammingError("A SQL statement string is expected as a parameter");
         }
 
         // Setup parameters ...
@@ -1275,10 +1275,10 @@ CCursor::executemany(const pythonpp::CTuple& args)
                     m_RowsNum += m_StmtHelper.GetRowCount();
                 }
             } else {
-                throw pythonpp::CError("Sequence of parameters should be provided either as a list or as a tuple data type");
+                throw CProgrammingError("Sequence of parameters should be provided either as a list or as a tuple data type");
             }
         } else {
-            throw pythonpp::CError("A sequence of parameters is expected with the 'executemany' function");
+            throw CProgrammingError("A sequence of parameters is expected with the 'executemany' function");
         }
     }
 
@@ -1306,7 +1306,7 @@ CCursor::fetchone(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return pythonpp::CNone();
@@ -1322,7 +1322,7 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
             array_size = static_cast<unsigned long>(pythonpp::CLong(args[0]));
         }
     } catch (const pythonpp::CError&) {
-        throw pythonpp::CError("Invalid parameters within 'CCursor::fetchmany' function");
+        throw CProgrammingError("Invalid parameters within 'CCursor::fetchmany' function");
     }
 
     pythonpp::CList py_list;
@@ -1346,7 +1346,7 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return py_list;
@@ -1377,7 +1377,7 @@ CCursor::fetchall(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return py_list;
@@ -1399,7 +1399,7 @@ CCursor::nextset(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+        throw CDatabaseError(e.Message());
     }
 
     return pythonpp::CNone();
@@ -1462,7 +1462,7 @@ CModuleDBAPI::connect(const pythonpp::CTuple& args)
             user_name = pythonpp::CString(func_args[4]);
             user_pswd = pythonpp::CString(func_args[5]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'connect' function");
+            throw CProgrammingError("Invalid parameters within 'connect' function");
         }
 
         CConnection* conn = new CConnection( CConnParam(
@@ -1502,7 +1502,7 @@ CModuleDBAPI::Date(const pythonpp::CTuple& args)
             month = pythonpp::CInt(func_args[1]);
             day = pythonpp::CInt(func_args[2]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Date' function");
+            throw CProgrammingError("Invalid parameters within 'Date' function");
         }
 
         // Feef the object to the Python interpreter ...
@@ -1533,7 +1533,7 @@ CModuleDBAPI::Time(const pythonpp::CTuple& args)
             minute = pythonpp::CInt(func_args[1]);
             second = pythonpp::CInt(func_args[2]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Time' function");
+            throw CProgrammingError("Invalid parameters within 'Time' function");
         }
 
         // Feef the object to the Python interpreter ...
@@ -1571,7 +1571,7 @@ CModuleDBAPI::Timestamp(const pythonpp::CTuple& args)
             minute = pythonpp::CInt(func_args[4]);
             second = pythonpp::CInt(func_args[5]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Timestamp' function");
+            throw CProgrammingError("Invalid parameters within 'Timestamp' function");
         }
 
         // Feef the object to the Python interpreter ...
@@ -1654,7 +1654,7 @@ CModuleDBAPI::Binary(const pythonpp::CTuple& args)
 
             value = pythonpp::CString(func_args[0]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Binary' function");
+            throw CProgrammingError("Invalid parameters within 'Binary' function");
         }
 
         CBinary* obj = new CBinary(
@@ -1770,7 +1770,7 @@ Connect(PyObject *self, PyObject *args)
                 support_standard_interface = pythonpp::CBool(func_args[6]);
             }
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'connect' function");
+            throw CProgrammingError("Invalid parameters within 'connect' function");
         }
 
         conn = new CConnection( CConnParam(
@@ -1816,7 +1816,7 @@ Date(PyObject *self, PyObject *args)
             month = pythonpp::CInt(func_args[1]);
             day = pythonpp::CInt(func_args[2]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Date' function");
+            throw CProgrammingError("Invalid parameters within 'Date' function");
         }
 
         return IncRefCount(pythonpp::CDate(year, month, day));
@@ -1853,7 +1853,7 @@ Time(PyObject *self, PyObject *args)
             minute = pythonpp::CInt(func_args[1]);
             second = pythonpp::CInt(func_args[2]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Time' function");
+            throw CProgrammingError("Invalid parameters within 'Time' function");
         }
 
         return IncRefCount(pythonpp::CTime(hour, minute, second, 0));
@@ -1897,7 +1897,7 @@ Timestamp(PyObject *self, PyObject *args)
             minute = pythonpp::CInt(func_args[4]);
             second = pythonpp::CInt(func_args[5]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Timestamp' function");
+            throw CProgrammingError("Invalid parameters within 'Timestamp' function");
         }
 
         return IncRefCount(pythonpp::CDateTime(year, month, day, hour, minute, second, 0));
@@ -1926,6 +1926,7 @@ PyObject*
 DateFromTicks(PyObject *self, PyObject *args)
 {
     try {
+        throw CNotSupportedError("Function DateFromTicks");
     }
     catch (const CDB_Exception& e) {
         pythonpp::CError::SetString(e.Message());
@@ -1951,6 +1952,7 @@ PyObject*
 TimeFromTicks(PyObject *self, PyObject *args)
 {
     try {
+        throw CNotSupportedError("Function TimeFromTicks");
     }
     catch (const CDB_Exception& e) {
         pythonpp::CError::SetString(e.Message());
@@ -1976,6 +1978,7 @@ PyObject*
 TimestampFromTicks(PyObject *self, PyObject *args)
 {
     try {
+        throw CNotSupportedError("Function TimestampFromTicks");
     }
     catch (const CDB_Exception& e) {
         pythonpp::CError::SetString(e.Message());
@@ -2008,7 +2011,7 @@ Binary(PyObject *self, PyObject *args)
 
             value = pythonpp::CString(func_args[0]);
         } catch (const pythonpp::CError&) {
-            throw pythonpp::CError("Invalid parameters within 'Binary' function");
+            throw CProgrammingError("Invalid parameters within 'Binary' function");
         }
 
         obj = new CBinary(
@@ -2171,6 +2174,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/02/10 17:43:42  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.6  2005/02/08 19:27:53  ssikorsk
 * Fixed compilation error with GCC
 *

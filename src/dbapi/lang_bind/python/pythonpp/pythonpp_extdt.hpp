@@ -115,7 +115,7 @@ public:
     CCalable(const CObject& obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
         Set(obj);
     }
@@ -130,7 +130,7 @@ public:
     {
         if ( this != &obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -140,7 +140,7 @@ public:
     {
         if ( Get() != obj ) {
             if ( !HasExactSameType(obj) ) {
-                throw CError("Invalid conversion");
+                throw CTypeError("Invalid conversion");
             }
             Set(obj);
         }
@@ -153,7 +153,7 @@ public:
     {
         PyObject* tmp_obj = PyObject_CallObject(Get(), NULL);
         if ( !tmp_obj ) {
-            throw CError("PyObject_CallObject error");
+            throw CSystemError("PyObject_CallObject error");
         }
         return CObject(tmp_obj, eTakeOwnership);
     }
@@ -162,7 +162,7 @@ public:
     {
         PyObject* tmp_obj = PyObject_CallObject(Get(), args.Get());
         if ( !tmp_obj ) {
-            throw CError("PyObject_CallObject error");
+            throw CSystemError("PyObject_CallObject error");
         }
         return CObject(tmp_obj, eTakeOwnership);
     }
@@ -171,7 +171,7 @@ public:
     {
         PyObject* tmp_obj = PyEval_CallObjectWithKeywords( Get(), args.Get(), key_words.Get() );
         if ( !tmp_obj ) {
-            throw CError("PyEval_CallObjectWithKeywords error");
+            throw CSystemError("PyEval_CallObjectWithKeywords error");
         }
         return CObject(tmp_obj, eTakeOwnership);
     }
@@ -200,14 +200,14 @@ public:
     : CObject(obj, ownership)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CModule(const CModule& obj)
     : CObject(obj)
     {
         if ( !HasExactSameType(obj) ) {
-            throw CError("Invalid conversion");
+            throw CTypeError("Invalid conversion");
         }
     }
     CModule(const std::string& name)
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/02/10 17:43:56  ssikorsk
+* Changed: more 'precise' exception types
+*
 * Revision 1.2  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object
