@@ -43,7 +43,7 @@
 #include <bdb/bdb_trans.hpp>
 
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbitime.hpp>
+#include <time.h>
 
 #include <util/cache/icache_cf.hpp>
 #include <util/cache/icache_clean_thread.hpp>
@@ -403,8 +403,9 @@ private:
 		m_AttrDB.subkey = m_SubKey;
         m_AttrDB.overflow = 0;
 
-        CTime time_stamp(CTime::eCurrent);
-        m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+        // CTime time_stamp(CTime::eCurrent);
+        time_t curr = time(0);
+        m_AttrDB.time_stamp = (unsigned) curr; //(unsigned)time_stamp.GetTimeT();
 
         if (m_OverflowFile) {
             m_AttrDB.overflow = 1;
@@ -421,8 +422,8 @@ private:
 			m_AttrDB.overflow = 0;
             m_AttrDB.ttl = m_TTL;
 
-			CTime time_stamp(CTime::eCurrent);
-			m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+			//CTime time_stamp(CTime::eCurrent);
+			m_AttrDB.time_stamp = (unsigned) curr; //(unsigned)time_stamp.GetTimeT();
 	        m_AttrDB.UpdateInsert();
 		}
 
@@ -951,12 +952,13 @@ void CBDB_Cache::Store(const string&  key,
     // Update cache element's attributes
     //
 
-    CTime time_stamp(CTime::eCurrent);
+    //CTime time_stamp(CTime::eCurrent);
+    time_t curr = time(0);
 
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
 	m_CacheAttrDB->subkey = subkey;
-    m_CacheAttrDB->time_stamp = (unsigned)time_stamp.GetTimeT();
+    m_CacheAttrDB->time_stamp = (unsigned)curr; //time_stamp.GetTimeT();
     m_CacheAttrDB->overflow = overflow;
     m_CacheAttrDB->ttl = time_to_live;
 
@@ -1548,8 +1550,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
         
-            CTime time_stamp(CTime::eCurrent);
-            time_t curr = (int)time_stamp.GetTimeT();
+            //CTime time_stamp(CTime::eCurrent);
+            time_t curr = time(0); //(int)time_stamp.GetTimeT();
 
             for (unsigned i = 0; i < batch_size; ++i) {
                 if (cur.Fetch() != eBDB_Ok) {
@@ -1683,8 +1685,8 @@ void CBDB_Cache::Purge(const string&    key,
 
     cur.From << key;
 
-    CTime time_stamp(CTime::eCurrent);
-    time_t curr = (int)time_stamp.GetTimeT();
+    //CTime time_stamp(CTime::eCurrent);
+    time_t curr = time(0); // (int)time_stamp.GetTimeT();
     int timeout = GetTimeout();
     if (access_timeout && access_timeout < timeout) {
         timeout = access_timeout;
@@ -1858,8 +1860,8 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
                                          int            version,
                                          const string&  subkey)
 {
-    CTime time_stamp(CTime::eCurrent);
-    time_t curr = (int)time_stamp.GetTimeT();
+    //CTime time_stamp(CTime::eCurrent);
+    time_t curr = time(0); // (int)time_stamp.GetTimeT();
     return x_CheckTimestampExpired(key, version, subkey, curr);
 }
 
@@ -1897,11 +1899,12 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
     if (IsReadOnly()) {
         return;
     }
-    CTime time_stamp(CTime::eCurrent);
+    //CTime time_stamp(CTime::eCurrent);
+    time_t curr = time(0); // time_stamp.GetTimeT()
     x_UpdateAccessTime_NonTrans(key, 
                                 version, 
                                 subkey, 
-                                (unsigned)time_stamp.GetTimeT());
+                                (unsigned)curr);
 }
 
 void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
@@ -2341,6 +2344,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2004/12/29 19:55:11  kuznets
+ * Use time(0) to get current time instead of CTime
+ *
  * Revision 1.99  2004/12/29 15:33:47  kuznets
  * Fixed bug in variable initialization
  *
