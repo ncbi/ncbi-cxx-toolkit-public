@@ -58,7 +58,6 @@ private:
     // event callbacks
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
-    void OnCheckbox(wxCommandEvent& event);
 
     // GUI elements
     IntegerSpinCtrl *iSpinDelay, *iFrameDelay;
@@ -74,6 +73,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/12/03 15:56:33  thiessen
+* remove unused function
+*
 * Revision 1.1  2003/12/03 15:07:09  thiessen
 * add more sophisticated animation controls
 *
