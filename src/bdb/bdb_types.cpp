@@ -104,11 +104,11 @@ void CBDB_BufferManager::Construct()
 
     // Buffer construction: fields size calculation.
     m_BufferSize = ComputeBufferSize();
-    
+
     if ( IsNullable() ) {
         m_NullSetSize = ComputeNullSetSize();
         m_BufferSize += m_NullSetSize;
-    } 
+    }
 
     m_Buffer = auto_ptr<char>(new char[m_BufferSize]);
     ::memset(m_Buffer.get(), 0, m_BufferSize);
@@ -177,7 +177,7 @@ unsigned int CBDB_BufferManager::Pack()
             ::memmove(new_ptr, old_ptr, actual_len);
             df.SetBuffer(new_ptr);
         }
-        
+
         if ( m_NullSetSize ) {
             if (df.IsVariableLength()  &&  TestNullBit(i)) {
                 actual_len = 1;
@@ -224,13 +224,13 @@ unsigned int CBDB_BufferManager::Unpack()
 }
 
 
-int CBDB_BufferManager::Compare(const CBDB_BufferManager& buf_mgr, 
+int CBDB_BufferManager::Compare(const CBDB_BufferManager& buf_mgr,
                                 unsigned int              field_count)
     const
 {
     if ( !field_count ) {
         field_count = FieldCount();
-    } 
+    }
     _ASSERT(field_count <= FieldCount());
 
     for (unsigned int i = 0;  i < field_count;  ++i) {
@@ -245,7 +245,7 @@ int CBDB_BufferManager::Compare(const CBDB_BufferManager& buf_mgr,
     return 0;
 }
 
- 
+
 void CBDB_BufferManager::DuplicateStructureFrom(const CBDB_BufferManager& buf_mgr)
 {
     _ASSERT(FieldCount() == 0);
@@ -265,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/29 19:07:22  kuznets
+ * Cosmetics..
+ *
  * Revision 1.3  2003/04/29 19:04:47  kuznets
  * Fixed a bug in buffers management
  *

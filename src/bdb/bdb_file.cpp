@@ -36,7 +36,7 @@ BEGIN_NCBI_SCOPE
 const char CBDB_RawFile::kDefaultDatabase[] = "_table";
 const int  CBDB_RawFile::kOpenFileMask      = 0664;
 
-extern "C" 
+extern "C"
 {
 
 
@@ -45,7 +45,7 @@ int bdb_uint_cmp(DB*, const DBT* val1, const DBT* val2)
     unsigned int v1, v2;
     ::memcpy(&v1, val1->data, sizeof(unsigned));
     ::memcpy(&v2, val2->data, sizeof(unsigned));
-    return (v1 < v2) ? -1 
+    return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
 
@@ -55,14 +55,14 @@ int bdb_int_cmp(DB*, const DBT* val1, const DBT* val2)
     int v1, v2;
     ::memcpy(&v1, val1->data, sizeof(int));
     ::memcpy(&v2, val2->data, sizeof(int));
-    return (v1 < v2) ? -1 
+    return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
 
 
 int bdb_cmp(DB* db, const DBT* val1, const DBT* val2)
 {
-    const CBDB_BufferManager* fbuf1 = 
+    const CBDB_BufferManager* fbuf1 =
           static_cast<const CBDB_BufferManager*> (db->app_private);
 
     _ASSERT(fbuf1);
@@ -100,7 +100,7 @@ CBDB_RawFile::CBDB_RawFile()
   m_CacheSize(256 * 1024)
 {
     ::memset(&m_DBT_Key,  0, sizeof(m_DBT_Key));
-    ::memset(&m_DBT_Data, 0, sizeof(m_DBT_Data));        
+    ::memset(&m_DBT_Data, 0, sizeof(m_DBT_Data));
 }
 
 
@@ -134,7 +134,7 @@ void CBDB_RawFile::x_Close(ECloseMode close_mode)
 }
 
 
-void CBDB_RawFile::Open(const char* filename, 
+void CBDB_RawFile::Open(const char* filename,
                         const char* database,
                         EOpenMode   open_mode)
 {
@@ -157,8 +157,8 @@ void CBDB_RawFile::Reopen(EOpenMode open_mode)
     int ret = m_DB->close(m_DB, 0);
     m_DB = 0;
     BDB_CHECK(ret, m_FileName.c_str());
-    x_Open(m_FileName.c_str(), 
-           !m_Database.empty() ? m_Database.c_str() : 0, 
+    x_Open(m_FileName.c_str(),
+           !m_Database.empty() ? m_Database.c_str() : 0,
            open_mode);
 }
 
@@ -174,7 +174,7 @@ void CBDB_RawFile::Remove(const char* filename, const char* database)
 	CDB_guard guard(&db);
     int ret = db_create(&db, 0, 0);
     BDB_CHECK(ret, 0);
-    
+
     ret = db->remove(db, filename, database, 0);
     guard.release();
     if (ret == ENOENT)
@@ -220,8 +220,8 @@ void CBDB_RawFile::x_CreateDB()
 }
 
 
-void CBDB_RawFile::x_Open(const char* filename, 
-                                 const char* database, 
+void CBDB_RawFile::x_Open(const char* filename,
+                                 const char* database,
                                  EOpenMode   open_mode)
 {
     if (m_DB == 0) {
@@ -239,7 +239,7 @@ void CBDB_RawFile::x_Open(const char* filename,
                              database,             // database name
                              DB_BTREE,
                              (u_int32_t) open_mode,
-                             kOpenFileMask         
+                             kOpenFileMask
                              );
         if ( ret ) {
             if (open_mode == eReadWrite) {
@@ -267,9 +267,9 @@ void CBDB_RawFile::SetPageSize(unsigned int page_size)
 
 void CBDB_RawFile::x_Create(const char* filename, const char* database)
 {
-    int ret = m_DB->open(m_DB, 
+    int ret = m_DB->open(m_DB,
                          0,               // DB_TXN*
-                         filename, 
+                         filename,
                          database,        // database name
                          DB_BTREE,
                          DB_CREATE,
@@ -299,8 +299,8 @@ CBDB_File::CBDB_File()
 }
 
 
-void CBDB_File::BindKey(const char* field_name, 
-                        CBDB_Field* key_field, 
+void CBDB_File::BindKey(const char* field_name,
+                        CBDB_Field* key_field,
                         size_t      buf_size)
 {
     _ASSERT(!IsOpen());
@@ -315,7 +315,7 @@ void CBDB_File::BindKey(const char* field_name,
 
 
 void CBDB_File::BindData(const char* field_name,
-                         CBDB_Field* data_field, 
+                         CBDB_Field* data_field,
                          size_t      buf_size,
                          ENullable   is_nullable)
 {
@@ -332,8 +332,8 @@ void CBDB_File::BindData(const char* field_name,
 }
 
 
-void CBDB_File::Open(const char* filename, 
-                     const char* database, 
+void CBDB_File::Open(const char* filename,
+                     const char* database,
                      EOpenMode   open_mode)
 {
     if ( IsOpen() )
@@ -350,7 +350,7 @@ void CBDB_File::Open(const char* filename,
         m_BufsCreated = 1;
     }
     m_DB->app_private = (void*) m_KeyBuf.get();
-    
+
 }
 
 
@@ -368,7 +368,7 @@ EBDB_ErrCode CBDB_File::Fetch()
 {
     x_StartRead();
 
-    int ret = m_DB->get(m_DB, 
+    int ret = m_DB->get(m_DB,
                         0,     // DB_TXN*
                         &m_DBT_Key,
                         &m_DBT_Data,
@@ -379,7 +379,7 @@ EBDB_ErrCode CBDB_File::Fetch()
     BDB_CHECK(ret, FileName().c_str());
 
     x_EndRead();
-    return eBDB_Ok;    
+    return eBDB_Ok;
 }
 
 
@@ -393,13 +393,13 @@ EBDB_ErrCode CBDB_File::Insert(EAfterWrite write_flag)
 EBDB_ErrCode CBDB_File::Delete()
 {
     m_KeyBuf->PrepareDBT_ForWrite(&m_DBT_Key);
-    int ret = m_DB->del(m_DB, 
+    int ret = m_DB->del(m_DB,
                         0,           // DB_TXN*
-                        &m_DBT_Key, 
+                        &m_DBT_Key,
                         0);
     BDB_CHECK(ret, FileName().c_str());
     Discard();
-    return eBDB_Ok;    
+    return eBDB_Ok;
 }
 
 
@@ -481,10 +481,10 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
         m_DataBuf->PrepareDBT_ForWrite(&m_DBT_Data);
     }
 
-    int ret = m_DB->put(m_DB, 
+    int ret = m_DB->put(m_DB,
                         0,     // DB_TXN*
-                        &m_DBT_Key, 
-                        &m_DBT_Data, 
+                        &m_DBT_Key,
+                        &m_DBT_Data,
                         flags
                         );
     if (ret == DB_KEYEXIST)
@@ -507,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/29 19:07:22  kuznets
+ * Cosmetics..
+ *
  * Revision 1.2  2003/04/28 14:51:55  kuznets
  * #include directives changed to conform the NCBI policy
  *

@@ -36,7 +36,7 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////
 //
-// Internal class used by CBDB_FileCursor to represent search 
+// Internal class used by CBDB_FileCursor to represent search
 // condition criteries.
 //
 
@@ -54,10 +54,10 @@ public:
     // +1 increment of number of assigned fields.
     // Return new fields count
     unsigned int IncFieldsAssigned()
-    { 
+    {
         _ASSERT(m_Buf.FieldCount()-1 >= m_FieldsAssigned);
         m_Cursor.ResetFirstFetched();
-        return ++m_FieldsAssigned; 
+        return ++m_FieldsAssigned;
     }
 
     // Return TRUE if all search criteria fileds have been assigned
@@ -83,7 +83,7 @@ protected:
     };
 
     // Constructor. key_buf - key buffer of the main table
-    CBDB_FC_Condition(const CBDB_BufferManager& key_buf, 
+    CBDB_FC_Condition(const CBDB_BufferManager& key_buf,
                       CBDB_FileCursor&          cursor)
         : m_KeyBuf(key_buf),
           m_Cursor(cursor),
@@ -93,7 +93,7 @@ protected:
         m_Buf.Construct();
     }
 
-    // Set incomplete (non assigned) fields to min(max) possible values 
+    // Set incomplete (non assigned) fields to min(max) possible values
     void InitUnassignedFields(EIncompleteVal incv)
     {
         if (incv == eAssignMinVal) {
@@ -111,7 +111,7 @@ protected:
 
 private:
     CBDB_FC_Condition(const CBDB_FC_Condition&);
-    const CBDB_FC_Condition& 
+    const CBDB_FC_Condition&
                operator= (const CBDB_FC_Condition&);
 
 private:
@@ -120,7 +120,7 @@ private:
     // Reference on parent cursor
     CBDB_FileCursor&            m_Cursor;
 
-    // Field buffer. Correspond to 
+    // Field buffer. Correspond to
     CBDB_BufferManager          m_Buf;
     // Number of fields assigned (for multi-segment) prefix searches
     unsigned int                m_FieldsAssigned;
@@ -201,8 +201,8 @@ void CBDB_FileCursor::SetCondition(ECondition cond_from, ECondition cond_to)
     if (cond_from == eNotSet) {
         BDB_THROW(eIdxSearch, "Cursor search 'FROM' parameter must be set");
     }
-        
-    if (cond_to == eEQ) 
+
+    if (cond_to == eEQ)
         BDB_THROW(eIdxSearch, "Cursor search 'TO' parameter cannot be EQ");
 
     m_CondFrom     = cond_from;
@@ -218,24 +218,24 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
 {
     m_FirstFetched = true;
 
-    // If cursor from buffer contains not all key fields 
-    // (prefix search) we set all remaining fields to max. 
+    // If cursor from buffer contains not all key fields
+    // (prefix search) we set all remaining fields to max.
     // possible value for GT condition
-    From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ? 
-                                 CBDB_FC_Condition::eAssignMaxVal 
-                                 : 
+    From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
+                                 CBDB_FC_Condition::eAssignMaxVal
+                                 :
                                  CBDB_FC_Condition::eAssignMinVal);
 
     m_Dbf.m_KeyBuf->CopyFieldsFrom(From.m_Condition.GetBuffer());
 
 
-    To.m_Condition.InitUnassignedFields(m_CondTo == eLE ? 
-                               CBDB_FC_Condition::eAssignMaxVal 
-                               : 
+    To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
+                               CBDB_FC_Condition::eAssignMaxVal
+                               :
                                CBDB_FC_Condition::eAssignMinVal);
 
-    // Incomplete == search transformed into >= search with incomplete 
-    // fields set to min 
+    // Incomplete == search transformed into >= search with incomplete
+    // fields set to min
     ECondition cond_from;
     if (m_CondFrom == eEQ  &&  !From.m_Condition.IsComplete()) {
         cond_from = eGE;
@@ -255,7 +255,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
         case eLast:                // last record
             flag = DB_LAST;
             break;
-        case eEQ:                 
+        case eEQ:
             flag = DB_SET;         // precise shot
             break;
         case eGT:
@@ -272,7 +272,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     if (ret != eBDB_Ok)
         return ret;
 
-    // Berkeley DB does not support "<" ">" conditions, so we need to scroll 
+    // Berkeley DB does not support "<" ">" conditions, so we need to scroll
     // up or down to reach the interval criteria.
     if (m_CondFrom == eGT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
@@ -280,8 +280,8 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
             if (ret != eBDB_Ok)
                 return ret;
         }
-    } 
-    else 
+    }
+    else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
             ret = m_Dbf.ReadCursor(m_DBC, DB_PREV);
@@ -317,7 +317,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
 
     // Check if we have fallen out of the FROM range
     if (m_CondFrom == eEQ) {
-        int cmp = 
+        int cmp =
             m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
                                     From.m_Condition.GetFieldsAssigned());
         if (cmp != 0) {
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/29 19:07:22  kuznets
+ * Cosmetics..
+ *
  * Revision 1.2  2003/04/28 14:51:55  kuznets
  * #include directives changed to conform the NCBI policy
  *

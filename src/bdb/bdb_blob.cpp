@@ -56,8 +56,8 @@ void CBDB_LobFile::SetCmp(DB* db)
 }
 
 
-EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id, 
-                                  const void*  data, 
+EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
+                                  const void*  data,
                                   size_t       size)
 {
     _ASSERT(lob_id);
@@ -73,10 +73,10 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
     m_DBT_Data.data = const_cast<void*> (data);
     m_DBT_Data.size = m_DBT_Data.ulen = size;
 
-    int ret = m_DB->put(m_DB, 
+    int ret = m_DB->put(m_DB,
                         0,     // DB_TXN*
-                        &m_DBT_Key, 
-                        &m_DBT_Data, 
+                        &m_DBT_Key,
+                        &m_DBT_Data,
                         DB_NOOVERWRITE
                         );
     if (ret == DB_KEYEXIST)
@@ -87,9 +87,9 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
 
 
 
-EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id, 
-                                 void**       buf, 
-                                 size_t       buf_size, 
+EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
+                                 void**       buf,
+                                 size_t       buf_size,
                                  EReallocMode allow_realloc)
 {
     _ASSERT(lob_id);
@@ -102,7 +102,7 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
     _ASSERT(m_DBT_Key.flags == DB_DBT_USERMEM);
 
     m_LobKey = lob_id;
- 
+
     // Here we attempt to read only key value and get information
     // about LOB size. In this case get operation fails with ENOMEM
     // error message (ignored)
@@ -125,7 +125,7 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
         }
     }
 
-    int ret = m_DB->get(m_DB, 
+    int ret = m_DB->get(m_DB,
                         0,          // DB_TXN*
                         &m_DBT_Key,
                         &m_DBT_Data,
@@ -167,7 +167,7 @@ EBDB_ErrCode CBDB_LobFile::GetData(void* buf, size_t size)
     m_DBT_Data.ulen  = size;
     m_DBT_Data.flags = DB_DBT_USERMEM;
 
-    int ret = m_DB->get(m_DB, 
+    int ret = m_DB->get(m_DB,
                         0,          // DB_TXN*
                         &m_DBT_Key,
                         &m_DBT_Data,
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/29 19:07:22  kuznets
+ * Cosmetics..
+ *
  * Revision 1.2  2003/04/28 14:51:55  kuznets
  * #include directives changed to conform the NCBI policy
  *
