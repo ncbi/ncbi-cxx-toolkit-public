@@ -729,12 +729,17 @@ x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
             CRef<CSeq_id>* seqid_ref = (CRef<CSeq_id>*)seqid_wrap->ptr;
             seqid.Reset(seqid_ref->GetPointer());
             delete seqid_ref;
-        } else {
+        } else /* if (seqid_wrap->choice == BLAST_SEQSRC_C_SEQID) */ {
+            /** FIXME!!! The following is a memory leak, because the C 
+                SeqId structure is not freed. */
+            sfree(seqid_wrap->ptr);
+            char* id_str = BLASTSeqSrcGetSeqIdStr(seq_src, (void*) &oid);
+            string id(id_str);
             /** FIXME!!! This is wrong, because the id created here will 
                 not be registered! However if sequence source returns a 
                 C object, we cannot handle it here. */
-            string id_str(BLASTSeqSrcGetSeqIdStr(seq_src, (void*) &oid));
             seqid.Reset(new CSeq_id(id_str));
+            sfree(id_str);
         }
         ListNodeFree(seqid_wrap);
         *length = BLASTSeqSrcGetSeqLen(seq_src, (void*) &oid);
@@ -953,6 +958,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/07/20 21:11:04  dondosha
+* Fixed a memory leak in x_GetSequenceLengthAndId
+*
 * Revision 1.13  2004/07/19 21:04:20  dondosha
 * Added back case when BlastSeqSrc returns a wrong type Seq-id - then retrieve a seqid string and construct CSeq_id from it
 *
