@@ -774,7 +774,7 @@ void CNcbiDiag::DiagTrouble(const char* file, size_t line)
 void CNcbiDiag::DiagAssert(const char* file, size_t line,
                            const char* expression)
 {
-    CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal) <<
+    CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal, eDPF_Trace) <<
         "Assertion failed: (" << expression << ")" << Endm;
 }
 
@@ -1105,6 +1105,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.75  2003/09/26 15:54:13  vakatov
+ * CNcbiDiag::DiagAssert() -- print everything (trace-like -- file, line, etc.)
+ * in the message
+ *
  * Revision 1.74  2003/09/17 15:58:29  vasilche
  * Allow debug abort when:
  * CObjectException is thrown - env var NCBI_ABORT_ON_COBJECT_THROW=[Yy1],
