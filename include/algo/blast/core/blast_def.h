@@ -58,7 +58,7 @@ extern "C" {
 
 /* Belongs to a higher level header */
 #ifndef sfree
-#define sfree(x) __sfree((void*)&(x))
+#define sfree(x) __sfree((void**)&(x))
 #endif
 void __sfree(void** x); /* implemented in lib/util.c */
 
