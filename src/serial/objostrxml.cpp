@@ -591,6 +591,13 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
 // value
 // no verification on write!
     const string& value = obj.GetValue();
+    if (value.empty()) {
+        OpenTagEndBack();
+        SelfCloseTagEnd();
+        m_LastTagAction = eTagClose;
+        x_EndNamespace(ns_name);
+        return;
+    }
     bool was_open = true;
     for (string::const_iterator is=value.begin(); is != value.end(); ++is) {
         if (*is == '/' && *(is+1) == '>') {
@@ -1321,6 +1328,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/06/22 14:58:25  gouriano
+* Corrected writing AnyContentObject with no value
+*
 * Revision 1.74  2004/06/08 20:22:32  gouriano
 * Moved several functions out of VIRTUAL_MID_LEVEL_IO condition:
 * there is no need for them to be there
