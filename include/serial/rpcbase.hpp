@@ -210,15 +210,21 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
 {
     CMutexGuard LOCK(m_Mutex);
     
-    for (unsigned int tries = 1;  tries <= m_RetryLimit;  ++tries) {
+    unsigned int tries = 0;
+    for (;;) {
         try {
             Connect(); // No-op if already connected
             *m_Out << request;
             *m_In >> reply;
             break;
         } catch (CSerialException&) {
-            if ( !x_ShouldRetry(tries) ) {
+            if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries) ) {
                 throw;
+            } else if ( !(tries % 2) ) {
+                // reset on every other attempt in case we're out of sync
+                try {
+                    Reset();
+                } STD_CATCH_ALL("CRPCClient<>::Reset()")
             }
         }
     }
@@ -277,6 +283,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/09/24 14:32:04  ucko
+* Rework Ask's logic; it now propagates exceptions when it's hit the
+* retry limit, and periodically attempts full resyncs.
+*
 * Revision 1.9  2004/09/10 16:10:23  vasilche
 * Delete object streams before iostream to avoid access to freed objects.
 *
