@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_ncbi.bat,v 1.3 2004/03/02 16:56:41 ivanov Exp $
+REM $Id: all_ncbi.bat,v 1.4 2004/03/16 17:51:50 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -35,7 +35,7 @@ IF _%1% == _ALL GOTO BUILDALL
 GOTO CONFIG
 
 :BUILDALL
-CALL %0 DebugDLL ReleaseDLL
+CALL %0 DebugDLL
 GOTO EXIT
 
 :CONFIG
