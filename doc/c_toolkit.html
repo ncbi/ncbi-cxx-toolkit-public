@@ -13,25 +13,53 @@ the C++ Toolkit environment.
 <ul>
 	<li>
         <a href="libs/c_cxx.html">Working with the NCBI C Toolkit</a><p></li>
-
 <!--#if expr="$SERVER_NAME=/intranet\./" -->
+	<!--#set var="C_LXR" value="/ieb/ToolBox/C_DOC/lxr" -->
     <li>
         <a href="http://inhouse.ncbi.nlm.nih.gov:6224/sdkdoc/INDEX.HTML">C Toolkit Documentation</a> </li>
-
-    <li>
-        <a href="/ieb/ToolBox/C_DOC/lxr/source/">C Toolkit Source Navigation</a></li>
 <!--#else  -->
+	<!--#set var="C_LXR" value="/IEB/ToolBox/C_DOC/lxr" -->
     <li>
         <a href="/IEB/ToolBox/SDKDOCS/INDEX.HTML">C Toolkit Documentation</a></li>
-
-    <li>
-        <a href="/IEB/ToolBox/C_DOC/lxr/source">C Toolkit Source Navigation</a></li>
 <!--#endif  -->
-
     <li>
         <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SB/hbr.html">C Toolkit Queryable Source Browser</a></li>
-
 </ul>
+
+<hr>
+
+<a name="ref_LXR"></a>
+<h3>LXR Browser</h3>
+<table>
+<form method=get action="<!--#echo var="C_LXR" -->/source">
+<tr>
+<td><input type="SUBMIT" value=" Navigate Source "></td>
+</tr>
+</form>
+
+<form method=get action="<!--#echo var="C_LXR" -->/ident">
+<tr>
+<td><input type="SUBMIT" value="  Identifier Search "></td>
+<td><input name="i" value="" size="45"></td>
+</tr>
+</form>
+
+<form method=get action="<!--#echo var="C_LXR" -->/find">
+<tr>
+<td><input type="SUBMIT" value=" Filename Search "></td>
+<td><input name="string" value="" size="45"></td>
+</tr>
+</form>
+
+<form method=get action="lxr/search">
+<tr>
+<td><input type="SUBMIT" value="  Freetext Search "></td>
+<td><input name="string" value="" size="45"></td>
+</tr>
+</form>
+
+</table>
+
 
 <br>
 <!--#include virtual="./ssi/navlinks.shtml" -->
