@@ -56,6 +56,7 @@ class CScope;
 class CBioseq_Handle;
 class CCdregion;
 class CSeq_feat;
+class CSeq_entry;
 
 BEGIN_SCOPE(sequence)
 
@@ -455,6 +456,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2002/12/23 13:48:34  dicuccio
+* Added predeclaration for CSeq_entry.
+*
 * Revision 1.16  2002/12/20 16:57:36  kans
 * ESeqlocPartial, SeqLocPartialCheck added
 *
