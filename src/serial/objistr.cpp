@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/11/18 20:18:08  vakatov
+* ReadObjectInfo() -- get rid of the CodeWarrior(MAC) C++ compiler warning
+*
 * Revision 1.32  1999/10/18 20:21:41  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -412,9 +415,11 @@ CObject CObjectIStream::ReadObjectInfo(void)
             return CObject(object, typeInfo);
         }
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "illegal pointer type");
+        break;  // error
     }
+
+    SetFailFlags(eFormatError);
+    THROW1_TRACE(runtime_error, "illegal pointer type");
 }
 
 string CObjectIStream::ReadMemberPointer(void)
