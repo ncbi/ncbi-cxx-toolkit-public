@@ -36,14 +36,15 @@ OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds ncbi_xloader_trace ncbi_xl
 Usage()
 {
     cat <<EOF 1>&2
-USAGE: $script_name [--copy|--hardlink] sourcedir targetdir
+USAGE: $script_name [--copy|--hardlink] [--setup-src] sourcedir targetdir
 SYNOPSIS:
    Create Genome Workbench installation from the standard Toolkit build.
 ARGUMENTS:
-   --copy     -- use Unix 'cp' command instead of 'ln -s'.
-   --hardlink -- use Unix 'ln' command instead of 'ln -s'.
-   sourcedir  -- path to pre-built NCBI Toolkit.
-   targetdir  -- target installation directory.
+   --copy      -- use Unix 'cp' command instead of 'ln -s'.
+   --hardlink  -- use Unix 'ln' command instead of 'ln -s'.
+   --setup-src -- set up links in the source bin directory.
+   sourcedir   -- path to pre-built NCBI Toolkit.
+   targetdir   -- target installation directory.
 
 EOF
     test -z "$1"  ||  echo ERROR: $1 1>&2
@@ -219,24 +220,36 @@ if [ $# -eq 0 ]; then
 fi
 
 copy_all="no"
+setup_src="no"
+BINCOPY="ln -s"
 MAC_BINCOPY=
-if [ $1 = "--copy" ]; then
-    copy_all="yes"
-    BINCOPY="cp -pf"
-    MAC_BINCOPY="/Developer/Tools/CpMac -p"
-    src_dir=$2
-    target_dir=$3
-elif [ $1 = "--hardlink" ]; then
-    copy_all="yes"
-    BINCOPY="ln -f"
-    MAC_BINCOPY="$script_dir/ln_mac.sh"
-    src_dir=$2
-    target_dir=$3
-else
-    BINCOPY="ln -s"
-    src_dir=$1
-    target_dir=$2
-fi
+while :; do
+    case "$1" in
+        --copy)
+            copy_all="yes"
+            BINCOPY="cp -pf"
+            MAC_BINCOPY="/Developer/Tools/CpMac -p"
+            ;;
+        --hardlink)
+            copy_all="yes"
+            BINCOPY="ln -f"
+            MAC_BINCOPY="$script_dir/ln_mac.sh"
+            ;;
+        --setup-src)
+            setup_src="yes"
+            ;;
+        -*)
+            echo "Unrecognized option $1"
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+src_dir=$1
+target_dir=$2
 
 if test "`uname`" = Darwin -a -x "$MAC_BINCOPY"; then
     BINCOPY=$MAC_BINCOPY
@@ -327,6 +340,8 @@ for f in ${source_dir}/patterns/*; do
         DoCopy $f ${target_dir}/etc/patterns
     fi
 done
+
+[ "$setup_src" = yes ] || exit 0
 
 # Do this last, to be sure the symlink doesn't end up dangling.
 rm -f ${src_dir}/bin/gbench
