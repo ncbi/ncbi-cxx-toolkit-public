@@ -212,24 +212,24 @@ void CTSE_Info::SetName(const CAnnotName& name)
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
 {
     entry.Parentize();
-    x_SetObject(entry);
+    if ( HasDataSource() ) {
+        {{
+            CDataSource::TMainLock::TWriteLockGuard guard
+                (GetDataSource().m_DSMainLock);
+            x_SetObject(entry);
+        }}
+        UpdateAnnotIndex();
+    }
+    else {
+        x_SetObject(entry);
+    }
 }
 
 
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps)
 {
     m_SNP_InfoMap = snps;
-    if ( HasDataSource() ) {
-        {{
-            CDataSource::TMainLock::TWriteLockGuard guard
-                (GetDataSource().m_DSMainLock);
-            SetSeq_entry(entry);
-        }}
-        UpdateAnnotIndex();
-    }
-    else {
-        SetSeq_entry(entry);
-    }
+    SetSeq_entry(entry);
     if ( !m_SNP_InfoMap.empty() ) {
         NCBI_THROW(CObjMgrException, eAddDataError,
                    "Unknown SNP annots");
