@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/12 14:28:33  vasilche
+* Changed the way arguments are processed.
+*
 * Revision 1.1  2000/01/05 19:46:58  vasilche
 * Added asn2asn test application.
 *
@@ -43,5 +46,6 @@ USING_NCBI_SCOPE;
 class CAsn2Asn : public CNcbiApplication
 {
 protected:
+    void Init(void);
     int Run(void);
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/12/12 14:28:01  vasilche
+* Changed the way arguments are processed.
+*
 * Revision 1.52  2000/11/07 17:25:39  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -487,10 +490,11 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
             const CClassTypeInfo* classType =
                 CTypeConverter<CClassTypeInfo>::SafeCast(asnType);
             if ( GetFirstItemOffset(classType->GetItems()) < sizeof(void*) ) {
-                THROW1_TRACE(runtime_error,
-                             "CSequenceOfTypeInfo: incompatible type: " +
-                             type->GetName() + ": " + typeid(*type).name() +
-                             " size: " + NStr::IntToString(type->GetSize()));
+                CNcbiOstrstream msg;
+                msg << "CSequenceOfTypeInfo: incompatible type: " <<
+                    type->GetName() << ": " << typeid(*type).name() <<
+                    " size: " << type->GetSize();
+                THROW1_TRACE(runtime_error, CNcbiOstrstreamToString(msg));
             }
             m_NextOffset = 0;
             m_DataOffset = 0;
@@ -509,10 +513,11 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
             _TRACE("SequenceOf(" << type->GetName() << ") VALNODE");
             SetValNodeNext();
 */
-            THROW1_TRACE(runtime_error,
-                         "CSequenceOfTypeInfo: incompatible type: " +
-                         type->GetName() + ": " + typeid(*type).name() +
-                         " size: " + NStr::IntToString(type->GetSize()));
+            CNcbiOstrstream msg;
+            msg << "CSequenceOfTypeInfo: incompatible type: " <<
+                type->GetName() << ": " << typeid(*type).name() <<
+                " size: " << type->GetSize();
+            THROW1_TRACE(runtime_error, CNcbiOstrstreamToString(msg));
 		}
     }
     else if ( type->GetSize() <= sizeof(dataval) ) {
@@ -521,10 +526,11 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
         SetValNodeNext();
     }
 	else {
-		THROW1_TRACE(runtime_error,
-                     "CSequenceOfTypeInfo: incompatible type: " +
-                     type->GetName() + ": " + typeid(*type).name() +
-                     " size: " + NStr::IntToString(type->GetSize()));
+        CNcbiOstrstream msg;
+        msg << "CSequenceOfTypeInfo: incompatible type: " <<
+            type->GetName() << ": " << typeid(*type).name() <<
+            " size: " << type->GetSize();
+		THROW1_TRACE(runtime_error, CNcbiOstrstreamToString(msg));
 	}
 
     {

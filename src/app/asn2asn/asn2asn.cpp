@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/12/12 14:28:31  vasilche
+* Changed the way arguments are processed.
+*
 * Revision 1.33  2000/11/17 22:04:33  vakatov
 * CArgDescriptions::  Switch the order of optional args in methods
 * AddOptionalKey() and AddPlain(). Also, enforce the default value to
@@ -289,75 +292,82 @@ public:
 *   Main program loop to read, process, write SeqEntrys
 *
 *****************************************************************************/
+void CAsn2Asn::Init(void)
+{
+    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+
+    d->SetUsageContext("asn2asn", "convert Seq-entry or Bioseq-set data");
+
+    d->AddKey("i", "inputFile",
+              "input data file",
+              CArgDescriptions::eInputFile);
+    d->AddOptionalKey("o", "outputFile",
+                      "output data file",
+                      CArgDescriptions::eOutputFile);
+    d->AddFlag("e",
+               "treat data as Seq-entry");
+    d->AddFlag("b",
+               "binary ASN.1 input format");
+    d->AddFlag("X",
+               "XML input format");
+    d->AddFlag("s",
+               "binary ASN.1 output format");
+    d->AddFlag("x",
+               "XML output format");
+    d->AddFlag("C",
+               "Convert data without reading in memory");
+    d->AddFlag("S",
+               "Skip data without reading in memory");
+    d->AddOptionalKey("l", "logFile",
+                      "log errors to <logFile>",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("c", "count",
+                      "perform command <count> times",
+                      CArgDescriptions::eInteger, "1");
+    
+    d->AddFlag("ih",
+               "Use read hooks");
+    d->AddFlag("oh",
+               "Use write hooks");
+
+    SetupArgDescriptions(d.release());
+}
+
 int CAsn2Asn::Run(void)
 {
 	SetDiagPostLevel(eDiag_Error);
 
-    auto_ptr<CArgs> args;
+    const CArgs& args = GetArgs();
 
-    // read arguments
-    {
-        CArgDescriptions argDesc;
-        argDesc.AddKey("i", "inputFile", "input data file",
-                       argDesc.eInputFile);
-        argDesc.AddOptionalKey("o", "outputFile", "output data file",
-                               argDesc.eOutputFile);
-        argDesc.AddFlag("e", "treat data as Seq-entry");
-        argDesc.AddFlag("b", "binary ASN.1 input format");
-        argDesc.AddFlag("X", "XML input format");
-        argDesc.AddFlag("s", "binary ASN.1 output format");
-        argDesc.AddFlag("x", "XML output format");
-        argDesc.AddFlag("C", "Convert data without reading in memory");
-        argDesc.AddFlag("S", "Skip data without reading in memory");
-        argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
-                               argDesc.eOutputFile);
-        argDesc.AddOptionalKey("c", "count", "perform command <count> times",
-                               argDesc.eInteger, "1");
-        
-        argDesc.AddFlag("ih", "Use read hooks");
-        argDesc.AddFlag("oh", "Use write hooks");
+    if ( const CArgValue& l = args["l"] )
+        SetDiagStream(&l.AsOutputFile());
 
-        try {
-            args.reset(argDesc.CreateArgs(GetArguments()));
-        }
-        catch (exception & e ) {
-            NcbiCerr << e.what() << NcbiEndl;
-            argDesc.SetUsageContext(GetArguments().GetProgramName(),
-                                    "asn2asn");
-            string s;
-            NcbiCerr << argDesc.PrintUsage(s);
-            return -1;
-        }
-    }
-
-    if ( args->IsProvided("l") )
-        SetDiagStream(&(*args)["l"].AsOutputFile());
-
-    string inFile = (*args)["i"].AsString();
+    string inFile = args["i"].AsString();
     ESerialDataFormat inFormat = eSerial_AsnText;
-    if ( args->IsProvided("b") )
+    if ( args["b"] )
         inFormat = eSerial_AsnBinary;
-    else if ( args->IsProvided("X") )
+    else if ( args["X"] )
         inFormat = eSerial_Xml;
 
-    bool haveOutput = args->IsProvided("o");
+    const CArgValue& o = args["o"];
+    bool haveOutput = o;
     string outFile;
     ESerialDataFormat outFormat = eSerial_AsnText;
     if ( haveOutput ) {
-        outFile = (*args)["o"].AsString();
-        if ( args->IsProvided("s") )
+        outFile = o.AsString();
+        if ( args["s"] )
             outFormat = eSerial_AsnBinary;
-        else if ( args->IsProvided("x") )
+        else if ( args["x"] )
             outFormat = eSerial_Xml;
     }
 
-    bool inSeqEntry = args->IsProvided("e");
-    bool skip = args->IsProvided("S");
-    bool convert = args->IsProvided("C");
-    bool readHook = args->IsProvided("ih");
-    bool writeHook = args->IsProvided("oh");
+    bool inSeqEntry = args["e"];
+    bool skip = args["S"];
+    bool convert = args["C"];
+    bool readHook = args["ih"];
+    bool writeHook = args["oh"];
 
-    size_t count = (*args)["c"].AsInteger();
+    size_t count = args["c"].AsInteger();
 
     for ( size_t i = 1; i <= count; ++i ) {
         bool displayMessages = count != 1;

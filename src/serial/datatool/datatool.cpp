@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/12/12 14:28:17  vasilche
+* Changed the way arguments are processed.
+*
 * Revision 1.46  2000/11/27 18:19:47  vasilche
 * Datatool now conforms CNcbiApplication requirements.
 *
@@ -289,9 +292,9 @@ bool CDataTool::ProcessModules(void)
 
     string modulesDir;
 
-    if ( args.IsProvided("oR") ) {
+    if ( const CArgValue& oR = args["oR"] ) {
         // NCBI directory tree
-        const string& rootDir = args["oR"].AsString();
+        const string& rootDir = oR.AsString();
         generator.SetHPPDir(Path(rootDir, "include"));
         string srcDir = Path(rootDir, "src");
         generator.SetCPPDir(srcDir);
@@ -300,20 +303,18 @@ bool CDataTool::ProcessModules(void)
         generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
     }
     
-    if ( args.IsProvided("opm") )
-        modulesDir = args["opm"].AsString();
+    if ( const CArgValue& opm = args["opm"] )
+        modulesDir = opm.AsString();
     
     LoadDefinitions(generator.GetMainModules(),
                     modulesDir, args["m"].AsString());
 
-    if ( args.IsProvided("f") ) {
-        const CArgValue& f = args["f"];
+    if ( const CArgValue& f = args["f"] ) {
         generator.GetMainModules().PrintASN(f.AsOutputFile());
         f.CloseFile();
     }
 
-    if ( args.IsProvided("fx") ) {
-        const CArgValue& fx = args["fx"];
+    if ( const CArgValue& fx = args["fx"] ) {
         if ( fx.AsString() == "m" )
             generator.GetMainModules().PrintDTDModular();
         else {
@@ -326,7 +327,7 @@ bool CDataTool::ProcessModules(void)
                     modulesDir, args["M"].AsString());
 
     if ( !generator.Check() ) {
-        if ( !args.IsProvided("i") ) { // ignored
+        if ( !args["i"] ) { // ignored
             ERR_POST("some types are unknown");
             return false;
         }
@@ -344,34 +345,38 @@ bool CDataTool::ProcessData(void)
     // convert data
     ESerialDataFormat inFormat;
     string inFileName;
-    string typeName = args["t"].AsString();
+    const CArgValue& t = args["t"];
     
-    if ( args.IsProvided("v") ) {
+    if ( const CArgValue& v = args["v"] ) {
         inFormat = eSerial_AsnText;
-        inFileName = args["v"].AsString();
+        inFileName = v.AsString();
     }
-    else if ( args.IsProvided("vx") ) {
+    else if ( const CArgValue& vx = args["vx"] ) {
         inFormat = eSerial_Xml;
-        inFileName = args["vx"].AsString();
+        inFileName = vx.AsString();
     }
-    else if ( args.IsProvided("d") ) {
-        inFormat = eSerial_AsnBinary;
-        inFileName = args["d"].AsString();
-        if ( typeName.empty() ) {
+    else if ( const CArgValue& d = args["d"] ) {
+        if ( !t ) {
             ERR_POST("ASN.1 value type must be specified (-t)");
             return false;
         }
+        inFormat = eSerial_AsnBinary;
+        inFileName = d.AsString();
     }
     else // no input data
         return true;
 
     auto_ptr<CObjectIStream>
         in(CObjectIStream::Open(inFormat, inFileName, eSerial_StdWhenAny));
-    
-    if ( typeName.empty() )
-        typeName = in->ReadFileHeader();
-    else
+
+    string typeName;
+    if ( t ) {
+        typeName = t.AsString();
         in->ReadFileHeader();
+    }
+    else {
+        typeName = in->ReadFileHeader();
+    }
 
     TTypeInfo typeInfo =
         generator.GetMainModules().ResolveInAnyModule(typeName, true)->
@@ -381,24 +386,24 @@ bool CDataTool::ProcessData(void)
     ESerialDataFormat outFormat;
     string outFileName;
     
-    if ( args.IsProvided("p") ) {
+    if ( const CArgValue& p = args["p"] ) {
         outFormat = eSerial_AsnText;
-        outFileName = args["p"].AsString();
+        outFileName = p.AsString();
     }
-    else if ( args.IsProvided("px") ) {
+    else if ( const CArgValue& px = args["px"] ) {
         outFormat = eSerial_Xml;
-        outFileName = args["px"].AsString();
+        outFileName = px.AsString();
     }
-    else if ( args.IsProvided("e") ) {
+    else if ( const CArgValue& e = args["e"] ) {
         outFormat = eSerial_AsnBinary;
-        outFileName = args["e"].AsString();
+        outFileName = e.AsString();
     }
     else {
         // no input data
         outFormat = eSerial_None;
     }
 
-    if ( args.IsProvided("F") ) {
+    if ( const CArgValue& F = args["F"] ) {
         // read fully in memory
         AnyType value;
         in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
@@ -432,18 +437,20 @@ bool CDataTool::GenerateCode(void)
     const CArgs& args = GetArgs();
 
     // load generator config
-    if ( args.IsProvided("od") )
-        generator.LoadConfig(args["od"].AsString(), args["odi"].AsBoolean());
-    if ( args.IsProvided("oD") )
-        generator.AddConfigLine(args["oD"].AsString());
+    if ( const CArgValue& od = args["od"] )
+        generator.LoadConfig(od.AsString(), args["odi"]);
+    //if ( const CArgValue& oD = args["oD"] )
+    //    generator.AddConfigLine(oD.AsString());
 
     // set list of types for generation
-    if ( args.IsProvided("oX") )
+    if ( args["oX"] )
         generator.ExcludeRecursion();
-    if ( args.IsProvided("oA") )
+    if ( args["oA"] )
         generator.IncludeAllMainTypes();
-    generator.IncludeTypes(args["ot"].AsString());
-    generator.ExcludeTypes(args["ox"].AsString());
+    if ( const CArgValue& ot = args["ot"] )
+        generator.IncludeTypes(ot.AsString());
+    if ( const CArgValue& ox = args["ox"] )
+        generator.ExcludeTypes(ox.AsString());
 
     if ( !generator.HaveGenerateTypes() )
         return true;
@@ -451,32 +458,32 @@ bool CDataTool::GenerateCode(void)
     // prepare generator
     
     // set namespace
-    if ( args.IsProvided("on") )
-        generator.SetDefaultNamespace(args["on"].AsString());
+    if ( const CArgValue& on = args["on"] )
+        generator.SetDefaultNamespace(on.AsString());
     
     // set output files
-    if ( args.IsProvided("oc") ) {
-        const string& fileName = args["oc"].AsString();
+    if ( const CArgValue& oc = args["oc"] ) {
+        const string& fileName = oc.AsString();
         generator.SetCombiningFileName(fileName);
         generator.SetFileListFileName(fileName+".files");
     }
-    if ( args.IsProvided("of") )
-        generator.SetFileListFileName(args["of"].AsString());
+    if ( const CArgValue& of = args["of"] )
+        generator.SetFileListFileName(of.AsString());
     
     // set directories
-    if ( args.IsProvided("oph") )
-        generator.SetHPPDir(args["oph"].AsString());
-    if ( args.IsProvided("opc") )
-        generator.SetCPPDir(args["opc"].AsString());
+    if ( const CArgValue& oph = args["oph"] )
+        generator.SetHPPDir(oph.AsString());
+    if ( const CArgValue& opc = args["opc"] )
+        generator.SetCPPDir(opc.AsString());
     
     // set file names prefixes
-    if ( args.IsProvided("or") )
-        generator.SetFileNamePrefix(args["or"].AsString());
-    if ( args.IsProvided("ors") )
+    if ( const CArgValue& or = args["or"] )
+        generator.SetFileNamePrefix(or.AsString());
+    if ( args["ors"] )
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
-    if ( args.IsProvided("orm") )
+    if ( args["orm"] )
         generator.SetFileNamePrefixSource(eFileName_FromModuleName);
-    if ( args.IsProvided("orA") )
+    if ( args["orA"] )
         generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
     
     // generate code
