@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/04 15:08:43  grichenk
+* Improved CTSE_Info locks
+*
 * Revision 1.6  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -124,6 +127,7 @@ private:
     // Move to the next valid seq-annot
     void x_Walk(void);
 
+    // The TSEInfo is locked by CAnnotTypes_CI, not here.
     CRef<CTSE_Info>   m_TSEInfo;
     SAnnotSelector    m_Selector;
     TRangeMap*        m_RangeMap;

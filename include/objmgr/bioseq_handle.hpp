@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/04 15:08:43  grichenk
+* Improved CTSE_Info locks
+*
 * Revision 1.8  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -77,6 +80,7 @@ BEGIN_SCOPE(objects)
 class CDataSource;
 class CSeqMap;
 class CSeqVector;
+class CTSE_Info;
 
 
 // Bioseq handle -- must be a copy-safe const type.
@@ -149,31 +153,21 @@ private:
     CDataSource& x_GetDataSource(void) const;
     // Set the handle seq-entry and datasource
     void x_ResolveTo(CScope& scope, CDataSource& datasource,
-                     CSeq_entry& entry, CSeq_entry& tse);
+                     CSeq_entry& entry, CTSE_Info& tse);
 
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
     CScope*              m_Scope;
     mutable CDataSource* m_DataSource;  // Data source for resolved handles
     mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
-    mutable CSeq_entry*  m_TSE;         // Top level seq-entry
+    mutable CTSE_Info*   m_TSE;         // Top level seq-entry
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
     friend class CDataSource;
     friend class CAnnot_CI;
+    friend class CAnnotTypes_CI;
 };
 
-
-inline
-void CBioseq_Handle::x_ResolveTo(
-    CScope& scope, CDataSource& datasource,
-    CSeq_entry& entry, CSeq_entry& tse)
-{
-    m_Scope = &scope;
-    m_DataSource = &datasource;
-    m_Entry = &entry;
-    m_TSE = &tse;
-}
 
 inline
 CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
@@ -189,27 +183,6 @@ inline
 const CSeq_id_Handle CBioseq_Handle::GetKey(void) const
 {
     return m_Value;
-}
-
-inline
-CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
-    : m_Value(h.m_Value),
-      m_Scope(h.m_Scope),
-      m_DataSource(h.m_DataSource),
-      m_Entry(h.m_Entry),
-      m_TSE(h.m_TSE)
-{
-}
-
-inline
-CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
-{
-    m_Value = h.m_Value;
-    m_Scope = h.m_Scope;
-    m_DataSource = h.m_DataSource;
-    m_Entry = h.m_Entry;
-    m_TSE = h.m_TSE;
-    return *this;
 }
 
 inline

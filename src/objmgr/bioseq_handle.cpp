@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/04 15:08:44  grichenk
+* Improved CTSE_Info locks
+*
 * Revision 1.5  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -51,6 +54,7 @@
 
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include "data_source.hpp"
+#include "tse_info.hpp"
 #include <objects/objmgr1/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -59,6 +63,36 @@ BEGIN_SCOPE(objects)
 
 CBioseq_Handle::~CBioseq_Handle(void)
 {
+    if ( m_TSE )
+        m_TSE->Unlock();
+}
+
+
+CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
+    : m_Value(h.m_Value),
+      m_Scope(h.m_Scope),
+      m_DataSource(h.m_DataSource),
+      m_Entry(h.m_Entry),
+      m_TSE(h.m_TSE)
+{
+    if ( m_TSE )
+        m_TSE->Lock();
+}
+
+
+CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
+{
+    m_Value = h.m_Value;
+    m_Scope = h.m_Scope;
+    m_DataSource = h.m_DataSource;
+    m_Entry = h.m_Entry;
+    CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
+    if ( m_TSE )
+        m_TSE->Unlock();
+    m_TSE = h.m_TSE;
+    if ( m_TSE )
+        m_TSE->Lock();
+    return *this;
 }
 
 
@@ -77,6 +111,7 @@ const CBioseq& CBioseq_Handle::GetBioseq(void) const
 
 const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
 {
+    // Can not use m_TSE->m_TSE since the handle may be unresolved yet
     return x_GetDataSource().GetTSE(*this);
 }
 
@@ -96,6 +131,22 @@ CSeqVector CBioseq_Handle::GetSeqVector(bool plus_strand)
 {
     return CSeqVector(*this, plus_strand, *m_Scope);
 }
+
+
+void CBioseq_Handle::x_ResolveTo(
+    CScope& scope, CDataSource& datasource,
+    CSeq_entry& entry, CTSE_Info& tse)
+{
+    m_Scope = &scope;
+    m_DataSource = &datasource;
+    m_Entry = &entry;
+    CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
+    if ( m_TSE )
+        m_TSE->Unlock();
+    m_TSE = &tse;
+    m_TSE->Lock();
+}
+
 
 
 END_SCOPE(objects)
