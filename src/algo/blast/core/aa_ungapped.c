@@ -106,11 +106,11 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    Boolean right_extend;
    Int4 hits_extended = 0;
 
-   if (diag == NULL)
-      return -1;
+   ASSERT(diag != NULL);
+   ASSERT(diag->array_type == eDiagStructArray);
 
    diag_offset = diag->offset;
-   diag_array = diag->diag_array;
+   diag_array = diag->diag_array.hit_level_array;
    diag_mask = diag->diag_mask;
    window = diag->window;
 
@@ -242,11 +242,11 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    DiagStruct* diag_array;
    Int4 hits_extended = 0;
 
-   if (!diag) 
-      return -1;
+   ASSERT(diag != NULL);
+   ASSERT(diag->array_type == eDiagStructArray);
    
    diag_offset = diag->offset;
-   diag_array = diag->diag_array;
+   diag_array = diag->diag_array.hit_level_array;
    diag_mask = diag->diag_mask;
    
    if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
@@ -569,17 +569,19 @@ Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length)
 Int4 DiagClear(BLAST_DiagTable* diag)
 {
   Int4 i,n;
+  DiagStruct* diag_struct_array;
 
   if (diag==NULL)
     return 0;
 
   n=diag->diag_array_length;
 
-  for(i=0;i<n;i++)
-    {
-      diag->diag_array[i].diag_level = 0;
-      diag->diag_array[i].last_hit = - diag->window;
-    }
+  diag_struct_array = diag->diag_array.hit_level_array;
+
+  for(i=0;i<n;i++) {
+     diag_struct_array[i].diag_level = 0;
+     diag_struct_array[i].last_hit = - diag->window;
+  }
   return 0;
 }
 
