@@ -203,30 +203,6 @@ CDisplaySeqalign::~CDisplaySeqalign()
     }
 }
 
-///extract seqalign set
-///@param target: new seqalign set
-///@param source: source seqalign set containing seqalign set
-///
-static void s_ExtractSeqalign(CSeq_align_set& target, 
-                              const CSeq_align_set& source)
-{
-    for(CSeq_align_set::Tdata::const_iterator iter = source.Get().begin();
-        iter != source.Get().end(); iter++) {
-        if((*iter)->IsSetSegs()){
-            const CSeq_align::TSegs& seg = (*iter)->GetSegs();
-            if(seg.IsDisc()){
-                const CSeq_align_set& set = seg.GetDisc();
-                for(CSeq_align_set::Tdata::const_iterator iter2 = 
-                        set.Get().begin(); iter2 != set.Get().end(); iter2 ++) {
-                    target.Set().push_back(*iter2);
-                }
-            } else {
-                target.Set().push_back(*iter);
-            }
-        }
-    }
-}
-
 ///show blast identity, positive etc.
 ///@param out: output stream
 ///@param aln_stop: stop in aln coords
@@ -885,7 +861,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
 void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
 {   
     CSeq_align_set actual_aln_list;
-    s_ExtractSeqalign(actual_aln_list, *m_SeqalignSetRef);
+    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+                                                     *m_SeqalignSetRef);
     if (actual_aln_list.Get().empty()){
         return;
     }
@@ -1223,9 +1200,10 @@ const void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
 }
 
 
-const void CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
-                                            list<int>& use_this_gi, 
-                                            CNcbiOstream& out) const
+const void 
+CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
+                                 list<int>& use_this_gi, 
+                                 CNcbiOstream& out) const
 {
     if(bsp_handle){
         const CRef<CSeq_id> wid =
@@ -2396,6 +2374,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.67  2005/03/14 20:10:44  dondosha
+*Moved static function s_ExtractSeqalign to a method in CblastFormatUtil class
+*
 *Revision 1.66  2005/03/14 15:49:06  jianye
 *Added hsp anchor for mapviewer
 *
