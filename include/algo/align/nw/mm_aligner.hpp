@@ -1,7 +1,7 @@
 #ifndef ALGO___MM_ALIGNER__HPP
 #define ALGO___MM_ALIGNER__HPP
 
-/* $Id $
+/* $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE                          
@@ -31,10 +31,9 @@
 * File Description:
 *   CMMAligner class definition
 *
-*   CMMAligner encapsulates the Myers and Miller
-*   global alignment algorithm featuring affine
-*   gap penalty model and requiring linear
-*   space to run.
+*   CMMAligner encapsulates the Hirschberg's divide-and-conquer
+*   algorithm (also credited to Myers and Miller) featuring
+*   affine gap penalty model and running in linear space
 *
 *   E.W. Myers and W. Miller
 *   Optimal alignment in linear space
@@ -57,8 +56,6 @@ BEGIN_NCBI_SCOPE
 
 struct SCoordRect; // auxiliary structure, see below
 
-// Myers-Miller algorithm encapsulation
-//
 
 class NCBI_XALGO_EXPORT CMMAligner: public CNWAligner
 {
@@ -145,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/04/10 19:12:07  kapustin
+ * Modify algorithm's description
+ *
  * Revision 1.7  2003/04/10 19:04:28  siyan
  * Added doxygen support
  *
