@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.36 2003/07/09 18:10:39 sherry Exp $
+-- $Id: docsum.asn,v 1.37 2003/07/09 19:36:33 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.37  2003/07/09 19:36:33  kholodov
+-- Syntax error fixed
+--
 -- Revision 1.36  2003/07/09 18:10:39  sherry
 -- *** empty log message ***
 --
@@ -203,7 +206,7 @@ NSE-Assay ::= SEQUENCE {
 									-- Join to appropriate object by batch-id.
 		snpassay (1),				-- detailed assay conditions for NSE-ss.
 		validation (2),				-- refSNPs confirmed by subsequent experimental data. Data for NSE-rs.validated-in-other-pop
-		doublehit (3)				-- refSNPs with both alleles seen twice. Data for NSE-rs.validated-by-2hit-2allele
+		doublehit (3) },			-- refSNPs with both alleles seen twice. Data for NSE-rs.validated-by-2hit-2allele
 	moltype ENUMERATED {
 		genomic (1),
 		cDNA (2),
