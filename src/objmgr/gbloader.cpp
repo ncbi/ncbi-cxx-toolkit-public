@@ -155,7 +155,8 @@ CGBDataLoader::~CGBDataLoader(void)
 }
 
 bool
-CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
+CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
+                          TTSESet* tse_set)
 {
   /*
     SeqLoc -> CHandleRangeMap ->
@@ -189,7 +190,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
         {
           //GBLOG_POST( "GetRecords-0" );
           TSeq_id_Key  sih       = x_GetSeq_id_Key(hrange->first);
-          if(x_GetRecords(sih,hrange->second,choice))
+          if(x_GetRecords(sih,hrange->second,choice, tse_set))
             unreleased_mutex_run=false;
         }
       _VERIFY(count++ < 10); /// actually I would expect it to be 2 at most
@@ -464,7 +465,8 @@ CGBDataLoader::x_Request2BlobMask(const EChoice choice)
 }
 
 bool
-CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,EChoice choice)
+CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,EChoice choice,
+                            TTSESet* tse_set)
 {
   TInt         sr_mask   = x_Request2SeqrefMask(choice);
   TInt         blob_mask = x_Request2BlobMask(choice);
@@ -561,7 +563,8 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
                               *srp,
                               lrange->first.GetFrom(),
                               lrange->first.GetTo(),
-                              blob_mask
+                              blob_mask,
+                              tse_set
                               );
                   break;
                 }
@@ -729,7 +732,8 @@ CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TI
 }
 
 bool
-CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask)
+CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask,
+                         TTSESet* tse_set)
 {
   CTSEUpload *tse_up = &tse->m_upload;
   if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
@@ -758,7 +762,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
                   tse_up->m_mode   = CTSEUpload::eDone;
                   GBLOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
                   new_tse=true;
-                  GetDataSource()->AddTSE(*(tse_up->m_tse));
+                  GetDataSource()->AddTSE(*(tse_up->m_tse), tse_set);
                 }
               else
                 {
@@ -800,6 +804,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/05/14 20:06:26  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
 * Revision 1.36  2002/05/10 16:44:32  kimelman
 * tuning to allow pubseq enable build
 *

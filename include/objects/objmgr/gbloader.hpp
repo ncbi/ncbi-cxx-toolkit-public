@@ -151,7 +151,8 @@ public:
   virtual ~CGBDataLoader(void);
   
   virtual bool DropTSE(const CSeq_entry* sep);
-  virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice);
+  virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
+      TTSESet* tse_set = 0);
   
   virtual CTSE_Info*
   ResolveConflict(const CSeq_id_Handle& handle,
@@ -234,10 +235,12 @@ private:
   
   
   typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
-  bool            x_GetRecords(const TSeq_id_Key key,const CHandleRange &hrange, EChoice choice);
+  bool            x_GetRecords(const TSeq_id_Key key,const CHandleRange &hrange, EChoice choice,
+      TTSESet* tse_set);
   bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
   bool            x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
-  bool            x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask);
+  bool            x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask,
+      TTSESet* tse_set);
   void            x_Check(STSEinfo *me);
 };
 
@@ -249,6 +252,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.21  2002/05/14 20:06:23  grichenk
+ * Improved CTSE_Info locking by CDataSource and CDataLoader
+ *
  * Revision 1.20  2002/05/09 21:41:01  kimelman
  * MT tuning
  *

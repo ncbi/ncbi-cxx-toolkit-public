@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/14 20:06:28  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
 * Revision 1.5  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -67,7 +70,9 @@ class CTestDataLoader : public CDataLoader
 {
 public:
     CTestDataLoader(const string& loader_name) : CDataLoader( loader_name) {}
-    virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice) {return false;}
+    virtual bool GetRecords(const CHandleRangeMap& hrmap,
+        const EChoice choice,
+        TTSESet* tse_set = 0) { return false; }
     virtual bool DropTSE(const CSeq_entry *sep)  {return false;}
     virtual void GC(void) {return;}
 };

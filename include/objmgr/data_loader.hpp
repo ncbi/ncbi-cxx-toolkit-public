@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/14 20:06:23  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
 * Revision 1.8  2002/05/06 03:30:35  vakatov
 * OM/OM1 renaming
 *
@@ -111,9 +114,13 @@ public:
     // CDataSource::AppendXXX() methods.
     //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
     
+    typedef set< CRef<CTSE_Info> > TTSESet;
+
     // Request from a datasource using handles and ranges instead of seq-loc
+    // The TSEs loaded in this call will be added to the tse_set.
     virtual bool GetRecords(const CHandleRangeMap& hrmap,
-                            const EChoice choice) = 0;
+                            const EChoice choice,
+                            TTSESet* tse_set = 0) = 0;
     
     // 
     virtual bool DropTSE(const CSeq_entry *sep) = 0 ;
@@ -127,7 +134,6 @@ public:
     // *select the best TSE from the set of dead TSEs.
     // *select the live TSE from the list of live TSEs
     //  and mark the others one as dead.
-    typedef set< CRef<CTSE_Info> > TTSESet;
     virtual CTSE_Info*
       ResolveConflict(const CSeq_id_Handle&,
                       const TTSESet&) { return 0; } //### = 0;

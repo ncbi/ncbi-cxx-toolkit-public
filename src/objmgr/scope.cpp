@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/14 20:06:26  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
 * Revision 1.19  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -212,6 +215,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
     if (!match)
         return CBioseq_Handle();
     x_AddToHistory(*match.m_TSE);
+    match.m_TSE->Unlock(); // Locked by x_BestResolve()
     return match.m_DataSource->GetBioseqHandle(*this, id);
 }
 
@@ -240,9 +244,10 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 {
     set<CSeqMatch_Info> bm_set;
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        CSeqMatch_Info info = (*it)->BestResolve(id, m_History);
-        if ( info )
+        CSeqMatch_Info info = (*it)->BestResolve(id, *this);
+        if ( info ) {
             bm_set.insert(info);
+        }
     }
     CSeqMatch_Info best;
     bool best_is_in_history = false;
@@ -289,6 +294,13 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
     if ( extra_live ) {
         x_ThrowConflict(eConflict_Live, best, extra_live);
     }
+    if ( best ) {
+        best.m_TSE->Lock(); // Lock the best TSE
+    }
+    iterate (set<CSeqMatch_Info>, bm_it, bm_set) {
+        // Unlock all TSEs
+        bm_it->m_TSE->Unlock();
+    }
     return best;
 }
 
@@ -299,11 +311,12 @@ void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
 {
     CMutexGuard guard(sm_Scope_Mutex);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        (*it)->PopulateTSESet(loc, tse_set, sel, m_History);
+        (*it)->PopulateTSESet(loc, tse_set, sel, *this);
     }
     //### Filter the set depending on the requests history?
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
         x_AddToHistory(**tse_it);
+        (*tse_it)->Unlock();
     }
 }
 
@@ -317,6 +330,7 @@ bool CScope::x_GetSequence(const CBioseq_Handle& handle,
     if (!match)
         return false;
     x_AddToHistory(*match.m_TSE);
+    match.m_TSE->Unlock();
     return match.m_DataSource->GetSequence(handle, point, seq_piece, *this);
 }
 
@@ -338,9 +352,9 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 }
 
 
-void CScope::x_AddToHistory(const CTSE_Info& tse)
+void CScope::x_AddToHistory(const CTSE_Info& tse, bool lock)
 {
-    if ( m_History.insert(&tse).second ) {
+    if ( m_History.insert(&tse).second  &&  lock ) {
         tse.Lock();
     }
 }

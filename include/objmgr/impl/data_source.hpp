@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/05/14 20:06:26  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
 * Revision 1.21  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -131,7 +134,8 @@ public:
     virtual ~CDataSource(void);
 
     /// Register new TSE (Top Level Seq-entry)
-    void AddTSE(CSeq_entry& se, bool dead = false);
+    typedef set< CRef<CTSE_Info> > TTSESet;
+    CTSE_Info* AddTSE(CSeq_entry& se, TTSESet* tse_set, bool dead = false);
 
     /// Add new sub-entry to "parent".
     /// Return FALSE and do nothing if "parent" is not a node in an
@@ -215,7 +219,6 @@ public:
     typedef CTSE_Info::TAnnotMap                    TAnnotMap;
     typedef map<CRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
     typedef CTSE_Info::TBioseqMap                   TBioseqMap;
-    typedef set< CRef<CTSE_Info> >                  TTSESet;
     typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
     typedef map<const CBioseq*, CRef<CSeqMap> >     TSeqMaps;
 
@@ -223,10 +226,9 @@ public:
     void PopulateTSESet(CHandleRangeMap& loc,
                         TTSESet& tse_set,
                         CSeq_annot::C_Data::E_Choice sel,
-                        const CScope::TRequestHistory& history) const;
+                        CScope& scope) const;
 
-    CSeqMatch_Info BestResolve(const CSeq_id& id,
-        const CScope::TRequestHistory& history);
+    CSeqMatch_Info BestResolve(const CSeq_id& id, CScope& scope);
 
     bool IsSynonym(const CSeq_id& id1, CSeq_id& id2) const;
 
@@ -234,8 +236,14 @@ public:
 
 private:
     // Process seq-entry recursively
-    void x_IndexEntry     (CSeq_entry& entry, CSeq_entry& tse, bool dead);
-    void x_AddToBioseqMap (CSeq_entry& entry, bool dead);
+    // Return TSE info for the indexed entry. For new TSEs the info is locked.
+    CTSE_Info* x_IndexEntry (CSeq_entry& entry,
+                             CSeq_entry& tse,
+                             bool dead,
+                             TTSESet* tse_set);
+    CTSE_Info* x_AddToBioseqMap (CSeq_entry& entry,
+                                  bool dead,
+                                  TTSESet* tse_set);
     void x_AddToAnnotMap  (CSeq_entry& entry);
 
     // Find the seq-entry with best bioseq for the seq-id handle.

@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/14 20:06:23  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
 * Revision 1.15  2002/05/06 03:30:36  vakatov
 * OM/OM1 renaming
 *
@@ -162,8 +165,8 @@ public:
 private:
     // Get requests history (used by data sources to process requests)
     const TRequestHistory& x_GetHistory(void);
-    // Add an entry to the requests history
-    void x_AddToHistory(const CTSE_Info& tse);
+    // Add an entry to the requests history, lock the TSE by default
+    void x_AddToHistory(const CTSE_Info& tse, bool lock=true);
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(const CSeq_id& id);
