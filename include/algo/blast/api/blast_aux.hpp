@@ -47,6 +47,7 @@
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_psi.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -145,6 +146,9 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
 
+DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
+DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -154,6 +158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/08/04 20:09:48  camacho
+* + class wrappers for PSIMatrix and PSIDiagnosticsResponse
+*
 * Revision 1.37  2004/06/23 14:02:05  dondosha
 * Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer
 *
