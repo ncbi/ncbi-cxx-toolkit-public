@@ -163,6 +163,8 @@ CResultZBtSrcX::CResultZBtSrcX(CByteSourceReader* src)
     : m_Src(src), m_BufferPos(0), m_BufferEnd(0),
       m_CompressedSize(0), m_DecompressionTime(0)
 {
+    m_Decompressor.SetFlags(m_Decompressor.fCheckFileHeader |
+                            m_Decompressor.GetFlags());
 }
 
 
@@ -258,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/10 18:41:47  vasilche
+ * Added SetFlags() to skip gzip header.
+ *
  * Revision 1.2  2004/04/07 16:16:17  ivanov
  * Cosmeic changes. Fixed header and footer.
  *
