@@ -71,15 +71,23 @@ CChecksum::CChecksum(const CChecksum& cks)
 
 CChecksum::~CChecksum()
 {
+    x_Free();
+}
+
+void CChecksum::x_Free()
+{
     switch ( GetMethod() ) {
     case eMD5:
         delete m_Checksum.m_MD5;
+        m_Checksum.m_MD5 = 0;
         break;
     }
 }
 
 CChecksum& CChecksum::operator= (const CChecksum& cks)
 {
+    x_Free();
+
     m_LineCount = cks.m_LineCount;
     m_CharCount = cks.m_CharCount;
     m_Method    = cks.m_Method;
@@ -88,12 +96,25 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
     case eCRC32:
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
         break;
-    case eMD5:
+    case eMD5:        
         m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
         break;
     }
 
     return *this;
+}
+
+void CChecksum::Reset()
+{
+    switch ( GetMethod() ) {
+    case eCRC32:
+        m_Checksum.m_CRC32 = 0;
+        break;
+    case eMD5:
+        delete m_Checksum.m_MD5;
+        m_Checksum.m_MD5 = new CMD5();
+        break;
+    }
 }
 
 CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
@@ -207,7 +228,7 @@ CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
     if (!input.is_open()) return cks;
 
     while (!input.eof()) {
-        char buf[1024];
+        char buf[2048];
         input.read(buf, sizeof(buf));
 
         size_t count = input.gcount();
@@ -221,6 +242,28 @@ CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
     return cks;
 }
 
+CChecksum&  ComputeFileChecksum(const string& path,
+                                CChecksum& checksum)
+{
+    CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+
+    if (!input.is_open()) return checksum;
+
+    while (!input.eof()) {
+        char buf[2048];
+        input.read(buf, sizeof(buf));
+
+        size_t count = input.gcount();
+
+        if (count) {
+            checksum.AddChars(buf, count);
+        }
+
+    } // while
+    input.close();
+    return checksum;
+
+}
 
 
 END_NCBI_SCOPE
@@ -229,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/11 16:47:02  kuznets
+* + Reset() implementation, fixed memory leak in assignment operator (MD5) mode.
+*
 * Revision 1.6  2003/07/29 21:29:26  ucko
 * Add MD5 support (cribbed from the C Toolkit)
 *
