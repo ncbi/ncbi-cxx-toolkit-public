@@ -226,13 +226,13 @@ void CAlnMrgApp::LoadInputAlignments(void)
 {
     const CArgs& args = GetArgs();
 
-    CNcbiIstream& is = args["in"].AsInputFile();
+    string sname = args["in"].AsString();
     
     // get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = asn_type.length();
     auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, is));
+        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
     if ( !binary ) {
         // auto-detection is possible in ASN.1 text mode
         asn_type = in->ReadFileHeader();
@@ -455,6 +455,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/09/22 19:11:24  todorov
+* open in file depending on the mode
+*
 * Revision 1.25  2004/09/22 17:00:53  todorov
 * +CAlnMix::fPreserveRows
 *
