@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.117  2002/01/18 13:55:29  thiessen
+* add help menu and viewer
+*
 * Revision 1.116  2002/01/11 15:48:52  thiessen
 * update for Mac CW7
 *
@@ -454,6 +457,17 @@
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cn3d/Cn3d_style_settings_set.hpp>
 
+#include <wx/wx.h>
+#include <wx/image.h>
+#include <wx/html/helpfrm.h>
+#include <wx/html/helpctrl.h>
+#include <wx/filesys.h>
+#include <wx/fs_zip.h>
+#include <wx/file.h>
+#include <wx/fontdlg.h>
+#include <wx/confbase.h>
+#include <wx/fileconf.h>
+
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/structure_set.hpp"
@@ -470,12 +484,6 @@
 #include "cn3d/cdd_ref_dialog.hpp"
 #include "cn3d/cn3d_png.hpp"
 #include "cn3d/wx_tools.hpp"
-
-#include <wx/file.h>
-#include <wx/fontdlg.h>
-#include <wx/image.h>
-#include <wx/confbase.h>
-#include <wx/fileconf.h>
 
 #include <ncbienv.h>
 
@@ -728,6 +736,13 @@ void Cn3DApp::InitRegistry(void)
 bool Cn3DApp::OnInit(void)
 {
     TESTMSG("Welcome to Cn3D++!\nbuilt " << __DATE__ << " with " << wxVERSION_STRING);
+
+    // help system loads from zip file
+#if wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB
+    wxFileSystem::AddHandler(new wxZipFSHandler);
+#else
+#error Must turn on wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB for Cn3D's help system!
+#endif
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -1015,12 +1030,14 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
     EVT_MENU_RANGE(MID_PLAY, MID_SET_DELAY,                 Cn3DMainFrame::OnAnimate)
     EVT_TIMER     (MID_ANIMATE,                             Cn3DMainFrame::OnTimer)
+    EVT_MENU      (MID_HELP_COMMANDS,                       Cn3DMainFrame::OnHelp)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), structureLimit(1000),
-    cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL)
+    cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
+    helpController(NULL), helpConfig(NULL)
 {
     topWindow = this;
     GlobalMessenger()->AddStructureWindow(this);
@@ -1163,6 +1180,11 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_ANNOT_CDD, "&Annotate");
     menuBar->Append(menu, "&CDD");
 
+    // Help menu
+    menu = new wxMenu;
+    menu->Append(MID_HELP_COMMANDS, "&Commands");
+    menuBar->Append(menu, "&Help");
+
     // accelerators for special keys
     wxAcceleratorEntry entries[10];
     entries[0].Set(wxACCEL_NORMAL, WXK_RIGHT, MID_NEXT_FRAME);
@@ -1202,6 +1224,58 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
     if (logFrame) {
         logFrame->Destroy();
         logFrame = NULL;
+    }
+}
+
+void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
+{
+    timer.Stop();
+    Command(MID_EXIT);
+}
+
+void Cn3DMainFrame::OnExit(wxCommandEvent& event)
+{
+    timer.Stop();
+    GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
+    GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
+    SaveDialog(false);                              // give structure window a chance to save data
+    SaveFavorites();
+
+    // remove help window if present
+    if (helpController) {
+        if (helpController->GetFrame())
+            helpController->GetFrame()->Close(true);
+        wxConfig::Set(NULL);
+        delete helpConfig; // saves data
+        delete helpController;
+    }
+
+    DestroyNonModalDialogs();
+    Destroy();
+}
+
+void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_HELP_COMMANDS) {
+        if (!helpController) {
+            wxString path = wxString(GetPrefsDir().c_str()) + "help_cache";
+            if (!wxDirExists(path)) {
+                TESTMSG("trying to create help cache folder " << path.c_str());
+                wxMkdir(path);
+            }
+            helpController = new wxHtmlHelpController(wxHF_DEFAULTSTYLE);
+            helpController->SetTempDir(path);
+            path = path + wxFILE_SEP_PATH + "Config";
+            TESTMSG("saving help config in " << path.c_str());
+            helpConfig = new wxFileConfig("Cn3D", "NCBI", path);
+            wxConfig::Set(helpConfig);
+            helpController->UseConfig(wxConfig::Get());
+            path = wxString(GetProgramDir().c_str()) + "cn3d_commands.htb";
+            if (!helpController->AddBook(path))
+                ERR_POST(Error << "Can't load help book at " << path.c_str());
+        }
+        if (event.GetId() == MID_HELP_COMMANDS)
+            helpController->Display("Cn3D Commands");
     }
 }
 
@@ -1452,24 +1526,6 @@ void Cn3DMainFrame::OnShowWindow(wxCommandEvent& event)
                 menuBar->IsChecked(MID_SHOW_LOG_START));
             break;
     }
-}
-
-void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
-{
-    timer.Stop();
-    Command(MID_EXIT);
-}
-
-void Cn3DMainFrame::OnExit(wxCommandEvent& event)
-{
-    timer.Stop();
-    GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
-    GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
-    SaveDialog(false);                              // give structure window a chance to save data
-    SaveFavorites();
-
-    DestroyNonModalDialogs();
-    Destroy();
 }
 
 void Cn3DMainFrame::DialogTextChanged(const MultiTextDialog *changed)

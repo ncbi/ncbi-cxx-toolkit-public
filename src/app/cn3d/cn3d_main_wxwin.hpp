@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2002/01/18 13:55:29  thiessen
+* add help menu and viewer
+*
 * Revision 1.56  2002/01/11 15:48:55  thiessen
 * update for Mac CW7
 *
@@ -246,6 +249,8 @@
 #error Please set wxUSE_GLCANVAS to 1 in setup.h.
 #endif
 #include <wx/glcanvas.h>
+#include <wx/html/helpctrl.h>
+#include <wx/fileconf.h>
 
 // for testing my new wxGLApp class
 #define TEST_WXGLAPP 1
@@ -395,6 +400,8 @@ public:
             MID_EDIT_CDD_NOTES,
             MID_EDIT_CDD_REFERENCES,
             MID_ANNOT_CDD,
+        // Help menu
+            MID_HELP_COMMANDS,
 
         // not actually a menu item, but used to enumerate style favorites list
             MID_FAVORITES_BEGIN = 100,
@@ -429,6 +436,7 @@ private:
     void OnSetFont(wxCommandEvent& event);
     void OnAnimate(wxCommandEvent& event);
     void OnTimer(wxTimerEvent& event);
+    void OnHelp(wxCommandEvent& event);
 
     static const int UNLIMITED_STRUCTURES;
     int structureLimit;
@@ -439,6 +447,10 @@ private:
     wxTimer timer;
     enum { ANIM_FRAMES, ANIM_SPIN };    // animation modes
     int animationMode;
+
+    // help window and associated config file (for saving bookmarks, etc.)
+    wxHtmlHelpController *helpController;
+    wxFileConfig *helpConfig;
 
     DECLARE_EVENT_TABLE()
 };
