@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/01/09 13:46:54  thiessen
+* highlight atom labels
+*
 * Revision 1.66  2002/12/19 15:58:26  thiessen
 * fix quadric problem on Mac
 *
@@ -264,6 +267,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/asn_converter.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1038,7 +1042,8 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
         AddTransparentSphere(atomStyle.color, atomStyle.name, site, atomStyle.radius, atomStyle.alpha);
         // but can put labels on now
         if (atomStyle.centerLabel.size() > 0)
-            DrawLabel(atomStyle.centerLabel, site, Vector(1,1,1)); // always white
+            DrawLabel(atomStyle.centerLabel, site,
+                (atomStyle.isHighlighted ? GlobalColors()->Get(Colors::eHighlight) : Vector(1,1,1)));
     }
 
     displayListEmpty[currentDisplayList] = false;
