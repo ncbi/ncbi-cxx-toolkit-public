@@ -137,6 +137,12 @@
   .cpp.o:<br>
   $(CCC) $(CFLAGS) -c $&lt; <br>
   and run make with "make -r" 
+
+<p>
+    In SunPro environment, use <i>"CC -xar ..."</i> rather than <i>"ar ..."</i>
+    to compose a library that defines template-based functions and
+    classes for external use.
+
 <p> When declaring a map, use the form <i>map&lt;string, string, less&lt;string&gt; 
   &gt;</i>. The third argument isn't necessary on most compilers, but SunPro 4.2 
   is a bit old and needs it because it doesn't do default values for templates. 
