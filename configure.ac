@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.4 2001/09/18 20:26:10 ucko Exp $
+#  $Id: configure.ac,v 1.5 2001/09/24 15:50:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -421,7 +421,7 @@ case "$host_os:$compiler" in
 
  irix*:GCC )
    if test "$with_debug" != "no" ; then
-      LDFLAGS="-LD_LAYOUT:lgot_buffer=24 $LDFLAGS"
+      LDFLAGS="-LD_LAYOUT:lgot_buffer=32 $LDFLAGS"
    fi
    ;;
 

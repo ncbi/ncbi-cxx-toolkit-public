@@ -2624,7 +2624,7 @@ case "$host_os:$compiler" in
 
  irix*:GCC )
    if test "$with_debug" != "no" ; then
-      LDFLAGS="-LD_LAYOUT:lgot_buffer=24 $LDFLAGS"
+      LDFLAGS="-LD_LAYOUT:lgot_buffer=32 $LDFLAGS"
    fi
    ;;
 
