@@ -249,6 +249,9 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
                             }
                             ++cds_match_count;
                             frame = lag % 3;
+                            if (frame < 0) {
+                                frame += 3;
+                            }
                             ++cds_match_count_by_frame[frame];
                         }
                     }
@@ -469,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/07 19:26:58  jcherry
+ * Deal properly with negative result of modulo operator
+ *
  * Revision 1.10  2005/02/01 19:41:35  jcherry
  * Set alignment vector gap character appropriately
  *
