@@ -235,9 +235,11 @@ public:
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
-
+    
     // For use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id);
+    static int BestRank(const CRef<CSeq_id>& id);
+    static int WorstRank(const CRef<CSeq_id>& id);
 
 private:
     void x_Init 
@@ -282,6 +284,44 @@ int CSeq_id::Score(const CRef<CSeq_id>& id)
 }
 
 
+inline
+int CSeq_id::BestRank(const CRef<CSeq_id>& id)
+{
+    switch (id->Which()) {
+    case e_not_set:                               return 83;
+    case e_General: case e_Local:                 return 80;
+    case e_Giim:                                  return 70;
+    case e_Other:                                 return 65;
+    case e_Ddbj: case e_Prf: case e_Pdb:
+    case e_Tpe:  case e_Tpd: case e_Embl:
+    case e_Pir:  case e_Swissprot: 
+    case e_Tpg:   case e_Genbank:                 return 60;
+    case e_Gibbmt:                                return 56;
+    case e_Gibbsq: case e_Patent:                 return 55;
+    case e_Gi:                                    return 51; 
+    default:                                      return 5;
+    }
+}
+
+
+inline
+int CSeq_id::WorstRank(const CRef<CSeq_id>& id)
+{
+    switch (id->Which()) {
+    case e_not_set:                               return 83;
+    case e_Gi: case e_Giim:                       return 20; 
+    case e_General: case e_Gibbsq: case e_Gibbmt: return 15; 
+    case e_Local: case e_Patent:                  return 10;
+    case e_Other:                                 return 8;
+    case e_Ddbj: case e_Prf: case e_Pdb:
+    case e_Tpe:  case e_Tpd: case e_Embl:
+    case e_Pir:  case e_Swissprot: 
+    case e_Tpg:   case e_Genbank:                 return 5;
+    default:                                      return 3;
+    }
+}
+
+
 /////////////////// end of CSeq_id inline methods
 
 
@@ -292,6 +332,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2002/10/03 17:06:13  clausen
+ * Added BestRank() and WorstRank()
+ *
  * Revision 1.23  2002/08/22 21:25:26  ucko
  * Added a standard score function for FindBestChoice corresponding to
  * the table in SeqIdFindWorst.
