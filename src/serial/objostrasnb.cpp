@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/10/05 15:52:50  vasilche
+* Avoid useing snprintf bacause it's missing on osf1_gcc
+*
 * Revision 1.47  2000/10/05 13:17:17  vasilche
 * Added missing #include <stdio.h>
 *
@@ -237,8 +240,6 @@
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
-// In MSVC snprintf is prefixed by underscore
-# define snprintf _snprintf
 #endif
 
 #if HAVE_NCBI_C
@@ -734,9 +735,14 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     int precision = digits - shift;
     if ( precision < 0 )
         precision = 0;
+    if ( precision > 64 ) // limit precision of data
+        precision = 64;
 
     char buffer[128];
-    int width = snprintf(buffer, sizeof(buffer), "%.*f", precision, data);
+    // ensure buffer is large enough to fit result
+    // (additional bytes are for sign, dot and exponent)
+    _ASSERT(sizeof(buffer) > precision + 16);
+    int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         THROW1_TRACE(runtime_error, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);

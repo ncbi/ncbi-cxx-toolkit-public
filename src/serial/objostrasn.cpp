@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/10/05 15:52:50  vasilche
+* Avoid useing snprintf bacause it's missing on osf1_gcc
+*
 * Revision 1.50  2000/10/05 13:17:17  vasilche
 * Added missing #include <stdio.h>
 *
@@ -255,8 +258,6 @@
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
-// In MSVC snprintf is prefixed by underscore
-# define snprintf _snprintf
 #endif
 
 #if HAVE_NCBI_C
@@ -364,7 +365,10 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
 	}
 
     char buffer[128];
-    int width = snprintf(buffer, sizeof(buffer), "%.*e", (digits-1), data);
+    // ensure buffer is large enough to fit result
+    // (additional bytes are for sign, dot and exponent)
+    _ASSERT(sizeof(buffer) > digits + 16);
+    int width = sprintf(buffer, "%.*e", int(digits-1), data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         THROW1_TRACE(runtime_error, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);
@@ -398,43 +402,6 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     m_Output.PutString(", 10, ");
     m_Output.PutInt(exp - fractDigits);
     m_Output.PutString(" }");
-
-#if 0
-    // old code
-    bool minus;
-    if ( data < 0.0 ) {
-        minus = true;
-        data = -data;
-    }
-    else {
-        minus = false;
-    }
-
-    double thelog = log10(data);
-    int characteristic;
-    if ( thelog >= 0.0 )
-        characteristic = digits - int(thelog);
-    else
-        characteristic = digits + int(ceil(-thelog));
-    
-    double mantissa = floor(data * pow(double(10), characteristic) + 0.5);
-    char buffer[128];
-    int width = snprintf(buffer, sizeof(buffer), "%.0f", mantissa);
-    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        THROW1_TRACE(runtime_error, "buffer overflow");
-    int ic = -characteristic; /* reverse direction */
-    while ( width > 0 && buffer[width - 1] == '0' ) {
-        --width;
-        ic++;
-    }
-	m_Output.PutString("{ ");
-    if ( minus )
-        m_Output.PutChar('-');
-    m_Output.PutString(buffer, width);
-    m_Output.PutString(", 10, ");
-    m_Output.PutInt(ic);
-    m_Output.PutString(" }");
-#endif
 }
 
 void CObjectOStreamAsn::WriteDouble(double data)
