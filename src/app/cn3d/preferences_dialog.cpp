@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/27 16:32:13  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.9  2002/04/09 23:59:10  thiessen
 * add cdd annotations read-only option
 *
@@ -211,6 +214,18 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
+}
+
+PreferencesDialog::~PreferencesDialog(void)
+{
+    DestroyChildren();  // must do first, since following are wxEvtHandlers
+    delete iWormSegments;
+    delete iWormSides;
+    delete iBondSides;
+    delete iHelixSides;
+    delete iAtomSlices;
+    delete iAtomStacks;
+    delete iCacheSize;
 }
 
 #define SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(section, name, iSpinCtrl, changedPtr) \

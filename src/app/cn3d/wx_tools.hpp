@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/27 16:32:16  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.9  2001/11/27 16:26:11  thiessen
 * major update to data management system
 *
@@ -205,6 +208,7 @@ class GetFloatingPointDialog : public wxDialog
 public:
     GetFloatingPointDialog(wxWindow* parent, const wxString& message, const wxString& title,
         double min, double max, double increment, double initial);
+    ~GetFloatingPointDialog(void);
 
     double GetValue(void);
 

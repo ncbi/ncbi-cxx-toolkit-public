@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/04/27 16:32:16  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.20  2002/04/26 13:46:45  thiessen
 * comment out all blast/pssm methods
 *
@@ -211,6 +214,7 @@ class ThreaderOptionsDialog : public wxDialog
 {
 public:
     ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions);
+    ~ThreaderOptionsDialog(void);
 
     // set the ThreaderOptions from values in the panel; returns true if all values are valid
     bool GetValues(ThreaderOptions *options);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/04/27 16:32:14  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.16  2002/04/12 01:54:43  thiessen
 * tweaks to style stuff
 *
@@ -234,6 +237,19 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
     topSizer->Fit(this);
     topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
+}
+
+StyleDialog::~StyleDialog(void)
+{
+    DestroyChildren();  // must do first, since following are wxEvtHandlers
+    delete fpSpaceFill;
+    delete fpBallRadius;
+    delete fpStickRadius;
+    delete fpTubeRadius;
+    delete fpTubeWormRadius;
+    delete fpHelixRadius;
+    delete fpStrandWidth;
+    delete fpStrandThickness;
 }
 
 void StyleDialog::SetupStyleStrings(void)

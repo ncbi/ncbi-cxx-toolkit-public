@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/04/27 16:32:15  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.36  2002/04/26 13:46:42  thiessen
 * comment out all blast/pssm methods
 *
@@ -510,6 +513,16 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     item0->Fit(this);
     item0->Fit(panel);
     item0->SetSizeHints(this);
+}
+
+ThreaderOptionsDialog::~ThreaderOptionsDialog(void)
+{
+    DestroyChildren();  // must do first, since following are wxEvtHandlers
+    delete fpWeight;
+    delete fpLoops;
+    delete iStarts;
+    delete iResults;
+    delete iCutoff;
 }
 
 bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/04/27 16:32:14  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.33  2002/04/26 13:46:38  thiessen
 * comment out all blast/pssm methods
 *
@@ -476,7 +479,7 @@ void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX
     y = (y - vsY) * cellHeight;
 
     // if necessary, redraw background with appropriate color
-    if (drawBackground || redrawBackground) {
+    if ((drawChar && drawBackground) || redrawBackground) {
         if (drawChar && drawBackground) {
             dc.SetPen(*(wxThePenList->FindOrCreatePen(cellBackgroundColor, 1, wxSOLID)));
             dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(cellBackgroundColor, wxSOLID)));

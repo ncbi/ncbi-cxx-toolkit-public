@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/04/27 16:32:12  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.20  2002/03/01 15:47:10  thiessen
 * fix bug in fit coloring for non-standard residues
 *
@@ -164,7 +167,7 @@ ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(fals
 
         // initialize BLOSUM map for easy access
         for (int row=0; row<BLOSUMSIZE; row++) {
-             for (int column=0; column<=BLOSUMSIZE; column++)
+             for (int column=0; column<BLOSUMSIZE; column++)
                 Blosum62Map[Blosum62Fields[row]][Blosum62Fields[column]] =
                     Blosum62Matrix[row][column];
         }

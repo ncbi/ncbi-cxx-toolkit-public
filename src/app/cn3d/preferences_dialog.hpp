@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/04/27 16:32:13  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.2  2001/10/30 02:54:13  thiessen
 * add Biostruc cache
 *
@@ -60,6 +63,7 @@ class PreferencesDialog : public wxDialog
 {
 public:
     PreferencesDialog(wxWindow *parent);
+    ~PreferencesDialog(void);
 
 private:
     // event callbacks

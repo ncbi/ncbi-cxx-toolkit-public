@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/04/27 16:32:15  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.65  2002/04/12 01:54:43  thiessen
 * tweaks to style stuff
 *
@@ -762,10 +765,11 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     const StyleSettings::BackboneStyle* *saveBackboneStyle,
     const StyleSettings::GeneralStyle* *saveGeneralStyle) const
 {
-    if (!residue) {
-        ERR_POST(Error << "StyleManager::GetAtomStyle() got NULL residue");
+    if (!residue || !atomStyle) {
+        ERR_POST(Error << "StyleManager::GetAtomStyle() got NULL residue or atomStyle");
         return false;
     }
+    atomStyle->isHighlighted = false; // queried sometimes even if atom not displayed
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return false;
 
@@ -1425,7 +1429,7 @@ CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
 
 bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styleDictionary)
 {
-    if (!globalStyle.LoadSettingsFromASN(styleDictionary.GetGlobal_style())) return false;;
+    if (!globalStyle.LoadSettingsFromASN(styleDictionary.GetGlobal_style())) return false;
 
     userStyles.clear();
     if (styleDictionary.IsSetStyle_table()) {

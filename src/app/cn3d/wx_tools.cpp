@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/27 16:32:16  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.11  2002/02/21 22:01:50  thiessen
 * remember alignment range on demotion
 *
@@ -353,6 +356,12 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     item0->Fit(this);
     item0->Fit(panel);
     item0->SetSizeHints(this);
+}
+
+GetFloatingPointDialog::~GetFloatingPointDialog(void)
+{
+    DestroyChildren();  // must do first, since following are wxEvtHandlers
+    delete fpSpinCtrl;
 }
 
 double GetFloatingPointDialog::GetValue(void)

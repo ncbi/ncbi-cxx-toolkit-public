@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/27 16:32:15  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.6  2002/04/21 12:21:23  thiessen
 * minor fixes for AIX
 *
@@ -116,6 +119,7 @@ class StyleDialog : public wxDialog
 {
 public:
     StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const StructureSet *set);
+    ~StyleDialog(void);
 
     // set the StyleSettings from values in the panel; returns true if all values are valid
     bool GetValues(StyleSettings *settings);

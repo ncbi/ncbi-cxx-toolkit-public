@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2002/04/27 16:32:14  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
 * Revision 1.100  2002/04/11 16:39:54  thiessen
 * fix style manager bug
 *
@@ -744,6 +747,7 @@ void StructureSet::Load(int structureLimit)
     alignmentSet = NULL;
     alignmentManager = NULL;
     nDomains = 0;
+    isAlphaOnly = false;
     parentSet = this;
     showHideManager = new ShowHideManager();
     styleManager = new StyleManager(this);
