@@ -68,7 +68,7 @@ typedef struct {
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
-#ifdef __cplusplus
+#if defined(__cplusplus)  &&  !defined(NCBI_COMPILER_WORKSHOP)
 static const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
 static const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
 #else
@@ -103,6 +103,10 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/08/27 02:00:11  ucko
+ * Sigh... WorkShop still mishandles kXxxTimeout in some cases, so fall
+ * back to making them macros.
+ *
  * Revision 6.5  2003/08/26 18:55:13  lavr
  * Added "static" to k...Timeout to make Sun WorkShop compiler happier
  *
