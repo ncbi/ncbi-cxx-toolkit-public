@@ -1216,16 +1216,13 @@ CScope_Impl::GetTSESetWithAnnotsRef(const CBioseq_ScopeInfo& binfo,
         }
         // Search in all data sources
         for (CPriority_I it(m_setDataSrc); it; ++it) {
-            TTSE_LockSet tse_set =
-                it->GetDataSource().GetTSESetWithAnnots(*match_it);
-            if ( tse_set.empty() ) {
-                continue;
-            }
             CFastMutexGuard guard(it->GetMutex());
-            const TTSE_LockSet& tse_cache = it->GetTSESet();
+            const TTSE_LockSet& history = it->GetTSESet();
+            TTSE_LockSet tse_set =
+                it->GetDataSource().GetTSESetWithAnnots(*match_it, history);
             ITERATE(TTSE_LockSet, ref_it, tse_set) {
                 if ( (*ref_it)->IsDead() &&
-                     tse_cache.find(*ref_it) == tse_cache.end() ) {
+                     history.find(*ref_it) == history.end() ) {
                     continue;
                 }
                 it->AddTSE(*ref_it);
@@ -1390,8 +1387,8 @@ void CScope_Impl::GetAllTSEs(TTSE_Handles& tses, int kind)
             continue;
         }
         CFastMutexGuard guard(it->GetMutex());
-        const TTSE_LockSet& tse_cache = it->GetTSESet();
-        ITERATE(TTSE_LockSet, tse_it, tse_cache) {
+        const TTSE_LockSet& history = it->GetTSESet();
+        ITERATE(TTSE_LockSet, tse_it, history) {
             tses.push_back(CSeq_entry_Handle(*m_HeapScope, **tse_it, *tse_it));
         }
     }
@@ -1429,6 +1426,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/08/13 16:13:49  vasilche
+* Use safe method to lock TSEs with fat annotations (from scope's history).
+*
 * Revision 1.21  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

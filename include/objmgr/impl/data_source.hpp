@@ -164,7 +164,8 @@ public:
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
     //void GetSynonyms(const CSeq_id_Handle& id, set<CSeq_id_Handle>& syns);
-    TTSE_LockSet GetTSESetWithAnnots(const CSeq_id_Handle& idh);
+    TTSE_LockSet GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                     const TTSE_LockSet& history);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -199,8 +200,7 @@ public:
     enum FLockFlags {
         fLockNoHistory = 1<<0,
         fLockNoManual  = 1<<1,
-        fLockNoThrow   = 1<<2,
-        fLockForce     = 1<<3
+        fLockNoThrow   = 1<<2
     };
     typedef int TLockFlags;
     TTSE_Lock x_LockTSE(const CTSE_Info& tse_info,

@@ -350,6 +350,7 @@ template<class Map, class Ref, class Info>
 inline
 void x_MapObject(Map& info_map, const Ref& ref, const Info& info)
 {
+    _ASSERT(ref);
     typedef typename Map::value_type value_type;
     pair<typename Map::iterator, bool> ins =
         info_map.insert(value_type(ref, info));
@@ -371,7 +372,9 @@ template<class Map, class Ref, class Info>
 inline
 void x_UnmapObject(Map& info_map, const Ref& ref, const Info& _DEBUG_ARG(info))
 {
+    _ASSERT(ref);
     typename Map::iterator iter = info_map.lower_bound(ref);
+    _ASSERT(iter != info_map.end() && iter->first == ref);
     if ( iter != info_map.end() && iter->first == ref ) {
         _ASSERT(iter->second == info);
         info_map.erase(iter);
@@ -703,7 +706,8 @@ void CDataSource::UpdateAnnotIndex(const CSeq_annot_Info& annot_info)
 
 
 CDataSource::TTSE_LockSet
-CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
+CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
+                                 const TTSE_LockSet& history)
 {
     TTSE_LockSet annot_locks;
     // load all relevant TSEs
@@ -711,6 +715,7 @@ CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     if ( m_Loader ) {
         load_locks = m_Loader->GetRecords(idh, CDataLoader::eExtAnnot);
     }
+    load_locks.insert(history.begin(), history.end());
 
     UpdateAnnotIndex();
 
@@ -730,13 +735,13 @@ CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
                 // skip TSE containing sequence
                 continue;
             }
-            TTSE_Lock lock = x_LockTSE(**tse, load_locks,
-                                       fLockNoThrow|fLockForce);
+            TTSE_Lock lock = x_LockTSE(**tse, load_locks, fLockNoThrow);
             if ( lock ) {
                 annot_locks.insert(lock);
             }
         }
     }
+    //ERR_POST("GetTSESetWithAnnots("<<idh.AsString()<<").size() = "<<annot_locks.size());
     return annot_locks;
 }
 
@@ -1104,14 +1109,6 @@ TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
     if ( (flags & fLockNoManual) == 0 ) {
         if ( m_ManualBlob.GetPointerOrNull() == &tse_info ) {
             ret = m_ManualBlob;
-            return ret;
-        }
-    }
-    if ( (flags & fLockForce) != 0 ) {
-        TMainLock::TWriteLockGuard guard(m_DSCacheLock);
-        if ( tse_info.HasDataSource() && &tse_info.GetDataSource() == this ) {
-            x_SetLock(ret, ConstRef(&tse_info));
-            _ASSERT(IsLocked(tse_info));
             return ret;
         }
     }
