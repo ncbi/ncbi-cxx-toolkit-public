@@ -1904,8 +1904,8 @@ void CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
     if (aln_seq1->m_BioseqHandle != aln_seq2->m_BioseqHandle) {
         string errstr = 
             string("CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2):")
-            + " Seq-ids: " + id1.AsFastaString() +
-            + " and " + id2.AsFastaString() +
+            + " Seq-ids: " + id1.AsFastaString() 
+            + " and " + id2.AsFastaString() 
             + " do not resolve to the same bioseq handle,"
             " but are used on the same 'row' in different segments."
             " This is legally allowed in a Std-seg, but conversion to"
@@ -1973,6 +1973,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2004/03/09 17:40:07  kuznets
+* Compilation bug fix CAlnMix::ChooseSeqId
+*
 * Revision 1.87  2004/03/09 17:16:16  todorov
 * + SSeqIdChooser implementation
 *
