@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/26 19:29:59  thiessen
+* limit undo stack size ; fix memory leak
+*
 * Revision 1.1  2000/11/30 15:49:35  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -72,6 +75,7 @@ BlockMultipleAlignment::~BlockMultipleAlignment(void)
     BlockList::iterator i, ie = blocks.end();
     for (i=blocks.begin(); i!=ie; i++) if (*i) delete *i;
     if (sequences) delete sequences;
+    delete conservationColorer;
 }
 
 BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
@@ -509,8 +513,8 @@ void BlockMultipleAlignment::RemoveBlock(Block *block)
     BlockList::iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
         if (*b == block) {
-            blocks.erase(b);
             delete *b;
+            blocks.erase(b);
             InitCache();
             return;
         }

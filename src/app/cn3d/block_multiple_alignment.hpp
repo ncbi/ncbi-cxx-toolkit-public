@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/26 19:30:37  thiessen
+* limit undo stack size ; fix memory leak
+*
 * Revision 1.2  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -244,6 +247,8 @@ public:
         parentAlignment(multiple), ranges(multiple->NRows()) { }
 
     int NSequences(void) const { return ranges.size(); }
+
+    virtual ~Block(void) { }    // virtual destructor for base class
 };
 
 

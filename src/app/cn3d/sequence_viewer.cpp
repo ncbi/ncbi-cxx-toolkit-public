@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/01/26 19:29:59  thiessen
+* limit undo stack size ; fix memory leak
+*
 * Revision 1.31  2000/12/29 19:23:39  thiessen
 * save row order
 *
@@ -146,6 +149,10 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 #include "cn3d/sequence_viewer_private.hpp"
+
+// limits the size of the stack (set to zero for unlimited)
+static const int MAX_UNDO_STACK_SIZE = 50;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // SequenceViewerWindow is the top-level window that contains the
@@ -926,6 +933,19 @@ void SequenceViewer::PushAlignment(void)
     displayStack.push_back(displayStack.back()->Clone(alignmentStack.back()));
     viewerWindow->UpdateAlignment(displayStack.back());
     if (displayStack.size() > 2) viewerWindow->EnableUndo(true);
+
+    // trim the stack to some max size; but don't delete the bottom of the stack, which is
+    // the original before editing was begun.
+    if (MAX_UNDO_STACK_SIZE > 0 && alignmentStack.size() > MAX_UNDO_STACK_SIZE) {
+        AlignmentStack::iterator a = alignmentStack.begin();
+        a++;
+        delete *a;
+        alignmentStack.erase(a);
+        DisplayStack::iterator d = displayStack.begin();
+        d++;
+        delete *d;
+        displayStack.erase(d);
+    }
 }
 
 // there can be a miminum of two items on the stack - the bottom is always the original
