@@ -546,7 +546,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
     if (close && !uuu->sock && uuu->can_connect != eCC_None &&
         ((uuu->flags & fHCC_SureFlush) || BUF_Size(uuu->obuf))) {
         /* "WRITE" mode and data (or just flag) pending */
-        s_PreRead(uuu, timeout, 1/*drop*/);
+        s_PreRead(uuu, timeout, 1/*drop_unread*/);
     }
     s_Disconnect(uuu, 1/*drop_unread*/, timeout);
     assert(!uuu->sock);
@@ -893,6 +893,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2003/02/04 22:04:11  lavr
+ * Minor fix in comment
+ *
  * Revision 6.43  2003/01/31 21:18:49  lavr
  * Fullfil max tries even in the absence of connection adjustment routine
  *
