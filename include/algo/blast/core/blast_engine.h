@@ -47,6 +47,8 @@ extern "C" {
 #include <blast_gapalign.h>
 #include <blast_hits.h>
 
+#define OFFSET_ARRAY_SIZE 4096
+
 #ifdef GAPPED_LOG
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 

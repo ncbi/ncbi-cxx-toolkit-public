@@ -94,8 +94,6 @@ static Boolean WriteLogInfo(BlastHSPListPtr hsp_list, BlastQueryInfoPtr query_in
    return FALSE;
 }
 
-#define OFFSET_ARRAY_SIZE 4096
-
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
