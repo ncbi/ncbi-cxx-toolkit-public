@@ -10,7 +10,7 @@
 // Description: Reads a binary ASN.1 Biostruc file into memory
 //		and saves it in text format.
 <font color = "green">
-#include &lt;corelib/ncbistre.hpp&gt;
+#include &lt;corelib/ncbistd.hpp&gt;
 #include &lt;serial/serial.hpp&gt;		
 #include &lt;serial/objistrasnb.hpp&gt;	
 #include &lt;serial/objostrasn.hpp&gt;
@@ -22,7 +22,7 @@ BEGIN_NCBI_SCOPE
 <font color = "black">
 int CTestAsn::Run() {
 
-<font color = "red">    // initialize the ASN binary input stream <font color = "black">
+<font color = "red">    // initialize the binary input stream <font color = "black">
 
     auto_ptr&lt;CNcbiIstream&gt; inStream =
         new CNcbiIfstream("1001.val", IOS_BASE::in | IOS_BASE::binary);
@@ -30,7 +30,7 @@ int CTestAsn::Run() {
     if ( !*inStream )
       ERR_POST(Fatal << "Cannot open input file");
 
-<font color = "red">    // initialize the ASN text output stream <font color = "black">
+<font color = "red">    // initialize the text output stream <font color = "black">
 
     auto_ptr&lt;CNcbiOstream&gt; outStream =
         new CNcbiOfstream("1001.txt");
@@ -38,22 +38,22 @@ int CTestAsn::Run() {
     if ( !*outStream )
       ERR_POST(Fatal << "Cannot open output file");
 
-<font color = "red">    // Associate an ASN input object with the input <font color = "black">
+<font color = "red">    // Associate ASN.1 binary serialization methods with the input <font color = "black">
 
     auto_ptr&lt;CObjectIStream&gt; inObject=
         new CObjectIStreamAsnBinary(*inStream);
 
-<font color = "red">    // Associate an ASN output object with the output <font color = "black">
+<font color = "red">    // Associate ASN.1 text serialization methods with the output <font color = "black">
 
     auto_ptr&lt;CObjectOStream&gt; outObject =
         new CObjectOStreamAsn(*outStream);
+
+<font color = "red">    // Provide explicit object type information <font color = "black">
 
     CBiostruc bs;
     *inObject >> bs;
     *outObject << bs;
 
-    inObject.reset(0);
-    outObject.reset(0);
     return 0;
 }
 <font color = "blue">
