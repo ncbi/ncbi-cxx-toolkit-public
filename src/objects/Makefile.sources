@@ -13,7 +13,6 @@ all all_r all_p:
 	        NCBI_DATATOOL_PATH="$(bindir)"; \
 	        export NCBI_DATATOOL_PATH; \
 	    fi; \
-	    $(MAKE) all_files; \
-	'
+	    $(MAKE) all_files;'
 
 clean clean_r clean_p purge purge_r purge_p:
