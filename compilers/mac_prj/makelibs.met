@@ -111,13 +111,12 @@ on SetProjectData()
 		
 		-- can't do "ncbi_lbsm_ipc", "ncbi_server_info", "ncbi_service_lbsmd", "ncbi_lbsm"
 		set myFiles to {"ncbi_conn_streambuf.cpp", "ncbi_conn_stream.cpp", "ncbi_core_cxx.cpp", ¬
-			"ncbi_ansi_ext", "ncbi_buffer", "ncbi_connection", "ncbi_connutil", ¬
-			"ncbi_core", "ncbi_file_connector", "ncbi_heapmgr", "ncbi_http_connector", ¬
-			"ncbi_priv", ¬
-			"ncbi_service", "ncbi_service_dispd", ¬
+			"email_diag_handler.cpp""ncbi_ansi_ext", "ncbi_buffer", "ncbi_connection", ¬
+			"ncbi_connutil", "ncbi_core", "ncbi_file_connector", "ncbi_heapmgr", ¬
+			"ncbi_http_connector", "ncbi_priv", "ncbi_service", "ncbi_service_dispd", ¬
 			"ncbi_socket_", "ncbi_socket_connector", "ncbi_util_", ¬
 			"ncbi_connector", "ncbi_service_connector", "ncbi_service_lbsmd_stub", ¬
-			"ncbi_server_info"}
+			"ncbi_server_info", "ncbi_sendmail_"}
 		
 		AddProject(DataPlusSysPaths(SimpleProjectData("connect", {"C"}, "connect", myFiles), ¬
 			{CToolkitRoot() & "include:", CToolkitRoot() & "corelib:"}))
@@ -130,7 +129,7 @@ on SetProjectData()
 			"ncbi_os_mac"})
 	
 	AddSimpleProject("util", {"C++"}, "util", ¬
-		{"bytesrc", "strbuffer", "checksum", "itree"})
+		{"bytesrc", "strbuffer", "checksum", "itree", "stream_pushback"})
 	
 	AddSimpleProject("serial", {"C++"}, "serial", ¬
 		{"asntypes", "autoptrinfo", "choice", ¬
@@ -146,7 +145,7 @@ on SetProjectData()
 	AddSimpleProject("html", {"C++"}, "html", ¬
 		{"components", "html", "htmlhelper", "linkbar", ¬
 			"node", "nodemap", "page", "pager", ¬
-			"querypages", "selection"})
+			"querypages", "selection", "commentdiag", "jsmenu"})
 	
 	if pCreateObjectLibs then
 		
@@ -180,6 +179,24 @@ on SetProjectData()
 		AddObject("submit")
 		
 		AddSimpleProject("objmgr", {"C++"}, "objects:objmgr", {"objmgr"})
+		
+		AddSimpleProject("xconntest", {"C"}, "connect:test", {"ncbi_conntest"})
+		
+		AddSimpleProject("xobjutil", {"C++"}, "objects:util", {"genbank", "gbqual"})
+		
+		AddSimpleProject("taxon1", {"C++"}, "objects:taxon1", {"taxon1__", "taxon1___", "taxon1", ¬
+			"cache", "utils", "ctreecont"})
+		
+		AddSimpleProject("docsum", {"C++"}, "objects:docsum", {"docsum__", "docsum___"})
+		
+		AddSimpleProject("xpbacktest", {"C++"}, "util:test", {"pbacktest"})
+		
+		set myFiles to {"ctools.cpp", "asn_connection"}
+		
+		AddProject(DataPlusSysPaths(SimpleProjectData("xctools", {"C"}, "ctools", myFiles), ¬
+			{CToolkitRoot() & "include:", CToolkitRoot() & "ctools:"}))
+		
+		AddSimpleProject("xasn", {"C++"}, "ctools:asn", {"asnio", "asnwrite"})
 		
 	end if
 	
