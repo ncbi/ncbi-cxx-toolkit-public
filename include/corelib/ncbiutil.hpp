@@ -84,12 +84,13 @@ inline X* NotNull(X* object)
 
 // get map element (pointer) or NULL if absent
 template<class Key, class Element>
-inline Element* GetMapElement(const map<Key, Element*>& m, const Key& key)
+inline Element GetMapElement(const map<Key, Element>& m, const Key& key,
+                             const Element& def = Element())
 {
-    typename map<Key, Element*>::const_iterator ptr = m.find(key);
+    typename map<Key, Element>::const_iterator ptr = m.find(key);
     if ( ptr !=m.end() )
         return ptr->second;
-    return 0;
+    return def;
 }
 
 template<class Key, class Element>
@@ -235,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/01/02 15:52:04  ucko
+ * Generalized GetMapElement to support non-pointer value types.
+ *
  * Revision 1.25  2002/08/28 14:48:00  ucko
  * Tweak FindBestChoice<> to work with MSVC.
  *
