@@ -27,6 +27,10 @@
  *
  */
 
+/// @file seqdbisam.cpp
+/// Implementation for the CSeqDBIsam class, which manages an ISAM
+/// index of some particular kind of identifiers.
+
 #include <ncbi_pch.hpp>
 #include "seqdbisam.hpp"
 

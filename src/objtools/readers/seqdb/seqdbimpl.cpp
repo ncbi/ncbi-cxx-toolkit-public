@@ -27,6 +27,10 @@
  *
  */
 
+/// @file seqdbimpl.cpp
+/// Implementation for the CSeqDBImpl class, the top implementation
+/// layer for SeqDB.
+
 #include <ncbi_pch.hpp>
 #include "seqdbimpl.hpp"
 #include <iostream>

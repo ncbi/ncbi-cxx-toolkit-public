@@ -27,6 +27,9 @@
  *
  */
 
+/// @file seqdbvolset.cpp
+/// Implementation for the CSeqDBVolSet class, which manages a list of volumes.
+
 #include <ncbi_pch.hpp>
 #include "seqdbvolset.hpp"
 

@@ -27,6 +27,10 @@
  *
  */
 
+/// @file seqdbfile.cpp
+/// Several classes providing access to the component files of a
+/// database volume.
+
 #include <ncbi_pch.hpp>
 #include "seqdbfile.hpp"
 

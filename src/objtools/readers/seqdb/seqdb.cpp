@@ -27,8 +27,8 @@
  *
  */
 
-/// @file blast_options_handle.cpp
-/// Implementation for the CSeqDB class.
+/// @file seqdb.cpp
+/// Implementation for the CSeqDB class, the top level class for SeqDB.
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>

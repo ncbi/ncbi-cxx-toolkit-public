@@ -27,6 +27,10 @@
  *
  */
 
+/// @file seqdboidlist.cpp
+/// Implementation for the CSeqDBOIDList class, an array of bits
+/// describing a subset of the virtual oid space.
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"

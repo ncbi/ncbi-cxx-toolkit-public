@@ -27,6 +27,10 @@
  *
  */
 
+/// @file seqdbalias.cpp
+/// Implementation for CSeqDBAliasFile and several related classes,
+/// which manage a hierarchical tree of alias file data.
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>

@@ -27,6 +27,10 @@
  *
  */
 
+/// @file seqdbatlas.cpp
+/// Implementation for the CSeqDBAtlas class and several related
+/// classes, which provide control of a set of memory mappings.
+
 #include <ncbi_pch.hpp>
 
 #include "seqdbatlas.hpp"

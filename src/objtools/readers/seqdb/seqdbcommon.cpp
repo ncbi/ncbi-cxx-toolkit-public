@@ -27,6 +27,9 @@
  *
  */
 
+/// @file seqdbcommon.cpp
+/// Definitions of various helper functions for SeqDB.
+
 #include <ncbi_pch.hpp>
 #include <corelib/metareg.hpp>
 #include <corelib/ncbienv.hpp>
