@@ -560,7 +560,7 @@ void CId2Reader::LoadChunk(CReaderRequestResult& result,
     CID2_Request req;
     CID2S_Request_Get_Chunks& req2 = req.SetRequest().SetGet_chunks();
     x_SetResolve(req2.SetBlob_id(), blob_id);
-    if ( blob->GetBlobVersion() ) {
+    if ( blob->GetBlobVersion() > 0 ) {
         req2.SetBlob_id().SetVersion(blob->GetBlobVersion());
     }
     req2.SetChunks().push_back(CID2S_Chunk_Id(chunk_id));
@@ -640,7 +640,8 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
                 stream >> MConnFormat >> reply;
             }
             catch ( CException& exc ) {
-                ERR_POST("CId2Reader: request serialization failed: "<<exc.what());
+                ERR_POST("CId2Reader: "
+                         "reply deserialization failed: "<<exc.what());
                 x_Reconnect(result, 1);
                 return;
             }
