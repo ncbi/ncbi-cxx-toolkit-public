@@ -159,9 +159,8 @@ int CDbapiTest::Run()
 
         NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
 
-
         //delete stmt;
-#if 0
+
         // Testing bulk insert w/o BLOBs
         NcbiCout << "Creating BulkSample table..." << endl;
         sql = "if exists( select * from sysobjects \
@@ -172,51 +171,47 @@ begin \
 end";
         stmt->ExecuteUpdate(sql);
 
-#endif
-        sql = "create table #test (\
+
+        sql = "create table BulkSample (\
 	id int not null, \
 	ord int not null, \
-    mode tinyint not null)";
+    mode tinyint not null, \
+    date datetime not null)";
+
         stmt->ExecuteUpdate(sql);
 
-        delete stmt;
+        //I_DriverContext *ctx = ds->GetDriverContext();
+        //delete ctx;
 
         try {
             //Initialize table using bulk insert
-            NcbiCout << "Initializing #test table..." << endl;
-            IBulkInsert *bi = conn->CreateBulkInsert("#test", 3);
+            NcbiCout << "Initializing BulkSample table..." << endl;
+            IBulkInsert *bi = conn->CreateBulkInsert("BulkSample", 4);
             CVariant b1(eDB_Int);
             CVariant b2(eDB_Int);
             CVariant b3(eDB_TinyInt);
+            CVariant b4(eDB_DateTime);
             bi->Bind(1, &b1);
             bi->Bind(2, &b2);
             bi->Bind(3, &b3);
+            bi->Bind(4, &b4);
             int i;
             for( i = 0; i < 10; ++i ) {
                 b1 = i;
                 b2 = i * 2;
                 b3 = Uint1(i + 1);
+                b4 = CTime(CTime::eCurrent);
                 bi->AddRow();
                 //bi->StoreBatch();
             }
             
-            bi->StoreBatch();
-            
-            for( ; i < 20; ++i ) {
-                b1 = i;
-                b2 = i * 2;
-                b3 = Uint1(i + 1);
-                bi->AddRow();
-            }
             bi->Complete();
 
-            delete bi;
         }
         catch(...) {
             throw;
         }
 
-        exit(1);
 
         // create a stored procedure
         sql = "if exists( select * from sysobjects \
@@ -230,42 +225,128 @@ end";
 
         sql = "create procedure SampleProc \
 	@id int, \
-	@f float \
+	@f float, \
+    @o int output \
 as \
 begin \
   select int_val, fl_val, date_val from SelectSample \
-  where int_val < @id and fl_val = @f \
-  select int_val, fl_val, date_val from SelectSample \
+  where int_val < @id and fl_val <= @f \
+  select @o = 555 \
+  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
   return @id \
 end";
 
         stmt->ExecuteUpdate(sql);
 
+        float f = 2.999f;
+
         // call stored procedure
         NcbiCout << "Calling stored procedure..." << endl;
         
-        float f = 2.999f;
-        
-        ICallableStatement *cstmt = conn->PrepareCall("SampleProc", 2);
+        ICallableStatement *cstmt = conn->PrepareCall("SampleProc", 3);
         cstmt->SetParam(CVariant(5), "@id");
         cstmt->SetParam(CVariant::Float(&f), "@f");
+        cstmt->SetOutputParam(CVariant(eDB_Int), "@o");
         cstmt->Execute(); 
     
         while(cstmt->HasMoreResults()) {
-            if( cstmt->HasRows() ) {
-                IResultSet *rs = cstmt->GetResultSet();
+            IResultSet *rs = cstmt->GetResultSet();
+
+            //NcbiCout << "Row count: " << cstmt->GetRowCount() << endl;
+
+            if( rs == 0 )
+                continue;
+
+            switch( rs->GetResultType() ) {
+            case eDB_ParamResult:
                 while( rs->Next() ) {
-                    NcbiCout << rs->GetVariant(1).GetInt4() << "|"
-                             << rs->GetVariant(2).GetFloat() << "|"
-                             << rs->GetVariant("date_val").GetString() << "|"
+                    NcbiCout << "Output param: "
+                             << rs->GetVariant(1).GetInt4()
                              << endl;
                 }
+                break;
+            case eDB_RowResult:
+                while( rs->Next() ) {
+                    if( rs->GetVariant(1).GetInt4() == 2121 ) {
+                            NcbiCout << rs->GetVariant(2).GetString() << " "
+                                     << rs->GetVariant(3).GetString() << " "
+                                     << rs->GetVariant(4).GetString() << " "
+                                     << rs->GetVariant(5).GetString() << " "
+                                     << rs->GetVariant(6).GetString() << " "
+                                     << rs->GetVariant(7).GetString() << " "
+                                     << endl;
+                    }
+                    else {
+                        NcbiCout << rs->GetVariant(1).GetInt4() << "|"
+                                 << rs->GetVariant(2).GetFloat() << "|"
+                                 << rs->GetVariant("date_val").GetString() << "|"
+                                 << endl;
+                    }
+                }
+                break;
             }
         }
         NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
 
        
         delete cstmt;
+
+        // call stored procedure using language call
+        NcbiCout << "Calling stored procedure using language call..." << endl;
+        
+        sql = "exec SampleProc @id, @f, @o output";
+        stmt->SetParam(CVariant(5), "@id");
+        stmt->SetParam(CVariant::Float(&f), "@f");
+        stmt->SetParam(CVariant(5), "@o");
+        stmt->Execute(sql); 
+    
+        while(stmt->HasMoreResults()) {
+            IResultSet *rs = stmt->GetResultSet();
+
+            //NcbiCout << "Row count: " << stmt->GetRowCount() << endl;
+
+            if( rs == 0 )
+                continue;
+
+            switch( rs->GetResultType() ) {
+            case eDB_ParamResult:
+                while( rs->Next() ) {
+                    NcbiCout << "Output param: "
+                             << rs->GetVariant(1).GetInt4()
+                             << endl;
+                }
+                break;
+            case eDB_StatusResult:
+                while( rs->Next() ) {
+                    NcbiCout << "Return status: "
+                             << rs->GetVariant(1).GetInt4()
+                             << endl;
+                }
+                break;
+            case eDB_RowResult:
+                while( rs->Next() ) {
+                    if( rs->GetVariant(1).GetInt4() == 2121 ) {
+                            NcbiCout << rs->GetVariant(2).GetString() << "|"
+                                     << rs->GetVariant(3).GetString() << "|"
+                                     << rs->GetVariant(4).GetString() << "|"
+                                     << rs->GetVariant(5).GetString() << "|"
+                                     << rs->GetVariant(6).GetString() << "|"
+                                     << rs->GetVariant(7).GetString() << "|"
+                                     << endl;
+                    }
+                    else {
+                        NcbiCout << rs->GetVariant(1).GetInt4() << "|"
+                                 << rs->GetVariant(2).GetFloat() << "|"
+                                 << rs->GetVariant("date_val").GetString() << "|"
+                                 << endl;
+                    }
+                }
+                break;
+            }
+        }
+
+        stmt->ClearParamList();
+        exit(1);
 
         // Reconnect
         NcbiCout << "Reconnecting..." << endl;
@@ -477,6 +558,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/10/03 18:59:55  kholodov
+* *** empty log message ***
+*
 * Revision 1.5  2002/10/02 15:06:58  kholodov
 * Modified: default connection settings for UNIX and NT platforms
 *
