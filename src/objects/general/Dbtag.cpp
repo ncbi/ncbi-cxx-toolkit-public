@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/09/17 15:22:57  vasilche
+ * Removed unnecessary array of strings and related memory leak.
+ *
  * Revision 6.7  2003/07/22 16:34:39  shomrat
  * Added ZFIN to approved DB list
  *
@@ -81,7 +84,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // List of approved DB names.
 // NOTE: these must stay in ASCIIbetical order!
-static const string kApprovedDbXrefs[] = {
+static const char* const kApprovedDbXrefs[] = {
     "ATCC",
     "ATCC(dna)",
     "ATCC(in host)",
@@ -141,9 +144,8 @@ static const string kApprovedDbXrefs[] = {
     "niaEST",
     "taxon"
 };
-static const string* kApprovedDbXrefsEnd
-    = kApprovedDbXrefs + sizeof(kApprovedDbXrefs)/sizeof(string);
-
+static const size_t
+kApprovedDbXrefs_size = sizeof(kApprovedDbXrefs)/sizeof(kApprovedDbXrefs_size);
 
 // destructor
 CDbtag::~CDbtag(void)
@@ -174,6 +176,11 @@ void CDbtag::GetLabel(string* label) const
     }
 }
 
+static inline
+bool StrLess(const char* s1, const char* s2)
+{
+    return NStr::strcmp(s1, s2) < 0;
+}
 
 // Test if CDbtag.dbis in the approved databases list.
 // NOTE: 'GenBank', 'EMBL' and 'DDBJ' are approved only in 
@@ -193,7 +200,10 @@ bool CDbtag::IsApproved(bool refseq) const
     }
 
     // Check the rest of approved databases
-    return binary_search(kApprovedDbXrefs, kApprovedDbXrefsEnd, db);
+    return binary_search(kApprovedDbXrefs,
+                         kApprovedDbXrefs + kApprovedDbXrefs_size,
+                         db.c_str(),
+                         StrLess);
 }
 
 
