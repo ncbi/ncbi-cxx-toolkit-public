@@ -63,8 +63,7 @@ compiler_ver=
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-    2\.95* )        compiler="GCC" ;;
-    egcs-2\.91\.* ) compiler="EGCS" ;;
+     2\.95* )  compiler="GCC" ;;
    esac
 else
    case "$host" in
@@ -154,7 +153,7 @@ case "$host:$compiler" in
    AR=${AR:="$CXX -ar -WR,-v -o"}
    ;;
 
- i*86*-pc-cygwin32:EGCS  |  i*86*-pc-cygwin32:GCC )
+ i*86*-pc-cygwin32:GCC )
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    CONF_exe_ext=".exe"
    ;;
@@ -180,11 +179,6 @@ case "$host:$compiler" in
    CONF_f_outexe="/OUT:"
    script_shell=""
    make_shell=""
-   ;;
-
- *:EGCS )
-   echo "EGCS compiler is not supported for:  $host"
-   compiler=
    ;;
 esac
 
