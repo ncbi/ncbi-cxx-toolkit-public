@@ -20,7 +20,7 @@ SRC = snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       seq_vector seq_vector_ci seqdesc_ci seq_id_handle seq_id_mapper \
       tse_chunk_info bioseq_ci annot_type_index \
       seq_loc_mapper seq_align_mapper annot_collector \
-      prefetch_impl
+      prefetch_impl seq_feat_handle seq_graph_handle seq_align_handle
 
 LIB    = xobjmgr
 

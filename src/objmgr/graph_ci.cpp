@@ -67,6 +67,14 @@ void CMappedGraph::MakeMappedLoc(void) const
 }
 
 
+CSeq_graph_Handle CMappedGraph::GetSeq_graph_Handle(void) const
+{
+    return CSeq_graph_Handle(m_Collector->GetScope(),
+        m_GraphRef->GetSeq_annot_Info(),
+        m_GraphRef->GetAnnotObjectIndex());
+}
+
+
 void CMappedGraph::MakeMappedGraph(void) const
 {
     if ( m_GraphRef->IsMapped() ) {
@@ -121,6 +129,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/05/04 18:08:48  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.26  2004/04/07 13:20:17  grichenk
 * Moved more data from iterators to CAnnot_Collector
 *

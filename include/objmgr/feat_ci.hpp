@@ -39,6 +39,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -54,6 +55,8 @@ public:
 
     // Original feature with unmapped location/product
     const CSeq_feat& GetOriginalFeature(void) const;
+    // Original feature handle
+    CSeq_feat_Handle GetSeq_feat_Handle(void) const;
 
     // Feature mapped to the master sequence.
     // WARNING! The function is rather slow and should be used with care.
@@ -223,20 +226,6 @@ public:
              SAnnotSelector::EResolveMethod resolve
              = SAnnotSelector::eResolve_TSE,
              EFeat_Location loc_type = e_Location);
-    CFeat_CI(CScope& scope,
-             const CSeq_loc& loc,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type,
-             SAnnotSelector::EResolveMethod resolve,
-             EFeat_Location loc_type,
-             const CSeq_entry_Handle& limitEntry);
-    CFeat_CI(CScope& scope,
-             const CSeq_loc& loc,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type,
-             SAnnotSelector::EResolveMethod resolve,
-             EFeat_Location loc_type,
-             const CSeq_entry* limitEntry);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
     // the whole bioseq is searched. References are resolved depending on the
     // "resolve" flag (see above).
@@ -373,6 +362,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/05/04 18:08:47  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.40  2004/04/07 13:20:17  grichenk
 * Moved more data from iterators to CAnnot_Collector
 *

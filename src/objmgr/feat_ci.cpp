@@ -292,6 +292,19 @@ CMappedFeat::~CMappedFeat(void)
 }
 
 
+CSeq_feat_Handle CMappedFeat::GetSeq_feat_Handle(void) const
+{
+    if ( m_FeatRef->IsSNPFeat() ) {
+        return CSeq_feat_Handle(m_Collector->GetScope(),
+            m_FeatRef->GetSeq_annot_SNP_Info(),
+            m_FeatRef->GetAnnotObjectIndex());
+    }
+    return CSeq_feat_Handle(m_Collector->GetScope(),
+        m_FeatRef->GetSeq_annot_Info(),
+        m_FeatRef->GetAnnotObjectIndex());
+}
+
+
 CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 {
     return CSeq_annot_Handle(m_Collector->GetScope(),
@@ -516,6 +529,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/05/04 18:08:48  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.30  2004/04/07 13:20:17  grichenk
 * Moved more data from iterators to CAnnot_Collector
 *

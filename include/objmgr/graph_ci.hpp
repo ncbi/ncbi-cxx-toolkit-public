@@ -39,6 +39,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objmgr/seq_graph_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -52,6 +53,10 @@ public:
         {
             return m_GraphRef->GetGraph();
         }
+
+    // Original graph handle
+    CSeq_graph_Handle GetSeq_graph_Handle(void) const;
+
     // Graph mapped to the master sequence.
     // WARNING! The function is rather slow and should be used with care.
     const CSeq_graph& GetMappedGraph(void) const
@@ -321,6 +326,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/05/04 18:08:47  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.35  2004/04/07 13:20:17  grichenk
 * Moved more data from iterators to CAnnot_Collector
 *

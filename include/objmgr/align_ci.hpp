@@ -38,6 +38,7 @@
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_align_handle.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -85,6 +86,8 @@ public:
     const CSeq_align* operator-> (void) const;
 
     const CSeq_align& GetOriginalSeq_align(void) const;
+    // Original align handle
+    CSeq_align_Handle GetSeq_align_Handle(void) const;
 
 private:
     CAlign_CI operator++ (int);
@@ -160,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/05/04 18:08:47  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.28  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

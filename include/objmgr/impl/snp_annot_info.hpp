@@ -263,6 +263,7 @@ private:
     friend class CSeq_annot_SNP_Info_Reader;
     friend class CSNP_Seq_feat_hook;
     friend struct SSNP_Info;
+    friend class CSeq_feat_Handle;
 
     int                         m_Gi;
     CRef<CSeq_id>               m_Seq_id;
@@ -444,6 +445,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/05/04 18:08:47  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.13  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

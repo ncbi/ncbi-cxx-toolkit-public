@@ -127,12 +127,23 @@ const CSeq_align& CAlign_CI::GetOriginalSeq_align(void) const
 }
 
 
+CSeq_align_Handle CAlign_CI::GetSeq_align_Handle(void) const
+{
+    return CSeq_align_Handle(GetScope(),
+        GetIterator()->GetSeq_annot_Info(),
+        GetIterator()->GetAnnotObjectIndex());
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/05/04 18:08:48  grichenk
+* Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
+*
 * Revision 1.24  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
