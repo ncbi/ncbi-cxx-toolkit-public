@@ -57,6 +57,7 @@ DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 
 static const unsigned int s_WriterBufferSize = 256 * 1024;
+static const unsigned int s_CheckPointInterval = 50 * (1024 * 1024);
 
 		
 static void s_MakeOverflowFileName(string& buf,
@@ -1517,13 +1518,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     vector<SCacheDescr> cache_entries;
     cache_entries.reserve(1000);
 
-//    CTime time_stamp(CTime::eCurrent);
-//    time_t curr = (int)time_stamp.GetTimeT();
-//    int timeout = GetTimeout();
-
     // Search the database for obsolete cache entries
     string first_key, last_key;
-
     for (bool flag = true; flag;) {
         unsigned batch_size = GetPurgeBatchSize();
         {{
@@ -1533,6 +1529,9 @@ void CBDB_Cache::Purge(time_t           access_timeout,
             CBDB_FileCursor cur(*m_CacheAttrDB);
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
+        
+            CTime time_stamp(CTime::eCurrent);
+            time_t curr = (int)time_stamp.GetTimeT();
 
             for (unsigned i = 0; i < batch_size; ++i) {
                 if (cur.Fetch() != eBDB_Ok) {
@@ -1540,23 +1539,16 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                     break;
                 }
 
-//                time_t db_time_stamp = m_CacheAttrDB->time_stamp;
                 int version = m_CacheAttrDB->version;
                 const char* key = m_CacheAttrDB->key;
                 last_key = key;
                 int overflow = m_CacheAttrDB->overflow;
                 const char* subkey = m_CacheAttrDB->subkey;
 
-                if (x_CheckTimestampExpired(key, version, subkey)) {
+                if (x_CheckTimestampExpired(key, version, subkey, curr)) {
                     cache_entries.push_back(
                          SCacheDescr(key, version, subkey, overflow));
                 }
-/*
-                if (curr - timeout > db_time_stamp) {
-                    cache_entries.push_back(
-                         SCacheDescr(key, version, subkey, overflow));
-                }
-*/
                 if (i == 0) { // first record in the batch
                     first_key = last_key;
                 } else 
@@ -1577,12 +1569,17 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                 m_PurgeStop = false;
                 return;
             }
+            if (m_BytesWritten > s_CheckPointInterval) {
+                m_Env->TransactionCheckpoint();
+                m_BytesWritten = 0;
+            }
 
         }}
 
         if (delay) {
             SleepMilliSec(delay);
         }
+
 
     } // for flag
     
@@ -1604,7 +1601,6 @@ void CBDB_Cache::Purge(time_t           access_timeout,
              (j < batch_size) && (i < cache_entries.size()); 
              ++i,++j) {
                  const SCacheDescr& it = cache_entries[i];
-cerr << "D:" << it.key << endl;
                  x_DropBlob(it.key.c_str(), 
                             it.version, 
                             it.subkey.c_str(), 
@@ -1629,15 +1625,11 @@ cerr << "D:" << it.key << endl;
 
     } // for i
 
-    if (!cache_entries.empty()) {
-        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-        m_Env->TransactionCheckpoint();
-    }
-
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
     ++m_PurgeCount;
     if (m_CleanLogOnPurge) {
         if ((m_PurgeCount % m_CleanLogOnPurge) == 0) {
+            m_Env->TransactionCheckpoint();
             m_Env->CleanLog();
         }
     }
@@ -1804,7 +1796,11 @@ void CBDB_Cache::Verify(const char*  cache_path,
 void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
 {
     m_BytesWritten += bytes_written;
-    if (m_BytesWritten > (100 * (1024 * 1024))) {
+    // if purge is running (in the background) it works as a checkpoint-er
+    // so we don't need to call TransactionCheckpoint
+    if (!m_PurgeNowRunning && 
+         m_BytesWritten > s_CheckPointInterval) {
+
         m_Env->TransactionCheckpoint();
         m_BytesWritten = 0;
     }
@@ -1812,21 +1808,53 @@ void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
 
 bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
                                          int            version,
-                                         const string&  subkey)
+                                         const string&  subkey,
+                                         time_t         curr)
 {
     int timeout = GetTimeout();
 
     if (timeout) {
-        // get it first from memory storage, then from database
-/*
-        int mem_time_stamp = 
-            m_MemAttr.GetAccessTime(CacheKey(key, version, subkey));
-*/
 
         int db_time_stamp = m_CacheAttrDB->time_stamp;
         unsigned int ttl = m_CacheAttrDB->ttl;
 
-//        db_time_stamp = max(db_time_stamp, mem_time_stamp);
+        if (ttl) {  // individual timeout
+            if (m_MaxTimeout && ttl > m_MaxTimeout) {
+                ttl = timeout;
+            } else {
+                timeout = ttl;
+            }
+        }
+        
+        if (curr - timeout > db_time_stamp) {
+/*
+            LOG_POST("local cache item expired:" 
+                     << db_time_stamp << " curr=" << curr 
+                     << " diff=" << curr - db_time_stamp
+                     << " ttl=" << ttl);
+*/
+            return true;
+        }
+    }
+    return false;
+
+}
+
+
+bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
+                                         int            version,
+                                         const string&  subkey)
+{
+    CTime time_stamp(CTime::eCurrent);
+    time_t curr = (int)time_stamp.GetTimeT();
+    return x_CheckTimestampExpired(key, version, subkey, curr);
+/*
+    int timeout = GetTimeout();
+
+    if (timeout) {
+
+        int db_time_stamp = m_CacheAttrDB->time_stamp;
+        unsigned int ttl = m_CacheAttrDB->ttl;
 
         CTime time_stamp(CTime::eCurrent);
         time_t curr = (int)time_stamp.GetTimeT();
@@ -1840,13 +1868,17 @@ bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
         }
         
         if (curr - timeout > db_time_stamp) {
-//            _TRACE("local cache item expired:" 
-//                   << db_time_stamp << " curr=" << curr 
-//                   << " diff=" << curr - db_time_stamp);
+
+            LOG_POST("local cache item expired:" 
+                     << db_time_stamp << " curr=" << curr 
+                     << " diff=" << curr - db_time_stamp
+                     << " ttl=" << ttl);
+
             return true;
         }
     }
     return false;
+*/
 }
 
 void CBDB_Cache::x_UpdateReadAccessTime(const string&  key,
@@ -2339,6 +2371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2004/12/28 19:44:38  kuznets
+ * Performance optimization
+ *
  * Revision 1.97  2004/12/28 16:46:23  kuznets
  * +DropBlob()
  *
