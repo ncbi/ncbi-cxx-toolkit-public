@@ -762,7 +762,7 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
                 q_seqloc.SetInt().SetTo(query->seqloc->GetInt().GetTo());
                 q_seqloc.SetInt().SetStrand(q_strand);
                 q_seqloc.SetInt().SetId().Assign(sequence::GetId(*query->seqloc, query->scope));
-                itr->RemapToLoc(query_dimension, q_seqloc, TRUE);
+                itr->RemapToLoc(query_dimension, q_seqloc, true);
             }
             if (remap_subject || s_shift > 0) {
                 CSeq_loc s_seqloc;
@@ -777,7 +777,7 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
                 s_seqloc.SetInt().SetTo(subject->seqloc->GetInt().GetTo());
                 s_seqloc.SetInt().SetStrand(s_strand);
                 s_seqloc.SetInt().SetId().Assign(sequence::GetId(*subject->seqloc, subject->scope));
-                itr->RemapToLoc(subject_dimension, s_seqloc, TRUE);
+                itr->RemapToLoc(subject_dimension, s_seqloc, !remap_subject);
             }
         }
     }
@@ -951,6 +951,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/06/15 22:14:23  dondosha
+* Correction in RemapToLoc call for subject Seq-loc on a minus strand
+*
 * Revision 1.4  2004/06/14 17:46:39  madden
 * Use CSeqVector_CI and call SetRandomizeAmbiguities to properly handle gaps in subject sequence
 *
