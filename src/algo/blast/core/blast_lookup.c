@@ -731,8 +731,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
          
          if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[index].num_used;
-            if (num_hits == 0)
-               continue;
+            ASSERT(num_hits != 0);
             if (num_hits > (max_hits - total_hits))
                break;
             if ( num_hits <= HITS_ON_BACKBONE )
@@ -775,8 +774,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
          
          if (NA_PV_TEST(pv_array, adjusted_index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[adjusted_index].num_used;
-            if (num_hits == 0)
-               continue;
+            ASSERT(num_hits != 0);
             if (num_hits > (max_hits - total_hits))
                break;
             if ( num_hits <= HITS_ON_BACKBONE )
@@ -836,8 +834,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
       while (s <= s_end) {
          if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[index].num_used;
-            if (num_hits == 0)
-               continue;
+            ASSERT(num_hits != 0);
             if (num_hits > (max_hits - total_hits))
                break;
             if ( num_hits <= HITS_ON_BACKBONE )
@@ -880,8 +877,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
          
          if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[index].num_used;
-            if (num_hits == 0)
-               continue;
+            ASSERT(num_hits != 0);
             if (num_hits > (max_hits - total_hits))
                break;
             if ( num_hits <= HITS_ON_BACKBONE )
