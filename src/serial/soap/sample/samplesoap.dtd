@@ -1,0 +1,20 @@
+<!ELEMENT Description  EMPTY>
+<!ELEMENT DescriptionText  (Text)>
+<!ELEMENT Text  (#PCDATA)>
+
+<!ELEMENT Version  (ClientID)>
+<!ELEMENT VersionResponse (VersionStruct)>
+<!ELEMENT VersionStruct (Major,Minor,ClientID)>
+<!ELEMENT Major (#PCDATA)>
+<!ELEMENT Minor (#PCDATA)>
+<!ELEMENT ClientID  (#PCDATA)>
+
+<!ELEMENT Math (Operand+)>
+<!ELEMENT Operand (x,y)>
+<!ATTLIST Operand
+    operation (add|subtract) #REQUIRED
+    >
+<!ELEMENT x (#PCDATA)>
+<!ELEMENT y (#PCDATA)>
+<!ELEMENT MathResponse (MathResult+)>
+<!ELEMENT MathResult  (#PCDATA)>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns="http://ncbi.nlm.nih.gov/"
+    targetNamespace="http://ncbi.nlm.nih.gov/"
+    >
+  <wsdl:types>
+    <xs:schema elementFormDefault="qualified" targetNamespace="http://ncbi.nlm.nih.gov/">
+      <xs:element name="Description">
+        <xs:complexType />
+      </xs:element>
+<xs:element name="DescriptionText">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="Text"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+<xs:element name="Text" type="xs:string"/>
+<xs:element name="Math">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="Operand" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+<xs:element name="Operand">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="x"/>
+      <xs:element ref="y"/>
+    </xs:sequence>
+        <xs:attribute name="operation" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="add"/>
+              <xs:enumeration value="subtract"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+  </xs:complexType>
+</xs:element>
+<xs:element name="x" type="xs:int"/>
+<xs:element name="y" type="xs:int"/>
+<xs:element name="MathResponse">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="MathResult" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+<xs:element name="MathResult" type="xs:int"/>
+<xs:element name="Version">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="ClientID"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+<xs:element name="ClientID" type="xs:string"/>
+<xs:element name="VersionResponse">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="VersionStruct"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+<xs:element name="VersionStruct">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="Major"/>
+      <xs:element ref="Minor"/>
+      <xs:element ref="ClientID"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+<xs:element name="Major" type="xs:string"/>
+<xs:element name="Minor" type="xs:string"/>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="GetDescriptionSoapIn">
+    <wsdl:part name="parameters" element="Description" />
+  </wsdl:message>
+  <wsdl:message name="GetDescriptionSoapOut">
+    <wsdl:part name="parameters" element="DescriptionText" />
+  </wsdl:message>
+  <wsdl:message name="GetVersionSoapIn">
+    <wsdl:part name="parameters" element="Version" />
+  </wsdl:message>
+  <wsdl:message name="GetVersionSoapOut">
+    <wsdl:part name="parameters" element="VersionResponse" />
+  </wsdl:message>
+  <wsdl:message name="MathSoapIn">
+    <wsdl:part name="parameters" element="Math" />
+  </wsdl:message>
+  <wsdl:message name="MathSoapOut">
+    <wsdl:part name="parameters" element="MathResponse" />
+  </wsdl:message>
+  <wsdl:portType name="SoapSampleServer">
+    <wsdl:operation name="GetDescription">
+      <wsdl:input message="GetDescriptionSoapIn" />
+      <wsdl:output message="GetDescriptionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetVersion">
+      <wsdl:input message="GetVersionSoapIn" />
+      <wsdl:output message="GetVersionSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="DoMath">
+      <wsdl:input message="MathSoapIn" />
+      <wsdl:output message="MathSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="SoapSampleServer" type="SoapSampleServer">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" />
+    <wsdl:operation name="GetDescription">
+      <soap:operation soapAction="GetDescription" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetVersion">
+      <soap:operation soapAction="GetVersion" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DoMath">
+      <soap:operation soapAction="DoMath" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SoapSampleService">
+    <wsdl:port name="SoapSampleServer" binding="SoapSampleServer">
+      <soap:address location="http://graceland.ncbi.nlm.nih.gov:6224/staff/gouriano/cgi/samplesoap/samplesoap.cgi" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
