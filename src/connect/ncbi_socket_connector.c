@@ -35,6 +35,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include <connect/ncbi_socket_connector.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define MAX_IP_ADDR_LEN       16 /* sizeof("255.255.255.255") */
@@ -381,6 +382,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/05/27 15:04:31  lavr
+ * +#include <stdio.h> (to define sprint's prototype on Mac)
+ *
  * Revision 6.16  2003/05/14 03:54:23  lavr
  * SOCKET_CreateConnectorOnTopEx(): number of parameters changed
  * Implementation of CONN_Description() added
