@@ -115,6 +115,14 @@ public:
     // Destructor
     virtual ~CDB_Connection();
 
+    // abort the connection
+    // Attention: it is not recommended to use this method unless you absolutely have to.
+    // The expected implementation is - close underlying file descriptor[s] without
+    // destroing any objects associated with a connection.
+    // Returns: true - if succeed
+    //          false - if not
+    virtual bool Abort();
+
 private:
     I_Connection* m_Connect;
 
@@ -485,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/23 21:36:38  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.10  2004/06/08 18:13:01  soussov
  * adds CDB_BaseEnt as a base class for CDB_ResultProcessor to allow crossreferences between processors
  *

@@ -271,6 +271,19 @@ void CDBL_Connection::DropCmd(CDB_BaseEnt& cmd)
     m_CMDs.Remove(static_cast<TPotItem> (&cmd));
 }
 
+bool CDBL_Connection::Abort()
+{
+    int fdr= DBIORDESC(m_Link);
+    int fdw= DBIOWDESC(m_Link);
+    if(fdr >= 0) {
+        close(fdr);
+    }
+    if(fdw != fdr && fdw >= 0) {
+        close(fdw);
+    }
+    return (fdr >= 0 || fdw >= 0);
+}
+
 
 bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
                                  CDB_Stream& stream, bool log_it)
@@ -565,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/23 21:39:46  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.11  2005/01/21 13:12:10  dicuccio
  * Set link to NULL after closing in destructor
  *

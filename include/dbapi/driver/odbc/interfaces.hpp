@@ -208,6 +208,14 @@ protected:
     CODBC_LangCmd* xLangCmd(const string&   lang_query,
                             unsigned int    nof_params = 0);
 
+    // abort the connection
+    // Attention: it is not recommended to use this method unless you absolutely have to.
+    // The expected implementation is - close underlying file descriptor[s] without
+    // destroing any objects associated with a connection.
+    // Returns: true - if succeed
+    //          false - if not
+    virtual bool Abort();
+
 private:
     bool x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Reporter& rep);
 
@@ -584,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/23 21:36:24  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.9  2005/02/15 17:57:19  ssikorsk
  * Fixed RowCountNum() with a SELECT statement
  *

@@ -337,6 +337,11 @@ void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
     m_CMDs.Remove(static_cast<TPotItem> (&cmd));
 }
 
+bool CODBC_Connection::Abort()
+{
+    return false;
+}
+
 
 static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, bool is_text, bool logit, 
@@ -602,6 +607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/23 21:40:55  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.6  2004/12/21 22:17:16  soussov
  * fixes bug in SendDataCmd
  *

@@ -570,6 +570,14 @@ protected:
     static CDB_CursorCmd*   Create_CursorCmd   (I_CursorCmd&   cursor_cmd  );
     static CDB_SendDataCmd* Create_SendDataCmd (I_SendDataCmd& senddata_cmd);
 
+    // abort the connection
+    // Attention: it is not recommended to use this method unless you absolutely have to.
+    // The expected implementation is - close underlying file descriptor[s] without
+    // destroing any objects associated with a connection.
+    // Returns: true - if succeed
+    //          false - if not
+    virtual bool Abort()= 0;
+
 public:
     virtual ~I_Connection();
 
@@ -598,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/02/23 21:36:38  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.26  2004/12/20 16:20:47  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

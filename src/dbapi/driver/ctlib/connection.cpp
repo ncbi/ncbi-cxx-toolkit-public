@@ -580,6 +580,18 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
     return descr;
 }
 
+bool CTL_Connection::Abort()
+{
+    int fd= -1;
+
+    if(ct_con_props(m_Link, CS_GET, CS_ENDPOINT, &fd, CS_UNUSED, 0) == CS_SUCCEED) {
+        if(fd >= 0) {
+            close(fd);
+            return true;
+        }
+    }
+    return false;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -730,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/02/23 21:39:57  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.17  2004/05/17 21:12:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

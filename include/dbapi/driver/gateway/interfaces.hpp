@@ -212,6 +212,14 @@ protected:
   // virtual void Release() {}
   CDBHandlerStack m_MsgHandlers;
 
+    // abort the connection
+    // Attention: it is not recommended to use this method unless you absolutely have to.
+    // The expected implementation is - close underlying file descriptor[s] without
+    // destroing any objects associated with a connection.
+    // Returns: true - if succeed
+    //          false - if not
+    virtual bool Abort();
+
 };
 
 
@@ -636,6 +644,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/23 21:32:35  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.7  2003/07/16 17:33:11  sapojnik
  * SetResultProcessor(), DumpResults() - almost empty implementations
  *

@@ -134,6 +134,15 @@ protected:
     virtual void Release();
 
     void DropCmd(CDB_BaseEnt& cmd);
+
+    // abort the connection
+    // Attention: it is not recommended to use this method unless you absolutely have to.
+    // The expected implementation is - close underlying file descriptor[s] without
+    // destroing any objects associated with a connection.
+    // Returns: true - if succeed
+    //          false - if not
+    virtual bool Abort();
+
 private:
     friend class CMySQL_LangCmd;
     friend class CMySQL_RowResult;
@@ -249,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/23 21:32:00  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.11  2004/03/24 19:48:27  vysokolo
  * Addaed support of blob
  *

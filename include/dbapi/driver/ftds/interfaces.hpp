@@ -273,6 +273,13 @@ protected:
 
     void DropCmd(CDB_BaseEnt& cmd);
 
+    // abort the connection
+    // Attention: it is not recommended to use this method unless you absolutely have to.
+    // The expected implementation is - close underlying file descriptor[s] without
+    // destroing any objects associated with a connection.
+    // Returns: true - if succeed
+    //          false - if not
+    virtual bool Abort();
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
@@ -743,6 +750,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/02/23 21:33:11  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.18  2004/12/20 16:20:48  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

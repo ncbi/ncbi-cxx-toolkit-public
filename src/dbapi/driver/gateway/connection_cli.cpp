@@ -496,6 +496,11 @@ void CGW_Connection::PopMsgHandler(CDB_UserHandler* h)
   m_MsgHandlers.Pop(h);
 }
 
+bool CGW_Connection::Abort()
+{
+  return false;
+}
+
 
 END_NCBI_SCOPE
 

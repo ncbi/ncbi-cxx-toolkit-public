@@ -258,6 +258,18 @@ void CTDS_Connection::DropCmd(CDB_BaseEnt& cmd)
     m_CMDs.Remove(static_cast<TPotItem> (&cmd));
 }
 
+bool CTDS_Connection::Abort()
+{
+    int fdr= DBIORDESC(m_Link);
+    int fdw= DBIOWDESC(m_Link);
+    if(fdr >= 0) {
+        close(fdr);
+    }
+    if(fdw != fdr && fdw >= 0) {
+        close(fdw);
+    }
+    return (fdr >= 0 || fdw >= 0);
+}
 
 bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
                                  CDB_Stream& stream, bool log_it)
@@ -539,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/23 21:39:08  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.7  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -192,6 +192,12 @@ CDB_Connection::~CDB_Connection()
 }
 
 
+bool CDB_Connection::Abort()
+{
+    s_CheckConnection(m_Connect, "IsReusable");
+    return m_Connect->Abort();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 //  CDB_Result::
@@ -751,6 +757,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/23 21:37:43  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.10  2004/06/08 18:55:40  soussov
  * adds code which cleans up a result processor if any in reusable connection
  *

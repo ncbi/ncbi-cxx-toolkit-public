@@ -194,6 +194,11 @@ CDB_CursorCmd *CMySQL_Connection::Cursor(const string& /*cursor_name*/,
     return 0;
 }
 
+bool CMySQL_Connection::Abort()
+{
+    return false;
+}
+
 
 END_NCBI_SCOPE
 
@@ -202,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/23 21:38:13  soussov
+ * Adds Abort() method to connection
+ *
  * Revision 1.6  2004/05/17 21:15:34  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
