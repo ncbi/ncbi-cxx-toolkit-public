@@ -905,6 +905,7 @@ Optional Packages:
  --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)
  --without-ftds          do not use FreeTDS libraries
  --with-ftds=DIR         use FreeTDS installation in DIR
+ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS
  --without-mysql         do not use MySQL
  --with-mysql=DIR        use MySQL installation in DIR
  --without-fltk          do not use FLTK
@@ -1731,6 +1732,12 @@ fi;
 # Check whether --with-ftds2 or --without-ftds2 was given.
 if test "${with_ftds2+set}" = set; then
   withval="$with_ftds2"
+
+fi;
+
+# Check whether --with-ftds-renamed or --without-ftds-renamed was given.
+if test "${with_ftds_renamed+set}" = set; then
+  withval="$with_ftds_renamed"
 
 fi;
 
@@ -15368,6 +15375,13 @@ if test "$with_ftds" != "no" ; then
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
       FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
+      if test "$with_ftds_renamed" != "no" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_FTDS_RENAME_SYBDB 1
+_ACEOF
+
+      fi
       { echo "$as_me:$LINENO: Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH" >&5
 echo "$as_me: Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH" >&6;}
    else

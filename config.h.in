@@ -385,6 +385,9 @@
 /* This is the NCBI C++ Toolkit. */
 #undef NCBI_CXX_TOOLKIT
 
+/* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
+#undef NCBI_FTDS_RENAME_SYBDB
+
 /* Define to 1 if `string::compare()' is non-standard. */
 #undef NCBI_OBSOLETE_STR_COMPARE
 

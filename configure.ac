@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.328 2004/10/08 14:58:58 ucko Exp $
+#  $Id: configure.ac,v 1.329 2004/10/16 20:40:57 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -174,6 +174,8 @@ AC_ARG_WITH(ftds,
    [ --without-ftds          do not use FreeTDS libraries])
 AC_ARG_WITH(ftds2,
    [ --with-ftds=DIR         use FreeTDS installation in DIR])
+AC_ARG_WITH(ftds-renamed,
+   [ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS])
 AC_ARG_WITH(mysql,
    [ --without-mysql         do not use MySQL])      
 AC_ARG_WITH(mysql2,
@@ -2645,6 +2647,10 @@ if test "$with_ftds" != "no" ; then
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
       FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
+      if test "$with_ftds_renamed" != "no" ; then
+          AC_DEFINE(NCBI_FTDS_RENAME_SYBDB, 1,
+                    [Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB.])
+      fi
       AC_MSG_NOTICE([Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH])
    else
       FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
