@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/09/27 15:58:17  lavr
+ * Registry entries adjusted
+ *
  * Revision 6.2  2000/05/30 23:25:03  vakatov
  * Cosmetic fix for the C++ compilation
  *
@@ -53,10 +56,10 @@
 /* Hard-coded pseudo-registry getter
  */
 
-#define TEST_ENGINE_HOST     "ray.nlm.nih.gov"
-#define TEST_ENGINE_PORT     "6224"
-#define TEST_ENGINE_PATH     "/cgi-bin/tools/vakatov/con_url.cgi"
-#define TEST_ENGINE_ARGS     "arg1+arg2+arg3"
+#define TEST_HOST            "ray.nlm.nih.gov"
+#define TEST_PORT            "6224"
+#define TEST_PATH            "/cgi-bin/tools/vakatov/con_url.cgi"
+#define TEST_ARGS            "arg1+arg2+arg3"
 #define TEST_DEBUG_PRINTOUT  "yes"
 
 
@@ -85,10 +88,10 @@ static void s_REG_Get
       return; \
   }
 
-    X_GET_VALUE(REG_CONN_ENGINE_HOST,    TEST_ENGINE_HOST);
-    X_GET_VALUE(REG_CONN_ENGINE_PORT,    TEST_ENGINE_PORT);
-    X_GET_VALUE(REG_CONN_ENGINE_PATH,    TEST_ENGINE_PATH);
-    X_GET_VALUE(REG_CONN_ENGINE_ARGS,    TEST_ENGINE_ARGS);
+    X_GET_VALUE(REG_CONN_HOST,    TEST_HOST);
+    X_GET_VALUE(REG_CONN_PORT,    TEST_PORT);
+    X_GET_VALUE(REG_CONN_PATH,    TEST_PATH);
+    X_GET_VALUE(REG_CONN_ARGS,    TEST_ARGS);
     X_GET_VALUE(REG_CONN_DEBUG_PRINTOUT, TEST_DEBUG_PRINTOUT);
 }
 

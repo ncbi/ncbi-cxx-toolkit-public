@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/09/27 16:00:24  lavr
+ * Registry entries adjusted
+ *
  * Revision 6.2  2000/05/30 23:24:40  vakatov
  * Cosmetic fix for the C++ compilation
  *
@@ -87,10 +90,10 @@ static void s_REG_Get
     return; \
     }
 
-    X_GET_VALUE(REG_CONN_ENGINE_HOST,    s_Args.host);
-    X_GET_VALUE(REG_CONN_ENGINE_PORT,    s_Args.port);
-    X_GET_VALUE(REG_CONN_ENGINE_PATH,    s_Args.path);
-    X_GET_VALUE(REG_CONN_ENGINE_ARGS,    s_Args.args);
+    X_GET_VALUE(REG_CONN_HOST,           s_Args.host);
+    X_GET_VALUE(REG_CONN_PORT,           s_Args.port);
+    X_GET_VALUE(REG_CONN_PATH,           s_Args.path);
+    X_GET_VALUE(REG_CONN_ARGS,           s_Args.args);
     X_GET_VALUE(REG_CONN_DEBUG_PRINTOUT, "yes");
 }
 
