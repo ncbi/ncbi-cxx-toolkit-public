@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -16,16 +16,19 @@
 NCBI-ID2Access DEFINITIONS ::=
 BEGIN
 
-IMPORTS Seq-id FROM NCBI-Seqloc
-        --Seq-entry   FROM NCBI-Seqset
-        --Seq-hist    FROM NCBI-Sequence
+IMPORTS Seq-id      FROM NCBI-Seqloc
         Seq-annot   FROM NCBI-Sequence
         Seq-descr   FROM NCBI-Sequence
         Seq-literal FROM NCBI-Sequence
         Seq-align   FROM NCBI-Seqalign;
 
 
+----------------------------------------------------------------------------
+-- request types
+----------------------------------------------------------------------------
+
 ID2-Request-Packet ::= SEQUENCE OF ID2-Request
+
 
 ID2-Request ::= SEQUENCE {
         -- request's serial number, can be used in asynchronic clients
@@ -44,33 +47,6 @@ ID2-Request ::= SEQUENCE {
                 reget-tse       ID2-Request-ReGet-TSE,
                 get-chunks      ID2S-Request-Get-Chunks
         }
-}
-
-
-ID2-Params ::= SEQUENCE OF ID2-Param
-
-
-ID2-Param ::= SEQUENCE {
-        name    VisibleString,
-        value   SEQUENCE OF VisibleString OPTIONAL,
-        type    ENUMERATED {
-                -- no response expected
-                set-value   (1) ,
-
-                -- this option is for client only
-                -- server replies with its value of param if known
-                -- server omits this param in reply if unknown to server
-                get-value   (2) ,
-
-                -- no direct response expected,
-                -- but if the param or its value is not supported
-                -- an error is reported and the request is not be completed
-                force-value (3) ,
-
-                -- use named package
-                -- value should be unset
-                use-package (4)
-        } DEFAULT set-value
 }
 
 
@@ -149,7 +125,7 @@ ID2S-Request-Get-Chunks ::= SEQUENCE {
         tse-id          ID2-TSE-Id,
 
         -- requests for specific chunks of splitted blob
-        chunks          SET OF INTEGER --ID2S-Chunk-Id
+        chunks          SET OF ID2S-Chunk-Id
 }
 
 
@@ -174,13 +150,9 @@ ID2-Get-TSE-Details ::= SEQUENCE {
 }
 
 
-ID2-TSE-Id ::= SEQUENCE {
-        sat             INTEGER,
-        sat-key         INTEGER
-}
-
-
---ID2S-Chunk-Id ::= INTEGER
+----------------------------------------------------------------------------
+-- reply types
+----------------------------------------------------------------------------
 
 
 ID2-Reply ::= SEQUENCE {
@@ -306,7 +278,7 @@ ID2S-Reply-Get-TSE-Info ::= SEQUENCE {
 ID2S-Reply-Get-Chunk ::= SEQUENCE {
         tse-id          ID2-TSE-Id,
 
-        chunk-id        INTEGER, --ID2S-Chunk-Id,
+        chunk-id        ID2S-Chunk-Id,
 
         -- chunk data
         -- not set if error occured
@@ -332,6 +304,11 @@ ID2-Reply-Data ::= SEQUENCE {
 }
 
 
+----------------------------------------------------------------------------
+-- Blob split info types
+----------------------------------------------------------------------------
+
+
 ID2S-Split-Info ::= SEQUENCE {
         bioseqs-info    SET OF ID2S-Bioseqs-Info OPTIONAL,
         chunks          SET OF ID2S-Chunk-Info
@@ -353,13 +330,13 @@ ID2S-Bioseq-Info ::= SEQUENCE {
 
 ID2S-Sequence-Split-Info ::= SEQUENCE {
         block-size      INTEGER,
-        chunk-start     INTEGER, --ID2S-Chunk-Id,
+        chunk-start     ID2S-Chunk-Id,
         chunk-blocks    SEQUENCE OF INTEGER
 }
 
 
 ID2S-Chunk-Info ::= SEQUENCE {
-        id              INTEGER, --ID2S-Chunk-Id,
+        id              ID2S-Chunk-Id,
         content         SET OF ID2S-Chunk-Content
 }
 
@@ -368,8 +345,8 @@ ID2S-Chunk-Content ::= CHOICE {
         seq-descr       ID2S-Seq-descr-Info,
         seq-annot       ID2S-Seq-annot-Info,
         seq-assembly    ID2S-Seq-assembly-Info,
-        seq-map         ID2-Seq-loc, --ID2S-Seq-map-Info,
-        seq-data        ID2-Seq-loc  --ID2S-Seq-data-Info
+        seq-map         ID2S-Seq-map-Info,
+        seq-data        ID2S-Seq-data-Info
 }
 
 
@@ -402,10 +379,42 @@ ID2S-Seq-assembly-Info ::= SEQUENCE {
 }
 
 
---ID2S-Seq-map-Info ::= ID2-Seq-loc
+ID2S-Seq-map-Info ::= ID2-Seq-loc
 
 
---ID2S-Seq-data-Info ::= ID2-Seq-loc
+ID2S-Seq-data-Info ::= ID2-Seq-loc
+
+
+ID2S-Chunk ::= SEQUENCE {
+        data            SET OF ID2S-Chunk-Data
+}
+
+
+ID2S-Chunk-Data ::= SEQUENCE {
+        id              CHOICE {
+                bioseq-set      INTEGER,
+                gi              INTEGER
+        },
+        descrs          SET OF Seq-descr OPTIONAL,
+        annots          SET OF Seq-annot OPTIONAL,
+        assembly        SET OF Seq-align OPTIONAL,
+        seq-map         SEQUENCE OF Seq-literal OPTIONAL,
+        seq-data        SEQUENCE OF Seq-literal OPTIONAL
+}
+
+
+----------------------------------------------------------------------------
+-- utility types
+----------------------------------------------------------------------------
+
+
+ID2S-Chunk-Id ::= INTEGER
+
+
+ID2-TSE-Id ::= SEQUENCE {
+        sat             INTEGER,
+        sat-key         INTEGER
+}
 
 
 ID2-Id-Range ::= SEQUENCE {
@@ -416,9 +425,10 @@ ID2-Id-Range ::= SEQUENCE {
 
 ID2-Seq-loc ::= CHOICE {
         whole           INTEGER,
-        whole-set       SET OF ID2-Id-Range,
         int             ID2-Interval,
-        int-set         SET OF ID2-Packed-Seq-ints
+        int-set         ID2-Packed-Seq-ints,
+        whole-range     ID2-Id-Range,
+        loc-set         SET OF ID2-Seq-loc
 }
 
 
@@ -441,22 +451,32 @@ ID2-Packed-Seq-ints ::= SEQUENCE {
 }
 
 
-ID2S-Chunk ::= SEQUENCE {
-        data            SET OF ID2S-Chunk-Data
+ID2-Params ::= SEQUENCE OF ID2-Param
+
+
+ID2-Param ::= SEQUENCE {
+        name    VisibleString,
+        value   SEQUENCE OF VisibleString OPTIONAL,
+        type    ENUMERATED {
+                -- no response expected
+                set-value   (1) ,
+
+                -- this option is for client only
+                -- server replies with its value of param if known
+                -- server omits this param in reply if unknown to server
+                get-value   (2) ,
+
+                -- no direct response expected,
+                -- but if the param or its value is not supported
+                -- an error is reported and the request is not be completed
+                force-value (3) ,
+
+                -- use named package
+                -- value should be unset
+                use-package (4)
+        } DEFAULT set-value
 }
 
-
-ID2S-Chunk-Data ::= SEQUENCE {
-        id              CHOICE {
-                bioseq-set      INTEGER,
-                gi              INTEGER
-        },
-        descrs          SET OF Seq-descr OPTIONAL,
-        annots          SET OF Seq-annot OPTIONAL,
-        assembly        SET OF Seq-align OPTIONAL,
-        seq-map         SEQUENCE OF Seq-literal OPTIONAL,
-        seq-data        SEQUENCE OF Seq-literal OPTIONAL
-}
-
+--VVI ::= SEQUENCE OF SEQUENCE OF INTEGER
 
 END
