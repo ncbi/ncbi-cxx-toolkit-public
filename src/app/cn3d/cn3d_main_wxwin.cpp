@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.139  2002/05/31 13:35:02  thiessen
+* use wxWin's FSSpec->path converter
+*
 * Revision 1.138  2002/05/26 21:59:16  thiessen
 * tweaks for new window styles
 *
@@ -572,6 +575,7 @@
 #ifdef __WXMAC__
 #include <wx/filename.h>
 #include "MoreCarbonAccessors.h"
+wxString wxMacFSSpec2MacFilename(const FSSpec *); // in wxwin/src/common/filefn.cpp
 #endif
 
 USING_NCBI_SCOPE;
@@ -949,40 +953,6 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 }
 
 #ifdef __WXMAC__
-// borrowed from vibwndws.c
-static void ConvertFilename ( FSSpec *fss, char *filename )
-{
-    register char *src;
-    register char *dst;
-    register int i;
-    char buffer [256];
-
-    Str255 dirname;
-    DirInfo dinfo;
-
-    src = buffer;
-    dinfo.ioDrParID = fss->parID;
-    dinfo.ioNamePtr = dirname;
-    do {
-        dinfo.ioVRefNum = fss->vRefNum;
-        dinfo.ioFDirIndex = -1;
-        dinfo.ioDrDirID = dinfo.ioDrParID;
-        PBGetCatInfo ((CInfoPBPtr) &dinfo, 0);
-
-        *src++ = ':';
-        for ( i=dirname[0]; i; i-- )
-        *src++ = dirname [i];
-    } while ( dinfo.ioDrDirID != 2 );
-
-    /* Reverse the file path! */
-    dst = filename;
-    while ( src != buffer )
-    *dst++ = *(--src);
-    for( i = 1; i <= fss->name [0]; i++ )
-    *dst++ = fss->name [i];
-    *dst = '\0';
-}
-
 // special handler for open file apple event
 short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply)
 {
@@ -995,7 +965,7 @@ short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF repl
     FSSpec fss;
     long count;
     Size size;
-    char filename [256];
+    wxString filename;
 
     stat = AEGetParamDesc ((const AEDesc *) event, keyDirectObject, typeAEList, &list);
     if ( stat ) return ( stat );
@@ -1007,18 +977,18 @@ short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF repl
     }
 
     // try to extract a file name to open
-    *filename = '\0';
     AECountItems ( &list, &count );
     for ( i = 1; i <= count; i++ ) {
         stat = AEGetNthPtr (&list, i, typeFSS, &keywd, &dtype, (Ptr) &fss, sizeof (fss), &size);
         if ( !stat ) {
-            ConvertFilename (&fss, filename);
+            filename = wxMacFSSpec2MacFilename(&fss);
             break;
         }
     }
+    AEDisposeDesc(&list);
 
     // actually open the file
-    if (*filename) {
+    if (filename.size() > 0) {
         TESTMSG("apple open event file: " << filename);
         structureWindow->LoadFile(filename);
     }
