@@ -679,10 +679,10 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
     for (;true;) {
 
         curr_time = time(0);
-        to.sec = end_time - curr_time;  // remaining
-        if (to.sec <= 0) {
+        if (curr_time >= end_time) {
             break;
         }
+        to.sec = end_time - curr_time;  // remaining
 
         status = udp_socket.Wait(&to);
         if (eIO_Success != status) {
@@ -1123,6 +1123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/28 14:21:30  didenko
+ * Fixed bug that caused an infinit loop in WaitForJob method
+ *
  * Revision 1.18  2005/03/24 16:43:14  didenko
  * Fixed error parsing
  *
