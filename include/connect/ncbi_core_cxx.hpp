@@ -34,8 +34,31 @@
  *     Logging
  *     Locking
  *
+ */
+
+#include <connect/ncbi_core.h>
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbithr.hpp>
+
+BEGIN_NCBI_SCOPE
+
+
+extern REG         REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
+extern LOG         LOG_cxx2c(void);
+extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock = 0,  bool pass_ownership = false);
+
+extern void     CONNECT_Init(CNcbiRegistry* reg = 0);
+
+
+END_NCBI_SCOPE
+
+
+/*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/06/10 19:49:32  lavr
+ * +CONNECT_Init()
+ *
  * Revision 6.6  2002/05/07 18:20:19  lavr
  * -#include <ncbidiag.hpp>: not needed for API definition (moved into .cpp)
  *
@@ -56,18 +79,5 @@
  *
  * ===========================================================================
  */
-
-#include <connect/ncbi_core.h>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbithr.hpp>
-
-BEGIN_NCBI_SCOPE
-
-
-extern REG         REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
-extern LOG         LOG_cxx2c(void);
-extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock = 0, bool pass_ownership = false);
-
-END_NCBI_SCOPE
 
 #endif  /* NCBI_CORE_CXX__HPP */
