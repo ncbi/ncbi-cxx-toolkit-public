@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/18 17:22:58  vasilche
+* GetTypeInfo & constructor of CObjectTypeInfo made public.
+*
 * Revision 1.9  2000/07/06 16:21:15  vasilche
 * Added interface to primitive types in CObjectInfo & CConstObjectInfo.
 *
@@ -101,22 +104,12 @@ public:
 
 class CObjectTypeInfo
 {
-protected:
+public:
     CObjectTypeInfo(TTypeInfo typeinfo = 0)
         : m_TypeInfo(typeinfo)
         {
         }
-    
-    void ResetTypeInfo(void)
-        {
-            m_TypeInfo = 0;
-        }
-    void SetTypeInfo(TTypeInfo typeinfo)
-        {
-            m_TypeInfo = typeinfo;
-        }
-    
-public:
+
     typedef int TMemberIndex; // index of class member or choice variant
 
     TTypeInfo GetTypeInfo(void) const
@@ -212,6 +205,16 @@ public:
             }
     };
 
+protected:
+    void ResetTypeInfo(void)
+        {
+            m_TypeInfo = 0;
+        }
+    void SetTypeInfo(TTypeInfo typeinfo)
+        {
+            m_TypeInfo = typeinfo;
+        }
+    
 private:
     TTypeInfo m_TypeInfo;
 };
