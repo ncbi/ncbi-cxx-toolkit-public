@@ -115,7 +115,7 @@ public:
 class CGBDataLoader : public CDataLoader
 {
 public:
-  CGBDataLoader(CReader &driver,const string& loader_name="GENBANK",int gc_threshold=100);
+  CGBDataLoader(const string& loader_name="GENBANK",CReader *driver=0,int gc_threshold=100);
   virtual ~CGBDataLoader(void);
   
   virtual bool DropTSE(const CSeq_entry* sep);
@@ -142,7 +142,6 @@ private:
   
   typedef CIntStreamable::TInt             TInt;
   
-  typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
   typedef map<CCmpTSE          ,STSEinfo*> TSr2TSEinfo   ;
   typedef map<const CSeq_entry*,STSEinfo*> TTse2TSEinfo  ;
   typedef map<TSeq_id_Key     , SSeqrefs*> TSeqId2Seqrefs;
@@ -163,6 +162,7 @@ private:
   STSEinfo       *m_UseListTail;
   int             m_TseCount;
   int             m_TseGC_Threshhold;
+  bool            m_InvokeGC;
   void            x_UpdateDropList(STSEinfo *p);
   void            x_GC(void);
   
@@ -175,7 +175,8 @@ private:
   TInt            x_Request2BlobMask(const EChoice choice);
   
   
-  bool            x_GetRecords(const TLocMap::const_iterator &hrange, EChoice choice);
+  typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
+  bool            x_GetRecords(const TSeq_id_Key key,const CHandleRange &hrange, EChoice choice);
   bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
   bool            x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
   bool            x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
@@ -189,6 +190,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.3  2002/03/20 19:06:29  kimelman
+ * bugfixes
+ *
  * Revision 1.2  2002/03/20 17:04:25  gouriano
  * minor changes to make it compilable on MS Windows
  *
