@@ -32,193 +32,193 @@
 
 
 
-#include <deque>
-
-#include <algo/align/nw_formatter.hpp>
-
 #include "splign.hpp"
 #include "splign_app_exception.hpp"
+#include <algo/align/nw_formatter.hpp>
+#include <deque>
+
 
 
 BEGIN_NCBI_SCOPE
 
 CSplign::CSplign(CSplicedAligner* aligner)
 {
-  m_aligner = aligner;
-  m_minidty = 0;
-  m_endgaps = false;
-  m_Seq1 = m_Seq2 = 0;
-  m_SeqLen1 = m_SeqLen2 = 0;
-  m_maxtestmem = 1024*1024*(1024 + 900);
+    m_aligner = aligner;
+    m_minidty = 0;
+    m_endgaps = false;
+    m_Seq1 = m_Seq2 = 0;
+    m_SeqLen1 = m_SeqLen2 = 0;
+    m_maxtestmem = 1024*1024*(1024 + 900);
 }
 
 
 void CSplign::SetSequences(const char* seq1, size_t len1,
-			   const char* seq2, size_t len2)
+                           const char* seq2, size_t len2)
 {
-  if(!seq1 || !seq2) {
-    NCBI_THROW(
-	       CSplignException,
-	       eBadParameter,
-	       "NULL sequence pointer(s) passed");
-  }
-  m_Seq1 = seq1;
-  m_SeqLen1 = len1;
-  m_Seq2 = seq2;
-  m_SeqLen2 = len2;
+    if(!seq1 || !seq2) {
+        NCBI_THROW(
+        CSplignException,
+        eBadParameter,
+        "NULL sequence pointer(s) passed");
+    }
+    m_Seq1 = seq1;
+    m_SeqLen1 = len1;
+    m_Seq2 = seq2;
+    m_SeqLen2 = len2;
 }
 
 
 void CSplign::EnforceEndGapsDetection(bool enforce)
 {
-  m_endgaps = enforce;
+    m_endgaps = enforce;
 }
 
 
 void CSplign::SetPattern(const vector<size_t>& pattern0)
 {
-  if(!m_Seq1 || !m_Seq2) {
-    NCBI_THROW(
-	       CSplignException,
-	       eNotInitialized,
-	       "Sequences must be set before pattern");
-  }
+    if(!m_Seq1 || !m_Seq2) {
+        NCBI_THROW(
+            CSplignException,
+            eNotInitialized,
+            "Sequences must be set before pattern");
+    }
 
-  size_t dim = pattern0.size();
-  const char* err = 0;
-  if(dim % 4 == 0) {
-    for(size_t i = 0; i < dim; i += 4) {
+    size_t dim = pattern0.size();
+    const char* err = 0;
+    if(dim % 4 == 0) {
+        for(size_t i = 0; i < dim; i += 4) {
       
-      if( pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3] ) {
-	err = "Pattern hits must be specified in plus strand";
-	break;
-      }
+            if(pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3]) {
+	            err = "Pattern hits must be specified in plus strand";
+                break;
+            }
       
-      if(i > 4) {
-	if(pattern0[i] <= pattern0[i-3] || pattern0[i+2] <= pattern0[i-2]){
-	  err = "Pattern hits coordinates must be sorted";
-	  break;
-	}
-      }
+            if(i > 4) {
+                if(pattern0[i] <= pattern0[i-3] || pattern0[i+2] <= pattern0[i-2]){
+                err = "Pattern hits coordinates must be sorted";
+                break;
+                }
+            }
             
-      if(pattern0[i+1] >= m_SeqLen1 || pattern0[i+3] >= m_SeqLen2) {
-	err = "One or several pattern hits are out of range";
-	break;
-      }
+            if(pattern0[i+1] >= m_SeqLen1 || pattern0[i+3] >= m_SeqLen2) {
+                err = "One or several pattern hits are out of range";
+	            break;
+            }
+        }
     }
-  }
-  else {
-    err = "Pattern must have a dimension multiple of four";
-  }
-
-  if(err) {
-    NCBI_THROW( CSplignException, eBadParameter, err );
-  }
-  else {
-    m_alnmap.clear();
-    m_pattern.clear();
-
-    // copy from pattern0 to pattern so that each hit is not too large
-    const size_t max_len = 500;
-    vector<size_t> pattern;
-    for(size_t i = 0; i < dim; i += 4) {
-      size_t lenq = 1 + pattern0[i+1] - pattern0[i];
-      if(lenq <= max_len) {
-	copy(pattern0.begin() + i,
-	     pattern0.begin() + i + 4,
-	     back_inserter(pattern));
-      }
-      else {
-	const size_t d = (lenq-1) / max_len + 1;
-	const size_t inc = lenq / d + 1;
-	for(size_t a = pattern0[i], b = a , c = pattern0[i+2], d = c;
-	    a < pattern0[i+1]; (a = b + 1), (c = d + 1) ) {
-	  b = a + inc - 1;
-	  d = c + inc - 1;
-	  if(b > pattern0[i+1] || d > pattern0[i+3]) {
-	    b = pattern0[i+1];
-	    d = pattern0[i+3];
-	  }
-	  pattern.push_back(a);
-	  pattern.push_back(b);
-	  pattern.push_back(c);
-	  pattern.push_back(d);
-	}
-      }
+    else {
+        err = "Pattern must have a dimension multiple of four";
     }
 
-    dim = pattern.size();
-
-    SAlnMapElem map_elem;
-    map_elem.m_box[0] = map_elem.m_box[2] = 0;
-    map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
-
-    // realign pattern hits and build the alignment map
-    for(size_t i = 0; i < dim; i += 4) {    
-
-      if(i >= 4) {
-	const size_t dist = pattern[i] - pattern[i-3] + 1;
-	if(dist > 10) {
-	  const size_t q0 = map_elem.m_box[1], q1 = pattern[i];
-	  const size_t s0 = map_elem.m_box[3], s1 = pattern[i+2];
-	  double minidty = x_EvalMinExonIdty(q0, q1, s0, s1);
-	  if(minidty < m_minidty) {
-	    m_alnmap.push_back(map_elem);
-	    map_elem.m_box[0] = pattern[i];
-	    map_elem.m_box[2] = pattern[i+2];
-	    map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
-	  }
-	}
-      }
-
-      CNWAligner nwa ( m_Seq1 + pattern[i],
-		       pattern[i+1] - pattern[i] + 1,
-		       m_Seq2 + pattern[i+2],
-		       pattern[i+3] - pattern[i+2] + 1 );
-      nwa.Run();
-
-      size_t L1, R1, L2, R2;
-      const size_t max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
-      if(max_seg_size) {
-
-	const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
-	const size_t hlq4 = hitlen_q/4;
-	const size_t sh = hlq4 < 30? hlq4: 30;
-
-	size_t delta = sh > L1? sh - L1: 0;
-	size_t q0 = pattern[i] + L1 + delta;
-	size_t s0 = pattern[i+2] + L2 + delta;
-
-	const size_t h2s_right = hitlen_q - R1 - 1;
-	delta = sh > h2s_right? sh - h2s_right: 0;
-	size_t q1 = pattern[i] + R1 - delta;
-	size_t s1 = pattern[i+2] + R2 - delta;
-
-	if(q0 > q1 || s0 > s1) { // longest seg was probably too short
-	  q0 = pattern[i] + L1;
-	  s0 = pattern[i+2] + L2;
-	  q1 = pattern[i] + R1;
-	  s1 = pattern[i+2] + R2;
-	}
-
-	m_pattern.push_back(q0); m_pattern.push_back(q1);
-	m_pattern.push_back(s0); m_pattern.push_back(s1);
-
-	const size_t pattern_dim = m_pattern.size();
-	if(map_elem.m_pattern_start == -1) {
-	  map_elem.m_pattern_start = pattern_dim - 4;;
-	}
-	map_elem.m_pattern_end = pattern_dim - 1;
-      }
-
-      map_elem.m_box[1] = pattern[i+1];
-      map_elem.m_box[3] = pattern[i+3];
+    if(err) {
+        NCBI_THROW( CSplignException, eBadParameter, err );
     }
+    else {
+        m_alnmap.clear();
+        m_pattern.clear();
 
-    map_elem.m_box[1] = m_SeqLen1 - 1;
-    map_elem.m_box[3] = m_SeqLen2 - 1;
-    m_alnmap.push_back(map_elem);
-  }
+        // copy from pattern0 to pattern so that each hit is not too large
+        const size_t max_len = 500;
+        vector<size_t> pattern;
+        for(size_t i = 0; i < dim; i += 4) {
+            size_t lenq = 1 + pattern0[i+1] - pattern0[i];
+            if(lenq <= max_len) {
+                copy(pattern0.begin() + i,
+                pattern0.begin() + i + 4,
+                back_inserter(pattern));
+            }
+            else {
+                const size_t d = (lenq-1) / max_len + 1;
+                const size_t inc = lenq / d + 1;
+                for(size_t a = pattern0[i], b = a , c = pattern0[i+2], d = c;
+                    a < pattern0[i+1]; (a = b + 1), (c = d + 1) ) {
+
+                    b = a + inc - 1;
+                    d = c + inc - 1;
+                    if(b > pattern0[i+1] || d > pattern0[i+3]) {
+                        b = pattern0[i+1];
+                        d = pattern0[i+3];
+                    }
+                    pattern.push_back(a);
+                    pattern.push_back(b);
+                    pattern.push_back(c);
+                    pattern.push_back(d);
+                }
+            }
+        }
+
+        dim = pattern.size();
+
+        SAlnMapElem map_elem;
+        map_elem.m_box[0] = map_elem.m_box[2] = 0;
+        map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
+
+        // realign pattern hits and build the alignment map
+        for(size_t i = 0; i < dim; i += 4) {    
+
+            if(i >= 4) {
+                const size_t dist = pattern[i] - pattern[i-3] + 1;
+                if(dist > 10) {
+                    const size_t q0 = map_elem.m_box[1], q1 = pattern[i];
+                    const size_t s0 = map_elem.m_box[3], s1 = pattern[i+2];
+                    double minidty = x_EvalMinExonIdty(q0, q1, s0, s1);
+                    if(minidty < m_minidty) {
+                        m_alnmap.push_back(map_elem);
+                        map_elem.m_box[0] = pattern[i];
+                        map_elem.m_box[2] = pattern[i+2];
+                        map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
+                    }
+                }
+            }
+
+            CNWAligner nwa (m_Seq1 + pattern[i],
+                            pattern[i+1] - pattern[i] + 1,
+                            m_Seq2 + pattern[i+2],
+	                        pattern[i+3] - pattern[i+2] + 1 );
+            nwa.Run();
+
+            size_t L1, R1, L2, R2;
+            const size_t max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
+            if(max_seg_size) {
+
+                const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
+                const size_t hlq4 = hitlen_q/4;
+                const size_t sh = hlq4 < 30? hlq4: 30;
+
+                size_t delta = sh > L1? sh - L1: 0;
+                size_t q0 = pattern[i] + L1 + delta;
+                size_t s0 = pattern[i+2] + L2 + delta;
+
+                const size_t h2s_right = hitlen_q - R1 - 1;
+                delta = sh > h2s_right? sh - h2s_right: 0;
+                size_t q1 = pattern[i] + R1 - delta;
+                size_t s1 = pattern[i+2] + R2 - delta;
+
+                if(q0 > q1 || s0 > s1) { // longest seg was probably too short
+                    q0 = pattern[i] + L1;
+                    s0 = pattern[i+2] + L2;
+                    q1 = pattern[i] + R1;
+                    s1 = pattern[i+2] + R2;
+                }
+
+                m_pattern.push_back(q0); m_pattern.push_back(q1);
+                m_pattern.push_back(s0); m_pattern.push_back(s1);
+
+                const size_t pattern_dim = m_pattern.size();
+                if(map_elem.m_pattern_start == -1) {
+                    map_elem.m_pattern_start = pattern_dim - 4;;
+                }
+                map_elem.m_pattern_end = pattern_dim - 1;
+            }
+
+            map_elem.m_box[1] = pattern[i+1];
+            map_elem.m_box[3] = pattern[i+3];
+        }
+
+        map_elem.m_box[1] = m_SeqLen1 - 1;
+        map_elem.m_box[3] = m_SeqLen2 - 1;
+        m_alnmap.push_back(map_elem);
+    }
 }
 
 
@@ -233,6 +233,7 @@ void CSplign::SetMinExonIdentity(double idty)
     m_minidty = idty;
   }
 }
+
 
 double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
 {
@@ -765,6 +766,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/01/29 21:25:37  kapustin
+ * Re-activate MSVC warning disablers
+ *
  * Revision 1.9  2004/01/05 15:43:45  kapustin
  * Modify boundary exon ends improvement procedure's parameters and other changes
  *
