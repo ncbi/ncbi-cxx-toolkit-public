@@ -717,6 +717,12 @@ int CDemoApp::Run(void)
                           .SetSortOrder(order)); it;  ++it) {
             count++;
             // Get seq-annot containing the feature
+            if ( get_mapped_location )
+                it->GetLoc();
+            if ( get_original_feature )
+                it->GetOriginalGraph();
+            if ( get_mapped_feature )
+                it->GetMappedGraph();
             if ( print_features ) {
                 NcbiCout << MSerial_AsnText <<
                     it->GetMappedGraph() << it->GetLoc();
@@ -759,6 +765,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/04/09 20:37:48  vasilche
+* Added optional test to get mapped location and object for graphs.
+*
 * Revision 1.63  2004/04/08 14:11:57  vasilche
 * Added option to dump loaded Seq-entry.
 *
