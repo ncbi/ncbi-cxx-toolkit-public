@@ -70,7 +70,7 @@ BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list,
          BinarySearchInt4(hsp->query.gapped_start, 
             query_info->context_offsets, 
             (Int4) (query_info->last_context+1));   
-      if (is_ooframe) {
+      if (is_ooframe && program_number == blast_type_blastx) {
          offset_shift = query_info->context_offsets[context-context%3];
          /* Query offset is in mixed-frame coordinates */
          hsp->query.frame = hsp->query.offset % 3 + 1;
