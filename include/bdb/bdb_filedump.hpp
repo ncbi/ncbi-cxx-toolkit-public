@@ -88,6 +88,7 @@ inline
 CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
 {
     m_ColumnSeparator = fdump.m_ColumnSeparator;
+    return *this;
 }
 
 inline
@@ -105,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/27 14:27:07  kuznets
+ * Minor compilation bug fixed.
+ *
  * Revision 1.1  2003/10/27 14:17:57  kuznets
  * Initial revision
  *
