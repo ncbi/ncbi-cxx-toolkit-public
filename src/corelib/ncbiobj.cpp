@@ -67,14 +67,16 @@
 
 #define USE_HEAPOBJ_LIST  0
 #if USE_HEAPOBJ_LIST
-    #include <corelib/ncbi_safe_static.hpp>
-    #include <list>
-    #include <algorithm>
+#  include <corelib/ncbi_safe_static.hpp>
+#  include <list>
+#  include <algorithm>
 #else
-    #define USE_COMPLEX_MASK  1
-    #if !USE_COMPLEX_MASK
-        #define STACK_THRESHOLD (16*1024)
-    #endif
+#  define USE_COMPLEX_MASK  1
+#  if USE_COMPLEX_MASK
+#    define STACK_THRESHOLD (64)
+#  else
+#    define STACK_THRESHOLD (16*1024)
+#  endif
 #endif
 
 
@@ -118,6 +120,7 @@ static CSafeStaticPtr< list<const void*> > s_heap_obj;
 void* CObject::operator new(size_t size)
 {
     _ASSERT(size >= sizeof(CObject));
+    size = max(size, 2*sizeof(TCounter));
     void* ptr = ::operator new(size);
 
 #if USE_HEAPOBJ_LIST
@@ -127,12 +130,12 @@ void* CObject::operator new(size_t size)
     }}
 #else// USE_HEAPOBJ_LIST
     memset(ptr, 0, size);
-#if USE_COMPLEX_MASK
+#  if USE_COMPLEX_MASK
     TCounter* ttt = &(static_cast<CObject*>(ptr)->m_Counter);
     if (size >= 2*sizeof(TCounter)) {
         *(++ttt) = eCounterNew;
     }
-#endif// USE_COMPLEX_MASK
+#  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
     static_cast<CObject*>(ptr)->m_Counter = eCounterNew;
     return ptr;
@@ -179,7 +182,7 @@ void CObject::InitCounter(void)
         m_Counter = TCounter(eCounterNotInHeap);
     }
     else {
-        bool inStack = true;
+        bool inStack = false;
 #if USE_HEAPOBJ_LIST
         const void* ptr = dynamic_cast<const void*>(this);
         {{
@@ -192,27 +195,28 @@ void CObject::InitCounter(void)
             }
         }}
 #else // USE_HEAPOBJ_LIST
-#if USE_COMPLEX_MASK
+#  if USE_COMPLEX_MASK
         TCounter* ttt = &m_Counter;
         ++ttt;
         inStack = (*ttt != eCounterNew);
-#else// USE_COMPLEX_MASK
+#  endif // USE_COMPLEX_MASK
         // m_Counter == eCounterNew -> possibly in heap
+        if (!inStack) {
         char stackObject;
         const char* stackObjectPtr = &stackObject;
         const char* objectPtr = reinterpret_cast<const char*>(this);
         inStack =
-#ifdef STACK_GROWS_UP
+#  ifdef STACK_GROWS_UP
             (objectPtr < stackObjectPtr) &&
-#else
+#  else
             (objectPtr < stackObjectPtr + STACK_THRESHOLD) &&
-#endif
-#ifdef STACK_GROWS_DOWN
+#  endif
+#  ifdef STACK_GROWS_DOWN
             (objectPtr > stackObjectPtr);
-#else
+#  else
             (objectPtr > stackObjectPtr - STACK_THRESHOLD);
-#endif
-#endif USE_COMPLEX_MASK
+#  endif
+        }
 #endif // USE_HEAPOBJ_LIST
 
         // surely not in heap
@@ -368,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/05/10 20:53:12  gouriano
+ * more stack/heap tests
+ *
  * Revision 1.20  2002/05/10 19:42:31  gouriano
  * object on stack vs on heap - do it more accurately
  *
