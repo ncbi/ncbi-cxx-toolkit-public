@@ -222,14 +222,14 @@ void CSeq_id_not_set_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
 
 CSeq_id_Handle CSeq_id_not_set_Tree::FindInfo(const CSeq_id& /*id*/) const
 {
-    LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+    // LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
     return CSeq_id_Handle();
 }
 
 
 CSeq_id_Handle CSeq_id_not_set_Tree::FindOrCreate(const CSeq_id& /*id*/)
 {
-    LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
+    // LOG_POST(Warning << "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
     return CSeq_id_Handle();
 }
 
@@ -1705,6 +1705,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/11/15 15:06:45  grichenk
+* Removed empty ID warnings
+*
 * Revision 1.18  2004/10/01 20:28:29  vasilche
 * Accession and name are case insensitive.
 *
