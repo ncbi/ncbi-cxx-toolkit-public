@@ -668,7 +668,7 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
     {
         ostrstream os;
         os << endl << "NCBI C++ Exception:" << endl << '\0';
-        *this << os.str();
+        *this << (string)CNcbiOstrstreamToString(os);
     }
     const CException* pex;
     stack<const CException*> pile;
@@ -682,10 +682,9 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
         {
             ostrstream os;
             pex->ReportExtra(os);
-            os << '\0';
-            if (strlen(os.str())!=0) {
+            if (os.pcount() != 0) {
                 text += " (";
-                text += os.str();
+                text += (string)CNcbiOstrstreamToString(os);
                 text += ')';
             }
         }
@@ -1070,6 +1069,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.69  2003/01/13 20:42:50  gouriano
+ * corrected the problem with ostrstream::str(): replaced such calls with
+ * CNcbiOstrstreamToString(os)
+ *
  * Revision 1.68  2002/09/30 16:35:16  vasilche
  * Restored mutex lock on fork().
  *

@@ -193,7 +193,7 @@ string CException::ReportAll(TDiagPostFlags flags) const
                                           *this, eDPF_Trace);
         m_InReporter = false;
     }
-    return os.str();
+    return CNcbiOstrstreamToString(os);
 }
 
 
@@ -202,12 +202,10 @@ string CException::ReportThis(TDiagPostFlags flags) const
     ostrstream os, osex;
     ReportStd(os, flags);
     ReportExtra(osex);
-    osex << '\0';
-    if (strlen(osex.str())!=0) {
-        os << " (" << osex.str() << ')';
+    if (osex.pcount() != 0) {
+        os << " (" << (string)CNcbiOstrstreamToString(osex) << ')';
     }
-    os << '\0';
-    return os.str();
+    return CNcbiOstrstreamToString(os);
 }
 
 
@@ -258,7 +256,7 @@ void CException::x_ReportToDebugger(void) const
         GetMsg() << "\" ";
     ReportExtra(os);
     os << endl << '\0';
-    OutputDebugString(os.str());
+    OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
 #endif
 }
 
@@ -575,6 +573,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/01/13 20:42:50  gouriano
+ * corrected the problem with ostrstream::str(): replaced such calls with
+ * CNcbiOstrstreamToString(os)
+ *
  * Revision 1.28  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *

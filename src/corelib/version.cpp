@@ -64,7 +64,7 @@ string CVersionInfo::Print(void) const
         os << " (" << m_Name << ")";
     }
     os << '\0';
-    return os.str();
+    return CNcbiOstrstreamToString(os);
 }
 
 
@@ -75,6 +75,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/01/13 20:42:50  gouriano
+ * corrected the problem with ostrstream::str(): replaced such calls with
+ * CNcbiOstrstreamToString(os)
+ *
  * Revision 1.1  2002/12/26 17:10:47  ivanov
  * Initial revision
  *
