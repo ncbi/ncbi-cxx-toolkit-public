@@ -125,6 +125,7 @@ f_compile="-c "
 f_outobj="-o "
 f_libpath="-L"
 f_outexe="-o "
+use_shell="SHELL=/bin/sh"
 
 changequote(, )dnl
 if test "$GCC" = "yes" ; then
@@ -250,7 +251,7 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
-AC_SUBST(use_shell)
+AC_SUBST(cmd_shell)
 AC_SUBST(obj_ext)
 AC_SUBST(lib_pre)
 AC_SUBST(lib_l_pre)

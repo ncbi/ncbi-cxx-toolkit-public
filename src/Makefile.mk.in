@@ -14,7 +14,7 @@
 
 ### Make sure we are using a right command shell
 
-@use_shell@
+@cmd_shell@
 
 
 ### Configurable directories
