@@ -165,8 +165,8 @@ private:
     CRef<CDense_seg> x_ExtendDSWithWidths(const CDense_seg& ds);
 
 
-    static bool x_CompareAlnSeqScores  (const CAlnMixSeq* aln_seq1,
-                                        const CAlnMixSeq* aln_seq2);
+    static bool x_CompareAlnSeqScores  (const CRef<CAlnMixSeq>& aln_seq1,
+                                        const CRef<CAlnMixSeq>& aln_seq2);
     static bool x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
                                         const CRef<CAlnMixMatch>& aln_match2);
         
@@ -340,6 +340,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/10/12 19:44:29  rsmith
+* make x_CompareAlnSeqScores arguments match the container it compares on.
+*
 * Revision 1.42  2004/09/27 16:18:17  todorov
 * + truncate segments of sequences on multiple frames
 *
