@@ -351,7 +351,9 @@ static SIZE_TYPE s_Find(const string& s, const char* target,
     // return s.find(target);
     // Some implementations of string::find call memcmp at every
     // possible position, which is way too slow.
-    _ASSERT(start < s.size());
+    if (start >= s.size()) {
+        return NPOS;
+    }
     const char* cstr = s.c_str();
     const char* p    = strstr(cstr + start, target);
     return p ? p - cstr : NPOS;
@@ -2075,6 +2077,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2003/05/15 12:33:54  ucko
+ * s_Find: drop assertion, and just return NPOS at/past the end of s.
+ *
  * Revision 1.83  2003/05/14 21:55:40  ucko
  * CHTMLText::PrintBegin: Use strstr() instead of string::find() when
  * looking for tags to replace, as the latter is much slower on some
