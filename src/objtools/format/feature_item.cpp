@@ -682,6 +682,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
 
         const CGene_ref* grp = m_Feat->GetGeneXref();
         CConstRef<CSeq_feat> overlap_gene;
+
         if (grp != NULL  &&  grp->CanGetDb()) {
             x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(grp->GetDb()));
         }
@@ -716,7 +717,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 pseudo = true;
             }
             if (!grp->IsSuppressed()) {
-                x_AddQuals(*grp, pseudo, subtype);
+                x_AddQuals(*grp, pseudo, subtype, overlap_gene);
             }
         }
         if ( type != CSeqFeatData::e_Cdregion  &&  type !=  CSeqFeatData::e_Rna ) {
@@ -970,7 +971,7 @@ void CFeatureItem::x_AddRnaQuals
 
 void CFeatureItem::x_AddGeneQuals(const CSeq_feat& gene, bool &pseudo, CScope& scope) const
 {
-    x_AddQuals(gene.GetData().GetGene(), pseudo, CSeqFeatData::eSubtype_gene);
+    x_AddQuals(gene.GetData().GetGene(), pseudo, CSeqFeatData::eSubtype_gene, false);
 }
 
 
@@ -1469,7 +1470,8 @@ void CFeatureItem::x_AddGoQuals(const CUser_object& uo) const
 void CFeatureItem::x_AddQuals
 (const CGene_ref& gene,
  bool& pseudo,
- CSeqFeatData::ESubtype subtype) const
+ CSeqFeatData::ESubtype subtype,
+ bool from_overlap) const
 {
     bool gene_feat = subtype == CSeqFeatData::eSubtype_gene;
 
@@ -1483,7 +1485,7 @@ void CFeatureItem::x_AddQuals
         (gene.IsSetLocus_tag()  &&  !gene.GetLocus_tag().empty()) ?
         &gene.GetLocus_tag() : 0;
 
-    if (subtype != CSeqFeatData::eSubtype_repeat_region) {
+    if (!from_overlap  ||  subtype != CSeqFeatData::eSubtype_repeat_region) {
         if (locus != NULL) {
             x_AddQual(eFQ_gene, new CFlatGeneQVal(*locus));
             if (locus_tag != NULL) {
@@ -3455,6 +3457,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/11/19 15:13:41  shomrat
+* Fixed quals from Gene-ref
+*
 * Revision 1.35  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
