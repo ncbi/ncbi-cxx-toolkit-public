@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/08/09 16:24:05  lavr
+* Added eDPF_OmitInfoSev to log message format flags
+*
 * Revision 1.29  2001/07/26 21:28:49  lavr
 * Remove printing DateTime stamp by default
 *
@@ -189,9 +192,10 @@ enum EDiagPostFlag {
     eDPF_ErrCode      = 0x20, // set by default (always)
     eDPF_ErrSubCode   = 0x40, // set by default (always)
     eDPF_DateTime     = 0x80,
+    eDPF_OmitInfoSev  = 0x4000,// no severity indication if eDiag_Info is sev.
 
     // set all flags
-    eDPF_All          = 0x7FFF,
+    eDPF_All          = 0x3FFF,
     // set all flags for using with __FILE__ and __LINE__
     eDPF_Trace        = 0x1F,
     // print the posted message only;  without severity, location, prefix, etc.
