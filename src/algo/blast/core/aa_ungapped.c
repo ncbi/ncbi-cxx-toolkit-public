@@ -152,11 +152,14 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
                   where the last hit was */
                diag_array[diag_coord].diag_level = diff + 1;
             } else if (diff < window + level) {
-               /* Extend this pair of hits */
+               /* Extend this pair of hits. The extension to the left must 
+                  reach the end of the first word in order for extension 
+                  to the right to proceed. */
                hsp_len = 0;
-               score = BlastAaExtendTwoHit(matrix, subject, query,
-                          last_hit, subject_offsets[i], query_offsets[i],
-                          dropoff, &hsp_q, &hsp_s, &hsp_len);
+               score = 
+                  BlastAaExtendTwoHit(matrix, subject, query,
+                     last_hit+lookup->wordsize, subject_offsets[i], 
+                     query_offsets[i], dropoff, &hsp_q, &hsp_s, &hsp_len);
                /* if the hsp meets the score threshold, report it */
                if (score > cutoff) {
                   BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
