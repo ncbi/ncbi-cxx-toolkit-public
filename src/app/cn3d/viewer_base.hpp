@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/06 20:20:44  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.1  2001/03/01 20:15:30  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -93,7 +96,7 @@ public:
 
     void GUIDestroyed(void) { *viewerWindow = NULL; }
 
-    BlockMultipleAlignment * GetCurrentAlignment(void) const
+    BlockMultipleAlignment * GetFirstCurrentAlignment(void) const
         { return ((alignmentStack.size() > 0) ? alignmentStack.back() : NULL); }
 
     SequenceDisplay * GetCurrentDisplay(void) const

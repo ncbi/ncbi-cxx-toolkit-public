@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/03/06 20:20:50  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.41  2001/03/02 15:32:52  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -230,7 +233,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
 
 const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
 {
-    return sequenceViewer->GetCurrentAlignment();
+    return sequenceViewer->GetFirstCurrentAlignment();
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
@@ -451,9 +454,6 @@ void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnable
     slavesVisible = itemsEnabled;
     NewMultipleWithRows(slavesVisible);
 
-    // do necessary redraws + show/hides: sequences + chains in the alignment
-    sequenceViewer->Refresh();
-
     AlignmentSet::AlignmentList::const_iterator
         a = alignmentSet->alignments.begin(), ae = alignmentSet->alignments.end();
     const StructureObject *object;
@@ -472,6 +472,10 @@ void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnable
             GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
         }
     }
+
+    // do necessary redraws + show/hides: sequences + chains in the alignment
+    sequenceViewer->Refresh();
+    GlobalMessenger()->UnPostRedrawSequenceViewer(sequenceViewer);  // Refresh() does this already
 }
 
 void AlignmentManager::NewMultipleWithRows(const std::vector < bool >& visibilities)

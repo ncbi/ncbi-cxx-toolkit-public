@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/06 20:20:43  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.1  2001/03/01 20:15:29  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -64,7 +67,7 @@ public:
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
     virtual void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
-    virtual DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const = 0;
+    virtual DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const = 0;
 
 protected:
     // can't instantiate base class
@@ -75,14 +78,14 @@ class DisplayRowFromAlignment : public DisplayRow
 {
 public:
     int row;
-    const BlockMultipleAlignment * const alignment;
+    BlockMultipleAlignment * const alignment;
 
-    DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) :
+    DisplayRowFromAlignment(int r, BlockMultipleAlignment *a) :
         row(r), alignment(a) { }
 
     int Width(void) const { return alignment->AlignmentWidth(); }
 
-    DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
+    DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromAlignment(row, newAlignment); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
@@ -115,7 +118,7 @@ public:
 
     int Width(void) const { return sequence->sequenceString.size(); }
 
-    DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
+    DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromSequence(sequence); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
@@ -137,17 +140,19 @@ public:
     std::string theString;
     const Vector stringColor, backgroundColor;
     const bool hasBackgroundColor;
+    BlockMultipleAlignment * const alignment;
 
     DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5),
-        const std::string& t = "", bool hasBG = false, Vector bgColor = (1,1,1)) :
+        const std::string& t = "", bool hasBG = false, Vector bgColor = (1,1,1),
+        BlockMultipleAlignment *a = NULL) :
         theString(s), stringColor(color), title(t),
-        hasBackgroundColor(hasBG), backgroundColor(bgColor) { }
+        hasBackgroundColor(hasBG), backgroundColor(bgColor), alignment(a) { }
 
     int Width(void) const { return theString.size(); }
 
-    DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
+    DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromString(
-            theString, stringColor, title, hasBackgroundColor, backgroundColor); }
+            theString, stringColor, title, hasBackgroundColor, backgroundColor, newAlignment); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
@@ -184,10 +189,10 @@ public:
     void AddRowFromString(const std::string& anyString);
 
     // adds a string row to the alignment, that contains block boundary indicators
-    DisplayRowFromString * FindBlockBoundaryRow(void);
-    void UpdateBlockBoundaryRow(void);
-    void AddBlockBoundaryRow(void);
-    void RemoveBlockBoundaryRow(void);
+    DisplayRowFromString * FindBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const;
+    void UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const;
+    void AddBlockBoundaryRows(void);
+    void RemoveBlockBoundaryRows(void);
 
     // create a new copy of this object
     SequenceDisplay * Clone(BlockMultipleAlignment *newAlignment) const;
@@ -197,8 +202,7 @@ private:
 
     // generic row manipulation functions
     void AddRow(DisplayRow *row);
-    void PrependRow(DisplayRow *row);
-    void RemoveRow(DisplayRow *row);
+    BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(int row) const;
 
     ViewerWindowBase* const *viewerWindow;
 
@@ -208,13 +212,13 @@ private:
 
     int maxRowWidth;
     void UpdateMaxRowWidth(void);
-    void UpdateAfterEdit(void);
+    void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
     bool controlDown;
 
 public:
 
-    bool IsEditable(void) { return isEditable; }
+    bool IsEditable(void) const { return isEditable; }
 
     // redraw all molecules associated with the SequenceDisplay
     void RedrawAlignedMolecules(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/06 20:20:43  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.5  2001/02/13 01:03:03  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -230,6 +233,9 @@ public:
     virtual int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
 
+    // delete a row
+    virtual void DeleteRow(int row) = 0;
+
     // makes a new copy of itself
     virtual Block * Clone(const BlockMultipleAlignment *newMultiple) const = 0;
 
@@ -255,14 +261,6 @@ public:
 
     int NSequences(void) const { return ranges.size(); }
 
-    // delete a row
-    void DeleteRow(int row)
-    {
-        RangeList::iterator r = ranges.begin();
-        for (int i=0; i<row; i++) r++;
-        ranges.erase(r);
-    }
-
     virtual ~Block(void) { }    // virtual destructor for base class
 };
 
@@ -282,6 +280,8 @@ public:
 
     char GetCharacterAt(int blockColumn, int row) const;
 
+    void DeleteRow(int row);
+
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };
 
@@ -298,6 +298,8 @@ public:
 
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
+
+    void DeleteRow(int row);
 
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };

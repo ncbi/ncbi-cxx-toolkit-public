@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/06 20:20:51  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.3  2001/03/02 15:32:52  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -92,7 +95,7 @@ void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
             event.Veto();       // cancelled
             return;
         }
-        viewer->GetCurrentDisplay()->RemoveBlockBoundaryRow();
+        viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
         viewer->GUIDestroyed(); // make sure SequenceViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }

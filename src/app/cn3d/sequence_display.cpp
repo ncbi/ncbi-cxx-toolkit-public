@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/06 20:20:50  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.2  2001/03/02 15:32:52  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -194,23 +197,13 @@ void SequenceDisplay::AddRow(DisplayRow *row)
     if (row->Width() > maxRowWidth) maxRowWidth = row->Width();
 }
 
-void SequenceDisplay::PrependRow(DisplayRow *row)
+BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(int row) const
 {
-    rows.insert(rows.begin(), row);
-    if (row->Width() > maxRowWidth) maxRowWidth = row->Width();
-}
-
-void SequenceDisplay::RemoveRow(DisplayRow *row)
-{
-    RowVector::iterator r, re = rows.end();
-    for (r=rows.begin(); r!=re; r++) {
-        if (*r == row) {
-            rows.erase(r);
-            delete row;
-            break;
-        }
-    }
-    UpdateMaxRowWidth();
+    const DisplayRowFromAlignment *displayRow = dynamic_cast<const DisplayRowFromAlignment*>(rows[row]);
+    if (displayRow) return displayRow->alignment;
+    const DisplayRowFromString *stringRow = dynamic_cast<const DisplayRowFromString*>(rows[row]);
+    if (stringRow) return stringRow->alignment;
+    return NULL;
 }
 
 void SequenceDisplay::UpdateMaxRowWidth(void)
@@ -329,9 +322,9 @@ void SequenceDisplay::MouseOver(int column, int row) const
     }
 }
 
-void SequenceDisplay::UpdateAfterEdit(void)
+void SequenceDisplay::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment)
 {
-    UpdateBlockBoundaryRow();
+    UpdateBlockBoundaryRow(forAlignment);
     UpdateMaxRowWidth(); // in case alignment width has changed
     (*viewerWindow)->viewer->PushAlignment();
     if ((*viewerWindow)->AlwaysSyncStructures())
@@ -346,20 +339,21 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     if (!controlDown && column == -1)
         GlobalMessenger()->RemoveAllHighlights(true);
 
-    if ((*viewerWindow)->viewer->GetCurrentAlignment() && column >= 0) {
+    BlockMultipleAlignment *alignment = GetAlignmentForRow(row);
+    if (alignment && column >= 0) {
 
         if ((*viewerWindow)->DoSplitBlock()) {
-            if ((*viewerWindow)->viewer->GetCurrentAlignment()->SplitBlock(column)) {
+            if (alignment->SplitBlock(column)) {
                 (*viewerWindow)->SplitBlockOff();
-                UpdateAfterEdit();
+                UpdateAfterEdit(alignment);
             }
             return false;
         }
 
         if ((*viewerWindow)->DoDeleteBlock()) {
-            if ((*viewerWindow)->viewer->GetCurrentAlignment()->DeleteBlock(column)) {
+            if (alignment->DeleteBlock(column)) {
                 (*viewerWindow)->DeleteBlockOff();
-                UpdateAfterEdit();
+                UpdateAfterEdit(alignment);
             }
             return false;
         }
@@ -367,12 +361,12 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         if ((*viewerWindow)->DoDeleteRow()) {
             if (row > 0) {
                 DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
-                if (selectedRow == NULL || selectedRow->row == 0 || selectedRow->alignment->NRows() <= 2 ||
-                    selectedRow->alignment != (*viewerWindow)->viewer->GetCurrentAlignment()) {
+                if (!selectedRow || selectedRow->row == 0 ||
+                    !selectedRow->alignment || selectedRow->alignment->NRows() <= 2) {
                     ERR_POST(Warning << "Can't delete that row...");
                 } else {
                     // delete row based on alignment row # (not display row #)
-                    if ((*viewerWindow)->viewer->GetCurrentAlignment()->DeleteRow(selectedRow->row)) {
+                    if (selectedRow->alignment->DeleteRow(selectedRow->row)) {
 
                         // delete this row from the display, and update higher row #'s
                         RowVector::iterator r, re = rows.end(), toDelete;
@@ -389,7 +383,8 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                         rows.erase(toDelete);
 
                         (*viewerWindow)->DeleteRowOff();
-                        UpdateAfterEdit();
+                        UpdateMaxRowWidth();
+                        UpdateAfterEdit(selectedRow->alignment);
                     }
                 }
             }
@@ -409,18 +404,19 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
 	BlockMultipleAlignment::eUnalignedJustification justification =
 		(*viewerWindow)->GetCurrentJustification();
 
-	if ((*viewerWindow)->viewer->GetCurrentAlignment()) {
+    BlockMultipleAlignment *alignment = GetAlignmentForRow(rowTop);
+    if (alignment && alignment == GetAlignmentForRow(rowBottom)) {
         if ((*viewerWindow)->DoMergeBlocks()) {
-            if ((*viewerWindow)->viewer->GetCurrentAlignment()->MergeBlocks(columnLeft, columnRight)) {
+            if (alignment->MergeBlocks(columnLeft, columnRight)) {
                 (*viewerWindow)->MergeBlocksOff();
-                UpdateAfterEdit();
+                UpdateAfterEdit(alignment);
             }
             return;
         }
         if ((*viewerWindow)->DoCreateBlock()) {
-            if ((*viewerWindow)->viewer->GetCurrentAlignment()->CreateBlock(columnLeft, columnRight, justification)) {
+            if (alignment->CreateBlock(columnLeft, columnRight, justification)) {
                 (*viewerWindow)->CreateBlockOff();
-                UpdateAfterEdit();
+                UpdateAfterEdit(alignment);
             }
             return;
         }
@@ -442,7 +438,8 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
     if (rowFrom != rowTo && columnFrom != columnTo) return;     // ignore diagonal drag
 
     if (columnFrom != columnTo) {
-        if ((*viewerWindow)->viewer->GetCurrentAlignment()) {
+        BlockMultipleAlignment *alignment = GetAlignmentForRow(rowFrom);
+        if (alignment) {
             // process horizontal drag on special block boundary row
             DisplayRowFromString *strRow = dynamic_cast<DisplayRowFromString*>(rows[rowFrom]);
             if (strRow) {
@@ -451,8 +448,8 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
                 if (GetRowTitle(rowFrom, &title, &ignored) && title == blockBoundaryStringTitle.c_str()) {
                     char ch = strRow->theString[columnFrom];
                     if (ch == blockRightEdgeChar || ch == blockLeftEdgeChar || ch == blockOneColumnChar) {
-                        if ((*viewerWindow)->viewer->GetCurrentAlignment()->MoveBlockBoundary(columnFrom, columnTo))
-                            UpdateAfterEdit();
+                        if (alignment->MoveBlockBoundary(columnFrom, columnTo))
+                            UpdateAfterEdit(alignment);
                     }
                 }
                 return;
@@ -461,10 +458,9 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
             // process drag on regular row - block row shift
             DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
             if (alnRow) {
-                if ((*viewerWindow)->viewer->GetCurrentAlignment()->
-                        ShiftRow(alnRow->row, columnFrom, columnTo,
-                            (*viewerWindow)->GetCurrentJustification()))
-                    UpdateAfterEdit();
+                if (alignment->ShiftRow(alnRow->row, columnFrom, columnTo,
+                        (*viewerWindow)->GetCurrentJustification()))
+                    UpdateAfterEdit(alignment);
                 return;
             }
         }
@@ -509,12 +505,13 @@ void SequenceDisplay::RedrawAlignedMolecules(void) const
     }
 }
 
-DisplayRowFromString * SequenceDisplay::FindBlockBoundaryRow(void)
+DisplayRowFromString * SequenceDisplay::FindBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const
 {
     DisplayRowFromString *blockBoundaryRow = NULL;
     for (int row=0; row<rows.size(); row++) {
         if ((blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(rows[row])) != NULL) {
-            if (blockBoundaryRow->title == blockBoundaryStringTitle)
+            if (blockBoundaryRow->alignment == forAlignment &&
+                blockBoundaryRow->title == blockBoundaryStringTitle)
                 break;
             else
                 blockBoundaryRow = NULL;
@@ -523,29 +520,43 @@ DisplayRowFromString * SequenceDisplay::FindBlockBoundaryRow(void)
     return blockBoundaryRow;
 }
 
-void SequenceDisplay::AddBlockBoundaryRow(void)
+void SequenceDisplay::AddBlockBoundaryRows(void)
 {
-    if (!IsEditable() || FindBlockBoundaryRow() != NULL) return;
+    if (!IsEditable()) return;
 
-    DisplayRowFromString *blockBoundaryRow =
-        new DisplayRowFromString("", Vector(0,0,0), blockBoundaryStringTitle, true, Vector(0.8,0.8,1));
-    PrependRow(blockBoundaryRow);
-    UpdateBlockBoundaryRow();
+    // find alignment master rows
+    RowVector::iterator r, ri, re = rows.end();
+    for (r=rows.begin(); r!=re; r++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(*r);
+        if (!alnRow || alnRow->row != 0 || !alnRow->alignment) continue;
+
+        // insert block row there - and increment r a second time, since this is a vector
+        DisplayRowFromString *blockBoundaryRow =
+            new DisplayRowFromString("", Vector(0,0,0), blockBoundaryStringTitle,
+                true, Vector(0.8,0.8,1), alnRow->alignment);
+        ri = r;
+        rows.insert(ri, blockBoundaryRow);
+        r++;
+        if (blockBoundaryRow->Width() > maxRowWidth) maxRowWidth = blockBoundaryRow->Width();
+        UpdateBlockBoundaryRow(blockBoundaryRow->alignment);
+    }
+
     (*viewerWindow)->UpdateDisplay(this);
 }
 
-void SequenceDisplay::UpdateBlockBoundaryRow(void)
+void SequenceDisplay::UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const
 {
     DisplayRowFromString *blockBoundaryRow;
-    if (!IsEditable() || (blockBoundaryRow = FindBlockBoundaryRow()) == NULL) return;
+    if (!IsEditable() || (blockBoundaryRow = FindBlockBoundaryRow(forAlignment)) == NULL ||
+        !blockBoundaryRow->alignment) return;
 
-    int alignmentWidth = (*viewerWindow)->viewer->GetCurrentAlignment()->AlignmentWidth();
+    int alignmentWidth = blockBoundaryRow->alignment->AlignmentWidth();
     blockBoundaryRow->theString.resize(alignmentWidth);
 
     // fill out block boundary marker string
     int blockColumn, blockWidth;
     for (int i=0; i<alignmentWidth; i++) {
-        (*viewerWindow)->viewer->GetCurrentAlignment()->GetAlignedBlockPosition(i, &blockColumn, &blockWidth);
+        blockBoundaryRow->alignment->GetAlignedBlockPosition(i, &blockColumn, &blockWidth);
         if (blockColumn >= 0 && blockWidth > 0) {
             if (blockWidth == 1)
                 blockBoundaryRow->theString[i] = blockOneColumnChar;
@@ -561,13 +572,21 @@ void SequenceDisplay::UpdateBlockBoundaryRow(void)
     GlobalMessenger()->PostRedrawSequenceViewer((*viewerWindow)->viewer);
 }
 
-void SequenceDisplay::RemoveBlockBoundaryRow(void)
+void SequenceDisplay::RemoveBlockBoundaryRows(void)
 {
-    DisplayRowFromString *blockBoundaryRow = FindBlockBoundaryRow();
-    if (blockBoundaryRow) {
-        RemoveRow(blockBoundaryRow);
-        (*viewerWindow)->UpdateDisplay(this);
+    RowVector::iterator r = rows.begin(), rr, re = rows.end();
+    while (r != re) {
+        DisplayRowFromString *blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(*r);
+
+        rr = r;
+        r++;
+        if (blockBoundaryRow && blockBoundaryRow->title == blockBoundaryStringTitle) {
+            delete blockBoundaryRow;
+            rows.erase(rr);
+        }
     }
+    UpdateMaxRowWidth();
+    (*viewerWindow)->UpdateDisplay(this);
 }
 
 END_SCOPE(Cn3D)

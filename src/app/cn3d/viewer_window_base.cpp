@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/06 20:20:51  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.2  2001/03/02 03:26:59  thiessen
 * fix dangling pointer upon app close
 *
@@ -38,6 +41,8 @@
 *
 * ===========================================================================
 */
+
+#include <corelib/ncbistd.hpp>
 
 #include "cn3d/viewer_window_base.hpp"
 #include "cn3d/viewer_base.hpp"
@@ -178,7 +183,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                 }
                 TESTMSG("turning on editor");
                 viewer->PushAlignment();    // keep copy of original at bottom of the stack
-                viewer->GetCurrentDisplay()->AddBlockBoundaryRow();
+                viewer->GetCurrentDisplay()->AddBlockBoundaryRows();
                 Command(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
                 if (!RequestEditorEnable(false)) {   // cancelled
@@ -186,7 +191,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                     break;
                 }
                 TESTMSG("turning off editor");
-                viewer->GetCurrentDisplay()->RemoveBlockBoundaryRow();
+                viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
                 if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
                     Command(MID_SELECT_RECT);
             }

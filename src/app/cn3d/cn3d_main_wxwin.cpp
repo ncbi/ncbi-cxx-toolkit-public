@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/03/06 20:20:50  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.27  2001/03/02 15:32:52  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -644,7 +647,9 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, *cdd, isBinary, err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            wxString cddDir = userDir.c_str() + wxFILE_SEP_PATH;
+            wxString cddDir(userDir.c_str());
+            cddDir += wxFILE_SEP_PATH;
+            TESTMSG("cddDir: '" << cddDir.c_str() << "'");
             glCanvas->structureSet = new StructureSet(cdd, cddDir.c_str());
         } else {
             ERR_POST(Warning << "error: " << err);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/06 20:20:50  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
 * Revision 1.6  2001/03/01 20:15:50  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -213,16 +216,16 @@ bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
 {
     int i = 0, j;
     BlockList::iterator b, be = blocks.end();
-    conservationColorer->Clear();
 
-    // resize block map
+    // reset old stuff, recalculate width
     totalWidth = 0;
     for (b=blocks.begin(); b!=be; b++) totalWidth += (*b)->width;
     TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
 
     // fill out the block map
-    UngappedAlignedBlock *uaBlock;
+    conservationColorer->Clear();
     blockMap.resize(totalWidth);
+    UngappedAlignedBlock *uaBlock;
     for (b=blocks.begin(); b!=be; b++) {
         for (j=0; j<(*b)->width; j++, i++) {
             blockMap[i].block = *b;
@@ -962,10 +965,21 @@ bool BlockMultipleAlignment::DeleteRow(int row)
     for (int i=0; i<row; i++) s++;
     (const_cast<SequenceList*>(sequences))->erase(s);
 
-    // delete row from all blocks
-    BlockList::iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++)
+    // delete row from all blocks, removing any zero-width blocks
+    BlockList::iterator b = blocks.begin(), br, be = blocks.end();
+    while (b != be) {
         (*b)->DeleteRow(row);
+        if ((*b)->width == 0) {
+            br = b;
+            b++;
+            TESTMSG("deleting block resized to zero width");
+            RemoveBlock(*br);
+        } else
+            b++;
+    }
+
+    // update total alignment width
+    UpdateBlockMapAndConservationColors();
 
     return true;
 }
@@ -1000,6 +1014,13 @@ Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) c
     }
     copy->width = width;
     return copy;
+}
+
+void UngappedAlignedBlock::DeleteRow(int row)
+{
+    RangeList::iterator r = ranges.begin();
+    for (int i=0; i<row; i++) r++;
+    ranges.erase(r);
 }
 
 
@@ -1043,6 +1064,20 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
     return seqIndex;
 }
 
+void UnalignedBlock::DeleteRow(int row)
+{
+    RangeList::iterator r = ranges.begin();
+    for (int i=0; i<row; i++) r++;
+    ranges.erase(r);
+
+    // reset block width
+    width = 0;
+    for (int i=0; i<NSequences(); i++) {
+        int blockWidth = ranges[i].to - ranges[i].from + 1;
+        if (blockWidth > width) width = blockWidth;
+    }
+}
+
 Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
 {
     UnalignedBlock *copy = new UnalignedBlock(newMultiple);
@@ -1054,7 +1089,6 @@ Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
     copy->width = width;
     return copy;
 }
-
 
 END_SCOPE(Cn3D)
 
