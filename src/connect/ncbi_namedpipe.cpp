@@ -41,6 +41,7 @@
 #  include <errno.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>
+#  include <sys/time.h>
 #  include <sys/un.h>
 #  include <connect/ncbi_socket.h>
 #else
@@ -1115,6 +1116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/19 14:34:43  ivanov
+ * + #include <sys/time.h> for UNIX
+ *
  * Revision 1.3  2003/08/18 22:53:59  vakatov
  * Fix for the platforms which are missing type 'socklen_t'
  *
