@@ -141,6 +141,10 @@ gethostbyname(char *name)
 {
 	Boolean done;
 	int i;
+	OSErr rsult;
+#ifdef __MACTCP__
+	ResultUPP proc;
+#endif
 	
 #if	NETDB_DEBUG >= 3
 	dprintf("gethostbyname: '%s'\n",name);
@@ -151,7 +155,14 @@ gethostbyname(char *name)
 	for (i=0; i<NUM_ALT_ADDRS; i++)
 		macHost.addr[i] = 0;
 	done = false;
-	if (StrToAddr(name,&macHost,(ResultProcPtr) DNRDone,(char *) &done) == cacheFault)
+#ifdef __MACTCP__
+  proc = NewResultProc (DNRDone);
+  rsult = StrToAddr(name,&macHost,proc,(char *) &done);
+  DisposeRoutineDescriptor (proc);
+#else
+  rsult = StrToAddr(name,&macHost,(ResultProcPtr) DNRDone,(char *) &done);
+#endif
+	if (rsult == cacheFault)
 	{
 #if NETDB_DEBUG >= 5
 		dprintf("gethostbyname: spinning\n");
@@ -213,6 +224,10 @@ gethostbyaddr(ip_addr *addrP,int len,int type)
 #pragma unused(type)
 	Boolean done;
 	int i;
+	OSErr rsult;
+#ifdef __MACTCP__
+	ResultUPP proc;
+#endif
 	
 #if	NETDB_DEBUG >= 3
 	dprintf("gethostbyaddr: %08x\n",*addrP);
@@ -223,7 +238,14 @@ gethostbyaddr(ip_addr *addrP,int len,int type)
 	for (i=0; i<NUM_ALT_ADDRS; i++)
 		macHost.addr[i] = 0;
 	done = false;
-	if (AddrToName(*addrP,&macHost,(ResultProcPtr) DNRDone,(char *) &done) == cacheFault)
+#ifdef __MACTCP__
+  proc = NewResultProc (DNRDone);
+  rsult = AddrToName(*addrP,&macHost,proc,(char *) &done);
+  DisposeRoutineDescriptor (proc);
+#else
+  rsult = AddrToName(*addrP,&macHost,(ResultProcPtr) DNRDone,(char *) &done);
+#endif
+	if (rsult == cacheFault)
 	{
 #if NETDB_DEBUG >= 5
 		dprintf("gethostbyaddr: spinning\n");

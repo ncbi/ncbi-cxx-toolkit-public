@@ -100,7 +100,10 @@ int sock_tcp_connect(
 	OSErr io;
 	TCPiopb	*pb;
 	void sock_tcp_connect_done();
-	
+#ifdef __MACTCP__
+	TCPIOCompletionUPP proc;
+#endif
+
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_connect",sp);
 #endif
@@ -116,8 +119,15 @@ int sock_tcp_connect(
 	if (!(pb=sock_fetch_pb(sp)))
 		return sock_err(ENOMEM);
 	
+#ifdef __MACTCP__
+	proc = NewTCPIOCompletionProc (sock_tcp_connect_done);
+	io = xTCPActiveOpen(pb, sp->sa.sin_port,addr->sin_addr.s_addr, addr->sin_port, 
+			proc);
+	DisposeRoutineDescriptor (proc);
+#else
 	io = xTCPActiveOpen(pb, sp->sa.sin_port,addr->sin_addr.s_addr, addr->sin_port, 
 			sock_tcp_connect_done);
+#endif
 			
 	if (io != noErr)
 	{
@@ -155,6 +165,9 @@ int sock_tcp_listen(
 	OSErr		io;
 	TCPiopb		*pb;
 	void sock_tcp_listen_done(TCPiopb *pb);
+#ifdef __MACTCP__
+	TCPIOCompletionUPP proc;
+#endif
 
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_listen",sp);
@@ -168,7 +181,13 @@ int sock_tcp_listen(
 	
 	sp->sstate = SOCK_STATE_LISTENING;
 	
+#ifdef __MACTCP__
+	proc = NewTCPIOCompletionProc (sock_tcp_listen_done);
+	io = xTCPPassiveOpen(pb, sp->sa.sin_port, proc);
+	DisposeRoutineDescriptor (proc);
+#else
 	io = xTCPPassiveOpen(pb, sp->sa.sin_port, sock_tcp_listen_done);
+#endif
 	if (io != noErr) 
 	{
 		sp->sstate = SOCK_STATE_UNCONNECTED;
@@ -601,6 +620,9 @@ int sock_tcp_send(
 	TCPiopb	*pb;
 	miniwds	wdsarray[TCP_MAX_WDS];
 	void	sock_tcp_send_done();
+#ifdef __MACTCP__
+	TCPIOCompletionUPP proc;
+#endif
 
 #if SOCK_TCP_DEBUG >= 2
 	sock_print("sock_tcp_send",sp);
@@ -691,9 +713,17 @@ int sock_tcp_send(
 		thiswds->length = (short)towrite;
 		thiswds->ptr=buffer;
 				
+#ifdef __MACTCP__
+		proc = NewTCPIOCompletionProc (sock_tcp_send_done);
+		xTCPSend(pb,(wdsEntry *)thiswds,(count <= TCP_MAX_MSG), /* push */
+				flags & MSG_OOB,	/*urgent*/
+				proc);
+		DisposeRoutineDescriptor (proc);
+#else
 		xTCPSend(pb,(wdsEntry *)thiswds,(count <= TCP_MAX_MSG), /* push */
 				flags & MSG_OOB,	/*urgent*/
 				sock_tcp_send_done);
+#endif
 				
 		SPIN(false,SP_TCP_WRITE,count);
 		count -= towrite;
