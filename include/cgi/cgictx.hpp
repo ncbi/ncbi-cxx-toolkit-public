@@ -31,97 +31,6 @@
 *
 * File Description:
 *   Basic CGI Application class
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2001/10/04 18:17:51  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* Revision 1.17  2001/06/13 21:04:35  vakatov
-* Formal improvements and general beautifications of the CGI lib sources.
-*
-* Revision 1.16  2001/05/17 14:49:01  lavr
-* Typos corrected
-*
-* Revision 1.15  2000/12/23 23:53:19  vakatov
-* TLMsg container to use AutoPtr instead of regular pointer
-*
-* Revision 1.14  2000/01/20 17:54:13  vakatov
-* CCgiContext:: constructor to get "CNcbiArguments*" instead of raw argc/argv.
-* All virtual member function implementations moved away from the header.
-*
-* Revision 1.13  1999/12/23 17:16:11  golikov
-* CtxMsgs made not HTML lib depended
-*
-* Revision 1.12  1999/11/15 15:53:20  sandomir
-* Registry support moved from CCgiApplication to CNcbiApplication
-*
-* Revision 1.11  1999/10/28 16:53:53  vasilche
-* Fixed bug with error message node.
-*
-* Revision 1.10  1999/10/28 13:37:49  vasilche
-* Fixed small memory leak.
-*
-* Revision 1.9  1999/10/01 14:22:04  golikov
-* Now messages in context are html nodes
-*
-* Revision 1.8  1999/07/15 19:04:37  sandomir
-* GetSelfURL(() added in Context
-*
-* Revision 1.7  1999/06/29 20:04:37  pubmed
-* many changes due to query interface changes
-*
-* Revision 1.6  1999/05/14 19:21:49  pubmed
-* myncbi - initial version; minor changes in CgiContext, history, query
-*
-* Revision 1.4  1999/05/06 20:32:48  pubmed
-* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
-*
-* Revision 1.3  1999/05/04 16:14:03  vasilche
-* Fixed problems with program environment.
-* Added class CNcbiEnvironment for cached access to C environment.
-*
-* Revision 1.2  1999/04/28 16:54:18  vasilche
-* Implemented stream input processing for FastCGI applications.
-*
-* Revision 1.1  1999/04/27 14:49:48  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.11  1999/02/22 21:12:37  sandomir
-* MsgRequest -> NcbiContext
-*
-* Revision 1.10  1998/12/28 23:28:59  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.9  1998/12/28 15:43:09  sandomir
-* minor fixed in CgiApp and Resource
-*
-* Revision 1.8  1998/12/10 17:36:54  sandomir
-* ncbires.cpp added
-*
-* Revision 1.7  1998/12/09 22:59:05  lewisg
-* use new cgiapp class
-*
-* Revision 1.6  1998/12/09 17:27:44  sandomir
-* tool should be changed to work with the new CCgiApplication
-*
-* Revision 1.5  1998/12/09 16:49:55  sandomir
-* CCgiApplication added
-*
-* Revision 1.1  1998/12/03 21:24:21  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.3  1998/12/01 19:12:36  lewisg
-* added CCgiApplication
-*
-* Revision 1.2  1998/11/05 21:45:13  sandomir
-* std:: deleted
-*
-* Revision 1.1  1998/11/02 22:10:12  sandomir
-* CNcbiApplication added; netest sample updated
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -250,10 +159,11 @@ public:
     // return empty string if no such entry
     // throw runtime_error if there are several entries with the same name
     string GetRequestValue(const string& name) const;
+    CCgiEntry GetRequestValueEx(const string& name) const;
 
-    void AddRequestValue(const string& name, const string& value);
+    void AddRequestValue(const string& name, const CCgiEntry& value);
     void RemoveRequestValues(const string& name);
-    void ReplaceRequestValue(const string& name, const string& value);
+    void ReplaceRequestValue(const string& name, const CCgiEntry& value);
 
     // program name access
     const string& GetSelfURL(void) const;
@@ -387,6 +297,13 @@ void CCgiContext::ClearMsg(void)
 
 
 inline
+string CCgiContext::GetRequestValue(const string& name) const
+{
+    return GetRequestValueEx(name).GetValue();
+}
+
+
+inline
 CCgiContext::TStreamStatus CCgiContext::GetStreamStatus(void) const
 {
     STimeout timeout = {0, 0};
@@ -395,5 +312,101 @@ CCgiContext::TStreamStatus CCgiContext::GetStreamStatus(void) const
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.19  2002/07/03 20:24:30  ucko
+* Extend to support learning uploaded files' names; move CVS logs to end.
+*
+* Revision 1.18  2001/10/04 18:17:51  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
+* Revision 1.17  2001/06/13 21:04:35  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
+* Revision 1.16  2001/05/17 14:49:01  lavr
+* Typos corrected
+*
+* Revision 1.15  2000/12/23 23:53:19  vakatov
+* TLMsg container to use AutoPtr instead of regular pointer
+*
+* Revision 1.14  2000/01/20 17:54:13  vakatov
+* CCgiContext:: constructor to get "CNcbiArguments*" instead of raw argc/argv.
+* All virtual member function implementations moved away from the header.
+*
+* Revision 1.13  1999/12/23 17:16:11  golikov
+* CtxMsgs made not HTML lib depended
+*
+* Revision 1.12  1999/11/15 15:53:20  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
+* Revision 1.11  1999/10/28 16:53:53  vasilche
+* Fixed bug with error message node.
+*
+* Revision 1.10  1999/10/28 13:37:49  vasilche
+* Fixed small memory leak.
+*
+* Revision 1.9  1999/10/01 14:22:04  golikov
+* Now messages in context are html nodes
+*
+* Revision 1.8  1999/07/15 19:04:37  sandomir
+* GetSelfURL(() added in Context
+*
+* Revision 1.7  1999/06/29 20:04:37  pubmed
+* many changes due to query interface changes
+*
+* Revision 1.6  1999/05/14 19:21:49  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
+*
+* Revision 1.4  1999/05/06 20:32:48  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
+* Revision 1.3  1999/05/04 16:14:03  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
+* Revision 1.2  1999/04/28 16:54:18  vasilche
+* Implemented stream input processing for FastCGI applications.
+*
+* Revision 1.1  1999/04/27 14:49:48  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
+* Revision 1.11  1999/02/22 21:12:37  sandomir
+* MsgRequest -> NcbiContext
+*
+* Revision 1.10  1998/12/28 23:28:59  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
+* Revision 1.9  1998/12/28 15:43:09  sandomir
+* minor fixed in CgiApp and Resource
+*
+* Revision 1.8  1998/12/10 17:36:54  sandomir
+* ncbires.cpp added
+*
+* Revision 1.7  1998/12/09 22:59:05  lewisg
+* use new cgiapp class
+*
+* Revision 1.6  1998/12/09 17:27:44  sandomir
+* tool should be changed to work with the new CCgiApplication
+*
+* Revision 1.5  1998/12/09 16:49:55  sandomir
+* CCgiApplication added
+*
+* Revision 1.1  1998/12/03 21:24:21  sandomir
+* NcbiApplication and CgiApplication updated
+*
+* Revision 1.3  1998/12/01 19:12:36  lewisg
+* added CCgiApplication
+*
+* Revision 1.2  1998/11/05 21:45:13  sandomir
+* std:: deleted
+*
+* Revision 1.1  1998/11/02 22:10:12  sandomir
+* CNcbiApplication added; netest sample updated
+* ===========================================================================
+*/
 
 #endif // NCBI_CGI_CTX__HPP

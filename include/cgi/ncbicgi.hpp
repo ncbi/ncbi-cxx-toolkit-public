@@ -33,159 +33,6 @@
 *      CCgiCookie    -- one CGI cookie
 *      CCgiCookies   -- set of CGI cookies
 *      CCgiRequest   -- full CGI request
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.52  2002/01/10 23:39:28  vakatov
-* Cosmetics
-*
-* Revision 1.51  2001/10/04 18:17:51  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* Revision 1.50  2001/06/19 20:08:29  vakatov
-* CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
-* requests' content body
-*
-* Revision 1.49  2001/06/13 21:04:35  vakatov
-* Formal improvements and general beautifications of the CGI lib sources.
-*
-* Revision 1.48  2001/05/17 14:49:25  lavr
-* Typos corrected
-*
-* Revision 1.47  2001/02/02 20:55:11  vakatov
-* CCgiRequest::GetEntry() -- "const"
-*
-* Revision 1.46  2001/01/30 23:17:30  vakatov
-* + CCgiRequest::GetEntry()
-*
-* Revision 1.45  2000/11/01 20:34:04  vasilche
-* Added HTTP_EOL string macro.
-*
-* Revision 1.44  2000/05/01 17:04:31  vasilche
-* MSVC doesn't allow content initialization in class body.
-*
-* Revision 1.43  2000/05/01 16:58:12  vasilche
-* Allow missing Content-Length and Content-Type headers.
-*
-* Revision 1.42  2000/02/01 22:19:53  vakatov
-* CCgiRequest::GetRandomProperty() -- allow to retrieve value of
-* properties whose names are not prefixed by "HTTP_" (optional).
-* Get rid of the aux.methods GetServerPort() and GetRemoteAddr() which
-* are obviously not widely used (but add to the volume of API).
-*
-* Revision 1.41  2000/01/20 17:52:05  vakatov
-* Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
-* and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
-* + constructor flag CCgiRequest::fOwnEnvironment to take ownership over
-* the passed "CNcbiEnvironment" object.
-*
-* Revision 1.40  1999/12/30 22:11:59  vakatov
-* Fixed and added comments.
-* CCgiCookie::GetExpDate() -- use a more standard time string format.
-*
-* Revision 1.39  1999/11/02 20:35:38  vakatov
-* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
-* cookie standard, smarter, and easier in use
-*
-* Revision 1.38  1999/09/03 21:26:44  vakatov
-* + #include <memory>
-*
-* Revision 1.37  1999/06/21 16:04:15  vakatov
-* CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
-* "TFlags" rather than the former "bool"
-*
-* Revision 1.36  1999/05/11 03:11:46  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
-*
-* Revision 1.35  1999/05/04 16:14:04  vasilche
-* Fixed problems with program environment.
-* Added class CNcbiEnvironment for cached access to C environment.
-*
-* Revision 1.34  1999/04/14 19:52:20  vakatov
-* + <time.h>
-*
-* Revision 1.33  1999/03/08 22:42:49  vakatov
-* Added "string CCgiCookie::GetValue(void)"
-*
-* Revision 1.32  1999/01/14 21:25:14  vasilche
-* Changed CPageList to work via form image input elements.
-*
-* Revision 1.31  1999/01/07 21:15:19  vakatov
-* Changed prototypes for URL_DecodeString() and URL_EncodeString()
-*
-* Revision 1.30  1999/01/07 20:06:03  vakatov
-* + URL_DecodeString()
-* + URL_EncodeString()
-*
-* Revision 1.29  1998/12/28 17:56:25  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.28  1998/12/14 20:25:35  sandomir
-* changed with Command handling
-*
-* Revision 1.27  1998/12/09 19:25:32  vakatov
-* Made CCgiRequest::GetRandomProperty() look "const"
-*
-* Revision 1.26  1998/12/04 23:38:34  vakatov
-* Workaround SunPro's "buggy const"(see "BW_01")
-* Renamed "CCgiCookies::Erase()" method to "...Clear()"
-*
-* Revision 1.25  1998/12/01 15:39:35  sandomir
-* xmlstore.hpp|cpp moved to another dir
-*
-* Revision 1.24  1998/12/01 00:27:16  vakatov
-* Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
-* Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
-*
-* Revision 1.23  1998/11/30 21:23:17  vakatov
-* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
-* + CCgiRequest::ParseIndexesAsEntries()
-* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
-*
-* Revision 1.22  1998/11/27 20:55:18  vakatov
-* CCgiRequest::  made the input stream arg. be optional(std.input by default)
-*
-* Revision 1.21  1998/11/27 19:44:31  vakatov
-* CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
-*
-* Revision 1.20  1998/11/26 00:29:50  vakatov
-* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
-*
-* Revision 1.19  1998/11/24 23:07:28  vakatov
-* Draft(almost untested) version of CCgiRequest API
-*
-* Revision 1.18  1998/11/24 21:31:30  vakatov
-* Updated with the ISINDEX-related code for CCgiRequest::
-* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
-*
-* Revision 1.17  1998/11/24 17:52:14  vakatov
-* Starting to implement CCgiRequest::
-* Fully implemented CCgiRequest::ParseEntries() static function
-*
-* Revision 1.16  1998/11/20 22:36:38  vakatov
-* Added destructor to CCgiCookies:: class
-* + Save the works on CCgiRequest:: class in a "compilable" state
-*
-* Revision 1.15  1998/11/19 23:41:09  vakatov
-* Tested version of "CCgiCookie::" and "CCgiCookies::"
-*
-* Revision 1.14  1998/11/19 20:02:49  vakatov
-* Logic typo:  actually, the cookie string does not contain "Cookie: "
-*
-* Revision 1.13  1998/11/19 19:50:00  vakatov
-* Implemented "CCgiCookies::"
-* Slightly changed "CCgiCookie::" API
-*
-* Revision 1.12  1998/11/18 21:47:50  vakatov
-* Draft version of CCgiCookie::
-*
-* Revision 1.11  1998/11/17 23:47:13  vakatov
-* + CCgiRequest::EMedia
-*
-* Revision 1.10  1998/11/17 02:02:08  vakatov
-* Compiles through with SunPro C++ 5.0
-* ==========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -430,12 +277,37 @@ enum ECgiProp {
 };  // ECgiProp
 
 
+class CCgiEntry
+{
+public:
+    CCgiEntry(const string& value, const string& filename = kEmptyStr)
+        : m_Value(value), m_Filename(filename) { }
+    CCgiEntry(const CCgiEntry& e)
+        : m_Value(e.m_Value), m_Filename(e.m_Filename) { }
+
+    const string& GetValue()    const { return m_Value; }
+    const string& GetFilename() const { return m_Filename; }
+    
+private:
+    string m_Value, m_Filename;
+};
+
+inline bool operator != (const CCgiEntry& e1, const CCgiEntry& e2)
+{
+    return (e1.GetValue() != e2.GetValue() 
+            ||  e1.GetFilename() != e2.GetFilename());
+}
+
+
 // Typedefs
-typedef map<string, string>          TCgiProperties;
-typedef multimap<string, string>     TCgiEntries;
-typedef TCgiEntries::iterator        TCgiEntriesI;
-typedef TCgiEntries::const_iterator  TCgiEntriesCI;
-typedef list<string>                 TCgiIndexes;
+typedef map<string, string>           TCgiProperties;
+typedef multimap<string, string>      TCgiEntries;
+typedef TCgiEntries::iterator         TCgiEntriesI;
+typedef TCgiEntries::const_iterator   TCgiEntriesCI;
+typedef multimap<string, CCgiEntry>   TCgiEntriesEx;
+typedef TCgiEntriesEx::iterator       TCgiEntriesExI;
+typedef TCgiEntriesEx::const_iterator TCgiEntriesExCI;
+typedef list<string>                  TCgiIndexes;
 
 
 // Forward class declarations
@@ -520,6 +392,12 @@ public:
     // To get all matches, use GetEntries() and "multimap::" member functions.
     const string& GetEntry(const string& name, bool* is_found = 0) const;
 
+    // Extended versions of the above, providing filenames as well as strings
+    const TCgiEntriesEx& GetEntriesEx(void) const;
+    TCgiEntriesEx& GetEntriesEx(void);
+    const CCgiEntry& GetEntryEx(const string& name, bool* is_found = 0) const;
+    
+
     // Get a set of indexes(decoded) received from the client.
     // It will always be empty if "indexes_as_entries" in the constructor
     // was "true"(default).
@@ -561,7 +439,8 @@ private:
     const CNcbiEnvironment*    m_Env;
     auto_ptr<CNcbiEnvironment> m_OwnEnv;
     // set of the request FORM-like entries(already retrieved; cached)
-    TCgiEntries m_Entries;
+    TCgiEntries   m_Entries;
+    TCgiEntriesEx m_EntriesEx;
     // set of the request ISINDEX-like indexes(already retrieved; cached)
     TCgiIndexes m_Indexes;
     // set of the request cookies(already retrieved; cached)
@@ -707,6 +586,12 @@ inline const TCgiEntries& CCgiRequest::GetEntries(void) const {
 inline TCgiEntries& CCgiRequest::GetEntries(void) {
     return m_Entries;
 }
+inline const TCgiEntriesEx& CCgiRequest::GetEntriesEx(void) const {
+    return m_EntriesEx;
+}
+inline TCgiEntriesEx& CCgiRequest::GetEntriesEx(void) {
+    return m_EntriesEx;
+}
 
 
 inline TCgiIndexes& CCgiRequest::GetIndexes(void) {
@@ -726,5 +611,163 @@ inline int CCgiRequest::GetInputFD(void) const {
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.53  2002/07/03 20:24:30  ucko
+* Extend to support learning uploaded files' names; move CVS logs to end.
+*
+* Revision 1.52  2002/01/10 23:39:28  vakatov
+* Cosmetics
+*
+* Revision 1.51  2001/10/04 18:17:51  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
+* Revision 1.50  2001/06/19 20:08:29  vakatov
+* CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
+* requests' content body
+*
+* Revision 1.49  2001/06/13 21:04:35  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
+* Revision 1.48  2001/05/17 14:49:25  lavr
+* Typos corrected
+*
+* Revision 1.47  2001/02/02 20:55:11  vakatov
+* CCgiRequest::GetEntry() -- "const"
+*
+* Revision 1.46  2001/01/30 23:17:30  vakatov
+* + CCgiRequest::GetEntry()
+*
+* Revision 1.45  2000/11/01 20:34:04  vasilche
+* Added HTTP_EOL string macro.
+*
+* Revision 1.44  2000/05/01 17:04:31  vasilche
+* MSVC doesn't allow content initialization in class body.
+*
+* Revision 1.43  2000/05/01 16:58:12  vasilche
+* Allow missing Content-Length and Content-Type headers.
+*
+* Revision 1.42  2000/02/01 22:19:53  vakatov
+* CCgiRequest::GetRandomProperty() -- allow to retrieve value of
+* properties whose names are not prefixed by "HTTP_" (optional).
+* Get rid of the aux.methods GetServerPort() and GetRemoteAddr() which
+* are obviously not widely used (but add to the volume of API).
+*
+* Revision 1.41  2000/01/20 17:52:05  vakatov
+* Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
+* and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
+* + constructor flag CCgiRequest::fOwnEnvironment to take ownership over
+* the passed "CNcbiEnvironment" object.
+*
+* Revision 1.40  1999/12/30 22:11:59  vakatov
+* Fixed and added comments.
+* CCgiCookie::GetExpDate() -- use a more standard time string format.
+*
+* Revision 1.39  1999/11/02 20:35:38  vakatov
+* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+* cookie standard, smarter, and easier in use
+*
+* Revision 1.38  1999/09/03 21:26:44  vakatov
+* + #include <memory>
+*
+* Revision 1.37  1999/06/21 16:04:15  vakatov
+* CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
+* "TFlags" rather than the former "bool"
+*
+* Revision 1.36  1999/05/11 03:11:46  vakatov
+* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+*
+* Revision 1.35  1999/05/04 16:14:04  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
+* Revision 1.34  1999/04/14 19:52:20  vakatov
+* + <time.h>
+*
+* Revision 1.33  1999/03/08 22:42:49  vakatov
+* Added "string CCgiCookie::GetValue(void)"
+*
+* Revision 1.32  1999/01/14 21:25:14  vasilche
+* Changed CPageList to work via form image input elements.
+*
+* Revision 1.31  1999/01/07 21:15:19  vakatov
+* Changed prototypes for URL_DecodeString() and URL_EncodeString()
+*
+* Revision 1.30  1999/01/07 20:06:03  vakatov
+* + URL_DecodeString()
+* + URL_EncodeString()
+*
+* Revision 1.29  1998/12/28 17:56:25  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
+* Revision 1.28  1998/12/14 20:25:35  sandomir
+* changed with Command handling
+*
+* Revision 1.27  1998/12/09 19:25:32  vakatov
+* Made CCgiRequest::GetRandomProperty() look "const"
+*
+* Revision 1.26  1998/12/04 23:38:34  vakatov
+* Workaround SunPro's "buggy const"(see "BW_01")
+* Renamed "CCgiCookies::Erase()" method to "...Clear()"
+*
+* Revision 1.25  1998/12/01 15:39:35  sandomir
+* xmlstore.hpp|cpp moved to another dir
+*
+* Revision 1.24  1998/12/01 00:27:16  vakatov
+* Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
+* Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
+*
+* Revision 1.23  1998/11/30 21:23:17  vakatov
+* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
+* + CCgiRequest::ParseIndexesAsEntries()
+* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
+*
+* Revision 1.22  1998/11/27 20:55:18  vakatov
+* CCgiRequest::  made the input stream arg. be optional(std.input by default)
+*
+* Revision 1.21  1998/11/27 19:44:31  vakatov
+* CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
+*
+* Revision 1.20  1998/11/26 00:29:50  vakatov
+* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
+*
+* Revision 1.19  1998/11/24 23:07:28  vakatov
+* Draft(almost untested) version of CCgiRequest API
+*
+* Revision 1.18  1998/11/24 21:31:30  vakatov
+* Updated with the ISINDEX-related code for CCgiRequest::
+* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
+*
+* Revision 1.17  1998/11/24 17:52:14  vakatov
+* Starting to implement CCgiRequest::
+* Fully implemented CCgiRequest::ParseEntries() static function
+*
+* Revision 1.16  1998/11/20 22:36:38  vakatov
+* Added destructor to CCgiCookies:: class
+* + Save the works on CCgiRequest:: class in a "compilable" state
+*
+* Revision 1.15  1998/11/19 23:41:09  vakatov
+* Tested version of "CCgiCookie::" and "CCgiCookies::"
+*
+* Revision 1.14  1998/11/19 20:02:49  vakatov
+* Logic typo:  actually, the cookie string does not contain "Cookie: "
+*
+* Revision 1.13  1998/11/19 19:50:00  vakatov
+* Implemented "CCgiCookies::"
+* Slightly changed "CCgiCookie::" API
+*
+* Revision 1.12  1998/11/18 21:47:50  vakatov
+* Draft version of CCgiCookie::
+*
+* Revision 1.11  1998/11/17 23:47:13  vakatov
+* + CCgiRequest::EMedia
+*
+* Revision 1.10  1998/11/17 02:02:08  vakatov
+* Compiles through with SunPro C++ 5.0
+* ==========================================================================
+*/
 
 #endif  /* NCBICGI__HPP */
