@@ -13,7 +13,8 @@
 	        <li>The <a href="#ctypeinfo"> <i>CTypeInfo</i></a> class
 	        <li>The <a href="#cobjinfo"> <i>CObjectInfo</i> and <i>CConstObjectInfo</i></a> classes
 	        <li>The <a href="#objstrs"> <i>CObject[IO]Stream</i></a> classes
-	        <li><a href="#macros"> Preprocessor macros for specifying type information </a>
+	        <li><a href="#macros"> The <i>BEGIN_*_INFO</i> pre-processor macros </a>
+	        <li><a href="#addm"> The <i>ADD_*_</i> pre-processor macros </a>
 	      </ul>
 
 <a name ="introduction"> <h3>Introduction</h3>
@@ -85,9 +86,10 @@ intended for usage with internal class definitions, as in:
 	};
 </pre>
 
-The C++ Toolkit also allows one to provide type information for legacy C style <i>struct</i> and <i>choice</i> 
-elements defined in the C Toolkit. The mechanisms used to implement this are not described here however, as
-it is not likely that newly-defined types will be in these categories. 
+The C++ Toolkit also allows one to provide type information for legacy C style <i>struct</i> and
+<i>choice</i> elements defined in the C Toolkit. The mechanisms used to implement this are mentioned
+but not described in detail here, as it is not likely that newly-defined types will be in
+these categories.
 
 <a name="ctypeinfo"> <h3> The
 
@@ -126,7 +128,8 @@ intended for internal usage only, and it is the <a href="#cobjinfo"> <i>CObjectI
 which provides the user interface to object type information.
 
 <a name="cobjinfo"> <h3> The 
-<a href="../docxx/CObjectInfo.html"> <i>CObjectInfo</i></a> class </h3>
+<a href="../docxx/CObjectInfo.html"> <i>CObjectInfo</i></a> and
+<a href="../docxx/CConstObjectInfo.html"> <i>CConstObjectInfo</i></a> classes </h3>
 
 Let us suppose that we would like to have a generic function which can populate an object 
 using data read from a flat file. For example, we might like to have:
@@ -171,14 +174,16 @@ The <i>CObjectInfo</i> object (<i>info</i>) will contain pointers to <i>myObj</i
 
          }
 
-	 (info.GetClassMember(MemberIdx))->SetPrimitiveValueString (myValue);
+	 info.GetClassMember(MemberIdx)->SetPrimitiveValueString (myValue);
      }
 </pre></font>
 
 The <i>GetClassMember()</i> method also returns a <i>CObjectInfo</i> object, in this case, for the data member. 
 Thus, we use <i>CObjectInfo</i>'s class 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CObjectInfo">
-interface</a> to set the value of this member.
+interface</a> to set the value of this member. The <i>CConstObjectInfo</i> class is actually the
+base class from which the <i>CObjectInfo</i> class is derived, and should be used for
+<i>const</i> objects.
 
 <a name="objstrs"> <h3> The 
 <a href="../docxx/CObjectIStream"> <i>CObjectIStream</i></a> and
@@ -230,7 +235,7 @@ template&lt;typename T> CObjectOStream& Write(CObjectOStream& out, T& object)
 The type information defines what tag names and value types should be encountered on the stream,
 while the <i>CObject[IO]Stream</i> subclasses specialize the data serialization format.<p>
 
-<a name="macros"><h3> Preprocessor Macros for implementing the <i>GetTypeInfo()</i> member function</h3>
+<a name="macros"><h3> The <i>BEGIN_*_INFO</i> pre-processor macros</h3>
 
 All of the automatically generated classes in the <i>include/objects</i> directory of the C++ tree have the
 static <i>GetTypeInfo()</i> member function defined. Accordingly, all of the resulting objects can 
@@ -251,11 +256,12 @@ applied to, and a list of the expected arguments. Each of the <i>BEGIN_NAMED_*_I
 listed in Table 1 has a corresponding <i>END_*_INFO</i> macro definition.<p>
 
 The first four macros in Table 1 apply to C++ objects; in conjunction with the <i>ADD_NAMED_*</i>
-macros listed in Table 2, these macros implement the <i>GetTypeInfo()</i> method.  The next two
-macros implement global, uniquely named functions which provide access to type information about 
-C-style structs defined in legacy libraries. The function name is derived by concatenating the internal
-symbolic name of the struct to the prefix <i>GetTypeInfo_struct_</i>. Similarly, the last two macros
-implement global type information functions for C++ enumerations; the resulting functions are named
+macros listed in Table 2, these macros implement the <i>GetTypeInfo()</i> method for the object.
+The next two macros implement global, uniquely named functions which provide access to type
+information about C-style structs defined in legacy libraries. The function name is derived by
+concatenating the internal symbolic name of the struct to the prefix
+<i>GetTypeInfo_struct_</i>. Similarly, the last two macros implement global type information
+functions for C++ enumerations; the resulting functions are named
 <i>GetTypeInfo_enum_[EnumName]</i>.<p>
 
 <font color=red>Note:</font> A C++ <i>struct</i> is actually a C++ <i>class</i> with default public 
@@ -418,27 +424,27 @@ href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CObjectGetTy
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_CHOICE_INFO">
 <i>BEGIN_CHOICE_INFO(ClassName)</i></a><br>
 
-install <i>GetTypeInfo()</i> for C++ <i>choice</i> objects, which are implemented as C++ classes;
-each of the choice types is identified as an internally enumerated type. The <i>Which()</i> and
-<i>Select()</i> methods provide the interface to the choice's <i>m_object</i>, which is a
-<i>CObject*</i> pointer to the the currently selected choice variant.<p>
-
-The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CHOICE_VARIANT">
+install <i>GetTypeInfo()</i> for C++ <i>choice</i> objects, which are implemented as C++ classes.
+See <a href="choice.html"> Choice objects in the C++ Toolkit</a> for a description of 
+C++ <i>choice</i> objects. Each choice variant occurs as a data member in the class, and
+the macros used to add choice variants 
+(<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CHOICE_VARIANT">
 <i>ADD_NAMED_*_CHOICE_VARIANT</i></a> and
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_CHOICE_VARIANT">
- <i>ADD_*_CHOICE_VARIANT</i></a>
+<i>ADD_*_CHOICE_VARIANT</i></a>)
+are used similarly to those which add data members to classes (see discussion of the 
+<a href ="#addm"> <i>ADD*</i></a> macros below). 
 
-macros are used to add choice variants to the choice object's type information.
  <p>
 
 <li><a name=achoice>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ASN_CHOICE_INFO">
 <i>BEGIN_NAMED_ASN_CHOICE_INFO(ChoiceAlias, ChoiceName)</i></a><br>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_ASN_CHOICE_INFO">
-<i>BEGIN_NAMED_ASN_CHOICE_INFO(ChoiceAlias, ChoiceName)</i></a><br>
+<i>BEGIN_ASN_CHOICE_INFO(ChoiceName)</i></a><br>
 
 install the corresponding global <i>GetTypeInfo_struct_*()</i> 
-functions for old C-style ASN.1 <i>choice</i> nodes (implemented as <i>valnode</i>s). Arguments
+functions for old C-style ASN.1 <i>choice</i> nodes (implemented as <i>ValNode</i>s). Arguments
 to the macro are the external choice alias and the internal name for the choice node in the C
 Toolkit libraries. As a result of executing the macro, a global function named
 <i>GetTypeInfo_struct_ChoiceName</i> will be implemented. The 
@@ -451,7 +457,7 @@ macros are used to add types to the choice object.
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ASN_STRUCT_INFO">
 <i>BEGIN_NAMED_ASN_STRUCT_INFO(StructAlias, StructName)</i></a> <br>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_ASN_STRUCT_INFO">
-<i>BEGIN_ASN_STRUCT_INFO(StructAlias, StructName)</i></a> <br>
+<i>BEGIN_ASN_STRUCT_INFO(StructName)</i></a> <br>
 should be
 used to implement the <i>GetTypeInfo_struct_*()</i> functions for C-style <i>struct</i>s. 
 User-defined C++ <i>struct</i>s should <i>not</i> use this macro; it is provided 
@@ -533,7 +539,7 @@ Similarly, the <i>DECLARE_INTERNAL_ENUM_INFO</i> and
 defined. The <i>DECLARE_ASN_TYPE_INFO</i> and <i>DECLARE_ASN_CHOICE_INFO</i> macros can be used to
 declare the type information functions for C-style structs and choice nodes.
 <p>
-<a name="addm"><h4> The ADD_* macros</h4> 
+<a name="addm"><h4> The <i>ADD_*_</i> pre-processor macros</h4> 
 
 Information about class data members, subclasses, and choice options is added to the
 <i>GetTypeInfo()</i> functions using the <i>ADD_*</i> macros listed in Table 2. As with the
@@ -541,8 +547,8 @@ Information about class data members, subclasses, and choice options is added to
 arguments to all of the ADD_NAMED_* macros begin with the external alias and internal C++ names of
 the data member, subclass, or option to be added. <p>
 
-For the first five ADD_* macros, no further information is needed, as the <i>type</i> of member or
-subclass being added is either a built-in type or is defined by the internal C++ name. When adding
+For the ADD_* macros which take only two arguments (an alias and a name), the <i>type</i> of member or
+subclass being added is either a built-in type or is defined by the name argument. When adding
 a <i>CRef</i> data member to a class or choice object however, the class referenced by the
 <i>CRef</i> must be made explicit with the <i>RefClass</i> argument, which is the internal C++ class
 name for the object pointed to. <p>
@@ -554,11 +560,15 @@ following statement:
 
 <p><center>ADD_ENUM_MEMBER (m_MyEnumVal, EMyEnum);</center><p>
 
+or, equivalently:
+
+<p><center>ADD_NAMED_ENUM_MEMBER ("m_MyEnumVal", m_MyEnumVal, EMyEnum);</center><p>
+
 Here, <i>EMyEnum</i> is defined in the same namespace and scope as <i>MyClass</i>. Alternatively,
 if the enumeration is defined in a different class or namespace (and therefore, not within the same
 scope), then the ADD_ENUM_IN_MEMBER macro must be used:
 
-<p><center>ADD_NAMED_ENUM_IN_MEMBER (OtherClassName::, m_MyEnumVal, EMyEnum);</center><p>
+<p><center>ADD_ENUM_IN_MEMBER (m_MyEnumVal, OtherClassName::, EMyEnum);</center><p>
 
 In this example, <i>EMyEnum</i> is defined in a class named <i>OtherClassName</i>. The
 <i>CppContext</i> argument (<i>OtherClassName::</i>) acts as a scope operator, and can also be used
@@ -584,17 +594,8 @@ macro, ADD_ENUM_VALUE specifies the legitimate values of the enumeration.  <p>
 <tr><td> ADD_NAMED_SUB_CLASS </td> 
     <td> Add a derived subclass to a class</td> <td>SubClassAlias, SubClassName</td> </tr>
 
-<tr><td> ADD_NAMED_STD_CHOICE_VARIANT</td>
-    <td> Add a standard option type to a C++ choice object </td><td> OptionAlias, OptionName</td></tr>
-
-<tr><td> ADD_NAMED_ASN_CHOICE_STD_VARIANT
-</td><td> Add a standard option type to an ASN choice object </td><td> OptionAlias, OptionName</td></tr>
-
 <tr><td> ADD_NAMED_REF_MEMBER </td> 
     <td> Add a <i>CRef</i> data member to a class</td> <td>MemberAlias, MemberName, RefClass</td> </tr>
-
-<tr><td> ADD_NAMED_REF_CHOICE_VARIANT
-</td><td> Add a <i>CRef</i> to a C++ choice object </td><td> OptionAlias, OptionName, RefClass</td></tr>
 
 <tr><td> ADD_NAMED_ENUM_MEMBER </td> 
     <td> Add an enumerated data member to a class</td> <td>MemberAlias, MemberName, EnumName</td> </tr>
@@ -602,51 +603,66 @@ macro, ADD_ENUM_VALUE specifies the legitimate values of the enumeration.  <p>
 <tr><td> ADD_NAMED_ENUM_IN_MEMBER </td> 
     <td> Add an externally defined enumerated data member to a class</td> <td>MemberAlias, MemberName, CppContext, EnumName</td> </tr>
 
+<tr><td> ADD_NAMED_MEMBER </td>
+    <td> Add a data member of the type specified by <i>TypeMacro</i> to a class</td>    
+    <td>MemberAlias, MemberName, TypeMacro, TypeMacroArgs </td></tr>
+
+<tr><td> ADD_NAMED_STD_CHOICE_VARIANT</td>
+    <td> Add a standard variant type to a C++ choice object </td><td> VariantAlias, VariantName</td></tr>
+
+<tr><td> ADD_NAMED_REF_CHOICE_VARIANT
+</td><td> Add a <i>CRef</i> variant to a C++ choice object </td><td> VariantAlias, VariantName, RefClass</td></tr>
+
 <tr><td> ADD_NAMED_ENUM_CHOICE_VARIANT </td>
-    <td> Add an enumeration option to a C++ choice object </td><td> OptionAlias, OptionName, EnumName</td> </tr>
+    <td> Add an enumeration variant to a C++ choice object </td><td> VariantAlias, VariantName, EnumName</td> </tr>
 
 <tr><td> ADD_NAMED_ENUM_IN_CHOICE_VARIANT </td>
-    <td> Add an enumeration option to a C++ choice object </td><td> OptionAlias, OptionName, CppContext, EnumName</td> </tr>
+    <td> Add an enumeration variant to a C++ choice object </td><td> VariantAlias, VariantName, CppContext, EnumName</td> </tr>
+
+<tr><td> ADD_NAMED_CHOICE_VARIANT </td> 
+    <td> Add a variant of the type specified by <i>TypeMacro</i> to a C++ choice object</td>
+    <td>VariantAlias, VariantName, TypeMacro, TypeMacroArgs </td></tr>
 
 <tr><td> ADD_ENUM_VALUE
 </td><td> Add a named enumeration value to an <i>enum</i> 
 </td><td> EnumValName, Value
 
-<tr><td> ADD_NAMED_MEMBER </td>
-    <td> Add a data member of type <i>Type</i> to a class</td>    <td>MemberAlias, MemberName, Type</td> </tr>
-</td></tr>
-
 </table>
 
-The last macro, ADD_NAMED_MEMBER, is more open-ended and allows for more complex specifications. We
+The most complex macros by far are those which use the <i>TypeMacro</i> and <i>TypeMacroArgs</i> arguments:
+<i>ADD(_NAMED)_MEMBER</i> and <i>ADD(_NAMED)_CHOICE_VARIANT</i>.
+These macros are more open-ended and allow for more complex specifications. We
 have already seen one example of using a macro of this type, in the implementation of the
 <i>GetTypeInfo()</i> method for <i>CPerson</i>:<p>
 
-<center> ADD_NAMED_MEMBER("m_next_door", m_next_door, POINTER, (CLASS, (CPerson))); </center><p>
+<center> ADD_MEMBER(m_next_door, POINTER, (CLASS, (CPerson))); </center><p>
 
-The ADD_NAMED_MEMBER macro always takes at least three arguments: 
+The <i>ADD_MEMBER</i> and <i>ADD_CHOICE_VARIANT</i>  macros always take at least two arguments: 
 <ol>
-<li> the external alias for the data member
-<li> the internal member name
-<li> the definition of the member's type
+<li> the internal member (variant) name
+<li> the definition of the member's (variant's) type
 </ol>
 
-In this case, the member is a <i>POINTER</i> to a <i>CLASS</i> of type <i>CPerson</i>.  More
-generally, the remaining arguments depend on the value of the <i>Type</i> argument, as these
-parameters complete the type definition. The possible types which can occur as the third argument,
+Depending on the (second) <i>TypeMacro</i> argument, additional arguments may or may
+not be needed.  In this case, the <i>TypeMacro</i> is <i>POINTER</i>, which <i>does</i>
+require additional arguments. The <i>TypeMacroArgs</i> here specify that <i>m_next_door</i>
+is a pointer to a <i>class</i> object whose C++ name is <i>CPerson</i>.<p>
+
+More generally, the remaining arguments depend on the value of <i>TypeMacro</i>, as these
+parameters complete the type definition. The possible strings which can occur as <i>TypeMacro</i>,
 along with the additional arguments required for that type, are given in Table 3.<p>
 
 <center><table border=.5 width=500 cellspacing=1>
   <caption ALIGN=BOTTOM> Table 3</caption>
   <tr>
-	 <th>Type</th>
-	 <th>Args </th>
+	 <th>TypeMacro</th>
+	 <th>TypeMacroArgs </th>
   </tr>
 
   <tr>	 <td> CLASS </td>	 <td> (ClassName) </td>  </tr>
   <tr>	 <td> STD   </td>        <td> (C++ type) </td>  </tr>
   <tr>	 <td> StringStore </td>  <td> ()     </td>  </tr>
-   <tr>	 <td> null </td>         <td> ()     </td>  </tr>
+  <tr> 	 <td> null </td>         <td> ()     </td>  </tr>
   <tr>	 <td> ENUM </td>         <td> (EnumType, EnumName) </td>  </tr> 
   <tr>	 <td> POINTER </td>      <td> (Type,Args) </td>  </tr> 
   <tr>	 <td> STL_multiset </td> <td> (Type,Args) </td>  </tr> 
@@ -671,13 +687,20 @@ The <i>ADD_MEMBER</i> macro generates a call to the corresponding <i>ADD_NAMED_M
 </pre></font>
 Some examples of using the ADD_MEMBER macro are:
 <font color = "#000080"> <pre>
-   ADD_MEMBER(m_X, STL_auto_ptr, (CLASS, (CA)));
+   ADD_MEMBER(m_X, STL_auto_ptr, (CLASS, (ClassName)));
    ADD_MEMBER(m_X, STL_CHAR_vector, (char))
-   ADD_MEMBER(m_X, STL_vector, (STD, (char))
-   ADD_MEMBER(m_X, STL_list, (CLASS, (name))
-   ADD_MEMBER(m_X, STL_list, (POINTER, (CLASS, (name)))
+   ADD_MEMBER(m_X, STL_vector, (STD, (int))
+   ADD_MEMBER(m_X, STL_list, (CLASS, (ClassName))
+   ADD_MEMBER(m_X, STL_list, (POINTER, (CLASS, (ClassName)))
    ADD_MEMBER(m_X, STL_map, (STD, (long), STD, (string)));
 </pre></font>
+
+Similarly, the <i>ADD_CHOICE_VARIANT</i> macro generates a call to the corresponding <i>ADD_NAMED_CHOICE_VARIANT</i> macro.
+A more complete description of <i>choice</i> objects can be found in <a href="choice.html">
+Choice objects in the C++ Toolkit</a>. Similar sets of <i>ADD_*</i> macros are defined for C-style <i>ASN_CHOICE</i> and 
+and <i>ASN_STRUCT</i> elements, in 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialasn.hpp">
+<i>include/serialasn.hpp</i></a>.
 
 <p>
 
