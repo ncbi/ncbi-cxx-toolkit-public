@@ -53,6 +53,7 @@
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include <objtools/format/context.hpp>
 
@@ -165,6 +166,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     x_SetLocation(user_loc);
     
+    m_HasOperon = x_HasOperon();
 }
 
 
@@ -206,6 +208,13 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 
     _ASSERT(source);
     m_Location = source;
+}
+
+
+bool CBioseqContext::x_HasOperon(void) const
+{
+    return CFeat_CI(m_Handle.GetScope(), *m_Location, SAnnotSelector().
+        SetFeatSubtype(CSeqFeatData::eSubtype_operon));
 }
 
 
@@ -608,6 +617,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2005/03/07 17:17:27  shomrat
+* Check if a Bioseq has an operon feature
+*
 * Revision 1.34  2005/02/18 15:08:08  shomrat
 * CSeq_loc interface changes
 *

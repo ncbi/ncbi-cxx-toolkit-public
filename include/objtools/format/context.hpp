@@ -179,6 +179,8 @@ public:
     const CSeq_loc* GetMasterLocation(void) const;
     bool IsGenbankFormat(void) const;
 
+    bool HasOperon(void) const;
+
 private:
     void x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc);
     void x_SetId(void);
@@ -193,6 +195,7 @@ private:
     
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
+    bool x_HasOperon(void) const;
 
     // data
     CBioseq_Handle        m_Handle;
@@ -236,6 +239,7 @@ private:
     int  m_Gi;
     bool m_ShowGBBSource;
     int  m_PatSeqid;
+    bool m_HasOperon;
     
     TReferences             m_References;
     CConstRef<CSeq_loc>     m_Location;
@@ -481,6 +485,13 @@ bool CBioseqContext::IsGenbankFormat(void) const
 }
 
 
+inline
+bool CBioseqContext::HasOperon(void) const
+{
+    return m_HasOperon;
+}
+
+
 // -------- CFlatFileContext
 
 inline
@@ -525,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/03/07 17:17:11  shomrat
+* Check if a Bioseq has an operon feature
+*
 * Revision 1.23  2005/01/12 15:16:57  shomrat
 * Added GetPatentSeqId
 *
