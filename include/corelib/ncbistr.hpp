@@ -267,7 +267,7 @@ public:
     /// resulting lines to the list "arr" (returned).  Normally, all
     /// lines will begin with "prefix" (counted against "width"),
     /// but the first line will instead begin with "prefix1" if
-    /// "eWrap_UsePrefix1" is set in "flags".
+    /// you supply it.
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags = 0,
                               const string* prefix = 0,
@@ -644,6 +644,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2002/10/18 21:02:30  ucko
+ * Drop obsolete (and misspelled!) reference to fWrap_UsePrefix1 from
+ * usage description.
+ *
  * Revision 1.24  2002/10/18 20:48:41  lavr
  * +ENewLine_Mode and '\n' translation in NStr::PrintableString()
  *
