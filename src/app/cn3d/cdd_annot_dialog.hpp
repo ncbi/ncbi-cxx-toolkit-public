@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/10/14 09:27:27  thiessen
+* add cdd evidence move up/down
+*
 * Revision 1.6  2001/10/01 16:03:58  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -105,6 +108,7 @@ private:
     void DeleteEvidence(void);
     void EditEvidence(void);
     void ShowEvidence(void);
+    void MoveEvidence(bool moveUp);
 
     // event callbacks
     void OnButton(wxCommandEvent& event);
