@@ -141,7 +141,7 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eDiagArray);
+    SetSeedContainerType(eLastHitArray);
     SetVariableWordSize(BLAST_VARWORD_NUCL);
     SetSeedExtensionMethod(eRightAndLeft);
     SetUngappedExtension();
@@ -151,7 +151,7 @@ void
 CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eDiagArray);
+    SetSeedContainerType(eLastHitArray);
     SetVariableWordSize(BLAST_VARWORD_MEGABLAST);
     SetSeedExtensionMethod(eRightAndLeft);
 }
@@ -235,7 +235,7 @@ void
 CBlastNucleotideOptionsHandle::SetEffectiveLengthsOptionsDefaults()
 {
     SetDbLength(0);
-    SetDbSeqNum(1);
+    SetDbSeqNum(0);
     SetEffectiveSearchSpace(0);
     SetUseRealDbSize();
 }
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/03 20:21:42  dondosha
+ * Set seed extension method to eLastHitArray rather than eDiagArray
+ *
  * Revision 1.13  2004/08/02 15:00:16  bealer
  * - Distinguish between blastn and megablast (for remote blast).
  *
