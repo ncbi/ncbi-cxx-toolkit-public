@@ -67,15 +67,33 @@ public:
 
     // GetSeqString methods
     // in seq coords
-    string GetSeqString   (TNumrow row,
-                           TSeqPos seq_from,
-                           TSeqPos seq_to)                               const;
-    string GetSeqString   (TNumrow row,
-                           const CAlnMap::TRange& seq_rng)               const;
-    string GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
+    string  GetSeqString   (TNumrow row,
+                            TSeqPos seq_from,
+                            TSeqPos seq_to)                               const;
+    string& GetSeqString   (string& buffer,
+                            TNumrow row,
+                            TSeqPos seq_from, TSeqPos seq_to)             const;
+
+    string  GetSeqString   (TNumrow row,
+                            const CAlnMap::TRange& seq_rng)               const;
+    string& GetSeqString   (string& buffer,
+                            TNumrow row,
+                            const CAlnMap::TRange& seq_rng)               const;
+
+    string  GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
+    string& GetSegSeqString(string& buffer, 
+                            TNumrow row, 
+                            TNumseg seg, TNumseg offset = 0) const;
+
     // in aln coords
-    string GetAlnSeqString(TNumrow row, 
-                           const CAlnMap::TSignedRange& aln_rng)         const;
+    string  GetAlnSeqString(TNumrow row, 
+                            const CAlnMap::TSignedRange& aln_rng)         const;
+    string& GetAlnSeqString(string& buffer,
+                            TNumrow row, 
+                            const CAlnMap::TSignedRange& aln_rng)         const;
+    string& GetAlnSeqString1(string& buffer,
+                            TNumrow row, 
+                            const CAlnMap::TSignedRange& aln_rng)         const;
 
     
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
@@ -169,12 +187,23 @@ CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
     }
 }
 
+
 inline
 string CAlnVec::GetSeqString(TNumrow row, TSeqPos seq_from, TSeqPos seq_to) const
 {
     string buff;
     x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buff);
     return buff;
+}
+
+
+inline
+string& CAlnVec::GetSeqString(string& buffer,
+                              TNumrow row,
+                              TSeqPos seq_from, TSeqPos seq_to) const
+{
+    x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
+    return buffer;
 }
 
 
@@ -190,11 +219,33 @@ string CAlnVec::GetSegSeqString(TNumrow row, TNumseg seg, int offset) const
 
 
 inline
+string& CAlnVec::GetSegSeqString(string& buffer,
+                                 TNumrow row,
+                                 TNumseg seg, int offset) const
+{
+    x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
+                                   GetStop (row, seg, offset) + 1,
+                                   buffer);
+    return buffer;
+}
+
+
+inline
 string CAlnVec::GetSeqString(TNumrow row, const CAlnMap::TRange& seq_rng) const
 {
     string buff;
     x_GetSeqVector(row).GetSeqData(seq_rng.GetFrom(), seq_rng.GetTo() + 1, buff);
     return buff;
+}
+
+
+inline
+string& CAlnVec::GetSeqString(string& buffer,
+                              TNumrow row,
+                              const CAlnMap::TRange& seq_rng) const
+{
+    x_GetSeqVector(row).GetSeqData(seq_rng.GetFrom(), seq_rng.GetTo() + 1, buffer);
+    return buffer;
 }
 
 
@@ -303,6 +354,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2003/01/17 18:17:29  todorov
+ * Added a better-performing set of GetXXXString methods
+ *
  * Revision 1.13  2003/01/16 20:46:30  todorov
  * Added Gap/EndChar set flags
  *

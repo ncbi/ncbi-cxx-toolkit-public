@@ -109,6 +109,7 @@ const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
     }
 }
 
+
 CScope& CAlnVec::GetScope(void) const
 {
     if (!m_Scope) {
@@ -123,6 +124,7 @@ CScope& CAlnVec::GetScope(void) const
     }
     return *m_Scope;
 }
+
 
 CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
 {
@@ -139,6 +141,7 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
         return *(m_SeqVectorCache[row] = seq_vec);
     }
 }
+
 
 string CAlnVec::GetAlnSeqString(TNumrow row, const TSignedRange& aln_rng) const
 {
@@ -178,6 +181,49 @@ string CAlnVec::GetAlnSeqString(TNumrow row, const TSignedRange& aln_rng) const
     }
     return str;
 }
+
+
+string& CAlnVec::GetAlnSeqString(string& buffer,
+                                 TNumrow row,
+                                 const TSignedRange& aln_rng) const
+{
+    string buff;
+    buffer.clear();
+    
+    // get the chunks which are aligned to seq on anchor
+    CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
+        GetAlnChunks(row, aln_rng, fSkipInserts | fSkipUnalignedGaps);
+    
+    // for each chunk
+    for (int i=0; i<chunk_vec->size(); i++) {
+        CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
+                
+        if (chunk->GetType() & fSeq) {
+            // add the sequence string
+            x_GetSeqVector(row).GetSeqData(chunk->GetRange().GetFrom(),
+                                           chunk->GetRange().GetTo()+1,
+                                           buff);
+            buffer += buff;
+        } else {
+            // add appropriate number of gap/end chars
+            const int n = chunk->GetAlnRange().GetLength();
+            char* ch_buff = new char[n+1];
+            char fill_ch;
+            if (chunk->GetType() & fNoSeqOnLeft  ||
+                chunk->GetType() & fNoSeqOnRight) {
+                fill_ch = GetEndChar();
+            } else {
+                fill_ch = GetGapChar(row);
+            }
+            memset(ch_buff, fill_ch, n);
+            ch_buff[n] = 0;
+            buffer += ch_buff;
+            delete ch_buff;
+        }
+    }
+    return buffer;
+}
+
 
 //
 // CreateConsensus()
@@ -437,6 +483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/01/17 18:16:53  todorov
+* Added a better-performing set of GetXXXString methods
+*
 * Revision 1.14  2003/01/16 20:46:17  todorov
 * Added Gap/EndChar set flags
 *
