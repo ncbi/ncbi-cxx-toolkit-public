@@ -237,7 +237,12 @@ public:
     const unsigned char* GetDbGeneticCodeStr() const;
     void SetDbGeneticCodeStr(const unsigned char* gc_str);
 
+    // Set both integer and string genetic code in one call
+    void SetDbGeneticCodeAndStr(int gc);
+
     /// @todo PSI-Blast options could go on their own subclass?
+    const char* GetPHIPattern() const;
+    void SetPHIPattern(const char* pattern, bool is_dna);
 
     /// Allows to dump a snapshot of the object
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -489,20 +494,13 @@ CBlastOption::SetStrandOption(objects::ENa_strand s)
 }
 
 #if 0
-vector< CConstRef<objects::CSeq_loc> >
-x_BlastMask2CSeqLoc(BlastMask* mask, EProgram program)
-{
-    abort();
-}
-
 inline vector< CConstRef<objects::CSeq_loc> >& 
 CBlastOption::GetLCaseMask() const
 {
     // Convert BlastMaskPtrs to objects::CSeq_loc
-    abort();
+    return m_QueryOpts->lcase_mask;
 }
 #endif
-
 
 inline void 
 CBlastOption::SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
@@ -995,6 +993,27 @@ CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
     copy(gc_str, gc_str+GENCODE_STRLEN, m_DbOpts->gen_code_string);
 }
 
+inline const char* 
+CBlastOption::GetPHIPattern() const
+{
+    return m_LutOpts->phi_pattern;
+}
+
+inline void 
+CBlastOption::SetPHIPattern(const char* pattern, bool is_dna)
+{
+    if (!pattern)
+        return;
+
+    if (is_dna)
+       m_LutOpts->lut_type = PHI_NA_LOOKUP;
+    else
+       m_LutOpts->lut_type = PHI_AA_LOOKUP;
+
+    m_LutOpts->phi_pattern = strdup(pattern);
+}
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1002,6 +1021,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/09/09 22:07:57  dondosha
+* Added accessor functions for PHI pattern
+*
 * Revision 1.21  2003/09/03 19:35:51  camacho
 * Removed unneeded prototype
 *
