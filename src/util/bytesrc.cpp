@@ -368,14 +368,16 @@ CRef<CByteSource> CIWriterSourceCollector::GetSource(void)
 }
 
 
-size_t 
-CStreamRedirectByteSourceReader::Read(char* buffer, size_t bufferLength)
+
+CRef<CSubSourceCollector> 
+CIWriterByteSourceReader::SubSource(size_t prepend, 
+                                    CRef<CSubSourceCollector> parent)
 {
-    size_t bytes_read = CStreamByteSourceReader::Read(buffer, bufferLength);
-    if (bytes_read)
-        m_Writer->Write(buffer, bytes_read);
-    return bytes_read;
+    return 
+     CRef<CSubSourceCollector>(
+        new CIWriterSourceCollector(m_Writer, eNoOwnership, parent));
 }
+
 
 
 END_NCBI_SCOPE
@@ -384,6 +386,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2003/09/30 20:24:03  kuznets
+ * +CIWriterByteSourceReader
+ *
  * Revision 1.23  2003/09/30 20:08:02  kuznets
  * +CStreamRedirectByteSourceReader implementation
  *

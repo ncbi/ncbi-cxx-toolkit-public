@@ -177,12 +177,15 @@ protected:
     CNcbiIstream* m_Stream;
 };
 
-/// Stream based byte source reader designed to redirect all traffic to 
-/// IWriter interface. 
-///
-/// One of the projected uses is to update the local BLOB cache
 
-class NCBI_XUTIL_EXPORT CStreamRedirectByteSourceReader 
+/// Stream based byte source reader 
+/// 
+/// Class works as a virtual class factory to create 
+/// CIWriterSourceCollector. see SubSource()
+///
+/// One of the projected uses is to update local BLOB cache
+
+class NCBI_XUTIL_EXPORT CIWriterByteSourceReader 
                                         : public CStreamByteSourceReader
 {
 public:
@@ -190,14 +193,16 @@ public:
     ///
     /// @param stream readers source 
     /// @param writer destination interface pointer
-    CStreamRedirectByteSourceReader(CNcbiIstream* stream, IWriter* writer)
+    CIWriterByteSourceReader(CNcbiIstream* stream, IWriter* writer)
     : CStreamByteSourceReader(0 /*CByteSource* */, stream),
       m_Writer(writer)
     {
         _ASSERT(writer);
     }
 
-    size_t Read(char* buffer, size_t bufferLength);
+    /// Create CIWriterSourceCollector
+    virtual CRef<CSubSourceCollector> 
+        SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
 
 protected:
     IWriter*   m_Writer;
@@ -405,6 +410,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/09/30 20:23:39  kuznets
+* +CIWriterByteSourceReader
+*
 * Revision 1.16  2003/09/30 20:07:02  kuznets
 * Added CStreamRedirectByteSourceReader class (byte source reader
 * with stream redirection into IWriter).
