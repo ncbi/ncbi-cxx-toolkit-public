@@ -808,8 +808,9 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
 static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 {
-    string              organism, product, locus;
+    string              organism, product, locus, strain, clone, isolate;
     string              completeness = "complete";
+    bool                cds_found = false;
     CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
 
     CSeq_loc everywhere;
@@ -817,11 +818,38 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 
     {
         CSeqdesc_CI it(handle, CSeqdesc::e_Source);
+        const CBioSource& src = it->GetSource();
         for (;  it;  ++it) {
-            if (it->GetSource().GetOrg().IsSetTaxname()) {
-                organism = it->GetSource().GetOrg().GetTaxname();
-                BREAK(it);
+            const COrg_ref& org = src.GetOrg();
+            if (org.IsSetTaxname()) {
+                organism = org.GetTaxname();
+                if (org.IsSetOrgname()) {
+                    const COrgName& orgname = org.GetOrgname();
+                    if (orgname.IsSetMod()) {
+                        ITERATE (COrgName::TMod, mod, orgname.GetMod()) {
+                            COrgMod::TSubtype subtype = (*mod)->GetSubtype();
+                            const string&     subname = (*mod)->GetSubname();
+                            if (subtype == COrgMod::eSubtype_strain) {
+                                if ( !NStr::EndsWith(organism, subname) ) {
+                                    strain = subname;
+                                }
+                                break;
+                            } else if (subtype == COrgMod::eSubtype_isolate) {
+                                isolate = subname;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
+            if (src.IsSetSubtype()) {
+                ITERATE (CBioSource::TSubtype, ssrc, src.GetSubtype()) {
+                    if ((*ssrc)->GetSubtype() == CSubSource::eSubtype_clone) {
+                        clone = s_DescribeClones((*ssrc)->GetName());
+                    }
+                }
+            }
+            BREAK(it);
         }
     }
 
@@ -831,6 +859,7 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 
     CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
     for (; it;  ++it) {
+        cds_found = true;
         if ( !it->IsSetProduct() ) {
             continue;
         }
@@ -862,6 +891,15 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
     }
 
     string result = organism;
+    if ( !cds_found) {
+        if ( !strain.empty() ) {
+            result += " strain " + strain;
+        } else if ( !clone.empty()  &&  clone.find(" clone ") != NPOS) {
+            result += clone;
+        } else if ( !isolate.empty() ) {
+            result += " isolate " + isolate;
+        }
+    }
     if ( !product.empty() ) {
         result += ' ' + product;
     }
@@ -882,6 +920,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2004/04/21 15:45:11  ucko
+* s_TitleFromSegment: collect strain/clone/isolate information from source
+* to use in lieu of information from a CDS (per C version, as usual).
+*
 * Revision 1.34  2004/04/07 20:02:49  ucko
 * x_TitleFromChromosome: spell out "extrachromosomal" per the C Toolkit.
 *
