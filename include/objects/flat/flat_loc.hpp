@@ -52,8 +52,28 @@ class CFlatLoc : public CObject // derived from CObject to allow for caching
 public:
     struct SInterval
     {
+        enum EFlags {
+            fReversed     = 0x1,
+            fPartialLeft  = 0x2,
+            fPartialRight = 0x4
+        };
+        typedef int TFlags; // binary OR of EFlags
+
+        TSeqPos GetStart(void) const
+          { return m_Flags & fReversed ? m_Range.GetTo() : m_Range.GetFrom(); }
+        TSeqPos GetStop(void) const
+          { return m_Flags & fReversed ? m_Range.GetFrom() : m_Range.GetTo(); }
+
+        bool IsReversed    (void) const
+            { return (m_Flags & fReversed) != 0; }
+        bool IsPartialLeft (void) const
+            { return (m_Flags & fPartialLeft) != 0; }
+        bool IsPartialRight(void) const
+            { return (m_Flags & fPartialRight) != 0; }
+
         string          m_Accession;
-        CRange<TSeqPos> m_Range; // 1-based; should be finite
+        CRange<TSeqPos> m_Range; // 1-based, L->R; should be finite
+        TFlags          m_Flags;
     };
     typedef vector<SInterval> TIntervals;
     
@@ -71,9 +91,10 @@ private:
     void x_Add   (const CSeq_interval& si, CNcbiOstrstream& oss,
                   CFlatContext& ctx);
     // these convert from 0-based to 1-based coordinates in the process
-    void x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
-                  CFlatContext& ctx);
-    void x_AddInt(TSeqPos from, TSeqPos to, const string& accn);
+    SInterval::TFlags x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
+                               CNcbiOstrstream& oss, CFlatContext& ctx);
+    void x_AddInt(TSeqPos from, TSeqPos to, const string& accn,
+                  SInterval::TFlags flags = 0);
 
     static void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
                         CFlatContext& ctx, string *s = 0);
@@ -87,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/28 19:02:43  ucko
+* Add flags to intervals.
+*
 * Revision 1.2  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

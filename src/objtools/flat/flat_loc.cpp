@@ -113,25 +113,28 @@ void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
             oss << "complement(";
             x_AddPnt(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ctx);
             oss << ')';
+            x_AddInt(pos, pos, accn, SInterval::fReversed);
         } else {
             x_AddPnt(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ctx);
+            x_AddInt(pos, pos, accn);
         }
-        x_AddInt(pos, pos, accn);
         break;
     }
 
     case CSeq_loc::e_Packed_pnt:
     {
-        const CPacked_seqpnt& ppnt = loc.GetPacked_pnt();
+        const CPacked_seqpnt& ppnt  = loc.GetPacked_pnt();
+        SInterval::TFlags     flags = 0;
         x_AddID(ppnt.GetId(), oss, ctx, &accn);
         if (IsReverse(ppnt.GetStrand())) {
             oss << "complement(";
+            flags = SInterval::fReversed;
         }
         string delim("join(");
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
             x_AddPnt(*it, ppnt.IsSetFuzz() ? &ppnt.GetFuzz() : 0, oss, ctx);
-            x_AddInt(*it, *it, accn);
+            x_AddInt(*it, *it, accn, flags);
             delim = ", \b";
         }
         if (IsReverse(ppnt.GetStrand())) {
@@ -170,36 +173,48 @@ void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
 void CFlatLoc::x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
                      CFlatContext& ctx)
 {
-    string  accn;
-    TSeqPos from = si.GetFrom(), to = si.GetTo();
+    string            accn;
+    TSeqPos           from = si.GetFrom(), to = si.GetTo();
+    SInterval::TFlags flags = 0;
     x_AddID(si.GetId(), oss, ctx, &accn);
     if (IsReverse(si.GetStrand())) {
         oss << "complement(";
-        x_AddPnt(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0, oss, ctx);
-        oss << "..";
-        x_AddPnt(to,   si.IsSetFuzz_to()   ? &si.GetFuzz_to()   : 0, oss, ctx);
+    }
+    flags |= (x_AddPnt(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0,
+                       oss, ctx)
+              & SInterval::fPartialLeft);
+    oss << "..";
+    flags |= (x_AddPnt(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, ctx)
+              & SInterval::fPartialRight);
+    if (IsReverse(si.GetStrand())) {
         oss << ')';
-        x_AddInt(to, from, accn); // ?
+        x_AddInt(to, from, accn, flags | SInterval::fReversed);
     } else {
-        x_AddPnt(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0, oss, ctx);
-        oss << "..";
-        x_AddPnt(to,   si.IsSetFuzz_to()   ? &si.GetFuzz_to()   : 0, oss, ctx);
-        x_AddInt(from, to, accn);
+        x_AddInt(from, to, accn, flags);
     }
 }
 
 
-void CFlatLoc::x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
-                        CNcbiOstrstream& oss, CFlatContext& ctx)
+CFlatLoc::SInterval::TFlags CFlatLoc::x_AddPnt(TSeqPos pnt,
+                                               const CInt_fuzz* fuzz,
+                                               CNcbiOstrstream& oss,
+                                               CFlatContext& ctx)
 {
+    CFlatLoc::SInterval::TFlags flags = 0;
     // need to convert to 1-based coordinates
     if (fuzz == 0) {
         oss << pnt + 1;
     } else if (fuzz->IsLim()) {
         bool h = ctx.GetFormatter().DoHTML();
         switch (fuzz->GetLim()) {
-        case CInt_fuzz::eLim_gt: oss << (h ? "&gt;" : ">") << pnt + 1; break;
-        case CInt_fuzz::eLim_lt: oss << (h ? "&lt;" : "<") << pnt + 1; break;
+        case CInt_fuzz::eLim_gt:
+            flags = SInterval::fPartialRight;
+            oss << (h ? "&gt;" : ">") << pnt + 1;
+            break;
+        case CInt_fuzz::eLim_lt:
+            flags = SInterval::fPartialLeft;
+            oss << (h ? "&lt;" : "<") << pnt + 1;
+            break;
         case CInt_fuzz::eLim_tr: oss << pnt + 1 << '^' << pnt + 2;     break;
         case CInt_fuzz::eLim_tl: oss << pnt     << '^' << pnt + 1;     break;
         default:                 oss << pnt + 1;                       break;
@@ -245,16 +260,20 @@ void CFlatLoc::x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
             oss << '(' << from + 1 << '.' << to + 1 << ')';
         }
     }
+
+    return flags;
 }
 
 
-void CFlatLoc::x_AddInt(TSeqPos from, TSeqPos to, const string& accn)
+void CFlatLoc::x_AddInt(TSeqPos from, TSeqPos to, const string& accn,
+                        CFlatLoc::SInterval::TFlags flags)
 {
     // need to convert to 1-based coordinates
     SInterval ival;
     ival.m_Accession = accn;
     ival.m_Range.SetFrom(from + 1);
     ival.m_Range.SetTo  (to + 1);
+    ival.m_Flags = flags;
     m_Intervals.push_back(ival);
 }
 
@@ -280,6 +299,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/03/28 19:03:40  ucko
+* Add flags to intervals.
+*
 * Revision 1.4  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.
