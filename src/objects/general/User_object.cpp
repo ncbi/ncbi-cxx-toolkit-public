@@ -497,13 +497,13 @@ void CUser_object::GetLabel(string* label, ELabelContent mode) const
 
     switch (mode) {
     case eType:
-        *label = s_GetUserObjectType(*this);
+        *label += s_GetUserObjectType(*this);
         break;
     case eContent:
-        *label = s_GetUserObjectContent(*this);
+        *label += s_GetUserObjectContent(*this);
         break;
     case eBoth:
-        *label = s_GetUserObjectType(*this) + ": " +
+        *label += s_GetUserObjectType(*this) + ": " +
             s_GetUserObjectContent(*this);
         break;
     }
@@ -561,6 +561,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2003/11/14 16:12:45  shomrat
+* fixed GetLabel so it will append to string and not replace it
+*
 * Revision 6.3  2003/09/29 15:57:15  dicuccio
 * Fleshed out CUser_object API.  Added function to retrieve fields based on
 * delimited keys.  Added functions to format a CUser_object as a known category
