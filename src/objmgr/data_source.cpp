@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/07/01 15:44:51  grichenk
+* Fixed typos
+*
 * Revision 1.54  2002/07/01 15:40:58  grichenk
 * Fixed 'tse_set' warning.
 * Removed duplicate call to tse_set.begin().
@@ -925,7 +928,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                 {{
                     CNcbiOstrstream os;
                     os << (*id)->DumpAsFasta();
-                    sid2 = CNcbiOstrstreamToString(os);
+                    si_conflict = CNcbiOstrstreamToString(os);
                 }}
                 THROW1_TRACE(runtime_error,
                     " duplicate Bioseq id '" + si_conflict + "' present in" +
