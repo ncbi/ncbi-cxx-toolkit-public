@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/03 21:24:23  sandomir
+* NcbiApplication and CgiApplication updated
+*
 * Revision 1.3  1998/12/01 19:12:08  lewisg
 * added CCgiApplication
 *
@@ -45,28 +48,44 @@
 
 #include <ncbistd.hpp>
 #include <ncbiapp.hpp>
-// #include <ncbiexcp.hpp>
+#include <cgiapp.hpp>
+
+#include <string.h>
+
+
 BEGIN_NCBI_SCOPE
 
+CNcbiApplication* CNcbiApplication::m_instance;
 
 //
 // class CNcbiApplication
 //
 
-CNcbiApplication::CNcbiApplication( int argc, char* argv[] ) /* throw(): m_argv() */ : m_argc(argc), m_argv(argv)
+CNcbiApplication* CNcbiApplication::Instance( void )
+{ 
+  return m_instance; 
+}
+
+CNcbiApplication::CNcbiApplication( int argc /* = 0 */, 
+                                    char* argv[] /* = 0 */ ) 
+  : m_argc( argc ), m_argv( argv )
 {
-  for( int i = 0; i < argc; i++ ) {
-    m_arguments.push_back( argv[ i ] );
+  if( m_instance ) {
+    throw logic_error( "CNcbiApplication::CNcbiApplication: "
+                       "cannot create second instance" );
   }
 }
 
-CNcbiApplication::~CNcbiApplication( void ) /* throw() */
-{}
+CNcbiApplication::~CNcbiApplication( void )
+{
+  m_instance = 0;
+}
 
 void CNcbiApplication::Init( void )
 {
-    /*  CNcbiOSException::SetDefHandler();
-	set_unexpected( CNcbiOSException::UnexpectedHandler ); */
+  // exceptions not used for now
+  // CNcbiOSException::SetDefHandler();
+  // set_unexpected( CNcbiOSException::UnexpectedHandler ); 
   return;
 }
 
@@ -80,15 +99,34 @@ int CNcbiApplication::Run( void )
   return 0;
 }
     
+//
+// CCgiApplication
+//
 
-// CGI applications
+CCgiApplication* CCgiApplication::Instance( void )
+{ 
+  return static_cast< CCgiApplication* >( CNcbiApplication::Instance() ); 
+}
 
-CCgiApplication::CCgiApplication(int argc, char* argv[], CNcbiIstream* istr,
-				 bool indexes_as_entries)
-        : CNcbiApplication(argc, argv),
-	  m_CgiRequest(argc, argv, istr, indexes_as_entries)
+CCgiApplication::CCgiApplication( int argc /* = 0 */, 
+                                  char* argv[] /* = 0 */ )
+  : CNcbiApplication(argc, argv),
+    m_CgiRequest( 0 )
+{}
+
+CCgiApplication::~CCgiApplication( void )
+{}
+
+void CCgiApplication::Init( void )
 {
-    m_CgiEntries = m_CgiRequest.GetEntries();
+  CNcbiApplication::Init();
+  m_CgiRequest = new CCgiRequest( m_argc, m_argv );
+}
+
+void CCgiApplication::Exit( void )
+{
+  CNcbiApplication::Exit();
+  delete m_CgiRequest;
 }
 
 

@@ -5,11 +5,11 @@ st: main.o xmlstore.o
 	$(CC)  -o st xmlstore.o main.o
 
 main.o: main.cpp
-	$(CC) -c main.cpp -g \
+	$(CC) -c main.cpp  \
 	-DUNIX  -I. -I../include
 
 xmlstore.o: ../src/xmlstore.cpp
-	$(CC) -c ../src/xmlstore.cpp  -g \
+	$(CC) -c ../src/xmlstore.cpp  \
 	-DUNIX  -I. -I../include
 
 clean: 

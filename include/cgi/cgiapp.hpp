@@ -1,5 +1,5 @@
-#ifndef NCBIAPP__HPP
-#define NCBIAPP__HPP
+#ifndef NCBI_CGI_APP__HPP
+#define NCBI_CGI_APP__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -30,11 +30,11 @@
 *	Vsevolod Sandomirskiy
 *
 * File Description:
-*   Basic Application class
+*   Basic CGI Application class
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/12/03 21:24:21  sandomir
+* Revision 1.1  1998/12/03 21:24:21  sandomir
 * NcbiApplication and CgiApplication updated
 *
 * Revision 1.3  1998/12/01 19:12:36  lewisg
@@ -49,43 +49,38 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-
-#include <vector>
-#include <string>
+#include <ncbiapp.hpp>
+#include <ncbicgi.hpp>
 
 BEGIN_NCBI_SCOPE
 
 //
-// class CNcbiApplication
+// class CCgiApplication
 //
 
-class CNcbiApplication
+class CCgiApplication: public CNcbiApplication
 {
 public:
-  
-  static CNcbiApplication* Instance( void ); // Singleton method
-  
-  // throw if not-only instance
-  CNcbiApplication( int argc = 0, char* argv[] = 0 ); 
-  virtual ~CNcbiApplication( void );
-  
+
+  static CCgiApplication* Instance( void ); // Singleton method
+
+  CCgiApplication( int argc = 0, char* argv[] = 0 );
+  virtual ~CCgiApplication( void );
+
   virtual void Init( void ); // initialization
   virtual void Exit( void ); // cleanup
   
-  virtual int Run( void ) = 0; // main loop
+  const CCgiRequest* GetRequest( void ) const
+  { return m_CgiRequest; }
+
+protected:
   
-protected: 
-  
-  static CNcbiApplication* m_instance;
-  
-  int m_argc;
-  char** m_argv;
+  CCgiRequest* m_CgiRequest;
   
 };
 
 END_NCBI_SCOPE
 
-#endif // NCBIAPP__HPP
+#endif // NCBI_CGI_APP__HPP
 
 

@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1998/12/03 21:24:23  sandomir
+* NcbiApplication and CgiApplication updated
+*
 * Revision 1.20  1998/12/03 16:40:15  vakatov
 * Initial revision
 * Aux. function "Getline()" to read from "istream" to a "string"
@@ -101,6 +104,7 @@
 #endif
 
 #include <ncbistd.hpp>
+#include <ncbiapp.hpp>
 #include <ncbicgi.hpp>
 #include <time.h>
 
@@ -601,18 +605,55 @@ static void TestCgi(int argc, char* argv[])
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
 }
 
+//
+// CTestApplication
+//
 
+class CTestApplication : public CNcbiApplication
+{
+public:
+  
+  CTestApplication( int argc = 0, char* argv[] = 0 )
+    : CNcbiApplication( argc, argv )
+    {}
+
+  virtual ~CTestApplication( void )
+    {}
+
+  virtual int Run( void );
+
+};
+
+int CTestApplication::Run( void )
+{
+  TestDiag();
+  
+  TestException();
+  TestIostream();
+
+  TestCgi( m_argc, m_argv );
+
+  SetDiagStream(0);
+
+  return 0;
+}
+  
 /////////////////////////////////
 // MAIN
 //
 extern int main(int argc, char* argv[])
 {
-    TestDiag();
-    TestException();
-    TestIostream();
-    TestCgi(argc, argv);
+  CTestApplication app( argc, argv );
+  
+  int res = 1;
+  try {
+    app.Init();
+    res = app.Run();
+    app.Exit();
+  } catch( exception& e ) {
+    cout << e.what();
+  }
 
-    SetDiagStream(0);
-    return 0;
+  return res;
 }
 
