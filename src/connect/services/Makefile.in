@@ -9,8 +9,8 @@
 #  - tests:      "test/*.*"
 #################################
 
-LIB_PROJ = connect xxconnect xconnect xthrserv xconnserv
-SUB_PROJ = ext daemons test
+LIB_PROJ = xconnserv
+SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

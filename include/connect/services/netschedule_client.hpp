@@ -39,7 +39,7 @@
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
-#include <connect/netservice_client.hpp>
+#include <connect/services/netservice_client.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
 
@@ -642,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/22 18:54:18  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.16  2005/03/22 16:09:05  didenko
  * + enum EShutdownLevel
  *

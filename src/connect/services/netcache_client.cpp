@@ -37,7 +37,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
-#include <connect/netcache_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <memory>
 
 
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/03/22 18:54:07  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.36  2005/03/22 14:59:22  kuznets
  * Enable TCP/IP buffering when using IWriter
  *

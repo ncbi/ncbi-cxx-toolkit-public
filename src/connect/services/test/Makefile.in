@@ -4,19 +4,10 @@
 # Test suite for library "xconnect"
 #################################
 
-LIB_PROJ = conntest
+LIB_PROJ =
 
-APP_PROJ = test_ncbi_buffer test_ncbi_core test_ncbi_socket test_ncbi_dsock \
-           test_ncbi_connutil_hit test_ncbi_connutil_misc socket_io_bouncer \
-           test_ncbi_socket_connector test_ncbi_file_connector \
-           test_ncbi_http_connector http_connector_hit test_ncbi_heapmgr \
-           test_ncbi_service_connector test_ncbi_sendmail test_ncbi_disp \
-           test_ncbi_http_get test_ncbi_memory_connector \
-			  test_ncbi_ftp_connector \
-           test_ncbi_conn_stream test_conn_stream_pushback \
-           test_threaded_server test_threaded_client \
-           test_fw test_ncbi_namedpipe test_ncbi_namedpipe_connector \
-           test_ncbi_pipe test_ncbi_pipe_connector test_netcache_client
+APP_PROJ = test_netcache_client
+
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

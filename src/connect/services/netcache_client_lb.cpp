@@ -34,7 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/netcache_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_service.h>
 
 #include <memory>
@@ -399,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/22 18:54:07  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.9  2005/02/07 16:54:59  kuznets
  * Improved diagnostics in LB connect
  *

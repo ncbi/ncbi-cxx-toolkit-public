@@ -39,8 +39,8 @@
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
-#include <connect/netservice_client.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
+#include <connect/services/netservice_client.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <util/reader_writer.hpp>
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/03/22 18:54:18  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.25  2005/03/21 16:53:31  didenko
  * + creating from PluginManager
  *

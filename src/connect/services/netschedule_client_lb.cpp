@@ -35,7 +35,7 @@
 #include <corelib/ncbitime.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_service.h>
 #include <util/request_control.hpp>
 
@@ -353,6 +353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/22 18:54:07  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.2  2005/03/17 17:18:45  kuznets
  * Implemented load-balanced client
  *

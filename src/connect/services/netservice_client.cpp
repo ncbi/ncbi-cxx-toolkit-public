@@ -38,7 +38,7 @@
 
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/netservice_client.hpp>
+#include <connect/services/netservice_client.hpp>
 
 #include <memory>
 
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/22 18:54:07  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.6  2005/03/17 17:17:29  kuznets
  * +Connect()
  *

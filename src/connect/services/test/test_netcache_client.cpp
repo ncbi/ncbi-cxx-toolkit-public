@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/netcache_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 /* This header must go last */
@@ -665,6 +665,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/03/22 18:54:07  kuznets
+ * Changed project tree layout
+ *
  * Revision 1.30  2005/02/15 15:20:53  kuznets
  * IsAlive test commented out
  *
