@@ -256,10 +256,10 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
     // unpack result blocks
     for (int b=0; b<result->nBlocks; b++) {
         UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
-        newBlock->width = blocks->blockSizes[b - result->firstBlock];
+        newBlock->width = blocks->blockSizes[b + result->firstBlock];
         newBlock->SetRangeOfRow(0,
-            blocks->blockPositions[b - result->firstBlock],
-            blocks->blockPositions[b - result->firstBlock] + newBlock->width - 1);
+            blocks->blockPositions[b + result->firstBlock],
+            blocks->blockPositions[b + result->firstBlock] + newBlock->width - 1);
         newBlock->SetRangeOfRow(1,
             result->blockPositions[b],
             result->blockPositions[b] + newBlock->width - 1);
@@ -920,6 +920,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/07/21 19:54:10  thiessen
+* fix firstBlock error
+*
 * Revision 1.26  2003/07/14 18:35:27  thiessen
 * run DP and Alejandro's block aligners, and compare results
 *
