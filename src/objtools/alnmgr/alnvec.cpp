@@ -341,14 +341,20 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     // take care of the remaining coords if necessary
     if (record_coords) {
         // previous scrns
-        nscrns = (aln_pos - scrn_pos) / (aln_len % scrn_width);
-        for (int i = 0; i < nscrns; i++) {
-            scrn_lefts->push_back(scrn_lft_seq_pos);
-            scrn_rights->push_back(scrn_rgt_seq_pos);
-            if (i == 0) {
-                scrn_lft_seq_pos = scrn_rgt_seq_pos;
+        TSeqPos pos_diff = aln_pos - scrn_pos;
+        if (pos_diff > 0) {
+            nscrns = pos_diff / scrn_width;
+            if (pos_diff % scrn_width) {
+                nscrns++;
             }
-            scrn_pos += scrn_width;
+            for (int i = 0; i < nscrns; i++) {
+                scrn_lefts->push_back(scrn_lft_seq_pos);
+                scrn_rights->push_back(scrn_rgt_seq_pos);
+                if (i == 0) {
+                    scrn_lft_seq_pos = scrn_rgt_seq_pos;
+                }
+                scrn_pos += scrn_width;
+            }
         }
     }
     return buffer;
@@ -791,6 +797,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/07/21 17:08:50  todorov
+* fixed calc of remaining nscrns in GetWhole...
+*
 * Revision 1.33  2003/07/18 22:12:51  todorov
 * Fixed an anchor bug in GetWholeAlnSeqString
 *
