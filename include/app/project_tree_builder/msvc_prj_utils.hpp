@@ -36,6 +36,8 @@
 #include <app/project_tree_builder/msvc71_project__.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
 
+#include <set>
+
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -214,6 +216,38 @@ string GetOpt(const CNcbiRegistry& registry,
 string ConfigName(const string& config);
 
 
+/// Add source file and use PCH if possible 
+class CSourceFileToProjectInserter
+{
+public:
+    CSourceFileToProjectInserter(const string&            project_id,
+                                 const list<SConfigInfo>& configs,
+                                 const string&            project_dir);
+
+    ~CSourceFileToProjectInserter(void);
+
+    void operator() (CRef<CFilter>&          filter, 
+                     const string&           rel_source_file);
+
+private:
+    string            m_ProjectId;
+    list<SConfigInfo> m_Configs;
+    string            m_ProjectDir;
+
+    typedef set<string> TPchHeaders;
+    TPchHeaders m_PchHeaders;
+
+    enum EUsePch {
+        eNotUse = 0,
+        eCreate = 1,
+        eUse    = 3
+    };
+    typedef pair<EUsePch, string> TPch;
+
+    TPch DefinePchUsage(const string&     project_dir,
+                        const string&     rel_source_file);
+};
+
 /// Common function shared by 
 /// CMsvcMasterProjectGenerator and CMsvcProjectGenerator
 void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
@@ -262,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/05/10 14:25:47  gorelenk
+ * + CSourceFileToProjectInserter .
+ *
  * Revision 1.17  2004/04/13 17:06:02  gorelenk
  * Added member m_CompilersSubdir to class CMsvc7RegSettings.
  *
