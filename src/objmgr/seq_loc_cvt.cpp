@@ -868,7 +868,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         break;
     }
     ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
-    ref.SetPartial(m_Partial);
+    ref.SetPartial(m_Partial || ref.IsPartial());
     ref.SetTotalRange(m_TotalRange);
     if ( mapped_feat ) {
         // This will also set location and partial of the mapped feature
@@ -1224,6 +1224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/10/19 20:52:37  vasilche
+* Keep PARTIAL flag on mapped features.
+*
 * Revision 1.37  2004/10/12 17:09:00  grichenk
 * Added mapping of code-break.
 *
