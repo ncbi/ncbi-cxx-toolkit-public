@@ -43,6 +43,8 @@
 #include <corelib/ncbi_limits.hpp>
 #include <serial/serializable.hpp>
 
+#include <objects/seqloc/Textseq_id.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -349,12 +351,37 @@ inline
 int CSeq_id::Score(const CRef<CSeq_id>& id)
 {
     switch (id->Which()) {
-    case e_not_set:                               return kMax_Int;
-    case e_Giim: case e_Gi:                       return 20;
-    case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
-    case e_Local: case e_Patent:                  return 10;
-    case e_Other:                                 return 8;
-    default:                                      return 5;
+    case e_not_set:
+        return kMax_Int;
+
+    case e_Giim:
+    case e_Gi:
+        return 20;
+
+    case e_General:
+        return 15;
+    case e_Gibbsq:
+    case e_Gibbmt:
+        return 15;
+
+    case e_Local:
+    case e_Patent:
+        return 10;
+
+    case e_Other:
+        if (id->GetOther().IsSetVersion()) {
+            return 7;
+        }
+        return 8;
+
+    default:
+        {{
+             const CTextseq_id* text_id = id->GetTextseq_Id();
+             if (text_id  &&  text_id->IsSetVersion()) {
+                 return 4;
+             }
+             return 5;
+         }}
     }
 }
 
@@ -366,11 +393,22 @@ int CSeq_id::BestRank(const CRef<CSeq_id>& id)
     case e_not_set:                               return 83;
     case e_General: case e_Local:                 return 80;
     case e_Giim:                                  return 70;
-    case e_Other:                                 return 65;
+    case e_Other:
+        if (id->GetOther().IsSetVersion()) {
+            return 64;
+        }
+        return 65;
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
     case e_Pir:  case e_Swissprot:
-    case e_Tpg:   case e_Genbank:                 return 60;
+    case e_Tpg:   case e_Genbank:
+        {{
+             const CTextseq_id* text_id = id->GetTextseq_Id();
+             if (text_id  &&  text_id->IsSetVersion()) {
+                 return 59;
+             }
+             return 60;
+         }}
     case e_Gibbmt:                                return 56;
     case e_Gibbsq: case e_Patent:                 return 55;
     case e_Gi:                                    return 51;
@@ -387,11 +425,22 @@ int CSeq_id::WorstRank(const CRef<CSeq_id>& id)
     case e_Gi: case e_Giim:                       return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
     case e_Local: case e_Patent:                  return 10;
-    case e_Other:                                 return 8;
+    case e_Other:
+        if (id->GetOther().IsSetVersion()) {
+            return 8;
+        }
+        return 7;
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
     case e_Pir:  case e_Swissprot:
-    case e_Tpg:   case e_Genbank:                 return 5;
+    case e_Tpg:   case e_Genbank:
+        {{
+             const CTextseq_id* text_id = id->GetTextseq_Id();
+             if (text_id  &&  text_id->IsSetVersion()) {
+                 return 5;
+             }
+             return 4;
+         }}
     default:                                      return 3;
     }
 }
@@ -407,6 +456,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2004/03/01 18:26:04  dicuccio
+ * Modified CSeq_id::Score(), CSeq_id::BestRank(), and CSeq_id::WorstRank to
+ * consider an accession's version if present.
+ *
  * Revision 1.40  2004/01/22 21:03:58  dicuccio
  * Separated functionality of enums in GetLabel() into discrete mode and flags
  *
