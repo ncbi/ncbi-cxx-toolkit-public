@@ -66,7 +66,9 @@ CRWStreambuf::CRWStreambuf(IReader*                 r,
 
 CRWStreambuf::~CRWStreambuf()
 {
-    sync();
+    if (m_WriteBuf  &&  pptr() > m_WriteBuf) {
+        sync();
+    }
 
     IReaderWriter* r = dynamic_cast<IReaderWriter*> (m_Reader);
     IReaderWriter* w = dynamic_cast<IReaderWriter*> (m_Writer);
@@ -282,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2005/03/24 19:53:06  lavr
+ * CRWStreambuf's dtor: flush only if data pending
+ *
  * Revision 1.11  2005/02/03 20:40:25  ucko
  * Use our portable _ASSERT rather than assert.
  *
