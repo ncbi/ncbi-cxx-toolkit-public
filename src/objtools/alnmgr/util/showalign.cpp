@@ -114,6 +114,7 @@ static const int k_FeatureIdLen = 16;
 
 #define URL_Geo "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Geo\"></a>"
 
+const int CDisplaySeqalign::m_NumAsciiChar;
 const int CDisplaySeqalign::m_NumColor;
 const string CDisplaySeqalign::color[m_NumColor]={"#000000", "#808080", "#FF0000"};
 const int CDisplaySeqalign::m_PMatrixSize;
@@ -1967,6 +1968,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.30  2004/01/27 17:11:43  ucko
+*Allocate storage for m_NumAsciiChar to avoid link errors on AIX.
+*
 *Revision 1.29  2004/01/21 18:32:46  jianye
 *initialize m_ConfigFile
 *
