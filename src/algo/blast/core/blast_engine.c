@@ -120,7 +120,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 #endif
 {
    Int4 oid;
-   BLAST_SequenceBlkPtr subject;
+   BLAST_SequenceBlkPtr subject = NULL;
    Int4 num_chunks, chunk, total_subject_length, offset;
    BlastInitHitListPtr init_hitlist;
    Boolean blastp = (lookup->lut_type == AA_LOOKUP_TABLE);
@@ -202,6 +202,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    results = *results_ptr;
 
    init_hitlist = BLAST_InitHitListNew();
+   hsp_list = BlastHSPListNew();
 
    translated_subject = (program_number == blast_type_tblastn
                          || program_number == blast_type_tblastx
@@ -236,6 +237,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       if ( (oid % 10000) == 0 ) printf("oid=%d\n",oid);
 #endif
 
+      subject = BlastSequenceBlkFree(subject);
       /* Retrieve subject sequence in ncbistdaa for proteins or ncbi2na 
          for nucleotides */
       MakeBlastSequenceBlk(db, &subject, oid, BLASTP_ENCODING);
@@ -301,11 +303,12 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 			       offset_array_size,
 			       init_hitlist);
 	 
+         if (init_hitlist->total == 0)
+            continue;
+
          max_hits = MAX(max_hits, num_hits);
          total_hits += num_hits;
          num_init_hsps += init_hitlist->total;
-
-         hsp_list = NULL;
 
 	 if (score_options->gapped_calculation)
 	   GetGappedScore(query,
@@ -317,7 +320,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 			  init_hitlist,
 			  &hsp_list);
 
-         if (!hsp_list)
+         if (hsp_list->hspcnt == 0)
             continue;
          
          num_hsps += hsp_list->hspcnt;
@@ -353,10 +356,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
                 (hsp_list->traceback_done || !hit_options->is_gapped),
                 FALSE)) {
-            /* Destruct the unneeded hsp_list, but make sure the HSPs 
-               themselves are not destructed */
+            /* HSPs from this list are moved elsewhere, reset count back 
+               to 0 */
             hsp_list->hspcnt = 0;
-            hsp_list = BlastHSPListDestruct(hsp_list);
          }
          offset += subject->length - DBSEQ_CHUNK_OVERLAP;
          subject->sequence += 
@@ -367,17 +369,20 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
       } /* End loop on frames */
       
+      if (!full_hsp_list || full_hsp_list->hspcnt == 0)
+         continue;
+
       num_good_hsps += full_hsp_list->hspcnt;
 
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, query, subject, results, 
          full_hsp_list, hit_params, query_info, gap_align->sbp, 
          score_options, db, NULL);
+
    }
 
    BLAST_InitHitListDestruct(init_hitlist);
-
-   MemFree(subject);
+   BlastHSPListFree(hsp_list);
 
    /* Now sort the hit lists for all queries */
    BLAST_SortResults(results);

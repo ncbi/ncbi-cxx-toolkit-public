@@ -1456,7 +1456,10 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
    BlastInitHSPPtr PNTR init_hsp_array;
    BlastHSPListPtr hsp_list;
 
-   hsp_list = BlastHSPListNew();
+   if (*hsp_list_ptr == NULL)
+      *hsp_list_ptr = hsp_list = BlastHSPListNew();
+   else 
+      hsp_list = *hsp_list_ptr;
 
    init_hsp_array = (BlastInitHSPPtr PNTR) 
      Malloc(init_hitlist->total*sizeof(BlastInitHSPPtr));
@@ -1515,7 +1518,6 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
       hsp_list->traceback_done = TRUE;
 
    MemFree(init_hsp_array);
-   *hsp_list_ptr = hsp_list;
 
    return 0;
 }
@@ -1970,7 +1972,6 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
       gap_align->subject_stop - gap_align->subject_start;
    new_hsp->subject.frame = frame;
 
-   /* Increment ending offsets for convenience */
    new_hsp->query.end = gap_align->query_stop;
    new_hsp->subject.end = gap_align->subject_stop;
    new_hsp->query.gapped_start = init_hsp->q_off;
@@ -2156,7 +2157,10 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
 
    is_prot = (gap_align->program != blast_type_blastn);
 
-   hsp_list = BlastHSPListNew();
+   if (*hsp_list_ptr == NULL)
+      *hsp_list_ptr = hsp_list = BlastHSPListNew();
+   else 
+      hsp_list = *hsp_list_ptr;
 
    init_hsp_array = (BlastInitHSPPtr PNTR) 
       Malloc(init_hitlist->total*sizeof(BlastInitHSPPtr));

@@ -128,6 +128,14 @@ void BLAST_AdjustQueryOffsets(Uint1 program_number,
    }
 }
 
+BlastHSPPtr BlastHSPFree(BlastHSPPtr hsp)
+{
+   if (!hsp)
+      return NULL;
+   hsp->gap_info = GapXEditBlockDelete(hsp->gap_info);
+   return (BlastHSPPtr) MemFree(hsp);
+}
+
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfoPtr query_info,
         BlastHSPListPtr hsp_list, BlastHitSavingOptionsPtr hit_options, 
         BLAST_ScoreBlkPtr sbp)
@@ -192,9 +200,7 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPListPtr hsp_list,
       ASSERT(hsp != NULL);
       
       if (hsp->evalue > cutoff) {
-         hsp_array[index]->gap_info = 
-            GapXEditBlockDelete(hsp_array[index]->gap_info);
-         hsp_array[index] = MemFree(hsp_array[index]);
+         hsp_array[index] = BlastHSPFree(hsp_array[index]);
       } else {
          if (index > hsp_cnt)
             hsp_array[hsp_cnt] = hsp_array[index];
@@ -340,16 +346,14 @@ diag_uniq_compare_hsps(VoidPtr v1, VoidPtr v2)
        h1->subject.offset >= h2->subject.offset && 
        h1->subject.end <= h2->subject.end && 
        h1->evalue >= h2->evalue) { 
-      h1->gap_info = GapXEditBlockDelete(h1->gap_info); 
-      *hp1 = MemFree(*hp1);
+      *hp1 = BlastHSPFree(*hp1);
       return 1; 
    } else if (h1->query.offset <= h2->query.offset &&  
               h1->query.end >= h2->query.end &&  
               h1->subject.offset <= h2->subject.offset && 
               h1->subject.end >= h2->subject.end && 
               h1->evalue <= h2->evalue) { 
-      h2->gap_info = GapXEditBlockDelete(h2->gap_info); 
-      *hp2 = MemFree(*hp2);
+      *hp2 = BlastHSPFree(*hp2);
       return -1; 
    }
    
@@ -392,18 +396,14 @@ BlastSortUniqHspArray(BlastHSPListPtr hsp_list)
              q_end <= hsp_array[index1]->query.end && 
              s_end <= hsp_array[index1]->subject.end &&
              evalue >= hsp_array[index1]->evalue) {
-            hsp_array[index]->gap_info = 
-               GapXEditBlockDelete(hsp_array[index]->gap_info);
-            hsp_array[index] = MemFree(hsp_array[index]);
+            hsp_array[index] = BlastHSPFree(hsp_array[index]);
             break;
          } else if (q_off <= hsp_array[index1]->query.offset && 
              s_off <= hsp_array[index1]->subject.offset && 
              q_end >= hsp_array[index1]->query.end && 
              s_end >= hsp_array[index1]->subject.end &&
              evalue <= hsp_array[index1]->evalue) {
-            hsp_array[index1]->gap_info = 
-               GapXEditBlockDelete(hsp_array[index1]->gap_info);
-            hsp_array[index1] = MemFree(hsp_array[index1]);
+            hsp_array[index1] = BlastHSPFree(hsp_array[index1]);
             shift_needed = TRUE;
          }
       }
@@ -628,8 +628,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
       if (delete_hsp) { /* This HSP is now below the cutoff */
          if (first_esp != NULL && first_esp != hsp->gap_info->esp)
             GapXEditScriptDelete(first_esp);
-         hsp->gap_info = GapXEditBlockDelete(hsp->gap_info);
-         hsp_array[index] = MemFree(hsp_array[index]);
+         hsp_array[index] = BlastHSPFree(hsp_array[index]);
          purge = TRUE;
       }
    }
@@ -739,16 +738,13 @@ BlastHSPListPtr BlastHSPListNew()
    return hsp_list;
 }
 
-BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list)
+BlastHSPListPtr BlastHSPListFree(BlastHSPListPtr hsp_list)
 {
    Int4 index;
    BlastHSPPtr hsp;
 
    for (index = 0; index < hsp_list->hspcnt; ++index) {
-      hsp = hsp_list->hsp_array[index];
-      if (hsp->gap_info)
-         hsp->gap_info = GapXEditBlockDelete(hsp->gap_info);
-      MemFree(hsp);
+      BlastHSPFree(hsp_list->hsp_array[index]);
    }
    MemFree(hsp_list->hsp_array);
 
@@ -763,7 +759,7 @@ BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list)
 static void InsertBlastHSPListInHeap(BlastHitListPtr hit_list, 
                                      BlastHSPListPtr hsp_list)
 {
-      BlastHSPListDestruct(hit_list->hsplist_array[0]);
+      BlastHSPListFree(hit_list->hsplist_array[0]);
       hit_list->hsplist_array[0] = hsp_list;
       if (hit_list->hsplist_count >= 2) {
          heapify((CharPtr)hit_list->hsplist_array, (CharPtr)hit_list->hsplist_array, 
@@ -804,7 +800,7 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
    } else if (hsp_list->hsp_array[0]->evalue >= hit_list->worst_evalue) {
       /* This hit list is less significant than any of those already saved;
          discard it */
-      BlastHSPListDestruct(hsp_list);
+      BlastHSPListFree(hsp_list);
    } else {
       if (!hit_list->heapified) {
          CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count, 
@@ -829,6 +825,32 @@ static BlastHitListPtr BLAST_HitListNew(Int4 hitlist_size)
       MemNew(sizeof(BlastHitList));
    new_hitlist->hsplist_max = hitlist_size;
    return new_hitlist;
+}
+
+/** Deallocate memory for the hit list */
+static BlastHitListPtr BLAST_HitListFree(BlastHitListPtr hitlist)
+{
+   Int4 index;
+
+   if (!hitlist)
+      return NULL;
+
+   for (index = 0; index < hitlist->hsplist_count; ++index)
+      BlastHSPListFree(hitlist->hsplist_array[index]);
+   MemFree(hitlist->hsplist_array);
+   return (BlastHitListPtr) MemFree(hitlist);
+}
+
+static BlastHSPListPtr BlastHSPListDup(BlastHSPListPtr hsp_list)
+{
+   Int4 index;
+   BlastHSPListPtr new_hsp_list = (BlastHSPListPtr) 
+      MemDup(hsp_list, sizeof(BlastHSPList));
+   new_hsp_list->hsp_array = (BlastHSPPtr PNTR) 
+      MemDup(hsp_list->hsp_array, hsp_list->hspcnt*sizeof(BlastHSPPtr));
+   new_hsp_list->allocated = hsp_list->hspcnt;
+
+   return new_hsp_list;
 }
 
 /* Documentation in blast_hits.h */
@@ -918,26 +940,38 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
             tmp_hsp_list->hsp_array[tmp_hsp_list->hspcnt++] = hsp;
          } else {
             /* Cannot add more HSPs; free the memory */
-            MemFree(hsp);
+            hsp_list->hsp_array[index] = BlastHSPFree(hsp);
          }
       }
-   } else {
-      hsp_list_array = &hsp_list;
+
+      /* Insert the hit list(s) into the appropriate places in the results 
+         structure */
+      for (index = 0; index < results->num_queries; index++) {
+         if (hsp_list_array[index]) {
+            if (!results->hitlist_array[index]) {
+               results->hitlist_array[index] = 
+                  BLAST_HitListNew(hit_options->hitlist_size);
+            }
+            BLAST_UpdateHitList(results->hitlist_array[index], 
+                                hsp_list_array[index], thr_info);
+         }
+      }
+      MemFree(hsp_list_array);
+      /* All HSPs from the hsp_list structure are now moved to the results 
+         structure, so set the HSP count back to 0 */
+      hsp_list->hspcnt = 0;
+      BlastHSPListFree(hsp_list);
+   } else if (hsp_list->hspcnt > 0) {
+      /* Single query; save the HSP list directly into the results 
+         structure */
+      if (!results->hitlist_array[0]) {
+         results->hitlist_array[0] = 
+            BLAST_HitListNew(hit_options->hitlist_size);
+      }
+      BLAST_UpdateHitList(results->hitlist_array[0], 
+                          hsp_list, thr_info);
    }
    
-   /* Insert the hit list(s) into the appropriate places in the results 
-      structure */
-   for (index = 0; index < results->num_queries; index++) 
-   {
-      if (hsp_list_array[index] && hsp_list_array[index]->hspcnt > 0) {
-         if (!results->hitlist_array[index]) {
-            results->hitlist_array[index] = 
-               BLAST_HitListNew(hit_options->hitlist_size);
-         }
-         BLAST_UpdateHitList(results->hitlist_array[index], 
-                             hsp_list_array[index], thr_info);
-      }
-   }
    return 0; 
 }
 
@@ -954,6 +988,15 @@ Int2 BLAST_ResultsInit(Int4 num_queries, BlastResultsPtr PNTR results_ptr)
    
    *results_ptr = results;
    return status;
+}
+
+BlastResultsPtr BLAST_ResultsFree(BlastResultsPtr results)
+{
+   Int4 index;
+   for (index = 0; index < results->num_queries; ++index)
+      BLAST_HitListFree(results->hitlist_array[index]);
+   MemFree(results->hitlist_array);
+   return (BlastResultsPtr) MemFree(results);
 }
 
 Int2 BLAST_SortResults(BlastResultsPtr results)
@@ -1267,9 +1310,17 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
    BlastHSPPtr PNTR new_hsp_array;
    Int4Ptr index_array;
    
-   /* If no previous HSP list, just return the new one */
+   if (!hsp_list || hsp_list->hspcnt == 0)
+      return 0;
+
+   /* If no previous HSP list, just return the new one or its copy */
    if (!combined_hsp_list) {
-      *combined_hsp_list_ptr = hsp_list;
+      if (!append) {
+         *combined_hsp_list_ptr = BlastHSPListDup(hsp_list);
+         hsp_list->hspcnt = 0;
+      } else {
+         *combined_hsp_list_ptr = hsp_list;
+      }
       return 0;
    }
 
@@ -1298,7 +1349,7 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
              (new_hspcnt - combined_hsp_list->hspcnt)*sizeof(BlastHSPPtr));
       for (index = new_hspcnt - combined_hsp_list->hspcnt; 
            index < hsp_list->hspcnt; ++index)
-         MemFree(hsp_list->hsp_array[index]);
+         BlastHSPFree(hsp_list->hsp_array[index]);
       hsp_list->hsp_array = MemFree(hsp_list->hsp_array);
 
       combined_hsp_list->hspcnt = new_hspcnt;
@@ -1345,18 +1396,16 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
                if (BLAST_MergeHsps(hspp1[index], hspp2[index1], start)) {
                   /* Remove the second HSP, as it has been merged with the
                      first */
-                  hspp2[index1]->gap_info = 
-                     GapXEditBlockDelete(hspp2[index1]->gap_info);
-                  hspp2[index1] = MemFree(hspp2[index1]);
+                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
                   break;
                }
             } else { /* No gap information available */
                if (BLASTHspContained(hspp1[index], hspp2[index1])) {
-                  hspp1[index] = MemFree(hspp1[index]);
+                  hspp1[index] = BlastHSPFree(hspp1[index]);
                   hspp1[index] = hspp2[index1];
                   hspp2[index1] = NULL;
                } else if (BLASTHspContained(hspp2[index1], hspp1[index]))
-                  hspp2[index1] = MemFree(hspp2[index1]);
+                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
 
             }
          }
@@ -1400,7 +1449,7 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
    /* Free the remaining HSPs in the new list, if reallocation failed */
    if (combined_hsp_list->do_not_reallocate) {
       for ( ; index1 < hsp_list->hspcnt; ++index1)
-         MemFree(hsp_list->hsp_array[index]);
+         BlastHSPFree(hsp_list->hsp_array[index]);
    }
    hsp_list->hsp_array = MemFree(hsp_list->hsp_array);
 
