@@ -156,6 +156,12 @@
 /* Define to 1 if `min'/`max' templates are not implemented. */
 #undef HAVE_NO_MINMAX_TEMPLATE
 
+/* Define to 1 if ODBC libraries are available. */
+#undef HAVE_ODBC
+
+/* Define to 1 if you have the <odbcss.h> header file. */
+#undef HAVE_ODBCSS_H
+
 /* Define to 1 if you have OpenGL (-lGL). */
 #undef HAVE_OPENGL
 

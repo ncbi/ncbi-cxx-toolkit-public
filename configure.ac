@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.186 2003/05/01 19:02:03 ucko Exp $
+#  $Id: configure.ac,v 1.187 2003/05/05 20:45:28 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -180,6 +180,10 @@ AC_ARG_WITH(orbacus,
    [ --without-orbacus       do not use ORBacus CORBA libraries])
 AC_ARG_WITH(orbacus2,
    [ --with-orbacus=DIR      use ORBacus installation in DIR])
+AC_ARG_WITH(odbc,
+   [ --with-odbc=DIR         use ODBC installation in DIR])
+AC_ARG_WITH(odbc2,
+   [ --without-odbc          do not use ODBC])
 
 ## Optional projects
 AC_ARG_WITH(local-lbsm,
@@ -212,7 +216,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl bdb \
+sybase-new ftds mysql orbacus fltk opengl bdb odbc \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -248,7 +252,7 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-bdb=* \
+      | --with-bdb=* | --with-odbc=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -2247,6 +2251,41 @@ else
 fi
 
 
+## ODBC
+if test "$with_odbc" != "no" ; then
+   case "$with_odbc" in
+      yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"} ;;
+      */*      ) ODBC_PATH=$with_bdb                   ;;
+   esac
+   ODBC_INCLUDE="-I$ODBC_PATH/include"
+   ODBC_LIBPATH="${ODBC_PATH}/lib"
+   ODBC_LIBS="-L${ODBC_LIBPATH} ${CONF_f_runpath}${ODBC_LIBPATH} -lodbc -lodbcinst"
+   CPPFLAGS="$ODBC_INCLUDE $orig_CPPFLAGS"
+   LIBS="$ODBC_LIBS $orig_LIBS"
+   AC_CACHE_CHECK([for ODBC libraries in $ODBC_PATH], ncbi_cv_lib_odbc,
+      [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <sql.h>]],
+          [[SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*)"x";
+            SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);]])],
+          [ncbi_cv_lib_odbc=yes], [ncbi_cv_lib_odbc=no])])
+   if test "$ncbi_cv_lib_odbc" = "no"; then
+      with_odbc="no"
+   else
+      # odbcss.h isn't self-contained :-/
+      AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
+   fi
+fi
+if test "$with_odbc" = "no" ; then
+   ODBC_PATH="No_ODBC"
+   ODBC_INCLUDE=
+   ODBC_LIBS=
+   WithoutPackages="$WithoutPackages ODBC"
+else
+   WithPackages="$WithPackages ODBC"
+   AC_DEFINE(HAVE_ODBC, 1, [Define to 1 if ODBC libraries are available.])
+fi
+
+
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
@@ -3331,6 +3370,8 @@ AC_SUBST(MYSQL_LIBS)
 AC_SUBST(BERKELEYDB_INCLUDE)
 AC_SUBST(BERKELEYDB_STATIC_LIBS)
 AC_SUBST(BERKELEYDB_LIBS)
+AC_SUBST(ODBC_INCLUDE)
+AC_SUBST(ODBC_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)

@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS7_INCLUDE FTDS7_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -908,6 +908,8 @@ Optional Packages:
  --without-sp            do not use SP libraries
  --without-orbacus       do not use ORBacus CORBA libraries
  --with-orbacus=DIR      use ORBacus installation in DIR
+ --with-odbc=DIR         use ODBC installation in DIR
+ --without-odbc          do not use ODBC
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
  --without-serial        do not build the serialization library and tools
  --with-objects          generate/build serializeable objects from ASNs
@@ -1708,6 +1710,18 @@ if test "${with_orbacus2+set}" = set; then
 
 fi;
 
+# Check whether --with-odbc or --without-odbc was given.
+if test "${with_odbc+set}" = set; then
+  withval="$with_odbc"
+
+fi;
+
+# Check whether --with-odbc2 or --without-odbc2 was given.
+if test "${with_odbc2+set}" = set; then
+  withval="$with_odbc2"
+
+fi;
+
 ## Optional projects
 
 # Check whether --with-local-lbsm or --without-local-lbsm was given.
@@ -1779,7 +1793,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl bdb \
+sybase-new ftds mysql orbacus fltk opengl bdb odbc \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1815,7 +1829,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | [A-Z]*=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-bdb=* \
+      | --with-bdb=* | --with-odbc=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -9610,23 +9624,14 @@ if test "$with_ftds" != "no" ; then
    if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
       with_ftds=8
    fi
-   if test "$with_ftds" = 7 -o "$with_ftds" = 8 ; then
-      FTDS7_LOCAL_PATH="dbapi/driver/ftds/freetds"
-      if test -f ${srcdir}/src/$FTDS7_LOCAL_PATH/Makefile.in ; then
-         FTDS7_LIBS="-lsybdb_ftds7-static -ltds_ftds7-static"
-         FTDS7_PATH="<$FTDS7_LOCAL_PATH>"
-         FTDS7_INCLUDE="-I\$(includedir)/$FTDS7_LOCAL_PATH -I\$(includedir0)/$FTDS7_LOCAL_PATH"
-      fi
+   if test "$with_ftds" = 8 ; then
       FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
       if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
          FTDS8_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
          FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
          FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
       fi
-      case "$with_ftds" in
-      7) test -n "$FTDS7_PATH" && FTDS_PATH=$FTDS7_PATH && freetds="freetds" ;;
-      8) test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds" ;;
-      esac
+      test -n "$FTDS8_PATH" && FTDS_PATH=$FTDS8_PATH && freetds="freetds"
    else
       FTDS_PATH="$with_ftds"
    fi
@@ -9699,8 +9704,6 @@ echo "${ECHO_T}$ncbi_cv_lib_freetds" >&6
       if test "$ncbi_cv_lib_freetds" = "no"; then
          with_ftds=no
       else
-         FTDS7_INCLUDE=$FTDS_INCLUDE
-         FTDS7_LIBS=$FTDS_LIBS
          FTDS8_INCLUDE=$FTDS_INCLUDE
          FTDS8_LIBS=$FTDS_LIBS
       fi
@@ -9710,8 +9713,6 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
-   FTDS7_INCLUDE=
-   FTDS7_LIBS=
    FTDS8_INCLUDE=
    FTDS8_LIBS=
    freetds=
@@ -9724,8 +9725,6 @@ _ACEOF
 
    WithPackages="$WithPackages FreeTDS"
 fi
-
-
 
 
 
@@ -9928,6 +9927,135 @@ else
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_BERKELEY_DB 1
+_ACEOF
+
+fi
+
+
+## ODBC
+if test "$with_odbc" != "no" ; then
+   case "$with_odbc" in
+      yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"} ;;
+      */*      ) ODBC_PATH=$with_bdb                   ;;
+   esac
+   ODBC_INCLUDE="-I$ODBC_PATH/include"
+   ODBC_LIBPATH="${ODBC_PATH}/lib"
+   ODBC_LIBS="-L${ODBC_LIBPATH} ${CONF_f_runpath}${ODBC_LIBPATH} -lodbc -lodbcinst"
+   CPPFLAGS="$ODBC_INCLUDE $orig_CPPFLAGS"
+   LIBS="$ODBC_LIBS $orig_LIBS"
+   echo "$as_me:$LINENO: checking for ODBC libraries in $ODBC_PATH" >&5
+echo $ECHO_N "checking for ODBC libraries in $ODBC_PATH... $ECHO_C" >&6
+if test "${ncbi_cv_lib_odbc+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sql.h>
+int
+main ()
+{
+SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*)"x";
+            SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_odbc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_odbc=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_odbc" >&5
+echo "${ECHO_T}$ncbi_cv_lib_odbc" >&6
+   if test "$ncbi_cv_lib_odbc" = "no"; then
+      with_odbc="no"
+   else
+      # odbcss.h isn't self-contained :-/
+
+for ac_header in odbcss.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sql.h>
+
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  eval "$as_ac_Header=yes"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+eval "$as_ac_Header=no"
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+   fi
+fi
+if test "$with_odbc" = "no" ; then
+   ODBC_PATH="No_ODBC"
+   ODBC_INCLUDE=
+   ODBC_LIBS=
+   WithoutPackages="$WithoutPackages ODBC"
+else
+   WithPackages="$WithPackages ODBC"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ODBC 1
 _ACEOF
 
 fi
@@ -17217,6 +17345,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -17912,8 +18042,6 @@ s,@LORDER@,$LORDER,;t t
 s,@TSORT@,$TSORT,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
-s,@FTDS7_INCLUDE@,$FTDS7_INCLUDE,;t t
-s,@FTDS7_LIBS@,$FTDS7_LIBS,;t t
 s,@FTDS8_INCLUDE@,$FTDS8_INCLUDE,;t t
 s,@FTDS8_LIBS@,$FTDS8_LIBS,;t t
 s,@FTDS_INCLUDE@,$FTDS_INCLUDE,;t t
@@ -18002,6 +18130,8 @@ s,@MYSQL_LIBS@,$MYSQL_LIBS,;t t
 s,@BERKELEYDB_INCLUDE@,$BERKELEYDB_INCLUDE,;t t
 s,@BERKELEYDB_STATIC_LIBS@,$BERKELEYDB_STATIC_LIBS,;t t
 s,@BERKELEYDB_LIBS@,$BERKELEYDB_LIBS,;t t
+s,@ODBC_INCLUDE@,$ODBC_INCLUDE,;t t
+s,@ODBC_LIBS@,$ODBC_LIBS,;t t
 s,@NCBI_C_INCLUDE@,$NCBI_C_INCLUDE,;t t
 s,@NCBI_C_LIBPATH@,$NCBI_C_LIBPATH,;t t
 s,@OPENGL_INCLUDE@,$OPENGL_INCLUDE,;t t

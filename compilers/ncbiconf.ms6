@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.17 2003/04/01 20:59:33 ucko Exp $
+/* $Id: ncbiconf.ms6,v 1.18 2003/05/05 20:45:29 ucko Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -52,3 +52,6 @@
 #define HAVE_OPENGL      1
 
 #define HAVE_IOS_XALLOC  1
+
+#define HAVE_ODBC        1
+#define HAVE_ODBCSS_H    1

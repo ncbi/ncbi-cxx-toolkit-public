@@ -52,3 +52,6 @@
 #define HAVE_OPENGL      1
 
 #define HAVE_IOS_XALLOC  1
+
+#define HAVE_ODBC        1
+#define HAVE_ODBCSS_H    1
