@@ -101,18 +101,22 @@ void CCodeGenerator::GenerateCode(void)
         CNcbiOfstream fileList(m_FileListFileName.c_str());
         
         fileList << "GENFILES =";
-        for ( TOutputFiles::const_iterator filei = m_Files.begin();
-              filei != m_Files.end();
-              ++filei ) {
-            fileList << ' ' << filei->first << "_Base";
+        {
+            for ( TOutputFiles::const_iterator filei = m_Files.begin();
+                  filei != m_Files.end();
+                  ++filei ) {
+                fileList << ' ' << filei->first << "_Base";
+            }
         }
         fileList << endl;
 
         fileList << "GENUSERFILES =";
-        for ( TOutputFiles::const_iterator filei = m_Files.begin();
-              filei != m_Files.end();
-              ++filei ) {
-            fileList << ' ' << filei->first;
+        {
+            for ( TOutputFiles::const_iterator filei = m_Files.begin();
+                  filei != m_Files.end();
+                  ++filei ) {
+                fileList << ' ' << filei->first;
+            }
         }
         fileList << endl;
     }
