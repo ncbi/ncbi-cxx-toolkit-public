@@ -33,12 +33,14 @@
 #define VALIDATOR___UTILITIES__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <vector>
+#include <list>
 
 
 BEGIN_NCBI_SCOPE
@@ -172,7 +174,8 @@ private:
 
 bool IsClassInEntry(const CSeq_entry& se, CBioseq_set::EClass clss);
 bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope);
-
+bool IsBlankString(const string& str);
+bool IsBlankStringList(const list< string >& str_list);
 
 // =============================================================================
 // AnyObj:
@@ -209,6 +212,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/21 19:45:35  shomrat
+* Added IsBlankString and IsBlankStringList
+*
 * Revision 1.4  2003/01/06 16:37:24  shomrat
 * Add private function Associate to CFeatQualAssoc
 *

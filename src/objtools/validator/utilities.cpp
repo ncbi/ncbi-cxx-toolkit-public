@@ -44,6 +44,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <list>
 
 
 BEGIN_NCBI_SCOPE
@@ -1044,6 +1045,33 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
 }
 
 
+// Check if string is either empty or contains just white spaces
+bool IsBlankString(const string& str)
+{
+    if ( !str.empty() ) {
+        size_t len = str.length();
+        for ( size_t i = 0; i < len; ++i ) {
+            if ( !isspace(str[i]) ) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool IsBlankStringList(const list< string >& str_list)
+{
+    iterate( list< string >, str, str_list ) {
+        if ( !IsBlankString(*str) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -1053,6 +1081,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/21 19:45:55  shomrat
+* Added IsBlankString and IsBlankStringList
+*
 * Revision 1.3  2003/01/06 16:38:03  shomrat
 * ASSOCIATE macro replaced with function to overcome a bug in GCC compiler
 *
