@@ -79,6 +79,7 @@ shift
 for x_arg in "$@" ; do
   case "$x_arg" in
     --without-bin )  with_bin="no" ;;
+    --with-objects)  with_objects="yes" ;;
     --move        )  with_move="yes" ;;
     --srcdir=*    )  new_srcdir=`echo "$x_arg" | sed 's%--srcdir=%%'` ;;
     --drop-suffix )  relocate_flags="$relocate_flags $x_arg" ;;
@@ -195,6 +196,12 @@ done
 chmod a+x $install_builddir/relocate.sh
 (cd $new_srcdir && $install_builddir/relocate.sh $relocate_flags)
 
+# Also copy object files if requested (necessary for debugging info with
+# WorkShop)
+
+echo "Copying object files (this may take a while)"
+# Can we skip SunWS_cache?
+(cd $build_dir/build && find . -name "*.o" -print | cpio -pd $install_builddir)
 
 #####  MOVE mode (remove the original build dir)
 
