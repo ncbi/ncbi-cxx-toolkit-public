@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.168 2003/02/25 22:26:01 ucko Exp $
+#  $Id: configure.ac,v 1.169 2003/02/28 19:14:05 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -765,8 +765,11 @@ LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
    case "$compiler" in
       GCC )
-        DEF_FAST_FLAGS="-O9 -fomit-frame-pointer -finline-functions"
-        DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math -fstrict-aliasing"
+        DEF_FAST_FLAGS="-O9 -finline-functions -ffast-math -fstrict-aliasing"
+        if test "$with_profiling" != "yes"; then
+           # incompatible with -pg
+           DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
+        fi
         ;;
       WorkShop* )
         # (Re)include ARCH_CFLAGS here because -fast implies -xtarget=native.
