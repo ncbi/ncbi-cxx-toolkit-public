@@ -28,10 +28,10 @@
 /* #undef WORDS_BIGENDIAN */
 
 /* Host info */
-#define HOST "i386-pc-cygwin32"
-#define HOST_CPU "i386"
-#define HOST_VENDOR "pc"
-#define HOST_OS "cygwin32"
+#define HOST "PowerPC-Apple-MacOS"
+#define HOST_CPU "PowerPC"
+#define HOST_VENDOR "Apple"
+#define HOST_OS "MacOS"
 
 /* Define if C++ namespaces are not supported */
 /* #undef HAVE_NO_NAMESPACE */
