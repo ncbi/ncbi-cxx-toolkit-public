@@ -123,7 +123,7 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         return;
     }
     // Check processor status
-    if ( !IsStreamProcessorOkey(dir) ) {
+    if ( !IsStreamProcessorOkay(dir) ) {
         return;
     }
     // Sync buffers
@@ -182,7 +182,7 @@ int CCompressionStreambuf::sync()
 int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
 {
     // Check processor status
-    if ( !IsStreamProcessorOkey(dir) ) {
+    if ( !IsStreamProcessorOkay(dir) ) {
         return -1;
     }
     // Process remaining data in the preprocessing buffer
@@ -228,7 +228,7 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
 CT_INT_TYPE CCompressionStreambuf::overflow(CT_INT_TYPE c)
 {
     // Check processor status
-    if ( !IsStreamProcessorOkey(CCompressionStream::eWrite) ) {
+    if ( !IsStreamProcessorOkay(CCompressionStream::eWrite) ) {
         return CT_EOF;
     }
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
@@ -374,7 +374,7 @@ streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
                                          streamsize count)
 {
     // Check processor status
-    if ( !IsStreamProcessorOkey(CCompressionStream::eWrite) ) {
+    if ( !IsStreamProcessorOkay(CCompressionStream::eWrite) ) {
         return CT_EOF;
     }
     // Check parameters
@@ -450,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/01/20 20:37:35  lavr
+ * Fix "Okay" spelling
+ *
  * Revision 1.8  2003/09/25 17:51:08  dicuccio
  * Reordered headers to avoid compilation warning on MSVC
  *
