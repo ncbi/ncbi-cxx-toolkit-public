@@ -143,7 +143,7 @@ static EIO_Status s_WriteCommand(SOCK sock,
     size_t cmdlen = strlen(cmd);
     size_t arglen = arg ? strlen(arg) : 0;
     size_t linelen = cmdlen + (arglen ? 1/* */ + arglen : 0) + 2/*\r\n*/;
-    char* line = malloc(linelen + 1/*\0*/);
+    char* line = (char*) malloc(linelen + 1/*\0*/);
     EIO_Status status = eIO_Unknown;
     if (line) {
         memcpy(line, cmd, cmdlen);
@@ -371,7 +371,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
 {
     EIO_Status status = eIO_Success;
     size_t size = BUF_Size(xxx->wbuf);
-    char* s = malloc(size + 1);
+    char* s = (char*) malloc(size + 1);
     s_FTPAbort(xxx);
     assert(size);
     if (s) {
@@ -692,6 +692,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2005/01/27 18:59:52  lavr
+ * Explicit cast of malloc()ed memory
+ *
  * Revision 1.5  2005/01/05 17:40:13  lavr
  * FEAT extensions and fixes for protocol compliance
  *

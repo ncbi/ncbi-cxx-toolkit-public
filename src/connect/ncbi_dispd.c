@@ -174,9 +174,10 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     if (*net_info->client_host && !strchr(net_info->client_host, '.') &&
         (ip = SOCK_gethostbyname(net_info->client_host)) != 0 &&
         SOCK_ntoa(ip, addr, sizeof(addr)) == 0) {
-        if ((s= malloc(strlen(net_info->client_host) + strlen(addr) + 3)) != 0)
+        if ((s = (char*) malloc(strlen(net_info->client_host) +
+                                strlen(addr) + 3)) != 0) {
             sprintf(s, "%s(%s)", net_info->client_host, addr);
-        else
+        } else
             s = net_info->client_host;
     } else
         s = net_info->client_host;
@@ -466,6 +467,9 @@ void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2005/01/27 19:00:05  lavr
+ * Explicit cast of malloc()ed memory
+ *
  * Revision 6.62  2004/08/19 15:48:15  lavr
  * SERV_ITER::type renamed into SERV_ITER::types to reflect its bitmask nature
  *
