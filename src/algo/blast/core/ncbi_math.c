@@ -56,7 +56,7 @@ static char * _this_file = __FILE__;
     Return values accurate to approx. 16 digits for the quantity exp(x)-1
     for all x.
 */
-extern double BLAST_Expm1(double	x)
+double BLAST_Expm1(double	x)
 {
   double	absx;
 
@@ -88,7 +88,7 @@ extern double BLAST_Expm1(double	x)
     Log1p(x)
     Return accurate values for the quantity log(x+1) for all x > -1.
 */
-extern double BLAST_Log1p(double x)
+double BLAST_Log1p(double x)
 {
 	Int4	i;
 	double	sum, y;
@@ -110,7 +110,8 @@ extern double BLAST_Log1p(double x)
 	return sum;
 }
 
-static double LogDerivative(Int4 order, double* u) /* nth derivative of ln(u) */
+static double 
+s_LogDerivative(Int4 order, double* u) /* nth derivative of ln(u) */
         /* order is order of the derivative */
         /* u is values of u, u', u", etc. */
 {
@@ -186,7 +187,7 @@ static double _default_gamma_coef [] = {
 static int      xgamma_dim = DIM(_default_gamma_coef);
 
 static double
-general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
+s_GeneralLnGamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
         /* x is 10-digit accuracy achieved only for 1 <= x */
         /* order is order of the derivative, 0..POLYGAMMA_ORDER_MAX */
 {
@@ -217,7 +218,7 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
                 y[i] = value;
         }
         ++y[0];
-        value = LogDerivative(order, y);
+        value = s_LogDerivative(order, y);
         tmp = tx + 0.5;
         switch (order) {
         case 0:
@@ -249,7 +250,8 @@ general_lngamma(double x, Int4 order)      /* nth derivative of ln[gamma(x)] */
 }
 
 
-static double PolyGamma(double x, Int4 order) /* ln(ABS[gamma(x)]) - 10 digits of accuracy */
+static double 
+s_PolyGamma(double x, Int4 order) /* ln(ABS[gamma(x)]) - 10 digits of accuracy */
 	/* x is and derivatives */
 	/* order is order of the derivative */
 /* order = 0, 1, 2, ...  ln(gamma), digamma, trigamma, ... */
@@ -270,10 +272,10 @@ of order is truly the order of the derivative.  */
 	}
 
 	if (x >= 1.)
-		return general_lngamma(x, order);
+		return s_GeneralLnGamma(x, order);
 
 	if (x < 0.) {
-		value = general_lngamma(1. - x, order);
+		value = s_GeneralLnGamma(1. - x, order);
 		value = ((order - 1) % 2 == 0 ? value : -value);
 		if (order == 0) {
 			sx = sin(NCBIMATH_PI * x);
@@ -295,11 +297,11 @@ of order is truly the order of the derivative.  */
 				tmp *= NCBIMATH_PI;
 				y[k] = tmp * sin(x += (NCBIMATH_PI/2.));
 			}
-			value -= LogDerivative(order, y);
+			value -= s_LogDerivative(order, y);
 		}
 	}
 	else {
-		value = general_lngamma(1. + x, order);
+		value = s_GeneralLnGamma(1. + x, order);
 		if (order == 0) {
 			if (x == 0.) {
 /*
@@ -318,15 +320,16 @@ of order is truly the order of the derivative.  */
 	return value;
 }
 
-static double LnGamma(double x)               /* ln(ABS[gamma(x)]) - 10 dig
+static double 
+s_LnGamma(double x)               /* ln(ABS[gamma(x)]) - 10 dig
 its of accuracy */
 {
-        return PolyGamma(x, 0);
+        return s_PolyGamma(x, 0);
 }
 
 #define FACTORIAL_PRECOMPUTED   36
 
-extern double BLAST_Factorial(Int4 n)
+double BLAST_Factorial(Int4 n)
 {
         static double      precomputed[FACTORIAL_PRECOMPUTED]
                 = { 1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.};
@@ -345,13 +348,13 @@ extern double BLAST_Factorial(Int4 n)
                         nlim = m;
                         return x;
                 }
-                return exp(LnGamma((double)(n+1)));
+                return exp(s_LnGamma((double)(n+1)));
         }
         return 0.0; /* Undefined! */
 }
 
 /* LnGammaInt(n) -- return log(Gamma(n)) for integral n */
-extern double BLAST_LnGammaInt(Int4 n)
+double BLAST_LnGammaInt(Int4 n)
 {
 	static double	precomputed[FACTORIAL_PRECOMPUTED];
 	static Int4	nlim = 1; /* first two entries are 0 */
@@ -367,7 +370,7 @@ extern double BLAST_LnGammaInt(Int4 n)
 			return precomputed[nlim = m];
 		}
 	}
-	return LnGamma((double)n);
+	return s_LnGamma((double)n);
 }
 
 
@@ -385,7 +388,7 @@ extern double BLAST_LnGammaInt(Int4 n)
 #define F(x)  ((*f)((x), fargs))
 #define ROMBERG_ITMAX 20
 
-extern double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
+double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin)
 
 {
 	double	romb[ROMBERG_ITMAX];	/* present list of Romberg values */
@@ -448,16 +451,9 @@ extern double BLAST_RombergIntegrate(double (*f) (double,void*), void* fargs, do
 	return HUGE_VAL;
 }
 
-/*
-	Gcd(a, b)
-
-	Return the greatest common divisor of a and b.
-
-	Adapted 8-15-90 by WRG from code by S. Altschul.
-*/
-long BLAST_Gcd(long a, long b)
+Int4 BLAST_Gcd(Int4 a, Int4 b)
 {
-	long	c;
+	Int4	c;
 
 	b = ABS(b);
 	if (b > a)
@@ -469,6 +465,22 @@ long BLAST_Gcd(long a, long b)
 		b = c;
 	}
 	return a;
+}
+
+Int4 
+BLAST_Gdb3(Int4* a, Int4* b, Int4* c)
+{
+    Int4 g;
+    if (*b == 0) 
+        g = BLAST_Gcd(*a, *c);
+    else 
+        g = BLAST_Gcd(*a, BLAST_Gcd(*b, *c));
+    if (g > 1) {
+        *a /= g;
+        *b /= g;
+        *c /= g;
+    }
+    return g;
 }
 
 /* Round a floating point number to the nearest integer */
@@ -484,7 +496,7 @@ integer power function
 Original submission by John Spouge, 6/25/90
 Added to shared library by WRG
 */
-extern double BLAST_Powi(double x, Int4 n)	/* power */
+double BLAST_Powi(double x, Int4 n)	/* power */
 {
 	double	y;
 
@@ -529,12 +541,12 @@ Loop2:
 	return y * x;
 }
 
-extern double BLAST_LnFactorial (double x) {
+double BLAST_LnFactorial (double x) {
 
     if(x<=0.0)
         return 0.0;
     else
-        return LnGamma(x+1.0);
+        return s_LnGamma(x+1.0);
         
 }
 
@@ -542,6 +554,9 @@ extern double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/11/18 21:26:15  dondosha
+ * Added BLAST_Gdb3, needed for greedy alignment; removed extern from function signatures; renamed static functions according to C++ toolkit guidelines
+ *
  * Revision 1.10  2004/11/02 17:56:48  camacho
  * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *
