@@ -47,6 +47,9 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CGen_code_table_imp;
+
+
 class CGenetic_code_table : public CGenetic_code_table_Base
 {
     typedef CGenetic_code_table_Base Tparent;
@@ -60,7 +63,6 @@ private:
     // Prohibit copy constructor and assignment operator
     CGenetic_code_table(const CGenetic_code_table& value);
     CGenetic_code_table& operator=(const CGenetic_code_table& value);
-
 };
 
 
@@ -78,6 +80,11 @@ CGenetic_code_table::CGenetic_code_table(void)
 
 
 // genetic code translation table class
+
+// the function CCdregion_translate::TranslateCdregion in
+// <objects/util/sequence.hpp> obtains the sequence under
+// a coding region feature location and uses CTrans_table
+// to do the translation
 
 class CTrans_table : public CObject
 {
@@ -139,7 +146,25 @@ public:
 
     // return table of loaded genetic codes for iteration
     static const CGenetic_code_table & GetCodeTable (void);
+
+private:
+    // this class uses a singleton internally to manage the specifics
+    // of the genetic code implementation
+    // these are the variables / functions that control the singleton
+    static auto_ptr<CGen_code_table_imp> sm_Implementation;
+
+    static void                 x_InitImplementation(void);
+    static CGen_code_table_imp& x_GetImplementation (void);
 };
+
+inline
+CGen_code_table_imp& CGen_code_table::x_GetImplementation(void)
+{
+    if ( !sm_Implementation.get() ) {
+        x_InitImplementation();
+    }
+    return *sm_Implementation;
+}
 
 
 
@@ -235,8 +260,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/09/12 19:58:09  kans
+* CGen_code_table_imp instantiated after type info system (diccucio)
+*
 * Revision 1.3  2002/09/10 21:30:09  kans
-* k_ATG_state into two inline functions because MSVC compiler will not allow constant inside a class
+* k_ATG_state into two inline functions because MSVC compiler will not allow
+* a constant inside a class
 *
 * Revision 1.2  2002/09/10 15:18:08  kans
 * added GetCodeTable method

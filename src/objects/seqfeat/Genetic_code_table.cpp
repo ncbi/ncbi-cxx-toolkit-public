@@ -37,6 +37,7 @@
 // standard includes
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
+#include <corelib/ncbithr.hpp>
 
 // generated includes
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -176,6 +177,11 @@ void CTrans_table::x_InitFsaTransl (const string *ncbieaa,
                                     if ((z & k) != 0) {
 
                                         // calculate offset in genetic code string
+
+                                        // the T = 0, C = 1, A = 2, G = 3 order is
+                                        // necessary because the genetic code strings
+                                        // are presented in TCAG order in printed tables
+                                        // and in the genetic code strings
                                         cd = 16 * codonIdx [x] + 4 * codonIdx [y] + codonIdx [z];
 
                                         // lookup amino acid for codon XYZ
@@ -258,24 +264,33 @@ private:
 };
 
 // single instance of implementation class is initialized before Main
-static CGen_code_table_imp s_cgencodeimp;
+auto_ptr<CGen_code_table_imp> CGen_code_table::sm_Implementation;
+
+void CGen_code_table::x_InitImplementation()
+{
+    static CFastMutex s_Implementation_mutex;
+    CFastMutexGuard   LOCK(s_Implementation_mutex);
+    if ( !sm_Implementation.get() ) {
+        sm_Implementation.reset(new CGen_code_table_imp());
+    }
+}
 
 
 // public access functions
 
 const CTrans_table & CGen_code_table::GetTransTable (int id)
 {
-    return s_cgencodeimp.GetTransTable (id);
+    return x_GetImplementation().GetTransTable (id);
 }
 
 const CTrans_table & CGen_code_table::GetTransTable (const CGenetic_code & gc)
 {
-    return s_cgencodeimp.GetTransTable (gc);
+    return x_GetImplementation().GetTransTable (gc);
 }
 
-const CGenetic_code_table & CGen_code_table::GetCodeTable (void)
+const CGenetic_code_table & CGen_code_table::GetCodeTable(void)
 {
-    return s_cgencodeimp.GetCodeTable ();
+    return x_GetImplementation().GetCodeTable();
 }
 
 // constructor
@@ -422,6 +437,41 @@ const CGenetic_code_table & CGen_code_table_imp::GetCodeTable (void)
     return *m_GcTable;
 }
 
+// standard genetic code
+//
+// ncbieaa  "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG"
+// sncbieaa "---M---------------M---------------M----------------------------"
+//
+// -- Base1  TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG
+// -- Base2  TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG
+// -- Base3  TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG
+
+/*
+                         Second Position
+First      T             C             A             G      Third
+-----------------------------------------------------------------
+  T   TTT Phe [F]   TCT Ser [S]   TAT Tyr [Y]   TGT Cys [C]   T
+      TTC Phe [F]   TCC Ser [S]   TAC Tyr [Y]   TGC Cys [C]   C
+      TTA Leu [L]   TCA Ser [S]   TAA Ter [*]   TGA Ter [*]   A
+      TTG Leu [L]   TCG Ser [S]   TAG Ter [*]   TGG Trp [W]   G
+-----------------------------------------------------------------
+  C   CTT Leu [L]   CCT Pro [P]   CAT His [H]   CGT Arg [R]   T
+      CTC Leu [L]   CCC Pro [P]   CAC His [H]   CGC Arg [R]   C
+      CTA Leu [L]   CCA Pro [P]   CAA Gln [Q]   CGA Arg [R]   A
+      CTG Leu [L]   CCG Pro [P]   CAG Gln [Q]   CGG Arg [R]   G
+-----------------------------------------------------------------
+  A   ATT Ile [I]   ACT Thr [T]   AAT Asn [N]   AGT Ser [S]   T
+      ATC Ile [I]   ACC Thr [T]   AAC Asn [N]   AGC Ser [S]   C
+      ATA Ile [I]   ACA Thr [T]   AAA Lys [K]   AGA Arg [R]   A
+      ATG Met [M]   ACG Thr [T]   AAG Lys [K]   AGG Arg [R]   G
+-----------------------------------------------------------------
+  G   GTT Val [V]   GCT Ala [A]   GAT Asp [D]   GGT Gly [G]   T
+      GTC Val [V]   GCC Ala [A]   GAC Asp [D]   GGC Gly [G]   C
+      GTA Val [V]   GCA Ala [A]   GAA Glu [E]   GGA Gly [G]   A
+      GTG Val [V]   GCG Ala [A]   GAG Glu [E]   GGG Gly [G]   G
+-----------------------------------------------------------------
+*/
+
 // local copy of gc.prt genetic code table ASN.1
 const char * CGen_code_table_imp::sm_GenCodeTblMemStr =
 "Genetic-code-table ::= {\n" \
@@ -489,6 +539,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2002/09/12 19:59:12  kans
+* CGen_code_table_imp instantiated after type info system (diccucio)
+*
 * Revision 6.3  2002/09/10 15:19:55  kans
 * added GetCodeTable method, moved sm_GenCodeTblMemStr into implementation class
 *
