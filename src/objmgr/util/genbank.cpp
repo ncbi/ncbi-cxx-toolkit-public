@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/10/02 19:23:30  ucko
+* Avoid dereferencing NULL pointers.
+*
 * Revision 1.1  2001/09/25 20:12:06  ucko
 * More cleanups from Denis.
 * Put utility code in the objects namespace.
@@ -651,10 +654,10 @@ bool CGenbankWriter::WriteKeywords(const CBioseq& /* seq */,
 bool CGenbankWriter::WriteSegment(const CBioseq& seq,
                                   const CDescList& /* descs */)
 {
-    if (!seq.GetParentEntry()->GetParentEntry()->IsSet()) {
+    const CSeq_entry* parent_entry = seq.GetParentEntry()->GetParentEntry();
+    if (parent_entry == NULL  ||  !parent_entry->IsSet()) {
         return true; // nothing to do
     }
-    const CSeq_entry* parent_entry = seq.GetParentEntry()->GetParentEntry();
     const CBioseq_set& parent = parent_entry->GetSet();
     if (parent.GetClass() != CBioseq_set::eClass_parts
         ||  (parent_entry->GetParentEntry()->GetSet().GetClass()
