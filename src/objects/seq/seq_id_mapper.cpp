@@ -1519,6 +1519,9 @@ CSeq_id_Mapper::CSeq_id_Mapper(void)
 CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
                                          bool do_not_create)
 {
+    if (id.Which() == CSeq_id::e_not_set) {
+        return CSeq_id_Handle();
+    }
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
     CFastMutexGuard guard(map_it->second->m_TreeMutex);
@@ -1542,6 +1545,9 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
 void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
                                         TSeq_id_HandleSet& h_set)
 {
+    if (id.Which() == CSeq_id::e_not_set) {
+        return;
+    }
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
@@ -1690,6 +1696,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/01/02 19:40:04  gouriano
+* added checking CSeq_id for validity
+*
 * Revision 1.24  2002/12/26 20:55:18  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *
