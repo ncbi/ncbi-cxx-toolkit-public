@@ -120,7 +120,8 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
     for (CFeat_CI feat(handle, 0, 0, CSeqFeatData::e_not_set,
-                       SAnnotSelector::eOverlap_Intervals, CFeat_CI::eResolve_TSE);
+                       SAnnotSelector::eOverlap_Intervals,
+                       SAnnotSelector::eResolve_TSE);
          feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
@@ -193,6 +194,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.26  2003/11/19 22:18:06  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".

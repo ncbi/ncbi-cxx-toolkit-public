@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 CAlign_CI::CAlign_CI(CScope& scope,
                      const CSeq_loc& loc,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
                      scope, loc,
                      overlap_type,
@@ -57,7 +57,7 @@ CAlign_CI::CAlign_CI(CScope& scope,
 
 CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
                      bioseq, start, stop,
                      overlap_type,
@@ -133,6 +133,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.23  2004/03/30 15:42:33  grichenk
 * Moved alignment mapper to separate file, added alignment mapping
 * to CSeq_loc_Mapper.

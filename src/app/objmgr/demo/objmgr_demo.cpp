@@ -223,13 +223,13 @@ int CDemoApp::Run(void)
         ERR_POST(Fatal << "One of -gi, -id or -asn_id arguments is required");
     }
 
-    CFeat_CI::EResolveMethod resolve = CFeat_CI::eResolve_TSE;
+    SAnnotSelector::EResolveMethod resolve = SAnnotSelector::eResolve_TSE;
     if ( args["resolve"].AsString() == "all" )
-        resolve = CFeat_CI::eResolve_All;
+        resolve = SAnnotSelector::eResolve_All;
     if ( args["resolve"].AsString() == "none" )
-        resolve = CFeat_CI::eResolve_None;
+        resolve = SAnnotSelector::eResolve_None;
     if ( args["resolve"].AsString() == "tse" )
-        resolve = CFeat_CI::eResolve_TSE;
+        resolve = SAnnotSelector::eResolve_TSE;
     if ( !args["loader"].AsString().empty() ) {
         string env = "GENBANK_LOADER_METHOD="+args["loader"].AsString();
         ::putenv(::strdup(env.c_str()));
@@ -750,6 +750,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.61  2004/03/18 16:30:24  grichenk
 * Changed type of seq-align containers from list to vector.
 *

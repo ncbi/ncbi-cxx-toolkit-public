@@ -142,7 +142,7 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
             0, 0,
             CSeqFeatData::e_Rna,
             SAnnotSelector::eOverlap_Intervals,
-            CFeat_CI::eResolve_TSE,
+            SAnnotSelector::eResolve_TSE,
             CFeat_CI::e_Product);
         return (bool)mrna;
     }
@@ -420,6 +420,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/04/05 15:56:15  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.12  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

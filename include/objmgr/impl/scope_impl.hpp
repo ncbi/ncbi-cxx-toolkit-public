@@ -351,7 +351,7 @@ private:
     friend class CSeqVector;
     friend class CDataSource;
     friend class CBioseq_CI;
-    friend class CAnnotTypes_CI;
+    friend class CAnnot_Collector;
     friend class CBioseq_Handle;
     friend class CBioseq_set_Handle;
     friend class CSeq_entry_Handle;
@@ -370,6 +370,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.4  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

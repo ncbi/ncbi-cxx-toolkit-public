@@ -301,7 +301,7 @@ void IFlatFormatter::x_FormatFeatures(CFlatContext& ctx,
     } else if (ctx.IsProt()) { // broaden condition?
         for (CFeat_CI it(scope, ctx.GetLocation(), CSeqFeatData::e_not_set,
                          SAnnotSelector::eOverlap_Intervals,
-                         CFeat_CI::eResolve_All, CFeat_CI::e_Product);
+                         SAnnotSelector::eResolve_All, CFeat_CI::e_Product);
              it;  ++it) {
             l.push_back(TFFRef(new CFlattishFeature
                                (*it, ctx, &it->GetProduct(), true)));
@@ -309,7 +309,7 @@ void IFlatFormatter::x_FormatFeatures(CFlatContext& ctx,
     }
     for (CFeat_CI it(scope, ctx.GetLocation(), CSeqFeatData::e_not_set,
                      SAnnotSelector::eOverlap_Intervals,
-                     CFeat_CI::eResolve_All);
+                     SAnnotSelector::eResolve_All);
          it;  ++it) {
         switch (it->GetData().Which()) {
         case CSeqFeatData::e_Pub:  // done as REFERENCEs
@@ -347,6 +347,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/05 15:56:15  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.7  2003/12/02 19:21:26  ucko
 * Fix a potential infinite loop in tilde expansion.
 *

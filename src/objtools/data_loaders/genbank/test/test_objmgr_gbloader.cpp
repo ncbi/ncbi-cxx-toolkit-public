@@ -138,7 +138,7 @@ int CTestApplication::Run()
                 CFeat_CI feat_it2(scope, *loc,
                                   CSeqFeatData::e_Cdregion,
                                   SAnnotSelector::eOverlap_Intervals,
-                                  CFeat_CI::eResolve_All);
+                                  SAnnotSelector::eResolve_All);
                 LOG_POST("Iterating CDS features, resolving references");
                 for ( ; feat_it2;  ++feat_it2) {
                     fcount++;
@@ -176,6 +176,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/04/05 15:56:15  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.4  2004/03/16 15:47:29  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

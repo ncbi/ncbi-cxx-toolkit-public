@@ -80,8 +80,8 @@ void CMappedGraph::MakeMappedGraph(void) const
 
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
-                     EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     SAnnotSelector::EOverlapType overlap_type,
+                     SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
                      scope, loc,
                      overlap_type, resolve)
@@ -94,8 +94,8 @@ CGraph_CI::CGraph_CI(CScope& scope,
 
 CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
-                     EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     SAnnotSelector::EOverlapType overlap_type,
+                     SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
                      bioseq, start, stop,
                      overlap_type, resolve)
@@ -117,6 +117,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.24  2004/03/23 19:37:33  grichenk
 * Added m_Graph in constructors
 *

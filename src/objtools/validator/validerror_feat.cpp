@@ -1613,7 +1613,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             0, 0,
             CSeqFeatData::e_Rna,
             SAnnotSelector::eOverlap_TotalRange,
-            CFeat_CI::eResolve_None,
+            SAnnotSelector::eResolve_None,
             CFeat_CI::e_Product);
         while ( mrna ) {
             if ( &(mrna->GetOriginalFeature()) != &feat ) {
@@ -2673,6 +2673,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2004/04/05 15:56:15  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.52  2004/03/25 20:10:13  shomrat
 * Fix statement with no effect
 *

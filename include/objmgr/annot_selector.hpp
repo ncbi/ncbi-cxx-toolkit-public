@@ -453,6 +453,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
 protected:
+    friend class CAnnot_Collector;
 
     static bool x_Has(const TAnnotsNames& names, const CAnnotName& name);
     static void x_Add(TAnnotsNames& names, const CAnnotName& name);
@@ -499,6 +500,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.29  2004/03/17 16:03:42  vasilche
 * Removed Windows EOL
 *

@@ -209,6 +209,8 @@ public:
     CFeat_CI(const CSeq_entry_Handle& entry,
              const SAnnotSelector& sel);
 
+    typedef SAnnotSelector::TFeatType TFeatType;
+
     // Search all TSEs in all datasources. By default search sequence segments
     // (for constructed sequences) only if the referenced sequence is in the
     // same TSE as the master one. Use CFeat_CI::eResolve_All flag to search
@@ -217,21 +219,23 @@ public:
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              TFeatType feat_type,
-             EOverlapType overlap_type = eOverlap_Intervals,
-             EResolveMethod resolve = eResolve_TSE,
+             SAnnotSelector::EOverlapType overlap_type
+             = SAnnotSelector::eOverlap_Intervals,
+             SAnnotSelector::EResolveMethod resolve
+             = SAnnotSelector::eResolve_TSE,
              EFeat_Location loc_type = e_Location);
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              TFeatType feat_type,
-             EOverlapType overlap_type,
-             EResolveMethod resolve,
+             SAnnotSelector::EOverlapType overlap_type,
+             SAnnotSelector::EResolveMethod resolve,
              EFeat_Location loc_type,
              const CSeq_entry_Handle& limitEntry);
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              TFeatType feat_type,
-             EOverlapType overlap_type,
-             EResolveMethod resolve,
+             SAnnotSelector::EOverlapType overlap_type,
+             SAnnotSelector::EResolveMethod resolve,
              EFeat_Location loc_type,
              const CSeq_entry* limitEntry);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
@@ -242,21 +246,23 @@ public:
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              TFeatType feat_type,
-             EOverlapType overlap_type = eOverlap_Intervals,
-             EResolveMethod resolve = eResolve_TSE,
+             SAnnotSelector::EOverlapType overlap_type
+             = SAnnotSelector::eOverlap_Intervals,
+             SAnnotSelector::EResolveMethod resolve
+             = SAnnotSelector::eResolve_TSE,
              EFeat_Location loc_type = e_Location);
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              TFeatType feat_type,
-             EOverlapType overlap_type,
-             EResolveMethod resolve,
+             SAnnotSelector::EOverlapType overlap_type,
+             SAnnotSelector::EResolveMethod resolve,
              EFeat_Location loc_type,
              const CSeq_entry_Handle& limitEntry);
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              TFeatType feat_type,
-             EOverlapType overlap_type,
-             EResolveMethod resolve,
+             SAnnotSelector::EOverlapType overlap_type,
+             SAnnotSelector::EResolveMethod resolve,
              EFeat_Location loc_type,
              const CSeq_entry* limitEntry);
     CFeat_CI(const CFeat_CI& iter);
@@ -368,6 +374,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.38  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

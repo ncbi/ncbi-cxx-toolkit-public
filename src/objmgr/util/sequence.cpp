@@ -2830,7 +2830,7 @@ const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
                     0, 0,
                     CSeqFeatData::e_Cdregion,
                     SAnnotSelector::eOverlap_Intervals,
-                    CFeat_CI::eResolve_TSE,
+                    SAnnotSelector::eResolve_TSE,
                     CFeat_CI::e_Product,
                     0);
         if ( fi ) {
@@ -2861,7 +2861,7 @@ const CSeq_feat* GetPROTForProduct(const CBioseq_Handle& bsh)
                     0, 0,
                     CSeqFeatData::e_Prot,
                     SAnnotSelector::eOverlap_Intervals,
-                    CFeat_CI::eResolve_TSE,
+                    SAnnotSelector::eResolve_TSE,
                     CFeat_CI::e_Product,
                     0);
         if ( fi ) {
@@ -4080,6 +4080,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.77  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.76  2004/03/25 20:02:30  vasilche
 * Added several method variants with CBioseq_Handle as argument.
 *

@@ -688,7 +688,7 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
     CConstRef<CSeq_feat> result;
     TSeqPos best_length = 0;
     CFeat_CI it(scope, location, type, SAnnotSelector::eOverlap_Intervals,
-                CFeat_CI::eResolve_TSE, lt);
+                SAnnotSelector::eResolve_TSE, lt);
     for (;  it;  ++it) {
         if (it->GetLocation().IsWhole()) {
             // kludge; length only works on a Seq-loc of type "whole"
@@ -882,6 +882,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.32  2004/03/18 21:08:03  lkhotoml
 * Fixed letter case in title MRNA -> mRNA
 *

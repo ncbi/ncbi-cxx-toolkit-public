@@ -78,8 +78,8 @@ CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    TFeatType feat_type,
-                   EOverlapType overlap_type,
-                   EResolveMethod resolve,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
                    EFeat_Location loc_type)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      bioseq, start, stop,
@@ -95,8 +95,8 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    TFeatType feat_type,
-                   EOverlapType overlap_type,
-                   EResolveMethod resolve,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
                    EFeat_Location loc_type,
                    const CSeq_entry_Handle& limitEntry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
@@ -114,8 +114,8 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    TFeatType feat_type,
-                   EOverlapType overlap_type,
-                   EResolveMethod resolve,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
                    EFeat_Location loc_type,
                    const CSeq_entry* limitEntry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
@@ -133,8 +133,8 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
                    TFeatType feat_type,
-                   EOverlapType overlap_type,
-                   EResolveMethod resolve,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
                    EFeat_Location loc_type)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      scope, loc,
@@ -151,8 +151,8 @@ CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      scope, loc,
-                     eOverlap_Intervals,
-                     eResolve_TSE)
+                     SAnnotSelector::eOverlap_Intervals,
+                     SAnnotSelector::eResolve_TSE)
 {
     Update();
 }
@@ -162,8 +162,8 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      bioseq, start, stop,
-                     eOverlap_Intervals,
-                     eResolve_TSE)
+                     SAnnotSelector::eOverlap_Intervals,
+                     SAnnotSelector::eResolve_TSE)
 {
     Update();
 }
@@ -486,6 +486,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.28  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -162,7 +162,7 @@ private:
 
     friend class CSeqMap_CI;
     friend class CSeq_annot_CI;
-    friend class CAnnotTypes_CI;
+    friend class CAnnot_Collector;
     friend class CBioseq_CI;
     friend class CHeapScope;
 
@@ -189,6 +189,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.73  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

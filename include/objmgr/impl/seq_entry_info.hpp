@@ -154,7 +154,7 @@ protected:
     friend class CScope_Impl;
     friend class CDataSource;
 
-    friend class CAnnotTypes_CI;
+    friend class CAnnot_Collector;
     friend class CSeq_annot_CI;
 
     friend class CTSE_Info;
@@ -249,6 +249,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.12  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

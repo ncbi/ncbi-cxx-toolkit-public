@@ -363,7 +363,7 @@ void CFlatHead::x_AddDBSource(void)
         for (CFeat_CI it(scope, m_Context->GetLocation(),
                          CSeqFeatData::e_not_set,
                          SAnnotSelector::eOverlap_Intervals,
-                         CFeat_CI::eResolve_TSE, CFeat_CI::e_Product);
+                         SAnnotSelector::eResolve_TSE, CFeat_CI::e_Product);
              it;  ++it) {
             for (CTypeConstIterator<CSeq_id> id2(it->GetLocation());
                  id2;  ++id2) {
@@ -703,6 +703,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/05 15:56:15  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.6  2003/07/22 18:04:13  dicuccio
 * Fixed access of unset optional variables
 *

@@ -55,12 +55,16 @@ public:
               const SAnnotSelector& sel);
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE);
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE);
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
 
     // Iterate all features from the object regardless of their location
     CAlign_CI(const CSeq_annot_Handle& annot);
@@ -156,6 +160,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.27  2004/03/16 15:47:25  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

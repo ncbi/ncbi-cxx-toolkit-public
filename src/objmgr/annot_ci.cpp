@@ -42,9 +42,6 @@ BEGIN_SCOPE(objects)
 
 CAnnot_CI::CAnnot_CI(void)
 {
-    SetNoMapping(true);
-    SetSortOrder(eSortOrder_None);
-    m_Iterator = m_SeqAnnotSet.end();
 }
 
 
@@ -67,7 +64,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      scope, loc,
                      SAnnotSelector()
                      .SetNoMapping(true)
-                     .SetSortOrder(eSortOrder_None))
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
     x_Collect();
 }
@@ -81,7 +78,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      bioseq, start, stop,
                      SAnnotSelector()
                      .SetNoMapping(true)
-                     .SetSortOrder(eSortOrder_None))
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
     x_Collect();
 }
@@ -105,12 +102,12 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 CAnnot_CI::CAnnot_CI(CScope& scope,
                      const CSeq_loc& loc,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      scope, loc,
                      SAnnotSelector()
                      .SetNoMapping(true)
-                     .SetSortOrder(eSortOrder_None)
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve))
 {
@@ -120,12 +117,12 @@ CAnnot_CI::CAnnot_CI(CScope& scope,
 
 CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      bioseq, start, stop,
                      SAnnotSelector()
                      .SetNoMapping(true)
-                     .SetSortOrder(eSortOrder_None)
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve))
 {
@@ -161,6 +158,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/04/05 15:56:14  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.29  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -169,12 +169,16 @@ public:
               const SAnnotSelector& sel);
     // Search all TSEs in all datasources
     CGraph_CI(CScope& scope, const CSeq_loc& loc,
-              EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE);
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE);
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
     
     // Iterate all graphs from the object regardless of their location
     CGraph_CI(const CSeq_annot_Handle& annot);
@@ -312,6 +316,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/04/05 15:56:13  grichenk
+* Redesigned CAnnotTypes_CI: moved all data and data collecting
+* functions to CAnnotDataCollector. CAnnotTypes_CI is no more
+* inherited from SAnnotSelector.
+*
 * Revision 1.33  2004/03/23 19:37:41  grichenk
 * Added m_Graph in constructors
 *
