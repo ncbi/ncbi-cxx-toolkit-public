@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_id;
+class CSeq_id_Handle;
 class CBioseqContext;
 class IFormatter;
 
@@ -64,7 +64,7 @@ private:
     void x_AddSPBlock(CBioseqContext& ctx);
     void x_AddPRFBlock(CBioseqContext& ctx);
     void x_AddPDBBlock(CBioseqContext& ctx);
-    string x_FormatDBSourceID(const CSeq_id& id);
+    string x_FormatDBSourceID(const CSeq_id_Handle& idh);
 
     // data
     TDBSource m_DBSource;
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/12/06 17:23:07  shomrat
+* Use CSeq_id_Handle instead of CSeq_id
+*
 * Revision 1.3  2004/04/22 15:35:34  shomrat
 * Changes in context
 *
