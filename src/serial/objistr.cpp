@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2001/10/15 23:30:10  vakatov
+* Get rid of extraneous "break;" after "throw"
+*
 * Revision 1.83  2001/07/30 14:42:46  lavr
 * eDiag_Trace and eDiag_Fatal always print as much as possible
 *
@@ -1386,7 +1389,6 @@ char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
         break;
     case eFNP_Throw:
         throw runtime_error(message);
-        break;
     case eFNP_Abort:
         CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
         break;
