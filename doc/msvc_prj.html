@@ -13,7 +13,7 @@ This manual assumes that the UNIX-like environment is used to prepare
 and manage MSVC++ project files, which in turn can be used to build NCBI
 C++ Toolkit by MSVC++ Developer Studio. The following tools must be available in order for
 the conversion scripts to work: <b>cat</b>, <b>cp</b>, <b>echo</b>,
-<b>egrep</b>, <b>find</b>, <b>grep</b>,<b> head</b>, <b>mv</b>,<b> rm</b>,
+<b>egrep</b>, <b>expr</b>, <b>find</b>, <b>grep</b>,<b> head</b>, <b>mv</b>,<b> rm</b>,
 <b>sh</b>, <b>tail</b>, <b>test</b>,<b> touch</b>, and <b>tr</b>. In the examples of command
 sequences below, a prompt of the operating system is shown as <b><tt><font color="#CC33CC">$</font></tt></b>,
 and the user input is rendered <tt><font color="#009900">like this</font></tt>.
@@ -103,13 +103,13 @@ parameter, as described below) checked are: <tt><font color="#3333FF">.dsw</font
 <tt><font color="#3333FF">.dsp</font></tt>, <tt><font color="#3333FF">.bat</font></tt>.</li>
 No explicit call to this script is ever necessary: it is entirely internal to CVS and transparent for the user.
 
-<p>
+<br>
 <b><i>Additional</i></b> functionality has been added to this script: if it detects that the file being committed
 contains paths either to standard NCBI C Toolkit include files/libraries, or wxWindows include files/libraries,
 then the paths are expanded to specify both relative (i.e. local) and absolute (i.e. via
 <tt><font color="#3333FF">\\DIZZY\public</font></tt>) locations, thus making possible to build
-the project using either local or pre-built libraries. We require that if a toolkit is used locally (i.e. not via
-<tt>\\DIZZY</tt>), then the upper-level directory of the toolkit has to be placed
+the project using either local or pre-built libraries. We require that if a toolkit is used locally (i.e. <b><i>not</i></b> via
+<tt><font color="#3333FF">\\DIZZY\public</font></tt>), then the upper-level directory of the toolkit has to be placed
 at the same level as the NCBI C++ Toolkit top-level directory. We reserve that <tt>wxwin</tt> and <tt>ncbi</tt> subdirectories, when appear in the same parent directory as <tt>cxx</tt>, contain wxWindows and NCBI C Toolkit correspondingly.
 Click <a href="config.html#ref_MsvcProjWxwin">here</a> to know how to use the wxWindows package in these requirements.
 
