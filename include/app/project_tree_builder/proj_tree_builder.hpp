@@ -78,44 +78,48 @@ struct SMakeProjectT
     };
 
     typedef list<SMakeInInfo> TMakeInInfoList;
-    static void AnalyzeMakeIn(const CSimpleMakeFileContents& makein_contents,
-                              TMakeInInfoList*               info);
+    static void    AnalyzeMakeIn(const CSimpleMakeFileContents& makein_contents,
+                                 TMakeInInfoList*               info);
 
     
     static string CreateMakeAppLibFileName(const string& base_dir,
                                            const string& projname);
 
-    static void CreateFullPathes(const string&      dir, 
-                                 const list<string> files,
-                                 list<string>*      full_pathes);
+    static void   CreateFullPathes        (const string&      dir, 
+                                           const list<string> files,
+                                           list<string>*      full_pathes);
 
-    static string GetOneIncludeDir(const string& flag, const string& token);
+    static string GetOneIncludeDir        (const string& flag, 
+                                           const string& token);
     
     
-    static void CreateIncludeDirs(const list<string>& cpp_flags,
-                                  const string&       source_base_dir,
-                                  list<string>*       include_dirs);
+    static void   CreateIncludeDirs       (const list<string>& cpp_flags,
+                                           const string&       source_base_dir,
+                                           list<string>*       include_dirs);
 
-    static void CreateDefines(const list<string>& cpp_flags,
-                              list<string>*       defines);
+    static void   CreateDefines           (const list<string>& cpp_flags,
+                                           list<string>*       defines);
 
     
-    static void Create3PartyLibs(const list<string>& libs_flags, 
-                                 list<string>*       libs_list);
+    static void   Create3PartyLibs        (const list<string>& libs_flags, 
+                                           list<string>*       libs_list);
 
-    static void DoResolveDefs(CSymResolver&              resolver, 
-                              CProjectItemsTree::TFiles& files,
-                              const set<string>&         keys);
+    static void   DoResolveDefs           (CSymResolver&              resolver,
+                                           CProjectItemsTree::TFiles& files,
+                                           const set<string>&         keys);
 
-    static bool IsMakeInFile(const string& name);
+    static bool   IsMakeInFile            (const string& name);
 
-    static bool IsMakeLibFile(const string& name);
+    static bool   IsMakeLibFile           (const string& name);
 
 
-    static bool IsMakeAppFile(const string& name);
+    static bool   IsMakeAppFile           (const string& name);
 
-    static void ConvertLibDepends(const list<string>& depends_libs, 
-                                  list<CProjKey>*     depends_ids);
+    static void   ConvertLibDepends       (const list<string>& depends_libs, 
+                                           list<CProjKey>*     depends_ids);
+
+    static bool   IsConfigurableDefine    (const string& define);
+    static string StripConfigurableDefine (const string& define);
 };
 
 
@@ -290,6 +294,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/06 17:12:37  gorelenk
+ * Added member-functions IsConfigurableDefine and StripConfigurableDefine
+ * to struct SMakeProjectT .
+ *
  * Revision 1.3  2004/03/18 17:41:03  gorelenk
  * Aligned classes member-functions parameters inside declarations.
  *
