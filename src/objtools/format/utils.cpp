@@ -58,17 +58,23 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-string ExpandTildes(const string& s, ETildeStyle style)
+void ExpandTildes(string& s, ETildeStyle style)
 {
     if ( style == eTilde_tilde ) {
-        return s;
+        return;
     }
 
     SIZE_TYPE start = 0, tilde, length = s.length();
+
+    tilde = s.find('~', start);
+    if (tilde == NPOS) {  // no tilde
+        return;
+    }
+
     string result;
 
     while ( (start < length)  &&  (tilde = s.find('~', start)) != NPOS ) {
-        result += s.substr(start, tilde - start);
+        result.append(s, start, tilde - start);
         char next = (tilde + 1) < length ? s[tilde + 1] : 0;
         switch ( style ) {
         case eTilde_space:
@@ -94,7 +100,7 @@ string ExpandTildes(const string& s, ETildeStyle style)
 
         case eTilde_comment:
             if (tilde > 0  &&  s[tilde - 1] == '`') {
-                result[result.length() - 1] = '~';
+                result.replace(result.length() - 1, 1, 1,'~');
             } else {
                 result += '\n';
             }
@@ -107,8 +113,10 @@ string ExpandTildes(const string& s, ETildeStyle style)
             break;
         }
     }
-    result += s.substr(start);
-    return result;
+    if (start < length) {
+        result.append(s, start, NPOS);
+    }
+    s.swap(result);
 }
 
 
@@ -673,6 +681,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/03/28 17:25:24  shomrat
+* ExpandTilde optimization
+*
 * Revision 1.20  2005/02/07 15:02:06  shomrat
 * Bug fix
 *

@@ -50,7 +50,7 @@ enum ETildeStyle {
     eTilde_newline, // '~' -> '\n' but "~~" -> "~"
     eTilde_comment  // '~' -> '\n' always
 };
-string ExpandTildes(const string& s, ETildeStyle style);
+void ExpandTildes(string& s, ETildeStyle style);
 
 // convert " to '
 void ConvertQuotes(string& str);
@@ -136,6 +136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/03/28 17:25:28  shomrat
+* ExpandTilde optimization
+*
 * Revision 1.16  2005/02/09 15:00:10  shomrat
 * Added NcbiId
 *
