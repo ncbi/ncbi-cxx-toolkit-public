@@ -66,6 +66,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/23 19:18:18  kuznets
+ * New line at the file end (GCC)
+ *
  * Revision 1.1  2005/02/23 19:15:30  kuznets
  * Initial revision
  *
