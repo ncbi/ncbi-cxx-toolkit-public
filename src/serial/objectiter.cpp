@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/03/17 21:07:42  vasilche
+* Removed enforced check for call of IsValid().
+*
 * Revision 1.13  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -86,48 +89,29 @@
 
 BEGIN_NCBI_SCOPE
 
-void CConstObjectInfoEI::ReportNonValid(void) const
-{
-    ERR_POST("CElementIterator was used without checking its validity");
-}
-
-void CObjectInfoEI::ReportNonValid(void) const
-{
-    ERR_POST("CElementIterator was used without checking its validity");
-}
-
-void CObjectTypeInfoII::ReportNonValid(void) const
-{
-    ERR_POST("CTypeMemberIterator is used without validity check");
-}
-
 // container iterators
 
 CConstObjectInfoEI::CConstObjectInfoEI(const CConstObjectInfo& object)
     : m_Iterator(object.GetObjectPtr(), object.GetContainerTypeInfo())
 {
-    _DEBUG_ARG(m_LastCall = eNone);
 }
 
 CConstObjectInfoEI&
 CConstObjectInfoEI::operator=(const CConstObjectInfo& object)
 {
     m_Iterator.Init(object.GetObjectPtr(), object.GetContainerTypeInfo());
-    _DEBUG_ARG(m_LastCall = eNone);
     return *this;
 }
 
 CObjectInfoEI::CObjectInfoEI(const CObjectInfo& object)
     : m_Iterator(object.GetObjectPtr(), object.GetContainerTypeInfo())
 {
-    _DEBUG_ARG(m_LastCall = eNone);
 }
 
 CObjectInfoEI&
 CObjectInfoEI::operator=(const CObjectInfo& object)
 {
     m_Iterator.Init(object.GetObjectPtr(), object.GetContainerTypeInfo());
-    _DEBUG_ARG(m_LastCall = eNone);
     return *this;
 }
 

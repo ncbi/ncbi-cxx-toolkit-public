@@ -179,26 +179,30 @@ public:
     typedef set<TConstObjectPtr> TVisitedObjects;
     typedef list< pair< typename LevelIterator::TObjectInfo, const CItemInfo*> > TIteratorContext;
 
+protected:
+    // iterator debugging support
+    bool CheckValid(void) const
+        {
+            return m_CurrentObject;
+        }
+public:
+
     // construct object iterator
     CTreeIteratorTmpl(void)
         {
-            _DEBUG_ARG(m_LastCall = eNone);
         }
     CTreeIteratorTmpl(const TBeginInfo& beginInfo)
         {
-            _DEBUG_ARG(m_LastCall = eNone);
             Init(beginInfo);
         }
     CTreeIteratorTmpl(const TBeginInfo& beginInfo, const string& filter)
         {
-            _DEBUG_ARG(m_LastCall = eNone);
             Init(beginInfo, filter);
         }
     virtual ~CTreeIteratorTmpl(void)
         {
             Reset();
         }
-
 
     // get information about current object
     TObjectInfo& Get(void)
@@ -223,7 +227,6 @@ public:
         {
             m_CurrentObject.Reset();
             m_VisitedObjects.reset(0);
-            _DEBUG_ARG(m_LastCall = eNone);
             while ( !m_Stack.empty() )
                 m_Stack.pop();
             _ASSERT(!*this);
@@ -248,7 +251,6 @@ public:
 
     bool IsValid(void) const
         {
-            _DEBUG_ARG(m_LastCall = eValid);
             return CheckValid();
         }
 
@@ -327,20 +329,6 @@ public:
         }
 
 protected:
-    bool CheckValid(void) const
-        {
-#if _DEBUG
-            if ( m_LastCall != eValid)
-                ReportNonValid();
-#endif
-            return m_CurrentObject;
-        }
-
-    void ReportNonValid(void) const
-        {
-            ERR_POST("Object iterator was used without checking its validity");
-        }
-
     virtual bool CanSelect(const CConstObjectInfo& obj)
         {
             if ( !obj )
@@ -438,9 +426,6 @@ private:
             } while ( Step(current) );
         }
 
-#if _DEBUG
-    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
     // stack of tree level iterators
     stack< AutoPtr<LevelIterator> > m_Stack;
     // currently selected object
@@ -983,8 +968,6 @@ CConstBeginInfo Begin(const C& obj, EDetectLoops)
 /* @} */
 
 
-//#include <serial/iterator.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* ITERATOR__HPP */
@@ -992,6 +975,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/03/17 21:07:22  vasilche
+* Removed enforced check for call of IsValid().
+*
 * Revision 1.36  2005/01/24 21:58:46  vasilche
 * Fixed check for validity of CTypeIterator<>.
 *

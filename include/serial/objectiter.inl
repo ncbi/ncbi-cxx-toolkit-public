@@ -41,23 +41,17 @@
 inline
 CConstObjectInfoEI::CConstObjectInfoEI(void)
 {
-    _DEBUG_ARG(m_LastCall = eNone);
 }
 
 inline
 bool CConstObjectInfoEI::CheckValid(void) const
 {
-#if _DEBUG
-    if ( m_LastCall != eValid)
-        ReportNonValid();
-#endif
     return m_Iterator.Valid();
 }
 
 inline
 bool CConstObjectInfoEI::Valid(void) const
 {
-    _DEBUG_ARG(m_LastCall = eValid);
     return CheckValid();
 }
 
@@ -101,23 +95,17 @@ CConstObjectInfo CConstObjectInfoEI::operator->(void) const
 inline
 CObjectInfoEI::CObjectInfoEI(void)
 {
-    _DEBUG_ARG(m_LastCall = eNone);
 }
 
 inline
 bool CObjectInfoEI::CheckValid(void) const
 {
-#if _DEBUG
-    if ( m_LastCall != eValid)
-        ReportNonValid();
-#endif
     return m_Iterator.Valid();
 }
 
 inline
 bool CObjectInfoEI::Valid(void) const
 {
-    _DEBUG_ARG(m_LastCall = eValid);
     return CheckValid();
 }
 
@@ -125,7 +113,6 @@ inline
 void CObjectInfoEI::Next(void)
 {
     _ASSERT(CheckValid());
-    _DEBUG_ARG(m_LastCall = eNext);
     m_Iterator.Next();
 }
 
@@ -154,7 +141,6 @@ inline
 void CObjectInfoEI::Erase(void)
 {
     _ASSERT(CheckValid());
-    _DEBUG_ARG(m_LastCall = eErase);
     m_Iterator.Erase();
 }
 
@@ -165,7 +151,6 @@ CObjectTypeInfoII::CObjectTypeInfoII(void)
     : m_ItemIndex(kFirstMemberIndex),
       m_LastItemIndex(kInvalidMember)
 {
-    _DEBUG_ARG(m_LastCall = eNone);
 }
 
 inline
@@ -175,7 +160,6 @@ void CObjectTypeInfoII::Init(const CClassTypeInfoBase* typeInfo,
     m_OwnerType = typeInfo;
     m_ItemIndex = index;
     m_LastItemIndex = typeInfo->GetItems().LastIndex();
-    _DEBUG_ARG(m_LastCall = (index == kInvalidMember? eNone: eValid));
 }
 
 inline
@@ -213,10 +197,6 @@ const CClassTypeInfoBase* CObjectTypeInfoII::GetClassTypeInfoBase(void) const
 inline
 bool CObjectTypeInfoII::CheckValid(void) const
 {
-#if _DEBUG
-    if ( m_LastCall != eValid)
-        ReportNonValid();
-#endif
     return m_ItemIndex >= kFirstMemberIndex &&
         m_ItemIndex <= m_LastItemIndex;
 }
@@ -243,7 +223,6 @@ const string& CObjectTypeInfoII::GetAlias(void) const
 inline
 bool CObjectTypeInfoII::Valid(void) const
 {
-    _DEBUG_ARG(m_LastCall = eValid);
     return CheckValid();
 }
 
@@ -251,7 +230,6 @@ inline
 void CObjectTypeInfoII::Next(void)
 {
     _ASSERT(CheckValid());
-    _DEBUG_ARG(m_LastCall = eNext);
     ++m_ItemIndex;
 }
 
@@ -926,6 +904,9 @@ CObjectInfoCV CObjectInfo::GetCurrentChoiceVariant(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/03/17 21:07:42  vasilche
+* Removed enforced check for call of IsValid().
+*
 * Revision 1.7  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *

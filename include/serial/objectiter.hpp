@@ -78,15 +78,12 @@ public:
     {
         return 0;
     }
-private:
+
+protected:
     bool CheckValid(void) const;
 
-    void ReportNonValid(void) const;
-    
+private:
     CConstContainerElementIterator m_Iterator;
-#if _DEBUG
-    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
 };
 
 class NCBI_XSERIAL_EXPORT CObjectInfoEI
@@ -125,15 +122,12 @@ public:
     {
         return 0;
     }
-private:
+
+protected:
     bool CheckValid(void) const;
 
-    void ReportNonValid(void) const;
-
+private:
     CContainerElementIterator m_Iterator;
-#if _DEBUG
-    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
 };
 
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoII // item iterator (either member or variant)
@@ -150,6 +144,7 @@ public:
     void Next(void);
 
     const CItemInfo* GetItemInfo(void) const;
+
 protected:
     CObjectTypeInfoII(void);
     CObjectTypeInfoII(const CClassTypeInfoBase* typeInfo);
@@ -166,18 +161,13 @@ protected:
     {
         return true;
     }
+
+    bool CheckValid(void) const;
+
 private:
     CObjectTypeInfo m_OwnerType;
     TMemberIndex m_ItemIndex;
     TMemberIndex m_LastItemIndex;
-    
-    void ReportNonValid(void) const;
-    
-protected:
-#if _DEBUG
-    mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
-#endif
-    bool CheckValid(void) const;
 };
 
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoMI : public CObjectTypeInfoII
@@ -489,6 +479,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/03/17 21:07:42  vasilche
+* Removed enforced check for call of IsValid().
+*
 * Revision 1.13  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *
