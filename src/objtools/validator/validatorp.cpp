@@ -130,6 +130,7 @@ CValidError_imp::CValidError_imp
       m_OvlPepErr((options & CValidator::eVal_ovl_pep_err) != 0),
       m_RequireTaxonID((options & CValidator::eVal_need_taxid) != 0),
       m_RequireISOJTA((options & CValidator::eVal_need_isojta) != 0),
+      m_ValidateIdSet((options & CValidator::eVal_validate_id_set) != 0),
       m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
       m_IsStandaloneAnnot(false),
       m_NoPubs(false),
@@ -1866,6 +1867,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/03/21 21:11:09  shomrat
+* Initialization of m_ValidateIdSet
+*
 * Revision 1.25  2003/03/21 20:36:34  shomrat
 * Added SEQ_DESCR_UnnecessaryBioSourceFocus
 *
