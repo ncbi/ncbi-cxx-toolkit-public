@@ -119,9 +119,10 @@ public:
     CDB_RPCEx(EDB_Severity severity, int err_code,
               const string& originated_from, const string& msg,
               const string& proc_name, int proc_line);
+    virtual ~CDB_RPCEx() throw();
 
     const string& ProcName()  const { return m_ProcName; }
-    int           ProcLine()  const { return m_ProcLine;     }
+    int           ProcLine()  const { return m_ProcLine; }
 
     virtual CDB_Exception* Clone() const;
 
@@ -138,6 +139,7 @@ public:
     CDB_SQLEx(EDB_Severity severity, int err_code,
               const string& originated_from, const string& msg,
               const string& sql_state, int batch_line);
+    virtual ~CDB_SQLEx() throw();
 
     const string& SqlState()   const { return m_SqlState;  }
     int           BatchLine()  const { return m_BatchLine; }
@@ -301,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2001/10/04 20:28:08  vakatov
+ * Added missing virtual destructors to CDB_RPCEx and CDB_SQLEx
+ *
  * Revision 1.6  2001/10/01 20:09:27  vakatov
  * Introduced a generic default user error handler and the means to
  * alternate it. Added an auxiliary error handler class

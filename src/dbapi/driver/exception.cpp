@@ -31,6 +31,7 @@
 */
 
 #include <dbapi/driver/exception.hpp>
+#include <iostream>
 
 
 BEGIN_NCBI_SCOPE
@@ -110,13 +111,17 @@ CDB_RPCEx::CDB_RPCEx(EDB_Severity severity, int err_code,
     m_ProcLine = proc_line;
 }
 
+CDB_RPCEx::~CDB_RPCEx() throw()
+{
+    return;
+}
+
 CDB_Exception* CDB_RPCEx::Clone() const
 {
     return new CDB_RPCEx
         (m_Severity, m_ErrCode, m_OriginatedFrom, m_Message,
          m_ProcName, m_ProcLine);
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -131,6 +136,11 @@ CDB_SQLEx::CDB_SQLEx(EDB_Severity severity, int err_code,
     static const string s_UnknownSqlState = "Unknown";
     m_SqlState  = sql_state.empty() ? s_UnknownSqlState : sql_state;
     m_BatchLine = batch_line;
+}
+
+CDB_SQLEx::~CDB_SQLEx() throw()
+{
+    return;
 }
 
 CDB_Exception* CDB_SQLEx::Clone() const
@@ -448,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/10/04 20:26:45  vakatov
+ * Added missing virtual destructors to CDB_RPCEx and CDB_SQLEx
+ *
  * Revision 1.5  2001/10/01 20:09:29  vakatov
  * Introduced a generic default user error handler and the means to
  * alternate it. Added an auxiliary error handler class
