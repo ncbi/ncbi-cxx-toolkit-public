@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.8  2002/08/30 16:20:56  vasilche
 * Avoid MT lock in CTypeRef::Get()
 *
@@ -66,7 +69,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static CMutex s_TypeRefMutex;
+DEFINE_STATIC_MUTEX(s_TypeRefMutex);
 
 
 CTypeRef::CTypeRef(TGet1Proc getProc, const CTypeRef& arg)

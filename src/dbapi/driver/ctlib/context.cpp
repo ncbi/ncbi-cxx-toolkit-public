@@ -66,7 +66,7 @@ CS_END_EXTERN_C
 
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 {
-    static CFastMutex xMutex;
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
     m_Context         = 0;
@@ -196,7 +196,7 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
                                       bool            reusable,
                                       const string&   pool_name)
 {
-    static CFastMutex xMutex;
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
     if (reusable  &&  m_NotInUse.NofItems() > 0) {
@@ -828,6 +828,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.14  2002/06/28 22:49:02  garrett
  * CTLIB now connects under Windows.
  *

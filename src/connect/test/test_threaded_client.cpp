@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2002/09/19 20:05:42  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 6.3  2002/01/15 22:24:42  ucko
 * Take advantage of MT_LOCK_cxx2c
 *
@@ -66,7 +69,7 @@ BEGIN_NCBI_SCOPE
 
 static          unsigned int s_Requests;
 static volatile unsigned int s_Processed = 0;
-static CFastMutex            s_Mutex;
+DEFINE_STATIC_FAST_MUTEX(s_Mutex);
 
 class CConnectionRequest : public CStdRequest
 {

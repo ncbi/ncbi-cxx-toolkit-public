@@ -136,7 +136,7 @@ static bool s_WriteComment(CNcbiOstream& os, const string& comment)
 
 
 // Protective mutex for registry Get() and Set() functions
-static CFastMutex s_RegMutex;
+DEFINE_STATIC_FAST_MUTEX(s_RegMutex);
 
 
 CNcbiRegistry::CNcbiRegistry(void)
@@ -762,6 +762,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.24  2002/08/01 18:43:57  ivanov
  * Using NcbiGetlineEOL() instead s_NcbiGetline()
  *

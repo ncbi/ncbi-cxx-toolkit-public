@@ -32,6 +32,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 // There was a long and bootless discussion:
@@ -89,12 +90,20 @@ BEGIN_NCBI_SCOPE
 //
 
 
-CFastMutex CObject::sm_ObjectMutex;
+DEFINE_STATIC_FAST_MUTEX(sm_ObjectMutex);
 
-#ifdef NCBI_COUNTER_NEED_MUTEX
+#if defined(NCBI_COUNTER_NEED_MUTEX)
 // CAtomicCounter doesn't normally have a .cpp file of its own, so this
 // goes here instead.
-CFastMutex CAtomicCounter::sm_Mutex;
+DEFINE_STATIC_FAST_MUTEX(sm_AtomicCounterMutex);
+
+CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
+{
+    CFastMutexGuard LOCK(sm_Mutex);
+    //TValue* nv_value_p = const_cast<TValue*>(&m_Value);
+    return (m_Value) += delta;
+}
+
 #endif
 
 #if USE_HEAPOBJ_LIST
@@ -361,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.31  2002/08/28 17:05:50  vasilche
  * Remove virtual inheritance, fixed heap detection
  *

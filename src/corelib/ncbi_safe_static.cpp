@@ -37,6 +37,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <memory>
 #include <assert.h>
 
@@ -50,11 +51,11 @@ BEGIN_NCBI_SCOPE
 
 // Protective mutex and the owner thread ID to avoid
 // multiple initializations and deadlocks
-static CFastMutex      s_Mutex;
-static TThreadSystemID s_MutexOwner;
+DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+
+static CThreadSystemID s_MutexOwner;
 // true if s_MutexOwner has been set (while the mutex is locked)
 static bool            s_MutexLocked;
-
 
 bool CSafeStaticPtr_Base::Init_Lock(bool* mutex_locked)
 {
@@ -62,8 +63,7 @@ bool CSafeStaticPtr_Base::Init_Lock(bool* mutex_locked)
     // in case of nested calls to Get() by T constructor
     // Lock only if unlocked or locked by another thread
     // to prevent initialization by another thread
-    TThreadSystemID id;
-    CThread::GetSystemID(&id);
+    CThreadSystemID id = CThreadSystemID::GetCurrent();
     if (!s_MutexLocked  ||  s_MutexOwner != id) {
         s_Mutex.Lock();
         s_MutexLocked = true;
@@ -82,7 +82,6 @@ void CSafeStaticPtr_Base::Init_Unlock(bool mutex_locked)
         s_Mutex.Unlock();
     }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -158,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.5  2002/04/11 20:00:45  ivanov
  * Returned standard assert() vice CORE_ASSERT()
  *

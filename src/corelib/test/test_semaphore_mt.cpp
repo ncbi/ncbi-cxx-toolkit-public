@@ -38,6 +38,7 @@
  */
 
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/test_mt.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -206,6 +207,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 6.6  2002/04/23 13:11:50  gouriano
  * test_mt.cpp/hpp moved into another location
  *

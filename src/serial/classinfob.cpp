@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.15  2002/09/13 15:38:42  dicuccio
 * Fixed memory leak (need to clear a static prior to termination)
 *
@@ -111,7 +114,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static CMutex s_ClassInfoMutex;
+DEFINE_STATIC_MUTEX(s_ClassInfoMutex);
 
 CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        size_t size, const char* name,

@@ -36,7 +36,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbimtx.hpp>
 
 #if defined(HAVE_SCHED_YIELD) && !defined(NCBI_NO_THREADS)
 #  include <sched.h>
@@ -76,11 +75,11 @@
 #elif defined(NCBI_COMPILER_GCC3)
 #  include <bits/atomicity.h>
    typedef _Atomic_word TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) __exchange_and_add(p, d) + d
+#  define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
 #elif defined(NCBI_COMPILER_COMPAQ)
 #  include <machine/builtins.h>
    typedef int TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) __ATOMIC_ADD_LONG(p, d) + d
+#  define NCBI_COUNTER_ADD(p, d) (__ATOMIC_ADD_LONG(p, d) + d)
 #elif defined(NCBI_OS_SOLARIS) && 0 // Kernel-only. :-/
 #  include <sys/atomic.h>
    typedef uint32_t TNCBIAtomicValue;
@@ -94,7 +93,7 @@
 #elif defined(NCBI_OS_AIX)
 #  include <sys/atomic_op.h>
    typedef int TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) fetch_and_add(p, d) + d
+#  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
 #  include <libkern/OSAtomic.h>
    typedef SInt32 TNCBIAtomicValue;
@@ -106,7 +105,7 @@
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
    typedef LONG TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) InterlockedExchangeAdd(p, d) + d
+#  define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(const_cast<TNCBIAtomicValue*>(p), d) + d)
 #else
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
@@ -130,15 +129,15 @@ public:
     // atomically adds delta, returning new value
     TValue Add(int delta) THROWS_NONE;
 
-private:
-#ifdef NCBI_COUNTER_USE_ASM
+#if defined(NCBI_COUNTER_USE_ASM)
     static TValue x_Add(volatile TValue* value, int delta) THROWS_NONE;
+#  if !defined(NCBI_COUNTER_ADD)
+#     define NCBI_COUNTER_ADD(value, delta) NCBI_NS_NCBI::CAtomicCounter::x_Add((value), (delta))
+#  endif
 #endif
 
+private:
     volatile TValue     m_Value;
-#ifdef NCBI_COUNTER_NEED_MUTEX
-    static   CFastMutex sm_Mutex;
-#endif
 };
 
 
@@ -272,21 +271,14 @@ THROWS_NONE
 }
 #endif
 
-
+#if !defined(NCBI_COUNTER_NEED_MUTEX)
 inline
 CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 {
-#ifdef NCBI_COUNTER_ADD
-    TValue* nv_value_p = const_cast<TValue*>(&m_Value);
+    volatile TValue* nv_value_p = &m_Value;
     return NCBI_COUNTER_ADD(nv_value_p, delta);
-#elif defined(NCBI_COUNTER_USE_ASM)
-    return x_Add(&m_Value, delta);
-#else // Use the global lock; relatively inefficient, but at least safe.
-    TValue* nv_value_p = const_cast<TValue*>(&m_Value);
-    CFastMutexGuard LOCK(sm_Mutex);
-    return (*nv_value_p) += delta;
-#endif
 }
+#endif
 
 END_NCBI_SCOPE
 
@@ -294,6 +286,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/09/19 20:05:41  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.7  2002/08/19 19:37:17  vakatov
 * Use <corelib/ncbi_os_mswin.hpp> in the place of <windows.h>
 *

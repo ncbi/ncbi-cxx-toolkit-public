@@ -35,7 +35,7 @@
 
 
 #if defined(NCBI_OS_MSWIN)
-#  include <windows.h>
+#  include <corelib/ncbi_os_mswin.hpp>
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
 #    include <dlfcn.h>
@@ -235,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.9  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *

@@ -50,14 +50,12 @@ BEGIN_NCBI_SCOPE
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Trace) \
       << message << NCBI_NS_NCBI::Endm )
 
-#  define _TROUBLE \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Fatal) \
-      << "Trouble!" << NCBI_NS_NCBI::Endm )
+#  define _TROUBLE NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(__FILE__, __LINE__)
 
 #  define _ASSERT(expr) \
-    if (!( expr )) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Fatal) \
-      << "Assertion failed: (" #expr ")" << NCBI_NS_NCBI::Endm )
+    do { if ( !(expr) ) \
+        NCBI_NS_NCBI::CNcbiDiag::DiagAssert(__FILE__, __LINE__, #expr); \
+    } while ( 0 )
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
@@ -93,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.27  2002/09/19 20:05:41  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.26  2002/04/16 22:03:16  lavr
  * Added a note about proper use of debug macros
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.18  2002/09/05 21:22:51  vasilche
 * Added mutex for module names set
 *
@@ -139,7 +142,7 @@ void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
     in.Read(object, type.Get());
 }
 
-static CFastMutex s_ModuleNameMutex;
+DEFINE_STATIC_FAST_MUTEX(s_ModuleNameMutex);
 
 static const string& GetModuleName(const char* moduleName)
 {

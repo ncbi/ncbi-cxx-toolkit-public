@@ -31,13 +31,14 @@
  */
 
 #include <corelib/test_mt.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <test/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
 
 
-static CFastMutex    s_GlobalLock;
+DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 static CThreadedApp* s_Application;
 
 // Default values
@@ -250,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.2  2002/04/30 19:09:47  gouriano
  * added possibility to add custom arguments
  *

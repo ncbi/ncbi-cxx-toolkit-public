@@ -39,7 +39,7 @@
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN )
-#  include <windows.h>
+#  include <corelib/ncbi_os_mswin.hpp>
 #  include <io.h>
 #  include <direct.h>
 
@@ -1387,6 +1387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.31  2002/09/17 20:44:58  lavr
  * Add comment in unreachable return from CDirEntry::MatchesMask()
  *

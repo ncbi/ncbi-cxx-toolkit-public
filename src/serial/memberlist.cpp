@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.28  2002/09/06 13:25:36  vasilche
 * Fixed cast error on Sun
 *
@@ -204,7 +207,7 @@ void CItemsInfo::AddItem(CItemInfo* item)
     item->m_Index = LastIndex();
 }
 
-static CFastMutex s_ItemsMapMutex;
+DEFINE_STATIC_FAST_MUTEX(s_ItemsMapMutex);
 
 const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
 {

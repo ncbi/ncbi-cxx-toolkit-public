@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.33  2002/08/13 13:56:06  grichenk
 * Improved MT-safety in CTypeInfo and CTypeRef
 *
@@ -177,12 +180,13 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CMutex& GetTypeInfoMutex(void)
+SSystemMutex& GetTypeInfoMutex(void)
 {
-    static CMutex s_TypeInfoMutex;
+    DEFINE_STATIC_MUTEX(s_TypeInfoMutex);
     return s_TypeInfoMutex;
 }
 

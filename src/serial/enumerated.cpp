@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.22  2002/09/05 21:21:32  vasilche
 * Added mutex for enum values map
 *
@@ -167,7 +170,7 @@ void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)
     m_NameToValue.reset(0);
 }
 
-static CFastMutex s_EnumValuesMutex;
+DEFINE_STATIC_FAST_MUTEX(s_EnumValuesMutex);
 
 const CEnumeratedTypeValues::TValueToName&
 CEnumeratedTypeValues::ValueToName(void) const

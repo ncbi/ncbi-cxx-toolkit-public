@@ -36,7 +36,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ddumpable.hpp>
-#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -163,7 +162,6 @@ private:
     void AddReferenceOverflow(TCount count) const; // counter overflow/bad
 
     mutable TCounter  m_Counter;  // reference counter
-    static CFastMutex sm_ObjectMutex;   // reference counter's protective mutex
 };
 
 
@@ -714,6 +712,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2002/09/19 20:05:41  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.36  2002/08/28 17:05:50  vasilche
  * Remove virtual inheritance, fixed heap detection
  *

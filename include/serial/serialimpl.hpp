@@ -228,7 +228,7 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
     return CreateEnumeratedTypeInfo(*member, enumInfo);
 }
 
-CMutex& GetTypeInfoMutex(void);
+SSystemMutex& GetTypeInfoMutex(void);
 
 // internal macros for implementing BEGIN_*_INFO and ADD_*_MEMBER
 #define DECLARE_BASE_OBJECT(ClassName) ClassName* base = 0
@@ -244,7 +244,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     static InfoType* volatile s_info = 0; \
     InfoType* info = s_info; \
     if ( !info ) { \
-        CMutexGuard GUARD(GetTypeInfoMutex()); \
+        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
         info = s_info; \
         if ( !info ) { \
             DECLARE_BASE_OBJECT(CClass); \
@@ -442,7 +442,7 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
     static NCBI_NS_NCBI::CEnumeratedTypeValues* volatile s_enumInfo = 0; \
     NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = s_enumInfo; \
     if ( !enumInfo ) { \
-        CMutexGuard GUARD(GetTypeInfoMutex()); \
+        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
         enumInfo = s_enumInfo; \
         if ( !enumInfo ) { \
             enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \

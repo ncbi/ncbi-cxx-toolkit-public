@@ -43,7 +43,7 @@
 
 #include <stack>
 #ifdef NCBI_OS_MSWIN
-#  include <windows.h>
+#  include <corelib/ncbi_os_mswin.hpp>
 #endif
 
 
@@ -575,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.27  2002/08/20 19:11:30  gouriano
  * added DiagPostFlags into CException reporting functions
  *

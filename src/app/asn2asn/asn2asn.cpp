@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.43  2002/09/17 22:27:09  grichenk
 * Type<> -> CType<>
 *
@@ -437,7 +440,7 @@ int CAsn2Asn::Run(void)
     return 0;
 }
 
-static CFastMutex s_ArgsMutex;
+DEFINE_STATIC_FAST_MUTEX(s_ArgsMutex);
 
 void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
 {

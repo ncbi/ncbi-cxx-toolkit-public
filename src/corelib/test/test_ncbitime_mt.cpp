@@ -31,6 +31,7 @@
 
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/test_mt.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -38,16 +39,14 @@
 USING_NCBI_SCOPE;
 
 
-static CFastMutex s_OutMutex;
+DEFINE_STATIC_FAST_MUTEX(s_OutMutex);
 
 static void OUTS(int idx, long line, string value, const char* check) 
 {
     CFastMutexGuard LOCK(s_OutMutex);
-    cout << idx << " (" << line << ") - " << value << endl;
-    cout.flush();
+    cout << idx << " (" << line << ") - " << value << '\n';
     if ( check  &&  value != string(check) ) {
         cout << "LINE: " << line << " - "<< value << " != " << string(check) << endl;
-        cout.flush();
         abort();
     }
 }
@@ -377,6 +376,7 @@ bool CTestRegApp::Thread_Run(int idx)
         OUTS( idx, __LINE__, "\n", 0);
     } catch (CException& e) {
         ERR_POST(Fatal << e);
+        return false;
     }
 
     return true;
@@ -420,6 +420,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 6.4  2002/07/15 18:17:26  gouriano
  * renamed CNcbiException and its descendents
  *

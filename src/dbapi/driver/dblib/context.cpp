@@ -107,7 +107,7 @@ CDBLibContext* CDBLibContext::m_pDBLibContext = 0;
 CDBLibContext::CDBLibContext(DBINT version) :
     m_AppName("DBLibDriver"), m_HostName(""), m_PacketSize(0)
 {
-    static CFastMutex xMutex;
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
     if (m_pDBLibContext != 0) {
@@ -167,7 +167,7 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
 {
     CDBL_Connection* t_con;
 
-    static CFastMutex xMutex;
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
     if (reusable  &&  m_NotInUse.NofItems() > 0) { // try to reuse connection
@@ -505,6 +505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.18  2002/07/10 15:47:46  soussov
  * fixed typo in DBAPI_RegisterDriver_MSDBLIB
  *

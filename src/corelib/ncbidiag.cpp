@@ -35,12 +35,13 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include <crtdbg.h>
-#  include <windows.h>
+#  include <corelib/ncbi_os_mswin.hpp>
 #  undef _ASSERT
 #endif
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <stdlib.h>
@@ -51,18 +52,25 @@
 #  include <corelib/ncbi_os_mac.hpp>
 #endif
 
-
 BEGIN_NCBI_SCOPE
 
-
-static CMutex s_DiagMutex;
+DEFINE_STATIC_MUTEX(s_DiagMutex);
 
 #if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
+
 #include <unistd.h> // for pthread_atfork()
+
 extern "C" {
-    static void s_NcbiDiagPreFork(void)  { s_DiagMutex.Lock();   }
-    static void s_NcbiDiagPostFork(void) { s_DiagMutex.Unlock(); }
+    static void s_NcbiDiagPreFork(void)
+    {
+        //s_DiagMutex.Lock();
+    }
+    static void s_NcbiDiagPostFork(void)
+    {
+        //s_DiagMutex.Unlock();
+    }
 }
+
 #endif
 
 
@@ -721,6 +729,32 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     return sev >= 0  && sev <= kDiagSevMax;
 }
 
+void CNcbiDiag::DiagFatal(const char* file, size_t line, const char* message)
+{
+    CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
+}
+
+void CNcbiDiag::DiagTrouble(const char* file, size_t line)
+{
+    DiagFatal(file, line, "Trouble!");
+}
+
+void CNcbiDiag::DiagAssert(const char* file, size_t line, const char* expression)
+{
+    CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal) <<
+        "Assertion failed: (" << expression << ")" << Endm;
+}
+
+void CNcbiDiag::DiagValidate(const char* file, size_t line,
+                             const char* expression, const char* message)
+{
+#ifdef _DEBUG
+    if ( xncbi_GetValidateAction() == eValidate_Throw ) {
+        throw CCoreException(file, line, 0, CCoreException::eCore, message);
+    }
+#endif
+    DiagAssert(file, line, expression);
+}
 
 ///////////////////////////////////////////////////////
 //  CDiagRestorer::
@@ -1033,6 +1067,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.66  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.65  2002/08/20 19:10:39  gouriano
  * added DiagWriteFlags into SDiagMessage::Write
  *

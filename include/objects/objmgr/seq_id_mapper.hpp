@@ -36,6 +36,7 @@
 #include <objects/objmgr/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <map>
 #include <set>
@@ -130,6 +131,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.8  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -33,7 +33,7 @@
 #include <corelib/ncbi_system.hpp>
 
 #ifdef NCBI_OS_MSWIN
-#  include <windows.h>
+#  include <corelib/ncbi_os_mswin.hpp>
 #endif
 
 #ifdef NCBI_OS_MAC
@@ -77,7 +77,7 @@ extern "C" {
 
 #ifdef NCBI_OS_UNIX
 
-static CFastMutex            s_ExitHandler_Mutex;
+DEFINE_STATIC_FAST_MUTEX(s_ExitHandler_Mutex);
 static bool                  s_ExitHandlerIsSet  = false;
 static ELimitsExitCode       s_ExitCode          = eLEC_None;
 static CTime                 s_TimeSet;
@@ -395,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.22  2002/07/19 18:39:02  lebedev
  * NCBI_OS_MAC: SleepMicroSec implementation added
  *

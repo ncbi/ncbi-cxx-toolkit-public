@@ -210,6 +210,13 @@ public:
     int            GetErrorSubCode(void) const;
     TDiagPostFlags GetPostFlags   (void) const;
 
+    // display error message
+    static void DiagFatal(const char* file, size_t line, const char* message);
+    static void DiagTrouble(const char* file, size_t line);
+    static void DiagAssert(const char* file, size_t line, const char* expression);
+    static void DiagValidate(const char* file, size_t line,
+                             const char* expression, const char* message);
+    
 private:
     mutable EDiagSev       m_Severity;   // severity level of current message
     mutable char           m_File[256];  // file name
@@ -546,6 +553,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.52  2002/09/19 20:05:41  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.51  2002/09/16 20:49:06  vakatov
  * Cosmetics and comments
  *

@@ -67,6 +67,10 @@ bool CTestDiagApp::Thread_Run(int idx)
 {
     LOG_POST("LOG message from thread " + NStr::IntToString(idx));
     ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
+    for ( int i = 0; i < 1000000; ++i ) {
+        CThreadSystemID::GetCurrent();
+        //CThread::GetSelf();
+    }
     return true;
 }
 
@@ -151,6 +155,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 6.4  2002/04/23 13:11:50  gouriano
  * test_mt.cpp/hpp moved into another location
  *

@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -63,7 +64,7 @@ static int  sWCycles       = 50;
 static int  s_NextIndex    = 0;
 
 
-CFastMutex s_GlobalLock;
+DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 
 
 void delay(int value)
@@ -230,7 +231,7 @@ void CTestThread::OnExit(void)
 
 bool Test_CThreadExit(void)
 {
-    static CFastMutex s_Exit_Mutex;
+    DEFINE_STATIC_FAST_MUTEX(s_Exit_Mutex);
     CFastMutexGuard guard(s_Exit_Mutex);
     // The mutex must be unlocked after call to CThread::Exit()
     try {
@@ -753,6 +754,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 6.4  2002/04/16 18:49:09  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

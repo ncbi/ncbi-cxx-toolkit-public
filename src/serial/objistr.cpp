@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.89  2002/09/19 14:00:38  grichenk
 * Implemented CObjectHookGuard for write and copy hooks
 * Added DefaultRead/Write/Copy methods to base hook classes
@@ -871,6 +874,8 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
         }
     default:
         ThrowError(eFormatError, "illegal pointer type");
+        objectPtr = 0;
+        objectType = 0;
         break;
     }
     while ( objectType != declaredType ) {

@@ -43,6 +43,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbithr.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -339,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/19 20:05:41  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.9  2002/07/15 18:17:50  gouriano
  * renamed CNcbiException and its descendents
  *

@@ -75,11 +75,11 @@ BEGIN_NCBI_SCOPE
 
 
 // Protective mutex
-static CFastMutex s_TimeMutex;
-static CFastMutex s_TimeAdjustMutex;
+DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
+DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
 
 // Store global time format in TLS
-static CRef< CTls<string> > s_TlsFormat(new CTls<string>);
+static CSafeStaticRef< CTls<string> > s_TlsFormat;
 
 static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 {
@@ -98,7 +98,8 @@ static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 static int s_DaysInMonth[] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 // Default value for time format
-const string kDefaultFormat = "M/D/Y h:m:s";
+//const string kDefaultFormat = "M/D/Y h:m:s";
+#define kDefaultFormat "M/D/Y h:m:s"
 
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
@@ -1162,6 +1163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.25  2002/08/19 14:02:24  ivanov
  * MT-safe fix for ToTime()
  *

@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static CMutex s_OM_Mutex;
+DEFINE_STATIC_MUTEX(s_OM_Mutex);
 
 CObjectManager::CObjectManager(void)
     : m_IdMapper(new CSeq_id_Mapper)
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.14  2002/07/12 18:33:23  grichenk
 * Fixed the bug with querying destroyed datasources
 *

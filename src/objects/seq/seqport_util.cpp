@@ -29,6 +29,7 @@
  * File Description:
  */  
 
+#include <corelib/ncbimtx.hpp>
 #include <objects/seq/seqport_util.hpp>
 
 #include <serial/serial.hpp>
@@ -859,7 +860,7 @@ auto_ptr<CSeqportUtil_implementation> CSeqportUtil::sm_Implementation;
 
 void CSeqportUtil::x_InitImplementation(void)
 {
-    static CFastMutex mutex;
+    DEFINE_STATIC_FAST_MUTEX(mutex);
     CFastMutexGuard   LOCK(mutex);
     if ( !sm_Implementation.get() ) {
         sm_Implementation.reset(new CSeqportUtil_implementation());
@@ -6270,6 +6271,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/09/19 20:05:44  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 6.13  2002/09/13 18:34:40  dicuccio
  * Fixed problem with static object instantiation and type information.
  * Broke the Seq-code-set ASN.1 blob into more easily editable lines (kans).

@@ -51,17 +51,9 @@ BEGIN_NCBI_SCOPE
 // "expression" evaluates to FALSE.
 #  define xncbi_Validate(expression, message) \
     do { \
-        EValidateAction action = xncbi_GetValidateAction(); \
-        if (action == eValidate_Throw) { \
-            if ( !(expression) ) { \
-                throw CCoreException(__FILE__,__LINE__,0,\
-                    CCoreException::eCore,message ); \
-            } \
-        } \
-        else { \
-            assert(expression); \
-        } \
-    } while (0)
+        if ( !(expression) ) \
+            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(__FILE__, __LINE__, #expression, message); \
+    } while ( 0 )
 
 #else // _DEBUG
 
@@ -71,11 +63,9 @@ BEGIN_NCBI_SCOPE
 // Throw exception if "expression" evaluates to FALSE.
 #  define xncbi_Validate(expression, message) \
     do { \
-        if ( !(expression) ) { \
-            throw CCoreException(__FILE__,__LINE__,0, \
-                CCoreException::eCore,message ); \
-        } \
-    } while (0)
+        if ( !(expression) ) \
+            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(__FILE__, __LINE__, #expression, message); \
+    } while ( 0 )
 
 #endif // _DEBUG
 
@@ -86,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/19 20:05:42  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.9  2002/07/15 18:17:23  gouriano
  * renamed CNcbiException and its descendents
  *

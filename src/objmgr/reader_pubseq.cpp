@@ -84,7 +84,7 @@ int CPubseqSeqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
 
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
 // we have non MT-safe library used in MT application
-static CMutex s_readers_mutex;
+DEFINE_STATIC_MUTEX(s_readers_mutex);
 static int    s_pubseq_readers=0;
 #endif
 
@@ -438,6 +438,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.16  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
 * Revision 1.15  2002/07/22 22:55:55  kimelman
 * bugfixes: a) null termination added for text seqid strstream.
 *           b) processing of failed request.

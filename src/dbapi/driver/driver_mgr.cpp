@@ -150,7 +150,7 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
 
 static C_xDriverMgr* s_DrvMgr= 0;
 static int           s_DrvCount= 0;
-static CFastMutex    s_DrvMutex;
+DEFINE_STATIC_FAST_MUTEX(s_DrvMutex);
 
 C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
 {
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/09/19 20:05:43  vasilche
+ * Safe initialization of static mutexes
+ *
  * Revision 1.12  2002/09/19 18:47:31  soussov
  * LoadDriverDll now allows driver to report an unrecoverable error through NULL return from entry_point function
  *
