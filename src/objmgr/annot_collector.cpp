@@ -1834,7 +1834,9 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
                                   range.GetToOpen() + shift);
                 }
                 else {
-                    strand = Reverse(strand);
+                    if ( strand != eNa_strand_unknown ) {
+                        strand = Reverse(strand);
+                    }
                     range.Set(shift - range.GetTo(), shift - range.GetFrom());
                 }
                 hr.AddRange(range, strand);
@@ -1864,6 +1866,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/02/28 17:26:44  vasilche
+* Fixed collection of stranded features from minus strand segments.
+*
 * Revision 1.49  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *
