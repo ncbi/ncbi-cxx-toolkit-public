@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/01/13 16:46:45  vasilche
+* Added const for a constant.
+*
 * Revision 1.16  2004/01/05 14:25:22  gouriano
 * Added possibility to set serialization hooks by stack path
 *
@@ -96,7 +99,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static size_t KInitialStackSize = 16;
+static const size_t KInitialStackSize = 16;
 
 CObjectStack::CObjectStack(void)
 {
