@@ -342,7 +342,7 @@ extern EIO_Status CONN_Wait
     /* check if there is a PEEK'ed data in the input */
     if (event == eIO_Read && BUF_Size(conn->buf))
         return eIO_Success;
-    
+
     /* call current connector's "WAIT" method */
     status = conn->meta.wait
         ? conn->meta.wait(conn->meta.c_wait, event, timeout)
@@ -392,6 +392,20 @@ extern EIO_Status CONN_Write
         CONN_LOG(eLOG_Error, "[CONN_Write]  Write error");
 
     return status;
+}
+
+
+extern EIO_Status CONN_PushBack
+(CONN        conn,
+ const void* buf,
+ size_t      size)
+{
+    CONN_NOT_NULL("PushBack");
+
+    if (conn->state != eCONN_Open)
+        return eIO_InvalidArg;
+
+    return BUF_PushBack(&conn->buf, buf, size) ? eIO_Success : eIO_Unknown;
 }
 
 
@@ -449,7 +463,7 @@ static EIO_Status s_CONN_Read
         ? BUF_Peek(conn->buf, buf, size) : BUF_Read(conn->buf, buf, size);
     if (*n_read == size)
         return eIO_Success;
-    buf = (char*) buf + *n_read;
+    buf   = (char*) buf + *n_read;
     size -= *n_read;
 
     /* read data from the connection */
@@ -683,6 +697,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/01/15 19:51:17  lavr
+ * +CONN_PushBack()
+ *
  * Revision 6.27  2002/09/19 19:43:46  lavr
  * Add more assert()'s and do not rely on CONN_Flush() to open in CONN_Read()
  *

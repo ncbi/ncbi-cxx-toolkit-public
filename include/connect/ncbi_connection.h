@@ -137,6 +137,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  );
 
 
+/* Push back "size" bytes from the mem.buffer "buf" into connection.
+ * Return eIO_Success on success, other code on an error.
+ * NOTE1:  Data pushed back are not necessarily those taken from the
+ *         connection before.
+ * NOTE2:  Upon successive read operation, the pushed back data are
+ *         taken out first.
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
+(CONN        conn,  /* [in]  connection handle                     */
+ const void* buf,   /* [in]  pointer to the data being pushed back */
+ size_t      size   /* [in]  # of bytes to push back               */
+ );
+
+
 /* Explicitly flush to the connection all data written by "CONN_Write()".
  * NOTE1:  CONN_Flush() effectively opens connection (if it wasn't open yet).
  * NOTE2:  Connection considered open if underlying connector's "Open" method
@@ -263,6 +277,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/01/15 19:50:17  lavr
+ * +CONN_PushBack()
+ *
  * Revision 6.13  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *
