@@ -64,31 +64,32 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-    static const char* s_VT_GetType(CONNECTOR       connector);
-    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Wait   (CONNECTOR       connector,
-                                    EIO_Event       event,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Write  (CONNECTOR       connector,
-                                    const void*     buf,
-                                    size_t          size,
-                                    size_t*         n_written,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Flush  (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Read   (CONNECTOR       connector,
-                                    void*           buf,
-                                    size_t          size,
-                                    size_t*         n_read,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Status (CONNECTOR       connector,
-                                    EIO_Event       dir);
-    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static void        s_Setup     (SMetaConnector* meta,
-                                    CONNECTOR       connector);
-    static void        s_Destroy   (CONNECTOR       connector);
+    static const char* s_VT_GetType (CONNECTOR       connector);
+    static char*       s_VT_Descr   (CONNECTOR       connector);
+    static EIO_Status  s_VT_Open    (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Wait    (CONNECTOR       connector,
+                                     EIO_Event       event,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Write   (CONNECTOR       connector,
+                                     const void*     buf,
+                                     size_t          size,
+                                     size_t*         n_written,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Flush   (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Read    (CONNECTOR       connector,
+                                     void*           buf,
+                                     size_t          size,
+                                     size_t*         n_read,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status  (CONNECTOR       connector,
+                                     EIO_Event       dir);
+    static EIO_Status  s_VT_Close   (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static void        s_Setup      (SMetaConnector* meta,
+                                     CONNECTOR       connector);
+    static void        s_Destroy    (CONNECTOR       connector);
 #  ifdef IMPLEMENTED__CONN_WaitAsync
     static EIO_Status s_VT_WaitAsync(void*                   connector,
                                      FConnectorAsyncHandler  func,
@@ -103,6 +104,18 @@ static const char* s_VT_GetType
 (CONNECTOR connector)
 {
     return "SOCK";
+}
+
+
+static char* s_VT_Descr
+(CONNECTOR connector)
+{
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+    size_t len = strlen(xxx->host) + 6/*:port*/ + 1/*EOL*/;
+    char* buf = (char*) malloc(len);
+    if (buf)
+        sprintf(buf, "%s:%hu", xxx->host, xxx->port);
+    return buf;
 }
 
 
@@ -128,37 +141,32 @@ static EIO_Status s_VT_Open
             xxx->port = port;
             status = eIO_Success;
         } else {
-            if (!xxx->max_try)
+            if ( !xxx->max_try )
                 break;
             /* connect/reconnect */
             status = xxx->sock ?
                 SOCK_Reconnect(xxx->sock, 0, 0, timeout) :
                 SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->sock,
+                              xxx->init_data, xxx->init_size,
                               (xxx->flags & eSCC_DebugPrintout)
                               ? eOn : eDefault);
+            if (xxx->init_data) {
+                free(xxx->init_data);
+                xxx->init_data = 0;
+                xxx->init_size = 0;
+            }
             i++;
         }
 
         if (status == eIO_Success) {
-            /* set data logging and write init data, if any */
-            size_t n_written = 0;
-
             SOCK_SetReadOnWrite(xxx->sock,
                                 (xxx->flags & eSCC_SetReadOnWrite)
                                 ? eOn : eDefault);
-            if (!xxx->init_data)
-                return eIO_Success;
-            SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
-            status = SOCK_Write(xxx->sock, xxx->init_data, xxx->init_size,
-                                &n_written, eIO_WritePersist);
-            if (status == eIO_Success)
-                return eIO_Success;
+            break;
         }
-
         /* error: continue trying */
     } while (i < xxx->max_try);
 
-    /* error: return status */
     return status;
 }
 
@@ -255,6 +263,7 @@ static void s_Setup
 {
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
+    CONN_SET_METHOD(meta, descr,      s_VT_Descr,     connector);
     CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
     CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
     CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
@@ -298,6 +307,7 @@ static CONNECTOR s_Init
 
     /* parameter check: either sock or host/port, not both */
     assert((!sock && host && port) || (sock && !host && !port));
+    assert(!init_size || init_data);
     /* initialize internal data structures */
     xxx->sock        = sock;
     xxx->host        = host ? strdup(host) : 0;
@@ -362,17 +372,19 @@ extern CONNECTOR SOCK_CreateConnectorOnTop
 extern CONNECTOR SOCK_CreateConnectorOnTopEx
 (SOCK         sock,
  unsigned int max_try,
- const void*  init_data,
- size_t       init_size,
  TSCC_Flags   flags)
 {
-    return s_Init(sock, 0, 0, max_try, init_data, init_size, flags);
+    return s_Init(sock, 0, 0, max_try, 0, 0, flags);
 }
 
 
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/05/14 03:54:23  lavr
+ * SOCKET_CreateConnectorOnTopEx(): number of parameters changed
+ * Implementation of CONN_Description() added
+ *
  * Revision 6.15  2003/01/17 19:44:47  lavr
  * Reduce dependencies
  *
