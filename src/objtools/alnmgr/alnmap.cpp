@@ -824,7 +824,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         } else {
             if (seg.GetOffset() > 0) {
                 // between aln segs
-                from = m_AlnMap.GetAlnStop(seg.GetAlnSeg());
+                from = m_AlnMap.GetAlnStop(seg.GetAlnSeg()) + 1;
             } else {
                 // at an aln seg
                 from = m_AlnMap.GetAlnStart(seg.GetAlnSeg()) +
@@ -840,7 +840,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         } else {
             if (seg.GetOffset() > 0) {
                 // between aln segs
-                to = m_AlnMap.GetAlnStop(seg.GetAlnSeg())+1;
+                to = m_AlnMap.GetAlnStop(seg.GetAlnSeg());
             } else {
                 // at an aln seg
                 to = m_AlnMap.GetAlnStop(seg.GetAlnSeg()) -
@@ -897,6 +897,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/01/14 21:32:40  todorov
+* Swapped aln range coords for insert chunks to insure proper range arithmetics
+*
 * Revision 1.41  2003/11/04 19:37:38  todorov
 * Fixed GetRawSeg and GetAlnPosFromSeqPos in case of unaligned region
 *
