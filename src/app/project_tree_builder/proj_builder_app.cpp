@@ -149,11 +149,17 @@ int CProjBulderApp::Run(void)
         prj_gen.Generate(p->second);
     }
 
+    //Utility projects dir
+    string utility_projects_dir = CDirEntry(m_Solution).GetDir();
+    utility_projects_dir = 
+        CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
+    utility_projects_dir = 
+        CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
     // MasterProject
     CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
                                                GetRegSettings().m_ConfigInfo,
-                                               CDirEntry(m_Solution).GetDir());
-    master_prj_gen.SaveProject("_MasterProject");
+                                               utility_projects_dir);
+    master_prj_gen.SaveProject();
 
     // ConfigureProject
     string output_dir = GetProjectTreeInfo().m_Compilers;
@@ -164,11 +170,11 @@ int CProjBulderApp::Run(void)
     CMsvcConfigureProjectGenerator configure_generator
                                       (output_dir,
                                        GetRegSettings().m_ConfigInfo,
-                                       CDirEntry(m_Solution).GetDir(),
+                                       utility_projects_dir,
                                        GetProjectTreeInfo().m_Root,
                                        GetArgs()["subtree"].AsString(),
                                        GetArgs()["solution"].AsString());
-    configure_generator.SaveProject("_CONFIGURE_");
+    configure_generator.SaveProject();
 
 
     // Solution
@@ -176,8 +182,8 @@ int CProjBulderApp::Run(void)
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         sln_gen.AddProject(p->second);
     }
-    sln_gen.AddMasterProject   ("_MasterProject");
-    sln_gen.AddConfigureProject("_CONFIGURE_");
+    sln_gen.AddMasterProject   (master_prj_gen.GetPath());
+    sln_gen.AddConfigureProject(configure_generator.GetPath());
     sln_gen.SaveSolution(m_Solution);
 
     //
@@ -439,6 +445,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/02/12 17:41:52  gorelenk
+ * Implemented creation of MasterProject and ConfigureProject in different
+ * folder.
+ *
  * Revision 1.15  2004/02/12 16:27:10  gorelenk
  * Added _CONFIGURE_ project generation.
  *
