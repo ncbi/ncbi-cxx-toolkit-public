@@ -595,7 +595,7 @@ void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt,
         m_SingleIndex = loc_index;
         return;
     }
-    else if (m_CvtByIndex.size() == 0) {
+    else if ( m_CvtByIndex.empty() ) {
         TIdMap& id_map = m_CvtByIndex[m_SingleIndex];
         TRangeMap& ranges = id_map[m_SingleConv->m_Src_id_Handle];
         ranges.insert(TRangeMap::value_type
@@ -1021,6 +1021,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/08/13 18:41:46  grichenk
+* Changed size() to empty()
+*
 * Revision 1.35  2004/08/13 18:34:28  grichenk
 * Fixed conversion collecting
 *
