@@ -182,7 +182,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         // extract first line
         char line[1024] = {0,};
         char* ptr = line;
-        for (unsigned i = 0; i < count; ++i) {
+        for (i = 0; i < count; ++i) {
             if (isLineEnd(buf[i])) {
                 break;
             }
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/10 19:58:25  ivanov
+ * Get rid of compilation warning: removed double variable declaration
+ *
  * Revision 1.6  2003/07/08 20:30:50  kuznets
  * Fixed bug with different "\n" coding in DOS-Windows and Unix.
  *
