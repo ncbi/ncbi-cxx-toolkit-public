@@ -1,5 +1,5 @@
-#ifndef NCBI_BSWAP__HPP
-#define NCBI_BSWAP__HPP
+#ifndef CORELIB___NCBI_BSWAP__HPP
+#define CORELIB___NCBI_BSWAP__HPP
 /* $Id$
  * ===========================================================================
  *
@@ -205,6 +205,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/29 18:53:33  siyan
+ * Prefixed conditional compilation macro with CORELIB___ since this is now
+ * part of Corelib.
+ *
  * Revision 1.6  2003/09/11 16:05:24  kuznets
  * Fixed minor misprint
  *
