@@ -629,6 +629,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    sfree(hit_params);
    sfree(ext_params);
    sfree(word_params);
+   sfree(eff_len_params);
    return status;
 }
 

@@ -1104,7 +1104,7 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
             ext_params->options, hit_params, db_options->gen_code_string);
 
          if (program_number != blast_type_rpstblastn)
-            _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length);
+            _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length+1);
       }
 
       /* Revert query and subject to their traditional meanings. 
