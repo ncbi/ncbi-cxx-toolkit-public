@@ -181,7 +181,9 @@ bool IsBlankString(const string& str);
 bool IsBlankStringList(const list< string >& str_list);
 int GetGIForSeqId(const CSeq_id& id);
 list< CRef< CSeq_id > > GetSeqIdsForGI(int gi);
-bool IsResidue(unsigned char res);
+
+inline
+bool IsResidue(unsigned char residue) { return residue <= 250; }
 
 
 END_SCOPE(validator)
@@ -193,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/06/16 16:17:30  shomrat
+* IsResidue added as an inline function
+*
 * Revision 1.11  2003/05/28 16:20:05  shomrat
 * Added gbqual insertion_seq
 *
