@@ -27,6 +27,7 @@
  *
  * File Description:
  *   Portable interprocess named pipe API for:  UNIX, MS-Win
+ *
  */
 
 #include <connect/ncbi_namedpipe.hpp>
@@ -969,6 +970,9 @@ CNamedPipe::CNamedPipe(void)
 CNamedPipe::~CNamedPipe(void)
 {
     Close();
+    if ( m_PipeHandle ) {
+        delete m_PipeHandle;
+    }
 }
 
 
@@ -1159,6 +1163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/16 13:42:36  ivanov
+ * Added deleting OS-specific pipe handle in the destructor
+ *
  * Revision 1.13  2003/09/05 19:52:37  ivanov
  * + UNIX CNamedPipeHandle::SetSocketBufferSize()
  *

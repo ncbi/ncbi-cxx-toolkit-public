@@ -1087,6 +1087,9 @@ CPipe::CPipe(const string& cmd, const vector<string>& args,
 CPipe::~CPipe(void)
 {
     Close();
+    if ( m_PipeHandle ) {
+        delete m_PipeHandle;
+    }
 }
 
 
@@ -1407,6 +1410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/09/16 13:42:36  ivanov
+ * Added deleting OS-specific pipe handle in the destructor
+ *
  * Revision 1.29  2003/09/09 19:30:33  ivanov
  * Fixed I/O timeout handling in the UNIX CPipeHandle. Cleanup code.
  * Comments and messages changes.
