@@ -46,6 +46,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
 class CSeq_annot_Handle;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
@@ -54,31 +61,56 @@ class CBioseq_Handle;
 class CBioseq_set_Handle;
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_annot_CI --
+///
+///  enumerate CSeq_annot objects - packs of annotations 
+///  (features, graphs, alignments etc.)
+///
+
 class NCBI_XOBJMGR_EXPORT CSeq_annot_CI
 {
 public:
     enum EFlags {
-        eSearch_entry,
-        eSearch_recursive
+        eSearch_entry,      //< Search only in this entry
+        eSearch_recursive   //< Search recursively
     };
 
+    /// Create an empty iterator
     CSeq_annot_CI(void);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given seq-entry
     explicit CSeq_annot_CI(const CSeq_entry_Handle& entry,
                            EFlags flags = eSearch_recursive);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given seq-set
     explicit CSeq_annot_CI(const CBioseq_set_Handle& bioseq_set,
                            EFlags flags = eSearch_recursive);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given seq-entry from different scope
     CSeq_annot_CI(CScope& scope, const CSeq_entry& entry,
                   EFlags flags = eSearch_recursive);
-    // Iterate from the bioseq up to the TSE
+
+    /// Create an iterator that enumerates CSeq_aannot objects 
+    /// related to the given bioseq up to the TSE
     explicit CSeq_annot_CI(const CBioseq_Handle& bioseq);
+
     CSeq_annot_CI(const CSeq_annot_CI& iter);
     ~CSeq_annot_CI(void);
 
     CSeq_annot_CI& operator=(const CSeq_annot_CI& iter);
 
+    /// Check if iterator points to an object
     operator bool(void) const;
+
+    /// Move to the next object in iterated sequence
     CSeq_annot_CI& operator++(void);
 
+    /// Get the current scope of the iterator
     CScope& GetScope(void) const;
 
     const CSeq_annot_Handle& operator*(void) const;
@@ -158,12 +190,18 @@ const CSeq_annot_Handle* CSeq_annot_CI::operator->(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/10/01 15:30:33  kononenk
+* Added doxygen formatting
+*
 * Revision 1.10  2004/08/04 14:53:25  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
