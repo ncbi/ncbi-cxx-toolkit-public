@@ -120,7 +120,7 @@ _PSICopyIntMatrix(int** dest, int** src,
 /* Structure declarations */
 
 /** Internal data structure to represent a position in the multiple sequence
- * alignment data structure (@sa _PSIMsa) */
+ * alignment data structure @sa _PSIMsa */
 typedef struct _PSIMsaCell {
     Uint1       letter;           /**< Preferred letter at this position */
     Boolean     is_aligned;       /**< Is this letter part of the alignment? */
@@ -299,9 +299,12 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
  * construction (stage 2). After this function the multiple sequence alignment
  * data will not be modified.
  * N.B.: If ignore_consensus is TRUE, the function _PSIPurgeAlignedRegion
- * should have been called before this function (@sa
- * implementation of PSICreatePssmWithDiagnostics)
+ * should have been called before this function 
+ * @sa implementation of PSICreatePssmWithDiagnostics
  * @param msa multiple sequence alignment data structure [in]
+ * @param identity_threshold percent identity threshold after which sequences
+ * similar to the query and each other are purged from the multiple sequence
+ * alignment [in]
  * @return PSIERR_BADPARAM if alignment is NULL
  *         PSI_SUCCESS otherwise
  */
@@ -505,8 +508,8 @@ _PSICalculateInformationContentFromScoreMatrix(
     double lambda);
 
 /** Calculates the information content from the residue frequencies calculated
- * in stage 5 of the PSSM creation algorithm (@sa
- * _PSIComputeFreqRatios)
+ * in stage 5 of the PSSM creation algorithm 
+ * @sa _PSIComputeFreqRatios: stage 5
  * @param freq_ratios matrix of frequency ratios (dimensions: query_length x 
  * alphabet_sz) (const) [in]
  * @param std_prob standard residue probabilities [in]
@@ -531,6 +534,9 @@ _PSICalculateInformationContentFromFreqRatios(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/11/26 14:22:54  camacho
+ * doxygen fixes
+ *
  * Revision 1.17  2004/11/22 14:38:48  camacho
  * + option to set % identity threshold to PSSM engine
  *
