@@ -216,6 +216,15 @@ BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop,
 */
 Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number);
 
+/** Find the length of an individual query within a concatenated set of 
+ * queries.
+ * @param query_info Queries information structure containing offsets into
+ *                   the concatenated sequence [in]
+ * @param context Index of the query/strand/frame within the concatenated 
+ *                set [in]
+ * @return Length of the individual sequence/strand/frame
+Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context);
+
 #ifdef __cplusplus
 }
 #endif
