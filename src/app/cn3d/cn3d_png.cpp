@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/10/18 15:42:59  thiessen
+* work around png header issue for linux
+*
 * Revision 1.11  2002/10/11 17:21:39  thiessen
 * initial Mac OSX build
 *
@@ -86,7 +89,14 @@
 #include <OpenGL/glu.h>
 #endif
 
+#include <wx/platform.h>
+#if defined(__WXGTK__) && defined(__LINUX__)
+// use system headers/libs for linux builds
+#include <png.h>
+#else 
+// otherwise, use libs built into wxWindows
 #include "cn3d/png.h"
+#endif
 
 #include "cn3d/cn3d_png.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
