@@ -93,7 +93,7 @@ typedef struct LinkHSPStruct {
 
 #define WINDOW_SIZE 20
 static double 
-SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp, 
+SumHSPEvalue(EBlastProgramType program_number, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    const BlastLinkHSPParameters* link_hsp_params, 
    LinkHSPStruct* head_hsp, LinkHSPStruct* hsp, Int4* sumscore)
@@ -493,7 +493,7 @@ static LinkHSPStruct* LinkHSPStructReset(LinkHSPStruct* lhsp)
 }
 
 static Int2
-link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
+link_hsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
@@ -1208,7 +1208,7 @@ static void ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt,
 }
 
 static Int2
-new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
+new_link_hsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params)
 {
@@ -1383,7 +1383,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 }
 
 Int2 
-BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
+BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)

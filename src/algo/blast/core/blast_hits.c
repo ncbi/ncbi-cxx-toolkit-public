@@ -383,7 +383,7 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject,
 
 Int2
 Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject, 
-   BlastHSP* hsp, Uint1 program, 
+   BlastHSP* hsp, EBlastProgramType program, 
    Int4* num_ident_ptr, Int4* align_length_ptr)
 {
    Int4 i, num_ident, align_length;
@@ -1060,7 +1060,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
 }
 
 void 
-Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
+Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list, 
                  Boolean is_ooframe)
 {
    BlastHSP* hsp;
@@ -1108,6 +1108,9 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
    
    hsp_cnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
+   /** If hsp_cnt > 0, hsp_array cannot be NULL */
+   ASSERT(!hsp_cnt || hsp_array);
+
    for (index=0; index<hsp_cnt; index++) {
       hsp = hsp_array[index];
 
@@ -1483,7 +1486,7 @@ Blast_HSPListsCombineByScore(BlastHSPList* hsp_list,
       combined_hsp_list->hsp_array = new_hsp_array;
    }
    
-   combined_hsp_list->hspcnt = index;
+   combined_hsp_list->hspcnt = new_hspcnt;
    /* Second HSP list now does not own any HSPs */
    hsp_list->hspcnt = 0;
 }
@@ -1995,7 +1998,7 @@ Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results)
    return 0;
 }
 
-Int2 Blast_HSPResultsSaveRPSHSPList(Uint1 program, BlastHSPResults* results, 
+Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsplist_in, const BlastHitSavingOptions* hit_options)
 {
    Int4 index, oid;
@@ -2060,7 +2063,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(Uint1 program, BlastHSPResults* results,
    return 0;
 }
 
-Int2 Blast_HSPResultsSaveHSPList(Uint1 program, BlastHSPResults* results, 
+Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options)
 {
    Int2 status = 0;

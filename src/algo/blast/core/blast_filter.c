@@ -179,7 +179,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 }
 
 Int2 
-BLAST_ComplementMaskLocations(Uint1 program_number, 
+BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
    BlastQueryInfo* query_info, 
    BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
 {
@@ -551,7 +551,7 @@ BlastSetUp_load_options_to_buffer(const char *instructions, char* buffer)
 #define CC_LINKER 32
 
 Int2
-BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
+BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length, 
    Int4 offset, const char* instructions, Boolean *mask_at_hash, 
    BlastSeqLoc* *seqloc_retval)
 {
@@ -604,7 +604,6 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 	/* -1 indicates defaults. */
 	level_dust = -1;
 	window_dust = -1;
-	minwin_dust = -1;
 	linker_dust = -1;
 	if (strcasecmp(instructions, "T") == 0)
 	{ /* do_default actually means seg for proteins and dust for nt. */
@@ -735,7 +734,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 		if (do_default || do_dust)
 		{
          SeqBufferDust(sequence, length, offset, level_dust, window_dust,
-                       minwin_dust, linker_dust, &dust_loc);
+                       linker_dust, &dust_loc);
 			seqloc_num++;
 		}
 #ifdef TEMP_BLAST_OPTIONS
@@ -833,7 +832,7 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 }
 
 static Int2
-GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, Uint1 program_number, const char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
+GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
 {
         Int2 status = 0;
         Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
@@ -898,7 +897,7 @@ GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo*
 
 
 Int2
-BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Uint1 program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash, Blast_Message * *blast_message)
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, EBlastProgramType program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash, Blast_Message * *blast_message)
 {
 
     Int2 status = 0;
@@ -994,7 +993,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 }
 
 Int2 
-BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, Uint1 program_number)
+BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, EBlastProgramType program_number)
 {
     const Boolean k_is_na = (program_number == eBlastTypeBlastn);
     Int4 context; /* loop variable. */

@@ -44,7 +44,7 @@ static char const rcsid[] =
 Int2
 BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
-                        Uint1 program, BlastQueryInfo * query_info)
+                        EBlastProgramType program, BlastQueryInfo * query_info)
 {
     Int2 tmp_index;
 
@@ -328,7 +328,7 @@ return status;
 }
 
 Int2
-BlastScoreBlkMatrixInit(Uint1 program_number, 
+BlastScoreBlkMatrixInit(EBlastProgramType program_number, 
                   const BlastScoringOptions* scoring_options,
                   BlastScoreBlk* sbp)
 {
@@ -374,7 +374,7 @@ Int2
 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
                          BlastQueryInfo* query_info, 
                          const BlastScoringOptions* scoring_options, 
-                         Uint1 program_number, 
+                         EBlastProgramType program_number, 
                          Boolean phi_align, 
                          BlastScoreBlk* *sbpp, 
                          double scale_factor, 
@@ -472,7 +472,7 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     return 0;
 }
 
-Int2 BLAST_MainSetUp(Uint1 program_number,
+Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     const QuerySetUpOptions *qsup_options,
     const BlastScoringOptions *scoring_options,
     const BlastHitSavingOptions *hit_options,
@@ -541,7 +541,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
 }
 
 
-Int2 BLAST_CalcEffLengths (Uint1 program_number, 
+Int2 BLAST_CalcEffLengths (EBlastProgramType program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsParameters* eff_len_params, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
@@ -640,7 +640,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
 }
 
 Int2 
-BLAST_GapAlignSetUp(Uint1 program_number,
+BLAST_GapAlignSetUp(EBlastProgramType program_number,
     const BlastSeqSrc* seq_src,
     const BlastScoringOptions* scoring_options,
     const BlastEffectiveLengthsOptions* eff_len_options,
@@ -697,7 +697,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
    return status;
 }
 
-Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
+Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
                     Uint4 subject_length,
                     const BlastScoringOptions* scoring_options,
                     BlastQueryInfo* query_info, 

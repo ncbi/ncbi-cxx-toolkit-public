@@ -184,7 +184,7 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
    (*copy)->lcase_mask_allocated = FALSE;
 }
 
-Int2 BlastProgram2Number(const char *program, Uint1 *number)
+Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
 {
 	*number = eBlastTypeUndefined;
 	if (program == NULL)
@@ -208,7 +208,7 @@ Int2 BlastProgram2Number(const char *program, Uint1 *number)
 	return 0;
 }
 
-Int2 BlastNumber2Program(Uint1 number, char* *program)
+Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 {
 
 	if (program == NULL)
@@ -653,7 +653,7 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
    return 0;
 }
 
-Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
+Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number)
 {
    Int2 frame=255;
 
@@ -678,7 +678,7 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
 }
 
 Int4 
-Blast_GetQueryIndexFromContext(Int4 context, Uint1 program)
+Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program)
 {
    Int4 index = 0;
    switch (program) {

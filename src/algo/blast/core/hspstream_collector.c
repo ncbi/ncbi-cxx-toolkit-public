@@ -209,7 +209,7 @@ BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args)
 }
 
 BlastHSPStream* 
-Blast_HSPListCollectorInitMT(Uint1 program, BlastHitSavingOptions* hit_options,
+Blast_HSPListCollectorInitMT(EBlastProgramType program, BlastHitSavingOptions* hit_options,
                            Int4 num_queries, Boolean sort_on_read,
                            MT_LOCK lock)
 {
@@ -240,7 +240,7 @@ Blast_HSPListCollectorInitMT(Uint1 program, BlastHitSavingOptions* hit_options,
 }
 
 BlastHSPStream* 
-Blast_HSPListCollectorInit(Uint1 program, BlastHitSavingOptions* hit_options,
+Blast_HSPListCollectorInit(EBlastProgramType program, BlastHitSavingOptions* hit_options,
                            Int4 num_queries, Boolean sort_on_read)
 {
    return Blast_HSPListCollectorInitMT(program, hit_options, num_queries, 

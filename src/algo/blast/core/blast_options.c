@@ -59,7 +59,7 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options)
 }
 
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
-        Uint1 program, const char *filter_string, Uint1 strand_option)
+        EBlastProgramType program, const char *filter_string, Uint1 strand_option)
 {
    if (options == NULL)
       return 1;
@@ -96,7 +96,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptions* options)
 
 
 Int2
-BlastInitialWordOptionsNew(Uint1 program, 
+BlastInitialWordOptionsNew(EBlastProgramType program, 
    BlastInitialWordOptions* *options)
 {
    *options = 
@@ -116,7 +116,7 @@ BlastInitialWordOptionsNew(Uint1 program,
 
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
-   Uint1 program, Boolean greedy, Int4 window_size, 
+   EBlastProgramType program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    double xdrop_ungapped)
 {
@@ -170,7 +170,7 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
  * @param program The blast program type
  * @return The default per-program expect value
  */
-static double GetCutoffEvalue(Uint1 program)
+static double GetCutoffEvalue(EBlastProgramType program)
 {
    switch(program) {
    case eBlastTypeBlastn:
@@ -190,7 +190,7 @@ static double GetCutoffEvalue(Uint1 program)
 }
 
 Int2
-BlastInitialWordParametersNew(Uint1 program_number, 
+BlastInitialWordParametersNew(EBlastProgramType program_number, 
    const BlastInitialWordOptions* word_options, 
    const BlastHitSavingParameters* hit_params, 
    const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
@@ -227,7 +227,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
 }
 
 Int2
-BlastInitialWordParametersUpdate(Uint1 program_number, 
+BlastInitialWordParametersUpdate(EBlastProgramType program_number, 
    const BlastHitSavingParameters* hit_params, 
    const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, Uint4 subj_length,
@@ -296,7 +296,7 @@ BlastExtensionOptionsFree(BlastExtensionOptions* options)
 
 
 Int2
-BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
+BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options)
 
 {
 	*options = (BlastExtensionOptions*) 
@@ -324,7 +324,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
 
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   Uint1 program, Int4 greedy, double x_dropoff, double x_dropoff_final)
+   EBlastProgramType program, Int4 greedy, double x_dropoff, double x_dropoff_final)
 {
    if (!options)
       return 1;
@@ -366,7 +366,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
 }
 
 Int2 
-BlastExtensionOptionsValidate(Uint1 program_number, 
+BlastExtensionOptionsValidate(EBlastProgramType program_number, 
    const BlastExtensionOptions* options, Blast_Message* *blast_msg)
 
 {
@@ -390,7 +390,7 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 	return 0;
 }
 
-Int2 BlastExtensionParametersNew(Uint1 program_number, 
+Int2 BlastExtensionParametersNew(EBlastProgramType program_number, 
         const BlastExtensionOptions* options, BlastScoreBlk* sbp,
         BlastQueryInfo* query_info, BlastExtensionParameters* *parameters)
 {
@@ -460,7 +460,7 @@ BlastScoringOptionsFree(BlastScoringOptions* options)
 }
 
 Int2 
-BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptions* *options)
+BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *options)
 {
    *options = (BlastScoringOptions*) calloc(1, sizeof(BlastScoringOptions));
 
@@ -484,7 +484,7 @@ BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptions* *options)
 
 Int2 
 BLAST_FillScoringOptions(BlastScoringOptions* options, 
-   Uint1 program_number, Boolean greedy_extension, Int4 penalty, Int4 reward, 
+   EBlastProgramType program_number, Boolean greedy_extension, Int4 penalty, Int4 reward, 
    const char *matrix, Int4 gap_open, Int4 gap_extend)
 {
    if (!options)
@@ -523,7 +523,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
 }
 
 Int2 
-BlastScoringOptionsValidate(Uint1 program_number, 
+BlastScoringOptionsValidate(EBlastProgramType program_number, 
    const BlastScoringOptions* options, Blast_Message* *blast_msg)
 
 {
@@ -745,7 +745,7 @@ LookupTableOptionsFree(LookupTableOptions* options)
 }
 
 Int2 
-LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
+LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *options)
 {
    *options = (LookupTableOptions*) calloc(1, sizeof(LookupTableOptions));
    
@@ -805,7 +805,7 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
 
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
-   Uint1 program_number, Boolean is_megablast, Int4 threshold,
+   EBlastProgramType program_number, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
    Boolean use_pssm)
 {
@@ -880,7 +880,7 @@ DiscWordOptionsValidate(Int2 word_size, Uint1 template_length,
 }
 
 Int2 
-LookupTableOptionsValidate(Uint1 program_number, 
+LookupTableOptionsValidate(EBlastProgramType program_number, 
    const LookupTableOptions* options, Blast_Message* *blast_msg)
 
 {
@@ -968,7 +968,7 @@ BlastHitSavingOptionsFree(BlastHitSavingOptions* options)
 }
 
 
-Int2 BlastHitSavingOptionsNew(Uint1 program_number, 
+Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number, 
         BlastHitSavingOptions* *options)
 {
    *options = (BlastHitSavingOptions*) calloc(1, sizeof(BlastHitSavingOptions));
@@ -1003,7 +1003,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
 }
 
 Int2
-BlastHitSavingOptionsValidate(Uint1 program_number,
+BlastHitSavingOptionsValidate(EBlastProgramType program_number,
    const BlastHitSavingOptions* options, Blast_Message* *blast_msg)
 {
 	if (options == NULL)
@@ -1037,7 +1037,7 @@ BlastLinkHSPParametersFree(BlastLinkHSPParameters* parameters)
    return NULL;
 }
 
-Int2 BlastLinkHSPParametersNew(Uint1 program_number, 
+Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number, 
                                Boolean gapped_calculation,
                                BlastLinkHSPParameters** link_hsp_params)
 {
@@ -1100,7 +1100,7 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters)
 
 
 Int2
-BlastHitSavingParametersNew(Uint1 program_number, 
+BlastHitSavingParametersNew(EBlastProgramType program_number, 
    const BlastHitSavingOptions* options, 
    const BlastExtensionParameters* ext_params, 
    BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
@@ -1159,7 +1159,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
 }
 
 Int2
-BlastHitSavingParametersUpdate(Uint1 program_number, 
+BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
    const BlastExtensionParameters* ext_params, 
    BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
    BlastHitSavingParameters* params)
@@ -1265,7 +1265,7 @@ BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options)
    return NULL;
 }
 
-Int2 BLAST_InitDefaultOptions(Uint1 program_number,
+Int2 BLAST_InitDefaultOptions(EBlastProgramType program_number,
    LookupTableOptions** lookup_options,
    QuerySetUpOptions** query_setup_options, 
    BlastInitialWordOptions** word_options,
@@ -1309,7 +1309,7 @@ Int2 BLAST_InitDefaultOptions(Uint1 program_number,
 
 }
 
-Int2 BLAST_ValidateOptions(Uint1 program_number,
+Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastExtensionOptions* ext_options,
                            const BlastScoringOptions* score_options, 
                            const LookupTableOptions* lookup_options, 
@@ -1337,7 +1337,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
 #define MY_EPS 1.0e-9
 
 void
-CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
+CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
    BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length)
@@ -1423,6 +1423,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.122  2004/07/06 15:42:15  dondosha
+ * Use EBlastProgramType enumeration type instead of Uint1 for program argument in all functions
+ *
  * Revision 1.121  2004/06/28 21:41:02  dondosha
  * Test for NULL input in BlastHitSavingParametersFree
  *

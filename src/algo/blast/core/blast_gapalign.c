@@ -49,7 +49,7 @@ static Int4 BLAST_AlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
    Int4* pej, Int4* pei, BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, Boolean reverse_sequence);
 
-static Int2 BLAST_ProtGappedAlignment(Uint1 program, 
+static Int2 BLAST_ProtGappedAlignment(EBlastProgramType program, 
    BLAST_SequenceBlk* query_in, BLAST_SequenceBlk* subject_in,
    BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, BlastInitHSP* init_hsp);
@@ -2303,7 +2303,7 @@ GetRelativeCoordinates(const BLAST_SequenceBlk* query,
    *context_out = context;
 }
 
-Int2 BLAST_MbGetGappedScore(Uint1 program_number, 
+Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number, 
              BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 			    BLAST_SequenceBlk* subject,
 			    BlastGapAlignStruct* gap_align,
@@ -2967,7 +2967,7 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
 }
 
 static Boolean 
-Blast_GappedScorePrelimTest(Uint1 program_number, 
+Blast_GappedScorePrelimTest(EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
@@ -3078,7 +3078,7 @@ Blast_GappedScorePrelimTest(Uint1 program_number,
    return further_process;
 }
 
-Int2 BLAST_GetGappedScore (Uint1 program_number, 
+Int2 BLAST_GetGappedScore (EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
@@ -3349,7 +3349,7 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
  * @param score_params Parameters related to scoring [in]
  * @param init_hsp The initial HSP information [in]
  */
-static Int2 BLAST_ProtGappedAlignment(Uint1 program, 
+static Int2 BLAST_ProtGappedAlignment(EBlastProgramType program, 
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, BlastInitHSP* init_hsp)
@@ -3546,7 +3546,7 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
 
 static Int2
 BLAST_OOFTracebackToGapEditBlock(Int4* S, Int4 q_length, 
-   Int4 s_length, Int4 q_start, Int4 s_start, Uint1 program, 
+   Int4 s_length, Int4 q_start, Int4 s_start, EBlastProgramType program, 
    GapEditBlock** edit_block_ptr)
 {
     register Int4 current_val, last_val, number, index1, index2;
@@ -3614,7 +3614,7 @@ BLAST_OOFTracebackToGapEditBlock(Int4* S, Int4 q_length,
     return 0;
 }
 
-Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query, 
+Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query, 
         Uint1* subject, BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length)
@@ -3966,7 +3966,7 @@ PHIGappedAlignment(BLAST_SequenceBlk* query_blk,
    return 0;
 }
 
-Int2 PHIGetGappedScore (Uint1 program_number, 
+Int2 PHIGetGappedScore (EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
