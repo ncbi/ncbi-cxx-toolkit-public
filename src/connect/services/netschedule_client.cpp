@@ -516,7 +516,8 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
             if (*str && *str == '"') {
                 ++str;
-                for( ;*str && *str != '"'; ++str) {
+                for( ;*str && *str; ++str) {
+                    if (*str == '"' && *(str-1) != '\\') break;
                     err_msg->push_back(*str);
                 }
             }
@@ -1122,6 +1123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/24 16:43:14  didenko
+ * Fixed error parsing
+ *
  * Revision 1.17  2005/03/22 18:54:07  kuznets
  * Changed project tree layout
  *
