@@ -41,9 +41,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_entry_Handle
-/////////////////////////////////////////////////////////////////////////////
+
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
 
 
 class CSeq_entry_Handle;
@@ -53,18 +55,35 @@ class CBioseq_set_EditHandle;
 class CSeq_entry_CI;
 class CSeq_entry_I;
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_entry_CI --
+///
+///  Enumerate seq-entries in a given parent seq-entry or a bioseq-set
+///
+
 class NCBI_XOBJMGR_EXPORT CSeq_entry_CI
 {
 public:
+    /// Create an empty iterator
     CSeq_entry_CI(void);
+
+    /// Create an iterator that enumerates seq-entries
+    /// related to the given seq-entrie
     CSeq_entry_CI(const CSeq_entry_Handle& entry);
+
+    /// Create an iterator that enumerates seq-entries
+    /// related to the given seq-set
     CSeq_entry_CI(const CBioseq_set_Handle& set);
 
+    /// Check if iterator points to an object
     operator bool(void) const;
 
     bool operator ==(const CSeq_entry_CI& iter) const;
     bool operator !=(const CSeq_entry_CI& iter) const;
 
+    /// Move to the next object in iterated sequence
     CSeq_entry_CI& operator ++(void);
 
     const CSeq_entry_Handle& operator*(void) const;
@@ -87,13 +106,30 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_entry_I --
+///
+///  Non const version of CSeq_entry_CI
+///
+///  @sa
+///    CSeq_entry_CI
+
 class NCBI_XOBJMGR_EXPORT CSeq_entry_I
 {
 public:
+    /// Create an empty iterator
     CSeq_entry_I(void);
+
+    /// Create an iterator that enumerates seq-entries
+    /// related to the given seq-entrie
     CSeq_entry_I(const CSeq_entry_EditHandle& entry);
+
+    /// Create an iterator that enumerates seq-entries
+    /// related to the given seq-set
     CSeq_entry_I(const CBioseq_set_EditHandle& set);
 
+    /// Check if iterator points to an object
     operator bool(void) const;
 
     bool operator ==(const CSeq_entry_I& iter) const;
@@ -113,6 +149,7 @@ private:
 
     friend class CBioseq_set_Handle;
 
+    /// Move to the next object in iterated sequence
     CSeq_entry_I& operator ++(int);
 
     CBioseq_set_EditHandle  m_Parent;
@@ -211,12 +248,18 @@ const CSeq_entry_EditHandle* CSeq_entry_I::operator->(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/10/01 14:54:54  kononenk
+* Added doxygen formatting
+*
 * Revision 1.2  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *
