@@ -67,7 +67,7 @@ public:
                  IWriter*       w,
                  streamsize     buf_size = kDefaultBufferSize,
                  CT_CHAR_TYPE*  buf = 0);
-    virtual ~CRWStreambuf(void);
+    virtual ~CRWStreambuf();
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -92,14 +92,15 @@ protected:
 };
 
 
-
 END_NCBI_SCOPE
-
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/12 17:44:32  lavr
+ * Uniformed file layout
+ *
  * Revision 1.2  2003/10/23 16:16:46  vasilche
  * Added Windows export modifiers.
  *

@@ -98,14 +98,15 @@ private:
 };
 
 
-
 END_NCBI_SCOPE
-
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/12 17:44:26  lavr
+ * Uniformed file layout
+ *
  * Revision 1.2  2003/10/22 19:15:15  lavr
  * Explicit calls for iostream constructors added
  *
