@@ -23,7 +23,7 @@ public:
     CSerialObject(void);
     virtual ~CSerialObject(void);
 
-    virtual void Dump(ostream& out) const;
+    virtual void Dump(CNcbiOstream& out) const;
 
     static const CTypeInfo* GetTypeInfo(void);
 

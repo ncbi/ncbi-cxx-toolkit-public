@@ -36,14 +36,14 @@ int CTestSerial::Run(void)
                     Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CNcbiOfstream out("webenv.bino", ios::out | ios::binary);
+                CNcbiOfstream out("webenv.bino", IOS_BASE::out | IOS_BASE::binary);
                 if ( !out )
                     THROW1_TRACE(runtime_error, "Cannot create webenv.bino");
                 CObjectOStreamAsnBinary(out).
                     Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CNcbiIfstream in("webenv.bin", ios::in | ios::binary);
+                CNcbiIfstream in("webenv.bin", IOS_BASE::in | IOS_BASE::binary);
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found webenv.bin");
                 CObjectIStreamAsnBinary(in).
@@ -124,7 +124,7 @@ int CTestSerial::Run(void)
 
         {
             {
-                CNcbiOfstream out("test.asbo", ios::binary);
+                CNcbiOfstream out("test.asbo", IOS_BASE::binary);
                 if ( !out )
                     THROW1_TRACE(runtime_error, "Cannot create test.asbo");
                 CObjectOStreamAsnBinary oout(out);
@@ -132,7 +132,7 @@ int CTestSerial::Run(void)
             }
             CSerialObject read;
             {
-                CNcbiIfstream in("test.asb", ios::binary);
+                CNcbiIfstream in("test.asb", IOS_BASE::binary);
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found test.asb");
                 CObjectIStreamAsnBinary iin(in);
@@ -141,7 +141,7 @@ int CTestSerial::Run(void)
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
             {
-                CNcbiIfstream in("test.asb", ios::binary);
+                CNcbiIfstream in("test.asb", IOS_BASE::binary);
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found test.asb");
                 CObjectIStreamAsnBinary(in).SkipValue();
@@ -150,7 +150,7 @@ int CTestSerial::Run(void)
 
         {
             {
-                CNcbiOfstream out("test.bino", ios::binary);
+                CNcbiOfstream out("test.bino", IOS_BASE::binary);
                 if ( !out )
                     THROW1_TRACE(runtime_error, "Cannot create test.bino");
                 CObjectOStreamBinary oout(out);
@@ -158,7 +158,7 @@ int CTestSerial::Run(void)
             }
             CSerialObject read;
             {
-                CNcbiIfstream in("test.bin", ios::binary);
+                CNcbiIfstream in("test.bin", IOS_BASE::binary);
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found test.bin");
                 CObjectIStreamBinary iin(in);
@@ -167,7 +167,7 @@ int CTestSerial::Run(void)
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
             {
-                CNcbiIfstream in("test.bin", ios::binary);
+                CNcbiIfstream in("test.bin", IOS_BASE::binary);
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found test.bin");
                 CObjectIStreamBinary(in).SkipValue();

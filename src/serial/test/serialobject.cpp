@@ -47,7 +47,7 @@ string Ptr(const void* p)
     return string(b.str(), b.pcount());
 }
 
-void CSerialObject::Dump(ostream& out) const
+void CSerialObject::Dump(CNcbiOstream& out) const
 {
     out << '{' << endl;
     out << "m_Name: \"" << m_Name << "\" (*" << Ptr(&m_Name) << ")" << endl;

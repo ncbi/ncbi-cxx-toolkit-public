@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/10/19 15:41:04  vasilche
+* Fixed reference to IOS_BASE
+*
 * Revision 1.31  1999/10/04 16:22:17  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -165,7 +168,7 @@ void CObjectIStreamBinary::ReadBytes(char* mem, size_t count)
 
 void CObjectIStreamBinary::SkipBytes(size_t count)
 {
-    m_Input.seekg(count, ios::cur);
+    m_Input.seekg(count, IOS_BASE::cur);
     CheckIOError(m_Input);
 }
 

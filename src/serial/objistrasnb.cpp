@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/10/19 15:41:03  vasilche
+* Fixed reference to IOS_BASE
+*
 * Revision 1.20  1999/10/18 20:21:41  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -290,7 +293,7 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
         m_CurrentPosition++;
     }
 #endif
-    m_Input.seekg(count, ios::cur);
+    m_Input.seekg(count, IOS_BASE::cur);
     CheckIOError(m_Input);
 }
 
