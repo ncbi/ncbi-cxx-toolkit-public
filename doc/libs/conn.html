@@ -1,0 +1,619 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Connection library</title>
+</head>
+
+<body>
+<h2>Connection library</h2>
+
+NCBI C++ platform-independent
+connection library (<i><b>scr/connect</b></i> and
+<i><b>include/connect</b></i>) consists of 2 parts:
+<ol>
+<li> Low-level library,
+written in C (also used as a replacement of existing
+connection library in the NCBI C Toolkit);
+<li> Upper-level library written in C++ and using C++ streams.
+</ol>
+<p>
+Functionality of the library includes:
+<ul>
+	<li> SOCK interface (sockets), which works
+			interchangeable on most UNIX flavors, MS-Windows, and Mac;
+	<li> CONN interface, which allows to
+			create a <i>connection</i>, the special object capable to
+			do <tt>read</tt>, <tt>write</tt>, etc. I/O operations;
+	<li> C++ streams built on top of CONN interface.
+</ul>
+<p>
+<u>Note:</u>
+The lowest-level SOCK interface is not covered in this document.
+Well-commented API can be found in <i><b>include/connect/ncbi_socket.h</b></i>.
+
+
+<h3>Connections</h3>
+
+There are 3 simple types of connections: <i>socket</i>, <i>file</i> and
+<i>http</i>; and one hybrid type, <i>service</i> connection.
+
+<p>
+A connection is created with a call to <i><b>CONN_Create()</b></i>,
+declared in <i><b>include/connect/ncbi_connection.h</b></i>, and returned
+by a pointer to <i><b>CONN</b></i> passed as a second argument:
+<pre>
+CONN conn;          /* connection handle */
+EIO_Status status = CONN_Create(connector, &conn);
+</pre>
+The first argument of this function is a handle of a so-called <i>connector</i>,
+a special object implementing functionality of the connection being built.
+Above, for each type of connection there is a special connector in the
+library. For each connector, one or more "constructors" defined, each
+returning the connector's handle. Connectors' constructors are defined in individual
+header files, like <i><b>include/connect/ncbi_socket_connector.h</b></i>.
+
+<p>
+After successful creation with <i><b>CONN_Create()</b></i>, the following
+calls from CONN API become available (all declared and documented in
+<i><b>include/connect/ncbi_connection.h</b></i>). All calls (except <i><b>CONN_GetTimeout()</b></i> and <i><b>CONN_GetType()</b></i>) return I/O completion status of type
+<i><b>EIO_Status</b></i>. Normal completion has code <i><b>eIO_Success</b></i>.
+<ul>
+
+<li> <i><b>CONN_Read</i></b>&nbsp;<tt>(CONN conn, void* buf, size_t bufsize, size_t* n_read, EIO_ReadMethod how);</tt><br>
+Read or peek data, depending on read method <tt>how</tt>, up to <tt>bufsize</tt> bytes from connection to specified buffer <tt>buf</tt>, return (via pointer argument <tt>n_read</tt>) the number of actually read bytes. The last argument
+<tt>how</tt> can be one of the following:
+<ul>
+<li><i><b>eIO_Plain</b></i> - to read data in a regular way, that is extracting data from the connection,
+<li><i><b>eIO_Peek</b></i> - to peek data from the connection, i.e. the next read operation will see the data again,
+<li><i><b>eIO_Persist</b></i> - to read exactly (not less than) <tt>bufsize</tt> bytes or until an error condition occurs.
+</ul>
+Return value other than <i><b>eIO_Success</b></i> means trouble.
+Specifically, return value <i><b>eIO_Timeout</b></i> indicates that the operation could not
+be completed within the preset amount of time; but some data may, however,
+be available in the buffer (e.g. in case of persistent reading, with <i><b>eIO_Persist</b></i>), and this is actually true for any return code.
+
+<li> <i><b>CONN_Write</b></i>&nbsp;<tt>(CONN conn, const void* buf, size_t bufsize, size_t* n_written);</tt><br>
+Write the specified number of bytes <tt>bufsize</tt> from the buffer <tt>buf</tt> to the connection. Return (via <tt>n_written</tt>) number of actually written data, and completion code as a return value.
+
+<li> <i><b>CONN_Flush</b></i>&nbsp;<tt>(CONN conn);</tt><br>
+Flush internal output queue, if this is supported by the current connection type.
+
+<li> <i><b>CONN_SetTimeout</b></i>&nbsp;<tt>(CONN conn, EIO_Event action, const STimeout* timeout);</tt><br>
+Set the timeout on the specified I/O action, <i><b>eIO_Read</b></i>, <i><b>eIO_Write</b></i>, <i><b>eIO_ReadWrite</b></i>, <i><b>eIO_Open</b></i>, and <i><b>eIO_Close</b></i>. The latter 2 actions are
+used in a phase of opening and closing the link, respectively: if connection
+cannot be established (closed) within the specified period, <i><b>eIO_Timeout</b></i> would result. <i><b>eIO_Timeout</b></i> would result if reading/writing could not
+be completed within specified time range, correspondingly. A timeout can be passed as a NULL-pointer. This special case denotes an infitine value for that timeout.
+
+<li> <i><b>CONN_GetTimeout</b></i>&nbsp;<tt>(CONN conn, EIO_Event action);</tt><br>
+Obtain (via return value of type <i><b>const STimeout*</b></i>)
+timeouts set by <i><b>CONN_SetTimeout()</b></i> routine, or active by default.
+<br>
+<u>Caution:</u> Returned pointer valid only for the time the connection
+handle is valid, i.e. up to a call to <i><b>CONN_Close()</b></i>.
+
+<li> <i><b>CONN_ReInit</b></i>&nbsp;<tt>(CONN conn, CONNECTOR replacement);</tt><br>
+This function allows to clear current contents of a
+connection, and "immerse" a new connector into it.
+Previous connector (if any) is closed first (if open),
+then gets destroyed, and thus must not be referenced again in the program.
+As a special case, new connector can be
+the same connector, which is currently active within the connection. It this case, the connector is not destroyed, instead it will be effectively re-opened.
+If connector passed as NULL, then the <tt>conn</tt> handle is kept existing but
+unusable (can be <i><b>CONN_ReInit()</b></i>ed later). None of the timeouts are touched by this call.
+
+<li> <i><b>CONN_Wait</b></i>&nbsp;<tt>(CONN conn, EIO_Event event, const STimeout* timeout);</tt><br>
+Suspend the program until connection is ready to perform reading (<tt>event</tt> = <i><b>eIO_Read</b></i>) or writing (<tt>event</tt> = <i><b>eIO_Write</b></i>), or until
+timeout (if non-NULL) expired. If timeout is passed as NULL, then
+the wait time is infinite.
+
+<li> <i><b>CONN_Status</b></i>&nbsp;<tt>(CONN conn, EIO_Event direction);</tt><br>
+Provide the information about recent low-level data exchange in the link.
+Operation direction has to be specified as either <i><b>eIO_Read</b></i> or <i><b>eIO_Write</b></i>. The necessity of this call arises from the fact that
+sometimes return value of a CONN API function does not really tell that the
+problem has been detected: suppose, a user peeks data, and gets 10 bytes.
+Return status <i><b>eIO_Success</b></i> signals that those 10 bytes were found
+in the connection okay. But how to know whether the end of file condition
+occurred during this operation? It is where <i><b>CONN_Status()</b></i> comes
+handy. When inquired about read operation, return value <i><b>eIO_Closed</b></i> denotes that the EOF was actually hit while making the peek,
+and those 10 bytes are actually the only data left untaken, no more are
+expected to come.
+
+<li> <i><b>CONN_Close</b></i>&nbsp;<tt>(CONN conn);</tt><br>
+Close the connection by closing the link (if open), deleting underlying
+connector(s) (if any) and the connection itself. Regardless of the return status (which may indicate certain problems), the connection handle becomes invalid and cannot be used in the program again.
+
+<li> <i><b>CONN_GetType</b></i>&nbsp;<tt>(CONN conn);</tt><br>
+Return character string (0-terminated), verbally representing the current
+connection type, like "HTTP", "SOCKET", "SERVICE/HTTP", etc. Unknown connection
+type gets returned as NULL.
+</ul>
+
+<u>Note:</u> There is no means to "open" a connection: it is done
+automatically when actually needed, and in the most cases, at
+the first I/O operation.
+But forming of actual link between source and destination
+can be postponed even longer. These details are hidden and made transparent to
+connection's user. The connection is seen as a two-way communication channel,
+which is clear to use right away after call to <i><b>CONN_Create()</b></i>.
+<p>
+<u>Note:</u> If for some reason <i><b>CONN_Create()</b></i> failed to create
+a connection (return code differs from <i><b>eIO_Success</b></i>), then the
+connector, which was passed to this function, is left intact; that is, its
+handle can be used again.
+Otherwise, if connection is created successfully, the passed
+connector handle becomes invalid, and cannot be used anywhere else throughout
+the program (with one, however, exception: it may be used as a replacing connector in a call to <i><b>CONN_ReInit()</b></i> for the same connection; see above). Such connector will be deleted automatically along with the connection
+it is placed in, or explicitly with a call to <i><b>CONN_ReInit()</b></i>
+provided that replacing connector is NULL or different from the original.
+<p>
+<u>Note:</u> There are no public connectors' "destructors". The only way to
+delete a connector is to create a connection and then to call either <i><b>CONN_Close()</b></i> or <i><b>CONN_ReInit()</b></i> (as described in
+the preceding note).
+
+<p>
+<hr>
+
+<h4>Socket connector</h4>
+
+Constructors are defined in:
+<pre>
+#include &lt;connect/ncbi_socket_connector.h&gt;
+</pre>
+
+<p>
+Socket connection based on the socket connector brings almost direct
+access to SOCK interface, thus allowing the user to create a peer-to-peer
+data channel between two programs, which could be located anywhere on the
+Internet.
+
+<p>
+In order to create the socket connection, the user has to create
+a socket connector first, then pass it to <i><b>CONN_Create()</b></i>,
+as in the following example:
+<pre>
+#include &lt;connect/ncbi_socket_connector.h&gt;
+#include &lt;connect/ncbi_connection.h&gt;
+
+#define MAX_TRY	3 /* Try to connect this many times before giving up */
+
+unsigned short port = 1234;
+CONNECTOR socket_connector = SOCK_CreateConnector("host.foo.com", port, MAX_TRY);
+
+if (!socket_connector)
+	fprintf(stderr, "Cannot create SOCKET connector");
+else {
+	CONN conn;
+  
+	if (CONN_Create(socket_connector, &conn) != eIO_Success)
+		fprintf(stderr, "CONN_Create failed");
+	else {
+		/* Connection created ok, use CONN_... function to access the network */
+		...
+  		CONN_Close(conn);
+	}
+}
+</pre>
+
+A variant form of connector's constructor,
+<i><b>SOCK_CreateConnectorEx()</b></i>,
+takes two more arguments: a pointer to data (of type <i><b>void*</b></i>),
+and data size (bytes) to specify the data to be sent as soon as
+the link has been established.
+
+<p>
+<hr>
+
+<h4>File connector</h4>
+
+Constructors defined in:
+<pre>
+#include &lt;connect/ncbi_file_connector.h&gt;
+</pre>
+
+This connector could be used for reading and writing files, when
+the input goes from one file, and the output goes to another file.
+(This differs from a normal file I/O when a single handle is used to access
+only one file.)
+
+<p>
+Extended variant of connector's constructor,
+<i><b>FILE_CreateConnectorEx()</b></i> takes an additional argument, the pointer to a structure, describing file connector attributes, like initial read position
+to start from in the input file, open mode for output file (append <i><b>eFCM_Append</b></i>, truncate <i><b>eFCM_Truncate</b></i>, or seek <i><b>eFCM_Seek</b></i> to start writing at a specified file position), and the position in the output file, which is used in <i>seek</i> open mode.
+Attribute pointer passed as NULL is equivalent to a call to
+<i><b>FILE_CreateConnector()</b></i>, which reads from the very
+beginning of the input file, and entirely overwrites the output file (if any) implicitly using <i><b>eFCM_Truncate</b></i>. 
+
+<p>
+<hr>
+
+<h4>HTTP connector</h4>
+
+Constructors defined in:
+<pre>
+#include &lt;connect/ncbi_http_connector.h&gt;
+</pre>
+
+The simplest form of this connector's contstructor takes 3 parameters:
+<pre>
+extern CONNECTOR HTTP_CreateConnector
+(const SConnNetInfo* info,
+ const char*         user_header,
+ THCC_Flags          flags
+ );
+</pre>
+a pointer to network information structure (can be NULL), a pointer to
+a custom HTTP tag-value (so-called "user-header", in the form "HTTP-Tag: Tag-value\r\n", or even multiple tag-values delimited by "\r\n"), and bitmask of various flags. If specified, the <tt>user_header</tt> parameter overrides the
+corresponding field in <tt>info</tt> (see below).
+
+<p>
+Network information structure (from <i><b>include/connect/ncbi_connutil.h</b></i>)
+defines parameters of the connection point,
+where the HTTP server is running. Not all parameters of the structure,
+depicted below, apply to this connector.
+
+<pre>
+/* Network connection related configurable info struct
+ */
+typedef struct {
+  char           client_host[64];  /* effective client hostname            */
+  char           host[64];         /* host to connect to                   */
+  unsigned short port;             /* port to connect to, host byte order  */
+  char           path[1024];       /* service: path(e.g. to  a CGI script) */
+  char           args[1024];       /* service: args(e.g. for a CGI script) */
+  EReqMethod     req_method;       /* method to use in the request         */
+  STimeout       timeout;          /* i/o timeout                          */
+  unsigned int   max_try;          /* max. # of attempts to establish conn */
+  char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
+  unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
+  char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
+  EDebugPrintout debug_printout;   /* printout some debug info             */
+  int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
+  int/*bool*/    firewall;         /* to use firewall/relay in connects    */
+  int/*bool*/    lb_disable;       /* to disable local load-balancing      */
+  const char*    http_user_header; /* user header to add to HTTP request   */
+  
+  /* the following field(s) are for the internal use only! */
+  int/*bool*/    http_proxy_adjusted;
+} SConnNetInfo;
+</pre>
+
+<u>Caution:</u> Unlike other "static fields" of this structure,
+<tt>http_user_header</tt> (if non-NULL)
+is assumed to be dynamically allocated from the heap
+(via a call to <tt>malloc</tt>, <tt>calloc</tt> or related function,
+like <tt>strdup</tt>).
+
+<p>
+The user code may use this structure by direct filling out the fields. There is,
+however, a better way (and interface!) to deal with
+(defined in <i><b>include/connect/ncbi_connutil.h</b></i>):
+
+<ul>
+<li> <i><b>ConnNetInfo_Create</b></i>&nbsp;<tt>(const char* service)</tt><br>
+  Create and return a pointer to a new <tt>SConnNetInfo</tt> structure, filled with
+  parameters specific either for a named <tt>service</tt> or by default if <tt>service</tt> specified as NULL (most likekly the case for ordinary HTTP connections). Parameters for the structure are taken from (in order of precedence):<ul>
+  <li> Environment variables of the form <tt>service_CONN_name</tt>,
+  where <tt>name</tt> is the name of the field;
+  <li> Service-specific <u>registry</u> section named <tt>[service]</tt>
+  using the key <tt>CONN_name</tt>;
+  <li> Environment variable of the form <tt>CONN_name</tt>;
+  <li> Registry section named <tt>[CONN]</tt> using <tt>name</tt> as a key;
+  <li> And finally, default value is applied, if none of the above resulted in a successful match.
+  </ul>
+  
+  Search for the keys in both environment and in registry is not case-sensitive; but the values of the keys are case-sensitive (except for enumerated types and boolean values, which can be of any -even mixed- case).<br>
+  <u>Note:</u> First 2 steps in the above sequence are apparently skipped if no service name specified (NULL).<br>
+  <u>Caution:</u> Obviously enough, the library does not provide reasonable
+  default values for <tt>path</tt> and <tt>args</tt> when in use for HTTP connectors.
+
+<li> <i><b>ConnNetInfo_Destroy</b></i>&nbsp;<tt>(SConnNetInfo* victim)</tt><br>
+  Delete and free the info structure via passed pointer (of course, HTTP user header (if any) is freed first by this function).
+<li> <i><b>ConnNetInfo_SetUserHeader</b></i>&nbsp;<tt>(SConnNetInfo* info, const char* new_user_header)</tt><br>
+Set the new HTTP user header (freeing the previous one if any) by cloning the passed string argument. NULL <tt>new_user_header</tt> causes only reset of the field.
+<li> <i><b>ConnNetInfo_Clone</b></i>&nbsp;<tt>(SConnNetInfo* info)</tt><br>
+ Create and return pointer to a new <tt>SConnNetInfo</tt> structure, which is an exact
+ copy of the passed structure. This function is aware of the dynamic nature of HTTP user header field, noted above.
+</ul>
+
+The following fields pertain to the HTTP connector:
+<tt>client_host</tt>, <tt>host</tt>, <tt>port</tt>, <tt>path</tt>, <tt>args</tt>, <tt>req_method</tt> (can be one of "GET", "POST", and "ANY"),
+<tt>timeout</tt>, <tt>max_try</tt> (see maximal try parameter for the socket
+connector above), <tt>http_proxy_host</tt>, <tt>http_proxy_port</tt>,
+<tt>debug_printout</tt> (values are "NONE" to disable any trace printout
+of the connection data, "SOME" to enable printing of <tt>SConnNetInfo</tt>
+structure before each connection attempt, and "DATA" to print both
+headers and data of the HTTP packets in addition to dumps of <tt>SConnNetInfo</tt> structures). Values of other fields are ignored.
+
+<p>
+As the last argument of the simple form of the HTTP connector's constructor comes
+the <tt>flags</tt>, which can be a bitwise <tt>OR</tt> of the following:
+<ul>
+<li> <i><b>fHCC_AutoReconnect</b></i><br>
+ If set then multiple request/reply HTTP transactions allowed; otherwise
+ (and by default) only one request/reply allowed.
+<li> <i><b>fHCC_SureFlush</b></i><br>
+  Always flush a request (maybe solely consisting of HTTP header with
+  no body at all) down to the HTTP server before any read or close
+  operations.
+<li> <i><b>fHCC_KeepHeader</b></i><br>
+  By default, HTTP connection sorts out the HTTP header and parses
+  HTTP errors (if any). Thus, normally reading from the connection returns
+  data from the HTTP body only. The flag disables this feature, and the HTTP
+  header is not parsed but instead passed to the application on a call to <i><b>CONN_Read()</b></i>.
+<li> <i><b>fHCC_UrlDecodeInput</b></i><br>
+  Enable decoding of the input data passed in HTTP body from the HTTP server.
+<li> <i><b>fHCC_UrlEncodeOutput</b></i><br>
+  Enable encoding of the output data passed in HTTP body to the HTTP server.
+<li> <i><b>fHCC_UrlCodec</b></i><br>
+  Make both codind and encoding (<tt>fHCC_UrlDecodeInput | fHCC_UrlEncodeOutput</tt>).
+<li> <i><b>fHCC_UrlEncodeArgs</b></i><br>
+  Encode URL if it contains special characters like <tt>'+'</tt>. By default,
+  the arguments are passed 'as is' (exactly as taken from <tt>SConnNetInfo</tt>).
+<li> <i><b>fHCC_DropUnread</b></i><br>
+  Drop unread data, which might exist in connection, before making another
+  request/reply HTTP shot. Normally, the connection first tries to read-out
+  the data from the HTTP server entirely, until EOF, and store them
+  in the internal buffer even if either the application did not request the
+  data to be read, or the data were read just partially, so that
+  the next read operation will see the data.
+</ul>
+
+The HTTP connection will be established using the following URL:
+<pre>
+http://host:port/path?args
+</pre>
+<u>Note</u> that <tt>path</tt> has to have a leading slash "/" as the very first character, that is, only "http://" and "?" are added by the connector,
+all other characters appear exactly as specified (but maybe encoded with <i><b>fHCC_UrlEncodeArgs</b></i>). Question mark is omitted if the URL has no arguments.
+
+<p>
+More elaborate form of the HTTP connector's constructor has the following prototype:
+<pre>
+typedef int/*bool*/ (*FHttpParseHTTPHdr)
+(const char* http_header,
+ void*       adjust_data,
+ int/*bool*/ server_error);
+ 
+typedef int/*bool*/ (*FHttpAdjustInfo)
+(SConnNetInfo* info,
+ void*         adjust_data,
+ unsigned int  n_failed);
+ 
+typedef void (*FHttpAdjustCleanup)
+(void* adjust_data
+ );
+ 
+extern CONNECTOR HTTP_CreateConnectorEx
+(const SConnNetInfo* info,
+ THCC_Flags          flags,
+ FHttpParseHTTPHdr   parse_http_hdr, /* can be NULL, then no addtl. parsing  */
+ FHttpAdjustInfo     adjust_info,    /* can be NULL, then no adjustments     */
+ void*               adjust_data,    /* for "adjust_info" & "adjust_cleanup" */
+ FHttpAdjustCleanup  adjust_cleanup  /* can be NULL                          */
+ );
+</pre>
+This form is assumed to be rarely used by the users directly, but it provides rich access to the internal management of HTTP connections.
+
+<p>
+First two agruments are identical to their counterparts in the arguments number
+one and three of <i><b>HTTP_CreateConnector()</b></i>. HTTP user header field
+(if any) is taken directly from the passed <tt>SConnNetInfo</tt> (which can be
+passed as NULL meaning to use the environment, registry and defaults as described above).
+
+<p>
+The third parameter specified a callback to be activated to
+parse the HTTP reply header (passed as a single string, with CR-LF -carriage return/line feed- characters incorporated to divide header lines). This callback
+also gets some custom data <tt>adjust_data</tt>, which supplied in the fifth argument of the connector's constructor, and a boolean value "true" if parsed response code from the server was not okay. The callback can return "false", which is considered the same way as having an error from the HTTP server.
+Return value "true" retains the pre-parsed error condition (or its lack).
+Parse header callback is <i>NOT</i> called if <i><b>fHCC_KeepHeader</b></i> is set in flags.
+
+<p>
+The forth argument is a callback, which gets control when an attempt to connect
+to the HTTP server has failed. On entry, this callback has current <tt>SConnNetInfo</tt>, which is requested to be adjusted in a faith that
+the connection to the HTTP server will finally succeed. That is the callback
+can change anything in the info structure, and the new parameters will be kept for all further connection attempts, until changed by this callback again.
+The number of successive failed attempts is given in the last callback's arguments. Note that the value 0 there should never be seen by the application.
+The callback return value "true" means successful adjustment. Return value
+"false" stops the connection trying and returns an error to the application.
+
+<p>
+When connector is been destoyed, the custom object <tt>adjust_data</tt> can be
+destroyed as well by the callback, specified as the last argument of the
+extended constructor.
+
+<p>
+Note that any callbacks can be specified as NULL, which means that no action
+is foreseen by the application, and default behavior occur.
+
+<p>
+<hr>
+
+<h4>Service connector</h4>
+
+Constructors defined in:
+<pre>
+#include &lt;connect/ncbi_service_connector.h&gt;
+</pre>
+
+This is the most complex connector in the library. It can initiate data exchange between an application and a named NCBI service, and data link can be either wrapped in HTTP or be just byte-tream (like in a socket). In fact this connector
+sits on top of either HTTP or SOCKET connectors.
+
+<p>
+The library provides these two forms of conector's constructors:
+<pre>
+SERVICE_CreateConnector(const char* sevice_name);
+
+SERVICE_CreateConnectorEx
+(const char*         service_name, /* The registered name of an NCBI service */
+ TSERV_Type          type,         /* Accepted server types, bitmask         */
+ const SConnNetInfo* info          /* Connection parameters                  */
+ );
+</pre>
+The second form is an equivalence of using 
+<i><b>SERVICE_CreateConnectorEx(</b></i><tt>service_name, 0, 0</tt><i><b>)</b></i>.
+
+A named service is a CGI or standalone server (which can be of one of two supported types), which runs at the NCBI site, and made accessible for the outside world. Special software, which runs on the NCBI Web-servers, called
+dispatcher, allows automatic switching to the appropriate server without
+having the client to know <i>a priori</i> the connection point. That is,
+the client just uses the main entry gate of the NCBI Web (usually, <tt>www.ncbi.nlm.nih.gov</tt>) with a request to have a service "service",
+and depending on the service availability, the request will be either 
+honored (by switching and routing the client to the machine,
+actually running the server), or rejected. To the client,
+the entire process of dispatching is seen as completely transparent.
+
+<p>
+Dispatching <i>per se</i> is implemented on top of HTTP protocol, parsed by a
+CGI program, <tt>dispd.cgi</tt> (or another dispatching CGI), which is
+available on the NCBI Web. On every server, which runs named services, another program, called load-balancing daemon, is executing. This daemon supports having the same service running on different machines, and allows to choose one machine which is less loaded. When <tt>dispd.cgi</tt> receives a request for a named service, it first consults the load-balancing table, broadcasted by each load-balancing daemon, and re-assembled in a network-wide form on each server. When the requested server is detected, the client request can be passed, or a dedicated connection to the server can be established. The dispatching is made such a way that it can be also used directly from the Internet browsers.
+
+<p>
+The named service facility uses the following distinction of server types:
+<ul>
+<li>HTTP servers, which are usually CGI programs:
+  <ul>
+  <li>HTTP_GET servers are those, which accept requests only using HTTP "GET"
+      method.
+  <li>HTTP_POST servers are those, which accept requests only using HTTP
+      "POST" method.
+  <li>HTTP servers are those, which can accept both "GET" and "POST" methods.
+  </ul>
+  <li>NCBID servers are those run by a special engine CGI, called
+      <tt>ncbid.cgi</tt>, a configurable program, which can convert byte-stream
+      output from another program (server) started by request
+      from dispatcher, to an HTTP-compliant reply (that is a packet
+      having both HTTP header and body).
+  <li>Standalone servers, like mailing daemons, are those, which are
+      listening on their own onto the network for incoming connections.
+</ul>
+
+Formal description of these types is given in <i><b>include/connect/ncbi_server_info.h</b></i>:
+<pre>
+/* Server types
+ */
+typedef enum {
+  fSERV_Ncbid      = 0x1,
+  fSERV_Standalone = 0x2,
+  fSERV_HttpGet    = 0x4,
+  fSERV_HttpPost   = 0x8,
+  fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost
+} ESERV_Type;
+
+#define fSERV_Any           0
+#define fSERV_StatelessOnly 0x80
+typedef unsigned TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
+</pre>
+
+The bitwise <tt>OR</tt> of the <i><b>ESERV_Type</b></i> flags can be used to
+restrict the search of the servers, matching the requested service name.
+Special value 0 (or, better <i><b>fSERV_Any</b></i>) states no
+such preference whatsoever. Special bit-value <i><b>fSERV_StatelessOnly</b></i>
+set together with other bits or just alone specifies that the servers
+should be only stateless (HTTP-alike), and the client is responsible for keeping
+track of the logical sequence of transactions. The flags are used by the
+dispatcher when figuring out, which server is acceptable for the client.
+
+<p>
+The following code fragment establishes the service connection to
+the named service "io_bounce", using only stateless servers:
+<pre>
+  CONNECTOR c;
+  CONN conn;
+
+  if (!(c = SERVICE_CreateConnector("io_bounce", fSERV_StatelessOnly, 0)))
+    fprintf(stderr, "No such service available");
+  else if (CONN_Create(c, &conn) != eIO_Success)
+    fprintf(stderr, "Failed to create connection");
+  else {
+    static const char buffer[] = "Data to pass to the server";
+    size_t n_written;
+    
+    CONN_Write(conn, buffer, sizeof(buffer) - 1, &n_written);
+    ...
+  }
+</pre>
+
+The real type of the data channel can be obtained via call to <i><b>CONN_GetType(</b></i><tt>conn</tt><i><b>)</b></i>.
+
+<p>
+Note that in the above example the client has no assumption how the
+data actually passed to the server. The server could be of any
+type in principle, even a standalone server, which was used
+in the request/reply mode of one-shot transactions. If necessary,
+such wrapping would have been made by the dispatching facility as well.
+
+<p>
+The last parameter of the extended constructor is the network info,
+described in the previous section, devoted to HTTP connector.
+Service connector uses all fields of this structure, and the following
+assumptions apply:
+<ul>
+<li><tt>path</tt> specifies the dispatcher program (defaulted to <tt>dispd.cgi</tt>);
+<li><tt>args</tt> specifies parameters for the requested service, this is service-specific, no defaults;
+<li><tt>stateless</tt> is used to set <i><b>fSERV_StatelessOnly</b></i>
+flag in the server type bitmask, if it was not set there already
+(convenient to modify the dispatching using environment and/or registry,
+if the flag is not set; yet allows to hardcode the flag at compile-time
+by setting it in constructor's <tt>type</tt> argument explicitly).
+<li><tt>lb_disable</tt> set to "true" means to always use remote dispatcher (via network connection) even if locally running load-balancing daemon is avaliable
+(by default, local load-balancing deamon consulted first to resolve
+the name of the service).
+<li><tt>firewall</tt> set to "true" disables the direct connection to
+the service. Instead, either a connection to a proxy firewall daemon (running
+at the NCBI site) is used to pass the data in stream mode, or data get relayed
+via dispatcher if stateless server is used (firewalling this doesn't involve dispatching, which is always done via HTTP directly).
+</ul>
+
+<p>
+As with HTTP connector, if network information structure is specified as
+NULL, default values are obtained as described above, as with the call to
+<i><b>ConnNetInfo_Create(</b></i><tt>service_name</tt><i><b>)</b></i>.
+
+<p>
+Library provides additional interface to named service mapper, which
+can be found in <i><b>include/connect/ncbi_service.h</b></i>.
+
+<p>
+<hr>
+
+<h3>C++ Connection Streams</h3>
+
+Using connections and connectors (in its most entirely procedural approach)
+in C++ programs overkills the power of the language.
+Therefore, we provide C++ users with the stream classes, all
+derived from standard <tt>iostream</tt>, and as a result, can be used with
+all famous stream I/O operators, manipulators etc.
+
+<p>
+The declarations of the stream's constructors can be found in
+<i><b>include/connect/ncbi_conn_stream.hpp</b></i>.
+We tried to keep the same number and order of constructor's
+parameters, which appear in corresponding connector's constructors in C.
+
+<p>
+The code below is a C++-style example from the previous section, service connector:
+<pre>
+#include &lt;connect/ncbi_conn_stream.hpp&gt;
+  
+  try {
+    CConn_HttpStream ios("io_bounce", fSERV_StatelessOnly, 0);
+    ios << "Data to be passed to the server";
+  } STD_CATCH_ALL("Connection problem");
+  
+  ...
+</pre>
+Stream constructor may throw an exception if, for instance,
+the requested service not found, or other kind of problem arose.
+To see the actual reason, we used standard toolkit macro <i><b>STD_CATCH_ALL()</b></i>, which prints the message and problem
+description into the log file (<tt>cerr</tt>, by default).
+
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>
