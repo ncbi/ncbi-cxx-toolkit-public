@@ -1646,7 +1646,15 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
 
     TSeqPos len = 0;
+    TSeqPos seg = 0;
     ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+        ++seg;
+        if ( !(*sg) ) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
+                "NULL pointer in delta seq_ext valnode (segment " +
+                NStr::IntToString(seg) + ")", seq);
+            continue;
+        }
         switch ( (**sg).Which() ) {
         case CDelta_seq::e_Loc:
         {
@@ -1682,6 +1690,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             // The C++ object serializaton will not load if invalid alphabet
             // so no check needed here
             const CSeq_literal& lit = (*sg)->GetLiteral();
+            TSeqPos start_len = len;
             len += lit.CanGetLength() ? lit.GetLength() : 0;
 
             // Check for invalid residues
@@ -1731,7 +1740,9 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     if ( adjacent_ns > scm_AdjacentNsThreshold ) {
                         PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
                             "Run of " + NStr::UIntToString(adjacent_ns) + 
-                            " Ns in delta chain", seq);
+                            " Ns in delta component " + NStr::UIntToString(seg) +
+                            " that starts at base " + NStr::UIntToString(start_len),
+                            seq);
                     }
                 }
             } else if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
@@ -3559,6 +3570,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2004/04/23 13:41:33  shomrat
+* InternalNsInSeqLit gives more informative message
+*
 * Revision 1.70  2004/04/05 15:56:15  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
