@@ -340,12 +340,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
                                       first_time);
 #endif
 
-         if (query_info->last_context > 1) {
-            /* Multiple contexts - adjust all HSP offsets to the individual 
-               query coordinates; also assign frames */
-            BLAST_AdjustQueryOffsets(program_number, hsp_list, 
-                                     query_info);
-         }
+         /* Multiple contexts - adjust all HSP offsets to the individual 
+            query coordinates; also assign frames */
+         BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info);
 
 #ifdef DO_LINK_HSPS
          if (hit_options->do_sum_stats == TRUE)
