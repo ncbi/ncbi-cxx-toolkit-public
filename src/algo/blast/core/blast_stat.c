@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.71  2004/05/07 15:23:47  papadopo
+ * add initialization of scale factor to ScoreBlkNew
+ *
  * Revision 1.70  2004/05/06 15:59:29  camacho
  * Made Blast_KarlinBlkCalc non-static
  *
@@ -827,6 +830,7 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 		}
 		sbp->matrix = sbp->matrix_struct->matrix;
 		sbp->maxscore = (Int4 *) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
+                sbp->scale_factor = 1.0;
 		sbp->number_of_contexts = number_of_contexts;
 		sbp->sfp = (BLAST_ScoreFreq**) 
          calloc(sbp->number_of_contexts, sizeof(BLAST_ScoreFreq*));
