@@ -37,7 +37,7 @@ working <i><b> outside </i></b> the NCBI C++ tree, say in a directory called
 <i>NewProj</i>. This is where you will write both your source and header
 files.  The first step then, is to create the new working directory
 and use the <i> new_project.sh </i> script to install a makefile there:<p>
-<pre><font size="-1">
+<pre>
 birch% mkdir NewProj
 
 birch% $NCBI/c++/scripts/new_project.sh NewProj app $NCBI/c++/GCC-Debug/build
@@ -160,8 +160,7 @@ the C Toolkit, namely:
 </ul>
 
 The <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> classes are
-included as data members in the application class's specification and are thus used to
-implement a layered design of that class.<p>
+included as data members in the application class.<p>
 
 <a name="CNcbiArguments">
 
@@ -237,11 +236,11 @@ END_NCBI_SCOPE
 </pre>
 <font color = black> 
 
-<b>Step 2.</b> Include <i> main()</i> in the <i>*.cpp </i> file where you instantiate your
+<b>Step 2.</b> Define <i> main()</i> in the <i>*.cpp </i> file where you instantiate your
 application subclass. <p>
 
-Inside <i>main()</i> instantiate your application subclass, and call the inherited function,
-<i>AppMain()</i> on that class. This file is also a good place to put the implementation of the
+Inside <i>main()</i>, instantiate your application subclass, and call its inherited function,
+<i>AppMain()</i>. This file is also a good place to put the implementation of the
 <i>Run()</i> function. Enclose the <i> Run() </i> implementation with <i> BEGIN_NCBI_SCOPE
 </i> and <i> END_NCBI_SCOPE </i> statements, and precede <i>main() </i>(as well as any other 
 code using the NCBI C++ Toolkit) with a <i>
@@ -299,7 +298,7 @@ To review what we've done so far:
 <ol>
  <li> We defined a subclass of  <i>CNcbiApplication </i> with an implementation of <i>Run()</i>.
  <li> We created an instance of this class in <i>main()</i>.
- <li> We invoked the class member function <i> AppMain() </i>, and passed <i>argc, argv[]</i> to it.
+ <li> We invoked the class member function <i> AppMain()</i>, and passed <i>argc, argv[]</i> to it.
 </ol>
 
 Here is a somewhat simplified view of the application class's definition:
