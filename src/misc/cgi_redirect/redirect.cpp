@@ -120,7 +120,7 @@ void s_AssignEntryValue(const string& name,
 
 int CCgiRedirectApplication::ProcessRequest(CCgiContext& ctx)
 {
-    const CNcbiRegistry& reg = GetConfig();
+    const CNcbiRegistry& reg = ctx.GetConfig();
 
     TCgiEntries new_entries;
 
@@ -174,7 +174,7 @@ TCgiEntries& CCgiRedirectApplication::RemapEntries(CCgiContext& ctx,
 {
     const CCgiRequest& request = ctx.GetRequest();
     TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
-    const CNcbiRegistry& reg = GetConfig();
+    const CNcbiRegistry& reg = ctx.GetConfig();
 
     // Substitute entries
     // Get list of entries to remove
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/19 16:10:42  ivanov
+ * ProcessRequest(): use ctx.GetConfig()
+ *
  * Revision 1.4  2004/02/17 16:21:38  ivanov
  * Changed method of using another variables from "&var" to "&{var}".
  * Also, all new string values in the registry file must be specified
