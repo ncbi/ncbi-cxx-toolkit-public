@@ -117,13 +117,8 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
    }
 
    /* Put all the SeqLoc's into one big linked list. */
-   if (loc_head == NULL) {
-      loc_head = last_loc = 
-         (BlastSeqLoc*) MemDup(mask_loc, sizeof(BlastSeqLoc));
-   } else {
-      last_loc->next = (BlastSeqLoc*) MemDup(mask_loc, sizeof(BlastSeqLoc));
-      last_loc = last_loc->next;
-   }
+   loc_head = last_loc = 
+      (BlastSeqLoc*) MemDup(mask_loc, sizeof(BlastSeqLoc));
          
    /* Copy all locations, so loc points at the end of the chain */
    while (last_loc->next) {		
