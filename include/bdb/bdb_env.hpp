@@ -122,6 +122,15 @@ public:
     /// Return TRUE if environment has been open as transactional
     bool IsTransactional() const { return m_Transactional; }
 
+    /// Flush the underlying memory pools, logs and data bases
+    void TransactionCheckpoint();
+
+    /// Turn off buffering of databases (DB_DIRECT_DB)
+    void SetDirectDB(bool on_off);
+
+    /// Turn off buffering of log files (DB_DIRECT_LOG)
+    void SetDirectLog(bool on_off);
+
 private:
     CBDB_Env(const CBDB_Env&);
     CBDB_Env& operator=(const CBDB_Env&);
@@ -138,6 +147,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/26 14:04:21  kuznets
+ * + environment functions to fine tune buffering and force
+ * transaction checkpoints
+ *
  * Revision 1.11  2003/12/29 18:44:55  kuznets
  * JoinEnv() added parameter to specify environment options (thread safety, etc)
  *
