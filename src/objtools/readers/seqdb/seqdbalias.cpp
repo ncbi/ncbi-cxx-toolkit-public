@@ -298,6 +298,20 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
     string dblist( m_Values["DBLIST"] );
     NStr::Tokenize(dblist, " ", namevec, NStr::eMergeDelims);
     
+    if (namevec.empty()) {
+        string situation;
+        
+        if (this_name == "-") {
+            situation = "passed to CSeqDB::CSeqDB().";
+        } else {
+            situation = string("found in alias file [") + this_name + "].";
+        }
+        
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   string("No database names were ") + situation);
+    }
+    
     bool parens = false;
     
     for(Uint4 i = 0; i<namevec.size(); i++) {
