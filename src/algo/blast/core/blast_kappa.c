@@ -55,6 +55,10 @@ static char const rcsid[] =
 #define PRO_TRUE_ALPHABET_SIZE 20
 #define scoreRange 10000
 
+#define XCHAR   21    /*character for low-complexity columns*/
+#define STARCHAR   25    /*character for stop codons*/
+
+
 
 
 /*positions of true characters in protein alphabet*/
@@ -1420,7 +1424,7 @@ static void fillResidueProbability(Uint1* sequence, Int4 length, double * resPro
   for(i = 0; i < BLASTAA_SIZE; i++)
     frequency[i] = 0;
   for(i = 0; i < length; i++) {
-    if (Xchar != sequence[i])
+    if (XCHAR != sequence[i])
       frequency[sequence[i]]++;
     else
       localLength--;
@@ -1480,6 +1484,7 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
 
    freqRatios = _PSIMatrixFrequencyRatiosFree(freqRatios);
 
+/* FIXME use blast_psi_priv.c:_PSIGetStandardProbabilities when available here. */
    stdrfp = Blast_ResFreqNew(sbp);
    Blast_ResFreqStdComp(sbp,stdrfp); 
    standardProb = calloc(1, BLASTAA_SIZE * sizeof(double));
@@ -1489,7 +1494,7 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
    for(i = 0; i < numPositions; i++) 
      for(j = 0; j < BLASTAA_SIZE; j++) 
        if ((standardProb[query[i]] > posEpsilon) && (standardProb[j] > posEpsilon) &&     
-	     (j != StarChar) && (j != Xchar)
+	     (j != STARCHAR) && (j != XCHAR)
 	     && (startNumerator[i][j] > posEpsilon))
 	   returnRatios[i][j] = startNumerator[i][j]/standardProb[j];
    stdrfp = Blast_ResFreqDestruct(stdrfp);
