@@ -44,7 +44,7 @@ typedef void* TPotItem;
 typedef int (*FPotCompare)(TPotItem, TPotItem);
 
 
-class CQuickSortStack
+class NCBI_DBAPIDRIVER_EXPORT CQuickSortStack
 {
 public:
     int Pop(int* i1, int* i2) {
@@ -75,7 +75,7 @@ private:
 
 
 
-class CPointerPot
+class NCBI_DBAPIDRIVER_EXPORT CPointerPot
 {
 public:
     int NofItems(void) const {
@@ -114,7 +114,7 @@ private:
     void x_SimpleSort(TPotItem* arr, int nof_items, FPotCompare cf);
 };
 
-class CMemPot 
+class NCBI_DBAPIDRIVER_EXPORT CMemPot 
 {
 public:
     void* Alloc(size_t nof_bytes) {
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/13 15:40:50  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT
+ *
  * Revision 1.4  2002/08/28 17:07:24  vasilche
  * Fixed delete[] of void pointer
  *

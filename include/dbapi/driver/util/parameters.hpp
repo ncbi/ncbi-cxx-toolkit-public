@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 void g_SubstituteParam(string& query, const string& name, const string& val);
 
 
-class CDB_Params
+class NCBI_DBAPIDRIVER_EXPORT  CDB_Params
 {
 public:
     CDB_Params(unsigned int nof_params = 0);
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/13 15:40:50  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT
+ *
  * Revision 1.4  2001/12/28 21:22:39  sapojnik
  * Made compatible with MS compiler: long long to Int8, static const within class def to enum
  *

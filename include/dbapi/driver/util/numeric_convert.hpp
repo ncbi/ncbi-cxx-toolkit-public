@@ -38,13 +38,16 @@
 
 BEGIN_NCBI_SCOPE
 
-unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec,
-				     unsigned char* cs_num);
+
+unsigned char* longlong_to_numeric(Int8 l_num, unsigned int prec,
+                                   unsigned char* cs_num);
 
 // long long numeric_to_longlong(CS_NUMERIC* cs_num);
 Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num);
 
 void swap_numeric_endian(unsigned int precision, unsigned char* num);
+
+
 
 END_NCBI_SCOPE
 
@@ -55,6 +58,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/02/13 15:40:50  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT
+ *
  * Revision 1.5  2002/06/20 18:37:49  soussov
  * odbc related changes
  *

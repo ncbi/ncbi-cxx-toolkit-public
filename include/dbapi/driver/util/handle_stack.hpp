@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CDBHandlerStack
+class NCBI_DBAPIDRIVER_EXPORT CDBHandlerStack
 {
 public:
     CDBHandlerStack(size_t n = 8);
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/13 15:40:50  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT
+ *
  * Revision 1.4  2001/11/06 17:58:07  lavr
  * Formatted uniformly as the rest of the library
  *
