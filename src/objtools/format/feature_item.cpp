@@ -274,23 +274,23 @@ static bool s_SkipFeature(const CSeq_feat& feat, CFFContext& ctx)
         return true;
     }
     
-    if ( ctx.HideImpFeat()  &&  type == CSeqFeatData::e_Imp ) {
+    if ( ctx.HideImpFeats()  &&  type == CSeqFeatData::e_Imp ) {
         return true;
     }
     
-    if ( ctx.HideSnpFeat()  &&  subtype == CSeqFeatData::eSubtype_variation ) {
+    if ( ctx.HideSnpFeats()  &&  subtype == CSeqFeatData::eSubtype_variation ) {
         return true;
     }
 
-    if ( ctx.HideExonFeat()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
+    if ( ctx.HideExonFeats()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
         return true;
     }
 
-    if ( ctx.HideIntronFeat()  &&  subtype == CSeqFeatData::eSubtype_intron ) {
+    if ( ctx.HideIntronFeats()  &&  subtype == CSeqFeatData::eSubtype_intron ) {
         return true;
     }
 
-    if ( ctx.HideRemImpFeat()  &&  subtype == CSeqFeatData::eSubtype_imp ) {
+    if ( ctx.HideRemImpFeats()  &&  subtype == CSeqFeatData::eSubtype_imp ) {
         if ( subtype == CSeqFeatData::eSubtype_variation  ||
              subtype == CSeqFeatData::eSubtype_exon       ||
              subtype == CSeqFeatData::eSubtype_intron     ||
@@ -306,6 +306,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, CFFContext& ctx)
 
     // To Do:
     // !!! supress full length comment features
+
     // if RELEASE mode, make sure we have all info to create mandatory quals.
     if ( ctx.NeedRequiredQuals() ) {
         return !s_CheckMandatoryQuals(feat, ctx);
@@ -1250,6 +1251,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 18:07:26  shomrat
+* HideXXXFeat() => HideXXXFeats()
+*
 * Revision 1.5  2004/02/11 22:50:35  shomrat
 * override GetKey
 *
