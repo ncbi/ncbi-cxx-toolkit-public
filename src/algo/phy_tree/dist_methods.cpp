@@ -321,7 +321,7 @@ void CDistMethods::Divergence(const CAlnVec& avec_in, TMatrix& result)
 }
 
 
-void CDistMethods::Divergence(const CAlignmentFile& aln, TMatrix& result)
+void CDistMethods::Divergence(const CAlignment& aln, TMatrix& result)
 {
     int nseqs = aln.GetSeqs().size();
     result.Resize(nseqs, nseqs);
@@ -341,8 +341,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2004/02/18 22:57:33  jcherry
- * Reflect change to util/creaders/alignment_file.[ch]pp
+ * Revision 1.5  2004/02/19 13:20:04  dicuccio
+ * Roll back to version 1.3
  *
  * Revision 1.3  2004/02/10 23:07:46  ucko
  * +<math.h> for log()
