@@ -1,108 +1,38 @@
-#ifndef NODE__HPP
-#define NODE__HPP
+#ifndef HTML___NODE__HPP
+#define HTML___NODE__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Lewis Geer
-*
-* File Description:
-*   standard node class
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.20  2003/04/25 13:45:33  siyan
-* Added doxygen groupings
-*
-* Revision 1.19  2001/05/17 14:55:37  lavr
-* Typos corrected
-*
-* Revision 1.18  2000/12/12 14:38:37  vasilche
-* Changed the way CHTMLNode::CreateSubNodes() is called.
-*
-* Revision 1.17  2000/07/18 17:21:34  vasilche
-* Added possibility to force output of empty attribute value.
-* Added caching to CHTML_table, now large tables work much faster.
-* Changed algorithm of emitting EOL symbols in html output.
-*
-* Revision 1.16  2000/03/29 15:50:38  vasilche
-* Added const version of CRef - CConstRef.
-* CRef and CConstRef now accept classes inherited from CObject.
-*
-* Revision 1.15  2000/03/07 15:40:37  vasilche
-* Added AppendChild(CNodeRef&)
-*
-* Revision 1.14  2000/03/07 15:26:06  vasilche
-* Removed second definition of CRef.
-*
-* Revision 1.13  1999/12/28 18:55:29  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.12  1999/11/19 15:45:32  vasilche
-* CNodeRef implemented as CRef<CNCBINode>
-*
-* Revision 1.11  1999/10/28 13:40:30  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.10  1999/05/28 16:32:09  vasilche
-* Fixed memory leak in page tag mappers.
-*
-* Revision 1.9  1999/05/20 16:49:13  pubmed
-* Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
-*
-* Revision 1.8  1999/01/04 20:06:11  vasilche
-* Redesigned CHTML_table.
-* Added selection support to HTML forms (via hidden values).
-*
-* Revision 1.7  1998/12/28 20:29:13  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.6  1998/12/23 21:20:58  vasilche
-* Added more HTML tags (almost all).
-* Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
-*
-* Revision 1.5  1998/12/23 14:28:08  vasilche
-* Most of closed HTML tags made via template.
-*
-* Revision 1.4  1998/12/21 22:24:57  vasilche
-* A lot of cleaning.
-*
-* Revision 1.3  1998/11/23 23:47:50  lewisg
-* *** empty log message ***
-*
-* Revision 1.2  1998/10/29 16:15:52  lewisg
-* version 2
-*
-* Revision 1.1  1998/10/06 20:34:31  lewisg
-* html library includes
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Lewis Geer
+ *
+ */
+
+/// @file node.hpp 
+/// The standard node class.
+
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -119,12 +49,12 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNCBINode;
 
+class CNCBINode;
 typedef CRef<CNCBINode> CNodeRef;
 
-// base class for a graph node
 
+// Base class for a graph node.
 class CNCBINode : public CObject
 {
 public:
@@ -140,10 +70,12 @@ public:
         SAttributeValue(void)
             : m_Optional(true)
             {
+                return;
             }
         SAttributeValue(const string& value, bool optional)
             : m_Value(value), m_Optional(optional)
             {
+                return;
             }
         SAttributeValue& operator=(const string& value)
             {
@@ -177,19 +109,23 @@ public:
         eHTML = 0,
         ePlainText  = 1
     };
+
     class TMode {
     public:
         TMode(EMode mode = eHTML)
             : m_Mode(mode), m_Node(0), m_Previous(0)
             {
+                return;
             }
         TMode(int mode)
             : m_Mode(EMode(mode)), m_Node(0), m_Previous(0)
             {
+                return;
             }
         TMode(const TMode* mode, CNCBINode* node)
             : m_Mode(mode->m_Mode), m_Node(node), m_Previous(mode)
             {
+                return;
             }
         operator EMode(void) const
             {
@@ -221,14 +157,14 @@ public:
     CNCBINode(const char* name);
     virtual ~CNCBINode();
 
-    // add a Node * to the end of m_Children
-    // returns this for chained AppendChild
+    // Add a Node * to the end of m_Children.
+    // Returns 'this' for chained AppendChild().
     CNCBINode* AppendChild(CNCBINode* child);
     CNCBINode* AppendChild(CNodeRef& ref);
     void RemoveAllChildren(void);
 
-    // all child operations (except AppendChild) are valid only if
-    // have children returns true
+    // All child operations (except AppendChild) are valid only if
+    // have children return true
     bool HaveChildren(void) const;
     TChildren& Children(void);
     const TChildren& Children(void) const;
@@ -244,12 +180,12 @@ public:
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
     virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
 
-    // this method will be called once before Print()
+    // This method will be called once before Print().
     virtual void CreateSubNodes(void);
-    // call CreateSubNodes() if it's not called yet
+    // Call CreateSubNodes() if it's not called yet.
     void Initialize(void);
 
-    // finds and replaces text with a node    
+    // Find and replace text with a node.
     virtual CNCBINode* MapTag(const string& tagname);
     CNodeRef MapTagAll(const string& tagname, const TMode& mode);
 
@@ -258,7 +194,7 @@ public:
     bool HaveAttributes(void) const;
     TAttributes& Attributes(void);
     const TAttributes& Attributes(void) const;
-    // retrieve attribute
+    // Retrieve attribute.
     bool HaveAttribute(const string& name) const;
     const string& GetAttribute(const string& name) const;
     bool AttributeIsOptional(const string& name) const;
@@ -267,7 +203,7 @@ public:
     void SetAttributeOptional(const char* name, bool optional = true);
     const string* GetAttributeValue(const string& name) const;
 
-    // set attribute
+    // Set attribute.
     void SetAttribute(const string& name, const string& value);
     void SetAttribute(const string& name);
     void SetAttribute(const string& name, int value);
@@ -285,31 +221,111 @@ protected:
     virtual void DoSetAttribute(const string& name,
                                 const string& value, bool optional);
 
-    bool m_CreateSubNodesCalled;
-    TChildrenMember m_Children;  // Child nodes.
+    bool            m_CreateSubNodesCalled;
+    TChildrenMember m_Children;              // Child nodes
+    string          m_Name;                  // Node name
 
-    string m_Name; // node name
-
-    auto_ptr<TAttributes> m_Attributes; // attributes, e.g. href="link.html"
+    // Attributes, e.g. href="link.html"
+    auto_ptr<TAttributes> m_Attributes;     
 
 private:
-    // to prevent copy constructor
+    // To prevent copy constructor.
     CNCBINode(const CNCBINode& node);
-    // to prevent assignment operator
+    // To prevent assignment operator.
     CNCBINode& operator=(const CNCBINode& node);
 
-    // return children list (create if needed)
+    // Return children list (create if needed).
     TChildren& GetChildren(void);
-    // return attributes map (create if needed)
+    // Return attributes map (create if needed).
     TAttributes& GetAttributes(void);
 };
+
+
+// Inline functions are defined here:
+#include <html/node.inl>
+
+
+END_NCBI_SCOPE
 
 
 /* @} */
 
 
-// inline functions are defined here:
-#include <html/node.inl>
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.21  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
+ * Revision 1.20  2003/04/25 13:45:33  siyan
+ * Added doxygen groupings
+ *
+ * Revision 1.19  2001/05/17 14:55:37  lavr
+ * Typos corrected
+ *
+ * Revision 1.18  2000/12/12 14:38:37  vasilche
+ * Changed the way CHTMLNode::CreateSubNodes() is called.
+ *
+ * Revision 1.17  2000/07/18 17:21:34  vasilche
+ * Added possibility to force output of empty attribute value.
+ * Added caching to CHTML_table, now large tables work much faster.
+ * Changed algorithm of emitting EOL symbols in html output.
+ *
+ * Revision 1.16  2000/03/29 15:50:38  vasilche
+ * Added const version of CRef - CConstRef.
+ * CRef and CConstRef now accept classes inherited from CObject.
+ *
+ * Revision 1.15  2000/03/07 15:40:37  vasilche
+ * Added AppendChild(CNodeRef&)
+ *
+ * Revision 1.14  2000/03/07 15:26:06  vasilche
+ * Removed second definition of CRef.
+ *
+ * Revision 1.13  1999/12/28 18:55:29  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.12  1999/11/19 15:45:32  vasilche
+ * CNodeRef implemented as CRef<CNCBINode>
+ *
+ * Revision 1.11  1999/10/28 13:40:30  vasilche
+ * Added reference counters to CNCBINode.
+ *
+ * Revision 1.10  1999/05/28 16:32:09  vasilche
+ * Fixed memory leak in page tag mappers.
+ *
+ * Revision 1.9  1999/05/20 16:49:13  pubmed
+ * Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
+ *
+ * Revision 1.8  1999/01/04 20:06:11  vasilche
+ * Redesigned CHTML_table.
+ * Added selection support to HTML forms (via hidden values).
+ *
+ * Revision 1.7  1998/12/28 20:29:13  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.6  1998/12/23 21:20:58  vasilche
+ * Added more HTML tags (almost all).
+ * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
+ *
+ * Revision 1.5  1998/12/23 14:28:08  vasilche
+ * Most of closed HTML tags made via template.
+ *
+ * Revision 1.4  1998/12/21 22:24:57  vasilche
+ * A lot of cleaning.
+ *
+ * Revision 1.3  1998/11/23 23:47:50  lewisg
+ * *** empty log message ***
+ *
+ * Revision 1.2  1998/10/29 16:15:52  lewisg
+ * version 2
+ *
+ * Revision 1.1  1998/10/06 20:34:31  lewisg
+ * html library includes
+ *
+ * ===========================================================================
+ */ 
 
-END_NCBI_SCOPE
-#endif
+#endif  /*  HTML___NODE__HPP */

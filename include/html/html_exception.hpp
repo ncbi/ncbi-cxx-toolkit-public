@@ -1,7 +1,6 @@
 #ifndef HTML___EXCEPTION__HPP
 #define HTML___EXCEPTION__HPP
 
-
 /*  $Id$
  * ===========================================================================
  *
@@ -29,11 +28,16 @@
  *
  * Author:  Andrei Gourianov
  *
- * File Description:  HTML library exceptions
- *
  */
 
+/// @file html_exception.hpp
+/// HTML library exceptions.
+///
+/// Defines class to generate exceptions from the HTML library.
+
+
 #include <corelib/ncbiexpt.hpp>
+
 
 /** @addtogroup HTMLexpt
  *
@@ -81,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.2  2003/11/03 14:43:21  ivanov
  * + eWrite
  *

@@ -25,8 +25,6 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  JavaScript menu support
- *
  */
 
 #include <html/jsmenu.hpp>
@@ -425,6 +423,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/11/03 17:03:08  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.19  2003/10/02 18:24:38  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *

@@ -23,9 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko, Anton Golikov
- *
- * File Description: Common pager with 2 views
+ * Author:  Eugene Vasilchenko, Anton Golikov
  *
  */
 
@@ -473,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/11/03 17:03:08  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.37  2003/10/02 18:24:38  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *

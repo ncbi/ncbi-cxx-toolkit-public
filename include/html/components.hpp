@@ -28,10 +28,13 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:
- *   The individual html components used on a page
- *
  */
+
+/// @file components.hpp
+/// The HTML page.
+///
+/// Defines the individual html components used on a page.
+
 
 #include <html/html.hpp>
 
@@ -48,41 +51,34 @@ BEGIN_NCBI_SCOPE
 class CSubmitDescription
 {
 public:
-    string m_Name;
-    string m_Label;
-
     CSubmitDescription(void);
     CSubmitDescription(const string& name);
     CSubmitDescription(const string& name, const string& label);
 
     CNCBINode* CreateComponent(void) const;
+public:
+    string m_Name;
+    string m_Label;
 };
 
 
 class COptionDescription
 {
 public:
-    string m_Value;
-    string m_Label;
-
     COptionDescription(void);
     COptionDescription(const string& value);
     COptionDescription(const string& value, const string& label);
 
     CNCBINode* CreateComponent(const string& def) const;
+public:
+    string m_Value;
+    string m_Label;
 };
 
 
 class CSelectDescription
 {
 public:
-    string m_Name;
-    list<COptionDescription> m_List;
-    string m_Default;
-
-    string m_TextBefore;
-    string m_TextAfter;
-
     CSelectDescription(void);
     CSelectDescription(const string& value);
 
@@ -91,92 +87,86 @@ public:
     void Add(int value);
 
     CNCBINode* CreateComponent(void) const;
+public:
+    string                   m_Name;
+    list<COptionDescription> m_List;
+    string                   m_Default;
+    string                   m_TextBefore;
+    string                   m_TextAfter;
 };
 
 
 class CTextInputDescription
 {
 public:
-    string m_Name;
-    string m_Value;
-    int m_Width;
-
     CTextInputDescription(void);
     CTextInputDescription(const string& value);
 
     CNCBINode* CreateComponent(void) const;
+public:
+    string  m_Name;
+    string  m_Value;
+    int     m_Width;
 };
 
 
 class CQueryBox: public CHTML_table
 {
-    // parent class
+    // Parent class
     typedef CHTML_form CParent;
-
 public:
-
     // 'tors
-
     CQueryBox(void);
 
-    // flags
-
+    // Flags
     enum flags {
         kNoLIST     = 0x1,
         kNoCOMMENTS = 0x2
     };
-
-    // members
-
-    int m_Width; // in pixels
-    string m_BgColor;
-
-    // map<string, string> m_HiddenValues;
 
     CSubmitDescription m_Submit;
     CSelectDescription m_Database;
     CTextInputDescription m_Term;
     CSelectDescription m_DispMax;
 
-    // subpages
-
+    // Subpages
     virtual void CreateSubNodes(void);
     virtual CNCBINode* CreateComments(void);
+public:
+    int     m_Width;    // in pixels
+    string  m_BgColor;
 };
 
 
-// Makes a button followed by a drop down.
+// Make a button followed by a drop down.
 class CButtonList: public CNCBINode
 {
-    // parent class
+    // Parent class
     typedef CHTML_form CParent;
-
 public:
     CButtonList(void);
+    virtual void CreateSubNodes(void);
 
+public:
     CSubmitDescription m_Button;
     CSelectDescription m_List;
-
-    virtual void CreateSubNodes(void);
 };
 
 
-// Makes a set of pagination links
-
+// Make a set of pagination links
 class CPageList: public CHTML_table
 {
-    // parent class
+    // Parent class
     typedef CHTML_table CParent;
     
 public:
     CPageList(void);
-    
-    map<int, string> m_Pages;   // number, href
-    string m_Forward;           // forward url
-    string m_Backward;          // backward url
-    int m_Current;              // current page number
-    
     virtual void CreateSubNodes(void);
+public:
+    map<int,string> m_Pages;     // number, href
+    string          m_Forward;   // forward url
+    string          m_Backward;  // backward url
+    int             m_Current;   // current page number
     
 private:
     void x_AddInactiveImageString(CNCBINode* node, const string& name, int number,
@@ -188,22 +178,19 @@ private:
 
 class CPagerBox: public CNCBINode
 {
-    // parent class
+    // Parent class
     typedef CHTML_form CParent;
-
 public:
     CPagerBox(void);
-
+    virtual void CreateSubNodes(void);
+public:
     int           m_Width;       // in pixels
     CButtonList*  m_TopButton;   // display button
     CButtonList*  m_LeftButton;  // save button
     CButtonList*  m_RightButton; // order button
     CPageList*    m_PageList;    // the pager
     int           m_NumResults;  // the number of results to display
-
-    string m_BgColor;
-    
-    virtual void CreateSubNodes(void);
+    string        m_BgColor;
 };
 
 
@@ -211,17 +198,15 @@ class CSmallPagerBox: public CNCBINode
 {
     // parent class
     typedef CHTML_form CParent;
-
 public:
     CSmallPagerBox(void);
+    virtual void CreateSubNodes(void);
 
+public:
     int        m_Width;      // in pixels
     CPageList* m_PageList;   // the pager
     int        m_NumResults; // the number of results to display
-
-    string m_BgColor;
-    
-    virtual void CreateSubNodes(void);
+    string     m_BgColor;
 };
 
 
@@ -234,12 +219,12 @@ END_NCBI_SCOPE
 /* @} */
 
 
-#endif /* HTML___COMPONENTS__HPP */
-
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.23  2003/11/03 14:42:16  ivanov
  * Moved log to end
  *
@@ -323,3 +308,5 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
+
+#endif  /* HTML___COMPONENTS__HPP */

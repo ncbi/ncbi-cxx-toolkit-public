@@ -28,9 +28,8 @@
  *
  * Author: Eugene Vasilchenko
  *
- * File Description:  CHTMLNode defines
- *
  */
+
 
 inline
 const string& CHTMLPlainText::GetText(void) const
@@ -575,6 +574,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.30  2003/11/03 15:07:55  ucko
  * Fixed typo in include guards: there must be *three* underscores after
  * the first "HTML".

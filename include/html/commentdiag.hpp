@@ -28,10 +28,11 @@
  *
  * Author:  Aaron Ucko
  *
- * File Description:
- *   Diagnostic handler for embedding diagnostics in comments.
- *
  */
+
+/// @file commentdiag.hpp
+/// Diagnostic handler for embedding diagnostics in comments.
+
 
 #include <corelib/ncbistd.hpp>
 #include <html/html.hpp>
@@ -86,12 +87,13 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif  /* HTML___COMMENTDIAG__HPP */
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.3  2003/11/03 14:41:15  ivanov
  * Log moved to end
  *
@@ -103,3 +105,5 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
+
+#endif  /* HTML___COMMENTDIAG__HPP */

@@ -25,8 +25,6 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  CNCBINode implementation
- *
  */
 
 #include <html/node.hpp>
@@ -267,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/11/03 17:03:08  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.27  2003/11/03 14:48:30  ivanov
  * Moved log to end
  *

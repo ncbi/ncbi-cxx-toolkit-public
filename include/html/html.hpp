@@ -32,6 +32,12 @@
  *
  */
 
+/// @file html.hpp 
+/// HTML classes.
+///
+/// Defines classes to generate HTML code.
+
+
 #include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
 #include <html/jsmenu.hpp>
@@ -1336,6 +1342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.66  2003/11/03 14:47:39  ivanov
  * Some formal code rearrangement
  *

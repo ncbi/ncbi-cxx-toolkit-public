@@ -1,40 +1,38 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Aaron Ucko, NCBI
-*
-* File Description:
-*   indenting output stream support
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Aaron Ucko
+ *
+ */
 
 #include <html/indentstream.hpp>
 #include <string.h>
 
+
 BEGIN_NCBI_SCOPE
+
 
 class CIndentingStreambuf : public CNcbiStreambuf
 {
@@ -69,6 +67,7 @@ CIndentingOstream::CIndentingOstream(CNcbiOstream& real_stream,
                                      SIZE_TYPE indent)
     : CNcbiOstream(new CIndentingStreambuf(real_stream.rdbuf(), indent))
 {
+    return;
 }
 
 
@@ -95,7 +94,7 @@ CIndentingStreambuf::~CIndentingStreambuf()
 {
     overflow();
     if (m_ISB) {
-        // make sure not to lose the information
+        // Make sure not to lose the information
         m_ISB->m_NeedIndent = m_NeedIndent;
     }
 }
@@ -136,6 +135,7 @@ int CIndentingStreambuf::sync(void)
     overflow();
     return m_Buf->PUBSYNC();
 }
+
 
 // Wrappers
 
@@ -192,18 +192,21 @@ CT_INT_TYPE CIndentingStreambuf::pbackfail(CT_INT_TYPE c)
     return (CT_EQ_INT_TYPE(c, CT_EOF) ? CT_EOF : m_Buf->sputbackc(c));
 }
 
+
 END_NCBI_SCOPE
 
+
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2003/02/24 18:10:55  ucko
-* Avoid spurious indentation in some cases.
-*
-* Revision 1.1  2003/02/14 16:16:57  ucko
-* Introduce CIndentingOstream, and the underlying CIndentingStreambuf.
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2003/11/03 17:03:08  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
+ * Revision 1.2  2003/02/24 18:10:55  ucko
+ * Avoid spurious indentation in some cases.
+ *
+ * Revision 1.1  2003/02/14 16:16:57  ucko
+ * Introduce CIndentingOstream, and the underlying CIndentingStreambuf.
+ *
+ * ===========================================================================
+ */

@@ -1,5 +1,5 @@
-#ifndef JSMENU__HPP
-#define JSMENU__HPP
+#ifndef HTML___JSMENU__HPP
+#define HTML___JSMENU__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -233,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/11/03 17:02:53  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.12  2003/10/02 18:16:46  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *
@@ -275,4 +278,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // JSMENU__HPP
+#endif  /* HTML___JSMENU__HPP */

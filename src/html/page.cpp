@@ -25,8 +25,6 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:   Page Classes
- *
  */
 
 #include <html/components.hpp>
@@ -36,10 +34,10 @@
 
 #include <errno.h>
 
+
 BEGIN_NCBI_SCOPE
  
 
-/////////////////////////////////////////////////////////////////////////////
 // CHTMLBasicPage
 
 CHTMLBasicPage::CHTMLBasicPage(void)
@@ -49,12 +47,14 @@ CHTMLBasicPage::CHTMLBasicPage(void)
     return;
 }
 
+
 CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
     : m_CgiApplication(application),
       m_Style(style)
 {
     return;
 }
+
 
 CHTMLBasicPage::~CHTMLBasicPage(void)
 {
@@ -66,15 +66,18 @@ CHTMLBasicPage::~CHTMLBasicPage(void)
     }
 }
 
+
 void CHTMLBasicPage::SetApplication(CCgiApplication* App)
 {
     m_CgiApplication = App;
 }
 
+
 void CHTMLBasicPage::SetStyle(int style)
 {
     m_Style = style;
 }
+
 
 CNCBINode* CHTMLBasicPage::MapTag(const string& name)
 {
@@ -85,10 +88,12 @@ CNCBINode* CHTMLBasicPage::MapTag(const string& name)
     return CParent::MapTag(name);
 }
 
+
 void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode* node)
 {
     AddTagMap(name, CreateTagMapper(node));
 }
+
 
 void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 {
@@ -97,10 +102,8 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// CHTMLPage
 
-// template struct TagMapper<CHTMLPage>;
+// CHTMLPage
 
 CHTMLPage::CHTMLPage(const string& title)
     : m_Title(title)
@@ -182,6 +185,7 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
         return new CHTMLText(kEmptyStr);
     }
 }
+
 
 CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                                        CNCBINode::TMode mode)
@@ -411,8 +415,11 @@ END_NCBI_SCOPE
 
 
 /*
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/11/03 17:03:08  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.38  2003/07/08 17:13:53  gouriano
  * changed thrown exceptions to CException-derived ones
  *
@@ -527,5 +534,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.3  1998/12/01 19:10:39  lewisg
  * uses CCgiApplication and new page factory
+ *
  * ===========================================================================
  */

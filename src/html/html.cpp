@@ -25,8 +25,6 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  CHTMLNode and tag classes implementation
- *
  */
 
 
@@ -2274,6 +2272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2003/11/03 17:03:08  ivanov
+ * Some formal code rearrangement. Move log to end.
+ *
  * Revision 1.88  2003/11/03 14:49:16  ivanov
  * Always check if the write was successful, throw otherwise
  *
