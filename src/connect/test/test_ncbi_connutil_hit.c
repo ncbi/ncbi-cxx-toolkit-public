@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/23 23:21:21  lavr
+ * Added new argument to URL_Connect
+ *
  * Revision 6.5  2001/01/08 22:42:14  lavr
  * eRequestMethodAny -> eRequestMethod_Any
  *
@@ -116,7 +119,7 @@ int main(int argc, char** argv)
     /* Connect */
     sock = URL_Connect(host, port, path, args,
                        eReqMethod_Any, content_length,
-                       &timeout, &timeout, user_header, 1/*true*/);
+                       &timeout, &timeout, user_header, 1/*true*/, eDefault);
     if ( !sock )
         return 3;
     
