@@ -57,13 +57,13 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 }
 
 
-CConn_IOStream::~CConn_IOStream(void)
+CConn_IOStream::~CConn_IOStream()
 {
     Cleanup();
 }
 
 
-CONN CConn_IOStream::GetCONN() const
+CONN CConn_IOStream::GetCONN(void) const
 {
     return m_CSb ? m_CSb->GetCONN() : 0;
 }
@@ -267,7 +267,7 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
 
 CConn_PipeStream::~CConn_PipeStream()
 {
-    // Explicit call Cleanup() to avoid using dead m_Pipe otherwise.
+    // Explicitly call Cleanup() to avoid using dead m_Pipe otherwise.
     Cleanup();
 #ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
@@ -292,8 +292,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/11/12 17:45:08  lavr
+ * Change log fixed to reflect real changes in previous commit
+ *
  * Revision 6.27  2003/11/12 16:37:50  ivanov
- *  Explicit call Cleanup() to avoid using dead m_Pipe otherwise
+ * CConn_PipeStream:: dtor added
  *
  * Revision 6.26  2003/10/23 12:16:27  lavr
  * CConn_IOStream:: base class is now CNcbiIostream
