@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/11/07 23:23:18  vakatov
+ * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
+ * (with "eMIME_Dispatch" added).
+ *
  * Revision 6.8  2000/10/20 17:08:40  lavr
  * All keys capitalized for registry access
  * Search for some keywords made case insensitive
@@ -71,18 +75,19 @@
 #include <ctype.h>
 
 
-static const char *s_GetValue(const char *service, const char *param,
-                              char *value, size_t value_size,
-                              const char *def_value)
+static const char* s_GetValue(const char* service, const char* param,
+                              char* value, size_t value_size,
+                              const char* def_value)
 {
-  char key[250], *sec;
-  const char *val;
+  char        key[250];
+  char*       sec;
+  const char* val;
 
-  if (!value || !param || value_size <= 0)
+  if (!value  ||  !param  ||  value_size <= 0)
       return 0;
   *value = '\0';
 
-  if (service && *service) {
+  if (service  &&  *service) {
       /* Service-specific inquiry */
       if (strlen(service) + 1 + sizeof(DEF_CONN_REG_SECTION) +
           strlen(param) + 1 > sizeof(key))
@@ -102,8 +107,9 @@ static const char *s_GetValue(const char *service, const char *param,
       strcpy(sec, service);
       strupr(sec);
       CORE_REG_GET(sec, key, value, value_size, 0);
-      if (*value)
+      if ( *value ) {
           return value;
+      }
   } else {
       /* Common case. Form 'CONN_param' */
       if (sizeof(DEF_CONN_REG_SECTION) + strlen(param) + 1 > sizeof(key))
@@ -118,6 +124,7 @@ static const char *s_GetValue(const char *service, const char *param,
       value[value_size - 1] = '\0';
       return value;
   }
+
   /* Last resort: Search for 'param' in default registry section */
   strcpy(key, param);
   strupr(key);
@@ -757,17 +764,59 @@ extern void URL_Encode
  * NCBI-specific MIME content type and sub-types
  */
 
-static const char* s_MIME_SubType[eMIME_Unknown+1] = {
-    "asn-text",
-    "asn-binary",
-    "fasta",
-    "dispatch",
+static const char* s_MIME_Type[eMIME_T_Unknown+1] = {
+    "x-ncbi-data",
+    "text",
+    "application",
     "unknown"
 };
+
+static const char* s_MIME_SubType[eMIME_Unknown+1] = {
+    "x-dispatch",
+    "x-asn-text",
+    "x-asn-binary",
+    "x-fasta",
+    "x-www-form",
+    "html",
+    "x-unknown"
+};
+
 static const char* s_MIME_Encoding[eENCOD_None+1] = {
-    "url-encoded",
+    "urlencoded",
     ""
 };
+
+
+extern char* MIME_ComposeContentTypeEx
+(EMIME_Type     type,
+ EMIME_SubType  subtype,
+ EMIME_Encoding encoding,
+ char*          buf,
+ size_t         buflen)
+{
+    static const char s_ContentType[] = "Content-Type: ";
+    const char*       x_Type          = s_MIME_Type    [(int) type];
+    const char*       x_SubType       = s_MIME_SubType [(int) subtype];
+    const char*       x_Encoding      = s_MIME_Encoding[(int) encoding];
+    char              x_buf[MAX_CONTENT_TYPE_LEN];
+
+    if ( *x_Encoding ) {
+        assert(sizeof(s_ContentType) + strlen(x_Type) + strlen(x_SubType)
+               + strlen(x_Encoding) + 4 < MAX_CONTENT_TYPE_LEN);
+        sprintf(x_buf, "%s%s/%s-%s\r\n",
+                s_ContentType, x_Type, x_SubType, x_Encoding);
+    } else {
+        assert(sizeof(s_ContentType) + strlen(x_Type) + strlen(x_SubType)
+               + 3 < MAX_CONTENT_TYPE_LEN);
+        sprintf(x_buf, "%s%s/%s\r\n", s_ContentType, x_Type, x_SubType);
+    }
+
+    assert(strlen(x_buf) < sizeof(x_buf));
+    assert(strlen(x_buf) < buflen);
+    strncpy(buf, x_buf, buflen);
+    buf[buflen - 1] = '\0';
+    return buf;
+}
 
 
 extern char* MIME_ComposeContentType
@@ -776,36 +825,24 @@ extern char* MIME_ComposeContentType
  char*          buf,
  size_t         buflen)
 {
-    static const char s_ContentType[] = "Content-Type: x-ncbi-data/x-";
-    const char*       x_SubType       = s_MIME_SubType [(int) subtype];
-    const char*       x_Encoding      = s_MIME_Encoding[(int) encoding];
-    char              x_buf[MAX_CONTENT_TYPE_LEN];
-
-    assert(sizeof(s_ContentType) + strlen(x_SubType) + strlen(x_Encoding) + 2
-           < MAX_CONTENT_TYPE_LEN );
-
-    if ( *x_Encoding ) {
-        sprintf(x_buf, "%s%s-%s\r\n", s_ContentType, x_SubType, x_Encoding);
-    } else {
-        sprintf(x_buf, "%s%s\r\n",    s_ContentType, x_SubType);
-    }
-
-    assert(strlen(x_buf) < sizeof(x_buf));
-    strncpy(buf, x_buf, buflen);
-    buf[buflen - 1] = '\0';
-    return buf;
+    return MIME_ComposeContentTypeEx(eMIME_T_NcbiData,
+                                     subtype, encoding, buf, buflen);
 }
 
 
-extern int/*bool*/ MIME_ParseContentType
+extern int/*bool*/ MIME_ParseContentTypeEx
 (const char*     str,
+ EMIME_Type*     type,
  EMIME_SubType*  subtype,
  EMIME_Encoding* encoding)
 {
     char* x_buf;
+    char* x_type;
     char* x_subtype;
     int   i;
 
+    if ( type )
+        *type = eMIME_T_Unknown;
     if ( subtype )
         *subtype = eMIME_Unknown;
     if ( encoding )
@@ -816,41 +853,67 @@ extern int/*bool*/ MIME_ParseContentType
 
     {{
         size_t x_size = strlen(str) + 1;
-        x_buf     = (char*) malloc(2 * x_size);
-        x_subtype = x_buf + x_size;
+        x_buf  = (char*) malloc(2 * x_size);
+        x_type = x_buf  + x_size;
     }}
 
     strcpy(x_buf, str);
-    {{
-        static const char s_ContentType[] = "content-type:";
-        char* x_ptr;
+    strlwr(x_buf);
 
-        for (x_ptr = x_buf;  *x_ptr;  x_ptr++)
-            *x_ptr = (char) tolower(*x_ptr);
-        x_ptr = strstr(x_buf, s_ContentType);
-        x_ptr = x_ptr ? x_ptr + sizeof(s_ContentType) - 1 : x_buf;
+    if ((sscanf(x_buf, " content-type: %s ", x_type) != 1  &&
+         sscanf(x_buf, " %s ", x_type) != 1)  ||
+        (x_subtype = strchr(x_type, '/')) == 0) {
+        free(x_buf);
+        return 0/*false*/;
+    }
+    *x_subtype++ = '\0';
 
-        if (sscanf(x_ptr, " x-ncbi-data/x-%s ", x_subtype) != 1) {
-            free(x_buf);
-            return 0/*false*/;
+    if ( type ) {
+        for (i = 0;  i < (int) eMIME_T_Unknown;  i++) {
+            if ( !strncmp(x_type, s_MIME_Type[i], strlen(s_MIME_Type[i])) ) {
+                *type = (EMIME_Type) i;
+            }
         }
-    }}
+    }
 
     if ( subtype ) {
         for (i = 0;  i < (int) eMIME_Unknown;  i++) {
-            if (strncmp(x_subtype, s_MIME_SubType[i],
-                        strlen(s_MIME_SubType[i])) == 0)
+            if ( !strncmp(x_subtype, s_MIME_SubType[i],
+                          strlen(s_MIME_SubType[i])) ) {
                 *subtype = (EMIME_SubType) i;
+            }
         }
     }
 
     if ( encoding ) {
         for (i = 0;  i < (int) eENCOD_None;  i++) {
-            if (strstr(x_subtype, s_MIME_Encoding[i]) != 0)
+            if (strstr(x_subtype, s_MIME_Encoding[i]) != 0) {
                 *encoding = (EMIME_Encoding) i;
+            }
         }
     }
   
     free(x_buf);
+    return 1/*true*/;
+}
+
+
+extern int/*bool*/ MIME_ParseContentType
+(const char*     str,
+ EMIME_SubType*  subtype,
+ EMIME_Encoding* encoding)
+{
+    EMIME_Type type;
+    if ( !MIME_ParseContentTypeEx(str, &type, subtype, encoding) )
+        return 0/*false*/;
+
+    if (type != eMIME_T_NcbiData) {
+        if ( subtype )
+            *subtype  = eMIME_Unknown;
+        if ( encoding )
+            *encoding = eENCOD_None;
+        return 0/*false*/;
+    }
+
     return 1/*true*/;
 }
