@@ -77,7 +77,7 @@ static double BlastSumPCalc (int r, double s);
 
 #define BLAST_MAX_ALPHABET 40 /* ncbistdaa is only 26, this should be enough */
 
-#define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN)
+#define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
 
 /****************************************************************************
 For more accuracy in the calculation of K, set K_SUMLIMIT to 0.00001.
@@ -216,7 +216,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for BLOSUM45 matrix, each element corresponds to same element number in array blosum45_values */
 
 
 #define BLOSUM50_VALUES_MAX 16 /**< Number of different combinations supported for BLOSUM50. */
@@ -256,7 +256,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for BLOSUM50 matrix, each element corresponds to same element number in array blosum50_values */
 
 #define BLOSUM62_VALUES_MAX 12 /**< Number of different combinations supported for BLOSUM62. */
 static double  blosum62_values[BLOSUM62_VALUES_MAX][8] = {
@@ -287,7 +287,7 @@ static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
     BLAST_MATRIX_BEST,
     BLAST_MATRIX_NOMINAL,
     BLAST_MATRIX_NOMINAL,
-};
+};  /**< Quality values for BLOSUM62 matrix, each element corresponds to same element number in array blosum62_values */
 
 
 #define BLOSUM80_VALUES_MAX 10 /**< Number of different combinations supported for BLOSUM80. */
@@ -314,7 +314,7 @@ static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
     BLAST_MATRIX_NOMINAL,
     BLAST_MATRIX_BEST,
     BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for BLOSUM80 matrix, each element corresponds to same element number in array blosum80_values */
 
 #define BLOSUM90_VALUES_MAX 8 /**< Number of different combinations supported for BLOSUM90. */
 static double  blosum90_values[BLOSUM90_VALUES_MAX][8] = {
@@ -337,7 +337,7 @@ static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
 	BLAST_MATRIX_NOMINAL,
 	BLAST_MATRIX_BEST,
 	BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for BLOSUM90 matrix, each element corresponds to same element number in array blosum90_values */
 
 #define PAM250_VALUES_MAX 16 /**< Number of different combinations supported for PAM250. */
 static double  pam250_values[PAM250_VALUES_MAX][8] = {
@@ -376,7 +376,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for PAM250 matrix, each element corresponds to same element number in array pam250_values */
 
 #define PAM30_VALUES_MAX 7 /**< Number of different combinations supported for PAM30. */
 static double  pam30_values[PAM30_VALUES_MAX][8] = {
@@ -397,7 +397,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_BEST,
 BLAST_MATRIX_NOMINAL,
-};
+};  /**< Quality values for PAM30 matrix, each element corresponds to same element number in array pam30_values */
 
 
 #define PAM70_VALUES_MAX 7 /**< Number of different combinations supported for PAM70. */
@@ -419,7 +419,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_BEST,
 BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for PAM70 matrix, each element corresponds to same element number in array pam70_values */
 
 
 
@@ -558,7 +558,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
-};
+};  /**< Quality values for BLOSUM62_20 matrix, each element corresponds to same element number in array blosum62_20_values */
 
 /*
 	Allocates memory for the BlastScoreBlk*.
@@ -599,7 +599,6 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 			return sbp;
 		}
 		sbp->matrix = sbp->matrix_struct->matrix;
-		sbp->maxscore = (Int4 *) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
         sbp->scale_factor = 1.0;
 		sbp->number_of_contexts = number_of_contexts;
 		sbp->sfp = (Blast_ScoreFreq**) 
@@ -686,7 +685,6 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     sfree(sbp->kbp_gap_std);
     sfree(sbp->kbp_gap_psi);
     sbp->matrix_struct = BlastMatrixDestruct(sbp->matrix_struct);
-    sfree(sbp->maxscore);
     sbp->comments = ListNodeFreeData(sbp->comments);
     sfree(sbp->name);
     sfree(sbp->ambiguous_res);
@@ -847,6 +845,7 @@ static Int2 BlastScoreBlkMatCreate(BlastScoreBlk* sbp)
 /** Read in the matrix from the FILE *fp.
  * This function ASSUMES that the matrices are in the ncbistdaa
  * @param sbp the BlastScoreBlk with the matrix to be populated [in|out]
+ * @param fp the file pointer to read from [in]
  * @return zero on success
 */
 
@@ -999,7 +998,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
 static Int2
 BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 {
-	Int4 score, maxscore;
+	Int4 score;
 	Int4 ** matrix; 
 	Int2 index1, index2;
 
@@ -1008,22 +1007,16 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 	matrix = sbp->matrix;
 	for (index1=0; index1<sbp->alphabet_size; index1++)
 	{
-		maxscore=BLAST_SCORE_MIN;
 		for (index2=0; index2<sbp->alphabet_size; index2++)
 		{
 			score = matrix[index1][index2];
 			if (score <= BLAST_SCORE_MIN || score >= BLAST_SCORE_MAX)
 				continue;
-			if (score > maxscore)
-			{
-				maxscore = score;
-			}
 			if (sbp->loscore > score)
 				sbp->loscore = score;
 			if (sbp->hiscore < score)
 				sbp->hiscore = score;
 		}
-		sbp->maxscore[index1] = maxscore;
 	}
 /* If the lo/hi-scores are BLAST_SCORE_MIN/BLAST_SCORE_MAX, (i.e., for
 gaps), then use other scores. */
@@ -1127,10 +1120,10 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
        if ( (status=BlastScoreBlkMatCreate(sbp)) != 0)
           return status;
     }
-    
-    if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
-       return status;
 
+    if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
+         return status;
+    
     return status;
 }
 
@@ -1262,16 +1255,16 @@ static BLAST_LetterProb Robinson_prob[] = {
 		{ 'V', 64.41 },
 		{ 'W', 13.30 },
 		{ 'Y', 32.16 }
-	};
+	}; /**< amino acid background frequencies from Robinson and Robinson */
 
-#define STD_AMINO_ACID_FREQS Robinson_prob
+#define STD_AMINO_ACID_FREQS Robinson_prob /**< points to the standard amino acid frequencies to use. */
 
 static BLAST_LetterProb	nt_prob[] = {
 		{ 'A', 25.00 },
 		{ 'C', 25.00 },
 		{ 'G', 25.00 },
 		{ 'T', 25.00 }
-	};
+	}; /**< nucleotide probabilities (25% each letter) */
 
 /** Normalizes all the residue frequencies and then normalizes them to "norm".
  * If "norm" is one, then they will all sum to one.
@@ -1335,13 +1328,12 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
 Int2
 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 {
-	Int2 retval;
         Uint4 index;
-	Uint1* residues;
 
 	if (sbp->protein_alphabet == TRUE)
 	{
-		residues = (Uint1*) calloc(DIM(STD_AMINO_ACID_FREQS), sizeof(Uint1));
+	        Int2 retval;
+	        Uint1* residues = (Uint1*) calloc(DIM(STD_AMINO_ACID_FREQS), sizeof(Uint1));
 		retval = Blast_GetStdAlphabet(sbp->alphabet_code, residues, DIM(STD_AMINO_ACID_FREQS));
 		if (retval < 1)
 			return retval;
@@ -1485,7 +1477,7 @@ Blast_ResFreqClr(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 /** Calculate the residue frequencies associated with the provided ResComp
  *  This function takes into account the composition of a given sequence
  *  (expressed through rcp) rather than just doing it for a standard distribution.
- * @parm sbp contains alphabet information [in]
+ * @param sbp contains alphabet information [in]
  * @param rfp object to be filled in [in|out]
  * @param rcp object with composition information [in]
  * @return zero on success, 1 on failure
@@ -2308,7 +2300,7 @@ MatrixInfoDestruct(MatrixInfo* matrix_info)
 
 /** Allocates New MatrixInfo*
  * @param name name of matrix [in]
- * @param array_of_8 contains information on a matrix [in]
+ * @param value array contains information about a matrix [in]
  * @param prefs contains information on a which values are preferred [in]
  * @param max_number size of those arrays [in]
  * @return pointer to the allocated MatrixInfo
@@ -2801,9 +2793,15 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
 below.
 */
 #define BLASTKAR_SMALL_FLOAT 1.0e-297
+/** Calculates score from expect value and search space.
+ * @param E expect value [in]
+ * @param kbp contains Karlin-Altschul parameters [in]
+ * @param searchsp query times database size [in]
+ * @return score
+ */
 static Int4
 BlastKarlinEtoS_simple(double	E,	/* Expect value */
-	Blast_KarlinBlk*	kbp,
+	const Blast_KarlinBlk*	kbp,
 	Int8	searchsp)	/* size of search space */
 {
 
@@ -2813,7 +2811,7 @@ BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	Lambda = kbp->Lambda;
 	K = kbp->K;
 	H = kbp->H;
-	if (Lambda < 0. || K < 0. || H < 0.) 
+	if (Lambda < 0. || K < 0. || H < 0.0) 
 	{
 		return BLAST_SCORE_MIN;
 	}
@@ -2933,7 +2931,7 @@ BLAST_KarlinStoE_simple(Int4 S,
 }
 
 /** BlastKarlinPtoE -- convert a P-value to an Expect value
- * @param the P-value to be converted [in]
+ * @param p the P-value to be converted [in]
  * @return the corresponding expect value.
 */
 static double
@@ -2981,11 +2979,11 @@ static double f (double,void*);
 static double g (double,void*);
 
 
-/*
-    Estimate the Sum P-value by calculation or interpolation, as appropriate.
-	Approx. 2-1/2 digits accuracy minimum throughout the range of r, s.
-	r = number of segments
-	s = total score (in nats), adjusted by -r*log(KN)
+/** Estimate the Sum P-value by calculation or interpolation, as appropriate.
+ * Approx. 2-1/2 digits accuracy minimum throughout the range of r, s.
+ * @param r number of segments [in]
+ * @param s total score (in nats), adjusted by -r*log(KN) [in]
+ * @return p-value 
 */
 static double
 BlastSumP(Int4 r, double s)
@@ -3186,7 +3184,7 @@ BLAST_SmallGapSumE(
 
     sum_e = BlastKarlinPtoE(sum_p);
 
-    if( weight_divisor == 0 || (sum_e /= weight_divisor) > INT4_MAX ) {
+    if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
         sum_e = INT4_MAX;
     }
 
@@ -3282,7 +3280,7 @@ BLAST_LargeGapSumE(
 
     sum_e = BlastKarlinPtoE(sum_p);
 
-    if( weight_divisor == 0 || (sum_e /= weight_divisor) > INT4_MAX ) {
+    if( weight_divisor == 0.0 || (sum_e /= weight_divisor) > INT4_MAX ) {
         sum_e = INT4_MAX;
     }
 
@@ -3413,7 +3411,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
 
 Int4 **
 RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
-                   Uint1 * rps_query_seq, Int4 db_seq_length, 
+                   const Uint1* rps_query_seq, Int4 db_seq_length, 
                    Int4 **posMatrix)
 {
     double *scoreArray;         /*array of score probabilities*/
@@ -3600,6 +3598,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.84  2004/06/18 14:01:32  madden
+ * Doxygen fixes, made some input params const, do not set deprecated sbp->maxscore
+ *
  * Revision 1.83  2004/06/16 19:34:26  madden
  * Doxygen fixes, made some params const
  *
