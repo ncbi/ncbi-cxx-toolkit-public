@@ -39,18 +39,11 @@
 /// For more details see PCRE documentation: http://www.pcre.org/pcre.txt
 
 #include <corelib/ncbistd.hpp>
-#ifdef NCBI_COMPILER_MSVC
-#include <util/regexp/pcre.h>
-#else
-#include <pcre.h>
-#endif
-
 
 /** @addtogroup Regexp
  *
  * @{
  */
-
 
 BEGIN_NCBI_SCOPE
 
@@ -103,11 +96,11 @@ public:
     ///   x  for PCRE_EXTENDED
     ///   U  for PCRE_UNGREEDY
     enum ECompile {
-        eCompile_default     = 0,
-        eCompile_ignore_case = PCRE_CASELESS,
-        eCompile_dotall      = PCRE_DOTALL,
-        eCompile_newline     = PCRE_MULTILINE,
-        eCompile_ungreedy    = PCRE_UNGREEDY
+        eCompile_default     = 0x80000000,
+        eCompile_ignore_case = 0x80000001,
+        eCompile_dotall      = 0x80000002,
+        eCompile_newline     = 0x80000004,
+        eCompile_ungreedy    = 0x80000008
     };
 
     /// Flags for match string against a pre-compiled pattern.
@@ -119,10 +112,10 @@ public:
     /// line. Without setting eCompile_newline, $ won't match anything
     /// if eMatch_not_end is set.
     enum EMatch {
-        eMatch_default   = 0,
-        eMatch_not_begin = PCRE_NOTBOL,      ///< ^ won't match string begin.
-        eMatch_not_end   = PCRE_NOTEOL,      ///< $ won't match string end.
-        eMatch_not_both  = PCRE_NOTBOL | PCRE_NOTEOL
+        eMatch_default       = 0x80000000,
+        eMatch_not_begin     = 0x80000001,   ///< ^ won't match string begin.
+        eMatch_not_end       = 0x80000002,   ///< $ won't match string end.
+        eMatch_not_both      = eMatch_not_begin | eMatch_not_end
     };
 
     /// Constructor.
@@ -135,7 +128,7 @@ public:
     ///   Regular expression compilation flags.
     /// @sa
     ///   ECompile
-    CRegexp(const string& pattern, TCompile flags = 0);
+    CRegexp(const string& pattern, TCompile flags = eCompile_default);
 
     /// Destructor.
     ///
@@ -152,7 +145,7 @@ public:
     ///   Regular expression compilation flags.
     /// @sa
     ///   ECompile
-    void Set(const string& pattern, TCompile flags = 0);
+    void Set(const string& pattern, TCompile flags = eCompile_default);
 
     /// Get matching pattern and subpatterns.
     ///
@@ -182,7 +175,7 @@ public:
         const string& str,
         TSeqPos       offset   = 0,
         size_t        idx      = 0,
-        TMatch        flags    = 0,
+        TMatch        flags    = eMatch_default,
         bool          noreturn = false
     );
 
@@ -231,7 +224,7 @@ private:
     void operator= (const CRegexp &);
 
     /// Pointer to compiled PCRE pattern.
-    pcre*  m_PReg;
+    void*  m_PReg;
 
     /// Array of locations of patterns/subpatterns resulting from
     /// the last call to GetMatch(). Also contains 1/3 extra space used
@@ -543,7 +536,7 @@ bool CRegexpUtil::Exists(
     x_Join();
     // Check the pattern existence
     CRegexp re(pattern, compile_flags);
-    re.GetMatch(m_Content.c_str(), 0, match_flags, 0, true);
+    re.GetMatch(m_Content.c_str(), 0, 0, match_flags, true);
     return re.NumFound() > 0;
 }
 
@@ -568,6 +561,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/22 16:46:13  ivanov
+ * Moved #include <pcre.h> from .hpp to .cpp.
+ * Do not assume that default compile and match flags are equal 0,
+ * use enum values.
+ *
  * Revision 1.10  2004/04/05 16:54:26  ucko
  * Include the internal pcre.h when using MSVC until its build system
  * catches up.
