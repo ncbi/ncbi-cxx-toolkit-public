@@ -151,6 +151,21 @@ s_TranslateHSPsToDNAPCoord(EBlastProgramType program,
     Blast_InitHitListSortByScore(init_hitlist);
 }
 
+/** Set up context offsets for the auxiliary BlastQueryInfo structure that is
+ * created for the concatenated database in RPS BLAST search. Calls the public 
+ * function OffsetArrayToContextOffsets with a blastp program, because subjects
+ * are protein sequences. This guarantees that all frames are set to 0.
+ * @param info The preallocated structure [in] [out]
+ * @param new_offsets The array context offsets to fill [in]
+ */
+static void
+s_RPSOffsetArrayToContextOffsets(BlastQueryInfo    * info,
+                                 Int4              * new_offsets)
+{
+   const EBlastProgramType kProgram = eBlastTypeBlastp;
+   OffsetArrayToContextOffsets(info, new_offsets, kProgram);
+}
+
 /** The core of the BLAST search: comparison between the (concatenated)
  * query against one subject sequence. Translation of the subject sequence
  * into 6 frames is done inside, if necessary. If subject sequence is 
@@ -259,9 +274,10 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
       query_info->num_queries = lut->num_profiles;
       query_info->last_context = lut->num_profiles - 1;
-      OffsetArrayToContextOffsets(query_info,
-                                  lut->rps_seq_offsets,
-                                  program_number);
+      /* Since this will really be "subject info", not "query info",
+         pass program argument such that all frames will be set to 0. */
+      s_RPSOffsetArrayToContextOffsets(query_info,
+                                       lut->rps_seq_offsets);
    }
 
    /* Loop over frames of the subject sequence */
@@ -334,7 +350,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             if (score_options->is_ooframe && kTranslatedSubject)
                subject->length = prot_length;
          } else {
-            BLAST_GetUngappedHSPList(init_hitlist, query_info, subject,
+            BLAST_GetUngappedHSPList(init_hitlist, query_info, subject, 
                                      hit_options, &hsp_list);
          }
 
@@ -343,11 +359,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
          
          /* The subject ordinal id is not yet filled in this HSP list */
          hsp_list->oid = subject->oid;
-         
-         /* Assign frames in all HSPs. */
-         Blast_HSPListSetFrames(program_number, hsp_list, 
-                                score_options->is_ooframe);
-         
+
          Blast_HSPListAdjustOffsets(hsp_list, offset);
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */

@@ -64,10 +64,11 @@ BlastHSP* Blast_HSPNew(void)
    Comments in blast_hits.h
 */
 Int2
-Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject_end,
-          Int4 query_gapped_start, Int4 subject_gapped_start, 
-          Int4 query_context, Int2 subject_frame, Int4 score, 
-          GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
+Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, 
+              Int4 subject_end, Int4 query_gapped_start, 
+              Int4 subject_gapped_start, Int4 query_context, 
+              Int2 query_frame, Int2 subject_frame, Int4 score, 
+              GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
 {
    BlastHSP* new_hsp = NULL;
 
@@ -91,12 +92,15 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject
    new_hsp->query.gapped_start = query_gapped_start;
    new_hsp->subject.gapped_start = subject_gapped_start;
    new_hsp->context = query_context;
+   new_hsp->query.frame = query_frame;
    new_hsp->subject.frame = subject_frame;
    new_hsp->score = score;
    if (gap_edit && *gap_edit)
    { /* If this is non-NULL transfer ownership. */
         new_hsp->gap_info = *gap_edit;
         *gap_edit = NULL;
+        new_hsp->gap_info->frame1 = new_hsp->query.frame;
+        new_hsp->gap_info->frame2 = new_hsp->subject.frame;
    }
 
    *ret_hsp = new_hsp;
@@ -1308,35 +1312,6 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
    }
    
    return status;
-}
-
-void 
-Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-                 Boolean is_ooframe)
-{
-   BlastHSP* hsp;
-   Int4 index;
-
-   if (!hsp_list)
-      return;
-
-   for (index=0; index<hsp_list->hspcnt; index++) {
-      hsp = hsp_list->hsp_array[index];
-      if (is_ooframe && program_number == eBlastTypeBlastx) {
-         /* Query offset is in mixed-frame coordinates */
-         hsp->query.frame = hsp->query.offset % CODON_LENGTH + 1;
-         if ((hsp->context % NUM_FRAMES) >= CODON_LENGTH)
-            hsp->query.frame = -hsp->query.frame;
-      } else {
-         hsp->query.frame = BLAST_ContextToFrame(program_number, hsp->context);
-      }
-      
-      /* Correct offsets in the edit block too */
-      if (hsp->gap_info) {
-         hsp->gap_info->frame1 = hsp->query.frame;
-         hsp->gap_info->frame2 = hsp->subject.frame;
-      }
-   }
 }
 
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
