@@ -61,20 +61,25 @@ public:
     /// are at least min_length_bp long.
     /// Report results as Seq-locs.
     /// seq must be in iupac.
+    /// If allowable_starts is empty (the default), any sense codon can begin
+    /// an ORF.  Otherwise, only codons in allowable_starts can do so.
     static void FindOrfs(const string& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
-                         int genetic_code = 1);
+                         int genetic_code = 1,
+                         const vector<string>& allowable_starts = vector<string>());
 
     static void FindOrfs(const vector<char>& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
-                         int genetic_code = 1);
+                         int genetic_code = 1,
+                         const vector<string>& allowable_starts = vector<string>());
 
     static void FindOrfs(const objects::CSeqVector& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
-                         int genetic_code = 1);
+                         int genetic_code = 1,
+                         const vector<string>& allowable_starts = vector<string>());
 
     /**
     /// This version returns an annot full of CDS features.
@@ -110,6 +115,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/02/10 19:43:01  jcherry
+ * Added ability to require ORFs to start with particular codons
+ * (e.g., ATG).  Tweaked naming of file-local functions.
+ *
  * Revision 1.16  2004/03/03 15:41:27  dicuccio
  * COmmented template definition of FindOrfs() - it is giving MSVC fits
  *

@@ -47,15 +47,36 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+// Find the first in-frame position in some interval that is on
+// a list of allowable starts.
+// This could probably be done more efficiently.
+template<class TSeq>
+inline TSeqPos FindFirstStart(const TSeq& seq, TSeqPos from, TSeqPos to,
+                              const vector<string>& allowable_starts)
+{
+    TSeqPos pos;
+    for (pos = from;  pos < to;  pos += 3) {
+        ITERATE(vector<string>, it, allowable_starts) {
+            if (seq[pos] == (*it)[0] 
+                && seq[pos + 1] == (*it)[1] && seq[pos + 2] == (*it)[2]) {
+                return pos;
+            }
+        }
+    }
+    return pos;  // if no start found, we'll return a position >= to
+}
+
+
 /// Find all ORFs in forward orientation with
 /// length in *base pairs* >= min_length_bp.
 /// seq must be in iupac.
 /// Returned range does not include the
 /// stop codon.
-template<class Seq>
-void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
-                       unsigned int min_length_bp = 3,
-                       int genetic_code = 1)
+template<class TSeq>
+inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
+                            unsigned int min_length_bp,
+                            int genetic_code,
+                            const vector<string>& allowable_starts)
 {
 
     vector<vector<TSeqPos> > stops;
@@ -85,6 +106,9 @@ void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
             // sequence length that gives an ORF length
             // divisible by 3
             to = ((seq.size() - from) / 3) * 3 + from - 1;
+            if (!allowable_starts.empty()) {
+                from = FindFirstStart(seq, from, to, allowable_starts);
+            }
             if (to - from + 1 >= min_length_bp) {
                 ranges.push_back(COrf::TRange(from, to));
             }
@@ -95,13 +119,24 @@ void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
         from = frame;
         to = stops[frame].front() - 1;
         if (to - from + 1 >= min_length_bp) {
-            ranges.push_back(COrf::TRange(from, to));
+            if (!allowable_starts.empty()) {
+                from = FindFirstStart(seq, from, to, allowable_starts);
+            }
+            if (from < to && to - from + 1 >= min_length_bp) {
+                ranges.push_back(COrf::TRange(from, to));
+            }
         }
 
         for (unsigned int i = 0;  i < stops[frame].size() - 1;  i++) {
             from = stops[frame][i] + 3;
             to = stops[frame][i + 1] - 1;
             if (to - from + 1 >= min_length_bp) {
+                if (!allowable_starts.empty()) {
+                    from = FindFirstStart(seq, from, to, allowable_starts);
+                    if (from >= to || to - from + 1 < min_length_bp) {
+                        continue;
+                    }
+                }
                 ranges.push_back(COrf::TRange(from, to));
             }
         }
@@ -113,6 +148,12 @@ void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
         // divisible by 3
         to = ((seq.size() - from) / 3) * 3 + from - 1;
         if (to - from + 1 >= min_length_bp) {
+            if (!allowable_starts.empty()) {
+                from = FindFirstStart(seq, from, to, allowable_starts);
+                if (from >= to || to - from + 1 < min_length_bp) {
+                    continue;
+                }
+            }
             ranges.push_back(COrf::TRange(from, to));
         }
     }
@@ -123,10 +164,11 @@ void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
 /// are at least min_length_bp long (not including the stop).
 /// Report results as Seq-locs.
 /// seq must be in iupac.
-template<class Seq>
-void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
-                unsigned int min_length_bp = 3,
-                int genetic_code = 1)
+template<class TSeq>
+static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
+                       unsigned int min_length_bp,
+                       int genetic_code,
+                       const vector<string>& allowable_starts)
 {
     COrf::TRangeVec ranges;
 
@@ -135,7 +177,8 @@ void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
     // in a single pass.
 
     // find ORFs on the forward sequence and report them as-is
-    x_FindForwardOrfs(seq, ranges, min_length_bp, genetic_code);
+    FindForwardOrfs(seq, ranges, min_length_bp,
+                    genetic_code, allowable_starts);
     ITERATE (COrf::TRangeVec, iter, ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc());
         orf->SetInt().SetFrom(iter->GetFrom());
@@ -158,17 +201,18 @@ void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
 
     // find ORFs on the complement and munge the numbers
     ranges.clear();
-    Seq comp(seq);
+    TSeq comp(seq);
 
     // compute the complement;
     // this should be replaced with new Seqport_util call
     reverse(comp.begin(), comp.end());
-    NON_CONST_ITERATE (typename Seq, i, comp) {
+    NON_CONST_ITERATE (typename TSeq, i, comp) {
         *i = objects::CSeqportUtil
             ::GetIndexComplement(objects::eSeq_code_type_iupacna, *i);
     }
 
-    x_FindForwardOrfs(comp, ranges, min_length_bp, genetic_code);
+    FindForwardOrfs(comp, ranges, min_length_bp,
+                    genetic_code, allowable_starts);
     ITERATE (COrf::TRangeVec, iter, ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
         unsigned int from = comp.size() - iter->GetTo() - 1;
@@ -197,9 +241,11 @@ void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
 void COrf::FindOrfs(const string& seq_iupac,
                     TLocVec& results,
                     unsigned int min_length_bp,
-                    int genetic_code)
+                    int genetic_code,
+                    const vector<string>& allowable_starts)
 {
-    x_FindOrfs(seq_iupac, results, min_length_bp, genetic_code);
+    s_FindOrfs(seq_iupac, results, min_length_bp,
+               genetic_code, allowable_starts);
 }
 
 
@@ -208,9 +254,11 @@ void COrf::FindOrfs(const string& seq_iupac,
 void COrf::FindOrfs(const vector<char>& seq_iupac,
                     TLocVec& results,
                     unsigned int min_length_bp,
-                    int genetic_code)
+                    int genetic_code,
+                    const vector<string>& allowable_starts)
 {
-    x_FindOrfs(seq_iupac, results, min_length_bp, genetic_code);
+    s_FindOrfs(seq_iupac, results, min_length_bp,
+               genetic_code, allowable_starts);
 }
 
 
@@ -219,13 +267,15 @@ void COrf::FindOrfs(const vector<char>& seq_iupac,
 void COrf::FindOrfs(const CSeqVector& orig_vec,
                     TLocVec& results,
                     unsigned int min_length_bp,
-                    int genetic_code)
+                    int genetic_code,
+                    const vector<string>& allowable_starts)
 {
     string seq_iupac;  // will contain ncbi8na
     CSeqVector vec(orig_vec);
     vec.SetCoding(CSeq_data::e_Iupacna);
     vec.GetSeqData(0, vec.size(), seq_iupac);
-    x_FindOrfs(seq_iupac, results, min_length_bp, genetic_code);
+    s_FindOrfs(seq_iupac, results, min_length_bp,
+               genetic_code, allowable_starts);
 }
 
 
@@ -266,6 +316,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/10 19:43:01  jcherry
+ * Added ability to require ORFs to start with particular codons
+ * (e.g., ATG).  Tweaked naming of file-local functions.
+ *
  * Revision 1.6  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *
