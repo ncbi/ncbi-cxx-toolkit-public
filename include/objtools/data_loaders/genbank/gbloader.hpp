@@ -168,6 +168,7 @@ public:
 
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
+    CBlob_id GetBlobId(const TBlobId& blob_id) const;
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
@@ -199,7 +200,7 @@ public:
     
     virtual void GC(void);
     
-    CBlob_id GetBlobId(const CTSE_Info& tse_info);
+    CBlob_id GetBlobId(const CTSE_Info& tse_info) const;
 
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const string& key);
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const CSeq_id_Handle& key);

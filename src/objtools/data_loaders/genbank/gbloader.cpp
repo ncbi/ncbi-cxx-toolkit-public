@@ -266,7 +266,7 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id_Handle& sih)
 {
     TBlobId id = GetBlobId(sih);
     if ( id ) {
-        const CBlob_id& blob_id = dynamic_cast<const CBlob_id&>(*id);
+        CBlob_id blob_id = GetBlobId(id);
         return ConstRef(new CSeqref(0,
                                     blob_id.GetSat(),
                                     blob_id.GetSatKey()));
@@ -909,13 +909,19 @@ bool CGBDataLoader::x_NeedMoreData(const STSEinfo& tse)
 #endif
 
 
-CBlob_id CGBDataLoader::GetBlobId(const CTSE_Info& tse_info)
+CBlob_id CGBDataLoader::GetBlobId(const TBlobId& blob_id) const
+{
+    return dynamic_cast<const CBlob_id&>(*blob_id);
+}
+
+
+CBlob_id CGBDataLoader::GetBlobId(const CTSE_Info& tse_info) const
 {
     if ( &tse_info.GetDataSource() != GetDataSource() ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "not mine TSE");
     }
-    return dynamic_cast<const CBlob_id&>(*tse_info.GetBlobId());
+    return GetBlobId(tse_info.GetBlobId());
 }
 
 
