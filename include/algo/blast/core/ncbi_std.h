@@ -56,7 +56,7 @@ extern "C" {
    barfs on restrict. Added ECC per Haruna Cofer */
 #if defined(__ICC) || defined(__ECC)
 #define NCBI_RESTRICT __restrict
-#elif __STDC_VERSION__ >= 199901
+#elif __STDC_VERSION__ >= 199901  &&  (!defined(__IBMC__) || defined(__C99_RESTRICT))
 #define NCBI_RESTRICT restrict
 #else
 #define NCBI_RESTRICT
