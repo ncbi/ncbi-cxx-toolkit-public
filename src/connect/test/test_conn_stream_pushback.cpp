@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 
-    string host = "yar.ncbi.nlm.nih.gov";
+    string host = "www.ncbi.nlm.nih.gov";
     string path = "/Service/bounce.cgi";
     string args = kEmptyStr;
     string uhdr = kEmptyStr;
@@ -64,6 +64,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2004/11/23 14:49:46  lavr
+ * Replace "yar" with "www"
+ *
  * Revision 1.13  2004/09/09 16:46:57  lavr
  * Do not use explicit CONNECT_Init(): rely on implicit init from now on
  *
