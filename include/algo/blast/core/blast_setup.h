@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.8  2003/05/06 21:28:09  dondosha
+* Added functions previously static in blast_driver.c
+*
 * Revision 1.7  2003/05/01 17:09:07  dondosha
 * BLAST_SetUpAuxStructures made static in blast_engine.c
 *
@@ -190,6 +193,20 @@ Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
 Boolean
 BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na, 
    SeqLocPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start);
+
+/** Given a list of nucleotide SeqLoc's, create a list of SeqLocs for their 
+ * translations. 
+ * @param query_slp List of nucleotide query SeqLocs [in]
+ * @param protein_slp_head Pointer to start of the list of translated 
+ *                         SeqLocs [out]
+ * @param full_dna_length Total nucleotide length of all query 
+ *                        sequences [out]
+ * @param frame_info_ptr Array of frame values for all translated 
+ *                       SeqLocs [out]
+ */
+Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp, 
+        SeqLocPtr PNTR protein_slp_head, Int4Ptr full_dna_length, 
+        Int4Ptr PNTR frame_info_ptr);
 
 /** Set up the subject sequence block in case of two sequences BLAST.
  * @param file_name File with the subject sequence FASTA [in]
