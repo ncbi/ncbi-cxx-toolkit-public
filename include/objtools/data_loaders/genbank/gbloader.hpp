@@ -161,10 +161,13 @@ public:
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
-    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
-                                    const SRequestDetails& details);
+    virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
+                                            const SRequestDetails& details);
+    virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
+
     virtual void GetChunk(TChunk chunk);
     virtual void GetChunks(const TChunkSet& chunks);
 
