@@ -1141,7 +1141,7 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
 
 CHTML_table::CHTML_table(void)
     : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1)),
-      m_ColSepL(kEmptyStr), m_ColSepM("\t|\t"), m_ColSepR(kEmptyStr),
+      m_ColSepL(kEmptyStr), m_ColSepM("\t"), m_ColSepR(kEmptyStr),
       m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
 }
@@ -1988,6 +1988,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2002/01/28 17:54:50  vakatov
+ * (plain text) CHTML_table:: set def. medium sep. to "\t" instead of "\t|\t"
+ *
  * Revision 1.68  2002/01/17 23:40:01  ivanov
  * Added means to print HTML tables in plain text mode
  *

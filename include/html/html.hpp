@@ -667,7 +667,7 @@ public:
     };
     // Set rows and cols separators (affects ePlainText mode only)
     void SetPlainSeparators(const string& col_left     = kEmptyStr,
-                            const string& col_middle   = "\t|\t",
+                            const string& col_middle   = "\t",
                             const string& col_right    = kEmptyStr,
                             const char    row_sep_char = '-',
                             ERowPlainSep  is_row_sep   = eSkipRowSep);
@@ -1226,6 +1226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2002/01/28 17:56:43  vakatov
+ * (plain text) CHTML_table:: set def. medium sep. to "\t" instead of "\t|\t"
+ *
  * Revision 1.55  2002/01/17 23:39:35  ivanov
  * Added means to print HTML tables in plain text mode
  *
