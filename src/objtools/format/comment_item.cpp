@@ -62,13 +62,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+// static variables initialization
 bool CCommentItem::sm_FirstComment = true;
 const string CCommentItem::kNsAreGaps = "The strings of n's in this record " \
 "represent gaps between contigs, and the length of each string corresponds " \
 "to the length of the gap.";
 
 
-
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CCommentItem
 
 CCommentItem::CCommentItem(CFFContext& ctx) :
     CFlatItem(ctx), m_First(false)
@@ -105,7 +108,6 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CFFContext& ctx) :
 void CCommentItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const
-
 {
     formatter.FormatComment(*this, text_os);
 }
@@ -684,7 +686,7 @@ void CCommentItem::x_SetCommentWithURLlinks
 //
 // Derived Classes
 
-// CGenomeAnnotComment
+// --- CGenomeAnnotComment
 
 CGenomeAnnotComment::CGenomeAnnotComment
 (CFFContext& ctx,
@@ -707,14 +709,14 @@ void CGenomeAnnotComment::x_GatherInfo(CFFContext& ctx)
     } else {
         text << "NCBI contigs are derived from assembled genomic sequence data."
              << "~Also see:~    " << "Documentation" 
-             << " of NCBI's Annotation Process~    ";
+             << " of NCBI's Annotation Process~ ";
     }
     
     x_SetComment(ExpandTildes(CNcbiOstrstreamToString(text), eTilde_newline));
 }
 
 
-// CHistComment
+// --- CHistComment
 
 CHistComment::CHistComment
 (EType type,
@@ -790,6 +792,8 @@ void CHistComment::x_GatherInfo(CFFContext& ctx)
 }
 
 
+// --- CGsdbComment
+
 CGsdbComment::CGsdbComment(const CDbtag& dbtag, CFFContext& ctx) :
     CCommentItem(ctx), m_Dbtag(&dbtag)
 {
@@ -803,12 +807,6 @@ void CGsdbComment::x_GatherInfo(CFFContext& ctx)
 }
 
 
-void CGsdbComment::AddPeriod(void)
-{
-    x_GetComment() += ".";
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -817,6 +815,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/26 17:22:51  shomrat
+* Minor fixes to comment string
+*
 * Revision 1.3  2004/03/05 18:44:05  shomrat
 * fixed RefTRack comments
 *
