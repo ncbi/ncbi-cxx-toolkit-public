@@ -1,0 +1,11 @@
+[client]
+class                 = CID1Client
+service               = ID1
+request               = ID1server-request
+reply                 = ID1server-back
+reply.getgi           = gotgi
+reply.getsefromgi     = gotseqentry
+reply.getseqidsfromgi = ids
+reply.getgihist       = gihist
+reply.getgirev        = girevhist
+reply.getgistate      = gistate

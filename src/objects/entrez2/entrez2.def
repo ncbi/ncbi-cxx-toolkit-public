@@ -1,0 +1,5 @@
+[client]
+class   = CEntrez2Client
+service = ENTREZ2
+request = Entrez2-request.request
+reply   = Entrez2-reply.reply
