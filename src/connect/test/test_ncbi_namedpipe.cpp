@@ -32,6 +32,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 
 #include <connect/ncbi_namedpipe.hpp>
@@ -44,7 +45,7 @@ USING_NCBI_SCOPE;
 #if defined(NCBI_OS_MSWIN)
     const string  kPipeName = "\\\\.\\pipe\\ncbi\\test_pipename";
 #elif defined(NCBI_OS_UNIX)
-    const string  kPipeName = "/var/tmp/.ncbi_test_pipename";
+    const string  kPipeName = "./.ncbi_test_pipename";
 #endif
 
 const size_t kNumSubBlobs = 10;
@@ -83,7 +84,7 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
 static void Client(int num)
 {
     LOG_POST("\nStart client " + NStr::IntToString(num) + "...\n");
-    STimeout timeout = {1,0};
+    STimeout timeout = {2,0};
 
     CNamedPipeClient pipe;
     assert(pipe.IsClientSide());
@@ -142,6 +143,11 @@ static void Client(int num)
 static void Server(void)
 {
     LOG_POST("\nStart server...\n");
+
+#if defined(NCBI_OS_UNIX)
+    // Remove the pipe if it is already exists
+    CFile(kPipeName).Remove();
+#endif  
 
     char buf[kSubBlobSize];
     size_t   n_read    = 0;
@@ -290,6 +296,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/02 19:54:25  ivanov
+ * Changed name of the test pipe. Remove test pipe if it is already exists.
+ * Increased default timeout to 2 sec.
+ *
  * Revision 1.3  2003/08/25 16:40:45  lavr
  * Get rid of CNamedPipe:: prefix in kDefaultTimeout
  *

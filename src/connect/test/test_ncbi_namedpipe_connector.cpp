@@ -45,11 +45,11 @@
 USING_NCBI_SCOPE;
 
 
-// test pipe name
+// Test pipe name
 #if defined(NCBI_OS_MSWIN)
     const char* kPipeName = "\\\\.\\pipe\\ncbi\\test_con_pipename";
 #elif defined(NCBI_OS_UNIX)
-    const char* kPipeName = "/var/tmp/.ncbi_test_con_pipename";
+    const char* kPipeName = "./.ncbi_test_con_pipename";
 #endif
 
 const size_t kBufferSize = 10*1024;
@@ -69,7 +69,7 @@ static void Client(STimeout timeout)
     LOG_POST(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
              kPipeName + ", timeout = " +
              NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
-             "sec.\n");
+             " sec.\n");
 
     connector = NAMEDPIPE_CreateConnector(kPipeName);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBouncePrint);
@@ -89,6 +89,11 @@ static void Client(STimeout timeout)
 static void Server(STimeout timeout, int n_cycle)
 {
     EIO_Status status;
+
+#if defined(NCBI_OS_UNIX)
+    // Remove the pipe if it is already exists
+    CFile(kPipeName).Remove();
+#endif  
 
     LOG_POST(string("Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n") +
              kPipeName + ", timeout = " +
@@ -255,6 +260,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/02 19:54:25  ivanov
+ * Changed name of the test pipe. Remove test pipe if it is already exists.
+ * Increased default timeout to 2 sec.
+ *
  * Revision 1.4  2003/08/21 20:09:46  ivanov
  * Adding test for NAMEDPIPE_CreateConnectorEx()
  *
