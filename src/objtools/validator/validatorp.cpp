@@ -1866,8 +1866,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.24  2003/03/21 19:37:30  shomrat
-* Implemented IsNucAcc
+* Revision 1.25  2003/03/21 20:36:34  shomrat
+* Added SEQ_DESCR_UnnecessaryBioSourceFocus
 *
 * Revision 1.23  2003/03/20 18:55:55  shomrat
 * Added validation of standalone Seq-annot objects
