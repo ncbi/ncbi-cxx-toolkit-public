@@ -175,7 +175,7 @@ ENa_strand CDense_seg::GetSeqStrand(TDim row) const
     }
 
 
-    if (!CanGetStrands()  ||  GetStrands().size() < row) {
+    if (!CanGetStrands()  ||  (int)GetStrands().size() < row) {
         NCBI_THROW(CSeqalignException, eInvalidInputData,
                    "CDense_seg::GetSeqStrand():"
                    " Strand doesn't exist for this row.");
@@ -241,6 +241,77 @@ void CDense_seg::Validate(bool full_test) const
             }
         }
     }
+}
+
+
+void CDense_seg::Compact()
+{
+    _ASSERT(GetNumseg() == GetLens().size());
+    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
+    _ASSERT(GetNumseg() * GetDim() == GetStrands().size());
+    _ASSERT(GetDim() == GetIds().size());
+    int i;
+    int j;
+    for (i = 0;  i < GetNumseg() - 1;  ) {
+        bool can_merge = true;
+        int gap_count = 0;
+        for (j = 0;  j < GetDim();  ++j) {
+            TSignedSeqPos this_start = GetStarts()[i * GetDim() + j];
+            TSignedSeqPos next_start = GetStarts()[(i + 1) * GetDim() + j];
+            if (this_start == -1) {
+                ++gap_count;
+            }
+
+            /// check to make sure there is not a gap mismatch
+            if ( (this_start == -1  &&  next_start != -1)  ||  (this_start != -1  &&  next_start == -1) ) {
+                can_merge = false;
+                break;
+            }
+
+            /// check to make sure there is no unaligned space
+            /// between this segment and the next
+            if (this_start != -1  &&  next_start != -1) {
+                TSignedSeqPos seg_len = GetLens()[i];
+                if (GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
+                    seg_len = GetLens()[i + 1];
+                    seg_len = -seg_len;
+                }
+
+                if (this_start + seg_len != next_start) {
+                    can_merge = false;
+                    break;
+                }
+            }
+        }
+
+        if (can_merge) {
+            for (j = 0;  j < GetDim();  ++j) {
+                if (GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
+                    SetStarts()[i * GetDim() + j] =
+                        SetStarts()[(i + 1) * GetDim() + j];
+                    SetStrands()[i * GetDim() + j] =
+                        SetStrands()[(i + 1) * GetDim() + j];
+                }
+            }
+            SetStarts().erase(SetStarts().begin() + (i + 1) * GetDim(),
+                              SetStarts().begin() + (i + 2) * GetDim());
+            SetStrands().erase(SetStrands().begin() + (i + 1) * GetDim(),
+                               SetStrands().begin() + (i + 2) * GetDim());
+            if (gap_count != GetDim()) {
+                SetLens()[i] += GetLens()[i + 1];
+            }
+            SetLens().erase(SetLens().begin() + i + 1);
+        } else {
+            ++i;
+        }
+    }
+
+    SetNumseg(SetLens().size());
+
+    _ASSERT(GetNumseg() == GetLens().size());
+    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
+    _ASSERT(GetNumseg() * GetDim() == GetStrands().size());
+    _ASSERT(GetDim() == GetIds().size());
 }
 
 
@@ -945,6 +1016,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/03/02 14:58:58  dicuccio
+* Added CDense_seg::Compact(): merges abutting segments where appropriate
+*
 * Revision 1.19  2005/02/22 16:59:07  kapustin
 * FromTranscript(): allow non-RLE input
 *

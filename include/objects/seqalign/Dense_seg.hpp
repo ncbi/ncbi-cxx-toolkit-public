@@ -98,6 +98,10 @@ public:
     /// Extract a slice of the alignment that includes the specified range
     CRef<CDense_seg> ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const;
 
+    /// Join adjacent mergeable segments to create a more compact
+    /// alignment
+    void Compact();
+
     /// Remap row coords according to a given seq-loc
     /// Optionally, ignore the strand of the loc
     void RemapToLoc(TDim row, const CSeq_loc& loc,
@@ -204,6 +208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/02 14:58:58  dicuccio
+* Added CDense_seg::Compact(): merges abutting segments where appropriate
+*
 * Revision 1.12  2004/10/21 01:37:58  kapustin
 * +FromTranscript
 *
