@@ -173,7 +173,7 @@ void CDemoApp::Init(void)
                       "use BDB cache");
     arg_desc->AddDefaultKey("cache_mode", "CacheMode",
                             "Cache classes to use",
-                            CArgDescriptions::eString, "old");
+                            CArgDescriptions::eString, "new");
     arg_desc->SetConstraint("cache_mode",
                             &(*new CArgAllow_Strings,
                               "old", "newid", "new"));
@@ -752,6 +752,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2004/02/05 14:53:53  vasilche
+* Used "new" cache interface by default.
+*
 * Revision 1.57  2004/02/04 18:05:34  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.
