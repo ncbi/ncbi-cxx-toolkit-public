@@ -88,7 +88,7 @@ CSeq_data::CSeq_data(const string& value, E_Choice index)
     }
     default:
         // throw error
-        NCBI_THROW (CException, CException::eUnknown,
+        NCBI_THROW (CException, eUnknown,
             "CSeq_data constructor: Invalid E_Choice index");
     }
 }
@@ -119,7 +119,7 @@ CSeq_data::CSeq_data(const vector< char >& value, E_Choice index)
 
     default:
         // throw error
-        NCBI_THROW (CException, CException::eUnknown,
+        NCBI_THROW (CException, eUnknown,
             "CSeq_data constructor: Invalid E_Choice index");
     }
 }
@@ -129,7 +129,7 @@ CSeq_data::~CSeq_data(void)
 {
 }
 
-void CSeq_data::DoContrsuct(const string& value, E_Choice index)
+void CSeq_data::DoConstruct(const string& value, E_Choice index)
 {
 
     switch (index) {
@@ -144,12 +144,12 @@ void CSeq_data::DoContrsuct(const string& value, E_Choice index)
         break;
     default:
         // throw an error
-        NCBI_THROW (CException, CException::eUnknown,
-            "CSeq_data::DoContrsuct: Invalid E_Choice index");
+        NCBI_THROW (CException, eUnknown,
+            "CSeq_data::DoConstruct: Invalid E_Choice index");
     }
 }
 
-void CSeq_data::DoContrsuct(const vector< char >& value, E_Choice index)
+void CSeq_data::DoConstruct(const vector< char >& value, E_Choice index)
 {
     switch (index) {
     case e_Ncbi2na:
@@ -175,8 +175,8 @@ void CSeq_data::DoContrsuct(const vector< char >& value, E_Choice index)
         break;
     default:
         // throw an error
-        NCBI_THROW (CException, CException::eUnknown,
-            "CSeq_data::DoContrsuct: Invalid E_Choice index");
+        NCBI_THROW (CException, eUnknown,
+            "CSeq_data::DoConstruct: Invalid E_Choice index");
     }
 }
 
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/01/03 01:24:00  ucko
+* Dropped CException:: from calls to NCBI_THROW; fixed spelling of DoConstruct.
+*
 * Revision 1.1  2003/01/02 15:01:56  friedman
 * Added constructors; one that accepts a string and the other that accepts a
 * vecor<char> as an arguement.
