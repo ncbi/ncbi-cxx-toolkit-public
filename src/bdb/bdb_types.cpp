@@ -29,6 +29,7 @@
  *
  */
 
+#include <corelib/ncbi_bswap.hpp>
 #include <bdb/bdb_types.hpp>
 #include <db.h>
 
@@ -93,6 +94,8 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
     const CBDB_BufferManager* fbuf1 =
           static_cast<CBDB_BufferManager*> (db->app_private);
 
+    bool byte_swapped = fbuf1->IsByteSwapped();
+
     _ASSERT(fbuf1);
 
     const char* p1 = static_cast<char*> (val1->data);
@@ -100,7 +103,7 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 
     for (unsigned int i = 0;  i < fbuf1->FieldCount();  ++i) {
         const CBDB_Field& fld1 = fbuf1->GetField(i);
-        int ret = fld1.Compare(p1, p2);
+        int ret = fld1.Compare(p1, p2, byte_swapped);
         if ( ret )
             return ret;
 
@@ -110,6 +113,48 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 
     return 0;
 }
+
+
+
+int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    unsigned int v1, v2;
+    v1 = (unsigned int) CByteSwap::GetInt4((unsigned char*)val1->data);
+    v2 = (unsigned int) CByteSwap::GetInt4((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    int v1, v2;
+    v1 = CByteSwap::GetInt4((unsigned char*)val1->data);
+    v2 = CByteSwap::GetInt4((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    float v1, v2;
+    v1 = CByteSwap::GetFloat((unsigned char*)val1->data);
+    v2 = CByteSwap::GetFloat((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+
+int BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    double v1, v2;
+    v1 = CByteSwap::GetDouble((unsigned char*)val1->data);
+    v2 = CByteSwap::GetDouble((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+
+}
+
+
 
 
 } // extern "C"
@@ -130,7 +175,8 @@ CBDB_Field::CBDB_Field(ELengthType length_type)
     m_Flags.Nullable = 0;
 }
 
-BDB_CompareFunction CBDB_Field::GetCompareFunction() const 
+BDB_CompareFunction 
+CBDB_Field::GetCompareFunction(bool /*byte_swapped*/) const
 { 
     return BDB_Compare; 
 }
@@ -145,6 +191,7 @@ CBDB_BufferManager::CBDB_BufferManager()
   : m_BufferSize(0),
     m_PackedSize(0),
     m_Packable(false),
+    m_ByteSwapped(false),
     m_Nullable(false),
     m_NullSetSize(0)
 {
@@ -233,11 +280,13 @@ void CBDB_BufferManager::Construct()
 }
 
 
-BDB_CompareFunction CBDB_BufferManager::GetCompareFunction() const
+BDB_CompareFunction 
+CBDB_BufferManager::GetCompareFunction() const
 {
     if (m_Fields.size() > 1)
         return BDB_Compare;
-    return m_Fields[0]->GetCompareFunction();
+    bool byte_swapped = IsByteSwapped();
+    return m_Fields[0]->GetCompareFunction(byte_swapped);
 }
 
 
@@ -390,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/11 16:34:35  kuznets
+ * Implemented byte-order independence.
+ *
  * Revision 1.10  2003/07/25 15:47:15  kuznets
  * Added support for double field type
  *

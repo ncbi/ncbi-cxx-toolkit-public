@@ -72,6 +72,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
   m_DBT_Data(0),
   m_Env(0),
   m_DB_Attached(false),
+  m_ByteSwapped(false),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
   m_DuplicateKeys(dup_keys)
@@ -258,7 +259,8 @@ void CBDB_RawFile::x_CreateDB()
 void CBDB_RawFile::x_Open(const char* filename,
                           const char* database,
                           EOpenMode   open_mode)
-{       
+{   
+    int ret;    
     if (m_DB == 0) {
         x_CreateDB();
     }
@@ -283,14 +285,14 @@ void CBDB_RawFile::x_Open(const char* filename,
             break;
         }
 
-        int ret = m_DB->open(m_DB,
-                             0,                    // DB_TXN*
-                             filename,
-                             database,             // database name
-                             DB_BTREE,
-                             open_flags,
-                             kOpenFileMask
-                             );
+        ret = m_DB->open(m_DB,
+                         0,                    // DB_TXN*
+                         filename,
+                         database,             // database name
+                         DB_BTREE,
+                         open_flags,
+                         kOpenFileMask
+                        );
         if ( ret ) {
             if (open_mode == eCreate || 
                 open_mode == eReadWriteCreate)
@@ -306,6 +308,13 @@ void CBDB_RawFile::x_Open(const char* filename,
     } // else open_mode == Create
 
     m_OpenMode = open_mode;
+
+    int isswapped;
+    ret = m_DB->get_byteswapped(m_DB, &isswapped);
+    BDB_CHECK(ret, filename);
+
+    m_ByteSwapped = (isswapped!=0);
+
 }
 
 
@@ -419,6 +428,7 @@ void CBDB_File::Open(const char* filename,
     x_CheckConstructBuffers();
 
     m_DB->app_private = (void*) m_KeyBuf.get();
+
 }
 
 
@@ -428,6 +438,11 @@ void CBDB_File::Reopen(EOpenMode open_mode)
     m_DB->app_private = (void*) m_KeyBuf.get();
     if ( m_DataBuf.get() ) {
         m_DataBuf->SetAllNull();
+    }
+    bool byte_swapped = IsByteSwapped();
+    m_KeyBuf->SetByteSwapped(byte_swapped);
+    if (m_DataBuf.get()) {
+        m_DataBuf->SetByteSwapped(byte_swapped);
     }
 }
 
@@ -642,6 +657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/09/11 16:34:35  kuznets
+ * Implemented byte-order independence.
+ *
  * Revision 1.20  2003/08/27 20:02:57  kuznets
  * Added DB_ENV support
  *

@@ -129,6 +129,10 @@ public:
     // Return TRUE if the file is attached to some other BDB file
     bool IsAttached() const;
 
+    // Return TRUE if the if the underlying database files were created 
+    // on an architecture of the different byte order 
+    bool IsByteSwapped() const { return m_ByteSwapped; }
+
     // Return TRUE if file can contain duplicate keys
     bool DuplicatesAllowed() const { return m_DuplicateKeys == eDuplicatesEnable; }
 
@@ -173,7 +177,8 @@ protected:
     CBDB_Env*         m_Env;
 
 private:
-    bool             m_DB_Attached;  // "TRUE" if m_DB doesn't belog here
+    bool             m_DB_Attached;  // TRUE if m_DB doesn't belong here
+    bool             m_ByteSwapped;  // TRUE if file created on a diff.arch.
     string           m_FileName;     // filename
     string           m_Database;     // db name in file (optional)
     unsigned         m_PageSize;
@@ -267,11 +272,11 @@ protected:
 private:
     CBDB_File(const CBDB_File&);
     CBDB_File& operator= (const CBDB_File&);
-
+/*
     void x_Open  (const char* filename, const char* database,
                   EOpenMode open_mode);
     void x_Create(const char* filename, const char* database);
-
+*/
     // Record reading prolog function
     void x_StartRead();
     // Record reading epilog function
@@ -380,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/11 16:34:13  kuznets
+ * Implemented byte-order independence.
+ *
  * Revision 1.16  2003/08/27 20:02:10  kuznets
  * Added DB_ENV support
  *

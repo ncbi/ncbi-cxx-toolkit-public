@@ -34,6 +34,7 @@
 
 #include <bdb/bdb_expt.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbi_bswap.hpp>
 
 #include <string>
 #include <vector>
@@ -82,6 +83,29 @@ int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
 int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 
 
+
+// Simple and fast comparison function for tables with 
+// non-segmented "unsigned int" keys.
+// Used when the data file is in a different byte order architecture.
+int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
+
+
+// Simple and fast comparison function for tables with 
+// non-segmented "int" keys
+// Used when the data file is in a different byte order architecture.
+int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
+// non-segmented "float" keys
+// Used when the data file is in a different byte order architecture.
+int BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
+// non-segmented "double" keys
+// Used when the data file is in a different byte order architecture.
+int BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
+
+
 }
 
 BEGIN_NCBI_SCOPE
@@ -107,8 +131,11 @@ public:
     // Comparison function. p1 and p2 are void pointers on field buffers.
     // Positive if p1>p2, zero if p1==p2, negative if p1<p2.
     // NOTE:  both buffers can be unaligned. 
+    // byte_swapped TRUE indicates that buffers values are in 
+    // a different byte order architecture
     virtual int         Compare(const void* p1, 
-                                const void* p2) const = 0;
+                                const void* p2,
+                                bool byte_swapped) const = 0;
 
     // Return current effective size of the buffer.
     virtual size_t      GetDataLength(const void* buf) const = 0;
@@ -189,7 +216,7 @@ public:
 
     // Return address to the type specific comparison function
     // By default it's universal BDB_Compare
-    virtual BDB_CompareFunction GetCompareFunction() const; 
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const;
 
     // Return TRUE if field can be NULL
     bool IsNullable() const;
@@ -227,6 +254,11 @@ protected:
 
     // RTTI based check if fld is of the same type
     bool IsSameType(const CBDB_Field& field) const;
+
+    // Return TRUE if field belongs to a file with an alternative
+    // byte order
+    bool IsByteSwapped() const;
+
 
     // Mark field as "NULL" capable.
     void SetNullable();
@@ -300,40 +332,26 @@ public:
         SetBufferSize(sizeof(T));
     }
 
-    void Set(T val)
-    {
-        ::memcpy(GetBuffer(), &val, sizeof(T));
-        SetNotNull();
-    }
-
     void Set(const CBDB_FieldSimple& field)
     {
         if ( field.IsNull() ) {
             SetNull();
         } else {
+            if (IsByteSwapped() != field.IsByteSwapped()) {
+                BDB_THROW(eInvalidValue, "Byte order incompatibility");
+            }
             ::memcpy(GetBuffer(), field.GetBuffer(), sizeof(T));
             SetNotNull();
         }
     }
 
-    T Get() const
-    {
-        T  v;
-        ::memcpy(&v, GetBuffer(), sizeof(T));
-        return v;
-    }
-
-    // Accessor operator
-    operator T() const
-    {
-        return Get();
-    }
-
-
     // IDBD_Field implementation
 
-    virtual int Compare(const void* p1, const void* p2) const
+    virtual int Compare(const void* p1, 
+                        const void* p2, 
+                        bool/* byte_swapped*/) const
     {
+        // Default implementation ignores byte swapping
         T v1, v2;
         ::memcpy(&v1, p1, sizeof(v1));
         ::memcpy(&v2, p2, sizeof(v2));
@@ -345,16 +363,6 @@ public:
     virtual size_t GetDataLength(const void* /*buf*/) const
     {
         return sizeof(T);
-    }
-
-	virtual void SetMinVal()
-    {
-        Set(numeric_limits<T>::min());
-    }
-
-	virtual void SetMaxVal()
-    {
-        Set(numeric_limits<T>::max());
     }
 };
 
@@ -372,6 +380,29 @@ class CBDB_FieldSimpleInt : public CBDB_FieldSimple<T>
 public:
     CBDB_FieldSimpleInt() : CBDB_FieldSimple<T>() {}
 
+    void Set(T val)
+    {
+        if (IsByteSwapped()) {
+
+            if (sizeof(T) == 2) {
+                CByteSwap::PutInt2((unsigned char*)GetBuffer(), (Int2) val);
+            } else
+            if (sizeof(T) == 4) {
+                CByteSwap::PutInt4((unsigned char*)GetBuffer(), (Int4) val);
+            } else
+            if (sizeof(T) == 8) {
+                CByteSwap::PutInt8((unsigned char*)GetBuffer(), (Int8) val);
+            }
+            else {
+                _ASSERT(0);
+            }
+
+        } else {
+            ::memcpy(GetBuffer(), &val, sizeof(T));
+        }
+        SetNotNull();
+    }
+
     virtual void SetInt    (int          val)  { Set((T) val); }
     virtual void SetUint   (unsigned int val)  { Set((T) val); }
     virtual void SetString (const char*  val)
@@ -379,7 +410,31 @@ public:
         long v = ::atol(val);
         Set((T) v);
     }
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimple<T>::Compare(p1, p2, byte_swapped);
+
+        T v1, v2;
+        v1 = (T) CByteSwap::GetInt4((unsigned char*)p1);
+        v2 = (T) CByteSwap::GetInt4((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
     
+	virtual void SetMinVal()
+    {
+        Set(numeric_limits<T>::min());
+    }
+
+	virtual void SetMaxVal()
+    {
+        Set(numeric_limits<T>::max());
+    }
 };
 
 
@@ -396,6 +451,26 @@ class CBDB_FieldSimpleFloat : public CBDB_FieldSimple<T>
 public:
     CBDB_FieldSimpleFloat() : CBDB_FieldSimple<T>() {}
 
+    void Set(T val)
+    {
+        if (IsByteSwapped()) {
+
+            if (sizeof(T) == 4) {
+                CByteSwap::PutFloat((unsigned char*)GetBuffer(), val);
+            } else
+            if (sizeof(T) == 8) {
+                CByteSwap::PutDouble((unsigned char*)GetBuffer(), val);
+            }
+            else {
+                _ASSERT(0);
+            }
+
+        } else {
+            ::memcpy(GetBuffer(), &val, sizeof(T));
+        }
+        SetNotNull();
+    }
+
     virtual void SetInt    (int          val) { Set((T) val); }
     virtual void SetUint   (unsigned int val) { Set((T) val); }
     virtual void SetString (const char*  val)
@@ -405,6 +480,16 @@ public:
     }
     virtual void SetFloat (float  val) { Set((T) val); }
     virtual void SetDouble(double val) { Set((T) val); }
+
+	virtual void SetMinVal()
+    {
+        Set(numeric_limits<T>::min());
+    }
+
+	virtual void SetMaxVal()
+    {
+        Set(numeric_limits<T>::max());
+    }
 };
 
 
@@ -434,15 +519,43 @@ public:
         return new CBDB_FieldInt4();
     }
 
+    Int4 Get() const
+    {
+        Int4  v;
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetInt4((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(Int4));
+        }
+        return v;
+    }
+
     operator Int4() const 
     { 
         return Get(); 
     }
 
-    virtual BDB_CompareFunction GetCompareFunction() const
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
     {
+        if (byte_swapped)
+            return BDB_ByteSwap_IntCompare;
         return BDB_IntCompare;
     } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleInt<Int4>::Compare(p1, p2, byte_swapped);
+
+        Int4 v1, v2;
+        v1 = CByteSwap::GetInt4((unsigned char*)p1);
+        v2 = CByteSwap::GetInt4((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
 
 };
 
@@ -473,15 +586,43 @@ public:
         return new CBDB_FieldUint4();
     }
 
+    Uint4 Get() const
+    {
+        Uint4  v;
+        if (IsByteSwapped()) {
+            v = (Uint4)CByteSwap::GetInt4((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(Uint4));
+        }
+        return v;
+    }
+
     operator Uint4() const
     { 
         return Get(); 
     }
 
-    virtual BDB_CompareFunction GetCompareFunction() const
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
     {
+        if (byte_swapped)
+            return BDB_ByteSwap_UintCompare;
         return BDB_UintCompare;
     } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleInt<Uint4>::Compare(p1, p2, byte_swapped);
+
+        Uint4 v1, v2;
+        v1 = (Uint4)CByteSwap::GetInt4((unsigned char*)p1);
+        v2 = (Uint4)CByteSwap::GetInt4((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
 
 };
 
@@ -512,15 +653,44 @@ public:
         return new CBDB_FieldFloat();
     }
 
+    float Get() const
+    {
+        float  v;
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetFloat((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(float));
+        }
+        return v;
+    }
+
     operator float() const 
     { 
         return Get(); 
     }
 
-    virtual BDB_CompareFunction GetCompareFunction() const
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
     {
+        if (byte_swapped)
+            return BDB_ByteSwap_FloatCompare;
+
         return BDB_FloatCompare;
     } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleFloat<float>::Compare(p1, p2, byte_swapped);
+
+        float v1, v2;
+        v1 = CByteSwap::GetFloat((unsigned char*)p1);
+        v2 = CByteSwap::GetFloat((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
 };
 
 
@@ -549,15 +719,45 @@ public:
         return new CBDB_FieldDouble();
     }
 
+    double Get() const
+    {
+        double  v;
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetDouble((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(double));
+        }
+        return v;
+    }
+
     operator double() const 
     { 
         return Get(); 
     }
 
-    virtual BDB_CompareFunction GetCompareFunction() const
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
     {
+        if (byte_swapped)
+            return BDB_ByteSwap_DoubleCompare;
+
         return BDB_DoubleCompare;
-    } 
+    }
+
+    virtual int Compare(const void* p1,
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleFloat<double>::Compare(p1, p2, byte_swapped);
+
+        double v1, v2;
+        v1 = CByteSwap::GetDouble((unsigned char*)p1);
+        v2 = CByteSwap::GetDouble((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
+
 };
 
 
@@ -600,14 +800,16 @@ public:
 
 
     // IField
-    virtual int         Compare(const void* p1, const void* p2) const;
+    virtual int         Compare(const void* p1, 
+                                const void* p2, 
+                                bool /* byte_swapped */) const;
     virtual size_t      GetDataLength(const void* buf) const;
     virtual void        SetMinVal();
     virtual void        SetMaxVal();
 
     virtual void SetString(const char*);
 
-    virtual BDB_CompareFunction GetCompareFunction() const
+    virtual BDB_CompareFunction GetCompareFunction(bool) const
     {
         return BDB_StringCompare;
     } 
@@ -651,13 +853,16 @@ public:
         return *this;
     }
 
-    virtual int Compare(const void* p1, const void* p2) const
+    virtual int Compare(const void* p1, 
+                        const void* p2, 
+                        bool/* byte_swapped */) const
     {
         _ASSERT(p1 && p2);
         return NStr::strcasecmp((const char*) p1, (const char*) p2);
     }
 
-    virtual BDB_CompareFunction GetCompareFunction() const
+    virtual 
+    BDB_CompareFunction GetCompareFunction(bool /* byte_swapped */) const
     {
         return BDB_StringCaseCompare;
     } 
@@ -680,6 +885,9 @@ public:
 
     const CBDB_Field& GetField(unsigned int idx) const;
     CBDB_Field&       GetField(unsigned int idx);
+
+    // Return TRUE if buffer is in a non-native byte order
+    bool IsByteSwapped() const { return m_ByteSwapped; }
 
 protected:
     CBDB_BufferManager();
@@ -740,6 +948,9 @@ protected:
     // Return TRUE if buffer can carry NULL fields
     bool IsNullable() const;
 
+    // Set byte swapping flag for the buffer
+    void SetByteSwapped(bool byte_swapped) { m_ByteSwapped = byte_swapped; }
+
     // Mark buffer as "NULL fields ready".
     // NOTE: Should be called before buffer construction.
     void SetNullable();
@@ -761,14 +972,19 @@ private:
 
 private:
     vector<CBDB_Field*>     m_Fields;
-    vector<void*>           m_Ptrs;        // pointers on the fields' data
+    // pointers on the fields' data
+    vector<void*>           m_Ptrs;        
     auto_ptr<char>          m_Buffer;
     size_t                  m_BufferSize;
     size_t                  m_PackedSize;
     bool                    m_Packable;
+    // TRUE if buffer is in a non-native arch.
+    bool                    m_ByteSwapped; 
 
-    bool                    m_Nullable;    // TRUE if buffer can carry NULL fields
-    size_t                  m_NullSetSize; // size of the 'is NULL' bitset in bytes
+    // TRUE if buffer can carry NULL fields
+    bool                    m_Nullable;    
+    // size of the 'is NULL' bitset in bytes
+    size_t                  m_NullSetSize; 
 
 private:
     friend class CBDB_Field;
@@ -896,7 +1112,8 @@ inline size_t CBDB_Field::GetLength() const
 
 inline int CBDB_Field::CompareWith(const CBDB_Field& field) const
 {
-    return Compare(GetBuffer(), field.GetBuffer());
+    bool byte_swapped = m_BufferManager->IsByteSwapped();
+    return Compare(GetBuffer(), field.GetBuffer(), byte_swapped);
 }
 
 
@@ -953,6 +1170,11 @@ inline void CBDB_Field::SetName(const char* name)
 {
     _ASSERT(name);
     m_Name = name;
+}
+
+inline bool CBDB_Field::IsByteSwapped() const 
+{ 
+    return m_BufferManager->IsByteSwapped(); 
 }
 
 
@@ -1029,7 +1251,9 @@ void CBDB_FieldString::SetString(const char* str)
     operator=(str);
 }
 
-inline int CBDB_FieldString::Compare(const void* p1, const void* p2) const
+inline int CBDB_FieldString::Compare(const void* p1, 
+                                     const void* p2, 
+                                     bool /*byte_swapped*/) const
 {
     _ASSERT(p1 && p2);
     return ::strcmp((const char*) p1, (const char*) p2);
@@ -1279,6 +1503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/11 16:34:13  kuznets
+ * Implemented byte-order independence.
+ *
  * Revision 1.16  2003/08/26 18:50:26  kuznets
  * Added forward declararion of DB_ENV structure
  *
