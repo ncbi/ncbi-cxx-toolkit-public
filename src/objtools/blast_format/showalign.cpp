@@ -1906,8 +1906,8 @@ void CDisplaySeqalign::setDbGi() {
       }
     } else if (saTemp->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
       CTypeConstIterator<CStd_seg> dsTemp = ConstBegin(*saTemp); 
-      const list< CRef< CSeq_id > >& idTemp = (dsTemp->GetIds());
-      list< CRef< CSeq_id > >::const_iterator iterTemp = idTemp.begin();
+      const CStd_seg::TIds& idTemp = (dsTemp->GetIds());
+      CStd_seg::TIds::const_iterator iterTemp = idTemp.begin();
       iterTemp++;
       const CBioseq_Handle& handleTemp = m_Scope.GetBioseqHandle(**iterTemp);
       if(handleTemp){
@@ -1993,6 +1993,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.33  2004/03/18 16:30:24  grichenk
+*Changed type of seq-align containers from list to vector.
+*
 *Revision 1.32  2004/02/10 21:59:36  jianye
 *Clean up some defs
 *

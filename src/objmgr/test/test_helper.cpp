@@ -293,7 +293,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 id->SetGi(12+index*1000);
                 id_list.push_back(id);
                 // start OFFSETS in ids order
-                list<TSeqPos>& start_list = diag->SetStarts();
+                CDense_diag::TStarts& start_list = diag->SetStarts();
                 start_list.push_back(0);
                 start_list.push_back(9);
                 diag->SetLen(7);
@@ -1411,6 +1411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2004/03/18 16:30:24  grichenk
+* Changed type of seq-align containers from list to vector.
+*
 * Revision 1.52  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

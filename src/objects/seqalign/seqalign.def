@@ -1,24 +1,41 @@
 [-]
 _export = NCBI_SEQALIGN_EXPORT
 
+[Seq-align]
+score._type    = vector
+
 [Dense-diag]
 starts.E._type = TSeqPos
 len._type      = TSeqPos
 ; for consistency with Dense-seg.ids
 ids._type      = vector
+starts._type   = vector
+strands._type  = vector
+scores._type   = vector
 
 [Dense-seg]
 ; may contain occurrences of -1
 starts.E._type = TSignedSeqPos
 lens.E._type   = TSeqPos
 ; to support binary searching
-starts._type   = vector
 ; to make binary searching on starts more useful
-lens._type     = vector
 ids._type      = vector
+lens._type     = vector
+starts._type   = vector
 strands._type  = vector
 scores._type   = vector
 
 [Packed-seg]
 starts.E._type = TSeqPos
 lens.E._type   = TSeqPos
+ids._type      = vector
+lens._type     = vector
+starts._type   = vector
+strands._type  = vector
+scores._type   = vector
+present._type  = vector
+
+[Std-seg]
+ids._type      = vector
+loc._type      = vector
+scores._type   = vector

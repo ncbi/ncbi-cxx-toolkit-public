@@ -602,7 +602,7 @@ int CDemoApp::Run(void)
                             MSerial_AsnText << it->GetLocation();
                     }
                 }
-                CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
+                CSeq_annot_Handle annot = it.GetAnnot();
                 /*
                 const CSeq_id* mapped_id = 0;
                 it->GetLocation().CheckId(mapped_id);
@@ -712,7 +712,7 @@ int CDemoApp::Run(void)
                 NcbiCout << MSerial_AsnText <<
                     it->GetMappedGraph() << it->GetLoc();
             }
-            CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
+            CSeq_annot_Handle annot = it.GetAnnot();
         }
         NcbiCout << "Graph count (whole, any):       " << count << NcbiEndl;
 
@@ -750,6 +750,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/03/18 16:30:24  grichenk
+* Changed type of seq-align containers from list to vector.
+*
 * Revision 1.60  2004/02/09 19:18:50  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

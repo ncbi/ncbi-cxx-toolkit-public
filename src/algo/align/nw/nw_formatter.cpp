@@ -93,19 +93,19 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
     CRef< CScore::C_Value > val (new CScore::C_Value);
     val->SetInt(m_aligner->GetScore());
     score->SetValue(*val);
-    list< CRef< CScore > >& scorelist = seqalign->SetScore();
+    CSeq_align::TScore& scorelist = seqalign->SetScore();
     scorelist.push_back(score);
 
     // create segments and add them to this seq-align
     CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
     CDense_seg& ds = segs->SetDenseg();
     ds.SetDim(2);
-    vector< CRef< CSeq_id > > &ids = ds.SetIds();
+    CDense_seg::TIds& ids = ds.SetIds();
     ids.push_back( id1 );
     ids.push_back( id2 );
-    vector< TSignedSeqPos > &starts  = ds.SetStarts();
-    vector< TSeqPos >       &lens    = ds.SetLens();
-    vector< ENa_strand >    &strands = ds.SetStrands();
+    CDense_seg::TStarts&  starts  = ds.SetStarts();
+    CDense_seg::TLens&    lens    = ds.SetLens();
+    CDense_seg::TStrands& strands = ds.SetStrands();
     
     // iterate through transcript
     size_t seg_count = 0;
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/18 16:30:24  grichenk
+ * Changed type of seq-align containers from list to vector.
+ *
  * Revision 1.6  2003/10/14 19:26:59  kapustin
  * Format void exons properly
  *
