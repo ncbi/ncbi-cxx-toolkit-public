@@ -58,7 +58,8 @@ struct NCBI_LDS_EXPORT SLDS_AnnotDB : public CBDB_File
     CBDB_FieldInt4    file_id;
     CBDB_FieldInt4    annot_type;
     CBDB_FieldInt4    file_offset;
-    CBDB_FieldInt4    top_level_id;
+    CBDB_FieldInt4    TSE_object_id;     // TOP level seq entry object id;
+    CBDB_FieldInt4    parent_object_id;  // Parent SeqEntry object id
 
     SLDS_AnnotDB();
 };
@@ -155,7 +156,8 @@ SLDS_AnnotDB::SLDS_AnnotDB()
     BindData("file_id", &file_id);
     BindData("annot_type", &annot_type);
     BindData("file_offset", &file_offset);
-    BindData("top_level_id", &top_level_id);
+    BindData("TSE_object_id", &TSE_object_id);
+    BindData("parent_object_id", &parent_object_id);
 }
 
 inline
@@ -211,6 +213,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2005/01/13 17:36:44  kuznets
+* Added parent object reference to annotations
+*
 * Revision 1.14  2004/03/17 17:20:59  kuznets
 * Code clean up
 *
