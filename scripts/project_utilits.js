@@ -145,6 +145,7 @@ function FillTreeStructure(oShell, oTree)
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/ncbilogo.ico",             oTree.CompilersBranch);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/project_tree_builder.ini", oTree.CompilersBranch);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/winmain.cpp",              oTree.CompilersBranch);
+    GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/asn_prebuild.bat",         oTree.CompilersBranch);
 
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/dll_info.ini",         oTree.CompilersBranchDll);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/dll_main.cpp",         oTree.CompilersBranchDll);
