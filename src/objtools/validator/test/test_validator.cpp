@@ -334,15 +334,16 @@ void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
     // Set validator options
     m_Options = 0;
 
-    m_Options |= args["nonascii"] ? CValidator::eVal_non_ascii   : 0;
-    m_Options |= args["context"]  ? CValidator::eVal_no_context  : 0;
-    m_Options |= args["align"]    ? CValidator::eVal_val_align   : 0;
-    m_Options |= args["exon"]     ? CValidator::eVal_val_exons   : 0;
-    m_Options |= args["splice"]   ? CValidator::eVal_splice_err  : 0;
-    m_Options |= args["ovlpep"]   ? CValidator::eVal_ovl_pep_err : 0;
-    m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid  : 0;
-    m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta : 0;
-
+    m_Options |= args["nonascii"] ? CValidator::eVal_non_ascii    : 0;
+    m_Options |= args["context"]  ? CValidator::eVal_no_context   : 0;
+    m_Options |= args["align"]    ? CValidator::eVal_val_align    : 0;
+    m_Options |= args["exon"]     ? CValidator::eVal_val_exons    : 0;
+    m_Options |= args["splice"]   ? CValidator::eVal_splice_err   : 0;
+    m_Options |= args["ovlpep"]   ? CValidator::eVal_ovl_pep_err  : 0;
+    m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid   : 0;
+    m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta  : 0;
+    m_Options |= args["g"]        ? CValidator::eVal_remote_fetch : 0;
+    
     // !!!  DEBUG {
     // For testing only. Should be removed in the future
     m_Options |= args["debug"].HasValue() ? CValidator::eVal_perf_bottlenecks : 0;
@@ -412,8 +413,8 @@ void CTest_validatorApplication::PrintValidErrItem
  CNcbiOstream& os)
 {
     os << item.GetSevAsStr() << ":       " << item.GetErrCode() << endl << endl
-       << "Message: " << item.GetMsg() << endl << endl
-       << "Verbose: " << item.GetVerbose() << endl << endl;
+       << "Message: " << item.GetMsg() << endl << endl;
+       //<< "Verbose: " << item.GetVerbose() << endl << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -432,6 +433,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2003/04/04 18:44:42  shomrat
+ * Added remote fetch flag
+ *
  * Revision 1.15  2003/03/20 18:58:22  shomrat
  * Added support for validation of standalone Seq-annot files
  *
