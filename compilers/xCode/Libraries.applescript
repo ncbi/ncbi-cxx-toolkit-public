@@ -182,7 +182,6 @@ property gui_print : {name:"gui_print", path:"gui:print"}
 property gui_math : {name:"gui_math", path:"gui:math"}
 property xgbplugin : {name:"xgbplugin", path:"gui:plugin", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true}
 
-property gui_dlg : {name:"gui_dlg", path:"gui:dialogs"}
 property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entry_form", exc:{"entry_form_.cpp"}}
 property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
@@ -285,7 +284,7 @@ property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_open
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext"}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core"}
 property gui_widgets : {name:"gui_widgets", libs:{w_toplevel, w_workspace, w_fltk, w_gl, w_flu, w_fltable}, dep:"gui_utils ncbi_image ncbi_core"}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg, gui_dlg_entry_form, gui_dlg_multi_col, gui_dlg_progress, gui_dlg_config}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"} -- gui_dlg_registry
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_multi_col, gui_dlg_progress, gui_dlg_config}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext"} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext"}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets"}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_widgets"}
@@ -339,6 +338,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/08/10 15:49:09  lebedev
+ * gui_dialogs fixed (gui_dlg removed)
+ *
  * Revision 1.16  2004/08/10 15:22:07  lebedev
  * Simplify target dependencies for xCode 1.5
  *
