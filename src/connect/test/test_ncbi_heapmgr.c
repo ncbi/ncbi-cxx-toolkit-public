@@ -148,6 +148,11 @@ int main(void)
                 CORE_LOGF(eLOG_Note,
                           ("Total of %d block%s", i, i == 1 ? "" : "s"));
                 HEAP_Detach(newheap);
+            } else {
+                TNCBI_Size size = HEAP_Size(heap);
+                CORE_LOGF(eLOG_Note, ("Heap trimmed: %u -> %u",
+                                      (unsigned) size,
+                                      (unsigned) HEAP_Trim(heap)));
             }
         }
         HEAP_Destroy(heap);
@@ -161,6 +166,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/07/31 17:54:16  lavr
+ * +HEAP_Trim() test
+ *
  * Revision 6.10  2003/02/27 15:34:35  lavr
  * Log moved to end
  *
