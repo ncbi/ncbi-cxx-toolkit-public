@@ -1927,20 +1927,21 @@ bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
 #endif  /* HAVE_MADVISE */
 
 
-CMemoryFileMap::CMemoryFileMap(SMemoryFileHandle& handle,
-                               SMemoryFileAttrs&  attrs,
-                               off_t              offset,
-                               size_t             length)
+CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
+                                       SMemoryFileAttrs&  attrs,
+                                       off_t              offset,
+                                       size_t             length)
     : m_DataPtr(0), m_Offset(offset), m_Length(length),
 	  m_DataPtrReal(0), m_OffsetReal(offset), m_LengthReal(length)
 {
     if ( m_Offset < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileMap: The file offset cannot be negative");
+            "CMemoryFileSegment: The file offset cannot be negative");
     }
     if ( !m_Length ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileMap: The length of file mapping region must be above 0");
+            "CMemoryFileSegment: The length of file mapping region "
+            "must be above 0");
     }
     // Get system's memory allocation granularity.
 #if defined(NCBI_OS_MSWIN)
@@ -1951,7 +1952,7 @@ CMemoryFileMap::CMemoryFileMap(SMemoryFileHandle& handle,
     long mag = sysconf(_SC_PAGESIZE);
     if ( mag <= 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileMap: Cannot determine size virtual page");
+            "CMemoryFileSegment: Cannot determine size virtual page");
     }    
 #endif
     // Adjust mapped length and offset.
@@ -1977,7 +1978,7 @@ CMemoryFileMap::CMemoryFileMap(SMemoryFileHandle& handle,
     m_DataPtr = (char*)m_DataPtrReal + (m_Offset - m_OffsetReal);
     if ( !m_DataPtr ) {
         NCBI_THROW(CFileException, eMemoryMap,
-            "CMemoryFileMap: Unable to map a view of a file into memory " \
+            "CMemoryFileSegment: Unable to map a view of a file into memory " \
             "(offset=" +
             NStr::Int8ToString(m_Offset) + ", length=" +
             NStr::Int8ToString(m_Length) + ")");
@@ -1985,13 +1986,13 @@ CMemoryFileMap::CMemoryFileMap(SMemoryFileHandle& handle,
 }
 
 
-CMemoryFileMap::~CMemoryFileMap(void)
+CMemoryFileSegment::~CMemoryFileSegment(void)
 {
     Unmap();
 }
 
 
-bool CMemoryFileMap::Flush(void) const
+bool CMemoryFileSegment::Flush(void) const
 {
     if ( !m_DataPtr ) {
         return false;
@@ -2006,7 +2007,7 @@ bool CMemoryFileMap::Flush(void) const
 }
 
 
-bool CMemoryFileMap::Unmap(void)
+bool CMemoryFileSegment::Unmap(void)
 {
     // If file view is not mapped do nothing
     if ( !m_DataPtr ) {
@@ -2025,17 +2026,17 @@ bool CMemoryFileMap::Unmap(void)
 }
 
 
-void CMemoryFileMap::x_Verify(void) const
+void CMemoryFileSegment::x_Verify(void) const
 {
     if ( m_DataPtr ) {
         return;
     }
     NCBI_THROW(CFileException, eMemoryMap,
-               "CMemoryFileMap: File view is not mapped");
+               "CMemoryFileSegment: File view is not mapped");
 }
 
 
-bool CMemoryFileMap::MemMapAdvise(EMemMapAdvise advise)
+bool CMemoryFileSegment::MemMapAdvise(EMemMapAdvise advise)
 {
     if ( !m_DataPtr ) {
         return false;
@@ -2049,7 +2050,8 @@ CMemoryFile::CMemoryFile(const string&  file_name,
                          EMemMapShare   share,
                          off_t          offset,
                          size_t         length)
-    : m_FileName(file_name), m_FileSize(0), m_Handle(0), m_Attrs(0), m_Map(0)
+    : m_FileName(file_name), m_FileSize(0), m_Handle(0), m_Attrs(0),
+      m_Segment(0)
 {
     // Translate attributes 
     m_Attrs = s_TranslateAttrs(protect, share);
@@ -2074,7 +2076,7 @@ CMemoryFile::CMemoryFile(const string&  file_name,
         length = (size_t)m_FileSize;
     }
     // Map view of file
-    m_Map = new CMemoryFileMap(*m_Handle, *m_Attrs, offset, length);
+    m_Segment = new CMemoryFileSegment(*m_Handle, *m_Attrs, offset, length);
 }
 
 
@@ -2159,7 +2161,7 @@ void CMemoryFile::x_Close()
 
 void CMemoryFile::x_Verify(void) const
 {
-    if ( m_Map ) {
+    if ( m_Segment ) {
         return;
     }
     NCBI_THROW(CFileException, eMemoryMap,"CMemoryFile: File is not mapped");
@@ -2170,10 +2172,10 @@ bool CMemoryFile::Unmap()
 {
     // Unmap mapped view of a file
     bool status = true;
-    if ( m_Map ) {
-        status = m_Map->Unmap();
-        delete m_Map;
-        m_Map = 0;
+    if ( m_Segment ) {
+        status = m_Segment->Unmap();
+        delete m_Segment;
+        m_Segment = 0;
     }
     return status;
 }
@@ -2185,6 +2187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2004/07/28 16:22:41  ivanov
+ * Renamed CMemoryFileMap -> CMemoryFileSegment
+ *
  * Revision 1.79  2004/07/28 15:47:08  ivanov
  * + CMemoryFile_Base, CMemoryFileMap.
  * Added "offset" and "length" parameters to CMemoryFile constructor to map

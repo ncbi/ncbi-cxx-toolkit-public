@@ -956,14 +956,14 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CMemoryFileMap --
+/// CMemoryFileSegment --
 ///
-/// Define class for mapping a memory file region of the file into
-/// the address space of the calling process. 
+/// Define auxiliary class for mapping a memory file segment of the file
+/// into the address space of the calling process. 
 /// 
 /// Throws an exceptions on error.
 
-class NCBI_XNCBI_EXPORT CMemoryFileMap : public CMemoryFile_Base
+class NCBI_XNCBI_EXPORT CMemoryFileSegment : public CMemoryFile_Base
 {
 public:
     /// Constructor.
@@ -981,15 +981,15 @@ public:
     ///   Number of bytes to map. The parameter value should be more than 0.
     /// @sa
     ///    EMemMapProtect, EMemMapShare, GetPtr(), GetSize(), GetOffset().
-    CMemoryFileMap(SMemoryFileHandle& handle,
-                   SMemoryFileAttrs&  attrs,
-                   off_t              offset,
-                   size_t             lendth);
+    CMemoryFileSegment(SMemoryFileHandle& handle,
+                       SMemoryFileAttrs&  attrs,
+                       off_t              offset,
+                       size_t             lendth);
 
     /// Destructor.
     ///
     /// Unmaps a mapped area of the file.
-    ~CMemoryFileMap(void);
+    ~CMemoryFileSegment(void);
 
     /// Get pointer to beginning of data.
     ///
@@ -1234,7 +1234,7 @@ private:
     SMemoryFileHandle*  m_Handle;    ///< Memory file handle.
     SMemoryFileAttrs*   m_Attrs;     ///< Specify operations permitted on
                                      ///< memory mapped file and mapping mode.
-    CMemoryFileMap*     m_Map;       ///< Memory mapper.
+    CMemoryFileSegment* m_Segment;   ///< Pointer to mapped segment.
 };
 
 
@@ -1334,42 +1334,42 @@ bool CDir::Exists(void) const
 
 
 
-// CMemoryFileMap
+// CMemoryFileSegment
 
 inline
-void* CMemoryFileMap::GetPtr(void) const
+void* CMemoryFileSegment::GetPtr(void) const
 {
     return m_DataPtr;
 }
 
 inline
-size_t CMemoryFileMap::GetSize(void) const
+size_t CMemoryFileSegment::GetSize(void) const
 {
     return m_Length;
 }
 
 
 inline
-off_t CMemoryFileMap::GetOffset(void) const
+off_t CMemoryFileSegment::GetOffset(void) const
 {
     return m_Offset;
 }
 
 inline
-void* CMemoryFileMap::GetRealPtr(void) const
+void* CMemoryFileSegment::GetRealPtr(void) const
 {
     return m_DataPtrReal;
 }
 
 inline
-size_t CMemoryFileMap::GetRealSize(void) const
+size_t CMemoryFileSegment::GetRealSize(void) const
 {
     return m_LengthReal;
 }
 
 
 inline
-off_t CMemoryFileMap::GetRealOffset(void) const
+off_t CMemoryFileSegment::GetRealOffset(void) const
 {
     return m_OffsetReal;
 }
@@ -1379,12 +1379,12 @@ off_t CMemoryFileMap::GetRealOffset(void) const
 inline
 void* CMemoryFile::GetPtr(void) const
 {
-    if ( !m_Map ) {
+    if ( !m_Segment ) {
         // Special case.
         // Always return 0 if a file is unmapped or have zero length.
         return 0;
     }
-    return m_Map->GetPtr();
+    return m_Segment->GetPtr();
 }
 
 inline
@@ -1396,25 +1396,25 @@ Int8 CMemoryFile::GetFileSize(void) const
 inline
 size_t CMemoryFile::GetSize(void) const
 {
-    if ( !m_Map &&  m_FileSize == 0) {
+    if ( !m_Segment &&  m_FileSize == 0) {
         return 0;
     }
     x_Verify();
-    return m_Map->GetSize();
+    return m_Segment->GetSize();
 }
 
 inline
 off_t CMemoryFile::GetOffset(void) const
 {
     x_Verify();
-    return m_Map->GetOffset();
+    return m_Segment->GetOffset();
 }
 
 inline
 bool CMemoryFile::Flush(void) const
 {
     x_Verify();
-    return m_Map->Flush();
+    return m_Segment->Flush();
 }
 
 
@@ -1424,6 +1424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/07/28 16:22:52  ivanov
+ * Renamed CMemoryFileMap -> CMemoryFileSegment
+ *
  * Revision 1.43  2004/07/28 15:47:17  ivanov
  * + CMemoryFile_Base, CMemoryFileMap.
  * Added "offset" and "length" parameters to CMemoryFile constructor to map
