@@ -79,7 +79,9 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     TRange GetTotalRange(void) const;
+    TRange GetTotalRangeCheckId(const CSeq_id*& id) const;
     TRange CalculateTotalRange(void) const;
+    TRange CalculateTotalRangeCheckId(const CSeq_id*& id) const;
     void InvalidateTotalRangeCache(void);
     void InvalidateTotalRangeCacheAll(void);
 
@@ -102,6 +104,7 @@ private:
     CSeq_loc& operator= (const CSeq_loc&);
 
     TRange x_UpdateTotalRange(void) const;
+    static void x_UpdateId(const CSeq_id*& total_id, const CSeq_id& id);
 
     enum {
         kDirtyCache = -2,
@@ -110,7 +113,7 @@ private:
 
     mutable TRange m_TotalRangeCache;
     // Seq-id for the whole seq-loc or null if multiple IDs were found
-    mutable CConstRef<CSeq_id> m_IdCache;
+    mutable const CSeq_id* m_IdCache;
 };
 
 
@@ -194,10 +197,8 @@ private:
 inline
 void CSeq_loc::InvalidateTotalRangeCache(void)
 {
-    m_TotalRangeCache
-        .SetFrom(TSeqPos(kDirtyCache))
-        .SetToOpen(TSeqPos(kDirtyCache));
-    m_IdCache.Reset();
+    m_TotalRangeCache.SetFrom(TSeqPos(kDirtyCache));
+    m_IdCache = 0;
 }
 
 
@@ -215,6 +216,18 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
     TRange range = m_TotalRangeCache;
     if ( range.GetFrom() == TSeqPos(kDirtyCache) )
         range = x_UpdateTotalRange();
+    return range;
+}
+
+
+inline
+CSeq_loc::TRange CSeq_loc::GetTotalRangeCheckId(const CSeq_id*& id) const
+{
+    TRange range = m_TotalRangeCache;
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) )
+        range = x_UpdateTotalRange();
+    if ( m_IdCache )
+        x_UpdateId(id, *m_IdCache);
     return range;
 }
 
@@ -320,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/06/18 16:00:07  vasilche
+ * Fixed GetTotalRange() in multithreaded app.
+ *
  * Revision 1.24  2003/06/13 17:21:18  grichenk
  * Added seq-id caching for single-id seq-locs
  *

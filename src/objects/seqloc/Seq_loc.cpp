@@ -248,21 +248,34 @@ void CSeq_loc::Assign(const CSerialObject& obj)
 CSeq_loc::TRange CSeq_loc::x_UpdateTotalRange(void) const
 {
     TRange range = m_TotalRangeCache;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) &&
-         range.GetToOpen() == TSeqPos(kDirtyCache) ) {
-        range = m_TotalRangeCache = CalculateTotalRange();
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) ) {
+        const CSeq_id* id = 0;
+        range = m_TotalRangeCache = CalculateTotalRangeCheckId(id);
+        m_IdCache = id;
     }
     return range;
 }
 
+
+void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id& id)
+{
+    if ( !total_id ) {
+        total_id = &id;
+    }
+    else if ( !total_id->Equals(id) ) {
+        THROW1_TRACE(runtime_error,
+                     "CSeq_loc::CalculateTotalRange -- "
+                     "can not combine multiple seq-ids");
+    }
+}
+
+
 // returns enclosing location range
 // the total range is meaningless if there are several seq-ids
 // in the location
-CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
+CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
 {
     TRange total_range;
-    m_IdCache.Reset();
- 
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -274,49 +287,43 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
         }
     case CSeq_loc::e_Whole:
         {
-            m_IdCache.Reset(&GetWhole());
+            x_UpdateId(id, GetWhole());
             total_range = TRange::GetWhole();
             break;
         }
     case CSeq_loc::e_Int:
         {
             const CSeq_interval& loc = GetInt();
-            m_IdCache.Reset(&loc.GetId());
+            x_UpdateId(id, loc.GetId());
             total_range.Set(loc.GetFrom(), loc.GetTo());
             break;
         }
     case CSeq_loc::e_Pnt:
         {
-            m_IdCache.Reset(&GetPnt().GetId());
-            TSeqPos pos = GetPnt().GetPoint();
+            const CSeq_point& pnt = GetPnt();
+            x_UpdateId(id, pnt.GetId());
+            TSeqPos pos = pnt.GetPoint();
             total_range.Set(pos, pos);
             break;
         }
     case CSeq_loc::e_Packed_int:
         {
             // Check ID of each interval
+            const CPacked_seqint& ints = GetPacked_int();
             total_range = TRange::GetEmpty();
-            ITERATE ( CPacked_seqint::Tdata, ii, GetPacked_int().Get() ) {
+            ITERATE ( CPacked_seqint::Tdata, ii, ints.Get() ) {
                 const CSeq_interval& loc = **ii;
-                if ( m_IdCache ) {
-                    if (!m_IdCache->Equals(loc.GetId())) {
-                        throw runtime_error
-                            ("CSeq_loc::CalculateTotalRange -- "
-                             "can not combine multiple seq-ids");
-                    }
-                }
-                else {
-                    m_IdCache.Reset(&loc.GetId());
-                }
+                x_UpdateId(id, loc.GetId());
                 total_range += TRange(loc.GetFrom(), loc.GetTo());
             }
             break;
         }
     case CSeq_loc::e_Packed_pnt:
         {
-            m_IdCache.Reset(&GetPacked_pnt().GetId());
+            const CPacked_seqpnt& pnts = GetPacked_pnt();
+            x_UpdateId(id, pnts.GetId());
             total_range = TRange::GetEmpty();
-            ITERATE( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
+            ITERATE( CPacked_seqpnt::TPoints, pi, pnts.GetPoints() ) {
                 TSeqPos pos = *pi;
                 total_range += TRange(pos, pos);
             }
@@ -325,21 +332,11 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
     case CSeq_loc::e_Mix:
         {
             // Check ID of each sub-location.
+            const CSeq_loc_mix& mix = GetMix();
             total_range = TRange::GetEmpty();
-            ITERATE(CSeq_loc_mix::Tdata, li, GetMix().Get()) {
-                // Using x_Calculate... instead of Get... to be able to check ID
-                total_range += (*li)->GetTotalRange();
-                if ( m_IdCache ) {
-                    if (!bool((*li)->m_IdCache)  ||
-                        !m_IdCache->Equals(*(*li)->m_IdCache)) {
-                        throw runtime_error
-                            ("CSeq_loc::CalculateTotalRange -- "
-                             "can not combine multiple seq-ids");
-                    }
-                }
-                else {
-                    m_IdCache.Reset((*li)->m_IdCache);
-                }
+            ITERATE( CSeq_loc_mix::Tdata, li, mix.Get() ) {
+                // instead of Get... to be able to check ID
+                total_range += (*li)->GetTotalRangeCheckId(id);
             }
             break;
         }
@@ -371,8 +368,9 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
     case CSeq_loc::e_Feat:
     default:
         {
-            throw runtime_error
-                ("CSeq_loc::CalculateTotalRange -- unsupported location type");
+            THROW1_TRACE(runtime_error,
+                         "CSeq_loc::CalculateTotalRange -- "
+                         "unsupported location type");
         }
     }
 
@@ -431,7 +429,7 @@ void CSeq_loc_CI::x_ThrowNotValid(const char* where) const
     msg += "CSeq_loc_CI::";
     msg += where;
     msg += " -- iterator is not valid";
-    throw runtime_error(msg);
+    THROW1_TRACE(runtime_error, msg);
 }
 
 void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
@@ -546,8 +544,8 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Feat:
     default:
         {
-            throw runtime_error
-                ("CSeq_loc_CI -- unsupported location type");
+            THROW1_TRACE(runtime_error,
+                         "CSeq_loc_CI -- unsupported location type");
         }
     }
 }
@@ -831,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.30  2003/06/18 16:00:07  vasilche
+ * Fixed GetTotalRange() in multithreaded app.
+ *
  * Revision 6.29  2003/06/13 17:21:20  grichenk
  * Added seq-id caching for single-id seq-locs
  *
