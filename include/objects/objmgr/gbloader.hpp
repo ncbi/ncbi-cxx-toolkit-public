@@ -109,7 +109,7 @@ public:
 
   CMutex& GetMutex(int x) { return m_Locks[x%m_size]; }
   
-  template<class A> int  Select(A *a) { return (((unsigned)(a))/sizeof(A)) % m_size ; }
+  template<class A> int  Select(A *a) { return (((unsigned long) a)/sizeof(A)) % m_size ; }
   template<class A> CMutex& GetMutex(A *a) { return GetMutex(Select(a)); }
 
   template<class A> void Lock  (A* a)
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.13  2002/04/08 23:09:23  vakatov
+ * CMutexPool::Select()  -- fixed for 64-bit compilation
+ *
  * Revision 1.12  2002/04/05 23:47:17  kimelman
  * playing around tests
  *
