@@ -444,8 +444,10 @@ void CCodeGenerator::GenerateCode(void)
             string out_dir(is_cpp ? outdir_cpp : outdir_hpp);
 
             string ignorePath(Path(out_dir,ignoreName));
+            // ios::out should be redundant, but some compilers
+            // (GCC 2.9x, for one) seem to need it. :-/
             CNcbiOfstream ignoreFile(ignorePath.c_str(),
-                (different_dirs || is_cpp) ? ios::trunc : ios::app);
+                ios::out | ((different_dirs || is_cpp) ? ios::trunc : ios::app));
 
             if (ignoreFile.is_open()) {
 
@@ -746,6 +748,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2003/06/16 19:03:03  ucko
+* Explicitly turn on ios::out when opening ignoreFile; needed with GCC 2.9x.
+*
 * Revision 1.52  2003/05/29 17:25:34  gouriano
 * added possibility of generation .cvsignore file
 *
