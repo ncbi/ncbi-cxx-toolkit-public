@@ -213,6 +213,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
     if ( id <= 0 ) {
         ERR_POST("Bioseq_set doesn't have integer id");
         dst.SetAnnot() = src.GetAnnot();
+        return;
     }
 
     CBioseq_SplitInfo& info = m_Bioseqs[-id];
@@ -285,6 +286,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/17 15:19:37  vasilche
+* Added missing return if Seq-annot cannot be split.
+*
 * Revision 1.2  2003/11/26 23:04:58  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *
