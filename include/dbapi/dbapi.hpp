@@ -186,6 +186,11 @@ public:
     // NOTE: Valid only after all rows are retrieved from a resultset
     virtual int GetRowCount() = 0;
 
+    // Get the parent connection
+    // NOTE: if the original connections was cloned, returns cloned
+    // connection
+    virtual class IConnection* GetParentConn() = 0;
+
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -263,6 +268,10 @@ public:
     // Close cursor
     virtual void Close() = 0;
   
+    // Get the parent connection
+    // NOTE: if the original connections was cloned, returns cloned
+    // connection
+    virtual class IConnection* GetParentConn() = 0;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -401,6 +410,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/10/21 20:38:17  kholodov
+ * Added: GetParentConn() method to get the parent connection from IStatement,
+ * ICallableStatement and ICursor objects.
+ *
  * Revision 1.14  2002/10/04 12:53:20  kholodov
  * Fixed: IStatement::SetParam() accepts both imput and output parameters
  *
