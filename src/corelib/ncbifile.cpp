@@ -1949,7 +1949,15 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
     GetSystemInfo(&si); 
     DWORD mag = si.dwAllocationGranularity;
 #elif defined(NCBI_OS_UNIX)
-    long mag = sysconf(_SC_PAGESIZE);
+    long mag = 0;
+#ifdef _SC_PAGESIZE
+    mag = sysconf(_SC_PAGESIZE);
+#endif
+#ifdef HAVE_GETPAGESIZE
+    if (mag <= 0) {
+        mag = getpagesize();
+    }
+#endif
     if ( mag <= 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileSegment: Cannot determine size virtual page");
@@ -2187,6 +2195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2004/07/28 20:31:11  ucko
+ * Portability fix: try getpagesize() if _SC_PAGESIZE is unavailable.
+ *
  * Revision 1.80  2004/07/28 16:22:41  ivanov
  * Renamed CMemoryFileMap -> CMemoryFileSegment
  *
