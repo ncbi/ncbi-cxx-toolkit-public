@@ -327,8 +327,11 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2005/03/19 02:17:08  lavr
+ * Fix change log entry
+ *
  * Revision 6.15  2005/03/19 02:14:10  lavr
- * +Test for  src/connect/test/test_ncbi_connutil_misc.cBASE64_{En|De}code
+ * +Test for BASE64_{En|De}code
  *
  * Revision 6.14  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
