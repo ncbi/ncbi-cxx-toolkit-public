@@ -44,7 +44,9 @@ CVisualStudioProject * LoadFromXmlFile(const string& file_path)
     auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_Xml, 
                                                     file_path, 
                                                     eSerial_StdWhenAny));
-
+    if ( in->fail() )
+	    NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
+    
     auto_ptr<CVisualStudioProject> prj(new CVisualStudioProject());
     in->Read(prj.get(), prj->GetThisTypeInfo());
     return prj.release();
@@ -60,9 +62,8 @@ void SaveToXmlFile  (const string&               file_path,
     CDir(dir).CreatePath();
 
     CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
-    if (!ofs) {
+    if ( !ofs )
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
-    }
 
     CObjectOStreamXml xs(ofs, false);
     xs.SetReferenceDTD(false);
@@ -263,15 +264,30 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
 void GetComponents(const string& entry, list<string>* components)
 {
     components->clear();
-    string comp_str = GetApp().GetConfig().GetString(entry, "component", "");
+    string comp_str = GetApp().GetConfig().GetString(entry, "Component", "");
     NStr::Split(comp_str, " ,\t", *components);
 }
+
+
+bool SameRootDirs(const string& dir1, const string& dir2)
+{
+    if ( dir1.empty() )
+        return false;
+    if ( dir2.empty() )
+        return false;
+
+    return dir1[0] == dir2[0];
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/04 23:35:17  gorelenk
+ * Added definition of functions GetComponents and SameRootDirs.
+ *
  * Revision 1.7  2004/02/03 17:19:04  gorelenk
  * Changed implementation of class CMsvc7RegSettings.
  * Added implementation of function GetComponents.
