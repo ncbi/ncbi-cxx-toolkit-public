@@ -150,6 +150,20 @@ static string s_GetGOText(const CUser_field& field)
     return NStr::TruncateSpaces(CNcbiOstrstreamToString(text));
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+// CFlatStringQVal {
+
+CFlatStringQVal::CFlatStringQVal
+(const string& value,
+ const string& suffix,
+ CFlatQual::EStyle style)
+     : m_Value(NStr::TruncateSpaces(value)),
+       m_Suffix(suffix),
+       m_Style(style)
+{
+}
+
 
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags flags) const
@@ -165,6 +179,8 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
         x_AddFQ(q, name, m_Value, sfx, m_Style);
     }
 }
+
+// }
 
 
 void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
@@ -386,18 +402,6 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
     */
 }
 
-/*
-void CFlatTranslationQVal::Format(TFlatQuals& q, const string& name,
-                            CFFContext& ctx, IFlatQVal::TFlags) const
-{
-    string s;
-    CSeqVector v = ctx.GetHandle().GetScope().GetBioseqHandle(*m_Value)
-        .GetSequenceView(*m_Value, CBioseq_Handle::eViewConstructed,
-                         CBioseq_Handle::eCoding_Iupac);
-    v.GetSeqData(0, v.size(), s);
-    x_AddFQ(q, name, s);
-}
-*/
 
 void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
                           CFFContext& ctx, IFlatQVal::TFlags) const
@@ -405,7 +409,9 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
     // XXX - add link in HTML mode
     string id_str;
     if ( m_Value->IsGi() ) {
-        id_str = "GI:";
+        if ( m_GiPrefix ) {
+            id_str = "GI:";
+        }
         m_Value->GetLabel(&id_str, CSeq_id::eContent);
     } else {
         id_str = m_Value->GetSeqIdString(true);
@@ -560,6 +566,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/08 21:01:44  shomrat
+* GI prefix flag for Seq-id quals
+*
 * Revision 1.6  2004/03/08 15:24:27  dicuccio
 * FIxed dereference of string pointer
 *
