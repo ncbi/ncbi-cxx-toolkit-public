@@ -1439,13 +1439,16 @@ diag_compare_match(VoidPtr v1, VoidPtr v2)
  * @param init_hitlist Contains all the initial hits [in]
  * @param hsp_list_ptr List of HSPs with full extension information [out]
 */
-static Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
-       BLAST_SequenceBlkPtr subject, BlastGapAlignStructPtr gap_align,
-       BlastScoringOptionsPtr score_options, 
-       BlastExtensionOptionsPtr ext_options,
-       BlastHitSavingOptionsPtr hit_options, BlastInitHitListPtr init_hitlist,
-       BlastHSPListPtr PNTR hsp_list_ptr)
+Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
+			    BLAST_SequenceBlkPtr subject,
+			    BlastGapAlignStructPtr gap_align,
+			    BlastScoringOptionsPtr score_options, 
+			    BlastExtensionParametersPtr ext_params,
+			    BlastHitSavingOptionsPtr hit_options,
+			    BlastInitHitListPtr init_hitlist,
+			    BlastHSPListPtr PNTR hsp_list_ptr)
 {
+   BlastExtensionOptionsPtr ext_options = ext_params->options;
    Int4 index, i;
    Boolean delete_hsp;
    BlastInitHSPPtr init_hsp;
@@ -2288,46 +2291,6 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
    }
    *hsp_list_ptr = hsp_list;
    return status;
-}
-
-/** Main nucleotide gapped alignment function
- * @param query The query sequence block [in]
- * @param subject The subject sequence block [in]
- * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_options Options related to scoring [in]
- * @param ext_params Options and parameters related to extensions [in]
- * @param hit_options Options related to saving hits [in]
- * @param init_hitlist List of initial HSPs (offset pairs with additional 
- *        information from the ungapped alignment performed earlier) [in]
- * @param hsp_list Structure containing all saved HSPs [out]
- */
-Int2 BLAST_NuclGetGappedScores(BLAST_SequenceBlkPtr query, 
-        BLAST_SequenceBlkPtr subject, 
-        BlastGapAlignStructPtr gap_align,
-        BlastScoringOptionsPtr score_options,                               
-        BlastExtensionParametersPtr ext_params,
-        BlastHitSavingOptionsPtr hit_options,
-        BlastInitHitListPtr init_hitlist,
-        BlastHSPListPtr PNTR hsp_list)
-{
-   Int2 status;
-
-   if (!init_hitlist || init_hitlist->total == 0) 
-     return 0;
-
-   if (ext_params->options->algorithm_type == EXTEND_DYN_PROG) {
-      if (score_options->gapped_calculation) {
-         status = BLAST_GetGappedScore(query, subject, gap_align,
-                     score_options, ext_params, hit_options, init_hitlist, 
-                     hsp_list);
-      }
-   } else {
-      status = BLAST_MbGetGappedScore(query, subject, gap_align,
-                  score_options, ext_params->options, hit_options, init_hitlist, 
-                  hsp_list);
-   }
-
-   return 0;
 }
 
 /** Reverse the sequence and copy into buffer.

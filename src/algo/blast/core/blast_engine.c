@@ -39,6 +39,7 @@ Contents: High level BLAST functions
 #include <util.h>
 #include <aa_ungapped.h>
 #include <blast_util.h>
+#include <blast_gapalign.h>
 
 #ifdef GAPPED_LOG
 /** Print out the initial hits information. Used for debugging only, will be 
@@ -129,6 +130,15 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    BlastResultsPtr results;
    Int2 status;
    BlastHitSavingOptionsPtr hit_options = hit_params->options;
+   Int2 (*GetGappedScore) (BLAST_SequenceBlkPtr, /* query */ 
+			   BLAST_SequenceBlkPtr, /* subject */ 
+			   BlastGapAlignStructPtr, /* gap_align */
+			   BlastScoringOptionsPtr, /* score_options */
+			   BlastExtensionParametersPtr, /* ext_params */
+			   BlastHitSavingOptionsPtr, /* hit_options */
+			   BlastInitHitListPtr, /* init_hitlist */
+			   BlastHSPListPtr PNTR); /* hsp_list_ptr */
+
    Int4 (*wordfinder) (BLAST_SequenceBlkPtr, /*subject*/
 		       BLAST_SequenceBlkPtr, /*query*/
 		       LookupTableWrapPtr, /* lookup wrapper */
@@ -144,6 +154,13 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    
    /* search prologue */
 
+   /* pick which gapped alignment algorithm to use */
+   if (ext_params->options->algorithm_type == EXTEND_DYN_PROG)
+     GetGappedScore = BLAST_GetGappedScore;
+   else
+     GetGappedScore = BLAST_MbGetGappedScore;
+
+   /* pick which wordfinder to use */
    offset_array_size = 10000;
    wordfinder = BlastNaWordFinder;
    
@@ -213,24 +230,15 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          
          hsp_list = NULL;
 
-	 if (blastp)
-	   BLAST_GetGappedScore(query,
-				subject,
-				gap_align,
-				score_options,
-				ext_params,
-				hit_options,
-				init_hitlist,
-				&hsp_list);
-	 else
-	   BLAST_NuclGetGappedScores(query,
-				     subject,
-				     gap_align,
-				     score_options,
-				     ext_params,
-				     hit_options,
-				     init_hitlist,
-				     &hsp_list);
+	 if (score_options->gapped_calculation)
+	   GetGappedScore(query,
+			  subject,
+			  gap_align,
+			  score_options,
+			  ext_params,
+			  hit_options,
+			  init_hitlist,
+			  &hsp_list);
 
          if (!hsp_list)
             continue;

@@ -120,31 +120,20 @@ typedef struct BlastHSPList {
                               this list? */
 } BlastHSPList, *BlastHSPListPtr;
 
-/** Perform the gapped alignment between nucleotide sequences 
- * @param query The query sequence [in]
- * @param subject The subject sequence [in]
- * @param gap_align The auxiliary structure for gapped alignment [in] [out]
- * @param score_options Options related to scoring alignments [in]
- * @param ext_params Options and parameters related to gapped extension [in]
- * @param hit_options Options related to saving hits [in]
- * @param init_hitlist The list of initial HSPs that need to be extended [in]
- * @param hsp_list_ptr The list of HSPs after gapped extension [out]
-*/
-Int2 BLAST_NuclGetGappedScores(BLAST_SequenceBlkPtr query,
-        BLAST_SequenceBlkPtr subject,
-        BlastGapAlignStructPtr gap_align,
-        BlastScoringOptionsPtr score_options,
-        BlastExtensionParametersPtr ext_params,
-        BlastHitSavingOptionsPtr hit_options,
-        BlastInitHitListPtr init_hitlist,
-        BlastHSPListPtr PNTR hsp_list_ptr);
-
 /** Creates HSP list structure with a default size HSP array */
 BlastHSPListPtr BlastHSPListNew(void);
 
 /** Deallocate memory for the HSP list */
 BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list);
 
+Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query, 
+			    BLAST_SequenceBlkPtr subject,
+			    BlastGapAlignStructPtr gap_align,
+			    BlastScoringOptionsPtr score_options, 
+			    BlastExtensionParametersPtr ext_params,
+			    BlastHitSavingOptionsPtr hit_options,
+			    BlastInitHitListPtr init_hitlist,
+			    BlastHSPListPtr PNTR hsp_list_ptr);
 
 /** Performs gapped extension for all non-Mega BLAST programs, given
  * that ungapped extension has been done earlier.
@@ -164,11 +153,13 @@ BlastHSPListPtr BlastHSPListDestruct(BlastHSPListPtr hsp_list);
  */
 Int2 LIBCALL
 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, BlastGapAlignStructPtr gap_align,
-   BlastScoringOptionsPtr score_options, 
-   BlastExtensionParametersPtr ext_params,
-   BlastHitSavingOptionsPtr hit_options, BlastInitHitListPtr init_hitlist,
-   BlastHSPListPtr PNTR hsp_list_ptr);
+		      BLAST_SequenceBlkPtr subject,
+		      BlastGapAlignStructPtr gap_align,
+		      BlastScoringOptionsPtr score_options, 
+		      BlastExtensionParametersPtr ext_params,
+		      BlastHitSavingOptionsPtr hit_options,
+		      BlastInitHitListPtr init_hitlist,
+		      BlastHSPListPtr PNTR hsp_list_ptr);
 
 /** Perform a gapped alignment with traceback
  * @param query The query sequence [in]
