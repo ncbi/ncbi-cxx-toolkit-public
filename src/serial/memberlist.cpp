@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/12/26 19:28:52  gouriano
+* elaborated FindDeep method
+*
 * Revision 1.31  2002/11/26 22:12:52  gouriano
 * elaborated FindDeep to handle more complex elements
 *
@@ -337,19 +340,22 @@ TMemberIndex CItemsInfo::FindDeep(const CLightString& name) const
         const CItemInfo* info = GetItemInfo(item);
         const CMemberId& id = info->GetId();
         if (!id.IsAttlist() && id.HasNotag()) {
-            const CTypeInfo* type = info->GetTypeInfo();
-            if (type->GetTypeFamily() == eTypeFamilyContainer) {
-                const CContainerTypeInfo* cont =
-                    dynamic_cast<const CContainerTypeInfo*>(type);
-                if (cont) {
-                    type = cont->GetElementType();
-                }
-            }
-            if (type->GetTypeFamily() == eTypeFamilyPointer) {
-                const CPointerTypeInfo* ptr =
-                    dynamic_cast<const CPointerTypeInfo*>(type);
-                if (ptr) {
-                    type = ptr->GetPointedType();
+            const CTypeInfo* type;
+            for (type = info->GetTypeInfo();;) {
+                if (type->GetTypeFamily() == eTypeFamilyContainer) {
+                    const CContainerTypeInfo* cont =
+                        dynamic_cast<const CContainerTypeInfo*>(type);
+                    if (cont) {
+                        type = cont->GetElementType();
+                    }
+                } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
+                    const CPointerTypeInfo* ptr =
+                        dynamic_cast<const CPointerTypeInfo*>(type);
+                    if (ptr) {
+                        type = ptr->GetPointedType();
+                    }
+                } else {
+                    break;
                 }
             }
             const CClassTypeInfoBase* classType =
