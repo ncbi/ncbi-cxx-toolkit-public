@@ -266,8 +266,7 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 
 
 CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
-                                     IOS_BASE::openmode which =
-                                     IOS_BASE::in | IOS_BASE::out)
+                                     IOS_BASE::openmode which)
 {
     if (off == 0  &&  whence == IOS_BASE::cur  &&  which == IOS_BASE::out)
         return x_Pos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
@@ -292,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2004/01/14 22:21:39  vasilche
+ * Removed duplicate default arguments.
+ *
  * Revision 6.43  2004/01/14 20:24:29  lavr
  * CConnStreambuf::seekoff(0, cur, out) added and implemented
  *
