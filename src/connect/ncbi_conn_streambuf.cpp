@@ -82,6 +82,15 @@ CConn_Streambuf::~CConn_Streambuf()
 }
 
 
+void CConn_Streambuf::Close(void)
+{
+    if (m_Conn) {
+        CONN_Close(m_Conn);
+        m_Conn = 0;
+    }
+}
+
+
 CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 {
     if ( !m_Conn )
@@ -268,7 +277,7 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                      IOS_BASE::openmode which)
 {
-    if (off == 0  &&  whence == IOS_BASE::cur) {
+    if (m_Conn  &&  off == 0  &&  whence == IOS_BASE::cur) {
         switch (which) {
         case IOS_BASE::out:
             return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
@@ -299,6 +308,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2005/03/15 21:27:52  lavr
+ * +CConn_Streambuf::Close()
+ *
  * Revision 6.52  2005/02/03 21:43:00  lavr
  * assert() -> _ASSERT()
  *

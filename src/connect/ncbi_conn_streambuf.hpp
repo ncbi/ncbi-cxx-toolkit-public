@@ -58,6 +58,7 @@ public:
                     streamsize buf_size, bool tie);
     virtual ~CConn_Streambuf();
     CONN    GetCONN(void) const { return m_Conn; };
+    void    Close(void);
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -97,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2005/03/15 21:27:52  lavr
+ * +CConn_Streambuf::Close()
+ *
  * Revision 6.35  2004/11/19 19:55:59  lavr
  * Comment fix [tellp() pertains to ostream, not istream]
  *
