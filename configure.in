@@ -86,7 +86,7 @@ case "${srcdir}" in
 esac
 
 #### Specify(derive) $includedir, $incdir, $libdir, $bindir and $builddir
-includedir="$srcdir/src/include"
+includedir="$srcdir/include"
 incdir="$exec_prefix/inc"
 libdir="$exec_prefix/lib"
 bindir="$exec_prefix/bin"
