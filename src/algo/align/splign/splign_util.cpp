@@ -326,9 +326,10 @@ CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
     case 'D':  state1 = 0; state2 = 1; score += Wg;
     break;
     default: {
-      char buf [1024];
-      sprintf(buf, "Unknown symbol in transcript: %c", transcript[0]);
-      NCBI_THROW(CAlgoAlignException, eInternal, buf);
+      CNcbiOstrstream oss;
+      oss << "Unknown symbol in transcript: " << transcript[0];
+      const string err_msg =  CNcbiOstrstreamToString(oss);
+      NCBI_THROW(CAlgoAlignException, eInternal, err_msg.c_str());
     }
   }
 
@@ -380,6 +381,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/04/23 16:50:48  kapustin
+ * sprintf->CNcbiOstrstream
+ *
  * Revision 1.3  2004/04/23 14:37:44  kapustin
  * *** empty log message ***
  *
