@@ -59,8 +59,6 @@ public:
 
 static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 
-static void Abort(void);
-
 
 ///////////////////////////////////////////////////////
 //  CDiagBuffer::
@@ -612,7 +610,7 @@ extern void SetAbortHandler(FAbortHandler func)
 }
 
 
-static void Abort(void)
+extern void Abort(void)
 {
     // If defined user abort handler then call it 
     if ( s_UserAbortHandler )
@@ -624,12 +622,12 @@ static void Abort(void)
     // Check environment variable for silent exit
     const char* value = getenv("DIAG_SILENT_ABORT");
     if (*value == 'Y'  ||  *value == 'y') {
-        ::exit(-1);
+        ::exit(255);
     } else {
         ::abort();
     }
 #else
-    ::exit(-1);
+    ::exit(255);
 #endif
 }
 
@@ -639,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.46  2002/04/10 14:45:27  ivanov
+ * Abort() moved from static to extern and added to header file
+ *
  * Revision 1.45  2002/04/01 22:35:22  ivanov
  * Added SetAbortHandler() function to set user abort handler.
  * Used call internal function Abort() vice ::abort().

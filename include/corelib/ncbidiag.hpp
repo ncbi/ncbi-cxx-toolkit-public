@@ -224,6 +224,11 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 // Return previous die-level
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
+// Smart abort function.
+// It can process user abort handler and don't popup assert window 
+// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y")
+extern void Abort(void);
+
 // Set/unset abort handler.
 // If "func"==0 that will be used default handler
 typedef void (*FAbortHandler)(void);
@@ -379,6 +384,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.38  2002/04/10 14:45:04  ivanov
+ * Abort() moved from static to extern and added to header file
+ *
  * Revision 1.37  2002/04/01 22:34:35  ivanov
  * Added SetAbortHandler() function to set user abort handler
  *
