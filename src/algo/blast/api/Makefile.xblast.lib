@@ -16,6 +16,7 @@ tblastn_options \
 rpstblastn_options \
 blast_nucl_options \
 disc_nucl_options \
+blast_psi_cxx \
 blast_rps_options \
 remote_blast \
 multiseq_src \
