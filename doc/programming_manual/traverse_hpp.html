@@ -16,7 +16,6 @@
 <font color = "blue">BEGIN_NCBI_SCOPE
 
 <font color = "red">// class CTestAsn <font color = "black">
-
 class CTestAsn : public CNcbiApplication {
 public:
     virtual int Run ();
@@ -28,7 +27,6 @@ void Visit(const CBiostruc::TDescr&);
 void Visit(const CBiostruc::TChemical_graph&);
 
 <font color = "red">// Not implemented <font color = "black">
-
 void Visit(const CBiostruc::TFeatures&) {};
 void Visit(const CBiostruc::TModel&) {};
 void Visit(const CBiostruc_descr::THistory&) {};
