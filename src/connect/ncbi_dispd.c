@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/05/03 16:58:16  lavr
+ * FIX: Percent is taken of local bonus coef instead of the value itself
+ *
  * Revision 6.18  2001/05/03 16:35:53  lavr
  * Local bonus coefficient modified: meaning of negative value changed
  *
@@ -402,7 +405,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
     /* We will take pre-chosen local server only if its status is not less
        than p% of the average rest status; otherwise, we ignore the server,
        and apply the general procedure by seeding a random point. */
-    if (point < 0.0 || access*(data->n_node - 1) < p*(total - access))
+    if (point < 0.0 || access*(data->n_node - 1) < p*0.01*(total - access))
         point = (total * rand()) / (double) RAND_MAX;
     for (i = 0; i < data->n_node; i++) {
         if (point < data->s_node[i].status)
