@@ -124,7 +124,8 @@ void CMsvcSite::GetLibInfo(const string& lib,
 {
     libinfo->Clear();
 
-    libinfo->m_IncludeDir = ProcessMacros(GetOpt(m_Registry, lib, "INCLUDE", config));
+    string include_str    = ProcessMacros(GetOpt(m_Registry, lib, "INCLUDE", config));
+    NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
     
     string defines_str    = GetOpt(m_Registry, lib, "DEFINES", config);
     NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
@@ -133,6 +134,9 @@ void CMsvcSite::GetLibInfo(const string& lib,
 
     string libs_str = GetOpt(m_Registry, lib, "LIB", config);
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
+
+    libs_str = GetOpt(m_Registry, lib, "STDLIB", config);
+    NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_StdLibs);
 
     string macro_str = GetOpt(m_Registry, lib, "MACRO", config);
     NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
@@ -243,7 +247,7 @@ CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(
         if (choice.m_3PartyLib == lib3party_id) {
             SLibInfo lib_info;
             GetLibInfo(lib3party_id, cfg_info, &lib_info);
-            return IsLibOk(lib_info) ? e3PartyLib : eLib;
+            return IsLibOk(lib_info,true) ? e3PartyLib : eLib;
         }
     }
     return eUnknown;
@@ -283,7 +287,9 @@ void CMsvcSite::GetLibChoiceIncludes(
             SLibInfo lib_info;
             GetLibInfo(choice.m_3PartyLib, cfg_info, &lib_info);
             if ( IsLibOk(lib_info, true) ) {
-                abs_includes->push_back(lib_info.m_IncludeDir);
+//                abs_includes->push_back(lib_info.m_IncludeDir);
+                copy(lib_info.m_IncludeDir.begin(), 
+                    lib_info.m_IncludeDir.end(), back_inserter(*abs_includes));
             } else {
                 const string& rel_include_path = *p;
                 string abs_include_path = 
@@ -309,13 +315,15 @@ void CMsvcSite::GetLibInclude(const string& lib_id,
     SLibInfo lib_info;
     GetLibInfo(lib_id, cfg_info, &lib_info);
     if ( IsLibOk(lib_info, true) ) {
-        includes->push_back(lib_info.m_IncludeDir);
+//        includes->push_back(lib_info.m_IncludeDir);
+        copy(lib_info.m_IncludeDir.begin(),
+             lib_info.m_IncludeDir.end(), back_inserter(*includes));
         return;
     } else {
         if (!lib_info.IsEmpty()) {
             LOG_POST(Warning << lib_id << "|" << cfg_info.m_Name
                           << " unavailable: library include ignored: "
-                          << lib_info.m_IncludeDir);
+                          << NStr::Join(lib_info.m_IncludeDir,","));
         }
     }
 }
@@ -375,12 +383,15 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
     if ( lib_info.IsEmpty() )
         return false;
-    if ( !lib_info.m_IncludeDir.empty() &&
-         !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
-        if (!silent) {
-            LOG_POST(Warning << "No LIB INCLUDE: " + lib_info.m_IncludeDir);
+    if ( !lib_info.m_IncludeDir.empty() ) {
+        ITERATE(list<string>, i, lib_info.m_IncludeDir) {
+            if (!CDirEntry(*i).Exists() ) {
+                if (!silent) {
+                    LOG_POST(Warning << "No LIB INCLUDE: " + *i);
+                }
+                return false;
+            }
         }
-        return false;
     }
     if ( !lib_info.m_LibPath.empty() &&
          !CDirEntry(lib_info.m_LibPath).Exists() ) {
@@ -452,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/12/30 17:48:49  gouriano
+ * INCLUDE changed from string to list of strings
+ *
  * Revision 1.25  2004/12/20 15:24:56  gouriano
  * Changed diagnostic output
  *
