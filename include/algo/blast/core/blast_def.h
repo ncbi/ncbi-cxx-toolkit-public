@@ -77,6 +77,8 @@ typedef enum {
 #ifndef NUM_FRAMES
 #define NUM_FRAMES 6
 #endif
+
+/** Number of frames in a nucleotide sequence */
 #ifndef NUM_STRANDS
 #define NUM_STRANDS 2
 #endif
@@ -94,8 +96,10 @@ typedef enum {
 #ifndef sfree
 #define sfree(x) __sfree((void**)&(x))
 #endif
+
+/** Implemented in lookup_util.c. @sa sfree */
 NCBI_XBLAST_EXPORT
-void __sfree(void** x); /* implemented in lookup_util.c */
+void __sfree(void** x);
 
 /********************* Structure definitions ********************************/
 

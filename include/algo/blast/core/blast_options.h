@@ -458,9 +458,6 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
  * @param greedy Settings should assume greedy alignments. [in]
  * @param window_size Size of a largest window between 2 words for the two-hit
  *                    version [in]
- * @param ag_blast Is AG BLAST approach used for scanning the database 
- *                 (blastn only)? [in]
- * @param mb_lookup Is Mega BLAST (12-mer based) lookup table used? [in]
  * @param xdrop_ungapped The value of the X-dropoff for ungapped extensions [in]
 */
 NCBI_XBLAST_EXPORT
@@ -596,7 +593,6 @@ Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *optio
  * @param is_megablast Megablast (instead of blastn) if TRUE [in]
  * @param threshold Threshold value for finding neighboring words [in]
  * @param word_size Number of matched residues in an initial word [in]
- * @param ag_blast Is AG BLAST approach to database scanning used? [in]
  * @param variable_wordsize Are only full bytes of a compressed sequence 
  *        checked to find initial words? [in]
  * @param use_pssm Use PSSM rather than (protein) query to build lookup table.

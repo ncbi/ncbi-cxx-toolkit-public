@@ -108,8 +108,8 @@ void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats,
 
 /** In a multi-threaded run, update global diagnostics data with the data
  * coming from one of the preliminary search threads.
- * @param global Diagnostics for the entire BLAST search [in] [out]
- * @param local Diagnostics from one of the preliminary search threads [in]
+ * @param diag_global Diagnostics for the entire BLAST search [in] [out]
+ * @param diag_local Diagnostics from one of the preliminary search threads [in]
  */
 void 
 Blast_DiagnosticsUpdate(BlastDiagnostics* diag_global,
