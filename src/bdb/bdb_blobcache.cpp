@@ -125,7 +125,7 @@ public:
     {
         delete m_BlobStream;
         delete m_OverflowFile;
-        delete m_Buffer;
+        delete[] m_Buffer;
     }
 
 
@@ -250,11 +250,11 @@ public:
         m_BlobDB.SetTransaction(&trans);
 
         if (m_Buffer) {
-            LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->SetTransaction(&trans);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             m_BlobDB.Sync();
-            delete m_Buffer;
+            delete[] m_Buffer;
         }
         delete m_BlobStream;
 
@@ -303,7 +303,7 @@ public:
                         m_OverflowFile->write((char*)m_Buffer, 
                                               m_BytesInBuffer);
                     }
-                    delete m_Buffer;
+                    delete[] m_Buffer;
                     m_Buffer = 0;
                     m_BytesInBuffer = 0;
                 }
@@ -332,10 +332,10 @@ public:
         m_BlobDB.SetTransaction(&trans);
 
         if (m_Buffer) {
-            LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->SetTransaction(&trans);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
-            delete m_Buffer;
+            delete[] m_Buffer;
             m_Buffer = 0;
             m_BytesInBuffer = 0;
         }
@@ -357,13 +357,13 @@ private:
         m_OverflowFile = new CNcbiOfstream();
         string path;
         s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version, m_SubKey);
-        LOG_POST(Info << "LC: Making overflow file " << path);
+        _TRACE("LC: Making overflow file " << path);
         m_OverflowFile->open(path.c_str(), 
                              IOS_BASE::out | 
                              IOS_BASE::trunc | 
                              IOS_BASE::binary);
         if (!m_OverflowFile->is_open()) {
-            LOG_POST(Info << "LC Error:Cannot create overflow file " << path);
+            ERR_POST("LC Error:Cannot create overflow file " << path);
             delete m_OverflowFile;
             m_OverflowFile = 0;
         }
@@ -552,13 +552,13 @@ void CBDB_Cache::Store(const string&  key,
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version, subkey);
 
-        LOG_POST(Info << "LC: Making overflow file " << path);
+        _TRACE("LC: Making overflow file " << path);
         oveflow_file.open(path.c_str(), 
                           IOS_BASE::out | 
                           IOS_BASE::trunc | 
                           IOS_BASE::binary);
         if (!oveflow_file.is_open()) {
-            LOG_POST(Error << "LC Error:Cannot create overflow file " << path);
+            ERR_POST("LC Error:Cannot create overflow file " << path);
             return;
         }
         oveflow_file.write((char*)data, size);
@@ -1019,9 +1019,9 @@ bool CBDB_Cache::x_CheckTimestampExpired()
         CTime time_stamp(CTime::eCurrent);
         time_t curr = (int)time_stamp.GetTimeT();
         if (curr - timeout > db_time_stamp) {
-            LOG_POST(Info << "local cache item expired:" 
-                          << db_time_stamp << " curr=" << curr 
-                          << " diff=" << curr - db_time_stamp);
+            _TRACE("local cache item expired:" 
+                   << db_time_stamp << " curr=" << curr 
+                   << " diff=" << curr - db_time_stamp);
             return true;
         }
     }
@@ -1262,7 +1262,7 @@ public:
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
         if (m_Buffer) {
-            LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             m_BlobDB.Sync();
             delete m_Buffer;
@@ -1332,7 +1332,7 @@ public:
     virtual ERW_Result Flush(void)
     {
         if (m_Buffer) {
-            LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             delete m_Buffer;
             m_Buffer = 0;
@@ -1353,13 +1353,13 @@ private:
         m_OverflowFile = new CNcbiOfstream();
         string path;
         s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version);
-        LOG_POST(Info << "LC: Making overflow file " << path);
+        _TRACE("LC: Making overflow file " << path);
         m_OverflowFile->open(path.c_str(), 
                              IOS_BASE::out | 
                              IOS_BASE::trunc | 
                              IOS_BASE::binary);
         if (!m_OverflowFile->is_open()) {
-            LOG_POST(Info << "LC Error:Cannot create overflow file " << path);
+            ERR_POST("LC Error:Cannot create overflow file " << path);
             delete m_OverflowFile;
             m_OverflowFile = 0;
         }
@@ -1469,13 +1469,13 @@ void CBDB_BLOB_Cache::Store(const string& key,
         string path;
         s_MakeOverflowFileName(path, m_Path, key, version);
 
-        LOG_POST(Info << "LC: Making overflow file " << path);
+        _TRACE("LC: Making overflow file " << path);
         oveflow_file.open(path.c_str(), 
                           IOS_BASE::out | 
                           IOS_BASE::trunc | 
                           IOS_BASE::binary);
         if (!oveflow_file.is_open()) {
-            LOG_POST(Error << "LC Error:Cannot create overflow file " << path);
+            ERR_POST("LC Error:Cannot create overflow file " << path);
             return;
         }
         oveflow_file.write((char*)data, size);
@@ -1887,18 +1887,12 @@ bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
 
     time_t curr = (unsigned)time_stamp.GetTimeT();
 
-/*
-    LOG_POST(Info << "Key1=" << key1 
-                  << " Key2=" << key2
-                  << " Load int ts=" 
-                  << ts);
-*/
+    //_TRACE("Key1=" << key1 << " Key2=" << key2 << " Load int ts=" << ts);
 
     if ((unsigned)(ts + m_ExpirationTime) <  unsigned(curr)) {
-    
-        LOG_POST(Info << "Int cache item expired:" 
-                      << ts << " curr=" << curr 
-                      << " diff=" << curr - ts );
+        _TRACE("Int cache item expired:" 
+               << ts << " curr=" << curr 
+               << " diff=" << curr - ts );
     
         value.resize(0);
         return false;
@@ -2007,6 +2001,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/01/29 20:31:06  vasilche
+ * Removed debug messages.
+ *
  * Revision 1.39  2004/01/07 18:58:10  vasilche
  * Make message about joining to non-transactional environment a warning.
  *
