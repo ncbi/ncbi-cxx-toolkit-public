@@ -153,7 +153,7 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
 
 string CMsvcSite::ResolveDefine(const string& define) const
 {
-    return m_Registry.GetString("Defines", define, "");
+    return ProcessMacros(m_Registry.GetString("Defines", define, ""));
 }
 
 
@@ -401,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/11/17 19:55:51  gouriano
+ * Expand macros in Defines section
+ *
  * Revision 1.19  2004/11/02 18:09:19  gouriano
  * Allow macros in the definition of 3rd party library paths
  *
