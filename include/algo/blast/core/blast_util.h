@@ -97,7 +97,17 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 	const Int4Ptr frame, BLAST_SequenceBlkPtr *seq_blk, 
         Boolean buffer_allocated);
 
+/** Allocate and initialize the query information structure.
+ * @param program_number Type of BLAST program [in]
+ * @param num_queries Number of query sequences [in]
+ * @param query_info_ptr The initialized structure [out]
+ */
+Int2 BLAST_QueryInfoInit(const Uint1 program_number, 
+        Int4 num_queries, BlastQueryInfoPtr *query_info_ptr);
+
+#ifndef CODON_LENGTH
 #define CODON_LENGTH 3
+#endif
 
 /** GetTranslation to get the translation of the nucl. sequence in the
  * appropriate frame and with the appropriate GeneticCode.
@@ -107,19 +117,12 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
  * @param query_seq_rev Reverse strand of the nucleotide sequence [in]
  * @param nt_length Length of the nucleotide sequence [in]
  * @param frame What frame to translate into? [in]
- * @param length Length of the translated sequence [out]
+ * @param buffer Preallocated buffer for the translated sequence [in][out]
  * @param genetic_code Genetic code to use for translation [in]
- * @return The translated sequence
 */
-Uint1Ptr LIBCALL
+Int2 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Int4Ptr length, CharPtr genetic_code);
-
-/** Make a temporary protein BioseqPtr to use with seg.
-*/
-BioseqPtr
-BLAST_MakeTempProteinBioseq (Uint1Ptr sequence, Int4 length, Uint1 alphabet);
-
+   Int4 nt_length, Int2 frame, Uint1Ptr buffer, CharPtr genetic_code);
 
 /** Given a GI, read the sequence from the database and fill out a
  *  BLAST_SequenceBlk structure.
