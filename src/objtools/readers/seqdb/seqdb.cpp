@@ -302,15 +302,6 @@ bool CSeqDB::CheckOrFindOID(int & oid) const
     return m_Impl->CheckOrFindOID(oid);
 }
 
-// Temporary method
-bool CSeqDB::CheckOrFindOID(Uint4 & next_oid) const
-{
-    int oid(next_oid);
-    bool rv = CheckOrFindOID(oid);
-    next_oid = oid;
-    return rv;
-}
-
 CSeqDB::EOidListType
 CSeqDB::GetNextOIDChunk(int         & begin,
                         int         & end,
@@ -318,40 +309,6 @@ CSeqDB::GetNextOIDChunk(int         & begin,
                         int         * state)
 {
     return m_Impl->GetNextOIDChunk(begin, end, lst, state);
-}
-
-CSeqDB::EOidListType
-CSeqDB::GetNextOIDChunk(Uint4         & begin,
-                        Uint4         & end,
-                        vector<Uint4> & lst,
-                        Uint4         * state)
-{
-    int ibegin (0);
-    int iend   (0);
-    int istate (state ? *state : 0);
-    
-    vector<int> ilist;
-    ilist.resize(lst.size());
-    
-    CSeqDB::EOidListType rv =
-        m_Impl->GetNextOIDChunk(ibegin, iend, ilist, state ? (& istate) : 0);
-    
-    if (rv == eOidList) {
-        lst.resize(ilist.size());
-        
-        for(size_t i = 0; i < ilist.size(); i++) {
-            lst[i] = ilist[i];
-        }
-    }
-    
-    begin  = ibegin;
-    end    = iend;
-    
-    if (state) {
-        *state = istate;
-    }
-    
-    return rv;
 }
 
 const string & CSeqDB::GetDBNameList() const
@@ -364,31 +321,9 @@ list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(int oid) const
     return m_Impl->GetSeqIDs(oid);
 }
 
-bool CSeqDB::PigToOid(Uint4 pig, Uint4 & oid) const
-{
-    int pig2 = int(pig);
-    int oid2 = int(0);
-    
-    bool rv = m_Impl->PigToOid(pig2, oid2);
-    
-    oid = Uint4(oid2);
-    return rv;
-}
-
 bool CSeqDB::PigToOid(int pig, int & oid) const
 {
     return m_Impl->PigToOid(pig, oid);
-}
-
-bool CSeqDB::OidToPig(Uint4 oid, Uint4 & pig) const
-{
-    int pig2 = 0;
-    int oid2 = int(oid);
-    
-    bool rv = m_Impl->OidToPig(oid2, pig2);
-    
-    pig = Uint4(pig2);
-    return rv;
 }
 
 bool CSeqDB::OidToPig(int oid, int & pig) const
@@ -396,47 +331,14 @@ bool CSeqDB::OidToPig(int oid, int & pig) const
     return m_Impl->OidToPig(oid, pig);
 }
 
-bool CSeqDB::GiToOid(Uint4 gi, Uint4 & oid) const
-{
-    int gi2 = int(gi);
-    int oid2 = int(0);
-    
-    bool rv = m_Impl->GiToOid(gi2, oid2);
-    
-    oid = Uint4(oid2);
-    return rv;
-}
-
 bool CSeqDB::GiToOid(int gi, int & oid) const
 {
     return m_Impl->GiToOid(gi, oid);
 }
 
-bool CSeqDB::OidToGi(Uint4 oid, Uint4 & gi) const
-{
-    int gi2 = 0;
-    int oid2 = int(oid);
-    
-    bool rv = m_Impl->OidToGi(oid2, gi2);
-    
-    gi = Uint4(gi2);
-    return rv;
-}
-
 bool CSeqDB::OidToGi(int oid, int & gi) const
 {
     return m_Impl->OidToGi(oid, gi);
-}
-
-bool CSeqDB::PigToGi(Uint4 pig, Uint4 & gi) const
-{
-    int pig2 = int(pig);
-    int gi2 = 0;
-    
-    bool rv = PigToGi(pig2, gi2);
-    
-    gi = Uint4(gi2);
-    return rv;
 }
 
 bool CSeqDB::PigToGi(int pig, int & gi) const
@@ -450,17 +352,6 @@ bool CSeqDB::PigToGi(int pig, int & gi) const
     return false;
 }
 
-bool CSeqDB::GiToPig(Uint4 gi, Uint4 & pig) const
-{
-    int gi2 = int(gi);
-    int pig2 = int(0);
-    
-    bool rv = GiToPig(gi2, pig2);
-    
-    pig = Uint4(pig2);
-    return rv;
-}
-
 bool CSeqDB::GiToPig(int gi, int & pig) const
 {
     int oid(0);
@@ -472,31 +363,9 @@ bool CSeqDB::GiToPig(int gi, int & pig) const
     return false;
 }
 
-void CSeqDB::AccessionToOids(const string & acc, vector<Uint4> & oids) const
-{
-    vector<int> oids2;
-    m_Impl->AccessionToOids(acc, oids2);
-    
-    oids.resize(oids2.size());
-    for(size_t i = 0; i<oids.size(); i++) {
-        oids[i] = oids2[i];
-    }
-}
-
 void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 {
     m_Impl->AccessionToOids(acc, oids);
-}
-
-void CSeqDB::SeqidToOids(const CSeq_id & seqid, vector<Uint4> & oids) const
-{
-    vector<int> oids2;
-    m_Impl->SeqidToOids(seqid, oids2);
-    
-    oids.reserve(oids2.size());
-    ITERATE(vector<int>, i, oids2) {
-        oids.push_back(*i);
-    }
 }
 
 void CSeqDB::SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const

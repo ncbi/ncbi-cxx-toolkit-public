@@ -463,60 +463,11 @@ public:
     /// If the specified OID is not included in the set (i.e. the OID
     /// mask), the input parameter is incremented until one is found
     /// that is.  The user will probably want to increment between
-    /// calls, if iterating over the db.  [This version of this method
-    /// is deprecated.]
-    ///
-    /// @return
-    ///   True if a valid OID was found, false otherwise.
-    bool CheckOrFindOID(Uint4 & next_oid) const;
-    
-    /// Find an included OID, incrementing next_oid if necessary.
-    ///
-    /// If the specified OID is not included in the set (i.e. the OID
-    /// mask), the input parameter is incremented until one is found
-    /// that is.  The user will probably want to increment between
     /// calls, if iterating over the db.
     ///
     /// @return
     ///   True if a valid OID was found, false otherwise.
     bool CheckOrFindOID(int & next_oid) const;
-    
-    /// Return a chunk of OIDs, and update the OID bookmark.
-    /// 
-    /// This method allows the caller to iterate over the database by
-    /// fetching batches of OIDs.  It will either return a list of OIDs in
-    /// a vector, or set a pair of integers to indicate a range of OIDs.
-    /// The return value will indicate which technique was used.  The
-    /// caller sets the number of OIDs to get by setting the size of the
-    /// vector.  If eOidRange is returned, the first included oid is
-    /// oid_begin and oid_end is the oid after the last included oid.  If
-    /// eOidList is returned, the vector contain the included OIDs, and may
-    /// be resized to a smaller value if fewer entries are available (for
-    /// the last chunk).  In some cases it may be desireable to have
-    /// several concurrent, independent iterations over the same database
-    /// object.  If this is required, the caller should specify the address
-    /// of an int to the optional parameter oid_state.  This should be
-    /// initialized to zero (before the iteration begins) but should
-    /// otherwise not be modified by the calling code (except that it can
-    /// be reset to zero to restart the iteration).  For the normal case of
-    /// one iteration per program, this parameter can be omitted.  [This
-    /// version of this method is deprecated.]
-    ///
-    /// @param begin_chunk
-    ///   First included oid (if eOidRange is returned).
-    /// @param end_chunk
-    ///   OID after last included (if eOidRange is returned).
-    /// @param oid_list
-    ///   List of oids (if eOidList is returned).  Set size before call.
-    /// @param oid_state
-    ///   Optional address of a state variable (for concurrent iterations).
-    /// @return
-    ///   eOidList in enumeration case, or eOidRange in begin/end range case.
-    EOidListType
-    GetNextOIDChunk(Uint4         & begin_chunk,       // out
-                    Uint4         & end_chunk,         // out
-                    vector<Uint4> & oid_list,          // out
-                    Uint4         * oid_state = NULL); // in+out
     
     /// Return a chunk of OIDs, and update the OID bookmark.
     /// 
@@ -573,50 +524,26 @@ public:
     /// of your application.
     void SetMemoryBound(Uint8 membound, Uint8 slice_size);
     
-    /// Translate a PIG to an OID. [This version is deprecated.]
-    bool PigToOid(Uint4 pig, Uint4 & oid) const;
-    
     /// Translate a PIG to an OID.
     bool PigToOid(int pig, int & oid) const;
-    
-    /// Translate an OID to a PIG. [This version is deprecated.]
-    bool OidToPig(Uint4 oid, Uint4 & pig) const;
     
     /// Translate an OID to a PIG.
     bool OidToPig(int oid, int & pig) const;
     
-    /// Translate a GI to an OID. [This version is deprecated.]
-    bool OidToGi(Uint4 oid, Uint4 & gi) const;
-    
     /// Translate a GI to an OID.
     bool OidToGi(int oid, int & gi) const;
-    
-    /// Translate a GI to an OID. [This version is deprecated.]
-    bool GiToOid(Uint4 gi, Uint4 & oid) const;
     
     /// Translate a GI to an OID.
     bool GiToOid(int gi, int & oid) const;
     
-    /// Translate a GI to a PIG. [This version is deprecated.]
-    bool GiToPig(Uint4 gi, Uint4 & pig) const;
-    
     /// Translate a GI to a PIG.
     bool GiToPig(int gi, int & pig) const;
-    
-    /// Translate a PIG to a GI. [This version is deprecated.]
-    bool PigToGi(Uint4 pig, Uint4 & gi) const;
     
     /// Translate a PIG to a GI.
     bool PigToGi(int pig, int & gi) const;
     
-    /// Translate an Accession to a list of OIDs. [This version is deprecated.]
-    void AccessionToOids(const string & acc, vector<Uint4> & oids) const;
-    
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<int> & oids) const;
-    
-    /// Translate a Seq-id to a list of OIDs. [This version is deprecated.]
-    void SeqidToOids(const CSeq_id & seqid, vector<Uint4> & oids) const;
     
     /// Translate a Seq-id to a list of OIDs.
     void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;

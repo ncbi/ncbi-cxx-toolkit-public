@@ -61,8 +61,8 @@ public:
     {
         CSeqDB nr("nr", CSeqDB::eProtein);
         
-        unsigned gi(129295);
-        unsigned oid(0);
+        int gi(129295);
+        int oid(0);
         
         if (nr.GiToOid(gi, oid)) {
             const char * buffer(0);
@@ -107,16 +107,16 @@ public:
     {
         CSeqDB sp("swissprot", CSeqDB::eProtein);
         
-        unsigned oid_count = 0;
-        unsigned length_1000 = 0;
+        int oid_count = 0;
+        int length_1000 = 0;
         
-        for(unsigned oid = 0; sp.CheckOrFindOID(oid); oid++) {
+        for(int oid = 0; sp.CheckOrFindOID(oid); oid++) {
             if (oid_count++ < 1000) {
                 length_1000 += sp.GetSeqLength(oid);
             }
         }
         
-        unsigned measured = (oid_count > 1000) ? 1000 : oid_count;
+        int measured = (oid_count > 1000) ? 1000 : oid_count;
         
         cout << "    Number of swissprot sequences in (from iteration):  "
              << oid_count << endl;
@@ -155,19 +155,19 @@ public:
         
         // Summary data to collect
         
-        unsigned oid_count = 0;
-        unsigned length_1000 = 0;
+        int oid_count = 0;
+        int length_1000 = 0;
         
         // This many OIDs will be fetched at once.
         
-        unsigned at_a_time = 1000;
+        int at_a_time = 1000;
         
-        vector<unsigned> oids;
+        vector<int> oids;
         oids.resize(at_a_time);
         
         // These will be set to a range if SeqDB chooses to return one.
         
-        unsigned begin(0), end(0);
+        int begin(0), end(0);
         
         // In a real multithreaded application, each thread might have
         // code like the loop inside the "iteration shell" markers,
@@ -189,7 +189,7 @@ public:
         // are specified to the GetNextOIDChunk() method, the method
         // uses a variable which is a field of the SeqDB object.
         
-        unsigned local_state = 0;
+        int local_state = 0;
         
         // --- Start of iteration "shell" ---
         
@@ -208,14 +208,14 @@ public:
             
             switch(sp.GetNextOIDChunk(begin, end, oids, & local_state)) {
             case CSeqDB::eOidList:
-                for(unsigned index = 0; index < oids.size(); index++) {
+                for(int index = 0; index < (int)oids.size(); index++) {
                     x_UseOID(sp, oids[index], oid_count, length_1000);
                 }
                 done = oids.empty();
                 break;
                 
             case CSeqDB::eOidRange:
-                for(unsigned oid = begin; oid < end; oid++) {
+                for(int oid = begin; oid < end; oid++) {
                     x_UseOID(sp, oid, oid_count, length_1000);
                 }
                 done = (begin == end);
@@ -237,9 +237,9 @@ public:
     
 private:
     void x_UseOID(CSeqDB   & sp,
-                  unsigned   oid,
-                  unsigned & oid_count,
-                  unsigned & length_1000)
+                  int        oid,
+                  int      & oid_count,
+                  int      & length_1000)
     {
         if (oid_count++ < 1000) {
             length_1000 += sp.GetSeqLength(oid);
