@@ -121,8 +121,10 @@ string CCgiCookie::GetExpDate(void) const
 
     char str[30];
     if ( !::strftime(str, sizeof(str),
-                     "%a, %d-%b-%Y %H:%M:%S GMT", &m_Expires) )
-        throw runtime_error("CCgiCookie::GetExpDate() -- strftime() failed");
+                     "%a, %d %b %Y %H:%M:%S GMT", &m_Expires) ) {
+        NCBI_THROW(CCgiErrnoException, eErrno,
+                   "CCgiCookie::GetExpDate() -- strftime() failed");
+    }
     return string(str);
 }
 
@@ -298,8 +300,8 @@ void CCgiCookies::Add(const string& str)
         Add(str.substr(pos_beg, pos_mid-pos_beg),
             str.substr(pos_mid+1, pos_end-pos_mid));
     }
-    NCBI_THROW2(CCgiParseException,eCookie,
-               "Invalid cookie string: `" + str + "'", pos);
+    NCBI_THROW2(CCgiParseException, eCookie,
+                "Invalid cookie string: `" + str + "'", pos);
 }
 
 
@@ -592,15 +594,15 @@ static void s_ParseQuery(const string& str,
             s_ParseIsIndex(str, 0, &entries) :
             s_ParseIsIndex(str, &indexes, 0);
         if (err_pos != 0)
-            NCBI_THROW2(CCgiParseException,eIndex,
-                       "Init CCgiRequest::ParseISINDEX(\"" +
-                       str + "\"", err_pos);
+            NCBI_THROW2(CCgiParseException, eIndex,
+                        "Init CCgiRequest::ParseISINDEX(\"" +
+                        str + "\"", err_pos);
     } else {  // regular(FORM) entries
         SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
         if (err_pos != 0)
-            NCBI_THROW2(CCgiParseException,eEntry,
-                       "Init CCgiRequest::ParseFORM(\"" +
-                       str + "\")", err_pos);
+            NCBI_THROW2(CCgiParseException, eEntry,
+                        "Init CCgiRequest::ParseFORM(\"" +
+                        str + "\")", err_pos);
     }
 }
 
@@ -887,8 +889,8 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
                     size_t count = istr->gcount();
                     if ( count == 0 ) {
                         if ( istr->eof() ) {
-                            string err =
-"CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF";
+                            string err = "\
+CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF";
                             string pos_str("(pos=");
                             pos_str.append(NStr::UIntToString(pos));
                             pos_str.append("; content_length=");
@@ -1179,8 +1181,9 @@ extern string URL_EncodeString(const string& str, EUrlEncode encode_mark_chars)
     if ( !len )
         return url_str;
 
-    const char (*encode_table)[4] = 
-        encode_mark_chars == eUrlEncode_SkipMarkChars ? s_Encode : s_EncodeMarkChars;
+    const char (*encode_table)[4] =
+        encode_mark_chars == eUrlEncode_SkipMarkChars
+        ? s_Encode : s_EncodeMarkChars;
 
     SIZE_TYPE pos;
     SIZE_TYPE url_len = len;
@@ -1210,14 +1213,19 @@ extern string URL_EncodeString(const string& str, EUrlEncode encode_mark_chars)
 }
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
+
+
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.72  2003/07/14 20:28:46  vakatov
+* CCgiCookie::GetExpDate() -- date format to conform with RFC1123
+*
 * Revision 1.71  2003/07/08 19:04:12  ivanov
-* Added optional parameter to the URL_Encode() to enable mark charactres encoding
+* Added optional parameter to the URL_Encode() to enable mark charactres
+* encoding
 *
 * Revision 1.70  2003/06/04 00:22:53  ucko
 * Improve diagnostics in CCgiRequest::x_Init.
