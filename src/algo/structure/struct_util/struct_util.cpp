@@ -33,14 +33,15 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include <algo/structure/struct_dp/struct_dp.h>
 
 #include <algo/structure/struct_util/struct_util.hpp>
+#include <algo/structure/struct_util/su_sequence_set.hpp>
+#include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
 #include "su_private.hpp"
-#include "su_sequence_set.hpp"
 #include "su_alignment_set.hpp"
-#include "su_block_multiple_alignment.hpp"
 
 // for PSSM (BLAST_Matrix)
 #include <blastkar.h>
@@ -433,11 +434,57 @@ const BLAST_Matrix_ * AlignmentUtility::GetPSSM(void)
 	return m_currentMultiple->GetPSSM();
 }
 
+const BlockMultipleAlignment * AlignmentUtility::GetBlockMultipleAlignment(void)
+{
+    // first we need to do IBM -> BlockMultipleAlignment
+    if (!m_currentMultiple && !DoIBM())
+            return NULL;
+
+    return m_currentMultiple;
+}
+
+int AlignmentUtility::ScoreRowByPSSM(unsigned int row)
+{
+    // first we need to do IBM -> BlockMultipleAlignment
+    if (!m_currentMultiple && !DoIBM())
+            return kMin_Int;
+
+    if (row >= m_currentMultiple->NRows()) {
+        ERROR_MESSAGE("AlignmentUtility::ScoreRowByPSSM() - row out of range");
+        return kMin_Int;
+    }
+
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    m_currentMultiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() == 0) {
+        WARNING_MESSAGE("AlignmentUtility::ScoreRowByPSSM() - alignment has no blocks");
+        return kMin_Int;
+    }
+
+    const Sequence *sequence = m_currentMultiple->GetSequenceOfRow(row);
+
+    int score = 0;
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        const Block::Range
+            *masterRange = (*b)->GetRangeOfRow(0),
+            *range = (*b)->GetRangeOfRow(row);
+        for (unsigned int i=0; i<(*b)->m_width; ++i)
+			score += m_currentMultiple->GetPSSM()->matrix[masterRange->from + i]
+                [LookupBLASTResidueNumberFromCharacter(sequence->m_sequenceString[range->from + i])];
+    }
+
+    return score;
+}
+
 END_SCOPE(struct_util)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/06/14 13:50:23  thiessen
+* make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
+*
 * Revision 1.10  2004/06/10 14:18:18  thiessen
 * add GetPSSM()
 *

@@ -68,12 +68,19 @@ public:
 	// Get the PSSM associated with this alignment (implies IBM); returns NULL on failure
 	const BLAST_Matrix_ * GetPSSM(void);
 
+    // Get the BlockMultipleAlignment (implies IBM); returns NULL on failure
+    const BlockMultipleAlignment * GetBlockMultipleAlignment(void);
+
+    // compute the score-vs-PSSM for a row (implies IBM), as sum of scores of aligned residues;
+    // returns kMin_Int on error
+    int ScoreRowByPSSM(unsigned int row);
+
     // do the intersect-by-master (IBM) algorithm; returs true on success
     bool DoIBM(void);
 
     // do the leave-one-out (LOO) algorithm (implies IBM) using the block aligner.
     // Numbering in these arguments starts from zero. Note that this currently requires
-    // the file "data/BLOSUM62" to be present, used for PSSM calculation. 
+    // the file "data/BLOSUM62" to be present, used for PSSM calculation.
 	// Returns true on success.
     bool DoLeaveOneOut(
         unsigned int row, const std::vector < unsigned int >& blocksToRealign,  // what to realign
@@ -107,6 +114,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/14 13:50:28  thiessen
+* make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
+*
 * Revision 1.6  2004/06/10 14:18:27  thiessen
 * add GetPSSM()
 *

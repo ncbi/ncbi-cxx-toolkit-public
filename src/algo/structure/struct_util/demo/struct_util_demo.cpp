@@ -149,6 +149,8 @@ int SUApp::Run(void)
         vector < unsigned int > blocksToRealign;
         for (int i=args["f"].AsInteger(); i<=args["l"].AsInteger(); ++i)
             blocksToRealign.push_back(i - 1);               // convert to zero-numbering
+        INFO_MESSAGE("score of row " << args["r"].AsInteger() << " before realignment: "
+            << au.ScoreRowByPSSM(args["r"].AsInteger() - 1));
         if (!au.DoLeaveOneOut(
                 args["r"].AsInteger() - 1, blocksToRealign, // what to realign
                 0.6, 10, 0))                                // max loop length calculation parameters
@@ -156,6 +158,8 @@ int SUApp::Run(void)
             ERROR_MESSAGE("LOO failed");
             return 8;
         }
+        INFO_MESSAGE("score of row " << args["r"].AsInteger() << " after realignment: "
+            << au.ScoreRowByPSSM(args["r"].AsInteger() - 1));
     }
 
     // replace Seq-annots in cdd with new data
@@ -204,6 +208,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/14 13:50:23  thiessen
+* make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
+*
 * Revision 1.4  2004/05/27 22:22:12  thiessen
 * add ctools/C-Toolkit stuff
 *
