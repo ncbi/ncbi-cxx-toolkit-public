@@ -451,8 +451,8 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 
    ReadDBFILEPtr rdfp)
 {
-   register Int4 sum, score, gap_open, gap_extend;
-   register Int4Ptr PNTR matrix;
+   Int4 sum, score, gap_open, gap_extend;
+   Int4Ptr PNTR matrix;
    BlastHSPPtr PNTR hsp_array, hsp;
    Uint1Ptr query, subject, query_start, subject_start = NULL;
    Uint1Ptr new_q_start, new_s_start, new_q_end, new_s_end;
@@ -654,9 +654,9 @@ static void
 heapify (Nlm_CharPtr base0, Nlm_CharPtr base, Nlm_CharPtr lim, Nlm_CharPtr last, size_t width, int (LIBCALLBACK *compar )PROTO ((Nlm_VoidPtr, Nlm_VoidPtr )))
 
 {
-   register size_t i;
-   register char   ch;
-   register Nlm_CharPtr left_son, large_son;
+   size_t i;
+   char   ch;
+   Nlm_CharPtr left_son, large_son;
    
    left_son = base0 + 2*(base-base0) + width;
    while (base <= lim) {
@@ -686,9 +686,9 @@ heapify (Nlm_CharPtr base0, Nlm_CharPtr base, Nlm_CharPtr lim, Nlm_CharPtr last,
 static void CreateHeap (Nlm_VoidPtr b, size_t nel, size_t width, 
    int (LIBCALLBACK *compar )PROTO ((Nlm_VoidPtr, Nlm_VoidPtr )))   
 {
-   register Nlm_CharPtr    base = (Nlm_CharPtr)b;
-   register size_t i;
-   register Nlm_CharPtr    base0 = (Nlm_CharPtr)base, lim, basef;
+   Nlm_CharPtr    base = (Nlm_CharPtr)b;
+   size_t i;
+   Nlm_CharPtr    base0 = (Nlm_CharPtr)base, lim, basef;
    
    if (nel < 2)
       return;

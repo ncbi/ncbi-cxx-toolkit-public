@@ -217,7 +217,7 @@ MB_ExtendInitialHit(BlastInitialWordOptionsPtr word_options,
    Int4 index, index1, step;
    MbStackPtr estack;
    Int4 diag, stack_top;
-   register Int4 window;
+   Int4 window;
    Boolean one_word, hit_ready, two_hits;
    MB_StackTablePtr stack_table = ewp->stack_table;
    BLAST_DiagTablePtr diag_table = ewp->diag_table;
@@ -230,7 +230,7 @@ MB_ExtendInitialHit(BlastInitialWordOptionsPtr word_options,
    if (diag_table) {
       DiagStructPtr diag_array = diag_table->diag_array;
       DiagStructPtr diag_array_elem;
-      register Int4 diag_mask;
+      Int4 diag_mask;
       Int4 offset, s_pos;
 
       diag_mask = diag_table->diag_mask;
@@ -479,8 +479,8 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
    Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
    BlastUngappedDataPtr PNTR ungapped_data)
 {
-	register Uint1Ptr q;
-	register Int4 sum, score;
+	Uint1Ptr q;
+	Int4 sum, score;
 	Uint1 ch;
 	Uint1Ptr subject0, sf, q_beg, q_end, s_end, s, start;
 	Int2 remainder, base;

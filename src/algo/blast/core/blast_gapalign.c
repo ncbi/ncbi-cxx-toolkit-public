@@ -576,14 +576,14 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   Int4 i, j, cb,  j_r, s, k;
   Uint1 st, std, ste;
   Int4 gap_open, gap_extend, decline_penalty;
-  register Int4 c, d, e, m,t, tt, f, tt_start;
+  Int4 c, d, e, m,t, tt, f, tt_start;
   Int4 best_score = 0;
-  register Int4Ptr wa;
-  register BlastGapDPPtr dp, dyn_prog;
+  Int4Ptr wa;
+  BlastGapDPPtr dp, dyn_prog;
   Uint1Ptr PNTR state, stp, tmp;
   Uint1Ptr state_array;
   Int4Ptr *matrix;
-  register Int4 X;
+  Int4 X;
   GapXDropStateArrayStructPtr state_struct;
   Int4 next_c;
   Uint1Ptr Bptr;
@@ -810,11 +810,11 @@ static Int4 SEMI_G_ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 {
   BlastGapDPPtr dyn_prog;
   Int4 i, j, cb, j_r, g, decline_penalty;
-  register Int4 c, d, e, m, tt, h, X, f;
+  Int4 c, d, e, m, tt, h, X, f;
   Int4 best_score = 0;
   Int4Ptr *matrix;
-  register Int4Ptr wa;
-  register BlastGapDPPtr dp;
+  Int4Ptr wa;
+  BlastGapDPPtr dp;
   Uint1Ptr Bptr;
   Int4 B_increment=1;
   
@@ -979,15 +979,15 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 {
   GapXData data;
   Int4 i, j, cb,  j_r, s, k, sc, s1, s2, s3, st1, e1, e2, e3, shift;
-  register Int4 c, d, m,t, tt, tt_start, f1, f2;
+  Int4 c, d, m,t, tt, tt_start, f1, f2;
   Int4 best_score = 0;
-  register Int4Ptr wa;
+  Int4Ptr wa;
   Int4 count = 0;
-  register BlastGapDPPtr dp;
+  BlastGapDPPtr dp;
   Uint1Ptr PNTR state, stp, tmp;
   Uint1Ptr state_array;
   Int4Ptr *matrix;
-  register Int4 X;
+  Int4 X;
   GapXDropStateArrayStructPtr state_struct;
   
   matrix = gap_align->sbp->matrix;
@@ -1242,11 +1242,11 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   BlastGapDPPtr CD;
   Int4 i, j, cb, j_r;
   Int4 e1, e2, e3, s1, s2, s3, shift;
-  register Int4 c, d, sc, m, tt, h, X, f1, f2;
+  Int4 c, d, sc, m, tt, h, X, f1, f2;
   Int4 best_score = 0, count = 0;
   Int4Ptr *matrix;
-  register Int4Ptr wa;
-  register BlastGapDPPtr dp;
+  Int4Ptr wa;
+  BlastGapDPPtr dp;
   
   if(!score_only)
       return OOF_ALIGN(A, B, M, N, S, pei, pej, sapp, gap_align, score_options,
@@ -1567,8 +1567,8 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
    BlastScoringOptionsPtr score_options, BlastExtensionOptionsPtr ext_options,
    BlastInitHSPPtr init_hsp)
 {
-   register Uint1Ptr q;
-   register Int4 score;
+   Uint1Ptr q;
+   Int4 score;
    Uint1Ptr s, subject0;
    Int4 X;
    Int4 q_avail, s_avail;
@@ -1770,11 +1770,11 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
 { 
   BlastGapDPPtr dyn_prog;
   Int4 i, j, cb, j_r, g, decline_penalty;
-  register Int4 c, d, e, m, tt, h, X, f;
+  Int4 c, d, e, m, tt, h, X, f;
   Int4 best_score = 0;
   Int4Ptr *matrix;
-  register Int4Ptr wa;
-  register BlastGapDPPtr dp;
+  Int4Ptr wa;
+  BlastGapDPPtr dp;
   Uint1Ptr Bptr;
   Uint1 base_pair;
   Int4 B_increment=1;
@@ -2461,7 +2461,7 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
                                Int4 start2, GapXEditBlockPtr PNTR edit_block)
 {
 
-  register Int4 i, j, op, number_of_subs, number_of_decline;
+  Int4 i, j, op, number_of_subs, number_of_decline;
   GapXEditScriptPtr e_script;
 
   if (S == NULL)
