@@ -25,8 +25,12 @@
 #include <corelib/ncbistre.hpp>
 #include <objects/objmgr/reader_id1.hpp>
 
+#include <serial/enumvalues.hpp>
+#include <serial/iterator.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
+#include <serial/serial.hpp>
 
 #include "strstreambuf.hpp"
 
@@ -349,6 +353,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.26  2003/02/04 18:53:36  dicuccio
+* Include file clean-up
+*
 * Revision 1.25  2002/12/26 20:53:25  dicuccio
 * Minor tweaks to relieve compiler warnings in MSVC
 *
