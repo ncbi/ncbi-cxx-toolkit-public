@@ -843,6 +843,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
  * @param sbp Scoring statistical parameters [in]
  * @param hit_params Hit saving parameters, including all cutoff 
  *                   scores [in] [out]
+ * @param ext_params Extension parameters (gap_trigger used) [in]
  * @param db_length Total length of database (non-database search if 0) [in]
  * @param subject_length Length of the subject sequence. [in]
  * 
@@ -850,6 +851,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
 void
 CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
+   BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length);
 
 #ifdef __cplusplus
