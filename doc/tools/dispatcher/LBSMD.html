@@ -81,8 +81,7 @@ which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">service mapping
 
 <tt>LBSMD</tt> is configured by means of a configuration file (default name <tt>servrc.cfg</tt>),
 which is also shared with <a href="DISPD.html#ref_NCBID">NCBI CGI engine</a>, <tt>NCBID.CGI</tt>.
-Each line in the file either defines a service,
-or is a part of the host environment (including address substitutions),
+Each line in the file either defines a service, or is a part of the host environment,
 or is an empty line (the one entirely blank or containing a
 comment only). Empty lines are all ignored in the file.
 Any single configuration line can be split into several physical lines by
@@ -99,37 +98,16 @@ clients while they make the service name resolution. Often, the host environment
 tells the client about limitations/options, which the host has, and based on this
 additional information the client can make a decision whether the server
 (despite that it is implementing the service) is suitable for carrying out client's request.
-Host environment entries come in 2 flavors: simple environment and address substitutions.
-For example, the simple host environment can give the client an idea about what are the databases
-available on the host. The simple host environment is not interpreted or used in any way both by the daemon and
+For example, the host environment can give the client an idea about what are the databases
+available on the host. The host environment is not interpreted or used in any way both by the daemon and
 by the load-balancing algorithm, except for that <tt>name</tt> must be a valid identifier.
 The <tt>value</tt> may be practically anything, even empty.
 It is left solely to the client to parse the environment and to look for the information in interest.
-<br>
+The host environment can obtained from the service iterator via call to
+<a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
+which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>.<br>
 <u>Note</u>: White characters surrounding <tt>name</tt> are not preserved, but they are
 preserved in <tt>value</tt>, i.e. when appear after the assignment sign.
-<p>
-Address substitution environment, on the contrary, is parsed by the daemon. The syntax of
-the substitution is following:
-<pre>
-<font color="#009900">@[host][:port]=[host][:port]</font>
-</pre>
-where <tt>host</tt> can be either domain-name or IP address in a dotted notation, with a special
-rule that address 127.0.0.1 (or a name corresponding to it, like "localhost") is always replaced
-with an actual host IP address. If <tt>port</tt> is specified, it has to be preceded by a semicolon,
-and must present on both sides from the equal sign. If host is omitted, the localhost is assumed.
-Spaces surrounding assignment sign are allowed but ignored. The daemon parses the left-hand side to verify whether
-host address and port number are legal. Then the right hand-side is checked, and if valid,
-the entire text is placed in the host environment, with exception that left-hand side is
-always in the form IP:host (i.e. name converted to dotted IP notation), while the right-hand
-side is completely preserved. IP address substitutions are used by dispatcher when non-local
-client tries to access a service located at NCBI site. The substitution is seen as a part of host
-environment obtained from the service iterator via call to
-<a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
-which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>.
-Partial IP substitutions in the form <tt>@host=host</tt> are used when no detailed
-IP substitution like <tt>@host:port=host:port</tt> matches the host and port of
-the server, just by preserving the port number and substituting the host only.
 
 <p>
 A <a name="ref_Service"><i>service</i></a> is defined by a line of the form
@@ -311,9 +289,6 @@ service, and one local HTTP service.
 db_list=a.db b.db c.db
 # And this does too (rather illustrative)
 my_entry="some very important value as a quoted string"
-
-# Declare IP address substitution for outside users
-@localhost=intranet.ncbi.nlm.nih.gov
 
 # Standalone server listening on port 9999
 TestService STANDALONE :9999 S=yes R=2000
