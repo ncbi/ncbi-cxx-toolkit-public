@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/06/11 16:33:10  vasilche
+* Fixed THROWx_TRACE
+*
 * Revision 1.12  1999/06/11 16:20:22  vasilche
 * THROW_TRACE fixed for not very smart compiler like Sunpro
 *
@@ -140,19 +143,26 @@ extern void DoThrowTraceAbort(void);
 
 // Example:  THROW0_TRACE("Throw just a string");
 // Example:  THROW0_TRACE(123);
-#  define THROW0_TRACE(exception_class) do { \
-    exception_class exception_; \
-    THROW_TRACE_TRY_CATCH \
+#  define THROW0_TRACE(exception_value) do { \
+    try { \
+        throw exception_value; \
+    } catch (exception& e) { \
+        _TRACE("EXCEPTION: " << e.what()); \
+    } catch (const string& s) { \
+        _TRACE("EXCEPTION: " << s); \
+    } catch (const char* s) { \
+        _TRACE("EXCEPTION: " << s); \
+    } \
     catch (...) { \
-        _TRACE("EXCEPTION: " << #exception_class); \
+        _TRACE("EXCEPTION: " << #exception_value); \
     } \
     DoThrowTraceAbort(); \
-    throw exception_; \
+    throw exception_value; \
 } while(0)
 
 // Example:  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) do { \
-    exception_class exception_(exception_arg); \
+    exception_class exception_ = exception_class(exception_arg); \
     THROW_TRACE_TRY_CATCH \
     catch (...) { \
         _TRACE("EXCEPTION: " \
@@ -166,7 +176,7 @@ extern void DoThrowTraceAbort(void);
 // Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
 // Example:  THROW_TRACE(CParseException, ("Some parse error", 123));
 #  define THROW_TRACE(exception_class, exception_args) do { \
-    exception_class exception_ exception_args; \
+    exception_class exception_ = exception_class exception_args; \
     THROW_TRACE_TRY_CATCH \
     catch (...) { \
         _TRACE("EXCEPTION: " \
