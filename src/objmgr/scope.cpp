@@ -390,7 +390,10 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
         }
     }
 
-    NCBI_THROW(CException, eUnknown, "GetBioseqHandle by location failed");
+    string label;
+    loc.GetLabel(&label);
+    NCBI_THROW(CException, eUnknown, "GetBioseqHandle by location failed: "
+        "seq-loc = " + label);
 }
 
 
@@ -783,6 +786,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/07/14 21:13:59  grichenk
+* Added seq-loc dump in GetBioseqHandle(CSeqLoc)
+*
 * Revision 1.74  2003/06/30 18:42:10  vasilche
 * CPriority_I made to use less memory allocations/deallocations.
 *
