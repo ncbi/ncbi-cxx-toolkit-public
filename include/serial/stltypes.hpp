@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2002/04/12 19:31:31  grichenk
+* Fixed containers assignment
+*
 * Revision 1.58  2001/09/04 14:08:27  ucko
 * Handle CConstRef analogously to CRef in type macros
 *
@@ -444,14 +447,19 @@ public:
             Get(objectPtr).clear();
         }
 
-    static void AddElement(const CContainerTypeInfo* /*containerType*/,
+    static void AddElement(const CContainerTypeInfo* containerType,
                            TObjectPtr containerPtr, TConstObjectPtr elementPtr)
         {
             TObjectType& container = Get(containerPtr);
 #if defined(_RWSTD_VER) && !defined(_RWSTD_STRICT_ANSI)
             container.allocation_size(container.size());
 #endif
-            container.push_back(CTypeConverter<TElementType>::Get(elementPtr));
+            //container.push_back(CTypeConverter<TElementType>::Get(elementPtr));
+            TElementType* elm = &CTypeConverter<TElementType>::Get
+                (containerType->GetElementType()->Create());
+            containerType->GetElementType()->Assign
+                (elm, &CTypeConverter<TElementType>::Get(elementPtr));
+            container.push_back(*elm);
         }
     static void AddElementIn(const CContainerTypeInfo* containerType,
                              TObjectPtr containerPtr, CObjectIStream& in)
