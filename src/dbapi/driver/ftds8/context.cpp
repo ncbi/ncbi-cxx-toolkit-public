@@ -74,7 +74,8 @@ CTDSContext* CTDSContext::m_pTDSContext = 0;
 CTDSContext::CTDSContext(DBINT version) :
     m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0)
 {
-    static CFastMutex xMutex;
+    // mutex guarding access to our images
+    DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
     if (m_pTDSContext != 0) {
@@ -469,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/03/23 19:33:14  friedman
+ * Replaced 'static CFastMutex' with DEFINE_STATIC_FAST_MUTEX
+ *
  * Revision 1.23  2003/12/18 19:01:35  soussov
  * makes FTDS_CreateContext return an existing context if reuse_context option is set
  *
