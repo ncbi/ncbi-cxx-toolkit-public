@@ -124,9 +124,12 @@ void CAlnVwrApp::Init(void)
         ("v", "",
          "View format:\n"
          "1. CSV table\n"
-         "2. Popset style using chunks\n"
-         "3. Popset style\n"
-         "4. Popset style speed optimized\n"
+         "2. Popset style using GetAlnSeqString\n"
+         "   (memory efficient for large alns, but slower)\n"
+         "3. Popset style using GetSeqString\n"
+         "   (memory inefficient)\n"
+         "4. Popset style using GetWholeAlnSeqString\n"
+         "   (fastest, but memory inefficient)\n"
          "5. Print segments\n"
          "6. Print chunks\n"
          "7. Alternative ways to get sequence\n"
@@ -371,15 +374,15 @@ int CAlnVwrApp::Run(void)
             break;
         case 2:
             CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
-                                 CAlnVwr::eUseChunks);
+                                 CAlnVwr::eUseAlnSeqString);
             break;
         case 3: 
             CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
-                                 CAlnVwr::eUseSegments);
+                                 CAlnVwr::eUseSeqString);
             break;
         case 4:
             CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
-                                 CAlnVwr::eUseWholeAlnSeqVector);
+                                 CAlnVwr::eUseWholeAlnSeqString);
             break;
         case 5:
             CAlnVwr::Segments(*m_AV, NcbiCout);
@@ -416,6 +419,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/09/16 18:25:41  todorov
+* CAlnVwr::PopsetStyle flags change
+*
 * Revision 1.2  2004/08/30 12:32:42  todorov
 * Made CNcbiOstream& a required param for the methods in CAlnVwr class. Changed the order of their params.
 *

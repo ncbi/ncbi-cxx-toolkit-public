@@ -61,15 +61,15 @@ public:
 
     // which algorithm to choose
     enum EAlgorithm {
-        eUseChunks,
-        eUseSegments,
-        eUseWholeAlnSeqVector  // fastest, but mem inefficient for large alns
+        eUseSeqString,         // memory ineficient
+        eUseAlnSeqString,      // memory efficient, recommended for large alns
+        eUseWholeAlnSeqString  // memory ineficient, but very fast
     };
 
     static void PopsetStyle(const CAlnVec& aln_vec,
                             CNcbiOstream&  out,
                             int            scrn_width = 70,
-                            EAlgorithm     algorithm  = eUseChunks);
+                            EAlgorithm     algorithm  = eUseAlnSeqString);
 };
 
 
@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/16 18:26:09  todorov
+ * CAlnVwr::PopsetStyle flags change
+ *
  * Revision 1.3  2004/08/30 12:31:25  todorov
  * Made CNcbiOstream& a required param. Changed the order of params. Changed name of the speed-optimized algrorithm. Changed the default value for PopStyle
  *

@@ -149,38 +149,7 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
                           EAlgorithm algorithm)
 {
     switch(algorithm) {
-    case eUseSegments:
-        {
-            TSeqPos aln_pos = 0;
-            CAlnMap::TSignedRange rng;
-            
-            do {
-                // create range
-                rng.Set(aln_pos, aln_pos + scrn_width - 1);
-                
-                string aln_seq_str;
-                aln_seq_str.reserve(scrn_width + 1);
-                // for each sequence
-                for (CAlnMap::TNumrow row = 0; row < alnvec.GetNumRows(); row++) {
-                    out << row 
-                        << "\t"
-                        << alnvec.GetSeqId(row).AsFastaString()
-                        << "\t" 
-                        << alnvec.GetSeqPosFromAlnPos(row, rng.GetFrom(),
-                                                      CAlnMap::eLeft)
-                        << "\t"
-                        << alnvec.GetAlnSeqString(aln_seq_str, row, rng)
-                        << "\t"
-                        << alnvec.GetSeqPosFromAlnPos(row, rng.GetTo(),
-                                                      CAlnMap::eLeft)
-                        << endl;
-                }
-                out << endl;
-                aln_pos += scrn_width;
-            } while (aln_pos < alnvec.GetAlnStop());
-            break;
-        }
-    case eUseChunks:
+    case eUseSeqString:
         {
             TSeqPos aln_len = alnvec.GetAlnStop() + 1;
             const CAlnMap::TNumrow nrows = alnvec.GetNumRows();
@@ -259,7 +228,38 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
             } while (pos < aln_len);
             break;
         }
-    case eUseWholeAlnSeqVector:
+    case eUseAlnSeqString:
+        {
+            TSeqPos aln_pos = 0;
+            CAlnMap::TSignedRange rng;
+            
+            do {
+                // create range
+                rng.Set(aln_pos, aln_pos + scrn_width - 1);
+                
+                string aln_seq_str;
+                aln_seq_str.reserve(scrn_width + 1);
+                // for each sequence
+                for (CAlnMap::TNumrow row = 0; row < alnvec.GetNumRows(); row++) {
+                    out << row 
+                        << "\t"
+                        << alnvec.GetSeqId(row).AsFastaString()
+                        << "\t" 
+                        << alnvec.GetSeqPosFromAlnPos(row, rng.GetFrom(),
+                                                      CAlnMap::eLeft)
+                        << "\t"
+                        << alnvec.GetAlnSeqString(aln_seq_str, row, rng)
+                        << "\t"
+                        << alnvec.GetSeqPosFromAlnPos(row, rng.GetTo(),
+                                                      CAlnMap::eLeft)
+                        << endl;
+                }
+                out << endl;
+                aln_pos += scrn_width;
+            } while (aln_pos < alnvec.GetAlnStop());
+            break;
+        }
+    case eUseWholeAlnSeqString:
         {
             CAlnMap::TNumrow row, nrows = alnvec.GetNumRows();
 
@@ -317,6 +317,9 @@ void CAlnVwr::PopsetStyle(const CAlnVec& alnvec,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/09/16 18:26:01  todorov
+ * CAlnVwr::PopsetStyle flags change
+ *
  * Revision 1.3  2004/09/15 20:12:09  todorov
  * Extended Get{Aln,Seq}Chunks with the ability to obtain [implicit] unaligned regions. Also fixed a but related to tranlated sequences.
  *
