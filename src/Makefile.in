@@ -3,5 +3,16 @@
 # Master (top-level) makefile for all NCBI C++ projects
 ##################################################################
 
-SUB_PROJ = connect corelib util cgi html hello @serial@ @objects@ @internal@
-include @builddir@/Makefile.meta
+MANDATORY_PROJ  = corelib connect util cgi html hello
+
+OPTIONAL_PROJ   = @serial@ @objects@ @internal@
+X_OPTIONAL_PROJ =  serial   objects   internal   tools   gui
+
+SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
+include ./Makefile.meta
+
+
+# Get rid of everything not needed for the install
+
+strip_for_install:
+	rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
