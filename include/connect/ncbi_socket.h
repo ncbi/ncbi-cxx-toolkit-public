@@ -629,6 +629,21 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  );
 
 
+/*
+ * Read a line from SOCK.  A line is terminated by either '\n' or '\0'
+ * with optional preceding '\r'.  Returned result is always '\0'-
+ * terminated with preceding '\r' (if any) stripped. *n_read (if 'n_read'
+ * passed non-NULL) contains the numbed of characters written into
+ * 'buf' (not counting the terminating '\0').  If 'buf', whose size is
+ * specified via 'size' parameter, is not big enough to contain the
+ * line, all 'size' bytes will be filled, with *n_read == size upon
+ * return.  Note that there will be no terminating '\0' in this
+ * (and the only) case, which the caller can easily distinguish.
+ * Return code eIO_Success upon successful completion, other - upon
+ * an error.  Note that *n_read must be analyzed prior to return code,
+ * because the buffer could have received some contents before
+ * the indicated error occurred (especially when connection closed).
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
 (SOCK           sock,
  char*          buf,    /* [out] data buffer to read to          */
@@ -1000,6 +1015,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2005/01/05 17:37:20  lavr
+ * SOCK_ReadLine() documented in details
+ *
  * Revision 6.53  2004/11/09 21:13:00  lavr
  * +ReadLine
  *
