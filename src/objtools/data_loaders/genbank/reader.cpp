@@ -244,8 +244,32 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
     CLoadLockBlob_ids ids(result, seq_id);
     if ( !ids.IsLoaded() ) {
         CReaderRequestConn conn(result);
-        ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
-        ids.SetLoaded();
+        try {
+            ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
+            ids.SetLoaded();
+        }
+        catch ( CLoaderException& exc ) {
+            if ( exc.GetErrCode() == exc.ePrivateData ) {
+                ids.SetLoaded();
+            }
+            else if ( exc.GetErrCode() == exc.eNoData ) {
+                ids.SetLoaded();
+            }
+            else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                throw;
+            }
+            else {
+                // any other error -> reconnect
+                LOG_POST(exc.what());
+                LOG_POST("GenBank connection failed: Reconnecting....");
+                Reconnect(conn);
+            }
+        }
+        catch ( const exception& exc ) {
+            LOG_POST(exc.what());
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            Reconnect(conn);
+        }
     }
 }
 
@@ -289,7 +313,8 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                 chunk->x_AddAnnotType(name, type,
                                       CSeq_id_Handle::GetGiHandle(gi),
                                       CTSE_Chunk_Info::TLocationRange::GetWhole());
-                chunk->x_AddBioseqPlace(0, CSeq_id_Handle::GetHandle(seq_id));
+                chunk->x_AddBioseqPlace(0);
+                chunk->x_AddBioseqId(CSeq_id_Handle::GetHandle(seq_id));
                 chunk->x_TSEAttach(*blob);
                 blob.SetLoaded();
                 result.AddTSE_Lock(blob);
@@ -297,11 +322,9 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                 return;
             }
         }
+        CReaderRequestConn conn(result);
         try {
-            {{
-                CReaderRequestConn conn(result);
-                GetBlob(*blob, blob_id, conn);
-            }}
+            GetBlob(*blob, blob_id, conn);
             blob.SetLoaded();
             result.AddTSE_Lock(blob);
             result.UpdateLoadedSet();
@@ -315,9 +338,20 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                 blob->SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
                 blob.SetLoaded();
             }
-            else {
+            else if ( exc.GetErrCode() == exc.eNoConnection ) {
                 throw;
             }
+            else {
+                // any other error -> reconnect
+                LOG_POST(exc.what());
+                LOG_POST("GenBank connection failed: Reconnecting....");
+                Reconnect(conn);
+            }
+        }
+        catch ( const exception &exc ) {
+            LOG_POST(exc.what());
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            Reconnect(conn);
         }
     }
 }
@@ -328,24 +362,41 @@ CId1ReaderBase::GetBlobVersion(CReaderRequestResult& result,
                                const TBlob_id& blob_id)
 {
     CLoadLockBlob blob(result, blob_id);
-    try {
-        if ( blob->GetBlobVersion() < 0 ) {
+    TBlobVersion version = blob->GetBlobVersion();
+    if ( version < 0 ) {
+        for ( int retry = 0; version < 0 && retry < 3; ++retry ) {
             CReaderRequestConn conn(result);
-            blob->SetBlobVersion(GetVersion(blob_id, conn));
+            try {
+                version = GetVersion(blob_id, conn);
+            }
+            catch ( CLoaderException& exc ) {
+                if ( exc.GetErrCode() == exc.ePrivateData ) {
+                    version = 0;
+                    break;
+                }
+                else if ( exc.GetErrCode() == exc.eNoData ) {
+                    version = 0;
+                    break;
+                }
+                else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                    throw;
+                }
+                else {
+                    // any other error -> reconnect
+                    LOG_POST(exc.what());
+                    LOG_POST("GenBank connection failed: Reconnecting....");
+                    Reconnect(conn);
+                }
+            }
+            catch ( const exception &exc ) {
+                LOG_POST(exc.what());
+                LOG_POST("GenBank connection failed: Reconnecting....");
+                Reconnect(conn);
+            }
         }
-        return blob->GetBlobVersion();
+        blob->SetBlobVersion(version);
     }
-    catch ( CLoaderException& exc ) {
-        if ( exc.GetErrCode() == exc.ePrivateData ) {
-            return 0;
-        }
-        else if ( exc.GetErrCode() == exc.eNoData ) {
-            return 0;
-        }
-        else {
-            throw;
-        }
-    }
+    return version;
 }
 
 
@@ -360,14 +411,38 @@ void CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
         CInitGuard init(chunk_info, result);
         if ( init ) {
             CReaderRequestConn conn(result);
-            if ( chunk_info.GetChunkId() == kSkeleton_ChunkId && 
-                 IsAnnotBlob_id(blob_id) ) {
-                GetBlob(*blob, blob_id, conn);
+            try {
+                if ( chunk_info.GetChunkId() == kSkeleton_ChunkId && 
+                     IsAnnotBlob_id(blob_id) ) {
+                    GetBlob(*blob, blob_id, conn);
+                }
+                else {
+                    GetChunk(chunk_info, blob_id, conn);
+                }
+                chunk_info.SetLoaded();
             }
-            else {
-                GetChunk(chunk_info, blob_id, conn);
+            catch ( CLoaderException& exc ) {
+                if ( exc.GetErrCode() == exc.ePrivateData ) {
+                    throw;
+                }
+                else if ( exc.GetErrCode() == exc.eNoData ) {
+                    throw;
+                }
+                else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                    throw;
+                }
+                else {
+                    // any other error -> reconnect
+                    LOG_POST(exc.what());
+                    LOG_POST("GenBank connection failed: Reconnecting....");
+                    Reconnect(conn);
+                }
             }
-            chunk_info.SetLoaded();
+            catch ( const exception& exc ) {
+                LOG_POST(exc.what());
+                LOG_POST("GenBank connection failed: Reconnecting....");
+                Reconnect(conn);
+            }
         }
     }
 }
