@@ -1,34 +1,34 @@
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Soussov
-*
-* File Description:  CTLib connection
-*
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Soussov
+ *
+ * File Description:  CTLib connection
+ *
+ *
+ */
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <string.h>
@@ -487,7 +487,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                            "wrong (zero) arguments");
     }
 
-    if (m_Bytes2go == 0)
+    if ( !m_Bytes2go )
         return 0;
 
     if (nof_bytes > m_Bytes2go)
@@ -499,7 +499,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     }
 
     m_Bytes2go -= nof_bytes;
-    if (m_Bytes2go != 0)
+    if ( m_Bytes2go )
         return nof_bytes;
 
     if (ct_send(m_Cmd) != CS_SUCCEED) {
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/12 21:21:00  lavr
+ * Faster checks against zero for unsigned ints
+ *
  * Revision 1.4  2001/09/27 20:08:33  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *
