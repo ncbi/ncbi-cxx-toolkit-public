@@ -106,9 +106,9 @@ CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
     m_SeqAlignSet.Reset(sset);
     m_Opts = opts;
 
-    m_MSA_Dimensions.query_length = query_length;
-    m_MSA_Dimensions.num_seqs = 0;
-    m_AlignmentData = NULL;
+    m_MsaDimensions.query_length = query_length;
+    m_MsaDimensions.num_seqs = 0;
+    m_Msa = NULL;
 
     const unsigned int kNumHits = m_SeqAlignSet->Get().size();
     m_ProcessHit.reserve(kNumHits);
@@ -119,7 +119,7 @@ CPsiBlastInputData::~CPsiBlastInputData()
 {
     delete [] m_Query;
     m_ProcessHit.clear();
-    PSIAlignmentDataFree(m_AlignmentData);
+    PSIMsaFree(m_Msa);
 }
 
 void
@@ -128,17 +128,17 @@ CPsiBlastInputData::Process()
     ASSERT(m_Query != NULL);
 
     // Update the number of aligned sequences
-    m_MSA_Dimensions.num_seqs = x_CountAndSelectQualifyingAlignments();
+    m_MsaDimensions.num_seqs = x_CountAndSelectQualifyingAlignments();
 
     // Create multiple alignment data structure and populate with query
     // sequence
-    m_AlignmentData = PSIAlignmentDataNew(m_Query, &m_MSA_Dimensions);
-    if ( !m_AlignmentData ) {
+    m_Msa = PSIMsaNew(&m_MsaDimensions);
+    if ( !m_Msa ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Multiple alignment data "
                    "structure");
     }
 
-    _PSIExtractQuerySequenceInfo(m_AlignmentData);
+    x_CopyQueryToMsa();
     x_ExtractAlignmentData();
     //x_ExtractAlignmentDataUseBestAlign();
 }
@@ -179,17 +179,17 @@ CPsiBlastInputData::x_CountAndSelectQualifyingAlignments()
 unsigned int
 CPsiBlastInputData::GetNumAlignedSequences() const
 {
-    if (m_MSA_Dimensions.num_seqs == 0) {
+    if (m_MsaDimensions.num_seqs == 0) {
         NCBI_THROW(CBlastException, eInternal, "Number of aligned sequences"
                    "not calculated yet");
     }
-    return m_MSA_Dimensions.num_seqs;
+    return m_MsaDimensions.num_seqs;
 }
 
-inline PsiAlignmentData* 
+inline PSIMsa* 
 CPsiBlastInputData::GetData()
 { 
-    return m_AlignmentData;
+    return m_Msa;
 }
 
 inline unsigned char*
@@ -201,7 +201,7 @@ CPsiBlastInputData::GetQuery()
 inline unsigned int
 CPsiBlastInputData::GetQueryLength()
 {
-    return m_MSA_Dimensions.query_length;
+    return m_MsaDimensions.query_length;
 }
 
 inline const PSIBlastOptions*
@@ -259,6 +259,17 @@ CPsiBlastInputData::x_ExtractAlignmentDataUseBestAlign()
 #endif
 
 void
+CPsiBlastInputData::x_CopyQueryToMsa()
+{
+    ASSERT(m_Msa);
+
+    for (unsigned int i = 0; i < GetQueryLength(); i++) {
+        m_Msa->data[kQueryIndex][i].letter = m_Query[i];
+        m_Msa->data[kQueryIndex][i].is_aligned = true;
+    }
+}
+
+void
 CPsiBlastInputData::x_ExtractAlignmentData()
 {
     // Index into m_ProcessHit vector
@@ -278,8 +289,9 @@ CPsiBlastInputData::x_ExtractAlignmentData()
         ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp_itr,
                 (*itr)->GetSegs().GetDisc().Get()) {
 
-            // Note: Std-seg (for tblastn results) can be converted to Dense-seg, 
-            // but this will need conversion from Dense-diag to Dense-seg too
+            // Note: Std-seg (for tblastn results) can be converted to 
+            // Dense-seg, but this will need conversion from Dense-diag to 
+            // Dense-seg too
             if ( !(*hsp_itr)->GetSegs().IsDenseg() ) {
                 NCBI_THROW(CBlastException, eNotSupported, 
                            "Segment type not supported");
@@ -356,15 +368,11 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
     // sequence alignment structure
     if (seq.first.get() == NULL) {
         for (unsigned int i = 0; i < GetQueryLength(); i++) {
-            PsiMsaCell& pos_desc =
-                m_AlignmentData->desc_matrix[msa_index][i];
-            pos_desc.letter = (unsigned char) -1;
-            pos_desc.is_aligned = false;
-            pos_desc.e_value = kDefaultEvalueForPosition;
-            pos_desc.extents.left = (unsigned int) -1;
-            pos_desc.extents.right = GetQueryLength();
+            m_Msa->data[msa_index][i].letter = (unsigned char) -1;
+            m_Msa->data[msa_index][i].is_aligned = false;
         }
-        m_AlignmentData->use_sequences[msa_index] = false;
+        //m_Msa->use_sequences[msa_index] = false;
+        // FIXME: this needs to withdraw the sequence!
         return;
     }
     /*
@@ -409,12 +417,10 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
 
             // gap in subject, initialize appropriately
             for (TSeqPos i = 0; i < lengths[segmt_idx]; i++) {
-                PsiMsaCell& pos_desc =
-                    m_AlignmentData->desc_matrix[msa_index][query_offset++];
-                if ( !pos_desc.is_aligned ) {
-                    pos_desc.letter = GAP;
-                    pos_desc.is_aligned = true;
-                    pos_desc.e_value = kDefaultEvalueForPosition;
+                PSIMsaCell& msa_cell = m_Msa->data[msa_index][query_offset++];
+                if ( !msa_cell.is_aligned ) {
+                    msa_cell.letter = GAP;
+                    msa_cell.is_aligned = true;
                 }
             }
 
@@ -422,12 +428,11 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
 
             // Aligned segments without any gaps
             for (TSeqPos i = 0; i < lengths[segmt_idx]; i++, subj_seq_idx++) {
-                PsiMsaCell& pos_desc =
-                    m_AlignmentData->desc_matrix[msa_index][query_offset++];
-                if ( !pos_desc.is_aligned ) {
-                    pos_desc.letter = seq.first.get()[subj_seq_idx];
-                    pos_desc.is_aligned = true;
-                    pos_desc.e_value = e_value;
+                PSIMsaCell& msa_cell =
+                    m_Msa->data[msa_index][query_offset++];
+                if ( !msa_cell.is_aligned ) {
+                    msa_cell.letter = seq.first.get()[subj_seq_idx];
+                    msa_cell.is_aligned = true;
     /*
 if (msa_index == 1 && (query_offset-1) == 7320) {
     CNcbiDiag log;
@@ -437,7 +442,7 @@ if (msa_index == 1 && (query_offset-1) == 7320) {
         << " subj_idx " <<
         subj_seq_idx << " evalue " << pos_desc.e_value << Endm;
     for(unsigned int in = 0; in < lengths[segmt_idx]; in++) {
-        log << getRes((char)m_AlignmentData->desc_matrix[0][(query_offset-1+in)].letter);
+        log << getRes((char)m_Msa->desc_matrix[0][(query_offset-1+in)].letter);
     }
     log << Endm;
     for(unsigned int in = 0; in < lengths[segmt_idx]; in++) {
@@ -573,6 +578,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/08/04 20:24:53  camacho
+ * Renaming of core PSSM structures and removal of unneeded fields.
+ *
  * Revision 1.3  2004/08/02 13:29:53  camacho
  * + implementation query sequence methods
  *
