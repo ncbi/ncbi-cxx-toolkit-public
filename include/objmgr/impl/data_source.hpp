@@ -51,7 +51,7 @@ class CDelta_seq;
 class CSeq_interval;
 class CSeq_annot_Info;
 
-class CDataSource : public CObject
+class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 {
 public:
     /// 'ctors
@@ -361,6 +361,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/02/25 14:48:07  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.39  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

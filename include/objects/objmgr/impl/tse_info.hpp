@@ -63,7 +63,7 @@ class CBioseq;
 class CAnnotObject_Info;
 
 
-struct SAnnotObject_Index {
+struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
     CRef<CAnnotObject_Info>                   m_AnnotObject;
     int                                       m_IndexBy;
     CHandleRangeMap::TLocMap::const_iterator  m_HandleRange;
@@ -122,7 +122,7 @@ private:
 };
 
 
-class CTSE_Guard
+class NCBI_XOBJMGR_EXPORT CTSE_Guard
 {
 public:
     explicit CTSE_Guard(const CTSE_Info& tse);
@@ -136,7 +136,7 @@ private:
 };
 
 
-class CTSE_Lock
+class NCBI_XOBJMGR_EXPORT CTSE_Lock
 {
 public:
     CTSE_Lock(void);
@@ -397,6 +397,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/02/25 14:48:07  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.19  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

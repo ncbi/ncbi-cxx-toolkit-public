@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // Structure to select type of Seq-annot
-struct SAnnotSelector
+struct NCBI_XOBJMGR_EXPORT SAnnotSelector
 {
     typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
     typedef CSeqFeatData::E_Choice       TFeatChoice;
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/02/25 14:48:06  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.1  2003/02/24 19:36:19  vasilche
 * Added missing annot_selector.hpp.
 *

@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CMappedGraph
+class NCBI_XOBJMGR_EXPORT CMappedGraph
 {
 public:
     CMappedGraph(void)
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/02/25 14:48:06  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.20  2003/02/24 18:57:20  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

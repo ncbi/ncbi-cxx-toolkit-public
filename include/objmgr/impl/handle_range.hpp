@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // Locations list for a particular bioseq handle
-class CHandleRange
+class NCBI_XOBJMGR_EXPORT CHandleRange
 {
 public:
     typedef CRange<TSeqPos> TRange;
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2003/02/25 14:48:07  vasilche
+ * Added Win32 export modifier to object manager classes.
+ *
  * Revision 1.15  2003/02/05 17:57:41  dicuccio
  * Moved into include/objects/objmgr/impl to permit data loaders to be defined
  * outside of xobjmgr.

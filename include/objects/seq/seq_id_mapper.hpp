@@ -61,7 +61,7 @@ typedef pair< CConstRef<CSeq_id>, TSeq_id_Key > TSeq_id_Info;
 
 
 // Base class for seq-id type-specific trees
-class CSeq_id_Which_Tree : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_id_Which_Tree : public CObject
 {
 public:
     // 'ctors
@@ -127,7 +127,7 @@ const size_t kKeyUsageTableSize =
     numeric_limits<TSeq_id_Key>().max() / kKeyUsageTableSegmentSize;
 
 
-class CSeq_id_Mapper : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
 {
 public:
     static  CSeq_id_Mapper& GetSeq_id_Mapper(void);
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/25 14:48:06  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.12  2003/01/29 22:03:43  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *

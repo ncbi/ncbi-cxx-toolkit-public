@@ -44,7 +44,7 @@ class CSeq_loc;
 
 
 // Seq_loc substitution for internal use by iterators and data sources
-class CHandleRangeMap
+class NCBI_XOBJMGR_EXPORT CHandleRangeMap
 {
 public:
     typedef map<CSeq_id_Handle, CHandleRange> TLocMap;
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2003/02/25 14:48:07  vasilche
+ * Added Win32 export modifier to object manager classes.
+ *
  * Revision 1.11  2003/02/24 18:57:21  vasilche
  * Make feature gathering in one linear pass using CSeqMap iterator.
  * Do not use feture index by sub locations.

@@ -47,7 +47,7 @@ class CSeqMap;
 class CSeq_data;
 
 // Sequence data
-struct SSeqData {
+struct NCBI_XOBJMGR_EXPORT SSeqData {
     TSeqPos              length;      /// Length of the sequence data piece
     TSeqPos              dest_start;  /// Starting pos in the dest. Bioseq
     TSeqPos              src_start;   /// Starting pos in the source Bioseq
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/02/25 14:48:06  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.26  2003/02/20 17:01:20  vasilche
 * Changed value of kTypeUnknown to fit in 16 bit enums on Mac.
 *

@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CBioseq_CI
+class NCBI_XOBJMGR_EXPORT CBioseq_CI
 {
 public:
     // 'ctors
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/02/25 14:48:06  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.6  2003/02/04 16:01:48  dicuccio
 * Removed export specification so that MSVC won't try to export an inlined class
 *

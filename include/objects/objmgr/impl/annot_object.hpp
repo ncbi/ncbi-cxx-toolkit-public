@@ -47,7 +47,7 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 
-class CSeq_annot_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
 {
 public:
     CSeq_annot_Info(CDataSource* data_source,
@@ -70,7 +70,7 @@ private:
 
 
 // General Seq-annot object used by CAnnot_CI to store data
-class CAnnotObject_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CAnnotObject_Info : public CObject
 {
 public:
     CAnnotObject_Info(CSeq_annot_Info& annot_ref,
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/02/25 14:48:07  vasilche
+* Added Win32 export modifier to object manager classes.
+*
 * Revision 1.2  2003/02/24 21:35:22  vasilche
 * Reduce checks in CAnnotObject_Ref comparison.
 * Fixed compilation errors on MS Windows.
