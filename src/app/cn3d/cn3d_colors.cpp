@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/08/10 19:45:18  thiessen
+* minor fix for Mac
+*
 * Revision 1.10  2001/08/09 23:14:13  thiessen
 * fixes for MIPSPro and Mac compilers
 *
@@ -142,7 +145,7 @@ Colors::Colors(void)
 const Vector& Colors::Get(eColor which) const
 {
     if (which >= 0 && which < eNumColors) return colors[which];
-    ERR_POST(Error << "Colors::Get() - bad eColor " << which);
+    ERR_POST(Error << "Colors::Get() - bad eColor " << (int) which);
     return colors[0];
 }
 
@@ -150,7 +153,7 @@ const Vector& Colors::Get(eColorCycle which, int n) const
 {
     if (which >= 0 && which < eNumColorCycles && n >= 0)
         return cycleColors[which][n % cycleColors[which].size()];
-    ERR_POST(Warning << "Colors::Get() - bad eColorCycle " << which);
+    ERR_POST(Error << "Colors::Get() - bad eColorCycle " << (int) which);
     return cycleColors[0][0];
 }
 
@@ -169,7 +172,7 @@ Vector Colors::Get(eColorMap which, double f) const
             color1[2] + fraction * (color2[2] - color1[2])
         );
     }
-    ERR_POST(Warning << "Colors::Get() - bad eColorMap " << which << " at " << f);
+    ERR_POST(Error << "Colors::Get() - bad eColorMap " << (int) which << " at " << f);
     return mapColors[0][0];
 }
 
