@@ -88,7 +88,12 @@ int CTest::Run(void)
         string pname = GetArguments().GetProgramName();
         int i = 0;
         ITERATE(list<string>, it, split) {
+#if defined(NCBI_OS_MSWIN)
+            pname = CDirEntry(pname).GetBase();
+            app = CDirEntry::MakePath(*it, pname, "exe");
+#else
             app = CDirEntry::MakePath(*it, pname);
+#endif
             if ( CFile(app).Exists() ) {
                 break;
             }
@@ -251,6 +256,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2003/03/12 16:05:52  ivanov
+ * MS Windows: Add extention to the executable file if running without it
+ *
  * Revision 6.13  2003/03/10 20:49:06  ivanov
  * A PATH environment variable is used to find current file to execute
  *
