@@ -1254,6 +1254,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    const BlastHitSavingOptions* options, 
    const BlastExtensionParameters* ext_params, 
    BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+   Int4 avg_subj_length,
    BlastHitSavingParameters* *parameters)
 {
    Boolean gapped_calculation = TRUE;
@@ -1266,21 +1267,13 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    if (!parameters)
       return 0;
 
+   *parameters = NULL;
+
    ASSERT(options);
    ASSERT(sbp);
    
    if (!sbp->kbp_gap)
       gapped_calculation = FALSE;
-
-   /* If parameters have not yet been created, allocate and fill all
-      parameters that are constant throughout the search */
-   *parameters = params = (BlastHitSavingParameters*) 
-      calloc(1, sizeof(BlastHitSavingParameters));
-
-   if (params == NULL)
-      return 1;
-
-   params->options = (BlastHitSavingOptions *) options;
 
    /* If sum statistics use is forced by the options, 
       set it in the paramters */
@@ -1296,6 +1289,21 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
           (program_number == eBlastTypeTblastx))
          do_sum_stats = TRUE;
    }
+  
+   if (do_sum_stats && gapped_calculation && avg_subj_length <= 0)
+       return 1;
+       
+
+   /* If parameters have not yet been created, allocate and fill all
+      parameters that are constant throughout the search */
+   *parameters = params = (BlastHitSavingParameters*) 
+      calloc(1, sizeof(BlastHitSavingParameters));
+
+   if (params == NULL)
+      return 1;
+
+   params->options = (BlastHitSavingOptions *) options;
+
 
    if (do_sum_stats) {
       BlastLinkHSPParametersNew(program_number, gapped_calculation,
@@ -1333,8 +1341,9 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
       }
    }
 
-   status = BlastHitSavingParametersUpdate(program_number, 
-               ext_params, sbp, query_info, params);
+   status = BlastHitSavingParametersUpdate(program_number, ext_params, sbp, query_info, 
+               avg_subj_length, params);
+
    return status;
 }
 
@@ -1342,20 +1351,22 @@ Int2
 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
    const BlastExtensionParameters* ext_params, 
    BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
-   BlastHitSavingParameters* params)
+   Int4 avg_subject_length, BlastHitSavingParameters* params)
 {
    BlastHitSavingOptions* options;
    Blast_KarlinBlk* kbp;
-   double evalue;
    double scale_factor = sbp->scale_factor;
    Boolean gapped_calculation;
+   Boolean do_sum_stats = FALSE;
 
    ASSERT(params);
    ASSERT(query_info);
    ASSERT(ext_params);
 
+   if (params->link_hsp_params)
+        do_sum_stats = TRUE;
+
    options = params->options;
-   evalue = options->expect_value;
 
    /* Scoring options are not available here, but we can determine whether
       this is a gapped or ungapped search by checking whether gapped
@@ -1374,24 +1385,36 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       params->cutoff_score = options->cutoff_score * (Int4) sbp->scale_factor;
    } else if (!options->phi_align) {
       Int4 context = query_info->first_context;
+      Int4 cutoff_score=0;
       Int8 searchsp = query_info->eff_searchsp_array[context];
+      double evalue = options->expect_value;
 
       /* translated RPS searches must scale the search space down */
       if (program_number == eBlastTypeRpsTblastn)
          searchsp = searchsp / NUM_FRAMES;
 
-      params->cutoff_score = 0;
-      BLAST_Cutoffs(&params->cutoff_score, &evalue, kbp, searchsp, FALSE, 0);
-      params->cutoff_score *= (Int4) scale_factor;
+      /* Get cutoff_score for specified evalue. */
+      BLAST_Cutoffs(&cutoff_score, &evalue, kbp, searchsp, FALSE, 0);
 
-      /* When sum statistics is used, all HSPs above the gap trigger 
-         cutoff are saved until the sum statistics is applied to potentially
-         link them with other HSPs and improve their e-values. 
-         However this does not apply to the ungapped search! */
-      if (params->link_hsp_params && gapped_calculation) {
-         params->cutoff_score = 
-            MIN(params->cutoff_score, ext_params->gap_trigger);
+      params->cutoff_score = 0;
+      if (do_sum_stats && gapped_calculation)
+      {
+         double evalue_hsp=1.0;
+         Int4 avg_qlen = 
+             (query_info->context_offsets[query_info->last_context+1] - 1) / (query_info->last_context + 1);
+         BLAST_Cutoffs(&params->cutoff_score, &evalue_hsp, kbp, (Int8) MIN(avg_qlen, avg_subject_length)* (Int8)avg_subject_length, 
+               TRUE, params->link_hsp_params->gap_decay_rate);
+         if (gapped_calculation)  
+         {   /* Assure that cutoff_score for one HSP is no smaller than gap_trigger. */
+             params->cutoff_score = MAX(params->cutoff_score, ext_params->gap_trigger);
+         }
+         /* Assure that cutoff_score for one HSP is no larger than cutoff_score for specified expect value. */
+         params->cutoff_score = MIN(params->cutoff_score, cutoff_score);
       }
+      else
+         params->cutoff_score = cutoff_score;
+     
+      params->cutoff_score *= (Int4) scale_factor;
    } else {
       params->cutoff_score = 0;
    }
@@ -1610,6 +1633,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.136  2004/10/14 17:10:35  madden
+ * BlastHitSavingParametersNew and BlastHitSavingParametersUpdate changes for gapped sum statistics
+ *
  * Revision 1.135  2004/10/13 17:44:17  dondosha
  * Added comment for setting of ungapped X-dropoff in BlastInitialWordParametersUpdate
  *
