@@ -30,7 +30,6 @@
  *
  * File Description:  Driver for DBLib server
  *
- * ===========================================================================
  */
 
 #include <dbapi/driver/public.hpp>
@@ -440,7 +439,7 @@ protected:
     unsigned int   m_NofCols;
     int            m_CmdNum;
     unsigned int*  m_ResStatus;
-    DBINT          m_Offset;
+    size_t         m_Offset;
     SDBL_ColDescr* m_ColFmt;
 };
 
@@ -556,9 +555,9 @@ protected:
     virtual ~CDBL_StatusResult();
 
     // data
-    int  m_Val;
-    int  m_Offset;
-    bool m_1stFetch;
+    int    m_Val;
+    size_t m_Offset;
+    bool   m_1stFetch;
 };
 
 
@@ -625,6 +624,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/24 16:36:05  lavr
+ * Type of CDBL_*Result::m_Offset changed to 'size_t'
+ *
  * Revision 1.1  2001/10/22 15:17:54  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally
