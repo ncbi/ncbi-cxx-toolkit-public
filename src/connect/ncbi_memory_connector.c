@@ -70,8 +70,6 @@ extern "C" {
                                      size_t          size,
                                      size_t*         n_written,
                                      const STimeout* timeout);
-    static EIO_Status  s_VT_Flush   (CONNECTOR       connector,
-                                     const STimeout* timeout);
     static EIO_Status  s_VT_Read    (CONNECTOR       connector,
                                      void*           buf,
                                      size_t          size,
@@ -94,6 +92,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 
+/*ARGSUSED*/
 static const char* s_VT_GetType
 (CONNECTOR connector)
 {
@@ -101,6 +100,7 @@ static const char* s_VT_GetType
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Open
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -113,6 +113,7 @@ static EIO_Status s_VT_Open
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Write
 (CONNECTOR       connector,
  const void*     buf,
@@ -140,6 +141,7 @@ static EIO_Status s_VT_Write
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Read
 (CONNECTOR       connector,
  void*           buf,
@@ -165,17 +167,10 @@ static EIO_Status s_VT_Read
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Wait
 (CONNECTOR       connector,
  EIO_Event       event,
- const STimeout* timeout)
-{
-    return eIO_Success;
-}
-
-
-static EIO_Status s_VT_Flush
-(CONNECTOR       connector,
  const STimeout* timeout)
 {
     return eIO_Success;
@@ -200,6 +195,7 @@ static EIO_Status s_VT_Status
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -219,7 +215,7 @@ static void s_Setup
     CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
     CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
     CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
+    CONN_SET_METHOD(meta, flush,      0,              0);
     CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
     CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
     CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
@@ -267,6 +263,9 @@ extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/05/31 05:15:39  lavr
+ * Add ARGSUSED where args are meant to be unused, remove Flush
+ *
  * Revision 6.4  2003/05/14 03:53:13  lavr
  * Log moved to end
  *

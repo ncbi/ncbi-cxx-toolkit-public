@@ -77,8 +77,6 @@ extern "C" {
                                      size_t          size,
                                      size_t*         n_written,
                                      const STimeout* timeout);
-    static EIO_Status  s_VT_Flush   (CONNECTOR       connector,
-                                     const STimeout* timeout);
     static EIO_Status  s_VT_Read    (CONNECTOR       connector,
                                      void*           buf,
                                      size_t          size,
@@ -101,6 +99,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 
+/*ARGSUSED*/
 static const char* s_VT_GetType
 (CONNECTOR connector)
 {
@@ -208,14 +207,6 @@ static EIO_Status s_VT_Write
 }
 
 
-static EIO_Status s_VT_Flush
-(CONNECTOR       connector,
- const STimeout* timeout)
-{
-    return eIO_Success;
-}
-
-
 static EIO_Status s_VT_Read
 (CONNECTOR       connector,
  void*           buf,
@@ -268,7 +259,7 @@ static void s_Setup
     CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
     CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
     CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
-    CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
+    CONN_SET_METHOD(meta, flush,      0,              0);
     CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
     CONN_SET_METHOD(meta, status,     s_VT_Status,    connector);
     CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
@@ -382,6 +373,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/05/31 05:15:45  lavr
+ * Add ARGSUSED where args are meant to be unused, remove Flush
+ *
  * Revision 6.17  2003/05/27 15:04:31  lavr
  * +#include <stdio.h> (to define sprint's prototype on Mac)
  *
