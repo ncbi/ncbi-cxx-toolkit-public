@@ -1432,7 +1432,22 @@ void CHTML_form::AddHidden(const string& name, int value)
 }
 
 
-// <legend> tag.
+// <input> tag.
+
+CHTML_input::CHTML_input(const char* type, const string& name)
+    : CParent("input")
+{
+    SetAttribute("type", type);
+    SetNameAttribute(name);
+}
+
+CHTML_input::~CHTML_input(void)
+{
+    return;
+}
+
+
+// <input type=legend> tag.
 
 CHTML_legend::CHTML_legend(const string& legend)
     : CParent("legend", legend)
@@ -1451,7 +1466,7 @@ CHTML_legend::~CHTML_legend(void)
     return;
 }
 
-// <fieldset> tag.
+// <input type=fieldset> tag.
 
 CHTML_fieldset::CHTML_fieldset(void)
     : CParent("fieldset")
@@ -1477,7 +1492,7 @@ CHTML_fieldset::~CHTML_fieldset(void)
 }
 
 
-// <label> tag.
+// <input tpe=label> tag.
 
 CHTML_label::CHTML_label(const string& text)
     : CParent("label", text)
@@ -1502,7 +1517,7 @@ void CHTML_label::SetFor(const string& idRef)
 }
 
 
-// <textarea> tag.
+// <input type=textarea> tag.
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
     : CParent("textarea")
@@ -1527,22 +1542,7 @@ CHTML_textarea::~CHTML_textarea(void)
 }
 
 
-// <input> tag.
-
-CHTML_input::CHTML_input(const char* type, const string& name)
-    : CParent("input")
-{
-    SetAttribute("type", type);
-    SetNameAttribute(name);
-}
-
-CHTML_input::~CHTML_input(void)
-{
-    return;
-}
-
-
-// <checkbox> tag.
+// <input type=checkbox> tag.
 
 const char CHTML_checkbox::sm_InputType[] = "checkbox";
 
@@ -1583,7 +1583,7 @@ CHTML_checkbox::~CHTML_checkbox(void)
 }
 
 
-// <image> tag.
+// <input type=image> tag.
 
 const char CHTML_image::sm_InputType[] = "image";
 
@@ -1610,7 +1610,7 @@ CHTML_image::~CHTML_image(void)
 }
 
 
-// <radio> tag.
+// <input type=radio> tag.
 
 const char CHTML_radio::sm_InputType[] = "radio";
 
@@ -1635,7 +1635,7 @@ CHTML_radio::~CHTML_radio(void)
 }
 
 
-// <hidden> tag.
+// <input type=hidden> tag.
 
 const char CHTML_hidden::sm_InputType[] = "hidden";
 
@@ -1657,7 +1657,40 @@ CHTML_hidden::~CHTML_hidden(void)
 }
 
 
-// <submit> tag.
+// <input type=password> tag.
+
+const char CHTML_password::sm_InputType[] = "password";
+
+CHTML_password::CHTML_password(const string& name, const string& value)
+    : CParent(sm_InputType, name)
+{
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_password::CHTML_password(const string& name, int size, 
+                               const string& value)
+    : CParent(sm_InputType, name)
+{
+    SetSize(size);
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_password::CHTML_password(const string& name, int size, int maxlength,
+                           const string& value)
+    : CParent(sm_InputType, name)
+{
+    SetSize(size);
+    SetAttribute("maxlength", maxlength);
+    SetOptionalAttribute("value", value);
+}
+
+CHTML_password::~CHTML_password(void)
+{
+    return;
+}
+
+
+// <input type=submit> tag.
 
 const char CHTML_submit::sm_InputType[] = "submit";
 
@@ -1679,7 +1712,7 @@ CHTML_submit::~CHTML_submit(void)
 }
 
 
-// <reset> tag.
+// <input type=reset> tag.
 
 const char CHTML_reset::sm_InputType[] = "reset";
 
@@ -1695,7 +1728,7 @@ CHTML_reset::~CHTML_reset(void)
 }
 
 
-// button tag
+// <input type=button> tag
 /*
   commented out because it's not supported in most browsers
   CHTML_button::CHTML_button(const string& text, EButtonType type)
@@ -1754,7 +1787,7 @@ CHTML_reset::~CHTML_reset(void)
 */
 
 
-// <text> tag.
+// <input type=text> tag.
 
 const char CHTML_text::sm_InputType[] = "text";
 
@@ -1786,7 +1819,7 @@ CHTML_text::~CHTML_text(void)
 }
 
 
-// <file> tag.
+// <input type=file> tag.
 
 const char CHTML_file::sm_InputType[] = "file";
 
@@ -1802,7 +1835,7 @@ CHTML_file::~CHTML_file(void)
 }
 
 
-// <select> tag.
+// <input type=select> tag.
 
 const char CHTML_select::sm_TagName[] = "select";
 
@@ -1818,7 +1851,7 @@ CHTML_select* CHTML_select::SetMultiple(void)
 }
 
 
-// <option> tag.
+// <input type=option> tag.
 
 const char CHTML_option::sm_TagName[] = "option";
 
@@ -2198,6 +2231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2004/08/13 16:47:53  ivanov
+ * Added class CHTML_password (HTML tag <input type=password>)
+ *
  * Revision 1.105  2004/07/20 20:12:22  ucko
  * Move declarations of CHTML_t*_Cache to html.hpp, as required by
  * some auto_ptr<> implementations.

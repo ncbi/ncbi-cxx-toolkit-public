@@ -1039,6 +1039,22 @@ public:
 };
 
 
+// <input type=password> tag.
+class NCBI_XHTML_EXPORT CHTML_password : public CHTML_input
+{
+    typedef CHTML_input CParent;
+    static const char sm_InputType[];
+public:
+    CHTML_password(const string& name,
+                   const string& value = kEmptyStr);
+    CHTML_password(const string& name, int size,
+                   const string& value = kEmptyStr);
+    CHTML_password(const string& name, int size, int maxlength,
+                   const string& value = kEmptyStr);
+    ~CHTML_password(void);
+};
+
+
 // <input type=radio> tag.
 class NCBI_XHTML_EXPORT CHTML_radio : public CHTML_input
 {
@@ -1052,7 +1068,7 @@ public:
 };
 
 
-// <input type=text> tag.
+// <input type=reset> tag.
 class NCBI_XHTML_EXPORT CHTML_reset : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -1484,6 +1500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2004/08/13 16:48:27  ivanov
+ * Added class CHTML_password (HTML tag <input type=password>)
+ *
  * Revision 1.77  2004/07/20 20:12:10  ucko
  * Move declarations of CHTML_t*_Cache from html.cpp, as required by
  * some auto_ptr<> implementations.
