@@ -299,7 +299,7 @@ struct LSOCK_tag {
     unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
 
     unsigned int    n_accept;   /* total number of accepted clients          */
-    unsigned short  port;       /* port on which the socket is listening     */
+    unsigned short  port;       /* port on which listening (host byte order) */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     EBSwitch             log:2; /* how to log events and data for this socket*/
@@ -317,7 +317,7 @@ struct LSOCK_tag {
 };
 
 
-/* Socket [it must be in one-2-one correspondence with LSOCK above]
+/* Socket [it must be in one-2-one binary correspondence with LSOCK above]
  */
 struct SOCK_tag {
     TSOCK_Handle    sock;       /* OS-specific socket handle                 */
@@ -618,8 +618,9 @@ static const char* s_ID(const SOCK sock, char* buf)
  */
 static void s_DoLog
 (const SOCK  sock, EIO_Event event,
- const void* data, size_t    size,  const struct sockaddr* sa)
+ const void* data, size_t    size,  const void* ptr)
 {
+    const struct sockaddr* sa = (const struct sockaddr*) ptr;
     char head[128];
     char tail[128];
     char _id[32];
@@ -748,7 +749,7 @@ extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
 
 extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
 {
-    ESwitch old = sock->log;
+    ESwitch old = (ESwitch) sock->log;
     sock->log = log;
     return old;
 }
@@ -977,9 +978,9 @@ static EIO_Status s_Status(SOCK sock, EIO_Event direction)
     switch ( direction ) {
     case eIO_Read:
         return sock->type != eSOCK_Datagram  &&  sock->eof
-            ? eIO_Closed : sock->r_status;
+            ? eIO_Closed : (EIO_Status) sock->r_status;
     case eIO_Write:
-        return sock->w_status;
+        return (EIO_Status) sock->w_status;
     default:
         /*should never get here*/
         assert(0);
@@ -1561,7 +1562,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     } else
 #endif /*NCBI_OS_UNIX*/
         {
-            c = HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?"; 
+            c = HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?";
         }
 
     /* statistics & logging */
@@ -1743,7 +1744,7 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*HAVE_SIN_LEN*/
             sock->host = x_host;
             sock->port = x_port;
-            c = HostPortToString(x_host, x_port, s, sizeof(s)) ? s : "???";
+            c = HostPortToString(x_host,ntohs(x_port),s,sizeof(s)) ? s : "???";
         }
 
     /* check the new socket */
@@ -2148,7 +2149,7 @@ static EIO_Status s_Send(SOCK        sock,
         }
     }
 
-    return sock->w_status;
+    return (EIO_Status) sock->w_status;
 }
 
 
@@ -2268,7 +2269,7 @@ static EIO_Status s_Read(SOCK        sock,
             ? BUF_Peek(sock->r_buf, buf, size)
             : BUF_Read(sock->r_buf, buf, size);
         sock->r_status = *n_read || !size ? eIO_Success : eIO_Closed;
-        return sock->r_status;
+        return (EIO_Status) sock->r_status;
     }
 
     status = s_WritePending(sock, sock->r_timeout, 0, 0);
@@ -2354,7 +2355,7 @@ static EIO_Status s_Write(SOCK        sock,
             *n_written = size;
         } else
             sock->w_status = eIO_Unknown;
-        return sock->w_status;
+        return (EIO_Status) sock->w_status;
     }
 
     if (sock->w_status == eIO_Closed) {
@@ -3475,7 +3476,7 @@ extern ESwitch SOCK_SetReadOnWriteAPI(ESwitch on_off)
 extern ESwitch SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
 {
     if (sock->type != eSOCK_Datagram) {
-        ESwitch old = sock->r_on_w;
+        ESwitch old = (ESwitch) sock->r_on_w;
         sock->r_on_w = on_off;
         return old;
     }
@@ -3495,7 +3496,7 @@ extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
 
 extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
 {
-    ESwitch old = sock->i_on_sig;
+    ESwitch old = (ESwitch) sock->i_on_sig;
     sock->i_on_sig = on_off;
     return old;
 }
@@ -3625,7 +3626,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 #ifdef HAVE_SIN_LEN
     addr.sin_len         = sizeof(addr);
 #endif /*HAVE_SIN_LEN*/
-    if (bind(sock->sock, (struct sockaddr*) &addr, sizeof(addr)) !=0 ) {
+    if (bind(sock->sock, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                            ("%s[DSOCK::Bind]  Failed bind()", s_ID(sock,_id)));
@@ -3690,7 +3691,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     if (connect(sock->sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         char addr[80];
         int x_errno = SOCK_ERRNO;
-        HostPortToString(sock->host, sock->port, addr, sizeof(addr));
+        HostPortToString(sock->host, ntohs(sock->port), addr, sizeof(addr));
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                            ("%s[DSOCK::Connect]  Failed connect() to %s",
                             s_ID(sock, _id), addr));
@@ -4378,6 +4379,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.166  2005/02/11 18:46:47  lavr
+ * Fix some network/host byte order issues with port numbers
+ *
  * Revision 6.165  2005/01/05 17:38:25  lavr
  * Fix assert() in s_CreateListening()
  *
