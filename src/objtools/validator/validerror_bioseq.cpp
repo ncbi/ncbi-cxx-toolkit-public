@@ -1168,21 +1168,21 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
         calc_len /= factor;
     }
     TSeqPos data_len = GetDataLen(inst);
-    string s_data_len = NStr::IntToString(data_len);
+    string data_len_str = NStr::IntToString(data_len);
     if (calc_len > data_len) {
         PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
-                 "Bioseq.seq_data too short [" + s_data_len +
+                 "Bioseq.seq_data too short [" + data_len_str +
                  "] for given length [" + s_len + "]", seq);
         return;
     } else if (calc_len < data_len) {
         PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
-                 "Bioseq.seq_data is larger [" + s_data_len +
+                 "Bioseq.seq_data is larger [" + data_len_str +
                  "] than given length [" + s_len + "]", seq);
     }
 
     unsigned char termination;
     unsigned int trailingX = 0;
-    unsigned int terminations = 0;
+    size_t terminations = 0;
     if (check_alphabet) {
 
         switch (seqtyp) {
@@ -1197,10 +1197,12 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
             termination = '\0';
         }
 
-        CSeqVector sv = m_Scope->GetBioseqHandle(seq).GetSeqVector();
+        CSeqVector sv = 
+            m_Scope->GetBioseqHandle(seq).GetSeqVector(CBioseq_Handle::eCoding_NotSet);
 
-        unsigned int bad_cnt = 0;
-        for (TSeqPos pos = 0; pos < sv.size(); pos++) {
+        size_t bad_cnt = 0;
+        size_t seq_size = sv.size();
+        for (TSeqPos pos = 0; pos < seq_size; ++pos) {
             if (sv[pos] > 250) {
                 if (++bad_cnt > 10) {
                     PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
@@ -1244,16 +1246,25 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
             PostErr(eDiag_Warning, eErr_SEQ_INST_TrailingX, msg, seq);
         }
 
-        if (terminations  && seqtyp != CSeq_data::e_Iupacna) {
+        if (terminations) {
             // Post error indicating terminations found in protein sequence
             // First get gene label
+
             string glbl;
-            seq.GetLabel(&glbl, CBioseq::eContent);         
+            seq.GetLabel(&glbl, CBioseq::eContent);
+            if ( IsBlankString(glbl) ) {
+                glbl = "gene?";
+            }
+
             string plbl;
             const CBioseq* nuc = GetNucGivenProt(seq);
             if ( nuc ) {
                 nuc->GetLabel(&plbl, CBioseq::eContent);
             }
+            if ( IsBlankString(plbl) ) {
+                plbl == "prot?";
+            }
+
             PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein,
                 NStr::IntToString(terminations) +
                 " termination symbols in protein sequence (" +
@@ -2045,7 +2056,7 @@ void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& seq)
 
 const CBioseq* CValidError_bioseq::GetNucGivenProt(const CBioseq& prot)
 {
-    const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(prot);
+    CConstRef<CSeq_feat> cds = m_Imp.GetCDSGivenProduct(prot);
     if ( cds ) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(cds->GetLocation());
         if ( bsh ) {
@@ -2066,6 +2077,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/02/03 18:01:43  shomrat
+* Minor fixes & style improvments
+*
 * Revision 1.12  2003/01/31 18:41:51  shomrat
 * Bug fix in CdError
 *
