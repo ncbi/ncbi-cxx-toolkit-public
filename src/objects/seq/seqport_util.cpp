@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/04/25 19:37:03  clausen
+ * Fixed bug in MapNcbi2naToNcbi4na that caused corrupiton of out_seq
+ *
  * Revision 6.8  2002/03/27 19:53:18  grichenk
  * Fixed CR/LF problem in the source
  *
@@ -2459,8 +2462,7 @@ unsigned int CSeqportUtil_implementation::MapNcbi2naToNcbi4na
     vector<char>::const_iterator i_in_begin =
         in_seq_data.begin() + uBeginIdx/4;
     vector<char>::const_iterator i_in_end = i_in_begin + uInBytes;
-    if(((uLength % 4) != 0) || (uOverhang != 0)) ++i_in_end;
-
+ 
     // Loop through in_seq_data and convert to out_seq_data
     for(i_in = i_in_begin; i_in != i_in_end; ++i_in) {
         unsigned short uVal =
