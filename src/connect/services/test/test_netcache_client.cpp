@@ -40,6 +40,7 @@
 #include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
+#include <connect/ncbi_core_cxx.hpp>
 #include <test/test_assert.h>  /* This header must go last */
 
 
@@ -332,6 +333,11 @@ void CTestNetCacheClient::Init(void)
     
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
+
+    CONNECT_Init(&GetConfig());
+
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagTrace(eDT_Enable);
 }
 
 static
@@ -596,11 +602,23 @@ int CTestNetCacheClient::Run(void)
     assert(!exists);
 */
 
+  
+
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
     vector<string>           rep_keys;
 
+    // Test writing HUGE BLOBs (uncomment and use carefully)
+/*
+    s_StressTest(host, port, 1024 * 1024 * 50, 10, &log, &log_read, &rep_keys, 30);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
+    NcbiCout << NcbiEndl;
 
+    return 0;
+*/
     unsigned repeats = 5000;
 
     s_StressTest(host, port, 256, repeats, &log, &log_read, &rep_keys, 10);
@@ -631,6 +649,7 @@ int CTestNetCacheClient::Run(void)
     NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
     s_ReportStatistics(log_read);
     NcbiCout << NcbiEndl;
+
 
     log_read.resize(0);
     NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs=" 
@@ -664,6 +683,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/04/06 18:07:33  kuznets
+ * Added test of 50M blobs
+ *
  * Revision 1.32  2005/03/22 19:22:27  kuznets
  * Compilation fixed
  *
