@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/02/22 21:12:37  sandomir
+* MsgRequest -> NcbiContext
+*
 * Revision 1.10  1998/12/28 23:28:59  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -87,8 +90,6 @@ public:
   virtual void Init(void); // initialization
   virtual void Exit(void); // cleanup
 
-  virtual CCgiRequest* GetRequest(void) const;
-
 protected:
 
   CNcbiIstream* m_Istr;
@@ -99,6 +100,7 @@ protected:
 //
 // blame lewisg for the below
 //
+/*
 
 class CSimpleCgiApp: public CCgiApplication {
 public:
@@ -111,6 +113,7 @@ public:
     CCgiRequest*  m_CgiRequest;
 };
 
+*/
 
 END_NCBI_SCOPE
 

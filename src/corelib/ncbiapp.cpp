@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/02/22 21:12:38  sandomir
+* MsgRequest -> NcbiContext
+*
 * Revision 1.13  1998/12/28 23:29:06  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -154,14 +157,10 @@ void CCgiApplication::Exit(void)
   CNcbiApplication::Exit();
 }
 
-CCgiRequest* CCgiApplication::GetRequest(void) const
-{
-  return new CCgiRequest(m_Argc, m_Argv, m_Istr, m_Iase);
-}
-
 //
 // Simple Cgi App
 //
+/*
 
 CSimpleCgiApp::CSimpleCgiApp(int argc, char ** argv, CNcbiIstream * istr,
 		       bool indexes_as_entries):
@@ -174,5 +173,6 @@ void CSimpleCgiApp::Init(void)
   m_CgiRequest = GetRequest();
   m_CgiEntries = m_CgiRequest->GetEntries();
 }
+*/
 
 END_NCBI_SCOPE

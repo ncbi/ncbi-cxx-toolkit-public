@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/02/22 21:12:39  sandomir
+* MsgRequest -> NcbiContext
+*
 * Revision 1.15  1999/01/27 16:46:23  sandomir
 * minor change: PFindByName added
 *
@@ -83,38 +86,14 @@
 BEGIN_NCBI_SCOPE
 
 //
-// class CNcbiMsgRequest
+// class CNcbiResource 
 //
 
-CNcbiMsgRequest::CNcbiMsgRequest( CNcbiIstream* istr /* =0 */, 
-                                  bool indexes_as_entries /* =true */ )
-  : CCgiRequest( istr, indexes_as_entries )
+CNcbiContext::CNcbiContext( CCgiRequest& request, 
+                            CCgiResponse& response,
+                            CCgiServerContext& srvCtx )
+    : m_request( request ), m_response( response ), m_srvCtx( srvCtx )
 {}
-
-CNcbiMsgRequest::CNcbiMsgRequest( int argc, char* argv[], 
-                                  CNcbiIstream* istr /* =0 */,
-                                  bool indexes_as_entries /* =true */ )
-  : CCgiRequest( argc, argv, istr, indexes_as_entries )
-{}
-
-
-CNcbiMsgRequest::~CNcbiMsgRequest(void)
-{}
-
-void CNcbiMsgRequest::PutMsg( const string& msg )
-{
-  m_msg.push_back( msg );
-}
-
-const CNcbiMsgRequest::TMsgList& CNcbiMsgRequest::GetMsgList( void ) const
-{
-  return m_msg;
-}
-
-void CNcbiMsgRequest::ClearMsgList( void )
-{
-  m_msg.clear();
-}
 
 //
 // class CNcbiResource 
@@ -126,24 +105,24 @@ CNcbiResource::CNcbiResource( void )
 CNcbiResource::~CNcbiResource( void )
 {}
 
-void CNcbiResource::HandleRequest( CNcbiMsgRequest& request )
+void CNcbiResource::HandleRequest( CNcbiContext& ctx )
 {
   try {
     TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
-                                     PRequested<CNcbiCommand>( request ) );
+                                     PRequested<CNcbiCommand>( ctx ) );
     
     auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
                                 ? GetDefaultCommand()
                                 : (*it)->Clone() );
-    cmd->Execute( request );
+    cmd->Execute( ctx );
     
   } catch( std::exception& e ) {
     _TRACE( e.what() );
-    if( request.GetMsgList().empty() ) {
-      request.PutMsg( "Unknown error" );
+    if( ctx.GetMsg().empty() ) {
+      ctx.GetMsg().push_back( "Unknown error" );
     }
     auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
-    cmd->Execute( request );
+    cmd->Execute( ctx );
   }
 }
 
@@ -158,11 +137,12 @@ CNcbiCommand::CNcbiCommand( CNcbiResource& resource )
 CNcbiCommand::~CNcbiCommand( void )
 {}
 
-bool CNcbiCommand::IsRequested( const CNcbiMsgRequest& request ) const
+bool CNcbiCommand::IsRequested( const CNcbiContext& ctx ) const
 {
   const string value = GetName();
   
-  TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
+  TCgiEntries& entries = const_cast<TCgiEntries&>( 
+      ctx.GetRequest().GetEntries() );
   pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
 
   for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
@@ -178,9 +158,10 @@ bool CNcbiCommand::IsRequested( const CNcbiMsgRequest& request ) const
 // class CNcbiDatabaseInfo
 //
 
-bool CNcbiDatabaseInfo::IsRequested( const CNcbiMsgRequest& request ) const
+bool CNcbiDatabaseInfo::IsRequested( const CNcbiContext& ctx ) const
 {  
-  TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
+  TCgiEntries& entries = const_cast<TCgiEntries&>(
+      ctx.GetRequest().GetEntries() );
   pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
   
   for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
@@ -207,11 +188,12 @@ CNcbiDatabase::~CNcbiDatabase( void )
 // class CNcbiDatabaseReport
 //
 
-bool CNcbiDataObjectReport::IsRequested( const CNcbiMsgRequest& request ) const
+bool CNcbiDataObjectReport::IsRequested( const CNcbiContext& ctx ) const
 { 
   const string value = GetName();
   
-  TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
+  TCgiEntries& entries = const_cast<TCgiEntries&>( 
+      ctx.GetRequest().GetEntries() );
   pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
 
   for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {

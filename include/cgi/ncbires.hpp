@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/02/22 21:12:37  sandomir
+* MsgRequest -> NcbiContext
+*
 * Revision 1.20  1999/02/18 19:29:14  vasilche
 * Added CCgiServerContext.
 *
@@ -98,6 +101,7 @@
 */
 
 #include <corelib/ncbicgi.hpp>
+#include <corelib/ncbicgir.hpp>
 
 #include <functional>
 
@@ -105,42 +109,53 @@ BEGIN_NCBI_SCOPE
 
 class CCgiServerContext
 {
+public:
+    virtual ~CCgiServerContext( void ) {}
 };
 
 //
-// class CNcbiMsgRequest
+// class CNcbiContext
 //
 
-class CNcbiMsgRequest : public CCgiRequest
+/* CNcbiContext is a wrapper for request, response, server context.
+In addtion, it contains list of messages.
+Having non-const reference, CNcbiContext's user has access to its all internal data
+*/
+ 
+class CNcbiContext
 {
 public:
 
-  typedef list<string> TMsgList;
-  
-  CNcbiMsgRequest(CNcbiIstream* istr=0, bool indexes_as_entries=true);
-  CNcbiMsgRequest(int argc, char* argv[], CNcbiIstream* istr=0,
-              bool indexes_as_entries=true);
-  virtual~CNcbiMsgRequest(void);
+    CNcbiContext( CCgiRequest& request, 
+                  CCgiResponse& response,
+                  CCgiServerContext& srvCtx );
 
-  void PutMsg( const string& msg );
-  const TMsgList& GetMsgList( void ) const;
-  void ClearMsgList( void );
+    const CCgiRequest& GetRequest( void ) const;
+    CCgiRequest& GetRequest( void );
 
-    virtual CCgiServerContext* GetServerContext(void)
-        { return 0; }
+    const CCgiResponse& GetResponse( void ) const;
+    CCgiResponse& GetResponse( void );
 
-protected:
+    const CCgiServerContext& GetServCtx( void ) const;
+    CCgiServerContext& GetServCtx( void );
 
-  TMsgList m_msg;
+    typedef list<string> TMsgList;
 
-};
+    const TMsgList& GetMsg( void ) const;
+    TMsgList& GetMsg( void );
 
-//
-// class CNcbiRequest
-//
+    void PutMsg( const string& msg );
+    void ClearMsgList( void );
 
+private:
 
-//class CNcbiMsgRequest : public CCgiRequest
+    CCgiRequest& m_request;
+    CCgiResponse& m_response;
+    CCgiServerContext& m_srvCtx;
+   
+    TMsgList m_msg;
+
+}; 
 
 //
 // class CNcbiResource
@@ -181,7 +196,7 @@ public:
 
   virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
 
-  virtual void HandleRequest( CNcbiMsgRequest& request );
+  virtual void HandleRequest( CNcbiContext& ctx );
 
 protected:
 
@@ -219,11 +234,11 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
-  virtual string GetLink( CNcbiMsgRequest& request ) const = 0;
+  virtual string GetLink( CNcbiContext& ctx ) const = 0;
 
-  virtual void Execute( CNcbiMsgRequest& request ) = 0;
+  virtual void Execute( CNcbiContext& ctx ) = 0;
 
-  virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
+  virtual bool IsRequested( const CNcbiContext& ctx ) const;
 
 protected:
 
@@ -254,7 +269,7 @@ public:
   virtual const CNcbiDbPresentation* GetPresentation() const
     { return 0; }
 
-  virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
+  virtual bool IsRequested( const CNcbiContext& ctx ) const;
 
 protected:
 
@@ -288,7 +303,7 @@ public:
   const TFilterList& GetFilterList( void ) const
     { return m_filter; }
 
-  virtual CNcbiQueryResult* Execute( CNcbiMsgRequest& request ) = 0;
+  virtual CNcbiQueryResult* Execute( CNcbiContext& ctx ) = 0;
 
 protected:
 
@@ -314,7 +329,7 @@ public:
 
   virtual ~CNcbiDbFilterReport() {}
 
-  virtual CNCBINode* CreateView( CNcbiMsgRequest& request ) const = 0;
+  virtual CNCBINode* CreateView( CNcbiContext& ctx ) const = 0;
 };
 
 //
@@ -382,11 +397,11 @@ public:
 
   virtual string GetLink( const CNcbiDataObject& obj ) const = 0;
 
-  virtual CNCBINode* CreateView( CNcbiMsgRequest& request,
+  virtual CNCBINode* CreateView( CNcbiContext& ctx,
                                  const CNcbiDataObject& obj ) const = 0;
 #endif
 
-  virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
+  virtual bool IsRequested( const CNcbiContext& ctx ) const;
 
 protected:
 
@@ -401,15 +416,15 @@ protected:
 template<class T>
 class PRequested : public unary_function<T,bool>
 {  
-  const CNcbiMsgRequest& m_request;
+  const CNcbiContext& m_ctx;
   
 public:
   
-  explicit PRequested( const CNcbiMsgRequest& request ) 
-    : m_request( request ) {}
+  explicit PRequested( const CNcbiContext& ctx ) 
+    : m_ctx( ctx ) {}
 
   bool operator() ( const T* t ) const 
-    { return t->IsRequested( m_request ); }
+    { return t->IsRequested( m_ctx ); }
 
 }; // class PRequested
 
@@ -431,6 +446,8 @@ public:
         { return AStrEquiv( m_name, t->GetName(), PNocase() ); }
     
 }; // class PFindByName
+
+#include <corelib/ncbires.inl>
 
 END_NCBI_SCOPE
 
