@@ -156,7 +156,7 @@ public:
     ///    Position shift in text
     /// @return 
     ///    the position at which the pattern was found, -1 otherwise.
-    int Search(const string& text, unsigned int pos = 0) const
+    size_t Search(const string& text, size_t pos = 0) const
     {
         return Search(text.c_str(), pos, text.length());
     }
@@ -172,9 +172,9 @@ public:
     ///    Length of text
     /// @return 
     ///    the position at which the pattern was found, -1 otherwise.
-    int Search(const char*  text, 
-               unsigned int pos,
-               unsigned int text_len) const;
+    size_t Search(const char*  text, 
+                     size_t pos,
+                     size_t text_len) const;
     
 private:
     // Constants
@@ -185,17 +185,17 @@ private:
     /// Check if the pattern at position pos in the text lies on a
     /// whole word boundry.
     bool IsWholeWord(const char*   text,
-                     unsigned int  pos,
-                     unsigned int  text_len) const;
+                     size_t     pos,
+                     size_t     text_len) const;
 
     void x_InitPattern(void);
 private:    
     string                  m_Pattern;  
-    string::size_type       m_PatLen;
+    size_t                  m_PatLen;
     NStr::ECase             m_CaseSensitive;
     unsigned int            m_WholeWord;
     vector<size_t>          m_LastOccurance;
-    vector<bool>            m_WordDelimiters;
+    vector<unsigned char>   m_WordDelimiters;
     
 };
 
@@ -535,6 +535,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/03/05 15:45:23  kuznets
+* fixed compilation warnings on 64-bit (Sun)
+*
 * Revision 1.15  2004/03/04 17:37:38  kuznets
 * CBoyerMooreMatcher added functions to work with different word delimiters
 *
