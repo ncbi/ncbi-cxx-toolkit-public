@@ -160,14 +160,112 @@ typedef IO_PREFIX::strstream     CNcbiStrstream;
 /// Portable alias for filebuf.
 typedef IO_PREFIX::filebuf       CNcbiFilebuf;
 
+#ifdef NCBI_COMPILER_MSVC
+class CNcbiIfstream : public IO_PREFIX::ifstream
+{
+public:
+    CNcbiIfstream() : m_Fp(0)
+    {
+    }
+
+    explicit CNcbiIfstream(const char* s,
+                           IOS_BASE::openmode mode = IOS_BASE::in)
+    {
+        fastopen(s, mode);
+    }
+
+    void fastopen(const char* s, IOS_BASE::openmode mode = IOS_BASE::in)
+    {
+        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode)))
+            setstate(failbit);
+        else
+            (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
+    }
+
+    virtual ~CNcbiIfstream(void)
+    {
+        if (m_Fp)
+            fclose(m_Fp);
+    }
+private:
+    FILE* m_Fp;
+};
+#else
 /// Portable alias for ifstream.
 typedef IO_PREFIX::ifstream      CNcbiIfstream;
+#endif
 
+#ifdef NCBI_COMPILER_MSVC
+class CNcbiOfstream : public IO_PREFIX::ofstream
+{
+public:
+    CNcbiOfstream() : m_Fp(0)
+    {
+    }
+
+    explicit CNcbiOfstream(const char* s,
+                           IOS_BASE::openmode mode = IOS_BASE::out)
+    {
+        fastopen(s, mode);
+    }
+
+    void fastopen(const char* s, IOS_BASE::openmode mode = IOS_BASE::out)
+    {
+        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode)))
+            setstate(failbit);
+        else
+            (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
+    }
+
+    virtual ~CNcbiOfstream(void)
+    {
+        if (m_Fp)
+            fclose(m_Fp);
+    }
+private:
+    FILE* m_Fp;
+};
+#else
 /// Portable alias for ofstream.
 typedef IO_PREFIX::ofstream      CNcbiOfstream;
+#endif
 
+#ifdef NCBI_COMPILER_MSVC
+class CNcbiFstream : public IO_PREFIX::fstream
+{
+public:
+    CNcbiFstream() : m_Fp(0)
+    {
+    }
+
+    explicit CNcbiFstream(const char* s,
+                          IOS_BASE::openmode
+                          mode = IOS_BASE::in | IOS_BASE::out)
+    {
+        fastopen(s, mode);
+    }
+
+    void fastopen(const char* s, IOS_BASE::openmode
+                  mode = IOS_BASE::in | IOS_BASE::out)
+    {
+        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode)))
+            setstate(failbit);
+        else
+            (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
+    }
+
+    virtual ~CNcbiFstream(void)
+    {
+        if (m_Fp)
+            fclose(m_Fp);
+    }
+private:
+    FILE* m_Fp;
+};
+#else
 /// Portable alias for fstream.
 typedef IO_PREFIX::fstream       CNcbiFstream;
+#endif
 
 // Standard I/O streams
 #define NcbiCin                  IO_PREFIX::cin
@@ -422,6 +520,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/10/20 15:27:17  lavr
+ * Implementations of CNcbiFstreams that forcedly turn on stream
+ * buffering in MSVC (caution: very kludgy and ad hoc solution)
+ *
  * Revision 1.35  2003/08/24 14:32:43  siyan
  * Added CORELIB___ prefix to the inclusion macros.
  *
