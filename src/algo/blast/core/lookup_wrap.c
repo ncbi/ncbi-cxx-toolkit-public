@@ -57,9 +57,9 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
    case AA_LOOKUP_TABLE:
       BlastAaLookupNew(lookup_options, (BlastLookupTable* *)
                        &lookup_wrap->lut);
-      BlastAaLookupIndexQueries( (BlastLookupTable*) lookup_wrap->lut,
+      BlastAaLookupIndexQuery( (BlastLookupTable*) lookup_wrap->lut,
                                  (lookup_options->use_pssm == TRUE) ? sbp->posMatrix : sbp->matrix, 
-                                query, lookup_segments, 1);
+                                query, lookup_segments);
       _BlastAaLookupFinalize((BlastLookupTable*) lookup_wrap->lut);
       break;
    case MB_LOOKUP_TABLE:

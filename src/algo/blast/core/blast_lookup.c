@@ -520,23 +520,15 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
 }
 
 
-Int4 BlastAaLookupIndexQueries(BlastLookupTable* lookup,
+Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlk* query,
-			       ListNode* locations,
-			       Int4 num_queries)
+			       ListNode* locations)
 {
-  Int4 i;
-
-  /* index queries */
-  for(i=0;i<num_queries;i++)
-    {
-      _BlastAaLookupIndexQuery(lookup, matrix, 
-                               (lookup->use_pssm == TRUE) ? NULL : &(query[i]), 
-                               &(locations[i]), 0);
-    }
-
-  return 0;
+return _BlastAaLookupIndexQuery(lookup,
+                               matrix, 
+                               (lookup->use_pssm == TRUE) ? NULL : query, 
+                               locations, 0);
 }
 
 Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,

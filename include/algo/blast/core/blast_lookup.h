@@ -219,7 +219,7 @@ Int4 LookupTableNew(const LookupTableOptions* opt, BlastLookupTable* * lut,
  */
 BlastLookupTable* LookupTableDestruct(BlastLookupTable* lookup);
 
-/** Index an array of queries.
+/** Index a protein query.
  *
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
@@ -228,11 +228,10 @@ BlastLookupTable* LookupTableDestruct(BlastLookupTable* lookup);
  * @param num_queries the number of queries [in]
  * @return Zero.
  */
-Int4 BlastAaLookupIndexQueries(BlastLookupTable* lookup,
+Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlk* query,
-			       ListNode* unmasked_regions,
-			       Int4 num_queries);
+			       ListNode* unmasked_regions);
 
 /** Index a single query.
  *
