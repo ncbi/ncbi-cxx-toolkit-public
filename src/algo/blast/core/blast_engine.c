@@ -636,9 +636,8 @@ Int2 BLAST_SearchEngine(CharPtr blast_program, BLAST_SequenceBlkPtr query,
       or without traceback */
    total_hits = 
       BLAST_SearchEngineCore(query, lookup, query_info, rdfp, subject,
-         eff_len_options->dbseq_num, ewp, gap_align, 
-         score_options, word_params, ext_params, hit_params, results, 
-         return_stats);
+         ewp, gap_align, score_options, word_params, ext_params, hit_params, 
+         results, return_stats);
 
    BlastExtendWordFree(ewp);
 
