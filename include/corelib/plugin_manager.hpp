@@ -488,9 +488,15 @@ public:
     ///
     /// @param paths
     ///   List of directories to scan for DLLs
+    /// @param driver_name
+    ///   Name of the driver (dblib, id1, etc)
+    /// @param version
+    ///   Interface version
     /// @return
     ///   Reference on DLL resolver holding all entry points
-    CDllResolver& Resolve(const vector<string>& paths);
+    CDllResolver& Resolve(const vector<string>& paths,
+                          const string&         driver_name = kEmptyStr,
+                          const CVersionInfo&   version = CVersionInfo::kAny);
 
     /// Search for plugin DLLs, resolve entry points.
     ///
@@ -741,14 +747,15 @@ void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver,
 }
 
 template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::Resolve(const string&       /*driver*/,
-                                             const CVersionInfo& /*version*/)
+void CPluginManager<TClass, TIfVer>::Resolve(const string&       driver,
+                                             const CVersionInfo& version)
 {
     vector<CDllResolver*> resolvers;
 
     // Run all resolvers to search for driver
     ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
-        CDllResolver& dll_resolver = (*it)->Resolve(m_DllSearchPaths);
+        CDllResolver& dll_resolver = 
+            (*it)->Resolve(m_DllSearchPaths, driver, version);
         resolvers.push_back(&dll_resolver);
     }
 
@@ -843,6 +850,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/08/09 15:39:06  kuznets
+ * Improved support of driver name
+ *
  * Revision 1.27  2004/08/02 13:51:29  kuznets
  * Derived CPluginManager from CObject
  *

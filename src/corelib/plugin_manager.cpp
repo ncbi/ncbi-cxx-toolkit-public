@@ -70,18 +70,25 @@ CPluginManager_DllResolver::~CPluginManager_DllResolver(void)
     delete m_DllResolver;
 }
 
-CDllResolver& CPluginManager_DllResolver::Resolve(const vector<string>& paths)
+CDllResolver& 
+CPluginManager_DllResolver::Resolve(const vector<string>& paths,
+                                    const string&         driver_name,
+                                    const CVersionInfo&   version)
 {
     CDllResolver* resolver = GetCreateDllResolver();
     _ASSERT(resolver);
 
+    const string& drv = driver_name.empty() ? m_DriverName : driver_name;
+    const CVersionInfo& ver = version.IsAny() ? m_Version : version;
+
     // Generate DLL masks
 
-    string mask = GetDllNameMask(m_InterfaceName, m_DriverName, m_Version);
+    string mask = GetDllNameMask(m_InterfaceName, drv, ver);
     vector<string> masks;
     masks.push_back(mask);
 
-    resolver->FindCandidates(paths, masks);
+    resolver->FindCandidates(paths, masks, 
+                             CDllResolver::fDefaultDllPath, drv);
     return *resolver;
 }
 
@@ -243,7 +250,7 @@ CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
     // some of them can duplicate, and that's legal. Resolver stops trying
     // after the first success.
 
-    entry_name = GetEntryPointName(m_InterfaceName, m_DriverName);
+    entry_name = GetEntryPointName(m_InterfaceName, "${driver}");
     entry_point_names.push_back(entry_name);
     
     entry_name = GetEntryPointName(kEmptyStr, kEmptyStr);
@@ -252,9 +259,9 @@ CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
     entry_name = GetEntryPointName(m_InterfaceName, kEmptyStr);
     entry_point_names.push_back(entry_name);
     
-    entry_name = GetEntryPointName(kEmptyStr, m_DriverName);
+    entry_name = GetEntryPointName(kEmptyStr, "${driver}");
     entry_point_names.push_back(entry_name);
-    
+
     // Make the library dependent entry point templates
     string base_name_templ = "${basename}";
     string prefix = GetEntryPointPrefix();
@@ -532,6 +539,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/09 15:39:26  kuznets
+ * Improved support of driver name
+ *
  * Revision 1.10  2004/07/29 20:20:15  ucko
  * #include <algorithm> for set_difference().
  *
