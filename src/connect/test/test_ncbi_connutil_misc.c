@@ -148,8 +148,8 @@ static void TEST_URL_Encoding(void)
 static void TEST_BASE64_Encoding(void)
 {
     const char test_string[] = "Quick brown fox jumps over the lazy dog";
-    size_t read, written, len = 16;
-    char buf1[1024], buf2[1024];
+    char buf1[1024], buf2[1024], buf3[1024];
+    size_t read, written, len = 16, i, j;
 
     BASE64_Encode(test_string, strlen(test_string) + 1, &read,
                   buf1, sizeof(buf1), &written, &len);
@@ -163,6 +163,27 @@ static void TEST_BASE64_Encoding(void)
     assert(written == strlen(test_string) + 1);
     assert(buf2[written - 1] == '\0');
     assert(strcmp(buf2, test_string) == 0);
+
+    for (i = 0; i < 100; i++) {
+        len = rand() % 250;
+        memset(buf1, '\0', sizeof(buf1));
+        memset(buf2, '=',  sizeof(buf2));
+        memset(buf3, '\0', sizeof(buf3));
+        for (j = 0; j < len; j++) {
+            buf1[j] = rand() & 0xFF;
+        }
+
+        j = rand() % 100;
+        BASE64_Encode(buf1, len, &read, buf2, sizeof(buf2), &written, &j);
+        assert(len == read);
+        assert (written < sizeof(buf2));
+        assert(buf2[written] == '\0');
+
+        buf2[written] = '=';
+        BASE64_Decode(buf2, written, &read, buf3, sizeof(buf3), &written);
+        assert(len == written);
+        assert(memcmp(buf1, buf3, len) == 0);
+    }
 }
 
 
@@ -327,6 +348,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2005/03/21 17:04:51  lavr
+ * BASE64_{En|De}code tests extended
+ *
  * Revision 6.16  2005/03/19 02:17:08  lavr
  * Fix change log entry
  *
