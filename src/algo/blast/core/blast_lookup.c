@@ -115,6 +115,7 @@ Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
       chain_size = 8;
       hits_in_chain = 0;
       chain = (Int4*) malloc( chain_size * sizeof(Int4) );
+      ASSERT(chain != NULL);
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
       lookup->thin_backbone[index] = chain;
@@ -453,9 +454,9 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
 {
   Uint1* w = NULL;
 
+  ASSERT(query != NULL);
 
-  if (query)
-	w = query->sequence + offset;
+  w = query->sequence + offset;
   
   if (lookup->threshold == 0)
     {
