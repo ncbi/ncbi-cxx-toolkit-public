@@ -125,7 +125,8 @@ int main(int argc, char** argv)
 
             assert(content_length >= n_read);
             content_length -= n_read;
-            status = SOCK_Write(sock, buffer, n_read, &n_written);
+            status = SOCK_Write(sock, buffer, n_read,
+                                &n_written, eIO_WritePersist);
             if ( status != eIO_Success ) {
                 fprintf(stderr, "Error writing to socket(%s)\n",
                         IO_StatusStr(status));
@@ -166,6 +167,9 @@ int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/08/12 15:10:43  lavr
+ * Use persistent SOCK_Write()
+ *
  * Revision 6.11  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *

@@ -78,7 +78,7 @@ static void s_DoServer(unsigned short port, int n_cycle)
         /* Bounce all incoming data back to the client */
         while ((status = SOCK_Read(sock,buf,sizeof(buf),&n_io,eIO_ReadPlain))
                == eIO_Success) {
-            status = SOCK_Write(sock, buf, n_io, &n_io_done);
+            status = SOCK_Write(sock, buf, n_io, &n_io_done, eIO_WritePersist);
             if (status != eIO_Success) {
                 fprintf(s_LogFile,
                         "Failed to write -- DoServer(n_cycle = %d): %s\n",
@@ -148,6 +148,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/08/12 15:10:43  lavr
+ * Use persistent SOCK_Write()
+ *
  * Revision 6.4  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *

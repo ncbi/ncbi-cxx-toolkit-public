@@ -31,43 +31,6 @@
  *   See in "connectr.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.10  2002/08/12 15:06:58  lavr
- * Use persistent SOCK_Write*(
- *
- * Revision 6.9  2002/08/07 16:37:45  lavr
- * EIO_ReadMethod enums changed accordingly;
- * eSCC_SetReadOnWrite processing added
- *
- * Revision 6.8  2002/04/26 16:37:05  lavr
- * Added setting of default timeout in meta-connector's setup routine
- * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
- *
- * Revision 6.7  2001/12/04 15:55:07  lavr
- * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
- * Redesign of open-retry loop
- *
- * Revision 6.6  2001/04/24 21:30:27  lavr
- * Added treatment of CONN_DEFAULT_TIMEOUT
- *
- * Revision 6.5  2001/01/25 17:04:44  lavr
- * Reversed:: DESTROY method calls free() to delete connector structure
- *
- * Revision 6.4  2001/01/23 23:09:47  lavr
- * Flags added to 'Ex' constructor
- *
- * Revision 6.3  2001/01/11 16:38:18  lavr
- * free(connector) removed from s_Destroy function
- * (now always called from outside, in METACONN_Remove)
- *
- * Revision 6.2  2000/12/29 18:16:26  lavr
- * Adapted for use of new connector structure.
- *
- * Revision 6.1  2000/04/07 20:05:38  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_ansi_ext.h>
@@ -407,3 +370,47 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 {
     return s_Init(sock, 0, 0, max_try, init_data, init_size, flags);
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.11  2002/08/12 15:12:46  lavr
+ * Use persistent SOCK_Write()
+ *
+ * Revision 6.10  2002/08/12 15:06:58  lavr
+ * Use persistent SOCK_Write()
+ *
+ * Revision 6.9  2002/08/07 16:37:45  lavr
+ * EIO_ReadMethod enums changed accordingly;
+ * eSCC_SetReadOnWrite processing added
+ *
+ * Revision 6.8  2002/04/26 16:37:05  lavr
+ * Added setting of default timeout in meta-connector's setup routine
+ * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
+ *
+ * Revision 6.7  2001/12/04 15:55:07  lavr
+ * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
+ * Redesign of open-retry loop
+ *
+ * Revision 6.6  2001/04/24 21:30:27  lavr
+ * Added treatment of CONN_DEFAULT_TIMEOUT
+ *
+ * Revision 6.5  2001/01/25 17:04:44  lavr
+ * Reversed:: DESTROY method calls free() to delete connector structure
+ *
+ * Revision 6.4  2001/01/23 23:09:47  lavr
+ * Flags added to 'Ex' constructor
+ *
+ * Revision 6.3  2001/01/11 16:38:18  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
+ * Revision 6.2  2000/12/29 18:16:26  lavr
+ * Adapted for use of new connector structure.
+ *
+ * Revision 6.1  2000/04/07 20:05:38  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

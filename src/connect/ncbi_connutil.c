@@ -555,32 +555,40 @@ extern SOCK URL_Connect
     /* compose and send HTTP header */
     if (
         /* {POST|GET} <path>?<args> HTTP/1.0\r\n */
-        (st = SOCK_Write(sock, (const void*) X_REQ_R, strlen(X_REQ_R), 0))
+        (st = SOCK_Write(sock, (const void*) X_REQ_R, strlen(X_REQ_R),
+                         0, eIO_WritePersist))
         != eIO_Success  ||
-        (st = SOCK_Write(sock, (const void*) path, strlen(path), 0))
+        (st = SOCK_Write(sock, (const void*) path, strlen(path),
+                         0, eIO_WritePersist))
         != eIO_Success  ||
         (x_args  &&
-         ((st = SOCK_Write(sock, (const void*) X_REQ_Q, strlen(X_REQ_Q), 0))
+         ((st = SOCK_Write(sock, (const void*) X_REQ_Q, strlen(X_REQ_Q),
+                           0, eIO_WritePersist))
           != eIO_Success  ||
-          (st = SOCK_Write(sock, (const void*) x_args, strlen(x_args), 0))
+          (st = SOCK_Write(sock, (const void*) x_args, strlen(x_args),
+                           0, eIO_WritePersist))
           != eIO_Success
           )
          )  ||
-        (st = SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E), 0))
+        (st = SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E),
+                         0, eIO_WritePersist))
         != eIO_Success  ||
 
         /* <user_header> */
         (user_hdr  &&
-         (st = SOCK_Write(sock, (const void*) user_hdr, strlen(user_hdr), 0))
+         (st = SOCK_Write(sock, (const void*) user_hdr, strlen(user_hdr),
+                          0, eIO_WritePersist))
          != eIO_Success)  ||
 
         /* Content-Length: <content_length>\r\n\r\n */
         (req_method != eReqMethod_Get  &&
          (sprintf(buffer, "Content-Length: %lu\r\n",
                   (unsigned long) content_length) <= 0  ||
-          (st = SOCK_Write(sock, (const void*) buffer, strlen(buffer), 0))
+          (st = SOCK_Write(sock, (const void*) buffer, strlen(buffer),
+                           0, eIO_WritePersist))
           != eIO_Success))  ||
-        (st = SOCK_Write(sock, (const void*) "\r\n", 2, 0))
+        (st = SOCK_Write(sock, (const void*) "\r\n", 2,
+                         0, eIO_WritePersist))
         != eIO_Success)
         {
             CORE_LOGF(eLOG_Error,
@@ -1175,6 +1183,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2002/08/12 15:12:01  lavr
+ * Use persistent SOCK_Write()
+ *
  * Revision 6.35  2002/08/07 16:32:47  lavr
  * Changed EIO_ReadMethod enums accordingly; log moved to end
  *

@@ -114,7 +114,7 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
                !uuu->adjust_net_info(uuu->net_info,
                                      uuu->adjust_data,
                                      uuu->failure_count)) {
-        CORE_LOG(eLOG_Error, "[HTTP]  Retry attempt(s) exhaused, giving up");
+        CORE_LOG(eLOG_Error, "[HTTP]  Retry attempt(s) exhausted, giving up");
         return 0/*failure*/;
     }
 
@@ -210,7 +210,8 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
                 size_t n_written;
                 size_t len = BUF_PeekAt(uuu->obuf, off, buf, sizeof(buf));
 
-                status = SOCK_Write(uuu->sock, buf, len, &n_written);
+                status = SOCK_Write(uuu->sock, buf, len,
+                                    &n_written, eIO_WritePersist);
                 if (status != eIO_Success) {
                     CORE_LOGF(eLOG_Error,  ("[HTTP]  Error writing body at "
                                             "offset %lu", (unsigned long)off));
@@ -845,6 +846,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2002/08/12 15:12:23  lavr
+ * Use persistent SOCK_Write()
+ *
  * Revision 6.31  2002/08/07 16:33:04  lavr
  * Changed EIO_ReadMethod enums accordingly; log moved to end
  *

@@ -114,7 +114,7 @@ static void TEST__client_1(SOCK sock)
         const char* x_C1 = s_C1;
 #endif
         n_io = strlen(x_C1) + 1;
-        status = SOCK_Write(sock, x_C1, n_io, &n_io_done);
+        status = SOCK_Write(sock, x_C1, n_io, &n_io_done, eIO_WritePersist);
     }}
     assert(status == eIO_Success  &&  n_io == n_io_done);
 
@@ -148,7 +148,7 @@ static void TEST__client_1(SOCK sock)
             continue;
         for (i = 0;  i < 10;  i++) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                                &n_io_done);
+                                &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done==SUB_BLOB_SIZE);
         }
         free(blob);
@@ -166,7 +166,7 @@ static void TEST__client_1(SOCK sock)
             continue;
         for (i = 0;  i < 10;  i++) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                                &n_io_done);
+                                &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         /* Receive back a very big binary blob, and check its content */
@@ -207,9 +207,11 @@ static void TEST__client_1(SOCK sock)
     /* Shutdown on write */
     assert(SOCK_Shutdown(sock, eIO_Write)          == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
-    assert(SOCK_Write   (sock, 0, 0, &n_io_done)   == eIO_Closed);
+    assert(SOCK_Write   (sock, 0, 0, &n_io_done, eIO_WritePersist)
+                                                   == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
-    assert(SOCK_Write   (sock, buf, 1, &n_io_done) == eIO_Closed);
+    assert(SOCK_Write   (sock, buf, 1, &n_io_done, eIO_WritePersist)
+                                                   == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
 
     /* Double shutdown should be okay */
@@ -244,7 +246,7 @@ static void TEST__server_1(SOCK sock)
     SOCK_SetDataLogging(sock, eDefault);
     SOCK_SetDataLoggingAPI(eOn);
     n_io = strlen(s_S1) + 1;
-    status = SOCK_Write(sock, s_S1, n_io, &n_io_done);
+    status = SOCK_Write(sock, s_S1, n_io, &n_io_done, eIO_WritePersist);
     assert(status == eIO_Success  &&  n_io == n_io_done);
     SOCK_SetDataLoggingAPI(eOff);
 
@@ -281,7 +283,7 @@ static void TEST__server_1(SOCK sock)
                                &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                                &n_io_done);
+                                &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
@@ -292,7 +294,8 @@ static void TEST__server_1(SOCK sock)
     /* Shutdown on write */
     assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
-    assert(SOCK_Write   (sock, 0, 0, &n_io_done) == eIO_Closed);
+    assert(SOCK_Write   (sock, 0, 0, &n_io_done, eIO_WritePersist)
+                                                 == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
 }
@@ -369,7 +372,8 @@ static void TEST__client_2(SOCK sock)
         n_io = sizeof(buf);
         do {
             X_SLEEP(1);
-            status = SOCK_Write(sock, x_buf, n_io, &n_io_done);
+            status = SOCK_Write(sock, x_buf, n_io,
+                                &n_io_done, eIO_WritePersist);
             if (status == eIO_Closed) {
                 fprintf(log_fp,
                         "[ERROR] TC2::write: connection closed\n");
@@ -529,7 +533,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
         n_io  = n_io_done;
         x_buf = buf;
         while ( n_io ) {
-            status = SOCK_Write(sock, buf, n_io, &n_io_done);
+            status = SOCK_Write(sock, buf, n_io, &n_io_done, eIO_WritePersist);
             switch ( status ) {
             case eIO_Success:
                 fprintf(log_fp, "[INFO] TS2::write: "
@@ -920,6 +924,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/08/12 15:10:43  lavr
+ * Use persistent SOCK_Write()
+ *
  * Revision 6.15  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *

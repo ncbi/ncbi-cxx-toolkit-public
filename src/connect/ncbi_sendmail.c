@@ -166,7 +166,8 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf)
     size_t len = strlen(buf);
     size_t n;
 
-    if (SOCK_Write(sock, buf, len, &n) != eIO_Success || n != len)
+    if (SOCK_Write(sock, buf, len, &n, eIO_WritePersist) != eIO_Success ||
+        n != len)
         return 0/*failed*/;
     return 1/*success*/;
 }
@@ -445,6 +446,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/08/12 15:12:31  lavr
+ * Use persistent SOCK_Write()
+ *
  * Revision 6.12  2002/08/07 16:33:15  lavr
  * Changed EIO_ReadMethod enums accordingly; log moved to end
  *
