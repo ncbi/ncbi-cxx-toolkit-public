@@ -437,6 +437,7 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
 bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                                   bool always)
 {
+    dst.Reset();
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -802,6 +803,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/03/13 21:49:58  vasilche
+* Fixed mapping of Mix location.
+*
 * Revision 1.54  2003/03/11 20:42:53  grichenk
 * Skip unresolvable IDs and synonym
 *
