@@ -101,6 +101,7 @@ static const string kId_allele           ("allele");
 static const string kId_replace          ("replace");
 static const string kId_dbSnpSynonymyData("dbSnpSynonymyData");
 static const string kId_weight           ("weight");
+static const string kVal_1               ("1");
 static const string kId_dbSNP            ("dbSNP");
 
 
@@ -112,37 +113,61 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     const CSeq_loc& loc = feat.GetLocation();
     const CSeqFeatData& data = feat.GetData();
     if ( data.Which() != CSeqFeatData::e_Imp ||
-         !feat.IsSetQual() || !feat.IsSetExt() || !feat.IsSetDbxref() ) {
+         !feat.IsSetQual() || !feat.IsSetDbxref() ) {
         return eSNP_Bad_WrongMemberSet;
     }
     
     const CImp_feat& imp_feat = data.GetImp();
     const CSeq_feat::TQual& qual = feat.GetQual();
-    const CUser_object& ext = feat.GetExt();
     const CSeq_feat::TDbxref& dbxref = feat.GetDbxref();
 
     size_t alleles_count = 0;
     bool qual_allele = false;
     bool qual_replace = false;
+    bool weight_qual = false;
+    bool weight_ext = false;
     ITERATE ( CSeq_feat::TQual, it, qual ) {
         if ( alleles_count >= kMax_AllelesCount ) {
             return eSNP_Complex_AlleleCountTooLarge;
         }
         const CGb_qual& gb_qual = **it;
-        const string& qual_str = gb_qual.GetQual();
-        if ( qual_str == kId_allele ) {
-            qual_allele = true;
-        }
-        else if ( qual_str == kId_replace ) {
+        const string& qual_id = gb_qual.GetQual();
+        const string& qual_val = gb_qual.GetVal();
+        if ( qual_id == kId_replace ) {
             qual_replace = true;
+        }
+        else if ( qual_id == kId_weight ) {
+            if ( weight_qual ) {
+                return eSNP_Complex_WeightCountIsNotOne;
+            }
+            weight_qual = true;
+            m_Flags |= fWeightQual;
+            if ( qual_val == kVal_1 ) {
+                m_Weight = 1;
+            }
+            else {
+                try {
+                    int value = NStr::StringToInt(qual_val);
+                    if ( value < 0 || value > kMax_Weight ) {
+                        return eSNP_Complex_WeightBadValue;
+                    }
+                    m_Weight = TWeight(value);
+                }
+                catch ( ... ) {
+                    return eSNP_Complex_WeightBadValue;
+                }
+            }
+            continue;
+        }
+        else if ( qual_id == kId_allele ) {
+            qual_allele = true;
         }
         else {
             return eSNP_Bad_WrongTextId;
         }
         TAlleleIndex allele_index =
-            annot_info.x_GetAlleleIndex(gb_qual.GetVal());
+            annot_info.x_GetAlleleIndex(qual_val);
         if ( allele_index == kNo_AlleleIndex ) {
-            //NcbiCout << "Bad allele: \"" << gb_qual.GetVal() << "\"\n";
             return eSNP_Complex_AlleleLengthBad;
         }
         m_AllelesIndices[alleles_count++] = allele_index;
@@ -206,42 +231,47 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         return eSNP_Bad_WrongTextId;
     }
 
-    {{
-        const CObject_id& id = ext.GetType();
-        if ( id.Which() != CObject_id::e_Str ||
-             id.GetStr() != kId_dbSnpSynonymyData ) {
-            return eSNP_Bad_WrongTextId;
+    if ( feat.IsSetExt() ) {
+        if ( weight_qual ) {
+            return eSNP_Complex_WeightCountIsNotOne;
         }
-    }}
-
-    bool have_weight = false;
-    ITERATE ( CUser_object::TData, it, ext.GetData() ) {
-        const CUser_field& field = **it;
-        const CUser_field::TData& user_data = field.GetData();
-
+        const CUser_object& ext = feat.GetExt();
         {{
-            const CObject_id& id = field.GetLabel();
+            const CObject_id& id = ext.GetType();
             if ( id.Which() != CObject_id::e_Str ||
-                 id.GetStr() != kId_weight ) {
+                 id.GetStr() != kId_dbSnpSynonymyData ) {
                 return eSNP_Bad_WrongTextId;
             }
         }}
 
-        if ( have_weight ) {
-            return eSNP_Complex_WeightCountIsNotOne;
+        ITERATE ( CUser_object::TData, it, ext.GetData() ) {
+            const CUser_field& field = **it;
+            const CUser_field::TData& user_data = field.GetData();
+
+            {{
+                const CObject_id& id = field.GetLabel();
+                if ( id.Which() != CObject_id::e_Str ||
+                     id.GetStr() != kId_weight ) {
+                    return eSNP_Bad_WrongTextId;
+                }
+            }}
+
+            if ( weight_ext ) {
+                return eSNP_Complex_WeightCountIsNotOne;
+            }
+            weight_ext = true;
+            if ( field.IsSetNum() ||
+                 user_data.Which() != CUser_field::TData::e_Int ) {
+                return eSNP_Complex_WeightBadValue;
+            }
+            int value = user_data.GetInt();
+            if ( value < 0 || value > kMax_Weight ) {
+                return eSNP_Complex_WeightBadValue;
+            }
+            m_Weight = TWeight(value);
         }
-        if ( field.IsSetNum() ||
-             user_data.Which() != CUser_field::TData::e_Int ) {
-            return eSNP_Complex_WeightBadValue;
-        }
-        int value = user_data.GetInt();
-        if ( value < 0 || value > kMax_Weight ) {
-            return eSNP_Complex_WeightBadValue;
-        }
-        m_Weight = TWeight(value);
-        have_weight = true;
     }
-    if ( !have_weight ) {
+    if ( !weight_ext && !weight_qual ) {
         return eSNP_Complex_WeightCountIsNotOne;
     }
 
@@ -321,7 +351,7 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
             CPackString::Assign(feat.SetData().SetImp().SetKey(),
                                 kId_variation);
         }
-        { // weight
+        if ( 0 ) { // weight - will create in x_UpdateSeq_featData
             CSeq_feat::TExt& ext = feat.SetExt();
             CPackString::Assign(ext.SetType().SetStr(),
                                 kId_dbSnpSynonymyData);
@@ -373,14 +403,45 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
             }
             else {
                 qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
-                CPackString::Assign(gb_qual->SetQual(), qual_str);
             }
+            CPackString::Assign(gb_qual->SetQual(), qual_str);
             CPackString::Assign(gb_qual->SetVal(),
                                 annot_info.x_GetAllele(allele_index));
         }
+        if ( m_Flags & fWeightQual ) { // weight in qual
+            CGb_qual* gb_qual;
+            if ( i < qual.size() ) {
+                gb_qual = qual[i].GetPointer();
+            }
+            else {
+                qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
+            }
+            ++i;
+            CPackString::Assign(gb_qual->SetQual(), kId_weight);
+            if ( m_Weight == 1 ) {
+                CPackString::Assign(gb_qual->SetVal(), kVal_1);
+            }
+            else {
+                gb_qual->SetVal(NStr::IntToString(m_Weight));
+            }
+        }
         qual.resize(i);
     }
-    { // weight
+    if ( m_Flags & fWeightQual ) { // weight in qual
+        feat.ResetExt();
+    }
+    else { // weight in ext
+        if ( !feat.IsSetExt() ) {
+            CSeq_feat::TExt& ext = feat.SetExt();
+            CPackString::Assign(ext.SetType().SetStr(),
+                                kId_dbSnpSynonymyData);
+            CSeq_feat::TExt::TData& data = ext.SetData();
+            data.resize(1);
+            data[0].Reset(new CUser_field);
+            CUser_field& user_field = *data[0];
+            CPackString::Assign(user_field.SetLabel().SetStr(),
+                                kId_weight);
+        }
         CSeq_feat::TExt::TData& data = feat.SetExt().SetData();
         _ASSERT(data.size() == 1);
         CUser_field& user_field = *data[0];
@@ -500,6 +561,12 @@ void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
     : m_Gi(-1)
+{
+}
+
+
+CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot& annot)
+    : m_Gi(-1), m_Seq_annot(&annot)
 {
 }
 
@@ -631,6 +698,18 @@ void CSeq_annot_SNP_Info::x_SetGi(int gi)
 }
 
 
+void CSeq_annot_SNP_Info::x_FinishParsing(void)
+{
+    // we don't need index maps anymore
+    m_Comments.ClearIndices();
+    m_Alleles.ClearIndices();
+    
+    sort(m_SNP_Set.begin(), m_SNP_Set.end());
+    
+    x_SetDirtyAnnotIndex();
+}
+
+
 void CSeq_annot_SNP_Info::Reset(void)
 {
     m_Gi = -1;
@@ -647,6 +726,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.16  2004/08/12 14:17:18  vasilche
+ * Understand "weight" param in qual field.
+ *
  * Revision 1.15  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.

@@ -151,7 +151,8 @@ public:
     typedef Uint1 TFlags;
     enum FFlags {
         fMinusStrand = 1,
-        fQualReplace = 2
+        fQualReplace = 2,
+        fWeightQual  = 4
     };
 
     TSeqPos         m_ToPosition;
@@ -209,6 +210,7 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_SNP_Info : public CTSE_Info_Object
     typedef CTSE_Info_Object TParent;
 public:
     CSeq_annot_SNP_Info(void);
+    CSeq_annot_SNP_Info(const CSeq_annot& annot);
     CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info);
     ~CSeq_annot_SNP_Info(void);
 
@@ -244,6 +246,10 @@ public:
     const CSeq_annot& GetRemainingSeq_annot(void) const;
     void Reset(void);
 
+    // filling SNP table from parser
+    void x_AddSNP(const SSNP_Info& snp_info);
+    void x_FinishParsing(void);
+
 protected:
     SSNP_Info::TCommentIndex x_GetCommentIndex(const string& comment);
     const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
@@ -252,7 +258,6 @@ protected:
 
     bool x_CheckGi(int gi);
     void x_SetGi(int gi);
-    void x_AddSNP(const SSNP_Info& snp_info);
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
@@ -261,7 +266,6 @@ private:
 
     friend class CSeq_annot_Info;
     friend class CSeq_annot_SNP_Info_Reader;
-    friend class CSNP_Seq_feat_hook;
     friend struct SSNP_Info;
     friend class CSeq_feat_Handle;
 
@@ -270,7 +274,7 @@ private:
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
     CIndexedStrings             m_Alleles;
-    CRef<CSeq_annot>            m_Seq_annot;
+    CConstRef<CSeq_annot>       m_Seq_annot;
 };
 
 
@@ -445,6 +449,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/08/12 14:17:30  vasilche
+* Understand "weight" param in qual field.
+*
 * Revision 1.15  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.
