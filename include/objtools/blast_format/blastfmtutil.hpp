@@ -181,6 +181,7 @@ public:
     ///@param bits: place to extract the bit score to
     ///@param evalue: place to extract the e value to
     ///@param sum_n: place to extract the sum_n to
+    ///@param sum_n: place to extract the num_ident to
     ///@param use_this_gi: place to extract use_this_gi to
     ///
     static void GetAlnScores(const CSeq_align& aln,
@@ -188,6 +189,7 @@ public:
                              double& bits, 
                              double& evalue,
                              int& sum_n,
+                             int& num_ident,
                              list<int>& use_this_gi);
     
     ///Add the specified white space
@@ -225,6 +227,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.9  2005/02/23 16:28:55  jianye
+num_ident addition to getalnscore
+
 Revision 1.8  2005/02/22 15:52:49  jianye
 add pruneseqalign
 
