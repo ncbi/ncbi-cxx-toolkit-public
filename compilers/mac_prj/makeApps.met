@@ -237,10 +237,10 @@ on SetProjectData()
 	end tell
 	
 	---------- GENOME WORK BENCH ----------
-	AddAppProject("gbench", {"fltk", "sockets", "libdl", "cmdline"}, "gui:gbench", Â
-		{ "w_flek", "w_table"}, {"gui_core"})
-	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline"}, "gui:gbench:gbench_plugin_scan", Â
-		{"xncbi", "xser", "xutil"}, {"gui_core"})
+	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
+		{"w_flek", "w_table"}, {"gui_core"})
+	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
+		{}, {"gui_core"})
 	
 	---------- SERIAL ----------	
 	AddProject(datatoolData)
@@ -512,14 +512,18 @@ on SetupTarget(proj, targetIndex)
 		end if
 		
 		-- non debug targets get different output names.
-		if not targetDebug then
-			if libtype is "MSL" then
-				set targetFilename to projName & "_" & libtype -- MSL Release just has _MSL on the end.
-			else
-				set targetFilename to projName --  Release has same name as project.
-			end if
+		if projFeatures contains "plainname" then
+			set targetFilename to projName --  all targets have the same name.
 		else
-			set targetFilename to projName & fileNameSuffix
+			if not targetDebug then
+				if libtype is "MSL" then
+					set targetFilename to projName & "_" & libtype -- MSL Release just has _MSL on the end.
+				else
+					set targetFilename to projName --  Release has same name as project.
+				end if
+			else
+				set targetFilename to projName & fileNameSuffix
+			end if
 		end if
 		
 		-- make sure target files have the right extension.
@@ -696,6 +700,7 @@ end CreateProject
 
 on CreateAndBuildAllProjects()
 	CreateFolder(gProjectsDir)
+	CleanupFiles(gProjectsDir)
 	set targetSpecs to GetTargetSpecs()
 	
 	repeat with proj in gProjectData
@@ -797,6 +802,7 @@ on GetStationeryName(proj)
 	set stationeryName to pStationeryName & pProjectFileExt
 	
 	CreateFolder(stationeryDir)
+	
 	tell application "Finder"
 		-- does the Library Stationery already exist?
 		if not (exists file (stationeryDir & stationeryName)) then
