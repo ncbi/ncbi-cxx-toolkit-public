@@ -270,12 +270,15 @@ extern EIO_Status LSOCK_GetOSHandle
 /* [CLIENT-side]  Connect client to another(server-side, listening) socket
  * (socket() + connect() [+ select()])
  */
-extern EIO_Status SOCK_Create
+extern EIO_Status SOCK_CreateEx
 (const char*     host,    /* [in]  host to connect to                     */
  unsigned short  port,    /* [in]  port to connect to                     */
  const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
- SOCK*           sock     /* [out] handle of the created socket           */
+ SOCK*           sock,    /* [out] handle of the created socket           */
+ ESwitch         do_log   /* [in]  whether to do logging on this socket   */
  );
+
+#define SOCK_Create(h, p, t, s) SOCK_CreateEx(h, p, t, s, eDefault)
 
 
 /* [CLIENT-side]  Close the socket referred by "sock" and then connect
@@ -566,6 +569,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2002/12/04 16:53:12  lavr
+ * Introduce SOCK_CreateEx()
+ *
  * Revision 6.23  2002/11/01 20:12:06  lavr
  * Specifically state which IP/name manip. routines do emtpy output buffer
  *
