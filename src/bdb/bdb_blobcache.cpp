@@ -284,7 +284,8 @@ public:
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t* bytes_written = 0)
     {
-        *bytes_written = 0;
+        if (bytes_written)
+            *bytes_written = 0;
         if (count == 0)
             return eRW_Success;
 		m_AttrUpdFlag = false;
@@ -298,7 +299,9 @@ public:
             if (new_buf_length <= s_WriterBufferSize) {
                 ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
                 m_BytesInBuffer = new_buf_length;
-                *bytes_written = count;
+                if (bytes_written) {
+                    *bytes_written = count;
+                }
                 return eRW_Success;
             } else {
                 // Buffer overflow. Writing to file.
@@ -318,7 +321,9 @@ public:
         if (m_OverflowFile) {
             m_OverflowFile->write((char*)buf, count);
             if ( m_OverflowFile->good() ) {
-                *bytes_written = count;
+                if (bytes_written) {
+                    *bytes_written = count;
+                }
                 return eRW_Success;
             }
         }
@@ -1848,6 +1853,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2004/09/28 17:05:10  kuznets
+ * Bug fix: IWriter::Write() bytes_written is optional
+ *
  * Revision 1.79  2004/09/27 16:37:19  kuznets
  * +use_transactions CF parameter
  *
