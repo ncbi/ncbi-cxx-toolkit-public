@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/02/26 16:32:01  kans
+ * Including string.h instead of cstring
+ *
  * Revision 6.8  2001/02/25 21:41:50  kans
  * Include <cstring> on Mac to get memset
  *
@@ -81,7 +84,7 @@
 #include <memory.h>
 
 #if defined(__POWERPC__) || defined(powerc) || defined(__powerc) || defined(__POWERPC)
-#include <cstring>
+#include <string.h>
 #endif
 
 
