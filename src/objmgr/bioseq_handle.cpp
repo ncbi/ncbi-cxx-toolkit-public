@@ -74,7 +74,7 @@ CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
     : m_TSE(tse),
       m_Seq_id(id),
       m_ScopeInfo(&binfo),
-      m_Info(binfo.GetBioseqInfo(tse))
+      m_Info(binfo.GetBioseqInfo(tse.x_GetTSE_Info()))
 {
 }
 
@@ -856,6 +856,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/12/28 18:39:46  vasilche
+* Added lost scope lock in CTSE_Handle.
+*
 * Revision 1.76  2004/12/22 15:56:05  vasilche
 * Introduced CTSE_Handle.
 * Added auto-release of unused TSEs in scope.

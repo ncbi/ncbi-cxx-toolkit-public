@@ -35,6 +35,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -54,15 +55,31 @@ class CBlobIdKey;
 /////////////////////////////////////////////////////////////////////////////
 
 
-class NCBI_XOBJMGR_EXPORT CTSE_Handle : public CTSE_ScopeUserLock
+class NCBI_XOBJMGR_EXPORT CTSE_Handle
 {
 public:
+    /// Default constructor/destructor and assignment
     CTSE_Handle(void);
+    ~CTSE_Handle(void);
+    CTSE_Handle& operator=(const CTSE_Handle& tse);
 
+    /// Returns scope
     CScope& GetScope(void) const;
 
+    /// State check
+    operator bool(void) const;
+    bool operator!(void) const;
+    bool operator==(const CTSE_Handle& tse) const;
+    bool operator!=(const CTSE_Handle& tse) const;
+    bool operator<(const CTSE_Handle& tse) const;
+
+    /// Reset to null state
+    void Reset(void);
+
+    /// TSE info getters
     CBlobIdKey GetBlobId(void) const;
 
+    /// Get Bioseq handle from this TSE
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id) const;
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id) const;
 
@@ -86,6 +103,11 @@ protected:
 
     CTSE_Handle(TObject& object);
 
+private:
+
+    CHeapScope          m_Scope;
+    CTSE_ScopeUserLock  m_TSE;
+
 public: // non-public section
 
     TObject& x_GetScopeInfo(void) const;
@@ -100,22 +122,58 @@ public: // non-public section
 
 
 inline
-CTSE_Handle::CTSE_Handle(void)
+CScope& CTSE_Handle::GetScope(void) const
 {
+    return m_Scope;
 }
 
 
 inline
-CTSE_Handle::CTSE_Handle(TObject& object)
-    : CTSE_ScopeUserLock(object)
+CScope_Impl& CTSE_Handle::x_GetScopeImpl(void) const
 {
+    return *m_Scope.GetImpl();
+}
+
+
+inline
+CTSE_Handle::operator bool(void) const
+{
+    return m_TSE;
+}
+
+
+inline
+bool CTSE_Handle::operator!(void) const
+{
+    return !m_TSE;
+}
+
+
+inline
+bool CTSE_Handle::operator==(const CTSE_Handle& tse) const
+{
+    return m_TSE == tse.m_TSE;
+}
+
+
+inline
+bool CTSE_Handle::operator!=(const CTSE_Handle& tse) const
+{
+    return m_TSE != tse.m_TSE;
+}
+
+
+inline
+bool CTSE_Handle::operator<(const CTSE_Handle& tse) const
+{
+    return m_TSE < tse.m_TSE;
 }
 
 
 inline
 CTSE_Handle::TObject& CTSE_Handle::x_GetScopeInfo(void) const
 {
-    return **this;
+    return *m_TSE;
 }
 
 

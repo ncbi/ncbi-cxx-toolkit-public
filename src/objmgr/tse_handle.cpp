@@ -40,21 +40,44 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+CTSE_Handle::CTSE_Handle(void)
+{
+}
+
+
+CTSE_Handle::CTSE_Handle(TObject& object)
+    : m_Scope(object.GetScopeImpl().GetScope()),
+      m_TSE(object)
+{
+}
+
+
+CTSE_Handle::~CTSE_Handle(void)
+{
+}
+
+
+CTSE_Handle& CTSE_Handle::operator=(const CTSE_Handle& tse)
+{
+    if ( &tse != this ) {
+        Reset();
+        m_Scope = tse.m_Scope;
+        m_TSE = tse.m_TSE;
+    }
+    return *this;
+}
+
+
+void CTSE_Handle::Reset(void)
+{
+    m_TSE.Reset();
+    m_Scope.Reset();
+}
+
+
 const CTSE_Info& CTSE_Handle::x_GetTSE_Info(void) const
 {
-    return *GetTSE_Lock();
-}
-
-
-CScope_Impl& CTSE_Handle::x_GetScopeImpl(void) const
-{
-    return x_GetScopeInfo().GetScopeImpl();
-}
-
-
-CScope& CTSE_Handle::GetScope(void) const
-{
-    return x_GetScopeImpl().GetScope();
+    return *m_TSE.GetTSE_Lock();
 }
 
 
@@ -83,7 +106,7 @@ CBioseq_Handle CTSE_Handle::GetBioseqHandle(const CSeq_id& id) const
 
 bool CTSE_Handle::AddUsedTSE(const CTSE_Handle& tse) const
 {
-    return x_GetScopeInfo().AddUsedTSE(tse);
+    return x_GetScopeInfo().AddUsedTSE(tse.m_TSE);
 }
 
 

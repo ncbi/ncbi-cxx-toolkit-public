@@ -257,7 +257,7 @@ public:
 
     void ClearCacheOnRemoveData(const CBioseq_Info& bioseq);
 
-    //const CTSE_Lock& GetTSE_Lock(void) const;
+    bool x_SameTSE(const CTSE_Info& tse) const;
 
     int GetLoadIndex(void) const;
     TBlobOrder GetBlobOrder(void) const;
@@ -326,7 +326,7 @@ public:
     const CSeq_id_Handle& GetLookupId(void) const;
 
     bool HasBioseq(void) const;
-    CConstRef<CBioseq_Info> GetBioseqInfo(const CTSE_ScopeUserLock& tse) const;
+    CConstRef<CBioseq_Info> GetBioseqInfo(const CTSE_Info& tse) const;
 
     const TIds& GetIds(void) const;
 
@@ -453,6 +453,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/12/28 18:39:46  vasilche
+* Added lost scope lock in CTSE_Handle.
+*
 * Revision 1.13  2004/12/22 15:56:26  vasilche
 * Used deep copying of CPriorityTree in AddScope().
 * Implemented auto-release of unused TSEs in scope.

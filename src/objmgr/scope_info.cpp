@@ -686,6 +686,12 @@ void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 }
 
 
+bool CTSE_ScopeInfo::x_SameTSE(const CTSE_Info& tse) const
+{
+    return m_TSE_LockCounter.Get() > 0 && m_TSE_Lock && &*m_TSE_Lock == &tse;
+}
+
+
 bool CTSE_ScopeInfo::AddUsedTSE(const CTSE_ScopeUserLock& used_tse) const
 {
     CTSE_ScopeInfo& add_info = *used_tse;
@@ -891,12 +897,13 @@ const CSeq_id_Handle& CBioseq_ScopeInfo::GetLookupId(void) const
 
 
 CConstRef<CBioseq_Info>
-CBioseq_ScopeInfo::GetBioseqInfo(const CTSE_ScopeUserLock& lock) const
+CBioseq_ScopeInfo::GetBioseqInfo(const CTSE_Info& tse) const
 {
-    const CTSE_Info& tse = *lock.GetTSE_Lock();
+    _ASSERT(GetTSE_ScopeInfo().x_SameTSE(tse));
     if ( !m_Bioseq ) {
         CDataSource_ScopeInfo::TTSE_LockSetMutex::TWriteLockGuard
             guard(GetTSE_ScopeInfo().GetDSInfo().GetTSE_LockSetMutex());
+
         if ( !m_Bioseq ) {
             m_Bioseq = tse.FindBioseq(GetLookupId());
         }
@@ -988,6 +995,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/12/28 18:39:46  vasilche
+* Added lost scope lock in CTSE_Handle.
+*
 * Revision 1.10  2004/12/22 15:56:26  vasilche
 * Used deep copying of CPriorityTree in AddScope().
 * Implemented auto-release of unused TSEs in scope.

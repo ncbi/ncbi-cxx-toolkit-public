@@ -557,7 +557,7 @@ CScope_Impl::x_GetBioseq_Lock(const CBioseq_ScopeInfo& binfo)
 {
     _ASSERT(&binfo.GetScopeImpl() == this);
     TTSE_Lock tse = x_GetTSE_Lock(binfo.GetTSE_ScopeInfo());
-    return TBioseq_Lock(binfo.GetBioseqInfo(tse), tse);
+    return TBioseq_Lock(binfo.GetBioseqInfo(*tse.GetTSE_Lock()), tse);
 }
 
 
