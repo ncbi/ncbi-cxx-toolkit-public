@@ -94,6 +94,7 @@ protected:
     void SetMBLookupTableDefaults();
     void SetMBInitialWordOptionsDefaults();
     void SetMBGappedExtensionDefaults();
+    void SetMBScoringOptionsDefaults();
 };
 
 END_SCOPE(blast)
@@ -106,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/22 20:15:58  dondosha
+ * Added custom setting of MB scoring options for discontiguous case
+ *
  * Revision 1.6  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *
