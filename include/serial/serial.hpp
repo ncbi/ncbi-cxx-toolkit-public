@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/09/08 20:31:18  vasilche
+* Added BEGIN_CLASS_INFO3 macro
+*
 * Revision 1.27  1999/09/07 20:57:44  vasilche
 * Forgot to add some files.
 *
@@ -642,8 +645,11 @@ const CTypeInfo* Method(void) \
     return info; \
 }
  
+#define BEGIN_CLASS_INFO3(Name, Class, RealClass) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<RealClass>, (Name))
 #define BEGIN_CLASS_INFO2(Name, Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, (Name))
+BEGIN_CLASS_INFO3(Name, Class, Class)
+
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_ABSTRACT_CLASS_INFO2(Name, Class) \
