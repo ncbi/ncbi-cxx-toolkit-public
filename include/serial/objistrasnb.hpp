@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/05/09 16:38:33  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.21  2000/04/28 16:58:02  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -174,7 +179,7 @@ protected:
     virtual void StartMember(Member& member, LastMember& lastMember);
     virtual void EndMember(const Member& member);
 	virtual void Begin(ByteBlock& block);
-	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
+	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
 	virtual void End(const ByteBlock& block);
 
 #if HAVE_NCBI_C

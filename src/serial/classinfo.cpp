@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/05/09 16:38:38  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.42  2000/05/03 14:38:13  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -528,7 +533,7 @@ size_t CClassInfoTmpl::GetSize(void) const
 
 void CClassInfoTmpl::UpdateClassInfo(const CObject* /* object */)
 {
-    SetParentClass(CObject::GetTypeInfo());
+    SetParentClass(CObjectGetTypeInfo::GetTypeInfo());
 }
 
 void CClassInfoTmpl::SetParentClass(TTypeInfo parentType)
@@ -536,7 +541,8 @@ void CClassInfoTmpl::SetParentClass(TTypeInfo parentType)
     const CClassInfoTmpl* parentClass =
         dynamic_cast<const CClassInfoTmpl*>(parentType);
     _ASSERT(parentClass != 0);
-    _ASSERT(!m_ParentClassInfo || m_ParentClassInfo == CObject::GetTypeInfo());
+    _ASSERT(!m_ParentClassInfo ||
+            m_ParentClassInfo == CObjectGetTypeInfo::GetTypeInfo());
     m_ParentClassInfo = parentClass;
 }
 
@@ -581,7 +587,8 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
         info->GetTypeInfo()->WriteData(out, GetMember(info, object));
     }
     else {
-        CObjectOStream::Block block(out, RandomOrder());
+        CObjectOStream::Block block(out, CObjectOStream::Block::eClass,
+                                    RandomOrder());
         WriteMembers(out, block, object);
     }
 }
@@ -595,7 +602,8 @@ void CClassInfoTmpl::SkipData(CObjectIStream& in) const
         info->GetTypeInfo()->SkipData(in);
     }
     else {
-        CObjectIStream::Block block(in, RandomOrder());
+        CObjectIStream::Block block(in, CObjectIStream::Block::eClass,
+                                    RandomOrder());
         SkipMembers(in, block);
     }
 }
@@ -640,7 +648,8 @@ void CClassInfoTmpl::WriteMembers(CObjectOStream& out,
 void CClassInfoTmpl::SkipMembers(CObjectIStream& in,
                                  CObjectIStream::Block& block) const
 {
-    if ( m_ParentClassInfo && m_ParentClassInfo != CObject::GetTypeInfo() )
+    if ( m_ParentClassInfo &&
+         m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
         m_ParentClassInfo->SkipMembers(in, block);
     if ( RandomOrder() ) {
         vector<bool> read(m_Members.GetSize());
@@ -654,7 +663,6 @@ void CClassInfoTmpl::SkipMembers(CObjectIStream& in,
             }
             read[index] = true;
             SkipMember(in, m_Members, index);
-            m.End();
         }
         // skip all absent members
         for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
@@ -677,7 +685,6 @@ void CClassInfoTmpl::SkipMembers(CObjectIStream& in,
                 CheckMemberOptional(in, m_Members, i);
             }
             SkipMember(in, m_Members, index);
-            m.End();
         }
         // init all absent members
         for ( size_t i = lastMember.GetIndex() + 1, end = m_Members.GetSize();
@@ -691,7 +698,8 @@ void CClassInfoTmpl::ReadMembers(CObjectIStream& in,
                                  CObjectIStream::Block& block,
                                  TObjectPtr object) const
 {
-    if ( m_ParentClassInfo && m_ParentClassInfo != CObject::GetTypeInfo() )
+    if ( m_ParentClassInfo &&
+         m_ParentClassInfo != CObjectGetTypeInfo::GetTypeInfo() )
         m_ParentClassInfo->ReadMembers(in, block, object);
     if ( RandomOrder() ) {
         vector<bool> read(m_Members.GetSize());
@@ -705,7 +713,6 @@ void CClassInfoTmpl::ReadMembers(CObjectIStream& in,
             }
             read[index] = true;
             ReadMember(in, object, m_Members, index);
-            m.End();
         }
         // init all absent members
         for ( size_t i = 0, end = m_Members.GetSize(); i < end; ++i ) {
@@ -729,7 +736,6 @@ void CClassInfoTmpl::ReadMembers(CObjectIStream& in,
                 AssignMemberDefault(in, object, m_Members, currentMember++);
             }
             ReadMember(in, object, m_Members, currentMember++);
-            m.End();
         }
         // init all absent members
         size_t memberCount = m_Members.GetSize();
@@ -745,7 +751,7 @@ CCObjectClassInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
     return &typeid(*static_cast<const CObject*>(object));
 }
 
-TTypeInfo CObject::GetTypeInfo(void)
+TTypeInfo CObjectGetTypeInfo::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = new CCObjectClassInfo;
     return typeInfo;

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/05/09 16:38:38  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.49  2000/05/04 16:22:19  vasilche
 * Cleaned and optimized blocks and members.
 *
@@ -373,13 +378,13 @@ string CObjectIStream::GetPosition(void) const
 void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
 {
     SetFailFlags(fail);
-    throw runtime_error(message);
+    THROW1_TRACE(runtime_error, message);
 }
 
 void CObjectIStream::ThrowError1(EFailFlags fail, const string& message)
 {
     SetFailFlags(fail);
-    throw runtime_error(message);
+    THROW1_TRACE(runtime_error, message);
 }
 
 void CObjectIStream::ThrowIOError1(CNcbiIstream& in)
@@ -464,7 +469,6 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
                          typeInfo->GetName());
         RegisterObject(object, typeInfo);
         ReadData(object, typeInfo);
-        m.End();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -597,7 +601,6 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 RegisterObject(object, declaredType);
                 ReadData(object, declaredType);
                 ReadOtherPointerEnd();
-                m.End();
                 info = CObjectInfo(object, typeInfo);
                 break;
             }
@@ -657,7 +660,6 @@ CObjectInfo CObjectIStream::ReadObjectInfo(void)
             RegisterObject(object, typeInfo);
             ReadData(object, typeInfo);
             ReadOtherPointerEnd();
-            m.End();
             return CObjectInfo(object, typeInfo);
         }
     default:
@@ -709,7 +711,6 @@ void CObjectIStream::Skip(TTypeInfo typeInfo)
                          typeInfo->GetName());
         RegisterObject(0, typeInfo);
         SkipData(typeInfo);
-        m.End();
     }
     catch (...) {
         SetFailFlags(eFail);
@@ -763,7 +764,6 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
                 RegisterObject(0, typeInfo);
                 SkipData(typeInfo);
                 ReadOtherPointerEnd();
-                m.End();
                 break;
             }
         default:
@@ -797,7 +797,6 @@ void CObjectIStream::SkipObjectInfo(void)
             RegisterObject(0, typeInfo);
             SkipData(typeInfo);
             ReadOtherPointerEnd();
-            m.End();
             return;
         }
     default:
@@ -830,29 +829,37 @@ void CObjectIStream::VEnd(const Block& )
 string CObjectIStream::MemberStack(void) const
 {
     string stack;
-    //    bool wasMember = false;
-    for ( const StackElement* m = m_CurrentElement; m; m = m->GetPrevous() ) {
-        string s = m->ToString();
-/*        if ( s.empty() ) {
-            if ( !wasMember ) {
-                s = "E";
-                wasMember = false;
-            }
-            else {
-                wasMember = false;
-                continue;
-            }
+    if ( !m_CurrentElement->AppendStackTo(stack) )
+        stack = "?";
+    return stack;
+}
+
+bool CObjectIStream::StackElement::AppendStackTo(string& s) const
+{
+    bool haveStack = m_Previous && m_Previous->AppendStackTo(s);
+    if ( m_NameType == eNameEmpty )
+        return haveStack;
+    if ( haveStack )
+        s += '.';
+    switch ( m_NameType ) {
+    case eNameCharPtr:
+        s += m_NameCharPtr;
+        break;
+    case eNameString:
+        s += *m_NameString;
+        break;
+    case eNameId:
+        if ( m_NameId->GetName().empty() ) {
+            s += '[';
+            s += NStr::IntToString(m_NameId->GetTag());
+            s += ']';
         }
         else {
-            wasMember = true;
+            s += m_NameId->GetName();
         }
-*/
-        if ( stack.empty() )
-            stack = s;
-        else
-            stack = s + '.' + stack;
+        break;
     }
-    return stack;
+    return true;
 }
 
 string CObjectIStream::StackElement::ToString(void) const
@@ -877,13 +884,14 @@ bool CObjectIStream::StackElement::CanClose(void) const
         // fail flag already set
         return false;
     }
-    else if ( uncaught_exception() || !Ended() ) {
+    else if ( uncaught_exception() ) {
         // exception thrown without setting fail flag
         GetStream().SetFailFlags(eFail);
         return false;
     }
     else {
         // ok
+        _TRACE("CanClose: "<<GetStream().MemberStack());
         return true;
     }
 }
@@ -892,57 +900,32 @@ void CObjectIStream::EndMember(const Member& )
 {
 }
 
-bool CObjectIStream::Block::Next(void)
-{
-    _ASSERT(!Ended());
-    if ( !GetStream().VNext(*this) ) {
-        End();
-        return false;
-    }
-    IncIndex();
-    return true;
-}
-
-CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
-    : StackElement(in, "B"),
-      m_KnownLength(false), m_Length(0)
-{
-    in.Begin(*this);
-    if ( KnownLength() && m_Length == 0 )
-        End();
-}
-
-CObjectIStream::ByteBlock::~ByteBlock(void)
-{
-    if ( CanClose() ) {
-        _ASSERT(!KnownLength() || m_Length == 0);
-        GetStream().End(*this);
-    }
-}
-
 size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
                                        bool forceLength)
 {
     size_t length;
-    if ( KnownLength() && m_Length < needLength )
-        length = m_Length;
-    else
-        length = needLength;
+    if ( KnownLength() ) {
+        if ( m_Length < needLength )
+            length = m_Length;
+        else
+            length = needLength;
+    }
+    else {
+        if ( m_Length == 0 )
+            length = 0;
+        else
+            length = needLength;
+    }
     
-    if ( Ended() || length == 0 ) {
+    if ( length == 0 ) {
         if ( forceLength && needLength != 0 )
             GetStream().ThrowError(eReadError, "read fault");
         return 0;
     }
 
     length = GetStream().ReadBytes(*this, static_cast<char*>(dst), length);
-    if ( length != 0 ) {
-        if ( (m_Length -= length) == 0 )
-            End();
-    }
-    else {
-        End();
-    }
+    if ( KnownLength() )
+        m_Length -= length;
     if ( forceLength && needLength != length )
         GetStream().ThrowError(eReadError, "read fault");
     return length;

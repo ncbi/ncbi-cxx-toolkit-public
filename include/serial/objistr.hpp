@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/05/09 16:38:33  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.39  2000/05/04 16:22:23  vasilche
 * Cleaned and optimized blocks and members.
 *
@@ -493,10 +498,10 @@ public:
         CObjectIStream& GetStream(void) const;
         const StackElement* GetPrevous(void) const;
 
+        bool StackElement::AppendStackTo(string& s) const;
         string ToString(void) const;
+        bool Named(void) const;
 
-        bool Ended(void) const;
-        void End(void);
         bool CanClose(void) const;
 
     private:
@@ -510,7 +515,6 @@ public:
             const string* m_NameString;
             const CMemberId* m_NameId;
         };
-        bool m_Ended;
         char m_NameType;
 
     private:
@@ -542,7 +546,11 @@ public:
     class Block : public StackElement
     {
     public:
-        Block(CObjectIStream& in, bool randomOrder = false);
+        enum EClass {
+            eClass
+        };
+        Block(CObjectIStream& in, bool randomOrder);
+        Block(CObjectIStream& in, EClass eClass, bool randomOrder);
         ~Block(void);
 
         bool Next(void);
@@ -552,7 +560,6 @@ public:
         size_t GetNextIndex(void) const;
         size_t GetIndex(void) const;
         bool First(void) const;
-        size_t GetSize(void) const;
 
     protected:
         void IncIndex(void);
@@ -561,7 +568,6 @@ public:
         friend class CObjectIStream;
 
         bool m_RandomOrder;
-        size_t m_Size;
         size_t m_NextIndex;
     };
 	class ByteBlock : public StackElement
@@ -632,9 +638,9 @@ protected:
     virtual bool VNext(const Block& block);
     virtual void VEnd(const Block& block);
 	static void SetBlockLength(ByteBlock& block, size_t length);
+	static void EndOfBlock(ByteBlock& block);
 	virtual void Begin(ByteBlock& block);
-	virtual size_t ReadBytes(const ByteBlock& block,
-                             char* buffer, size_t count) = 0;
+	virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count) = 0;
 	virtual void End(const ByteBlock& block);
 
     // low level readers

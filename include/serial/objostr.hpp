@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/05/09 16:38:34  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.36  2000/05/04 16:22:23  vasilche
 * Cleaned and optimized blocks and members.
 *
@@ -199,10 +204,8 @@ public:
                                 bool deleteOutStream = false);
 
 protected:
-    CObjectOStream(CNcbiOstream& out, bool deleteOut = false)
-        : m_Output(out, deleteOut)
-        {
-        }
+    CObjectOStream(CNcbiOstream& out, bool deleteOut = false);
+
 public:
     virtual ~CObjectOStream(void);
 
@@ -302,19 +305,71 @@ public:
 
     virtual bool Write(const CRef<CByteSource>& source);
 
-    class Member {
+    class StackElement {
+    public:
+        enum ENameType {
+            eNameEmpty,
+            eNameCharPtr,
+            eNameString,
+            eNameId
+        };
+    public:
+        StackElement(CObjectOStream& s);
+        StackElement(CObjectOStream& s, const string& str);
+        StackElement(CObjectOStream& s, const char* str);
+        StackElement(CObjectOStream& s, const CMemberId& id);
+        ~StackElement(void);
+
+        void SetName(const char* str);
+        void SetName(const string& str);
+        void SetName(const CMemberId& id);
+
+        CObjectOStream& GetStream(void) const;
+        const StackElement* GetPrevous(void) const;
+
+        string ToString(void) const;
+
+        bool CanClose(void) const;
+
+    private:
+        CObjectOStream& m_Stream;
+        friend class CObjectOStream;
+        const StackElement* m_Previous;
+
+    protected:
+        union {
+            const char* m_NameCharPtr;
+            const string* m_NameString;
+            const CMemberId* m_NameId;
+        };
+        char m_NameType;
+
+    private:
+        // to prevent allocation in heap
+        void *operator new(size_t size);
+        void *operator new(size_t size, size_t count);
+        // to prevent copying
+        StackElement(const StackElement&);
+        StackElement& operator=(const StackElement&);
+    };
+    string MemberStack(void) const;
+    class Member : public StackElement
+    {
     public:
         Member(CObjectOStream& out, const CMemberId& member);
         Member(CObjectOStream& out,
                const CMembers& members, TMemberIndex index);
         ~Member(void);
-    private:
-        CObjectOStream& m_Out;
     };
     // block interface
-    class Block {
+    class Block : public StackElement
+    {
     public:
-        Block(CObjectOStream& out, bool randomOrder = false);
+        enum EClass {
+            eClass
+        };
+        Block(CObjectOStream& out, bool randomOrder);
+        Block(CObjectOStream& out, EClass isClass, bool randomOrder);
         ~Block(void);
 
         void Next(void);
@@ -327,22 +382,15 @@ public:
         size_t GetSize(void) const;
 
     protected:
-        CObjectOStream& m_Out;
-
         void IncIndex(void);
 
     private:
-        // to prevent copying
-        Block(const Block&);
-        Block& operator=(const Block&);
-
-        friend class CObjectOStream;
-
         bool m_RandomOrder;
         size_t m_NextIndex;
         size_t m_Size;
     };
-	class ByteBlock {
+	class ByteBlock : public StackElement
+    {
 	public:
 		ByteBlock(CObjectOStream& out, size_t length);
 		~ByteBlock(void);
@@ -352,12 +400,12 @@ public:
 		void Write(const void* bytes, size_t length);
 
 	private:
-		CObjectOStream& m_Out;
 		size_t m_Length;
 	};
 
 #if HAVE_NCBI_C
-    class AsnIo {
+    class AsnIo : public StackElement
+    {
     public:
         AsnIo(CObjectOStream& out, const string& rootTypeName);
         ~AsnIo(void);
@@ -369,7 +417,6 @@ public:
         const string& GetRootTypeName(void) const;
 
     private:
-        CObjectOStream& m_Out;
         string m_RootTypeName;
         asnio* m_AsnIo;
 
@@ -386,6 +433,7 @@ protected:
 
 protected:
     // block interface
+    friend class StackElement;
     friend class Block;
     friend class Member;
 	friend class ByteBlock;
@@ -395,7 +443,7 @@ protected:
     // write member name
     virtual void StartMember(Member& member, const CMemberId& id) = 0;
     virtual void StartMember(Member& member,
-                             const CMembers& members, TMemberIndex index);
+                             const CMembers& ids, TMemberIndex index);
     virtual void EndMember(const Member& member);
 	// write byte blocks
 	virtual void Begin(const ByteBlock& block);
@@ -448,6 +496,9 @@ protected:
 
 protected:
     COStreamBuffer m_Output;
+
+private:
+    const StackElement* m_CurrentElement;
 };
 
 #include <serial/objostr.inl>

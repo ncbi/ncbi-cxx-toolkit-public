@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/05/09 16:38:38  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.13  2000/03/14 14:42:29  vasilche
 * Fixed error reporting.
 *
@@ -221,7 +226,6 @@ void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
     TObjectPtr data = dataType->Create();
     SetObjectPointer(object, data);
     in.ReadExternalObject(data, dataType);
-    m.End();
 }
 
 void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
@@ -231,7 +235,6 @@ void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     in.SkipExternalObject(dataType);
-    m.End();
 }
 
 CNullTypeInfo::CNullTypeInfo(void)

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/05/09 16:38:34  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.36  2000/05/04 16:22:22  vasilche
 * Cleaned and optimized blocks and members.
 *
@@ -937,7 +942,7 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& o = Get(object);
-            CObjectOStream::Block block(out);
+            CObjectOStream::Block block(out, true);
             for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
                 block.Next();
                 WriteKeyValuePair(out, &i->first, &i->second);
@@ -947,7 +952,7 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(in);
+            CObjectIStream::Block block(in, true);
             while ( block.Next() ) {
                 TKeyType key;
                 TValueType value;
@@ -959,7 +964,7 @@ protected:
 
     virtual void SkipData(CObjectIStream& in) const
         {
-            CObjectIStream::Block block(in);
+            CObjectIStream::Block block(in, true);
             while ( block.Next() ) {
                 SkipKeyValuePair(in);
             }

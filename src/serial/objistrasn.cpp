@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/05/09 16:38:39  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.43  2000/05/03 14:38:14  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -989,21 +994,21 @@ int CObjectIStreamAsn::GetHexChar(void)
     }
 }
 
-size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& block,
+size_t CObjectIStreamAsn::ReadBytes(ByteBlock& block,
                                     char* dst, size_t length)
 {
 	size_t count = 0;
 	while ( length-- > 0 ) {
         int c1 = GetHexChar();
         if ( c1 < 0 ) {
-            SetBlockLength(const_cast<ByteBlock&>(block), count);
+            EndOfBlock(block);
             return count;
         }
         int c2 = GetHexChar();
         if ( c2 < 0 ) {
             *dst++ = c1 << 4;
             count++;
-            SetBlockLength(const_cast<ByteBlock&>(block), count);
+            EndOfBlock(block);
             return count;
         }
         else {

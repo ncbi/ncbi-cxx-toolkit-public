@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/05/09 16:38:34  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.24  2000/03/29 15:55:22  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -127,6 +132,7 @@
 */
 
 #include <serial/serialdef.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
@@ -281,6 +287,31 @@ public:
         {
             return sizeof(TObjectType);
         }
+
+#ifdef _DEBUG
+private:
+    static void AssertPointer(const CObject* /*selector*/, const void* ptr)
+        {
+            // assert that ptr is really pointer to T
+            _ASSERT(dynamic_cast<const T*>(static_cast<const CObject*>(ptr)));
+        }
+    static void AssertPointer(const void* /*selector*/, const void* /*ptr*/)
+        {
+            // cannot check if T is not subclass of CObject
+        }
+public:
+    static void AssertPointer(const void* ptr)
+        {
+            _ASSERT(ptr);
+            const T* selector = static_cast<const T*>(0);
+            AssertPointer(selector, ptr);
+        }
+#else
+    static void AssertPointer(const void* /*ptr*/)
+        {
+            // do nothing in non _DEBUG mode
+        }
+#endif
 };
 
 #include <serial/typeinfo.inl>

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/05/09 16:38:32  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.8  2000/05/05 17:59:02  vasilche
 * Unfortunately MSVC doesn't support explicit instantiation of template methods.
 *
@@ -372,6 +377,11 @@ protected:
     virtual bool CanSelectCurrentObject(void);
     virtual bool CanEnterCurrentObject(void);
 
+    TTypeInfo GetIteratorType(void) const
+        {
+            return m_NeedType;
+        }
+
 private:
     TTypeInfo m_NeedType;
 };
@@ -469,10 +479,12 @@ public:
 
     C& operator*(void)
         {
+            CType<C>::AssertPointer(Get().GetObjectPtr());
             return *static_cast<C*>(Get().GetObjectPtr());
         }
     const C& operator*(void) const
         {
+            CType<C>::AssertPointer(Get().GetObjectPtr());
             return *static_cast<const C*>(Get().GetObjectPtr());
         }
 };
@@ -501,6 +513,7 @@ public:
 
     const C& operator*(void) const
         {
+            CType<C>::AssertPointer(Get().GetObjectPtr());
             return *static_cast<const C*>(Get().GetObjectPtr());
         }
 };
@@ -549,8 +562,8 @@ public:
         }
 };
 
-typedef CTypeIterator<CObject> CObjectsIterator;
-typedef CTypeConstIterator<CObject> CObjectsConstIterator;
+typedef CTypeIterator<CObject, CObjectGetTypeInfo> CObjectsIterator;
+typedef CTypeConstIterator<CObject, CObjectGetTypeInfo> CObjectsConstIterator;
 
 typedef CTypesIteratorBase<CTreeIterator> CTypesIterator;
 typedef CTypesIteratorBase<CTreeConstIterator> CTypesConstIterator;

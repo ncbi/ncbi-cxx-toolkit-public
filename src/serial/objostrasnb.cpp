@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/05/09 16:38:39  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.33  2000/04/28 16:58:14  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -363,8 +368,8 @@ void CObjectOStreamAsnBinary::WriteTag(EClass c, bool constructed, TTag tag)
         // long form
         WriteShortTag(c, constructed, eLongTag);
         bool write = false;
-        size_t shift;
-        for ( shift = (sizeof(TTag) * 8 - 1) / 7 * 7; shift != 0; shift -= 7 ) {
+        for ( size_t shift = (sizeof(TTag) * 8 - 1) / 7 * 7;
+              shift != 0; shift -= 7 ) {
             TByte bits = tag >> shift;
             if ( !write ) {
                 if ( bits & 0x7f == 0 )

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/05/09 16:38:40  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.21  2000/05/04 16:22:20  vasilche
 * Cleaned and optimized blocks and members.
 *
@@ -273,7 +278,7 @@ void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
                                              TConstObjectPtr key,
                                              TConstObjectPtr value) const
 {
-    CObjectOStream::Block block(out);
+    CObjectOStream::Block block(out, CObjectOStream::Block::eClass, false);
     block.Next();
     {
         CObjectOStream::Member m(out, GetKeyId());
@@ -290,14 +295,13 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
                                             TObjectPtr key,
                                             TObjectPtr value) const
 {
-    CObjectIStream::Block block(in);
+    CObjectIStream::Block block(in, CObjectIStream::Block::eClass, false);
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map key expected");
     }
     {
         CObjectIStream::Member m(in, GetKeyId());
         GetKeyTypeInfo()->ReadData(in, key);
-        m.End();
     }
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map value expected");
@@ -305,7 +309,6 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
     {
         CObjectIStream::Member m(in, GetValueId());
         GetValueTypeInfo()->ReadData(in, value);
-        m.End();
     }
     if ( block.Next() ) {
         THROW1_TRACE(runtime_error, "too many elements in map pair");
@@ -314,14 +317,13 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
 
 void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
 {
-    CObjectIStream::Block block(in);
+    CObjectIStream::Block block(in, CObjectIStream::Block::eClass, false);
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map key expected");
     }
     {
         CObjectIStream::Member m(in, GetKeyId());
         GetKeyTypeInfo()->SkipData(in);
-        m.End();
     }
     if ( !block.Next() ) {
         THROW1_TRACE(runtime_error, "map value expected");
@@ -329,7 +331,6 @@ void CStlClassInfoMapImpl::SkipKeyValuePair(CObjectIStream& in) const
     {
         CObjectIStream::Member m(in, GetValueId());
         GetValueTypeInfo()->SkipData(in);
-        m.End();
     }
     if ( block.Next() ) {
         THROW1_TRACE(runtime_error, "too many elements in map pair");

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/05/09 16:38:32  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.6  2000/01/05 19:43:43  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -58,6 +63,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -76,22 +82,17 @@ public:
     CMemberId(const char* name, TTag tag);
     CMemberId(TTag tag);
 
+    const string& GetName(void) const;       // ASN.1 tag name
+    TTag GetTag(void) const;                 // ASN.1 binary tag value
+    const string& GetXmlName(void) const;    // XML element name
+
     // return visible representation of CMemberId (as in ASN.1)
     string ToString(void) const;
-
-    const string& GetName(void) const;
-    void SetName(const string& name);
-    void UpdateName(const CMemberId& id);
-
-    TTag GetTag(void) const;
-    CMemberId* SetTag(TTag tag);
-
-    void SetNext(const CMemberId& id);
-    bool operator==(const CMemberId& id) const;
 
 private:
     // identification
     string m_Name;
+    AutoPtr<string> m_XmlName;
     TTag m_Tag;
 };
 

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/05/09 16:38:39  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.37  2000/05/04 16:22:20  vasilche
 * Cleaned and optimized blocks and members.
 *
@@ -236,6 +241,11 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                  "CObjectOStream::Open: unsupported format");
 }
 
+CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
+    : m_Output(out, deleteOut), m_CurrentElement(0)
+{
+}
+
 CObjectOStream::~CObjectOStream(void)
 {
     _TRACE("~CObjectOStream:"<<m_Objects.GetObjectCount()<<" objects written");
@@ -420,6 +430,52 @@ void CObjectOStream::WriteThis(TConstObjectPtr object, CWriteObjectInfo& info)
     WriteObject(object, info);
 }
 
+string CObjectOStream::MemberStack(void) const
+{
+    string stack;
+    for ( const StackElement* m = m_CurrentElement; m; m = m->GetPrevous() ) {
+        if ( !stack.empty() )
+            stack += '.';
+        stack += m->ToString();
+    }
+    return stack;
+}
+
+string CObjectOStream::StackElement::ToString(void) const
+{
+    switch ( m_NameType ) {
+    case eNameEmpty:
+        return NcbiEmptyString;
+    case eNameCharPtr:
+        return m_NameCharPtr;
+    case eNameString:
+        return *m_NameString;
+    case eNameId:
+        return m_NameId->ToString();
+    default:
+        return "?";
+    }
+}
+
+bool CObjectOStream::StackElement::CanClose(void) const
+{
+    if ( uncaught_exception() ) {
+        // exception thrown without setting fail flag
+        return false;
+    }
+    else {
+        // ok
+        return true;
+    }
+}
+
+CObjectOStream::Member::Member(CObjectOStream& out,
+                               const CMembers& members, TMemberIndex index)
+    : StackElement(out, members.GetMemberId(index))
+{
+    out.StartMember(*this, members, index);
+}
+
 void CObjectOStream::StartMember(Member& m,
                                  const CMembers& members, TMemberIndex index)
 {
@@ -440,21 +496,6 @@ void CObjectOStream::VNext(const Block& )
 
 void CObjectOStream::VEnd(const Block& )
 {
-}
-
-CObjectOStream::ByteBlock::~ByteBlock(void)
-{
-    if ( m_Length != 0 )
-        THROW1_TRACE(runtime_error, "not all bytes written");
-    m_Out.End(*this);
-}
-
-void CObjectOStream::ByteBlock::Write(const void* bytes, size_t length)
-{
-    if ( length > m_Length )
-        THROW1_TRACE(runtime_error, "too many bytes written");
-    m_Out.WriteBytes(*this, static_cast<const char*>(bytes), length);
-    m_Length -= length;
 }
 
 void CObjectOStream::Begin(const ByteBlock& )
@@ -478,7 +519,7 @@ extern "C" {
 }
 
 CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
-    : m_Out(out), m_RootTypeName(rootTypeName), m_Count(0)
+    : StackElement(out), m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
     out.AsnOpen(*this);
@@ -487,7 +528,7 @@ CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
 CObjectOStream::AsnIo::~AsnIo(void)
 {
     AsnIoClose(*this);
-    m_Out.AsnClose(*this);
+    GetStream().AsnClose(*this);
 }
 
 void CObjectOStream::AsnOpen(AsnIo& )

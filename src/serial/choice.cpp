@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/05/09 16:38:37  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.12  2000/04/28 16:58:12  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -235,14 +240,12 @@ void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
                                                           memberInfo) ) {
             // we've got delayed buffer -> select using delay buffer
             SetDelayIndex(object, index);
-            m.End();
             return;
         }
         // select for reading
         SetIndex(object, index);
     }
     memberInfo->GetTypeInfo()->ReadData(in, GetData(object, index));
-    m.End();
 }
 
 void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
@@ -250,7 +253,6 @@ void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
     CObjectIStream::Member m(in, GetMembers());
     TMemberIndex index = m.GetIndex();
     GetVariantTypeInfo(index)->SkipData(in);
-    m.End();
 }
 
 bool CChoiceTypeInfoBase::MayContainType(TTypeInfo typeInfo) const

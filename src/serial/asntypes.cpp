@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/05/09 16:38:37  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.37  2000/03/31 21:38:20  vasilche
 * Renamed First() -> FirstNode(), Next() -> NextNode() to avoid name conflict.
 *
@@ -678,7 +683,6 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     CObjectIStream::AsnIo io(in, GetName());
     if ( (Get(object) = m_ReadProc(io, 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
-    io.End();
 }
 
 void COldAsnTypeInfo::SkipData(CObjectIStream& /*in*/) const

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/05/09 16:38:33  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.5  2000/05/04 16:23:10  vasilche
 * Updated CTypesIterator and CTypesConstInterator interface.
 *
@@ -66,6 +71,12 @@ BEGIN_NCBI_SCOPE
 class CObjectTypeInfo;
 class CConstObjectInfo;
 class CObjectInfo;
+
+class CObjectGetTypeInfo
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
 
 class CObjectTypeInfo {
 protected:

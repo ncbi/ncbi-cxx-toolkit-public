@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/05/09 16:38:39  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.32  2000/04/28 16:58:13  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -872,7 +877,7 @@ void CObjectIStreamAsnBinary::Begin(ByteBlock& block)
 	SetBlockLength(block, ReadLength());
 }
 
-size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& ,
+size_t CObjectIStreamAsnBinary::ReadBytes(ByteBlock& ,
                                           char* dst, size_t length)
 {
 	ReadBytes(dst, length);

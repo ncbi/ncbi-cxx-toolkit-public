@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/05/09 16:38:38  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
 * Revision 1.5  2000/01/05 19:43:53  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -74,48 +79,6 @@ CMemberId::CMemberId(const char* name)
 CMemberId::CMemberId(const char* name, TTag tag)
     : m_Name(name), m_Tag(tag)
 {
-}
-
-void CMemberId::SetName(const string& name)
-{
-    m_Name = name;
-}
-
-void CMemberId::UpdateName(const CMemberId& id)
-{
-    if ( GetName().empty() ) {
-        _ASSERT(GetTag() == id.GetTag() || id.GetTag() < 0);
-        m_Name = id.GetName();
-    }
-    else {
-        _ASSERT(GetName() == id.GetName());
-    }
-}
-
-CMemberId* CMemberId::SetTag(TTag tag)
-{
-    m_Tag = tag;
-    return this;
-}
-
-void CMemberId::SetNext(const CMemberId& id)
-{
-    m_Name = id.GetName();
-    int tag = id.GetTag();
-    if ( tag < 0 ) {
-        ++m_Tag;
-    }
-    else {
-        m_Tag = tag;
-    }
-}
-
-bool CMemberId::operator==(const CMemberId& id) const
-{
-    if ( id.GetTag() < 0 )
-        return GetName() == id.GetName();
-    else
-        return GetTag() == id.GetTag();
 }
 
 string CMemberId::ToString(void) const
