@@ -38,7 +38,7 @@
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_option.hpp>
-#include <algo/blast/api/blast_seqalign.hpp>
+#include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
 
 // NewBlast includes
@@ -299,6 +299,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2003/09/09 15:18:02  camacho
+ * Fix includes
+ *
  * Revision 1.29  2003/09/09 12:55:09  camacho
  * Moved setup member functions to blast_setup_cxx.cpp
  *

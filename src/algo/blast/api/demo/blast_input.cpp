@@ -39,8 +39,8 @@
 
 #include <objmgr/scope.hpp>
 
-#include <algo/blast/api/blast_input.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include "blast_input.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);

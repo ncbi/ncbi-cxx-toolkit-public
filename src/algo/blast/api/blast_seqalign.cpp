@@ -32,7 +32,7 @@
 * ===========================================================================
 */
 
-#include <algo/blast/api/blast_seqalign.hpp>
+#include "blast_seqalign.hpp"
 #include <algo/blast/core/link_hsps.h>
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -735,6 +735,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/09/09 15:18:02  camacho
+* Fix includes
+*
 * Revision 1.16  2003/08/19 20:27:51  dondosha
 * Rewrote the results-to-seqalign conversion slightly
 *
