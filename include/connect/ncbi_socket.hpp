@@ -137,6 +137,8 @@ public:
     //          byte order requested by the third argument.
     void GetPeerAddress(unsigned int* host, unsigned short* port,
                         ENH_ByteOrder byte_order) const;
+    // Return textual string representing the peer's address
+    string GetPeerAddress(void) const;
 
     // Specify if this "CSocket" is to own the underlying "SOCK".
     // Return previous ownership mode.
@@ -575,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/07/15 16:49:16  lavr
+ * +CSocket::GetPeerAddress(void)
+ *
  * Revision 6.27  2003/05/31 05:12:09  lavr
  * Fix return value type of HostToNetShort and NetToHostShort
  *
