@@ -795,6 +795,127 @@ string CRemoteBlast::GetWarnings(void)
     return rvalue;
 }
 
+CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
+{
+    string service;
+    
+    switch(algo_opts->GetFactorySetting()) {
+    case eBlastn:
+        service = "plain";
+        break;
+        
+    case eMegablast:
+        service = "megablast";
+        break;
+        
+    default:
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Unknown nucleotide type specified.");
+    }
+    
+    x_Init(algo_opts, "blastn", service.c_str());
+}
+
+CRemoteBlast::CRemoteBlast(const string & RID)
+{
+    x_Init(RID);
+}
+    
+CRemoteBlast::CRemoteBlast(CBlastProteinOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts, "blastp", "plain");
+}
+    
+CRemoteBlast::CRemoteBlast(CBlastxOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts, "blastx", "plain");
+}
+    
+CRemoteBlast::CRemoteBlast(CTBlastnOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts, "tblastn", "plain");
+}
+    
+CRemoteBlast::CRemoteBlast(CTBlastxOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts, "tblastx", "plain");
+}
+    
+CRemoteBlast::CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts, "blastn", "megablast");
+}
+    
+CRemoteBlast::CRemoteBlast(CPSIBlastOptionsHandle * algo_opts)
+{
+    x_Init(algo_opts, "blastp", "psi");
+}
+
+CRemoteBlast::~CRemoteBlast()
+{
+}
+
+void CRemoteBlast::SetGIList(list<Int4> & gi_list)
+{
+    if (gi_list.empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty gi_list specified.");
+    }
+    x_SetOneParam("GiList", & gi_list);
+}
+
+void CRemoteBlast::SetDatabase(const string & x)
+{
+    if (x.empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty string specified for database.");
+    }
+    SetDatabase(x.c_str());
+}
+
+void CRemoteBlast::SetEntrezQuery(const char * x)
+{
+    if (!x) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "NULL specified for entrez query.");
+    }
+    
+    if (*x) { // Ignore empty strings.
+        x_SetOneParam("EntrezQuery", &x);
+    }
+}
+
+void CRemoteBlast::SetMatrixTable(CRef<CScore_matrix_parameters> matrix)
+{
+    if (matrix.Empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty reference for matrix.");
+    }
+    x_SetOneParam("MatrixTable", matrix);
+}
+
+bool CRemoteBlast::SubmitSync(void)
+{
+    return SubmitSync( x_DefaultTimeout() );
+}
+
+const string & CRemoteBlast::GetRID(void)
+{
+    return m_RID;
+}
+
+void CRemoteBlast::SetVerbose(EDebugMode verb)
+{
+    m_Verbose = verb;
+}
+
+/// The default timeout is 3.5 hours.
+const int CRemoteBlast::x_DefaultTimeout(void)
+{
+    return int(3600*3.5);
+}
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -804,6 +925,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/08/03 21:01:29  bealer
+* - Move one line functions around.
+*
 * Revision 1.18  2004/07/28 21:02:19  bealer
 * - Remote blast will throw an exception instead of calling exit.
 *

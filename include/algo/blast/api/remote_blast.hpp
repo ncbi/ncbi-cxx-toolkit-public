@@ -64,91 +64,44 @@ class NCBI_XBLAST_EXPORT CRemoteBlast : public CObject
 {
 public:
     /// Use the specified RID to get results for an existing search.
-    CRemoteBlast(const string & RID)
-    {
-        x_Init(RID);
-    }
+    CRemoteBlast(const string & RID);
     
     /// Create a blastp (protein) search.
-    CRemoteBlast(CBlastProteinOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "blastp", "plain");
-    }
+    CRemoteBlast(CBlastProteinOptionsHandle * algo_opts);
     
     /// Create a blastn (nucleotide) search.
-    inline CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts);
+    CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts);
     
     /// Create a blastx (translated query) search.
-    CRemoteBlast(CBlastxOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "blastx", "plain");
-    }
+    CRemoteBlast(CBlastxOptionsHandle * algo_opts);
     
     /// Create a tblastn (translated database) search.
-    CRemoteBlast(CTBlastnOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "tblastn", "plain");
-    }
+    CRemoteBlast(CTBlastnOptionsHandle * algo_opts);
     
     /// Create a tblastx search, translating both query and database.
-    CRemoteBlast(CTBlastxOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "tblastx", "plain");
-    }
+    CRemoteBlast(CTBlastxOptionsHandle * algo_opts);
     
     /// Create a Discontiguous Megablast search.
-    CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "blastn", "megablast");
-    }
+    CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts);
     
     /// Create a PSI-Blast search (only protein is supported).
-    CRemoteBlast(CPSIBlastOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "blastp", "psi");
-    }
+    CRemoteBlast(CPSIBlastOptionsHandle * algo_opts);
     
     /// Destruct the search object.
-    ~CRemoteBlast()
-    {
-    }
+    ~CRemoteBlast();
     
     /// This restricts the subject database to this list of GIs (this is not
     /// supported yet on the server end).
-    void SetGIList(list<Int4> & gi_list)
-    {
-        if (gi_list.empty()) {
-            NCBI_THROW(CBlastException, eBadParameter,
-                       "Empty gi_list specified.");
-        }
-        x_SetOneParam("GiList", & gi_list);
-    }
+    void SetGIList(list<Int4> & gi_list);
     
     /// Set the name of the database to search against.
-    void SetDatabase(const string & x)
-    {
-        if (x.empty()) {
-            NCBI_THROW(CBlastException, eBadParameter,
-                       "Empty string specified for database.");
-        }
-        SetDatabase(x.c_str());
-    }
+    void SetDatabase(const string & x);
     
     /// Alternate interface to set database name.
     void SetDatabase(const char * x);
     
     /// Restrict search to sequences matching this Entrez query.
-    void SetEntrezQuery(const char * x)
-    {
-        if (!x) {
-            NCBI_THROW(CBlastException, eBadParameter,
-                       "NULL specified for entrez query.");
-        }
-        
-        if (*x) { // Ignore empty strings.
-            x_SetOneParam("EntrezQuery", &x);
-        }
-    }
+    void SetEntrezQuery(const char * x);
     
     /// Set the query as a Bioseq_set.
     void SetQueries(CRef<CBioseq_set> bioseqs);
@@ -168,14 +121,7 @@ public:
     /// matrix and using a Bioseq_set with SetQueries().  The former method is
     /// newer and this option may be removed in the future.
     
-    void SetMatrixTable(CRef<CScore_matrix_parameters> matrix)
-    {
-        if (matrix.Empty()) {
-            NCBI_THROW(CBlastException, eBadParameter,
-                       "Empty reference for matrix.");
-        }
-        x_SetOneParam("MatrixTable", matrix);
-    }
+    void SetMatrixTable(CRef<CScore_matrix_parameters> matrix);
     
     /* Getting Results */
     
@@ -189,10 +135,7 @@ public:
     /// by 30% after each check to a maximum of 300 seconds per sleep.
     ///
     /// @return true if the search was submitted, otherwise false.
-    bool SubmitSync(void)
-    {
-        return SubmitSync( DefaultTimeout() );
-    }
+    bool SubmitSync(void);
     
     /// This submits the search (if necessary) and polls for results.
     ///
@@ -244,10 +187,7 @@ public:
     /// Gets the request id (RID) associated with the search.
     ///
     /// If the search was not successfully submitted, this will be empty.
-    const string & GetRID(void)
-    {
-        return m_RID;
-    }
+    const string & GetRID(void);
     
     /// Get the seqalign set from the results.
     /// @return Reference to a seqalign set.
@@ -290,10 +230,7 @@ public:
     /// along with ASN.1 objects used during the search and other text.  It
     /// produces a great deal of output, none of which is expected to be
     /// useful to the end-user.
-    void SetVerbose(EDebugMode verb = eDebug)
-    {
-        m_Verbose = verb;
-    }
+    void SetVerbose(EDebugMode verb = eDebug);
     
 private:
     /// An alias for the most commonly used part of the Blast4 search results.
@@ -330,10 +267,7 @@ private:
     };
     
     /// The default timeout is 3.5 hours.
-    const int DefaultTimeout(void)
-    {
-        return int(3600*3.5);
-    }
+    const int x_DefaultTimeout(void);
     
     /// Called by new search constructors: initialize a new search.
     void x_Init(CBlastOptionsHandle * algo_opts,
@@ -404,7 +338,7 @@ private:
     
     
     /// Options for new search.
-    CRef<blast::CBlastOptionsHandle>            m_CBOH;
+    CRef<blast::CBlastOptionsHandle>   m_CBOH;
     
     /// Request object for new search.
     CRef<CBlast4_queue_search_request> m_QSR;
@@ -435,28 +369,6 @@ private:
 };
 
 
-CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
-{
-    string service;
-    
-    switch(algo_opts->GetFactorySetting()) {
-    case eBlastn:
-        service = "plain";
-        break;
-        
-    case eMegablast:
-        service = "megablast";
-        break;
-        
-    default:
-        NCBI_THROW(CBlastException, eBadParameter,
-                   "Unknown nucleotide type specified.");
-    }
-    
-    x_Init(algo_opts, "blastn", service.c_str());
-}
-
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -466,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/08/03 21:01:49  bealer
+ * - Move one line functions around.
+ *
  * Revision 1.11  2004/08/02 15:01:36  bealer
  * - Distinguish between blastn and megablast (for remote blast).
  *
