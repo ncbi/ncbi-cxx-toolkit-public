@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.10 2005/02/04 15:03:29 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.11 2005/02/08 14:33:58 thiessen Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -32,7 +32,7 @@
 
 NCBI-PCSubstance DEFINITIONS ::= BEGIN
 
-EXPORTS PC-Source, PC-ID, PC-InfoData, PC-XRefData;
+EXPORTS PC-Substance, PC-Compound, PC-Source, PC-ID, PC-InfoData, PC-XRefData;
 
 IMPORTS Pub              FROM NCBI-Pub
         Date, Object-id  FROM NCBI-General;
@@ -645,6 +645,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.11  2005/02/08 14:33:58  thiessen
+-- export PC-Substance, PC-Compound
+--
 -- Revision 1.10  2005/02/04 15:03:29  bolton
 -- Made Compound id.type optional.
 --
