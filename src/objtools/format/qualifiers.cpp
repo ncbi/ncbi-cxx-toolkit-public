@@ -144,6 +144,28 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CFormatQual - low-level formatted qualifier
+
+CFormatQual::CFormatQual
+(const string& name,
+ const string& value, 
+ const string& prefix,
+ const string& suffix,
+ TStyle style) :
+    m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
+    m_Style(style)
+{
+}
+
+
+CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) :
+    m_Name(name), m_Value(value), m_Prefix(kEmptyStr), m_Suffix(kEmptyStr),
+    m_Style(style)
+{
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // CFlatStringQVal {
@@ -216,7 +238,7 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
             return;
         }
         x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
-            CFlatQual::eUnquoted);
+            CFormatQual::eUnquoted);
     }
 }
 
@@ -248,7 +270,7 @@ void CFlatExpEvQVal::Format(TFlatQuals& q, const string& name,
     default:                                   break;
     }
     if (s) {
-        x_AddFQ(q, name, s, CFlatQual::eUnquoted);
+        x_AddFQ(q, name, s, CFormatQual::eUnquoted);
     }
 }
 
@@ -333,7 +355,11 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
 
     if ( s_IsNote(flags) ) {
         m_Suffix = (m_Value->GetSubtype() == COrgMod::eSubtype_other ? &kEOL : &kSemicolon);
-        x_AddFQ(q, "note", name + ": " + subname);
+        if ( name != "orgmod_note" ) {
+            x_AddFQ(q, "note", name + ": " + subname);
+        } else {
+            x_AddFQ(q, "note", subname);
+        }
     } else {
         x_AddFQ(q, name, subname);
     }
@@ -364,7 +390,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
 
     case CBioSource::eGenome_macronuclear: case CBioSource::eGenome_proviral:
     case CBioSource::eGenome_virion:
-        x_AddFQ(q, organelle, kEmptyStr, CFlatQual::eEmpty);
+        x_AddFQ(q, organelle, kEmptyStr, CFormatQual::eEmpty);
         break;
 
     case CBioSource::eGenome_plasmid: case CBioSource::eGenome_transposon:
@@ -388,7 +414,7 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
     ITERATE (vector< CRef<CReferenceItem> >, it, ctx.GetReferences()) {
         if ((*it)->Matches(*m_Value)) {
             x_AddFQ(q, name, '[' + NStr::IntToString((*it)->GetSerial()) + ']',
-                    CFlatQual::eUnquoted);
+                    CFormatQual::eUnquoted);
         }
     }
 }
@@ -435,7 +461,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
              subtype == CSubSource::eSubtype_rearranged          ||
              subtype == CSubSource::eSubtype_transgenic          ||
              subtype == CSubSource::eSubtype_environmental_sample ) {
-            x_AddFQ(q, name, kEmptyStr, CFlatQual::eEmpty);
+            x_AddFQ(q, name, kEmptyStr, CFormatQual::eEmpty);
         } else {
             x_AddFQ(q, name, subname);
         }
@@ -582,7 +608,7 @@ void CFlatAnticodonQVal::Format
     text << "(pos:" << range.GetFrom() + 1 << ".." << range.GetTo() + 1
          << ",aa:" << m_Aa << ")";
 
-    x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFlatQual::eUnquoted);
+    x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFormatQual::eUnquoted);
 }
 
 
@@ -617,6 +643,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/05/06 17:58:52  shomrat
+* CFlatQual -> CFormatQual
+*
 * Revision 1.13  2004/04/27 15:13:16  shomrat
 * fixed SubSource formatting
 *
