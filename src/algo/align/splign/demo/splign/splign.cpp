@@ -295,6 +295,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
             CNWFormatter formatter (*m_aligner);
             string exons;
             formatter.AsText(&exons, CNWFormatter::eFormatExonTableEx);      
+
             CNcbiIstrstream iss_exons (exons.c_str());
             while(iss_exons) {
                 string id1, id2, txt, repr;
@@ -329,12 +330,11 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
                 g.m_idty = 0;
                 g.m_len = g.m_box[1] - g.m_box[0] + 1;
                 g.m_annot = "<GAP>";
-                g.m_details.append(m_Seq1 + g.m_box[0],
-                    g.m_box[1] - g.m_box[0] + 1);
+                g.m_details.append(m_Seq1+g.m_box[0], g.m_box[1]-g.m_box[0]+1);
                 segments.push_back(g);
             }
         }
-    }
+    } // zone iterations end
 
     // Do some post-processing:
     // walk through exons and maybe turn some of
@@ -363,7 +363,6 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
 
     // fill the left-hand gap, if any
     if(segments[0].m_exon && segments[0].m_box[0] > 0) {
-
         SSegment g;
         g.m_exon = false;
         g.m_box[0] = 0;
@@ -373,8 +372,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
         g.m_idty = 0;
         g.m_len = segments[0].m_box[0];
         g.m_annot = "<GAP>";
-        g.m_details.append( m_Seq1 + g.m_box[0],
-                            g.m_box[1] + 1 - g.m_box[0]);
+        g.m_details = string(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
         segments.push_front(g);
         ++seg_dim;
         ++k0;
@@ -407,7 +405,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
         g.m_idty = 0;
         g.m_len = g.m_box[1] - g.m_box[0] + 1;
         g.m_annot = "<GAP>";
-        g.m_details.append(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+        g.m_details = string(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
         segments.push_back(g);
         ++seg_dim;
     }
@@ -559,9 +557,14 @@ void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
     m_details.insert(m_details.begin(), head, 'M');
     RestoreIdentity();
     
-    // possibly delete first two annotation symbols
-    if(m_annot.size() > 2 && m_annot[0] != '<') {
-      m_annot.erase(0,2);
+    // update the first two annotation symbols
+    if(m_annot.size() > 2 && m_annot[2] == '<') {
+      int  j1 = m_box[2] - 2;
+      char c1 = j1 >= 0? seq2[j1]: ' ';
+      m_annot[0] = c1;
+      int  j2 = m_box[2] - 2;
+      char c2 = j2 >= 0? seq2[j2]: ' ';
+      m_annot[1] = c2;
     }
   }
 }
@@ -662,10 +665,11 @@ void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
     m_details.insert(m_details.end(), tail, 'M');
     RestoreIdentity();
     
-    // possibly delete last two annotation chars
-    size_t adim = m_annot.size();
-    if(adim > 2 && m_annot[adim - 1] != '>') {
-      m_annot.resize(adim - 2);
+    // update the last two annotation chars
+    const size_t adim = m_annot.size();
+    if(adim > 2 && m_annot[adim - 3] == '>') {
+      m_annot[adim-2] = seq2[m_box[3] + 1];
+      m_annot[adim-1] = seq2[m_box[3] + 2];
     }
   }
 }
@@ -689,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/10 21:34:41  kapustin
+ * Update annotation chars in boundary exon adjustment routines
+ *
  * Revision 1.6  2003/12/04 19:26:37  kapustin
  * Account for zero-length segment vector
  *
