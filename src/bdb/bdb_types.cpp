@@ -709,7 +709,7 @@ void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
     Unpack();
     unsigned char* str_buf = (unsigned char*) GetBuffer();
 
-    int s_len = -new_len;  // always store it negative
+    int s_len = -(int)new_len;  // always store it negative
     str_buf[0] = (unsigned char) (s_len);
     str_buf[1] = (unsigned char) (s_len >> 8);
     str_buf[2] = (unsigned char) (s_len >> 16);
@@ -889,7 +889,7 @@ void CBDB_FieldLString::SetStdString(const string& str)
 
     unsigned char* str_buf = (unsigned char*) GetBuffer();
 
-    int s_len = -str_len;  // always store it negative
+    int s_len = -(int)str_len;  // always store it negative
     str_buf[0] = (unsigned char) (s_len);
     str_buf[1] = (unsigned char) (s_len >> 8);
     str_buf[2] = (unsigned char) (s_len >> 16);
@@ -990,7 +990,7 @@ CBDB_Field* CBDB_FieldFactory::Create(const string& type) const
 	{
 		return Create(et);
 	} 
-	catch (CBDB_LibException& ex)
+	catch (CBDB_LibException& )
 	{
 		BDB_THROW(eInvalidType, type);
 	}
@@ -1003,6 +1003,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/07/09 15:14:49  kuznets
+ * Fixed warnings (MSVC 7)
+ *
  * Revision 1.30  2004/06/29 12:25:40  kuznets
  * CBDB_BufferManager added functions to bulk copy fields
  *
