@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/02 15:46:30  gouriano
+* corrected CIstreamContainerIterator constructor to handle empty containers
+*
 * Revision 1.8  2003/10/24 17:50:37  vasilche
 * CIStreamContainerIterator::operator++() moved to *.cpp file.
 *
@@ -331,6 +334,11 @@ CIStreamContainerIterator::CIStreamContainerIterator(CObjectIStream& in,
         containerTypeInfo->GetElementType();
     in.PushFrame(CObjectStackFrame::eFrameArrayElement, elementTypeInfo);
     BeginElement();
+    if ( m_State == eNoMoreElements ) {
+        in.PopFrame();
+        in.EndContainer();
+        in.PopFrame();
+    }
 }
 
 CIStreamContainerIterator::~CIStreamContainerIterator(void)
