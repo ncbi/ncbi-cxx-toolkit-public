@@ -29,9 +29,8 @@
  *
  */
 
-#include <util/compress/stream.hpp>
-#include <memory>
 #include "streambuf.hpp"
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -95,19 +94,17 @@ CCompressionStream::CCompressionStream(CNcbiIos&                    stream,
     if ( !m_StreamBuf->IsOkay() ) {
         setstate(badbit | eofbit);
     }
-    return;
 }
 
 
 CCompressionStream::~CCompressionStream(void)
 {
     // Delete stream buffer
-#if !defined(HAVE_IOS_XALLOC) || defined(HAVE_BUGGY_IOS_CALLBACKS)
     streambuf* sb = rdbuf();
     delete sb;
-    if ( sb != m_StreamBuf )
-#endif
+    if ( sb != m_StreamBuf ) {
         delete m_StreamBuf;
+    }
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
 #endif
@@ -128,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/20 20:38:34  lavr
+ * Cease using HAVE_BUGGY_IOS_CALLBACKS in this file
+ *
  * Revision 1.4  2003/06/17 15:45:05  ivanov
  * Added CCompressionStreamProcessor base class. Rewritten CCompressionStream
  * to use I/O stream processors of class CCompressionStreamProcessor.

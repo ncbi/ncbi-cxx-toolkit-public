@@ -71,11 +71,9 @@ CONN CConn_IOStream::GetCONN(void) const
 
 void CConn_IOStream::Cleanup(void)
 {
-#if !defined(HAVE_IOS_XALLOC) || defined(HAVE_BUGGY_IOS_CALLBACKS)
     streambuf* sb = rdbuf();
     delete sb;
     if (sb != m_CSb)
-#endif
         delete m_CSb;
     m_CSb = 0;
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
@@ -292,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2004/01/20 20:36:05  lavr
+ * Cease using HAVE_BUGGY_IOS_CALLBACKS in this file
+ *
  * Revision 6.28  2003/11/12 17:45:08  lavr
  * Change log fixed to reflect real changes in previous commit
  *
