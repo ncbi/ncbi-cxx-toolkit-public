@@ -56,14 +56,16 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CAlnVec::CAlnVec(const CDense_seg& ds) 
     : CAlnMap(ds),
-      m_ConsensusSeq(-1)
+      m_ConsensusSeq(-1),
+      m_EndChar(' ')
 {
 }
 
 
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
     : CAlnMap(ds, anchor),
-      m_ConsensusSeq(-1)
+      m_ConsensusSeq(-1),
+      m_EndChar(' ')
 {
 }
 
@@ -71,7 +73,8 @@ CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
 CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope) 
     : CAlnMap(ds),
       m_Scope(&scope),
-      m_ConsensusSeq(-1)
+      m_ConsensusSeq(-1),
+      m_EndChar(' ')
 {
 }
 
@@ -79,7 +82,8 @@ CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope)
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor, CScope& scope)
     : CAlnMap(ds, anchor),
       m_Scope(&scope),
-      m_ConsensusSeq(-1)
+      m_ConsensusSeq(-1),
+      m_EndChar(' ')
 {
 }
 
@@ -417,6 +421,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2002/10/08 18:03:15  todorov
+* added the default m_EndChar value
+*
 * Revision 1.9  2002/10/01 14:13:22  dicuccio
 * Added handling of strandedness in creation of consensus sequence.
 *
