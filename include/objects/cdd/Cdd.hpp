@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/07/09 14:51:17  hurwitz
+ * added function
+ *
  * Revision 1.3  2002/06/19 20:28:58  hurwitz
  * added more support functions for cdd access
  *
@@ -103,6 +106,7 @@ public:
     int    GetUpperBound(int Row);                    // get Row upper alignment bound
     bool   ReMaster(int Row);                         // make Row the new master
     bool   GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID);               // get SeqID from sequence list
+    bool   GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs);       // get SeqIDs from sequence list
     bool   GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID);   // get SeqID from alignment
     bool   GetSeqIDFromAlignment(int RowIndex, CRef<CSeq_id>& SeqID) { // get SeqID from alignment
       int  Pair = (RowIndex <= 1) ? 0 : RowIndex-1;

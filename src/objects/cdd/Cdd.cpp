@@ -719,6 +719,35 @@ int CCdd::GetSeqIndex(CRef<CSeq_id>& SeqID) {
 }
 
 
+bool CCdd::GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs) {
+//-------------------------------------------------------------------------
+// get the list of SeqIDs for a sequence
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_entry > >::const_iterator  i;
+  int  SeqCount;
+
+  if (IsSetSequences()) {
+    if (GetSequences().IsSet()) {
+      // count to the SeqIndex sequence
+      SeqCount = 0;
+      for (i=GetSequences().GetSet().GetSeq_set().begin();
+           i!=GetSequences().GetSet().GetSeq_set().end(); i++) {
+        if (SeqCount == SeqIndex) {
+          if ((*i)->IsSeq()) {
+            // return its set of ids
+            SeqIDs = (*i)->GetSeq().GetId();
+            return(true);
+          }
+        }
+        SeqCount++;
+        if (SeqCount > SeqIndex) break;
+      }
+    }
+  }
+  return(false);
+}
+
+
 bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
 //-------------------------------------------------------------------------
 // get a SeqID from a list of sequences.
@@ -869,7 +898,7 @@ void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences
 //------------------------------------------------------------------------------
   list< CRef< CSeq_entry > >::const_iterator  i;
   CSeqportUtil  Conversion;
-  CRef< CSeq_data >  ConvertedSeqData;
+  CRef< CSeq_data >  ConvertedSeqData = new CSeq_data;
   string err;
 
   ConvertedSequences.clear();
@@ -886,7 +915,7 @@ void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences
             if (((*i)->GetSeq().GetInst().GetSeq_data().IsIupacaa())  ||
                 ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbistdaa())) {
               Conversion.Convert((*i)->GetSeq().GetInst().GetSeq_data(),
-                                 ConvertedSeqData, CSeq_data::e_Ncbieaa);
+                                 ConvertedSeqData.GetPointer(), CSeq_data::e_Ncbieaa);
               ConvertedSequences.push_back(ConvertedSeqData);
             }
             // if it's already ncbieaa make a copy of it
@@ -903,6 +932,7 @@ void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences
       }
     }
   }
+  ConvertedSeqData.Reset();
 }
 
 
@@ -1112,6 +1142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/09 14:50:37  hurwitz
+ * added function
+ *
  * Revision 1.6  2002/07/05 13:27:42  ucko
  * Tweak to be less sensitive to ASN.1-based types' implementation-details.
  * Move CVS log to end per current practice.
