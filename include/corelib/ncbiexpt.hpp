@@ -271,7 +271,7 @@ STD_CATCH(message) \
 
 class CExceptionReporter;
 
-class CNcbiException : public exception
+class CNcbiException : public std::exception
 {
 public:
     // Each derived class has its own err.codes and their interpretations
@@ -508,6 +508,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/06/27 18:26:23  vakatov
+ * Explicitly qualify "exception" with "std::" to avoid a silly name conflict
+ * with <math.h> for SUN Forte6u2 compiler
+ *
  * Revision 1.28  2002/06/26 18:36:36  gouriano
  * added CNcbiException class
  *
