@@ -205,6 +205,9 @@
 /* Define to 1 if local LBSM support is available. */
 #undef HAVE_LOCAL_LBSM
 
+/* Define to 1 if you have the `lutimes' function. */
+#undef HAVE_LUTIMES
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -338,6 +341,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `utimes' function. */
+#undef HAVE_UTIMES
+
 /* Define to 1 if you have the `vasprintf' function. */
 #undef HAVE_VASPRINTF
 
@@ -355,6 +361,12 @@
 
 /* Define to 1 if wxWindows is available. */
 #undef HAVE_WXWINDOWS
+
+/* Define to 1 if Xalan-C++ is available. */
+#undef HAVE_XALAN
+
+/* Define to 1 if Xerces-C++ is available. */
+#undef HAVE_XERCES
 
 /* Full GNU-style system type */
 #undef HOST

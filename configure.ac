@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.358 2005/03/22 15:45:21 ucko Exp $
+#  $Id: configure.ac,v 1.359 2005/03/31 18:01:28 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -246,6 +246,14 @@ AC_ARG_WITH(libxml,
    [ --with-libxml=DIR       use libxml2 installation in DIR])
 AC_ARG_WITH(libxml_,
    [ --without-libxml        do not use libxml2])
+AC_ARG_WITH(xerces,
+   [ --with-xerces=DIR       use Xerces-C++ installation in DIR])
+AC_ARG_WITH(xerces2,
+   [ --without-xerces,       do not use Xerces-C++])
+AC_ARG_WITH(xalan,
+   [ --with-xalan=DIR        use Xalan-C++ installation in DIR])
+AC_ARG_WITH(xalan2,
+   [ --without-xalan,        do not use Xalan-C++])
 AC_ARG_WITH(oechem,
    [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
 AC_ARG_WITH(oechem2,
@@ -305,7 +313,7 @@ ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc python sqlite cppunit \
-expat sablot libxml oechem gif jpeg tiff png xpm \
+expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -344,7 +352,8 @@ for x_arg in "$@" ; do
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
-      | --with-bdb=* | --with-odbc=* | --with-python=* | --with-gif=* | --with-jpeg=* \
+      | --with-xerces=* | --with-xalan=* | --with-bdb=* | --with-odbc=* \
+      | --with-python=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
@@ -1636,6 +1645,11 @@ case "$compiler" in
 esac
 
 
+# Make sure we have commands for both C and C++ preprocessors
+AC_PROG_CPP
+dnl AC_PROG_CXXCPP
+
+
 #### Make "srcdir" absolute
 case "${srcdir}" in
    /* ) ;;
@@ -1993,7 +2007,7 @@ AC_SEARCH_LIBS(sched_yield, rt,
 
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf vsnprintf \
-               getpagesize lchown)
+               getpagesize lchown utimes lutimes)
 AC_LANG_POP(C)
 
 # We want the program to return 0, which is *false* in C.  Also, since
@@ -3747,6 +3761,110 @@ else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}
 fi
 
+: ${XERCES_PATH=$NCBI/xerces}
+if test "$with_xerces" != no; then
+   if test "${with_xerces-yes}" != yes; then
+      XERCES_PATH=$with_xerces
+   fi
+   if test -d "$XERCES_PATH"; then
+      XERCES_PATH=`cd $XERCES_PATH && $smart_pwd`
+   fi
+   vpath="$XERCES_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}"
+   if test -d "$vpath/lib"; then
+      XERCES_PATH=$vpath
+   elif test -d "$vpath"; then
+      : ${XERCES_LIBPATH=$vpath}
+   fi
+   if test -d $XERCES_PATH; then
+      in_path=" in $XERCES_PATH"
+      : ${XERCES_INCLUDE=-I$XERCES_PATH/include}
+      : ${XERCES_LIBPATH=$XERCES_PATH/lib}
+   else
+      in_path=''
+   fi
+   : ${XERCES_LIBPATH_=-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH}
+   XERCES_LIBS="$XERCES_LIBPATH_ -lxerces-c"
+   AC_CACHE_CHECK([for Xerces-C++$in_path], ncbi_cv_lib_xerces_c,
+      [CPPFLAGS="$XERCES_INCLUDE $orig_CPPFLAGS"
+       LIBS="$XERCES_LIBS $orig_LIBS"
+       AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <xercesc/dom/DOM.hpp>]],
+             [[xercesc::DOMImplementation* impl
+               = xercesc::DOMImplementationRegistry::getDOMImplementation
+                 (xercesc::XMLString::transcode("XML 1.0"));]])],
+          ncbi_cv_lib_xerces_c=yes, ncbi_cv_lib_xerces_c=no)])
+   if test ncbi_cv_lib_xerces_c=yes; then
+      if test -f "$XERCES_LIBPATH/libxerces-c-static.a"; then
+         XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static"
+      else
+         XERCES_STATIC_LIBS=$XERCES_LIBS
+      fi
+   else
+      with_xerces=no
+   fi
+fi
+if test "with_xerces" != no; then
+   WithPackages="$WithPackages Xerces"
+   AC_DEFINE(HAVE_XERCES, 1, [Define to 1 if Xerces-C++ is available.])
+else
+   WithoutPackages="$WithoutPackages Xerces"
+   XERCES_INCLUDE=
+   XERCES_LIBS=
+   XERCES_STATIC_LIBS=
+fi
+
+: ${XALAN_PATH=$NCBI/xalan}
+if test "$with_xalan" != no; then
+   if test "${with_xalan-yes}" != yes; then
+      XALAN_PATH=$with_xalan
+   fi
+   if test -d "$XALAN_PATH"; then
+      XALAN_PATH=`cd $XALAN_PATH && $smart_pwd`
+   fi
+   vpath="$XALAN_PATH/${compiler_vpfx}${release_debug}${bit64_sfx}${mt_sfx}"
+   if test -d "$vpath/lib"; then
+      XALAN_PATH=$vpath
+   elif test -d "$vpath"; then
+      : ${XALAN_LIBPATH=$vpath}
+   fi
+   if test -d $XALAN_PATH; then
+      in_path=" in $XALAN_PATH"
+      : ${XALAN_INCLUDE=-I$XALAN_PATH/include}
+      : ${XALAN_LIBPATH=$XALAN_PATH/lib}
+   else
+      in_path=''
+   fi
+   : ${XALAN_LIBPATH_=-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH}
+   XALAN_LIBS="$XALAN_LIBPATH_ -lxalan-c -lxalanMsg"
+   AC_CACHE_CHECK([for Xalan-C++$in_path], ncbi_cv_lib_xalan_c,
+      [CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
+       LIBS="$XALAN_LIBS $XERCES_LIBS $orig_LIBS"
+       AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <xalanc/XalanEXSLT/XalanEXSLTMath.hpp>]],
+             [[xalanc::XalanEXSLTMathFunctionsInstaller::installGlobal();]])],
+          ncbi_cv_lib_xalan_c=yes, ncbi_cv_lib_xalan_c=no)])
+   if test ncbi_cv_lib_xalan_c=yes; then
+      if test -f "$XALAN_LIBPATH/libxalan-c-static.a"; then
+         XALAN_STATIC_LIBS="-L$XALAN_LIBPATH -lxalan-c-static -lxalanMsg-static"
+      else
+         XALAN_STATIC_LIBS=$XALAN_LIBS
+      fi
+   else
+      with_xalan=no
+   fi
+fi
+if test "with_xalan" != no; then
+   WithPackages="$WithPackages Xalan"
+   AC_DEFINE(HAVE_XALAN, 1, [Define to 1 if Xalan-C++ is available.])
+else
+   WithoutPackages="$WithoutPackages Xalan"
+   XALAN_INCLUDE=
+   XALAN_LIBS=
+   XALAN_STATIC_LIBS=
+fi
+
+test -d SunWS_cache  &&  rm -r SunWS_cache
+
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite}
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
@@ -4389,6 +4507,12 @@ AC_SUBST(LIBIMR)
 AC_SUBST(EXPAT_STATIC_LIBS)
 AC_SUBST(SABLOT_STATIC_LIBS)
 AC_SUBST(LIBXML_STATIC_LIBS)
+AC_SUBST(XERCES_INCLUDE)
+AC_SUBST(XERCES_LIBS)
+AC_SUBST(XERCES_STATIC_LIBS)
+AC_SUBST(XALAN_INCLUDE)
+AC_SUBST(XALAN_LIBS)
+AC_SUBST(XALAN_STATIC_LIBS)
 
 AC_SUBST(NCBI_C_ncbi)
 
