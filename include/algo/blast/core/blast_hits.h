@@ -152,11 +152,13 @@ typedef struct BLASTHSPSegment {
  * @param combined_hsp_list_ptr Contains HSPs from previous chunks [in] [out]
  * @param start Offset where the current subject chunk starts [in]
  * @param merge_hsps Should the overlapping HSPs be merged into one? [in]
+ * @param append Just append the new HSP list to the old - TRUE when 
+ *               lists are from different frames [in]
  * @return 1 if HSP lists have been merged, 0 otherwise.
  */
 Int2 MergeHSPLists(BlastHSPListPtr hsp_list, 
         BlastHSPListPtr PNTR combined_hsp_list_ptr, Int4 start,
-        Boolean merge_hsps);
+        Boolean merge_hsps, Boolean append);
 
 #ifdef __cplusplus
 }
