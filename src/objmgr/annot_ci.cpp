@@ -45,10 +45,12 @@ CAnnot_CI::CAnnot_CI(CScope& scope,
                      EResolveMethod resolve,
                      const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_not_set),
+          SAnnotSelector(CSeq_annot::C_Data::e_not_set)
+          .SetNoMapping()
+          .SetSortOrder(eSortOrder_None),
           overlap_type, resolve, entry)
 {
-    return;
+    x_Collect();
 }
 
 
@@ -56,10 +58,12 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      SAnnotSelector::EOverlapType overlap_type,
                      EResolveMethod resolve, const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_not_set),
+          SAnnotSelector(CSeq_annot::C_Data::e_not_set)
+          .SetNoMapping()
+          .SetSortOrder(eSortOrder_None),
           overlap_type, resolve, entry)
 {
-    return;
+    x_Collect();
 }
 
 
@@ -69,22 +73,21 @@ CAnnot_CI::~CAnnot_CI(void)
 }
 
 
-/*
-const CSeq_align& CAlign_CI::operator* (void) const
+void CAnnot_CI::x_Collect(void)
 {
-    const CAnnotObject_Ref& annot = Get();
-    _ASSERT(annot.Get().IsAlign());
-    return annot.Get().GetAlign();
+    while ( IsValid() ) {
+        if (Get().GetObjectType() != CAnnotObject_Ref::eType_AnnotObject_Info) {
+            Next();
+            continue;
+        }
+        CSeq_annot_Handle h;
+        h.x_Set(GetScope(), Get().GetAnnotObject_Info().GetSeq_annot_Info());
+        m_SeqAnnotSet.insert(h);
+        Next();
+    }
+    m_Iterator = m_SeqAnnotSet.begin();
 }
 
-
-const CSeq_align* CAlign_CI::operator-> (void) const
-{
-    const CAnnotObject_Ref& annot = Get();
-    _ASSERT(annot.Get().IsAlign());
-    return &annot.Get().GetAlign();
-}
-*/
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -92,6 +95,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/08/22 15:00:49  grichenk
+* Redesigned CAnnot_CI to iterate over seq-annots, containing
+* given location.
+*
 * Revision 1.25  2003/08/15 15:22:00  grichenk
 * Initial revision
 *

@@ -34,9 +34,8 @@
 */
 
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/graph_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -63,13 +62,6 @@ public:
               const CSeq_entry* entry = 0);
 
     // Iterate all features from the object regardless of their location
-    CAnnot_CI(const CSeq_annot_Handle& annot);
-    CAnnot_CI(const CSeq_annot_Handle& annot,
-              SAnnotSelector sel);
-    CAnnot_CI(CScope& scope, const CSeq_entry& entry);
-    CAnnot_CI(CScope& scope, const CSeq_entry& entry,
-              SAnnotSelector sel);
-
     CAnnot_CI(const CAnnot_CI& iter);
     virtual ~CAnnot_CI(void);
 
@@ -79,42 +71,54 @@ public:
     CAnnot_CI& operator-- (void);
     operator bool (void) const;
 
-    bool IsFeat(void) const;
-    bool IsAlign(void) const;
-    bool IsGraph(void) const;
-
-    CMappedFeat&       GetFeat(void) const;
-    const CSeq_align&  GetAlign(void) const;
-    CMappedGraph&      GetGraph(void) const;
+    CSeq_annot_Handle& operator*(void) const;
+    CSeq_annot_Handle* operator->(void) const;
 
 private:
+    void x_Collect(void);
+
     CAnnot_CI operator++ (int);
     CAnnot_CI operator-- (int);
 
-    mutable CMappedFeat m_MappedFeat;
-    mutable CMappedGraph m_MappedGraph;
+    typedef set<CSeq_annot_Handle> TSeqAnnotSet;
+    typedef TSeqAnnotSet::iterator TIterator;
+
+    mutable TSeqAnnotSet m_SeqAnnotSet;
+    TIterator m_Iterator;
+    mutable CSeq_annot_Handle m_Value;
 };
 
 
 inline
 CAnnot_CI::CAnnot_CI(void)
 {
-    return;
+    SetNoMapping();
+    SetSortOrder(eSortOrder_None);
+    m_Iterator = m_SeqAnnotSet.end();
 }
 
 inline
 CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
     : CAnnotTypes_CI(iter)
 {
-    return;
+    m_SeqAnnotSet = iter.m_SeqAnnotSet;
+    if (iter) {
+        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
+    }
+    else {
+        m_Iterator = m_SeqAnnotSet.end();
+    }
 }
 
 inline
 CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set))
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set)
+                     .SetNoMapping()
+                     .SetSortOrder(eSortOrder_None))
 {
+    x_Collect();
 }
 
 
@@ -123,111 +127,63 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set))
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set)
+                     .SetNoMapping()
+                     .SetSortOrder(eSortOrder_None))
 {
+    x_Collect();
 }
-
-
-inline
-CAnnot_CI::CAnnot_CI(const CSeq_annot_Handle& annot)
-    : CAnnotTypes_CI(annot,
-                     SAnnotSelector(CSeq_annot::C_Data::e_not_set))
-{
-}
-
-
-inline
-CAnnot_CI::CAnnot_CI(const CSeq_annot_Handle& annot,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(annot,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set))
-{
-}
-
-
-inline
-CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_entry& entry)
-    : CAnnotTypes_CI(scope, entry,
-                     SAnnotSelector(CSeq_annot::C_Data::e_not_set))
-{
-}
-
-
-inline
-CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_entry& entry,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, entry,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set))
-{
-}
-
 
 inline
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
     CAnnotTypes_CI::operator=(iter);
-    m_MappedFeat = CMappedFeat();
-    m_MappedGraph = CMappedGraph();
+    m_SeqAnnotSet.clear();
+    m_SeqAnnotSet = iter.m_SeqAnnotSet;
+    if (iter) {
+        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
+    }
+    else {
+        m_Iterator = m_SeqAnnotSet.end();
+    }
     return *this;
 }
 
 inline
 CAnnot_CI& CAnnot_CI::operator++ (void)
 {
-    Next();
+    _ASSERT(m_Iterator != m_SeqAnnotSet.end());
+    ++m_Iterator;
     return *this;
 }
 
 inline
 CAnnot_CI& CAnnot_CI::operator-- (void)
 {
-    Prev();
+    _ASSERT(m_Iterator != m_SeqAnnotSet.begin());
+    --m_Iterator;
     return *this;
 }
 
 inline
 CAnnot_CI::operator bool (void) const
 {
-    return IsValid();
+    return m_Iterator != m_SeqAnnotSet.end();
 }
 
 inline
-bool CAnnot_CI::IsFeat(void) const
+CSeq_annot_Handle& CAnnot_CI::operator*(void) const
 {
-    return Get().IsFeat();
+    _ASSERT(*this);
+    return m_Value = *m_Iterator;
 }
 
 inline
-bool CAnnot_CI::IsAlign(void) const
+CSeq_annot_Handle* CAnnot_CI::operator->(void) const
 {
-    return Get().IsAlign();
-}
-
-inline
-bool CAnnot_CI::IsGraph(void) const
-{
-    return Get().IsGraph();
-}
-
-inline
-CMappedFeat& CAnnot_CI::GetFeat(void) const
-{
-    _ASSERT(IsFeat());
-    return m_MappedFeat.Set(Get());
-}
-
-inline
-const CSeq_align& CAnnot_CI::GetAlign(void) const
-{
-    _ASSERT(IsAlign());
-    return Get().GetAlign();
-}
-
-inline
-CMappedGraph& CAnnot_CI::GetGraph(void) const
-{
-    _ASSERT(IsGraph());
-    return m_MappedGraph.Set(Get());
+    _ASSERT(*this);
+    m_Value = *m_Iterator;
+    return &m_Value;
 }
 
 
@@ -237,6 +193,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/08/22 15:00:47  grichenk
+* Redesigned CAnnot_CI to iterate over seq-annots, containing
+* given location.
+*
 * Revision 1.20  2003/08/15 15:21:58  grichenk
 * Initial revision
 *
