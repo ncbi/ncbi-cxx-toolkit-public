@@ -53,6 +53,13 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, BlastInitHSP* init_hsp);
 
+/** Auxiliary structure for dynamic programming gapped extension */
+typedef struct BlastGapDP {
+  Int4 best;
+  Int4 best_gap;
+  Int4 best_decline;
+} BlastGapDP;
+
 typedef struct GapData {
   BlastGapDP* CD;
   Int4** v;
@@ -2357,9 +2364,16 @@ MBToGapEditScript (MBGapEditScript* ed_script)
    for (i=0; i<ed_script->num; i++) {
       esp = (GapEditScript*) calloc(1, sizeof(GapEditScript));
       esp->num = EDIT_VAL(ed_script->op[i]);
-      esp->op_type = 3 - EDIT_OPC(ed_script->op[i]);
-      if (esp->op_type == 3)
-         fprintf(stderr, "op_type = 3\n");
+      switch (EDIT_OPC(ed_script->op[i])) {
+      case 1: 
+         esp->op_type = eGapAlignDel; break;
+      case 2:
+         esp->op_type = eGapAlignIns; break;
+      case 3:
+         esp->op_type = eGapAlignSub; break;
+      default:
+         fprintf(stderr, "op_type = 3\n"); break;
+      }
       if (i==0)
          esp_start = esp_prev = esp;
       else {
@@ -2401,6 +2415,8 @@ BLAST_GapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start,
       gap_align->edit_block->start2 = s_start;
       gap_align->edit_block->length1 = query_length;
       gap_align->edit_block->length2 = subject_length;
+      gap_align->edit_block->original_length1 = query_length;
+      gap_align->edit_block->original_length2 = subject_length;
       gap_align->edit_block->frame1 = gap_align->edit_block->frame2 = 1;
       gap_align->edit_block->reverse = 0;
       gap_align->edit_block->esp = esp;
@@ -3413,14 +3429,14 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
 	op = *S;
 	if (op != MININT && number_of_decline > 0) 
 	{
-               e_script->op_type = GAPALIGN_DECLINE;
+               e_script->op_type = eGapAlignDecline;
                e_script->num = number_of_decline;
                e_script = GapEditScriptNew(e_script);
 		number_of_decline = 0;
 	}
         if (op != 0 && number_of_subs > 0) 
 	{
-                        e_script->op_type = GAPALIGN_SUB;
+                        e_script->op_type = eGapAlignSub;
                         e_script->num = number_of_subs;
                         e_script = GapEditScriptNew(e_script);
                         number_of_subs = 0;
@@ -3435,7 +3451,7 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
 	{
 		if(op > 0) 
 		{
-			e_script->op_type = GAPALIGN_DEL;
+			e_script->op_type = eGapAlignDel;
 			e_script->num = op;
 			j += op;
 			if (i < M || j < N)
@@ -3443,7 +3459,7 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
 		}
 		else
 		{
-			e_script->op_type = GAPALIGN_INS;
+			e_script->op_type = eGapAlignIns;
 			e_script->num = ABS(op);
 			i += ABS(op);
 			if (i < M || j < N)
@@ -3455,10 +3471,10 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
 
   if (number_of_subs > 0)
   {
-	e_script->op_type = GAPALIGN_SUB;
+	e_script->op_type = eGapAlignSub;
 	e_script->num = number_of_subs;
   } else if (number_of_decline > 0) {
-        e_script->op_type = GAPALIGN_DECLINE;
+        e_script->op_type = eGapAlignDecline;
         e_script->num = number_of_decline;
   }
 
@@ -3522,7 +3538,7 @@ BLAST_OOFTracebackToGapEditBlock(Int4* S, Int4 q_length,
             e_script = GapEditScriptNew(e_script);
             
             /* if(last_val%3 != 0 && current_val%3 == 0) */
-            if(last_val%3 != 0 && current_val == 3) 
+            if(last_val%3 != 0 && current_val == eGapAlignSub) 
                 /* 1, 2, 4, 5 vs. 0, 3, 6*/                
                 number = 1;
             else
@@ -3534,7 +3550,7 @@ BLAST_OOFTracebackToGapEditBlock(Int4* S, Int4 q_length,
         /* for out_of_frame == TRUE - we have op_type == S parameter */
         e_script->op_type = current_val;
         
-        if(current_val != 6) {
+        if(current_val != eGapAlignIns) {
             index1++;
             index2 += current_val;
         } else {
