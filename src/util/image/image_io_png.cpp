@@ -363,10 +363,10 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& istr,
         size_t height = 0;
         size_t depth  = 0;
         s_PngReadValidate(png_ptr, info_ptr, width, height, depth,
-                          x, y, w, y);
+                          x, y, w, h);
 
         // allocate our image
-        CRef<CImage> image(new CImage(w, h, depth));
+        image.Reset(new CImage(w, h, depth));
         unsigned char* to_data   = image->SetData();
         size_t         to_stride = image->GetWidth() * image->GetDepth();
         size_t         to_offs   = x * image->GetDepth();
@@ -389,6 +389,7 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& istr,
             to_data += to_stride;
         }
 
+        /**
         // read the rest of the image (do we need this?)
         for ( ;  i < height;  ++i) {
             png_read_row(png_ptr, row_ptr, NULL);
@@ -396,6 +397,7 @@ CImage* CImageIOPng::ReadImage(CNcbiIstream& istr,
 
         // read the end pointer
         png_read_end(png_ptr, end_ptr);
+        **/
 
         // close and return
         s_PngReadFinalize(png_ptr, info_ptr, end_ptr);
@@ -581,6 +583,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/20 17:50:53  dicuccio
+ * Fixed bugs in reading of subimage - don't declare image in try block; use
+ * correct height.  Dropped unnecessary finalization - don't need to scan whole
+ * image.
+ *
  * Revision 1.3  2003/12/16 15:49:37  dicuccio
  * Large re-write of image handling.  Added improved error-handling and support
  * for streams-based i/o (via hooks into each client library).
