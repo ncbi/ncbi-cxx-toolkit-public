@@ -51,7 +51,7 @@ NOTE:  If your firewall is "non-transparent" (it is extremely rare case),
 then your system administrator must "map" the corresponding ports on
 your firewall server to the advertised FD addresses (shown above).
 In this case, you will have to specify the address of your firewall server
-in the client configuration (<a href="../../lxr/source/include/connect/ncbi_connutil.h">CONN_PROXY_HOST</a>).
+in the client configuration (<a href="../../libs/conn.html#ref_ProxyHost">CONN_PROXY_HOST</a>).
 
 <p>
 The mapping on your non-transparent firewall server should look like this:
@@ -86,12 +86,14 @@ Connected to 130.14.22.1.
 Escape character is '^]'.
 test
 NCBI Firewall Daemon:  Invalid ticket. Connection closed.
-See  <a href="http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html">http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html</a>.
+See <a href="http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html">http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html</a>.
 Connection closed by foreign host.
 </pre>
 
 <p>
-There is also an auxiliary UNIX shell script `fwd_check.sh'
+There is also an auxiliary UNIX shell script
+`<a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.sh">fwd_check.sh</a>'
+(and <a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.cgi">Web page</a>)
 to check the accessibility of all of the above FD addresses.
 
 
