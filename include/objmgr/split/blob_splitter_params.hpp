@@ -69,8 +69,8 @@ struct SSplitterParams
     void SetChunkSize(size_t size)
         {
             m_ChunkSize = size;
-            m_MinChunkSize = size_t(size * 0.8);
-            m_MaxChunkSize = size_t(size * 1.2);
+            m_MinChunkSize = size_t(double(size) * 0.8);
+            m_MaxChunkSize = size_t(double(size) * 1.2);
         }
 
     void Compress(vector<char>& dst, const char* data, size_t size) const;
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/18 21:15:35  vasilche
+* Fixed long -> double conversion warning.
+*
 * Revision 1.3  2003/11/26 23:04:58  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *
