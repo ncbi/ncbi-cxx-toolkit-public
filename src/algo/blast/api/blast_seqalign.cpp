@@ -1203,7 +1203,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     const BlastScoreBlk* sbp)
 {
     CSeq_align_set* seq_aligns = new CSeq_align_set();
-    bool is_gapped = static_cast<bool>(score_options->gapped_calculation);
+    bool is_gapped = score_options->gapped_calculation ? true : false;
 
     if (!hit_list) {
         return x_CreateEmptySeq_align_set(seq_aligns);
@@ -1292,6 +1292,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/12/01 20:02:39  coulouri
+* fix msvc warning
+*
 * Revision 1.26  2003/11/24 20:59:12  ucko
 * Change one ASSERT to _ASSERT (probably more appropriate in general)
 * due to MSVC brokenness.
