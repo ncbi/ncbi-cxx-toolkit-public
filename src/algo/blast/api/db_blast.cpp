@@ -327,7 +327,7 @@ void CDbBlast::SetupSearch()
     }
     
     // Check if subject sequence source is of correct molecule type
-    bool seqsrc_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) == TRUE);
+    bool seqsrc_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) != FALSE);
     bool db_is_prot = (x_eProgram == eBlastTypeBlastp || 
                        x_eProgram == eBlastTypeBlastx ||
                        x_eProgram == eBlastTypeRpsBlast ||
@@ -655,6 +655,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2004/09/13 14:14:20  dondosha
+ * Minor fix in conversion from Boolean to bool
+ *
  * Revision 1.40  2004/09/13 12:46:07  madden
  * Replace call to ListNodeFreeData with BlastSeqLocFree
  *
