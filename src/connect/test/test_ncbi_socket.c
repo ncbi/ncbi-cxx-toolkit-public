@@ -707,7 +707,7 @@ static int/*bool*/ TEST_gethostbyaddr(unsigned int host);
 
 static const char* s_ntoa(unsigned int host)
 {
-    static char buf[1024];
+    static char buf[256];
     if (SOCK_ntoa(host, buf, sizeof(buf)) != 0) {
         buf[0] = '?';
         buf[1] = '\0';
@@ -717,13 +717,13 @@ static const char* s_ntoa(unsigned int host)
 
 static int/*bool*/ TEST_gethostbyname(const char* name)
 {
-    char         buf[1024];
+    char         buf[256];
     unsigned int host;
 
     fprintf(log_fp, "------------\n");
 
     host = SOCK_gethostbyname(name);
-    fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  %x [%s]\n",
+    fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  0x%08X [%s]\n",
             name, (unsigned int) host, s_ntoa(host));
     if ( !host ) {
         return 0/*false*/;
@@ -733,10 +733,10 @@ static int/*bool*/ TEST_gethostbyname(const char* name)
     if ( name ) {
         assert(name == buf);
         assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
-        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):  \"%s\"\n",
+        fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  \"%s\"\n",
                 (unsigned int) host, s_ntoa(host), name);
     } else {
-        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):  <not found>\n",
+        fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  <not found>\n",
                 (unsigned int) host, s_ntoa(host));
     }
 
@@ -755,16 +755,16 @@ static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
     if ( name ) {
         assert(name == buf);
         assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
-        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):  \"%s\"\n",
+        fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  \"%s\"\n",
                 (unsigned int) host, s_ntoa(host), name);
     } else {
-        fprintf(log_fp, "SOCK_gethostbyaddr(%x [%s]):   <not found>\n",
+        fprintf(log_fp, "SOCK_gethostbyaddr(0x%08X [%s]):  <not found>\n",
                 (unsigned int) host, s_ntoa(host));
         return 0/*false*/;
     }
 
     host = SOCK_gethostbyname(name);
-    fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  %x [%s]\n",
+    fprintf(log_fp, "SOCK_gethostbyname(\"%s\"):  0x%08X [%s]\n",
             name, (unsigned int) host, s_ntoa(host));
       
     return 1/*true*/;
@@ -924,6 +924,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/11/01 20:17:39  lavr
+ * Change hostname buffers to hold up to 256 chars
+ *
  * Revision 6.17  2002/10/11 19:58:23  lavr
  * Remove asserts() (replace with tests) for SOCK_gethostbyaddr({0|0xFFFFFFFF})
  *
