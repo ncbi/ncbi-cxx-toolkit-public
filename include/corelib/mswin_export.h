@@ -701,7 +701,7 @@
 #ifdef NCBI_XLOADER_LDS_EXPORTS
 #  define NCBI_XLOADER_LDS_EXPORT     __declspec(dllexport)
 #else
-#  define NCBI_XLOADER_LDS_EXPORTS    __declspec(dllimport)
+#  define NCBI_XLOADER_LDS_EXPORT    __declspec(dllimport)
 #endif
 
 
@@ -771,7 +771,7 @@
 #  define NCBI_XUTIL_EXPORT
 #  define NCBI_LDS_EXPORT
 #  define NCBI_BDB_EXPORT
-#  define NCBI_XLOADER_LDS_EXPORTS
+#  define NCBI_XLOADER_LDS_EXPORT
 
 #endif
 
@@ -781,6 +781,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.30  2003/07/30 16:35:17  kuznets
+ * Fixed typo with NCBI_XLOADER_LDS_EXPORT
+ *
  * Revision 1.29  2003/07/16 20:15:00  kuznets
  * + NCBI_XLOADER_LDS_EXPORTS (export/import macro for lds dataloader)
  *
