@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/02/04 20:19:55  lavr
+ * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
+ * More assert()'s inserted into the code to check standard compliance
+ *
  * Revision 6.13  2002/01/30 20:09:00  lavr
  * Define xsgetn() for WorkShop compiler also; few patches in underflow();
  * sync() properly redesigned (now standard-conformant)
@@ -172,6 +176,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     if ( m_Tie ) {
         _VERIFY(sync() == 0);
     }
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     // read from the connection
     size_t n_read;
@@ -192,7 +197,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
+#if defined(NCBI_COMPILER_GCC)      || \
+    defined(NCBI_COMPILER_WORKSHOP) || \
+    defined(NCBI_COMPILER_MIPSPRO)
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     static const STimeout s_ZeroTimeout = {0, 0};
@@ -250,6 +257,7 @@ streamsize CConn_Streambuf::showmanyc(void)
     if ( m_Tie ) {
         _VERIFY(sync() == 0);
     }
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     switch (CONN_Wait(m_Conn, eIO_Read, CONN_GetTimeout(m_Conn, eIO_Read))) {
     case eIO_Success:
