@@ -208,7 +208,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
         if (line[0] == '>') {
             // new sequence
             SIZE_TYPE       space = line.find_first_of(" \t");
-            string          name  = line.substr(0, space), local;
+            string          name  = line.substr(1, space), local;
             CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
 
             s_FixSeqData(seq);
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.9  2002/11/25 18:50:01  ucko
+ * Skip initial > when parsing IDs (caught by Mike DiCuccio)
+ *
  * Revision 6.8  2002/11/04 21:29:17  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *
