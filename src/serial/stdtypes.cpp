@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/07/01 15:42:07  grichenk
+* Fixed 'unused variable' warnings, removed commented code.
+*
 * Revision 1.30  2002/02/13 22:39:17  ucko
 * Support AIX.
 *
@@ -578,14 +581,10 @@ public:
             Get(object) = true;
         }
     static void Write(CObjectOStream& out, TTypeInfo ,
-                      TConstObjectPtr object)
+                      TConstObjectPtr /*object*/)
         {
-/*
-            if ( !Get(object) )
-                THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
-*/
             out.WriteNull();
-    }
+        }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
             copier.In().ReadNull();

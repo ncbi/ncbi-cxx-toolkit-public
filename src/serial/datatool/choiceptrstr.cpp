@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/07/01 15:42:08  grichenk
+* Fixed 'unused variable' warnings, removed commented code.
+*
 * Revision 1.3  2001/05/17 15:07:11  lavr
 * Typos corrected
 *
@@ -77,7 +80,7 @@ CChoicePtrTypeStrings::SVariantInfo::SVariantInfo(const string& n,
 }
 
 void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
-                                              CNcbiOstream& setters,
+                                              CNcbiOstream& /*setters*/,
                                               const string& methodPrefix,
                                               bool haveUserClass,
                                               const string& classPrefix) const
