@@ -1,0 +1,37 @@
+#! /bin/sh
+# $Id$
+#
+
+mainDir=/net/hawthorn/export/home/vasilche/c++/src/objects/asn2asn
+
+d=$mainDir/data
+r=$mainDir/res
+
+tool=./asn2asn
+
+do_test() {
+    cmd="$tool -i $d/$1 -o out"
+    echo $cmd
+    $cmd
+    if test $? != 0; then
+        echo "asn2asn failed!"
+        exit 1
+    fi
+    cmp out $r/$2
+    if test $? != 0; then
+        echo "wrong result!"
+        exit 1
+    fi
+}
+
+for i in "set.ent" "set.bin -b" "set.xml -X"; do
+    do_test "$i -e" set.ent
+    do_test "$i -e -s" set.bin
+    do_test "$i -e -x" set.xml
+done
+for i in "phg.ent" "phg.bin -b" "phg.xml -X"; do
+    do_test "$i" phg.ent.sorted
+    do_test "$i -s" phg.bin.sorted
+    do_test "$i -x" phg.xml.sorted
+done
+echo "Done!"
