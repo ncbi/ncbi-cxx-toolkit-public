@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/08 17:47:30  vasilche
+* Simplified error check.
+*
 * Revision 1.2  2000/03/08 14:18:22  vasilche
 * Fixed throws instructions.
 *
@@ -75,13 +78,12 @@ void CObject::RemoveLastReference(void)
         // last reference removed
         delete this;
         break;
-    case unsigned(-1):
-    case unsigned(eDoNotDelete - 1):
-        m_Counter++;
-        throw runtime_error("RemoveReference() without AddReference()");
     case eDoNotDelete:
         // last reference to static object removed -> do nothing
         break;
+    default:
+        m_Counter++;
+        throw runtime_error("RemoveReference() without AddReference()");
     }
 }
 
