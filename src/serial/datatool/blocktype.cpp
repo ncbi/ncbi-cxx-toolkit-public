@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2005/02/09 16:05:10  gouriano
+* Corrected schema generation for elements with mixed content
+*
 * Revision 1.55  2005/02/09 14:33:25  gouriano
 * Corrected formatting when writing DTD
 *
@@ -455,7 +458,7 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
     string asnk = GetASNKeyword();
     string xsdk;
     bool hasAttlist= false, isAttlist= false;
-    bool hasNotag= false, isOptional= false, isSeq= false;
+    bool hasNotag= false, isOptional= false, isSeq= false, isMixed=false;
     bool isSimple= false, isSimpleSeq= false;
     bool parent_hasNotag= false;
     string openTag, closeTag1, closeTag2, simpleType, simpleContents;
@@ -465,6 +468,16 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
             if (i->get()->Attlist()) {
                 hasAttlist = true;
                 break;
+            }
+        }
+        if (( hasAttlist && GetMembers().size() > 2) ||
+            (!hasAttlist && GetMembers().size() > 1)) {
+            ITERATE ( TMembers, i, m_Members ) {
+                if (i->get()->Notag()) {
+                    const CStringDataType* str =
+                        dynamic_cast<const CStringDataType*>(i->get()->GetType());
+                    isMixed = (str != 0);
+                }
             }
         }
         if (GetDataMember()) {
@@ -551,7 +564,11 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
         closeTag2.erase();
     } else if (isSimple) {
         openTag   = "<xs:element name=\"" + tag + "\">\n"
-                    "  <xs:complexType>\n";
+                    "  <xs:complexType";
+        if (isMixed) {
+            openTag += " mixed=\"true\"";
+        }
+        openTag += ">\n";
         if (!simpleType.empty()) {
             openTag  +="    <xs:simpleContent>\n"
                        "      <xs:extension base=\"" + simpleType + "\">\n";
@@ -568,7 +585,11 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
         openTag.erase();
         if (!hasNotag) {
             openTag += "<xs:element name=\"" + tag + "\">\n" +
-                       "  <xs:complexType>\n";
+                       "  <xs:complexType";
+            if (isMixed) {
+                openTag += " mixed=\"true\"";
+            }
+            openTag += ">\n";
         }
         openTag     += "    <xs:"  + xsdk;
         if (isOptional) {
@@ -617,6 +638,9 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
                     }
                 }
                 if (member.Notag()) {
+                    if (isMixed && dynamic_cast<const CStringDataType*>(member.GetType())) {
+                        continue;
+                    }
                     member.GetType()->PrintXMLSchemaElement(out);
                     continue;
                 }
