@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/04/10 17:04:39  vakatov
+* CNcbiRelocateCommand::Execute() -- temp. un-fix:  do not set Status
+*
 * Revision 1.29  2002/03/19 00:41:48  vakatov
 * CNcbiRelocateCommand::Execute() -- set status to 301 (Moved)
 *
@@ -100,7 +103,8 @@
 * VC++ fixes in ncbistd; minor fixes in Resource
 *
 * Revision 1.6  1998/12/17 21:50:44  sandomir
-* CNCBINode fixed in Resource; case insensitive string comparison predicate added
+* CNCBINode fixed in Resource; case insensitive string comparison
+* predicate added
 *
 * Revision 1.5  1998/12/17 17:25:02  sandomir
 * minor changes in Report
@@ -209,7 +213,8 @@ bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
 { 
     const string value = GetName();
   
-    TCgiEntries& entries = const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+    TCgiEntries& entries =
+        const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
 
     pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
     for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; ++itEntr ) {
@@ -237,10 +242,12 @@ bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
 CNcbiRelocateCommand::CNcbiRelocateCommand( CNcbiResource& resource )
     : CNcbiCommand( resource )
 {
+    return;
 }
 
 CNcbiRelocateCommand::~CNcbiRelocateCommand( void )
 {
+    return;
 }
 
 void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
@@ -248,7 +255,14 @@ void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
     try {
         string url = GetLink(ctx);
         _TRACE("CNcbiRelocateCommand::Execute changing location to:" << url);
-        ctx.GetResponse().SetStatus(301, "Moved");
+        // Theoretically, the status should be set, but...
+        // Commented temporarily to avoid the redirection to go out of
+        // NCBI and confuse some not-so-smart clients.
+        // It can be restored later when (and if) the NCBI internal HTTP
+        // servers are tuned to intercept the redirections and resolve these
+        // internally.
+        //
+        //        ctx.GetResponse().SetStatus(301, "Moved");
         ctx.GetResponse().SetHeaderValue("Location", url);
         ctx.GetResponse().WriteHeader();
     }
