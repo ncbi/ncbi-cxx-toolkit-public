@@ -447,6 +447,34 @@ int CDemoApp::Run(void)
 
     CSeq_id_Handle master_id = CSeq_id_Handle::GetHandle(*id);
 
+    CRef<CSeq_loc> whole_loc(new CSeq_loc);
+    // No region restrictions -- the whole bioseq is used:
+    whole_loc->SetWhole(*id);
+    CRef<CSeq_loc> range_loc;
+    TSeqPos range_from, range_to;
+    if ( args["range_from"] || args["range_to"] ) {
+        if ( args["range_from"] ) {
+            range_from = args["range_from"].AsInteger();
+        }
+        else {
+            range_from = 0;
+        }
+        if ( args["range_to"] ) {
+            range_to = args["range_to"].AsInteger();
+        }
+        else {
+            range_to = handle.GetBioseqLength()-1;
+        }
+        range_loc.Reset(new CSeq_loc);
+        range_loc->SetInt().SetId(*id);
+        range_loc->SetInt().SetFrom(range_from);
+        range_loc->SetInt().SetTo(range_to);
+    }
+    else {
+        range_from = range_to = 0;
+        range_loc = whole_loc;
+    }
+
     for ( int c = 0; c < repeat_count; ++c ) {
         if ( c && pause ) {
             SleepSec(pause);
@@ -496,7 +524,7 @@ int CDemoApp::Run(void)
                 for ( CBioseq_CI bit(handle.GetTopLevelEntry()); bit; ++bit) {
                     ++count;
                 }
-                NcbiCout << "TSE sequences: " << count << NcbiEndl;
+                NcbiCout << "TSE sequences:\t" << count << NcbiEndl;
             }
 
             // Get the bioseq
@@ -542,20 +570,20 @@ int CDemoApp::Run(void)
             // from the bioseq and going the seq-entries tree up to the
             // top-level seq-entry.
             count = 0;
-            for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
+            for (CSeqdesc_CI desc_it(handle); desc_it; ++desc_it) {
                 if ( print_descr ) {
                     NcbiCout << "\n" << MSerial_AsnText << *desc_it;
                 }
                 count++;
             }
             cout << "\n";
-            NcbiCout << "Seqdesc count: " << count << NcbiEndl;
+            NcbiCout << "Seqdesc count (sequence):\t" << count << NcbiEndl;
 
             count = 0;
             for ( CSeq_annot_CI ai(handle.GetParentEntry()); ai; ++ai) {
                 ++count;
             }
-            NcbiCout << "Seq_annot count (recursive): "
+            NcbiCout << "Seq_annot count (recursive):\t"
                      << count << NcbiEndl;
             
             count = 0;
@@ -564,7 +592,7 @@ int CDemoApp::Run(void)
                   ai; ++ai) {
                 ++count;
             }
-            NcbiCout << "Seq_annot count (non-recursive): "
+            NcbiCout << "Seq_annot count (non-recurs):\t"
                      << count << NcbiEndl;
 
             if ( whole_tse ) {
@@ -572,14 +600,14 @@ int CDemoApp::Run(void)
                 for ( CSeq_annot_CI ai(handle); ai; ++ai) {
                     ++count;
                 }
-                NcbiCout << "Seq_annot count (up to TSE): "
+                NcbiCout << "Seq_annot count (up to TSE):\t"
                          << count << NcbiEndl;
 
                 count = 0;
                 for (CSeq_annot_CI ai(handle.GetTopLevelEntry()); ai; ++ai) {
                     ++count;
                 }
-                NcbiCout << "Seq_annot count (TSE, recursive): "
+                NcbiCout << "Seq_annot count (TSE, recursive):\t"
                          << count << NcbiEndl;
                 
                 count = 0;
@@ -588,17 +616,13 @@ int CDemoApp::Run(void)
                      ai; ++ai) {
                     ++count;
                 }
-                NcbiCout << "Seq_annot count (TSE, non-recursive): "
+                NcbiCout << "Seq_annot count (TSE, non-recurs):\t"
                          << count << NcbiEndl;
             }
         }
 
         // CSeq_feat iterator: iterates all features which can be found in the
         // current scope including features from all TSEs.
-        // Construct seq-loc to get features for.
-        CSeq_loc loc;
-        // No region restrictions -- the whole bioseq is used:
-        loc.SetWhole(*id);
         count = 0;
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
@@ -633,12 +657,7 @@ int CDemoApp::Run(void)
             if ( feat_subtype >= 0 ) {
                 sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
             }
-            //int cnt0 = newCObjects.Get();
-            CFeat_CI it(scope, loc, sel);
-            //int cnt1 = newCObjects.Get();
-            bool print = print_features &&
-                !args["range_from"] && !args["range_to"];
-            for ( ; it;  ++it) {
+            for ( CFeat_CI it(scope, *range_loc, sel); it;  ++it) {
                 count++;
                 if ( get_mapped_location )
                     it->GetLocation();
@@ -648,7 +667,7 @@ int CDemoApp::Run(void)
                     it->GetMappedFeature();
                 
                 // Get seq-annot containing the feature
-                if ( print ) {
+                if ( print_features ) {
                     NcbiCout << "Feature:";
                     if ( it->IsSetPartial() ) {
                         NcbiCout << " partial = " << it->GetPartial();
@@ -673,27 +692,24 @@ int CDemoApp::Run(void)
                   _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == master_id);
                 */
             }
-            //int cnt2 = newCObjects.Get();
             if ( feat_type >= 0 || feat_subtype >= 0 ) {
-                NcbiCout << "Feat count (whole, requested): ";
+                NcbiCout << "Feat count (loc range, req):\t";
             }
             else {
-                NcbiCout << "Feat count (whole, any):       ";
+                NcbiCout << "Feat count (loc range, any):\t";
             }
             NcbiCout << count << NcbiEndl;
-            //NcbiCout << "Init new: " << (cnt1 - cnt0) << " iteratr new: " << (cnt2-cnt1) << NcbiEndl;
-            _ASSERT(count == (int)it.GetSize());
         }}
 
         if ( !only_features ) {
             count = 0;
-            // The same region (whole sequence), but restricted feature type:
+            // The same region, but restricted feature type:
             // searching for e_Cdregion features only. If the sequence is
             // segmented (constructed), search for features on the referenced
             // sequences in the same top level seq-entry, ignore far pointers.
             SAnnotSelector sel = base_sel;
             sel.SetFeatType(CSeqFeatData::e_Cdregion);
-            for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+            for ( CFeat_CI it(scope, *range_loc, sel); it;  ++it ) {
                 count++;
                 // Get seq vector filtered with the current feature location.
                 // e_ViewMerged flag forces each residue to be shown only once.
@@ -701,7 +717,8 @@ int CDemoApp::Run(void)
                     (it->GetLocation(), CBioseq_Handle::eViewMerged,
                      CBioseq_Handle::eCoding_Iupac);
                 // Print first 10 characters of each cd-region
-                NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
+                NcbiCout << "cds" << count <<
+                    " len=" << cds_vect.size() << " data=";
                 if ( cds_vect.size() == 0 ) {
                     NcbiCout << "Zero size from: " << MSerial_AsnText <<
                         it->GetOriginalFeature().GetLocation();
@@ -727,77 +744,28 @@ int CDemoApp::Run(void)
                 }
                 NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
             }
-            NcbiCout << "Feat count (whole, cds):      " << count << NcbiEndl;
+            NcbiCout << "Feat count (loc range, cds):\t" << count << NcbiEndl;
         }
-
-        // Region set to interval 0..9 on the bioseq. Any feature
-        // intersecting with the region should be selected.
-        loc.SetInt().SetId(*id);
-        TSeqPos range_from = 0;
-        if ( args["range_from"] ) {
-            range_from = args["range_from"].AsInteger();
-        }
-        TSeqPos range_to = 9;
-        if ( args["range_to"] ) {
-            range_to = args["range_to"].AsInteger();
-        }
-        loc.SetInt().SetFrom(range_from);
-        loc.SetInt().SetTo(range_to);
-        count = 0;
-        // Iterate features. No feature type restrictions.
-        for (CFeat_CI it(scope, loc, base_sel); it;  ++it) {
-            count++;
-            if ( print_features ) {
-                NcbiCout << "Feature:";
-                if ( it->IsSetPartial() ) {
-                    NcbiCout << " partial = " << it->GetPartial();
-                }
-                NcbiCout << "\n" <<
-                    MSerial_AsnText << it->GetMappedFeature();
-                if ( 1 ) {
-                    NcbiCout << "Original location:\n" <<
-                        MSerial_AsnText <<
-                        it->GetOriginalFeature().GetLocation();
-                }
-                else {
-                    NcbiCout << "Location:\n" <<
-                        MSerial_AsnText << it->GetLocation();
-                }
-            }
-        }
-        NcbiCout << "Feat count (id, "<<range_from<<".."<<range_to<<", any):   "
-                 << count << NcbiEndl;
 
         // Search features only in the TSE containing the target bioseq.
         // Since only one seq-id may be used as the target bioseq, the
         // iterator is constructed not from a seq-loc, but from a bioseq handle
-        // and start/stop points on the bioseq. If both start and stop are 0 the
-        // whole bioseq is used.
+        // and start/stop points on the bioseq.
+        // If both start and stop are 0 the whole bioseq is used.
         // The last parameter may be used for type filtering.
         count = 0;
-        range_from = 0;
-        if ( args["range_from"] ) {
-            range_from = args["range_from"].AsInteger();
-        }
-        range_to = 999;
-        if ( args["range_to"] ) {
-            range_to = args["range_to"].AsInteger();
-        }
-        for ( CFeat_CI it(handle, range_from, range_to, base_sel); it;  ++it ) {
+        for ( CFeat_CI it(handle, range_from, range_to, base_sel); it; ++it ) {
             count++;
         }
-        NcbiCout << "Feat count (bh, "<<range_from<<".."<<range_to<<", any):  "
-                 << count << NcbiEndl;
+        NcbiCout << "Feat count (bh range, any):\t" << count << NcbiEndl;
 
         if ( only_features )
             continue;
 
         // The same way may be used to iterate aligns and graphs,
         // except that there is no type filter for both of them.
-        // No region restrictions -- the whole bioseq is used:
-        loc.SetWhole(*id);
         count = 0;
-        for (CGraph_CI it(scope, loc, base_sel); it;  ++it) {
+        for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
             count++;
             // Get seq-annot containing the feature
             if ( get_mapped_location )
@@ -812,12 +780,12 @@ int CDemoApp::Run(void)
             }
             CSeq_annot_Handle annot = it.GetAnnot();
         }
-        NcbiCout << "Graph count (whole, any):       " << count << NcbiEndl;
+        NcbiCout << "Graph count (loc range, any):\t" << count << NcbiEndl;
 
         if ( !skip_alignments ) {
             count = 0;
             // Create CAlign_CI using the current scope and location.
-            for (CAlign_CI it(scope, loc, base_sel); it;  ++it) {
+            for (CAlign_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 count++;
                 if ( get_mapped_alignments ) {
                     *it;
@@ -826,7 +794,7 @@ int CDemoApp::Run(void)
                     NcbiCout << MSerial_AsnText << *it;
                 }
             }
-            NcbiCout << "Align count (whole, any):       " <<count<<NcbiEndl;
+            NcbiCout << "Align count (loc range, any):\t" <<count<<NcbiEndl;
         }
     }
 
@@ -855,6 +823,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/07/15 16:50:51  vasilche
+* All annotation iterators use -range_from and -range_to options.
+*
 * Revision 1.73  2004/07/13 21:09:09  vasilche
 * Added "range_from" and "range_to" options.
 *
