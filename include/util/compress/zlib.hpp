@@ -358,7 +358,7 @@ public:
         CCompression::TFlags  flags
         )
         : CCompressionStreamProcessor( 
-              new CZipDecompressor(window_bits,flags),
+              new CZipDecompressor(window_bits, flags),
               eDelete, in_bufsize, out_bufsize)
     {}
 
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/15 13:16:13  ivanov
+ * Cosmetics
+ *
  * Revision 1.11  2004/11/08 14:01:59  gouriano
  * Removed USE_LOCAL_ZLIB
  *
