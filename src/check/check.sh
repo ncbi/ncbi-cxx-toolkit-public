@@ -49,7 +49,7 @@ script_args="$*"
 short_res="check.sh.log"
 full_res="check.sh.out"
 
-mailx="mailx -r ''"
+mailx="mailx -r `whoami | cut -f1 -d' '`"
 
 
 ####  ERROR REPORT
