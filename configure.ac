@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.257 2004/01/24 15:25:24 ucko Exp $
+#  $Id: configure.ac,v 1.258 2004/01/27 17:05:11 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -571,6 +571,7 @@ if test "$with_mt" = "yes" ; then
     solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
     *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
     *:Compaq | freebsd*:GCC         )  MT_FLAG=${MT_FLAG:="-pthread"} ;;
+    *:VisualAge                     )  : ${MT_FLAG:="-qthreaded"} ;;
     *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
     * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
    esac
@@ -703,7 +704,8 @@ case "$host_os:$compiler" in
    make_shell=""
    ;;
 
- aix*:VisualAge)
+ *:VisualAge)
+   CFLAGS="-qlanglvl=stdc99 $CFLAGS"
    CXXFLAGS="-qrtti=all $CXXFLAGS"
    DEPFLAGS="-E -M"
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
@@ -1380,6 +1382,11 @@ case "$compiler" in
    ;;
  KCC )
    LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
+   ;;
+ VisualAge )
+   # NOTE: --without-dll still recommended, as the linker doesn't seem
+   # to support building shared libraries with undefined symbols.
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -qmkshrobj -o"
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
