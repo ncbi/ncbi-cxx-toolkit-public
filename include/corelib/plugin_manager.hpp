@@ -70,6 +70,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/version.hpp>
 
+#include <set>
 
 /** @addtogroup PluginMgr
  *
@@ -99,10 +100,10 @@ class CInterfaceVersion
 /// very header that describes that interface.
 ///
 /// Example:
-///    NCBI_PLUGIN_VERSION(IFooBar, 1, 3, 8);
+///    NCBI_INTERFACE_VERSION(IFooBar, 1, 3, 8);
 /// @sa CInterfaceVersion
 
-#define NCBI_PLUGIN_VERSION(iface, major, minor, patch_level) \
+#define NCBI_INTERFACE_VERSION(iface, major, minor, patch_level) \
 EMPTY_TEMPLATE \
 class CInterfaceVersion<iface> \
 { \
@@ -120,31 +121,56 @@ public: \
 ///
 /// Class factory for the given interface.
 ///
-/// It is to be implemented in drivers and exported by hosts.
+/// IClassFactory should be implemented for collection of drivers
+/// and exported by hosts
 
 template <class TClass>
 class IClassFactory
 {
 public:
-    /// Create class instance
+    typedef TClass   TInterface;
+
+    struct SDriverInfo
+    {
+        string         name;        ///< Driver name
+        CVersionInfo   version;     ///< Driver version
+
+        SDriverInfo(const string& driver_name,
+                    const CVersionInfo& driver_version)
+        : name(driver_name),
+          version(driver_version)
+        {}
+    };
+
+    typedef list<SDriverInfo>  TDriverList;
+
+
+    /// Create driver's instance
     ///
+    /// Function creates driver by its name and version.
+    /// The requirements is the drivers version should match the interface
+    /// up to the patch level.
+    ///
+    /// @param driver
+    ///  Requested driver's name (not the name of the supported interface)
     /// @param version
-    ///  Requested version (as understood by the caller).
+    ///  Requested interface version (as understood by the caller).
     ///  By default it will be passed the version which is current from
     ///  the calling code's point of view.
     /// @return
     ///  NULL on any error (not found entry point, version mismatch, etc.)
-    virtual TClass* CreateInstance(CVersionInfo version = CVersionInfo
-                                   (CInterfaceVersion<TClass>::eMajor,
-                                    CInterfaceVersion<TClass>::eMinor,
-                                    CInterfaceVersion<TClass>::ePatchLevel))
+    virtual TClass* CreateInstance(const string&     driver  = kEmptyStr,
+                                   CVersionInfo version = CVersionInfo
+                                   (ncbi::CInterfaceVersion<TClass>::eMajor,
+                                    ncbi::CInterfaceVersion<TClass>::eMinor,
+                                    ncbi::CInterfaceVersion<TClass>::ePatchLevel))
         const = 0;
 
     // Name of the interface provided by the factory
     virtual string GetName(void) const = 0;
 
     // Versions of the interface exported by the factory
-    virtual list<const CVersionInfo&> GetDriverVersions(void) const = 0;
+    virtual void GetDriverVersions(TDriverList& driver_list) const = 0;
 
     virtual ~IClassFactory(void) {}
 };
@@ -180,7 +206,7 @@ public:
                             CInterfaceVersion<TClass>::ePatchLevel))
         const
     {
-        return GetFactory(name, version)->CreateInstance(version);
+        return GetFactory(name, version)->CreateInstance(name, version);
     }
 
     /// Get class factory
@@ -201,7 +227,18 @@ public:
                               (CInterfaceVersion<TClass>::eMajor,
                                CInterfaceVersion<TClass>::eMinor,
                                CInterfaceVersion<TClass>::ePatchLevel))
-        const;
+        const
+    {
+        CFastMutexGuard guard(m_Mutex);
+
+        set<TClassFactory*>::const_iterator it = m_Factories.begin();
+        set<TClassFactory*>::const_iterator it_end = m_Factories.end();
+
+        set<TClassFactory*>::const_iterator it1 = FindVersion(it, it_end);
+        if (it1 != it_end) {
+            return *it1;
+        }
+    }
 
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
@@ -212,6 +249,13 @@ public:
         // It's the plugin manager's (and not SDriverInfo) responsibility to
         // keep and then destroy class factories.
         TClassFactory* factory;     //!< Class factory (can be NULL)
+
+        SDriverInfo(const string&        driver_name,
+                    const CVersionInfo&  driver_version)
+        : name(driver_name),
+          version(driver_version),
+          factory(0)
+        {}
     };
 
     /// List of driver information.
@@ -284,21 +328,6 @@ private:
 
 
 
-template <class TClass> CPluginManager<TClass>::TClassFactory* 
-CPluginManager<TClass>::GetFactory(const string&       driver,
-                                   const CVersionInfo& version)
-{
-    CFastMutexGuard guard(m_Mutex);
-
-    set<TClassFactory*>::const_iterator it = m_Factories.begin();
-    set<TClassFactory*>::const_iterator it_end = m_Factories.end();
-
-    set<TClassFactory*>::const_iterator it1 = FindVersion(it, it_end);
-    if (it1 != it_end) {
-        return *it1;
-    }
-}
-
 template <class TClass>
 void CPluginManager<TClass>::RegisterFactory(TClassFactory& factory)
 {
@@ -312,7 +341,7 @@ bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 {
     CFastMutexGuard guard(m_Mutex);
 
-    set<TClassFactory*> it = m_Factories.find(&factory);
+    set<TClassFactory*>::iterator it = m_Factories.find(&factory);
     if (it != m_Factories.end()) {
         TClassFactory* f = *it;
         m_Factories.erase(it);
@@ -346,6 +375,64 @@ CPluginManager<TClass>::~CPluginManager()
         delete f;
     }
 }
+
+
+/// Entry point implementation
+///
+template<class TClassFactory> struct CHostEntryPointImpl
+{
+    static
+    NCBI_EntryPointImpl(CPluginManager<TClassFactory::TInterface>::TDriverInfoList& info_list,
+                        CPluginManager<TClassFactory::TInterface>::EEntryPointRequest method)
+    {
+        typedef typename TClassFactory::TInterface          TInterface;
+        typedef CPluginManager<TInterface>                  TPluginManager;
+        typedef CPluginManager<TInterface>::SDriverInfo     TDriverInfo;
+        typedef CPluginManager<TInterface>::TDriverInfoList TDriverInfoList;
+
+        CLDS_DataLoaderCF cf;
+        list<TClassFactory::SDriverInfo> cf_info_list;
+        cf.GetDriverVersions(cf_info_list);
+
+        switch (method)
+        { 
+        case TPluginManager::eGetFactoryInfo:
+            {
+            ITERATE(list<TClassFactory::SDriverInfo>, it, cf_info_list) {
+                info_list.push_back(TDriverInfo(it->name, it->version));
+            }
+
+            }
+            break;
+        case TPluginManager::eInstantiateFactory:
+            {
+            NON_CONST_ITERATE(TDriverInfoList, it1, info_list) {
+                if (it1->factory) {    // already instantiated
+                    continue;
+                }
+                ITERATE(list<TClassFactory::SDriverInfo>, it2, cf_info_list){
+                    if (it1->name == it2->name) {
+                        if (it1->version.Match(it2->version) != 
+                                                 CVersionInfo::eNonCompatible)
+                        {
+                            TClassFactory* cg = new TClassFactory();
+                            IClassFactory<TInterface>* icf = cg;
+                            it1->factory = icf;
+                        }
+                    }
+                } // ITERATE
+
+            } // NON_CONST_ITERATE
+
+            }
+            break;
+        default:
+            _ASSERT(0);
+        } // switch
+    }
+
+};
+
 
 
 //!!!  The above API is by-and-large worked through, all the rest of
@@ -502,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/31 19:53:52  kuznets
+ * +CHostEntryPointImpl
+ *
  * Revision 1.5  2003/10/30 20:03:49  kuznets
  * Work in progress. Added implementations of CPluginManager<> methods.
  *
