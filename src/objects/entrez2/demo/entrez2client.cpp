@@ -30,24 +30,25 @@
  */
 
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbistd.hpp>
 
-#include <objects/entrez2/entrez2_client.hpp>
-#include <objects/entrez2/Entrez2_info.hpp>
-#include <objects/entrez2/Entrez2_eval_boolean.hpp>
-#include <objects/entrez2/Entrez2_boolean_reply.hpp>
-#include <objects/entrez2/Entrez2_boolean_exp.hpp>
 #include <objects/entrez2/Entrez2_boolean_element.hpp>
-#include <objects/entrez2/Entrez2_id_list.hpp>
-#include <objects/entrez2/Entrez2_docsum_list.hpp>
+#include <objects/entrez2/Entrez2_boolean_exp.hpp>
+#include <objects/entrez2/Entrez2_boolean_reply.hpp>
 #include <objects/entrez2/Entrez2_db_id.hpp>
+#include <objects/entrez2/Entrez2_docsum_list.hpp>
+#include <objects/entrez2/Entrez2_eval_boolean.hpp>
+#include <objects/entrez2/Entrez2_id_list.hpp>
+#include <objects/entrez2/Entrez2_info.hpp>
+#include <objects/entrez2/Entrez2_limits.hpp>
+#include <objects/entrez2/entrez2_client.hpp>
 
-#include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
+#include <serial/serial.hpp>
 
 using namespace ncbi;
 using namespace objects;
@@ -69,8 +70,6 @@ private:
     //
 
     void x_GetInfo         (CEntrez2Client& client);
-    void x_GetDocsum       (CEntrez2Client& client,
-                            const string& query, const string& db);
     void x_GetCount        (CEntrez2Client& client,
                             const string& query, const string& db);
     void x_GetParsedQuery  (CEntrez2Client& client,
@@ -78,19 +77,21 @@ private:
     void x_GetUids         (CEntrez2Client& client,
                             const string& query, const string& db);
     void x_GetDocsums      (CEntrez2Client& client,
-                            const string& query, const string& db);
+                            const string& query, const string& db,
+                            int start, int max_num);
+
     void x_GetTermPositions(CEntrez2Client& client,
                             const string& query, const string& db);
     void x_GetTermList(CEntrez2Client& client,
-                            const string& query, const string& db);
+                       const string& query, const string& db);
     void x_GetTermHierarchy(CEntrez2Client& client,
                             const string& query, const string& db);
     void x_GetLinks(CEntrez2Client& client,
-                            const string& query, const string& db);
+                    const string& query, const string& db);
     void x_GetLinked(CEntrez2Client& client,
-                            const string& query, const string& db);
+                     const string& query, const string& db);
     void x_GetLinkCounts(CEntrez2Client& client,
-                            const string& query, const string& db);
+                         const string& query, const string& db);
 
     // format a reply (basic formatting only)
     void x_FormatReply(CEntrez2_boolean_reply& reply);
@@ -99,8 +100,8 @@ private:
     CEntrez2_boolean_reply* x_EvalBoolean(CEntrez2Client& client,
                                           const string& query,
                                           const string& db,
-                                          bool parse,
-                                          bool uids);
+                                          bool parse, bool uids,
+                                          int start = -1, int max_num = -1);
 };
 
 
@@ -130,7 +131,14 @@ void CEntrez2ClientApp::Init(void)
                               "links",    // get links
                               "linked",   // get linked status
                               "linkct"    // get link count
-                              ));
+                             ));
+
+    arg_desc->AddDefaultKey("start", "StartPos",
+                            "Starting point in the UID list for retrieval",
+                            CArgDescriptions::eInteger, "-1");
+    arg_desc->AddDefaultKey("max", "MaxNum",
+                            "Maximum number of records to retrieve",
+                            CArgDescriptions::eInteger, "-1");
 
     arg_desc->AddDefaultKey("out", "OutputFile", "File to dump output to",
                             CArgDescriptions::eOutputFile, "-");
@@ -153,6 +161,9 @@ int CEntrez2ClientApp::Run(void)
     string query       = args["query"].AsString();
     string lt          = args["lt"].AsString();
     CNcbiOstream& ostr = args["out"].AsOutputFile();
+
+    int start          = args["start"].AsInteger();
+    int max_num        = args["max"].AsInteger();
 
     m_Client.Reset(new CEntrez2Client());
     m_Client->SetDefaultRequest().SetTool("Entrez2 Command-line Test");
@@ -177,7 +188,7 @@ int CEntrez2ClientApp::Run(void)
         x_GetUids(*m_Client, query, db);
     } else if (lt == "docsum") {
         LOG_POST(Info << "performing look-up type: get-docsum");
-        x_GetDocsums(*m_Client, query, db);
+        x_GetDocsums(*m_Client, query, db, start, max_num);
     } else if (lt == "termpos") {
         LOG_POST(Info << "performing look-up type: get-termpos");
         x_GetTermPositions(*m_Client, query, db);
@@ -245,17 +256,23 @@ void CEntrez2ClientApp::x_GetParsedQuery(CEntrez2Client& client,
 //
 void CEntrez2ClientApp::x_GetDocsums(CEntrez2Client& client,
                                      const string& query,
-                                     const string& db)
+                                     const string& db,
+                                     int start, int max_num)
 {
     // retrieve our list of UIDs
     CRef<CEntrez2_boolean_reply> reply(x_EvalBoolean(client, query, db,
-                                                     false, true));
+                                                     false, true,
+                                                     start, max_num));
 
     // retrieve the docsums
     CRef<CEntrez2_docsum_list> docsums =
         client.AskGet_docsum(reply->GetUids());
 
+    *m_Ostream << reply->GetCount() << " records match" << endl;
+    *m_Ostream << "docsums:" << endl;
+    *m_Ostream << string(72, '-') << endl;
     *m_ObjOstream << *docsums;
+    *m_Ostream << endl << string(72, '-') << endl;
 }
 
 
@@ -274,8 +291,8 @@ void CEntrez2ClientApp::x_GetTermPositions(CEntrez2Client& client,
 // display term list for a given query
 //
 void CEntrez2ClientApp::x_GetTermList(CEntrez2Client& client,
-                                           const string& query,
-                                           const string& db)
+                                      const string& query,
+                                      const string& db)
 {
     LOG_POST(Error << "get-term-list query unimplemented");
 }
@@ -332,7 +349,8 @@ void CEntrez2ClientApp::x_GetLinkCounts(CEntrez2Client& client,
 CEntrez2_boolean_reply*
 CEntrez2ClientApp::x_EvalBoolean(CEntrez2Client& client,
                                  const string& query, const string& db,
-                                 bool parse, bool uids)
+                                 bool parse, bool uids,
+                                 int start, int max_num)
 {
     CEntrez2_eval_boolean req;
 
@@ -343,6 +361,14 @@ CEntrez2ClientApp::x_EvalBoolean(CEntrez2Client& client,
         req.SetReturn_UIDs(true);
     }
     CEntrez2_boolean_exp& exp = req.SetQuery();
+
+    if (start != -1) {
+        exp.SetLimits().SetOffset_UIDs(start);
+    }
+
+    if (max_num != -1) {
+        exp.SetLimits().SetMax_UIDs(max_num);
+    }
 
     // set the database we're querying
     exp.SetDb().Set(db);
@@ -385,20 +411,6 @@ void CEntrez2ClientApp::x_FormatReply(CEntrez2_boolean_reply& reply)
 }
 
 
-//
-// get-docsum
-//
-void CEntrez2ClientApp::x_GetDocsum(CEntrez2Client& client,
-                                    const string& query, const string& db)
-{
-    CEntrez2_id_list idlist;
-
-    // fill in our IDs
-
-    CRef<CEntrez2_docsum_list> info = client.AskGet_docsum(idlist);
-    *m_ObjOstream << *info;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
@@ -413,6 +425,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/31 18:12:26  dicuccio
+ * Code clean-up.  Added limits for docsum retrieval (start pos / max number of
+ * records)
+ *
  * Revision 1.1  2003/07/31 17:38:51  dicuccio
  * Added subproject demo with a single applicaiton, a command-line demo app
  *
