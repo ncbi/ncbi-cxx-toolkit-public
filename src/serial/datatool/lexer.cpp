@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/01/31 03:38:41  lavr
+* Heed int->bool performance warnings
+*
 * Revision 1.14  2002/09/26 16:57:31  vasilche
 * Added flag for compatibility with asntool
 *
@@ -80,12 +83,12 @@ BEGIN_NCBI_SCOPE
 
 inline bool IsAlNum(char c)
 {
-    return isalnum(c);
+    return isalnum(c) ? true : false;
 }
 
 inline bool IsDigit(char c)
 {
-    return isdigit(c);
+    return isdigit(c) ? true : false;
 }
 
 ASNLexer::ASNLexer(CNcbiIstream& in)
