@@ -354,7 +354,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set objects of newProject to CreateRecordFromList(objValues, objKeys)
 		
 		try -- create some folders
-			set shScript to "if test ! -d " & TheOUTPath & "/NCBI.xCode ; then mkdir " & TheOUTPath & "/NCBI.xCode ; fi"
+			set shScript to "if test ! -d " & TheOUTPath & "/NCBI.xcode ; then mkdir " & TheOUTPath & "/NCBI.xcode ; fi"
 			do shell script shScript
 		end try
 		
@@ -524,6 +524,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/29 13:16:04  lebedev
+ * demo for cross alignment added
+ *
  * Revision 1.7  2004/07/26 18:15:37  lebedev
  * Use proper extension for projects (xcode instead of xCode)
  *

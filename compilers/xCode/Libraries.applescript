@@ -238,6 +238,7 @@ property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core pcr
 
 (* Demo GUI Applications *)
 property demo_seqgraphic : {name:"demo_seqgraphic", path:"gui:widgets:seq_graphic:demo", dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & gui2link}
+property demo_crossaln : {name:"demo_crossaln", path:"gui:widgets:aln_crossaln:demo", dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_widgets_aln gui_config" & gui2link}
 
 property demo_hitmatrix : {name:"demo_hitmatrix", path:"gui:widgets:hit_matrix:demo", dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config" & gui2link}
 
@@ -315,7 +316,7 @@ property datatools : {datatool}
 property allCTools : {tests, datatools}
 
 -- Application packs
-property gui_demos : {demo_seqgraphic, demo_hitmatrix}
+property gui_demos : {demo_seqgraphic, demo_crossaln, demo_hitmatrix}
 property gui_gbench : {gbench}
 property allApps : {gui_demos, gui_gbench}
 
@@ -333,6 +334,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/07/29 13:16:04  lebedev
+ * demo for cross alignment added
+ *
  * Revision 1.11  2004/07/22 16:04:33  lebedev
  * added dependency on ncbi_seqext for validator
  *
