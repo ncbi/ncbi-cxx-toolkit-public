@@ -232,7 +232,7 @@ bool CSeqMap_CI::IsInvalid(void) const
 inline
 CSeqMap_CI::operator bool(void) const
 {
-    return m_Stack.front().InRange()  &&
+    return !m_Stack.empty()  &&  m_Stack.front().InRange()  &&
         m_Stack.front().GetType() != CSeqMap::eSeqEnd;
 }
 
@@ -337,6 +337,9 @@ CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/22 18:39:13  grichenk
+ * Fixed operator bool()
+ *
  * Revision 1.8  2004/08/04 14:53:26  vasilche
  * Revamped object manager:
  * 1. Changed TSE locking scheme
