@@ -20,17 +20,19 @@
     <li> <a href="#ref_MakeMeta">
     <i>Meta-makefiles</i> (to provide multiple and/or recursive builds)</a>
     <li> <a href="#ref_MakeProj">
-    Project makefiles (to build a particular library or application)</a>
+    Project makefiles</a>
     <ul>
       <li> <a href="#ref_MakeProjMk">
-        <i><b>Configured</b></i> tools and flags for the whole build tree</a>
+        Configured tools, flags and paths for the whole build tree
+        (<b><i>Makefile.mk</i></b>)</a>
       <li> <a href="#ref_MakeProjLib">
-        Customized makefile to build a  library</a>
+        Customized makefile to build a library</a>
       <li> <a href="#ref_MakeProjApp">
         Customized makefile to build an application</a>
+      <li> <a href="#ref_MakeProjUsr">
+        User-defined makefile to build... whatever</a>
       <li> <a href="#ref_MakeProjTarget">
-        Standard build targets(<b>all, clean, purge</b>)
-        in the customized makefiles</a>
+        Standard build targets(<b>all, clean, purge</b>) in makefiles</a>
     </ul>
   </ul>
   <li> <a href="mkfiles.html">
@@ -140,7 +142,7 @@ configurable template
 <h2>Project makefiles and sub-projects</h2>
 
 <a name="ref_MakeMeta"></a>
-<h4>Meta-makefiles (to provide multiple and/or recursive builds)</h4>
+<h3>Meta-makefiles (to provide multiple and/or recursive builds)</h3>
 
 All projects from the NCBI C++ hierarchy are tied together by a
 set of <i>meta-makefiles</i> which present in all project source directories
@@ -194,7 +196,7 @@ cd bar_sub_proj1  &&  make -f Makefile all_r
 <p>
 <br>
 <a name="ref_MakeProj"></a>
-<h4>Project makefiles (to build a particular library or application)</h4>
+<h3>Project makefiles</h3>
 
 Just like <b><i>Makefile.meta.in</i></b> configurable template is used to ease
 and standatize the writing of
@@ -210,34 +212,290 @@ them get put to the very top of a <i>build tree</i>.
 <p>
 <br>
 <a name="ref_MakeProjMk"></a>
-<h4><i><b>Configured</b> tools and flags for the whole build tree</i></h4>
+<h3><i>Configured tools, flags, and paths for the whole build tree (<b>Makefile.mk</b>)</i></h3>
 
-Usually, <b><i>Makefile.mk</i></b> must be included to the makefiles
-that build libraries and applications -- as it defines a set of
-makefile macros to be used in the
-<a href="config.html#ref_StdBuildRules">standard</a> project build process:
-<ul>
-  <li> <a href="config.html#ref_TableToolsAndFlags">
-       compiler, linker, and other tools</a>
-  <li> <a href="config.html#ref_TableToolsAndFlags">
-       flags</a> for compiler, linker, and other tools
-  <li> info on the local
-       <a href="config.html#ref_TableLocalization1">
-       system and third-party packages</a>
-  <li> path to the input (<b>top_srcdir, includedir</b>) and
-  output (<b>libdir, bindir</b>, etc.) directories
-  <li> path to the current <i>build</i> and <i>source</i> directories
-  (<b>builddir</b> and <b>srcdir</b>, respectively)
-  <li> command shell (<b>SHELL</b>) to use by the makefiles, and
-  suffixes (<b>.SUFFIXES:</b>), etc.
-</ul>
+<b><i>Makefile.mk</i></b> is silently included at the very beginning of the
+<i>customized makefiles</i> used to build
+<a href="#ref_MakeProjLib">libraries</a> and
+<a href="#ref_MakeProjApp">applications</a>.
+
+<p>
+<b><i>Makefile.mk</i></b> defines the following makefile macros obtained
+from the configuration process:
+
+<br></br>
+<a name="ref_TableFlags">
+<table border=1 cellspacing=0>
+<caption>Flags</caption>
+  <tr>
+	 <th>Macro</th>
+	 <th><a href="config.html#ref_TableToolsAndFlags">Source</a></th>
+	 <th><a href="config.html#ref_StdBuildRules">Synopsis</a></th>
+  </tr>
+
+  <tr>
+	 <td><b>CFLAGS</b></td>
+	 <td><i>$CFLAGS</i></td>
+	 <td>C compiler flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>CXXFLAGS</b></td>
+	 <td><i>$CXXFLAGS</i></td>
+	 <td>C++ compiler flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>CPPFLAGS</b></td>
+	 <td><i>$CPPFLAGS</i></td>
+	 <td>C/C++ preprocessor flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>LDFLAGS</b></td>
+	 <td><i>$LDFLAGS</i></td>
+	 <td>Linker flags</td>
+  </tr>
+</table>
+
+
+<br></br>
+<a name="ref_TableThirdParty">
+<table border=1 cellspacing=0>
+<caption>System and third-party packages</caption>
+  <tr>
+	 <th>Macro</th>
+	 <th><a href="config.html#ref_TableLocalization1">Source</a></th>
+	 <th>Synopsis</th>
+  </tr>
+
+  <tr>
+	 <td><b>LIBS</b></td>
+	 <td><i>$LIBS</i></td>
+	 <td>Default libraries to link with</td>
+  </tr>
+
+  <tr>
+	 <td><b>THREAD_LIBS</b></td>
+	 <td><i>$THREAD_LIBS</i></td>
+	 <td>Thread library</td>
+  </tr>
+
+  <tr>
+	 <td><b>NETWORK_LIBS</b></td>
+	 <td><i>$NETWORK_LIBS</i></td>
+	 <td>Network library</td>
+  </tr>
+
+  <tr>
+	 <td><b>SYBASE_INCLUDE</b></td>
+	 <td><i>$SYBASE_INCLUDE</i></td>
+	 <td>SYBASE headers</td>
+  </tr>
+
+  <tr>
+	 <td><b>SYBASE_LIBS</b></td>
+	 <td><i>$SYBASE_LIBS</i></td>
+	 <td>SYBASE libraries</td>
+  </tr>
+
+  <tr>
+	 <td><b>FASTCGI_INCLUDE</b></td>
+	 <td><i>$FASTCGI_INCLUDE</i></td>
+	 <td>Fast-CGI headers</td>
+  </tr>
+
+  <tr>
+	 <td><b>FASTCGI_LIBS</b></td>
+	 <td><i>$FASTCGI_LIBS</i></td>
+	 <td>Fast-CGI libraries</td>
+  </tr>
+
+  <tr>
+	 <td><b>NCBI_C_INCLUDE</b></td>
+	 <td><i>$NCBI_C_INCLUDE</i></td>
+	 <td>NCBI C toolkit headers</td>
+  </tr>
+
+  <tr>
+	 <td><b>NCBI_C_LIBPATH</b></td>
+	 <td><i>$NCBI_C_LIBPATH</i></td>
+	 <td>Path to the NCBI C toolkit libraries</td>
+  </tr>
+
+  <tr>
+	 <td><b>NCBI_C_ncbi</b></td>
+	 <td><i>$NCBI_C_ncbi</i></td>
+	 <td>NCBI C CoreLib</td>
+  </tr>
+
+  <tr>
+	 <td><b>NCBI_SSSDB_INCLUDE</b></td>
+	 <td><i>$NCBI_SSSDB_INCLUDE</i></td>
+	 <td>NCBI SSS DB headers</td>
+  </tr>
+
+  <tr>
+	 <td><b>NCBI_SSSDB_LIBS</b></td>
+	 <td><i>$NCBI_SSSDB_LIBS</i></td>
+	 <td>NCBI SSS DB libraries</td>
+  </tr>
+
+  <tr>
+	 <td><b>NCBI_PM_PATH</b></td>
+	 <td><i>$NCBI_PM_PATH</i></td>
+	 <td>Path to the PubMed package</td>
+  </tr>
+</table>
+
+
+<br></br>
+<a name="ref_TablePath">
+<table border=1 cellspacing=0>
+<caption>Useful paths to some <i>source</i> and <i>build</i> tree directories
+</caption>
+  <tr>
+	 <th>Macro</th>
+	 <th>Source</th>
+	 <th>Synopsis</th>
+  </tr>
+
+  <tr>
+	 <td><b>top_srcdir</b></td>
+	 <td><i>@top_srcdir@</i></td>
+	 <td>Path to the whole NCBI C++ package</td>
+  </tr>
+
+  <tr>
+	 <td><b>srcdir</b></td>
+	 <td><i>@srcdir@</i></td>
+	 <td>Directory in the <i>source tree</i> that corresponds to the
+        directory (<i><b>./</b></i>) in the <i>build tree</i> where the
+        build is currently going on
+    </td>
+  </tr>
+
+  <tr>
+	 <td><b>includedir</b></td>
+	 <td><i>@includedir@</i></td>
+	 <td>Top include directory in the <i>source tree</i></td>
+  </tr>
+
+  <tr>
+	 <td><b>exec_prefix</b></td>
+	 <td><i>@exec_prefix@</i></td>
+	 <td>Path to the whole <i>build tree</i></td>
+  </tr>
+
+  <tr>
+	 <td><b>builddir</b></td>
+	 <td><i>@builddir@</i></td>
+	 <td>Top build directory inside the <i>build tree</i></td>
+  </tr>
+
+  <tr>
+	 <td><b>incdir</b></td>
+	 <td><i>@incdir@</i></td>
+	 <td>Top include directory inside the <i>build tree</i></td>
+  </tr>
+
+  <tr>
+	 <td><b>libdir</b></td>
+	 <td><i>@libdir@</i></td>
+	 <td>Libraries built inside the <i>build tree</i></td>
+  </tr>
+
+  <tr>
+	 <td><b>bindir</b></td>
+	 <td><i>@bindir@</i></td>
+	 <td>Executables built inside the <i>build tree</i></td>
+  </tr>
+</table>
+
+
+<br></br>
+<a name="ref_TableTools">
+<table border=1 cellspacing=0>
+<caption>Compiler, Linker, and other Tools</caption>
+  <tr>
+	 <th>Macro</th>
+	 <th><a href="config.html#ref_TableToolsAndFlags">Source</a></th>
+	 <th><a href="config.html#ref_StdBuildRules">Synopsis</a></th>
+  </tr>
+
+  <tr>
+	 <td><b>CC</b></td>
+	 <td><i>$CC</i></td>
+	 <td>C compiler</td>
+  </tr>
+
+  <tr>
+	 <td><b>CXX</b></td>
+	 <td><i>$CXX</i></td>
+	 <td>C++ compiler</td>
+  </tr>
+
+  <tr>
+	 <td><b>LINK</b></td>
+	 <td><i>$CXX</i></td>
+	 <td>Linker (C++-aware)</td>
+  </tr>
+
+  <tr>
+	 <td><b>CPP</b></td>
+	 <td><i>$CPP</i></td>
+	 <td>C preprocessor</td>
+  </tr>
+
+  <tr>
+	 <td><b>CXXCPP</b></td>
+	 <td><i>$CXXCPP</i></td>
+	 <td>C++ preprocessor</td>
+  </tr>
+
+  <tr>
+	 <td><b>AR</b></td>
+	 <td><i>$AR</i></td>
+	 <td>Library archiver</td>
+  </tr>
+
+  <tr>
+	 <td><b>STRIP</b></td>
+	 <td><i>$STRIP</i></td>
+	 <td>Tool to strip symbolic info from binaries</td>
+  </tr>
+
+  <tr>
+	 <td><b>RM</b></td>
+	 <td><i>rm -f</i></td>
+	 <td>Remove file(s)</td>
+  </tr>
+
+  <tr>
+	 <td><b>RMDIR</b></td>
+	 <td><i>rm -rf</i></td>
+	 <td>Remove file(s) and directory(ies) recursively</td>
+  </tr>
+
+  <tr>
+	 <td><b>COPY</b></td>
+	 <td><i>cp -p</i></td>
+	 <td>Copy file (preserving the modification time)</td>
+  </tr>
+
+  <tr>
+	 <td><b>BINCOPY</b></td>
+	 <td><i>@BINCOPY@</i></td>
+	 <td>Copy a library or an executable -- but only if it was changed</td>
+  </tr>
+</table>
 
 
 
 <p>
 <br>
 <a name="ref_MakeProjLib"></a>
-<h4><i>Customized makefile to build a library</i></h4>
+<h3><i>Customized makefile to build a library</i></h3>
 
 Here is an example of a <i>customized makefile</i> to build
 library <i><b>libxmylib.a</b></i> from two source files,
@@ -271,16 +529,13 @@ This <i>customized makefile</i> should be referenced as <i><b>xmylib</b></i> in 
 <b>LIB_PROJ</b> macro of relevant
 <a href="#ref_MakeMeta"><i>meta-makefile</i></a>. Note also, that the
 <a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> will be
-implicitely included to resolve all
-<a href="config.html#ref_TableToolsAndFlags">tools, flags</a>, and
-<a href="config.html#ref_TableLocalization1">
-system and third-party package related</a> macros.
+implicitely included.
 
 
 <p>
 <br>
 <a name="ref_MakeProjApp"></a>
-<h4><i>Customized makefile to build an application</i></h4>
+<h3><i>Customized makefile to build an application</i></h3>
 
 Here is an example of a <i>customized makefile</i> to build
 application <i><b>my_exe</b></i> from three source files,
@@ -330,27 +585,112 @@ This <i>customized makefile</i> should be referenced as <i><b>my_exe</b></i> in 
 <b>APP_PROJ</b> macro of relevant
 <a href="#ref_MakeMeta"><i>meta-makefile</i></a>. Note also, that the
 <a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> will be
-implicitely included to resolve all
-<a href="config.html#ref_TableToolsAndFlags">tools, flags</a>, and
-<a href="config.html#ref_TableLocalization1">
-system and third-party package related</a> macros.
+implicitely included.
+
+
+<p>
+<br>
+<a name="ref_MakeProjUsr"></a>
+<h3><i>User-defined makefile to build... whatever</i></h3>
+
+<p>
+In some cases, we may need more functionality than the <i>customized makefiles</i>
+(designed to build libraries and applications) can provide.
+
+<p>
+So, if you have a "regular" non-customized <i>user makefile</i>, and
+you want to make with it, then you must enlist this <i>user makefile</i>
+in the <b>USR_PROJ</b> macro of the project's
+<a href="#ref_MakeMeta"><i>meta-makefile</i></a>.
+
+<p>
+Now, during the project build (and before any <i>customized makefiles</i>
+are processed), your makefile will be called with one of the 
+<a href="#ref_MakeProjTarget">standard make targets</a> from the
+project's build directory. Additionally,
+<a href="#ref_TablePath"><b>builddir</b></a> and
+<a href="#ref_TablePath"><b>srcdir</b></a> macro will be passed
+to your makefile (via the <b>make</b> command line).
+
+<p>
+In most cases, it is necessary to know your "working environment", i.e.
+tools, flags and paths (those that you use in your <i>customized makefiles</i>).
+This can be easily done by including
+<a href="#ref_MakeProjMk"><i>Makefile.mk</i></a> to your makefile.
+
+<p>
+Shown below is a real-life example of a <i>user makefile</i>:
+<ul>
+  <li> build an auxiliary application using <i>customized makefiles</i>
+    <i><b>Makefile.hc_gen_obj.app</b></i> (this part is a tricky one...)
+  <li> use the resultant application <i><b>$(bindir)/hc_gen_obj</b></i>
+    to generate source an header files <i><b>humchrom_dat.[ch]</b></i>
+    from data file <i><b>humchrom.dat</b></i>
+  <li> carefully, using script <i><b>$(top_srcdir)/src/if_diff.sh</b></i>
+    to check if they really different, replace previous versions
+    of <i><b>humchrom_dat.[ch]</b></i> (if any) by the new (just generated)
+    ones
+</ul>
+
+And, of course, it provides build rules for all
+<a href="#ref_MakeProjTarget">standard make targets</a>.
+
+<pre>
+File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
+
+# Build a code generator for hard-coding the chrom data into an obj file
+# Generate header and source "humchrom_dat.[ch]" from data file "humchrom.dat"
+# Deploy the header to the compiler-specific include dir
+# Compile source code
+#################################
+
+include $(builddir)/Makefile.mk
+
+
+BUILD__HC_GEN_OBJ = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="hc_gen_obj" $(MFLAGS)
+
+
+all_r: all
+all: humchrom_dat.dep
+
+purge_r: purge
+purge:   x_clean
+	$(BUILD__HC_GEN_OBJ) purge
+
+clean_r: clean
+clean:   x_clean
+	$(BUILD__HC_GEN_OBJ) clean
+x_clean:
+	-rm -f humchrom_dat.h
+	-rm -f humchrom_dat.c
+
+
+humchrom_dat.dep: $(srcdir)/data/humchrom.dat
+	$(BUILD__HC_GEN_OBJ) all
+	-cp -p humchrom_dat.c humchrom_dat.save.c
+	$(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat -f humchrom_dat
+	$(top_srcdir)/src/if_diff.sh "mv" humchrom_dat.h $(incdir)/humchrom_dat.h
+	-rm humchrom_dat.h
+	$(top_srcdir)/src/if_diff.sh "mv" humchrom_dat.c humchrom_dat.save.c
+	mv humchrom_dat.save.c humchrom_dat.c
+	touch humchrom_dat.dep
+</pre>
 
 
 <p>
 <br>
 <a name="ref_MakeProjTarget"></a>
-<h2>Standard build targets(<b>all, clean, purge</b>)
-    in the <i>customized makefiles</i></h2>
+<h2>Standard build targets(<b>all, clean, purge</b>) in makefiles</h2>
 
 <ul>
   <li> <b>all</b> -- compile object modules specified in the
   <i>"$(OBJ)"</i> macro, and use them to build library <i>"$(LIB)"</i> or
   application <i>"$(APP)"</i>;  then copy the resultant lib/app to the
-  <b>libdir/ bindir</b> directory, respectively
+  <a href="#ref_TablePath"><b>libdir/bindir</b></a> directory, respectively
   <li> <b>clean</b> -- remove all object modules and lib/app
   that have been built by <b>all</b>
   <li> <b>purge</b> -- do <b>clean</b>, and then remove the copy
-  of lib/app from the <b>libdir/ bindir</b> directory
+  of lib/app from the <a href="#ref_TablePath"><b>libdir/bindir</b></a> directory
 </ul>
 
 Naturally, the <i>customized makefiles</i> will not make a difference between
