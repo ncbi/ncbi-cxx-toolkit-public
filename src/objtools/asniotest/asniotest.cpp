@@ -54,6 +54,7 @@
 #include <objects/mmdb2/Model_space_points.hpp>
 #include <objects/mmdb3/Region_coordinates.hpp>
 #include <objects/cn3d/Cn3d_color.hpp>
+#include <objects/general/User_object.hpp>
 
 #include "asniotest.hpp"
 
@@ -302,14 +303,14 @@ BEGIN_TEST_FUNCTION(MandatoryField)
 END_TEST_FUNCTION
 
 
-// test list (SEQUENCE) field 
+// test list (SEQUENCE) field
 BEGIN_TEST_FUNCTION(ListField)
 
     // read in a valid object, with a mandatory but empty list
     CModel_space_points m1;
     if (!ReadASNFromFile("goodMSP.txt", &m1, false, &err))
         ADD_ERR_RETURN("failed to read goodMSP.txt: " << err);
-    if (!m1.IsSetX() || !m1.CanGetX() || m1.GetX().size() != 3 || m1.GetX().front() != 167831) 
+    if (!m1.IsSetX() || !m1.CanGetX() || m1.GetX().size() != 3 || m1.GetX().front() != 167831)
         ADD_ERR("x access failed");
     if (!m1.IsSetZ() || !m1.CanGetZ() || m1.GetZ().size() != 0)
         ADD_ERR("z access failed");
@@ -372,7 +373,7 @@ BEGIN_TEST_FUNCTION(OptionalField)
         ADD_ERR("bad release state after SetRelease()");
     if (!WriteASNToFilesTxtBin(g2, &err))
         ADD_ERR("failed to write good Global-id: " << err);
-    
+
 END_TEST_FUNCTION
 
 
@@ -398,6 +399,27 @@ BEGIN_TEST_FUNCTION(DefaultField)
     c2.SetBlue(3);
     if (!WriteASNToFilesTxtBin(c2, &err))
         ADD_ERR("failed to write good Cn3d-color: " << err);
+
+END_TEST_FUNCTION
+
+// check problem with zero Real data
+BEGIN_TEST_FUNCTION(ZeroReal)
+
+    CUser_object originalUO, newUO;
+    if(!ReadASNFromFile("userObject.txt", &originalUO, false, &err))
+        ADD_ERR_RETURN("failed to read userObject.txt: " << err);
+    if (!WriteASNToFilesTxtBin(originalUO, &err))
+        ADD_ERR("failed to write original User-object: " << err);
+
+    // copy via streams
+    CNcbiStrstream asnIOstream;
+    ncbi::CObjectOStreamAsnBinary outObject(asnIOstream);
+    outObject << originalUO;
+    ncbi::CObjectIStreamAsnBinary inObject(asnIOstream);
+    inObject >> newUO;
+
+    if (!WriteASNToFilesTxtBin(newUO, &err))
+        ADD_ERR("failed to write new User-object: " << err);
 
 END_TEST_FUNCTION
 
@@ -428,6 +450,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(ListField);
         RUN_TEST(OptionalField);
         RUN_TEST(DefaultField);
+        RUN_TEST(ZeroReal);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -477,6 +500,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/01/12 22:43:08  thiessen
+* add ZeroReal test
+*
 * Revision 1.6  2003/12/11 17:52:10  thiessen
 * add Optional and Default field tests
 *
