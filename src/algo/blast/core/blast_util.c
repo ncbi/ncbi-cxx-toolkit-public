@@ -216,7 +216,7 @@ static Uint1 CodonToAA (Uint1Ptr codon, Uint1Ptr codes)
    return aa;
 }
 
-Int4 LIBCALL
+Int4
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, const Uint1Ptr genetic_code)
 {
@@ -251,7 +251,7 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
 /*
   Translate a compressed nucleotide sequence without ambiguity codes.
 */
-Int4 LIBCALL
+Int4
 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
    Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq)
 {
