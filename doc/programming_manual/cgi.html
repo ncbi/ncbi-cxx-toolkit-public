@@ -726,6 +726,20 @@ in the <span class="ncbi_reg">[CGI]</span> section.</p>
 	<br> 
 	</td>
   </tr>
+  <tr>
+	<td><span class="ncbi_reg_var">RequestErrBufSize</span></td> 
+	<td>Size of CGI request error buffer</td>
+	<td>This parameter works only when CGI request fails trying to parse
+        the request string. In this case error message includes portion
+        of the original request string. (By default it is first 256 characters).
+        By setting this parameter you can disable printing the buffer 
+        diagnostics (value 0) or set value different than 256. 
+	<br><br> 
+
+        Example:<br>
+	<pre class="ncbi_code">[CGI]<br>RequestErrBufSize = 1024</pre>
+	</td>
+  </tr>
 
 </table>
 
