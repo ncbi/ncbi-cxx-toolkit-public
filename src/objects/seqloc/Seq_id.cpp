@@ -38,6 +38,7 @@
 
 // generated includes
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -566,6 +567,132 @@ void CSeq_id::WriteAsFasta(ostream& out)
 }
 
 
+//
+// Local functions for producing a sequence ID 'score'
+// These functions produce scores in FastA order
+//
+static int s_ScoreNAForFasta(const CSeq_id* id)
+{
+    switch (id->Which()) {
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Pir:
+    case CSeq_id::e_Swissprot:
+    case CSeq_id::e_Prf:       return kMax_Int;
+    case CSeq_id::e_Local:     return 230;
+    case CSeq_id::e_Gi:        return 120;
+    case CSeq_id::e_General:   return 50;
+    case CSeq_id::e_Patent:    return 40;
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Pdb:       return 30;
+    case CSeq_id::e_Other:     return 15;
+    default:                   return 20; // [third party] GenBank/EMBL/DDBJ
+    }
+}
+
+
+static int s_ScoreAAForFasta(const CSeq_id* id)
+{
+    switch (id->Which()) {
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Giim:      return kMax_Int;
+    case CSeq_id::e_Local:     return 230;
+    case CSeq_id::e_Gi:        return 120;
+    case CSeq_id::e_General:   return 90;
+    case CSeq_id::e_Patent:    return 80;
+    case CSeq_id::e_Prf:       return 70;
+    case CSeq_id::e_Pdb:       return 50;
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:    return 40;
+    case CSeq_id::e_Pir:       return 30;
+    case CSeq_id::e_Swissprot: return 20;
+    case CSeq_id::e_Other:     return 15;
+    default:                   return 60; // [third party] GenBank/EMBL/DDBJ
+    }
+}
+
+
+//
+// GetStringDescr()
+// Given a bioseq, return the best possible ID description, in a number of
+// appealing formats.  This function can produce FastA-formatted titles or a
+// number of sub-titles (GI only, Best Accession with or without version).
+//
+string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
+{
+    bool is_na            = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
+    CRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
+                                           is_na ? s_ScoreNAForFasta
+                                           : s_ScoreAAForFasta);
+    switch (fmt) {
+    case eFormat_FastA:
+        {
+            // FastA format
+            // Here we have something like:
+            //      gi|###|SOME_ACCESSION|title
+            bool found_gi = false;
+
+            CNcbiOstrstream out_str;
+            iterate (CBioseq::TId, id, bioseq.GetId()) {
+                if ((*id)->IsGi()) {
+                    (*id)->WriteAsFasta(out_str);
+                    found_gi = true;
+                    break;
+                }
+            }
+
+            if (best_id.NotEmpty()  &&  best_id->Which() != CSeq_id::e_Gi) {
+                if (found_gi) {
+                    out_str << '|';
+                }
+                best_id->WriteAsFasta(out_str);
+            }
+
+            return string(out_str.str(), out_str.pcount());
+        }
+        break;
+
+    case eFormat_ForceGI:
+        // eForceGI produces a string containing only the GI in FastA format
+        // so we have:
+        //    gi|####
+        iterate (CBioseq::TId, iter, bioseq.GetId()) {
+            if ( (*iter)->IsGi() ) {
+                CNcbiOstrstream out_str;
+                (*iter)->WriteAsFasta(out_str);
+                return string(out_str.str(), out_str.pcount());
+            }
+        }
+        break;
+
+    case eFormat_BestWithVersion:
+        {
+            // eBestWithVersion produces only the 'best' accession name, with
+            // its version indicator
+            if (best_id.NotEmpty()) {
+                return best_id->GetSeqIdString(true);
+            }
+        }
+        break;
+        
+    case eFormat_BestWithoutVersion:
+        {
+            // eBestWithoutVersion produces only the 'best' accession name,
+            // without its version indicator
+            if (best_id.NotEmpty()) {
+                return best_id->GetSeqIdString(false);
+            }
+        }
+        break;
+    }
+
+    // fall-through for unusual events
+    return "";
+}
+
+
+
 //SeqIdFastAConstructors
 CSeq_id::CSeq_id( const string& the_id )
 {
@@ -937,6 +1064,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.41  2002/11/26 15:13:32  dicuccio
+ * Added CSeq_id::GetStringDescr() - provides text representations of seq-ids in a
+ * number of formats.
+ *
  * Revision 6.40  2002/10/23 18:23:07  ucko
  * Add self-classification (using known type information).
  *
