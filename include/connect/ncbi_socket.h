@@ -70,6 +70,8 @@
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
  *
+ *  SOCK_IsServerSide
+ *
  * Data logging:
  *
  *  SOCK_SetDataLoggingAPI
@@ -83,6 +85,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/12/03 21:33:48  vakatov
+ * + SOCK_IsServerSide()
+ *
  * Revision 6.14  2001/09/10 16:10:41  vakatov
  * SOCK_gethostbyname() -- special cases "0.0.0.0" and "255.255.255.255"
  *
@@ -472,6 +477,12 @@ extern void SOCK_SetReadOnWriteAPI(ESwitch on_off);
  * SOCK_SetReadOnWriteAPI), call this function with "on_off" == eDefault.
  */
 extern void SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off);
+
+
+/* Return non-zero value if socket "sock" was created by LSOCK_Accept().
+ * Return zero otherwise.
+ */
+extern int/*bool*/ SOCK_IsServerSide(SOCK sock);
 
 
 
