@@ -272,6 +272,23 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) c
 }
 
 void
+CBlastScoringParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*d*/)
+    const
+{
+	ddc.SetFrame("CBlastScoringParameters");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("reward", m_Ptr->reward);
+    ddc.Log("penalty", m_Ptr->penalty);
+    ddc.Log("gap_open", m_Ptr->gap_open);
+    ddc.Log("gap_extend", m_Ptr->gap_extend);
+    ddc.Log("decline_align", m_Ptr->decline_align);
+    ddc.Log("shift_pen", m_Ptr->shift_pen);
+    ddc.Log("scale_factor", m_Ptr->scale_factor);
+}
+
+void
 CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastDatabaseOptions");
@@ -544,6 +561,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2004/12/20 16:11:33  camacho
+ * + RAII wrapper for BlastScoringParameters
+ *
  * Revision 1.57  2004/12/03 22:23:35  camacho
  * Minor change
  *

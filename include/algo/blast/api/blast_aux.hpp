@@ -172,6 +172,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, BlastDatabaseOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoreBlk, BlastScoreBlkFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptions, BlastScoringOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastScoringParameters, BlastScoringParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
                            BlastEffectiveLengthsOptionsFree);
@@ -195,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/12/20 16:11:24  camacho
+* + RAII wrapper for BlastScoringParameters
+*
 * Revision 1.47  2004/12/03 22:24:08  camacho
 * Updated documentation
 *
