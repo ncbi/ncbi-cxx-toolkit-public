@@ -797,7 +797,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     // bail if location has just stop
     if ( feat.CanGetLocation() ) {
         const CSeq_loc& loc = feat.GetLocation();
-        if ( loc.IsPartialLeft()  &&  !loc.IsPartialRight() ) {
+        if ( loc.IsPartialStart(eExtreme_Biological)  &&  !loc.IsPartialStop(eExtreme_Biological) ) {
             if ( GetLength(loc, m_Scope) <= 5 ) {
                 return;
             }
@@ -893,8 +893,8 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         return;
     }
     
-    bool partial_first = location.IsPartialLeft();
-    bool partial_last = location.IsPartialRight();
+    bool partial_first = location.IsPartialStart(eExtreme_Biological);
+    bool partial_last = location.IsPartialStop(eExtreme_Biological);
 
 
     size_t counter = 0;
@@ -1640,10 +1640,10 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
     TSeqPos mod1 = (pos1 - cdr.GetFrame()) %3;
     TSeqPos mod2 = (pos2 - cdr.GetFrame()) %3;
 
-    if ( loc.IsPartialLeft() ) {
+    if ( loc.IsPartialStart(eExtreme_Biological) ) {
         mod1 = 0;
     }
-    if ( loc.IsPartialRight() ) {
+    if ( loc.IsPartialStop(eExtreme_Biological) ) {
         mod2 = 2;
     }
 
@@ -1973,8 +1973,8 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
     const CMolInfo& molinfo = sd->GetMolinfo();
 
     const CSeq_loc& loc = feat.GetLocation();
-    bool partial5 = loc.IsPartialLeft();
-    bool partial3 = loc.IsPartialRight();
+    bool partial5 = loc.IsPartialStart(eExtreme_Biological);
+    bool partial3 = loc.IsPartialStop(eExtreme_Biological);
 
     if ( molinfo.CanGetCompleteness() ) {
         switch ( molinfo.GetCompleteness() ) {
@@ -3039,6 +3039,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2005/02/18 15:07:10  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.73  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *

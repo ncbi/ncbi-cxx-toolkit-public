@@ -78,7 +78,7 @@ void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
     x_SetObject(*ctx.GetHandle().GetBioseqCore());
 
     const CSeq_loc& loc = ctx.GetLocation();
-    TSeqPos offset = loc.GetStart();
+    TSeqPos offset = loc.GetStart(eExtreme_Positional);
     TSeqPos start = m_From + offset;
     TSeqPos end   = min(m_To + offset, ctx.GetHandle().GetInst_Length() - 1);
     
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/02/18 15:09:26  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.11  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *

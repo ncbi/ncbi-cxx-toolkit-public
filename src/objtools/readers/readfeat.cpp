@@ -1457,10 +1457,10 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
         ival.SetTo (stop);
         ival.SetStrand (strand);
         if (partial5) {
-            ival.SetPartialLeft (true);
+            ival.SetPartialStart (true, eExtreme_Biological);
         }
         if (partial3) {
-            ival.SetPartialRight (true);
+            ival.SetPartialStop (true, eExtreme_Biological);
         }
         CSeq_id seq_id (seqid);
         ival.SetId().Assign (seq_id);

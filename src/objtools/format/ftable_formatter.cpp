@@ -132,14 +132,14 @@ void CFtableFormatter::x_FormatLocation
         }
         string left, right;
        
-        if ( curr.IsPartialLeft() ) {
+        if ( curr.IsPartialStart(eExtreme_Biological) ) {
             left = '<';
         }
         left += NStr::IntToString(start);
         if ( is_between ) {
             left += '^';
         }
-        if ( curr.IsPartialRight() ) {
+        if ( curr.IsPartialStop(eExtreme_Biological) ) {
             right = '>';
         }
         right += NStr::IntToString(stop);

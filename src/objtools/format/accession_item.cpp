@@ -126,8 +126,8 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
     if ( !ctx.GetLocation().IsWhole() ) {
         // specific region is set
         const CSeq_loc& loc = ctx.GetLocation();
-        m_Region.SetFrom(loc.GetStart() + 1);
-        m_Region.SetTo(loc.GetEnd() + 1);
+        m_Region.SetFrom(loc.GetStart(eExtreme_Positional) + 1);
+        m_Region.SetTo(loc.GetStop(eExtreme_Positional) + 1);
         m_IsSetRegion = true;
     }
 }
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/02/18 15:07:42  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.8  2005/02/09 14:55:10  shomrat
 * supress local and general ids in Entrez or GBench mode
 *

@@ -248,7 +248,11 @@ void CPromote::x_PromoteCdregion(CSeq_feat& feat, TRnaMap* rna_map) const
 
             // add Prot feature on protein
             const CSeq_loc& loc = feat.GetLocation();
-            x_AddProtFeature(prot, *prp, loc.IsPartialLeft(), loc.IsPartialRight());
+            x_AddProtFeature(
+                prot,
+                *prp,
+                loc.IsPartialStart(eExtreme_Biological),
+                loc.IsPartialStop(eExtreme_Biological));
 
             // find the seq-entry to put the protein in.
             CBioseq_Handle mrna;
@@ -537,8 +541,8 @@ CSeqdesc* CPromote::x_MakeMolinfoDesc(const CSeq_feat& feat) const
     }
 
     // set completeness
-    bool partial_left  = feat.GetLocation().IsPartialLeft();
-    bool partial_right = feat.GetLocation().IsPartialRight();
+    bool partial_left  = feat.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial_right = feat.GetLocation().IsPartialStop(eExtreme_Biological);
     if ( partial_left  &&  partial_right ) {
         mi.SetCompleteness(CMolInfo::eCompleteness_no_ends);
     } else if ( partial_left ) {
@@ -588,8 +592,8 @@ void CPromote::x_AddProtFeature(CBioseq_EditHandle pseq, CProt_ref& prp,
     // set feature location
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->SetWhole().Assign(*pseq.GetSeqId());
-    loc->SetPartialLeft(partial_left);
-    loc->SetPartialRight(partial_right);
+    loc->SetPartialStart(partial_left, eExtreme_Biological);
+    loc->SetPartialStop(partial_right, eExtreme_Biological);
     prot->SetLocation(*loc);
 
     // create new Ftable annotation and insert feature
@@ -668,6 +672,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/18 15:06:27  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.3  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *

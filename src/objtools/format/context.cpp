@@ -181,8 +181,8 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 
         // no need to map if doing the entire bioseq
         if ( source->IsWhole()  ||
-             source->GetStart() == 0  &&
-             source->GetEnd() == m_Handle.GetInst_Length() - 1) {
+             source->GetStart(eExtreme_Positional) == 0  &&
+             source->GetStop(eExtreme_Positional) == m_Handle.GetInst_Length() - 1) {
             source.Reset();
         }
 
@@ -608,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2005/02/18 15:08:08  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.33  2005/02/17 15:58:42  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *

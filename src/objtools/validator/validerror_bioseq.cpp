@@ -2595,8 +2595,8 @@ void CValidError_bioseq::x_ValidateAbuttingCDSGroup
 
         if ( minus ) {
         } else {
-            TSeqPos secend = second_loc.GetEnd();
-            TSeqPos firstart = first_loc.GetStart();
+            TSeqPos secend = second_loc.GetStop(eExtreme_Positional);
+            TSeqPos firstart = first_loc.GetStart(eExtreme_Positional);
             if ( secend + 1 != firstart ) {
                 const string& first_name = s_FeatName(*first);
                 const string& second_name = s_FeatName(*second);
@@ -2737,8 +2737,16 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                 curr->GetOriginalFeature());
                         } else if ( curr_subtype != CSeqFeatData::eSubtype_pub ) {
                             // do not report if partial flags are different
-                            if (curr_loc->IsPartialLeft() == prev_loc->IsPartialLeft()  &&
-                                curr_loc->IsPartialRight() == prev_loc->IsPartialRight()) {
+                            bool curr_partial_start =
+                                curr_loc->IsPartialStart(eExtreme_Biological);
+                            bool curr_partial_stop =
+                                curr_loc->IsPartialStop(eExtreme_Biological);
+                            bool prev_partial_start =
+                                prev_loc->IsPartialStart(eExtreme_Biological);
+                            bool prev_partial_stop =
+                                prev_loc->IsPartialStop(eExtreme_Biological);
+                            if (curr_partial_start == prev_partial_start  &&
+                                curr_partial_stop == prev_partial_stop) {
                                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                                     "Features have identical intervals, but labels differ",
                                     curr->GetOriginalFeature());
@@ -3899,6 +3907,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.94  2005/02/18 15:07:10  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.93  2005/01/24 17:16:48  vasilche
 * Safe boolean operators.
 *

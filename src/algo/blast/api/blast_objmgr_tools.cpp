@@ -363,8 +363,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
             bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask);
 
-            BlastSeqLoc_RestrictToInterval(&bsl_tmp, itr->seqloc->GetStart(), 
-                                           itr->seqloc->GetEnd());
+            BlastSeqLoc_RestrictToInterval(&bsl_tmp, itr->seqloc->GetStart(eExtreme_Positional), 
+                                           itr->seqloc->GetStop(eExtreme_Positional));
 
             SBlastSequence sequence;
 
@@ -952,6 +952,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2005/02/18 15:06:02  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.34  2005/01/27 18:30:24  camacho
 * Remove unused variable
 *

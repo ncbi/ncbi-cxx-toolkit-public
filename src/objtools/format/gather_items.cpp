@@ -1300,7 +1300,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
         
             // handle gaps
-            TSeqPos feat_start = feat_loc->GetStart();
+            TSeqPos feat_start = feat_loc->GetStart(eExtreme_Positional);
             while (gap_it) {
                 // if feature after gap first output the gap
                 if (feat_start >= gap_it.GetPosition()) {
@@ -1603,6 +1603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2005/02/18 15:08:54  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.41  2005/02/17 15:58:42  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *

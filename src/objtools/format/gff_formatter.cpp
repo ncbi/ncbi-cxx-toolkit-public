@@ -194,7 +194,7 @@ void CGFFFormatter::FormatFeature
     CRef<CSeq_loc> tentative_stop;
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
-        if ( !f.GetLoc().IsPartialRight()  &&  seqfeat.IsSetProduct() ) {
+        if ( !f.GetLoc().IsPartialStop(eExtreme_Biological)  &&  seqfeat.IsSetProduct() ) {
             TSeqPos loc_len = sequence::GetLength(f.GetLoc(), scope);
             TSeqPos prod_len = sequence::GetLength(seqfeat.GetProduct(),
                                                    scope);
@@ -255,7 +255,7 @@ void CGFFFormatter::FormatFeature
 
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
-        if ( !f.GetLoc().IsPartialLeft() ) {
+        if ( !f.GetLoc().IsPartialStart(eExtreme_Biological) ) {
             CRef<CSeq_loc> tentative_start;
             {{
                 CRef<SRelLoc::TRange> range(new SRelLoc::TRange);
@@ -573,6 +573,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/02/18 15:09:07  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.15  2005/01/13 19:06:25  ucko
 * x_GetGeneID: qualify GetBestOverlappingFeat with sequence:: for MIPSpro.
 *

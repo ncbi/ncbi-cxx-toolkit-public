@@ -125,7 +125,7 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
     bool just_stop = false;
     if ( feat.CanGetLocation() ) {
         const CSeq_loc& loc = feat.GetLocation();
-        if ( loc.IsPartialLeft()  &&  !loc.IsPartialRight() ) {
+        if ( loc.IsPartialStart(eExtreme_Biological)  &&  !loc.IsPartialStop(eExtreme_Biological) ) {
             if ( GetLength(loc, &scope) <= 5 ) {
                 just_stop = true;
             }
@@ -3540,6 +3540,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/02/18 15:08:23  shomrat
+* CSeq_loc interface changes
+*
 * Revision 1.44  2005/02/17 15:58:42  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *
