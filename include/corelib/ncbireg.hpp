@@ -296,6 +296,7 @@ public:
     ///
     /// @param comment
     ///   Comment string value.
+    ///   Set to kEmptyStr to delete the comment.
     /// @param section
     ///   Section name.
     ///   If "section" is empty string, then set as the registry comment.
@@ -304,16 +305,18 @@ public:
     ///   If "name" is empty string, then set as the "section" comment.
     /// @return
     ///   FALSE if "section" and/or "name" do not exist in registry.
-    bool SetComment(const string& comment, ///< kEmptyStr to delete the comment
+    bool SetComment(const string& comment,
                     const string& section = kEmptyStr,
                     const string& name    = kEmptyStr);
 
     /// Get comment of the registry entry "section:name".
     ///
     /// @param section
-    ///   Section name. If passed empty string, then get the registry comment.
+    ///   Section name.
+    ///   If passed empty string, then get the registry comment.
     /// @param name
-    ///   Parameter name. If empty string, then get the "section" comment.
+    ///   Parameter name.
+    ///   If empty string, then get the "section" comment.
     /// @return
     ///   Comment string. If not found, return an empty string.
     const string& GetComment(const string& section = kEmptyStr,
@@ -380,6 +383,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/08/14 12:25:28  siyan
+ * Made previous documentation changes consistent.
+ * Best not to mix the ///< style with @param style for parameter documentation
+ * as Doxygen may not always render this correctly.
+ *
  * Revision 1.29  2003/08/12 19:00:39  vakatov
  * Fixed comments and code layout
  *
