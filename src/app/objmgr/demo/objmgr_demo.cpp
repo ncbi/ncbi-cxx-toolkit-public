@@ -36,11 +36,6 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/serial.hpp>
-#include <serial/iterator.hpp>
-#include <serial/objectio.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
@@ -53,21 +48,21 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 // Object manager includes
-#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/desc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
 
-// cache
+#include <objmgr/object_manager.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
@@ -142,6 +137,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
+    arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("reverse", "reverse order of features");
     arg_desc->AddFlag("no_sort", "do not sort features");
     arg_desc->AddDefaultKey("max_feat", "MaxFeat",
@@ -220,8 +216,7 @@ int CDemoApp::Run(void)
             text = "Seq-id ::= " + text;
         }
         CNcbiIstrstream ss(text.c_str());
-        AutoPtr<CObjectIStream> os(CObjectIStream::Open(eSerial_AsnText, ss));
-        *os >> *id;
+        ss >> MSerial_AsnText >> *id;
     }
     else {
         ERR_POST(Fatal << "One of -gi, -id or -asn_id arguments is required");
@@ -246,6 +241,7 @@ int CDemoApp::Run(void)
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
+    bool print_alignments = args["print_alignments"];
     SAnnotSelector::ESortOrder order =
         args["reverse"] ?
         SAnnotSelector::eSortOrder_Reverse : SAnnotSelector::eSortOrder_Normal;
@@ -399,18 +395,12 @@ int CDemoApp::Run(void)
 
     if ( args["file"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Open(eSerial_AsnText,
-                                  args["file"].AsInputFile()));
-        *in >> *entry;
+        args["file"].AsInputFile() >> MSerial_AsnText >> *entry;
         scope.AddTopLevelSeqEntry(*entry);
     }
     if ( args["bfile"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Open(eSerial_AsnBinary,
-                                  args["bfile"].AsInputFile()));
-        *in >> *entry;
+        args["bfile"].AsInputFile() >> MSerial_AsnBinary >> *entry;
         scope.AddTopLevelSeqEntry(*entry);
     }
 
@@ -449,6 +439,40 @@ int CDemoApp::Run(void)
         if ( c && pause ) {
             SleepSec(pause);
         }
+
+        {{
+            TSeqRange range(0, handle.GetBioseqLength()-1);
+            for (size_t levels = 0;  levels < 4;  ++levels) {
+                CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+                CSeqMap::const_iterator seg =
+                    seq_map->ResolvedRangeIterator(&handle.GetScope(),
+                                                   range.GetFrom(),
+                                                   range.GetLength(),
+                                                   eNa_strand_plus, levels);
+                
+                for ( ;  seg;  ++seg ) {
+                    TSeqRange map_range;
+                    switch (seg.GetType()) {
+                    case CSeqMap::eSeqRef:
+                        break;
+                    case CSeqMap::eSeqData:
+                    case CSeqMap::eSeqGap:
+                        map_range = TSeqRange(seg.GetPosition(),
+                                              seg.GetEndPosition());
+                        break;
+                    case CSeqMap::eSeqEnd:
+                        _ASSERT("Unexpected END segment" && 0);
+                        break;
+                    default:
+                        _ASSERT("Unexpected segment type" && 0);
+                        break;
+                    }
+                    
+                    TSeqRange ref_range(seg.GetPosition(), seg.GetEndPosition());
+                }
+            }
+        }}
+
         string sout;
         int count;
         if ( !only_features ) {
@@ -569,17 +593,16 @@ int CDemoApp::Run(void)
                     if ( it->IsSetPartial() ) {
                         NcbiCout << " partial = " << it->GetPartial();
                     }
-                    NcbiCout << "\n";
-                    auto_ptr<CObjectOStream>
-                        out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                    *out << it->GetMappedFeature();
+                    NcbiCout << "\n" <<
+                        MSerial_AsnText << it->GetMappedFeature();
                     if ( 1 ) {
-                        NcbiCout << "Original location:\n";
-                        *out << it->GetOriginalFeature().GetLocation();
+                        NcbiCout << "Original location:\n" <<
+                            MSerial_AsnText <<
+                            it->GetOriginalFeature().GetLocation();
                     }
                     else {
-                        NcbiCout << "Location:\n";
-                        *out << it->GetLocation();
+                        NcbiCout << "Location:\n" <<
+                            MSerial_AsnText << it->GetLocation();
                     }
                 }
                 CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
@@ -617,12 +640,10 @@ int CDemoApp::Run(void)
                 // Print first 10 characters of each cd-region
                 NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
                 if ( cds_vect.size() == 0 ) {
-                    NcbiCout << "Zero size from: ";
-                    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                    *out << it->GetOriginalFeature().GetLocation();
-                    out->Flush();
-                    NcbiCout << "Zero size to: ";
-                    *out << it->GetMappedFeature().GetLocation();
+                    NcbiCout << "Zero size from: " << MSerial_AsnText <<
+                        it->GetOriginalFeature().GetLocation();
+                    NcbiCout << "Zero size to: " << MSerial_AsnText <<
+                        it->GetMappedFeature().GetLocation();
                 }
                 sout = "";
                 for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
@@ -655,10 +676,8 @@ int CDemoApp::Run(void)
         for ( CFeat_CI it(handle, 0, 999, base_sel); it;  ++it ) {
             count++;
             if ( print_features ) {
-                auto_ptr<CObjectOStream>
-                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                *out << it->GetMappedFeature();
-                *out << it->GetLocation();
+                NcbiCout << MSerial_AsnText <<
+                    it->GetMappedFeature() << it->GetLocation();
             }
         }
         NcbiCout << "Feat count (bh, 0..999, any):  " << count << NcbiEndl;
@@ -675,10 +694,8 @@ int CDemoApp::Run(void)
             count++;
             // Get seq-annot containing the feature
             if ( print_features ) {
-                auto_ptr<CObjectOStream>
-                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                *out << it->GetMappedGraph();
-                *out << it->GetLoc();
+                NcbiCout << MSerial_AsnText <<
+                    it->GetMappedGraph() << it->GetLoc();
             }
             CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
         }
@@ -686,10 +703,13 @@ int CDemoApp::Run(void)
 
         count = 0;
         // Create CAlign_CI using the current scope and location.
-        for (CAlign_CI align_it(scope, loc); align_it;  ++align_it) {
+        for (CAlign_CI it(scope, loc); it;  ++it) {
             count++;
+            if ( print_alignments ) {
+                NcbiCout << MSerial_AsnText << *it;
+            }
         }
-        NcbiCout << "Annot count (whole, any):       " << count << NcbiEndl;
+        NcbiCout << "Align count (whole, any):       " << count << NcbiEndl;
     }
 
     NcbiCout << "Done" << NcbiEndl;
@@ -715,6 +735,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/01/26 18:06:35  vasilche
+* Add option for printing Seq-align.
+* Use MSerial_Asn* manipulators.
+* Removed unused includes.
+*
 * Revision 1.53  2004/01/07 17:38:02  vasilche
 * Fixed include path to genbank loader.
 *
