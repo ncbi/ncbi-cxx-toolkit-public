@@ -91,7 +91,10 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #define HAVE_IOSTREAM_H 1
 
-/* Define to 1 if ios(_base)::xalloc et al. exist. */
+/* Define to 1 if you have `ios(_base)::register_callback'. */
+#define HAVE_IOS_REGISTER_CALLBACK 1
+
+/* Define to 1 if you have `ios(_base)::xalloc'. */
 #define HAVE_IOS_XALLOC 1
 
 /* Define to 1 if CRYPT is available, either in its own library or as part of
