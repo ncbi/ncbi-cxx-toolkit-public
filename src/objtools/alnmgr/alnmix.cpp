@@ -754,33 +754,31 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
     if (starts2.size()) {
 
         start_i = starts2.lower_bound(start2);
-        if (start_i == starts2.end()) {
-            // ok, obviously, no overlaps exist
-            return true;
-        }
+        if (start_i != starts2.end()) {
 
-        // check for overlap below
-        if (start_i->first > start2) {
-            if (start_i != starts2.begin()) {
-                start_i--;
-                if (start_i->first + start_i->second->m_Len > start2) {
-                    return false;
-                } else {
-                    start_i++;
+            // check for overlap below
+            if (start_i->first > start2) {
+                if (start_i != starts2.begin()) {
+                    start_i--;
+                    if (start_i->first + start_i->second->m_Len > start2) {
+                        return false;
+                    } else {
+                        start_i++;
+                    }
                 }
             }
-        }
         
-        // check for overlap above
-        while (start_i != starts2.end()  &&  
-               start_i->first < start2 + len) {
-            if (start_i->second->m_StartIts[seq1]->first != start1 + 
-                (match->m_StrandsDiffer ?
-                 start2 + len - start_i->first :
-                 start_i->first - start2)) {
-                return false;
+            // check for overlap above
+            while (start_i != starts2.end()  &&  
+                   start_i->first < start2 + len) {
+                if (start_i->second->m_StartIts[seq1]->first != start1 + 
+                    (match->m_StrandsDiffer ?
+                     start2 + len - start_i->first :
+                     start_i->first - start2)) {
+                    return false;
+                }
+                start_i++;
             }
-            start_i++;
         }
 
         // check for inconsistent matches
@@ -793,7 +791,8 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             CAlnMixSegment::TStartIterators::iterator it;
             TSeqPos tmp_start =
                 match->m_StrandsDiffer ? start2 + len : start2;
-            while (start_i->first < start1 + len) {
+            while (start_i != starts1.end()  &&  
+                   start_i->first < start1 + len) {
                 CAlnMixSegment::TStartIterators& its = 
                     start_i->second->m_StartIts;
 
@@ -842,6 +841,17 @@ void CAlnMix::x_CreateSegmentsVector()
 
     // init the start iterators for each row
     non_const_iterate (TSeqs, row_i, m_Rows) {
+        CAlnMixSeq * row = *row_i;
+        if (row->m_PositiveStrand) {
+            row->m_StartIt = row->m_Starts.begin();
+        } else {
+            row->m_StartIt = row->m_Starts.end();
+            row->m_StartIt--;
+        }
+    }
+
+    // init the start iterators for each extra row
+    non_const_iterate (list<CRef<CAlnMixSeq> >, row_i, m_ExtraRows) {
         CAlnMixSeq * row = *row_i;
         if (row->m_PositiveStrand) {
             row->m_StartIt = row->m_Starts.begin();
@@ -1067,6 +1077,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2002/12/30 18:08:39  todorov
+* 1) Initialized extra rows' m_StartIt
+* 2) Fixed a bug in x_SecondRowFits
+*
 * Revision 1.10  2002/12/27 23:09:56  todorov
 * Additional inconsistency checks in x_SecondRowFits
 *
