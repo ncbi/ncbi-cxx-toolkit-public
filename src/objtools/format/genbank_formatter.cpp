@@ -457,7 +457,7 @@ void CGenbankFormatter::FormatComment
  IFlatTextOStream& text_os)
 {
     list<string> l;
-
+    
     if ( !comment.IsFirst() ) {
         Wrap(l, kEmptyStr, comment.GetComment(), eSubp);
     } else {
@@ -512,6 +512,9 @@ void CGenbankFormatter::FormatFeature
         NStr::Wrap(value, GetWidth(), l,
                    /*DoHTML() ? NStr::fWrap_HTMLPre : */0, GetFeatIndent(),
                    GetFeatIndent() + qual);
+    }
+    NON_CONST_ITERATE (list<string>, it, l) {
+        *it = NStr::TruncateSpaces(*it, NStr::eTrunc_End);
     }
     text_os.AddParagraph(l);
 }
@@ -705,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/08/30 13:41:08  shomrat
+* Truncate spaces from feature quals
+*
 * Revision 1.16  2004/08/19 16:36:45  shomrat
 * Fixed REFERENCE format
 *
