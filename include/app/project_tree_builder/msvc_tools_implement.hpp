@@ -70,7 +70,7 @@ public:
     }
     virtual string IntermediateDirectory(void) const
     {
-	    return m_ConfigurationName;
+	    return "$(ConfigurationName)";//m_ConfigurationName;
     }
     virtual string ConfigurationType(void) const
     {
@@ -280,7 +280,7 @@ public:
         if( !output_file.empty() )
             return output_file;
 
-	    return string("$(OutDir)/") + m_ProjectId + ConfTrait::TargetExtension();
+	    return string("$(OutDir)\\") + m_ProjectId + ConfTrait::TargetExtension();
     }
 
 #define SUPPORT_LINKER_OPTION(opt) \
@@ -297,14 +297,14 @@ public:
 
     virtual string ProgramDatabaseFile(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectId + ".pdb";
+	    return string("$(OutDir)\\") + m_ProjectId + ".pdb";
     }
 
     SUPPORT_LINKER_OPTION(SubSystem)
     
     virtual string ImportLibrary(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectId + ".lib";
+	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
     }
 
     SUPPORT_LINKER_OPTION(TargetMachine)
@@ -411,7 +411,7 @@ public:
 
     virtual string OutputFile(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectId + ".lib";
+	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
     }
 
 #define SUPPORT_LIBRARIAN_OPTION(opt) \
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/07/13 15:58:00  gouriano
+ * Add more parameterization
+ *
  * Revision 1.14  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

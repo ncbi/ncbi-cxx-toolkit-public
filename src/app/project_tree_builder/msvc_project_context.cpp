@@ -466,7 +466,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     }
 
     output_dir_abs = 
-        CDirEntry::ConcatPath(output_dir_abs, config.m_Name);
+        CDirEntry::ConcatPath(output_dir_abs, /*config.m_Name*/"$(ConfigurationName)");
     m_OutputDirectory = 
         CDirEntry::CreateRelativePath(prj_context.ProjectDir(), 
                                       output_dir_abs);
@@ -845,6 +845,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/07/13 15:58:40  gouriano
+ * Add more parameterization
+ *
  * Revision 1.33  2004/06/15 19:01:40  gorelenk
  * Fixed compilation errors on GCC 2.95 .
  *
