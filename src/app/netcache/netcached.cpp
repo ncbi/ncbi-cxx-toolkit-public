@@ -57,7 +57,70 @@ USING_NCBI_SCOPE;
 const unsigned int kNetCacheBufSize = 64 * 1024;
 const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 
+/// General purpose NetCache Mutex
 DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
+
+/// Mutex to guard vector of busy IDs 
+DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
+
+
+
+
+
+
+/// Class guards the BLOB id, guarantees exclusive access to the object
+///
+/// @internal
+class CIdBusyGuard
+{
+public:
+    CIdBusyGuard(bm::bvector<>* id_set, 
+                 unsigned int   id,
+                 unsigned       timeout)
+        : m_IdSet(id_set), m_Id(id)
+    {
+        _ASSERT(id);
+        unsigned cnt = 0; unsigned sleep_ms = 10;
+        while (true) {
+            {{
+            CFastMutexGuard guard(x_NetCacheMutex_ID);
+            if ((*id_set)[id] == false) {
+                id_set->set(id);
+                break;
+            }
+            }}
+            cnt += sleep_ms;
+            if (cnt > timeout * 1000) {
+                NCBI_THROW(CNetCacheException, 
+                           eTimeout, "Failed to lock object");
+            }
+            SleepMilliSec(sleep_ms);
+        } // while
+    }
+
+    ~CIdBusyGuard()
+    {
+        Release();
+    }
+
+    void Release()
+    {
+        if (m_Id) {
+            CFastMutexGuard guard(x_NetCacheMutex_ID);
+            m_IdSet->set(m_Id, false);
+            m_Id = 0;
+        }
+    }
+private:
+    CIdBusyGuard(const CIdBusyGuard&);
+    CIdBusyGuard& operator=(const CIdBusyGuard&);
+private:
+    bm::bvector<>*   m_IdSet;
+    unsigned int     m_Id;
+};
+
+
+
 
 
 
@@ -115,7 +178,7 @@ private:
     };
 
     /// Process "PUT" request
-    void ProcessPut(CSocket& sock, const Request& req);
+    void ProcessPut(CSocket& sock, Request& req);
 
     /// Process "GET" request
     void ProcessGet(CSocket& sock, const Request& req);
@@ -146,7 +209,6 @@ private:
                            string*        id_str,
                            unsigned int*  transaction_id);
 
-    void WaitForId(unsigned int id);
 private:
     bool x_CheckBlobId(CSocket&       sock,
                        CNetCache_Key* blob_id, 
@@ -163,39 +225,6 @@ private:
     bool            m_Shutdown; 
     /// Time to wait for the client (seconds)
     unsigned        m_InactivityTimeout;
-};
-
-/// @internal
-class CIdBusyGuard
-{
-public:
-    CIdBusyGuard(bm::bvector<>* id_set, unsigned int id)
-        : m_IdSet(id_set), m_Id(id)
-    {
-        if (id) {
-            CFastMutexGuard guard(x_NetCacheMutex);
-            id_set->set(id);
-        }
-    }
-
-    ~CIdBusyGuard()
-    {
-        Release();
-    }
-
-    void Release()
-    {
-        if (m_Id) {
-            CFastMutexGuard guard(x_NetCacheMutex);
-            m_IdSet->set(m_Id, false);
-            m_Id = 0;
-        }
-
-    }
-
-private:
-    bm::bvector<>*   m_IdSet;
-    unsigned int     m_Id;
 };
 
 /// @internal
@@ -351,7 +380,8 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 
-    WaitForId(blob_id.id);
+    CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
+
     m_Cache->Remove(req_id);
 }
 
@@ -367,8 +397,7 @@ void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
     CNetCache_Key blob_id;
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
-
-    WaitForId(blob_id.id);
+    CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
 
     auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
     if (!rdr.get()) {
@@ -422,13 +451,21 @@ blob_not_found:
     }
 }
 
-void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
+void CNetCacheServer::ProcessPut(CSocket& sock, Request& req)
 {
-    string rid;
+    string& rid = req.req_id;
     unsigned int transaction_id;
-    GenerateRequestId(req, &rid, &transaction_id);
+    CNetCache_Key blob_id;
 
-    CIdBusyGuard guard(&m_UsedIds, transaction_id);
+    if (!req.req_id.empty()) {  // UPDATE request
+        if (!x_CheckBlobId(sock, &blob_id, req.req_id))
+            return;
+        transaction_id = blob_id.id;
+    } else {
+        GenerateRequestId(req, &rid, &transaction_id);
+    }
+
+    CIdBusyGuard guard(&m_UsedIds, transaction_id, m_InactivityTimeout);
 
     WriteMsg(sock, "ID:", rid);
     //LOG_POST(Info << "PUT request. Generated key=" << rid);
@@ -463,23 +500,6 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
 
 }
 
-void CNetCacheServer::WaitForId(unsigned int id)
-{
-    // Spins in the loop while requested id is in the transaction list
-    // (PUT request is still working)
-    //
-    while (true) {
-        {{
-        CFastMutexGuard guard(x_NetCacheMutex);
-        if (!m_UsedIds[id]) {
-            return;
-        }
-        }}
-        SleepMilliSec(10);
-    }
-}
-
-
 void CNetCacheServer::WriteMsg(CSocket&       sock, 
                                const string&  prefix, 
                                const string&  msg)
@@ -500,17 +520,27 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
     if (strncmp(s, "PUT", 3) == 0) {
         req->req_type = ePut;
         req->timeout = 0;
+        req->req_id = kEmptyStr;
 
         s += 3;
         while (*s && isspace(*s)) {
             ++s;
         }
+
         if (*s) {  // timeout value
             int time_out = atoi(s);
             if (time_out > 0) {
                 req->timeout = time_out;
             }
         }
+        while (*s && isdigit(*s)) {
+            ++s;
+        }
+        while (*s && isspace(*s)) {
+            ++s;
+        }
+        req->req_id = s;
+
         return;
     } // PUT
 
@@ -521,6 +551,7 @@ parse_blob_id:
         while (*s && isspace(*s)) {
             ++s;
         }
+
         req->req_id = s;
         return;
     } // GET
@@ -622,32 +653,13 @@ void CNetCacheServer::GenerateRequestId(const Request& req,
                                         unsigned int*  transaction_id)
 {
     long id;
-    string tmp;
-
     {{
     CFastMutexGuard guard(x_NetCacheMutex);
     id = ++m_MaxId;
     }}
     *transaction_id = id;
 
-    *id_str = "NCID_01"; // NetCacheId prefix plus id version
-
-    NStr::IntToString(tmp, id);
-    *id_str += "_";
-    *id_str += tmp;
-
-    *id_str += "_";
-    *id_str += m_Host;    
-
-    NStr::IntToString(tmp, GetPort());
-    *id_str += "_";
-    *id_str += tmp;
-
-    CTime time_stamp(CTime::eCurrent);
-    unsigned tm = (unsigned)time_stamp.GetTimeT();
-    NStr::IntToString(tmp, tm);
-    *id_str += "_";
-    *id_str += tmp;
+    CNetCache_GenerateBlobKey(id_str, id, m_Host, GetPort());
 }
 
 bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
@@ -848,6 +860,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/11/01 14:40:24  kuznets
+ * Implemented BLOB update, fixed bug in object locking
+ *
  * Revision 1.21  2004/10/28 16:14:42  kuznets
  * Implemented REMOVE
  *
