@@ -1163,6 +1163,12 @@ void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
  const CSerialObject& obj)
 {
+    if ( !bsrc.CanGetOrg() ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+            "No organism has been applied to this Bioseq.", obj);
+        return;
+    }
+
 	const COrg_ref& orgref = bsrc.GetOrg();
   
 	// Organism must have a name.
@@ -1254,6 +1260,7 @@ void CValidError_imp::ValidateBioSource
 	}
 
     if ( !orgref.IsSetOrgname()  ||
+         !orgref.GetOrgname().IsSetLineage()  ||
          orgref.GetOrgname().GetLineage().empty() ) {
 		PostErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
 			     "No lineage for this BioSource.", obj);
@@ -1267,9 +1274,9 @@ void CValidError_imp::ValidateBioSource
 		} 
 		if ( bsrc.GetGenome() == CBioSource::eGenome_nucleomorph ) {
 			if ( lineage.find("Chlorarchniophyta") == string::npos  &&
-				lineage.find("Cryptophyta") == string::npos) {
+				lineage.find("Cryptophyta") == string::npos ) {
 				PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
-						 "Only Chlorarchniophyta and Cryptophyta have nucleomorphs", obj);
+                    "Only Chlorarchniophyta and Cryptophyta have nucleomorphs", obj);
 			}
 		}
 	}
@@ -1792,21 +1799,19 @@ bool CValidError_imp::IsNucAcc(const string& acc)
 }
 
 
-bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const 
+bool CValidError_imp::IsFarLocation(const CSeq_loc& loc)
 {
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
         CConstRef<CSeq_id> id(&citer.GetSeq_id());
-        bool found = false;
-        ITERATE (vector< CConstRef<CSeq_id> >, it, m_InitialSeqIds ) {
-            if ( id->Match(**it) ) {
-                found = true;
-                break;
+        if ( id ) {
+            CBioseq_Handle near_seq = 
+                m_Scope->GetBioseqHandleFromTSE(*id, *m_TSE);
+            if ( !near_seq ) {
+                return true;
             }
         }
-        if ( !found ) {
-            return true;
-        }
     }
+
     return false;
 }
 
@@ -1822,7 +1827,7 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
     // NT (we assume features have been pulled from the segments to the NT).
     const CSeq_entry* limit = 0;
     if ( IsNT() ) {
-        limit = m_TSE.GetPointer();
+        limit = m_TSE.GetPointerOrNull();
     }
 
     if ( bsh ) {
@@ -2061,16 +2066,6 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
         }
     }
     
-    // store the seq-ids of the bioseqs contained in this record
-    // IMPORTANT: This is a temporary implementation to enable
-    // checks for far locations, should be changed once this
-    // check can be done through the object manager.
-    for ( CTypeConstIterator<CBioseq> bsi(se); bsi; ++bsi ) {
-        const list< CRef< CSeq_id > >& ids = bsi->GetId();
-        copy(ids.begin(), ids.end(), back_inserter(m_InitialSeqIds));
-    }
-    sort(m_InitialSeqIds.begin(), m_InitialSeqIds.end(), PPtrLess<CConstRef<CSeq_id> >());
-
     // Map features to their enclosing Seq_annot
     for ( CTypeConstIterator<CSeq_annot> ai(se); ai; ++ai ) {
         if ( ai->GetData().IsFtable() ) {
@@ -2441,6 +2436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/03/01 18:40:28  shomrat
+* Changed far location check
+*
 * Revision 1.45  2004/01/12 20:25:23  shomrat
 * ValidateCitSub called from ValidatePubdesc, gives error if no affiliation fields set
 *
