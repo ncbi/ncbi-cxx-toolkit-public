@@ -31,6 +31,7 @@ if test -f "${CHECK_RUN_FILE}" ; then
 fi
 
 cat >> ${CHECK_RUN_FILE} <<EOF
+#! /bin/sh
 
 res_journal="${CHECK_RUN_FILE}.journal"
 res_log="${CHECK_RUN_FILE}.log"
@@ -77,7 +78,6 @@ case "\$method" in
     x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
     for x_file in \${x_files} ; do
       x_file=\`echo "\${x_file}" | sed -e 's/%gj_s4%/ /g'\`
-      rm -f echo \$x_file
     done
     rm -f \$res_journal \$res_log \$res_concat
     rm -f ${CHECK_RUN_FILE} 
@@ -138,7 +138,7 @@ if test \${count_err} -eq 0 ; then
    echo
 fi
 
-exit \${count_err}
+exit \`expr \${count_absent} + \${count_err}\`
 EOF
 
 else

@@ -86,6 +86,8 @@ for x_cmd in ${x_run} ; do
 cat >> $x_out <<EOF
 #######################################################
 
+if test -d "$x_pwd"; then
+
    echo "$test_out" >> \${res_journal}
    (
      echo "======================================================================"
@@ -124,6 +126,10 @@ cat >> $x_out <<EOF
       echo "ABS --  \$x_cmd" >> \${res_log}
       count_absent=\`expr \${count_absent} + 1\`
    fi
+else
+   echo "ABS -- $x_pwd/ - $x_test"
+   count_absent=\`expr \${count_absent} + 1\`
+fi
 
 EOF
    x_cnt=`expr ${x_cnt} + 1`
