@@ -31,6 +31,7 @@
 
 #include <bdb/bdb_env.hpp>
 #include <db.h>
+#include <db_config.h> // for the definition of HAVE_MUTEX_THREAD_ONLY
 
 BEGIN_NCBI_SCOPE
 
@@ -67,6 +68,9 @@ void CBDB_Env::SetCacheSize(unsigned int cache_size)
 
 void CBDB_Env::Open(const char* db_home, int flags)
 {
+#if HAVE_MUTEX_THREAD_ONLY
+    flags |= DB_PRIVATE;
+#endif
     int ret = m_Env->open(m_Env, db_home, flags, 0664);
     BDB_CHECK(ret, "DB_ENV");
 }
@@ -187,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/04/08 16:54:36  rsmith
+ * In CBDB_Env::Open always add DB_PRIVATE flag if we are not configured with shared mutexes.
+ *
  * Revision 1.17  2004/03/26 14:53:59  kuznets
  * No error checking for direct IO functions (does not work on some platforms)
  *
