@@ -57,6 +57,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/util/sequence.hpp>
 
@@ -1479,6 +1480,129 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
 }
 
 
+static
+CSeq_inst::EMol s_DeduceMol(const CSeq_id& id, CScope* scope,
+                            CSeq_inst::EMol fallback) {
+    if (scope) {
+        CBioseq_Handle handle = scope->GetBioseqHandle(id);
+        if (handle) {
+            return handle.GetBioseqCore()->GetInst().GetMol();
+        }
+    }
+
+    CSeq_id::EAccessionInfo info = id.IdentifyAccession();
+    if (info & CSeq_id::fAcc_nuc) {
+        // can potentially be more specific in some cases, but need not
+        return CSeq_inst::eMol_na;
+    } else if (info & CSeq_id::fAcc_prot) {
+        return CSeq_inst::eMol_aa;
+    } else {
+        return fallback;
+    }
+}
+
+
+static inline
+CSeq_inst::EMol s_DeduceMol(const CSeq_loc& loc, CScope* scope,
+                            CSeq_inst::EMol fallback) {
+    return s_DeduceMol(*CTypeConstIterator<CSeq_id>(loc), scope, fallback);
+}
+
+
+// XXX - handle fuzz?
+CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
+                               const CSeq_loc& source_loc, TS2PFlags flags,
+                               CScope* scope, int* frame)
+{
+    SRelLoc::TFlags rl_flags = 0;
+    if (flags & fS2P_NoMerge) {
+        rl_flags |= SRelLoc::fNoMerge;
+    }
+    SRelLoc rl(feat.GetLocation(), source_loc, scope, rl_flags);
+    _ASSERT(!rl.m_Ranges.empty());
+    rl.m_ParentLoc.Reset(&feat.GetProduct());
+    if ((s_DeduceMol(feat.GetLocation(), scope, CSeq_inst::eMol_na)
+         != CSeq_inst::eMol_aa)
+        &&  (s_DeduceMol(feat.GetProduct(), scope, CSeq_inst::eMol_aa)
+             == CSeq_inst::eMol_aa)) {
+        // looks like nucleotide to protein; adjust offsets accordingly
+        const CCdregion& cds         = feat.GetData().GetCdregion();
+        int              base_frame  = cds.GetFrame();
+        if (base_frame > 0) {
+            --base_frame;
+        }
+        if (frame) {
+            *frame = 3 - (rl.m_Ranges.front().GetFrom() + 2 - base_frame) % 3;
+        }
+        TSeqPos prot_length;
+        try {
+            prot_length = GetLength(feat.GetProduct(), scope);
+        } catch (CNoLength) {
+            prot_length = numeric_limits<TSeqPos>::max();
+        }
+        non_const_iterate (SRelLoc::TRanges, it, rl.m_Ranges) {
+            it->SetFrom((it->GetFrom() - base_frame) / 3);
+            it->SetTo  ((it->GetTo()   - base_frame) / 3);
+            if ((flags & fS2P_AllowTer)  &&  it->GetTo() == prot_length) {
+                it->SetTo(it->GetTo() - 1);
+            }
+        }
+    } else {
+        if (frame) {
+            *frame = 0; // not applicable; explicitly zero
+        }
+    }
+
+    return rl.Resolve(scope, rl_flags);
+}
+
+
+// XXX - handle fuzz?
+CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
+                               TP2SFlags flags, CScope* scope)
+{
+    SRelLoc rl(feat.GetProduct(), prod_loc, scope);
+    _ASSERT(!rl.m_Ranges.empty());
+    rl.m_ParentLoc.Reset(&feat.GetLocation());
+    if ((s_DeduceMol(feat.GetLocation(), scope, CSeq_inst::eMol_na)
+         != CSeq_inst::eMol_aa)
+        &&  (s_DeduceMol(feat.GetProduct(), scope, CSeq_inst::eMol_aa)
+             == CSeq_inst::eMol_aa)) {
+        // looks like protein to nucleotide; adjust offsets accordingly
+        const CCdregion& cds        = feat.GetData().GetCdregion();
+        int              base_frame = cds.GetFrame();
+        if (base_frame > 0) {
+            --base_frame;
+        }
+        TSeqPos nuc_length, prot_length;
+        try {
+            nuc_length = GetLength(feat.GetLocation(), scope);
+        } catch (CNoLength) {
+            nuc_length = numeric_limits<TSeqPos>::max();
+        }
+        try {
+            prot_length = GetLength(feat.GetProduct(), scope);
+        } catch (CNoLength) {
+            prot_length = numeric_limits<TSeqPos>::max();
+        }
+        non_const_iterate (SRelLoc::TRanges, it, rl.m_Ranges) {
+            if ((flags & fP2S_Extend)  &&  it->GetFrom() == 0) {
+                it->SetFrom(0);
+            } else {
+                it->SetFrom(it->GetFrom() * 3 + base_frame);
+            }
+            if ((flags & fP2S_Extend)  &&  it->GetTo() == prot_length - 1) {
+                it->SetTo(nuc_length - 1);
+            } else {
+                it->SetTo(it->GetTo() * 3 + base_frame + 2);
+            }
+        }
+    }
+
+    return rl.Resolve(scope);
+}
+
+
 END_SCOPE(sequence)
 
 void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
@@ -1557,19 +1681,11 @@ void CFastaOstream::WriteTitle(CBioseq_Handle& handle)
         id->WriteAsFasta(m_Out);
     }
 
-#if 0
-// This was in id1_fetch for some reason, but then it never got updated
-// to use the sophisticated version of GetTitle....
-    for (CSeqdesc_CI it(handle, CSeqdesc::e_Name);  it;  ++it) {
-        m_Out << ' ' << it->GetName();
-        BREAK(it);
-    }
-#endif
-
     m_Out << ' ' << sequence::GetTitle(handle) << NcbiEndl;
 }
 
 
+// XXX - replace with SRelLoc?
 struct SGap {
     SGap(TSeqPos start, TSeqPos length) : m_Start(start), m_Length(length) { }
     TSeqPos GetEnd(void) const { return m_Start + m_Length - 1; }
@@ -1940,12 +2056,168 @@ void CCdregion_translate::TranslateCdregion (string& prot,
 }
 
 
+SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
+                 SRelLoc::TFlags flags)
+    : m_ParentLoc(&parent)
+{
+    for (CSeq_loc_CI cit(child);  cit;  ++cit) {
+        const CSeq_id& cseqid  = cit.GetSeq_id();
+        TRange         crange  = cit.GetRange();
+        if (crange.IsWholeTo()  &&  scope) {
+            // determine actual end
+            crange.SetTo(sequence::GetLength(cit.GetSeq_id(), scope));
+        }
+        ENa_strand     cstrand = cit.GetStrand();
+        TSeqPos        pos     = 0;
+        for (CSeq_loc_CI pit(parent);  pit;  ++pit) {
+            if ( !sequence::IsSameBioseq(cseqid, pit.GetSeq_id(), scope) ) {
+                continue;
+            }
+            TRange prange = pit.GetRange();
+            if (prange.IsWholeTo()  &&  scope) {
+                // determine actual end
+                prange.SetTo(sequence::GetLength(pit.GetSeq_id(), scope));
+            }
+            TRange intersection(max(prange.GetFrom(), crange.GetFrom()),
+                                min(prange.GetTo(),   crange.GetTo()));
+            if ( !intersection.Empty() ) {
+                if ( !SameOrientation(cstrand, pit.GetStrand()) ) {
+                    ERR_POST(Warning
+                             << "SRelLoc::SRelLoc:"
+                             " parent and child have opposite orientations");
+                }
+                if (IsReverse(cstrand)) { // both strands reverse
+                    TSeqPos sigma = pos + prange.GetTo();
+                    TSeqPos from0 = intersection.GetFrom();
+                    intersection.SetFrom(sigma - intersection.GetTo());
+                    intersection.SetTo  (sigma - from0);
+                } else { // both strands forward
+                    TSignedSeqPos delta = pos - prange.GetFrom();
+                    intersection.SetFrom(intersection.GetFrom() + delta);
+                    intersection.SetTo  (intersection.GetTo()   + delta);
+                }
+                // add to m_Ranges, combining with the previous
+                // interval if possible
+                if ( !(flags & fNoMerge)  &&  !m_Ranges.empty()
+                    &&  m_Ranges.back().GetTo() >= m_Ranges.back().GetFrom()
+                    &&  m_Ranges.back().GetTo() == intersection.GetFrom() - 1) {
+                    m_Ranges.back().SetTo(intersection.GetTo());
+                } else {
+                    m_Ranges.push_back(intersection);
+                }
+            }
+            pos += prange.GetLength();
+        }
+    }
+}
+
+
+// Bother trying to merge?
+CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
+    const
+{
+    CRef<CSeq_loc> result(new CSeq_loc);
+    CSeq_loc_mix&  mix = result->SetMix();
+    iterate (TRanges, it, m_Ranges) {
+        _ASSERT(it->GetFrom() <= it->GetTo());
+        TSeqPos pos = 0, start = it->GetFrom();
+        bool    keep_going;
+        for (CSeq_loc_CI pit(*m_ParentLoc);  pit;  ++pit) {
+            TRange  prange = pit.GetRange();
+            if (prange.IsWholeTo()  &&  scope) {
+                // determine actual end
+                prange.SetTo(sequence::GetLength(pit.GetSeq_id(), scope));
+            }
+            TSeqPos length = prange.GetLength();
+            if (start >= pos  &&  start < pos + length) {
+                TSeqPos from, to;
+                if (IsReverse(pit.GetStrand())) {
+                    TSeqPos sigma = pos + prange.GetTo();
+                    from = sigma - it->GetTo();
+                    to   = sigma - start;
+                    if (from < prange.GetFrom()  ||  from > sigma) {
+                        from = prange.GetFrom();
+                        keep_going = true;
+                    } else {
+                        keep_going = false;
+                    }
+                } else {
+                    TSignedSeqPos delta = prange.GetFrom() - pos;
+                    from = start       + delta;
+                    to   = it->GetTo() + delta;
+                    if (to > prange.GetTo()) {
+                        to = prange.GetTo();
+                        keep_going = true;
+                    } else {
+                        keep_going = false;
+                    }
+                }
+                if (from == to) {
+                    // just a point
+                    CRef<CSeq_loc> loc(new CSeq_loc);
+                    CSeq_point& point = loc->SetPnt();
+                    point.SetPoint(from);
+                    point.SetStrand(pit.GetStrand());
+                    point.SetId().Assign(pit.GetSeq_id());
+                    mix.Set().push_back(loc);
+                } else {
+                    CRef<CSeq_loc> loc(new CSeq_loc);
+                    CSeq_interval& ival = loc->SetInt();
+                    ival.SetFrom(from);
+                    ival.SetTo(to);
+                    ival.SetStrand(pit.GetStrand());
+                    ival.SetId().Assign(pit.GetSeq_id());
+                    mix.Set().push_back(loc);
+                }
+                if (keep_going) {
+                    start = pos + length;
+                } else {
+                    break;
+                }
+            }
+            pos += length;
+        }
+        if (keep_going) {
+            TSeqPos total_length;
+            string  label;
+            m_ParentLoc->GetLabel(&label);
+            try {
+                total_length = sequence::GetLength(*m_ParentLoc, scope);
+                ERR_POST(Warning << "SRelLoc::Resolve: Relative position "
+                         << start << " exceeds length (" << total_length
+                         << ") of parent location " << label);
+            } catch (sequence::CNoLength) {
+                ERR_POST(Warning << "SRelLoc::Resolve: Relative position "
+                         << start
+                         << " exceeds length (???) of parent location "
+                         << label);
+            }            
+        }
+    }
+    // clean up output
+    switch (mix.Get().size()) {
+    case 0:
+        result->SetNull();
+        break;
+    case 1:
+        result.Reset(mix.Set().front());
+        break;
+    default:
+        break;
+    }
+    return result;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2002/11/12 20:00:25  ucko
+* +SourceToProduct, ProductToSource, SRelLoc
+*
 * Revision 1.15  2002/10/23 19:22:39  ucko
 * Move the FASTA reader from objects/util/sequence.?pp to
 * objects/seqset/Seq_entry.?pp because it doesn't need the OM.

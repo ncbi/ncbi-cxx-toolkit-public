@@ -40,13 +40,13 @@
 #include <serial/objostr.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // Forward declarations
 class CSeq_id;
-class CSeq_loc;
 class CSeq_loc_mix;
 class CSeq_point;
 class CPacked_seqpnt;
@@ -177,6 +177,23 @@ bool BadSeqLocSortOrder
  CScope*         scope);
 
 
+enum ES2PFlags {
+    fS2P_NoMerge  = 0x1, // don't merge adjacent intervals on the product
+    fS2P_AllowTer = 0x2  // map the termination codon as a legal location
+};
+typedef int TS2PFlags; // binary OR of ES2PFlags
+CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
+                               const CSeq_loc& source_loc, TS2PFlags flags = 0,
+                               CScope* scope = 0, int* frame = 0);
+
+enum EP2SFlags {
+    fP2S_Extend = 0x1  // if hitting ends, extend to include partial codons
+};
+typedef int TP2SFlags; // binary OR of ES2PFlags
+CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
+                               TP2SFlags flags = 0, CScope* scope = 0);
+
+
 END_SCOPE(sequence)
 
 // FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
@@ -241,12 +258,40 @@ public:
 };
 
 
+
+// Location relative to a base Seq-loc: one (usually) or more ranges
+// of offsets
+// XXX - handle fuzz?
+struct SRelLoc
+{
+    enum EFlags {
+        fNoMerge = 0x1 // don't merge adjacent intervals
+    };
+    typedef int TFlags; // binary OR of EFlags
+
+    // Beware: treats locations corresponding to different sequences as
+    // disjoint, even if one is actually a segment of the other. :-/
+    SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope = 0,
+            TFlags flags = 0);
+    CRef<CSeq_loc> Resolve(CScope* scope = 0, TFlags flags = 0) const;
+
+    typedef CSeq_loc::TRange TRange;
+    typedef vector<TRange>   TRanges;
+    CConstRef<CSeq_loc> m_ParentLoc;
+    TRanges             m_Ranges;
+};
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2002/11/12 20:00:19  ucko
+* +SourceToProduct, ProductToSource, SRelLoc
+*
 * Revision 1.11  2002/11/04 22:03:34  ucko
 * Pull in <objects/seqloc/Na_strand.hpp> rather than relying on previous headers
 *
