@@ -108,10 +108,10 @@ void CAlnMrgApp::Init(void)
          "and specifies the type of the top-level ASN.1 object.\n",
          CArgDescriptions::eString, "");
 
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("log", "log_file_name",
          "Name of log file to write to",
-         CArgDescriptions::eOutputFile, "/dev/null", CArgDescriptions::fPreOpen);
+         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
         ("gen2est", "bool",
@@ -446,6 +446,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/09/20 15:51:17  todorov
+* Made log an optional parameter
+*
 * Revision 1.23  2004/09/16 19:04:55  todorov
 * rm binout
 *
