@@ -50,26 +50,15 @@ class BlockMultipleAlignment;
 
 class ConservationColorer
 {
-public:
-    ConservationColorer(const BlockMultipleAlignment *parent);
-
-    // add an aligned block to the profile
-    void AddBlock(const UngappedAlignedBlock *block);
-
-    // create colors - should be done only after all blocks have been added
-    void CalculateConservationColors(void);
-
-    // frees memory used by color storage (but keeps blocks around)
-    void FreeColors(void);
-
-    // clears everything, including alignment blocks
-    void Clear(void);
-
 private:
     const BlockMultipleAlignment *alignment;
 
     typedef std::map < const UngappedAlignedBlock *, std::vector < int > > BlockMap;
     BlockMap blocks;
+
+    typedef std::map < char, int > ColumnProfile;
+    typedef std::vector < ColumnProfile > AlignmentProfile;
+    AlignmentProfile alignmentProfile;
 
     int GetProfileIndex(const UngappedAlignedBlock *block, int blockColumn) const
         { return blocks.find(block)->second[blockColumn]; }
@@ -77,7 +66,10 @@ private:
         int *profileIndex, char *residue) const;
 
     int nColumns;
-    bool colorsCurrent;
+    bool basicColorsCurrent, fitColorsCurrent;
+
+    void CalculateBasicConservationColors(void);
+    void CalculateFitConservationColors(void);
 
     std::vector < bool > identities;
 
@@ -92,30 +84,40 @@ private:
     BlockFitColors blockFitColors, blockZFitColors, blockRowFitColors;
 
 public:
+    ConservationColorer(const BlockMultipleAlignment *parent);
+
+    // add an aligned block to the profile
+    void AddBlock(const UngappedAlignedBlock *block);
+
+    // frees memory used by color storage (but keeps blocks around)
+    void FreeColors(void);
+
+    // clears everything, including alignment blocks
+    void Clear(void);
 
     // color accessors
     const Vector *GetIdentityColor(const UngappedAlignedBlock *block, int blockColumn)
     {
-        CalculateConservationColors();
+        CalculateBasicConservationColors();
         return GlobalColors()->Get(Colors::eConservationMap,
             (identities[GetProfileIndex(block, blockColumn)] ? Colors::nConservationMap - 1 : 0));
     }
 
     const Vector *GetVarietyColor(const UngappedAlignedBlock *block, int blockColumn)
     {
-        CalculateConservationColors();
+        CalculateBasicConservationColors();
         return &(varietyColors[GetProfileIndex(block, blockColumn)]);
     }
 
     const Vector *GetWeightedVarietyColor(const UngappedAlignedBlock *block, int blockColumn)
     {
-        CalculateConservationColors();
+        CalculateBasicConservationColors();
         return &(weightedVarietyColors[GetProfileIndex(block, blockColumn)]);
     }
 
     const Vector *GetInformationContentColor(const UngappedAlignedBlock *block, int blockColumn)
     {
-        CalculateConservationColors();
+        CalculateBasicConservationColors();
         return &(informationContentColors[GetProfileIndex(block, blockColumn)]);
     }
 
@@ -123,26 +125,26 @@ public:
     {
         int profileIndex;
         char residue;
-        CalculateConservationColors();
+        CalculateFitConservationColors();
         GetProfileIndexAndResidue(block, blockColumn, row, &profileIndex, &residue);
         return &(fitColors[profileIndex].find(residue)->second);
     }
 
     const Vector *GetBlockFitColor(const UngappedAlignedBlock *block, int row)
     {
-        CalculateConservationColors();
+        CalculateFitConservationColors();
         return &(blockFitColors.find(block)->second[row]);
     }
 
     const Vector *GetBlockZFitColor(const UngappedAlignedBlock *block, int row)
     {
-        CalculateConservationColors();
+        CalculateFitConservationColors();
         return &(blockZFitColors.find(block)->second[row]);
     }
 
     const Vector *GetBlockRowFitColor(const UngappedAlignedBlock *block, int row)
     {
-        CalculateConservationColors();
+        CalculateFitConservationColors();
         return &(blockRowFitColors.find(block)->second[row]);
     }
 };
@@ -154,6 +156,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/13 18:31:39  thiessen
+* separate basic from fit color calculation
+*
 * Revision 1.13  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *

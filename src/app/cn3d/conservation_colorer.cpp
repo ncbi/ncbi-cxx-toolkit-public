@@ -124,7 +124,7 @@ static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
 static map < char, float > StandardProbabilities;
 
 ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
-    nColumns(0), colorsCurrent(false), alignment(parent)
+    nColumns(0), basicColorsCurrent(false), fitColorsCurrent(false), alignment(parent)
 {
     if (StandardProbabilities.size() == 0) {  // initialize static stuff
 
@@ -188,22 +188,20 @@ void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
     for (int i=0; i<block->width; i++) blocks[block][i] = nColumns + i;
     nColumns += block->width;
 
-    colorsCurrent = false;
+    basicColorsCurrent = fitColorsCurrent = false;
 }
 
-typedef map < char, int > ColumnProfile;
-
-void ConservationColorer::CalculateConservationColors(void)
+void ConservationColorer::CalculateBasicConservationColors(void)
 {
-    if (colorsCurrent) return;
+    if (basicColorsCurrent || blocks.size() == 0) return;
 
-    TRACEMSG("calculating conservation colors");
+    TRACEMSG("calculating basic conservation colors");
 
-    if (blocks.size() == 0) return;
+    int nRows = alignment->NRows();
 
-    ColumnProfile profile;
     ColumnProfile::iterator p, pe, p2;
     int row, profileColumn;
+    alignmentProfile.resize(nColumns);
 
     typedef vector < int > IntVector;
     IntVector varieties(nColumns, 0), weightedVarieties(nColumns, 0);
@@ -214,21 +212,12 @@ void ConservationColorer::CalculateConservationColors(void)
     FloatVector informationContents(nColumns, 0.0f);
     float totalInformationContent = 0.0f;
 
-    int nRows = alignment->NRows();
-    typedef map < char, int > CharIntMap;
-    vector < CharIntMap > fitScores(nColumns);
-    int minFit, maxFit;
-
-    typedef map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
-    BlockRowScores blockFitScores, blockZFitScores, blockRowFitScores;
-    float minBlockFit, maxBlockFit, minBlockZFit, maxBlockZFit, minBlockRowFit, maxBlockRowFit;
-
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
-        blockFitScores[b->first].resize(nRows, 0.0f);
 
         for (int blockColumn=0; blockColumn<b->first->width; blockColumn++) {
             profileColumn = b->second[blockColumn];
+            ColumnProfile& profile = alignmentProfile[profileColumn];
 
             // create profile for this column
             profile.clear();
@@ -239,8 +228,9 @@ void ConservationColorer::CalculateConservationColors(void)
                 else
                     profile[ch] = 1;
             }
+            pe = profile.end();
 
-            // identity for this column?
+            // identity for this column
             if (profile.size() == 1 && profile.begin()->first != 'X')
                 identities[profileColumn] = true;
             else
@@ -259,7 +249,6 @@ void ConservationColorer::CalculateConservationColors(void)
             }
 
             // weighted variety for this column
-            pe = profile.end();
             int& weightedVariety = weightedVarieties[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
                 weightedVariety +=
@@ -276,11 +265,10 @@ void ConservationColorer::CalculateConservationColors(void)
                 else if (weightedVariety > maxWeightedVariety) maxWeightedVariety = weightedVariety;
             }
 
-            // information content (calculated in bits -> logs of base 2) and fit scores for this column
-            pe = profile.end();
+            // information content (calculated in bits -> logs of base 2) for this column
             float &columnInfo = informationContents[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
-                static const float ln2 = (float) log(2.0), threshhold = 0.0001f;
+                static const float ln2 = log(2.0f), threshhold = 0.0001f;
                 float residueScore = 0.0f, expFreq = StandardProbabilities[p->first];
                 if (expFreq > threshhold) {
                     float obsFreq = 1.0f * p->second / nRows,
@@ -290,7 +278,82 @@ void ConservationColorer::CalculateConservationColors(void)
                         columnInfo += residueScore; // information content
                     }
                 }
-                // fit score
+            }
+            totalInformationContent += columnInfo;
+        }
+    }
+
+    INFOMSG("Total information content of aligned blocks: " << totalInformationContent << " bits");
+
+    // now assign colors
+    varietyColors.resize(nColumns);
+    weightedVarietyColors.resize(nColumns);
+    informationContentColors.resize(nColumns);
+
+    double scale;
+    for (profileColumn=0; profileColumn<nColumns; profileColumn++) {
+
+        // variety
+        if (maxVariety == minVariety)
+            scale = 1.0;
+        else
+            scale = 1.0 - 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
+        varietyColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
+
+        // weighted variety
+        if (maxWeightedVariety == minWeightedVariety)
+            scale = 1.0;
+        else
+            scale = 1.0 * (weightedVarieties[profileColumn] - minWeightedVariety) /
+                (maxWeightedVariety - minWeightedVariety);
+        weightedVarietyColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
+
+        // information content, based on absolute scale
+        static const float minInform = 0.10f, maxInform = 6.24f;
+        scale = (informationContents[profileColumn] - minInform) / (maxInform - minInform);
+        if (scale < 0.0) scale = 0.0;
+        else if (scale > 1.0) scale = 1.0;
+        scale = sqrt(scale);    // apply non-linearity so that lower values are better distinguished
+        informationContentColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
+    }
+
+    basicColorsCurrent = true;
+    fitColorsCurrent = false;
+}
+
+void ConservationColorer::CalculateFitConservationColors(void)
+{
+    if (fitColorsCurrent || blocks.size() == 0) return;
+
+    CalculateBasicConservationColors();     // also includes profile
+
+    TRACEMSG("calculating fit conservation colors");
+
+    int nRows = alignment->NRows();
+
+    ColumnProfile::iterator p, pe;
+    int row, profileColumn;
+
+    typedef map < char, int > CharIntMap;
+    vector < CharIntMap > fitScores(nColumns);
+    int minFit, maxFit;
+
+    typedef vector < float > FloatVector;
+    typedef map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
+    BlockRowScores blockFitScores, blockZFitScores, blockRowFitScores;
+    float minBlockFit, maxBlockFit, minBlockZFit, maxBlockZFit, minBlockRowFit, maxBlockRowFit;
+
+    BlockMap::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) {
+        blockFitScores[b->first].resize(nRows, 0.0f);
+
+        for (int blockColumn=0; blockColumn<b->first->width; blockColumn++) {
+            profileColumn = b->second[blockColumn];
+            ColumnProfile& profile = alignmentProfile[profileColumn];
+            pe = profile.end();
+
+            // fit scores
+            for (p=profile.begin(); p!=pe; p++) {
                 int& fit = fitScores[profileColumn][p->first];
                 fit = GetPSSMScore(alignment->GetPSSM(),
                     p->first, b->first->GetRangeOfRow(0)->from + blockColumn);
@@ -301,13 +364,11 @@ void ConservationColorer::CalculateConservationColors(void)
                     else if (fit > maxFit) maxFit = fit;
                 }
             }
-            totalInformationContent += columnInfo;
 
             // add up residue fit scores to get block fit scores
             for (row=0; row<nRows; row++) {
                 char ch = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
-                blockFitScores[b->first][row] += GetPSSMScore(alignment->GetPSSM(),
-                    ch, b->first->GetRangeOfRow(0)->from + blockColumn);
+                blockFitScores[b->first][row] += fitScores[profileColumn][ch];
             }
         }
 
@@ -368,40 +429,10 @@ void ConservationColorer::CalculateConservationColors(void)
         }
     }
 
-    INFOMSG("Total information content of aligned blocks: " << totalInformationContent << " bits");
-
     // now assign colors
-    varietyColors.resize(nColumns);
-    weightedVarietyColors.resize(nColumns);
-    informationContentColors.resize(nColumns);
-    fitColors.resize(nRows * nColumns);
-
     double scale;
+    fitColors.resize(nRows * nColumns);
     for (profileColumn=0; profileColumn<nColumns; profileColumn++) {
-
-        // variety
-        if (maxVariety == minVariety)
-            scale = 1.0;
-        else
-            scale = 1.0 - 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
-        varietyColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
-
-        // weighted variety
-        if (maxWeightedVariety == minWeightedVariety)
-            scale = 1.0;
-        else
-            scale = 1.0 * (weightedVarieties[profileColumn] - minWeightedVariety) /
-                (maxWeightedVariety - minWeightedVariety);
-        weightedVarietyColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
-
-        // information content, based on absolute scale
-        static const float minInform = 0.10f, maxInform = 6.24f;
-        scale = (informationContents[profileColumn] - minInform) / (maxInform - minInform);
-        if (scale < 0.0) scale = 0.0;
-        else if (scale > 1.0) scale = 1.0;
-        scale = sqrt(scale);    // apply non-linearity so that lower values are better distinguished
-        informationContentColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
-
         // fit
         CharIntMap::const_iterator c, ce = fitScores[profileColumn].end();
         for (c=fitScores[profileColumn].begin(); c!=ce; c++) {
@@ -479,7 +510,7 @@ void ConservationColorer::CalculateConservationColors(void)
         }
     }
 
-    colorsCurrent = true;
+    fitColorsCurrent = true;
 }
 
 void ConservationColorer::GetProfileIndexAndResidue(
@@ -496,17 +527,20 @@ void ConservationColorer::Clear(void)
     nColumns = 0;
     blocks.clear();
     FreeColors();
-    colorsCurrent = false;
 }
 
 void ConservationColorer::FreeColors(void)
 {
+    alignmentProfile.clear();
     identities.clear();
     varietyColors.clear();
     weightedVarietyColors.clear();
     informationContentColors.clear();
     fitColors.clear();
-    colorsCurrent = false;
+    blockFitColors.clear();
+    blockZFitColors.clear();
+    blockRowFitColors.clear();
+    basicColorsCurrent = fitColorsCurrent = false;
 }
 
 END_SCOPE(Cn3D)
@@ -515,6 +549,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/02/13 18:31:39  thiessen
+* separate basic from fit color calculation
+*
 * Revision 1.29  2003/02/12 15:36:14  thiessen
 * clean up fit scoring code
 *
