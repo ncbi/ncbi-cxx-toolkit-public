@@ -569,12 +569,11 @@ CBl2Seq::x_Results2SeqAlign()
     _ASSERT(mi_vResults.size() == m_tSubjects.size());
     unsigned int index = 0;
     ITERATE(TSeqLocVector, itr, m_tSubjects) {
-        CConstRef<CSeq_id> subj_id(&sequence::GetId(*itr->first, itr->second));
         CRef<CSeq_align_set> seqalign =
             BLAST_Results2CppSeqAlign(mi_vResults[index++], m_eProgram,
-                                      query_vector, NULL,
-                                      subj_id, m_pOptions->GetScoringOpts(),
-                                      mi_pScoreBlock);
+                query_vector, NULL,
+                &sequence::GetId(*itr->first, itr->second),
+                m_pOptions->GetScoringOpts(), mi_pScoreBlock);
         if (seqalign) {
             retval->Set().merge(seqalign->Set());
         }
@@ -596,6 +595,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2003/08/12 19:21:08  dondosha
+ * Subject id argument to BLAST_Results2CppSeqAlign is now a simple pointer, allowing it to be NULL
+ *
  * Revision 1.14  2003/08/11 19:55:55  camacho
  * Early commit to support query concatenation and the use of multiple scopes.
  * Compiles, but still needs work.
