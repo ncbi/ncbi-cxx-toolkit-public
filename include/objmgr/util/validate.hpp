@@ -61,7 +61,7 @@ public:
                   const CSerialObject& obj);
     // destructor
     ~CValidErrItem(void);
-    
+
     // access functions
     EDiagSev                GetSeverity (void) const;
     const string&             GetErrCode  (void) const;
@@ -90,29 +90,29 @@ public:
         eVal_val_align  = 0x00000004,
         eVal_no_context = 0x00000008
     };
-        
+
     // constructors
     CValidError
-    (CObjectManager&   objmgr, 
+    (CObjectManager&   objmgr,
      const CSeq_entry& se,
      unsigned int      options = 0x00000000);
 
     CValidError
-    (CObjectManager&    objmgr, 
-     const CSeq_submit& ss, 
+    (CObjectManager&    objmgr,
+     const CSeq_submit& ss,
      unsigned int       options = 0x00000000);
-     
+
     // destructor
     ~CValidError(void);
-        
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidError(const CValidError&);
     CValidError& operator= (const CValidError&);
-    
+
     // Error list
     TErrs m_ErrItems;
-    
+
     friend class CValidError_CI;
 };
 
@@ -127,13 +127,13 @@ public:
                    EDiagSev maxsev  = eDiag_Critical);
     CValidError_CI(const CValidError_CI& iter);
     virtual ~CValidError_CI(void);
-    
+
     CValidError_CI& operator= (const CValidError_CI& iter);
     CValidError_CI& operator++ (void);
     operator bool (void) const;
-    
+
     const CValidErrItem& operator* (void) const;
-    
+
 private:
     const CValidError*      m_ValidError;
     TErrs::const_iterator   m_ErrIter;
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2002/10/03 18:31:03  clausen
+* Removed extra whitespace
+*
 * Revision 1.1  2002/10/03 16:30:56  clausen
 * First version
 *
