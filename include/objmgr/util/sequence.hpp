@@ -35,6 +35,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -105,6 +108,12 @@ bool IsOneBioseq(const CSeq_loc& loc, CScope* scope = 0);
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
+// Returns eNa_strand_unknown if multiple Bioseqs in loc
+// Returns eNa_strand_other if multiple strands in same loc
+// Returns eNa_strand_both if loc is a Whole
+// Returns strand otherwise
+ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope = 0);
+
 // If only one CBioseq is represented by CSeq_loc, returns the lowest residue
 // position represented. If not null, scope is used to determine if two 
 // CSeq_ids represent the same CBioseq. Throws exception CNotUnique if
@@ -112,6 +121,13 @@ const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0)
 TSeqPos GetStart(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
+// If only one CBioseq is represented by CSeq_loc, returns the highest residue
+// position represented. If not null, scope is used to determine if two 
+// CSeq_ids represent the same CBioseq. Throws exception CNotUnique if
+// CSeq_loc does not represent one CBioseq.
+TSeqPos GetStop(const CSeq_loc& loc, CScope* scope = 0)
+    THROWS((sequence::CNotUnique));
+    
 // Returns the sequence::ECompare containment relationship between CSeq_locs
 sequence::ECompare Compare(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,
@@ -128,8 +144,36 @@ enum EGetTitleFlags {
 typedef int TGetTitleFlags;
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 
-END_SCOPE(sequence)
+// Change a CSeq_id to the one for the CBioseq that it represents
+// that has the best rank or worst rank according on value of best.
+// Just returns if scope == 0
+void ChangeSeqId(CSeq_id* id, bool best, CScope* scope = 0);
 
+// Change each of the CSeq_ids embedded in a CSeq_loc to the best
+// or worst CSeq_id accoring to the value of best. Just returns if
+// scope == 0
+void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope = 0);
+
+enum ESeqLocCheck {
+    eSeqLocCheck_ok,
+    eSeqLocCheck_warning,
+    eSeqLocCheck_error
+};
+
+// Checks that a CSeq_loc is all on one strand. For embedded points, checks
+// that the point location is <= length of sequence of point. For packed
+// points, checks that all points are within length of sequence. For
+// intervals, ensures from <= to and interval is within length of sequence.
+ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope);
+
+// Returns true if the order of Seq_locs is bad, otherwise, false
+bool BadSeqLocSortOrder
+(const CBioseq&  seq,
+ const CSeq_loc& loc,
+ CScope*         scope);
+
+
+END_SCOPE(sequence)
 
 // FASTA-format output
 class CFastaOstream {
@@ -199,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/10/03 16:33:10  clausen
+* Added functions needed by validate
+*
 * Revision 1.5  2002/09/12 21:38:43  kans
 * added CCdregion_translate and CCdregion_translate
 *

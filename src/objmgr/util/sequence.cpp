@@ -50,6 +50,11 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objects/seqfeat/Cdregion.hpp>
@@ -62,7 +67,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
-
 
 TSeqPos GetLength(const CSeq_id& id, CScope* scope)
 {
@@ -209,6 +213,77 @@ const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope)
     return *first; 
 }
 
+inline
+static ENa_strand s_GetStrand(const CSeq_loc& loc)
+{
+    switch (loc.Which()) {
+    case CSeq_loc::e_Bond:
+        return loc.GetBond().GetA().IsSetStrand() ?
+            loc.GetBond().GetA().GetStrand() : eNa_strand_unknown;
+    case CSeq_loc::e_Whole:
+        return eNa_strand_both;
+    case CSeq_loc::e_Int:
+        return loc.GetInt().IsSetStrand() ? loc.GetInt().GetStrand() :
+            eNa_strand_unknown;
+    case CSeq_loc::e_Pnt:
+        return loc.GetPnt().IsSetStrand() ? loc.GetPnt().GetStrand() :
+            eNa_strand_unknown;
+    case CSeq_loc::e_Packed_pnt:
+        return loc.GetPacked_pnt().IsSetStrand() ?
+            loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
+    case CSeq_loc::e_Packed_int:
+    {
+        CTypeConstIterator<CSeq_interval> i = ConstBegin(loc);
+        ENa_strand strand = i->IsSetStrand() ? i->GetStrand() :
+            eNa_strand_unknown;
+        for (++i; i; ++i) {
+            ENa_strand cstrand = i->IsSetStrand() ? i->GetStrand() :
+                eNa_strand_unknown;
+            if (strand == eNa_strand_unknown  &&  cstrand == eNa_strand_plus) {
+                strand = eNa_strand_plus;
+            } else if (strand == eNa_strand_plus  &&
+                cstrand == eNa_strand_unknown) {
+                cstrand = eNa_strand_plus;
+            }
+            if (cstrand != strand) {
+                return eNa_strand_other;
+            }
+        }
+    }
+    default:
+        return eNa_strand_unknown;
+    }
+}
+
+ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
+{
+    if (!IsOneBioseq(loc, scope)) {
+        return eNa_strand_unknown;
+    }
+    
+    CTypeConstIterator<CSeq_loc> i = ConstBegin(loc);
+    ENa_strand strand = s_GetStrand(*i), cstrand;
+    for (++i; i; ++i) {
+        switch (i->Which()) {
+        case CSeq_loc::e_Mix:
+        case CSeq_loc::e_Equiv:
+            break;
+        default:
+            cstrand = s_GetStrand(*i);
+            if (strand == eNa_strand_unknown  &&  cstrand == eNa_strand_plus) {
+                strand = eNa_strand_plus;
+            } else if (strand == eNa_strand_plus  &&
+                cstrand == eNa_strand_unknown) {
+                cstrand = eNa_strand_plus;
+            }
+            if (cstrand != strand) {
+                return eNa_strand_other;
+            }            
+        }
+    }
+    return strand;
+}
+
 
 TSeqPos GetStart(const CSeq_loc& loc, CScope* scope) 
     THROWS((CNotUnique))
@@ -218,6 +293,17 @@ TSeqPos GetStart(const CSeq_loc& loc, CScope* scope)
     
     CSeq_loc::TRange rg = loc.GetTotalRange();
     return rg.GetFrom();
+}
+
+
+TSeqPos GetStop(const CSeq_loc& loc, CScope* scope) 
+    THROWS((CNotUnique))
+{
+    // Throw CNotUnique if loc does not represent one CBioseq
+    GetId(loc, scope);
+    
+    CSeq_loc::TRange rg = loc.GetTotalRange();
+    return rg.GetTo();
 }
 
 
@@ -1278,8 +1364,124 @@ ECompare Compare
 }
 
 
-END_SCOPE(sequence)
+void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
+{
+    // Return if no scope
+    if (!scope) {
+        return;
+    }
+    
+    // Get CBioseq represented by *id
+    CBioseq_Handle::TBioseqCore seq = 
+        scope->GetBioseqHandle(*id).GetBioseqCore();
 
+    // Get pointer to the best/worst id of *seq
+    const CSeq_id* tmp_id;
+    if (best) {
+        // tmp_id = seq->GetBestId();
+        tmp_id = FindBestChoice(seq->GetId(), CSeq_id::BestRank).GetPointer();
+    } else {
+        // tmp_id = seq->GetWorstId();
+        tmp_id = FindBestChoice(seq->GetId(), CSeq_id::WorstRank).GetPointer();
+    }
+    
+    // Change the contents of *id to that of *tmp_id
+    id->Reset();
+    SerialAssign(*id, *tmp_id);    
+}
+
+void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
+{
+    if (!scope) {
+        return;
+    }
+    
+    for (CTypeIterator<CSeq_id> id(Begin(*loc)); id; ++id) {
+        ChangeSeqId(&(*id), best, scope);
+    }
+}
+
+
+bool BadSeqLocSortOrder
+(const CBioseq&  seq, 
+ const CSeq_loc& loc, 
+ CScope*         scope) 
+{
+    ENa_strand strand = GetStrand(loc, scope);
+    if (strand == eNa_strand_unknown  ||  strand == eNa_strand_other) {
+        return false;
+    }
+           
+    if (SeqLocCheck(loc, scope) == eSeqLocCheck_warning) {
+        return false;
+    }
+    
+    CSeq_loc::TRange last_range;
+    bool first = true;
+    for (CSeq_loc_CI lit(loc); lit; ++lit) {
+        if (first) {
+            last_range = lit.GetRange();
+            first = false;
+            continue;
+        }
+        if (strand == eNa_strand_minus) {
+            if (last_range.GetTo() < lit.GetRange().GetTo()) {
+                return true;
+            }
+        } else {
+            if (last_range.GetFrom() > lit.GetRange().GetFrom()) {
+                return true;
+            }
+        }
+        last_range = lit.GetRange();
+    }    
+    return false;
+}
+
+
+ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
+{
+    bool first = true;
+    ESeqLocCheck rtn = eSeqLocCheck_ok;
+    
+    ENa_strand last_strand, curr_strand;
+    CTypeConstIterator<CSeq_loc> lit(ConstBegin(loc));
+    for (;lit; ++lit) {
+        curr_strand = GetStrand(*lit, scope);
+        if (!first) {
+            if (curr_strand != last_strand) {
+                ERR_POST("Mixed strand location" << eDiag_Warning);
+                rtn = eSeqLocCheck_warning;
+            }
+            first = false;
+        }
+        last_strand = curr_strand;
+        
+        switch (lit->Which()) {
+        case CSeq_loc::e_Int:
+            if (!IsValid(lit->GetInt(), scope)) {
+                rtn = eSeqLocCheck_error;
+            }
+            break;
+        case CSeq_loc::e_Pnt:
+            if (!IsValid(lit->GetPnt(), scope)) {
+                rtn = eSeqLocCheck_error;
+            }
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            if (!IsValid(lit->GetPacked_pnt(), scope)) {
+                rtn = eSeqLocCheck_error;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return rtn;
+}
+
+
+END_SCOPE(sequence)
 
 void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
 {
@@ -1683,10 +1885,11 @@ void CCdregion_translate::TranslateCdregion (string& prot,
                                 CGen_code_table::GetTransTable (1));
 
     // main loop through bases
-    for (int i = offset, j = 0, state = 0; i < bases.size (); j++) {
+    unsigned int i, j, state;
+    for (i = offset, j = 0, state = 0; i < bases.size (); j++) {
 
         // loop through one codon at a time
-        for (int k = 0; k < 3; i++, k++) {
+        for (unsigned int k = 0; k < 3; i++, k++) {
             char ch = bases [i];
             state = tbl.NextCodonState (state, ch);
         }
@@ -1745,6 +1948,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/10/03 16:33:55  clausen
+* Added functions needed by validate
+*
 * Revision 1.7  2002/09/13 15:30:43  ucko
 * Change resize(0) to erase() at Denis's suggestion.
 *
