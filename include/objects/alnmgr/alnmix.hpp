@@ -45,7 +45,11 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CScope;
 class CObjectManager;
 
-class CAlnMix
+class CAlnMixSegment;
+class CAlnMixSeq;
+class CAlnMixMatch;
+
+class CAlnMix : public CObject
 {
 public:
 
@@ -79,16 +83,119 @@ private:
     CAlnMix(const CAlnMix& value);
     CAlnMix& operator=(const CAlnMix& value);
 
-    void x_CreateScope              (void);
-    bool x_MergeInit                (void);
-    void x_Merge                    (void);
 
-    CRef<CObjectManager>                 m_ObjMgr;
-    CRef<CScope>                         m_Scope;
-    TConstDSs                            m_InputDSs;
-    CRef<CDense_seg>                     m_DS;
-    TMergeFlags                          m_MergeFlags;
+    void x_InitBlosum62Map     (void);
+    void x_CreateScope         (void);
+    void x_Merge               (void);
+    bool x_SecondRowFits       (const CAlnMixMatch * match) const;
+    void x_CreateRowsVector    (void);
+    void x_CreateSegmentsVector(void);
+    void x_CreateDenseg        (void);
+    int  x_CalculateScore      (const string& s1, const string& s2,
+                                bool s1_is_prot, bool s2_is_prot);
+
+
+    static bool x_CompareAlnSeqScores  (const CAlnMixSeq* aln_seq1,
+                                        const CAlnMixSeq* aln_seq2);
+    static bool x_CompareAlnMatchScores(const CAlnMixMatch* aln_match1,
+                                        const CAlnMixMatch* aln_match2);
+    static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
+                                        const CAlnMixSegment* aln_seg2);
+
+    typedef vector<CAlnMixSeq*>                    TSeqs;
+    typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
+    typedef vector<CRef<CAlnMixMatch> >            TMatches;
+    typedef vector<CAlnMixSegment*>                TSegments;
+
+    CRef<CObjectManager>        m_ObjMgr;
+    mutable CRef<CScope>        m_Scope;
+    TConstDSs                   m_InputDSs;
+    CRef<CDense_seg>            m_DS;
+    TMergeFlags                 m_MergeFlags;
+    TSeqs                       m_Seqs;
+    TMatches                    m_Matches;
+    TSegments                   m_Segments;
+    TSeqs                       m_Rows;
+    list<CRef<CAlnMixSeq> >     m_ExtraRows;
+    bool                        m_SingleRefseq;
+    map<char, map<char, int> >  m_Blosum62Map;
+    TBioseqHandleMap            m_BioseqHandles;
+
 };
+
+
+///////////////////////////////////////////////////////////
+///////////////////// Helper Classes //////////////////////
+///////////////////////////////////////////////////////////
+
+class CAlnMixSeq : public CObject
+{
+public:
+    CAlnMixSeq(void) 
+        : m_DS_Count(0),
+          m_Score(0),
+          m_Factor(1),
+          m_RefBy(0),
+          m_RefseqCandidate(false),
+          m_ExtraRow(0)
+    {};
+
+    typedef map<TSeqPos, CRef<CAlnMixSegment> > TStarts;
+
+    int                   m_DS_Count;
+    const CBioseq_Handle* m_BioseqHandle;
+    int                   m_Score;
+    bool                  m_IsAA;
+    int                   m_Factor;
+    bool                  m_PositiveStrand;
+    TStarts               m_Starts;
+    CAlnMixSeq *          m_RefBy;
+    bool                  m_RefseqCandidate;
+    CAlnMixSeq *          m_ExtraRow;
+    int                   m_RowIndex;
+    int                   m_SeqIndex;
+    TStarts::iterator     m_StartIt;
+
+    CSeqVector& GetSeqVector(void) {
+        if ( !m_SeqVector ) {
+            m_SeqVector = new CSeqVector
+                (m_BioseqHandle->GetSeqVector
+                 (CBioseq_Handle::eCoding_Iupac,
+                  CBioseq_Handle::eStrand_Plus));
+        }
+        return *m_SeqVector;
+    }
+private:
+    CRef<CSeqVector> m_SeqVector;
+};
+
+
+class CAlnMixSegment : public CObject
+{
+public:
+    typedef map<CAlnMixSeq*, CAlnMixSeq::TStarts::iterator> TStartIterators;
+        
+    TSeqPos         m_Len;
+    TStartIterators m_StartIts;
+    int             m_Index1;
+    int             m_Index2;
+};
+
+
+class CAlnMixMatch : public CObject
+{
+public:
+    CAlnMixMatch(void)
+        : m_Score(0), m_Start1(0), m_Start2(0),
+          m_Len(0), m_StrandsDiffer(false)
+    {};
+        
+    int           m_Score;
+    CAlnMixSeq    * m_AlnSeq1, * m_AlnSeq2;
+    TSeqPos       m_Start1, m_Start2, m_Len;
+    bool          m_StrandsDiffer;
+};
+
 
 ///////////////////////////////////////////////////////////
 ///////////////////// inline methods //////////////////////
@@ -102,21 +209,16 @@ CScope& CAlnMix::GetScope() const
 
 
 inline
-void CAlnMix::Add(const CDense_seg &ds)
-{
-    m_DS.Reset();
-    m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
-}
-
-
-inline
 const CDense_seg& CAlnMix::GetDenseg() const
 {
     if (!m_DS) {
-        /* throw */
+        NCBI_THROW(CAlnException, eMergeFailure,
+                   "CAlnMix::GetDenseg(): "
+                   "Dense_seg is not available until after Merge()");
     }
     return *m_DS;
 }
+
 
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
@@ -130,6 +232,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/12/18 03:47:05  todorov
+* created an algorithm for mixing alignments that share a single sequence.
+*
 * Revision 1.6  2002/11/08 19:43:33  grichenk
 * CConstRef<> constructor made explicit
 *
