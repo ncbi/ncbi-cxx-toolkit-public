@@ -342,11 +342,11 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             int dim    = denseg.GetDim();
             int numseg = denseg.GetNumseg();
             // claimed dimension may not be accurate :-/
+            if (numseg > (int)denseg.GetLens().size()) {
+                numseg = denseg.GetLens().size();
+            }
             if (dim * numseg > (int)denseg.GetStarts().size()) {
                 dim = denseg.GetStarts().size() / numseg;
-            }
-            if (dim > (int)denseg.GetLens().size()) {
-                dim = denseg.GetLens().size();
             }
             CDense_seg::TStarts::const_iterator it_start =
                 denseg.GetStarts().begin();
@@ -483,6 +483,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/07/18 16:58:23  grichenk
+* Fixed alignment coordinates
+*
 * Revision 1.22  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
