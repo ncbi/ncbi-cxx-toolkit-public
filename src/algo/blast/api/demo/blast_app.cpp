@@ -268,8 +268,9 @@ CBlastApplication::InitScope(void)
 void 
 CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
 {
+    m_ObjMgr = CObjectManager::GetInstance();
     CBlastDbDataLoader::RegisterInObjectManager(
-        *CObjectManager::GetInstance(),
+        *m_ObjMgr,
         dbname,
         db_is_na ? CBlastDbDataLoader::eNucleotide :
                    CBlastDbDataLoader::eProtein,
