@@ -719,11 +719,10 @@ string CNcbiApplication::FindProgramExecutablePath(
      const char* const* argv)
 {
     string ret_val;
-#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_OS_DARWIN)
-    // TO BE IMPLEMENTED!!
-    ret_val = argv[0];
-
-#elif defined (NCBI_OS_DARWIN)
+#if defined (NCBI_OS_DARWIN)  &&  defined (NCBI_COMPILER_METROWERKS)
+    // We don't want to impose a dependency on Carbon when building
+    // with GCC, since linking the framework *at all* makes remote
+    // execution impossible. :-/
     OSErr               err;
     ProcessSerialNumber psn;
     FSRef               fsRef;
@@ -738,6 +737,10 @@ string CNcbiApplication::FindProgramExecutablePath(
     }    
     ret_val = filePath;
     
+#elif defined(NCBI_OS_UNIX)
+    // TO BE IMPLEMENTED!!
+    ret_val = argv[0];
+
 #elif defined (NCBI_OS_MSWIN)
     // TO BE IMPLEMENTED ! ??
     ret_val = argv[0];
@@ -831,6 +834,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2003/06/18 20:41:23  ucko
+ * FindProgramExecutablePath: conditionalize the Darwin-specific code on
+ * Metrowerks, since no executable linked against Carbon can run remotely. :-/
+ *
  * Revision 1.59  2003/06/16 13:52:27  rsmith
  * Add ProgramDisplayName member. Program name becomes real executable full path. Handle Mac special arg handling better.
  *
