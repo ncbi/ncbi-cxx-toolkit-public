@@ -181,6 +181,19 @@ CClientPseudoTypeStrings::CClientPseudoTypeStrings
 }
 
 
+static string s_QualClassName(const CDataType* dt)
+{
+    _ASSERT(dt);
+    string result;
+    const CDataType* parent = dt->GetParentType();
+    if (parent) {
+        result = s_QualClassName(parent) + "::";
+    }
+    result += dt->ClassName();
+    return result;
+}
+
+
 void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
                                                  CNcbiOstream& /* getters */,
                                                  const string& /* methodPfx */,
@@ -208,7 +221,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     if ( !m_Source.m_RequestElement.empty() ) {
         code.HPPIncludes().insert(m_Source.m_RequestChoiceType->FileName());
         code.ClassPublic() << "    typedef "
-                           << m_Source.m_RequestChoiceType->ClassName()
+                           << s_QualClassName(m_Source.m_RequestChoiceType)
                            << " TRequestChoice;\n";
         code.ClassPrivate() << "    TRequest m_DefaultRequest;\n\n";
     } else {
@@ -218,7 +231,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         if ( !m_Source.m_ReplyElement.empty() ) {
             code.HPPIncludes().insert(m_Source.m_ReplyChoiceType->FileName());
             code.ClassPublic() << "    typedef "
-                               << m_Source.m_ReplyChoiceType->ClassName()
+                               << s_QualClassName(m_Source.m_ReplyChoiceType)
                                << " TReplyChoice;\n\n";
         } else {
             code.ClassPublic() << "    typedef TReply TReplyChoice;\n\n";
@@ -503,6 +516,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/03/25 21:57:13  ucko
+* Allow request and reply elements to have anonymous (internal) types.
+*
 * Revision 1.11  2004/02/09 15:10:55  ucko
 * Make sure to qualify CRef with ncbi:: if necessary.
 *
