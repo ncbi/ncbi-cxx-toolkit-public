@@ -122,9 +122,9 @@ fi
 x_features=""
 for f in $x_conf_dir/status/*.enabled; do
    f=`echo $f | sed 's|^.*/status/\(.*\).enabled$|\1|g'`
-   x_features=`echo "$x_features $f"`
+   x_features="$x_features$f "
 done
-x_features=`echo "$x_features" | sed 's|^ *||g'`
+
 
 #echo ----------------------------------------------------------------------
 #echo "Imported project  :" $x_import_prj
@@ -241,8 +241,8 @@ esac
 # Export some global vars
 top_srcdir="$x_root_dir"
 export top_srcdir
-features="$x_features"
-export features
+FEATURES="$x_features"
+export FEATURES
 
 # Add current, build and scripts directories to PATH
 PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
