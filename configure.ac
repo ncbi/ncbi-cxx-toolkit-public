@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.57 2002/04/11 21:30:30 ucko Exp $
+#  $Id: configure.ac,v 1.58 2002/04/16 22:26:54 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -290,7 +290,7 @@ ncbi_compiler_ver="0"
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-     2.95* | 3.* )
+     2.95* | 2.96* | 3.* )
        compiler="GCC"
        ncbi_compiler="GCC"
        ncbi_compiler_ver="$compiler_ver" ;;

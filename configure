@@ -2894,7 +2894,7 @@ ncbi_compiler_ver="0"
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-     2.95* | 3.* )
+     2.95* | 2.96* | 3.* )
        compiler="GCC"
        ncbi_compiler="GCC"
        ncbi_compiler_ver="$compiler_ver" ;;
