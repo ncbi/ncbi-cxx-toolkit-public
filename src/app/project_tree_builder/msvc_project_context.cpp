@@ -279,6 +279,11 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
+        if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires) == CMsvcSite::eLib) {
+                continue;
+            }
+        }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_IncludeDir.empty() ) {
@@ -307,6 +312,11 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
+        if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires) == CMsvcSite::eLib) {
+                continue;
+            }
+        }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_Libs.empty() ) {
@@ -345,6 +355,11 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
     list<string> dir_list;
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
+        if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires) == CMsvcSite::eLib) {
+                continue;
+            }
+        }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_LibPath.empty() ) {
@@ -454,6 +469,11 @@ const list<string> CMsvcPrjProjectContext::Defines(const SConfigInfo& cfg_info) 
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
         const string& lib_id = *p;
+        if (GetApp().GetSite().Is3PartyLibWithChoice(lib_id)) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(lib_id) == CMsvcSite::eLib) {
+                continue;
+            }
+        }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(lib_id, cfg_info, &lib_info);
         if ( !lib_info.m_LibDefines.empty() ) {
@@ -896,6 +916,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/11/03 19:37:58  gouriano
+ * Correctly process LibChoices settings
+ *
  * Revision 1.37  2004/10/12 13:27:36  gouriano
  * Added possibility to specify which headers to include into project
  *
