@@ -117,7 +117,7 @@ static bool AlignedToAllSlaves(unsigned int masterResidue, const AlignmentSet::A
 {
     AlignmentSet::AlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; ++a) {
-        if ((*a)->m_masterToSlave[masterResidue] == MasterSlaveAlignment::UNALIGNED)
+        if ((*a)->m_masterToSlave[masterResidue] == MasterSlaveAlignment::eUnaligned)
             return false;
     }
     return true;
@@ -394,6 +394,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/26 14:45:11  gorelenk
+* UNALIGNED->eUnaligned
+*
 * Revision 1.4  2004/05/26 14:30:16  thiessen
 * adjust handling of alingment data ; add row ordering
 *

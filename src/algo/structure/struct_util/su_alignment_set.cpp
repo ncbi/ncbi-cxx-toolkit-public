@@ -204,8 +204,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqA
         m_master(masterSequence), m_slave(NULL)
 {
     // resize alignment and block vector
-    m_masterToSlave.resize(m_master->Length(), UNALIGNED);
-    m_blockStructure.resize(m_master->Length(), UNALIGNED);
+    m_masterToSlave.resize(m_master->Length(), eUnaligned);
+    m_blockStructure.resize(m_master->Length(), eUnaligned);
 
     // find slave sequence for this alignment, and order (master or slave first)
     const CSeq_id& frontSeqId = seqAlign.GetSegs().IsDendiag() ?
@@ -327,6 +327,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/26 14:45:11  gorelenk
+* UNALIGNED->eUnaligned
+*
 * Revision 1.5  2004/05/26 01:58:05  ucko
 * Move #include <corelib/ncbi_limits.hpp> to su_alignment_set.hpp.
 *

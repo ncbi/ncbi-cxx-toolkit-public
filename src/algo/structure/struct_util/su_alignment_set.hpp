@@ -66,7 +66,7 @@ public:
     // Residues are numbered from zero. masterToSlave[n] = UNALIGNED means that master
     // residue n is unaligned.
     enum {
-        UNALIGNED = kMax_UInt
+        eUnaligned = kMax_UInt
     };
     typedef std::vector < unsigned int > ResidueVector;
     ResidueVector m_masterToSlave;
@@ -103,6 +103,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/26 14:45:11  gorelenk
+* UNALIGNED->eUnaligned
+*
 * Revision 1.4  2004/05/26 01:57:47  ucko
 * Move #include <corelib/ncbi_limits.hpp> from su_alignment_set.cpp for
 * kMax_UInt.
