@@ -1,8 +1,8 @@
 gui
 app/project_tree_builder
 -gui/core
--gui/core
 -gui/plugins
 -gui/gbench
 -gui/dialogs/registry
+-gui/graph/demo
 
