@@ -30,16 +30,22 @@
 */
 
 #include <corelib/ncbistd.hpp>
+
+#include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/seq_vector.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
+
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+
 #include <objects/seqloc/Seq_loc.hpp>
+
 #include <objects/util/weight.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -184,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2002/06/06 18:38:11  clausen
+* Added include for object_manager.hpp
+*
 * Revision 1.8  2002/05/10 14:54:12  ucko
 * Dropped test for negative start positions, which are now impossible.
 *
