@@ -90,7 +90,9 @@ using namespace sequence;
 
 
 CValidError_feat::CValidError_feat(CValidError_imp& imp) :
-    CValidError_base(imp)
+    CValidError_base(imp),
+    m_NumGenes(0),
+    m_NumGeneXrefs(0)
 {
 }
 
@@ -131,6 +133,11 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 
     if ( feat.CanGetCit() ) {
         ValidateFeatCit(feat.GetCit(), feat);
+    }
+
+    const CGene_ref* gene_xref = feat.GetGeneXref();
+    if ( gene_xref != 0  &&  !gene_xref->IsSuppressed() ) {
+        ++m_NumGeneXrefs;
     }
 }
 
@@ -565,6 +572,8 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 
 void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat)
 {
+    ++m_NumGenes;
+
     if ( (gene.CanGetLocus()      &&  gene.GetLocus().empty())   &&
          (gene.CanGetAllele()     &&  gene.GetAllele().empty())  &&
          (gene.CanGetDesc()       &&  gene.GetDesc().empty())    &&
@@ -2483,6 +2492,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/10/20 16:13:28  shomrat
+* count gene and gene xrefs
+*
 * Revision 1.39  2003/10/13 18:48:52  shomrat
 * added tests for TrnaCodonWrong and BadTrnaAA
 *
