@@ -57,8 +57,8 @@ CId1ReaderBase::~CId1ReaderBase()
 }
 
 
-bool CId1ReaderBase::LoadStringSeq_ids(CReaderRequestResult& result,
-                                       const string& seq_id)
+bool CId1ReaderBase::LoadStringSeq_ids(CReaderRequestResult& /*result*/,
+                                       const string& /*seq_id*/)
 {
     return false;
 }

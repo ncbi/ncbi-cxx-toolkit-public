@@ -52,7 +52,7 @@ public:
         {
         }
     
-    string GetDllName(const string&       interface_name,
+    string GetDllName(const string&       /*interface_name*/,
                       const string&       driver_name  = kEmptyStr,
                       const CVersionInfo& version      = CVersionInfo::kAny)
         const
@@ -61,7 +61,7 @@ public:
                                                           driver_name,
                                                           version);
         }
-    string GetDllNameMask(const string&       interface_name,
+    string GetDllNameMask(const string&       /*interface_name*/,
                           const string&       driver_name = kEmptyStr,
                           const CVersionInfo& version     = CVersionInfo::kAny)
         const

@@ -660,8 +660,8 @@ void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& result,
 }
 
 
-void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& result,
-                                          const TBlobId& blob_id,
+void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& /*result*/,
+                                          const TBlobId& /*blob_id*/,
                                           CLoadLockBlob& blob,
                                           TBlobState state) const
 {
