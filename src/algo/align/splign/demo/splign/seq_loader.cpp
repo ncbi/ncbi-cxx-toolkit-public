@@ -33,6 +33,7 @@
 #include "seq_loader.hpp"
 #include "splign_app_exception.hpp"
 
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -240,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/09 13:20:50  ucko
+ * +<memory> for auto_ptr
+ *
  * Revision 1.8  2003/12/03 19:45:33  kapustin
  * Keep min index value to support non-zero based index
  *

@@ -45,6 +45,7 @@
 #include <iterator>
 #include <iostream>
 
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -573,6 +574,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/12/09 13:21:47  ucko
+ * +<memory> for auto_ptr
+ *
  * Revision 1.11  2003/12/04 20:08:22  kapustin
  * Remove endgaps argument
  *
