@@ -61,7 +61,7 @@
       <tr><td><i><b>E</b>EnumTypeName</i></td><td>
 				enum EMyEnum { ..... };</td></tr>
       <tr><td><i><b>F</b>FunctionTypeName</i></td><td>
-				void (*FMyFunc)(void) { ..... };</td></tr>
+				typedef int (*FMyFunc)(void);</td></tr>
       <tr><td><i><b>P</b>PredicateName</i></td><td>
 				struct PMyPred { bool operator() (..... , .....); };</td></tr>
       <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td>
@@ -80,16 +80,18 @@
 				const int kMyConst = 123;</td></tr>
       <tr><td><i><b>e</b>EnumConstantName</i></td>
 			 <td>enum EMyEnum { <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_1 = 11, <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_2 = 22, <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_3 = 33 <br>
 				};</td></tr>
 
       <tr><td><i><b>f</b>FlagConstantName</i></td>
-			 <td>enum EMyFlagEnum { <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag1 = 0x1, <br>
-				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag2 = 0x2 <br>
-				};</td></tr>
+			 <td>enum EMyFlags { <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_1 = 0x1, <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_2 = 0x2 <br>
+				}; <br>
+				typedef int TMyFlags;  // holds a binary OR of "EMyFlags"
+			 </td></tr>
 
 		<a name="ref_NamingCVar">
       <tr><th colspan=2 align=left>
@@ -316,7 +318,9 @@ static long s_MyFunc3(void)
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-		  <td align=right>($Revision$)</td></tr>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+		<tr>
 	 </table>
   </body>
 </html>
