@@ -138,7 +138,8 @@ void CTestDiagApp::x_SetExpects(const string& expects )
         if (m_Expected[i]) {
             for (int num = 0;  num < 3;  ++num) 
                 for (unsigned int thr = 0;  thr < s_NumThreads;  ++thr)
-                    m_CaseExpected.insert( make_pair(TCase(i, num), thr) );
+                    m_CaseExpected.insert(
+                        TThreads::value_type(TCase(i, num), thr) );
         }
     }
 } 
@@ -338,6 +339,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/09/22 17:05:03  ucko
+ * Don't rely on automatic pair<> conversion.
+ *
  * Revision 1.1  2004/09/21 18:15:46  kononenk
  * Added tests for "Diagnostic Message Filtering"
  *
