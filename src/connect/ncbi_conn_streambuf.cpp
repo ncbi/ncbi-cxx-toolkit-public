@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
-    : m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
+    : m_Conn(0), m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
 {
     if ( !connector ) {
         ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");
@@ -60,6 +60,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
         return;
     }
+    assert(m_Conn != 0);
 
     CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
     CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
@@ -72,9 +73,11 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
 CConn_Streambuf::~CConn_Streambuf(void)
 {
-    sync();
-    if (CONN_Close(m_Conn) != eIO_Success) {
-        _TRACE("CConn_Streambuf::~CConn_Streambuf(): CONN_Close() failed");
+    if ( m_Conn ) {
+        sync();
+        if (CONN_Close(m_Conn) != eIO_Success) {
+            _TRACE("CConn_Streambuf::~CConn_Streambuf(): CONN_Close() failed");
+        }
     }
     delete[] m_Buf;
 }
@@ -82,6 +85,9 @@ CConn_Streambuf::~CConn_Streambuf(void)
 
 CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 {
+    if ( !m_Conn )
+        return CT_EOF;
+
     size_t n_written;
 
     if ( pbase() ) {
@@ -125,6 +131,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
 CT_INT_TYPE CConn_Streambuf::underflow(void)
 {
+    if ( !m_Conn )
+        return CT_EOF;
+
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
         _VERIFY(sync() == 0);
@@ -157,6 +166,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     static const STimeout s_ZeroTmo = {0, 0};
+
+    if ( !m_Conn )
+        return 0;
 
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
@@ -213,6 +225,9 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CConn_Streambuf::showmanyc(void)
 {
+    if ( !m_Conn )
+        return -1;
+
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
         _VERIFY(sync() == 0);
@@ -232,6 +247,9 @@ streamsize CConn_Streambuf::showmanyc(void)
 
 int CConn_Streambuf::sync(void)
 {
+    if ( !m_Conn )
+        return -1;
+
     do {
         if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
             return -1;
@@ -265,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/05/20 16:46:29  lavr
+ * Check for NULL connection in every streambuf method before proceding
+ *
  * Revision 6.28  2003/05/12 18:32:27  lavr
  * Modified not to throw exceptions from stream buffer; few more improvements
  *
