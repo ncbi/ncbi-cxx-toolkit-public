@@ -670,7 +670,13 @@ public:
             op.Remote(num_hits,
                       COptHandler_HitlistSize<BlOptTp>(),
                       cboh);
-            
+            /*
+              The code here is wrong.
+              It compiled before only because of conversion:
+              CRef<TCutoff> -> bool -> double.
+              Now, when CRef<> doesn't have conversion to bool
+              this code produces compilation errors.
+
             if (m_Evalue.Exists()) {
                 typedef objects::CBlast4_cutoff TCutoff;
                 CRef<TCutoff> cutoff(new TCutoff);
@@ -682,6 +688,7 @@ public:
                           COptHandler_EvalueThreshold<BlOptTp>(),
                           cboh);
             }
+            */
         }
     }
     
@@ -763,6 +770,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/01/12 15:07:44  vasilche
+ * Commented out incorrect code.
+ *
  * Revision 1.8  2004/11/30 22:08:30  ucko
  * Tweak OPT_HANDLER_SUPPORT to unconfuse GCC 2.95.
  *
