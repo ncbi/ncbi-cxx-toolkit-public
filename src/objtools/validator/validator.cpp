@@ -476,6 +476,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_MultipleCdsOnMrna",
     "SEQ_FEAT_BadConflictFlag",
     "SEQ_FEAT_ConflictFlagSet",
+    "SEQ_FEAT_LocusTagProblem",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1040,63 +1041,47 @@ same as the instantiated product Bioseq.",
 //  SEQ_FEAT_ConflictFlagSet
 "The coding region conflict flag is appropriately set, but this record should \
 be brought to the attention of the source database for possible correction.",
+//  SEQ_FEAT_LocusTagProblem
+"A gene locus_tag should be a single token, with no spaces.",
 
 /* SEQ_ALIGN */
 
 //  SEQ_ALIGN_SeqIdProblem
-"The seqence referenced by an alignment SeqID is not packaged in the \
-record.",
+"The seqence referenced by an alignment SeqID is not packaged in the record.",
 //  SEQ_ALIGN_StrandRev
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_DensegLenStart
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_StartMorethanBiolen
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_EndMorethanBiolen
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_LenMorethanBiolen
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SumLenStart
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsDimMismatch
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsNumsegMismatch
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsStartsMismatch
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsPresentMismatch
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsPresentStartsMismatch
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsPresentStrandsMismatch
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_FastaLike
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegmentGap
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_SegsInvalidDim
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_Segtype
-"Please contact the sequence database for further help with this \
-error.",
+"Please contact the sequence database for further help with this error.",
 //  SEQ_ALIGN_BlastAligns
-"BLAST alignments are not desired in records submitted to the sequence \
-database.",
+"BLAST alignments are not desired in records submitted to the sequence database.",
 
 /* SEQ_GRAPH */
 
@@ -1157,6 +1142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/01/16 20:08:35  shomrat
+* Added LocusTagProblem error
+*
 * Revision 1.37  2003/12/17 19:13:58  shomrat
 * Added SEQ_PKG_GraphPackagingProblem
 *

@@ -260,6 +260,7 @@ enum EErrType {
     eErr_SEQ_FEAT_MultipleCdsOnMrna,
     eErr_SEQ_FEAT_BadConflictFlag,
     eErr_SEQ_FEAT_ConflictFlagSet,
+    eErr_SEQ_FEAT_LocusTagProblem,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -917,6 +918,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/01/16 20:08:14  shomrat
+* Added LocusTagProblem error
+*
 * Revision 1.54  2004/01/12 20:24:42  shomrat
 * Added ValidateCitSub
 *
