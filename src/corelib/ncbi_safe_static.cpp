@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/03/30 23:10:12  grichenk
+ * Protected from double initializations and deadlocks in multithread
+ * environment
+ *
  * Revision 1.1  2001/03/26 20:38:35  vakatov
  * Initial revision (by A.Grichenko)
  *
@@ -41,11 +45,59 @@
 
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
 #include <assert.h>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CSafeStaticPtr_Base::
+//
+
+// Protective mutex and the owner thread ID to avoid
+// multiple initializations and deadlocks
+static CFastMutex      s_Mutex;
+static TThreadSystemID s_MutexOwner;
+// true if s_MutexOwner has been set (while the mutex is locked)
+static bool            s_MutexLocked;
+
+
+bool CSafeStaticPtr_Base::Init_Lock(bool* mutex_locked)
+{
+    // Check if already locked by the same thread to avoid deadlock
+    // in case of nested calls to Get() by T constructor
+    // Lock only if unlocked or locked by another thread
+    // to prevent initialization by another thread
+    TThreadSystemID id;
+    CThread::GetSystemID(&id);
+    if (!s_MutexLocked  ||  s_MutexOwner != id) {
+        s_Mutex.Lock();
+        s_MutexLocked = true;
+        *mutex_locked = true;
+        s_MutexOwner = id;
+    }
+    return m_Ptr == 0;
+}
+
+
+void CSafeStaticPtr_Base::Init_Unlock(bool mutex_locked)
+{
+    // Unlock the mutex only if it was locked by the same call to Get()
+    if ( mutex_locked ) {
+        s_MutexLocked = false;
+        s_Mutex.Unlock();
+    }
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CSafeStaticGuard::
+//
 
 // Cleanup stack to keep all on-demand variables
 CSafeStaticGuard::TStack* CSafeStaticGuard::sm_Stack;
@@ -84,7 +136,7 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
 }
 
 
-// Global guard - to prevent premature destruction by i.g. GNU compiler
+// Global guard - to prevent premature destruction by e.g. GNU compiler
 // (it destroys all local static variables before any global one)
 static CSafeStaticGuard sg_CleanupGuard;
 

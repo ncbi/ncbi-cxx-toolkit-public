@@ -41,6 +41,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/03/30 23:10:10  grichenk
+ * Protected from double initializations and deadlocks in multithread
+ * environment
+ *
  * Revision 1.2  2001/03/26 21:01:41  vakatov
  * CSafeStaticPtr, CSafeStaticRef -- added "operator *"
  *
@@ -81,11 +85,18 @@ public:
     {}
 
 protected:
-    void*         m_Ptr;          // Pointer to the data
+    void* m_Ptr;          // Pointer to the data
+
+    // Prepare to the object initialization: check current thread, lock
+    // the mutex and store its state to "mutex_locked", return "true"
+    // if the object must be created or "false" if already created.
+    bool Init_Lock(bool* mutex_locked);
+    // Finalize object initialization: release the mutex if "mutex_locked"
+    void Init_Unlock(bool mutex_locked);
 
 private:
-    FSelfCleanup  m_SelfCleanup;  // Derived class' cleanup function
-    FUserCleanup  m_UserCleanup;  // User-provided  cleanup function
+    FSelfCleanup m_SelfCleanup;  // Derived class' cleanup function
+    FUserCleanup m_UserCleanup;  // User-provided  cleanup function
 
     // To be called by CSafeStaticGuard on the program termination
     friend class CSafeStaticGuard;
@@ -122,8 +133,7 @@ public:
     T& Get(void)
     {
         if ( !m_Ptr ) {
-            m_Ptr = new T;
-            CSafeStaticGuard::Get()->Register(this);
+            Init();
         }
         return *static_cast<T*> (m_Ptr);
     }
@@ -132,10 +142,28 @@ public:
     T& operator *  (void) { return  Get(); }
 
 private:
+    // Initialize the object
+    void Init(void)
+    {
+        bool mutex_locked = false;
+        if ( Init_Lock(&mutex_locked) ) {
+            // Create the object and register for cleanup
+            try {
+                m_Ptr = new T;
+                CSafeStaticGuard::Get()->Register(this);
+            }
+            catch (...) {
+                Init_Unlock(mutex_locked);
+                throw;
+            }
+        }
+        Init_Unlock(mutex_locked);
+    }
+
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
     {
-        delete static_cast<T*>(*ptr);
+        delete static_cast<T*> (*ptr);
         *ptr = 0;
     }
 };
@@ -164,17 +192,33 @@ public:
     // Create the variable if not created yet, return the reference
     T& Get(void)
     {
-        CRef<T>* obj = static_cast<CRef<T>*> (m_Ptr);
-        if ( !obj ) {
-            m_Ptr = obj = new CRef<T>;
-            obj->Reset(new T);
-            CSafeStaticGuard::Get()->Register(this);
+        if ( !m_Ptr ) {
+            Init();
         }
-        return obj->GetObject();
+        return static_cast<CRef<T>*> (m_Ptr)->GetObject();
     }
 
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
+
+private:
+    // Initialize the object and the reference
+    void Init(void)
+    {
+        bool mutex_locked = false;
+        if ( Init_Lock(&mutex_locked) ) {
+            // Create the object and register for cleanup
+            try {
+                m_Ptr = new CRef<T> (new T);
+                CSafeStaticGuard::Get()->Register(this);
+            }
+            catch (...) {
+                Init_Unlock(mutex_locked);
+                throw;
+            }
+        }
+        Init_Unlock(mutex_locked);
+    }
 
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
