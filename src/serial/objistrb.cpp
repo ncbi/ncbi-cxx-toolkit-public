@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/16 13:24:54  vakatov
+* tiny typo fixed
+*
 * Revision 1.7  1999/06/15 16:19:49  vasilche
 * Added ASN.1 object output stream.
 *
@@ -465,7 +468,7 @@ void CObjectIStreamBinary::ReadStd(string& data)
 {
     switch ( ReadByte() ) {
     case CObjectStreamBinaryDefs::eNull:
-        data.clear();
+        data.erase();
         break;
     case CObjectStreamBinaryDefs::eStd_string:
         data = ReadString();
