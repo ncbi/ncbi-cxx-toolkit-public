@@ -133,7 +133,7 @@ class CInterfaceVersion
 /// @sa CInterfaceVersion
 
 #define NCBI_DECLARE_INTERFACE_VERSION(iface, iface_name, major, minor, patch_level) \
-EMPTY_TEMPLATE \
+template<> \
 class CInterfaceVersion<iface> \
 { \
 public: \
@@ -148,10 +148,10 @@ public: \
 /// Macro to contruct CVersionInfo class using interface name
 /// (relies on CInterfaceVersion class)
 /// @sa CVersionInfo
-#define NCBI_INTERFACE_VERSION(iface) CVersionInfo( \
-        ncbi::CInterfaceVersion<iface>::eMajor, \
-        ncbi::CInterfaceVersion<iface>::eMinor, \
-        ncbi::CInterfaceVersion<iface>::ePatchLevel)
+#define NCBI_INTERFACE_VERSION(iface) \
+CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
+             ncbi::CInterfaceVersion<iface>::eMinor, \
+             ncbi::CInterfaceVersion<iface>::ePatchLevel)
 
 
 
@@ -197,13 +197,12 @@ public:
     ///  the calling code's point of view.
     /// @return
     ///  NULL on any error (not found entry point, version mismatch, etc.)
-    virtual
-    TClass* CreateInstance(const string&  driver  = kEmptyStr,
-                           CVersionInfo   version = 
-                                          NCBI_INTERFACE_VERSION(TClass))
+    virtual TClass* CreateInstance
+    (const string&  driver  = kEmptyStr,
+     CVersionInfo   version = NCBI_INTERFACE_VERSION(TClass))
         const = 0;
 
-    // Versions of the interface exported by the factory
+    /// Versions of the interface exported by the factory
     virtual void GetDriverVersions(TDriverList& driver_list) const = 0;
 
     virtual ~IClassFactory(void) {}
@@ -237,9 +236,9 @@ public:
     /// @return
     ///  Never returns NULL -- always throw exception on error.
     /// @sa GetFactory()
-    TClass* CreateInstance(const string&       driver  = kEmptyStr,
-                           const CVersionInfo& version = 
-                                   NCBI_INTERFACE_VERSION(TClass))
+    TClass* CreateInstance
+    (const string&       driver  = kEmptyStr,
+     const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass))
     {
         TClassFactory* factory = GetFactory(driver, version);
         return factory->CreateInstance(driver, version);
@@ -259,19 +258,19 @@ public:
     ///  with the requested version.
     /// @return
     ///  Never return NULL -- always throw exception on error.
-    TClassFactory* GetFactory(const string&       driver  = kEmptyStr,
-                              const CVersionInfo& version = 
-                                              NCBI_INTERFACE_VERSION(TClass));
+    TClassFactory* GetFactory
+    (const string&       driver  = kEmptyStr,
+     const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass));
 
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
     /// @sa FNCBI_EntryPoint
     struct SDriverInfo {
-        string         name;        //!< Driver name
-        CVersionInfo   version;     //!< Driver version
+        string         name;        ///< Driver name
+        CVersionInfo   version;     ///< Driver version
         // It's the plugin manager's (and not SDriverInfo) responsibility to
         // keep and then destroy class factories.
-        TClassFactory* factory;     //!< Class factory (can be NULL)
+        TClassFactory* factory;     ///< Class factory (can be NULL)
 
         SDriverInfo(const string&       driver_name,
                     const CVersionInfo& driver_version)
@@ -343,18 +342,21 @@ public:
     ///   DLL resolver. Plugin manager takes ownership of the resolver.
     void AddResolver(CPluginManager_DllResolver* resolver);
 
-    /// 
+    /// Add path for the DLL lookup (for all resolvers)
     void AddDllSearchPath(const string& path);
 
     /// Scan DLLs for specified driver using attached resolvers
-    void Resolve(const string&       driver,
-                 const CVersionInfo& version);
+    void Resolve(const string&       driver  = kEmptyStr,
+                 const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass));
 
     // ctors
     CPluginManager(void) {}
     virtual ~CPluginManager();
 
 protected:
+    TClassFactory* FindClassFactory(const string&  driver,
+                                    const CVersionInfo& version);
+
     /// Protective mutex to syncronize the access to the plugin manager
     /// from different threads
     CFastMutex m_Mutex;
@@ -374,6 +376,7 @@ private:
 };
 
 
+
 template <class TClass>
 CPluginManager<TClass>::TClassFactory* 
 CPluginManager<TClass>::GetFactory(const string&       driver,
@@ -381,21 +384,22 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
 {
     CFastMutexGuard guard(m_Mutex);
 
-    typename 
-        set<TClassFactory*>::const_iterator it = FindVersion(m_Factories, version);
-    if (it != m_Factories.end()) {
-        return *it1;
+    TClassFactory* cf = 0;
+
+    // Search among already registered factories
+    cf = FindClassFactory(driver, version);
+    if (cf) {
+        return cf;
     }
 
-    // Trying to resolve the driver
+    // Trying to resolve the driver's factory
     Resolve(driver, version);
 
     // Re-scanning factories...
-    it = FindVersion(m_Factories, version);
-    if (it != m_Factories.end()) {
-        return *it1;
+    cf = FindClassFactory(driver, version);
+    if (cf) {
+        return cf;
     }
-
 
     NCBI_THROW(CPluginManagerException, eResolveFailure, 
                "Cannot resolve class factory");
@@ -404,14 +408,56 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
 }
 
 
+template <class TClass>
+CPluginManager<TClass>::TClassFactory* 
+CPluginManager<TClass>::FindClassFactory(const string&  driver,
+                                         const CVersionInfo& version)
+{
+    TClassFactory* best_factory = 0;
+    int best_major = -1;
+    int best_minor = -1;
+    int best_patch_level = -1;
+
+    NON_CONST_ITERATE(set<TClassFactory*>, it, m_Factories) {
+        TClassFactory* cf = *it;
+
+        typename IClassFactory<TClass>::TDriverList drv_list;
+
+        if (!cf)
+            continue;
+
+        cf->GetDriverVersions(drv_list);
+
+        NON_CONST_ITERATE(typename IClassFactory<TClass>::TDriverList, 
+                          it2, 
+                          drv_list) {
+             typename IClassFactory<TClass>::SDriverInfo& drv_info = *it2;
+             if (!driver.empty()) {
+                if (driver != drv_info.name) {
+                    continue;
+                }
+             }
+             const CVersionInfo& vinfo = drv_info.version;
+             if (IsBetterVersion(version, vinfo, 
+                                 best_major, best_minor, best_patch_level))
+             {
+                best_factory = cf;
+             }
+        }
+    }
+    
+    return best_factory;
+}
+
 
 template <class TClass>
 void CPluginManager<TClass>::RegisterFactory(TClassFactory& factory)
 {
     CFastMutexGuard guard(m_Mutex);
 
-    m_Factories->insert(&factory);
+    m_Factories.insert(&factory);
 }
+
 
 template <class TClass>
 bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
@@ -420,22 +466,28 @@ bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 
     typename set<TClassFactory*>::iterator it = m_Factories.find(&factory);
     if (it != m_Factories.end()) {
-        TClassFactory* f = *it;
+        delete *it;
         m_Factories.erase(it);
-        delete f;
     }
 }
 
 
 template <class TClass>
-void CPluginManager<TClass>::RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point)
+void CPluginManager<TClass>::RegisterWithEntryPoint
+(FNCBI_EntryPoint plugin_entry_point)
 {
     TDriverInfoList drv_list;
-    plugin_entry_point(&drv_list, eGetFactoryInfo);
+    plugin_entry_point(drv_list, eGetFactoryInfo);
 
-    if (!drv_list.empty()) {
-        plugin_entry_point(&drv_list, eInstantiateFactory);
+    if ( !drv_list.empty() ) {
+        plugin_entry_point(drv_list, eInstantiateFactory);
 
+        NON_CONST_ITERATE(typename TDriverInfoList, it, drv_list) {
+            if (it->factory) {
+                RegisterFactory(*(it->factory));
+            }
+        }
+/*
         typename TDriverInfoList::iterator it = drv_list.begin();
         typename TDriverInfoList::iterator it_end = drv_list.end();
         for (; it != it_end; ++it) {
@@ -443,8 +495,11 @@ void CPluginManager<TClass>::RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entr
                 RegisterFactory(*(it->factory));
             }
         }
+*/
     }
+
 }
+
 
 
 template <class TClass>
@@ -467,15 +522,16 @@ void CPluginManager<TClass>::Resolve(const string&       driver,
                                      const CVersionInfo& version)
 {
     vector<CDllResolver*> resolvers;
-    // run all resolvers to search for driver
-    ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
-        CDllResolver& dll_resolver = it->Resolve(m_DllSearchPaths);
-        resolvers.push_back(&dll_resover);
-    }
-    // Now choose the DLL entry point to register the class factory
 
-    NON_CONST_ITERATE(CDllResolver*>, it, resolvers) {
-        CDllResolver::TEntries& entry_points = it->GetResolvedEntries();
+    // Run all resolvers to search for driver
+    ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
+        CDllResolver& dll_resolver = (*it)->Resolve(m_DllSearchPaths);
+        resolvers.push_back(&dll_resolver);
+    }
+
+    // Now choose the DLL entry point to register the class factory
+    NON_CONST_ITERATE(vector<CDllResolver*>, it, resolvers) {
+        CDllResolver::TEntries& entry_points = (*it)->GetResolvedEntries();
 
         NON_CONST_ITERATE(CDllResolver::TEntries, ite, entry_points) {
             CDllResolver::SResolvedEntry& entry = *ite;
@@ -530,7 +586,8 @@ CPluginManager<TClass>::~CPluginManager()
 ///   delegates the functionality to 
 ///               CHostEntryPointImpl<>::NCBI_EntryPointImpl()
 
-template<class TClassFactory> struct CHostEntryPointImpl
+template<class TClassFactory> 
+struct CHostEntryPointImpl
 {
     typedef typename TClassFactory::TInterface                TInterface;
     typedef CPluginManager<TInterface>                        TPluginManager;
@@ -628,12 +685,12 @@ public:
     ///   Patch level implemented by the driver. 
     ///   By default corresponds to interface patch level.
     CSimpleClassFactoryImpl(const string& driver_name, int patch_level = -1) 
-        : m_DriverVersionInfo()
+        : m_DriverVersionInfo
         (ncbi::CInterfaceVersion<TIClass>::eMajor, 
          ncbi::CInterfaceVersion<TIClass>::eMinor, 
          patch_level >= 0 ?
-         patch_level : ncbi::CInterfaceVersion<TIClass>::ePatchLevel),
-      m_DriverName(driver_name)
+            patch_level : ncbi::CInterfaceVersion<TIClass>::ePatchLevel),
+          m_DriverName(driver_name)
     {
         _ASSERT(!m_DriverName.empty());
     }
@@ -672,6 +729,7 @@ protected:
 
 
 
+
 /// Service class for DLLs resolution.
 /// 
 /// Class is used by CPluginManager to scan directories for DLLs, 
@@ -695,8 +753,8 @@ public:
     ///   Interface version
     CPluginManager_DllResolver
     (const string&       interface_name,
-     const string&       driver_name,
-     const CVersionInfo& version = CVersionInfo::kAny);
+     const string&       driver_name = kEmptyStr,
+     const CVersionInfo& version     = CVersionInfo::kAny);
 
     //
     virtual ~CPluginManager_DllResolver(void);
@@ -704,7 +762,7 @@ public:
     /// Search for plugin DLLs, resolve entry points.
     ///
     /// @param paths
-    ///    List of directories to scan for DLLs
+    ///   List of directories to scan for DLLs
     /// @return
     ///   Reference on DLL resolver holding all entry points
     CDllResolver& Resolve(const vector<string>& paths);
@@ -712,10 +770,10 @@ public:
     /// Search for plugin DLLs, resolve entry points.
     ///
     /// @param paths
-    ///    Path to scan for DLLs
-    /// @return Reference on DLL resolver holding all entry points
+    ///   Path to scan for DLLs
+    /// @return
+    ///   Reference on DLL resolver holding all entry points
     CDllResolver& Resolve(const string& path);
-
 
     /// Return dll file name. Name does not include path.
     ///
@@ -727,9 +785,9 @@ public:
     /// prefixes and suffixes.
     ///
     /// @param driver_name
-    ///    driver name ( "id1", "lds", etc)
+    ///    Driver name ("id1", "lds", etc)
     /// @param version
-    ///    version of the driver
+    ///    Requested version of the driver
     virtual
     string GetDllName(const string&       interface_name,
                       const string&       driver_name  = kEmptyStr,
@@ -743,7 +801,6 @@ public:
     /// Example:
     ///    "ncbi_plugin_objmgr_*.dll"
     ///    "ncbi_plugin_dbapi_ftds.so.*"
-    /// 
     virtual
     string GetDllNameMask(const string&       interface_name,
                           const string&       driver_name = kEmptyStr,
@@ -775,17 +832,11 @@ public:
     virtual void SetDllNamePrefix(const string& prefix);
 
     /// Return name of the driver
-    const string& GetDriverName() const 
-    {
-        return m_DriverName;
-    }
-
+    const string& GetDriverName() const { return m_DriverName; }
 
 protected:
-
     CDllResolver* GetCreateDllResolver();
     CDllResolver* CreateDllResolver() const;
-
 
 protected:
     string          m_DllNamePrefix;
@@ -807,6 +858,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/11/18 15:26:29  kuznets
+ * Numerous fixes here and there as a result of testing and debugging.
+ *
  * Revision 1.12  2003/11/17 17:04:11  kuznets
  * Cosmetic fixes
  *
