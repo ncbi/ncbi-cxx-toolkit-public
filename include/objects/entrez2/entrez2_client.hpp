@@ -69,9 +69,22 @@ public:
     void GetNeighbors(int query_uid, const string& db,
                       const string& link_type,
                       vector<int>& neighbor_uids);
+
+    /// This form just yields a vector of UIDs, taking a vector of UIDs
+    void GetNeighbors(const vector<int>& query_uids,
+                      const string& db,
+                      const string& link_type,
+                      vector<int>& neighbor_uids);
+
     /// This form returns the entire CEntrez2_link_set object,
     /// which includes scores.
     CRef<CEntrez2_link_set> GetNeighbors(int query_uid,
+                                         const string& db,
+                                         const string& link_type);
+
+    /// This form returns the entire CEntrez2_link_set object,
+    /// which includes scores.
+    CRef<CEntrez2_link_set> GetNeighbors(const vector<int>& query_uids,
                                          const string& db,
                                          const string& link_type);
 
@@ -124,6 +137,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/11 17:25:05  dicuccio
+* Added API to retrieve neighbors for multiple UIDs at once
+*
 * Revision 1.5  2004/01/20 05:36:56  jcherry
 * Added missing '&' on argument to FilterIds (pass by reference)
 *
