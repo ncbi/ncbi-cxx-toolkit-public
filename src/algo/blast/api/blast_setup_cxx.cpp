@@ -250,11 +250,11 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
 
             // Get both strands of the original nucleotide sequence with
             // sentinels
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, 
                             eNa_strand_both, true));
 
-            AutoPtr<Uint1,ArrayDeleter<Uint1> > gc = 
+            AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
                 FindGeneticCode(options.GetQueryGeneticCode());
             int na_length = sequence::GetLength(*itr->seqloc, itr->scope);
 
@@ -282,7 +282,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
                 strand_opt == eNa_strand_plus) {
                 strand = strand_opt;
             }
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
             int index = (strand == eNa_strand_minus) ? 
                 ctx_index + 1 : ctx_index;
@@ -291,7 +291,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
 
         } else {
 
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, 
                             eNa_strand_unknown, true));
             int offset = qinfo->context_offsets[ctx_index];
@@ -336,27 +336,25 @@ SetupSubjects(const TSeqLocVector& subjects,
 
     // TODO: Should strand selection on the subject sequences be allowed?
     //ENa_strand strand = options->GetStrandOption(); 
-    ENa_strand strand = eNa_strand_unknown;
     Int8 dblength = 0;
 
     ITERATE(TSeqLocVector, itr, subjects) {
         BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
             calloc(1, sizeof(BLAST_SequenceBlk));
 
-        pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf( 
+        ENa_strand strand = sequence::GetStrand(*itr->seqloc, itr->scope);
+        pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf( 
             GetSequence(*itr->seqloc, encoding, itr->scope, strand, false));
 
         if (subj_is_na) {
             subj->sequence = seqbuf.first.release();
             subj->sequence_allocated = TRUE;
 
-            encoding = (prog == eBlastn) ? 
-                BLASTNA_ENCODING : NCBI4NA_ENCODING;
-            bool use_sentinels = (prog == eBlastn) ?
-                true : false;
+            encoding = (prog == eBlastn) ? BLASTNA_ENCODING : NCBI4NA_ENCODING;
+            bool use_sentinels = (prog == eBlastn) ?  true : false;
 
             // Retrieve the sequence with ambiguities
-            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> sbuf2(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> sbuf2(
                      GetSequence(*itr->seqloc, encoding, itr->scope, strand, 
                                  use_sentinels));
             subj->sequence_start = sbuf2.first.release();
@@ -410,7 +408,7 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
    
 }
 
-pair<AutoPtr<Uint1, CDeleter<Uint1> >, int>
+pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, 
             ENa_strand strand, bool add_nucl_sentinel)
 {
@@ -500,7 +498,8 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return make_pair((AutoPtr<Uint1,CDeleter<Uint1> >)(buf), (int)buflen);
+    AutoPtr<Uint1, CDeleter<Uint1> > tmp(buf);
+    return make_pair(tmp, buflen);
 }
 
 #if 0
@@ -692,6 +691,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/09/10 04:27:43  camacho
+* 1) Minor change to return type of GetSequence
+* 2) Fix to previous revision
+*
 * Revision 1.24  2003/09/09 22:15:02  dondosha
 * Added cast in return statement in GetSequence method, fixing compiler error
 *
