@@ -40,6 +40,15 @@ RunTest()
 }
 
 
+# Check existence of the "dbapi_driver_check"
+dbapi_driver_check
+if test $? -ne 99 ; then
+  echo "The DBAPI driver existence check application not found."
+  echo
+  exit 1
+fi
+
+
 # Loop through all combinations of {driver, server, test}
 for driver in $driver_list ; do
   cat <<EOF
