@@ -214,8 +214,6 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
 
         ctx_index += nframes;
     }
-
-    (*qinfo)->total_length = context_offsets[ctx_index];
 }
 
 Uint1
@@ -284,7 +282,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     // Determine sequence encoding
     Uint1 encoding = GetQueryEncoding(prog);
 
-    int buflen = qinfo->total_length;
+    int buflen = qinfo->context_offsets[qinfo->last_context+1] + 1;
     Uint1* buf = (Uint1*) calloc((buflen+1), sizeof(Uint1));
     if ( !buf ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
@@ -844,6 +842,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2003/11/24 17:12:44  dondosha
+* Query info structure does not have a total_length member any more; use last context offset
+*
 * Revision 1.48  2003/11/06 21:25:37  camacho
 * Revert previous change, add assertions
 *
