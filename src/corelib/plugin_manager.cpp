@@ -43,12 +43,55 @@ BEGIN_NCBI_SCOPE
 
 CPluginManager_DllResolver::CPluginManager_DllResolver(void)
  : m_DllNamePrefix("ncbi_plugin"),
-   m_EntryPointPrefix("NCBI_EntryPoint")
+   m_EntryPointPrefix("NCBI_EntryPoint"),
+   m_Version(CVersionInfo::kAny),
+   m_DllResolver(0)
+{}
+
+CPluginManager_DllResolver::CPluginManager_DllResolver(
+                    const string& interface_name,
+                    const string& plugin_name,
+                    const string& driver_name,
+                    const CVersionInfo& version)
+ : m_DllNamePrefix("ncbi_plugin"),
+   m_EntryPointPrefix("NCBI_EntryPoint"),
+   m_InterfaceName(interface_name),
+   m_PluginFamilyName(plugin_name),
+   m_DriverName(driver_name),
+   m_Version(version),
+   m_DllResolver(0)
 {
 }
 
+
 CPluginManager_DllResolver::~CPluginManager_DllResolver(void)
-{}
+{
+    delete m_DllResolver;
+}
+
+CDllResolver& CPluginManager_DllResolver::Resolve(const vector<string>& paths)
+{
+    CDllResolver* resolver = GetCreateDllResolver();
+    _ASSERT(resolver);
+
+    // Generate DLL masks
+
+    string mask = GetDllNameMask(m_PluginFamilyName, m_DriverName, m_Version);
+    vector<string> masks;
+    masks.push_back(mask);
+
+    resolver->FindCandidates(paths, masks);
+    return *resolver;
+}
+
+CDllResolver& CPluginManager_DllResolver::Resolve(const string& path)
+{
+    _ASSERT(!path.empty());
+    vector<string> paths;
+    paths.push_back(path);
+    return Resolve(paths);
+}
+
 
 string 
 CPluginManager_DllResolver::GetDllName(
@@ -190,5 +233,46 @@ void CPluginManager_DllResolver::SetDllNamePrefix(const string& prefix)
     m_DllNamePrefix = prefix; 
 }
 
+CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
+{
+   vector<string> entry_point_names;
+
+    // Generate all variants of entry point names
+    // some of them can duplicate, and that's legal. Resolver stops trying
+    // after the first success.
+
+    string entry_name1 = GetEntryPointName(m_InterfaceName, m_DriverName);
+    string entry_name2 = GetEntryPointName(kEmptyStr, kEmptyStr);
+    string entry_name3 = GetEntryPointName(m_InterfaceName, kEmptyStr);
+    string entry_name4 = GetEntryPointName(kEmptyStr, m_DriverName);
+
+    entry_point_names.push_back(entry_name1);
+    entry_point_names.push_back(entry_name2);
+    entry_point_names.push_back(entry_name3);
+    entry_point_names.push_back(entry_name4);
+
+    CDllResolver* resolver = new CDllResolver(entry_point_names);
+
+    return resolver;
+ }
+
+CDllResolver* CPluginManager_DllResolver::GetCreateDllResolver()
+{
+    if (m_DllResolver == 0) {
+        m_DllResolver = CreateDllResolver();
+    }
+    return m_DllResolver;
+}
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2003/11/12 18:57:21  kuznets
+ * Implemented dll resolution.
+ *
+ *
+ * ===========================================================================
+ */
+
