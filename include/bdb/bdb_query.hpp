@@ -235,7 +235,7 @@ protected:
 private:
     CBDB_FileScanner(const CBDB_FileScanner&);
     CBDB_FileScanner& operator=(const CBDB_FileScanner&);
-private:
+protected:
     CBDB_File&   m_File;   ///< Searched BDB file
 };
 
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/10 14:22:55  kuznets
+ * CBDB_FileScanner relaxed private to protected for m_File member
+ *
  * Revision 1.6  2004/03/01 14:01:59  kuznets
  * Add non const GetValue() accessor to query node
  *
