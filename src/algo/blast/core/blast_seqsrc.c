@@ -51,22 +51,17 @@ struct BlastSeqSrc {
                                          the set */
     GetInt8FnPtr      GetTotLen;      /**< Get tot length of all seqs in set */
     GetStrFnPtr       GetName;        /**< Get the name of the database */
-    GetStrFnPtr       GetDefinition;  /**< Get the database definition */
-    GetStrFnPtr       GetDate;        /**< Get the date of the database */
     GetBoolFnPtr      GetIsProt;      /**< Find if database is a protein or 
                                          nucleotide */
 
    /* Functions to get information about individual sequences */
     GetSeqBlkFnPtr    GetSequence;    /**< Retrieve individual sequence */
-    GetStrFnPtr       GetSeqIdStr;    /**< Retrieve sequence identifier 
-                                         string */
-    GetGenDataFnPtr   GetSeqId;       /**< Retrieve sequence identifier */
     GetInt4FnPtr      GetSeqLen;      /**< Retrieve given sequence length */
 
    /* Functions to iterate over sequences in the database */
     GetNextChunkFnPtr GetNextChunk;   /**< Get next chunk of seq indices */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
-    GetGenDataFnPtr   GetError;       /**< Gets a saved error message, if
+    GetErrorFnPtr       GetError;       /**< Gets a saved error message, if
                                          supported. */
     GetSeqBlkFnPtr    RetSequence;    /**< Deallocate individual sequence 
                                          buffer if necessary. */
@@ -96,39 +91,39 @@ BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
     return retval;
 }
 
-BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp)
+BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src)
 {
     BlastSeqSrcDestructor destructor_fnptr = NULL;
 
-    if (!bssp) {
+    if (!seq_src) {
         return (BlastSeqSrc*) NULL;
     }
 
     /* This could leave a memory leak if destructor function pointer is not
      * initialized! It is the implementation's resposibility to provide this */
-    if ( !(destructor_fnptr = (*bssp->DeleteFnPtr))) {
-        sfree(bssp);
+    if ( !(destructor_fnptr = (*seq_src->DeleteFnPtr))) {
+        sfree(seq_src);
         return NULL;
     }
 
-    return (BlastSeqSrc*) (*destructor_fnptr)(bssp);
+    return (BlastSeqSrc*) (*destructor_fnptr)(seq_src);
 }
 
-BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* bssp)
+BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src)
 {
     BlastSeqSrcCopier copy_fnptr = NULL;
     BlastSeqSrc* retval;
 
-    if (!bssp) {
+    if (!seq_src) {
         return NULL;
     }
 
-    if ( !(retval = (BlastSeqSrc*) BlastMemDup(bssp, sizeof(BlastSeqSrc)))) {
+    if ( !(retval = (BlastSeqSrc*) BlastMemDup(seq_src, sizeof(BlastSeqSrc)))) {
         return NULL;
     }
 
     /* If copy function is not provided, just return a copy of the structure */
-    if ( !(copy_fnptr = (*bssp->CopyFnPtr))) {
+    if ( !(copy_fnptr = (*seq_src->CopyFnPtr))) {
         return retval;
     }
 
@@ -178,13 +173,13 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr)
     return NULL;
 }
 
-Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* bssp, BlastSeqSrcIterator* itr)
+Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, BlastSeqSrcIterator* itr)
 {
-    ASSERT(bssp);
+    ASSERT(seq_src);
     ASSERT(itr);
-    ASSERT(bssp->IterNext);
+    ASSERT(seq_src->IterNext);
 
-    return (*bssp->IterNext)((void*) bssp, itr);
+    return (*seq_src->IterNext)((void*) seq_src, itr);
 }
 
 /*****************************************************************************/
@@ -218,15 +213,11 @@ DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
 
 DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDefinition, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDate, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*)
 
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetSeqIdStr, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqId, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetError, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetErrorFnPtr, GetError, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*)
