@@ -7,8 +7,12 @@
 		function execute(oShell, command)
 		{
 			var oExec = oShell.Exec("cmd /c " + command);
-			while(!oExec.StdOut.AtEndOfStream)
-				WScript.StdOut.WriteLine(oExec.StdOut.ReadLine());
+			while(!oExec.StdOut.AtEndOfStream  ||  !oExec.StdErr.AtEndOfStream) {
+				if ( !oExec.StdOut.AtEndOfStream )
+					WScript.StdOut.WriteLine(oExec.StdOut.ReadLine());
+				if ( !oExec.StdErr.AtEndOfStream )
+					WScript.StdErr.WriteLine("STDERR: " + oExec.StdErr.ReadLine());
+				}
 			return oExec.ExitCode;
 		}
 		// convert all back-slashes to forward ones
