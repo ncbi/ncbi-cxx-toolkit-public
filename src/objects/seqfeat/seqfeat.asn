@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -414,9 +414,14 @@ BioSource ::= SEQUENCE {
         plasmid (9) ,
         transposon (10) ,
         insertion-seq (11) ,
-		cyanelle (12) ,
-		proviral (13) ,
-		virion (14) } DEFAULT unknown ,
+	cyanelle (12) ,
+	proviral (13) ,
+	virion (14) } DEFAULT unknown ,
+                                       -- 4 more genome values coming
+                                       -- nucleomorph (15)
+                                       -- apicoplast (16)
+                                       -- leucoplast (17)
+                                       -- protoplast (18)
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
