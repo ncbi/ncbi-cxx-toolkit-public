@@ -576,7 +576,7 @@ private:
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, const long long int * x)
+    void x_SetOneParam(const char * name, const Int8 * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetBig_integer(*x);
@@ -2414,6 +2414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/01/17 00:15:06  ucko
+* Substitute Int8 for non-portable "long long"
+*
 * Revision 1.38  2004/01/16 21:40:01  bealer
 * - Add Blast4 API support to the CBlastOptions class.
 *
