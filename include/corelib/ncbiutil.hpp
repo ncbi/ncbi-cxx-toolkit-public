@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/08 19:07:54  vakatov
+* Fixed "p_equal_to" and "pair_equal_to" to pass MIPSpro 7.3 (-n32) compil
+*
 * Revision 1.2  1999/06/02 00:46:06  vakatov
 * DeleteElements():  use "typename" for Cnt::iterator
 *
@@ -99,21 +102,20 @@ BEGIN_NCBI_SCOPE
 
 // check for equality object pointed by pointer
 template <class T>
-struct p_equal_to : public binary_function<const T*, const T*, bool>
+struct p_equal_to : public binary_function
+<const T*, const T*, bool>
 {
-    bool operator() (const first_argument_type& x,
-                     const second_argument_type& y) const
+    bool operator() (const T*& x, const T*& y) const
         { return *x == *y; }
 };
 
 // check for equality object pointed by pointer
 template <class Pair>
-struct pair_equal_to : public binary_function<
-    pair<typename Pair::first_type, typename Pair::second_type>,
-        typename Pair::second_type, bool>
+struct pair_equal_to : public binary_function
+<Pair, typename Pair::second_type, bool>
 {
-    bool operator() (const first_argument_type& x,
-                     const second_argument_type& y) const
+    bool operator() (const Pair& x,
+                     const typename Pair::second_type& y) const
         { return x.second == y; }
 };
 
