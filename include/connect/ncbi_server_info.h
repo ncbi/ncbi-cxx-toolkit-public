@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2002/03/19 22:10:59  lavr
+ * Better description for flags 'P' and 'C'
+ *
  * Revision 6.29  2002/03/11 21:51:18  lavr
  * Modified server info to include MIME encoding and to prepare for
  * BLAST dispatching to be phased out. Also, new DNS server type defined.
@@ -318,7 +321,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  * of each flag is allowed:
  *
  *    Load average calculation for the server:
- *       Regular (default)
+ *       Regular        (default)
  *       Blast
  *
  *    Local server:
@@ -375,22 +378,23 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           average status of remaining servers for the same service.
  *
  *    Content type indication:
- *       C=type/subtype[-encoding] [no default]
- *           specification of Content-Type, which server accepts.
- *           The value of this tag gets added automatically to any packet
- *           which is sent e.g. by SERVICE connector. The client has,
- *           however, to know the data type accepted by the server, i.e.
- *           a protocol, which server understands, in order to communicate.
- *           This flag just helps insure that HTTP packets all get proper
- *           content type, defined at service configuration.
+ *       C=type/subtype [no default]
+ *           specification of Content-Type (including encoding), which server
+ *           accepts. The value of this flag gets added automatically to any
+ *           HTTP packet sent to the server by SERVICE connector. However,
+ *           in order to communicate, a client still has to know and generate
+ *           the data type accepted by the server, i.e. a protocol, which
+ *           server understands. This flag just helps insure that HTTP packets
+ *           all get proper content type, defined at service configuration.
  *
  *    Private server:
  *       P=no           (default)
  *       P=yes
  *           specifies whether the server is private for the host.
  *           Private server cannot be used from anywhere else but
- *           this host. When non-private (default) the server lacks
+ *           this host. When non-private (default), the server lacks
  *           'P=no' in verbal representation resulted from SERV_WriteInfo().
+ *           This tag is not allowed for DNS server types.
  *
  * Note that optional arguments can be omitted along with all preceding
  * optional arguments, that is the following 2 server specifications are
