@@ -451,12 +451,12 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
           Int4 context_offset;
           Int4 query_length;
           Uint1 *buffer;              /* holds sequence */
-
+          
           /* For each query, check if forward strand is present */
-          if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
-             continue;
-
-          context_offset = query_info->context_offsets[context];
+          if ((query_length = query_info->contexts[context].query_length) < 0)
+              continue;
+          
+          context_offset = query_info->contexts[context].query_offset;
           buffer = &query_blk->sequence[context_offset];
 
           if ((status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
@@ -629,8 +629,8 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
        Blast_KarlinBlk * kbp;   /* statistical parameters for the
                                    current context */
        kbp = kbp_ptr[index];
-
-       if ( (query_length = BLAST_GetQueryLength(query_info, index)) > 0) {
+       
+       if ((query_length = query_info->contexts[index].query_length) > 0) {
           /* Use the correct Karlin block. For blastn, two identical Karlin
              blocks are allocated for each sequence (one per strand), but we
              only need one of them.
@@ -656,8 +656,8 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
                 (db_length - db_num_seqs*length_adjustment);
           }
        }
-       query_info->eff_searchsp_array[index] = effective_search_space;
-       query_info->length_adjustments[index] = length_adjustment;
+       query_info->contexts[index].eff_searchsp = effective_search_space;
+       query_info->contexts[index].length_adjustment = length_adjustment;
    }
 
    return 0;

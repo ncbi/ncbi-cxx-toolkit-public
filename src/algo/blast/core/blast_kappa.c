@@ -2528,11 +2528,11 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
 {
   Uint1* query;               /* the query sequence */
   Int4 queryLength;             /* the length of the query sequence */
-  const Int4 kContextOffset = queryInfo->context_offsets[0];  /* offset in buffer of start of query. */
+  const Int4 kContextOffset = queryInfo->contexts[0].query_offset;  /* offset in buffer of start of query. */
 
   query = &queryBlk->sequence[kContextOffset];
-  queryLength = BLAST_GetQueryLength(queryInfo, 0);
-
+  queryLength = queryInfo->contexts[0].query_length;
+  
   if(searchParams->adjustParameters) {
     Int4 i, j;
     Blast_KarlinBlk* kbp;     /* statistical parameters used to evaluate a
@@ -2623,7 +2623,7 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
     }
 
     query = &queryBlk->sequence[0];
-    queryLength = BLAST_GetQueryLength(queryInfo, 0);
+    queryLength = queryInfo->contexts[0].query_length;
     if(positionBased) {
       sp->startFreqRatios =
         getStartFreqRatios(sbp, query, scoringParams->options->matrix,
@@ -2870,7 +2870,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
   }
   /*****************/
   query.data   = &queryBlk->sequence[0];
-  query.length = BLAST_GetQueryLength(queryInfo, 0);
+  query.length = queryInfo->contexts[0].query_length;
 
   if(SmithWaterman) {
     Kappa_ForbiddenRangesInitialize(&forbidden, query.length);
@@ -2986,7 +2986,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                      scoringParams->gap_open,
                                      scoringParams->gap_extend,
                                      &matchEnd, &queryEnd, &aSwScore, kbp,
-                                     queryInfo->eff_searchsp_array[0],
+                                     queryInfo->contexts[0].eff_searchsp,
                                      positionBased,
                                      &forbidden);
             alignment_is_significant =

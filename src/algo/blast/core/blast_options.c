@@ -391,10 +391,12 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
    if (!gapped_calculation || program_number == eBlastTypeBlastn) {
       double cutoff_e = s_GetCutoffEvalue(program_number);
-      Int4 avg_qlen = (query_info->context_offsets[query_info->last_context+1] - 1) /
-         (query_info->last_context + 1);
+      Int4 concat_qlen =
+          query_info->contexts[query_info->last_context].query_offset +
+          query_info->contexts[query_info->last_context].query_length;
+      Int4 avg_qlen = concat_qlen / (query_info->last_context + 1);
       double gap_decay_rate = 0.0;
-
+      
       /* FIXME, hit_params->link_hsp_params is NULL for gapped blastn so is gap_decay_rate. */
       if (hit_params && hit_params->link_hsp_params)
           gap_decay_rate = hit_params->link_hsp_params->gap_decay_rate;
@@ -1388,7 +1390,7 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       params->cutoff_score_max = params->cutoff_score = options->cutoff_score * (Int4) sbp->scale_factor;
    } else if (!options->phi_align) {
       Int4 context = query_info->first_context;
-      Int8 searchsp = query_info->eff_searchsp_array[context];
+      Int8 searchsp = query_info->contexts[context].eff_searchsp;
       double evalue = options->expect_value;
 
       /* translated RPS searches must scale the search space down */
@@ -1402,8 +1404,10 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       if (do_sum_stats && gapped_calculation)
       {
          double evalue_hsp=1.0;
-         Int4 avg_qlen = 
-             (query_info->context_offsets[query_info->last_context+1] - 1) / (query_info->last_context + 1);
+         Int4 concat_qlen =
+             query_info->contexts[query_info->last_context].query_offset +
+             query_info->contexts[query_info->last_context].query_length - 1;
+         Int4 avg_qlen = concat_qlen / (query_info->last_context + 1);
          BLAST_Cutoffs(&params->cutoff_score, &evalue_hsp, kbp, (Int8) MIN(avg_qlen, avg_subject_length)* (Int8)avg_subject_length, 
                TRUE, params->link_hsp_params->gap_decay_rate);
          /* Assure that cutoff_score for one HSP is no larger than cutoff_score for specified expect value. */
@@ -1556,35 +1560,38 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
    const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length)
 {
-   double gap_prob, gap_decay_rate, x_variable, y_variable;
-   Blast_KarlinBlk* kbp;
-   Int4 expected_length, window_size, query_length;
-   Int8 search_sp;
-   Boolean translated_subject = (program == eBlastTypeTblastn || 
-                                 program == eBlastTypeRpsTblastn || 
-                                 program == eBlastTypeTblastx);
+    double gap_prob, gap_decay_rate, x_variable, y_variable;
+    Blast_KarlinBlk* kbp;
+    Int4 expected_length, window_size, query_length;
+    Int8 search_sp;
+    Boolean translated_subject = (program == eBlastTypeTblastn || 
+                                  program == eBlastTypeRpsTblastn || 
+                                  program == eBlastTypeTblastx);
 
-   if (!link_hsp_params)
-      return;
+    if (!link_hsp_params)
+        return;
 
-	/* Do this for the first context, should this be changed?? */
-	kbp = sbp->kbp[query_info->first_context];
-	window_size
+    /* Do this for the first context, should this be changed?? */
+    kbp = sbp->kbp[query_info->first_context];
+    window_size
         = link_hsp_params->gap_size + link_hsp_params->overlap_size + 1;
     gap_prob = link_hsp_params->gap_prob = BLAST_GAP_PROB;
-	gap_decay_rate = link_hsp_params->gap_decay_rate;
-   /* Use average query length */
-	query_length = 
-      (query_info->context_offsets[query_info->last_context+1] - 1) /
-      (query_info->last_context + 1);
-
-   if (translated_subject) {
-      /* Lengths in subsequent calculations should be on the protein scale */
-      subject_length /= CODON_LENGTH;
-      db_length /= CODON_LENGTH;
-   }
-
-	/* Subtract off the expected score. */
+    gap_decay_rate = link_hsp_params->gap_decay_rate;
+    /* Use average query length */
+    
+    Int4 concat_qlen =
+        query_info->contexts[query_info->last_context].query_offset +
+        query_info->contexts[query_info->last_context].query_length - 1;
+    
+    query_length = concat_qlen / (query_info->last_context + 1);
+    
+    if (translated_subject) {
+        /* Lengths in subsequent calculations should be on the protein scale */
+        subject_length /= CODON_LENGTH;
+        db_length /= CODON_LENGTH;
+    }
+    
+    /* Subtract off the expected score. */
    expected_length = BLAST_Nint(log(kbp->K*((double) query_length)*
                                     ((double) subject_length))/(kbp->H));
    query_length = query_length - expected_length;
@@ -1637,6 +1644,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.143  2004/12/02 15:55:54  bealer
+ * - Change multiple-arrays to array-of-struct in BlastQueryInfo
+ *
  * Revision 1.142  2004/11/22 14:38:48  camacho
  * + option to set % identity threshold to PSSM engine
  *

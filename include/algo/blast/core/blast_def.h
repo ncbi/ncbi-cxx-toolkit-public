@@ -144,22 +144,27 @@ typedef struct BLAST_SequenceBlk {
                                     lcase_mask */
 } BLAST_SequenceBlk;
 
+/** The context related information
+ */
+typedef struct BlastContextInfo {
+    Int4 query_offset;      /**< Offset of this query, strand or frame in the
+                               concatenated super-query. */
+    Int4 query_length;      /**< Length of this query, strand or frame */
+    Int8 eff_searchsp;      /**< Effective search space for this context. */
+    Int4 length_adjustment; /**< Length adjustment for boundary conditions */
+    Int4 query_index;       /**< Index of query (same for all frames) */
+    Int1 frame;             /**< Frame number (-1, -2, -3, 0, 1, 2, or 3) */
+} BlastContextInfo;
+
 /** The query related information 
  */
 typedef struct BlastQueryInfo {
-   Int4 first_context; /**< Index of the first element of the context array */
-   Int4 last_context;  /**< Index of the last element of the context array */
-   int num_queries;   /**< Number of query sequences */
-   Int4* context_offsets; /**< Array of offsets of the individual queries, 
-                               strands or frames in the concatenated 
-                               super-query. Contains one extra element, to 
-                               allow easy calculation of lengths. */
-   Int4* length_adjustments; /**< Array of length adjustments for boundary 
-                                  conditions corresponding to each context. */
-   Int8* eff_searchsp_array; /**< Array of effective search spaces for all
-                                  contexts. */
-   Uint4 max_length; /**< Length of the longest among the concatenated 
-                        queries */
+   Int4 first_context;  /**< Index of the first element of the context array */
+   Int4 last_context;   /**< Index of the last element of the context array */
+   int num_queries;     /**< Number of query sequences */
+   BlastContextInfo * contexts; /**< Information per context */
+   Uint4 max_length;    /**< Length of the longest among the concatenated
+                           queries */
 } BlastQueryInfo;
 
 

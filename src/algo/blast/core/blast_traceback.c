@@ -530,7 +530,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    BlastScoringOptions* score_options = score_params->options;
    Int4 context_offset;
    Uint1* translation_buffer = NULL;
-   Int4* frame_offsets = NULL;
+   Int4 * frame_offsets   = NULL;
+   Int4 * frame_offsets_a = NULL;
    Boolean partial_translation = FALSE;
    const Boolean kIsOutOfFrame = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
@@ -539,7 +540,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        program_number == eBlastTypeRpsTblastn); 
    BlastQueryInfo* query_info = query_info_in;
    Int4 offsets[2];
-
+   
    if (hsp_list->hspcnt == 0) {
       return 0;
    }
@@ -560,10 +561,12 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          subject_length = 2*subject_blk->length - 1;
       } else if (program_number == eBlastTypeRpsTblastn) {
 	 translation_buffer = subject_blk->sequence - 1;
-	 frame_offsets = query_info_in->context_offsets;
+	 frame_offsets_a = frame_offsets =
+             ContextOffsetsToOffsetArray(query_info_in);
       } else {
          Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
             &translation_buffer, &frame_offsets, &partial_translation);
+         frame_offsets_a = frame_offsets;
          /* subject and subject_length will be set later, for each HSP. */
       }
    } else {
@@ -581,7 +584,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       query_info->num_queries = 1;
       offsets[0] = 0;
       offsets[1] = query_blk->length + 1;
-      query_info->context_offsets = offsets; 
+      OffsetArrayToContextOffsets(query_info, offsets, program_number);
    }
 
    /* Make sure the HSPs in the HSP list are sorted by score, as they should 
@@ -592,25 +595,31 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       hsp = hsp_array[index];
       if (program_number == eBlastTypeBlastx || 
           program_number == eBlastTypeTblastx) {
+         Int4 end_of_frame_set = 0;
          Int4 context = hsp->context - hsp->context % 3;
-         context_offset = query_info->context_offsets[context];
-         query_length_orig = 
-            query_info->context_offsets[context+3] - context_offset - 1;
+         context_offset = query_info->contexts[context].query_offset;
+         
+         end_of_frame_set =
+             query_info->contexts[context+2].query_offset +
+             query_info->contexts[context+2].query_length;
+         
+         query_length_orig = end_of_frame_set - context_offset;
+         
          if (kIsOutOfFrame) {
             query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
             query_length = query_length_orig;
          } else {
             query = query_blk->sequence + 
-               query_info->context_offsets[hsp->context];
-            query_length = BLAST_GetQueryLength(query_info, hsp->context);
+               query_info->contexts[hsp->context].query_offset;
+            query_length = query_info->contexts[hsp->context].query_length;
          }
       } else {
-         query = query_blk->sequence + 
-            query_info->context_offsets[hsp->context];
-         query_length = query_length_orig = 
-            BLAST_GetQueryLength(query_info, hsp->context);
+          query = query_blk->sequence + 
+              query_info->contexts[hsp->context].query_offset;
+          query_length = query_length_orig = 
+              query_info->contexts[hsp->context].query_length;
       }
-
+      
       subject_length_orig = subject_blk->length;
       /* For RPS tblastn the "subject" length should be the original 
 	 nucleotide query length, which can be calculated from the 
@@ -618,10 +627,14 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       if (program_number == eBlastTypeRpsTblastn) {
 	 if (hsp->subject.frame > 0) {
 	    subject_length_orig = 
-	       query_info_in->context_offsets[NUM_FRAMES/2] - 1;
+	       query_info_in->contexts[NUM_FRAMES/2].query_offset - 1;
 	 } else {
-	    subject_length_orig = query_info_in->context_offsets[NUM_FRAMES] -
-	       query_info_in->context_offsets[NUM_FRAMES/2] - 1;
+            Int4 frame_set_end =
+                query_info_in->contexts[NUM_FRAMES-1].query_offset +
+                query_info_in->contexts[NUM_FRAMES-1].query_length;
+            
+            subject_length_orig = frame_set_end -
+                query_info_in->contexts[NUM_FRAMES/2].query_offset;
 	 }
       }
 
@@ -746,11 +759,12 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       if (translation_buffer) {
          sfree(translation_buffer);
       }
-      if (frame_offsets) {
-         sfree(frame_offsets);
-      }
    }
-
+   
+   if (frame_offsets_a) {
+       sfree(frame_offsets_a);
+   }
+   
    /* Free the local query_info structure, if necessary (RPS tblastn only) */
    if (query_info != query_info_in)
       sfree(query_info);
@@ -999,7 +1013,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
-      db_seq_start = concat_db_info->context_offsets[hsp_list->oid];
+      db_seq_start = concat_db_info->contexts[hsp_list->oid].query_offset;
       
       /* Update the statistics for this database sequence
          (if not a translated search) */

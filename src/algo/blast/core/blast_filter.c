@@ -287,8 +287,9 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       Int4 start_offset, end_offset, filter_start, filter_end;
       Int4 left, right; /* Used for left/right extent of a region. */
 
-      start_offset = query_info->context_offsets[context];
-      end_offset = query_info->context_offsets[context+1] - 2;
+      start_offset = query_info->contexts[context].query_offset;
+      end_offset = query_info->contexts[context].query_length + start_offset - 1;
+      
       /* For blastn: check if this strand is not searched at all */
       if (end_offset < start_offset)
           continue;
@@ -949,11 +950,11 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
 
         const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
         Int2 index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-
-        context_offset = query_info->context_offsets[context];
+        
+        context_offset = query_info->contexts[context].query_offset;
         buffer = &query_blk->sequence[context_offset];
 
-        if ((query_length = BLAST_GetQueryLength(query_info, context)) <= 0)
+        if ((query_length = query_info->contexts[context].query_length) <= 0)
            return 0;
 
 
@@ -1023,10 +1024,10 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
       
         BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
         Boolean reverse = BlastIsReverseStrand(kIsNucl, context);
-        Int4 query_length;
+        Int4 query_length = 0;
 
         /* For each query, check if forward strand is present */
-        if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
+        if ((query_length = query_info->contexts[context].query_length) <= 0)
         {
             if (kIsNucl && (context & 1) == 0)  /* Needed only for blastn, or does this not apply FIXME */
                no_forward_strand = TRUE;  /* No plus strand, we cannot simply infer locations by going from plus to minus */
@@ -1108,10 +1109,10 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
         Uint1 *buffer;              /* holds sequence */
 
         /* For each query, check if forward strand is present */
-        if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
+        if ((query_length = query_info->contexts[context].query_length) <= 0)
             continue;
 
-        context_offset = query_info->context_offsets[context];
+        context_offset = query_info->contexts[context].query_offset;
         buffer = &query_blk->sequence[context_offset];
 
         maskloc_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);

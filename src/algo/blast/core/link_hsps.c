@@ -114,12 +114,12 @@ s_SumHSPEvalue(EBlastProgramType program_number,
    Int4 context = head_hsp->hsp->context;
    Int4 query_window_size;
    Int4 subject_window_size;
-
+   
    gap_decay_rate = link_hsp_params->gap_decay_rate;
 
    num = head_hsp->hsp->num + new_hsp->hsp->num;
 
-   length_adjustment = query_info->length_adjustments[context];
+   length_adjustment = query_info->contexts[context].length_adjustment;
 
    subject_eff_length = MAX((subject_length - length_adjustment), 1);
    if (program_number == eBlastTypeTblastn ||
@@ -127,9 +127,9 @@ s_SumHSPEvalue(EBlastProgramType program_number,
       subject_eff_length /= 3;
    }
    subject_eff_length = MAX(subject_eff_length, 1);
-	
+   
    query_eff_length = 
-      MAX(BLAST_GetQueryLength(query_info, context) - length_adjustment, 1);
+      MAX(query_info->contexts[context].query_length - length_adjustment, 1);
    
    *xsum = new_hsp->xsum + head_hsp->xsum;
 
@@ -141,7 +141,7 @@ s_SumHSPEvalue(EBlastProgramType program_number,
    sum_evalue = 
        BLAST_UnevenGapSumE(query_window_size, subject_window_size,
           num, *xsum, query_eff_length, subject_eff_length,
-          query_info->eff_searchsp_array[context],
+          query_info->contexts[context].eff_searchsp,
           BLAST_GapDecayDivisor(gap_decay_rate, num));
 
    return sum_evalue;
@@ -632,8 +632,8 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
       hp_frame_start[frame_index]->prev = hp_start;
       number_of_hsps = hp_frame_number[frame_index];
       query_context = hp_start->next->hsp->context;
-      length_adjustment = query_info->length_adjustments[query_context];
-      query_length = BLAST_GetQueryLength(query_info, query_context);
+      length_adjustment = query_info->contexts[query_context].length_adjustment;
+      query_length = query_info->contexts[query_context].query_length;
       query_length = MAX(query_length - length_adjustment, 1);
       subject_length = subject_length_orig; /* in nucleotides even for tblast[nx] */
       /* If subject is translated, length adjustment is given in nucleotide
@@ -986,7 +986,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
             prob[0] = BLAST_SmallGapSumE(window_size,
                          best[0]->hsp_link.num[0], best[0]->hsp_link.xsum[0],
                          query_length, subject_length,
-                         query_info->eff_searchsp_array[query_context],
+                         query_info->contexts[query_context].eff_searchsp,
                          BLAST_GapDecayDivisor(gap_decay_rate,
                                               best[0]->hsp_link.num[0]) );
 
@@ -1000,7 +1000,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
             prob[1] = BLAST_LargeGapSumE(best[1]->hsp_link.num[1],
                          best[1]->hsp_link.xsum[1],
                          query_length, subject_length,
-                         query_info->eff_searchsp_array[query_context],
+                         query_info->contexts[query_context].eff_searchsp,
                          BLAST_GapDecayDivisor(gap_decay_rate,
                                               best[1]->hsp_link.num[1]));
 
@@ -1022,7 +1022,7 @@ s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
                          best[1]->hsp_link.num[1],
                          best[1]->hsp_link.xsum[1],
                          query_length, subject_length,
-                         query_info->eff_searchsp_array[query_context],
+                         query_info->contexts[query_context].eff_searchsp,
                          BLAST_GapDecayDivisor(gap_decay_rate,
                                               best[1]->hsp_link.num[1]));
             ordering_method = BLAST_LARGE_GAPS;

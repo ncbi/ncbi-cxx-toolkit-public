@@ -214,17 +214,6 @@ Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number);
 NCBI_XBLAST_EXPORT
 Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
 
-/** Find the length of an individual query within a concatenated set of 
- * queries.
- * @param query_info Queries information structure containing offsets into
- *                   the concatenated sequence [in]
- * @param context Index of the query/strand/frame within the concatenated 
- *                set [in]
- * @return Length of the individual sequence/strand/frame.
- */
-NCBI_XBLAST_EXPORT
-Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context);
-
 /** Deallocate memory for query information structure */
 NCBI_XBLAST_EXPORT
 BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
@@ -324,6 +313,42 @@ Int4 FrameToContext(Int2 frame);
 /** The following binary search routine assumes that array A is filled. */
 NCBI_XBLAST_EXPORT
 Int4 BSearchInt4(Int4 n, Int4* A, Int4 size);
+
+
+/** Search BlastContextInfo structures for the specified offset */
+NCBI_XBLAST_EXPORT
+Int4 BSearchContextInfo(Int4 n, BlastQueryInfo * A);
+
+
+/** Get the number of bytes required for the concatenated sequence
+ * buffer, given a query info structure.  The context data should
+ * already be assigned.
+ * @param qinfo  Query info structure. [in/out]
+ * @return Number of bytes for all queries and inter-query marks.
+ */
+Uint4
+QueryInfo_GetSeqBufLen(const BlastQueryInfo* qinfo);
+
+
+/** Copy the context query offsets to an allocated array of Int4.
+ * @param info Describes the concatenated query.
+ * @return Allocated array.
+ */
+NCBI_XBLAST_EXPORT
+Int4 * ContextOffsetsToOffsetArray(BlastQueryInfo* info);
+
+
+/** Copy the context query offsets from an array of Int4, allocating
+ * the context array if needed.
+ * @param info Destination for the values.
+ * @param new_offsets Array of values to copy from.
+ * @param prog        The blast program type.
+ */
+NCBI_XBLAST_EXPORT
+void OffsetArrayToContextOffsets(BlastQueryInfo    * info,
+                                 Int4              * new_offsets,
+                                 EBlastProgramType   prog);
+
 
 /** Get the standard amino acid probabilities. This is basically a wrapper for 
  * BlastScoreBlkNew() and Blast_ResFreqStdComp() from blast_stat.c with a more

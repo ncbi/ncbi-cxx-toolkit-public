@@ -2231,24 +2231,28 @@ s_GetRelativeCoordinates(const BLAST_SequenceBlk* query,
                        BlastInitHSP* init_hsp, BLAST_SequenceBlk* query_out,
                        BlastInitHSP* init_hsp_out, Int4* context_out)
 {
-   Int4 context;
-   Int4 query_start, query_length;
+   Int4 context = 0;
+   Int4 query_start = 0, query_length = 0;
 
-   context = BSearchInt4(init_hsp->q_off, query_info->context_offsets, 
-                         query_info->last_context+2);
+   context = BSearchContextInfo(init_hsp->q_off, query_info);
+
    if (query && query->oof_sequence) {
-      /* Out-of-frame blastx case: all frames of the same parity are mixed
-         together in a special sequence. */
-      Int4 mixed_frame_context = context - context%CODON_LENGTH;
-      query_start = query_info->context_offsets[mixed_frame_context];
-      query_length = 
-         query_info->context_offsets[mixed_frame_context+CODON_LENGTH] - 
-         query_start - 1;
+       /* Out-of-frame blastx case: all frames of the same parity are mixed
+          together in a special sequence. */
+       Int4 query_end_pt = 0;
+       Int4 mixed_frame_context = context - context % CODON_LENGTH;
+       
+       query_start = query_info->contexts[mixed_frame_context].query_offset;
+       query_end_pt =
+           query_info->contexts[mixed_frame_context+CODON_LENGTH-1].query_offset +
+           query_info->contexts[mixed_frame_context+CODON_LENGTH-1].query_length;
+       query_length =
+           query_end_pt - query_start;
    } else {
-      query_start = query_info->context_offsets[context];
-      query_length = BLAST_GetQueryLength(query_info, context);
+       query_start  = query_info->contexts[context].query_offset;
+       query_length = query_info->contexts[context].query_length;
    }
-
+   
    if (query && query_out) {
       if (query->oof_sequence) {
          query_out->sequence = NULL;
@@ -2303,7 +2307,7 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
    const BlastHitSavingOptions* hit_options = hit_params->options;
    BLAST_SequenceBlk query_tmp;
    Int4 context;
-
+   
    /* To avoid changing order of initial hits and having to sort them again
       by score at the end of the routine, just introduce an auxiliary array of 
       pointers, which can then be sorted by hits' diagonals. */
@@ -2957,7 +2961,7 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
     Boolean is_prot;
     Int4 max_offset;
     Int2 status = 0;
-    
+
     cutoff_score = hit_params->cutoff_score;
     is_prot = (program_number != eBlastTypeBlastn);
     orig_pssm = gap_align->sbp->posMatrix;
@@ -2991,7 +2995,7 @@ s_BlastGappedScorePrelimTest(EBlastProgramType program_number,
                                    &init_hsp_tmp, &context);
             if (orig_pssm)
                 gap_align->sbp->posMatrix = orig_pssm + 
-                    query_info->context_offsets[context];
+                    query_info->contexts[context].query_offset;
 
             if(is_prot && !score_params->options->is_ooframe) {
                 max_offset = 
@@ -3100,7 +3104,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
       if (orig_pssm)
          gap_align->sbp->posMatrix = orig_pssm + 
-                                query_info->context_offsets[context];
+             query_info->contexts[context].query_offset;
 
       /* This prefetches this value for the test below. */
       next_offset = init_hsp->q_off;

@@ -224,14 +224,13 @@ CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
         NCBI_THROW(CBlastException, eOutOfMemory, "BlastQueryInfo");
     }
 
-    retval->num_queries             = 1;
-    retval->first_context           = 0;
-    retval->last_context            = 0;
-    retval->context_offsets         = (Int4*) calloc(2, sizeof(Int4));
-    retval->context_offsets[1]      = query_length + 1;
-    retval->eff_searchsp_array      = (Int8*) calloc(1, sizeof(Int8));
-    retval->length_adjustments      = (Int4*) calloc(1, sizeof(Int4));
-    retval->max_length              = query_length;
+    retval->num_queries              = 1;
+    retval->first_context            = 0;
+    retval->last_context             = 0;
+    retval->contexts                 = (BlastContextInfo*) calloc(1, sizeof(BlastContextInfo));
+    retval->contexts[0].query_offset = 0;
+    retval->contexts[0].query_length = query_length;
+    retval->max_length               = query_length;
 
     return retval;
 }
@@ -520,6 +519,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2004/12/02 16:01:24  bealer
+ * - Change multiple-arrays to array-of-struct in BlastQueryInfo
+ *
  * Revision 1.22  2004/11/23 21:48:44  camacho
  * Removed local initialization of ideal Karlin-Altschul parameters
  *

@@ -73,11 +73,44 @@ BLASTHspListToSeqAlign(EProgram program,
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id, bool is_ooframe);
 
+/** Set field values for one element of the context array of a
+ * concatenated query.  All previous contexts should have already been
+ * assigned correct values.
+ * @param qinfo  Query info structure containing contexts. [in/out]
+ * @param index  Index of the context to fill. [in]
+ * @param length Length of this context. [in]
+ * @param prog   Program type of this search. [in]
+ */
+static void
+QueryInfo_SetContext(BlastQueryInfo*   qinfo,
+                     Uint4             index,
+                     Uint4             length,
+                     EBlastProgramType prog)
+{
+    qinfo->contexts[index].frame =
+        BLAST_ContextToFrame(prog, index);
+    
+    qinfo->contexts[index].query_index =
+        Blast_GetQueryIndexFromContext(index, prog);
+    
+    if (index) {
+        Uint4 prev_loc = qinfo->contexts[index-1].query_offset;
+        Uint4 prev_len = qinfo->contexts[index-1].query_length;
+        
+        Uint4 shift = prev_len ? prev_len + 1 : 0;
+        
+        qinfo->contexts[index].query_offset = prev_loc + shift;
+        qinfo->contexts[index].query_length = length;
+    } else {
+        // First context
+        qinfo->contexts[0].query_offset = 0;
+        qinfo->contexts[0].query_length = length;
+    }
+}
 
 /** Allocates the query information structure and fills the context 
  * offsets, in case of multiple queries, frames or strands. 
- * NB: effective lengths arrays are allocated here, but will be filled inside
- * the engine.
+ * NB: effective length will be assigned inside the engine.
  * @param queries Vector of query locations [in]
  * @param options BLAST search options [in]
  * @param qinfo Allocated query info structure [out]
@@ -99,24 +132,15 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     (*qinfo)->first_context = 0;
     (*qinfo)->last_context = (*qinfo)->num_queries * nframes - 1;
 
-    // Allocate the various arrays of the query info structure
-    int* context_offsets = NULL;
-    if ( !(context_offsets = (int*)
-           malloc(sizeof(int) * ((*qinfo)->last_context + 2)))) {
+    EBlastProgramType progtype = options.GetProgramType();
+    
+    (*qinfo)->contexts =
+        (BlastContextInfo*) calloc((*qinfo)->last_context + 1, sizeof(BlastContextInfo));
+    
+    if ( ! (*qinfo)->contexts) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
     }
-    if ( !((*qinfo)->eff_searchsp_array = 
-           (Int8*) calloc((*qinfo)->last_context + 1, sizeof(Int8)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Search space array");
-    }
-    if ( !((*qinfo)->length_adjustments = 
-           (int*) calloc((*qinfo)->last_context + 1, sizeof(int)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Length adjustments array");
-    }
-
-    (*qinfo)->context_offsets = context_offsets;
-    context_offsets[0] = 0;
-
+    
     bool is_na = (prog == eBlastn) ? true : false;
     bool translate = 
         ((prog == eBlastx) || (prog == eTblastx) || (prog == eRPSTblastn));
@@ -165,32 +189,23 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                 unsigned int prot_length = 
                     (length == 0 ? 0 : (length - i % CODON_LENGTH) / CODON_LENGTH);
                 max_length = MAX(max_length, prot_length);
-
+                
+                Uint4 ctx_len(0);
+                
                 switch (strand) {
                 case eNa_strand_plus:
-                    if (i < 3) {
-                        context_offsets[ctx_index + i + 1] = 
-                            context_offsets[ctx_index + i] + prot_length + 1;
-                    } else {
-                        context_offsets[ctx_index + i + 1] = 
-                            context_offsets[ctx_index + i];
-                    }
+                    ctx_len = (i<3) ? prot_length : 0;
+                    QueryInfo_SetContext(*qinfo, ctx_index + i, ctx_len, progtype);
                     break;
 
                 case eNa_strand_minus:
-                    if (i < 3) {
-                        context_offsets[ctx_index + i + 1] = 
-                            context_offsets[ctx_index + i];
-                    } else {
-                        context_offsets[ctx_index + i + 1] =
-                            context_offsets[ctx_index + i] + prot_length + 1;
-                    }
+                    ctx_len = (i<3) ? 0 : prot_length;
+                    QueryInfo_SetContext(*qinfo, ctx_index + i, ctx_len, progtype);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
-                    context_offsets[ctx_index + i + 1] = 
-                        context_offsets[ctx_index + i] + prot_length + 1;
+                    QueryInfo_SetContext(*qinfo, ctx_index + i, prot_length, progtype);
                     break;
 
                 default:
@@ -199,36 +214,30 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
             }
         } else {
             max_length = MAX(max_length, length);
+            
             if (is_na) {
                 switch (strand) {
                 case eNa_strand_plus:
-                    context_offsets[ctx_index + 1] =
-                        context_offsets[ctx_index] + length + 1;
-                    context_offsets[ctx_index + 2] =
-                        context_offsets[ctx_index + 1];
+                    QueryInfo_SetContext(*qinfo, ctx_index, length, progtype);
+                    QueryInfo_SetContext(*qinfo, ctx_index+1, 0, progtype);
                     break;
 
                 case eNa_strand_minus:
-                    context_offsets[ctx_index + 1] =
-                        context_offsets[ctx_index];
-                    context_offsets[ctx_index + 2] =
-                        context_offsets[ctx_index + 1] + length + 1;
+                    QueryInfo_SetContext(*qinfo, ctx_index, 0, progtype);
+                    QueryInfo_SetContext(*qinfo, ctx_index+1, length, progtype);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
-                    context_offsets[ctx_index + 1] =
-                        context_offsets[ctx_index] + length + 1;
-                    context_offsets[ctx_index + 2] =
-                        context_offsets[ctx_index + 1] + length + 1;
+                    QueryInfo_SetContext(*qinfo, ctx_index, length, progtype);
+                    QueryInfo_SetContext(*qinfo, ctx_index+1, length, progtype);
                     break;
 
                 default:
                     abort();
                 }
             } else {    // protein
-                context_offsets[ctx_index + 1] = 
-                    context_offsets[ctx_index] + length + 1;
+                QueryInfo_SetContext(*qinfo, ctx_index, length, progtype);
             }
         }
         ctx_index += nframes;
@@ -290,9 +299,10 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     // Determine sequence encoding
     Uint1 encoding = GetQueryEncoding(prog);
-
-    int buflen = qinfo->context_offsets[qinfo->last_context+1] + 1;
-    Uint1* buf = (Uint1*) calloc((buflen+1), sizeof(Uint1));
+    
+    int buflen = QueryInfo_GetSeqBufLen(qinfo);
+    Uint1* buf = (Uint1*) calloc(buflen+1, sizeof(Uint1));
+    
     if ( !buf ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
     }
@@ -361,14 +371,29 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
             // Populate the sequence buffer
             for (unsigned int i = 0; i < nframes; i++) {
-                if (BLAST_GetQueryLength(qinfo, i) <= 0) {
+                if (qinfo->contexts[i].query_length <= 0) {
                     continue;
                 }
+                
+                int offset = qinfo->contexts[ctx_index + i].query_offset;
 
-                int offset = qinfo->context_offsets[ctx_index + i];
+                // The BlastContextInfo structure has a "frame" field, but
+                // that field is set from the program type, and the value
+                // we want here is the value for blastx, not the actual
+                // program type (why?).  Perhaps there ought to be two
+                // frame values...  Further investigation and discussion
+                // indicates that BLAST_ContextToFrame should do this
+                // internally (this change will be made soon).
+
+                //short frame = qinfo->contexts[ctx_index + i].frame;
                 short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
-                BLAST_GetTranslation(seqbuf.first.get() + 1, seqbuf_rev,
-                   na_length, frame, &buf[offset], gc.get());
+
+                BLAST_GetTranslation(seqbuf.first.get() + 1,
+                                     seqbuf_rev,
+                                     na_length,
+                                     frame,
+                                     & buf[offset],
+                                     gc.get());
             }
             // Translate the lower case mask coordinates;
             BlastMaskLocDNAToProtein(bsl_tmp, mask, index, *itr->seqloc, 
@@ -389,7 +414,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             }
             int idx = (strand == eNa_strand_minus) ? 
                 ctx_index + 1 : ctx_index;
-            int offset = qinfo->context_offsets[idx];
+
+            int offset = qinfo->contexts[idx].query_offset;
             memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
             mask->seqloc_array[index] = bsl_tmp;
 
@@ -403,10 +429,9 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 NCBI_THROW(CBlastException, eBadParameter, 
                            "Sequence not found: wrong query type provided");
             }
-            int offset = qinfo->context_offsets[ctx_index];
+            int offset = qinfo->contexts[ctx_index].query_offset;
             memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
             mask->seqloc_array[index] = bsl_tmp;
-
         }
 
         ++index;
@@ -422,8 +447,6 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     (*seqblk)->lcase_mask = mask;
     (*seqblk)->lcase_mask_allocated = TRUE;
-
-    return;
 }
 
 /** Sets up internal subject data structure for the BLAST search.
@@ -979,6 +1002,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2004/12/02 16:01:24  bealer
+* - Change multiple-arrays to array-of-struct in BlastQueryInfo
+*
 * Revision 1.25  2004/11/30 16:59:16  dondosha
 * Call BlastSeqLoc_RestrictToInterval to adjust lower case mask offsets when query restricted to interval
 *

@@ -1385,9 +1385,9 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
          hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                           sbp->effective_search_sp);
       } else {
-         hsp->evalue = 
-            BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-               query_info->eff_searchsp_array[hsp->context]);
+          Int8 effsp = query_info->contexts[hsp->context].eff_searchsp;
+          hsp->evalue =
+              BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context], effsp);
       }
       hsp->evalue /= gap_decay_divisor;
       /* Put back the unscaled value of Lambda. */
@@ -1715,7 +1715,8 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
 
       context = hsp->context;
 
-      query_start = query_blk->sequence + query_info->context_offsets[context];
+      query_start = query_blk->sequence +
+          query_info->contexts[context].query_offset;
 
       if (gapped) {
          /* NB: This can only happen for blastn after greedy extension with 

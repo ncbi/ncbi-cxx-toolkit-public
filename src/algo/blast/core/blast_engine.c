@@ -98,44 +98,53 @@ static void s_TranslateHSPsToDNAPCoord(EBlastProgramType program,
         BlastInitHitList* init_hitlist, BlastQueryInfo* query_info,
         Int2 subject_frame, Int4 subject_length, Int4 offset)
 {
-   BlastInitHSP* init_hsp;
-   Int4 index, context, frame;
-   Int4* context_offsets = query_info->context_offsets;
-   
-   for (index = 0; index < init_hitlist->total; ++index) {
-      init_hsp = &init_hitlist->init_hsp_array[index];
+    BlastInitHSP * init_hsp = 0;
+    Int4 index = 0;
 
-      if (program == eBlastTypeBlastx) {
-         context = 
-            BSearchInt4(init_hsp->q_off, context_offsets,
-                             query_info->last_context+1);
-         frame = context % 3;
-      
-         init_hsp->q_off = 
-            (init_hsp->q_off - context_offsets[context]) * CODON_LENGTH + 
-            context_offsets[context-frame] + frame;
-         init_hsp->ungapped_data->q_start = 
-            (init_hsp->ungapped_data->q_start - context_offsets[context]) 
-            * CODON_LENGTH + context_offsets[context-frame] + frame;
-      } else {
-         init_hsp->s_off += offset;
-         init_hsp->ungapped_data->s_start += offset;
-         if (subject_frame > 0) {
-            init_hsp->s_off = 
-               (init_hsp->s_off * CODON_LENGTH) + subject_frame - 1;
-            init_hsp->ungapped_data->s_start = 
-               (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
-               subject_frame - 1;
-         } else {
-            init_hsp->s_off = (init_hsp->s_off * CODON_LENGTH) + 
-               subject_length - subject_frame;
-            init_hsp->ungapped_data->s_start = 
-               (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
-               subject_length - subject_frame;
-         }
-      }
-   }
-   return;
+    for(index = 0; index < init_hitlist->total; ++index) {
+        BlastContextInfo * contexts = query_info->contexts;
+        init_hsp = &init_hitlist->init_hsp_array[index];
+        
+        if (program == eBlastTypeBlastx) {
+            Int4 context_idx    = 0; /* Index of this HSP's context */
+            Int4 frame_idx      = 0; /* Index of this frame within set of
+                                        frames with same query and sign */
+            Int4 init_frame_idx = 0; /* First frame of this query */
+            Int4 frame_pos      = 0; /* Start of this frame in DNA */
+            
+            /* Find context containing this HSP */
+            context_idx = BSearchContextInfo(init_hsp->q_off, query_info);
+            
+            frame_idx = context_idx % 3;
+            init_frame_idx = context_idx - frame_idx;
+            
+            frame_pos = contexts[init_frame_idx].query_offset + frame_idx;
+            
+            init_hsp->q_off =
+                (init_hsp->q_off -
+                 contexts[context_idx].query_offset) * CODON_LENGTH + frame_pos;
+            
+            init_hsp->ungapped_data->q_start =
+                (init_hsp->ungapped_data->q_start -
+                 contexts[context_idx].query_offset) * CODON_LENGTH + frame_pos;
+        } else {
+            init_hsp->s_off += offset;
+            init_hsp->ungapped_data->s_start += offset;
+            if (subject_frame > 0) {
+                init_hsp->s_off = 
+                    (init_hsp->s_off * CODON_LENGTH) + subject_frame - 1;
+                init_hsp->ungapped_data->s_start = 
+                    (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
+                    subject_frame - 1;
+            } else {
+                init_hsp->s_off = (init_hsp->s_off * CODON_LENGTH) + 
+                    subject_length - subject_frame;
+                init_hsp->ungapped_data->s_start = 
+                    (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
+                    subject_length - subject_frame;
+            }
+        }
+    }
 }
 
 /** The core of the BLAST search: comparison between the (concatenated)
@@ -175,7 +184,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    BlastInitHitList* init_hitlist = aux_struct->init_hitlist;
    BlastHSPList* hsp_list = aux_struct->hsp_list;
    Uint1* translation_buffer = NULL;
-   Int4* frame_offsets = NULL;
+   Int4* frame_offsets   = NULL;
+   Int4* frame_offsets_a = NULL; /* Will be freed if non-null */
    BlastHitSavingOptions* hit_options = hit_params->options;
    BlastScoringOptions* score_options = score_params->options;
    BlastHSPList* combined_hsp_list = NULL;
@@ -203,15 +213,18 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, &subject->oof_sequence);
          subject->oof_sequence_allocated = TRUE;
+         frame_offsets_a = frame_offsets;
       } else if (program_number == eBlastTypeRpsTblastn ) {
-	 /* For RPS tblastn, subject is actually query, which has already 
-	    been translated during the setup stage. */
-	 translation_buffer = orig_sequence - 1;
-	 frame_offsets = query_info_in->context_offsets;
+          /* For RPS tblastn, subject is actually query, which has already 
+             been translated during the setup stage. */
+          translation_buffer = orig_sequence - 1;
+          frame_offsets_a = frame_offsets =
+              ContextOffsetsToOffsetArray(query_info_in);
       } else {
          BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
             orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, NULL);
+         frame_offsets_a = frame_offsets;
       }
    } else if (program_number == eBlastTypeBlastn) {
       first_context = 1;
@@ -242,7 +255,9 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
       query_info->num_queries = lut->num_profiles;
       query_info->last_context = lut->num_profiles - 1;
-      query_info->context_offsets = lut->rps_seq_offsets;
+      OffsetArrayToContextOffsets(query_info,
+                                  lut->rps_seq_offsets,
+                                  program_number);
    }
 
    /* Loop over frames of the subject sequence */
@@ -253,7 +268,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       Int4 total_subject_length; /* Length of subject sequence used when split. */
 
       if (kTranslatedSubject) {
-         subject->frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
+         subject->frame =
+             BLAST_ContextToFrame(eBlastTypeBlastx, context);
          subject->sequence = 
             translation_buffer + frame_offsets[context] + 1;
          subject->length = 
@@ -396,11 +412,12 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       if (translation_buffer) {
 	 sfree(translation_buffer);
       }
-      if (frame_offsets) {
-	 sfree(frame_offsets);
-      }
    }
-
+   
+   if (frame_offsets_a) {
+       sfree(frame_offsets_a);
+   }
+   
    return status;
 }
 
@@ -652,8 +669,10 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    concat_db_info.num_queries = num_db_seqs;
    concat_db_info.first_context = 0;
    concat_db_info.last_context = num_db_seqs - 1;
-   concat_db_info.context_offsets = lookup->rps_seq_offsets;
-
+   OffsetArrayToContextOffsets(& concat_db_info,
+                               lookup->rps_seq_offsets,
+                               program_number);
+   
    BLAST_RPSTraceback(program_number, hsp_stream, seq_src, 
             &concat_db_info, query, query_info, gap_align, 
             score_params, ext_params, hit_params, 
@@ -874,7 +893,7 @@ BLAST_SearchEngine(EBlastProgramType program_number,
            ext_params, hit_params, eff_len_params, psi_options, 
            db_options, hsp_stream, diagnostics)) != 0)
       return status;
-
+   
    /* Prohibit any subsequent writing to the HSP stream. */
    BlastHSPStreamClose(hsp_stream);
 
