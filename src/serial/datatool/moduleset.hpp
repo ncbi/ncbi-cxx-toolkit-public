@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/12/21 17:18:37  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.10  1999/12/20 21:00:19  vasilche
 * Added generation of sources in different directories.
 *
@@ -48,50 +51,17 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typemapper.hpp>
+#include "mcontainer.hpp"
 #include <list>
 #include <map>
 
 class CDataType;
 class CDataTypeModule;
 
-BEGIN_NCBI_SCOPE
-
-class CNcbiRegistry;
-
-END_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
 
-class CModuleContainer;
 class CModuleSet;
 class CFileSet;
-
-enum EHeadersDirNameSource {
-    eFromNone,
-    eFromSourceFileName,
-    eFromModuleName
-};
-
-class CModuleContainer
-{
-public:
-    typedef map<string, AutoPtr<CDataTypeModule> > TModules;
-
-    CModuleContainer(void);
-    virtual ~CModuleContainer(void);
-
-    virtual const CNcbiRegistry& GetConfig(void) const;
-    virtual const string& GetSourceFileName(void) const;
-    virtual const string& GetHeadersPrefix(void) const;
-    virtual EHeadersDirNameSource GetHeadersDirNameSource(void) const;
-    virtual CDataType* InternalResolve(const string& moduleName,
-                                       const string& typeName) const;
-
-	void SetModuleContainer(const CModuleContainer* parent);
-	const CModuleContainer& GetModuleContainer(void) const;
-private:
-    const CModuleContainer* m_Parent;
-};
 
 class CFileSet : public CModuleContainer
 {
@@ -127,6 +97,8 @@ private:
 class CModuleSet : public CModuleContainer
 {
 public:
+    typedef map<string, AutoPtr<CDataTypeModule> > TModules;
+
     CModuleSet(const string& fileName);
 
     bool Check(void) const;
@@ -135,6 +107,7 @@ public:
     void PrintASN(CNcbiOstream& out) const;
 
     const string& GetSourceFileName(void) const;
+    string GetHeadersPrefix(void) const;
 
     void AddModule(const AutoPtr<CDataTypeModule>& module);
 
@@ -152,6 +125,7 @@ public:
 private:
     TModules m_Modules;
     string m_SourceFileName;
+    mutable string m_PrefixFromSourceFileName;
 
     friend class CFileSet;
 };

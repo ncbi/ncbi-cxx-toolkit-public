@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/21 17:18:35  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.21  1999/12/20 21:00:18  vasilche
 * Added generation of sources in different directories.
 *
@@ -90,8 +93,8 @@ static void Help(void)
         "  -oh Directory for generated C++ headers [Directory] Optional" << NcbiEndl <<
         "  -oc Directory for generated C++ code [Directory] Optional" << NcbiEndl <<
         "  -of File for list of generated C++ files [File Out] Optional" << NcbiEndl <<
-        "  -or Generate .CPP/.HPP files in dirs by on module file name [prefix]" << NcbiEndl <<
-        "  -oR set root directory in NCBI C++ toolkit tree [root] [prefix]" << NcbiEndl <<
+        "  -oR set root directory in NCBI C++ toolkit tree [root]" << NcbiEndl <<
+        "  -or Generate files in subdirs with source name [prefix]" << NcbiEndl <<
         "  -i  Ignore unresolved symbols Optional" << NcbiEndl;
 }
 
@@ -249,20 +252,16 @@ int main(int argc, const char*argv[])
                 case 'c':
                     generator.SetSourcesDir(DirArgument(argv[++i]));
                     break;
-                case 'r':
+                case 'R':
+                    ++i;
+                    generator.SetHeadersDir(Path(DirArgument(argv[i]),
+                                                 "include"));
+                    generator.SetSourcesDir(Path(DirArgument(argv[i]),
+                                                 "src"));
+                    break;
+                case 's':
                     generator.SetHeadersDirPrefix(StringArgument(argv[++i]));
                     generator.SetHeadersDirNameSource(eFromSourceFileName);
-                    break;
-                case 'R':
-                    {
-                        string rootDir = DirArgument(argv[++i]);
-                        string subDir = StringArgument(argv[++i]);
-                        
-                        generator.SetHeadersDir(Path(rootDir, "include"));
-                        generator.SetSourcesDir(Path(rootDir, "src"));
-                        generator.SetHeadersDirPrefix(subDir);
-                        generator.SetHeadersDirNameSource(eFromSourceFileName);
-                    }
                     break;
                 case 'f':
                     generator.SetFileListFileName(FileOutArgument(argv[++i]));

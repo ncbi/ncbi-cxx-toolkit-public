@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/21 17:18:36  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.12  1999/12/20 21:00:19  vasilche
 * Added generation of sources in different directories.
 *
@@ -50,13 +53,13 @@
 #include <corelib/ncbiutil.hpp>
 #include <list>
 #include <map>
+#include "mcontainer.hpp"
 
 USING_NCBI_SCOPE;
 
 class CDataType;
-class CModuleContainer;
 
-class CDataTypeModule {
+class CDataTypeModule : public CModuleContainer {
 public:
     CDataTypeModule(const string& name);
     virtual ~CDataTypeModule();
@@ -76,7 +79,6 @@ public:
         }
 
     const string& GetVar(const string& section, const string& value) const;
-    const string& GetSourceFileName(void) const;
     string GetHeadersPrefix(void) const;
     
     void AddDefinition(const string& name, const AutoPtr<CDataType>& type);
@@ -93,12 +95,6 @@ public:
         {
             return m_Name;
         }
-    const CModuleContainer& GetModuleContainer(void) const
-        {
-            _ASSERT(m_ModuleContainer != 0);
-            return *m_ModuleContainer;
-        }
-    void SetModuleContainer(const CModuleContainer* container);
     const TDefinitions& GetDefinitions(void) const
         {
             return m_Definitions;
@@ -113,8 +109,7 @@ public:
 private:
     bool m_Errors;
     string m_Name;
-
-    const CModuleContainer* m_ModuleContainer;
+    mutable string m_PrefixFromName;
 
     TExports m_Exports;
     TImports m_Imports;

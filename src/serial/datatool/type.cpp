@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/12/21 17:18:37  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.35  1999/12/20 21:00:19  vasilche
 * Added generation of sources in different directories.
 *
@@ -72,23 +75,6 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
     if ( typeInfo->GetSize() > sizeof(AnyType) )
         typeInfo = new CAutoPointerTypeInfo(typeInfo);
     return typeInfo;
-}
-
-string CDataType::Identifier(const string& typeName, bool capitalize)
-{
-    string s;
-    s.reserve(typeName.size());
-    string::const_iterator i = typeName.begin();
-    if ( i != typeName.end() ) {
-        s += capitalize? toupper(*i): *i;
-        while ( ++i != typeName.end() ) {
-            char c = *i;
-            if ( c == '-' || c == '.' )
-                c = '_';
-            s += c;
-        }
-    }
-    return s;
 }
 
 string CDataType::GetTemplateHeader(const string& tmpl)

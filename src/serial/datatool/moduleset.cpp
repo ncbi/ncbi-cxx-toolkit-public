@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/12/21 17:18:36  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.14  1999/12/20 21:00:19  vasilche
 * Added generation of sources in different directories.
 *
@@ -44,53 +47,7 @@
 #include "module.hpp"
 #include "type.hpp"
 #include "exceptions.hpp"
-
-CModuleContainer::CModuleContainer(void)
-    : m_Parent(0)
-{
-}
-
-CModuleContainer::~CModuleContainer(void)
-{
-}
-
-void CModuleContainer::SetModuleContainer(const CModuleContainer* parent)
-{
-    _ASSERT(m_Parent == 0 && parent != 0);
-    m_Parent = parent;
-}
-
-const CModuleContainer& CModuleContainer::GetModuleContainer(void) const
-{
-    _ASSERT(m_Parent != 0);
-    return *m_Parent;
-}
-
-const CNcbiRegistry& CModuleContainer::GetConfig(void) const
-{
-    return GetModuleContainer().GetConfig();
-}
-
-const string& CModuleContainer::GetSourceFileName(void) const
-{
-    return GetModuleContainer().GetSourceFileName();
-}
-
-const string& CModuleContainer::GetHeadersPrefix(void) const
-{
-    return GetModuleContainer().GetHeadersPrefix();
-}
-
-EHeadersDirNameSource CModuleContainer::GetHeadersDirNameSource(void) const
-{
-    return GetModuleContainer().GetHeadersDirNameSource();
-}
-
-CDataType* CModuleContainer::InternalResolve(const string& module,
-                                             const string& type) const
-{
-    return GetModuleContainer().InternalResolve(module, type);
-}
+#include "fileutil.hpp"
 
 CModuleSet::CModuleSet(const string& name)
     : m_SourceFileName(name)
@@ -143,6 +100,17 @@ void CModuleSet::PrintASN(CNcbiOstream& out) const
 const string& CModuleSet::GetSourceFileName(void) const
 {
     return m_SourceFileName;
+}
+
+string CModuleSet::GetHeadersPrefix(void) const
+{
+    const string& prefix = GetModuleContainer().GetHeadersPrefix();
+    if ( GetHeadersDirNameSource() == eFromSourceFileName ) {
+        if ( m_PrefixFromSourceFileName.empty() )
+            m_PrefixFromSourceFileName = BaseName(m_SourceFileName);
+        return Path(prefix, m_PrefixFromSourceFileName);
+    }
+    return prefix;
 }
 
 CDataType* CModuleSet::ExternalResolve(const string& moduleName,

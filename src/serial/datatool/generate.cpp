@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.22  1999/12/20 21:00:18  vasilche
 * Added generation of sources in different directories.
 *
@@ -91,7 +94,7 @@ const string& CCodeGenerator::GetSourceFileName(void) const
     return NcbiEmptyString;
 }
 
-const string& CCodeGenerator::GetHeadersPrefix(void) const
+string CCodeGenerator::GetHeadersPrefix(void) const
 {
     return m_HeadersDirPrefix;
 }

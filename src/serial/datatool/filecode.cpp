@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.6  1999/12/20 21:00:17  vasilche
 * Added generation of sources in different directories.
 *
@@ -52,6 +55,7 @@
 #include "code.hpp"
 #include "type.hpp"
 #include <typeinfo>
+#include "fileutil.hpp"
 
 CFileCode::CFileCode(const string& baseName)
     : m_BaseName(baseName)
@@ -159,7 +163,7 @@ void CFileCode::AddForwardDeclarations(const TForwards& forwards)
 void CFileCode::GenerateHPP(const string& path) const
 {
     string fileName = path + GetHPPName();
-    CNcbiOfstream header(fileName.c_str());
+    CDelayedOfstream header(fileName.c_str());
     if ( !header ) {
         ERR_POST("Cannot create file: " << fileName);
         return;
@@ -221,7 +225,7 @@ void CFileCode::GenerateHPP(const string& path) const
 void CFileCode::GenerateCPP(const string& path) const
 {
     string fileName = path + GetCPPName();
-    CNcbiOfstream code(fileName.c_str());
+    CDelayedOfstream code(fileName.c_str());
     if ( !code ) {
         ERR_POST("Cannot create file: " << fileName);
         return;
@@ -269,7 +273,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
     }
 	header.seekp(0, IOS_BASE::end);
     if ( streampos(header.tellp()) != streampos(0) ) {
-        ERR_POST(Warning <<
+        ERR_POST(Info <<
                  "Will not overwrite existing user file: " << fileName);
         return false;
     }
@@ -318,7 +322,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     }
 	code.seekp(0, IOS_BASE::end);
     if ( streampos(code.tellp()) != streampos(0) ) {
-        ERR_POST(Warning <<
+        ERR_POST(Info <<
                  "Will not overwrite existing user file: " << fileName);
         return false;
     }

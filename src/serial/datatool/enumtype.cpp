@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/21 17:18:33  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.4  1999/12/03 21:42:11  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -47,6 +50,7 @@
 #include "code.hpp"
 #include "typestr.hpp"
 #include "value.hpp"
+#include "fileutil.hpp"
 
 const char* CEnumDataType::GetASNKeyword(void) const
 {

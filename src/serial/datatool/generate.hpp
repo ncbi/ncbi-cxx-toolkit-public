@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.9  1999/12/20 21:00:18  vasilche
 * Added generation of sources in different directories.
 *
@@ -104,7 +107,7 @@ public:
     // generation interface
     const CNcbiRegistry& GetConfig(void) const;
     const string& GetSourceFileName(void) const;
-    const string& GetHeadersPrefix(void) const;
+    string GetHeadersPrefix(void) const;
     void SetHeadersDirPrefix(const string& prefix);
     EHeadersDirNameSource GetHeadersDirNameSource(void) const;
     void SetHeadersDirNameSource(EHeadersDirNameSource source);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.1  1999/12/20 21:00:18  vasilche
 * Added generation of sources in different directories.
 *
@@ -40,6 +43,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <memory>
 
 USING_NCBI_SCOPE;
 
@@ -98,10 +102,36 @@ struct FileInfo {
     EFileType type;
 };
 
+class CDelayedOfstream : public CNcbiOstrstream
+{
+public:
+    CDelayedOfstream(const char* fileName);
+    virtual ~CDelayedOfstream(void);
+
+    bool is_open(void) const
+        {
+            return !m_FileName.empty();
+        }
+    void open(const char* fileName);
+    void close(void);
+
+protected:
+    bool equals(void);
+    bool write(void);
+
+private:
+    string m_FileName;
+    auto_ptr<CNcbiIfstream> m_Istream;
+    auto_ptr<CNcbiOfstream> m_Ostream;
+};
+
 // return combined dir and name, inserting if needed '/'
 string Path(const string& dir, const string& name);
 
 // return base name of file e.g. without dir and extension
 string BaseName(const string& path);
+
+// return valid C name
+string Identifier(const string& typeName, bool capitalize = true);
 
 #endif

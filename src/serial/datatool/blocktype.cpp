@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/12/21 17:18:33  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.7  1999/12/03 21:42:10  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -61,6 +64,7 @@
 #include "code.hpp"
 #include "typestr.hpp"
 #include "value.hpp"
+#include "fileutil.hpp"
 
 class CContainerTypeInfo : public CClassInfoTmpl
 {

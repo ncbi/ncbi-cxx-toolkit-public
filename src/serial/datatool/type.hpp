@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/12/21 17:18:38  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.23  1999/12/03 21:42:13  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -190,7 +193,6 @@ public:
             return *m_References;
         }
 
-    static string Identifier(const string& typeName, bool capitalize = true);
     static string GetTemplateHeader(const string& tmpl);
     static bool IsSimplePointerTemplate(const string& tmpl);
     static string GetTemplateNamespace(const string& tmpl);

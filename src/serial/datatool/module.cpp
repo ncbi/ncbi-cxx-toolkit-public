@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/21 17:18:36  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.13  1999/12/20 21:00:19  vasilche
 * Added generation of sources in different directories.
 *
@@ -47,24 +50,17 @@
 #include <corelib/ncbireg.hpp>
 #include <typeinfo>
 #include "module.hpp"
-#include "moduleset.hpp"
 #include "exceptions.hpp"
 #include "type.hpp"
 #include "fileutil.hpp"
 
 CDataTypeModule::CDataTypeModule(const string& n)
-    : m_Errors(false), m_Name(n), m_ModuleContainer(0)
+    : m_Errors(false), m_Name(n)
 {
 }
 
 CDataTypeModule::~CDataTypeModule()
 {
-}
-
-void CDataTypeModule::SetModuleContainer(const CModuleContainer* container)
-{
-    _ASSERT(m_ModuleContainer == 0 && container != 0);
-    m_ModuleContainer = container;
 }
 
 void CDataTypeModule::AddDefinition(const string& name,
@@ -224,22 +220,15 @@ CDataType* CDataTypeModule::InternalResolve(const string& typeName) const
     THROW1_TRACE(CTypeNotFound, "undefined type: " + typeName);
 }
 
-const string& CDataTypeModule::GetSourceFileName(void) const
-{
-    return GetModuleContainer().GetSourceFileName();
-}
-
 string CDataTypeModule::GetHeadersPrefix(void) const
 {
     const string& prefix = GetModuleContainer().GetHeadersPrefix();
-    switch ( GetModuleContainer().GetHeadersDirNameSource() ) {
-    case eFromSourceFileName:
-        return Path(prefix, BaseName(GetSourceFileName()));
-    case eFromModuleName:
-        return Path(prefix, GetName());
-    default:
-        return prefix;
+    if ( GetHeadersDirNameSource() == eFromModuleName ) {
+        if ( m_PrefixFromName.empty() )
+            m_PrefixFromName = Identifier(m_Name);
+        return Path(prefix, m_PrefixFromName);
     }
+    return prefix;
 }
 
 const string& CDataTypeModule::GetVar(const string& section,
@@ -247,7 +236,7 @@ const string& CDataTypeModule::GetVar(const string& section,
 {
     _ASSERT(!section.empty());
     _ASSERT(!value.empty());
-    const CNcbiRegistry& registry = GetModuleContainer().GetConfig();
+    const CNcbiRegistry& registry = GetConfig();
     const string& s1 = registry.Get(GetName() + '.' + section, value);
     if ( !s1.empty() )
         return s1;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/21 17:18:33  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
 * Revision 1.2  1999/12/17 19:05:18  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -45,6 +48,7 @@
 #include "value.hpp"
 #include "code.hpp"
 #include "typestr.hpp"
+#include "fileutil.hpp"
 
 const char* CChoiceDataType::GetASNKeyword(void) const
 {

@@ -8,7 +8,7 @@
 
 APP = datatool
 OBJ = type statictype enumtype reftype unitype blocktype choicetype \
-	value module moduleset generate typestr filecode code \
+	value mcontainer module moduleset generate typestr filecode code \
 	main fileutil alexer aparser parser lexer
 LIB = xser xncbi
 
