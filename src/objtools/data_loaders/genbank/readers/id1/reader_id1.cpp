@@ -53,6 +53,7 @@
 #include <serial/serial.hpp>
 
 #include <memory>
+#include <iomanip>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -128,54 +129,127 @@ CId1Reader::~CId1Reader()
 }
 
 
+void CId1Reader::PrintStat(const char* type,
+                           size_t count,
+                           const char* what,
+                           double time)
+{
+    if ( !count ) {
+        return;
+    }
+    LOG_POST(type <<' '<<count<<' '<<what<<" in "<<
+             setiosflags(ios::fixed)<<
+             setprecision(3)<<
+             (time)<<" s "<<
+             (time*1000/count)<<" ms/one");
+}
+
+
+void CId1Reader::PrintBlobStat(const char* type,
+                               size_t count,
+                               double bytes,
+                               double time)
+{
+    if ( !count ) {
+        return;
+    }
+    LOG_POST(type<<' '<<count<<" blobs "<<
+             setiosflags(ios::fixed)<<
+             setprecision(2)<<
+             (bytes/1024)<<" kB in "<<
+             setprecision(3)<<
+             (time)<<" s "<<
+             setprecision(2)<<
+             (bytes/time/1024)<<" kB/s");
+}
+
+
+void CId1Reader::LogStat(const char* type, const CSeq_id& id, double time)
+{
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    LOG_POST(type<<' '<<id.AsFastaString()<<" in "<<
+             setiosflags(ios::fixed)<<
+             setprecision(3)<<
+             (time*1000)<<" ms");
+}
+
+
+void CId1Reader::LogStat(const char* type,
+                         const CID1server_maxcomplex& maxplex, double time)
+{
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    LOG_POST(type<<" TSE("<<maxplex.GetSat()<<','<<maxplex.GetEnt()<<") in "<<
+             setiosflags(ios::fixed)<<
+             setprecision(3)<<
+             (time*1000)<<" ms");
+}
+
+
+void CId1Reader::LogStat(const char* type, int gi, double time)
+{
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    LOG_POST(type<<' '<<gi<<" in "<<
+             setiosflags(ios::fixed)<<
+             setprecision(3)<<
+             (time*1000)<<" ms");
+}
+
+
+void CId1Reader::LogBlobStat(const char* type,
+                             const CSeqref& seqref, double bytes, double time)
+{
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    LOG_POST(type<<' '<<seqref.printTSE()<<' '<<
+             setiosflags(ios::fixed)<<
+             setprecision(2)<<
+             (bytes/1024)<<" kB in "<<
+             setprecision(3)<<
+             (time*1000)<<" ms "<<
+             setprecision(2)<<
+             (bytes/1024/time)<<" kB/s");
+}
+
+
 void CId1Reader::PrintStatistics(void) const
 {
-    if ( resolve_id_count ) {
-        LOG_POST("ID1 resolution: resolved "<<resolve_id_count<<" ids in "<<
-                 (resolve_id_time*1000)<<" ms "<<
-                 (resolve_id_time*1000/resolve_id_count)<<" ms/one");
-    }
-    if ( resolve_gi_count ) {
-        LOG_POST("ID1 resolution: resolved "<<resolve_gi_count<<" gis in "<<
-                 (resolve_gi_time*1000)<<" ms "<<
-                 (resolve_gi_time*1000/resolve_gi_count)<<" ms/one");
-    }
-    if ( resolve_ver_count ) {
-        LOG_POST("ID1 resolution: got "<<resolve_ver_count<<" blob ver in "<<
-                 (resolve_ver_time*1000)<<" ms "<<
-                 (resolve_ver_time*1000/resolve_ver_count)<<" ms/one");
-    }
-    if ( main_blob_count ) {
-        LOG_POST("ID1 non-SNP: loaded "<<main_blob_count<<" blobs "<<
-                 (main_bytes/1024)<<" kB in "<<
-                 (main_time*1000)<<" ms "<<
-                 (main_bytes/main_time/1024)<<" kB/s");
-    }
+    PrintStat("ID1 resolution: resolved",
+              resolve_id_count, "ids", resolve_id_time);
+    PrintStat("ID1 resolution: resolved",
+              resolve_gi_count, "gis", resolve_gi_time);
+    PrintStat("ID1 resolution: resolved",
+              resolve_ver_count, "gis", resolve_ver_time);
+    PrintBlobStat("ID1 non-SNP: loaded",
+                  main_blob_count, main_bytes, main_time);
+    PrintBlobStat("ID1 SNP: loaded",
+                  snp_blob_count, snp_compressed, snp_time);
     if ( snp_blob_count ) {
-        LOG_POST("ID1 SNP: loaded "<<snp_blob_count<<" blobs "<<
-                 (snp_compressed/1024)<<" kB in "<<
-                 (snp_time*1000)<<" ms "<<
-                 (snp_compressed/snp_time/1024)<<" kB/s");
-        LOG_POST("ID1 SNP decompression: "<<(snp_compressed/1024)<<" kB -> "<<
+        LOG_POST("ID1 SNP decompression: "<<
+                 setiosflags(ios::fixed)<<
+                 setprecision(2)<<
+                 (snp_compressed/1024)<<" kB -> "<<
                  (snp_uncompressed/1024)<<" kB, compession ratio: "<<
+                 setprecision(1)<<
                  (snp_uncompressed/snp_compressed));
         double snp_parse_time = snp_time - snp_total_read_time;
         LOG_POST("ID1 SNP times: decompression : "<<
-                 (snp_decompression_time*1000)<<
-                 " ms, total read time: "<<
-                 (snp_total_read_time*1000)<<
-                 " ms, parse time: "<<
-                 (snp_parse_time*1000)<<" ms");
+                 setiosflags(ios::fixed)<<
+                 setprecision(3)<<
+                 (snp_decompression_time)<<" s, total read time: "<<
+                 (snp_total_read_time)<<" s, parse time: "<<
+                 (snp_parse_time)<<" s");
     }
-    int total_blob_count = main_blob_count + snp_blob_count;
-    if ( total_blob_count ) {
-        double total_bytes = main_bytes + snp_compressed;
-        double total_time = main_time + snp_time;
-        LOG_POST("ID1 total: loaded "<<total_blob_count<<" blobs "<<
-                 (total_bytes/1024)<<" kB in "<<
-                 (total_time*1000)<<" ms "<<
-                 (total_bytes/total_time/1024)<<" kB/s");
-    }
+    PrintBlobStat("ID1 total: loaded",
+                  main_blob_count + snp_blob_count,
+                  main_bytes + snp_compressed,
+                  main_time + snp_time);
 }
 
 
@@ -366,30 +440,19 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
         if ( id1_request.Which() == CID1server_request::e_Getgi ) {
-            if ( CollectStatistics() > 1 ) {
-                LOG_POST("CId1Reader: resolved id "<<
-                         id1_request.GetGetgi().AsFastaString()<<
-                         " in "<<(time*1000)<<" ms");
-            }
+            LogStat("CId1Reader: resolved id", id1_request.GetGetgi(), time);
             resolve_id_count++;
             resolve_id_time += time;
         }
         else if ( id1_request.Which() == CID1server_request::e_Getblobinfo ) {
             const CID1server_maxcomplex& req = id1_request.GetGetblobinfo();
             if ( req.IsSetSat() ) {
-                if ( CollectStatistics() > 1 ) {
-                    LOG_POST("CId1Reader: got blob version TSE("<<
-                             req.GetSat()<<","<<req.GetEnt()<<
-                             ") in "<<(time*1000)<<" ms");
-                }
+                LogStat("CId1Reader: got blob version", req, time);
                 resolve_ver_count++;
                 resolve_ver_time += time;
             }
             else {
-                if ( CollectStatistics() > 1 ) {
-                    LOG_POST("CId1Reader: resolved gi "<<req.GetGi()<<
-                             " in "<<(time*1000)<<" ms");
-                }
+                LogStat("CId1Reader: resolved gi", req.GetGi(), time);
                 resolve_gi_count++;
                 resolve_gi_time += time;
             }
@@ -462,10 +525,7 @@ void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
 
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
-        if ( CollectStatistics() > 1 ) {
-            LOG_POST("CId1Reader: read blob "<<seqref.printTSE()<<" "<<
-                     (last_object_bytes/1024)<<" kB in "<<(time*1000)<<" ms");
-        }
+        LogBlobStat("CId1Reader: read blob", seqref, last_object_bytes, time);
         main_blob_count++;
         main_bytes += last_object_bytes;
         main_time += time;
@@ -509,10 +569,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
-        if ( CollectStatistics() > 1 ) {
-            LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
-                     (compressed/1024)<<" kB in "<<(time*1000)<<" ms");
-        }
+        LogBlobStat("CId1Reader: read SNP blob", seqref, compressed, time);
         snp_blob_count++;
         snp_compressed += compressed;
         snp_uncompressed += last_object_bytes;
@@ -609,6 +666,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.56  2003/10/24 13:27:40  vasilche
+ * Cached ID1 reader made more safe. Process errors and exceptions correctly.
+ * Cleaned statistics printing methods.
+ *
  * Revision 1.55  2003/10/22 16:36:25  vasilche
  * Fixed typo.
  *

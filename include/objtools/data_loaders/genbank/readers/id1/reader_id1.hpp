@@ -70,6 +70,16 @@ protected:
 
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
     void PrintStatistics(void) const;
+    static void PrintStat(const char* type,
+                          size_t count, const char* what, double time);
+    static void PrintBlobStat(const char* type,
+                              size_t count, double bytes, double time);
+    static void LogStat(const char* type, const CSeq_id& id, double time);
+    static void LogStat(const char* type,
+                        const CID1server_maxcomplex& maxplex, double time);
+    static void LogStat(const char* type, int gi, double time);
+    static void LogBlobStat(const char* type,
+                            const CSeqref& seqref, double bytes, double time);
 
     virtual int x_ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
     virtual void x_RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
@@ -122,6 +132,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.25  2003/10/24 13:27:40  vasilche
+* Cached ID1 reader made more safe. Process errors and exceptions correctly.
+* Cleaned statistics printing methods.
+*
 * Revision 1.24  2003/10/21 16:32:50  vasilche
 * Cleaned ID1 statistics messages.
 * Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.
