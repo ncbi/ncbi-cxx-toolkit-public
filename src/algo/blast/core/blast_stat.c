@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.43  2003/11/28 15:03:48  camacho
+ * Added static keyword to BlastKarlinLtoH
+ *
  * Revision 1.42  2003/11/26 19:12:13  madden
  * code to simplify some routines and use NlmKarlinLambdaNR in place of BlastKarlinLambdaBis (following Mike Gertzs changes to blastkar.c )
  *
@@ -2123,7 +2126,7 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 
 	Calculate H, the relative entropy of the p's and q's
 */
-double 
+static double 
 BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
 {
 	Int4	score;
