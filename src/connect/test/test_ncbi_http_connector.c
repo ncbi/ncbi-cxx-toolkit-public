@@ -41,7 +41,7 @@
 /* Hard-coded pseudo-registry getter
  */
 
-#define TEST_HOST            "ray.nlm.nih.gov"
+#define TEST_HOST            "yar.nlm.nih.gov"
 #define TEST_PORT            "6224"
 #define TEST_PATH            "/tools/vakatov/con_url.cgi"
 #define TEST_ARGS            "arg1+arg2+arg3"
@@ -143,6 +143,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/11/22 15:09:40  lavr
+ * Replace all occurances of "ray" with "yar"
+ *
  * Revision 6.9  2002/10/28 15:47:12  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *

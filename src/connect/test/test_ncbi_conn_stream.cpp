@@ -54,7 +54,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     reg->Set("ID1", "CONN_" REG_CONN_HOST, DEF_CONN_HOST);
     reg->Set("ID1", "CONN_" REG_CONN_PATH, DEF_CONN_PATH);
     reg->Set("ID1", "CONN_" REG_CONN_ARGS, DEF_CONN_ARGS);
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,          "ray.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,          "yar.nlm.nih.gov");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
@@ -249,6 +249,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/11/22 15:09:40  lavr
+ * Replace all occurances of "ray" with "yar"
+ *
  * Revision 6.22  2002/06/10 19:55:11  lavr
  * Take advantage of CONNECT_Init() call
  *
