@@ -1115,43 +1115,50 @@ int operator - (const CTime& t1, const CTime& t2)
 
 CTime AddYear(const CTime& t, int years)
 {
-    return CTime(t).AddYear(years);
+    CTime tmp(t);
+    return tmp.AddYear(years);
 }
 
  
 CTime AddMonth(const CTime& t, int months)
 {
-    return CTime(t).AddMonth(months);
+    CTime tmp(t);
+    return tmp.AddMonth(months);
 }
 
  
 CTime AddDay(const CTime& t, int days)
 {
-    return CTime(t).AddDay(days);
+    CTime tmp(t);
+    return tmp.AddDay(days);
 }
 
  
 CTime AddHour(const CTime& t, int hours)
 {
-    return CTime(t).AddHour(hours);
+    CTime tmp(t);
+    return tmp.AddHour(hours);
 }
 
  
 CTime AddMinute(const CTime& t, int minutes)
 {
-    return CTime(t).AddMinute(minutes);
+    CTime tmp(t);
+    return tmp.AddMinute(minutes);
 }
 
  
 CTime AddSecond(const CTime& t, int seconds)
 {
-    return CTime(t).AddSecond(seconds);
+    CTime tmp(t);
+    return tmp.AddSecond(seconds);
 }
 
  
 CTime AddNanoSecond(const CTime& t, long nanoseconds)
 {
-    return CTime(t).AddNanoSecond(nanoseconds);
+    CTime tmp(t);
+    return tmp.AddNanoSecond(nanoseconds);
 }
 
 
@@ -1187,7 +1194,8 @@ CTime CurrentTime(CTime::ETimeZone tz, CTime::ETimeZonePrecision tzp)
  
 CTime Truncate(const CTime& t)
 {
-    return CTime(t).Truncate();
+    CTime tmp(t);
+    return tmp.Truncate();
 }
 
 
@@ -1197,6 +1205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/10/18 20:13:01  ivanov
+ * Get rid of some Sun Workshop compilation warnings
+ *
  * Revision 1.27  2002/10/17 16:55:30  ivanov
  * Added new time format symbols - 'b' and 'B' (month abbreviated and full name)
  *
