@@ -698,20 +698,22 @@ void LIBCALL sortAlignPieces(Int4 numBlocks)
 
   for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
     /*Copy the list  into the array qs*/
-    qs = (alignPiece **) MemNew(sizeof(alignPiece *)*(numPiecesInList[blockIndex]+1));
-    for (i = 0, sp = (alignPieceLists[blockIndex]); 
-	 i < numPiecesInList[blockIndex]; i++, sp = sp->next) 
-      qs[i] = sp;
-    /*Put sentinel at the end of the array*/
-    qs[i] = &sentinel; 
-    sentinel.score = -(BLAST_SCORE_MIN);
-    alignPiece_quicksort(qs, 0, numPiecesInList[blockIndex]-1);
-    /*Copy back to the list */
-    for (i = numPiecesInList[blockIndex]-1; i > 0; i--)
-      qs[i]->next = qs[i-1];
-    qs[0]->next = NULL;
-    alignPieceLists[blockIndex] = qs[numPiecesInList[blockIndex]-1];
-    MemFree(qs);
+    if (NULL != alignPieceLists[blockIndex]) {
+      qs = (alignPiece **) MemNew(sizeof(alignPiece *)*(numPiecesInList[blockIndex]+1));
+      for (i = 0, sp = (alignPieceLists[blockIndex]); 
+	   i < numPiecesInList[blockIndex]; i++, sp = sp->next) 
+	qs[i] = sp;
+      /*Put sentinel at the end of the array*/
+      qs[i] = &sentinel; 
+      sentinel.score = -(BLAST_SCORE_MIN);
+      alignPiece_quicksort(qs, 0, numPiecesInList[blockIndex]-1);
+      /*Copy back to the list */
+      for (i = numPiecesInList[blockIndex]-1; i > 0; i--)
+	qs[i]->next = qs[i-1];
+      qs[0]->next = NULL;
+      alignPieceLists[blockIndex] = qs[numPiecesInList[blockIndex]-1];
+      MemFree(qs);
+    }
   }
 }
 
@@ -1068,7 +1070,9 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
       }
     }
   }
-  finalPairsToPrint = sortAlignBlocks(finalPairsToPrint,numToPrint);
+  if (NULL != finalPairsToPrint) {
+    finalPairsToPrint = sortAlignBlocks(finalPairsToPrint,numToPrint);
+  }
   lastAlignBlock = finalPairsToPrint;
   listToReturn = lastSeqAlign = NULL;
   while (NULL != lastAlignBlock) {

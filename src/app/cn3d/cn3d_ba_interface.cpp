@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/07/27 12:29:51  thiessen
+* fix block aligner crash
+*
 * Revision 1.1  2002/07/26 15:28:45  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -106,7 +109,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
 
     // make sure the overall structure of this SeqAlign is what we expect
     if (!sa.IsSetDim() || sa.GetDim() != 2 ||
-        !sa.GetSegs().IsDisc() || sa.GetSegs().GetDisc().Get().size() == 0)
+        !((sa.GetSegs().IsDisc() && sa.GetSegs().GetDisc().Get().size() > 0) || sa.GetSegs().IsDenseg()))
     {
         ERR_POST(Error << "Confused by block aligner's result format");
         return NULL;
@@ -118,11 +121,18 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
     (*seqs)[1] = query;
     bma.reset(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
 
+    // get list of segs (can be a single or a set)
+    CSeq_align_set::Tdata segs;
+    if (sa.GetSegs().IsDisc())
+        segs = sa.GetSegs().GetDisc().Get();
+    else
+        segs.push_back(CRef<CSeq_align>(const_cast<CSeq_align*>(&sa)));
+
     // loop through segs, adding aligned block for each starts pair that doesn't describe a gap
-    CSeq_align_set::Tdata::const_iterator s, se = sa.GetSegs().GetDisc().Get().end();
+    CSeq_align_set::Tdata::const_iterator s, se = segs.end();
     CDense_seg::TStarts::const_iterator i_start;
     CDense_seg::TLens::const_iterator i_len;
-    for (s=sa.GetSegs().GetDisc().Get().begin(); s!=se; s++) {
+    for (s=segs.begin(); s!=se; s++) {
 
         // check to make sure query is first id, master is second id
         if ((*s)->GetDim() != 2 || !(*s)->GetSegs().IsDenseg() || (*s)->GetSegs().GetDenseg().GetDim() != 2 ||
@@ -130,7 +140,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
             !query->identifier->MatchesSeqId((*s)->GetSegs().GetDenseg().GetIds().front().GetObject()) ||
             !master->identifier->MatchesSeqId((*s)->GetSegs().GetDenseg().GetIds().back().GetObject()))
         {
-            ERR_POST(Error << "Confused by denseg format in block aligner's result");
+            ERR_POST(Error << "Confused by seg format in block aligner's result");
             return NULL;
         }
 
@@ -268,25 +278,28 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
             subject_id, query_id, &bestFirstBlock, &bestLastBlock,
             Lambda, K, searchSpaceSize);
 
+        // process results; assume first result SeqAlign is the highest scoring
+        if (results) {
 #ifdef _DEBUG
-        AsnIoPtr aip = AsnIoOpen("seqalign-ba.txt", "w");
-        SeqAlignAsnWrite(results, aip, NULL);
-        AsnIoFree(aip, true);
+            AsnIoPtr aip = AsnIoOpen("seqalign-ba.txt", "w");
+            SeqAlignAsnWrite(results, aip, NULL);
+            AsnIoFree(aip, true);
 #endif
 
-        // process results; assume first result SeqAlign is the highest scoring
-        CSeq_align best;
-        std::string err;
-        BlockMultipleAlignment *newAlignment;
-        if (!ConvertAsnFromCToCPP(results, (AsnWriteFunc) SeqAlignAsnWrite, &best, &err) ||
-            (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
-            ERR_POST(Error << "conversion of results to C++ object failed: " << err);
-        } else {
-            newAlignments->push_back(newAlignment);
+            CSeq_align best;
+            std::string err;
+            BlockMultipleAlignment *newAlignment;
+            if (!ConvertAsnFromCToCPP(results, (AsnWriteFunc) SeqAlignAsnWrite, &best, &err) ||
+                (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
+                ERR_POST(Error << "conversion of results to C++ object failed: " << err);
+            } else {
+                newAlignments->push_back(newAlignment);
+            }
+
+            SeqAlignSetFree(results);
         }
 
         // cleanup
-        SeqAlignSetFree(results);
         MemFree(convertedQuery);
         freeBestPairs(numBlocks);
     }

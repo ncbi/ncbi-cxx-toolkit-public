@@ -32,7 +32,7 @@ Contents: Code to test block-based alignments for proteins */
 /*
  * $Id$
  *
- * This file is modified very slightly from Alejandro's blockalign.c as of 7/26/02
+ * This file is modified very slightly from Alejandro's blockalign.c as of 7/27/02
  */
 
 #include <ncbi.h>
@@ -439,7 +439,7 @@ alignBlocks * alignBlocksListFree(alignBlocks *listToFree)
 void freeBestPairs(Int4 numBlocks)
 {
    Int4 blockIndex1, blockIndex2;
-   /*alignBlocks *thisAlign, *nextAlign;*/
+/*   alignBlocks *thisAlign, *nextAlign;*/
 
    for(blockIndex1 = 0; blockIndex1 < numBlocks; blockIndex1++) {
      for(blockIndex2 = 0; blockIndex2 < numBlocks; blockIndex2++) {
@@ -713,20 +713,22 @@ void LIBCALL sortAlignPieces(Int4 numBlocks)
 
   for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
     /*Copy the list  into the array qs*/
-    qs = (alignPiece **) MemNew(sizeof(alignPiece *)*(numPiecesInList[blockIndex]+1));
-    for (i = 0, sp = (alignPieceLists[blockIndex]);
-	 i < numPiecesInList[blockIndex]; i++, sp = sp->next)
-      qs[i] = sp;
-    /*Put sentinel at the end of the array*/
-    qs[i] = &sentinel;
-    sentinel.score = -(BLAST_SCORE_MIN);
-    alignPiece_quicksort(qs, 0, numPiecesInList[blockIndex]-1);
-    /*Copy back to the list */
-    for (i = numPiecesInList[blockIndex]-1; i > 0; i--)
-      qs[i]->next = qs[i-1];
-    qs[0]->next = NULL;
-    alignPieceLists[blockIndex] = qs[numPiecesInList[blockIndex]-1];
-    MemFree(qs);
+    if (NULL != alignPieceLists[blockIndex]) {
+      qs = (alignPiece **) MemNew(sizeof(alignPiece *)*(numPiecesInList[blockIndex]+1));
+      for (i = 0, sp = (alignPieceLists[blockIndex]);
+	   i < numPiecesInList[blockIndex]; i++, sp = sp->next)
+	qs[i] = sp;
+      /*Put sentinel at the end of the array*/
+      qs[i] = &sentinel;
+      sentinel.score = -(BLAST_SCORE_MIN);
+      alignPiece_quicksort(qs, 0, numPiecesInList[blockIndex]-1);
+      /*Copy back to the list */
+      for (i = numPiecesInList[blockIndex]-1; i > 0; i--)
+	qs[i]->next = qs[i-1];
+      qs[0]->next = NULL;
+      alignPieceLists[blockIndex] = qs[numPiecesInList[blockIndex]-1];
+      MemFree(qs);
+    }
   }
 }
 
@@ -843,7 +845,7 @@ void initializeBestPairs(Int4 numBlocks, Int4 queryLength)
 void pruneBestPairs(Int4 blockIndex1, Int4 blockIndex2, Int4 queryLength,
 		    Int4 scoreThreshold)
 {
-  alignBlocks *prevAlignBlock,*thisAlignBlock /*, *nextAlignBlock*/ ;
+  alignBlocks *prevAlignBlock,*thisAlignBlock/*, *nextAlignBlock*/;
   Int4 lastPosition; /*what is the last position matched in the query*/
 
   thisAlignBlock = bestPairs[blockIndex1][blockIndex2];
@@ -1083,7 +1085,9 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
       }
     }
   }
-  finalPairsToPrint = sortAlignBlocks(finalPairsToPrint,numToPrint);
+  if (NULL != finalPairsToPrint) {
+    finalPairsToPrint = sortAlignBlocks(finalPairsToPrint,numToPrint);
+  }
   lastAlignBlock = finalPairsToPrint;
   listToReturn = lastSeqAlign = NULL;
   while (NULL != lastAlignBlock) {
@@ -1345,15 +1349,15 @@ Int2  Main(void)
        fake_bsp->length = query_bsp->length;
        fake_bsp->seq_data_type = query_bsp->seq_data_type;
        fake_bsp->seq_data = query_bsp->seq_data;
-
+       
        obidp = ObjectIdNew();
        obidp->str = StringSave("QUERY");
        ValNodeAddPointer(&(fake_bsp->id), SEQID_LOCAL, obidp);
-
+       
        /* FASTA defline not parsed, ignore the "lcl|tempseq" ID. */
        query_bsp->id = SeqIdSetFree(query_bsp->id);
      }
-
+ 
    searchSpaceSize = getSearchSpaceSize(masterLength,myargs[14].intvalue,myargs[15].intvalue);
 
    private_slp = SeqLocIntNew(0, fake_bsp->length-1 , Seq_strand_plus, SeqIdFindBest(fake_bsp->id, SEQID_GI));
@@ -1363,13 +1367,13 @@ Int2  Main(void)
    allocateAlignPieceMemory(numBlocks);
    findAlignPieces(convertedQuery,queryLength, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue);
    sortAlignPieces(numBlocks);
-   results = makeMultiPieceAlignments(convertedQuery, numBlocks,
+   results = makeMultiPieceAlignments(convertedQuery, numBlocks, 
       queryLength, masterSequence, masterLength,
    blockStarts, blockEnds, allowedGaps, myargs[18].intvalue,
    subject_id,query_id, &bestFirstBlock,&bestLastBlock,myargs[24].floatvalue,
    myargs[25].floatvalue,searchSpaceSize);
-
-
+   
+   
 #ifdef OS_UNIX
    fprintf(outfp, "%s", "done");
 #endif
@@ -1382,19 +1386,19 @@ Int2  Main(void)
    if (show_gi) {
      align_options += TXALIGN_SHOW_GI;
      print_options += TXALIGN_SHOW_GI;
-   }
+   } 
 
    if (myargs[3].intvalue != 0)
      {
        align_options += TXALIGN_MASTER;
-       if (myargs[3].intvalue == 1 ||
+       if (myargs[3].intvalue == 1 || 
 	   myargs[3].intvalue == 3)
 	 align_options += TXALIGN_MISMATCH;
-       if (myargs[3].intvalue == 3 ||
-	   myargs[3].intvalue == 4 ||
+       if (myargs[3].intvalue == 3 || 
+	   myargs[3].intvalue == 4 || 
 	   myargs[3].intvalue == 6)
 	 align_options += TXALIGN_FLAT_INS;
-       if (myargs[3].intvalue == 5 ||
+       if (myargs[3].intvalue == 5 || 
 	   myargs[3].intvalue == 6)
 	 align_options += TXALIGN_BLUNT_END;
      }
@@ -1403,7 +1407,7 @@ Int2  Main(void)
        align_options += TXALIGN_MATRIX_VAL;
        align_options += TXALIGN_SHOW_QS;
      }
-
+   
    number_of_descriptions = myargs[19].intvalue;
    number_of_alignments = myargs[20].intvalue;
 
@@ -1429,18 +1433,16 @@ Int2  Main(void)
 	 PrintDefLinesFromSeqAlign(prune->sap, 80, outfp, print_options, FIRST_PASS, NULL);
 	 free_buff();
 	 prune = BlastPruneHitsFromSeqAlign(results, number_of_alignments, prune);
-/*
-	 if(!DDV_DisplayBlastPairList(prune->sap, NULL,
-                                         outfp, FALSE,
+/*	 if(!DDV_DisplayBlastPairList(prune->sap, NULL, 
+                                         outfp, FALSE, 
                                          align_options,
-                                         align_options & TXALIGN_HTML ? 6 : 1)) {
-                fprintf(stdout,
+                                         align_options & TXALIGN_HTML ? 6 : 1)) { 
+                fprintf(stdout, 
                         "\n\n!!!\n   "
                         "    --------  Failure to print alignment...  --------"
                         "\n!!!\n\n");
                 fflush(stdout);
-            }
-*/
+            }*/
        }
      seqannot->data = results;
      prune = BlastPruneSapStructDestruct(prune);
@@ -1465,7 +1467,7 @@ Int2  Main(void)
    freeBestScores(numBlocks);
    freeBestPairs(numBlocks);
    freeAlignPieceLists(numBlocks);
-   FileClose(infp);
+   FileClose(infp);   
    FileClose(outfp);
    FileClose(diagfp);
    return 0;

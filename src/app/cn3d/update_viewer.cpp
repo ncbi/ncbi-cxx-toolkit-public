@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/07/27 12:29:52  thiessen
+* fix block aligner crash
+*
 * Revision 1.41  2002/07/26 15:28:48  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -891,12 +894,13 @@ void UpdateViewer::BlockAlignUpdate(BlockMultipleAlignment *alignment)
         alignmentManager->blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
             multipleForPSSM, toRealign, &newAlignments);
         if (newAlignments.size() != 1) {
-            ERR_POST(Error <<
-                "UpdateViewer::BlockAlignUpdate() - CreateNewPairwiseAlignmentsByBlockAlignment() failed");
+            ERR_POST(Warning <<
+                "block aligner failed to find any significant alignment; alignment unchanged");
             return;
         }
         if (newAlignments.front()->NAlignedBlocks() == 0) {
-            ERR_POST(Warning << "alignment unchanged");
+            ERR_POST(Warning <<
+                "block aligner failed to find any significant alignment; alignment unchanged");
             delete newAlignments.front();
             return;
         }
