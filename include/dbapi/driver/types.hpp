@@ -211,6 +211,7 @@ public:
     Int8 Value() const  { return m_Null ? 0 : m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
 
+
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
     virtual void AssignValue(CDB_Object& v);
@@ -870,6 +871,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/10/07 13:08:32  kans
+ * repaired inconsistent newlines caught by Mac compiler
+ *
  * Revision 1.10  2002/09/13 18:28:05  soussov
  * fixed bug with long overflow
  *
@@ -906,3 +910,4 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
+
