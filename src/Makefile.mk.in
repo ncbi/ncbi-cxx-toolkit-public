@@ -406,4 +406,4 @@ OBJMGR_LIBS = $(GENBANK_LIBS)
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
 QOBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
-	general xcompress z bz2 qall
+	general xcompress $(CMPRS_LIB) qall
