@@ -243,6 +243,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlkPtr query,
 		      BlastHSPListPtr PNTR hsp_list_ptr);
 
 /** Perform a gapped alignment with traceback
+ * @param program Type of BLAST program [in]
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param gap_align The gapped alignment structure [in] [out]
@@ -251,7 +252,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlkPtr query,
  * @param s_start Offset in subject where to start alignment [in]
  * @param subject_length Maximal allowed extension in subject [in]
  */
-Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject, 
+Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, 
+        Uint1Ptr query, Uint1Ptr subject, 
         BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
