@@ -235,7 +235,7 @@ BLASTFindGeneticCode(int genetic_code)
     _ASSERT(gc_ncbistdaa.IsNcbistdaa());
     _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
 
-    if ( !(retval = new(nothrow) unsigned char[nconv]));
+    if ( !(retval = new(nothrow) unsigned char[nconv]))
         return NULL;
 
     for (unsigned int i = 0; i < nconv; i++)
@@ -258,7 +258,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
 
     // Look for matrix file in local directory
     full_path = mtx;
-    cerr << "Trying " << full_path << "..." << endl;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
         return retval;
@@ -270,7 +269,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     string path = reg.Get("NCBI", "Data");
 
     full_path = CFile::MakePath(path, mtx);
-    cerr << "Trying " << full_path << "..." << endl;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
         return retval;
@@ -282,7 +280,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path += is_prot ? "aa" : "nt";
     full_path += CFile::AddTrailingPathSeparator(full_path);
     full_path += mtx;
-    cerr << "Trying " << full_path << "..." << endl;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
         return retval;
@@ -292,7 +289,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path = "data";
     full_path += CFile::AddTrailingPathSeparator(full_path);
     full_path += mtx;
-    cerr << "Trying " << full_path << "..." << endl;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
         return retval;
@@ -309,7 +305,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         full_path += is_prot ? "aa" : "nt";
         full_path += CFile::AddTrailingPathSeparator(full_path);
         full_path += mtx;
-        cerr << "Trying " << full_path << "..." << endl;
         if (CFile(full_path).Exists()) {
             retval = strdup(full_path.c_str());
             return retval;
@@ -322,7 +317,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path += is_prot ? "aa" : "nt";
     full_path += CFile::AddTrailingPathSeparator(full_path);
     full_path += mtx;
-    cerr << "Trying " << full_path << "..." << endl;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
         return retval;
@@ -334,7 +328,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         full_path = blastmat_env;
         full_path += CFile::AddTrailingPathSeparator(full_path);
         full_path += mtx;
-        cerr << "Trying " << full_path << "..." << endl;
         if (CFile(full_path).Exists()) {
             retval = strdup(full_path.c_str());
             return retval;
@@ -345,7 +338,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path = BLASTMAT_DIR;
     full_path += CFile::AddTrailingPathSeparator(full_path);
     full_path += mtx;
-    cerr << "Trying " << full_path << "..." << endl;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
         return retval;
@@ -361,6 +353,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/04 15:18:23  camacho
+* Minor fixes
+*
 * Revision 1.8  2003/08/01 22:35:02  camacho
 * Added function to get matrix path (fixme)
 *
