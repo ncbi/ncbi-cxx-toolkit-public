@@ -52,7 +52,7 @@ on ProjectData(projName, features, aFileData)
 		end if
 		set myFeatures to features
 		
-		return {name:projName, features:myFeatures, rsrcs:{"Info.plc"}, settings:Â
+		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
 			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, sysPaths:{}, fileData:Â
 			aFileData}
 		
@@ -77,7 +77,7 @@ on SimpleProjectData(projName, section, features)
 			set myLibs to {section}
 			set myPath to section & ":test:"
 		end if
-		return {name:projName, features:myFeatures, rsrcs:{"Info.plc"}, settings:Â
+		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
 			{Prefix File:"", ppcProject:{}}, projLibs:myLibs, dynaLibs:{}, fileData:Â
 			{my mkFileDataListFiles(gSourceDir & myPath, myFileList)}}
 		
@@ -100,7 +100,7 @@ on ComplexProjectData(projName, section, features, filesToAdd)
 			set myLibs to {section}
 			set myPath to section & ":test:"
 		end if
-		return {name:projName, features:myFeatures, rsrcs:{"Info.plc"}, settings:Â
+		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
 			{Prefix File:"", ppcProject:{}}, projLibs:myLibs, dynaLibs:{}, fileData:Â
 			{my mkFileDataListFiles(gSourceDir & myPath, filesToAdd)}}
 		
@@ -227,11 +227,10 @@ on SetProjectData()
 		set myName to "datatool"
 		set myFeatures to {"C++", "cmdline"}
 		set mySettings to {Prefix File:"", ppcProject:{}}
-		set myRsrcs to {"ncbilogo.r", "Info.plc"}
 		set myLibs to {"xncbi", "xser", "xutil"}
 		-- use all the files in the datatool directory
 		set myFiles to {my mkFileData(gSourceDir & "serial:datatool:")}
-		set datatoolData to {name:myName, features:myFeatures, settings:mySettings, rsrcs:myRsrcs, projLibs:myLibs, dynaLibs:{}, fileData:myFiles} Â
+		set datatoolData to {name:myName, features:myFeatures, settings:mySettings, rsrcs:{}, projLibs:myLibs, dynaLibs:{}, fileData:myFiles} Â
 			
 		
 	end tell
@@ -637,6 +636,9 @@ on SetupTarget(proj, targetIndex)
 		
 		if projFeatures contains "cmdline" then
 			copy gRsrcsDir & "Carbon.r" to end of filesToAdd
+		else
+			copy gRsrcsDir & "Info.plc" to end of filesToAdd
+			copy gRsrcsDir & "ncbi.icns" to end of filesToAdd
 		end if
 		Add Files filesToAdd
 		
