@@ -5,7 +5,7 @@
  * Configuration file for the Fast Light Tool Kit (FLTK).
  * @configure_input@
  *
- * Copyright 1998-2002 by Bill Spitzak and others.
+ * Copyright 1998-2003 by Bill Spitzak and others.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
