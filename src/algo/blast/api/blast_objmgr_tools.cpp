@@ -338,7 +338,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 seqbuf = 
                     GetSequence(*itr->seqloc, encoding, itr->scope, strand,
                                 eSentinels);
-            } catch (const CSeqVectorException& exptn) {
+            } catch (const CSeqVectorException&) {
                 sfree(buf);
                 NCBI_THROW(CBlastException, eBadParameter, 
                            "Sequence not found: wrong query type provided");
@@ -974,6 +974,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/08/17 21:49:36  dondosha
+* Removed unused variable
+*
 * Revision 1.15  2004/08/16 19:49:25  dondosha
 * Small memory leak fix; catch CSeqVectorException and throw CBlastException out of setup functions
 *
