@@ -273,6 +273,7 @@ on SetProjectData()
 			{"blocksort.c", "huffman.c", "crctable.c", "randtable.c", "compress.c", "decompress.c", "bzlib.c"})
 		AddSimpleProject("xcompress", {}, "util:compress")
 		AddSimpleProjectListFiles("tables", {}, "util:tables", {"raw_scoremat.c"})
+		AddSimpleProject("sequtil", {}, "util:sequtil")
 		AddSimpleProject("bdb", {"bdb"}, "bdb")
 		
 		set xblastfiles to {Â
@@ -281,6 +282,8 @@ on SetProjectData()
 				}
 		AddProject(ProjectData("xblast", {}, xblastfiles))
 		AddSimpleProject("blast", {}, "algo:blast:core")
+		
+		-- AddSimpleProject("xsqlite", {}, "sqlite") -- until sqlite
 		
 		set libdbFiles to {Â
 			mkFileData(gBdbRootFolder & "btree"), Â
@@ -370,8 +373,12 @@ on SetProjectData()
 		AddSimpleProject("lds", {}, "objtools:lds")
 		AddSimpleProject("lds_admin", {}, "objtools:lds:admin")
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
+		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
 		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
+		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
+		-- AddSimpleProject("ncbi_xloader_blastdb", {}, "objtools:data_loaders:blastdb") -- until sqlite
+		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 	end if
 	
 	-- GUI libs.
@@ -379,8 +386,10 @@ on SetProjectData()
 		-- GuiProject's automatically have 'fltk' feature.
 		
 		AddGuiProject("gui_utils", {}, "utils")
+		-- AddGuiProject("gui_config", {}, "config")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"config_dlg.cpp", "config_items.cpp", "config_mediator.cpp", "settings_set.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"config_dlg.cpp", "feat_config.cpp", "config_mediator.cpp", "settings_set.cpp", "config___.cpp", "config__.cpp"})}))
+		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_feature", {}, "dialogs:feature")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
@@ -444,17 +453,16 @@ on SetProjectData()
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
+		-- AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xblast"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat","xblast", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
-			{"xalgoseq", "gui_multi_col_dlg", "w_fltable", "w_table"})
-		AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"})
+			{"xalgoseq", "gui_multi_col_dlg", "w_fltable", "w_table", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
+		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
-		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
-			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
+		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
