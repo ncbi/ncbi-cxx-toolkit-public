@@ -1127,7 +1127,7 @@ int CNetCacheDApp::Run(void)
             catch (CBDB_Exception& ex)
             {
                 bool drop_db = reg.GetBool("server", "drop_db", 
-                                           true, CNcbiRegistry::eReturn);
+                                           true, 0, CNcbiRegistry::eReturn);
                 if (drop_db) {
                     LOG_POST("Error initializing BDB ICache interface.");
                     LOG_POST(ex.what());
@@ -1248,6 +1248,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/03/24 01:23:44  vakatov
+ * Fix accidental mix-up of 'flags' vs 'action' arg in calls to
+ * CNcbiRegistry::Get*()
+ *
  * Revision 1.46  2005/03/22 18:55:18  kuznets
  * Reflecting changes in connect library layout
  *

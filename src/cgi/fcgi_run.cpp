@@ -238,7 +238,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 
     // Statistics
-    bool is_stat_log = reg.GetBool("CGI", "StatLog", false,
+    bool is_stat_log = reg.GetBool("CGI", "StatLog", false, 0,
                                    CNcbiRegistry::eReturn);
     auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
@@ -412,7 +412,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CAutoCgiContext auto_context(m_Context);
 
             // Checking for exit request (if explicitly allowed)
-            if (reg.GetBool("FastCGI", "HonorExitRequest", false,
+            if (reg.GetBool("FastCGI", "HonorExitRequest", false, 0,
                             CNcbiRegistry::eErrPost)
                 && m_Context->GetRequest().GetEntries().find("exitfastcgi")
                 != m_Context->GetRequest().GetEntries().end()) {
@@ -432,7 +432,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
 
             // Debug message (if requested)
-            bool is_debug = reg.GetBool("FastCGI", "Debug", false,
+            bool is_debug = reg.GetBool("FastCGI", "Debug", false, 0,
                                         CNcbiRegistry::eErrPost);
             if ( is_debug ) {
                 m_Context->PutMsg
@@ -502,7 +502,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             // (If to) abrupt the FCGI loop on error
             {{
                 bool is_stop_onfail = reg.GetBool
-                    ("FastCGI","StopIfFailed", false, CNcbiRegistry::eErrPost);
+                    ("FastCGI","StopIfFailed", false, 0,
+                     CNcbiRegistry::eErrPost);
                 if ( is_stop_onfail ) {     // configured to stop on error
                     // close current request
                     OnEvent(eExitOnFail, 113);
@@ -570,6 +571,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.54  2005/03/24 01:23:44  vakatov
+ * Fix accidental mix-up of 'flags' vs 'action' arg in calls to
+ * CNcbiRegistry::Get*()
+ *
  * Revision 1.53  2005/03/23 22:36:21  ucko
  * Fix call to GetInto for [FastCGI]Iterations -- err_action was
  * accidentally being passed as flags.

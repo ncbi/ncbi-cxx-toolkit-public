@@ -276,8 +276,7 @@ void CSplitCacheApp::SetupCache(void)
             cache_dir = args["cache_dir"].AsString();
         }
         else {
-            cache_dir = reg.GetString("LOCAL_CACHE", "Path",
-                                      cache_dir, CNcbiRegistry::eErrPost);
+            cache_dir = reg.GetString("LOCAL_CACHE", "Path", cache_dir);
         }
         if ( cache_dir.empty() ) {
             ERR_POST(Fatal << "empty cache directory name");
@@ -300,7 +299,7 @@ void CSplitCacheApp::SetupCache(void)
         m_Cache.reset(cache = new CBDB_Cache());
         
         int blob_age = reg.GetInt("LOCAL_CACHE", "Age", kDefaultCacheBlobAge,
-                                  CNcbiRegistry::eErrPost);
+                                  0, CNcbiRegistry::eErrPost);
 
         // Cache cleaning
         // Objects age should be assigned in days, negative value
@@ -335,7 +334,7 @@ void CSplitCacheApp::SetupCache(void)
         m_IdCache.reset(cache = new CBDB_Cache());
         
         int id_age = reg.GetInt("LOCAL_CACHE", "IdAge", kDefaultCacheIdAge,
-                                CNcbiRegistry::eErrPost);
+                                0, CNcbiRegistry::eErrPost);
         
         if ( id_age <= 0 ) {
             id_age = kDefaultCacheIdAge;
@@ -814,6 +813,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/03/24 01:23:44  vakatov
+* Fix accidental mix-up of 'flags' vs 'action' arg in calls to
+* CNcbiRegistry::Get*()
+*
 * Revision 1.32  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *

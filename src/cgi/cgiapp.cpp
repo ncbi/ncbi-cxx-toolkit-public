@@ -80,8 +80,8 @@ int CCgiApplication::Run(void)
     CTime start_time(CTime::eCurrent);
 
     // Logging for statistics
-    bool is_stat_log =
-        GetConfig().GetBool("CGI", "StatLog", false, CNcbiRegistry::eReturn);
+    bool is_stat_log = GetConfig().GetBool("CGI", "StatLog", false,
+                                           0, CNcbiRegistry::eReturn);
     auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     // Logging
@@ -228,7 +228,7 @@ CCgiContext* CCgiApplication::CreateContext
  int               ofd)
 {
     int errbuf_size =
-        GetConfig().GetInt("CGI", "RequestErrBufSize", 256,
+        GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 0,
                            CNcbiRegistry::eReturn);
 
     return 
@@ -521,14 +521,14 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
 
     if ( flags & fBegin ) {
         bool is_print_iter = reg.GetBool("FastCGI", "PrintIterNo",
-                                         false, CNcbiRegistry::eErrPost);
+                                         false, 0, CNcbiRegistry::eErrPost);
         if ( is_print_iter ) {
             msg << " Iteration = " << iteration << NcbiEndl;
         }
     }
 
     bool is_timing =
-        reg.GetBool("CGI", "TimeStamp", false, CNcbiRegistry::eErrPost);
+        reg.GetBool("CGI", "TimeStamp", false, 0, CNcbiRegistry::eErrPost);
     if ( is_timing ) {
         msg << " start time = "  << start_time.AsString();
 
@@ -576,7 +576,7 @@ void CCgiApplication::x_AddLBCookie()
     if ( cookie_name.empty() )
         return;
 
-    int life_span = reg.GetInt("CGI-LB", "LifeSpan", 0,
+    int life_span = reg.GetInt("CGI-LB", "LifeSpan", 0, 0,
                                CNcbiRegistry::eReturn);
 
     string domain = reg.GetString("CGI-LB", "Domain", ".ncbi.nlm.nih.gov");
@@ -592,7 +592,7 @@ void CCgiApplication::x_AddLBCookie()
     string path = reg.Get("CGI-LB", "Path");
 
     bool secure = reg.GetBool("CGI-LB", "Secure", false,
-                              CNcbiRegistry::eErrPost);
+                              0, CNcbiRegistry::eErrPost);
 
     string host;
 
@@ -665,7 +665,7 @@ string CCgiStatistics::Compose(void)
 
     // Check if it is assigned NOT to log the requests took less than
     // cut off time threshold
-    int time_cutoff = reg.GetInt("CGI", "TimeStatCutOff", 0,
+    int time_cutoff = reg.GetInt("CGI", "TimeStatCutOff", 0, 0,
                                  CNcbiRegistry::eReturn);
     if (time_cutoff > 0) {
         int diff = end_time.DiffSecond(m_StartTime);
@@ -689,7 +689,7 @@ string CCgiStatistics::Compose(void)
     }
 
     bool is_timing =
-        reg.GetBool("CGI", "TimeStamp", false, CNcbiRegistry::eErrPost);
+        reg.GetBool("CGI", "TimeStamp", false, 0, CNcbiRegistry::eErrPost);
     if ( is_timing ) {
         tmp_str = Compose_Timing(end_time);
         if ( !tmp_str.empty() ) {
@@ -807,6 +807,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.61  2005/03/24 01:23:44  vakatov
+* Fix accidental mix-up of 'flags' vs 'action' arg in calls to
+* CNcbiRegistry::Get*()
+*
 * Revision 1.60  2005/03/10 18:04:23  vakatov
 * GetArgs() -- fixes, mostly to avoid unintended caching of arg values in FCGI
 *
