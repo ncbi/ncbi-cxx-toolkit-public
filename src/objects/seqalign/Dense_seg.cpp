@@ -916,7 +916,7 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     starts.push_back(seg_type == 1? -1: query_start + query_close);
     strands.push_back(query_strand);
     
-    TSeqPos subj_close = subj_strand? start2: 1 - pos2;
+    TSeqPos subj_close = subj_strand == eNa_strand_plus? start2: 1 - pos2;
     starts.push_back(seg_type == 2? -1: subj_start + subj_close);
     strands.push_back(subj_strand);
     
@@ -942,6 +942,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/11/08 22:44:46  kapustin
+* Fix subj_strand condition in FromTranscript()
+*
 * Revision 1.17  2004/10/21 01:38:12  kapustin
 * +FromTranscript
 *
@@ -979,7 +982,8 @@ END_NCBI_SCOPE
 * +RemapToLoc
 *
 * Revision 1.5  2003/09/25 17:50:14  dicuccio
-* Changed testing of STL container size to use empty() and avoid warning on MSVC
+* Changed testing of STL container size to use empty() and avoid
+* warning on MSVC
 *
 * Revision 1.4  2003/09/16 15:31:14  todorov
 * Added validation methods. Added seq range methods
