@@ -58,32 +58,43 @@ extern const unsigned int UNFROZEN_BLOCK;
 
 /* info on block structure */
 typedef struct {
-  unsigned int nBlocks;         /* number of blocks */
-  unsigned int *blockPositions; /* first residue of each block on subject (zero-numbered) */
-  unsigned int *blockSizes;     /* length of each block */
-  unsigned int *maxLoops;       /* nBlocks-1 max loop sizes */
-  unsigned int *freezeBlocks;   /* first residue of each block on query (zero-numbered) if frozen;
-                                    UNFROZEN_BLOCK otherwise (default) */
+    unsigned int nBlocks;           /* number of blocks */
+    unsigned int *blockPositions;   /* first residue of each block on subject (zero-numbered) */
+    unsigned int *blockSizes;       /* length of each block */
+    unsigned int *maxLoops;         /* nBlocks-1 max loop sizes */
+    unsigned int *freezeBlocks;     /* first residue of each block on query (zero-numbered) if frozen;
+                                        UNFROZEN_BLOCK otherwise (default); global alignment only! */
 } DP_BlockInfo;
 
 /* convenience functions for allocating/destroying BlockInfo structures;
    do not use free (MemFree), because these are C++-allocated! */
-DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
-void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
+extern DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
+extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
 
 /* callback function to get the score for a block at a specified position;
    should return NEGATIVE_INFINITY if the block can't be aligned at this position */
 typedef int (*DP_BlockScoreFunction)(unsigned int block, unsigned int queryPos);
 
+/* returned alignment structure */
+typedef struct {
+    int score;                      /* alignment score */
+    unsigned int nBlocks;           /* number of blocks in this alignment */
+    unsigned int firstBlock;        /* first block aligned (w.r.t. subject blocks) */
+    unsigned int *blockPositions;   /* positions of blocks on query (zero-numbered) */
+} DP_AlignmentResult;
+
 /* main alignment routine */
-int                                     /* returns an above STRUCT_DP_ error code */
+extern int                              /* returns an above STRUCT_DP_ error code */
 DP_GlobalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
     unsigned int queryFrom,             /* range of query to search */
-    unsigned int queryTo          
+    unsigned int queryTo,
+    DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
 );
 
+/* for destroying alignment result; do not use free (MemFree) */
+extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
 
 #ifdef __cplusplus
 }
@@ -94,6 +105,9 @@ DP_GlobalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/06/18 21:46:09  thiessen
+* add traceback, alignment return structure
+*
 * Revision 1.3  2003/06/18 19:17:17  thiessen
 * try once more to fix lf issue
 *

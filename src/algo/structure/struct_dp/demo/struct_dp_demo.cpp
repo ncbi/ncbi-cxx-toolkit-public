@@ -177,7 +177,39 @@ int DPApp::Run(void)
     query = "ASYQVRLINKKQDIDTTIEIDEETTILDGAEENGIELPFSCHSGSCSSCVGKVVEGEVDQSDQ"
                 "IFLDDEQMGKGFALLCVTYPRSNCTIKTHQEPYLA";
 
-    int result = DP_GlobalBlockAlign(blocks, ScoreByBlosum62, 0, query.size() - 1);
+    DP_AlignmentResult *alignment;
+    int result = DP_GlobalBlockAlign(blocks, ScoreByBlosum62, 0, query.size() - 1, &alignment);
+
+    // crudely print out alignment result
+    if (result == STRUCT_DP_FOUND_ALIGNMENT) {
+        INFO_MESSAGE("Found alignment, total score: " << alignment->score
+            << " for " << alignment->nBlocks << " blocks");
+        unsigned int block;
+        for (block=alignment->firstBlock; block<alignment->firstBlock+alignment->nBlocks; block++) {
+            INFO_MESSAGE(
+                "Block " << (block + 1) << ", score " 
+                << ScoreByBlosum62(block, alignment->blockPositions[block]) << ":\n"
+                << "S: " << subject.substr(blocks->blockPositions[block], blocks->blockSizes[block])
+                << ' ' << (blocks->blockPositions[block] + 1) << '-'
+                << (blocks->blockPositions[block] + blocks->blockSizes[block]) << '\n'
+                << "Q: " << query.substr(
+                    alignment->blockPositions[block - alignment->firstBlock], 
+                    blocks->blockSizes[block - alignment->firstBlock])
+                << ' ' << (alignment->blockPositions[block - alignment->firstBlock] + 1) << '-'
+                << (alignment->blockPositions[block - alignment->firstBlock] + blocks->blockSizes[block])
+            );
+            
+        }
+        DP_DestroyAlignmentResult(alignment);
+    } 
+
+    else if (result == STRUCT_DP_NO_ALIGNMENT) {
+        INFO_MESSAGE("Found no significant alignment");
+    }
+
+    else if (result == STRUCT_DP_PARAMETER_ERROR || result == STRUCT_DP_ALGORITHM_ERROR) {
+        ERROR_MESSAGE("DP_GlobalBlockAlign() failed");
+    }
 
     DP_DestroyBlockInfo(blocks);
     return 0;
@@ -201,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/06/18 21:46:10  thiessen
+* add traceback, alignment return structure
+*
 * Revision 1.2  2003/06/18 19:10:17  thiessen
 * fix lf issues
 *

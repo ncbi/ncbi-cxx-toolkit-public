@@ -36,6 +36,7 @@
 #include <corelib/ncbi_limits.h>
 
 #include <vector>
+#include <deque>
 
 #include <struct_dp/struct_dp.h>
 
@@ -178,7 +179,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
 
     // fill in first row with scores of first block at all possible positions
     for (residue=firstPos[0]; residue<=lastPos[0]; residue++)
-        matrix[0][residue].score = BlockScore(0, residue);
+        matrix[0][residue - queryFrom].score = BlockScore(0, residue);
 
     // for each successive block, find the best allowed pairing of the block with the previous block
     bool blockScoreCalculated;
@@ -199,7 +200,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
                     continue;
             
                 // make sure previous block is at an allowed position
-                if (matrix[block-1][prevResidue].score == NEGATIVE_INFINITY)
+                if (matrix[block-1][prevResidue - queryFrom].score == NEGATIVE_INFINITY)
                     continue;
 
                 // get score at this position
@@ -211,32 +212,66 @@ int CalculateGlobalMatrix(Matrix& matrix,
                 }
 
                 // find highest sum of scores for allowed pairing of this block with any previous
-                sum = score + matrix[block-1][prevResidue].score;
-                if (sum > matrix[block][residue].score) {
-                    matrix[block][residue].score = sum;
-                    matrix[block][residue].tracebackResidue = prevResidue;
+                sum = score + matrix[block-1][prevResidue - queryFrom].score;
+                if (sum > matrix[block][residue - queryFrom].score) {
+                    matrix[block][residue - queryFrom].score = sum;
+                    matrix[block][residue - queryFrom].tracebackResidue = prevResidue;
                 }
             }
         }
     }
 
+    return STRUCT_DP_OKAY;
+}
+
+int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned int lastBlockPos,
+    const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
+    DP_AlignmentResult **alignment)
+{
+    // trace backwards from last block/pos
+    deque < unsigned int > blockPositions;
+    unsigned int block = lastBlock, pos = lastBlockPos;
+    do {
+        blockPositions.push_back(pos);  // list is backwards after this...
+        pos = matrix[block][pos - queryFrom].tracebackResidue;
+        block--;
+    } while (pos != NO_TRACEBACK);
+    unsigned int firstBlock = block + 1; // last block traced to == first block of the alignment
+
+    // allocate and fill in alignment result structure
+    *alignment = new DP_AlignmentResult;
+    (*alignment)->score = matrix[lastBlock][lastBlockPos - queryFrom].score;
+    (*alignment)->firstBlock = firstBlock;
+    (*alignment)->nBlocks = blockPositions.size();
+    (*alignment)->blockPositions = new unsigned int[blockPositions.size()];
+    for (block=0; block<blockPositions.size(); block++)
+        (*alignment)->blockPositions[block] = blockPositions[lastBlock - firstBlock - block];
+    return STRUCT_DP_FOUND_ALIGNMENT;
+}
+
+int TracebackGlobalAlignment(const Matrix& matrix, 
+    const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
+    DP_AlignmentResult **alignment)
+{
     // find max score (e.g., best-scoring position of last block)
-    score = NEGATIVE_INFINITY;
-    unsigned int lastBlockPos;
-    for (residue=firstPos[lastBlock]; residue<=lastPos[lastBlock]; residue++) {
-        if (matrix[lastBlock][residue].score > score) {
-            score = matrix[lastBlock][residue].score;
+    int score = NEGATIVE_INFINITY;
+    unsigned int residue, lastBlockPos;
+    for (residue=queryFrom; residue<=queryTo; residue++) {
+        if (matrix[blocks->nBlocks - 1][residue - queryFrom].score > score) {
+            score = matrix[blocks->nBlocks - 1][residue - queryFrom].score;
             lastBlockPos = residue;
         }
     }
 
     if (score == NEGATIVE_INFINITY) {
-        ERROR_MESSAGE("CalculateGlobalMatrix() - somehow failed to find any allowed alignment");
+        ERROR_MESSAGE("TracebackGlobalAlignment() - somehow failed to find any allowed global alignment");
         return STRUCT_DP_ALGORITHM_ERROR;
     }
-    INFO_MESSAGE("Score of best alignment: " << score);
+    INFO_MESSAGE("Score of best global alignment: " << score);
 
-    return STRUCT_DP_OKAY;
+    return TracebackAlignment(
+        matrix, blocks->nBlocks - 1, lastBlockPos, blocks, 
+        queryFrom, queryTo, alignment);
 }
 
 END_SCOPE(struct_dp)
@@ -249,7 +284,8 @@ USING_SCOPE(struct_dp);
 
 int DP_GlobalBlockAlign(
     const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore,
-    unsigned int queryFrom, unsigned int queryTo)
+    unsigned int queryFrom, unsigned int queryTo,
+    DP_AlignmentResult **alignment)
 {
     if (!blocks || blocks->nBlocks < 1 || !blocks->blockSizes || !BlockScore || queryTo < queryFrom) {
         ERROR_MESSAGE("GlobalBlockAlign() - invalid parameters");
@@ -278,9 +314,8 @@ int DP_GlobalBlockAlign(
         return status;
     }
 
-//    status = TracebackAlignment(matrix);
-
-    return STRUCT_DP_NO_ALIGNMENT;
+    status = TracebackGlobalAlignment(matrix, blocks, queryFrom, queryTo, alignment);
+    return status;
 }
 
 DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
@@ -298,6 +333,8 @@ DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
 
 void DP_DestroyBlockInfo(DP_BlockInfo *blocks)
 {
+    if (!blocks)
+        return;
     delete blocks->blockPositions;
     delete blocks->blockSizes;
     delete blocks->maxLoops;
@@ -305,9 +342,20 @@ void DP_DestroyBlockInfo(DP_BlockInfo *blocks)
     delete blocks;
 }
 
+void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
+{
+    if (!alignment) 
+        return;
+    delete alignment->blockPositions;
+    delete alignment;
+}
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/06/18 21:46:09  thiessen
+* add traceback, alignment return structure
+*
 * Revision 1.2  2003/06/18 19:10:17  thiessen
 * fix lf issues
 *
