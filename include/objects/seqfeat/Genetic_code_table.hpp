@@ -47,6 +47,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CObjectIStream;
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CGen_code_table_imp;
@@ -164,6 +166,11 @@ public:
     static int CodonToIndex(char base1, char base2, char base3);
     static int CodonToIndex(const string& codon);
 
+    // Attempt to load a new translation table; if it fails, throw
+    // an exception and continue to use the old one.
+    static void LoadTransTable(CObjectIStream& ois);
+    static void LoadTransTable(const string& path, ESerialDataFormat format);
+
 private:
     // this class uses a singleton internally to manage the specifics
     // of the genetic code implementation
@@ -278,6 +285,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/12/14 16:41:47  ucko
+* +CGen_code_table::LoadTransTable to support optionally replacing the
+* builtin copy.
+*
 * Revision 1.10  2003/06/19 21:49:32  johnson
 * bug fix: IsOrfStop now calls GetCodonResidue instead of GetStartResidue
 *
