@@ -299,7 +299,7 @@ const CSeq_id& GetId(const CBioseq_Handle& handle,
     case eGetId_Best:
         {{
             CConstRef<CSynonymsSet> syns =
-                handle.GetScope().GetSynonyms(*handle.GetSeqId());
+                handle.GetScope().GetSynonyms(handle.GetSeq_id_Handle());
             if ( !syns ) {
                 string msg("No synonyms found for sequence ");
                 handle.GetSeqId()->GetLabel(&msg);
@@ -312,7 +312,6 @@ const CSeq_id& GetId(const CBioseq_Handle& handle,
                 ids.push_back
                     (CRef<CSeq_id>(const_cast<CSeq_id*>(idh.GetSeqId().GetPointer())));
             }
-
             CConstRef<CSeq_id> best_id = FindBestChoice(ids, CSeq_id::Score);
             if (best_id) {
                 return *best_id;
@@ -2683,9 +2682,9 @@ static void s_RearrangeRanges(TRangeVec& ranges)
 }
 
 
-CSeq_loc* SeqLocMerge
+CSeq_loc* SeqLocMergeOne
 (const CBioseq_Handle& target,
- vector< CConstRef<CSeq_loc> >& locs,
+ const CSeq_loc& loc,
  TSeqLocFlags flags)
 {
     _ASSERT(target);
@@ -2693,24 +2692,19 @@ CSeq_loc* SeqLocMerge
     TRangeVec ranges;
 
     CRef<CSeq_id> id(new CSeq_id);
-    id->Assign(*FindBestChoice(target.GetBioseqCore()->GetId(), CSeq_id::BestRank));
+    id->Assign(GetId(target, eGetId_Best));
 
-
-    CSeq_inst::TTopology topology = target.GetBioseqCore()->GetInst().CanGetTopology() ?
-        target.GetBioseqCore()->GetInst().GetTopology() : CSeq_inst::eTopology_not_set;
+    const CSeq_inst& inst = target.GetInst();
+    CSeq_inst::TTopology topology = inst.CanGetTopology() ?
+        inst.GetTopology() : CSeq_inst::eTopology_not_set;
     bool circular = (topology == CSeq_inst::eTopology_circular);
     if ( circular ) {  // circular topology overrides fSingleInterval flag
         flags &= ~fSingleInterval;
     }
-    TSeqPos seq_len = target.GetBioseqLength();
+    TSeqPos seq_len = inst.IsSetLength() ? inst.GetLength() : 0;
 
-    // create a single Seq-loc holding all the locations
-    CSeq_loc temp;
-    ITERATE( vector< CConstRef<CSeq_loc> >, it, locs ) {
-        temp.Add(**it);
-    }
     // map the location to the target bioseq
-    CRef<CSeq_loc> mapped_loc(target.MapLocation(temp));
+    CRef<CSeq_loc> mapped_loc(target.MapLocation(loc));
     _ASSERT(IsOneBioseq(*mapped_loc));  // doesn't have multiple bioseqs
 
     ENa_strand strand = GetStrand(*mapped_loc);
@@ -4115,6 +4109,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.79  2004/05/06 17:39:43  shomrat
+* Fixes to SeqLocMerge
+*
 * Revision 1.78  2004/04/06 14:03:15  dicuccio
 * Added API to extract the single Org-ref from a bioseq handle.  Added API to
 * retrieve a single tax-id from a bioseq handle
