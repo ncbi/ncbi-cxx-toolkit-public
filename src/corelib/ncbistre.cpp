@@ -38,17 +38,18 @@
 BEGIN_NCBI_SCOPE
 
 
-static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str, char delim, char delim2)
+static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
+                                   char delim, char delim2)
 {
     int ch;
 
 #ifdef NO_PUBSYNC
     if ( !is.ipfx(1) )
-      return is;
+        return is;
 #else
     CNcbiIstream::sentry s(is);
-    if ( !s)
-      return is;
+    if ( !s )
+        return is;
 #endif
 
     str.erase();
@@ -56,20 +57,20 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str, char delim, ch
     SIZE_TYPE end = str.max_size();
     SIZE_TYPE i = 0;
     for (ch = is.rdbuf()->sbumpc();  ch != EOF;  ch = is.rdbuf()->sbumpc()) {
-      i++;
-      if ((char)ch == delim || (char)ch == delim2)
-        break;
-      if (i == end) {
-          is.clear(NcbiFailbit | is.rdstate());      
-          break;
-      }
+        i++;
+        if ((char) ch == delim  ||  (char) ch == delim2)
+            break;
+        if (i == end) {
+            is.clear(NcbiFailbit | is.rdstate());      
+            break;
+        }
         
-      str.append(1, (char)ch);
+        str.append(1, (char) ch);
     }
     if (ch == EOF) 
-      is.clear(NcbiEofbit | is.rdstate());      
-    if (!i)
-      is.clear(NcbiFailbit | is.rdstate());      
+        is.clear(NcbiEofbit | is.rdstate());      
+    if ( !i )
+        is.clear(NcbiFailbit | is.rdstate());      
 
 #ifdef NO_PUBSYNC
     is.isfx();
@@ -295,7 +296,7 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 
     SIZE_TYPE end = str.max_size();
     if ( is.width() )
-      end = (int)end < is.width() ? end : is.width(); 
+        end = (int)end < is.width() ? end : is.width(); 
 
     SIZE_TYPE i = 0;
     for (ch = is.rdbuf()->sbumpc();  ch != EOF  &&  !isspace(ch);
@@ -306,9 +307,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
             break;
     }
     if (ch == EOF) 
-      is.clear(NcbiEofbit | is.rdstate());      
+        is.clear(NcbiEofbit | is.rdstate());      
     if ( !i )
-      is.clear(NcbiFailbit | is.rdstate());      
+        is.clear(NcbiFailbit | is.rdstate());      
 
     is.width(0);
     return is;
@@ -320,8 +321,12 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/03/27 23:10:43  vakatov
+ * Identation
+ *
  * Revision 1.20  2003/03/26 21:18:54  kans
- * s_NcbiGetline takes two delimiters, NcbiGetlineEOL calls this if NCBI_OS_DARWIN to handle both kinds of newlines
+ * s_NcbiGetline takes two delimiters, NcbiGetlineEOL calls this if
+ * NCBI_OS_DARWIN to handle both kinds of newlines
  *
  * Revision 1.19  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
