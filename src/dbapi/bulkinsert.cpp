@@ -31,6 +31,12 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/10/03 18:49:59  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
 * Revision 1.2  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -62,6 +68,13 @@ CBulkInsert::CBulkInsert(const string& name,
 
 CBulkInsert::~CBulkInsert()
 {
+    Close();
+    Notify(CDbapiDeletedEvent(this));
+    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+}
+
+void CBulkInsert::Close()
+{
     delete m_cmd;
     m_cmd = 0;
     if( m_conn != 0 ) {
@@ -69,12 +82,10 @@ CBulkInsert::~CBulkInsert()
             delete m_conn;
             m_conn = 0;
         }
-        //Notify(CDbapiClosedEvent(this));
+        Notify(CDbapiClosedEvent(this));
     }
-    Notify(CDbapiDeletedEvent(this));
 }
-
-  
+ 
 void CBulkInsert::Bind(unsigned int col, CVariant* v)
 {
     GetBCPInCmd()->Bind(col - 1, v->GetData());

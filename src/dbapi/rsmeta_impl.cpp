@@ -31,6 +31,12 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
 * Revision 1.3  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -73,6 +79,7 @@ CResultSetMetaData::CResultSetMetaData(CDB_Result *rs)
 CResultSetMetaData::~CResultSetMetaData()
 {
   Notify(CDbapiDeletedEvent(this));
+  _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
 
 void CResultSetMetaData::Action(const CDbapiEvent& e) 
@@ -85,7 +92,6 @@ void CResultSetMetaData::Action(const CDbapiEvent& e)
     if(dynamic_cast<CResultSet*>(e.GetSource()) != 0 ) {
         _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
       delete this;
-      //SetValid(false);
     }
   }
 }

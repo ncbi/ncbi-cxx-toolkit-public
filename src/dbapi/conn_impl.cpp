@@ -31,6 +31,12 @@
 *
 *
 * $Log$
+* Revision 1.17  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
 * Revision 1.16  2002/09/30 20:45:34  kholodov
 * Added: ForceSingle() method to enforce single connection used
 *
@@ -167,6 +173,7 @@ CConnection::~CConnection()
     }
     Close();
     Notify(CDbapiDeletedEvent(this));
+    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
 
 
@@ -285,9 +292,7 @@ void CConnection::Action(const CDbapiEvent& e)
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
         if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
-            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
-            
         }
     }
 }

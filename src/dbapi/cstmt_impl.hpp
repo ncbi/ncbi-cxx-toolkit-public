@@ -34,6 +34,12 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
 * Revision 1.4  2002/04/05 19:33:08  kholodov
 * Added: ExecuteUpdate() to skip all resultsets returned (if any)
 *
@@ -79,6 +85,7 @@ public:
 protected:
 
     CDB_RPCCmd* GetRpcCmd();
+
     virtual void Execute(const string& /*sql*/) {}
     virtual void ExecuteUpdate(const string& /*sql*/) {}
 

@@ -34,6 +34,12 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
 * Revision 1.4  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -81,11 +87,16 @@ public:
     
     virtual void Execute(const string& sql);
     virtual void ExecuteUpdate(const string& sql);
+
+    virtual void ExecuteLast();
+
     virtual void Cancel();
     virtual void Close();
 
     virtual void SetParam(const CVariant& v, 
                           const string& name);
+
+    virtual void ClearParamList();
 
     CDB_Result* GetResult() {
         return m_rs;
@@ -116,6 +127,8 @@ private:
     CDB_Result *m_rs;
     int m_rowCount;
     bool m_failed;
+    typedef map<string, CVariant*> ParamList;
+    ParamList m_params;
 
 };
 

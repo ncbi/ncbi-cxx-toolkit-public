@@ -31,6 +31,12 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
 * Revision 1.5  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -72,6 +78,7 @@ CStatement::~CStatement()
 {
     Close();
     Notify(CDbapiDeletedEvent(this));
+    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
 
 void CStatement::SetRs(CDB_Result *rs) 
@@ -100,8 +107,24 @@ void CStatement::SetParam(const CVariant& v,
                           const string& name)
 {
 
-    GetLangCmd()->SetParam(name.empty() ? 0 : name.c_str(),
-                           v.GetData());
+    ParamList::iterator i = m_params.find(name);
+    if( i != m_params.end() ) {
+        *((*i).second) = v;
+    }
+    else {
+        m_params.insert(make_pair(name, new CVariant(v)));
+    }
+
+
+}
+void CStatement::ClearParamList()
+{
+    ParamList::iterator i = m_params.begin();
+    for( ; i != m_params.end(); ++i ) {
+        delete (*i).second;
+    }
+
+    m_params.clear();
 }
 
 void CStatement::Execute(const string& sql)
@@ -114,14 +137,24 @@ void CStatement::Execute(const string& sql)
 
     SetFailed(false);
 
-    SetBaseCmd(m_conn->GetCDB_Connection()->LangCmd(sql.c_str()));
-    GetBaseCmd()->Send();
+    m_cmd = m_conn->GetCDB_Connection()->LangCmd(sql, m_params.size());
+
+    ExecuteLast();
 }
 
 void CStatement::ExecuteUpdate(const string& sql)
 {
     Execute(sql);
     while( HasMoreResults() );
+}
+
+void CStatement::ExecuteLast()
+{
+    ParamList::iterator i = m_params.begin();
+    for( ; i != m_params.end(); ++i ) {
+        GetLangCmd()->SetParam((*i).first, (*i).second->GetData());
+    }
+    m_cmd->Send();
 }
 
 bool CStatement::HasRows() 
@@ -152,6 +185,7 @@ void CStatement::Close()
         Notify(CDbapiClosedEvent(this));
     }
 
+    ClearParamList();
 }
   
 void CStatement::Cancel()
@@ -189,7 +223,6 @@ void CStatement::Action(const CDbapiEvent& e)
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
-            //SetValid(false);
         }
     }
 }
