@@ -546,7 +546,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
         uuu->w_timeout  = timeout;
     }
 
-    if (close  &&  !uuu->soc  &&  uuu->can_connect != eCC_None  &&
+    if (close  &&  !uuu->sock  &&  uuu->can_connect != eCC_None  &&
         ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(uuu->obuf))) {
         /* "WRITE" mode and data (or just flag) pending */
         s_PreRead(uuu, timeout, 1/*drop*/);
@@ -890,6 +890,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2003/01/09 22:32:37  vakatov
+ * Typo fixed
+ *
  * Revision 6.38  2003/01/09 22:31:28  vakatov
  * s_FlushAndDisconnect() -- do not try to drop unread data in the end:
  * s_Disconnect() call does this job.
