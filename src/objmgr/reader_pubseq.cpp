@@ -485,7 +485,8 @@ CSeq_entry *CPubseqBlob::Seq_entry()
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Create(eSerial_AsnBinary, src));
 
-        if ( true ) {
+        string s1("qual"), s2(s1);
+        if ( s1.data() == s2.data() ) {
             CObjectTypeInfo type = CType<CGb_qual>();
             type.FindMember("qual").SetLocalReadHook(*in, new CPackStringClassHook);
             type.FindMember("val").SetLocalReadHook(*in, new CPackStringClassHook(1));
@@ -796,6 +797,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.31  2003/07/18 20:27:54  vasilche
+* Check if reference counting is working before trying ot use it.
+*
 * Revision 1.30  2003/07/17 22:23:27  vasilche
 * Fixed unsigned <-> size_t argument.
 *
