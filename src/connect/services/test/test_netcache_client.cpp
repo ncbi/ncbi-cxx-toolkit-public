@@ -151,10 +151,17 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     NcbiCout << "Statistical records=" << log.size() << NcbiEndl;
     double sum, sum_conn, sum_tran;
     sum = sum_conn = sum_tran = 0.0;
+    
+    double max_time = 0.0;
+
     ITERATE(vector<STransactionInfo>, it, log) {
         sum_conn += it->connection_time;
         sum_tran += it->transaction_time;
-        sum += it->connection_time + it->transaction_time;
+        double t = it->connection_time + it->transaction_time;
+        sum += t;
+        if (t > max_time) {
+            max_time = t;
+        }
     }
     double avg, avg_conn, avg_tran;
     avg = sum / double(log.size());
@@ -170,7 +177,7 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     NcbiCout << sum << ", " << sum_conn << ", " << sum_tran << NcbiEndl;
     NcbiCout << "Avg, Conn, Trans" << endl;
     NcbiCout << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
-
+    NcbiCout << "Max(slowest) turn around time:" << max_time << NcbiEndl;
 }
 
 
@@ -533,6 +540,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/12/27 17:00:27  kuznets
+ * + worst case statistics
+ *
  * Revision 1.18  2004/12/22 16:43:58  kuznets
  * Added read-test of random read BLOBs
  *
