@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Throw exception with diagnostic message
-void s_ThrowException(const string& what)
+static void s_ThrowException(const string& what)
 {
     const char* errmsg = strerror(errno);
     if ( !errmsg ) {
@@ -350,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/06/04 19:43:20  ivanov
+ * Done s_ThrowException static
+ *
  * Revision 1.2  2002/05/31 20:49:33  ivanov
  * Removed excrescent headers
  *
