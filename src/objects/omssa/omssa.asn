@@ -1,17 +1,21 @@
--- $Id: omssa.asn,v 1.1 2003/10/20 21:32:13 lewisg Exp $
+-- $Id: omssa.asn,v 1.2 2003/10/29 22:22:32 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
 --  Lewis Geer, 2003
 --
---  make using 
+--  make using something like
+--  "datatool -m omssa.asn -oc ObjOmssa -oA -od omssa.def"
 --
--- /netopt/ncbi_tools/c++/Release/bin/datatool -m omssa.asn -oc ObjOmssa -oA -od omssa.ini
+--  note that this file requires omssa.def
 --
 --**********************************************************************
 
 OMMSA DEFINITIONS ::=
 BEGIN
+
+
+-- Holds a single spectrum
 
 MSSpectrum ::= SEQUENCE {
 	charge SEQUENCE OF INTEGER,  -- may be more than one if unknown
@@ -23,7 +27,13 @@ MSSpectrum ::= SEQUENCE {
 	number INTEGER -- unique number of spectrum
 	}
 
+
+-- Holds a set of spectra
+
 MSSpectrumset ::= SEQUENCE OF MSSpectrum
+
+
+-- enumerate enzymes
 
 MSEnzymes ::= INTEGER {
 	trypsin (1),
@@ -42,23 +52,34 @@ MSEnzymes ::= INTEGER {
 	none (14)  -- always highest bound
 	}
 
+
+-- enumerate modifications
+
 MSMod ::= INTEGER {
-    	ntermacetyl (1),  -- n term acetylation
-    	moxy (2),         -- oxidation of methionine
-    	mcleave (3),      -- cleave n-term methionine
+    ntermacetyl (1),  -- n term acetylation
+    moxy (2),         -- oxidation of methionine
+    mcleave (3),      -- cleave n-term methionine
 	none(4)           -- always highest bound
 	}
+
+
+-- How is charge to be handled?  Some input files are not clear
+-- on this.  For example, a dta file only specifies one charge, 
+-- even though the charge is not really known.
 
 MSChargeHandle ::= INTEGER {
 	calculate (1),  -- guess the charge(s) from the data
 	usefile (2)     -- use what the input file says
 	}
 
+
+-- The search request that is given to the OMSSA algorithm
+
 MSRequest ::= SEQUENCE {
 	spectra MSSpectrumset,
 	peptol REAL,  -- peptide mass tolerance
 	msmstol REAL, -- msms mass tolerance
-        haircut REAL, -- the intensity fraction below which peaks will be discarded
+    haircut REAL, -- the intensity fraction below which peaks will be discarded
 	fixed SEQUENCE OF MSMod,
 	variable SEQUENCE OF MSMod,
 	enzyme MSEnzymes,
@@ -70,15 +91,21 @@ MSRequest ::= SEQUENCE {
 	chargehandling MSChargeHandle OPTIONAL  -- how to deal with charges
 	}
 
+
+-- enumeration of ion types
+
 MSIonType ::= INTEGER {
 	a (1),
 	b (2),
-        c (3),
+    c (3),
 	x (4),
 	y (5),
 	z (6)
 	}
 	
+
+-- defines a particular ion
+
 MSMZHit ::= SEQUENCE {
 	ion MSIonType,
 	charge INTEGER,
@@ -86,7 +113,10 @@ MSMZHit ::= SEQUENCE {
 	mz INTEGER  -- scaled m/z value
 }
 
--- contains information about identical peptide sequences
+
+-- contains information about sequences with identical peptide
+-- sequences
+
 MSPepHit ::= SEQUENCE {
 	start INTEGER,
 	stop INTEGER,
@@ -96,6 +126,7 @@ MSPepHit ::= SEQUENCE {
 }	
 
 -- hits to a given spectrum
+
 MSHits ::= SEQUENCE {
 	evalue REAL,
 	pvalue REAL,
@@ -106,6 +137,9 @@ MSHits ::= SEQUENCE {
 	threshold REAL OPTIONAL -- significance threshold
 	}
 
+
+-- error return for a particular spectrum's hitset
+
 MSHitError ::= INTEGER {
 	none (0),
 	generalerr (1),
@@ -113,12 +147,18 @@ MSHitError ::= INTEGER {
 	notenuffpeaks (3)
 	}
 
+
+-- contains a set of hits to a single spectrum
+
 MSHitSet ::= SEQUENCE {
-	number INTEGER, -- unique number of spectrum
-	error MSHitError OPTIONAL,
-	hits SEQUENCE OF MSHits OPTIONAL,
-        filename VisibleString OPTIONAL -- place to put corresponding filename
+    number INTEGER, -- unique number of spectrum
+    error MSHitError OPTIONAL,
+    hits SEQUENCE OF MSHits OPTIONAL,
+    filename VisibleString OPTIONAL -- place to put corresponding filename
 	}
+
+
+-- error return for the entire response
 
 MSResponseError ::= INTEGER {
 	none (0),
@@ -126,6 +166,9 @@ MSResponseError ::= INTEGER {
 	noblastdb (2),
 	noinput (3)
 	}
+
+
+-- search results
 
 MSResponse ::= SEQUENCE {
 	hitsets SEQUENCE OF MSHitSet,
