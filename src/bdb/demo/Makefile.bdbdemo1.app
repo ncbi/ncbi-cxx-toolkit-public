@@ -1,9 +1,0 @@
-# $Id$
-
-APP = bdbdemo1
-SRC = demo1
-LIB = bdb xncbi
-LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
-
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
-REQUIRES = BerkeleyDB
