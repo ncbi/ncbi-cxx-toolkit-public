@@ -293,11 +293,13 @@ public:
     virtual ~CValidError_imp(void);
 
     // Validation methods
-    void Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
+    bool Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
         CScope* scope = 0);
     void Validate(const CSeq_submit& ss, CScope* scope = 0);
     void Validate(const CSeq_annot& sa, CScope* scope = 0);
 
+    void SetProgressCallback(CValidator::TProgressCallback callback,
+        void* user_data);
 public:
     // interface to be used by the various validation classes
 
@@ -488,6 +490,17 @@ private:
     // source qulalifiers prefixes
     static const string sm_SourceQualPrefixes[];
     CTextFsa m_SourceQualTags;
+
+    CValidator::TProgressCallback m_PrgCallback;
+    CValidator::CProgressInfo     m_PrgInfo;
+    SIZE_TYPE   m_NumAlign;
+    SIZE_TYPE   m_NumAnnot;
+    SIZE_TYPE   m_NumBioseq;
+    SIZE_TYPE   m_NumBioseq_set;
+    SIZE_TYPE   m_NumDesc;
+    SIZE_TYPE   m_NumDescr;
+    SIZE_TYPE   m_NumFeat;
+    SIZE_TYPE   m_NumGraph;
 };
 
 
@@ -786,6 +799,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/04/15 14:53:32  shomrat
+* Added a progress callback mechanism
+*
 * Revision 1.24  2003/04/10 19:25:07  shomrat
 * Added ValidateMolTypeContext
 *

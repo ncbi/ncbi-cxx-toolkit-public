@@ -201,12 +201,57 @@ public:
     auto_ptr<CValidError> Validate(const CSeq_annot& sa, CScope* scope = 0,
         Uint4 options = 0);
 
+    // progress reporting
+    class CProgressInfo
+    {
+    public:
+        enum EState {
+            eState_not_set,
+            eState_Initializing,
+            eState_Align,
+            eState_Annot,
+            eState_Bioseq,
+            eState_Bioseq_set,
+            eState_Desc,
+            eState_Descr,
+            eState_Feat,
+            eState_Graph,
+        };
+
+        CProgressInfo(void): m_State(eState_not_set), 
+            m_Total(0), m_TotalDone(0), 
+            m_Current(0), m_CurrentDone(0),
+            m_UserData(0)
+        {}
+        EState GetState(void)       const { return m_State;       }
+        size_t GetTotal(void)       const { return m_Total;       }
+        size_t GetTotalDone(void)   const { return m_TotalDone;   }
+        size_t GetCurrent(void)     const { return m_Current;     }
+        size_t GetCurrentDone(void) const { return m_CurrentDone; }
+        void*  GetUserData(void)    const { return m_UserData;    }
+
+    private:
+        friend class CValidError_imp;
+
+        EState m_State;
+        size_t m_Total;
+        size_t m_TotalDone;
+        size_t m_Current;
+        size_t m_CurrentDone; 
+        void*  m_UserData;
+    };
+
+    typedef bool (*TProgressCallback)(CProgressInfo*);
+    void SetProgressCallback(TProgressCallback callback, void* user_data = 0);
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidator(const CValidator&);
     CValidator& operator= (const CValidator&);
 
     CRef<CObjectManager>    m_ObjMgr;
+    TProgressCallback       m_PrgCallback;
+    void*                   m_UserData;
 };
 
 
@@ -270,6 +315,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/04/15 14:55:02  shomrat
+* Added a progress callback mechanism
+*
 * Revision 1.10  2003/04/04 18:29:06  shomrat
 * Added remote_fetch option
 *
