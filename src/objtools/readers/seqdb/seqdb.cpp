@@ -212,6 +212,22 @@ bool CSeqDB::GiToPig(TGI gi, TPIG & pig) const
     return false;
 }
 
+bool CSeqDB::AccessionToOid(const string & acc, TOID & oid) const
+{
+    return m_Impl->AccessionToOid(acc, oid);
+}
+
+void CSeqDB::AccessionToOids(const string & acc, vector<TOID> & oids) const
+{
+    // Temporary shim version.
+    
+    TOID oid(0);
+    
+    if (m_Impl->AccessionToOid(acc, oid)) {
+        oids.push_back(oid);
+    }
+}
+
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
 {
     m_Impl->SetMemoryBound(membound, slice_size);

@@ -35,8 +35,11 @@
 /// This object defines access to the various ISAM index files.
 
 #include "seqdbfile.hpp"
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
+
+USING_SCOPE(objects);
 
 /// ISAM file.
 ///
@@ -46,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 class CSeqDBIsam : public CObject {
 public:
-    enum EIdentType { eGi, ePig, eStringID };
+    enum EIdentType { eGi, ePig, eStringID, eOID };
     
     enum EIsamDbType {
         eNumeric         = 0,
@@ -82,6 +85,21 @@ public:
         return x_IdentToOid(gi, oid, locked);
     }
     
+//  bool StringToOids(const string   & acc,
+//                    vector<TOid>   & oids,
+//                    CSeqDBLockHold & locked);
+    
+    bool StringToOid(const string   & acc,
+                     TOid           & oid,
+                     CSeqDBLockHold & locked);
+    
+    bool SeqidToOid(const string & acc, TOid & oid, CSeqDBLockHold & locked);
+    
+    static EIdentType
+    TryToSimplifyAccession(const string & acc,
+                           Uint4        & num_id,
+                           string       & str_id);
+    
     void UnLease();
     
 private:
@@ -113,10 +131,6 @@ private:
                       TOid           & oid,
                       CSeqDBLockHold & locked);
     
-    bool x_AccToOids(const string   & acc,
-                     vector<TOid>   & oid,
-                     CSeqDBLockHold & locked);
-    
     EErrorCode
     x_SearchIndexNumeric(Uint4            Number, 
                          Uint4          * Data,
@@ -139,10 +153,69 @@ private:
                     CSeqDBLockHold & locked);
     
     EErrorCode
+    x_StringSearch(const string   & term_in,
+                   bool             follow_match,
+                   bool             short_match,
+                   string         & term_out,
+                   string         & value,
+                   Uint4          & index,
+                   CSeqDBLockHold & locked);
+    
+    EErrorCode
     x_InitSearch(CSeqDBLockHold & locked);
     
     Int4 x_GetPageNumElements(Int4       SampleNum,
                               Int4     * Start);
+    
+    bool x_SparseStringToOid(const string   & acc,
+                             Uint4          & oids,
+                             CSeqDBLockHold & locked);
+    
+//     bool x_SparseStringToOids(const string   & acc,
+//                               vector<Uint4>  & oids,
+//                               CSeqDBLockHold & locked);
+    
+    Int4
+    x_DiffCharLease(const string   & term_in,
+                    CSeqDBMemLease & lease,
+                    const string   & file_name,
+                    Uint4            file_length,
+                    Uint4            at_least,
+                    Uint4            KeyOffset,
+                    bool             ignore_case,
+                    CSeqDBLockHold & locked);
+
+    Int4
+    x_DiffChar(const string & term_in,
+               const char   * begin,
+               const char   * end,
+               bool           ignore_case);
+    
+    void x_ExtractData(const char * key_start,
+                       const char * entry_end,
+                       string     & key_out,
+                       string     & data_out);
+    
+    Uint4 x_GetIndexKeyOffset(Uint4            sample_offset,
+                              Uint4            sample_num,
+                              CSeqDBLockHold & locked);
+    
+    Uint4 x_GetIndexKey(Uint4            sample_offset,
+                        Uint4            sample_num,
+                        CSeqDBLockHold & locked);
+    
+    void x_GetIndexString(Uint4            key_offset,
+                          Uint4            length,
+                          string         & prefix,
+                          bool             trim_to_null,
+                          CSeqDBLockHold & locked);
+    
+    static EIdentType
+    x_SimplifySeqID(const string  & acc,
+                    CRef<CSeq_id>   bestid,
+                    Uint4         & num_id,
+                    string        & str_id);
+    
     
     // Data
     
@@ -157,6 +230,9 @@ private:
     
     string         m_DataFname;       // Filename of database file
     string         m_IndexFname;      // Filename of ISAM index file
+    
+    Uint4          m_DataFileLength;  // Filename of database file
+    Uint4          m_IndexFileLength; // Filename of ISAM index file
     
     Int4           m_NumTerms;        // Number of terms in database
     Int4           m_NumSamples;      // Number of terms in ISAM index

@@ -1376,6 +1376,106 @@ bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
     return false;
 }
 
+bool CSeqDBVol::AccessionToOid(const string   & acc,
+                               Uint4          & oid,
+                               CSeqDBLockHold & locked) const
+{
+    if (m_IsamStr.Empty()) {
+        return true;
+    }
+    
+    bool  no_error = false;
+    Uint4 ident    = Uint4(-1);
+    //Uint4 oid      = Uint4(-1);
+    string str_id;
+    
+    oid = (Uint4) -1;
+    
+    switch(CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id)) {
+    case CSeqDBIsam::eString:
+        if (! m_IsamStr.Empty()) {
+            // Not simplified
+            no_error = m_IsamStr->StringToOid(str_id, oid, locked);
+        }
+        break;
+        
+    case CSeqDBIsam::ePig:
+        // Converted to PIG type.
+        if (! m_IsamPig.Empty()) {
+            no_error = m_IsamPig->PigToOid(ident, oid, locked);
+        }
+        break;
+        
+    case CSeqDBIsam::eGi:
+        // Converted to GI type.
+        if (! m_IsamGi.Empty()) {
+            no_error = m_IsamGi->GiToOid(ident, oid, locked);
+        }
+        break;
+        
+    case CSeqDBIsam::eOID:
+        // Converted to OID directly.
+        no_error = true;
+        //oids.push_back(oid);
+        break;
+    }
+    
+    return no_error;
+}
+
+// bool CSeqDBVol::AccessionToOids(const string   & acc,
+//                                 vector<Uint4>  & oids,
+//                                 CSeqDBLockHold & locked) const
+// {
+//     if (m_IsamStr.Empty()) {
+//         return true;
+//     }
+    
+//     bool  no_error = false;
+//     Uint4 ident    = Uint4(-1);
+//     Uint4 oid      = Uint4(-1);
+//     string str_id;
+    
+//     switch(CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id)) {
+//     case CSeqDBIsam::eString:
+//         if (! m_IsamStr.Empty()) {
+//             // Not simplified
+//             no_error = m_IsamStr->StringToOids(str_id, oids, locked);
+//         }
+//         break;
+        
+//     case CSeqDBIsam::ePig:
+//         // Converted to PIG type.
+//         if (! m_IsamPig.Empty()) {
+//             no_error = m_IsamPig->PigToOid(ident, oid, locked);
+            
+//             if (no_error) {
+//                 oids.push_back(oid);
+//             }
+//         }
+//         break;
+        
+//     case CSeqDBIsam::eGi:
+//         // Converted to GI type.
+//         if (! m_IsamGi.Empty()) {
+//             no_error = m_IsamGi->GiToOid(ident, oid, locked);
+            
+//             if (no_error) {
+//                 oids.push_back(oid);
+//             }
+//         }
+//         break;
+        
+//     case CSeqDBIsam::eOID:
+//         // Converted to OID directly.
+//         no_error = true;
+//         oids.push_back(oid);
+//         break;
+//     }
+    
+//     return no_error;
+// }
+
 void CSeqDBVol::UnLease()
 {
     m_Idx.UnLease();

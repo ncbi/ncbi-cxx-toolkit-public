@@ -489,5 +489,57 @@ bool CSeqDBImpl::OidToGi(Uint4 oid, Uint4 & gi) const
                "OID not in valid range.");
 }
 
+bool CSeqDBImpl::AccessionToOid(const string & acc, Uint4 & oid) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    for(Uint4 vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        // Append any additional OIDs from this volume's indices.
+        if (m_VolSet.GetVol(vol_idx)->AccessionToOid(acc, oid, locked)) {
+            Uint4 oid2(oid);
+            
+            if (CheckOrFindOID(oid2) && (oid == oid2)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+// void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
+// {
+//     CSeqDBLockHold locked(m_Atlas);
+    
+//     oids.clear();
+//     Uint4 oid_cnt = 0;
+    
+//     for(Uint4 vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+//         // Append any additional OIDs from this volume's indices.
+//         m_VolSet.GetVol(vol_idx)->AccessionToOids(acc, oids, locked);
+        
+//         if (oid_cnt != oids.size()) {
+//             Uint4 vol_start = m_VolSet.GetVolOIDStart(vol_idx);
+            
+//             while(oid_cnt < oids.size()) {
+//                 oids[oid_cnt++] += vol_start;
+//             }
+//         }
+//     }
+    
+//     Uint4 cnt(0);
+    
+//     for(Uint4 idx = 0; idx < oids.size(); idx++) {
+//         Uint4 oid1, oid2;
+//         oid1 = oid2 = oids[idx];
+        
+//         if (CheckOrFindOID(oid1) && (oid1 == oid2)) {
+//             oids[cnt ++] == oids[idx];
+//         }
+//     }
+    
+//     oids.resize(cnt);
+// }
+
 END_NCBI_SCOPE
 
