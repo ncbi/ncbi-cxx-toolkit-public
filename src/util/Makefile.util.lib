@@ -1,5 +1,5 @@
 # $Id$
 
-LIBOBJ = random_gen utf8 checksum bytesrc strbuffer itree smalldns
+LIBOBJ = random_gen utf8 checksum bytesrc strbuffer itree smalldns watchdog
 
 LIB    = xutil
