@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2001/08/24 13:29:27  thiessen
+* header and GTK font tweaks
+*
 * Revision 1.69  2001/08/24 00:41:35  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -329,6 +332,10 @@
 
 #include <wx/file.h>
 #include <wx/fontdlg.h>
+
+#ifdef __WXGTK__
+#include <gdk/gdk.h>    // needed for GdkFont
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1389,9 +1396,12 @@ bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height)
     *width = w;
     *height = h;
 
-    // empirical platform-specific tweaks
+    // empirical platform-specific tweaks, mainly to get ion labels centered
 #if defined(__WXMSW__)
     *height *= 0.6;
+#elif defined(__WXGTK__)
+    *height *= 0.6;
+    *width *= 0.8;
 #endif
 	return true;
 }

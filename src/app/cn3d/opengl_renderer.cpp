@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/08/24 13:29:28  thiessen
+* header and GTK font tweaks
+*
 * Revision 1.48  2001/08/24 00:41:35  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -177,6 +180,7 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
