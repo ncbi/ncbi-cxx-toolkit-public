@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2001/10/02 18:01:06  thiessen
+* fix CDD annotate dialog bug
+*
 * Revision 1.88  2001/10/01 16:04:24  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -794,7 +797,7 @@ static void SetupFavoritesMenu(wxMenu *favoritesMenu)
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
-    glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES)
+    glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES), cddAnnotateDialog(NULL)
 {
     topWindow = this;
     GlobalMessenger()->AddStructureWindow(this);
