@@ -106,14 +106,18 @@ AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu")
 AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor")
 AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
 
-AC_LANG_CPLUSPLUS
-AC_PROG_CXX
-
-# Use right command shell in scripts and makefiles
-script_sh="#!/bin/sh"
+#### Use right command shell in scripts and makefiles
+script_sh="#! /bin/sh"
 make_shell="SHELL=/bin/sh"
 
-### Turn on compilation warnings and some compiler-specific flags and features
+#### Tools
+AC_LANG_CPLUSPLUS
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_RANLIB
+AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR) 
+
+#### Turn on compilation warnings and some compiler-specific flags and features
 obj_ext=".o"
 lib_pre="lib"
 lib_l_pre="-l"
@@ -239,9 +243,8 @@ AC_SUBST(bindir)
 AC_SUBST(builddir)
 
 AC_SUBST(CC)
-AC_SUBST(CXX)
 AC_SUBST(CPP)
-AC_SUBST(CXXCPP)
+AC_SUBST(CXX)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 
