@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/04/23 14:35:15  lavr
+ * Another round of moving things to get tests to link on Windows (Release)
+ *
  * Revision 1.7  2002/04/22 20:41:24  ivanov
  * Added #define _ASSERT assert
  *
@@ -87,13 +90,6 @@
 
 #include <ncbiconf.h>
 
-#ifdef   NDEBUG
-#  undef NDEBUG
-#endif
-#ifdef   assert
-#  undef assert
-#endif
-
 
 #ifdef NCBI_OS_MSWIN
 #  ifndef   _DEBUG
@@ -107,14 +103,6 @@
 #  include <stdio.h>
 #  include <windows.h>
 #  undef Type
-
-/* Don't use Windows _ASSERT and test_assert.h together:
- * application don't terminate in this case (CRT library bug).
- * Use "assert" instead _ASSERT.
- */
-#  undef _ASSERT
-#  define _ASSERT assert
-
 
 /* Suppress popup messages on execution errors.
  * NOTE: Windows-specific, suppresses all error message boxes in both runtime
@@ -153,6 +141,13 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #endif
 
 
+#ifdef   NDEBUG
+#  undef NDEBUG
+#endif
+#ifdef   assert
+#  undef assert
+#endif
+
 /* IRIX MIPSpro compiler fix: assert.h already included above */ 
 #ifdef   NCBI_COMPILER_MIPSPRO
 #  ifdef   __ASSERT_H__
@@ -161,6 +156,11 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #endif
 
 #include <assert.h>
+
+#ifdef   _ASSERT
+#  undef _ASSERT
+#endif
+#define  _ASSERT assert
 
 
 #endif  /* TEST_ASSERT__H */
