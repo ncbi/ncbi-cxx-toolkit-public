@@ -233,13 +233,15 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
     if ( !menu ) {
         return;
     }
+    const string kStopEvent = " return false;";
+
     switch (menu->GetType()) {
     case CHTMLPopupMenu::eSmith: 
-        SetEventHandler(event, menu->ShowMenu());
+        SetEventHandler(event, menu->ShowMenu() + kStopEvent);
         return;
     case CHTMLPopupMenu::eKurdin: 
-        SetEventHandler(event, menu->ShowMenu());
-        SetEventHandler(eHTML_EH_MouseOut, "PopUpMenu2_Hide()");
+        SetEventHandler(event, menu->ShowMenu() + kStopEvent);
+        SetEventHandler(eHTML_EH_MouseOut, "PopUpMenu2_Hide();"  + kStopEvent);
         return;
     case CHTMLPopupMenu::eKurdinSide:
         AppendHTMLText(menu->ShowMenu());
@@ -2269,6 +2271,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2003/12/10 19:15:14  ivanov
+ * Move adding a string "return false;" to menues JS code call from ShowMenu()
+ * to AttachPopupMenu()
+ *
  * Revision 1.90  2003/12/02 14:25:58  ivanov
  * Removed obsolete functions GetCodeBodyTag[Handler|Action]().
  * AttachPopupMenu(): use event parameter for eKurdin menu also.
