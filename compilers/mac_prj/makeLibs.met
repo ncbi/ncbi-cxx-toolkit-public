@@ -23,10 +23,10 @@ property pCreateProfiledTargets : false
 property pShouldBuild : true
 
 -- Whether to create projects in the specified category.
-property pCreateCoreLibs : false
-property pCreateObjectLibs : false (* whether to create/compile object libraries *)
-property pCreateObjToolsLibs : false
-property pCreateSocketLibs : false (* whether to create/compile socket libs *)
+property pCreateCoreLibs : true
+property pCreateObjectLibs : true (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : true
+property pCreateSocketLibs : true (* whether to create/compile socket libs *)
 property pCreateGuiLibs : true
 property pCreatePluginLibs : true
 
@@ -43,6 +43,7 @@ property pTargetKeyWords : "MSL BSD Debug Final"
 global gHomeDir
 global gDistribRoot
 global gProjectsDir
+global gPluginsDir
 global gSourceDir
 global gIncludeDir
 global gRsrcsDir
@@ -480,6 +481,7 @@ on SetGlobals()
 		set gIncludeDir to gDistribRoot & "include:"
 		set gSourceDir to gDistribRoot & "src:"
 		set gProjectsDir to gDistribRoot & "compilers:mac_prj:lib:"
+		set gPluginsDir to gDistribRoot & "compilers:mac_prj:plugins:"
 		set gLibsDir to gProjectsDir
 		set gRsrcsDir to gDistribRoot & "compilers:mac_prj:"
 		set gMakeDir to my GetMyPath()
@@ -815,6 +817,7 @@ end CreateProject
 
 on CreateAndBuildAllProjects()
 	CreateFolder(gProjectsDir)
+	CreateFolder(gPluginsDir)
 	CleanupFiles(gProjectsDir)
 	set targetSpecs to GetTargetSpecs()
 	
