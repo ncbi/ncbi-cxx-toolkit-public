@@ -121,6 +121,76 @@ void CFlatItemFormatter::Format(const IFlatItem& item, IFlatTextOStream& text_os
 }
 
 
+static void s_PrintAccessions
+(CNcbiOstream& os,
+ const vector<string>& accs,
+ char separator)
+{
+    ITERATE (CAccessionItem::TExtra_accessions, it, accs) {
+        os << separator <<*it;
+    }
+}
+
+
+static bool s_IsSuccessor(const string& acc, const string& prev)
+{
+    if (acc.length() != prev.length()) {
+        return false;
+    }
+    size_t i;
+    for (i = 0; i < acc.length()  &&  !isdigit(acc[i]); ++i) {
+        if (acc[i] != prev[i]) {
+            return false;
+        }
+    }
+    if (i < acc.length()) {
+        if (NStr::StringToUInt(acc.substr(i)) == NStr::StringToUInt(prev.substr(i)) + 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void s_FormatSecondaryAccessions
+(CNcbiOstream& os,
+ const CAccessionItem::TExtra_accessions& xtra,
+ char separator)
+{
+    static const size_t kAccCutoff = 20;
+    static const size_t kBinCutoff = 5;
+
+    if (xtra.size() < kAccCutoff) {
+        s_PrintAccessions(os, xtra, separator);
+        return;
+    }
+    _ASSERT(!xtra.empty());
+
+    typedef vector<string>      TAccBin;
+    typedef vector <TAccBin>    TAccBins;
+    TAccBins bins;
+    TAccBin* curr_bin = NULL;
+
+    // populate the bins
+    CAccessionItem::TExtra_accessions::const_iterator prev = xtra.begin();
+    ITERATE (CAccessionItem::TExtra_accessions, it, xtra) {
+        if (!s_IsSuccessor(*it, *prev)) {
+            bins.push_back(TAccBin());
+            curr_bin = &bins.back();
+        }
+        curr_bin->push_back(*it);
+        prev = it;
+    }
+    
+    ITERATE (TAccBins, bin_it, bins) {
+        if (bin_it->size() < kBinCutoff) {
+            s_PrintAccessions(os, *bin_it, separator);
+        } else {
+            os << separator<< bin_it->front() << '-' << bin_it->back();
+        }
+    }
+}
+
+
 string  CFlatItemFormatter::x_FormatAccession
 (const CAccessionItem& acc,
  char separator) const
@@ -137,8 +207,8 @@ string  CFlatItemFormatter::x_FormatAccession
         acc_line << separator << acc.GetWGSAccession();
     }
 
-    ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
-        acc_line << separator << *it;
+    if (!acc.GetExtraAccessions().empty()) {
+        s_FormatSecondaryAccessions(acc_line, acc.GetExtraAccessions(), separator);
     }
 
     return CNcbiOstrstreamToString(acc_line);
@@ -1087,6 +1157,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/03/02 16:32:08  shomrat
+* Implement range format for secondary accessions
+*
 * Revision 1.21  2005/02/09 14:59:12  shomrat
 * Relax requirement for iso_jta journal
 *
