@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/27 19:40:11  vasilche
+* Implemented sorting in CGraph_CI.
+* Added Rewind() method to feature/graph/align iterators.
+*
 * Revision 1.19  2003/03/26 17:27:04  vasilche
 * Added optinal reverse feature traversal.
 *
@@ -117,6 +121,7 @@
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/desc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/graph_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
 #include <objects/objmgr/reader_id1.hpp>
@@ -377,6 +382,23 @@ int CDemoApp::Run(void)
         // except that there is no type filter for both of them.
         // No region restrictions -- the whole bioseq is used:
         loc.SetWhole().SetGi(gi);
+        count = 0;
+        for (CGraph_CI it(scope, loc,
+                          SAnnotSelector()
+                          .SetResolveMethod(resolve)
+                          .SetSortOrder(order)); it;  ++it) {
+            count++;
+            // Get seq-annot containing the feature
+            if ( print_features ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << it->GetMappedGraph();
+                *out << it->GetLoc();
+            }
+            CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
+        }
+        NcbiCout << "Graph count (whole, any):       " << count << NcbiEndl;
+
         count = 0;
         // Create CAlign_CI using the current scope and location.
         for (CAlign_CI align_it(scope, loc); align_it;  ++align_it) {

@@ -94,6 +94,7 @@ public:
 
     bool IsGraph(void) const;
     const CSeq_graph& GetGraph(void) const;
+    const CSeq_graph* GetGraphFast(void) const; // unchecked & unsafe
 
     const CHandleRangeMap& GetRangeMap(void) const;
     const CHandleRangeMap* GetProductMap(void) const; // may be null
@@ -296,6 +297,12 @@ const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 }
 
 inline
+const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
+{
+    return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
+}
+
+inline
 const CHandleRangeMap& CAnnotObject_Info::GetRangeMap(void) const
 {
     return *m_RangeMap;
@@ -366,6 +373,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/27 19:40:11  vasilche
+* Implemented sorting in CGraph_CI.
+* Added Rewind() method to feature/graph/align iterators.
+*
 * Revision 1.4  2003/03/18 21:48:28  grichenk
 * Removed obsolete class CAnnot_CI
 *

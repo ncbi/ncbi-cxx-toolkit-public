@@ -53,7 +53,9 @@ class CSeq_loc;
 class CSeqMap_CI;
 class CAnnotObject_Info;
 class CFeat_Less;
+class CFeat_Reverse_Less;
 class CAnnotObject_Less;
+class CAnnotObject_Reverse_Less;
 class CSeq_loc_Conversion;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
@@ -86,6 +88,7 @@ private:
     friend class CFeat_Less;
     friend class CFeat_Reverse_Less;
     friend class CAnnotObject_Less;
+    friend class CAnnotObject_Reverse_Less;
 
     TRange x_UpdateTotalRange(void) const;
 
@@ -100,33 +103,6 @@ private:
     bool                    m_Partial;    // Partial flag (same as in features)
 
     friend class CSeq_loc_Conversion;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CFeat_Less
-{
-public:
-    // Compare CRef-s: both must be features
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CFeat_Reverse_Less
-{
-public:
-    // Compare CRef-s: both must be features
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CAnnotObject_Less
-{
-public:
-    // Compare CRef-s: if at least one is NULL, compare as pointers
-    bool operator ()(const CAnnotObject_Ref& x,
-                     const CAnnotObject_Ref& y) const;
 };
 
 
@@ -166,6 +142,10 @@ public:
     virtual ~CAnnotTypes_CI(void);
 
     CAnnotTypes_CI& operator= (const CAnnotTypes_CI& it);
+
+    // Rewind annot iterator to point to the very first annot object, the same as
+    // immediately after construction.
+    void Rewind(void);
 
     typedef set<TTSE_Lock> TTSESet;
 
@@ -319,6 +299,13 @@ bool CAnnotTypes_CI::IsValid(void) const
 
 
 inline
+void CAnnotTypes_CI::Rewind(void)
+{
+    m_CurAnnot = m_AnnotSet.begin();
+}
+
+
+inline
 void CAnnotTypes_CI::Next(void)
 {
     ++m_CurAnnot;
@@ -353,6 +340,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/03/27 19:40:10  vasilche
+* Implemented sorting in CGraph_CI.
+* Added Rewind() method to feature/graph/align iterators.
+*
 * Revision 1.36  2003/03/21 19:22:48  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *
