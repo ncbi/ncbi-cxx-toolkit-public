@@ -128,36 +128,44 @@ public:
 
     TScore        GetScore(void) const;
     
-    // transcript symbols
+    // alignment transcript
     enum ETranscriptSymbol {
-        eTS_None    =  0,
+        eTS_None    =  0,   
         eTS_Delete  = 'D',
         eTS_Insert  = 'I',
         eTS_Match   = 'M',
         eTS_Replace = 'R',
         eTS_Intron  = 'Z'
     };
+    typedef vector<ETranscriptSymbol> TTranscript;
 
     // raw transcript
-    const vector<ETranscriptSymbol>* GetTranscript(void) const {
-        return &m_Transcript;
-    }
-    // converted transcript vector
+    TTranscript GetTranscript(bool reversed = true) const;
+
+    // transcript as a string
     string GetTranscriptString(void) const;
 
     // transcript parsers
-    size_t        GetLeftSeg(size_t* q0, size_t* q1,
-                             size_t* s0, size_t* s1,
-                             size_t min_size) const;
-    size_t        GetRightSeg(size_t* q0, size_t* q1,
+    size_t         GetLeftSeg(size_t* q0, size_t* q1,
                               size_t* s0, size_t* s1,
                               size_t min_size) const;
-    size_t        GetLongestSeg(size_t* q0, size_t* q1,
-                                size_t* s0, size_t* s1) const;
+    size_t         GetRightSeg(size_t* q0, size_t* q1,
+                               size_t* s0, size_t* s1,
+                               size_t min_size) const;
+    size_t         GetLongestSeg(size_t* q0, size_t* q1,
+                                 size_t* s0, size_t* s1) const;
+ 
     // returns the size of a single backtrace matrix element
     virtual size_t GetElemSize(void) const {
         return 1;
     }
+
+    // Compute score with the given transcript and sequences offsets.
+    // if defaults are supplied for start1 and start2,
+    // compute score using transcript only assuming nucleotide alignment.
+    virtual TScore ScoreFromTranscript(const TTranscript& transcript,
+                                       size_t start1 = kMax_UInt,
+                                       size_t start2 = kMax_UInt ) const;
 
     void    EnableMultipleThreads(bool enable = true);
 
@@ -194,7 +202,7 @@ protected:
     virtual bool x_CheckMemoryLimit(void);
 
     // Transcript, score and guiding hits
-    vector<ETranscriptSymbol> m_Transcript;
+    TTranscript               m_Transcript;
     TScore                    m_score;
     vector<size_t>            m_guides;
 
@@ -209,15 +217,13 @@ protected:
     struct SAlignInOut;
     virtual TScore x_Align (SAlignInOut* data);
 
-    virtual TScore x_ScoreByTranscript(void) const;
-
     // overflow safe "infinity"
     enum { kInfMinus = kMin_Int / 2 };
 
     // backtrace
     void x_DoBackTrace(const unsigned char* backtrace_matrix,
                        size_t N1, size_t N2,
-                       vector<ETranscriptSymbol>* transcript);
+                       TTranscript* transcript);
 
     friend class CNWAlignerThread_Align;
 };
@@ -248,7 +254,7 @@ struct CNWAligner::SAlignInOut {
     bool        m_esf_L2, m_esf_R2;
 
     // [out]
-    vector<ETranscriptSymbol> m_transcript;
+    TTranscript m_transcript;
 
     size_t      GetSpace(void) const {
         return m_space;
@@ -273,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/11/29 14:36:45  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.36  2004/08/31 20:37:29  papadopo
  * fix cut-and-paste-error
  *

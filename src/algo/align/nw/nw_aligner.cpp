@@ -33,11 +33,12 @@
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <algo/align/align_exception.hpp>
 
 #include "nw_aligner_threads.hpp"
+#include "messages.hpp"
 
+#include <corelib/ncbi_system.hpp>
+#include <algo/align/align_exception.hpp>
 #include <algorithm>
 
 
@@ -93,7 +94,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 {
     if(!seq1 || !seq2) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "NULL sequence pointer(s) passed");
+                   g_msg_NullParameter);
     }
 
     if(verify) {
@@ -303,11 +304,11 @@ CNWAligner::TScore CNWAligner::Run()
 {
     if(!m_Seq1 || !m_Seq2) {
         NCBI_THROW(CAlgoAlignException, eNoData,
-                   "Sequence data not available for one or both sequences");
+                   g_msg_DataNotAvailable);
     }
 
     if(!x_CheckMemoryLimit()) {
-        NCBI_THROW(CAlgoAlignException, eMemoryLimit, "Out of space");
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit, g_msg_OutOfSpace);
     }
 
     m_score = x_Run();
@@ -435,7 +436,7 @@ CNWAligner::TScore CNWAligner::x_Run()
                     }
                 }
                 
-                m_score = x_ScoreByTranscript();
+                m_score = ScoreFromTranscript(GetTranscript(false), 0, 0);
             }}
         }
         else {            
@@ -476,13 +477,14 @@ CNWAligner::TScore CNWAligner::x_Run()
             copy(data.m_transcript.begin(), data.m_transcript.end(),
                  back_inserter(m_Transcript));
 
-            m_score = x_ScoreByTranscript();
+            m_score = ScoreFromTranscript(GetTranscript(false), 0, 0);
         }
     }
     
     catch( bad_alloc& ) {
         
-        NCBI_THROW(CAlgoAlignException, eMemoryLimit, "Memory limit exceeded");
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit,
+                   g_msg_OutOfSpace);
     }
     
     return m_score;
@@ -492,7 +494,7 @@ CNWAligner::TScore CNWAligner::x_Run()
 // perform backtrace step;
 void CNWAligner::x_DoBackTrace(const unsigned char* backtrace,
                                size_t N1, size_t N2,
-                               vector<ETranscriptSymbol>* transcript)
+                               TTranscript* transcript)
 {
     transcript->clear();
     transcript->reserve(N1 + N2);
@@ -578,6 +580,20 @@ void CNWAligner::GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2) const
 }
 
 
+// return raw transcript
+CNWAligner::TTranscript CNWAligner::GetTranscript(bool reversed) const
+{
+    TTranscript rv (m_Transcript.size());
+    if(reversed) {
+        copy(m_Transcript.begin(), m_Transcript.end(), rv.begin());
+    }
+    else {
+        copy(m_Transcript.rbegin(), m_Transcript.rend(), rv.begin());
+    }
+    return rv;
+}
+
+
 // Return transcript as a readable string
 string CNWAligner::GetTranscriptString(void) const
 {
@@ -618,9 +634,8 @@ string CNWAligner::GetTranscriptString(void) const
 
 	    default: {
 	      NCBI_THROW(CAlgoAlignException, eInternal,
-                         "Unexpected transcript symbol");
-	    }
-	  
+                         g_msg_InvalidTranscriptSymbol);
+	    }	  
         }
 
         s[i++] = c;
@@ -652,7 +667,8 @@ void CNWAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix* psm)
         m_abc = g_nwaligner_nucleotides;
         const size_t dim = strlen(m_abc);
         vector<TNCBIScore> iupacna (dim*dim, m_Wms);
-        iupacna[0] = iupacna[dim+1] = iupacna[2*(dim+1)] = iupacna[3*(dim+1)] = m_Wm;
+        iupacna[0] = iupacna[dim+1] = iupacna[2*(dim+1)] = 
+            iupacna[3*(dim+1)] = m_Wm;
         SNCBIPackedScoreMatrix iupacna_psm;
         iupacna_psm.symbols = g_nwaligner_nucleotides;
         iupacna_psm.scores = &iupacna.front();
@@ -695,7 +711,7 @@ CNWAligner::TScore CNWAligner::GetScore() const
   }
   else {
     NCBI_THROW(CAlgoAlignException, eNoData,
-               "Sequences not aligned yet");
+               g_msg_NoAlignment);
   }
 }
 
@@ -741,33 +757,43 @@ void CNWAligner::EnableMultipleThreads(bool enable)
 }
 
 
-CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
+CNWAligner::TScore CNWAligner::ScoreFromTranscript(
+                       const TTranscript& transcript,
+                       size_t start1, size_t start2) const
 {
-    const size_t dim = m_Transcript.size();
+    bool nucl_mode;
+    if(start1 == kMax_UInt && start2 == kMax_UInt) {
+        nucl_mode = true;
+    }
+    else if(start1 != kMax_UInt && start2 != kMax_UInt) {
+        nucl_mode = false;
+    }
+    else {
+        NCBI_THROW(CAlgoAlignException, eInternal,
+                   g_msg_InconsistentArguments);
+    }
+
+    const size_t dim = transcript.size();
     if(dim == 0) {
         return 0;
     }
 
-    vector<ETranscriptSymbol> transcript (dim);
-    for(size_t i = 0; i < dim; ++i) {
-        transcript[i] = m_Transcript[dim - i - 1];
-    }
-
     TScore score = 0;
 
-    const char* p1 = m_Seq1;
-    const char* p2 = m_Seq2;
+    const char* p1 = m_Seq1 + start1;
+    const char* p2 = m_Seq2 + start2;
 
     int state1;   // 0 = normal, 1 = gap, 2 = intron
     int state2;   // 0 = normal, 1 = gap
 
     switch(transcript[0]) {
-    case eTS_Match:    state1 = state2 = 0; break;
+    case eTS_Match:
+    case eTS_Replace:  state1 = state2 = 0; break;
     case eTS_Insert:   state1 = 1; state2 = 0; score += m_Wg; break;
     case eTS_Delete:   state1 = 0; state2 = 1; score += m_Wg; break;
     default: {
-        NCBI_THROW(CAlgoAlignException, eInternal,
-                   "Invalid transcript symbol");
+        NCBI_THROW( CAlgoAlignException, eInternal,
+                    g_msg_InvalidTranscriptSymbol );
         }
     }
 
@@ -775,15 +801,22 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
 
     for(size_t i = 0; i < dim; ++i) {
 
-        switch(transcript[i]) {
+        ETranscriptSymbol ts = transcript[i];
 
-        case eTS_Match: {
+        switch(ts) {
 
-            unsigned char c1 = p1? *p1: 'N';
-            unsigned char c2 = p2? *p2: 'N';
+        case eTS_Match:
+        case eTS_Replace: {
+            if(nucl_mode) {
+                score += (ts == eTS_Match)? m_Wm: m_Wms;
+            }
+            else {
+                unsigned char c1 = *p1;
+                unsigned char c2 = *p2;
+                score += sm[c1][c2];
+                ++p1; ++p2;
+            }
             state1 = state2 = 0;
-            score += sm[c1][c2];
-            ++p1; ++p2;
         }
         break;
 
@@ -808,7 +841,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         default: {
 
             NCBI_THROW(CAlgoAlignException, eInternal,
-                       "Invalid transcript symbol");
+                       g_msg_InvalidTranscriptSymbol);
         }
         }
     }
@@ -919,8 +952,8 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
             break;
 
             default: {
-                NCBI_THROW(CAlgoAlignException, eInternal,
-                           "Invalid transcript symbol");
+                NCBI_THROW( CAlgoAlignException, eInternal,
+                            g_msg_InvalidTranscriptSymbol );
             }
         }
     }
@@ -1006,8 +1039,8 @@ size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
             break;
 
             default: {
-                NCBI_THROW(CAlgoAlignException, eInternal,
-                           "Invalid transcript symbol");
+                NCBI_THROW( CAlgoAlignException, eInternal,
+                            g_msg_InvalidTranscriptSymbol );
             }
         }
     }
@@ -1086,8 +1119,8 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
             break;
 
             default: {
-                NCBI_THROW(CAlgoAlignException, eInternal,
-                           "Invalid transcript symbol");
+                NCBI_THROW( CAlgoAlignException, eInternal,
+                            g_msg_InvalidTranscriptSymbol );
             }
         }
     }
@@ -1112,6 +1145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2004/11/29 14:37:15  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.58  2004/09/23 15:31:24  kapustin
  * Eliminate reading past sequence ends in x_ScoreByTranscript()
  *

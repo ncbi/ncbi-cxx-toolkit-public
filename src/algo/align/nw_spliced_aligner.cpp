@@ -33,6 +33,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include "messages.hpp"
 #include <algo/align/nw_spliced_aligner.hpp>
 #include <algo/align/align_exception.hpp>
 
@@ -64,7 +65,7 @@ void CSplicedAligner::SetWi  (unsigned char splice_type, TScore value)
     {
         NCBI_THROW(CAlgoAlignException,
                    eInvalidSpliceTypeIndex,
-                   "Invalid splice type index");
+                   g_msg_InvalidSpliceTypeIndex);
     }
 }
 
@@ -78,7 +79,7 @@ CSplicedAligner::TScore CSplicedAligner::GetWi  (unsigned char splice_type)
     {
         NCBI_THROW(CAlgoAlignException,
                    eInvalidSpliceTypeIndex,
-                   "Invalid splice type index");
+                   g_msg_InvalidSpliceTypeIndex);
     }
 }
 
@@ -253,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/29 14:37:15  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.8  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "splign_util.hpp"
 #include "splign_hitparser.hpp"
-
+#include "messages.hpp"
 #include <algo/align/align_exception.hpp>
 
 #include <algorithm>
@@ -308,8 +308,6 @@ string RLE(const string& in)
 CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
 				     const char* transcript)
 {
-  static const string kBadSymMsg = "Unknown symbol in transcript: ";
-
   const int Wg  = aligner.GetWg();
   const int Ws  = aligner.GetWs();
   const int Wm  = aligner.GetWm();
@@ -331,7 +329,8 @@ CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
     case 'D':  state1 = 0; state2 = 1; score += Wg;
     break;
     default:
-      NCBI_THROW(CAlgoAlignException, eInternal, kBadSymMsg + transcript[0]);
+      NCBI_THROW(CAlgoAlignException, eInternal,
+                 string(g_msg_UnknownTranscriptSymbol) + transcript[0]);
   }
 
   for(size_t i = 0; i < dim; ++i) {
@@ -365,7 +364,8 @@ CNWAligner::TScore ScoreByTranscript(const CNWAligner& aligner,
       break;
 
       default:
-        NCBI_THROW(CAlgoAlignException, eInternal, kBadSymMsg + transcript[i]);
+        NCBI_THROW(CAlgoAlignException, eInternal,
+                   string(g_msg_UnknownTranscriptSymbol) + transcript[i]);
     }
   }
 
@@ -379,6 +379,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/11/29 14:37:16  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.8  2004/05/24 16:13:57  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -42,18 +42,27 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CSplignFormatter::CSplignFormatter (const CSplign& splign):
-    m_splign(&splign)
+const char kErrMsg_ID_not_set[] = "ID_not_set";
+
+
+CSplignFormatter::CSplignFormatter(const CSplign::TResults& results):
+    m_splign_results(results)
 {
-    static const char kErrMsg[] = "ID_not_set";
-    m_QueryId = m_SubjId = kErrMsg;
+    m_QueryId = m_SubjId = kErrMsg_ID_not_set;
+}
+
+
+CSplignFormatter::CSplignFormatter (const CSplign& splign):
+    m_splign_results(splign.GetResult())
+{
+    m_QueryId = m_SubjId = kErrMsg_ID_not_set;
 }
 
 
 string CSplignFormatter::AsText(const CSplign::TResults* results) const
 {
     if(results == 0) {
-        results = &(m_splign->GetResult());
+        results = &m_splign_results;
     }
 
     CNcbiOstrstream oss;
@@ -89,8 +98,7 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
                 oss << seg.m_annot << '\t';
                 oss << RLE(seg.m_details);
 #ifdef GENOME_PIPELINE
-                oss << '\t' << ScoreByTranscript(*(m_splign->GetAligner()),
-                                                 seg.m_details.c_str());
+                oss << '\t' << seg.m_score;
 #endif
             }
             else {
@@ -121,14 +129,14 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
                                                      results) const
 {
     if(results == 0) {
-        results = &(m_splign->GetResult());
+        results = &(m_splign_results);
     }
 
     CRef<CSeq_align_set> rv (new CSeq_align_set);
     CSeq_align_set::Tdata& data = rv->Set();
 
 
-    ITERATE(vector<CSplign::SAlignedCompartment>, ii, *results) {
+    ITERATE(CSplign::TResults, ii, *results) {
     
         vector<size_t> boxes;
         vector<string> transcripts;
@@ -142,8 +150,7 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
                 
                 copy(seg.m_box, seg.m_box + 4, back_inserter(boxes));
                 transcripts.push_back(seg.m_details);
-                scores.push_back(ScoreByTranscript(*(m_splign->GetAligner()),
-                                                   seg.m_details.c_str()));
+                scores.push_back(seg.m_score);
             }
         }
        
@@ -234,6 +241,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/11/29 14:37:16  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.10  2004/11/04 17:55:46  kapustin
  * Use CDense_seg::FromTrancsript() to format dense-segs
  *

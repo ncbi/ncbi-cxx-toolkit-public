@@ -33,6 +33,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include "messages.hpp"
 #include <algo/align/nw_spliced_aligner32.hpp>
 #include <algo/align/align_exception.hpp>
 
@@ -128,7 +129,7 @@ CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
         default: {
             NCBI_THROW(CAlgoAlignException,
                        eInvalidSpliceTypeIndex,
-                       "Invalid splice type index");
+                       g_msg_InvalidSpliceTypeIndex);
         }
     }
 }
@@ -420,7 +421,7 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 	  Uint4 k2 = (Key & mask_jump);
 	  if(k2 >= k) {
 	        NCBI_THROW(CAlgoAlignException, eInternal,
-                           "Incorrect backtrace jump detected");
+                           g_msg_InvalidBacktraceData);
 	  }
 
 	  ETranscriptSymbol ts;
@@ -441,9 +442,9 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 	      decr = N2;
 	    }
 	    else {
-	      // ts = eTS_DiagSpace;
+	      // ts = eTS_DiagSpace (not yet supported)
 	      NCBI_THROW(CAlgoAlignException, eInternal,
-                         "Diag spaces not yet supported");
+                         g_msg_InvalidBacktraceData);
 	    }
 	  }
 
@@ -452,7 +453,7 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 	  }
 	  if(k != k2) {
 	      NCBI_THROW(CAlgoAlignException, eInternal,
-                         "Backtrace jump failed");
+                         g_msg_InvalidBacktraceData);
 	  }
 	}
     } // while
@@ -460,24 +461,38 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 
 
 
-CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
+CNWAligner::TScore CSplicedAligner32::ScoreFromTranscript(
+                       const TTranscript& transcript,
+                       size_t start1, size_t start2) const
 {
-    const size_t dim = m_Transcript.size();
-    if(dim == 0) return 0;
+    bool nucl_mode;
+    if(start1 == kMax_UInt && start2 == kMax_UInt) {
+        nucl_mode = true;
+    }
+    else if(start1 != kMax_UInt && start2 != kMax_UInt) {
+        nucl_mode = false;
+    }
+    else {
+        NCBI_THROW(CAlgoAlignException, eInternal,
+                   g_msg_InconsistentArguments);
+    }
+
+    const size_t dim = transcript.size();
 
     TScore score = 0;
 
-    const char* p1 = m_Seq1;
-    const char* p2 = m_Seq2;
+    const char* p1 = m_Seq1 + start1;
+    const char* p2 = m_Seq2 + start2;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
     char state1;   // 0 = normal, 1 = gap, 2 = intron
     char state2;   // 0 = normal, 1 = gap
 
-    switch( m_Transcript[dim - 1] ) {
+    switch( transcript[0] ) {
 
     case eTS_Match:
+    case eTS_Replace:
         state1 = state2 = 0;
         break;
 
@@ -495,20 +510,27 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
 
     default: {
         NCBI_THROW(CAlgoAlignException, eInternal,
-                   "Invalid transcript symbol");
+                   g_msg_InvalidTranscriptSymbol);
         }
     }
 
-    for(int i = dim - 1; i >= 0; --i) {
+    for(size_t i = 0; i < dim; ++i) {
 
-        unsigned char c1 = m_Seq1? *p1: 0;
-        unsigned char c2 = m_Seq2? *p2: 0;
-        switch(m_Transcript[i]) {
+        ETranscriptSymbol ts = transcript[i];
+        switch(ts) {
 
+        case eTS_Replace:
         case eTS_Match: {
+            if(nucl_mode) {
+                score += (ts == eTS_Match)? m_Wm: m_Wms;
+            }
+            else {
+                unsigned char c1 = *p1;
+                unsigned char c2 = *p2;
+                score += sm[c1][c2];
+                ++p1; ++p2;
+            }
             state1 = state2 = 0;
-            score += sm[c1][c2];
-            ++p1; ++p2;
         }
         break;
 
@@ -531,10 +553,17 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
         case eTS_Intron: {
 
             if(state1 != 2) {
-                for(unsigned char k = 0; k < splice_type_count_32; ++k) {
-                    if(*p2 == g_nwspl32_donor[k][0] && *(p2 + 1) == g_nwspl32_donor[k][1]) {
-                        score += m_Wi[k];
-                        break;
+                if(nucl_mode) {
+                    score += m_Wi[0];
+                }
+                else {
+                    for(unsigned char k = 0; k < splice_type_count_32; ++k) {
+                        if(*p2 == g_nwspl32_donor[k][0] && 
+                           *(p2 + 1) == g_nwspl32_donor[k][1]) {
+                            
+                            score += m_Wi[k];
+                            break;
+                        }
                     }
                 }
             }
@@ -545,35 +574,15 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
 
         default: {
         NCBI_THROW(CAlgoAlignException, eInternal,
-                   "Invalid transcript symbol");
+                   g_msg_InvalidTranscriptSymbol);
         }
-        }
-    }
-
-    if(m_esf_L1) {
-        size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
-            if(m_Transcript[i] == eTS_Insert) ++g; else break;
-        }
-        if(g > 0) {
-            score -= (m_Wg + g*m_Ws);
-        }
-    }
-
-    if(m_esf_L2) {
-        size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
-            if(m_Transcript[i] == eTS_Delete) ++g; else break;
-        }
-        if(g > 0) {
-            score -= (m_Wg + g*m_Ws);
         }
     }
 
     if(m_esf_R1) {
         size_t g = 0;
-        for(size_t i = 0; i < dim; ++i) {
-            if(m_Transcript[i] == eTS_Insert) ++g; else break;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(transcript[i] == eTS_Insert) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -582,8 +591,28 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
 
     if(m_esf_R2) {
         size_t g = 0;
+        for(int i = dim - 1; i >= 0; --i) {
+            if(transcript[i] == eTS_Delete) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_L1) {
+        size_t g = 0;
         for(size_t i = 0; i < dim; ++i) {
-            if(m_Transcript[i] == eTS_Delete) ++g; else break;
+            if(transcript[i] == eTS_Insert) ++g; else break;
+        }
+        if(g > 0) {
+            score -= (m_Wg + g*m_Ws);
+        }
+    }
+
+    if(m_esf_L2) {
+        size_t g = 0;
+        for(size_t i = 0; i < dim; ++i) {
+            if(transcript[i] == eTS_Delete) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -601,6 +630,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/11/29 14:37:15  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.17  2004/08/31 16:17:21  papadopo
  * make SAlignInOut work with sequence offsets rather than char pointers
  *

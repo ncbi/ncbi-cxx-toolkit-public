@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "messages.hpp"
 #include <algo/align/nw_formatter.hpp>
 #include <algo/align/nw_aligner.hpp>
 #include <algo/align/align_exception.hpp>
@@ -59,11 +60,12 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
     if(seqalign == 0) {
         NCBI_THROW(CAlgoAlignException,
                    eBadParameter,
-                   "Invalid address specified");
+                   g_msg_InvalidAddress);
     }
 
 #ifdef USE_RAW_TRANCSRIPT
-    const vector<CNWAligner::ETranscriptSymbol>& transcript =  *(m_aligner->GetTranscript());
+    const vector<CNWAligner::ETranscriptSymbol>& transcript = 
+        *(m_aligner->GetTranscript());
 #else
     const string transcript = m_aligner->GetTranscriptString();
 #endif
@@ -71,7 +73,7 @@ void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
     if(transcript.size() == 0) {
         NCBI_THROW(CAlgoAlignException,
                    eNoData,
-                   "Zero size transcript (forgot to run the aligner?)");
+                   g_msg_NoAlignment);
     }
 
     seqalign->Reset();
@@ -196,13 +198,12 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
 {
     CNcbiOstrstream ss;
 
-    const vector<CNWAligner::ETranscriptSymbol>& transcript =
-        *(m_aligner->GetTranscript());
+    const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
 
     if(transcript.size() == 0) {
         NCBI_THROW(CAlgoAlignException,
                    eNoData,
-                   "Zero size transcript (forgot to run the aligner?)");
+                   g_msg_NoAlignment);
     }
 
     switch (type) {
@@ -446,8 +447,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
 size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
     const
 {
-    const vector<CNWAligner::ETranscriptSymbol>& transcript = 
-        *(m_aligner->GetTranscript());
+    const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
 
     vector<char>& v1 = *pv1;
     vector<char>& v2 = *pv2;
@@ -501,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/29 14:37:15  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.11  2004/11/04 17:32:32  kapustin
  * Use CDense_seg::FromTranscript() to init dense-segs
  *

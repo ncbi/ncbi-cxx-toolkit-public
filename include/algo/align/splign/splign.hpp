@@ -58,53 +58,11 @@ class NCBI_XALGOALIGN_EXPORT CSplign: public CObject
 {
 public:
 
-    // a segment can represent an exon or an unaligning piece of mRna (a gap)
-    struct SSegment {
-        bool   m_exon; // false if gap
-        double m_idty;
-        size_t m_len;
-        size_t m_box [4];
-        string m_annot;   // short description like AG<exon>GT
-        string m_details; // transcript for exons, '-' for gaps
-
-        void ImproveFromLeft( const char* seq1, const char* seq2 );
-        void ImproveFromRight( const char* seq1, const char* seq2 );
-        void RestoreIdentity(void);
-        const char* GetDonor(void) const;    // raw pointers to parts of annot
-        const char* GetAcceptor(void) const; // or zero if less than 2 chars
-    };
-    typedef vector<SSegment> TSegments;
-
-    // aligned compartment representation 
-    struct SAlignedCompartment {
-
-        SAlignedCompartment(void): m_id(0), m_error(true) {}
-        SAlignedCompartment(size_t id, bool err, const char* msg):
-            m_id(id), m_error(err), m_msg(msg) {}
-
-        // returns overall identity (including gaps)
-        double GetIdentity(void);
-    
-        size_t           m_id;
-        TSegments        m_segments;
-        size_t           m_mrnasize;
-        bool             m_QueryStrand, m_SubjStrand;
-
-        size_t           m_qmin;         // Span *before* the alignment -
-        size_t           m_smin, m_smax; // not the actual span of exons.
-                                         // Used by formatter to convert to
-                                         // the original coordinates
-        bool             m_error;
-        string           m_msg;
-    };
-    typedef vector<CHit> THits;
-    typedef vector<SAlignedCompartment> TResults;
+    typedef CSplicedAligner TAligner;
 
     CSplign(void);
 
     // setters and getters
-
-    typedef CSplicedAligner TAligner;
     CRef<TAligner>&     SetAligner(void);
     CConstRef<TAligner> GetAligner(void) const;
 
@@ -140,8 +98,15 @@ public:
         return m_model_id + 1;
     }
 
+    typedef vector<CHit> THits;
+
     void Run(THits* hits);
   
+    struct  SSegment;
+    struct  SAlignedCompartment;
+    typedef vector<SSegment> TSegments;
+    typedef vector<SAlignedCompartment> TResults;
+
     const TResults& GetResult(void) const {
         return m_result;
     }
@@ -203,12 +168,69 @@ protected:
     void   x_SetPattern(THits* hits);
 };
 
+
+// aligned compartment representation 
+struct CSplign::SAlignedCompartment {
+
+    size_t           m_id;
+    bool             m_error;
+    string           m_msg;
+    bool             m_QueryStrand, m_SubjStrand;
+    TSegments        m_segments;
+    
+    SAlignedCompartment(void): m_id(0), m_error(true)
+    {}
+    
+    SAlignedCompartment(size_t id, bool err, const char* msg):
+        m_id(id), m_error(err), m_msg(msg)
+    {}
+    
+    // return overall identity (including gaps)
+    double GetIdentity(void) const;
+    
+    // save to / read from NetCache buffer
+    void ToBuffer   (vector<char>* buf) const;
+    void FromBuffer (const vector<char>& buf);
+};
+
+
+// a segment can represent an exon or an unaligning piece of mRna (a gap)
+struct CSplign::SSegment {
+
+public:
+    
+    bool   m_exon; // false if gap
+    double m_idty;
+    size_t m_len;
+    size_t m_box [4];
+    string m_annot;   // short description like AG<exon>GT
+    string m_details; // transcript for exons, '-' for gaps
+    CNWAligner::TScore m_score;
+     
+    void ImproveFromLeft( const char* seq1, const char* seq2,
+                          CConstRef<CSplicedAligner> aligner);
+    void ImproveFromRight( const char* seq1, const char* seq2,
+                           CConstRef<CSplicedAligner> aligner);
+    
+    void Update(CConstRef<CSplicedAligner> aligner); // recompute members
+    const char* GetDonor(void) const;    // raw pointers to parts of annot
+    const char* GetAcceptor(void) const; // or zero if less than 2 chars
+
+    // NetCache-related serialization
+    void ToBuffer   (vector<char>* buf) const;
+    void FromBuffer (const vector<char>& buf);
+};
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/11/29 14:36:45  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.14  2004/06/29 20:48:18  kapustin
  * Use CRef to access CObject-derived members
  *

@@ -65,6 +65,10 @@ public:
         return splice_type_count_32;
     }
 
+    virtual TScore ScoreFromTranscript(const TTranscript& transcript,
+                                       size_t start1 = kMax_UInt,
+                                       size_t start2 = kMax_UInt ) const;
+
 protected:
 
     TScore m_Wi [splice_type_count_32];
@@ -80,9 +84,7 @@ protected:
     // backtrace
     void x_DoBackTrace( const Uint4* backtrace_matrix,
                         size_t N1, size_t N2,
-                        vector<ETranscriptSymbol>* transcript );
-    // included primarily for test purpose
-    virtual TScore  x_ScoreByTranscript(void) const;
+                        TTranscript* transcript );
 };
 
 
@@ -93,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/29 14:36:45  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.9  2004/06/29 20:46:04  kapustin
  * Support simultaneous segment computing
  *

@@ -33,6 +33,9 @@
 
 
 #include <ncbi_pch.hpp>
+
+#include "messages.hpp"
+
 #include <algo/align/align_exception.hpp>
 #include <algo/align/nw_band_aligner.hpp>
 
@@ -263,7 +266,7 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
         if(Key == kVoid) {
 
             NCBI_THROW(CAlgoAlignException, eInternal,
-                       "Invalid backtrace data ");
+                       g_msg_InvalidBacktraceData);
         }
 
         if (Key & kMaskD) {
@@ -334,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/11/29 14:37:15  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.1  2004/09/16 19:27:43  kapustin
  * Initial revision
  *

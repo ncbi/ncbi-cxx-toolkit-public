@@ -102,6 +102,10 @@ public:
     const double** GetFreq2() const             {return m_Freq2;}
     int GetFreqScale() const                    {return m_FreqScale;}
 
+    virtual TScore ScoreFromTranscript(const TTranscript& transcript,
+                                       size_t start1 = 0,
+                                       size_t start2 = 0) const;
+
 protected:
 
     // Source sequences
@@ -131,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/11/29 14:36:45  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.1  2004/10/05 19:26:33  papadopo
  * Semantics identical to CNWAligner but allowing for one or both input
  * sequences to be represented as profiles

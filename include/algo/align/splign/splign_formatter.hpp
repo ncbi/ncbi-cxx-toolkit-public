@@ -43,6 +43,7 @@ class NCBI_XALGOALIGN_EXPORT CSplignFormatter: public CObject
 {
 public:
 
+    CSplignFormatter(const CSplign::TResults& results);
     CSplignFormatter(const CSplign& splign);
 
     // setters
@@ -57,7 +58,8 @@ public:
 
 private:
 
-    const CSplign*    m_splign;
+    const CSplign::TResults m_splign_results;
+
     string            m_QueryId, m_SubjId;
 
     CRef<objects::CSeq_align> x_Compartment2SeqAlign(
@@ -76,6 +78,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/11/29 14:36:45  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.8  2004/06/21 17:44:46  kapustin
  * Add result param to AsText and AsSeqAlignSet with zero default
  *

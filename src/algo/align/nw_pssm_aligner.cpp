@@ -33,6 +33,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include "messages.hpp"
 #include <algo/align/nw_pssm_aligner.hpp>
 #include <algo/align/align_exception.hpp>
 
@@ -94,14 +95,14 @@ void CPSSMAligner::SetSequences(const TScore** pssm1, size_t len1,
 {
     if(!pssm1 || !len1 || !seq2 || !len2) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "NULL sequence data passed");
+                   g_msg_NullParameter);
     }
 
     if(verify) {
         for (size_t i = 0; i < len2; i++) {
             if (seq2[i] < 0 || seq2[i] >= kPSSM_ColumnSize) {
-                NCBI_THROW(CAlgoAlignException, eInvalidCharacter, 
-                            "Invalid sequence character(s) detected");
+                NCBI_THROW(CAlgoAlignException, eInvalidCharacter,
+                           g_msg_InvalidSequenceChars);
             }
         }
     }
@@ -122,7 +123,7 @@ void CPSSMAligner::SetSequences(const double** freq1, size_t len1,
 {
     if(!freq1 || !len1 || !freq2 || !len2) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "NULL parameter passed");
+                   g_msg_NullParameter);
     }
     m_Pssm1 = 0;
     m_Freq1 = freq1;
@@ -143,7 +144,7 @@ void CPSSMAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix *scoremat)
 
     if(!scoremat) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "Unspecified score matrix");
+                   g_msg_NullParameter);
     }
     CNWAligner::SetScoreMatrix(scoremat);
 }
@@ -152,7 +153,8 @@ void CPSSMAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix *scoremat)
 CPSSMAligner::TScore CPSSMAligner::Run()
 {
     if(!x_CheckMemoryLimit()) {
-        NCBI_THROW(CAlgoAlignException, eMemoryLimit, "Out of space");
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit,
+                   g_msg_OutOfSpace);
     }
 
     m_score = CNWAligner::x_Run();
@@ -345,44 +347,40 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
 }
 
 
-CNWAligner::TScore CPSSMAligner::x_ScoreByTranscript() const
+// The present implementation works with full transcripts only,
+// e.g. aligner.ScoreFromTranscript(aligner.GetTranscript(false));
+//
+CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
+                       const TTranscript& transcript,
+                       size_t start1, size_t start2) const
 {
-    const size_t dim = m_Transcript.size();
-    if(dim == 0) {
-        return 0;
-    }
-
-    if (CNWAligner::m_Seq1 || CNWAligner::m_Seq2)
-        return CNWAligner::x_ScoreByTranscript();
-
-    vector<ETranscriptSymbol> transcript (dim);
-    for(size_t i = 0; i < dim; ++i) {
-        transcript[i] = m_Transcript[dim - i - 1];
-    }
-
     TScore score = 0;
 
     int state1;   // 0 = normal, 1 = gap, 2 = intron
     int state2;   // 0 = normal, 1 = gap
 
     switch(transcript[0]) {
+    case eTS_Replace:
     case eTS_Match:    state1 = state2 = 0; break;
     case eTS_Insert:   state1 = 1; state2 = 0; score += m_Wg; break;
     case eTS_Delete:   state1 = 0; state2 = 1; score += m_Wg; break;
     default: {
         NCBI_THROW(CAlgoAlignException, eInternal,
-                   "Invalid transcript symbol");
+                   g_msg_InvalidTranscriptSymbol);
         }
     }
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
-    size_t offset1 = 0;
-    size_t offset2 = 0;
+    size_t offset1 = start1;
+    size_t offset2 = start2;
 
+    const size_t dim = transcript.size();
     for(size_t i = 0; i < dim; ++i) {
 
-        switch(transcript[i]) {
+        ETranscriptSymbol ts = transcript[i];
+        switch(ts) {
 
+        case eTS_Replace:
         case eTS_Match: {
             state1 = state2 = 0;
             if (m_Pssm1) {
@@ -421,7 +419,7 @@ CNWAligner::TScore CPSSMAligner::x_ScoreByTranscript() const
         
         default: {
         NCBI_THROW(CAlgoAlignException, eInternal,
-                   "Invalid transcript symbol");
+                   g_msg_InvalidTranscriptSymbol);
         }
         }
     }
@@ -475,6 +473,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/11/29 14:37:15  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.1  2004/10/05 19:23:03  papadopo
  * Semantics identical to CNWAligner but allowing for one or both input
  * sequences to be represented as profiles

@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include "splign_util.hpp"
+#include "messages.hpp"
 
 #include <algo/align/splign/splign_compartment_finder.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
@@ -119,7 +120,7 @@ void CSplign::SetMinExonIdentity( double idty )
     if(!(0 <= idty && idty <= 1)) {
         NCBI_THROW( CAlgoAlignException,
                     eBadParameter,
-                    "Identity threshold must be between 0 and 1" );
+                    g_msg_BadIdentityThreshold );
     }
     else {
         m_minidty = idty;
@@ -144,7 +145,7 @@ void CSplign::SetMinQueryCoverage( double cov )
     if(cov < 0 || cov > 1) {
         NCBI_THROW( CAlgoAlignException,
                     eBadParameter,
-                    "Min query coverage out of range");
+                    g_msg_QueryCoverageOutOfRange);
     }
     m_min_query_coverage = cov;
 }
@@ -159,7 +160,7 @@ void CSplign::SetCompartmentPenalty(double penalty)
     if(penalty < 0 || penalty > 1) {
         NCBI_THROW( CAlgoAlignException,
                     eBadParameter,
-                    "Min query coverage out of range");
+                    g_msg_QueryCoverageOutOfRange);
     }
     m_compartment_penalty = penalty;
 }
@@ -332,19 +333,19 @@ void CSplign::Run( THits* phits )
     if(m_sa.IsNull()) {
         NCBI_THROW( CAlgoAlignException,
                     eNotInitialized,
-                    "Sequence accessor object not specified" );
+                    g_msg_SequenceAccessorNotSpecified);
     }
   
     if(m_aligner.IsNull()) {
       NCBI_THROW( CAlgoAlignException,
 		  eNotInitialized,
-		  "Spliced aligner object not specified" );
+                  g_msg_AlignedNotSpecified);
     }
 
     if(hits.size() == 0) {
       NCBI_THROW( CAlgoAlignException,
 		  eNoData,
-		  "Empty hit vector passed to CSplign" );
+		  g_msg_EmptyHitVectorPassed );
     }
 
     const string query ( hits[0].m_Query );
@@ -406,117 +407,6 @@ void CSplign::Run( THits* phits )
         }
         smin = same_strand? box[3] + 1: 0;
     }
-
-    // convert the coordinates back to the originals
-    NON_CONST_ITERATE(TResults, ii, m_result) {
-
-        if(!ii->m_error) {
-
-            NON_CONST_ITERATE(TSegments, jj, ii->m_segments) {
-      
-                if(ii->m_QueryStrand) {
-                    jj->m_box[0] += ii->m_qmin;
-                    jj->m_box[1] += ii->m_qmin;
-                }
-                else {
-                    jj->m_box[0] = ii->m_mrnasize - jj->m_box[0] - 1;
-                    jj->m_box[1] = ii->m_mrnasize - jj->m_box[1] - 1;
-                }
-
-                if(jj->m_exon) {
-                    if(ii->m_SubjStrand) {
-                        jj->m_box[2] += ii->m_smin;
-                        jj->m_box[3] += ii->m_smin;
-                    }
-                    else {
-                        jj->m_box[2] = ii->m_smax - jj->m_box[2];
-                        jj->m_box[3] = ii->m_smax - jj->m_box[3];
-                    }
-                }
-            }
-        }
-    }
-
-/*  FIXME: resolve possible conflict: 
-    compartments can overlap over the shared space - leave the best one.
-
-    // resolve possible conflicts
-    vector<SAlignedCompartment*> vdel;
-    SAlignedCompartment* prev = 0;
-    NON_CONST_ITERATE(TResults, ii, m_result) {
-
-        SAlignedCompartment& ac = *ii;
-        if(ac.m_error) {
-            continue;
-        }
-
-        if(prev != 0 && prev->m_SubjStrand == ac.m_SubjStrand) {
-
-            // find the rightmost exon from 'prev'
-            const SSegment* sleft = 0;
-            for(int i = prev->m_segments.size() - 1; i >= 0; --i) {
-                if(prev->m_segments[i].m_exon) {
-                    sleft = &(prev->m_segments[i]);
-                    break;
-                }
-            }
-
-            // find the leftmost exon from ac
-            const SSegment* sright = 0;
-            for(int i = 0, dim = ac.m_segments.size(); i < dim; ++i) {
-                if(ac.m_segments[i].m_exon) {
-                    sright = &(ac.m_segments[i]);
-                    break;
-                }
-            }
-
-            if(sleft && sright) {
-
-                // test overlap
-
-                size_t right_prev, left_this;
-                if(ac.m_SubjStrand) {
-                    right_prev = prev->m_smin + sleft->m_box[3];
-                    left_this =  ac.m_smin + sright->m_box[2];
-                }
-                else {
-                    cerr << "Strand should be tested before sleft and sright"
-                         << endl;
-                }
-
-                if(right_prev >= left_this) {
-
-                    // favor the best of the two
-                    const double idty_prev = prev->GetIdentity();
-                    const double idty_this = ac.GetIdentity();
-                    vdel.push_back(idty_prev < idty_this? prev: &ac);
-                }
-            }
-        }
-
-        prev = &ac;
-    }
-
-    const size_t vdel_dim = vdel.size();
-    if(vdel_dim) {
-        size_t k = 0, dim = m_result.size();
-        for(size_t i = 0, j = 0; i < dim && j < dim; ++i, ++j) {
-
-            SAlignedCompartment* p = &(m_result[i]);
-            if(p == vdel[k]) {
-                ++j;
-                ++k;
-            }
-            else {
-                if(i < j) {
-                    m_result[i] = m_result[j];
-                }
-            }
-        }
-        m_result.resize(dim - vdel_dim);
-    }
-*/
-
 }
 
 
@@ -545,14 +435,15 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     m_segments.clear();
     
     if(range_left > range_right) {
-        NCBI_THROW( CAlgoAlignException, eInternal, "Invalid range data");
+        NCBI_THROW( CAlgoAlignException, eInternal,
+                    g_msg_InvalidRange);
     }
     
     XFilter(hits);
     
     if(hits->size() == 0) {
         NCBI_THROW( CAlgoAlignException, eNoData,
-                    "No hits left after filtering");
+                    g_msg_NoHitsAfterFiltering);
     }
     
     const string query ( hits->front().m_Query );
@@ -580,7 +471,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         if(hits->size() == 0) {
             NCBI_THROW( CAlgoAlignException,
                         eNoData,
-                        "No hits found beyond Poly(A), if any");
+                        g_msg_NoHitsBeyondPolya );
         }
     }
     
@@ -645,10 +536,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     rv.m_QueryStrand = m_strand;
     rv.m_SubjStrand  = ctg_strand;
-    rv.m_qmin = qmin;
-    rv.m_smin = smin;
-    rv.m_smax = smax;
-    rv.m_mrnasize = mrna_size;
     
     // shift hits so that they originate from qmin, smin;
     // also make them zero-based
@@ -665,7 +552,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     const size_t seg_dim = m_segments.size();
     if(seg_dim == 0) {
-        NCBI_THROW( CAlgoAlignException, eNoData, "No alignment found.");
+        NCBI_THROW( CAlgoAlignException, eNoData,
+                    g_msg_NoAlignment);
     }
     
     // try to extend the last segment into the PolyA area  
@@ -688,7 +576,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             s.m_box[1] += sh;
             s.m_box[3] += sh;
             s.m_details.append(sh, 'M');
-            s.RestoreIdentity();
+            s.Update(m_aligner);
             
             // correct annotation
             const size_t ann_dim = s.m_annot.size();
@@ -749,11 +637,35 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     }
     if(!some_exons) {
         NCBI_THROW( CAlgoAlignException, eNoData,
-                    "No exons found above identity limit.");
+                    g_msg_NoExonsAboveIdtyLimit);
     }
     
     m_segments.resize(j + 1);
 
+    // convert coordinates back to the originals
+    NON_CONST_ITERATE(TSegments, jj, m_segments) {
+        
+        if(rv.m_QueryStrand) {
+            jj->m_box[0] += qmin;
+            jj->m_box[1] += qmin;
+        }
+        else {
+            jj->m_box[0] = mrna_size - jj->m_box[0] - 1;
+            jj->m_box[1] = mrna_size - jj->m_box[1] - 1;
+        }
+        
+        if(jj->m_exon) {
+            if(rv.m_SubjStrand) {
+                jj->m_box[2] += smin;
+                jj->m_box[3] += smin;
+            }
+            else {
+                jj->m_box[2] = smax - jj->m_box[2];
+                jj->m_box[3] = smax - jj->m_box[3];
+            }
+        }
+    }
+    
     return rv;
 }
 
@@ -841,12 +753,11 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 s1 += zone.m_box[2];
                 SSegment e;
                 e.m_exon = true;
-                e.m_idty = idty;
-                e.m_len = size;
                 e.m_box[0] = q0; e.m_box[1] = q1;
                 e.m_box[2] = s0; e.m_box[3] = s1;
                 e.m_annot = txt;
                 e.m_details = repr;
+                e.Update(m_aligner);
                 segments.push_back(e);
             }
 
@@ -862,6 +773,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 g.m_len = g.m_box[1] - g.m_box[0] + 1;
                 g.m_annot = kGap;
                 g.m_details.resize(0);
+                g.m_score = 0; // no score for <Gap>s
                 segments.push_back(g);
             }
         }
@@ -875,7 +787,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
              << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
-             << ii->m_annot << endl;
+             << ii->m_annot << '\t' << ii->m_score << endl;
     }
 #endif
 
@@ -894,7 +806,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         SSegment& s = segments[k0];
         if(s.m_exon) {
             if(s.m_idty < min_idty || m_endgaps) {
-                s.ImproveFromLeft(Seq1, Seq2);
+                s.ImproveFromLeft(Seq1, Seq2, m_aligner);
             }
             if(s.m_idty >= min_idty) {
                 break;
@@ -916,6 +828,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_len = segments[0].m_box[0];
         g.m_annot = kGap;
         g.m_details.resize(0);
+        g.m_score = 0;
         ++seg_dim;
         ++k0;
     }
@@ -925,7 +838,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         SSegment& s = segments[k1];
         if(s.m_exon) {
             if(s.m_idty < min_idty || m_endgaps) {
-	            s.ImproveFromRight(Seq1, Seq2);
+	            s.ImproveFromRight(Seq1, Seq2, m_aligner);
             }
             if(s.m_idty >= min_idty) {
 	            break;
@@ -952,6 +865,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         g.m_len = g.m_box[1] - g.m_box[0] + 1;
         g.m_annot = kGap;
         g.m_details.resize(0);
+        g.m_score = 0;
         segments.push_back(g);
         ++seg_dim;
     }
@@ -965,6 +879,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
             s.m_annot = kGap;
             s.m_details.resize(0);
+            s.m_score = 0;
         }
     }
 
@@ -996,6 +911,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                     s.m_len = exon_size;
                     s.m_annot = kGap;
                     s.m_details.resize(0);
+                    s.m_score = 0;
                 }
             }
         }
@@ -1027,6 +943,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                     s.m_len = exon_size;
                     s.m_annot = kGap;
                     s.m_details.resize(0);
+                    s.m_score = 0;
                 }
             }
         }
@@ -1051,6 +968,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
             s.m_annot = kGap;
             s.m_details.resize(0);
+            s.m_score = 0;
 	  }
 	  gap_prev = false;
 	}
@@ -1102,7 +1020,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
              << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
-             << ii->m_annot << endl;
+             << ii->m_annot << '\t' << ii->m_score << endl;
     }
 #endif
 
@@ -1110,221 +1028,229 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
 
 // try improving the segment by cutting it from the left
-void CSplign::SSegment::ImproveFromLeft(const char* seq1, const char* seq2)
+void CSplign::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
+                                        CConstRef<CSplicedAligner> aligner)
 {
-  const size_t min_query_size = 4;
-
-  int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
-  if(i0 < int(min_query_size)) {
-    return;
-  }
-
-  // find the top score suffix
-  int i1 = int(m_box[3] - m_box[2] + 1), i1_max = i1;
-  
-  CNWAligner::TScore score_max = 0, s = 0;
-  
-  const CNWAligner::TScore wm =  1;
-  const CNWAligner::TScore wms = -1;
-  const CNWAligner::TScore wg =  0;
-  const CNWAligner::TScore ws =  -1;
-  
-  string::reverse_iterator irs0 = m_details.rbegin(),
-    irs1 = m_details.rend(), irs = irs0, irs_max = irs0;
-
-  for( ; irs != irs1; ++irs) {
+    const size_t min_query_size = 4;
     
-    switch(*irs) {
-      
-    case 'M': {
-      s += wm;
-      --i0;
-      --i1;
-      }
-      break;
-      
-    case 'R': {
-      s += wms;
-      --i0;
-      --i1;
-      }
-      break;
-      
-    case 'I': {
-        s += ws;
-	if(irs > irs0 && *(irs-1)!='I') s += wg;
-	--i1;
-      }
-      break;
-
-    case 'D': {
-        s += ws;
-	if(irs > irs0 && *(irs-1)!='D') s += wg;
-	--i0;
-      }
-
+    int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
+    if(i0 < int(min_query_size)) {
+        return;
     }
-
-    if(s >= score_max) {
-      score_max = s;
-      i0_max = i0;
-      i1_max = i1;
-      irs_max = irs;
-    }
-  }
-
-  // work around a weird case of equally optimal
-  // but detrimental for our purposes alignment
-  // -check the actual sequence chars
-  size_t head = 0;
-  while(i0_max > 0 && i1_max > 0) {
-    if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
-      --i0_max; --i1_max;
-      ++head;
-    }
-    else {
-      break;
-    }
-  }
-
-  // if the resulting segment is still long enough
-  if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size
-     && i0_max > 0) {
-
-    // resize
-    m_box[0] += i0_max;
-    m_box[2] += i1_max;
-    m_details.erase(0, m_details.size() - (irs_max - irs0 + 1));
-    m_details.insert(m_details.begin(), head, 'M');
-    RestoreIdentity();
     
-    // update the first two annotation symbols
-    if(m_annot.size() > 2 && m_annot[2] == '<') {
-      int  j1 = m_box[2] - 2;
-      char c1 = j1 >= 0? seq2[j1]: ' ';
-      m_annot[0] = c1;
-      int  j2 = m_box[2] - 2;
-      char c2 = j2 >= 0? seq2[j2]: ' ';
-      m_annot[1] = c2;
+    // find the top score suffix
+    int i1 = int(m_box[3] - m_box[2] + 1), i1_max = i1;
+    
+    CNWAligner::TScore score_max = 0, s = 0;
+    
+    const CNWAligner::TScore wm =  1;
+    const CNWAligner::TScore wms = -1;
+    const CNWAligner::TScore wg =  0;
+    const CNWAligner::TScore ws =  -1;
+  
+    string::reverse_iterator irs0 = m_details.rbegin(),
+        irs1 = m_details.rend(), irs = irs0, irs_max = irs0;
+    
+    for( ; irs != irs1; ++irs) {
+        
+        switch(*irs) {
+            
+        case 'M': {
+            s += wm;
+            --i0;
+            --i1;
+        }
+        break;
+            
+        case 'R': {
+            s += wms;
+            --i0;
+            --i1;
+        }
+        break;
+            
+        case 'I': {
+            s += ws;
+            if(irs > irs0 && *(irs-1)!='I') s += wg;
+            --i1;
+        }
+        break;
+
+        case 'D': {
+            s += ws;
+            if(irs > irs0 && *(irs-1)!='D') s += wg;
+            --i0;
+        }
+        }
+
+        if(s >= score_max) {
+            score_max = s;
+            i0_max = i0;
+            i1_max = i1;
+            irs_max = irs;
+        }
     }
-  }
+
+    // work around a weird case of equally optimal
+    // but detrimental for our purposes alignment
+    // -check the actual sequence chars
+    size_t head = 0;
+    while(i0_max > 0 && i1_max > 0) {
+        if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
+            --i0_max; --i1_max;
+            ++head;
+        }
+        else {
+            break;
+        }
+    }
+    
+    // if the resulting segment is still long enough
+    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size
+       && i0_max > 0) {
+        
+        // resize
+        m_box[0] += i0_max;
+        m_box[2] += i1_max;
+        m_details.erase(0, m_details.size() - (irs_max - irs0 + 1));
+        m_details.insert(m_details.begin(), head, 'M');
+        Update(aligner);
+        
+        // update the first two annotation symbols
+        if(m_annot.size() > 2 && m_annot[2] == '<') {
+            int  j1 = m_box[2] - 2;
+            char c1 = j1 >= 0? seq2[j1]: ' ';
+            m_annot[0] = c1;
+            int  j2 = m_box[2] - 2;
+            char c2 = j2 >= 0? seq2[j2]: ' ';
+            m_annot[1] = c2;
+        }
+    }
 }
 
 
 // try improving the segment by cutting it from the right
-void CSplign::SSegment::ImproveFromRight(const char* seq1, const char* seq2)
+void CSplign::SSegment::ImproveFromRight(const char* seq1, const char* seq2,
+                                         CConstRef<CSplicedAligner> aligner)
 {
-  const size_t min_query_size = 4;
-
-  if(m_box[1] - m_box[0] + 1 < min_query_size) {
-    return;
-  }
-
-  // find the top score prefix
-  int i0 = -1, i0_max = i0;
-  int i1 = -1, i1_max = i1;
-
-  CNWAligner::TScore score_max = 0, s = 0;
-
-  const CNWAligner::TScore wm =  1;
-  const CNWAligner::TScore wms = -1;
-  const CNWAligner::TScore wg =  0;
-  const CNWAligner::TScore ws =  -1;
-
-  string::iterator irs0 = m_details.begin(),
-    irs1 = m_details.end(), irs = irs0, irs_max = irs0;
-
-  for( ; irs != irs1; ++irs) {
-
-    switch(*irs) {
-
-    case 'M': {
-        s += wm;
-	++i0;
-	++i1;
-      }
-      break;
-
-    case 'R': {
-        s += wms;
-	++i0;
-	++i1;
-      }
-      break;
-      
-    case 'I': {
-      s += ws;
-	if(irs > irs0 && *(irs-1) != 'I') s += wg;
-	++i1;
-    }
-      break;
-
-    case 'D': {
-        s += ws;
-	if(irs > irs0 && *(irs-1) != 'D') s += wg;
-	++i0;
-      }
-
-    }
-
-    if(s >= score_max) {
-      score_max = s;
-      i0_max = i0;
-      i1_max = i1;
-      irs_max = irs;
-    }
-  }
-
-  int dimq = int(m_box[1] - m_box[0] + 1);
-  int dims = int(m_box[3] - m_box[2] + 1);
-
-  // work around a weird case of equally optimal
-  // but detrimental for our purposes alignment
-  // -check the actual sequences
-  size_t tail = 0;
-  while(i0_max < dimq - 1  && i1_max < dims - 1) {
-    if(seq1[m_box[0]+i0_max+1] == seq2[m_box[2]+i1_max+1]) {
-      ++i0_max; ++i1_max;
-      ++tail;
-    }
-    else {
-      break;
-    }
-  }
-
-  dimq += tail;
-  dims += tail;
-
-  // if the resulting segment is still long enough
-  if(i0_max >= int(min_query_size) && i0_max < dimq - 1) {
-
-    m_box[1] = m_box[0] + i0_max;
-    m_box[3] = m_box[2] + i1_max;
-
-    m_details.resize(irs_max - irs0 + 1);
-    m_details.insert(m_details.end(), tail, 'M');
-    RestoreIdentity();
+    const size_t min_query_size = 4;
     
-    // update the last two annotation chars
-    const size_t adim = m_annot.size();
-    if(adim > 2 && m_annot[adim - 3] == '>') {
-      m_annot[adim-2] = seq2[m_box[3] + 1];
-      m_annot[adim-1] = seq2[m_box[3] + 2];
+    if(m_box[1] - m_box[0] + 1 < min_query_size) {
+        return;
     }
-  }
+    
+    // find the top score prefix
+    int i0 = -1, i0_max = i0;
+    int i1 = -1, i1_max = i1;
+
+    CNWAligner::TScore score_max = 0, s = 0;
+    
+    const CNWAligner::TScore wm =  1;
+    const CNWAligner::TScore wms = -1;
+    const CNWAligner::TScore wg =  0;
+    const CNWAligner::TScore ws =  -1;
+    
+    string::iterator irs0 = m_details.begin(),
+        irs1 = m_details.end(), irs = irs0, irs_max = irs0;
+    
+    for( ; irs != irs1; ++irs) {
+        
+        switch(*irs) {
+            
+        case 'M': {
+            s += wm;
+            ++i0;
+            ++i1;
+        }
+        break;
+            
+        case 'R': {
+            s += wms;
+            ++i0;
+            ++i1;
+        }
+        break;
+      
+        case 'I': {
+            s += ws;
+            if(irs > irs0 && *(irs-1) != 'I') s += wg;
+            ++i1;
+        }
+        break;
+
+        case 'D': {
+            s += ws;
+            if(irs > irs0 && *(irs-1) != 'D') s += wg;
+            ++i0;
+        }
+    }
+        
+        if(s >= score_max) {
+            score_max = s;
+            i0_max = i0;
+            i1_max = i1;
+            irs_max = irs;
+        }
+    }
+    
+    int dimq = int(m_box[1] - m_box[0] + 1);
+    int dims = int(m_box[3] - m_box[2] + 1);
+    
+    // work around a weird case of equally optimal
+    // but detrimental for our purposes alignment
+    // -check the actual sequences
+    size_t tail = 0;
+    while(i0_max < dimq - 1  && i1_max < dims - 1) {
+        if(seq1[m_box[0]+i0_max+1] == seq2[m_box[2]+i1_max+1]) {
+            ++i0_max; ++i1_max;
+            ++tail;
+        }
+        else {
+            break;
+        }
+    }
+    
+    dimq += tail;
+    dims += tail;
+    
+    // if the resulting segment is still long enough
+    if(i0_max >= int(min_query_size) && i0_max < dimq - 1) {
+        
+        m_box[1] = m_box[0] + i0_max;
+        m_box[3] = m_box[2] + i1_max;
+        
+        m_details.resize(irs_max - irs0 + 1);
+        m_details.insert(m_details.end(), tail, 'M');
+        Update(aligner);
+        
+        // update the last two annotation chars
+        const size_t adim = m_annot.size();
+        if(adim > 2 && m_annot[adim - 3] == '>') {
+            m_annot[adim-2] = seq2[m_box[3] + 1];
+            m_annot[adim-1] = seq2[m_box[3] + 2];
+        }
+    }
 }
 
 
-void CSplign::SSegment::RestoreIdentity()
+void CSplign::SSegment::Update(CConstRef<CSplicedAligner> aligner)
 {
     // restore length and identity
     m_len = m_details.size();
+
     string::const_iterator ib = m_details.begin(), ie = m_details.end();
-    size_t count = 0; // not using std::count here due to known incompatibilty
+    size_t count = 0; // std::count() not supported on some platforms
     for(string::const_iterator ii = ib; ii != ie; ++ii) {
         if(*ii == 'M') ++count;
     }
     m_idty = double(count) / m_len;
+    
+    CNWAligner::TTranscript transcript (m_details.size());
+    size_t i = 0;
+    ITERATE(string, ii, m_details) {
+        transcript[i++] = CNWAligner::ETranscriptSymbol(*ii); // 2b fixed
+    }
+    m_score = aligner->CNWAligner::ScoreFromTranscript(transcript);
 }
 
 
@@ -1343,7 +1269,8 @@ const char* CSplign::SSegment::GetAcceptor() const
 }
 
 
-double CSplign::SAlignedCompartment::GetIdentity()
+
+double CSplign::SAlignedCompartment::GetIdentity() const
 {
     string trans;
     for(size_t i = 0, dim = m_segments.size(); i < dim; ++i) {
@@ -1364,14 +1291,164 @@ double CSplign::SAlignedCompartment::GetIdentity()
     return double(matches) / trans.size();
 }
 
+typedef vector<char> TNetCacheBuffer;
+
+void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
+{
+    if(target == 0) {
+        NCBI_THROW( CAlgoAlignException,
+                    eBadParameter,
+                    g_msg_NullPointerPassed);
+    }
+
+    const size_t core_size = sizeof m_id + sizeof m_error + m_msg.size() + 1
+        + sizeof m_QueryStrand + sizeof m_SubjStrand;
+
+    vector<char> core (core_size);
+
+    char* p = &core.front();
+
+    *((size_t*)p) = m_id; p += sizeof m_id;
+    *((bool*)p)   = m_error;; p += sizeof m_error;
+    copy(m_msg.begin(), m_msg.end(), p); p += m_msg.size();
+    *p++ = 0;
+    *((bool*)p) = m_QueryStrand; p += sizeof m_QueryStrand;
+    *((bool*)p) = m_SubjStrand;  p += sizeof m_SubjStrand;
+    
+    typedef vector<TNetCacheBuffer> TBuffers;
+    TBuffers vb (m_segments.size());
+    size_t ibuf = 0;
+    ITERATE(TSegments, ii, m_segments) {
+        ii->ToBuffer(&vb[ibuf++]);
+    }
+
+    size_t total_size = core_size + sizeof(size_t) * m_segments.size();
+    ITERATE(TBuffers, ii, vb) {
+        total_size += ii->size();
+    }
+
+    target->resize(total_size);
+    TNetCacheBuffer::iterator it = target->begin();
+    copy(core.begin(), core.end(), it);
+    it += core_size;
+
+    ITERATE(TBuffers, ii, vb) {
+        char* p = &(*it);
+        const size_t seg_buf_size = ii->size();
+        *((size_t*)p) = seg_buf_size;
+        it += sizeof (size_t);
+        copy(ii->begin(), ii->end(), it);
+        it += seg_buf_size;
+    }
+}
+
+
+void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
+{
+    TNetCacheBuffer::const_iterator is = source.begin(), ise = source.end();
+    const size_t min_size = sizeof m_id + sizeof m_error + 1 
+        + sizeof m_QueryStrand + sizeof m_SubjStrand;
+    if(source.size() < min_size) {
+    NCBI_THROW(CAlgoAlignException, eInternal,
+               g_msg_NetCacheBufferIncomplete);
+    }
+    
+    m_id = *((const size_t*)&(*is));  is += sizeof m_id;
+    m_error = *((const bool*)&(*is)); is += sizeof m_error;
+    TNetCacheBuffer::const_iterator is0 = is;
+    while(*is++);
+    m_msg.resize(is - is0 - 1);
+    copy(is0, is - 1, m_msg.begin());
+    m_QueryStrand = *((bool*)&(*is)); is += sizeof m_QueryStrand;
+    m_SubjStrand = *((bool*)&(*is));  is += sizeof m_SubjStrand;
+
+    while(is < ise) {
+        const size_t seg_buf_size = *((size_t*)&(*is));
+        is += sizeof(size_t);
+        m_segments.push_back(SSegment());
+        SSegment& seg = m_segments.back();
+        seg.FromBuffer(TNetCacheBuffer(is, is + seg_buf_size));
+        is += seg_buf_size;
+    }
+}
+
+
+void CSplign::SSegment::ToBuffer(TNetCacheBuffer* target) const
+{
+    if(target == 0) {
+        NCBI_THROW( CAlgoAlignException,
+                    eBadParameter,
+                    g_msg_NullPointerPassed );
+    }
+    
+    const size_t total_size = sizeof m_exon + sizeof m_idty + 
+        sizeof m_len + sizeof m_box + m_annot.size() + 1 +
+        m_details.size() + 1 + sizeof m_score;
+
+    target->resize(total_size);
+    
+    char* p = &target->front();
+
+    *((bool*)p) = m_exon;   p += sizeof m_exon;
+    *((double*)p) = m_idty; p += sizeof m_idty;
+    *((size_t*)p) = m_len;  p += sizeof m_len;
+
+    for(size_t i = 0; i < 4; ++i) {
+        *((size_t*)p) = m_box[i];
+        p += sizeof m_box[i];
+    }
+    copy(m_annot.begin(), m_annot.end(), p); p += m_annot.size();
+    *p++ = 0;
+
+    copy(m_details.begin(), m_details.end(), p); p += m_details.size();
+    *p++ = 0;
+
+    *((CNWAligner::TScore*)p) = m_score;
+}
+
+
+void CSplign::SSegment::FromBuffer(const TNetCacheBuffer& source)
+{
+    TNetCacheBuffer::const_iterator is = source.begin(), ise = source.end();
+    const size_t min_size = sizeof m_exon + sizeof m_idty + sizeof m_len + 
+        + sizeof m_box + 1 + 1 + sizeof m_score;
+    if(source.size() < min_size) {
+        NCBI_THROW(CAlgoAlignException, eInternal,
+               g_msg_NetCacheBufferIncomplete);
+    }
+    
+    m_exon = *((const bool*)&(*is));  is += sizeof m_exon;
+    m_idty = *((const double*)&(*is)); is += sizeof m_idty;
+    m_len = *((const size_t*)&(*is));  is += sizeof m_len;
+
+    for(size_t i = 0; i < 4; ++i) {
+        m_box[i] = *((const size_t*)&(*is));  is += sizeof m_box[i];
+    }
+    
+    TNetCacheBuffer::const_iterator is0 = is;
+    while(*is++);
+    m_annot.resize(is0 - is - 1);
+    copy(is0, is - 1, m_annot.begin());
+
+    is0 = is;
+    while(*is++);
+    m_details.resize(is0 - is - 1);
+    copy(is0, is - 1, m_details.begin());
+
+    m_score = *((const CNWAligner::TScore*)&(*is));
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/11/29 14:37:16  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.22  2004/09/27 17:12:38  kapustin
- * Move splign_compartment_finder.hpp to /include/algo/align/splign. SetIntronLimits() => SetMaxIntron()
+ * Move splign_compartment_finder.hpp to /include/algo/align/splign.
+ * SetIntronLimits() => SetMaxIntron()
  *
  * Revision 1.21  2004/09/21 16:39:47  kapustin
  * Use separate constants to specify min term exon length and the min

@@ -79,7 +79,7 @@ protected:
     // backtrace
     void           x_DoBackTrace(const unsigned char* backtrace_matrix,
                                  size_t N1, size_t N2,
-                                 vector<ETranscriptSymbol>* transcript);
+                                 TTranscript* transcript);
     // other
     virtual bool   x_CheckMemoryLimit(void);
 };
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/11/29 14:36:45  kapustin
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ *
  * Revision 1.2  2004/11/15 22:21:48  grichenk
  * Doxygenized comments, fixed group names.
  *

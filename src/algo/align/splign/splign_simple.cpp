@@ -33,6 +33,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include "messages.hpp"
 #include <algo/align/splign/splign_simple.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
@@ -68,8 +69,8 @@ public:
     {
         if (!seq) {
             NCBI_THROW(CAlgoAlignException, eNotInitialized,
-                       "CSplignObjMgrAccessor::Load passed NULL sequence "
-                       "pointer.");
+                       string(g_msg_NullPointerPassed) + " in " + 
+                       "CSplignObjMgrAccessor::Load");
         }
 
         CSeq_id seqId(id);
@@ -83,8 +84,7 @@ public:
             sv = &m_SeqVector2;
         } else {
             NCBI_THROW(CAlgoAlignException, eInternal,
-                       "CSplignObjMgrAccessor::Load could not find the proper "
-                       "sequence for '"+id+"'.");
+                       string(g_msg_SequenceNotFound) + " for " + id);
         }
 
         if (finish == kMax_UInt) { //flag to return everything
@@ -123,6 +123,7 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
 
     CRef<CSplignSeqAccessor> accessor
         (new CSplignObjMgrAccessor(*m_TranscriptId, *m_GenomicId, scope));
+
     m_Splign->SetSeqAccessor() = accessor;
 }
 
@@ -210,6 +211,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.10  2004/11/29 14:37:16  kapustin
+* CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+*
 * Revision 1.9  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *
