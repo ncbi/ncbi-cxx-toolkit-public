@@ -32,7 +32,7 @@
  *
  */
 
-#include <corelib/ncbistre.hpp>
+#include <corelib/ncbistr.hpp>
 #include <util/math/promote.hpp>
 #include <vector>
 
@@ -956,6 +956,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/10 14:13:29  dicuccio
+ * Corrected include - use ncbistr instead of ncbistre
+ *
  * Revision 1.4  2004/02/10 21:17:54  jcherry
  * Made operator>> work for a matrix of any contained type that defines
  * operator>> (not just doubles)
