@@ -106,11 +106,11 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
+      m_MatrixType(matrix_type),
+      m_prg_callback(0),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
-      m_MatrixType(matrix_type),
-      m_score(kInfMinus),
-      m_prg_callback(0)
+      m_score(kInfMinus)
 {
     if(!seq1 && m_SeqLen1 || !seq2 && m_SeqLen2) {
         NCBI_THROW(
@@ -897,9 +897,6 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         }
     }
 
-    TScore L1 = 0, R1 = 0, L2 = 0, R2 = 0;
-    bool   bL1 = false, bR1 = false, bL2 = false, bR2 = false;
-    
     for(size_t i = 0; i < dim; ++i) {
 
         char c1 = m_Seq1? *p1: 'N';
@@ -988,6 +985,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/04/17 14:44:40  kapustin
+ * A few changes to eliminate gcc warnings
+ *
  * Revision 1.23  2003/04/14 19:00:55  kapustin
  * Add guide creation facility.  x_Run() -> x_Align()
  *
