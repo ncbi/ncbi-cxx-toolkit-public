@@ -39,7 +39,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 {
     EFormat format = eUnknown;
 
-    CNcbiIfstream input(path.c_str(), ios_base::in | ios_base::binary);
+    CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
 
     if (!input.is_open()) 
         return eUnknown;
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/09 14:08:28  ucko
+ * ios_base:: -> IOS_BASE:: for gcc 2.9x compatibility
+ *
  * Revision 1.1  2003/05/08 19:46:34  kuznets
  * Initial revision
  *
