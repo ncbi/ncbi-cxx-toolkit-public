@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/11/15 18:57:01  vakatov
+* Added <memory> (for "auto_ptr<>" template)
+*
 * Revision 1.11  1999/11/15 15:53:27  sandomir
 * Registry support moved from CCgiApplication to CNcbiApplication
 *
@@ -73,6 +76,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
