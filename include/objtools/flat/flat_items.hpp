@@ -132,7 +132,7 @@ public:
     CFlatPrimary(const CFlatContext& ctx);
     void Format(IFlatFormatter& f) const { f.FormatPrimary(*this); }
 
-    typedef CRange<TSignedSeqPos> TRange;
+    typedef CRange<TSeqPos> TRange;
     struct SPiece {
         TRange             m_Span;
         CConstRef<CSeq_id> m_PrimaryID;
@@ -275,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/09/19 00:22:45  ucko
+* CFlatPrimary: use an unsigned range per CAlnMap::GetSeqRange's new rettype.
+*
 * Revision 1.5  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
