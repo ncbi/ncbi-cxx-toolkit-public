@@ -113,7 +113,7 @@ public:
 protected:
     friend class CSeq_id_Mapper;
 
-    CSeq_id_Info* CreateInfo(void);
+    CSeq_id_Info* CreateInfo(CSeq_id::E_Choice type);
     CSeq_id_Info* CreateInfo(const CSeq_id& id);
 
     virtual void x_Unindex(const CSeq_id_Info* info) = 0;
@@ -253,7 +253,8 @@ protected:
     bool x_Check(const CSeq_id& id) const;
     int  x_Get(const CSeq_id& id) const;
 
-    CConstRef<CSeq_id_Info> m_Info;
+    CConstRef<CSeq_id_Info> m_ZeroInfo;
+    CConstRef<CSeq_id_Info> m_SharedInfo;
 };
 
 
@@ -594,6 +595,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/17 18:28:38  vasilche
+* Fixed null pointer exception in GI CSeq_id_Handle.
+*
 * Revision 1.5  2004/02/19 17:25:34  vasilche
 * Use CRef<> to safely hold pointer to CSeq_id_Info.
 * CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.

@@ -53,28 +53,20 @@ DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
 #endif
 
 
-CSeq_id_Info::CSeq_id_Info(void)
-    : m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type)
+    : m_Seq_id_Type(type),
+      m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
 {
-    m_Counter.Set(0);
+    m_LockCounter.Set(0);
 }
 
 
 CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
-    : m_Seq_id(seq_id),
+    : m_Seq_id_Type(seq_id->Which()),
+      m_Seq_id(seq_id),
       m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
 {
-    m_Counter.Set(0);
-}
-
-
-CSeq_id_Which_Tree* CSeq_id_Info::GetTree(void) const
-{
-    _ASSERT(m_Mapper);
-    if ( !m_Seq_id ) {
-        return m_Mapper->m_Trees[CSeq_id::e_Gi];
-    }
-    return &m_Mapper->x_GetTree(*m_Seq_id);
+    m_LockCounter.Set(0);
 }
 
 
@@ -103,20 +95,20 @@ CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
 
 CSeq_id_Info::~CSeq_id_Info(void)
 {
-    _ASSERT(m_Counter.Get() == 0);
+    _ASSERT(m_LockCounter.Get() == 0);
 }
+
+
+CSeq_id_Which_Tree& CSeq_id_Info::GetTree(void) const
+{
+    return GetMapper().x_GetTree(GetType());
+}
+
 
 
 void CSeq_id_Info::x_RemoveLastLock(void) const
 {
-    GetTree()->DropInfo(this);
-}
-
-
-inline
-CSeq_id_Mapper& CSeq_id_Info::GetSeq_id_Mapper(void) const
-{
-    return *m_Mapper;
+    GetTree().DropInfo(this);
 }
 
 
@@ -282,7 +274,7 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
 
 bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 {
-    return m_Info->GetSeq_id_Mapper().x_IsBetter(*this, h);
+    return m_Info->GetMapper().x_IsBetter(*this, h);
 }
 
 
@@ -291,7 +283,7 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
     if ( IsGi() ) {
         return id.IsGi() && id.GetGi() == GetGi();
     }
-    return *this == m_Info->GetSeq_id_Mapper().GetHandle(id);
+    return *this == m_Info->GetMapper().GetHandle(id);
 }
 
 
@@ -316,6 +308,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/06/17 18:28:38  vasilche
+* Fixed null pointer exception in GI CSeq_id_Handle.
+*
 * Revision 1.24  2004/06/16 19:21:56  grichenk
 * Fixed locking of CSeq_id_Info
 *

@@ -80,9 +80,9 @@ bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& /*h1*/,
 
 
 inline
-CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(void)
+CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(CSeq_id::E_Choice type)
 {
-    return new CSeq_id_Info();
+    return new CSeq_id_Info(type);
 }
 
 
@@ -110,13 +110,13 @@ CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 
 void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 {
-    if ( info->GetCounter() > 0 ) {
+    if ( info->GetLockCounter() > 0 ) {
         return;
     }
 
     {{
         TWriteLockGuard guard(m_TreeLock);
-        if ( info->GetCounter() > 0 ) {
+        if ( info->GetLockCounter() > 0 ) {
             return;
         }
         x_Unindex(info);
@@ -374,15 +374,16 @@ int CSeq_id_Gibbmt_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Gi_Tree::CSeq_id_Gi_Tree(void)
-    : m_Info(CreateInfo())
+    : m_SharedInfo(CreateInfo(CSeq_id::e_Gi))
 {
 }
 
 
 CSeq_id_Gi_Tree::~CSeq_id_Gi_Tree(void)
 {
-    _ASSERT(m_Info);
-    m_Info.Reset();
+    m_ZeroInfo.Reset();
+    _ASSERT(m_SharedInfo);
+    m_SharedInfo.Reset();
 }
 
 
@@ -418,21 +419,42 @@ void CSeq_id_Gi_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
 
 CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(int gi)
 {
-    return CSeq_id_Handle(m_Info, gi);
+    if ( gi ) {
+        return CSeq_id_Handle(m_SharedInfo, gi);
+    }
+    else {
+        if ( !m_ZeroInfo ) {
+            TWriteLockGuard guard(m_TreeLock);
+            if ( !m_ZeroInfo ) {
+                CRef<CSeq_id> zero_id(new CSeq_id);
+                zero_id->SetGi(0);
+                m_ZeroInfo.Reset(CreateInfo(*zero_id));
+            }
+        }
+        return CSeq_id_Handle(m_ZeroInfo);
+    }
 }
 
 
 CSeq_id_Handle CSeq_id_Gi_Tree::FindInfo(const CSeq_id& id) const
 {
+    CSeq_id_Handle ret;
     _ASSERT(x_Check(id));
-    return CSeq_id_Handle(m_Info, x_Get(id));
+    int gi = x_Get(id);
+    if ( gi ) {
+        ret = CSeq_id_Handle(m_SharedInfo, gi);
+    }
+    else if ( m_ZeroInfo ) {
+        ret = CSeq_id_Handle(m_ZeroInfo);
+    }
+    return ret;
 }
 
 
 CSeq_id_Handle CSeq_id_Gi_Tree::FindOrCreate(const CSeq_id& id)
 {
     _ASSERT(x_Check(id));
-    return CSeq_id_Handle(m_Info, x_Get(id));
+    return GetGiHandle(x_Get(id));
 }
 
 
@@ -451,17 +473,22 @@ void CSeq_id_Gi_Tree::FindMatch(const CSeq_id_Handle& id, TSeq_id_MatchList& id_
 
 
 void CSeq_id_Gi_Tree::FindMatchStr(string sid,
-                                    TSeq_id_MatchList& id_list) const
+                                   TSeq_id_MatchList& id_list) const
 {
-    int value;
+    int gi;
     try {
-        value = NStr::StringToInt(sid);
+        gi = NStr::StringToInt(sid);
     }
     catch (const CStringException& /*ignored*/) {
         // Not an integer value
         return;
     }
-    id_list.insert(CSeq_id_Handle(m_Info, value));
+    if ( gi ) {
+        id_list.insert(CSeq_id_Handle(m_SharedInfo, gi));
+    }
+    else if ( m_ZeroInfo ) {
+        id_list.insert(CSeq_id_Handle(m_ZeroInfo));
+    }
 }
 
 
@@ -1611,6 +1638,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/06/17 18:28:38  vasilche
+* Fixed null pointer exception in GI CSeq_id_Handle.
+*
 * Revision 1.14  2004/06/16 19:21:56  grichenk
 * Fixed locking of CSeq_id_Info
 *

@@ -102,8 +102,9 @@ private:
     bool x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2);
 
 
-    CSeq_id_Which_Tree& x_GetTree(const CSeq_id_Handle& idh);
+    CSeq_id_Which_Tree& x_GetTree(CSeq_id::E_Choice type);
     CSeq_id_Which_Tree& x_GetTree(const CSeq_id& id);
+    CSeq_id_Which_Tree& x_GetTree(const CSeq_id_Handle& idh);
 
     // Hide copy constructor and operator
     CSeq_id_Mapper(const CSeq_id_Mapper&);
@@ -131,12 +132,30 @@ CConstRef<CSeq_id> CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& h)
 }
 
 
+inline
+CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(CSeq_id::E_Choice type)
+{
+    _ASSERT(size_t(type) < m_Trees.size());
+    return *m_Trees[type];
+}
+
+
+inline
+CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
+{
+    return x_GetTree(id.Which());
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/06/17 18:28:38  vasilche
+* Fixed null pointer exception in GI CSeq_id_Handle.
+*
 * Revision 1.25  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.

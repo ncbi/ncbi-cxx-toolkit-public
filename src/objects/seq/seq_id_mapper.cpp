@@ -75,18 +75,21 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
 }
 
 
-CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
-{
-    CSeq_id::E_Choice type = id.Which();
-    _ASSERT(size_t(type) < m_Trees.size());
-    return *m_Trees[type];
-}
-
-
 inline
 CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id_Handle& idh)
 {
-    return idh? *idh.m_Info->GetTree(): *m_Trees[CSeq_id::e_not_set];
+    CSeq_id::E_Choice type;
+    if ( !idh ) {
+        type = CSeq_id::e_not_set;
+    }
+    else if ( idh.IsGi() ) {
+        type = CSeq_id::e_Gi;
+    }
+    else {
+        return idh.m_Info->GetTree();
+    }
+    _ASSERT(size_t(type) < m_Trees.size());
+    return *m_Trees[type];
 }
 
 
@@ -164,6 +167,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/06/17 18:28:38  vasilche
+* Fixed null pointer exception in GI CSeq_id_Handle.
+*
 * Revision 1.48  2004/06/16 19:58:25  ucko
 * Make x_GetTree(const CSeq_id&) non-inline, since CSeq_id_Info::GetTree
 * in seq_id_handle.cpp now also calls it.

@@ -59,8 +59,8 @@ class CSeq_id_Which_Tree;
 class NCBI_XOBJMGR_EXPORT CSeq_id_Info : public CObject
 {
 public:
-    explicit CSeq_id_Info(void);
-    CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
+    explicit CSeq_id_Info(CSeq_id::E_Choice type);
+    explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
     ~CSeq_id_Info(void);
 
     CConstRef<CSeq_id> GetSeqId(void) const
@@ -72,10 +72,11 @@ public:
     void AddLock(void) const;
     void RemoveLock(void) const;
 
-    int GetCounter(void) const;
+    int GetLockCounter(void) const;
 
-    CSeq_id_Mapper& GetSeq_id_Mapper(void) const;
-    CSeq_id_Which_Tree* GetTree(void) const;
+    CSeq_id::E_Choice GetType(void) const;
+    CSeq_id_Mapper& GetMapper(void) const;
+    CSeq_id_Which_Tree& GetTree(void) const;
 
 private:
     CSeq_id_Info(const CSeq_id_Info&);
@@ -83,10 +84,10 @@ private:
 
     void x_RemoveLastLock(void) const;
 
-    mutable CAtomicCounter       m_Counter;
+    mutable CAtomicCounter       m_LockCounter;
+    CSeq_id::E_Choice            m_Seq_id_Type;
     CConstRef<CSeq_id>           m_Seq_id;
     mutable CRef<CSeq_id_Mapper> m_Mapper;
-
 };
 
 
@@ -135,8 +136,6 @@ private:
     
     friend class CSeq_id_Mapper;
 
-    CSeq_id_Which_Tree* x_GetTree(void) const;
-
     // Comparison methods
     // True if handles are strictly equal
     bool x_Equal(const CSeq_id_Handle& handle) const;
@@ -165,25 +164,39 @@ private:
 inline
 void CSeq_id_Info::AddLock(void) const
 {
-    _VERIFY(m_Counter.Add(1) > 0);
+    _VERIFY(m_LockCounter.Add(1) > 0);
 }
 
 
 inline
 void CSeq_id_Info::RemoveLock(void) const
 {
-    if ( m_Counter.Add(-1) <= 0 ) {
+    if ( m_LockCounter.Add(-1) <= 0 ) {
         x_RemoveLastLock();
     }
 }
 
 
 inline
-int CSeq_id_Info::GetCounter(void) const
+int CSeq_id_Info::GetLockCounter(void) const
 {
-    int counter = m_Counter.Get();
+    int counter = m_LockCounter.Get();
     _ASSERT(counter >= 0);
     return counter;
+}
+
+
+inline
+CSeq_id::E_Choice CSeq_id_Info::GetType(void) const
+{
+    return m_Seq_id_Type;
+}
+
+
+inline
+CSeq_id_Mapper& CSeq_id_Info::GetMapper(void) const
+{
+    return *m_Mapper;
 }
 
 
@@ -324,6 +337,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/06/17 18:28:38  vasilche
+* Fixed null pointer exception in GI CSeq_id_Handle.
+*
 * Revision 1.24  2004/06/16 19:21:56  grichenk
 * Fixed locking of CSeq_id_Info
 *
