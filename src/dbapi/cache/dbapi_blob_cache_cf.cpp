@@ -106,6 +106,9 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
         return 0;
     }
 
+    if (!params)
+        return drv.release();
+
     // cache configuration
 
     const string& conn_str =
@@ -168,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/26 19:18:12  kuznets
+ * Class factory: supported no-params instantiation
+ *
  * Revision 1.1  2004/07/26 14:04:22  kuznets
  * Initial revision
  *
