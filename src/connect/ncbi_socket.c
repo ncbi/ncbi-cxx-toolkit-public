@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2002/04/22 20:53:16  lavr
+ * +SOCK_htons(); Set close timeout only when the socket was not yet shut down
+ *
  * Revision 6.42  2002/04/17 20:05:05  lavr
  * Cosmetic changes
  *
@@ -955,11 +958,11 @@ static EIO_Status s_Close(SOCK sock)
     /* Set the close()'s linger period be equal to the close timeout */
 #if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
     /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
-    if ( sock->c_timeout ) {
+    if ( sock->c_timeout  &&  sock->w_status != eIO_Closed ) {
         struct linger lgr;
         lgr.l_onoff  = 1;
         lgr.l_linger = sock->c_timeout->tv_sec ? sock->c_timeout->tv_sec : 1;
-        if (setsockopt(sock->sock, SOL_SOCKET, SO_LINGER, 
+        if (setsockopt(sock->sock, SOL_SOCKET, SO_LINGER,
                        (char*) &lgr, sizeof(lgr)) != 0) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
                            "[SOCK::s_Close]  Failed setsockopt(SO_LINGER)");
@@ -1696,6 +1699,12 @@ extern int SOCK_ntoa(unsigned int host,
 extern unsigned int SOCK_htonl(unsigned int value)
 {
     return htonl(value);
+}
+
+
+extern unsigned short SOCK_htons(unsigned short value)
+{
+    return htons(value);
 }
 
 
