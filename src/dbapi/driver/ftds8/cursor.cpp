@@ -409,8 +409,8 @@ bool CTDS_CursorCmd::x_AssignParams()
                 break;
             }
             case eDB_DateTime: {
-                CDB_SmallDateTime& val =
-                    dynamic_cast<CDB_SmallDateTime&> (param);
+                CDB_DateTime& val =
+                    dynamic_cast<CDB_DateTime&> (param);
                 string t = val.Value().AsString("M/D/Y h:m:s:S");
                 sprintf(val_buffer, "'%s'", t.c_str());
                 break;
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/12/18 17:56:38  soussov
+ * copy-paste bug in datetime processing fixed
+ *
  * Revision 1.2  2001/11/06 18:00:02  lavr
  * Formatted uniformly as the rest of the library
  *
