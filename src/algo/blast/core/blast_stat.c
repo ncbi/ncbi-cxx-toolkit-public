@@ -2970,7 +2970,7 @@ typedef struct SRombergCbackArgs {
  *  and Altschul, PNAS USA, 90, 5873-5877 (1993).
  * 
  * @param x variable to integrate over [in]
- * @parm vp pointer to parameters [in]
+ * @param vp pointer to parameters [in]
  * @return value of integrand
  */  
 static double
@@ -2996,7 +2996,7 @@ s_OuterIntegralCback(double x, void* vp)
  *  and Altschul, PNAS USA, 90, 5873-5877 (1993).
  * 
  * @param s variable to integrate over [in]
- * @parm vp pointer to parameters [in]
+ * @param vp pointer to parameters [in]
  * @return value of integrand
  */  
 static double
@@ -3643,6 +3643,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.112  2005/01/28 13:50:43  madden
+ * Fix typos in doxygen comments
+ *
  * Revision 1.111  2005/01/27 13:59:17  madden
  * Minor doxygen fix
  *
