@@ -46,6 +46,17 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 
+/// Reads FASTA file and creates a TSeqLocVector type for the read sequence(s). 
+/// Restricts sequences to an interval, if requested. 
+/// @param in Input file stream [in]
+/// @param objmgr Object manager reference [in]
+/// @param strand What strand to use if it is a nucleotide sequence [in]
+/// @param from Starting offset of an interval [in]
+/// @param to Ending offset of an interval (end of sequence if 0) [in]
+/// @param counter What index to start assigning local ids from? First unused 
+///                index on exit. [in] [out]
+/// @param get_lcase_mask Should lower case be masked? [in]
+/// @return Vector of sequence location structures.
 TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, objects::CObjectManager& objmgr, 
                          objects::ENa_strand strand,
