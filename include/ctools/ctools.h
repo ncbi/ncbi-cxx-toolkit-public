@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2003/04/11 17:46:32  siyan
+ * Added doxygen support
+ *
  * Revision 1.2  2001/02/12 15:34:34  lavr
  * Extra semicolon removed
  *
@@ -41,6 +44,13 @@
  *
  * ==========================================================================
  */
+
+
+/** @addtogroup CToolsBridge
+ *
+ * @{
+ */
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,3 +68,6 @@ void SetupCToolkitErrPost(void);
 
 
 #endif  /* CTOOLS__H */
+
+
+/* @} */

@@ -38,6 +38,13 @@
 #include <dbapi/driver/driver_mgr.hpp>
 #include <map>
 
+
+/** @addtogroup DbDrvMgr
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -85,9 +92,15 @@ protected:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/11 17:45:57  siyan
+ * Added doxygen support
+ *
  * Revision 1.3  2003/02/10 17:21:09  kholodov
  * Added: DestroyDs() method
  *

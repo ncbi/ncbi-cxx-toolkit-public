@@ -37,6 +37,12 @@
 #include <dbapi/variant.hpp>
 
 
+/** @addtogroup DbAPI
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -441,9 +447,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/04/11 17:45:55  siyan
+ * Added doxygen support
+ *
  * Revision 1.20  2003/03/07 21:22:31  kholodov
  * Added: IsAlive() method
  *

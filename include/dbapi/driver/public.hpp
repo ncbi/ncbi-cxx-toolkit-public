@@ -35,6 +35,12 @@
 #include <dbapi/driver/interfaces.hpp>
 
 
+/** @addtogroup DbPubInterfaces
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -439,10 +445,15 @@ protected:
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/04/11 17:46:09  siyan
+ * Added doxygen support
+ *
  * Revision 1.6  2002/12/26 19:29:12  dicuccio
  * Added Win32 export specifier for base DBAPI library
  *

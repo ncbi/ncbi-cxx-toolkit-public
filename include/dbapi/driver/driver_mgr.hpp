@@ -35,6 +35,13 @@
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/public.hpp>
 
+
+/** @addtogroup DbDrvMgr
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -61,10 +68,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/04/11 17:46:01  siyan
+ * Added doxygen support
+ *
  * Revision 1.10  2002/12/26 19:29:12  dicuccio
  * Added Win32 export specifier for base DBAPI library
  *

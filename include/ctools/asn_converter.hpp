@@ -42,6 +42,13 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 
+
+/** @addtogroup CToolsASNConv
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 #define DECLARE_ASN_CONVERTER(TCpp, TC, name) \
@@ -65,6 +72,9 @@ private:
     FWrite m_Write;
     FRead  m_Read;
 };
+
+
+/* @} */
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -115,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/11 17:46:30  siyan
+* Added doxygen support
+*
 * Revision 1.1  2002/08/08 18:18:01  ucko
 * Add central template class for converting ASN.1-based objects between
 * C and C++ representations.

@@ -35,6 +35,12 @@
 #include <corelib/ncbistd.hpp>
 
 
+/** @addtogroup DbExceptions
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -296,10 +302,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/04/11 17:46:05  siyan
+ * Added doxygen support
+ *
  * Revision 1.13  2003/02/12 22:07:44  coremake
  * Added export specifier NCBI_DBAPIDRIVER_EXPORT to the CDB_MultiExStorage class declaration
  *

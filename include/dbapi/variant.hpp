@@ -39,6 +39,13 @@
 #include <corelib/ncbitime.hpp>
 #include <dbapi/driver/types.hpp>
 
+
+/** @addtogroup DbVariant
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -189,6 +196,9 @@ private:
 };
 
 
+/* @} */
+
+
 //================================================================
 
 inline
@@ -223,6 +233,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.10  2003/04/11 17:45:58  siyan
+ * Added doxygen support
+ *
  * Revision 1.9  2002/09/16 21:04:03  kholodov
  * Modified: CVariant::Assign<> template removed
  *

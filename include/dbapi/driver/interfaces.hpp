@@ -38,6 +38,13 @@
 #include <dbapi/driver/util/pointer_pot.hpp>
 #include <map>
 
+
+/** @addtogroup DbInterfaces
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -567,10 +574,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/04/11 17:46:07  siyan
+ * Added doxygen support
+ *
  * Revision 1.19  2003/04/01 20:25:16  vakatov
  * Temporarily rollback to R1.16 -- until more backward-incompatible
  * changes (in CException) are ready to commit (to avoid breaking the

@@ -37,6 +37,12 @@
 #include <corelib/ncbi_limits.h>
 
 
+/** @addtogroup DbTypes
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -869,10 +875,15 @@ END_NCBI_SCOPE
 #endif  /* DBAPI_DRIVER___TYPES__HPP */
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/04/11 17:46:11  siyan
+ * Added doxygen support
+ *
  * Revision 1.13  2003/01/30 16:06:04  soussov
  * Changes the default from eCurrent to eEmpty for DateTime types
  *

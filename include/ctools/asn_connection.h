@@ -37,6 +37,12 @@
 #include <asn.h>
 
 
+/** @addtogroup CToolsASNConn
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -111,10 +117,15 @@ CONN CreateAsnConn_Service
 #endif
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/04/11 17:46:29  siyan
+ * Added doxygen support
+ *
  * Revision 1.6  2003/01/17 15:39:38  lavr
  * Slightly modify API description for clarity
  *

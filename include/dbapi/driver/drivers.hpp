@@ -33,6 +33,12 @@
  */
 
 
+/** @addtogroup DbDriverReg
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class I_DriverMgr;
@@ -48,10 +54,15 @@ void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/04/11 17:46:03  siyan
+ * Added doxygen support
+ *
  * Revision 1.4  2003/02/19 03:38:42  vakatov
  * + DBAPI_RegisterDriver_MYSQL
  *
