@@ -32,7 +32,7 @@
  */
 
 #include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
+#include <corelib/metareg.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -100,7 +100,8 @@ CNcbiApplication::CNcbiApplication(void)
     m_Environ.reset(new CNcbiEnvironment);
 
     // Create an empty registry
-    m_Config.reset(new CNcbiRegistry);
+    m_Config = new CNcbiRegistry;
+    m_OwnsConfig = true;
 
 }
 
@@ -111,7 +112,10 @@ CNcbiApplication::~CNcbiApplication(void)
     FlushDiag(0, true);
     if (m_CinBuffer) {
         delete [] m_CinBuffer;
-    } 
+    }
+    if (m_OwnsConfig) {
+        delete m_Config;
+    }
 }
 
 
@@ -595,117 +599,44 @@ bool CNcbiApplication::SetupDiag_AppSpecific(void)
 }
 
 
-// for the exclusive use by CNcbiApplication::LoadConfig()
-static bool s_LoadConfig(CNcbiRegistry& reg, const string& conf)
-{
-    CNcbiIfstream is(conf.c_str());
-    if ( !is.good() ) {
-        _TRACE("CNcbiApplication::LoadConfig() -- cannot open registry file: "
-               << conf);
-        return false;
-    }
-
-    _TRACE("CNcbiApplication::LoadConfig() -- reading registry file: "
-           << conf);
-    reg.Read(is);
-    return true;
-}
-
-
-// for the exclusive use by CNcbiApplication::LoadConfig()
-static bool s_LoadConfigTryPath(CNcbiRegistry& reg, const string& path,
-                                const string& conf, const string& basename)
-{
-    if ( !conf.empty() ) {
-        return s_LoadConfig(reg, path + conf);
-    }
-
-    // try derive conf.file name from the application name (for empty "conf")
-    string fileName = basename;
-
-    for (;;) {
-        // try the next variant -- with added ".ini" file extension
-        fileName += ".ini";
-
-        // current directory
-        if ( s_LoadConfig(reg, path + fileName) )
-            return true;  // success!
-
-        // strip ".ini" file extension (the one added above)
-        _ASSERT( fileName.length() > 4 );
-        fileName.resize(fileName.length() - 4);
-
-        // strip next file extension, if any left
-        SIZE_TYPE dot_pos = fileName.find_last_of(".");
-        if ( dot_pos == NPOS ) {
-            break;
-        }
-        fileName.resize(dot_pos);
-    }
-    return false;
-}
-
-
 bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
 {
-    // don't load at all
+    string basename(m_Arguments->GetProgramBasename());
+    CMetaRegistry::SEntry entry;
+
     if ( !conf ) {
         return false;
+    } else if (conf->empty()) {
+        entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini);
+    } else {
+        entry = CMetaRegistry::Load(*conf);
     }
-
-    string x_conf;
-    string cnf = CDirEntry::ConvertToOSPath(*conf);
-
-    // load from the specified file name only (with path)
-    if (cnf.find_first_of("/\\:") != NPOS) {
-        // detect if it is a absolute path
-        if ( CDirEntry::IsAbsolutePath(cnf) ) {
-            // absolute path
-            x_conf = cnf;
+    if ( !entry.registry ) {
+        // failed; complain as appropriate
+        string dir;
+        CDirEntry::SplitPath(*conf, &dir, 0, 0);
+        if (dir.empty()) {
+            ERR_POST(Warning <<
+                     "Registry file of application \"" << basename
+                     << "\" is not found");
         } else {
-            // path is relative to the program location
-            x_conf = CDirEntry::ConcatPathEx(m_Arguments->GetProgramDirname(),
-                                             cnf);
-        }
-        // do load
-        x_conf = NStr::TruncateSpaces(x_conf);
-        if ( !s_LoadConfig(reg, x_conf) ) {
             NCBI_THROW(CAppException, eNoRegistry,
-                       "Registry file cannot be opened");
+                       "Registry file \"" + *conf + "\" cannot be opened");
+        }
+        return false;
+    } else {
+        if (&reg == m_Config) {
+            m_Config     = entry.registry;
+            m_OwnsConfig = false;
+        } else { // can this happen?
+            // copy into reg
+            CNcbiStrstream str;
+            entry.registry->Write(str);
+            str.seekg(0);
+            reg.Read(str);
         }
         return true;
     }
-
-    string basename = m_Arguments->GetProgramBasename();
-
-    // current (working) directory
-    if ( s_LoadConfigTryPath(reg, kEmptyStr, cnf, basename) ) {
-        return true;
-    }
-    // path from environment variable "NCBI"
-    char* ptr = getenv("NCBI");
-    if (ptr  &&
-        s_LoadConfigTryPath(reg, CDirEntry::AddTrailingPathSeparator(ptr),
-                            cnf, basename)) {
-        return true;
-    }
-    // home directory
-    if ( s_LoadConfigTryPath(reg, CDir::GetHome(), cnf, basename) ) {
-        return true;
-    }
-    // program directory
-    string dirname = m_Arguments->GetProgramDirname();
-    if (!dirname.empty()  &&
-        s_LoadConfigTryPath(reg, dirname, cnf, basename)) {
-        return true;
-    }
-
-    ERR_POST(Warning <<
-             "Registry file of application \""
-             << m_Arguments->GetProgramBasename()
-             << "\" is not found");
-
-    return false;
 }
 
 
@@ -802,7 +733,7 @@ string CNcbiApplication::FindProgramExecutablePath
 void CNcbiApplication::HonorDebugSettings(CNcbiRegistry* reg)
 {
     if (reg == 0) {
-        reg = m_Config.get();
+        reg = m_Config;
         if (reg == 0)
             return;
     }
@@ -844,6 +775,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2003/08/05 20:00:36  ucko
+ * Completely rewrite LoadConfig to use CMetaRegistry; properly handle
+ * only sometimes owning m_Config.
+ *
  * Revision 1.63  2003/06/26 18:55:40  rsmith
  * call LoadConfig even if conf is null, child classes might do something anyway. (gbench).
  *
