@@ -35,7 +35,7 @@
       then type <span class="ncbi_value">:pserver:yourlogname@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</span>
       in the text field "<span class="ncbi_menu">Variable Value</span>". Here, the <span class="ncbi_value">yourlogname</span> stands
       for your NCBI account name with all letter lowercased. For example,<br>
-      <span class="ncbi_value">:pserver:vakatov@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</span><p>
+      <span class="ncbi_value">:pserver:vakatov@cvsvault.ncbi.nlm.nih.gov:/src/NCBI/vault.ncbi</span>.<p>
       <li>
       Press the button "<span class="ncbi_menu">OK</span>" (or "<span class="ncbi_menu">Set</span>"). The new variable
       <span class="ncbi_env">CVSROOT</span> and its value should appear in the pane
@@ -47,17 +47,22 @@
       <li>
       Logout, then login to your PC again.<p>
   </ul>
-  <li> Execute exactly once the following command (you can do so
+  <li> Make sure you have your "home" directory set up -- i.e. pointed by
+       the environment variable <span class="ncbi_env">HOMEPATH</span>.
+    <p>
+  <li> Create an empty file <span class="ncbi_file">.cvspass</span> in your
+       "home" directory.
+    <p>
+  <li> Execute (exactly once!) the following command (you can do so
     by selecting "<span class="ncbi_menu">Run...</span>" from the main menu): <span class="ncbi_cmd">cvs login</span><br>
-    You will be asked for a password, and you have to enter the word
-    <em>allowed</em> as a reply.
+    You will be asked for a password -- enter the word <em>allowed</em>.
     <br>
-    This command creates the file named <span class="ncbi_file">.cvspass</span> in your
-    "home" directory, as defined by the value of the environment variable
-    <span class="ncbi_env">HOMEPATH</span>, which should be pre-assigned for you.
+    This command will record your login info in the
+    <span class="ncbi_file">.cvspass</span> file
+    (so you would not have to login into CVS in the future, ever).
     <p>
   <li>
-  After logging in, you can use all usual CVS commands.
+  Now you are all set and can use all usual CVS commands.
 </ol>
 
 
