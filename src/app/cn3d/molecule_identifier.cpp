@@ -183,7 +183,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
             if (identifier->gi != _gi) {
                 if (identifier->accession.size() > 0 && identifier->accession == _accession) {
                     // special case where accession is same, gi is different: two versions of same sequence
-                    FATALMSG("The sequence being processed (gi " << _gi << ") has the same accession code ("
+                    ERRORMSG("The sequence being processed (gi " << _gi << ") has the same accession code ("
                         << _accession <<
                         ") as a sequence already encountered (gi " << identifier->gi << "). Cn3D does not "
                         "allow two versions of the same sequence to be present simultaneously. If you want "
@@ -339,6 +339,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/27 23:35:17  thiessen
+* don't abort on sequence import if gi/acc mismatch, but only on original load
+*
 * Revision 1.15  2004/09/27 18:31:00  thiessen
 * exit gracefully on same accession different gi
 *

@@ -92,6 +92,8 @@ static void UnpackSeqSet(CBioseq_set& bss, SequenceSet *parent, SequenceSet::Seq
                 continue;
 
             const Sequence *sequence = new Sequence(parent, q->GetObject().SetSeq());
+            if (!sequence || !sequence->identifier)
+                FATALMSG("Can't create Sequence object, aborting...");
             seqlist.push_back(sequence);
 
         } else { // Bioseq-set
@@ -104,6 +106,8 @@ static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSe
 {
     if (seqEntry.IsSeq()) {
         const Sequence *sequence = new Sequence(parent, seqEntry.SetSeq());
+        if (!sequence || !sequence->identifier)
+            FATALMSG("Can't create Sequence object, aborting...");
         seqlist.push_back(sequence);
     } else { // Bioseq-set
         UnpackSeqSet(seqEntry.SetSet(), parent, seqlist);
@@ -660,6 +664,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/09/27 23:35:17  thiessen
+* don't abort on sequence import if gi/acc mismatch, but only on original load
+*
 * Revision 1.68  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
