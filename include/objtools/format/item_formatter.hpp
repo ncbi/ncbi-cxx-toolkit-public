@@ -111,11 +111,13 @@ public:
     virtual void FormatAlignment (const CAlignmentItem& , IFlatTextOStream&)  {}
 
     // Context
-    void SetContext(CFlatFileContext& ctx) { m_Ctx.Reset(&ctx); }
+    void SetContext(CFlatFileContext& ctx);
     CFlatFileContext& GetContext(void) { return *m_Ctx; }
 
 protected:
-    CFlatItemFormatter(void) {}
+    typedef NStr::TWrapFlags    TWrapFlags;
+
+    CFlatItemFormatter(void) : m_WrapFlags(NStr::fWrap_FlatFile) {}
     CFlatItemFormatter(const CFlatItemFormatter&);
     CFlatItemFormatter& operator=(const CFlatItemFormatter&);
 
@@ -154,10 +156,13 @@ protected:
     const string& GetFeatIndent(void) const { return m_FeatIndent; }
     void SetFeatIndent(const string& feat_indent) { m_FeatIndent = feat_indent; }
 
+    TWrapFlags& SetWrapFlags(void) { return m_WrapFlags; }
+
 private:
     // data
     string                 m_Indent;
     string                 m_FeatIndent;
+    TWrapFlags             m_WrapFlags;
     CRef<CFlatFileContext> m_Ctx;
 };
 
@@ -170,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/02/07 14:56:51  shomrat
+* Added WrapFlags
+*
 * Revision 1.9  2005/01/12 16:43:16  shomrat
 * Added FormatAlignment; Changed journal formatting
 *
