@@ -462,7 +462,8 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_BadProductSeqId",
     "SEQ_FEAT_RnaProductMismatch",
     "SEQ_FEAT_DifferntIdTypesInSeqLoc",
-    "eErr_SEQ_FEAT_MissingCDSproduct",
+    "SEQ_FEAT_MissingCDSproduct",
+    "SEQ_FEAT_MissingLocation",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -995,6 +996,8 @@ same id type",
 "The CDS should have a product, but does not.  Pseudo or short CDSs (less than 6 \
 amino acids), or those marked with a rearrangement required for product exception, \
 are exempt from needing a product.",
+//  SEQ_FEAT_MissingLocation
+"A feature must specify its location.",
 
 /* SEQ_ALIGN */
 
@@ -1112,6 +1115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/07/21 21:17:45  shomrat
+* Added SEQ_FEAT_MissingLocation
+*
 * Revision 1.25  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
