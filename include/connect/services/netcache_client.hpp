@@ -157,6 +157,13 @@ public:
     /// If BLOB not found method returns NULL
     /// Caller is responsible for deletion of the IReader*
     ///
+    /// @note 
+    ///   IReader implementation used here is TCP/IP socket 
+    ///   based, so when reading the BLOB please control 
+    ///   IReader::Read return codes, it may not be able to read
+    ///   the whole BLOB in one call because of network delays.
+    ///
+    ///
     /// @param key
     ///    BLOB key to read (returned by PutData)
     /// @param blob_size
@@ -229,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/16 19:26:39  kuznets
+ * Improved documentation
+ *
  * Revision 1.12  2004/11/04 21:49:51  kuznets
  * CheckConnect() fixed
  *
