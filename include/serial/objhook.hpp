@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/09/09 18:20:18  grichenk
+* Fixed includes (to declare Type<>)
+*
 * Revision 1.6  2002/09/09 18:13:59  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -71,6 +74,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/objecttype.hpp>
 #include <serial/objstack.hpp>
 
 BEGIN_NCBI_SCOPE
