@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/09/07 14:09:45  grichenk
+* Fixed assignment of default value to aliased types
+*
 * Revision 1.1  2003/10/21 13:45:23  grichenk
 * Initial revision
 *
@@ -73,6 +76,7 @@ public:
     string GetDestructionCode(const string& expr) const;
     string GetIsSetCode(const string& var) const;
     string GetResetCode(const string& var) const;
+    string GetDefaultCode(const string& var) const;
 
     void GenerateCode(CClassContext& ctx) const;
     void GenerateUserHPPCode(CNcbiOstream& out) const;
@@ -120,6 +124,7 @@ public:
     string GetDestructionCode(const string& expr) const;
     string GetIsSetCode(const string& var) const;
     string GetResetCode(const string& var) const;
+    string GetDefaultCode(const string& var) const;
 
     virtual void GenerateCode(CClassContext& ctx) const;
     virtual void GenerateUserHPPCode(CNcbiOstream& out) const;

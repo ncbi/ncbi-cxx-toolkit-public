@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/09/07 14:09:45  grichenk
+* Fixed assignment of default value to aliased types
+*
 * Revision 1.11  2003/10/21 13:48:48  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
@@ -156,6 +159,7 @@ public:
     virtual string GetDestructionCode(const string& expr) const;
     virtual string GetIsSetCode(const string& var) const;
     virtual string GetResetCode(const string& var) const;
+    virtual string GetDefaultCode(const string& var) const;
 
     virtual void GenerateCode(CClassContext& ctx) const;
     virtual void GenerateUserHPPCode(CNcbiOstream& out) const;

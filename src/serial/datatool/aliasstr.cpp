@@ -125,6 +125,16 @@ string CAliasTypeStrings::GetResetCode(const string& var) const
     return m_RefType->GetResetCode(var);
 }
 
+string CAliasTypeStrings::GetDefaultCode(const string& var) const
+{
+    // No value - return empty string
+    if ( var.empty() ) {
+        return NcbiEmptyString;
+    }
+    // Return var for classes, else cast var to the aliased type
+    return GetCType(GetNamespace()) + "(" + var + ")";
+}
+
 void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
 {
     const CNamespace& ns = ctx.GetNamespace();
@@ -395,7 +405,7 @@ string CAliasRefTypeStrings::GetInitializer(void) const
 {
     return m_IsObject ?
         NcbiEmptyString :
-        GetCType(GetNamespace()) + "(" + m_RefType->GetInitializer() + ")";
+        GetDefaultCode(m_RefType->GetInitializer());
 }
 
 string CAliasRefTypeStrings::GetDestructionCode(const string& expr) const
@@ -415,6 +425,16 @@ string CAliasRefTypeStrings::GetResetCode(const string& var) const
     return m_IsObject ?
         var + ".Reset();\n" :
         m_RefType->GetResetCode(var + ".Set()");
+}
+
+string CAliasRefTypeStrings::GetDefaultCode(const string& var) const
+{
+    // No value - return empty string
+    if ( m_IsObject  ||  var.empty() ) {
+        return NcbiEmptyString;
+    }
+    // Cast var to the aliased type
+    return GetCType(GetNamespace()) + "(" + var + ")";
 }
 
 void CAliasRefTypeStrings::GenerateCode(CClassContext& ctx) const
@@ -439,6 +459,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/09/07 14:09:45  grichenk
+* Fixed assignment of default value to aliased types
+*
 * Revision 1.7  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

@@ -122,6 +122,11 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
     }
 
     bool haveDefault = !defaultValue.empty();
+    if ( haveDefault  &&  type ) {
+        // Some aliased types need to cast default value
+        defaultValue = type->GetDefaultCode(defaultValue);
+    }
+
 //    if ( optional && !haveDefault ) {
 //    }
     // true [optional] CObject type should be implemented as CRef
@@ -1451,6 +1456,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2004/09/07 14:09:45  grichenk
+* Fixed assignment of default value to aliased types
+*
 * Revision 1.64  2004/07/21 13:29:59  gouriano
 * Set and return primitive type data by value
 *

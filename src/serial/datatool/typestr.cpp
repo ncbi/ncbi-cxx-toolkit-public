@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/09/07 14:09:45  grichenk
+* Fixed assignment of default value to aliased types
+*
 * Revision 1.23  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -168,6 +171,11 @@ string CTypeStrings::GetDestructionCode(const string& /*expr*/) const
 string CTypeStrings::GetResetCode(const string& /*var*/) const
 {
     return NcbiEmptyString;
+}
+
+string CTypeStrings::GetDefaultCode(const string& var) const
+{
+    return var;
 }
 
 bool CTypeStrings::HaveSpecialRef(void) const
