@@ -270,3 +270,11 @@ check_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 check_add_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
+
+.PHONY: all        clean        purge        check        check_add
+.PHONY: all.real   clean.real   purge.real   check.real   check_add.real
+.PHONY: all_r      clean_r      purge_r      check_r      check_add_r
+.PHONY: all_r.real clean_r.real purge_r.real check_r.real check_add_r.real
+.PHONY: all_p      clean_p      purge_p      check_p      check_add_p
+.PHONY: all_p.real clean_p.real purge_p.real check_p.real check_add_p.real
+.PHONY: sources libs
