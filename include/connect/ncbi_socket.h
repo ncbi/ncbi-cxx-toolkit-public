@@ -65,10 +65,12 @@
  *  SOCK_PushBack
  *  SOCK_Status
  *  SOCK_Write
- *  SOCK_GetAddress
+ *  SOCK_GetPeerAddress
  *
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
+ *  SOCK_SetInterruptOnSignalAPI
+ *  SOCK_SetInterruptOnSignal
  *
  *  SOCK_IsServerSide
  *
@@ -83,67 +85,6 @@
  *  SOCK_ntoa
  *  SOCK_htonl
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.17  2002/04/26 16:40:43  lavr
- * New method: SOCK_Poll()
- *
- * Revision 6.16  2002/04/22 20:52:34  lavr
- * +SOCK_htons(), macros SOCK_ntohl() and SOCK_ntohs()
- *
- * Revision 6.15  2001/12/03 21:33:48  vakatov
- * + SOCK_IsServerSide()
- *
- * Revision 6.14  2001/09/10 16:10:41  vakatov
- * SOCK_gethostbyname() -- special cases "0.0.0.0" and "255.255.255.255"
- *
- * Revision 6.13  2001/05/21 15:11:46  ivanov
- * Added (with Denis Vakatov) automatic read on write data from the socket
- * (stall protection).
- * Added functions SOCK_SetReadOnWriteAPI(), SOCK_SetReadOnWrite()
- * and internal function s_SelectStallsafe().
- *
- * Revision 6.12  2001/04/23 22:22:06  vakatov
- * SOCK_Read() -- special treatment for "buf" == NULL
- *
- * Revision 6.11  2001/03/22 17:44:14  vakatov
- * + SOCK_AllowSigPipeAPI()
- *
- * Revision 6.10  2001/03/06 23:54:10  lavr
- * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
- * Added:   SOCK_gethostbyaddr
- *
- * Revision 6.9  2001/03/02 20:05:15  lavr
- * Typos fixed
- *
- * Revision 6.8  2000/12/26 21:40:01  lavr
- * SOCK_Read modified to handle properly the case of 0 byte reading
- *
- * Revision 6.7  2000/12/05 23:27:44  lavr
- * Added SOCK_gethostaddr
- *
- * Revision 6.6  2000/11/15 18:51:05  vakatov
- * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
- *
- * Revision 6.5  2000/06/23 19:34:41  vakatov
- * Added means to log binary data
- *
- * Revision 6.4  2000/05/30 23:31:37  vakatov
- * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
- * implementation to work properly with GCC on IRIX64 platforms
- *
- * Revision 6.3  2000/03/24 23:12:04  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.2  2000/02/23 22:33:38  vakatov
- * Can work both "standalone" and as a part of NCBI C++ or C toolkits
- *
- * Revision 6.1  1999/10/18 15:36:39  vakatov
- * Initial revision (derived from the former "ncbisock.[ch]")
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_core.h>
@@ -165,8 +106,16 @@ extern "C" {
 
 
 /******************************************************************************
- *  TYPEDEF & MACRO
+ *  TYPEDEFS & MACROS
  */
+
+
+/* Network and host byte order enumeration type
+ */
+typedef enum {
+    eNH_HostByteOrder,
+    eNH_NetworkByteOrder
+} ENH_ByteOrder;
 
 
 /* Forward declarations of the hidden socket internal structure, and
@@ -407,7 +356,7 @@ extern const STimeout* SOCK_GetTimeout
 
 /* Read up to "size" bytes from "sock" to the mem.buffer pointed by "buf".
  * In "*n_read", return the number of successfully read bytes.
- * If there is no data available to read (also, if eIO_Persist and cannot
+ * If there is no data available to read (also, if eIO_ReadPersist and cannot
  * read exactly "size" bytes) and the timeout(see SOCK_SetTimeout) is expired
  * then return eIO_Timeout.
  * If "buf" is passed NULL, then:
@@ -475,11 +424,11 @@ extern EIO_Status SOCK_Write
  * If "network_byte_order" is true(non-zero) then return the host/port in the
  * network byte order; otherwise return them in the local host byte order.
  */
-extern void SOCK_GetAddress
+extern void SOCK_GetPeerAddress
 (SOCK            sock,
  unsigned int*   host,               /* [out] the peer's host (can be NULL) */
  unsigned short* port,               /* [out] the peer's port (can be NULL) */
- int             network_byte_order  /* [in]  host/port byte order          */
+ ENH_ByteOrder   byte_order          /* [in]  host/port byte order          */
  );
 
 
@@ -574,5 +523,75 @@ extern char* SOCK_gethostbyaddr
 } /* extern "C" */
 #endif
 
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.18  2002/08/07 16:31:00  lavr
+ * Added enum ENH_ByteOrder; renamed SOCK_GetAddress() ->
+ * SOCK_GetPeerAddress() and now accepts ENH_ByteOrder as last arg;
+ * added SOCK_SetInterruptOnSignal[API]; write-status (w_status) made current;
+ * log moved to end
+ *
+ * Revision 6.17  2002/04/26 16:40:43  lavr
+ * New method: SOCK_Poll()
+ *
+ * Revision 6.16  2002/04/22 20:52:34  lavr
+ * +SOCK_htons(), macros SOCK_ntohl() and SOCK_ntohs()
+ *
+ * Revision 6.15  2001/12/03 21:33:48  vakatov
+ * + SOCK_IsServerSide()
+ *
+ * Revision 6.14  2001/09/10 16:10:41  vakatov
+ * SOCK_gethostbyname() -- special cases "0.0.0.0" and "255.255.255.255"
+ *
+ * Revision 6.13  2001/05/21 15:11:46  ivanov
+ * Added (with Denis Vakatov) automatic read on write data from the socket
+ * (stall protection).
+ * Added functions SOCK_SetReadOnWriteAPI(), SOCK_SetReadOnWrite()
+ * and internal function s_SelectStallsafe().
+ *
+ * Revision 6.12  2001/04/23 22:22:06  vakatov
+ * SOCK_Read() -- special treatment for "buf" == NULL
+ *
+ * Revision 6.11  2001/03/22 17:44:14  vakatov
+ * + SOCK_AllowSigPipeAPI()
+ *
+ * Revision 6.10  2001/03/06 23:54:10  lavr
+ * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
+ * Added:   SOCK_gethostbyaddr
+ *
+ * Revision 6.9  2001/03/02 20:05:15  lavr
+ * Typos fixed
+ *
+ * Revision 6.8  2000/12/26 21:40:01  lavr
+ * SOCK_Read modified to handle properly the case of 0 byte reading
+ *
+ * Revision 6.7  2000/12/05 23:27:44  lavr
+ * Added SOCK_gethostaddr
+ *
+ * Revision 6.6  2000/11/15 18:51:05  vakatov
+ * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
+ *
+ * Revision 6.5  2000/06/23 19:34:41  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.4  2000/05/30 23:31:37  vakatov
+ * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
+ * implementation to work properly with GCC on IRIX64 platforms
+ *
+ * Revision 6.3  2000/03/24 23:12:04  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.2  2000/02/23 22:33:38  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
+ * Revision 6.1  1999/10/18 15:36:39  vakatov
+ * Initial revision (derived from the former "ncbisock.[ch]")
+ *
+ * ===========================================================================
+ */
 
 #endif /* NCBI_SOCKET__H */
