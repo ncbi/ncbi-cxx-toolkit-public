@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.27  2004/02/10 20:05:14  dondosha
+* Made BlastScoreBlkGappedFill external again: needed in unit test
+*
 * Revision 1.26  2003/12/03 16:31:46  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults, to avoid name conflicts
 *
@@ -221,6 +224,19 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
         BlastMaskLoc* *filter_slp_out,
         BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
+
+/** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
+ *      Should be moved to blastkar.c (or it's successor) in the future.
+ * @param sbp Contains fields to be set, should not be NULL. [out]
+ * @param scoring_options Scoring_options [in]
+ * @param program_number Used to set fields on sbp [in]
+ * @param query_info Query information containing context information [in]
+ *
+*/
+Int2
+BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
+                        const BlastScoringOptions * scoring_options,
+                        Uint1 program, BlastQueryInfo * query_info);
 
 #ifdef __cplusplus
 }
