@@ -28,10 +28,11 @@
  *
  * Author:  Andrei Gourianov
  *
- * File Description:
- *      Floating-point support routines
  *      
  */
+
+/// @file ncbifloat.h
+/// Floating-point support routines.
 
 
 /** @addtogroup Exception
@@ -48,11 +49,15 @@
 
 
 #if defined(NCBI_OS_MSWIN)
-//Checks double-precision value for not a number (NaN)
+/// Define value of isnan (Is Not A Number).
+///
+/// Checks double-precision value for not a number (NaN).
 #   define isnan _isnan
 #elif defined(NCBI_OS_DARWIN)  &&  defined(MATH_ERRNO)  &&  !defined(isnan)
-// <math.h> changed a lot between 10.1 and 10.2; the presence of
-// MATH_ERRNO indicates 10.2, which needs this hack.
+/// Define value of isnan (Is Not A Number).
+///
+/// <math.h> changed a lot between 10.1 and 10.2; the presence of
+/// MATH_ERRNO indicates 10.2, which needs this hack.
 #   define isnan __isnan
 #endif
 
@@ -63,6 +68,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/23 14:53:52  siyan
+ * Documentation changes.
+ *
  * Revision 1.4  2003/04/03 17:52:31  ucko
  * Properly close doxygen end-group comment.
  *
