@@ -1119,6 +1119,32 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-one]";
         
+        if (s == "-overlap") {
+            CSeqDB sp("hoola/Test/pataa_emb", 'p');
+            
+            cout << " num oids " << sp.GetNumSeqs() << endl;
+            
+            vector<Uint4> chunky;
+            chunky.resize(1000000);
+            
+            Uint4 b(0), e(0);
+            
+            CSeqDB::EOidListType et = sp.GetNextOIDChunk(b,e,chunky);
+            
+            if (b != e) {
+                cout << " oh boy. " << endl;
+                return 0;
+            }
+            
+            cout << "et=" << et << ", chunky size=" << chunky.size() << endl;
+            
+            for(unsigned i = 0; i<chunky.size(); i++) {
+                cout << chunky[i] << endl;
+            }
+            
+            return 0;
+        } else desc += " [-overlap]";
+        
 //         if (s == "-alias") {
 //             string dbname = "pdb";
             
