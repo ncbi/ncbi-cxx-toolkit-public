@@ -1732,15 +1732,11 @@ void CAlnMix::x_CreateDenseg()
     CDense_seg::TStarts&  starts  = m_DS->SetStarts();
     CDense_seg::TStrands& strands = m_DS->SetStrands();
     CDense_seg::TLens&    lens    = m_DS->SetLens();
-    CDense_seg::TWidths&  widths  = m_DS->SetWidths();
 
     ids.resize(numrows);
     lens.resize(numsegs);
     starts.resize(num, -1);
     strands.resize(num, eNa_strand_minus);
-    if (m_ContainsNA  &&  m_ContainsAA) {
-        widths.resize(numrows);
-    }
 
     // ids
     for (numrow = 0;  numrow < numrows;  numrow++) {
@@ -1769,6 +1765,8 @@ void CAlnMix::x_CreateDenseg()
 
     // widths
     if (m_ContainsNA  &&  m_ContainsAA) {
+        CDense_seg::TWidths&  widths  = m_DS->SetWidths();
+        widths.resize(numrows);
         for (numrow = 0;  numrow < numrows;  numrow++) {
             widths[numrow] = m_Rows[numrow]->m_Width;
         }
@@ -1786,6 +1784,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2003/11/24 17:11:32  todorov
+* SetWidths only if necessary
+*
 * Revision 1.78  2003/11/03 14:43:44  todorov
 * Use CDense_seg::Validate()
 *
