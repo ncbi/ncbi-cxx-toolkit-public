@@ -942,6 +942,14 @@ public:
     /// Return TRUE if buffer is in a non-native byte order
     bool IsByteSwapped() const { return m_ByteSwapped; }
 
+    /// Sets maximum number of fields participating in comparison
+    /// Should be less than total number of fields in the buffer
+    void SetFieldCompareLimit(unsigned int n_fields);
+
+    /// Get number of fields in comparison.
+    /// 0 - means no forced limit
+    unsigned int GetFieldCompareLimit() const;
+
 protected:
     CBDB_BufferManager();
 
@@ -1038,6 +1046,9 @@ private:
     bool                    m_Nullable;    
     /// size of the 'is NULL' bitset in bytes
     size_t                  m_NullSetSize; 
+
+    /// Number of fields in key comparison
+    unsigned int            m_CompareLimit;
 
 private:
     friend class CBDB_Field;
@@ -1535,12 +1546,24 @@ void CBDB_BufferManager::SetMaxVal(unsigned int idx_from, unsigned int idx_to)
     }
 }
 
+inline 
+void CBDB_BufferManager::SetFieldCompareLimit(unsigned int n_fields) 
+{ 
+    m_CompareLimit = n_fields; 
+}
+
+inline
+unsigned int CBDB_BufferManager::GetFieldCompareLimit() const 
+{ 
+    return m_CompareLimit; 
+}
 
 // Delete all field objects bound to field buffer. 
 // Should be used with extreme caution. After calling this buf object should
 // never be used again. All fields bound to the buffer must be dynamically
 // allocated.
-inline void DeleteFields(CBDB_BufferManager& buf)
+inline 
+void DeleteFields(CBDB_BufferManager& buf)
 {
     for (unsigned int i = 0;  i < buf.FieldCount();  ++i) {
         CBDB_Field* fld = &buf.GetField(i);
@@ -1556,6 +1579,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/10/16 19:25:25  kuznets
+ * Added field comparison limit to the fields manager
+ *
  * Revision 1.22  2003/09/29 16:25:14  kuznets
  * Cleaned up warnings for 64-bit mode
  *

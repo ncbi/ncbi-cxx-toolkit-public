@@ -246,6 +246,10 @@ public:
                   size_t buf_size = 0, 
                   ENullable is_null = eNullable);
 
+    /// Sets maximum number of key fields participating in comparison
+    /// Should be less than total number of key fields
+    void SetFieldCompareLimit(unsigned int n_fields);
+
     /// Create new copy of m_DBT_Key.
     /// Caller is responsible for proper deletion. See also: DestroyDBT_Clone
     DBT* CloneDBT_Key();
@@ -368,18 +372,25 @@ inline bool CBDB_RawFile::IsAttached() const
 
 
 
-inline void CBDB_File::Open(const char* filename, EOpenMode open_mode)
+inline 
+void CBDB_File::Open(const char* filename, EOpenMode open_mode)
 {
     Open(filename, 0, open_mode);
 }
 
 
-inline void CBDB_File::CheckNullDataConstraint() const
+inline 
+void CBDB_File::CheckNullDataConstraint() const
 {
     if ( m_DataBuf.get() )
         m_DataBuf->CheckNullConstraint();
 }
 
+inline
+void CBDB_File::SetFieldCompareLimit(unsigned int n_fields)
+{
+    m_KeyBuf->SetFieldCompareLimit(n_fields);
+}
 
 
 END_NCBI_SCOPE
@@ -389,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/10/16 19:26:07  kuznets
+ * Added field comparison limit to the fields manager
+ *
  * Revision 1.21  2003/10/15 18:10:09  kuznets
  * Several functions(Close, Delete) received optional parameter to ignore
  * errors (if any).

@@ -111,7 +111,14 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
     const char* p1 = static_cast<char*> (val1->data);
     const char* p2 = static_cast<char*> (val2->data);
 
-    for (unsigned int i = 0;  i < fbuf1->FieldCount();  ++i) {
+    unsigned int cmp_limit = fbuf1->GetFieldCompareLimit();
+    if (cmp_limit == 0) {
+        cmp_limit = fbuf1->FieldCount();
+    } else {
+        _ASSERT(cmp_limit <= fbuf1->FieldCount());
+    }
+
+    for (unsigned int i = 0;  i < cmp_limit;  ++i) {
         const CBDB_Field& fld1 = fbuf1->GetField(i);
         int ret = fld1.Compare(p1, p2, byte_swapped);
         if ( ret )
@@ -213,7 +220,8 @@ CBDB_BufferManager::CBDB_BufferManager()
     m_Packable(false),
     m_ByteSwapped(false),
     m_Nullable(false),
-    m_NullSetSize(0)
+    m_NullSetSize(0),
+    m_CompareLimit(0)
 {
 }
 
@@ -459,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/10/16 19:25:38  kuznets
+ * Added field comparison limit to the fields manager
+ *
  * Revision 1.13  2003/09/29 16:27:06  kuznets
  * Cleaned up 64-bit compilation warnings
  *
