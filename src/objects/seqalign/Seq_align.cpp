@@ -146,6 +146,36 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
 }
 
 
+TSeqPos CSeq_align::GetSeqStart(TDim row) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        return GetSegs().GetDenseg().GetSeqStart(row);
+    case C_Segs::e_Std:
+        return GetSeqRange(row).GetFrom();
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetSeqStart() currently does not handle "
+                   "this type of alignment.");
+    }
+}
+
+
+TSeqPos CSeq_align::GetSeqStop (TDim row) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        return GetSegs().GetDenseg().GetSeqStop(row);
+    case C_Segs::e_Std:
+        return GetSeqRange(row).GetTo();
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetSeqStop() currently does not handle "
+                   "this type of alignment.");
+    }
+}
+
+
 void CSeq_align::Validate(bool full_test) const
 {
     switch (GetSegs().Which()) {
@@ -419,6 +449,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/12/11 22:34:05  todorov
+* Implementation of GetSeq{Start,Stop}
+*
 * Revision 1.4  2003/09/16 15:31:14  todorov
 * Added validation methods. Added seq range methods
 *
