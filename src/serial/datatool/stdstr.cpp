@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/07 19:26:34  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.2  2000/02/17 20:05:07  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -80,6 +86,8 @@
 #include <serial/tool/stdstr.hpp>
 #include <serial/tool/classctx.hpp>
 #include <serial/tool/fileutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CStdTypeStrings::CStdTypeStrings(const string& type)
     : m_CType(type)
@@ -176,3 +184,4 @@ string CStringStoreTypeStrings::GetTypeInfoCode(const string& externalName,
         +GetRef()+")";
 }
 
+END_NCBI_SCOPE

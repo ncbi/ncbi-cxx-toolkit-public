@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/07 19:26:14  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.3  2000/03/29 15:51:42  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 *
@@ -82,11 +88,6 @@
 BEGIN_NCBI_SCOPE
 
 class CTypeInfo;
-
-END_NCBI_SCOPE
-
-USING_NCBI_SCOPE;
-
 class CDataType;
 class CDataTypeModule;
 class CDataValue;
@@ -96,6 +97,7 @@ class CReferenceDataType;
 class CTypeStrings;
 class CFileCode;
 class CClassTypeStrings;
+class CNamespace;
 
 typedef int TInteger;
 
@@ -159,7 +161,7 @@ public:
     bool Skipped(void) const;
     string ClassName(void) const;
     string FileName(void) const;
-    string Namespace(void) const;
+    const CNamespace& Namespace(void) const;
     string InheritFromClass(void) const;
     const CDataType* InheritFromType(void) const;
     const string& GetVar(const string& value) const;
@@ -214,10 +216,12 @@ public:
             return *m_References;
         }
 
+/*
     static string GetTemplateHeader(const string& tmpl);
     static bool IsSimplePointerTemplate(const string& tmpl);
     static string GetTemplateNamespace(const string& tmpl);
     static string GetTemplateMacro(const string& tmpl);
+*/
 
     void SetParent(const CDataType* parent, const string& memberName);
     void SetParent(const CDataTypeModule* module, const string& typeName);
@@ -244,6 +248,7 @@ private:
 
     AutoPtr<CTypeInfo> m_CreatedTypeInfo;
     mutable string m_CachedFileName;
+    mutable auto_ptr<CNamespace> m_CachedNamespace;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);
@@ -253,5 +258,7 @@ private:
 if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
     (value).Warning(name " value expected"); return false; \
 } } while(0)
+
+END_NCBI_SCOPE
 
 #endif

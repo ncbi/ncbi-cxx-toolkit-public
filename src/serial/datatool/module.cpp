@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/04/07 19:26:29  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.18  2000/02/01 21:48:02  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -74,6 +80,8 @@
 #include <serial/tool/exceptions.hpp>
 #include <serial/tool/type.hpp>
 #include <serial/tool/fileutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CDataTypeModule::CDataTypeModule(const string& n)
     : m_Errors(false), m_Name(n)
@@ -286,3 +294,4 @@ const string& CDataTypeModule::GetVar(const string& section,
     return registry.Get(GetName(), value);
 }
 
+END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/04/07 19:26:23  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.12  2000/03/14 14:43:10  vasilche
 * All OPTIONAL members implemented via CRef<> by default.
 *
@@ -79,6 +85,8 @@
 #include <serial/tool/classstr.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
+
+BEGIN_NCBI_SCOPE
 
 class CContainerTypeInfo : public CClassInfoTmpl
 {
@@ -185,7 +193,8 @@ AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
-                                                          ClassName()));
+                                                          ClassName(),
+                                                          Namespace()));
     bool haveUserClass = GetParentType() == 0;
     bool isObject;
     if ( haveUserClass ) {
@@ -365,3 +374,5 @@ void CDataMember::SetOptional(void)
 {
     m_Optional = true;
 }
+
+END_NCBI_SCOPE

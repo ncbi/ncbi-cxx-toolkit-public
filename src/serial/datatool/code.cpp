@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/04/07 19:26:25  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.28  2000/03/07 20:05:00  vasilche
 * Added NewInstance method to generated classes.
 *
@@ -69,15 +75,17 @@
 #include <serial/tool/type.hpp>
 #include <serial/tool/fileutil.hpp>
 
+BEGIN_NCBI_SCOPE
+
 CClassContext::~CClassContext(void)
 {
 }
 
 CClassCode::CClassCode(CClassContext& owner, const string& className,
-                       const string& namespaceName)
+                       const CNamespace& ns)
     : m_Code(owner),
-      m_Namespace(namespaceName), m_ClassName(className),
-      m_ParentClassName(""), m_VirtualDestructor(false)
+      m_ClassName(className), m_Namespace(ns),
+      m_VirtualDestructor(false)
 {
 }
 
@@ -136,22 +144,27 @@ CClassCode::TIncludes& CClassCode::CPPIncludes(void)
 }
 
 void CClassCode::SetParentClass(const string& className,
-                                const string& namespaceName)
+                                const CNamespace& ns)
 {
     m_ParentClassName = className;
-    m_ParentClassNamespaceName = namespaceName;
+    m_ParentClassNamespace = ns;
 }
 
-void CClassCode::AddForwardDeclaration(const string& s, const string& ns)
+void CClassCode::AddForwardDeclaration(const string& s, const CNamespace& ns)
 {
     m_Code.AddForwardDeclaration(s, ns);
+}
+
+bool CClassCode::HaveInitializers(void) const
+{
+    return !Empty(m_Initializers);
 }
 
 void CClassCode::AddInitializer(const string& member, const string& init)
 {
     if ( init.empty() )
         return;
-    if ( m_Initializers.pcount() != 0 )
+    if ( HaveInitializers() )
         m_Initializers << ", ";
     m_Initializers << member << '(' << init << ')';
 }
@@ -161,11 +174,6 @@ void CClassCode::AddDestructionCode(const string& code)
     if ( code.empty() )
         return;
     m_DestructionCode.push_front(code);
-}
-
-bool CClassCode::HaveInitializers(void) const
-{
-    return const_cast<CNcbiOstrstream&>(m_Initializers).pcount() != 0;
 }
 
 CNcbiOstream& CClassCode::WriteInitializers(CNcbiOstream& out) const
@@ -185,14 +193,18 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
     header <<
         "class "<<GetClassName();
-    if ( !GetParentClassName().empty() )
-        header << " : public "<<GetParentClassNamespaceName()<<"::"<<GetParentClassName();
+    string parentNamespaceRef;
+    if ( !GetParentClassName().empty() ) {
+        parentNamespaceRef =
+            GetNamespace().GetNamespaceRef(GetParentClassNamespace());
+        header << " : public "<<parentNamespaceRef<<GetParentClassName();
+    }
     header <<
         "\n"
         "{\n";
     if ( !GetParentClassName().empty() ) {
         header <<
-            "    typedef "<<GetParentClassNamespaceName()<<"::"<<GetParentClassName()<<" Tparent;\n";
+            "    typedef "<<parentNamespaceRef<<GetParentClassName()<<" Tparent;\n";
     }
     header <<
         "public:\n";
@@ -256,3 +268,4 @@ CNcbiOstream& CClassCode::GenerateUserCPP(CNcbiOstream& code) const
     return code;
 }
 
+END_NCBI_SCOPE

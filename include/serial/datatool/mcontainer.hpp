@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:09  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:20  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -62,16 +68,12 @@
 
 #include <corelib/ncbistd.hpp>
 
-class CDataType;
-class CDataTypeModule;
-
 BEGIN_NCBI_SCOPE
 
 class CNcbiRegistry;
-
-END_NCBI_SCOPE
-
-USING_NCBI_SCOPE;
+class CDataType;
+class CDataTypeModule;
+class CNamespace;
 
 enum EFileNamePrefixSource {
     eFileName_FromNone = 0,
@@ -108,6 +110,9 @@ public:
     virtual CDataType* InternalResolve(const string& moduleName,
                                        const string& typeName) const;
 
+    virtual const CNamespace& GetNamespace(void) const;
+    virtual string GetNamespaceRef(const CNamespace& ns) const;
+
 	void SetModuleContainer(const CModuleContainer* parent);
 	const CModuleContainer& GetModuleContainer(void) const;
 private:
@@ -116,5 +121,7 @@ private:
     CModuleContainer(const CModuleContainer&);
     CModuleContainer& operator=(const CModuleContainer&);
 };
+
+END_NCBI_SCOPE
 
 #endif

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:09  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:19  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -66,6 +72,9 @@
 #include <set>
 #include <map>
 #include <serial/tool/moduleset.hpp>
+#include <serial/tool/namespace.hpp>
+
+BEGIN_NCBI_SCOPE
 
 class CFileCode;
 
@@ -127,6 +136,9 @@ public:
     CDataType* InternalResolve(const string& moduleName,
                                const string& typeName) const;
 
+    void SetDefaultNamespace(const string& ns);
+    const CNamespace& GetNamespace(void) const;
+
     CDataType* ExternalResolve(const string& module, const string& type,
                                bool allowInternal = false) const;
     CDataType* ResolveInAnyModule(const string& type,
@@ -160,8 +172,11 @@ private:
     string m_CPPDir;
     string m_FileNamePrefix;
     EFileNamePrefixSource m_FileNamePrefixSource;
+    CNamespace m_DefaultNamespace;
 
     TOutputFiles m_Files;
 };
+
+END_NCBI_SCOPE
 
 #endif

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/04/07 19:26:23  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.13  2000/04/06 16:11:25  vasilche
 * Removed unneeded calls to Reset().
 *
@@ -119,6 +125,8 @@
 #include <serial/tool/code.hpp>
 #include <serial/tool/fileutil.hpp>
 
+BEGIN_NCBI_SCOPE
+
 #define STATE_ENUM "E_Choice"
 #define STATE_MEMBER "m_choice"
 #define STRING_TYPE "NCBI_NS_STD::string"
@@ -129,8 +137,9 @@
 #define STATE_NOT_SET "e_not_set"
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
-                                       const string& className)
-    : CParent(externalName, className),
+                                       const string& className,
+                                       const CNamespace& ns)
+    : CParent(externalName, className, ns),
       m_HaveAssignment(false)
 {
 }
@@ -750,9 +759,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 }
 
 CChoiceRefTypeStrings::CChoiceRefTypeStrings(const string& className,
-                                             const string& namespaceName,
+                                             const CNamespace& ns,
                                              const string& fileName)
-    : CParent(className, namespaceName, fileName)
+    : CParent(className, ns, fileName)
 {
 }
 
@@ -760,3 +769,5 @@ bool CChoiceRefTypeStrings::CanBeInSTL(void) const
 {
     return false;
 }
+
+END_NCBI_SCOPE

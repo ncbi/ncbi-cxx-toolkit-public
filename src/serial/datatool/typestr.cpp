@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/04/07 19:26:36  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.12  2000/03/07 20:05:00  vasilche
 * Added NewInstance method to generated classes.
 *
@@ -83,6 +89,8 @@
 #include <serial/tool/typestr.hpp>
 #include <serial/tool/classctx.hpp>
 #include <serial/tool/ptrstr.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CTypeStrings::~CTypeStrings(void)
 {
@@ -174,3 +182,5 @@ string CTypeStrings::GetTypeInfoCode(const string& externalName,
         "NCBI_NS_NCBI::Check< "+GetCType()+" >::Ptr(MEMBER_PTR("+memberName+")), "
         +GetRef()+')';
 }
+
+END_NCBI_SCOPE

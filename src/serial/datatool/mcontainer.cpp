@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/07 19:26:28  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.3  2000/02/01 21:48:02  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -50,6 +56,9 @@
 */
 
 #include <serial/tool/mcontainer.hpp>
+#include <serial/tool/namespace.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CModuleContainer::CModuleContainer(void)
     : m_Parent(0)
@@ -98,3 +107,16 @@ CDataType* CModuleContainer::InternalResolve(const string& module,
     return GetModuleContainer().InternalResolve(module, type);
 }
 
+const CNamespace& CModuleContainer::GetNamespace(void) const
+{
+    return GetModuleContainer().GetNamespace();
+}
+
+string CModuleContainer::GetNamespaceRef(const CNamespace& ns) const
+{
+    return m_Parent?
+        GetModuleContainer().GetNamespaceRef(ns):
+        GetNamespace().GetNamespaceRef(ns);
+}
+
+END_NCBI_SCOPE

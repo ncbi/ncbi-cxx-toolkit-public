@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/07 19:26:09  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.2  2000/03/29 15:51:42  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 *
@@ -68,7 +74,7 @@
 #include <corelib/ncbistd.hpp>
 #include <memory>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 static const size_t MAX_FILE_NAME_LENGTH = 31;
 
@@ -168,11 +174,14 @@ string DirName(const string& path);
 // return valid C name
 string Identifier(const string& typeName, bool capitalize = true);
 
+bool Empty(const CNcbiOstrstream& code);
 CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& code);
 CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
                           const char* tab = 0);
 CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
                           const char* tab = 0);
 string Tabbed(const string& code, const char* tab = 0);
+
+END_NCBI_SCOPE
 
 #endif

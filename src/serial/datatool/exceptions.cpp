@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:26  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/03/15 21:24:12  vasilche
 * Error diagnostic about ambiguous types made more clear.
 *
@@ -49,6 +55,8 @@
 #include <serial/tool/exceptions.hpp>
 #include <serial/tool/type.hpp>
 #include <corelib/ncbiutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CTypeNotFound::CTypeNotFound(const string& msg)
     THROWS_NONE
@@ -144,3 +152,5 @@ CDataType* CResolvedTypeSet::GetType(void) const
     }
     THROW_TRACE(CAmbiguiousTypes, (msg, m_Types));
 }
+
+END_NCBI_SCOPE

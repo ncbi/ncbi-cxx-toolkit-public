@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/04/07 19:26:38  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.10  2000/02/01 21:48:10  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -50,6 +56,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <serial/tool/value.hpp>
 #include <serial/tool/module.hpp>
+
+BEGIN_NCBI_SCOPE
 
 inline
 CNcbiOstream& NewLine(CNcbiOstream& out, int indent)
@@ -201,3 +209,4 @@ bool CBlockDataValue::IsComplex(void) const
     return true;
 }
 
+END_NCBI_SCOPE

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:07  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:14  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -61,8 +67,6 @@
 BEGIN_NCBI_SCOPE
 
 class CClassInfoTmpl;
-
-END_NCBI_SCOPE
 
 class CDataMember {
 public:
@@ -160,5 +164,7 @@ public:
 
     virtual const char* GetASNKeyword(void) const;
 };
+
+END_NCBI_SCOPE
 
 #endif

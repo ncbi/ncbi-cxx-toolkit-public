@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:08  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:17  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -62,8 +68,11 @@
 */
 
 #include <serial/tool/typestr.hpp>
+#include <serial/tool/namespace.hpp>
 #include <memory>
 #include <list>
+
+BEGIN_NCBI_SCOPE
 
 class CEnumTypeStrings : public CTypeStrings
 {
@@ -98,7 +107,7 @@ class CEnumRefTypeStrings : public CTypeStrings
 public:
     CEnumRefTypeStrings(const string& enumName,
                         const string& cName,
-                        const string& namespaceName,
+                        const CNamespace& ns,
                         const string& fileName);
 
     string GetCType(void) const;
@@ -113,8 +122,10 @@ public:
 private:
     string m_EnumName;
     string m_CType;
-    string m_NamespaceName;
+    CNamespace m_Namespace;
     string m_FileName;
 };
+
+END_NCBI_SCOPE
 
 #endif

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:06  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:12  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -55,7 +61,7 @@
 #include <vector>
 #include <serial/tool/atoken.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class AbstractLexer {
 public:
@@ -177,5 +183,7 @@ private:
     AbstractToken m_NextToken;
     string m_TokenValue;
 };
+
+END_NCBI_SCOPE
 
 #endif

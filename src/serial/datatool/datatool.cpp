@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/04/07 19:26:28  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.27  2000/03/10 17:59:31  vasilche
 * Fixed error reporting.
 *
@@ -86,7 +92,7 @@
 #include <serial/tool/type.hpp>
 #include <serial/tool/generate.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 typedef pair<AnyType, TTypeInfo> TObject;
 
@@ -219,6 +225,7 @@ void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
     info.name = FileOutArgument(name);
 }
 
+extern "C"
 int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
@@ -349,6 +356,7 @@ int main(int argc, const char*argv[])
                                              "src"));
                     modulesDir = Path(DirArgument(argv[i]), "src");
                     generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
+                    generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
                     break;
                 default:
                     ERR_POST(Fatal << "Invalid argument: " << arg <<
@@ -489,3 +497,5 @@ void StoreValue(const TObject& object, const FileInfo& file)
     }
     objOut->Write(&object.first, object.second);
 }
+
+END_NCBI_SCOPE

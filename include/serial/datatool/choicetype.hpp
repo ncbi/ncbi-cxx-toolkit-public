@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:07  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:15  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -55,6 +61,8 @@
 #include <serial/tool/blocktype.hpp>
 #include <serial/choice.hpp>
 #include <serial/tool/statictype.hpp>
+
+BEGIN_NCBI_SCOPE
 
 class CChoiceDataType : public CDataMemberContainerType {
     typedef CDataMemberContainerType CParent;
@@ -102,5 +110,7 @@ protected:
     virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
     virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 };
+
+END_NCBI_SCOPE
 
 #endif

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/07 19:26:07  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.4  2000/03/17 16:47:38  vasilche
 * Added copyright message to generated files.
 * All objects pointers in choices now share the only CObject pointer.
@@ -75,6 +81,8 @@
 #include <serial/tool/classstr.hpp>
 #include <corelib/ncbiutil.hpp>
 
+BEGIN_NCBI_SCOPE
+
 class CChoiceTypeStrings : public CClassTypeStrings
 {
     typedef CClassTypeStrings CParent;
@@ -96,7 +104,8 @@ public:
     };
     typedef list<SVariantInfo> TVariants;
 
-    CChoiceTypeStrings(const string& externalName, const string& className);
+    CChoiceTypeStrings(const string& externalName,
+                       const string& className, const CNamespace& ns);
     ~CChoiceTypeStrings(void);
 
     bool HaveAssignment(void) const
@@ -121,11 +130,12 @@ class CChoiceRefTypeStrings : public CClassRefTypeStrings
 {
     typedef CClassRefTypeStrings CParent;
 public:
-    CChoiceRefTypeStrings(const string& className,
-                          const string& namespaceName,
+    CChoiceRefTypeStrings(const string& className, const CNamespace& ns,
                           const string& fileName);
 
     bool CanBeInSTL(void) const;
 };
+
+END_NCBI_SCOPE
 
 #endif

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/07 19:26:25  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.2  2000/02/17 20:05:07  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -81,6 +87,8 @@
 #include <serial/tool/classctx.hpp>
 #include <serial/tool/fileutil.hpp>
 #include <corelib/ncbiutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CEnumTypeStrings::CEnumTypeStrings(const string& enumName,
                                    const string& cType,
@@ -152,11 +160,10 @@ string CEnumTypeStrings::GetTypeInfoCode(const string& externalName,
 
 CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
                                          const string& cType,
-                                         const string& namespaceName,
+                                         const CNamespace& ns,
                                          const string& fileName)
     : m_EnumName(enumName),
-      m_CType(cType),
-      m_NamespaceName(namespaceName),
+      m_CType(cType), m_Namespace(ns),
       m_FileName(fileName)
 {
 }
@@ -166,12 +173,12 @@ string CEnumRefTypeStrings::GetCType(void) const
     if ( !m_CType.empty() && m_CType != m_EnumName )
         return m_CType;
 
-    return m_NamespaceName+"::"+m_EnumName;
+    return m_Namespace.ToString()+m_EnumName;
 }
 
 string CEnumRefTypeStrings::GetRef(void) const
 {
-    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+m_CType+"(0), "+m_NamespaceName+"::GetEnumInfo_"+m_EnumName+"())";
+    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+m_CType+"(0), "+m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"())";
 }
 
 string CEnumRefTypeStrings::GetInitializer(void) const
@@ -190,5 +197,7 @@ string CEnumRefTypeStrings::GetTypeInfoCode(const string& externalName,
     return "info->GetMembers().AddMember("
         "\""+externalName+"\", "
         "NCBI_NS_NCBI::EnumMember(MEMBER_PTR("+memberName+"), "+
-        m_NamespaceName+"::GetEnumInfo_"+m_EnumName+"()))";
+        m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"()))";
 }
+
+END_NCBI_SCOPE

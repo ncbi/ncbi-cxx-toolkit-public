@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:13  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/02/01 21:46:23  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -45,6 +51,8 @@
 *
 * ===========================================================================
 */
+
+BEGIN_NCBI_SCOPE
 
 static const TToken T_IDENTIFIER = 1;
 static const TToken T_TYPE_REFERENCE = 2;
@@ -78,6 +86,8 @@ static const TToken K_FALSE = 121;
 static const TToken K_TRUE = 122;
 static const TToken K_OPTIONAL = 123;
 static const TToken K_DEFAULT = 124;
+
+END_NCBI_SCOPE
 
 #endif
 

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/07 19:26:08  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.5  2000/03/16 17:43:54  vasilche
 * Added missing forward declaration.
 *
@@ -63,7 +69,7 @@
 #include <stdexcept>
 #include <list>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CDataType;
 
@@ -113,5 +119,7 @@ private:
     string m_Module, m_Name;
     list<CDataType*> m_Types;
 };
+
+END_NCBI_SCOPE
 
 #endif

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/07 19:26:09  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.5  2000/03/29 15:51:41  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 *
@@ -75,10 +81,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/tool/classctx.hpp>
+#include <serial/tool/namespace.hpp>
 #include <map>
 #include <set>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CDataType;
 class CTypeStrings;
@@ -86,12 +93,12 @@ class CTypeStrings;
 class CFileCode : public CClassContext
 {
 public:
-    typedef map<string, string> TForwards;
+    typedef map<string, CNamespace> TForwards;
     typedef set<string> TAddedClasses;
     struct SClassInfo {
-        string namespaceName;
+        CNamespace ns;
         AutoPtr<CTypeStrings> code;
-        SClassInfo(const string& namespaceName, AutoPtr<CTypeStrings> code);
+        SClassInfo(const CNamespace& ns, AutoPtr<CTypeStrings> code);
     };
     typedef list< SClassInfo > TClasses;
 
@@ -122,8 +129,7 @@ public:
     string GetMethodPrefix(void) const;
     TIncludes& HPPIncludes(void);
     TIncludes& CPPIncludes(void);
-    void AddForwardDeclaration(const string& className,
-                               const string& namespaceName);
+    void AddForwardDeclaration(const string& className, const CNamespace& ns);
     void AddHPPCode(const CNcbiOstrstream& code);
     void AddINLCode(const CNcbiOstrstream& code);
     void AddCPPCode(const CNcbiOstrstream& code);
@@ -147,7 +153,13 @@ private:
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;
     TForwards m_ForwardDeclarations;
+    CNamespace m_CurrentNamespace;
     CNcbiOstrstream m_HPPCode, m_INLCode, m_CPPCode;
+    CNamespace m_HPPNamespace, m_INLNamespace, m_CPPNamespace;
+
+    void UpdateNamespace(CNcbiOstream& out, CNamespace& ns);
+    void AddCode(CNcbiOstream& out, CNamespace& ns,
+                 const CNcbiOstrstream& code);
 
     set<string> m_SourceFiles;
     // classes code
@@ -158,21 +170,6 @@ private:
     CFileCode& operator=(const CFileCode&);
 };
 
-class CNamespace
-{
-public:
-    CNamespace(CNcbiOstream& out);
-    ~CNamespace(void);
-    
-    void Set(const string& ns);
-
-    void End(void);
-
-private:
-    void Begin(void);
-
-    CNcbiOstream& m_Out;
-    string m_Namespace;
-};
+END_NCBI_SCOPE
 
 #endif

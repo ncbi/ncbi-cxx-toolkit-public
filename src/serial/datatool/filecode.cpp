@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/04/07 19:26:26  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.17  2000/04/03 18:47:30  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -99,7 +105,10 @@
 #include <serial/tool/type.hpp>
 #include <serial/tool/typestr.hpp>
 #include <serial/tool/fileutil.hpp>
+#include <serial/tool/namespace.hpp>
 #include <typeinfo>
+
+BEGIN_NCBI_SCOPE
 
 CFileCode::CFileCode(const string& baseName)
     : m_BaseName(baseName)
@@ -194,38 +203,51 @@ CFileCode::TIncludes& CFileCode::CPPIncludes(void)
     return m_CPPIncludes;
 }
 
-void CFileCode::AddForwardDeclaration(const string& cls, const string& ns)
+void CFileCode::AddForwardDeclaration(const string& cls, const CNamespace& ns)
 {
     m_ForwardDeclarations[cls] = ns;
 }
 
+void CFileCode::UpdateNamespace(CNcbiOstream& out, CNamespace& ns)
+{
+    ns.Set(m_CurrentNamespace, out);
+}
+
+void CFileCode::AddCode(CNcbiOstream& out, CNamespace& ns,
+                        const CNcbiOstrstream& code)
+{
+    if ( !Empty(code) ) {
+        UpdateNamespace(out, ns);
+        Write(out, code);
+    }
+}
+
 void CFileCode::AddHPPCode(const CNcbiOstrstream& code)
 {
-    Write(m_HPPCode, code);
+    AddCode(m_HPPCode, m_HPPNamespace, code);
 }
 
 void CFileCode::AddINLCode(const CNcbiOstrstream& code)
 {
-    Write(m_INLCode, code);
+    AddCode(m_INLCode, m_INLNamespace, code);
 }
 
 void CFileCode::AddCPPCode(const CNcbiOstrstream& code)
 {
-    Write(m_CPPCode, code);
+    AddCode(m_CPPCode, m_CPPNamespace, code);
 }
 
 void CFileCode::GenerateCode(void)
 {
     if ( !m_Classes.empty() ) {
-        CNamespace nsHPP(m_HPPCode);
-        CNamespace nsINL(m_INLCode);
-        CNamespace nsCPP(m_CPPCode);
         iterate ( TClasses, ci, m_Classes ) {
-            nsHPP.Set(ci->namespaceName);
-            nsINL.Set(ci->namespaceName);
-            nsCPP.Set(ci->namespaceName);
+            m_CurrentNamespace = ci->ns;
             ci->code->GenerateCode(*this);
         }
+        m_CurrentNamespace.Reset();
+        UpdateNamespace(m_HPPCode, m_HPPNamespace);
+        UpdateNamespace(m_INLCode, m_INLNamespace);
+        UpdateNamespace(m_CPPCode, m_CPPNamespace);
     }
     m_HPPIncludes.erase(NcbiEmptyString);
     m_CPPIncludes.erase(NcbiEmptyString);
@@ -339,20 +361,22 @@ void CFileCode::GenerateHPP(const string& path) const
     }
 
     if ( !m_ForwardDeclarations.empty() ) {
-        CNamespace ns(header);
+        CNamespace ns;
         header <<
             "\n"
             "// forward declarations\n";
         iterate ( TForwards, fi, m_ForwardDeclarations ) {
-            ns.Set(fi->second);
+            ns.Set(fi->second, header);
             header <<
                 "class " << fi->first << ";\n";
         }
+        ns.Reset(header);
     }
     
     header <<
         "\n"
-        "// generated classes\n";
+        "// generated classes\n"
+        "\n";
     Write(header, m_HPPCode);
     
     if ( const_cast<CNcbiOstrstream&>(m_INLCode).pcount() != 0 ) {
@@ -413,7 +437,8 @@ void CFileCode::GenerateCPP(const string& path) const
 
     code <<
         "\n"
-        "// generated classes\n";
+        "// generated classes\n"
+        "\n";
     Write(code, m_CPPCode);
 
     code.close();
@@ -448,18 +473,18 @@ bool CFileCode::GenerateUserHPP(const string& path) const
         "// generated includes\n"
         "#include <" << GetBaseHPPName() << ">\n";
     
-    CNamespace ns(header);
-    
     if ( !m_Classes.empty() ) {
+        CNamespace ns;
         header <<
             "\n"
-            "// generated classes\n";
+            "// generated classes\n"
+            "\n";
         iterate ( TClasses, ci, m_Classes ) {
-            ns.Set(ci->namespaceName);
+            ns.Set(ci->ns, header);
             ci->code->GenerateUserHPPCode(header);
         }
+        ns.Reset(header);
     }
-    ns.End();
     
     header <<
         "\n"
@@ -492,16 +517,17 @@ bool CFileCode::GenerateUserCPP(const string& path) const
         "// generated includes\n"
         "#include <" << GetUserHPPName() << ">\n";
 
-    CNamespace ns(code);
-    
     if ( !m_Classes.empty() ) {
+        CNamespace ns;
         code <<
             "\n"
-            "// generated classes\n";
+            "// generated classes\n"
+            "\n";
         iterate ( TClasses, ci, m_Classes ) {
-            ns.Set(ci->namespaceName);
+            ns.Set(ci->ns, code);
             ci->code->GenerateUserCPPCode(code);
         }
+        ns.Reset(code);
     }
 
     code.close();
@@ -510,8 +536,8 @@ bool CFileCode::GenerateUserCPP(const string& path) const
     return true;
 }
 
-CFileCode::SClassInfo::SClassInfo(const string& ns, AutoPtr<CTypeStrings> c)
-    : namespaceName(ns), code(c)
+CFileCode::SClassInfo::SClassInfo(const CNamespace& n, AutoPtr<CTypeStrings> c)
+    : ns(n), code(c)
 {
 }
 
@@ -527,43 +553,4 @@ bool CFileCode::AddType(const CDataType* type)
     return true;
 }
 
-CNamespace::CNamespace(CNcbiOstream& out)
-    : m_Out(out)
-{
-}
-
-CNamespace::~CNamespace(void)
-{
-    End();
-}
-
-void CNamespace::Begin(void)
-{
-    if ( !m_Namespace.empty() ) {
-        m_Out <<
-            "\n"
-            "namespace " << m_Namespace << " {\n"
-            "\n";
-    }
-}
-
-void CNamespace::End(void)
-{
-    if ( !m_Namespace.empty() ) {
-        m_Out <<
-            "\n"
-            "}\n"
-            "\n";
-        m_Namespace.erase();
-    }
-}
-
-void CNamespace::Set(const string& ns)
-{
-    if ( ns != m_Namespace ) {
-        End();
-        m_Namespace = ns;
-        Begin();
-    }
-}
-
+END_NCBI_SCOPE

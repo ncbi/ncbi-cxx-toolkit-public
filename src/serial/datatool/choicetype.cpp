@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/07 19:26:24  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.7  2000/03/07 14:06:30  vasilche
 * Added generation of reference counted objects.
 *
@@ -67,9 +73,9 @@
 #include <serial/tool/choicetype.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/tool/value.hpp>
-//#include <serial/tool/module.hpp>
 #include <serial/tool/choicestr.hpp>
-//#include <serial/tool/fileutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CChoiceTypeInfoAnyType::CChoiceTypeInfoAnyType(const string& name)
     : CParent(name)
@@ -172,7 +178,8 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
     AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(IdName(),
-                                                            ClassName()));
+                                                            ClassName(),
+                                                            Namespace()));
     bool haveUserClass = GetParentType() == 0;
     code->SetHaveUserClass(haveUserClass);
     code->SetObject(true);
@@ -182,3 +189,5 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());
 }
+
+END_NCBI_SCOPE

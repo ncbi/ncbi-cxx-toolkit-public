@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/07 19:26:07  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.5  2000/03/14 18:32:54  vasilche
 * Fixed class includes generation.
 *
@@ -78,7 +84,10 @@
 
 #include <serial/tool/typestr.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/tool/namespace.hpp>
 #include <list>
+
+BEGIN_NCBI_SCOPE
 
 class CClassCode;
 
@@ -105,7 +114,8 @@ public:
     };
     typedef list<SMemberInfo> TMembers;
 
-    CClassTypeStrings(const string& externalName, const string& className);
+    CClassTypeStrings(const string& externalName,
+                      const string& className, const CNamespace& ns);
     ~CClassTypeStrings(void);
 
     const string& GetExternalName(void) const
@@ -117,8 +127,7 @@ public:
             return m_ClassName;
         }
 
-    void SetParentClass(const string& className,
-                        const string& namespaceName,
+    void SetParentClass(const string& className, const CNamespace& ns,
                         const string& fileName);
 
     void AddMember(const string& name, AutoPtr<CTypeStrings> type,
@@ -165,8 +174,9 @@ private:
     bool m_HaveUserClass;
     string m_ExternalName;
     string m_ClassName;
+    CNamespace m_Namespace;
     string m_ParentClassName;
-    string m_ParentClassNamespaceName;
+    CNamespace m_ParentClassNamespace;
     string m_ParentClassFileName;
     TMembers m_Members;
 };
@@ -174,8 +184,7 @@ private:
 class CClassRefTypeStrings : public CTypeStrings
 {
 public:
-    CClassRefTypeStrings(const string& className,
-                         const string& namespaceName,
+    CClassRefTypeStrings(const string& className, const CNamespace& ns,
                          const string& fileName);
 
     string GetCType(void) const;
@@ -194,8 +203,10 @@ public:
 
 private:
     string m_ClassName;
-    string m_NamespaceName;
+    CNamespace m_Namespace;
     string m_FileName;
 };
+
+END_NCBI_SCOPE
 
 #endif

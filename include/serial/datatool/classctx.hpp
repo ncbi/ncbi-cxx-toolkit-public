@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/07 19:26:07  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.2  2000/02/17 20:05:02  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -67,11 +73,12 @@
 #include <corelib/ncbistre.hpp>
 #include <set>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CDataType;
 class CChoiceDataType;
 class CFileCode;
+class CNamespace;
 
 class CClassContext
 {
@@ -84,10 +91,12 @@ public:
     virtual TIncludes& HPPIncludes(void) = 0;
     virtual TIncludes& CPPIncludes(void) = 0;
     virtual void AddForwardDeclaration(const string& className,
-                                       const string& namespaceName) = 0;
+                                       const CNamespace& ns) = 0;
     virtual void AddHPPCode(const CNcbiOstrstream& code) = 0;
     virtual void AddINLCode(const CNcbiOstrstream& code) = 0;
     virtual void AddCPPCode(const CNcbiOstrstream& code) = 0;
 };
+
+END_NCBI_SCOPE
 
 #endif

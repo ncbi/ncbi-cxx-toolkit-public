@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/04/07 19:26:29  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.19  2000/03/15 21:24:12  vasilche
 * Error diagnostic about ambiguous types made more clear.
 *
@@ -68,6 +74,8 @@
 #include <serial/tool/type.hpp>
 #include <serial/tool/exceptions.hpp>
 #include <serial/tool/fileutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CFileModules::CFileModules(const string& name)
     : m_SourceFileName(name)
@@ -252,3 +260,4 @@ bool CFileSet::CheckNames(void) const
     return ok;
 }
 
+END_NCBI_SCOPE

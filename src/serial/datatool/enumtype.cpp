@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/07 19:26:25  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.7  2000/02/17 20:05:07  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -63,6 +69,8 @@
 #include <serial/tool/enumstr.hpp>
 #include <serial/tool/fileutil.hpp>
 #include <serial/enumerated.hpp>
+
+BEGIN_NCBI_SCOPE
 
 const char* CEnumDataType::GetASNKeyword(void) const
 {
@@ -237,3 +245,4 @@ bool CIntEnumDataType::IsInteger(void) const
     return true;
 }
 
+END_NCBI_SCOPE

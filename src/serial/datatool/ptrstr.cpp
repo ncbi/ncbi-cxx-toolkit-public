@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:33  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/03/07 14:06:32  vasilche
 * Added generation of reference counted objects.
 *
@@ -38,6 +44,8 @@
 
 #include <serial/tool/ptrstr.hpp>
 #include <serial/tool/classctx.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CPointerTypeStrings::CPointerTypeStrings(CTypeStrings* dataType)
     : m_DataType(dataType)
@@ -151,3 +159,4 @@ string CRefTypeStrings::GetResetCode(const string& var) const
     return var + ".Reset();\n";
 }
 
+END_NCBI_SCOPE

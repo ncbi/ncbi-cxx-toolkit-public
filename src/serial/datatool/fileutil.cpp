@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/07 19:26:27  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.8  2000/03/29 15:52:27  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 * Removed unions with only one member.
@@ -71,7 +77,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <set>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 static const int BUFFER_SIZE = 4096;
 
@@ -411,6 +417,11 @@ bool CDelayedOfstream::rewrite(void)
     return true;
 }
 
+bool Empty(const CNcbiOstrstream& src)
+{
+    return const_cast<CNcbiOstrstream&>(src).pcount() == 0;
+}
+
 CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& src)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(src);
@@ -503,3 +514,4 @@ string Tabbed(const string& code, const char* tab)
     return out;
 }
 
+END_NCBI_SCOPE

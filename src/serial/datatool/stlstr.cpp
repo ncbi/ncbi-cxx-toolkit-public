@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/07 19:26:34  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.5  2000/03/07 14:06:33  vasilche
 * Added generation of reference counted objects.
 *
@@ -86,6 +92,9 @@
 #include <serial/tool/stlstr.hpp>
 #include <serial/tool/classctx.hpp>
 #include <serial/tool/fileutil.hpp>
+#include <serial/tool/namespace.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
                                              CTypeStrings* arg1Type)
@@ -105,7 +114,7 @@ CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
 
 string CTemplate1TypeStrings::GetCType(void) const
 {
-    return GetTemplateNamespace()+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
+    return GetTemplateNamespace().ToString()+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
 }
 
 string CTemplate1TypeStrings::GetRef(void) const
@@ -152,14 +161,14 @@ void CTemplate1TypeStrings::AddTemplateInclude(TIncludes& hpp) const
     hpp.insert(header);
 }
 
-string CTemplate1TypeStrings::GetTemplateNamespace(void) const
+static CNamespace KNCBINamespace("NCBI_NS_NCBI");
+static CNamespace KSTDNamespace("NCBI_NS_STD");
+
+const CNamespace& CTemplate1TypeStrings::GetTemplateNamespace(void) const
 {
-    const char* ns;
     if ( GetTemplateName() == "AutoPtr" )
-        ns = "NCBI_NS_NCBI::";
-    else
-        ns = "NCBI_NS_STD::";
-    return ns;
+        return KNCBINamespace;
+    return KSTDNamespace;
 }
 
 void CTemplate1TypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -371,3 +380,4 @@ string CVectorTypeStrings::GetResetCode(const string& var) const
     return var+".clear();\n";
 }
 
+END_NCBI_SCOPE

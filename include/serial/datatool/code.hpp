@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/07 19:26:08  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.4  2000/03/07 20:04:57  vasilche
 * Added NewInstance method to generated classes.
 *
@@ -71,9 +77,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/tool/classctx.hpp>
+#include <serial/tool/namespace.hpp>
 #include <list>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CDataType;
 class CFileCode;
@@ -81,11 +88,11 @@ class CFileCode;
 class CClassCode : public CClassContext
 {
 public:
-    CClassCode(CClassContext& ownerClass, const string& className,
-               const string& namespaceName = NcbiEmptyString);
+    CClassCode(CClassContext& ownerClass,
+               const string& className, const CNamespace& ns);
     virtual ~CClassCode(void);
 
-    const string& GetNamespace(void) const
+    const CNamespace& GetNamespace(void) const
         {
             return m_Namespace;
         }
@@ -97,12 +104,12 @@ public:
         {
             return m_ParentClassName;
         }
-    const string& GetParentClassNamespaceName(void) const
+    const CNamespace& GetParentClassNamespace(void) const
         {
-            return m_ParentClassNamespaceName;
+            return m_ParentClassNamespace;
         }
 
-    void SetParentClass(const string& className, const string& namespaceName);
+    void SetParentClass(const string& className, const CNamespace& ns);
     bool HaveVirtualDestructor(void) const
         {
             return m_VirtualDestructor;
@@ -116,7 +123,7 @@ public:
     bool InternalClass(void) const;
     TIncludes& HPPIncludes(void);
     TIncludes& CPPIncludes(void);
-    void AddForwardDeclaration(const string& s, const string& ns);
+    void AddForwardDeclaration(const string& s, const CNamespace& ns);
     void AddInitializer(const string& member, const string& init);
     void AddDestructionCode(const string& code);
 
@@ -166,10 +173,10 @@ public:
 
 private:
     CClassContext& m_Code;
-    string m_Namespace;
     string m_ClassName;
+    CNamespace m_Namespace;
     string m_ParentClassName;
-    string m_ParentClassNamespaceName;
+    CNamespace m_ParentClassNamespace;
 
     bool m_VirtualDestructor;
     CNcbiOstrstream m_ClassPublic;
@@ -183,5 +190,7 @@ private:
     CClassCode(const CClassCode&);
     CClassCode& operator=(const CClassCode&);
 };
+
+END_NCBI_SCOPE
 
 #endif

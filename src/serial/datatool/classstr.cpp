@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/07 19:26:24  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.14  2000/04/06 16:11:25  vasilche
 * Removed unneeded calls to Reset().
 *
@@ -122,10 +128,13 @@
 #include <serial/tool/code.hpp>
 #include <serial/tool/fileutil.hpp>
 
+BEGIN_NCBI_SCOPE
+
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
-                                     const string& className)
+                                     const string& className,
+                                     const CNamespace& ns)
     : m_IsObject(true), m_HaveUserClass(true),
-      m_ExternalName(externalName), m_ClassName(className)
+      m_ExternalName(externalName), m_ClassName(className), m_Namespace(ns)
 {
 }
 
@@ -227,11 +236,11 @@ string CClassTypeStrings::GetResetCode(const string& var) const
 }
 
 void CClassTypeStrings::SetParentClass(const string& className,
-                                       const string& namespaceName,
+                                       const CNamespace& ns,
                                        const string& fileName)
 {
     m_ParentClassName = className;
-    m_ParentClassNamespaceName = namespaceName;
+    m_ParentClassNamespace = ns;
     m_ParentClassFileName = fileName;
 }
 
@@ -278,18 +287,20 @@ CNcbiOstream& GenerateNewMethod(CNcbiOstream& out, const string& className)
         "\n";
 }
 
+static CNamespace KNCBINamespace("NCBI_NS_NCBI");
+
 void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
     bool haveUserClass = HaveUserClass();
     string codeClassName = GetClassName();
     if ( haveUserClass )
         codeClassName += "_Base";
-    CClassCode code(ctx, codeClassName);
+    CClassCode code(ctx, codeClassName, m_Namespace);
     if ( m_ParentClassName.empty() ) {
-        code.SetParentClass("CObject", "NCBI_NS_NCBI");
+        code.SetParentClass("CObject", KNCBINamespace);
     }
     else {
-        code.SetParentClass(m_ParentClassName, m_ParentClassNamespaceName);
+        code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
     }
     string methodPrefix = code.GetMethodPrefix();
 
@@ -799,10 +810,10 @@ void CClassTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
 }
 
 CClassRefTypeStrings::CClassRefTypeStrings(const string& className,
-                                           const string& namespaceName,
+                                           const CNamespace& ns,
                                            const string& fileName)
     : m_ClassName(className),
-      m_NamespaceName(namespaceName),
+      m_Namespace(ns),
       m_FileName(fileName)
 {
 }
@@ -814,13 +825,13 @@ void CClassRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 void CClassRefTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
 {
-    ctx.AddForwardDeclaration(m_ClassName, m_NamespaceName);
+    ctx.AddForwardDeclaration(m_ClassName, m_Namespace);
     ctx.CPPIncludes().insert(m_FileName);
 }
 
 string CClassRefTypeStrings::GetCType(void) const
 {
-    return m_NamespaceName + "::" + m_ClassName;
+    return m_Namespace.ToString() + m_ClassName;
 }
 
 string CClassRefTypeStrings::GetRef(void) const
@@ -853,3 +864,4 @@ string CClassRefTypeStrings::GetResetCode(const string& var) const
     return var+".Reset();\n";
 }
 
+END_NCBI_SCOPE

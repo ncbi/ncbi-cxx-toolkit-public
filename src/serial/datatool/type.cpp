@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/04/07 19:26:35  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.43  2000/03/29 15:52:27  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 * Removed unions with only one member.
@@ -105,6 +111,8 @@
 #include <serial/tool/fileutil.hpp>
 #include <algorithm>
 
+BEGIN_NCBI_SCOPE
+
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
     TTypeInfo typeInfo = m_Type->GetTypeInfo();
@@ -113,6 +121,7 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
     return typeInfo;
 }
 
+/*
 string CDataType::GetTemplateHeader(const string& tmpl)
 {
     if ( tmpl == "multiset" )
@@ -133,7 +142,7 @@ bool CDataType::IsSimplePointerTemplate(const string& tmpl)
     return false;
 }
 
-string CDataType::GetTemplateNamespace(const string& tmpl)
+CNamespace CDataType::GetTemplateNamespace(const string& tmpl)
 {
     if ( tmpl == "AutoPtr" )
         return "NCBI_NS_NCBI";
@@ -144,6 +153,7 @@ string CDataType::GetTemplateMacro(const string& tmpl)
 {
     return "STL_" + tmpl;
 }
+*/
 
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
@@ -315,9 +325,23 @@ string CDataType::FileName(void) const
     return m_CachedFileName;
 }
 
-string CDataType::Namespace(void) const
+const CNamespace& CDataType::Namespace(void) const
 {
-    return GetVar("_namespace");
+    if ( !m_CachedNamespace.get() ) {
+        const string& ns = GetVar("_namespace");
+        if ( !ns.empty() ) {
+            m_CachedNamespace.reset(new CNamespace(ns));
+        }
+        else {
+            if ( GetParentType() ) {
+                return GetParentType()->Namespace();
+            }
+            else {
+                return GetModule()->GetNamespace();
+            }
+        }
+    }
+    return *m_CachedNamespace;
 }
 
 string CDataType::InheritFromClass(void) const
@@ -392,7 +416,8 @@ TTypeInfo CDataType::GetTypeInfo(void)
 AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
-                                                          ClassName()));
+                                                          ClassName(),
+                                                          Namespace()));
     code->AddMember(NcbiEmptyString, GetFullCType(), NcbiEmptyString,
                     false, NcbiEmptyString);
     SetParentClassTo(*code);
@@ -431,3 +456,5 @@ CTypeInfo* CDataType::CreateTypeInfo(void)
 {
     return 0;
 }
+
+END_NCBI_SCOPE

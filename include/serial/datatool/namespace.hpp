@@ -1,3 +1,6 @@
+#ifndef NAMESPACE__HPP
+#define NAMESPACE__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -26,54 +29,90 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Abstract parser class
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  2000/04/07 19:26:23  vasilche
+* Revision 1.1  2000/04/07 19:26:10  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
 * NCBI_NS_NCBI::objects (aka ncbi::objects).
 * Datatool's classes also moved to NCBI namespace.
 *
-* Revision 1.5  2000/02/01 21:47:52  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.4  1999/11/15 19:36:12  vasilche
-* Fixed warnings on GCC
-*
 * ===========================================================================
 */
 
-#include <serial/tool/aparser.hpp>
+#include <corelib/ncbistd.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
-AbstractParser::AbstractParser(AbstractLexer& lexer)
-    : m_Lexer(lexer)
+class CNamespace
 {
+public:
+    typedef vector<string> TNamespaces;
+
+    CNamespace(void);
+    CNamespace(const string& s);
+
+    void Set(const CNamespace& ns, CNcbiOstream& out);
+
+    string GetNamespaceRef(const CNamespace& ns) const;
+
+    void Reset(void)
+        {
+            m_Namespaces.clear();
+        }
+    void Reset(CNcbiOstream& out)
+        {
+            CloseAllAbove(0, out);
+        }
+
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
+
+    operator string(void) const
+        {
+            string s;
+            ToStringTo(s);
+            return s;
+        }
+
+    string ToString(void) const
+        {
+            string s;
+            ToStringTo(s);
+            return s;
+        }
+
+protected:
+    const TNamespaces& GetNamespaces(void) const
+        {
+            return m_Namespaces;
+        }
+    size_t GetNamespaceLevel(void) const
+        {
+            return m_Namespaces.size();
+        }
+
+    void Open(const string& s, CNcbiOstream& out);
+    void Close(CNcbiOstream& out);
+    void CloseAllAbove(size_t level, CNcbiOstream& out);
+
+    size_t EqualLevels(const CNamespace& ns) const;
+
+    void ToStringTo(string& s) const;
+
+    TNamespaces m_Namespaces;
+};
+
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CNamespace& ns)
+{
+    return ns.PrintFullName(out);
 }
 
-AbstractParser::~AbstractParser(void)
-{
-}
-
-void AbstractParser::ParseError(const char* error, const char* expected,
-                                const AbstractToken& token)
-{
-    throw runtime_error(NStr::IntToString(token.GetLine()) +
-                        ": Parse error: " + error + ": " +
-                        expected + " expected");
-}
-
-string AbstractParser::Location(void) const
-{
-    const AbstractToken& token = NextToken();
-    return NStr::IntToString(token.GetLine()) + ':';
-}
+//#include <serial/tool/namespace.inl>
 
 END_NCBI_SCOPE
+
+#endif  /* NAMESPACE__HPP */

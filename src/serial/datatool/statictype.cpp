@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/07 19:26:33  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.9  2000/03/10 15:00:46  vasilche
 * Fixed OPTIONAL members reading.
 *
@@ -74,6 +80,8 @@
 #include <serial/tool/value.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/autoptrinfo.hpp>
+
+BEGIN_NCBI_SCOPE
 
 void CStaticDataType::PrintASN(CNcbiOstream& out, int ) const
 {
@@ -364,3 +372,4 @@ string CIntDataType::GetDefaultCType(void) const
     return "int";
 }
 
+END_NCBI_SCOPE

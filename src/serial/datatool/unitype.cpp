@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/07 19:26:37  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.8  2000/02/01 21:48:09  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -70,6 +76,8 @@
 #include <serial/tool/blocktype.hpp>
 #include <serial/tool/stlstr.hpp>
 #include <serial/tool/value.hpp>
+
+BEGIN_NCBI_SCOPE
 
 CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
@@ -198,3 +206,4 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
     return AutoPtr<CTypeStrings>(new CSetTypeStrings(templ, tData));
 }
 
+END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/04/07 19:26:27  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.27  2000/03/07 14:06:32  vasilche
 * Added generation of reference counted objects.
 *
@@ -90,7 +96,7 @@
 #include <serial/tool/exceptions.hpp>
 #include <serial/tool/fileutil.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 CCodeGenerator::CCodeGenerator(void)
     : m_ExcludeRecursion(false), m_FileNamePrefixSource(eFileName_FromNone)
@@ -133,6 +139,16 @@ CDataType* CCodeGenerator::InternalResolve(const string& module,
                                            const string& name) const
 {
     return ExternalResolve(module, name);
+}
+
+const CNamespace& CCodeGenerator::GetNamespace(void) const
+{
+    return m_DefaultNamespace;
+}
+
+void CCodeGenerator::SetDefaultNamespace(const string& ns)
+{
+    m_DefaultNamespace = ns;
 }
 
 void CCodeGenerator::LoadConfig(const string& fileName)
@@ -496,3 +512,5 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         return;
 }
 #endif
+
+END_NCBI_SCOPE

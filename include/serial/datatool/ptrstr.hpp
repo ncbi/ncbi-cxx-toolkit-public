@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/07 19:26:11  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
 * Revision 1.1  2000/03/07 14:06:05  vasilche
 * Added generation of reference counted objects.
 *
@@ -41,6 +47,8 @@
 
 #include <serial/tool/typestr.hpp>
 #include <corelib/ncbiutil.hpp>
+
+BEGIN_NCBI_SCOPE
 
 class CPointerTypeStrings : public CTypeStrings
 {
@@ -89,5 +97,7 @@ public:
     string GetIsSetCode(const string& var) const;
     string GetResetCode(const string& var) const;
 };
+
+END_NCBI_SCOPE
 
 #endif
