@@ -478,7 +478,7 @@ private:
     static map<char, char>          sm_Complement;
 
     bool                 m_AllowOneMismatch;
-    int                  m_MaxPatLen;
+    size_t               m_MaxPatLen;
     IClient*             m_Client;
     CTextFsm<CMatchInfo> m_Fsa;
 
@@ -493,6 +493,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2003/01/22 20:14:27  vasilche
+* Removed compiler warning.
+*
 * Revision 1.24  2003/01/09 17:48:26  ucko
 * Include Seq_interval.hpp rather than just forward-declaring
 * CSeq_interval now that we use CRef<CSeq_interval> here.

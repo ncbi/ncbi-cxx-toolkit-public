@@ -1583,7 +1583,7 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
                        EOffsetType how, CScope* scope)
 {
     SRelLoc rl(outer, inner, scope);
-    bool    want_reverse;
+    bool    want_reverse = false;
     {{
         bool outer_is_reverse = IsReverse(GetStrand(outer, scope));
         switch (how) {
@@ -2245,8 +2245,7 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
     // get vector of sequence under location
     CSeqVector seqv = bsh.GetSequenceView (loc,
                                            CBioseq_Handle::eViewConstructed,
-                                           CBioseq_Handle::eCoding_Iupac,
-                                           CBioseq_Handle::eStrand_Plus);
+                                           CBioseq_Handle::eCoding_Iupac);
 
     // number of real sequence letters to take
     int len = seqv.size ();
@@ -2395,8 +2394,7 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
         TRange0        crange  = cit.GetRange();
         if (crange.IsWholeTo()  &&  scope) {
             // determine actual end
-            crange.Set(crange.GetFrom(),
-                       sequence::GetLength(cit.GetSeq_id(), scope));
+            crange.SetToOpen(sequence::GetLength(cit.GetSeq_id(), scope));
         }
         ENa_strand     cstrand = cit.GetStrand();
         TSeqPos        pos     = 0;
@@ -2407,8 +2405,7 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
             TRange0 prange = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
-                prange.Set(prange.GetFrom(),
-                           sequence::GetLength(pit.GetSeq_id(), scope));
+                prange.SetToOpen(sequence::GetLength(pit.GetSeq_id(), scope));
             }
             CRef<TRange> intersection(new TRange);
             intersection->SetFrom(max(prange.GetFrom(), crange.GetFrom()));
@@ -2455,13 +2452,12 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
     iterate (TRanges, it, m_Ranges) {
         _ASSERT((*it)->GetFrom() <= (*it)->GetTo());
         TSeqPos pos = 0, start = (*it)->GetFrom();
-        bool    keep_going;
+        bool    keep_going = true;
         for (CSeq_loc_CI pit(*m_ParentLoc);  pit;  ++pit) {
             TRange0 prange = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
-                prange.Set(prange.GetFrom(),
-                           sequence::GetLength(pit.GetSeq_id(), scope));
+                prange.SetToOpen(sequence::GetLength(pit.GetSeq_id(), scope));
             }
             TSeqPos length = prange.GetLength();
             if (start >= pos  &&  start < pos + length) {
@@ -2524,7 +2520,7 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
             } catch (sequence::CNoLength) {
                 ERR_POST(Warning << "SRelLoc::Resolve: Relative position "
                          << start
-                         << " exceeds length (???) of parent location "
+                         << " exceeds length (?\?\?) of parent location "
                          << label);
             }            
         }
@@ -2730,7 +2726,7 @@ string CSeqSearch::ReverseComplement(const string& pattern) const
     rcomp.resize(len);
 
     // calculate the complement
-    for ( int i = 0; i < len; ++i ) {
+    for ( size_t i = 0; i < len; ++i ) {
         rcomp[i] = sm_Complement[pattern[i]];
     }
 
@@ -2814,6 +2810,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2003/01/22 20:15:02  vasilche
+* Removed compiler warning.
+*
 * Revision 1.31  2003/01/22 18:17:09  ucko
 * SRelLoc::SRelLoc: change intersection to a CRef, so we don't have to
 * worry about it going out of scope while still referenced (by m_Ranges).
