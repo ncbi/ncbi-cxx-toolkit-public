@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/03/01 15:47:10  thiessen
+* fix bug in fit coloring for non-standard residues
+*
 * Revision 1.19  2002/02/13 19:45:29  thiessen
 * Fit coloring by info content contribution
 *
@@ -139,6 +142,22 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 std::map < char, std::map < char, int > > Blosum62Map;
 static std::map < char, float > StandardProbabilities;
 
+inline char ScreenResidueCharacter(char original)
+{
+    char ch = toupper(original);
+    switch (ch) {
+        case 'A': case 'R': case 'N': case 'D': case 'C':
+        case 'Q': case 'E': case 'G': case 'H': case 'I':
+        case 'L': case 'K': case 'M': case 'F': case 'P':
+        case 'S': case 'T': case 'W': case 'Y': case 'V':
+        case 'B': case 'Z':
+            break;
+        default:
+            ch = 'X'; // make all but natural aa's just 'X'
+    }
+    return ch;
+}
+
 ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(false)
 {
     if (Blosum62Map.size() == 0) {  // initialize static stuff
@@ -151,8 +170,8 @@ ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(fals
         }
 
         static const char ncbistdaa2char[26] = {
-            'X', 'A', 'X', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
-            'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'X', 'X', 'X'
+            'X', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
+            'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z', 'X', 'X'
         };
 
         // calculate expected residue frequencies (standard probabilities)
@@ -241,16 +260,7 @@ void ConservationColorer::CalculateConservationColors(void)
             // create profile for this column
             profile.clear();
             for (row=0; row<nRows; row++) {
-                char ch = toupper(b->first->GetCharacterAt(blockColumn, row));
-                switch (ch) {
-                    case 'A': case 'R': case 'N': case 'D': case 'C':
-                    case 'Q': case 'E': case 'G': case 'H': case 'I':
-                    case 'L': case 'K': case 'M': case 'F': case 'P':
-                    case 'S': case 'T': case 'W': case 'Y': case 'V':
-                        break;
-                    default:
-                        ch = 'X'; // make all but natural aa's just 'X'
-                }
+                char ch = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
                 if ((p=profile.find(ch)) != profile.end())
                     p->second++;
                 else
@@ -376,7 +386,7 @@ void ConservationColorer::GetProfileIndexAndResidue(
 {
     BlockMap::const_iterator b = blocks.find(block);
     *profileIndex = b->second[blockColumn];
-    *residue = toupper(b->first->GetCharacterAt(blockColumn, row));
+    *residue = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
 }
 
 void ConservationColorer::Clear(void)
