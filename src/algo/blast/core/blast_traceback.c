@@ -1107,6 +1107,11 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
       if (program_number != eBlastTypeRpsTblastn)
          _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length+1);
 
+      if (hsp_list->hspcnt == 0) {
+         hsp_list = Blast_HSPListFree(hsp_list);
+         continue;
+      }
+
       /* Revert query and subject to their traditional meanings. 
          This involves switching the offsets around and reversing
          any traceback information */

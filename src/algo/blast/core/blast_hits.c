@@ -1412,6 +1412,8 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    }
 
    BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+   
+   sfree(seq_arg.seq);
    subject_blk->sequence = NULL;
 
    return status;

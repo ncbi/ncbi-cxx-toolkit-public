@@ -1811,6 +1811,9 @@ Kappa_MatchingSequenceInitialize(Kappa_MatchingSequence * self,
 #endif
   self->seq_blk = NULL;
   BlastSetUp_SeqBlkNew(self->filteredSequence, self->length, 0, &(self->seq_blk), FALSE);
+  /* All buffers have been copied, so the ones returned from seqSrc are no 
+     longer needed. */
+  BLASTSeqSrcRetSequence(seqSrc, (void*)&seq_arg);
   return;
 
 }
@@ -2769,7 +2772,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
     }
     /* end if Kappa_AdjustSearch ran without error */
     Kappa_MatchingSequenceRelease(&matchingSeq);
-    
+    thisMatch = Blast_HSPListFree(thisMatch);
   }
   /* end for all matching sequences */
 
