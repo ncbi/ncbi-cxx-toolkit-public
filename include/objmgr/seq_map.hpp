@@ -40,6 +40,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <vector>
 #include <list>
@@ -98,6 +99,8 @@ public:
     };
     */
 
+    typedef CSeq_inst::TMol TMol;
+
 protected:
     class CSegment;
     class SPosLessSegment;
@@ -147,7 +150,8 @@ public:
     ~CSeqMap(void);
 
     TSeqPos GetLength(CScope* scope = 0) const;
-    
+    TMol GetMol(void) const;    
+
     // new interface
     // STL style methods
     const_iterator begin(CScope* scope = 0) const;
@@ -220,6 +224,7 @@ public:
     static CConstRef<CSeqMap> CreateSeqMapForBioseq(CBioseq& seq,
                                                     CDataSource* source = 0);
     static CConstRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
+                                                     CScope* scope = 0,
                                                      CDataSource* source = 0);
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                                     ENa_strand strand);
@@ -231,7 +236,7 @@ protected:
     CSeqMap(CSeqMap* parent, size_t index);
     CSeqMap(CDataSource* source = 0);
     CSeqMap(CSeq_data& data, TSeqPos len, CDataSource* source = 0);
-    CSeqMap(CSeq_loc& ref, CDataSource* source = 0);
+    CSeqMap(CSeq_loc& ref, CScope* scope = 0, CDataSource* source = 0);
     CSeqMap(TSeqPos len, CDataSource* source = 0); // gap
 
     void x_AddEnd(void);
@@ -317,7 +322,10 @@ protected:
     
     CRef<CObject>    m_Delta;
     CDataSource*     m_Source;
-    
+
+    // Molecule type from seq-inst
+    TMol m_Mol;
+
     //mutable CAtomicCounter m_LockCounter; // usage lock counter
 
     // MT-protection
@@ -340,6 +348,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/06/11 19:32:53  grichenk
+* Added molecule type caching to CSeqMap, simplified
+* coding and sequence type calculations in CSeqVector.
+*
 * Revision 1.36  2003/06/10 19:06:34  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *

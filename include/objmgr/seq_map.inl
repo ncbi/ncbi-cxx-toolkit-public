@@ -81,9 +81,20 @@ TSeqPos CSeqMap::GetLength(CScope* scope) const
 }
 
 
+inline
+CSeqMap::TMol CSeqMap::GetMol(void) const
+{
+    return m_Mol;
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/11 19:32:53  grichenk
+ * Added molecule type caching to CSeqMap, simplified
+ * coding and sequence type calculations in CSeqVector.
+ *
  * Revision 1.2  2003/01/22 20:11:53  vasilche
  * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
  * CSeqMap_CI now supports resolution and iteration over sequence range.

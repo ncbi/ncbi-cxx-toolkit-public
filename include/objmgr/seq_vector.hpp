@@ -114,7 +114,6 @@ private:
 
     TCoding x_GetCoding(TCoding cacheCoding, TCoding dataCoding) const;
     TCoding x_UpdateCoding(void) const;
-    bool x_UpdateSequenceType(TCoding coding) const;
     void x_InitSequenceType(void);
     TResidue x_GetGapChar(TCoding coding) const;
 
@@ -158,6 +157,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/06/11 19:32:53  grichenk
+* Added molecule type caching to CSeqMap, simplified
+* coding and sequence type calculations in CSeqVector.
+*
 * Revision 1.34  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

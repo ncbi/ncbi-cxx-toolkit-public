@@ -193,7 +193,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 {
     CConstRef<CSeqMap> ret;
     if ( mode == eViewConstructed ) {
-        ret = CSeqMap::CreateSeqMapForSeq_loc(loc, &x_GetDataSource());
+        ret = CSeqMap::CreateSeqMapForSeq_loc(loc, m_Scope, &x_GetDataSource());
     }
     else {
         // Parse the location
@@ -254,7 +254,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
             seg_loc->SetInt().SetTo(rit->first.GetTo());
             view_loc->SetMix().Set().push_back(seg_loc);
         }
-        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, &x_GetDataSource());
+        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, m_Scope, &x_GetDataSource());
     }
     return ret;
 }
@@ -339,6 +339,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/06/11 19:32:55  grichenk
+* Added molecule type caching to CSeqMap, simplified
+* coding and sequence type calculations in CSeqVector.
+*
 * Revision 1.39  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

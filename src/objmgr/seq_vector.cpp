@@ -258,9 +258,6 @@ CSeqVector::TCoding CSeqVector::x_UpdateCoding(void) const
 CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding cacheCoding,
                                             TCoding dataCoding) const
 {
-    if ( m_SequenceType == eType_not_set )
-        x_UpdateSequenceType(dataCoding);
-
     if ( int(cacheCoding) & kTypeUnknown ) {
         TCoding newCoding = CSeq_data::e_not_set;
         switch ( GetSequenceType() ) {
@@ -303,7 +300,7 @@ void CSeqVector::SetCoding(TCoding coding)
 
 void CSeqVector::SetIupacCoding(void)
 {
-    switch ( m_SequenceType ) {
+    switch ( GetSequenceType() ) {
     case eType_aa:
         SetCoding(CSeq_data::e_Iupacaa);
         break;
@@ -319,7 +316,7 @@ void CSeqVector::SetIupacCoding(void)
 
 void CSeqVector::SetNcbiCoding(void)
 {
-    switch ( m_SequenceType ) {
+    switch ( GetSequenceType() ) {
     case eType_aa:
         SetCoding(CSeq_data::e_Ncbistdaa);
         break;
@@ -351,42 +348,21 @@ void CSeqVector::SetCoding(EVectorCoding coding)
 
 CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
 {
-    if ( m_SequenceType == eType_not_set ) {
-        for ( CSeqMap::const_iterator
-                  i(m_SeqMap->BeginResolved(m_Scope,
-                                            size_t(-1),
-                                            CSeqMap::fFindData)); i; ++i ) {
-            _ASSERT(i.GetType() == CSeqMap::eSeqData);
-            if ( x_UpdateSequenceType(i.GetRefData().Which()) ) {
-                return m_SequenceType;
-            }
+    if (m_SequenceType == eType_not_set) {
+        switch ( m_SeqMap->GetMol() ) {
+        case CSeq_inst::eMol_dna:
+        case CSeq_inst::eMol_rna:
+        case CSeq_inst::eMol_na:
+            m_SequenceType = eType_na;
+            break;
+        case CSeq_inst::eMol_aa:
+            m_SequenceType = eType_aa;
+            break;
+        default:
+            m_SequenceType = eType_unknown;
         }
-        m_SequenceType = eType_unknown;
     }
     return m_SequenceType;
-}
-
-
-bool CSeqVector::x_UpdateSequenceType(TCoding coding) const
-{
-    switch ( coding ) {
-    case CSeq_data::e_Ncbi2na:
-    case CSeq_data::e_Ncbi4na:
-    case CSeq_data::e_Ncbi8na:
-    case CSeq_data::e_Ncbipna:
-    case CSeq_data::e_Iupacna:
-        m_SequenceType = eType_na;
-        return true;
-    case CSeq_data::e_Ncbi8aa:
-    case CSeq_data::e_Ncbieaa:
-    case CSeq_data::e_Ncbipaa:
-    case CSeq_data::e_Ncbistdaa:
-    case CSeq_data::e_Iupacaa:
-        m_SequenceType = eType_aa;
-        return true;
-    default:
-        return false;
-    }
 }
 
 
@@ -403,6 +379,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/06/11 19:32:55  grichenk
+* Added molecule type caching to CSeqMap, simplified
+* coding and sequence type calculations in CSeqVector.
+*
 * Revision 1.52  2003/06/04 13:48:56  grichenk
 * Improved double-caching, fixed problem with strands.
 *

@@ -82,21 +82,24 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
 
 CSeqMap::CSeqMap(CDataSource* source)
     : m_Resolved(0),
-      m_Source(source)
+      m_Source(source),
+      m_Mol(CSeq_inst::eMol_not_set)
 {
 }
 
 
 CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
     : m_Resolved(0),
-      m_Source(parent->m_Source)
+      m_Source(parent->m_Source),
+      m_Mol(CSeq_inst::eMol_not_set)
 {
 }
 
 
-CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
+CSeqMap::CSeqMap(CSeq_loc& ref, CScope* scope, CDataSource* source)
     : m_Resolved(0),
-      m_Source(source)
+      m_Source(source),
+      m_Mol(CSeq_inst::eMol_not_set)
 {
     x_AddEnd();
     x_Add(ref);
@@ -106,7 +109,8 @@ CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
 
 CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
     : m_Resolved(0),
-      m_Source(source)
+      m_Source(source),
+      m_Mol(CSeq_inst::eMol_not_set)
 {
     x_AddEnd();
     x_Add(data, length);
@@ -116,7 +120,8 @@ CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
 
 CSeqMap::CSeqMap(TSeqPos length, CDataSource* source)
     : m_Resolved(0),
-      m_Source(source)
+      m_Source(source),
+      m_Mol(CSeq_inst::eMol_not_set)
 {
     x_AddEnd();
     x_AddGap(length);
@@ -542,54 +547,81 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
                                                   CDataSource* source)
 {
     CConstRef<CSeqMap> ret;
-    if ( true /*seq.IsSetInst()*/ ) {
-        CSeq_inst& inst = seq.SetInst();
-        if ( inst.IsSetSeq_data() ) {
-            ret.Reset(new CSeqMap(inst.SetSeq_data(),
-                                  inst.GetLength(),
-                                  source));
-        }
-        else if ( inst.IsSetExt() ) {
-            CSeq_ext& ext = inst.SetExt();
-            switch (ext.Which()) {
-            case CSeq_ext::e_Seg:
-                ret.Reset(new CSeqMap_Seq_locs(ext.SetSeg(),
-                                               ext.SetSeg().Set(),
-                                               source));
-                break;
-            case CSeq_ext::e_Ref:
-                ret = CreateSeqMapForSeq_loc(ext.SetRef().Set(), source);
-                break;
-            case CSeq_ext::e_Delta:
-                ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta(), source));
-                break;
-            case CSeq_ext::e_Map:
-                //### Not implemented
-                THROW1_TRACE(runtime_error,
-                             "CSeq_ext::e_Map -- not implemented");
-            default:
-                //### Not implemented
-                THROW1_TRACE(runtime_error,
-                             "CSeq_ext::??? -- not implemented");
-            }
-        }
-        else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
-            // Virtual sequence -- no data, no segments
-            // The total sequence is gap
-            ret.Reset(new CSeqMap(inst.GetLength()));
-        }
-        else {
-            _ASSERT(inst.GetRepr() == CSeq_inst::eRepr_not_set);
+    CSeq_inst& inst = seq.SetInst();
+    if ( inst.IsSetSeq_data() ) {
+        ret.Reset(new CSeqMap(inst.SetSeq_data(),
+                              inst.GetLength(),
+                              source));
+    }
+    else if ( inst.IsSetExt() ) {
+        CSeq_ext& ext = inst.SetExt();
+        switch (ext.Which()) {
+        case CSeq_ext::e_Seg:
+            ret.Reset(new CSeqMap_Seq_locs(ext.SetSeg(),
+                                           ext.SetSeg().Set(),
+                                           source));
+            break;
+        case CSeq_ext::e_Ref:
+            ret = CreateSeqMapForSeq_loc(ext.SetRef().Set(), 0, source);
+            break;
+        case CSeq_ext::e_Delta:
+            ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta(), source));
+            break;
+        case CSeq_ext::e_Map:
+            //### Not implemented
+            THROW1_TRACE(runtime_error,
+                         "CSeq_ext::e_Map -- not implemented");
+        default:
+            //### Not implemented
+            THROW1_TRACE(runtime_error,
+                         "CSeq_ext::??? -- not implemented");
         }
     }
+    else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
+        // Virtual sequence -- no data, no segments
+        // The total sequence is gap
+        ret.Reset(new CSeqMap(inst.GetLength()));
+    }
+    else {
+        _ASSERT(inst.GetRepr() == CSeq_inst::eRepr_not_set);
+    }
+    const_cast<CSeqMap&>(*ret).m_Mol = inst.GetMol();
     return ret;
 }
 
 
 CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
+                                                   CScope* scope,
                                                    CDataSource* source)
 {
-    return CConstRef<CSeqMap>(new CSeqMap(const_cast<CSeq_loc&>(loc), source));
+    CConstRef<CSeqMap> ret(
+        new CSeqMap(const_cast<CSeq_loc&>(loc), scope, source));
+    if ( scope ) {
+        CSeqMap::const_iterator i(
+            ret->BeginResolved(scope, size_t(-1), fFindData));
+        for ( ; i; ++i ) {
+            _ASSERT(i.GetType() == eSeqData);
+            switch ( i.GetRefData().Which() ) {
+            case CSeq_data::e_Ncbi2na:
+            case CSeq_data::e_Ncbi4na:
+            case CSeq_data::e_Ncbi8na:
+            case CSeq_data::e_Ncbipna:
+            case CSeq_data::e_Iupacna:
+                const_cast<CSeqMap&>(*ret).m_Mol = CSeq_inst::eMol_na;
+                break;
+            case CSeq_data::e_Ncbi8aa:
+            case CSeq_data::e_Ncbieaa:
+            case CSeq_data::e_Ncbipaa:
+            case CSeq_data::e_Ncbistdaa:
+            case CSeq_data::e_Iupacaa:
+                const_cast<CSeqMap&>(*ret).m_Mol = CSeq_inst::eMol_aa;
+                break;
+            default:
+                const_cast<CSeqMap&>(*ret).m_Mol = CSeq_inst::eMol_not_set;
+            }
+        }
+    }
+    return ret;
 }
 
 
@@ -603,6 +635,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                           const_cast<CSeqMap*>(seqMap.GetPointer()),
                           0, kInvalidSeqPos, strand);
         ret->x_AddEnd();
+        ret->m_Mol = seqMap->m_Mol;
         seqMap = ret;
     }
     return seqMap;
@@ -789,6 +822,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/06/11 19:32:55  grichenk
+* Added molecule type caching to CSeqMap, simplified
+* coding and sequence type calculations in CSeqVector.
+*
 * Revision 1.37  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
