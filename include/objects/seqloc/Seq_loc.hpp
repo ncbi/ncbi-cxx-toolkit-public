@@ -112,6 +112,10 @@ public:
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
 
+    // set / remove e_Lim fuzz on left (5') or right (3') end
+    void SetPartialLeft (bool val);
+    void SetPartialRight(bool val);
+
     // set the 'id' field in all parts of this location
     void SetId(CSeq_id& id); // stores id
     void SetId(const CSeq_id& id); // stores a new copy of id
@@ -436,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/05/06 16:54:41  shomrat
+ * Added methods to set partial left and right
+ *
  * Revision 1.36  2004/03/25 15:58:41  gouriano
  * Added possibility to copy and compare serial object non-recursively
  *

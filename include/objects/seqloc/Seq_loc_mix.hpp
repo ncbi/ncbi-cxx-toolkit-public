@@ -67,6 +67,10 @@ public:
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
 
+    // set / remove e_Lim fuzz on left (5') or right (3') end
+    void SetPartialLeft (bool val);
+    void SetPartialRight(bool val);
+
     // Add a Seq-loc to the mix.
     // NB: This is just a structural change, no guarantees as to the biological
     // validity of the data are made.
@@ -99,6 +103,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/05/06 16:54:41  shomrat
+ * Added methods to set partial left and right
+ *
  * Revision 1.14  2004/01/28 17:15:37  shomrat
  * Added methods to ease the construction of objects
  *

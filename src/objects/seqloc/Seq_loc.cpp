@@ -1068,6 +1068,51 @@ bool CSeq_loc::IsPartialRight (void) const
     return false;
 }
 
+
+void CSeq_loc::SetPartialLeft (bool val)
+{
+    if ( val == IsPartialLeft() ) {
+        return;
+    }
+
+    switch ( Which() ) {
+        case CSeq_loc::e_Int:
+            return SetInt().SetPartialLeft(val);
+
+        case CSeq_loc::e_Pnt:
+            return SetPnt().SetPartialLeft(val);
+
+        case CSeq_loc::e_Mix :
+            return SetMix().SetPartialLeft(val);
+
+        default :
+            break;
+    }
+}
+
+
+void CSeq_loc::SetPartialRight(bool val)
+{
+    if ( val == IsPartialRight() ) {
+        return;
+    }
+
+    switch ( Which() ) {
+        case CSeq_loc::e_Int:
+            return SetInt().SetPartialRight(val);
+
+        case CSeq_loc::e_Pnt:
+            return SetPnt().SetPartialRight(val);
+
+        case CSeq_loc::e_Mix:
+            return SetMix().SetPartialRight(val);
+
+        default :
+            break;
+    }
+}
+
+
 // Appends a label suitable for display (e.g., error messages)
 // label must point to an existing string object
 // Method just returns if label is null
@@ -1462,6 +1507,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.40  2004/05/06 16:55:00  shomrat
+ * Added methods to set partial left and right
+ *
  * Revision 6.39  2004/03/25 15:59:06  gouriano
  * Added possibility to copy and compare serial object non-recursively
  *

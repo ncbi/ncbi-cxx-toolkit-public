@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2004/05/06 16:54:41  shomrat
+ * Added methods to set partial left and right
+ *
  * Revision 1.6  2004/01/28 19:06:52  shomrat
  * Added methods to ease the construction of objects
  *
@@ -84,12 +87,17 @@ public:
     // check left (5') or right (3') end of location for e_Lim fuzz
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
+
+    // set / remove e_Lim fuzz on left (5') or right (3') end
+    void SetPartialLeft (bool val);
+    void SetPartialRight(bool val);
         
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_point(const CSeq_point& value);
     CSeq_point& operator=(const CSeq_point& value);
 
+    bool x_IsMinusStrand(void) const;
 };
 
 

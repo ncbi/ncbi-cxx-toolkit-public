@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2004/05/06 16:55:00  shomrat
+ * Added methods to set partial left and right
+ *
  * Revision 6.6  2002/09/12 21:17:45  kans
  * IsPartialLeft and IsPartialRight are const
  *
@@ -74,24 +77,20 @@ CSeq_interval::~CSeq_interval(void)
 {
 }
 
+
+bool CSeq_interval::x_IsMinusStrand(void) const
+{
+    ENa_strand strand = eNa_strand_unknown;
+    if ( IsSetStrand() ) {
+        strand = GetStrand();
+    }
+    return (strand == eNa_strand_minus)  ||  (strand == eNa_strand_both_rev);
+}
+
+
 bool CSeq_interval::IsPartialLeft (void) const
 {
-    bool minus_strand = false;
-
-    if (IsSetStrand ()) {
-        switch (GetStrand ()) {
-            case eNa_strand_minus :
-                minus_strand = true;
-                break;
-            case eNa_strand_both_rev :
-                minus_strand = true;
-                break;
-            default :
-                break;
-        }
-    }
-
-    if (minus_strand) {
+    if (x_IsMinusStrand()) {
         if (IsSetFuzz_to ()) {
             const CInt_fuzz & ifp = GetFuzz_to ();
             if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
@@ -111,22 +110,7 @@ bool CSeq_interval::IsPartialLeft (void) const
 
 bool CSeq_interval::IsPartialRight (void) const
 {
-    bool minus_strand = false;
-
-    if (IsSetStrand ()) {
-        switch (GetStrand ()) {
-            case eNa_strand_minus :
-                minus_strand = true;
-                break;
-            case eNa_strand_both_rev :
-                minus_strand = true;
-                break;
-            default :
-                break;
-        }
-    }
-
-    if (minus_strand) {
+    if (x_IsMinusStrand()) {
         if (IsSetFuzz_from ()) {
             const CInt_fuzz & ifp = GetFuzz_from ();
             if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
@@ -143,6 +127,54 @@ bool CSeq_interval::IsPartialRight (void) const
     }
     return false;
 }
+
+
+// set / remove e_Lim fuzz on left (5') or right (3') end
+void CSeq_interval::SetPartialLeft (bool val)
+{
+    if (val == IsPartialLeft()) {
+        return;
+    }
+
+    if (val) {
+        if (x_IsMinusStrand()) {
+            SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        } else {
+            SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        }
+    } else {
+        if (x_IsMinusStrand()) {
+            ResetFuzz_to();
+        } else {
+            ResetFuzz_from();
+        }
+    }
+    _ASSERT(val == IsPartialLeft());
+}
+
+
+void CSeq_interval::SetPartialRight(bool val)
+{
+    if (val == IsPartialRight()) {
+        return;
+    }
+
+    if (val) {
+        if (x_IsMinusStrand()) {
+            SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        } else {
+            SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        }
+    } else {
+        if (x_IsMinusStrand()) {
+            ResetFuzz_from();
+        } else {
+            ResetFuzz_to();
+        }
+    }
+    _ASSERT(val == IsPartialRight());
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

@@ -65,6 +65,24 @@ bool CSeq_loc_mix::IsPartialRight (void) const
 }
 
 
+void CSeq_loc_mix::SetPartialLeft (bool val)
+{
+    if ( !Set().empty() ) {
+        Set().front()->SetPartialLeft(val);
+    }
+    _ASSERT(val == IsPartialLeft());
+}
+
+
+void CSeq_loc_mix::SetPartialRight(bool val)
+{
+    if ( !Set().empty() ) {
+        Set().front()->SetPartialRight(val);
+    }
+    _ASSERT(val == IsPartialRight());
+}
+
+
 void CSeq_loc_mix::AddSeqLoc(const CSeq_loc& other)
 {
     if ( !other.IsMix() ) {
@@ -125,6 +143,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.11  2004/05/06 16:55:00  shomrat
+ * Added methods to set partial left and right
+ *
  * Revision 6.10  2004/01/28 17:18:19  shomrat
  * Added methods to ease the construction of objects
  *
