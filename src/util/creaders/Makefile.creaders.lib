@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = creaders
+SRC = alnread

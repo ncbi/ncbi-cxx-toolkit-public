@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = creaders
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
