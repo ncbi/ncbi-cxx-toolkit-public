@@ -76,6 +76,8 @@ string CSymResolver::StripDefine(const string& define)
 
 void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
 {
+    resolved_def->clear();
+
     if ( !IsDefine(define) ) {
 	    resolved_def->push_back(define);
 	    return;
@@ -94,7 +96,11 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
     ITERATE(CSimpleMakeFileContents::TContents, p, m_Data.m_Contents) {
 	    if (p->first == str_define) {
             ITERATE(list<string>, n, p->second) {
-                Resolve(*n, resolved_def);
+                list<string> new_resolved_def;
+                Resolve(*n, &new_resolved_def);
+                copy(new_resolved_def.begin(),
+                     new_resolved_def.end(),
+                     back_inserter(*resolved_def));
             }
 	    }
     }
@@ -179,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/10 18:16:00  gorelenk
+ * Fixed recursive resolving procedure.
+ *
  * Revision 1.5  2004/02/04 23:57:22  gorelenk
  * Added definition of function FilterDefine.
  *
