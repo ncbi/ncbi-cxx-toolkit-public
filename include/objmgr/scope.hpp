@@ -74,7 +74,6 @@ class CScope;
 class CHeapScope;
 class CObjectManager;
 class CDataSource;
-class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CBioseq_Info;
@@ -617,6 +616,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/01/27 17:11:13  ucko
+* Remove redundant forward declaration of CTSE_Info
+*
 * Revision 1.67  2003/12/29 20:04:52  grichenk
 * CHeapScope can be initialized with null pointer.
 *

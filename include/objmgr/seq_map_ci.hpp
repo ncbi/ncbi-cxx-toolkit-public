@@ -45,7 +45,6 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 class CSeqMap;
-class CTSE_Info;
 class CSeq_entry;
 
 class NCBI_XOBJMGR_EXPORT CSeqMap_CI_SegmentInfo
@@ -299,6 +298,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/27 17:11:13  ucko
+* Remove redundant forward declaration of CTSE_Info
+*
 * Revision 1.11  2003/11/10 18:12:09  grichenk
 * Removed extra EFlags declaration from seq_map_ci.hpp
 *
