@@ -84,7 +84,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
         BLAST_SequenceBlk* subject, BlastResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
         BlastQueryInfo* query_info, BLAST_ScoreBlk* sbp, 
-        BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
+        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
         BlastThrInfo* thr_info);
 
 /** Initialize the results structure.

@@ -52,11 +52,11 @@ BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
 
    if (buffer_allocated) {
       (*seq_blk)->sequence_start_allocated = TRUE;
-      (*seq_blk)->sequence_start = buffer;
+      (*seq_blk)->sequence_start = (Uint1 *) buffer;
       /* The first byte is a sentinel byte. */
       (*seq_blk)->sequence = (*seq_blk)->sequence_start+1;
    } else {
-      (*seq_blk)->sequence = buffer;
+      (*seq_blk)->sequence = (Uint1 *) buffer;
       (*seq_blk)->sequence_start = NULL;
    }
    
@@ -175,7 +175,7 @@ Int2 BlastNumber2Program(Uint1 number, char* *program)
  * @param codes Geneic code string to use (must be in ncbistdaa encoding!)
  * @return Amino acid in ncbistdaa
  */
-static Uint1 CodonToAA (Uint1* codon, Uint1* codes)
+static Uint1 CodonToAA (Uint1* codon, const Uint1* codes)
 {
    register Uint1 aa = 0, taa;
    register int i, j, k, index0, index1, index2;
@@ -218,7 +218,7 @@ static Uint1 CodonToAA (Uint1* codon, Uint1* codes)
 }
 
 Int4
-BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev, 
+BLAST_GetTranslation(const Uint1* query_seq, const Uint1* query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1* prot_seq, const Uint1* genetic_code)
 {
 	Uint1 codon[CODON_LENGTH];
@@ -226,7 +226,7 @@ BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev,
 	Uint1 residue;
    Uint1* nucl_seq;
 
-   nucl_seq = (frame >= 0 ? query_seq : query_seq_rev+1);
+   nucl_seq = (frame >= 0 ? (Uint1 *)query_seq : (Uint1 *)(query_seq_rev+1));
 
 	/* The first character in the protein is the NULLB sentinel. */
 	prot_seq[0] = NULLB;
@@ -254,7 +254,7 @@ BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev,
 */
 Int4
 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length, 
-   Uint1* nt_seq, Int2 frame, Uint1* prot_seq)
+   const Uint1* nt_seq, Int2 frame, Uint1* prot_seq)
 {
    int state;
    Int2 total_remainder;
@@ -279,7 +279,7 @@ BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
    remainder = length%4;
 
    if (frame > 0) {
-      nt_seq_end = nt_seq + (length)/4 - 1;
+      nt_seq_end = (Uint1 *) (nt_seq + (length)/4 - 1);
       last_remainder = (4*(length/4) - frame + 1)%CODON_LENGTH;
       total_remainder = last_remainder+remainder;
       
@@ -415,7 +415,7 @@ BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
          prot_seq++;
       }
    } else {
-      nt_seq_start = nt_seq;
+      nt_seq_start = (Uint1 *) nt_seq;
       nt_seq += length/4;
       state = remainder+frame;
       /* Do we start in the last byte?  This one has the lowest order
@@ -552,7 +552,7 @@ BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
 
 
 /** Reverse a nucleotide sequence in the ncbi4na encoding */
-Int2 GetReverseNuclSequence(Uint1* sequence, Int4 length, 
+Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length, 
                             Uint1** rev_sequence_ptr)
 {
    Uint1* rev_sequence;

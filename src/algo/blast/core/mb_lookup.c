@@ -105,7 +105,7 @@ DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
 /** Documentation in mb_lookup.h */
 Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
         MBLookupTable** mb_lt_ptr,
-        LookupTableOptions* lookup_options)
+        const LookupTableOptions* lookup_options)
 {
    Int4 query_length;
    Uint1* seq,* pos;

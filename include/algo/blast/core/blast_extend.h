@@ -136,7 +136,7 @@ typedef struct BLAST_ExtendWord {
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
 Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
-   BlastInitialWordOptions* word_options,
+   const BlastInitialWordOptions* word_options,
    Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr);
 
 /** Allocate memory for the BlastInitHitList structure */

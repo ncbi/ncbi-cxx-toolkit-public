@@ -216,7 +216,7 @@ typedef struct MBLookupTable {
  */
 Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
                        MBLookupTable** mb_lt_ptr,
-                       LookupTableOptions* lookup_options);
+                       const LookupTableOptions* lookup_options);
 
 /** 
  * Deallocate memory used by the Mega BLAST lookup table

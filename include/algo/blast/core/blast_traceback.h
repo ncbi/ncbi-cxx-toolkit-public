@@ -61,7 +61,7 @@ extern "C" {
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
-        BlastScoringOptions* score_options,
+        const BlastScoringOptions* score_options,
         BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options);
@@ -83,7 +83,8 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
         BlastResults* results, BLAST_SequenceBlk* query, 
         BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-        BlastGapAlignStruct* gap_align, BlastScoringOptions* score_options,
+        BlastGapAlignStruct* gap_align, 
+        const BlastScoringOptions* score_options,
         BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options);

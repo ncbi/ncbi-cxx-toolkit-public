@@ -385,7 +385,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, BLAST_ScoreBlk* sbp, 
-   BlastScoringOptions* score_options,
+   const BlastScoringOptions* score_options,
    BlastHitSavingParameters* hit_params,
    const BlastDatabaseOptions* db_options)
 {
@@ -749,7 +749,7 @@ static Uint1 GetTracebackEncoding(Uint1 program_number)
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
-        BlastScoringOptions* score_options,
+        const BlastScoringOptions* score_options,
         BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options)
@@ -816,7 +816,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
-        BlastScoringOptions* score_options,
+        const BlastScoringOptions* score_options,
         BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options)

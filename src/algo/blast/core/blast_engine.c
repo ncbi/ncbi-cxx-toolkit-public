@@ -641,7 +641,7 @@ static void BLAST_ThrInfoFree(BlastThrInfo* thr_info)
 
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
-   const BLAST_SequenceBlk* query, const BlastQueryInfo* query_info,
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
    const BlastSeqSrcNewInfo* bssn_info,  BLAST_ScoreBlk* sbp,
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap,
@@ -751,8 +751,8 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 
 Int4 
 BLAST_TwoSequencesEngine(Uint1 program_number, 
-   const BLAST_SequenceBlk* query, const BlastQueryInfo* query_info, 
-   const BLAST_SequenceBlk* subject, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   BLAST_SequenceBlk* subject, 
    BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap,
    const BlastInitialWordOptions* word_options, 

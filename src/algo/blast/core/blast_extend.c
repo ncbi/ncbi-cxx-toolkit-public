@@ -105,7 +105,7 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 
 /* Description in blast_extend.h */
 Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
-   BlastInitialWordOptions* word_options,
+   const BlastInitialWordOptions* word_options,
    Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr)
 {
    BLAST_ExtendWord* ewp;

@@ -122,8 +122,9 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
  *                     in ncbistdaa encoding [in]
  * @return Length of the traslated protein sequence.
 */
-Int4 BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1* buffer, const Uint1* genetic_code);
+Int4 BLAST_GetTranslation(const Uint1* query_seq, 
+   const Uint1* query_seq_rev, Int4 nt_length, Int2 frame, Uint1* buffer, 
+   const Uint1* genetic_code);
 
 /** Translate a nucleotide sequence without ambiguity codes.
  * This is used for the first-pass translation of the database.
@@ -153,7 +154,7 @@ Int4 BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev,
  *                 with NULLB sentinels on either end. [out]
 */
 Int4 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length, 
-        Uint1* nt_seq, Int2 frame, Uint1* prot_seq);
+        const Uint1* nt_seq, Int2 frame, Uint1* prot_seq);
 
 /** Reverse a nucleotide sequence in the blastna encoding, adding sentinel 
  * bytes on both ends.
@@ -161,7 +162,7 @@ Int4 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
  * @param length Length of the sequence plus 1 for the sentinel byte [in]
  * @param rev_sequence_ptr Reverse strand of the sequence [out]
  */
-Int2 GetReverseNuclSequence(Uint1* sequence, Int4 length, 
+Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length, 
                             Uint1** rev_sequence_ptr);
 
 #if 0

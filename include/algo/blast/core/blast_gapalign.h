@@ -154,7 +154,7 @@ typedef struct BlastGapAlignStruct {
  * @param gap_align_ptr The BlastGapAlignStruct structure [out]
 */
 Int2
-BLAST_GapAlignStructNew(BlastScoringOptions* score_options, 
+BLAST_GapAlignStructNew(const BlastScoringOptions* score_options, 
    BlastExtensionParameters* ext_params, 
    Uint4 max_subject_length, Int4 query_length, 
    BLAST_ScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr);
@@ -206,7 +206,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
         BLAST_SequenceBlk* query, 
 			    BLAST_SequenceBlk* subject,
 			    BlastGapAlignStruct* gap_align,
-			    BlastScoringOptions* score_options, 
+			    const BlastScoringOptions* score_options, 
 			    BlastExtensionParameters* ext_params,
 			    BlastHitSavingParameters* hit_params,
 			    BlastInitHitList* init_hitlist,
@@ -232,7 +232,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlk* query, 
 		      BLAST_SequenceBlk* subject,
 		      BlastGapAlignStruct* gap_align,
-		      BlastScoringOptions* score_options, 
+		      const BlastScoringOptions* score_options, 
 		      BlastExtensionParameters* ext_params,
 		      BlastHitSavingParameters* hit_params,
 		      BlastInitHitList* init_hitlist,
@@ -250,7 +250,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number, BLAST_SequenceBlk* query,
  */
 Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, 
         Uint1* query, Uint1* subject, 
-        BlastGapAlignStruct* gap_align, BlastScoringOptions* score_options,
+        BlastGapAlignStruct* gap_align, 
+        const BlastScoringOptions* score_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
 /** Convert initial HSP list to an HSP list: to be used in ungapped search.
@@ -264,7 +265,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
  */
 Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist, 
         BLAST_SequenceBlk* subject, 
-        BlastHitSavingOptions* hit_options, 
+        const BlastHitSavingOptions* hit_options, 
         BlastHSPList** hsp_list_ptr);
 
 #ifdef __cplusplus

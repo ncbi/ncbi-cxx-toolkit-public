@@ -59,7 +59,7 @@ static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
    *index = 0;
    for (i = 0; i < length; ++i)
       *index = ((*index)<<FULL_BYTE_SHIFT) | word[i];
-   return word + length;
+   return (Uint1 *) (word + length);
 }
 
 /** Recompute the word index given its previous value and the new location 
@@ -635,7 +635,7 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1* word_start,
                       Int4 second_template_bit)
 {
    Int4 index;
-   Uint1* subject = word_start;
+   Uint1* subject = (Uint1 *) word_start;
    Uint1 bit;
    Int4 extra_code, tmpval;   
 

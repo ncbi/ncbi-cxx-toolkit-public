@@ -431,11 +431,11 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
 */
 Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
-   BlastInitialWordOptions* word_options, 
+   const BlastInitialWordOptions* word_options, 
    BlastHitSavingParameters* hit_params, 
    BlastExtensionParameters* ext_params, BLAST_ScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
-   BlastEffectiveLengthsOptions* eff_len_options, 
+   const BlastEffectiveLengthsOptions* eff_len_options, 
    BlastInitialWordParameters* *parameters);
 
 /** Deallocate memory for BlastExtensionOptions.
@@ -472,7 +472,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
  * @param blast_msg Describes any validation problems found [out]
 */
 Int2 BlastExtensionOptionsValidate(Uint1 program_number, 
-        BlastExtensionOptions* options, Blast_Message* *blast_msg);
+        const BlastExtensionOptions* options, Blast_Message* *blast_msg);
 
 /** Calculate the raw values for the X-dropoff parameters 
  * @param blast_program Program number [in]
@@ -483,7 +483,7 @@ Int2 BlastExtensionOptionsValidate(Uint1 program_number,
  * @param parameters Extension parameters [out]
  */
 Int2 BlastExtensionParametersNew(Uint1 blast_program, 
-        BlastExtensionOptions* options, 
+        const BlastExtensionOptions* options, 
         BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastExtensionParameters* *parameters);
 
@@ -528,7 +528,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options, Uint1 program,
 */
 Int2
 BlastScoringOptionsValidate(Uint1 program_number, 
-   BlastScoringOptions* options, Blast_Message* *blast_msg);
+   const BlastScoringOptions* options, Blast_Message* *blast_msg);
 
 /** Deallocate memory for BlastEffectiveLengthsOptions*. 
  * @param options Structure to free [in]
@@ -588,7 +588,7 @@ LookupTableOptionsFree(LookupTableOptions* options);
 */
 Int2
 LookupTableOptionsValidate(Uint1 program_number, 
-   LookupTableOptions* options,  Blast_Message* *blast_msg);
+   const LookupTableOptions* options,  Blast_Message* *blast_msg);
 
 /** Deallocate memory for BlastHitSavingOptions. 
  * @param options Structure to free [in]
@@ -604,7 +604,7 @@ BlastHitSavingOptionsFree(BlastHitSavingOptions* options);
 
 Int2
 BlastHitSavingOptionsValidate(Uint1 program_number,
-   BlastHitSavingOptions* options, Blast_Message* *blast_msg);
+   const BlastHitSavingOptions* options, Blast_Message* *blast_msg);
 
 /** Allocate memory for BlastHitSavingOptions.
  * @param program Program number (blastn, blastp, etc.) [in]
@@ -643,7 +643,7 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  * @param parameters Resulting parameters [out]
  */
 Int2 BlastHitSavingParametersNew(Uint1 program_number, 
-        BlastHitSavingOptions* options, 
+        const BlastHitSavingOptions* options, 
         int (*handle_results)(void*, void*, void*, void*, void*, 
                            void*, void*), 
         BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info, 

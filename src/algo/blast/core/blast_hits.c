@@ -459,8 +459,8 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
 static Int2 
 BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
-   BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
-   BLAST_ScoreBlk* sbp, BlastScoringOptions* score_options, 
+   const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
+   BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
    const BlastSeqSrc* bssp)
 {
    Int4 sum, score, gap_open, gap_extend;
@@ -901,7 +901,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
         BLAST_SequenceBlk* subject, BlastResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
         BlastQueryInfo* query_info, BLAST_ScoreBlk* sbp, 
-        BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
+        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
         BlastThrInfo* thr_info)
 {
    Int2 status;
