@@ -307,14 +307,16 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
 
     // check the validity of the seq-loc
     if (ttl_loc_len < row_stop + 1) {
-        string errstr = string("CDense_seg::RemapToLoc():")
-            + " Seq-loc is not long enough to"
-            + " cover the alignment!"
-            + " Maximum row seq pos is " + NStr::IntToString(row_stop)
-            + " The total seq-loc len is only "
-            + NStr::IntToString(ttl_loc_len) +
-            + ", it should be at least " + NStr::IntToString(row_stop+1)
-            + " (= max seq pos + 1).";
+        string errstr("CDense_seg::RemapToLoc():"
+                      " Seq-loc is not long enough to"
+                      " cover the alignment!"
+                      " Maximum row seq pos is ");
+        errstr += NStr::IntToString(row_stop);
+        errstr += " The total seq-loc len is only ";
+        errstr += NStr::IntToString(ttl_loc_len);
+        errstr += ", it should be at least ";
+        errstr += NStr::IntToString(row_stop+1);
+        errstr += " (= max seq pos + 1).";
         NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
     }
 
@@ -479,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/03/10 13:04:18  dicuccio
+* Compilation fix for Win32: don't add char* and char*
+*
 * Revision 1.10  2004/03/09 21:57:03  todorov
 * Fixed the out-of-range exception txt
 *
