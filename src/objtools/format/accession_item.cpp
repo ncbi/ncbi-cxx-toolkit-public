@@ -79,7 +79,14 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
         return;
     }
 
-    m_Accession = ctx.GetPrimaryId()->GetSeqIdString();
+    const CSeq_id& id = *ctx.GetPrimaryId();
+
+    // if no accession, do not show local or general in ACCESSION
+    if ((id.IsGeneral()  ||  id.IsLocal())  &&
+        (ctx.Config().IsModeEntrez()  ||  ctx.Config().IsModeGBench())) {
+        return;
+    }
+    m_Accession = id.GetSeqIdString();
 
     if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() ) {
         size_t acclen = m_Accession.length();
@@ -134,6 +141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/02/09 14:55:10  shomrat
+* supress local and general ids in Entrez or GBench mode
+*
 * Revision 1.7  2004/11/15 20:04:50  shomrat
 * ValidateAccession -> IsValidAccession
 *
