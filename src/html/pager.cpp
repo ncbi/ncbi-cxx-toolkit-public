@@ -251,6 +251,7 @@ CNCBINode* CPager::GetPageInfo(void) const
 
 CNCBINode* CPager::GetItemInfo(void) const
 {
+    char buf[1024];
     CHTML_div* node = new CHTML_div;
     node->SetClass("medium2");
     
@@ -260,18 +261,15 @@ CNCBINode* CPager::GetItemInfo(void) const
         int firstItem = m_DisplayPage * m_PageSize + 1;
         int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
         if (firstItem != endItem) {
-            node->AppendChild(new CHTMLPlainText("Items " +
-                                                 NStr::IntToString(firstItem)
-                                                 + "-" +
-                                                 NStr::IntToString(endItem)));
+            sprintf(buf, "Items %'d - %'d", firstItem, endItem);
+            node->AppendChild(new CHTMLPlainText(buf));
         } else {
-            node->AppendChild(new CHTMLPlainText("Item " +
-                                                 NStr::IntToString(firstItem))
-                              );
+            sprintf(buf, "Item %'d", firstItem);
+            node->AppendChild(new CHTMLPlainText(buf));
         }
         if( m_view != eTabs ) {
-            node->AppendChild(new CHTMLPlainText(" of " +
-                                             NStr::IntToString(m_ItemCount)));
+            sprintf(buf, " of %'d", m_ItemCount);
+            node->AppendChild(new CHTMLPlainText(buf));
         }
     }
     return node;
@@ -452,7 +450,9 @@ void CPagerViewButtons::CreateSubNodes()
     div->AppendChild(new CHTML_nbsp);
     div->AppendChild(new CHTMLPlainText("of"));
     div->AppendChild(new CHTML_nbsp);
-    div->AppendChild(new CHTMLPlainText(NStr::IntToString(lastPage + 1)));
+    char buf[1024];
+    sprintf(buf, "%'d", lastPage + 1);
+    div->AppendChild(new CHTMLPlainText(buf));
     InsertAt(0, column++, div);
     
     // place holder for page num, to explicitly tell about new page num
@@ -477,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/09/01 17:00:03  golikov
+ * *** empty log message ***
+ *
  * Revision 1.41  2004/07/12 21:26:58  golikov
  * additions for tab view
  *
