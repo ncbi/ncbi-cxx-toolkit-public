@@ -67,6 +67,28 @@ string CVersionInfo::Print(void) const
     return CNcbiOstrstreamToString(os);
 }
 
+bool CVersionInfo::Match(const CVersionInfo& version_info, 
+                         EPatchLevelCompare  pl_mode) const
+{
+    if (GetMajor() != version_info.GetMajor())
+        return false;
+
+    if (GetMinor() != version_info.GetMinor())
+        return false;
+
+    switch (pl_mode)
+    {
+    case eAnyLevel:
+        return true;
+    case eNewerLevel:
+        return GetPatchLevel() >= version_info.GetPatchLevel();
+    case eExactLevel:
+        return GetPatchLevel() == version_info.GetPatchLevel();
+    default:
+        _ASSERT(0);
+    }
+    return false;
+}
 
 
 END_NCBI_SCOPE
@@ -75,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/30 16:38:50  kuznets
+ * Implemented CVersionInfo::Match
+ *
  * Revision 1.2  2003/01/13 20:42:50  gouriano
  * corrected the problem with ostrstream::str(): replaced such calls with
  * CNcbiOstrstreamToString(os)
