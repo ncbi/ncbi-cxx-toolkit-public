@@ -375,7 +375,7 @@ public:
     void WriteClassMember(CObjectOStream& out,
                           const CConstObjectInfo::CMemberIterator& member)
         {
-            if ( seq.seq && seq.seq->GetInst().IsSetSeq_data() ) {
+            if ( bool(seq.seq) && seq.seq->GetInst().IsSetSeq_data() ) {
                 COStreamClassMember m(out, member);
                 out.WriteObject(&seq.seq->GetInst().GetSeq_data(),
                                 CType<CSeq_data>::GetTypeInfo());
@@ -397,7 +397,7 @@ public:
     void WriteClassMember(CObjectOStream& out,
                           const CConstObjectInfo::CMemberIterator& member)
         {
-            if ( seq.seq && seq.seq->GetInst().IsSetExt() ) {
+            if ( bool(seq.seq) && seq.seq->GetInst().IsSetExt() ) {
                 COStreamClassMember m(out, member);
                 out.WriteObject(&seq.seq->GetInst().GetExt(),
                                 CType<CSeq_ext>::GetTypeInfo());
@@ -860,6 +860,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/05/27 20:54:52  grichenk
+* Fixed CRef<> to bool convertion
+*
 * Revision 1.25  2003/05/06 16:52:54  vasilche
 * Added 'pause' argument.
 *
