@@ -47,7 +47,7 @@ fi
 # define function which will get variable value from file
 # Synopsis: getvar <var_name> <file_name>
 getvar () {
-    grep "^[ 	]*$1[ 	]*=" "$2" | head -1 |
+    grep "^[ 	]*$1[ 	]*=" "$2" | head -n1 |
         sed "s/^[ 	]*$1[ 	]*=[ 	]*//" | sed "s/[ 	]*$//"
 }
 
