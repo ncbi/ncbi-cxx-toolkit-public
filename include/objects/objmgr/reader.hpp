@@ -33,13 +33,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJMGR_EXPORT CStreamable
-{
-public:
-  virtual ~CStreamable() {}
-  virtual void Save(ostream &) const = 0;
-  virtual void Restore(istream &) = 0;
-};
+    class NCBI_XOBJMGR_EXPORT CStreamable
+    {
+    public:
+        virtual ~CStreamable() {}
+        virtual void Save(ostream &) const = 0;
+        virtual void Restore(istream &) = 0;
+    };
 
 ostream & operator << (ostream &os, const CStreamable &obj);
 istream & operator >> (istream &is, CStreamable &obj);
@@ -47,111 +47,117 @@ istream & operator >> (istream &is, CStreamable &obj);
 class NCBI_XOBJMGR_EXPORT CIntStreamable : public CStreamable
 {
 public:
-  typedef unsigned long TInt;
+    typedef unsigned long TInt;
   
-  CIntStreamable(TInt value = 0) : m_Value(value) {}
-  virtual void Save(ostream &) const;
-  virtual void Restore(istream &);
-  TInt      &Value()       { return m_Value; }
-  const TInt Value() const { return m_Value; }
+    CIntStreamable(TInt value = 0) : m_Value(value) {}
+    virtual void Save(ostream &) const;
+    virtual void Restore(istream &);
+    TInt      &Value()       { return m_Value; }
+    const TInt Value() const { return m_Value; }
   
 private:
-  TInt m_Value;
+    TInt m_Value;
 };
 
 class NCBI_XOBJMGR_EXPORT CStringStreamable : public CStreamable
 {
 public:
-  CStringStreamable(const string &value = "") : m_Value(value) {}
-  virtual void Save(ostream &) const;
-  virtual void Restore(istream &);
-  string       &Value()       { return m_Value; }
-  const string &Value() const { return m_Value; }
+    CStringStreamable(const string &value = "") : m_Value(value) {}
+    virtual void Save(ostream &) const;
+    virtual void Restore(istream &);
+    string       &Value()       { return m_Value; }
+    const string &Value() const { return m_Value; }
 
 private:
-  string m_Value;
+    string m_Value;
 };
 
 class NCBI_XOBJMGR_EXPORT CIStream : public istream
 {
 public:
-  CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(IOS_BASE::skipws); }
-  ~CIStream() { delete m_sb; }
+    CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(IOS_BASE::skipws); }
+    ~CIStream() { delete m_sb; }
 
-  bool Eof();
-  static size_t Read(istream &is, char* buffer, size_t bufferLength);
+    bool Eof();
+    static size_t Read(istream &is, char* buffer, size_t bufferLength);
 
-  streambuf *m_sb;
+    streambuf *m_sb;
 };
 
 class NCBI_XOBJMGR_EXPORT CBlobDescr : public CStringStreamable
-{};
+{
+};
 
 class NCBI_XOBJMGR_EXPORT CBlobClass : public CIntStreamable
-{};
+{
+};
 
 class NCBI_XOBJMGR_EXPORT CSeqrefFlag : public CIntStreamable
-{};
+{
+};
 
 class NCBI_XOBJMGR_EXPORT CBlob : public CStreamable
 {
 public:
-  virtual void Save(ostream &) const;
-  virtual void Restore(istream &);
-  virtual CSeq_entry *Seq_entry() { return NULL; }
-  string &Descr() { return m_Descr.Value(); }
-  CBlobClass::TInt &Class() { return m_Class.Value(); }
+    virtual void Save(ostream &) const;
+    virtual void Restore(istream &);
+    virtual CSeq_entry *Seq_entry() { return NULL; }
+    string &Descr() { return m_Descr.Value(); }
+    CBlobClass::TInt &Class() { return m_Class.Value(); }
 
 protected:
-  CBlob(istream &is) : m_IStream(is) {}
-  istream &m_IStream;
+    CBlob(istream &is) : m_IStream(is) {}
+    istream &m_IStream;
 private:
-  CBlobClass m_Class;
-  CBlobDescr m_Descr;
+    CBlobClass m_Class;
+    CBlobDescr m_Descr;
 };
 
 class NCBI_XOBJMGR_EXPORT CSeqref : public CStreamable
 {
 public:
   
-  virtual void       Save(ostream &os) const { m_Flag.Save(os); }
-  virtual void       Restore(istream &is) { m_Flag.Restore(is); }
-  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn = 0) = 0;
-  virtual CBlob     *RetrieveBlob(istream &is) = 0;
-  virtual CSeqref*   Dup() const = 0;
-  virtual char*      print(char*,int)    const = 0;
-  virtual char*      printTSE(char*,int) const = 0;
+    virtual void       Save(ostream &os) const { m_Flag.Save(os); }
+    virtual void       Restore(istream &is) { m_Flag.Restore(is); }
+    virtual streambuf *BlobStreamBuf(int start, int stop,
+                                     const CBlobClass &cl,
+                                     unsigned conn = 0) = 0;
+    virtual CBlob     *RetrieveBlob(istream &is) = 0;
+    virtual CSeqref*   Dup() const = 0;
+    virtual char*      print(char*,int)    const = 0;
+    virtual char*      printTSE(char*,int) const = 0;
 
-  enum EMatchLevel {
-    eContext,
-    eTSE    ,
-    eSeq
-  };
-  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const = 0;
-  CSeqrefFlag::TInt &Flag() { return m_Flag.Value(); }
+    enum EMatchLevel {
+        eContext,
+        eTSE    ,
+        eSeq
+    };
+    virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const = 0;
+    CSeqrefFlag::TInt &Flag() { return m_Flag.Value(); }
 
-  CSeqrefFlag m_Flag;
+    CSeqrefFlag m_Flag;
 };
 
 class NCBI_XOBJMGR_EXPORT CReader
 {
 public:
   
-  virtual ~CReader() {}
-  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0) = 0;
-  virtual CSeqref *RetrieveSeqref(istream &is) = 0;
+    virtual ~CReader() {}
+    virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId,
+                                       unsigned conn = 0) = 0;
+    virtual CSeqref *RetrieveSeqref(istream &is) = 0;
 
-  // return the level of reasonable parallelism
-  // 1 - non MTsafe; 0 - no synchronization required,
-  // n - at most n connection is advised/supported
-  virtual size_t GetParallelLevel(void) const = 0;
-  virtual void SetParallelLevel(size_t) = 0;
-  virtual void Reconnect(size_t) = 0;
+    // return the level of reasonable parallelism
+    // 1 - non MTsafe; 0 - no synchronization required,
+    // n - at most n connection is advised/supported
+    virtual size_t GetParallelLevel(void) const = 0;
+    virtual void SetParallelLevel(size_t) = 0;
+    virtual void Reconnect(size_t) = 0;
 
-  // returns the time in secons when already retrived data
-  // could become obsolete by fresher version 
-  // -1 - never
-  virtual CIntStreamable::TInt GetConst(string &const_name) const;
+    // returns the time in secons when already retrived data
+    // could become obsolete by fresher version 
+    // -1 - never
+    virtual CIntStreamable::TInt GetConst(string &const_name) const;
 
 };
 
@@ -160,6 +166,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.18  2003/02/25 22:03:31  vasilche
+* Fixed identation.
+*
 * Revision 1.17  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *
