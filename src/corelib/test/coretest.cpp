@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/01/12 17:06:37  sandomir
+* GetLink changed
+*
 * Revision 1.32  1999/01/07 21:15:24  vakatov
 * Changed prototypes for URL_DecodeString() and URL_EncodeString()
 *
@@ -816,10 +819,26 @@ int CTestApplication::Run(void)
 
 extern int main(int argc, char* argv[])
 {
+  try {
+    char* p = 0;
+    string str( p );
+    cout << str;
+    str += "test";
+    cout << str;
+  } catch( exception& e ) {
+    cout << "seva ERROR: " << e.what();
+  }
+  cout << "seva OK";
+  
+
     int res = 1;
     try {
         CTestApplication app(argc, argv);  
         app.Init();
+
+        IO_PREFIX::ofstream os( "test" );
+        os << "test";
+
         res = app.Run();
         app.Exit();
     } STD_CATCH("Exception: ");

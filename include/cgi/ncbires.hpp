@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/01/12 17:06:29  sandomir
+* GetLink changed
+*
 * Revision 1.12  1998/12/31 19:47:28  sandomir
 * GetEntry() fixed
 *
@@ -170,7 +173,7 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
-  virtual CHTML_a* GetLink( void ) const { return 0; }
+  virtual string GetLink( void ) const = 0;
 };
 
 //
@@ -188,7 +191,7 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
-  virtual CHTML_a* GetLink( void ) const { return 0; }
+  virtual string GetLink( void ) const = 0;
 
   virtual void Execute( CNcbiMsgRequest& request ) = 0;
 
@@ -288,7 +291,7 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0; // this is printable name
-  virtual CHTML_a* GetLink( void ) const { return 0; }
+  virtual string GetLink( void ) const = 0;
 };
 
 //
@@ -336,7 +339,7 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
-  virtual CHTML_a* GetLink( void ) const { return 0; }
+  virtual string GetLink( void ) const = 0;
 
   virtual CNCBINode* CreateView( CNcbiMsgRequest& request ) const = 0;
 

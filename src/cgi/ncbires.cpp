@@ -24,13 +24,16 @@
 * ===========================================================================
 *
 * Author: 
-*	Vsevolod Sandomirskiy
+*	Vsevolod Sandomirskiy 
 *
 * File Description:
 *   Basic Resource class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/01/12 17:06:37  sandomir
+* GetLink changed
+*
 * Revision 1.12  1999/01/06 22:23:40  sandomir
 * minor changes
 *
