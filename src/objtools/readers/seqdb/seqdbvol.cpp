@@ -1380,15 +1380,12 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
                                 vector<Uint4>  & oids,
                                 CSeqDBLockHold & locked) const
 {
-    oids.clear();
-    
     if (m_IsamStr.Empty()) {
         return;
     }
     
     bool  simpler (false);
     Uint4 ident   (Uint4(-1));
-    Uint4 oid     (Uint4(-1));
     string str_id;
     
     switch(CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler)) {
@@ -1402,9 +1399,9 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
     case CSeqDBIsam::ePig:
         // Converted to PIG type.
         if (! m_IsamPig.Empty()) {
-            bool no_error = m_IsamPig->PigToOid(ident, oid, locked);
+            Uint4 oid(Uint4(-1));
             
-            if (no_error) {
+            if (m_IsamPig->PigToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
@@ -1413,9 +1410,9 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
     case CSeqDBIsam::eGi:
         // Converted to GI type.
         if (! m_IsamGi.Empty()) {
-            bool no_error = m_IsamGi->GiToOid(ident, oid, locked);
+            Uint4 oid(Uint4(-1));
             
-            if (no_error) {
+            if (m_IsamGi->GiToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
@@ -1423,7 +1420,7 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
         
     case CSeqDBIsam::eOID:
         // Converted to OID directly.
-        oids.push_back(oid);
+        oids.push_back(ident);
         break;
     }
 }
