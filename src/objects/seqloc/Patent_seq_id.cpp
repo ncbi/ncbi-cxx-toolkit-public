@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/26 17:28:55  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 6.4  2000/12/08 22:19:45  ostell
  * changed MakeFastString to AsFastaString and to use ostream instead of string
  *
@@ -71,10 +74,7 @@ CPatent_seq_id::~CPatent_seq_id(void)
 // comparison function
 bool CPatent_seq_id::Match(const CPatent_seq_id& psip2) const
 {
-	if ((GetSeqid()) != (psip2.GetSeqid()))
-		return false;
-	
-        return (GetCit().Match(psip2.GetCit()));
+	return GetSeqid() == psip2.GetSeqid() && GetCit().Match(psip2.GetCit());
 }
 
     // format a FASTA style string

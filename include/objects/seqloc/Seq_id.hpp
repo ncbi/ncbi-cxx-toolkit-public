@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2000/12/26 17:28:34  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 1.4  2000/12/08 22:18:41  ostell
  * changed MakeFastString to AsFastaString and to use ostream instead of string
  *
@@ -57,12 +60,16 @@
 
 // generated includes
 #include <objects/seqloc/Seq_id_.hpp>
+#include <set>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+class CBioseq;
+class CObjectManager;
 
 class CSeq_id : public CSeq_id_Base
 {
@@ -84,30 +91,33 @@ public:
       e_YES };         // SeqIds compared, are equivalent
     E_SIC Compare(const CSeq_id& sid2) const;
 
+    // return compatible CTextseq_id
+    const CTextseq_id* GetTextseq_Id(void) const;
+
     // SeqId string functions
-       // format one SeqId with vertical bar delimiters
+    // format one SeqId with vertical bar delimiters
     ostream& AsFastaString(ostream& s) const;
-    
+
+    // setup object manager
+    void SetObjectManager(const CRef<CObjectManager>& objMgr);
+    void ResetObjectManager(const CRef<CObjectManager>& objMgr);
+
+    // use object manager to resolve sequence
+    CRef<CBioseq> Resolve(void) const;
+
+private:
+    CRef<CObjectManager> m_ObjectManager;
 };
 
 
 
 /////////////////// CSeq_id inline methods
 
-// constructor
-inline
-CSeq_id::CSeq_id(void)
-{
-}
-
 // Match - just uses Compare
 inline
 bool CSeq_id::Match (const CSeq_id& sid2) const
 {
-    if (Compare(sid2) == e_YES)
-       return true;
-    else
-       return false;
+    return Compare(sid2) == e_YES;
 }
 
 /////////////////// end of CSeq_id inline methods

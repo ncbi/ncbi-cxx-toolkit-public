@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/12/26 17:28:29  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 1.1  2000/11/30 21:44:37  ostell
  * added Match()
  *
@@ -66,6 +69,8 @@ public:
 
     // comparison function
     bool Match(const CId_pat& idp2) const;
+    static bool Id_Match(const C_Id& id1, const C_Id& id2);
+
 };
 
 

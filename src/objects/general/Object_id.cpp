@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/26 17:28:51  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 6.4  2000/12/15 19:22:10  ostell
  * made AsString do Upcase, and switched to using PNocase().Equals()
  *
@@ -71,25 +74,19 @@ CObject_id::~CObject_id(void)
 // match for identity
 bool CObject_id::Match(const CObject_id& oid2) const
 {
-	E_Choice type1 = Which();
-	E_Choice type2 = oid2.Which();
+	E_Choice type = Which();
 
-	if (type1 != type2)
+	if ( type != oid2.Which() )
 		return false;
 
-	switch (type1)
-	{
-		case e_Id:
-			if ((GetId()) == (oid2.GetId()))
-				return true;
-			else
-				return false;
-		case e_Str:
-			return PNocase().Equals(GetStr(), oid2.GetStr());
-		default:
-			break;
+	switch ( type ) {
+    case e_Id:
+        return GetId() == oid2.GetId();
+    case e_Str:
+        return PNocase().Equals(GetStr(), oid2.GetStr());
+    default:
+        return false;
 	}
-	return false;
 }
 
     // format contents into a stream

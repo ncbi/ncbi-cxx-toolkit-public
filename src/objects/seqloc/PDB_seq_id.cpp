@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/12/26 17:28:55  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 6.5  2000/12/15 19:30:31  ostell
  * Used Upcase() in AsFastaString() and changed to PNocase().Equals() style
  *
@@ -73,19 +76,14 @@ CPDB_seq_id::~CPDB_seq_id(void)
 // comparison function
 bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 {
-       if (PNocase().Equals(GetMol().Get(), psip2.GetMol().Get()))
-       {
-            if ((GetChain()) == (psip2.GetChain()))
-                         return true;
-	}
-	return false;
+    return GetChain() == psip2.GetChain() &&
+        PNocase().Equals(GetMol(), psip2.GetMol());
 }
 
     // format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {
-	s << Upcase(GetMol().Get()) << '|' << (char)(GetChain());
-	return s;
+	return s << Upcase(GetMol()) << '|' << char(GetChain());
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

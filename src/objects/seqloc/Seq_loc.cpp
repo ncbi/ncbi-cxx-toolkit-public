@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/26 17:28:55  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 6.1  2000/11/17 21:35:10  vasilche
  * Added GetLength() method to CSeq_loc class.
  *
@@ -49,6 +52,9 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
+
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 // generated classes
 
@@ -79,7 +85,7 @@ int CSeq_loc::GetLength(void) const
 		return GetInt().GetLength();
 	    case e_Empty:
 	    case e_Whole:
-		return eUndefined;  /* need BioseqLock */
+		return GetWhole().Resolve()->GetInst().GetLength();
 	    case e_Packed_int:
 		return GetPacked_int().GetLength();
 	    case e_Mix:

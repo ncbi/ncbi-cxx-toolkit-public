@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/26 17:28:46  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 6.1  2000/11/30 21:45:07  ostell
  * added Match()
  *
@@ -58,39 +61,29 @@ CId_pat::~CId_pat(void)
 {
 }
 
-bool CId_Match (const CId_pat::C_Id& id1, const CId_pat::C_Id& id2)
+bool CId_pat::Id_Match(const C_Id& id1, const C_Id& id2)
 {
-	CId_pat::C_Id::E_Choice type1 = id1.Which();
-	CId_pat::C_Id::E_Choice type2 = id2.Which();
+	C_Id::E_Choice type1 = id1.Which();
+	C_Id::E_Choice type2 = id2.Which();
 
 	if (type1 != type2)
 		return false;
 
-	if (type1 == CId_pat::C_Id::e_Number)
-	{
-            if (AStrEquiv(id1.GetNumber(), id2.GetNumber(), PNocase()))
-		return true;
-	    else
-		return false;
-	}
-
-	if (type1 == CId_pat::C_Id::e_App_number)
-	{
-            if (AStrEquiv(id1.GetApp_number(), id2.GetApp_number(), PNocase()))
-                return true;
-            else
-                return false;
-        }
-
-	return false;
+    switch ( type1 ) {
+    case C_Id::e_Number:
+        return AStrEquiv(id1.GetNumber(), id2.GetNumber(), PNocase());
+    case C_Id::e_App_number:
+        return AStrEquiv(id1.GetApp_number(), id2.GetApp_number(), PNocase());
+    default:
+        return false;
+    }
 }
 	
 // comparison function
 bool CId_pat::Match(const CId_pat& idp2) const
 {
-       if (! AStrEquiv(GetCountry(), idp2.GetCountry(), PNocase()))
-		return false;
-       return CId_Match(GetId(), idp2.GetId());
+    return AStrEquiv(GetCountry(), idp2.GetCountry(), PNocase()) &&
+        Id_Match(GetId(), idp2.GetId());
 }
 	
 END_objects_SCOPE // namespace ncbi::objects::

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/12/26 17:28:55  vasilche
+ * Simplified and formatted code.
+ *
  * Revision 6.8  2000/12/15 19:30:31  ostell
  * Used Upcase() in AsFastaString() and changed to PNocase().Equals() style
  *
@@ -74,191 +77,106 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
 
+// object manager includes
+#include <objects/objmgr/objmgr.hpp>
+#include <objects/seq/Bioseq.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CSeq_id::CSeq_id(void)
+{
+}
+
 // destructor
 CSeq_id::~CSeq_id(void)
 {
 }
 
+const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
+{
+    switch ( Which() ) {
+    case e_Genbank:
+        return &GetGenbank();
+    case e_Embl:
+        return &GetEmbl();
+    case e_Ddbj:
+        return &GetDdbj();
+    default:
+        return 0;
+    }
+}
+
 // Compare() - are SeqIds equivalent?
 CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 {
-	E_Choice type1 = Which();
-	E_Choice type2 = sid2.Which();
-	const CTextseq_id *tsip1 = 0, *tsip2 = 0;
+    if ( Which() != sid2.Which() ) { // only one case where this will work
+        const CTextseq_id *tsip1 = GetTextseq_Id();
+        if ( !tsip1 )
+            return e_DIFF;
 
-	if (type1 != type2)  // only one case where this will work
-	{
-		switch (type1)
-		{
-			case e_Genbank:
-			case e_Embl:
-			case e_Ddbj:
-			{
-				switch (type2)
-				{
-					case e_Genbank:
-					case e_Embl:
-					case e_Ddbj:
-						break;  // ok
-					default:
-						return e_DIFF;
-				}
-				break;  // goto next switch
-			}
-			default:
-				return e_DIFF;
-		}
-		// now do the match
-		switch (type1)
-		{
-                        case e_Genbank:
-				tsip1 = &GetGenbank();
-				break;
-                        case e_Embl:
-				tsip1 = &GetEmbl();
-				break;
-                        case e_Ddbj:
-				tsip1 = &GetDdbj();
-				break;
-		}
-                switch (type2)
-                {
-                        case e_Genbank:
-                                tsip2 = &(sid2.GetGenbank());
-                                break;
-                        case e_Embl:
-                                tsip2 = &(sid2.GetEmbl());
-                                break;
-                        case e_Ddbj:
-                                tsip2 = &(sid2.GetDdbj());
-                                break;
-                }
+        const CTextseq_id *tsip2 = sid2.GetTextseq_Id();
+        if ( !tsip2 )
+            return e_DIFF;
 
-		if ((tsip1 != 0) && (tsip2 != 0))
-		{
-			if (tsip1->Match(*tsip2))
-				return e_YES;
-			else
-				return e_NO;
-		}
-		return e_DIFF;
-	}
+        if ( tsip1->Match(*tsip2) ) // id Textseq_id match
+            return e_YES;
+        else
+            return e_NO;
+    }
 
-	switch (type1)    // now we only need to know one
-	{
-        case e_Local:
-	{
-		if ((GetLocal()).Match(sid2.GetLocal()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Gibbsq:
-	{
-		if ((GetGibbsq()) == (sid2.GetGibbsq()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Gibbmt:
-	{
-		if ((GetGibbmt()) == (sid2.GetGibbmt()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Giim:
-	{
-		if ((GetGiim().GetId()) == (sid2.GetGiim().GetId()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Pir:
-	{
-		if (GetPir().Match(sid2.GetPir()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Swissprot:
-	{
-		if (GetSwissprot().Match(sid2.GetSwissprot()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Patent:
-	{
-		if (GetPatent().Match(sid2.GetPatent()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Other:
-	{
-		if (GetOther().Match(sid2.GetOther()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_General:
-	{
-		if (GetGeneral().Match(sid2.GetGeneral()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Gi:
-	{
-		if ((GetGi()) == (sid2.GetGi()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Prf:
-	{
-		if (GetPrf().Match(sid2.GetPrf()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_Pdb:
-	{
-		if (GetPdb().Match(sid2.GetPdb()))
-			return e_YES;
-		else
-			return e_NO;
-	}
-        case e_not_set:
-        default:
-		break;
-	}
-	return e_error;  // should never get here 
+    switch ( Which() ) { // now we only need to know one
+    case e_Local:
+        return GetLocal().Match(sid2.GetLocal())? e_YES: e_NO;
+    case e_Gibbsq:
+        return GetGibbsq() == sid2.GetGibbsq()? e_YES: e_NO;
+    case e_Gibbmt:
+        return GetGibbmt() == sid2.GetGibbmt()? e_YES: e_NO;
+    case e_Giim:
+        return GetGiim().GetId() == sid2.GetGiim().GetId()? e_YES: e_NO;
+    case e_Pir:
+        return GetPir().Match(sid2.GetPir())? e_YES: e_NO;
+    case e_Swissprot:
+        return GetSwissprot().Match(sid2.GetSwissprot())? e_YES: e_NO;
+    case e_Patent:
+        return GetPatent().Match(sid2.GetPatent())? e_YES: e_NO;
+    case e_Other:
+        return GetOther().Match(sid2.GetOther())? e_YES: e_NO;
+    case e_General:
+        return GetGeneral().Match(sid2.GetGeneral())? e_YES: e_NO;
+    case e_Gi:
+        return GetGi() == sid2.GetGi()? e_YES: e_NO;
+    case e_Prf:
+        return GetPrf().Match(sid2.GetPrf())? e_YES: e_NO;
+    case e_Pdb:
+        return GetPdb().Match(sid2.GetPdb())? e_YES: e_NO;
+    default:
+        return e_error;
+    }
 }
-        static char * txtid [16] = {              /* FASTA_LONG formats */
-                "???" ,         /* not-set = ??? */
-                "lcl",          /* local = lcl|integer or string */
-                "bbs",     /* gibbsq = bbs|integer */
-                "bbm",          /* gibbmt = bbm|integer */
-                "gim",          /* giim = gim|integer */
-                "gb",           /* genbank = gb|accession|locus */
-                "emb",          /* embl = emb|accession|locus */
-                "pir",          /* pir = pir|accession|name */
-                "sp",           /* swissprot = sp|accession|name */
-                "pat",          /* patent = pat|country|patent number (string)|seq number (integer) */
-                "ref",          /* other = ref|accession|name|release - changed from oth to ref */
-                "gnl",          /* general = gnl|database(string)|id (string or number) */
-                "gi",           /* gi = gi|integer */
-                "dbj",          /* ddbj = dbj|accession|locus */
-                "prf",          /* prf = prf|accession|name */
-                "pdb" };        /* pdb = pdb|entry name (string)|chain id (char) */
+
+static const char* const txtid[16] = {     /* FASTA_LONG formats */
+    "???" ,         /* not-set = ??? */
+    "lcl",          /* local = lcl|integer or string */
+    "bbs",          /* gibbsq = bbs|integer */
+    "bbm",          /* gibbmt = bbm|integer */
+    "gim",          /* giim = gim|integer */
+    "gb",           /* genbank = gb|accession|locus */
+    "emb",          /* embl = emb|accession|locus */
+    "pir",          /* pir = pir|accession|name */
+    "sp",           /* swissprot = sp|accession|name */
+    "pat",          /* patent = pat|country|patent number (string)|seq number (integer) */
+    "ref",          /* other = ref|accession|name|release - changed from oth to ref */
+    "gnl",          /* general = gnl|database(string)|id (string or number) */
+    "gi",           /* gi = gi|integer */
+    "dbj",          /* ddbj = dbj|accession|locus */
+    "prf",          /* prf = prf|accession|name */
+    "pdb"           /* pdb = pdb|entry name (string)|chain id (char) */
+};
 
 ostream& CSeq_id::AsFastaString(ostream& s) const
 {
@@ -268,65 +186,90 @@ ostream& CSeq_id::AsFastaString(ostream& s) const
 
 	s << txtid[the_type] << '|';
 
-	switch (the_type)
-	{
-           case e_not_set:
-		break;
-           case e_Local:
-		GetLocal().AsString(s);
-		break;
-           case e_Gibbsq:
-		s << GetGibbsq();
-		break;
-           case e_Gibbmt:
-		s << GetGibbmt();
-		break;
-           case e_Giim:
-		s << (GetGiim().GetId());
-		break;
-           case e_Genbank:
-		GetGenbank().AsFastaString(s);
-		break;
-           case e_Embl:
-		GetEmbl().AsFastaString(s);
-		break;
-           case e_Pir:
-		GetPir().AsFastaString(s);
-		break;
-           case e_Swissprot:
-		GetSwissprot().AsFastaString(s);
-		break;
-           case e_Patent:
-		GetPatent().AsFastaString(s);
-		break;
-           case e_Other:
-		GetOther().AsFastaString(s);
-		break;
-           case e_General:
-		{
-		const CDbtag& dbt = GetGeneral();
-		s << Upcase(dbt.GetDb()) << '|' << (dbt.GetTag().AsString(s));
-		}
-		break;
-           case e_Gi:
-		s << GetGi();
-		break;
-           case e_Ddbj:
-		GetDdbj().AsFastaString(s);
-		break;
-           case e_Prf:
-		GetPrf().AsFastaString(s);
-		break;
-           case e_Pdb:
-		GetPdb().AsFastaString(s);
-		break;
-	   default:
-		s << "[UnknownSeqIdType]";
-		break;
+	switch (the_type) {
+    case e_not_set:
+        break;
+    case e_Local:
+        GetLocal().AsString(s);
+        break;
+    case e_Gibbsq:
+        s << GetGibbsq();
+        break;
+    case e_Gibbmt:
+        s << GetGibbmt();
+        break;
+    case e_Giim:
+        s << (GetGiim().GetId());
+        break;
+    case e_Genbank:
+        GetGenbank().AsFastaString(s);
+        break;
+    case e_Embl:
+        GetEmbl().AsFastaString(s);
+        break;
+    case e_Pir:
+        GetPir().AsFastaString(s);
+        break;
+    case e_Swissprot:
+        GetSwissprot().AsFastaString(s);
+        break;
+    case e_Patent:
+        GetPatent().AsFastaString(s);
+        break;
+    case e_Other:
+        GetOther().AsFastaString(s);
+        break;
+    case e_General:
+        {
+            const CDbtag& dbt = GetGeneral();
+            s << Upcase(dbt.GetDb()) << '|' << (dbt.GetTag().AsString(s));
+        }
+        break;
+    case e_Gi:
+        s << GetGi();
+        break;
+    case e_Ddbj:
+        GetDdbj().AsFastaString(s);
+        break;
+    case e_Prf:
+        GetPrf().AsFastaString(s);
+        break;
+    case e_Pdb:
+        GetPdb().AsFastaString(s);
+        break;
+    default:
+        s << "[UnknownSeqIdType]";
+        break;
 
-	}
+    }
 	return s;
 }
+
+void CSeq_id::SetObjectManager(const CRef<CObjectManager>& objMgr)
+{
+    if ( m_ObjectManager )
+        THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: already set");
+    if ( !objMgr )
+        THROW1_TRACE(runtime_error, "CSeq_id::SetObjectManager: null pointer");
+
+    m_ObjectManager = objMgr;
+}
+
+void CSeq_id::ResetObjectManager(const CRef<CObjectManager>& objMgr)
+{
+    if ( m_ObjectManager.GetPointer() != objMgr.GetPointer() )
+        ERR_POST("CSeq_id::ResetObjectManager: not owner");
+    m_ObjectManager.Reset();
+}
+
+CRef<CBioseq> CSeq_id::Resolve(void) const
+{
+    if ( !m_ObjectManager )
+        THROW1_TRACE(runtime_error, "CSeq_id::Resolve: null pointer");
+
+    return m_ObjectManager->GetBioseq(*this);
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
