@@ -1149,7 +1149,7 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
         CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
         if ( init ) {
             CRef<TAnnotRefMap> ref_map(new TAnnotRefMap);
-            TTSE_LockMap& tse_map = *ref_map;
+            //TTSE_LockMap& tse_map = *ref_map;
 
             TTSE_LockMap with_ref;
             const CBioseq_Info::TId& syns =
@@ -1395,6 +1395,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/06/15 14:02:22  vasilche
+* Commented out unused local variable.
+*
 * Revision 1.17  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.
