@@ -938,7 +938,7 @@ void CReferenceItem::x_CleanData(void)
 //
 // Genbank Format Specific
 
-static const string s_RemarksText[] = {
+static const string sc_RemarkText[] = {
   "full automatic",
   "full staff_review",
   "full staff_entry",
@@ -949,6 +949,7 @@ static const string s_RemarksText[] = {
   "unannotated staff_review",
   "unannotated staff_entry"
 };
+static const CStaticArraySet<string> sc_Remarks(sc_RemarkText, sizeof(sc_RemarkText));
 
 
 void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
@@ -959,9 +960,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
     if ( m_Pubdesc->IsSetComment()  &&  !m_Pubdesc->GetComment().empty() ) {
         const string& comment = m_Pubdesc->GetComment();
         
-        CStaticArraySet<string> texts(s_RemarksText,
-            sizeof(s_RemarksText) / sizeof(string));
-        if ( texts.find(comment) == texts.end() ) {
+        if ( sc_Remarks.find(comment) == sc_Remarks.end() ) {
             l.push_back(comment);
         }
     }
@@ -1168,6 +1167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/05/14 13:15:25  shomrat
+* Fixed use of CStaticArraySet
+*
 * Revision 1.13  2004/05/06 17:59:30  shomrat
 * Handle duplicate references
 *
