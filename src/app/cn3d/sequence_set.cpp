@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2002/09/05 17:14:14  thiessen
+* create new netscape window on unix
+*
 * Revision 1.46  2002/07/12 13:24:10  thiessen
 * fixes for PSSM creation to agree with cddumper/RPSBLAST
 *
@@ -711,7 +714,7 @@ void LaunchWebPage(const char *url)
 
 #elif defined(__WXGTK__)
     CNcbiOstrstream oss;
-    oss << "( netscape -raise -remote 'openURL(" << url << ")' || netscape '" << url
+    oss << "( netscape -noraise -remote 'openURL(" << url << ",new-window)' || netscape '" << url
         << "' ) >/dev/null 2>&1 &" << '\0';
     system(oss.str());
     delete oss.str();
