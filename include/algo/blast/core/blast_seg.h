@@ -72,7 +72,7 @@ void SegParametersFree(SegParameters* sparamsp);
  * @param offset amount to shift over resulting locations 
  *    (if full sequence not passed in) [in]
  * @param sparamsp the seg parameters created with SegParametersNewAa [in]
- * @params seg_locs resulting locations for filtering [out]
+ * @param seg_locs resulting locations for filtering [out]
  * @return zero on success
  */
 Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
