@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/03/22 17:24:12  gouriano
+* loader-related fix in DropTSE()
+*
 * Revision 1.25  2002/03/21 21:39:48  grichenk
 * garbage collector bugfix
 *
@@ -1216,9 +1219,9 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
         return false;
     if ( found->second->Locked() )
         return false; // Not really dropped, although found
-    x_DropEntry(*found->first);
     if ( m_Loader )
         m_Loader->DropTSE(found->first);
+    x_DropEntry(*found->first);
     return true;
 }
 
