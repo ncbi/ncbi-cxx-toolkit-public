@@ -73,7 +73,7 @@ public:
     {
         m_MaxThreads = 25;
         m_InitThreads = 10;
-        m_QueueSize = 100;
+        m_QueueSize = m_MaxThreads + 2;
     }
 
     virtual ~CNetCacheServer() {}
@@ -530,7 +530,6 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length
         return true;
     }
 
-    _ASSERT(m_Buf);
     EIO_Status io_st = sock.Read(buf, kNetCacheBufSize, buffer_length);
     switch (io_st) 
     {
@@ -744,6 +743,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/19 15:53:36  kuznets
+ * Code cleanup
+ *
  * Revision 1.6  2004/10/18 13:46:57  kuznets
  * Removed common buffer (was shared between threads)
  *
