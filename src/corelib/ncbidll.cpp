@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbiapp.hpp>
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -255,7 +256,7 @@ bool CDllResolver::TryCandidate(const string& file_name)
             
             const string& dll_name = dll->GetName();
             
-            if (!dll_name.empty()) {
+            if ( !dll_name.empty() ) {
                 string base_name;
                 CDirEntry::SplitPath(entry_point_name, 0, &base_name, 0);
                 NStr::Replace(*it, "${basename}", base_name, entry_point_name);
@@ -263,15 +264,15 @@ bool CDllResolver::TryCandidate(const string& file_name)
             
             // Check for the BASE library name macro
             
-            if (entry_point_name.empty())
+            if ( entry_point_name.empty() )
                 continue;
             p = dll->GetEntryPoint(entry_point_name);
-            if (p.data) { 
+            if ( p.data ) { 
                 entry_point.entry_points.push_back(SNamedEntryPoint(entry_point_name, p));
             }
         } // ITERATE
 
-        if (entry_point.entry_points.empty()) {
+        if ( entry_point.entry_points.empty() ) {
             delete dll;
             return false;
         }
@@ -286,6 +287,72 @@ bool CDllResolver::TryCandidate(const string& file_name)
     }
 
     return true;
+}
+
+void CDllResolver::AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
+{
+    // Nothing to do
+
+    if (which == fNoExtraDllPath) {
+        return;
+    }
+
+    // Add program executable path
+
+    if ((which & fProgramPath) != 0) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            string exe = app->GetProgramExecutablePath();
+            if ( !exe.empty() ) {
+                string dir;
+                CDirEntry::SplitPath(exe, &dir);
+                if ( !dir.empty() ) {
+                    paths.push_back(dir);
+                }
+            }
+        }
+    }
+
+    // Add hardcoded runpath
+
+#if defined(NCBI_OS_UNIX)
+    if ((which & fToolkitDllPath) != 0) {
+        const char* runpath = NCBI_GetRunpath();
+        if (runpath  &&  *runpath) {
+            paths.push_back(runpath);
+        }
+    }
+#endif
+
+    // Add systems directories
+
+    if ((which & fSystemDllPath) != 0) {
+#if defined(NCBI_OS_MSWIN)
+        // Get Windows system directories
+        char buf[MAX_PATH+1];
+        UINT len = GetSystemDirectory(buf, MAX_PATH+1);
+        if (len>0  &&  len<=MAX_PATH) {
+            paths.push_back(buf);
+        }
+        len = GetWindowsDirectory(buf, MAX_PATH+1);
+        if (len>0  &&  len<=MAX_PATH) {
+            paths.push_back(buf);
+        }
+        // Parse PATH environment variable 
+        const char* env = getenv("PATH");
+        if (env  &&  *env) {
+            NStr::Tokenize(env, ";", paths);
+        }
+
+#elif defined(NCBI_OS_UNIX)
+        // From LD_LIBRARY_PATH environment variable 
+        const char* env = getenv("LD_LIBRARY_PATH");            
+        if (env  &&  *env) {
+            NStr::Tokenize(env, ":", paths);
+        }
+#endif
+    }
+    return;
 }
 
 void CDllResolver::Unload()
@@ -303,6 +370,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/08/06 11:26:07  ivanov
+ * Extend CDllResolver to make it also look in "standard" places.
+ * Added TExtraDllPath enum and AddExtraDllPath() method.
+ * Added accessory parameter to FindCandidates().
+ *
  * Revision 1.21  2004/06/23 17:13:56  ucko
  * Centralize plugin naming in ncbidll.hpp.
  *

@@ -36,6 +36,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbicfg.h>
 #include <corelib/ncbifile.hpp>
 
 
@@ -193,7 +194,7 @@ public:
     /// If the DLL is not loaded yet, then this method will call Load(),
     /// which can result in throwing an exception if Load() fails.
     /// @sa
-    ///   GetEntryPoint_Data()
+    ///   GetEntryPoint_Data
     template <class TFunc>
     TFunc GetEntryPoint_Func(const string& name, TFunc* func)
     {
@@ -211,7 +212,7 @@ public:
     /// If the DLL is not loaded yet, then this method will call Load(),
     /// which can result in throwing an exception if Load() fails.
     /// @sa
-    ///   GetEntryPoint_Func()
+    ///   GetEntryPoint_Func
     template <class TData>
     TData GetEntryPoint_Data(const string& name, TData* data)
     {
@@ -241,7 +242,7 @@ public:
     /// @return
     ///   The entry point's address on success, or return NULL on error.
     /// @sa
-    ///   GetEntryPoint_Func(), GetEntryPoint_Data()
+    ///   GetEntryPoint_Func, GetEntryPoint_Data
     NCBI_XNCBI_EXPORT
     TEntryPoint GetEntryPoint(const string& name);
 
@@ -341,7 +342,7 @@ public:
     ///   List of alternative DLL entry points.
     NCBI_XNCBI_EXPORT CDllResolver(const vector<string>& entry_point_names); 
 
-    
+    /// Destructor.
     NCBI_XNCBI_EXPORT ~CDllResolver();
 
     /// Try to load DLL from the specified file and resolve the entry point.
@@ -355,8 +356,7 @@ public:
     ///   TRUE if DLL is succesfully loaded and entry point resolved.
     /// @sa
     ///   GetResolvedEntries
-    NCBI_XNCBI_EXPORT
-    bool TryCandidate(const string& file_name);
+    NCBI_XNCBI_EXPORT bool TryCandidate(const string& file_name);
 
     /// Try to resolve file candidates.
     ///
@@ -374,6 +374,31 @@ public:
         }
     }
 
+    /// Various (usually system-dependent) standard paths to look for DLLs in.
+    /// The fProgramPath flag works only inside CNcbiApplication framework.
+    /// @sa
+    ///   AddExtraDllPath, FindCandidates
+    enum {
+        fNoExtraDllPath = 0,        //< Do not add
+        fProgramPath    = 1 << 0,   //< Path to executable file
+        fToolkitDllPath = 1 << 1,   //< Toolkit paths
+        fSystemDllPath  = 1 << 2,   //< System paths
+        fDefaultDllPath = fProgramPath | fToolkitDllPath | fSystemDllPath
+    } EExtraDllPath;
+
+    typedef int TExtraDllPath;      //<  bitwise OR of "EExtraDllPath"
+
+    /// Try to resolve all files matching the specified masks in the
+    /// specified directories.
+    ///
+    /// @param paths
+    ///   Container to add the requested DLL search paths to.
+    /// @param which
+    ///   Which "standard" paths to add.
+    /// @sa
+    ///   FindCandidates
+    void AddExtraDllPath(vector<string>& paths, TExtraDllPath which);
+
     /// Try to resolve all files matching the specified masks in the
     /// specified directories.
     ///
@@ -381,14 +406,44 @@ public:
     ///   Container with directory names.
     /// @param masks
     ///   Container with file candidate masks.
+    /// @param extra_path
+    ///   Extra "standard" paths to search the DLLs in
     /// @sa
-    ///   GetResolvedEntries
+    ///   GetResolvedEntries, AddExtraDllPath
     template<class TClass1, class TClass2>
-    void FindCandidates(const TClass1& paths, const TClass2& masks)
+    void FindCandidates(const TClass1& paths, const TClass2& masks,
+                        TExtraDllPath extra_path = fDefaultDllPath)
     {
+        // search in the explicitly specified paths
+        vector<string> x_path(paths);
+        // search in "standard" paths, if any specified by 'extra_path' flag
+        AddExtraDllPath(x_path, extra_path);
+        // remove duplicate dirs
+        vector<string> x_path_unique;
+        x_path_unique.reserve(x_path.size());
+        ITERATE(vector<string>, it, x_path) {
+            bool found = false;
+            ITERATE(vector<string>, i, x_path_unique) {
+                if (*i == *it) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) {
+                x_path_unique.push_back(CDir::DeleteTrailingPathSeparator(*it));
+            }
+        }
+ ITERATE(vector<string>, it, x_path_unique) {
+        cout << *it << endl;
+ }
+
+        // find files
         vector<string> candidates;
-        FindFiles(candidates, paths.begin(), paths.end(), 
-                              masks.begin(), masks.end());
+        FindFiles(candidates,
+                  x_path_unique.begin(), x_path_unique.end(),
+                  masks.begin(), masks.end(),
+                  fFF_File);
+        // try to resolve entry points in the found DLLs
         Try(candidates);
     }
 
@@ -428,6 +483,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/08/06 11:25:38  ivanov
+ * Extend CDllResolver to make it also look in "standard" places.
+ * Added TExtraDllPath enum and AddExtraDllPath() method.
+ * Added accessory parameter to FindCandidates().
+ *
  * Revision 1.22  2004/06/23 17:13:56  ucko
  * Centralize plugin naming in ncbidll.hpp.
  *
