@@ -80,6 +80,14 @@ CFlatFileGenerator::~CFlatFileGenerator(void)
 }
 
 
+// Set annotation selector for feature gathering
+
+SAnnotSelector& CFlatFileGenerator::SetAnnotSelector(void)
+{
+    return *(m_Ctx->SetAnnotSelector());
+}
+
+
 // Generate a flat-file report for a Seq-entry
 
 void CFlatFileGenerator::Generate
@@ -178,6 +186,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:52:06  shomrat
+* allow user to specify selector for feature gathering
+*
 * Revision 1.4  2004/02/11 16:58:28  shomrat
 * bug fix
 *
