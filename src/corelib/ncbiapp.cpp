@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/11/29 17:00:25  vakatov
+* Use LOG_POST instead of ERR_POST to print cmd.-line arg usage
+*
 * Revision 1.25  2000/11/24 23:33:12  vakatov
 * CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
 * setup cmd.-line argument description, and then to retrieve their
@@ -276,15 +279,16 @@ int CNcbiApplication::AppMain
     catch (CArgHelpException&) {
         // Print USAGE
         string str;
-        ERR_POST("\n" << m_ArgDesc->PrintUsage(str));
+        LOG_POST(string(72, '='));
+        LOG_POST(m_ArgDesc->PrintUsage(str));
         exit_code = 0;
     }
     catch (CArgException& e) {
         // Print USAGE and the exception error message
         string str;
-        ERR_POST("\n" << string(72, '~') <<
-                 "\n" << m_ArgDesc->PrintUsage(str) <<
-                 string(72, '=') << "\n ERROR:  " << e.what());
+        LOG_POST(string(72, '='));
+        LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
+        LOG_POST(" ERROR:  " << e.what());
         exit_code = -1;
     }
     catch (exception& e) {
