@@ -110,25 +110,27 @@ Usage: update_core.sh [--no-projects] [--help] [&lt;dirs&gt;]
 
 <pre>
 
-Usage: update_projects.sh &lt;project-list&gt;
+Usage: update_projects.sh &lt;project-list&gt; [&lt;directory&gt;]
 
 This script supports two modes of operation:
 
+  * If you specify a directory name, it will create the directory if
+    necessary and check the specified portion of the C++ tree out into
+    it, along with any additional infrastructure needed for the build
+    system to work.  (If the directory already exists, it must be
+    empty.)  It will then optionally configure and build the new tree.
+
   * If you run it from the top level of an existing checkout of the
     C++ source tree, it will update the sources and headers for the
-    specified projects.
-
-  * If you run it from a newly created root (determined by the absence
-    of CVS directories), it will check out the specified portion of
-    the C++ tree, along with any additional infrastructure needed for
-    the build system to work.
+    specified projects.  It will then optionally reconfigure and
+    rebuild the tree.
 
 The syntax for project lists is documented at
 <a href="config.html#ref_ProjectList">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/config.html#ref_ProjectList</a>
 
 In either mode, if <project-list> contains neither a directory nor an
 extension, the script will add the extension .lst and look in the
-system directory "$NCBI/c++/scripts/internal/projects".
+system directory ".../c++/scripts/internal/projects".
 </pre>
 
 
