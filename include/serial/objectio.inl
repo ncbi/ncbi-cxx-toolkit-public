@@ -99,7 +99,16 @@ CIStreamContainerIterator::operator bool(void) const
 inline
 CIStreamContainerIterator& CIStreamContainerIterator::operator++(void)
 {
-    NextElement();
+    if (m_State == eElementBegin) {
+        SkipElement();
+    }
+    if (m_State != eNoMoreElements) {
+        CheckState(eElementEnd);
+        m_State = eElementBegin;
+    }
+    else {
+        m_State = eFinished;
+    }
     return *this;
 }
 
@@ -109,6 +118,9 @@ CIStreamContainerIterator& CIStreamContainerIterator::operator++(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/10/24 15:54:27  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.4  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

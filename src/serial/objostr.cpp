@@ -189,8 +189,13 @@ CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
 
 CObjectOStream::~CObjectOStream(void)
 {
-    Close();
-    ResetLocalHooks();
+    try {
+        Close();
+        ResetLocalHooks();
+    }
+    catch (...) {
+        ERR_POST("Can not close output stream");
+    }
 }
 
 void CObjectOStream::Close(void)
@@ -857,8 +862,14 @@ void CObjectOStream::ByteBlock::End(void)
 
 CObjectOStream::ByteBlock::~ByteBlock(void)
 {
-    if ( !m_Ended )
-        GetStream().Unended("byte block not fully written");
+    if ( !m_Ended ) {
+        try {
+            GetStream().Unended("byte block not fully written");
+        }
+        catch (...) {
+            ERR_POST("unended byte block");
+        }
+    }
 }
 
 void CObjectOStream::BeginChars(const CharBlock& )
@@ -881,8 +892,14 @@ void CObjectOStream::CharBlock::End(void)
 
 CObjectOStream::CharBlock::~CharBlock(void)
 {
-    if ( !m_Ended )
-        GetStream().Unended("char block not fully written");
+    if ( !m_Ended ) {
+        try {
+            GetStream().Unended("char block not fully written");
+        }
+        catch (...) {
+            ERR_POST("unended char block");
+        }
+    }
 }
 
 
@@ -898,6 +915,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2003/10/24 15:54:28  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.87  2003/10/21 21:08:46  grichenk
 * Fixed aliases-related bug in XML stream
 *

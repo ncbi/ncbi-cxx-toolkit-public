@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/10/24 15:54:28  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.6  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -97,8 +100,15 @@ CIStreamFrame::CIStreamFrame(CObjectIStream& stream)
 
 CIStreamFrame::~CIStreamFrame(void)
 {
-    if ( GetStream().GetStackDepth() != m_Depth )
-        GetStream().PopErrorFrame();
+    if ( GetStream().GetStackDepth() != m_Depth ) {
+        try {
+            GetStream().PopErrorFrame();
+        }
+        catch (...) {
+            GetStream().SetFailFlags(CObjectIStream::fIllegalCall,
+                "object stack frame error");
+        }
+    }
 }
 
 inline
@@ -121,8 +131,15 @@ bool COStreamFrame::Good(void) const
 
 COStreamFrame::~COStreamFrame(void)
 {
-    if ( GetStream().GetStackDepth() != m_Depth )
-        GetStream().PopErrorFrame();
+    if ( GetStream().GetStackDepth() != m_Depth ) {
+        try {
+            GetStream().PopErrorFrame();
+        }
+        catch (...) {
+            GetStream().SetFailFlags(CObjectOStream::fIllegalCall,
+                "object stack frame error");
+        }
+    }
 }
 
 #ifdef NCBI_COMPILER_ICC
@@ -201,11 +218,17 @@ CIStreamClassMemberIterator::CIStreamClassMemberIterator(CObjectIStream& in,
 CIStreamClassMemberIterator::~CIStreamClassMemberIterator(void)
 {
     if ( Good() ) {
-        if ( *this )
-            GetStream().EndClassMember();
-        GetStream().PopFrame();
-        GetStream().EndClass();
-        GetStream().PopFrame();
+        try {
+            if ( *this )
+                GetStream().EndClassMember();
+            GetStream().PopFrame();
+            GetStream().EndClass();
+            GetStream().PopFrame();
+        }
+        catch (...) {
+            GetStream().SetFailFlags(CObjectIStream::fIllegalCall,
+                "class member iterator error");
+        }
     }
 }
 
@@ -257,8 +280,14 @@ COStreamClassMember::COStreamClassMember(CObjectOStream& out,
 COStreamClassMember::~COStreamClassMember(void)
 {
     if ( Good() ) {
-        GetStream().EndClassMember();
-        GetStream().PopFrame();
+        try {
+            GetStream().EndClassMember();
+            GetStream().PopFrame();
+        }
+        catch (...) {
+            GetStream().SetFailFlags(CObjectIStream::fIllegalCall,
+                "class member write error");
+        }
     }
 }
 
@@ -266,7 +295,7 @@ COStreamClassMember::~COStreamClassMember(void)
 inline
 void CIStreamContainerIterator::BeginElement(void)
 {
-    _ASSERT(m_State == eError);
+    _ASSERT(m_State == eElementEnd);
     if ( GetStream().BeginContainerElement(m_ElementTypeInfo) )
         m_State = eElementBegin;
     else
@@ -277,6 +306,7 @@ inline
 void CIStreamContainerIterator::IllegalCall(const char* message) const
 {
     GetStream().ThrowError(CObjectIStream::fIllegalCall, message);
+    // GetStream().SetFailFlags(CObjectIStream::fIllegalCall, message);
 }
 
 inline
@@ -287,7 +317,7 @@ void CIStreamContainerIterator::BadState(void) const
 
 CIStreamContainerIterator::CIStreamContainerIterator(CObjectIStream& in,
                                      const CObjectTypeInfo& containerType)
-    : CParent(in), m_ContainerType(containerType), m_State(eError)
+    : CParent(in), m_ContainerType(containerType), m_State(eElementEnd)
 {
     const CContainerTypeInfo* containerTypeInfo =
         GetContainerType().GetContainerTypeInfo();
@@ -304,25 +334,20 @@ CIStreamContainerIterator::~CIStreamContainerIterator(void)
 {
     if ( Good() ) {
         switch ( m_State ) {
-        case eElementBegin:
-            // not read element
-            m_State = eError;
-            BadState();
-            return;
-        case eElementEnd:
-            NextElement();
-            if ( m_State != eNoMoreElements )
-                IllegalCall("not all elements read");
-            break;
         case eNoMoreElements:
+            // normal state
+            return;
+        case eElementBegin:
+        case eElementEnd:
+            // not read element(s)
+            m_State = eError;
+            GetStream().SetFailFlags(CObjectIStream::fIllegalCall,
+                "not all elements read");
             break;
         default:
             // error -> do nothing
             return;
         }
-        GetStream().PopFrame();
-        GetStream().EndContainer();
-        GetStream().PopFrame();
     }
 }
 
@@ -330,16 +355,23 @@ inline
 void CIStreamContainerIterator::CheckState(EState state)
 {
     bool ok = (m_State == state);
-    m_State = eError;
-    if ( !ok )
+    if ( !ok ) {
+        m_State = eError;
         BadState();
+    }
 }
 
 void CIStreamContainerIterator::NextElement(void)
 {
-    CheckState(eElementEnd);
+    CheckState(eElementBegin);
     GetStream().EndContainerElement();
+    m_State = eElementEnd;
     BeginElement();
+    if ( m_State == eNoMoreElements ) {
+        GetStream().PopFrame();
+        GetStream().EndContainer();
+        GetStream().PopFrame();
+    }
 }
 
 inline
@@ -360,21 +392,30 @@ void CIStreamContainerIterator::ReadElement(const CObjectInfo& element)
 {
     BeginElementData(element);
     GetStream().ReadSeparateObject(element);
-    m_State = eElementEnd;
+    NextElement();
+    if (m_State != eNoMoreElements) {
+        m_State = eElementEnd;
+    }
 }
 
 void CIStreamContainerIterator::SkipElement(const CObjectTypeInfo& elementType)
 {
     BeginElementData(elementType);
     GetStream().SkipObject(elementType.GetTypeInfo());
-    m_State = eElementEnd;
+    NextElement();
+    if (m_State != eNoMoreElements) {
+        m_State = eElementEnd;
+    }
 }
 
 void CIStreamContainerIterator::SkipElement(void)
 {
     BeginElementData();
     GetStream().SkipObject(m_ElementTypeInfo);
-    m_State = eElementEnd;
+    NextElement();
+    if (m_State != eNoMoreElements) {
+        m_State = eElementEnd;
+    }
 }
 
 COStreamContainer::COStreamContainer(CObjectOStream& out,
@@ -394,9 +435,15 @@ COStreamContainer::COStreamContainer(CObjectOStream& out,
 COStreamContainer::~COStreamContainer(void)
 {
     if ( Good() ) {
-        GetStream().PopFrame();
-        GetStream().EndContainer();
-        GetStream().PopFrame();
+        try {
+            GetStream().PopFrame();
+            GetStream().EndContainer();
+            GetStream().PopFrame();
+        }
+        catch (...) {
+            GetStream().SetFailFlags(CObjectOStream::fIllegalCall,
+                "container write error");
+        }
     }
 }
 

@@ -203,6 +203,7 @@ private:
         eElementBegin,
         eElementEnd,
         eNoMoreElements,
+        eFinished,
         eError // exception was thrown
     };
 
@@ -277,6 +278,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/10/24 15:54:27  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.6  2003/04/15 16:18:13  siyan
 * Added doxygen support
 *

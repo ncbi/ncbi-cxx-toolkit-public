@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/10/24 15:54:28  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.80  2003/10/15 17:50:55  vasilche
 * Fixed interger overflow when binary asn output stream excedes 2GB.
 *
@@ -390,7 +393,7 @@ CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
 {
 #if CHECK_STREAM_INTEGRITY
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
-        ThrowError(fFail, "CObjectOStreamAsnBinary not finished");
+        ERR_POST("CObjectOStreamAsnBinary not finished");
 #endif
 }
 

@@ -233,8 +233,13 @@ CObjectIStream::CObjectIStream(void)
 
 CObjectIStream::~CObjectIStream(void)
 {
-    Close();
-    ResetLocalHooks();
+    try {
+        Close();
+        ResetLocalHooks();
+    }
+    catch (...) {
+        ERR_POST("Can not close input stream");
+    }
 }
 
 void CObjectIStream::Open(CByteSourceReader& reader)
@@ -286,7 +291,7 @@ CObjectIStream::TFailFlags CObjectIStream::SetFailFlags(TFailFlags flags,
     m_Fail |= flags;
     if ( !old && flags ) {
         // first fail
-        ERR_POST(Info << "CObjectIStream: error at "<<
+        ERR_POST(Error << "CObjectIStream: error at "<<
                  GetPosition()<<": "<<GetStackTrace() << ": " << message);
     }
     return old;
@@ -996,8 +1001,14 @@ CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
 
 CObjectIStream::ByteBlock::~ByteBlock(void)
 {
-    if ( !m_Ended )
-        GetStream().Unended("byte block not fully read");
+    if ( !m_Ended ) {
+        try {
+            GetStream().Unended("byte block not fully read");
+        }
+        catch (...) {
+            ERR_POST("unended byte block");
+        }
+    }
 }
 
 void CObjectIStream::ByteBlock::End(void)
@@ -1053,8 +1064,14 @@ CObjectIStream::CharBlock::CharBlock(CObjectIStream& in)
 
 CObjectIStream::CharBlock::~CharBlock(void)
 {
-    if ( !m_Ended )
-        GetStream().Unended("char block not fully read");
+    if ( !m_Ended ) {
+        try {
+            GetStream().Unended("char block not fully read");
+        }
+        catch (...) {
+            ERR_POST("unended char block");
+        }
+    }
 }
 
 void CObjectIStream::CharBlock::End(void)
@@ -1294,6 +1311,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.117  2003/10/24 15:54:28  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.116  2003/10/21 21:08:46  grichenk
 * Fixed aliases-related bug in XML stream
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/10/24 15:54:28  grichenk
+* Removed or blocked exceptions in destructors
+*
 * Revision 1.62  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -927,8 +930,14 @@ void CObjectOStream::AsnIo::End(void)
 
 CObjectOStream::AsnIo::~AsnIo(void)
 {
-    if ( !m_Ended )
-        GetStream().Unended("AsnIo write error");
+    if ( !m_Ended ) {
+        try {
+            GetStream().Unended("AsnIo write error");
+        }
+        catch (...) {
+            ERR_POST("AsnIo write error");
+        }
+    }
 }
 
 CObjectOStream& CObjectOStream::AsnIo::GetStream(void) const
