@@ -63,7 +63,7 @@ const char kSeqTypeProt = 'p';
 const char kSeqTypeNucl = 'n';
 const char kSeqTypeUnkn = '-';
 
-// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
+// Two output formats, used by CSeqDB::GetAmbigSeq(...)
 
 const Uint4 kSeqDBNuclNcbiNA8  = 0;
 const Uint4 kSeqDBNuclBlastNA8 = 1;
