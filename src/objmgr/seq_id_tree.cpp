@@ -494,22 +494,7 @@ CSeq_id_Textseq_Tree::x_FindVersionEqual(const TVersions& ver_list,
                                          const CTextseq_id& tid) const
 {
     ITERATE(TVersions, vit, ver_list) {
-        const CTextseq_id& tid_it = x_Get(*(*vit)->GetSeqId());
-        if (tid.IsSetVersion()  &&  tid_it.IsSetVersion()) {
-            // Compare versions
-            if (tid.GetVersion() == tid_it.GetVersion()) {
-                return *vit;
-            }
-        }
-        else if (tid.IsSetRelease()  &&  tid_it.IsSetRelease()) {
-            // Compare releases if no version specified
-            if (tid.GetRelease() == tid_it.GetRelease()) {
-                return *vit;
-            }
-        }
-        else if (!tid.IsSetVersion()  &&  !tid.IsSetRelease()  &&
-            !tid_it.IsSetVersion()  &&  !tid_it.IsSetRelease()) {
-            // No version/release for both seq-ids
+        if (x_Get(*(*vit)->GetSeqId()).Equals(tid)) {
             return *vit;
         }
     }
@@ -556,10 +541,6 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
     const CTextseq_id& tid = x_Get(id);
     TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Info* info = x_FindInfo(tid);
-    if ( info  &&  !info->GetSeqId()->Equals(id) ) {
-        // Need equal IDs, not just matching
-        info = 0;
-    }
     if ( !info ) {
         info = CreateInfo(id);
 
@@ -1625,6 +1606,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/04/21 19:55:05  grichenk
+* Fixed textseq-id matching.
+*
 * Revision 1.10  2004/04/21 13:37:13  grichenk
 * Fixed reverse matching IDs
 *
