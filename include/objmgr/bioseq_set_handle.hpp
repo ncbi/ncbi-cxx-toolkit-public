@@ -37,8 +37,7 @@
 
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objmgr/impl/heap_scope.hpp>
-#include <objmgr/impl/tse_lock.hpp>
+#include <objmgr/tse_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -158,6 +157,11 @@ public:
     ///    operator bool()
     bool operator!(void) const;
 
+
+    // Get CTSE_Handle of containing TSE
+    const CTSE_Handle& GetTSE_Handle(void) const;
+
+
     CBioseq_set_Handle& operator=(const CBioseq_set_Handle& bsh);
 
     // Reset handle and make it not to point to any bioseq-set
@@ -195,21 +199,20 @@ protected:
     friend class CSeq_annot_CI;
     friend class CAnnotTypes_CI;
 
-    CBioseq_set_Handle(CScope& scope,
-                       const CBioseq_set_Info& info,
-                       const TTSE_Lock& tse_lock);
+    CBioseq_set_Handle(const CBioseq_set_Info& info,
+                       const CTSE_Handle& tse);
 
     typedef int TComplexityTable[20];
     static const TComplexityTable& sx_GetComplexityTable(void);
 
     static TComplexityTable sm_ComplexityTable;
 
-    CHeapScope          m_Scope;
-    TTSE_Lock           m_TSE_Lock;
+    CTSE_Handle         m_TSE;
     CConstRef<CObject>  m_Info;
 
 public: // non-public section
-    const TTSE_Lock& GetTSE_Lock(void) const;
+
+    CScope_Impl& x_GetScopeImpl(void) const;
     const CBioseq_set_Info& x_GetInfo(void) const;
 };
 
@@ -416,9 +419,8 @@ protected:
     friend class CSeq_entry_EditHandle;
 
     CBioseq_set_EditHandle(const CBioseq_set_Handle& h);
-    CBioseq_set_EditHandle(CScope& scope,
-                           CBioseq_set_Info& info,
-                           const TTSE_Lock& tse_lock);
+    CBioseq_set_EditHandle(CBioseq_set_Info& info,
+                           const CTSE_Handle& tse);
 
 public: // non-public section
     CBioseq_set_Info& x_GetInfo(void) const;
@@ -437,16 +439,23 @@ CBioseq_set_Handle::CBioseq_set_Handle(void)
 
 
 inline
-CScope& CBioseq_set_Handle::GetScope(void) const
+const CTSE_Handle& CBioseq_set_Handle::GetTSE_Handle(void) const
 {
-    return m_Scope;
+    return m_TSE;
 }
 
 
 inline
-const TTSE_Lock& CBioseq_set_Handle::GetTSE_Lock(void) const
+CScope& CBioseq_set_Handle::GetScope(void) const
 {
-    return m_TSE_Lock;
+    return m_TSE.GetScope();
+}
+
+
+inline
+CScope_Impl& CBioseq_set_Handle::x_GetScopeImpl(void) const
+{
+    return m_TSE.x_GetScopeImpl();
 }
 
 
@@ -474,22 +483,22 @@ bool CBioseq_set_Handle::operator!(void) const
 inline
 bool CBioseq_set_Handle::operator ==(const CBioseq_set_Handle& handle) const
 {
-    return m_Scope == handle.m_Scope  &&  m_Info == handle.m_Info;
+    return m_TSE == handle.m_TSE  &&  m_Info == handle.m_Info;
 }
 
 
 inline
 bool CBioseq_set_Handle::operator !=(const CBioseq_set_Handle& handle) const
 {
-    return m_Scope != handle.m_Scope  ||  m_Info != handle.m_Info;
+    return m_TSE != handle.m_TSE  ||  m_Info != handle.m_Info;
 }
 
 
 inline
 bool CBioseq_set_Handle::operator <(const CBioseq_set_Handle& handle) const
 {
-    if ( m_Scope != handle.m_Scope ) {
-        return m_Scope < handle.m_Scope;
+    if ( m_TSE != handle.m_TSE ) {
+        return m_TSE < handle.m_TSE;
     }
     return m_Info < handle.m_Info;
 }
@@ -514,10 +523,9 @@ CBioseq_set_EditHandle::CBioseq_set_EditHandle(const CBioseq_set_Handle& h)
 
 
 inline
-CBioseq_set_EditHandle::CBioseq_set_EditHandle(CScope& scope,
-                                               CBioseq_set_Info& info,
-                                               const TTSE_Lock& tse_lock)
-    : CBioseq_set_Handle(scope, info, tse_lock)
+CBioseq_set_EditHandle::CBioseq_set_EditHandle(CBioseq_set_Info& info,
+                                               const CTSE_Handle& tse)
+    : CBioseq_set_Handle(info, tse)
 {
 }
 
@@ -538,6 +546,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.12  2004/09/29 19:52:19  kononenk
 * Updated doxygen documentation
 *

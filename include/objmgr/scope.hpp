@@ -42,6 +42,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objmgr/tse_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -109,12 +110,18 @@ public:
                                    EGetBioseqFlag get_flag);
 
     // Deprecated interface
+    CTSE_Handle GetTSE_Handle(const CSeq_entry& tse);
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
 
 
     /// Get bioseq handle for sequence withing one TSE
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
+                                          const CTSE_Handle& tse);
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
+                                          const CTSE_Handle& tse);
+
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
                                           const CBioseq_Handle& bh);
 
@@ -195,7 +202,6 @@ public:
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
 
-
     // deprecated interface
     void AttachEntry(CSeq_entry& parent, CSeq_entry& entry);
     void RemoveEntry(CSeq_entry& entry);
@@ -257,6 +263,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.83  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *

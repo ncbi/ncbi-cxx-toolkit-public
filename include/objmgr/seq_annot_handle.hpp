@@ -35,8 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 
-#include <objmgr/impl/heap_scope.hpp>
-#include <objmgr/impl/tse_lock.hpp>
+#include <objmgr/tse_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -86,6 +85,11 @@ public:
     ///    operator bool()
     bool operator!(void) const;
 
+
+    // Get CTSE_Handle of containing TSE
+    const CTSE_Handle& GetTSE_Handle(void) const;
+
+
     CSeq_annot_Handle& operator=(const CSeq_annot_Handle& sah);
 
     // Reset handle and make it not to point to any seq-annot
@@ -132,18 +136,16 @@ protected:
     friend class CScope_Impl;
     friend class CSeq_annot_CI;
 
-    CSeq_annot_Handle(CScope& scope,
-                      const CSeq_annot_Info& annot,
-                      const TTSE_Lock& tse_lock);
+    CSeq_annot_Handle(const CSeq_annot_Info& annot,
+                      const CTSE_Handle& tse);
 
+    CScope_Impl& x_GetScopeImpl(void) const;
     void x_Set(CScope& scope, const CSeq_annot_Info& annot);
 
-    CHeapScope          m_Scope;
-    TTSE_Lock           m_TSE_Lock;
+    CTSE_Handle         m_TSE;
     CConstRef<CObject>  m_Info;
 
 public: // non-public section
-    const TTSE_Lock& GetTSE_Lock(void) const;
     const CSeq_annot_Info& x_GetInfo(void) const;
 
 #if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
@@ -179,9 +181,8 @@ protected:
     friend class CSeq_entry_EditHandle;
 
     CSeq_annot_EditHandle(const CSeq_annot_Handle& h);
-    CSeq_annot_EditHandle(CScope& scope,
-                          CSeq_annot_Info& info,
-                          const TTSE_Lock& tse_lock);
+    CSeq_annot_EditHandle(CSeq_annot_Info& info,
+                          const CTSE_Handle& tse);
 
 public: // non-public section
     CSeq_annot_Info& x_GetInfo(void) const;
@@ -196,6 +197,13 @@ public: // non-public section
 inline
 CSeq_annot_Handle::CSeq_annot_Handle(void)
 {
+}
+
+
+inline
+const CTSE_Handle& CSeq_annot_Handle::GetTSE_Handle(void) const
+{
+    return m_TSE;
 }
 
 
@@ -216,14 +224,14 @@ bool CSeq_annot_Handle::operator!(void) const
 inline
 CScope& CSeq_annot_Handle::GetScope(void) const
 {
-    return *m_Scope;
+    return m_TSE.GetScope();
 }
 
 
 inline
-const TTSE_Lock& CSeq_annot_Handle::GetTSE_Lock(void) const
+CScope_Impl& CSeq_annot_Handle::x_GetScopeImpl(void) const
 {
-    return m_TSE_Lock;
+    return m_TSE.x_GetScopeImpl();
 }
 
 
@@ -237,22 +245,22 @@ const CSeq_annot_Info& CSeq_annot_Handle::x_GetInfo(void) const
 inline
 bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& handle) const
 {
-    return m_Scope == handle.m_Scope  &&  m_Info == handle.m_Info;
+    return m_TSE == handle.m_TSE  &&  m_Info == handle.m_Info;
 }
 
 
 inline
 bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& handle) const
 {
-    return m_Scope != handle.m_Scope  ||  m_Info != handle.m_Info;
+    return m_TSE != handle.m_TSE  ||  m_Info != handle.m_Info;
 }
 
 
 inline
 bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& handle) const
 {
-    if ( m_Scope != handle.m_Scope ) {
-        return m_Scope < handle.m_Scope;
+    if ( m_TSE != handle.m_TSE ) {
+        return m_TSE < handle.m_TSE;
     }
     return m_Info < handle.m_Info;
 }
@@ -272,10 +280,9 @@ CSeq_annot_EditHandle::CSeq_annot_EditHandle(const CSeq_annot_Handle& h)
 
 
 inline
-CSeq_annot_EditHandle::CSeq_annot_EditHandle(CScope& scope,
-                                             CSeq_annot_Info& info,
-                                             const TTSE_Lock& tse_lock)
-    : CSeq_annot_Handle(scope, info, tse_lock)
+CSeq_annot_EditHandle::CSeq_annot_EditHandle(CSeq_annot_Info& info,
+                                             const CTSE_Handle& tse)
+    : CSeq_annot_Handle(info, tse)
 {
 }
 
@@ -288,6 +295,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.12  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

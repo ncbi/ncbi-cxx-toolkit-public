@@ -46,10 +46,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CBioseq_set_Handle::CBioseq_set_Handle(CScope& scope,
-                                       const CBioseq_set_Info& info,
-                                       const TTSE_Lock& tse_lock)
-    : m_Scope(&scope), m_TSE_Lock(tse_lock), m_Info(&info)
+CBioseq_set_Handle::CBioseq_set_Handle(const CBioseq_set_Info& info,
+                                       const CTSE_Handle& tse)
+    : m_TSE(tse), m_Info(&info)
 {
 }
 
@@ -58,8 +57,7 @@ void CBioseq_set_Handle::Reset(void)
 {
     // order is significant
     m_Info.Reset();
-    m_TSE_Lock.Reset();
-    m_Scope.Reset();
+    m_TSE.Reset();
 }
 
 
@@ -68,8 +66,7 @@ CBioseq_set_Handle::operator=(const CBioseq_set_Handle& bsh)
 {
     if ( this != &bsh ) {
         Reset();
-        m_Scope = bsh.m_Scope;
-        m_TSE_Lock = bsh.m_TSE_Lock;
+        m_TSE = bsh.m_TSE;
         m_Info = bsh.m_Info;
     }
     return *this;
@@ -93,9 +90,8 @@ CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
     CSeq_entry_Handle ret;
     const CBioseq_set_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(),
-                                info.GetParentSeq_entry_Info(),
-                                GetTSE_Lock());
+        ret = CSeq_entry_Handle(info.GetParentSeq_entry_Info(),
+                                GetTSE_Handle());
     }
     return ret;
 }
@@ -103,20 +99,13 @@ CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
 
 CSeq_entry_Handle CBioseq_set_Handle::GetTopLevelEntry(void) const
 {
-    CSeq_entry_Handle ret;
-    const CBioseq_set_Info& info = x_GetInfo();
-    if ( info.HasTSE_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(),
-                                info.GetTSE_Info(),
-                                GetTSE_Lock());
-    }
-    return ret;
+    return GetTSE_Handle();
 }
 
 
 CBioseq_set_EditHandle CBioseq_set_Handle::GetEditHandle(void) const
 {
-    return m_Scope->GetEditHandle(*this);
+    return GetScope().GetEditHandle(*this);
 }
 
 
@@ -292,9 +281,10 @@ CBioseq_set_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
     while ( e ) {
         _ASSERT(e.IsSet());
         // Found good level
-        if (ctab[e.GetSet().GetClass()] == ctab[cls])
+        if (ctab[e.GetSet().GetClass()] == ctab[cls]) {
             last = e;
             break;
+        }
         // Gone too high
         if ( ctab[e.GetSet().GetClass()] > ctab[cls] ) {
             break;
@@ -328,9 +318,8 @@ CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
     CSeq_entry_EditHandle ret;
     CBioseq_set_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
-        ret = CSeq_entry_EditHandle(GetScope(),
-                                    info.GetParentSeq_entry_Info(),
-                                    GetTSE_Lock());
+        ret = CSeq_entry_EditHandle(info.GetParentSeq_entry_Info(),
+                                    GetTSE_Handle());
     }
     return ret;
 }
@@ -450,7 +439,7 @@ CBioseq_set_EditHandle::TakeBioseq(const CBioseq_EditHandle& seq, int index) con
 CSeq_entry_EditHandle
 CBioseq_set_EditHandle::AttachEntry(CSeq_entry& entry, int index) const
 {
-    return m_Scope->AttachEntry(*this, entry, index);
+    return x_GetScopeImpl().AttachEntry(*this, entry, index);
 }
 
 
@@ -458,7 +447,7 @@ CSeq_entry_EditHandle
 CBioseq_set_EditHandle::CopyEntry(const CSeq_entry_Handle& entry,
                                   int index) const
 {
-    return m_Scope->CopyEntry(*this, entry, index);
+    return x_GetScopeImpl().CopyEntry(*this, entry, index);
 }
 
 
@@ -466,7 +455,7 @@ CSeq_entry_EditHandle
 CBioseq_set_EditHandle::TakeEntry(const CSeq_entry_EditHandle& entry,
                                   int index) const
 {
-    return m_Scope->TakeEntry(*this, entry, index);
+    return x_GetScopeImpl().TakeEntry(*this, entry, index);
 }
 
 
@@ -493,7 +482,7 @@ CBioseq_set_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 
 void CBioseq_set_EditHandle::Remove(void) const
 {
-    m_Scope->RemoveBioseq_set(*this);
+    x_GetScopeImpl().RemoveBioseq_set(*this);
 }
 
 
@@ -503,6 +492,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.12  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *

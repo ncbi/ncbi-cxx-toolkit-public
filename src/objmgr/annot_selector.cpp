@@ -112,7 +112,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_LimitObjectType = sel.m_LimitObjectType;
         m_UnresolvedFlag = sel.m_UnresolvedFlag;
         m_LimitObject = sel.m_LimitObject;
-        m_LimitTSE_Lock = sel.m_LimitTSE_Lock;
+        m_LimitTSE = sel.m_LimitTSE;
         m_MaxSize = sel.m_MaxSize;
         m_IncludeAnnotsNames = sel.m_IncludeAnnotsNames;
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
@@ -135,7 +135,20 @@ SAnnotSelector& SAnnotSelector::SetLimitNone(void)
 {
     m_LimitObjectType = eLimit_None;
     m_LimitObject.Reset();
-    m_LimitTSE_Lock.Reset();
+    m_LimitTSE.Reset();
+    return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::SetLimitTSE(const CTSE_Handle& limit)
+{
+    if ( !limit )
+        return SetLimitNone();
+    
+    m_LimitObjectType = eLimit_TSE_Info;
+    m_LimitObject.Reset(&limit.x_GetTSE_Info());
+    m_LimitTSE = limit;
     return *this;
 }
 
@@ -143,14 +156,7 @@ SAnnotSelector& SAnnotSelector::SetLimitNone(void)
 SAnnotSelector&
 SAnnotSelector::SetLimitTSE(const CSeq_entry_Handle& limit)
 {
-    if ( !limit )
-        return SetLimitNone();
-    
-    const CTSE_Info& info = limit.x_GetInfo().GetTSE_Info();
-    m_LimitObjectType = eLimit_TSE_Info;
-    m_LimitObject.Reset(&info);
-    m_LimitTSE_Lock = limit.GetTSE_Lock();
-    return *this;
+    return SetLimitTSE(limit.GetTSE_Handle());
 }
 
 
@@ -160,10 +166,9 @@ SAnnotSelector::SetLimitSeqEntry(const CSeq_entry_Handle& limit)
     if ( !limit )
         return SetLimitNone();
     
-    const CSeq_entry_Info& info = limit.x_GetInfo();
     m_LimitObjectType = eLimit_Seq_entry_Info;
-    m_LimitObject.Reset(&info);
-    m_LimitTSE_Lock = limit.GetTSE_Lock();
+    m_LimitObject.Reset(&limit.x_GetInfo());
+    m_LimitTSE = limit.GetTSE_Handle();
     return *this;
 }
 
@@ -174,15 +179,14 @@ SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot_Handle& limit)
     if ( !limit )
         return SetLimitNone();
     
-    const CSeq_annot_Info& info = limit.x_GetInfo();
     m_LimitObjectType = eLimit_Seq_annot_Info;
-    m_LimitObject.Reset(&info);
-    m_LimitTSE_Lock = limit.GetTSE_Lock();
+    m_LimitObject.Reset(&limit.x_GetInfo());
+    m_LimitTSE = limit.GetTSE_Handle();
     return *this;
 }
 
 
-SAnnotSelector& SAnnotSelector::SetSearchExternal(const CSeq_entry_Handle& tse)
+SAnnotSelector& SAnnotSelector::SetSearchExternal(const CTSE_Handle& tse)
 {
     _ASSERT( tse );
     SetResolveTSE();
@@ -192,10 +196,17 @@ SAnnotSelector& SAnnotSelector::SetSearchExternal(const CSeq_entry_Handle& tse)
 }
 
 
+SAnnotSelector& SAnnotSelector::SetSearchExternal(const CSeq_entry_Handle& se)
+{
+    _ASSERT( se );
+    return SetSearchExternal(se.GetTSE_Handle());
+}
+
+
 SAnnotSelector& SAnnotSelector::SetSearchExternal(const CBioseq_Handle& seq)
 {
     _ASSERT( seq );
-    return SetSearchExternal(seq.GetTopLevelEntry());
+    return SetSearchExternal(seq.GetTSE_Handle());
 }
 
 
@@ -315,12 +326,19 @@ SAnnotSelector::SetAdaptiveTrigger(const SAnnotTypeSelector& sel)
 
 
 SAnnotSelector&
-SAnnotSelector::ExcludeTSE(const CSeq_entry_Handle& tse)
+SAnnotSelector::ExcludeTSE(const CTSE_Handle& tse)
 {
     if ( !ExcludedTSE(tse) ) {
         m_ExcludedTSE.push_back(tse);
     }
     return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::ExcludeTSE(const CSeq_entry_Handle& tse)
+{
+    return ExcludeTSE(tse.GetTSE_Handle());
 }
 
 
@@ -332,10 +350,16 @@ SAnnotSelector::ResetExcludedTSE(void)
 }
 
 
-bool SAnnotSelector::ExcludedTSE(const CSeq_entry_Handle& tse) const
+bool SAnnotSelector::ExcludedTSE(const CTSE_Handle& tse) const
 {
     return find(m_ExcludedTSE.begin(), m_ExcludedTSE.end(), tse)
         != m_ExcludedTSE.end();
+}
+
+
+bool SAnnotSelector::ExcludedTSE(const CSeq_entry_Handle& tse) const
+{
+    return ExcludedTSE(tse.GetTSE_Handle());
 }
 
 
@@ -551,7 +575,7 @@ SAnnotSelector::SetLimitTSE(const CSeq_entry* limit)
     
     m_LimitObjectType = eLimit_TSE;
     m_LimitObject.Reset(limit);
-    m_LimitTSE_Lock.Reset();
+    m_LimitTSE.Reset();
     return *this;
 }
 
@@ -567,7 +591,7 @@ SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* limit)
     
     m_LimitObjectType = eLimit_Seq_entry;
     m_LimitObject.Reset(limit);
-    m_LimitTSE_Lock.Reset();
+    m_LimitTSE.Reset();
     return *this;
 }
 
@@ -583,7 +607,7 @@ SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* limit)
     
     m_LimitObjectType = eLimit_Seq_annot;
     m_LimitObject.Reset(limit);
-    m_LimitTSE_Lock.Reset();
+    m_LimitTSE.Reset();
     return *this;
 }
 
@@ -596,6 +620,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.18  2004/12/13 17:02:24  grichenk
 * Removed redundant constructors
 *

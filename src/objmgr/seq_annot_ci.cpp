@@ -186,9 +186,8 @@ void CSeq_annot_CI::x_Settle(void)
 {
     for ( ;; ) {
         if ( m_AnnotIter != x_GetAnnots().end() ) {
-            m_CurrentAnnot = CSeq_annot_Handle(m_CurrentEntry.GetScope(),
-                                               **m_AnnotIter,
-                                               m_CurrentEntry.GetTSE_Lock());
+            m_CurrentAnnot = CSeq_annot_Handle(**m_AnnotIter,
+                                               m_CurrentEntry.GetTSE_Handle());
             return;
         }
 
@@ -226,6 +225,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.9  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

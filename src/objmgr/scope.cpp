@@ -84,19 +84,25 @@ CScope::~CScope(void)
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
-    return m_Impl->GetBioseqHandle(id, eGetBioseq_All);
+    return GetBioseqHandle(id, eGetBioseq_All);
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
 {
-    return m_Impl->GetBioseqHandle(id, eGetBioseq_All);
+    return GetBioseqHandle(id, eGetBioseq_All);
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 {
     return m_Impl->GetBioseqHandle(loc, eGetBioseq_All);
+}
+
+
+CTSE_Handle CScope::GetTSE_Handle(const CSeq_entry& entry)
+{
+    return GetSeq_entryHandle(entry).GetTSE_Handle();
 }
 
 
@@ -110,7 +116,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id,
                                        EGetBioseqFlag get_flag)
 {
-    return m_Impl->GetBioseqHandle(id, get_flag);
+    return GetBioseqHandle(CSeq_id_Handle::GetHandle(id), get_flag);
 }
 
 
@@ -136,30 +142,44 @@ CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot)
 
 
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
+                                              const CTSE_Handle& tse)
+{
+    return GetBioseqHandleFromTSE(CSeq_id_Handle::GetHandle(id), tse);
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CBioseq_Handle& bh)
 {
-    return m_Impl->GetBioseqHandleFromTSE(id, bh);
+    return GetBioseqHandleFromTSE(id, bh.GetTSE_Handle());
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CSeq_entry_Handle& seh)
 {
-    return m_Impl->GetBioseqHandleFromTSE(id, seh);
+    return GetBioseqHandleFromTSE(id, seh.GetTSE_Handle());
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                               const CBioseq_Handle& bh)
 {
-    return m_Impl->GetBioseqHandleFromTSE(id, bh);
+    return GetBioseqHandleFromTSE(id, bh.GetTSE_Handle());
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                               const CSeq_entry_Handle& seh)
 {
-    return m_Impl->GetBioseqHandleFromTSE(id, seh);
+    return GetBioseqHandleFromTSE(id, seh.GetTSE_Handle());
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
+                                              const CTSE_Handle& tse)
+{
+    return m_Impl->GetBioseqHandleFromTSE(id, tse);
 }
 
 
@@ -201,7 +221,7 @@ void CScope::ResetHistory(void)
 
 CScope::TIds CScope::GetIds(const CSeq_id& id)
 {
-    return m_Impl->GetIds(id);
+    return GetIds(CSeq_id_Handle::GetHandle(id));
 }
 
 
@@ -213,7 +233,7 @@ CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
 
 CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id& id)
 {
-    return m_Impl->GetSynonyms(id, eGetBioseq_All);
+    return GetSynonyms(CSeq_id_Handle::GetHandle(id));
 }
 
 
@@ -270,7 +290,7 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CSeq_entry& tse)
 {
     //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
-    return m_Impl->GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
+    return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
@@ -278,7 +298,7 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                               const CSeq_entry& tse)
 {
     //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
-    return m_Impl->GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
+    return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
@@ -337,6 +357,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.111  2004/11/04 19:21:18  grichenk
 * Marked non-handle versions of SetLimitXXXX as deprecated
 *

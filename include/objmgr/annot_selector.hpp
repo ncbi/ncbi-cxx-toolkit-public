@@ -36,7 +36,7 @@
 #include <corelib/ncbi_limits.h>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
-#include <objmgr/impl/tse_lock.hpp>
+#include <objmgr/tse_handle.hpp>
 
 #include <vector>
 
@@ -53,6 +53,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_annot;
 
+class CTSE_Handle;
 class CBioseq_Handle;
 class CSeq_entry_Handle;
 class CSeq_annot_Handle;
@@ -261,6 +262,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return m_LimitObject;
         }
     SAnnotSelector& SetLimitNone(void);
+    SAnnotSelector& SetLimitTSE(const CTSE_Handle& limit);
     SAnnotSelector& SetLimitTSE(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
@@ -295,6 +297,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     ///   ResolveTSE - prevent loading external bioseqs
     ///   LimitTSE   - search only external annotations near the virtual bioseq
     ///   SearchUnresolved - search on unresolved IDs.
+    SAnnotSelector& SetSearchExternal(const CTSE_Handle& tse);
     SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
     SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
 
@@ -329,9 +332,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool ExcludedAnnotName(const CAnnotName& name) const;
 
     // Limit search with a set of TSEs
-    typedef vector<CSeq_entry_Handle> TTSE_Limits;
+    SAnnotSelector& ExcludeTSE(const CTSE_Handle& tse);
     SAnnotSelector& ExcludeTSE(const CSeq_entry_Handle& tse);
     SAnnotSelector& ResetExcludedTSE(void);
+    bool ExcludedTSE(const CTSE_Handle& tse) const;
     bool ExcludedTSE(const CSeq_entry_Handle& tse) const;
 
     // No locations mapping flag. Set to true by CAnnot_CI.
@@ -355,6 +359,7 @@ protected:
     void x_ClearAnnotTypesSet(void);
 
     typedef vector<bool> TAnnotTypesSet;
+    typedef vector<CTSE_Handle> TTSE_Limits;
 
     bool                  m_FeatProduct;  // "true" for searching products
     int                   m_ResolveDepth;
@@ -365,21 +370,21 @@ protected:
 
     enum ELimitObject {
         eLimit_None,
-        eLimit_TSE_Info,
-        eLimit_Seq_entry_Info,
-        eLimit_Seq_annot_Info
+        eLimit_TSE_Info,        // CTSE_Info + m_LimitTSE
+        eLimit_Seq_entry_Info,  // CSeq_entry_Info + m_LimitTSE
+        eLimit_Seq_annot_Info   // CSeq_annot_Info + m_LimitTSE
 #if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
 // !!!!! Deprecated methods !!!!!
         ,
-        eLimit_TSE,
-        eLimit_Seq_entry,
-        eLimit_Seq_annot
+        eLimit_TSE,             // CSeq_entry
+        eLimit_Seq_entry,       // CSeq_entry
+        eLimit_Seq_annot        // CSeq_annot
 #endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     };
     ELimitObject          m_LimitObjectType;
     EUnresolvedFlag       m_UnresolvedFlag;
     CConstRef<CObject>    m_LimitObject;
-    TTSE_Lock             m_LimitTSE_Lock;
+    CTSE_Handle           m_LimitTSE;
     size_t                m_MaxSize; //
     TAnnotsNames          m_IncludeAnnotsNames;
     TAnnotsNames          m_ExcludeAnnotsNames;
@@ -409,6 +414,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.39  2004/12/13 17:02:24  grichenk
 * Removed redundant constructors
 *

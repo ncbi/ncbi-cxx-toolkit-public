@@ -41,10 +41,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_annot_Handle::CSeq_annot_Handle(CScope& scope,
-                                     const CSeq_annot_Info& info,
-                                     const TTSE_Lock& tse_lock)
-    : m_Scope(&scope), m_TSE_Lock(tse_lock), m_Info(&info)
+CSeq_annot_Handle::CSeq_annot_Handle(const CSeq_annot_Info& info,
+                                     const CTSE_Handle& tse)
+    : m_TSE(tse), m_Info(&info)
 {
 }
 
@@ -53,8 +52,7 @@ void CSeq_annot_Handle::Reset(void)
 {
     // order is significant
     m_Info.Reset();
-    m_TSE_Lock.Reset();
-    m_Scope.Reset();
+    m_TSE.Reset();
 }
 
 
@@ -63,8 +61,7 @@ CSeq_annot_Handle& CSeq_annot_Handle::operator=(const CSeq_annot_Handle& sah)
     // order is significant
     if ( this != &sah ) {
         Reset();
-        m_Scope = sah.m_Scope;
-        m_TSE_Lock = sah.m_TSE_Lock;
+        m_TSE = sah.m_TSE;
         m_Info = sah.m_Info;
     }
     return *this;
@@ -79,28 +76,20 @@ CConstRef<CSeq_annot> CSeq_annot_Handle::GetCompleteSeq_annot(void) const
 
 CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
 {
-    return CSeq_entry_Handle(GetScope(),
-                             x_GetInfo().GetParentSeq_entry_Info(),
-                             GetTSE_Lock());
+    return CSeq_entry_Handle(x_GetInfo().GetParentSeq_entry_Info(),
+                             GetTSE_Handle());
 }
 
 
 CSeq_entry_Handle CSeq_annot_Handle::GetTopLevelEntry(void) const
 {
-    CSeq_entry_Handle ret;
-    const CSeq_annot_Info& info = x_GetInfo();
-    if ( info.HasTSE_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(),
-                                info.GetTSE_Info(),
-                                GetTSE_Lock());
-    }
-    return ret;
+    return GetTSE_Handle();
 }
 
 
 CSeq_annot_EditHandle CSeq_annot_Handle::GetEditHandle(void) const
 {
-    return m_Scope->GetEditHandle(*this);
+    return x_GetScopeImpl().GetEditHandle(*this);
 }
 
 
@@ -124,15 +113,14 @@ CSeq_annot_Info& CSeq_annot_EditHandle::x_GetInfo(void) const
 
 CSeq_entry_EditHandle CSeq_annot_EditHandle::GetParentEntry(void) const
 {
-    return CSeq_entry_EditHandle(GetScope(),
-                                 x_GetInfo().GetParentSeq_entry_Info(),
-                                 GetTSE_Lock());
+    return CSeq_entry_EditHandle(x_GetInfo().GetParentSeq_entry_Info(),
+                                 GetTSE_Handle());
 }
 
 
 void CSeq_annot_EditHandle::Remove(void) const
 {
-    m_Scope->RemoveAnnot(*this);
+    x_GetScopeImpl().RemoveAnnot(*this);
 }
 
 
@@ -156,6 +144,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/12/22 15:56:04  vasilche
+* Introduced CTSE_Handle.
+*
 * Revision 1.12  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *
