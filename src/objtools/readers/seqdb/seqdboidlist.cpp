@@ -68,7 +68,7 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
                             bool             use_mmap,
                             CSeqDBLockHold & locked)
 {
-    Uint8 file_length = 0;
+    CSeqDBAtlas::TIndx file_length = 0;
     
     m_Atlas.GetFile(m_Lease, filename, file_length, locked);
     

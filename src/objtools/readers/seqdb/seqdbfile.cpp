@@ -184,12 +184,9 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
       m_NumSeqs       (0),
       m_TotLen        (0),
       m_MaxLen        (0),
-      m_HdrOffset     (0),
-      m_SeqOffset     (0),
-      m_AmbCharOffset (0),
-      m_HdrLease      (atlas),
-      m_SeqLease      (atlas),
-      m_AmbLease      (atlas)
+      m_HdrRegion     (0),
+      m_SeqRegion     (0),
+      m_AmbRegion     (0)
 {
     // Input validation
     
@@ -239,10 +236,6 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     // For now, I will keep offsets and get the lease each time it is
     // needed.  The atlas will still contain all the pieces.
     
-    m_HdrOffset     = off1;
-    m_SeqOffset     = off2;
-    m_AmbCharOffset = off3;
-    
     char db_seqtype = ((f_db_seqtype == 1)
                        ? kSeqTypeProt
                        : kSeqTypeNucl);
@@ -254,6 +247,10 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                    eFileErr,
                    "Error: requested sequence type does not match DB.");
     }
+    
+    m_HdrRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off1, off2, locked);
+    m_SeqRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off2, off3, locked);
+    m_AmbRegion = (Uint4*) m_Atlas.GetRegion(m_FileName, off3, offend, locked);
 }
 
 END_NCBI_SCOPE
