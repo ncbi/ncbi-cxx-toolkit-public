@@ -13,7 +13,7 @@ CompileAs=0
 Detect64BitPortabilityProblems=FALSE
 IgnoreStandardIncludePath=FALSE
 StringPooling=FALSE
-MinimalRebuild=TRUE
+MinimalRebuild=
 ExceptionHandling=TRUE
 BufferSecurityCheck=TRUE
 RuntimeTypeInfo=TRUE
@@ -24,6 +24,7 @@ AdditionalOptions=
 [Compiler.debug]
 DebugInformationFormat=3
 Optimization=0
+MinimalRebuild=TRUE
 GlobalOptimizations=FALSE
 InlineFunctionExpansion=0
 FavorSizeOrSpeed=0
@@ -35,6 +36,7 @@ EnableFunctionLevelLinking=FALSE
 [Compiler.release]
 DebugInformationFormat=0
 Optimization=2
+MinimalRebuild=FALSE
 GlobalOptimizations=TRUE
 InlineFunctionExpansion=1
 FavorSizeOrSpeed=1
