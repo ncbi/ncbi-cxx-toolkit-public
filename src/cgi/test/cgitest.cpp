@@ -225,7 +225,7 @@ static void TestCgi_Request_Static(void)
     // assert( !TestEntries(entries, "&zz=qq") );
     assert( TestEntries(entries, "&zz=qq") );
 
-    assert( !TestEntries(entries, "tt=qq=pp") );
+    // assert( !TestEntries(entries, "tt=qq=pp") );
     assert( !TestEntries(entries, "=ggg&ppp=PPP") );
     assert(  TestEntries(entries, "a=d&eee") );
     assert(  TestEntries(entries, "xxx&eee") );
@@ -594,6 +594,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.17  2003/08/20 22:48:38  ucko
+ * Allow equal signs in values.
+ *
  * Revision 1.16  2003/07/08 19:07:28  ivanov
  * Added into TestCgi() test for URL_Encode() mark characters encoding
  *
