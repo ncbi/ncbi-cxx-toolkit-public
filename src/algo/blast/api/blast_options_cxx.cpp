@@ -117,7 +117,7 @@ CBlastOption::SetBlastp()
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-    m_LutOpts->alphabet_size = 25;
+    m_LutOpts->alphabet_size = BLASTAA_SIZE;
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -168,7 +168,7 @@ CBlastOption::SetBlastn()
     m_LutOpts->lut_type = NA_LOOKUP_TABLE;
     m_LutOpts->word_size = BLAST_WORDSIZE_NUCL;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTN;
-    m_LutOpts->alphabet_size = 16;
+    m_LutOpts->alphabet_size = BLASTNA_SIZE;
     // ag_blast is the default; variable word sizes can only be used for word
     // sizes divisible by COMPRESSION_RATIO (4)
     if (m_LutOpts->word_size % COMPRESSION_RATIO == 0)
@@ -226,7 +226,7 @@ void CBlastOption::SetMegablast()
     m_LutOpts->word_size = BLAST_WORDSIZE_MEGABLAST;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_MEGABLAST;
     m_LutOpts->max_positions = INT4_MAX;
-    m_LutOpts->alphabet_size = 16;
+    m_LutOpts->alphabet_size = BLASTNA_SIZE;
     // ag_blast is the default; variable word sizes can only be used for word
     // sizes divisible by COMPRESSION_RATIO (4)
     if (m_LutOpts->word_size % COMPRESSION_RATIO == 0)
@@ -288,7 +288,7 @@ CBlastOption::SetBlastx()
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-    m_LutOpts->alphabet_size = 25;
+    m_LutOpts->alphabet_size = BLASTAA_SIZE;
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -338,7 +338,7 @@ CBlastOption::SetTblastn()
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-    m_LutOpts->alphabet_size = 25;
+    m_LutOpts->alphabet_size = BLASTAA_SIZE;
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -395,7 +395,7 @@ CBlastOption::SetTblastx()
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
-    m_LutOpts->alphabet_size = 25;
+    m_LutOpts->alphabet_size = BLASTAA_SIZE;
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -500,6 +500,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/27 15:05:56  camacho
+* Use symbolic name for alphabet sizes
+*
 * Revision 1.14  2003/08/21 19:32:08  dondosha
 * Call SetDbGeneticCodeStr when creating a database gen. code string, to avoid code duplication
 *

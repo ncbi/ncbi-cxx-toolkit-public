@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.55  2003/08/27 15:05:37  camacho
+ * Use symbolic name for alphabet sizes
+ *
  * Revision 1.54  2003/08/26 21:53:33  madden
  * Protein alphabet is 26 chars, not 25
  *
@@ -809,7 +812,7 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
    
    if (program_number != blast_type_blastn) {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
-      (*options)->alphabet_size = 26;
+      (*options)->alphabet_size = BLASTAA_SIZE;
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
       if (program_number == blast_type_blastp)
@@ -822,7 +825,7 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
       
    } else {
-      (*options)->alphabet_size = 16;
+      (*options)->alphabet_size = BLASTNA_SIZE;
    }
 
    return 0;
