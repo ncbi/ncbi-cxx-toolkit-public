@@ -954,6 +954,78 @@ int test1(int argc, char ** argv)
         } else desc += " [-gi2oid | -gi2oidR]";
         
         
+        if (s == "-fastacmd") {
+            string dbname("nr");
+            CSeqDB::ESeqType seqtype(CSeqDB::eUnknown);
+            string acc;
+            
+            while(! args.empty()) {
+                string cmd(args.front());
+                args.pop_front();
+                
+                bool has_value = true;
+                
+                if (args.empty() || (args.front()[0] == '-')) {
+                    has_value = false;
+                }
+                
+                bool success = false;
+                
+                if (has_value) {
+                    success = true;
+                    string value = args.front();
+                    args.pop_front();
+                    
+                    if (cmd == "-d") {
+                        dbname = value;
+                    } else if (cmd == "-s") {
+                        acc = value;
+                    } else if (cmd == "-p") {
+                        // Default is eUnknown.  Can specify protein
+                        // or nucleotide directly, though.
+                        
+                        seqtype = (value == "T")
+                            ? CSeqDB::eProtein
+                            : CSeqDB::eNucleotide;
+                    } else if (cmd == "-s") {
+                        acc = value;
+                    } else {
+                        cout << "Fell off bottom of value test" << endl;
+                        success = false;
+                    }
+                } else {
+                    cout << "No value found, cmd=" << cmd << endl;
+                }
+                
+                if (! success) {
+                    cout << "Command [" << cmd << "] not supported yet." << endl;
+                    return 0;
+                }
+            }
+            
+            if (acc.empty()) {
+                cout << "For this command, [-s] option is mandatory." << endl;
+                return 0;
+            }
+            
+            CSeqDB db(dbname, seqtype);
+            
+            vector<Uint4> oids;
+            db.AccessionToOids(acc, oids);
+            
+            if (oids.empty()) {
+                cout << "Could not find OIDs for Accession " << acc << endl;
+            } else {
+                ITERATE(vector<Uint4>, iter, oids) {
+                    cout << "Have OID " << (*iter)
+                         << ", length " << db.GetSeqLength(*iter) << endl;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-fastacmd]";
+        
+        
         if (s == "-xlate3") {
             string dbname("nr");
             //string dbname("prot_dbs");
