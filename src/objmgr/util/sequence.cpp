@@ -1804,13 +1804,13 @@ int TestForOverlap(const CSeq_loc& loc1,
         rg1 = loc1.GetTotalRange();
         rg2 = loc2.GetTotalRange();
     }
-    catch (runtime_error) {
+    catch (runtime_error&) {
         // Can not use total range for multi-sequence locations
         if (type == eOverlap_Simple  ||
             type == eOverlap_Contained  ||
             type == eOverlap_Contains) {
             // Can not process circular multi-id locations
-            if (circular_len != 0) {
+            if (circular_len != 0  &&  circular_len != kInvalidSeqPos) {
                 throw;
             }
             return x_TestForOverlap_MultiSeq(loc1, loc2, type);
@@ -2539,7 +2539,7 @@ void CFastaOstream::Write(CBioseq& seq, const CSeq_loc* location)
 
 
 void CCdregion_translate::ReadSequenceByLocation (string& seq,
-                                                  CBioseq_Handle& bsh,
+                                                  const CBioseq_Handle& bsh,
                                                   const CSeq_loc& loc)
 
 {
@@ -2551,7 +2551,7 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
 }
 
 void CCdregion_translate::TranslateCdregion (string& prot,
-                                             CBioseq_Handle& bsh,
+                                             const CBioseq_Handle& bsh,
                                              const CSeq_loc& loc,
                                              const CCdregion& cdr,
                                              bool include_stop,
@@ -3098,6 +3098,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.61  2003/10/08 21:08:38  ucko
+* CCdregion_translate: take const Bioseq_Handles, since there's no need
+* to modify them.
+* TestForOverlap: don't consider sequences circular if
+* circular_len == kInvalidSeqPos
+*
 * Revision 1.60  2003/09/22 18:38:14  grichenk
 * Fixed circular seq-locs processing by TestForOverlap()
 *
