@@ -265,9 +265,15 @@ void CBioseqContext::x_SetId(void)
             break;
         // TPA
         case CSeq_id::e_Tpg:
+            m_IsTPA = true;
+            break;
         case CSeq_id::e_Tpe:
+            m_IsTPA = true;
+            m_IsEMBL = true;
+            break;
         case CSeq_id::e_Tpd:
             m_IsTPA = true;
+            m_IsDDBJ = true;
             break;
         case CSeq_id::e_General:
             if ( id.GetGeneral().CanGetDb() ) {
@@ -594,6 +600,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/11/15 20:06:00  shomrat
+* Flag EMBL/DDBJ for EMBL and DDBJ TPAs
+*
 * Revision 1.26  2004/10/22 15:41:34  shomrat
 * + IsDDBJ
 *
