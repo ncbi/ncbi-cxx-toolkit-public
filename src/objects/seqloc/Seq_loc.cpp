@@ -46,8 +46,112 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+
+// constructors
+CSeq_loc::CSeq_loc(E_Choice index)
+{
+    switch ( index ) {
+    case e_Null:
+        {
+            SetNull();
+            break;
+        }
+    case e_Empty:
+        {
+            SetEmpty();
+            break;
+        }
+    case e_Whole:
+        {
+            SetWhole();
+            break;
+        }
+    case e_Int:
+        {
+            SetInt();
+            break;
+        }
+    case e_Packed_int:
+        {
+            SetPacked_int();
+            break;
+        }
+    case e_Pnt:
+        {
+            SetPnt();
+            break;
+        }
+    case e_Packed_pnt:
+        {
+            SetPacked_pnt();
+            break;
+        }
+    case e_Mix:
+        {
+            SetMix();
+            break;
+        }
+    case e_Equiv:
+        {
+            SetEquiv();
+            break;
+        }
+    case e_Bond:
+        {
+            SetBond();
+            break;
+        }
+    case e_Feat:
+        {
+            SetFeat();
+            break;
+        }
+    case e_not_set:
+    default:
+        break;
+    }
+}
+
+
+CSeq_loc::CSeq_loc(TId& id, TPoint point, TStrand strand)
+{
+    x_InvalidateCache();
+    SetPnt(*new CSeq_point(id, point, strand));
+}
+
+
+CSeq_loc::CSeq_loc(TId& id, const TPoints& points, TStrand strand)
+{
+    x_InvalidateCache();
+    if ( points.size() == 1 ) {
+        SetPnt(*new CSeq_point(id, points.front(), strand));
+    } else {
+        SetPacked_pnt(*new CPacked_seqpnt(id, points, strand));
+    }
+}
+
+
+CSeq_loc::CSeq_loc(TId& id, TPoint from, TPoint to, TStrand strand)
+{
+    x_InvalidateCache();
+    SetInt(*new CSeq_interval(id, from, to, strand));
+}
+
+
+CSeq_loc::CSeq_loc(TId& id, TRanges ranges, TStrand strand)
+{
+    x_InvalidateCache();
+    if ( ranges.size() == 1 ) {
+        SetInt(*new CSeq_interval(id,
+            ranges.front().GetFrom(), ranges.front().GetTo(), strand));
+    } else {
+        SetPacked_int(*new CPacked_seqint(id, ranges, strand));
+    }
+}
 
 
 // destructor
@@ -254,58 +358,65 @@ CSeq_loc::TRange CSeq_loc::x_UpdateTotalRange(void) const
     TRange range = m_TotalRangeCache;
     if ( range.GetFrom() == TSeqPos(kDirtyCache) ) {
         const CSeq_id* id = 0;
-        range = m_TotalRangeCache = CalculateTotalRangeCheckId(id);
+        range = m_TotalRangeCache = x_CalculateTotalRangeCheckId(id);
         m_IdCache = id;
     }
     return range;
 }
 
 
-void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id& id)
+void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const
 {
+    if ( total_id == id ) {
+        return;
+    }
+    
     if ( !total_id ) {
-        total_id = &id;
+        total_id = id;
+    } else if ( (id  &&  !total_id->Equals(*id))  ||  !id ) {
+        NCBI_THROW(CException, eUnknown, "CSeq_loc -- multiple seq-ids");
     }
-    else if ( !total_id->Equals(id) ) {
-        NCBI_THROW(CException, eUnknown,
-                   "CSeq_loc::CalculateTotalRange -- "
-                   "can not combine multiple seq-ids");
-    }
-}
+} 
+
 
 
 // returns enclosing location range
 // the total range is meaningless if there are several seq-ids
 // in the location
-CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
+CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) const
 {
     TRange total_range;
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
+        {
+            // Ignore locations without id
+            total_range = TRange::GetEmpty();
+            break;
+        }
     case CSeq_loc::e_Empty:
         {
-            // Ignore empty locations
+            x_UpdateId(id, &GetEmpty());
             total_range = TRange::GetEmpty();
             break;
         }
     case CSeq_loc::e_Whole:
         {
-            x_UpdateId(id, GetWhole());
+            x_UpdateId(id, &GetWhole());
             total_range = TRange::GetWhole();
             break;
         }
     case CSeq_loc::e_Int:
         {
             const CSeq_interval& loc = GetInt();
-            x_UpdateId(id, loc.GetId());
+            x_UpdateId(id, &loc.GetId());
             total_range.Set(loc.GetFrom(), loc.GetTo());
             break;
         }
     case CSeq_loc::e_Pnt:
         {
             const CSeq_point& pnt = GetPnt();
-            x_UpdateId(id, pnt.GetId());
+            x_UpdateId(id, &pnt.GetId());
             TSeqPos pos = pnt.GetPoint();
             total_range.Set(pos, pos);
             break;
@@ -317,7 +428,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
             total_range = TRange::GetEmpty();
             ITERATE ( CPacked_seqint::Tdata, ii, ints.Get() ) {
                 const CSeq_interval& loc = **ii;
-                x_UpdateId(id, loc.GetId());
+                x_UpdateId(id, &loc.GetId());
                 total_range += TRange(loc.GetFrom(), loc.GetTo());
             }
             break;
@@ -325,7 +436,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
     case CSeq_loc::e_Packed_pnt:
         {
             const CPacked_seqpnt& pnts = GetPacked_pnt();
-            x_UpdateId(id, pnts.GetId());
+            x_UpdateId(id, &pnts.GetId());
             total_range = TRange::GetEmpty();
             ITERATE( CPacked_seqpnt::TPoints, pi, pnts.GetPoints() ) {
                 TSeqPos pos = *pi;
@@ -340,7 +451,7 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
             total_range = TRange::GetEmpty();
             ITERATE( CSeq_loc_mix::Tdata, li, mix.Get() ) {
                 // instead of Get... to be able to check ID
-                total_range += (*li)->GetTotalRangeCheckId(id);
+                total_range += (*li)->x_CalculateTotalRangeCheckId(id);
             }
             break;
         }
@@ -1039,6 +1150,308 @@ bool CSeq_loc::Equals(const CSerialObject& object) const
 }
 
 
+void CSeq_loc::x_CheckId(const CSeq_id*& id) const
+{
+    switch ( Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+        {
+            x_UpdateId(id, 0);
+            break;
+        }
+    case CSeq_loc::e_Empty:
+        {
+            x_UpdateId(id, &GetEmpty());
+            break;
+        }
+    case CSeq_loc::e_Whole:
+        {
+            x_UpdateId(id, &GetWhole());
+            break;
+        }
+    case CSeq_loc::e_Int:
+        {
+            const CSeq_interval& loc = GetInt();
+            x_UpdateId(id, &loc.GetId());
+            break;
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            const CSeq_point& pnt = GetPnt();
+            x_UpdateId(id, &pnt.GetId());
+            break;
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            // Check ID of each interval
+            const CPacked_seqint& ints = GetPacked_int();
+            ITERATE ( CPacked_seqint::Tdata, ii, ints.Get() ) {
+                const CSeq_interval& loc = **ii;
+                x_UpdateId(id, &loc.GetId());
+            }
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            const CPacked_seqpnt& pnts = GetPacked_pnt();
+            x_UpdateId(id, &pnts.GetId());
+            break;
+        }
+    case CSeq_loc::e_Mix:
+        {
+            // Check ID of each sub-location.
+            const CSeq_loc_mix& mix = GetMix();
+            ITERATE( CSeq_loc_mix::Tdata, li, mix.Get() ) {
+                (*li)->CheckId(id);
+            }
+            break;
+        }
+    case CSeq_loc::e_Bond:
+        {
+            const CSeq_bond& bond = GetBond();
+            if ( bond.CanGetA() ) {
+                x_UpdateId(id, &bond.GetA().GetId());
+            }
+            if ( bond.CanGetB() ) {
+                x_UpdateId(id, &bond.GetB().GetId());
+            }
+            break;
+        }        
+    case CSeq_loc::e_Equiv:
+        {
+            // Doesn't make much sense to test equiv, but ...
+            ITERATE(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
+                (*li)->CheckId(id);
+            }
+            break;
+        }
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::CheckId -- "
+                       "unsupported location type");
+        }
+    }
+}
+
+
+void CSeq_loc::x_ChangeToMix(const CSeq_loc& other)
+{
+    CRef<CSeq_loc> self(new CSeq_loc);
+    self->Assign(*this);
+    CSeq_loc_mix& mix = SetMix();
+    mix.AddSeqLoc(*self);
+    mix.AddSeqLoc(other);
+}
+
+
+void CSeq_loc::x_ChangeToPackedInt(const CSeq_loc& other)
+{
+    _ASSERT(IsInt());
+    _ASSERT(other.IsInt()  ||  other.IsPacked_int());
+    
+    CConstRef<CSeq_interval> self(&GetInt());
+    SetPacked_int().AddInterval(*self);
+
+    if ( other.IsInt() ) {
+        SetPacked_int().AddInterval(other.GetInt());
+    } else {  // other is packed int
+        SetPacked_int().AddIntervals(other.GetPacked_int());
+    }
+}
+
+
+void CSeq_loc::x_ChangeToPackedPnt(const CSeq_loc& other)
+{
+    _ASSERT(IsPnt());
+    _ASSERT(other.IsPnt()  ||  other.IsPacked_pnt());
+
+    CRef<CSeq_point> pnt(&SetPnt());
+    CPacked_seqpnt& ppnt = SetPacked_pnt();
+    if ( pnt->IsSetStrand() ) {
+        ppnt.SetStrand(pnt->GetStrand());
+    }
+    if ( pnt->IsSetId() ) {
+        ppnt.SetId(pnt->SetId());
+    }
+    if ( pnt->IsSetFuzz() ) {
+        ppnt.SetFuzz(pnt->SetFuzz());
+    }
+    ppnt.AddPoint(pnt->GetPoint());
+
+    if ( other.IsPnt() ) {
+        ppnt.AddPoint(other.GetPnt().GetPoint());
+    } else { // other is packed point
+        ppnt.AddPoints(other.GetPacked_pnt().GetPoints());
+    }
+}
+
+
+template<typename T1, typename T2>
+bool s_CanAdd(const T1& obj1, const T2& obj2)
+{
+    // test strands
+    {{
+        ENa_strand s1 = obj1.CanGetStrand() ? obj1.GetStrand() : eNa_strand_unknown;
+        ENa_strand s2 = obj2.CanGetStrand() ? obj2.GetStrand() : eNa_strand_unknown;
+        if ( s1 != s2 ) {
+            return false;
+        }
+    }}
+
+    // test ids
+    {{
+        const CSeq_id* id1 = obj1.CanGetId() ? &obj1.GetId() : 0;
+        const CSeq_id* id2 = obj2.CanGetId() ? &obj2.GetId() : 0;
+        if ( ((id1 != id2)  &&  (id1 == 0  ||  id2 == 0))  ||
+             !id1->Match(*id2) ) {
+            return false;
+        }
+    }}
+
+    // test fuzz
+    {{
+        const CInt_fuzz* f1 = obj1.CanGetFuzz() ? &obj1.GetFuzz() : 0;
+        const CInt_fuzz* f2 = obj2.CanGetFuzz() ? &obj2.GetFuzz() : 0;
+        if ( ((f1 != f2)  &&  (f1 == 0  ||  f2 == 0))  ||
+             !f1->Equals(*f2) ) {
+            return false;
+        }
+    }}
+
+    return true;
+}
+
+
+bool s_CanAdd(const CSeq_loc& loc1, const CSeq_loc& loc2)
+{
+    switch ( loc1.Which() ) {
+    case CSeq_loc::e_Pnt:
+        {
+            switch ( loc2.Which() ) {
+            case CSeq_loc::e_Pnt:
+                return s_CanAdd(loc1.GetPnt(), loc2.GetPnt());
+            case CSeq_loc::e_Packed_pnt:
+                return s_CanAdd(loc1.GetPnt(), loc2.GetPacked_pnt());
+            }
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            switch ( loc2.Which() ) {
+            case CSeq_loc::e_Pnt:
+                return s_CanAdd(loc1.GetPacked_pnt(), loc2.GetPnt());
+            case CSeq_loc::e_Packed_pnt:
+                return s_CanAdd(loc1.GetPacked_pnt(), loc2.GetPacked_pnt());
+            }
+            break;
+        }
+    default:
+        {
+            return false;
+        }
+    }
+
+    return false;
+}
+
+
+void CSeq_loc::Add(const CSeq_loc& other)
+{
+    switch ( Which() ) {
+    case CSeq_loc::e_not_set:
+        {
+            Assign(other);
+            break;
+        }
+    case CSeq_loc::e_Null:
+        {
+            // ??? skip if other is null?
+            x_ChangeToMix(other);
+            break;
+        }
+    case CSeq_loc::e_Empty:
+        {
+            // ??? skip if other is empty and ids match?
+            x_ChangeToMix(other);
+            break;
+        }
+        break;
+
+    case CSeq_loc::e_Whole:
+        {
+            x_ChangeToMix(other);
+            break;
+        }
+    case CSeq_loc::e_Int:
+        {
+            if ( other.IsInt()  ||  other.IsPacked_int() ) {
+                x_ChangeToPackedInt(other);
+            } else {
+                x_ChangeToMix(other);
+            }
+        }
+        break;
+    case CSeq_loc::e_Pnt:
+        {
+            if ( s_CanAdd(*this, other) ) {
+                x_ChangeToPackedPnt(other);
+            } else {
+                x_ChangeToMix(other);
+            }
+            break;
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            if ( other.IsInt() ) {
+                SetPacked_int().AddInterval(other.GetInt());
+            } else if ( other.IsPacked_int() ) {
+                SetPacked_int().AddIntervals(other.GetPacked_int());
+            } else {
+                x_ChangeToMix(other);
+            }
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            if ( s_CanAdd(*this, other) ) {
+                if ( other.IsPnt() ) {
+                    SetPacked_pnt().AddPoint(other.GetPnt().GetPoint());
+                } else if ( other.IsPacked_pnt() ) {
+                    SetPacked_pnt().AddPoints(other.GetPacked_pnt().GetPoints());
+                }
+            } else {
+                x_ChangeToMix(other);
+            }
+            break;
+        }
+    case CSeq_loc::e_Mix:
+        {
+            SetMix().AddSeqLoc(other);
+            break;
+        }
+    case CSeq_loc::e_Equiv:
+        {
+            SetEquiv().Add(other);
+            break;
+        }
+    case CSeq_loc::e_Bond:
+        {
+            x_ChangeToMix(other);
+            break;
+        }
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::Add -- "
+                       "unsupported location type");
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -1046,6 +1459,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.37  2004/01/28 17:18:11  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 6.36  2003/11/21 14:45:05  grichenk
  * Replaced runtime_error with CException
  *

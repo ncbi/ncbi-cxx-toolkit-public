@@ -48,6 +48,15 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// constructor
+CPacked_seqint::CPacked_seqint(TId& id, const TRanges& ivals, TStrand strand)
+{
+    ITERATE(TRanges, ival, ivals) {
+        AddInterval(id, ival->GetFrom(), ival->GetTo(), strand);
+    }
+}
+
+
 // destructor
 CPacked_seqint::~CPacked_seqint(void)
 {
@@ -63,18 +72,41 @@ TSeqPos CPacked_seqint::GetLength(void) const
 	return length;
 }
 
+
+void CPacked_seqint::AddInterval(const CSeq_interval& ival)
+{
+    CRef<CSeq_interval> new_ival(new CSeq_interval);
+    new_ival->Assign(ival);
+    Set().push_back(new_ival);
+}
+
+
 void CPacked_seqint::AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
                                  ENa_strand strand)
 {
-    CRef<CSeq_interval> ival(new CSeq_interval);
-    ival->SetFrom(from);
-    ival->SetTo(to);
-    ival->SetId().Assign(id);
+    CSeq_interval ival;
+    ival.SetFrom(from);
+    ival.SetTo(to);
+    ival.SetId().Assign(id);
     if (strand != eNa_strand_unknown) {
-        ival->SetStrand(strand);
+        ival.SetStrand(strand);
     }
-    Set().push_back(ival);
+    AddInterval(ival);
 }
+
+
+void CPacked_seqint::AddIntervals(const CPacked_seqint& ivals)
+{
+    AddIntervals(ivals.Get());
+}
+
+
+void CPacked_seqint::AddIntervals(const Tdata& ivals)
+{
+    copy(ivals.begin(), ivals.end(), back_inserter(Set()));
+}
+
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -84,6 +116,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.5  2004/01/28 17:18:01  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 6.4  2003/08/11 14:39:13  ucko
  * +AddInterval; CVS log to end
  *

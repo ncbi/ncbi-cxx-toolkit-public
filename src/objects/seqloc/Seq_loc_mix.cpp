@@ -65,6 +65,35 @@ bool CSeq_loc_mix::IsPartialRight (void) const
 }
 
 
+void CSeq_loc_mix::AddSeqLoc(const CSeq_loc& other)
+{
+    if ( !other.IsMix() ) {
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->Assign(other);
+        Set().push_back(loc);
+    } else {
+        // "flatten" the other seq-loc
+        ITERATE(CSeq_loc_mix::Tdata, li, other.GetMix().Get()) {
+            AddSeqLoc(**li);
+        }
+    }
+}
+
+
+void CSeq_loc_mix::AddSeqLoc(CSeq_loc& other)
+{
+    if ( !other.IsMix() ) {
+        CRef<CSeq_loc> loc(&other);
+        Set().push_back(loc);
+    } else {
+        // "flatten" the other seq-loc
+        NON_CONST_ITERATE(CSeq_loc_mix::Tdata, li, other.SetMix().Set()) {
+            AddSeqLoc(**li);
+        }
+    }
+}
+
+
 void CSeq_loc_mix::AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
                                ENa_strand strand)
 {
@@ -96,6 +125,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.10  2004/01/28 17:18:19  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 6.9  2003/05/23 20:24:56  ucko
  * +AddInterval (also handles points automatically); CVS log -> end;
  * drop workaround for old WorkShop bug

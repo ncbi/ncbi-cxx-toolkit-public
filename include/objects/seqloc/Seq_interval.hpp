@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2004/01/28 17:15:26  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 1.11  2003/01/24 20:12:18  vasilche
  * Reverted CSeq_interval::GetLength() fix for negative strands.
  *
@@ -97,6 +100,8 @@ public:
 
     // constructor
     CSeq_interval(void);
+    CSeq_interval(TId& id, TFrom from, TTo to, TStrand strand = eNa_strand_unknown);
+
     // destructor
     ~CSeq_interval(void);
 
@@ -122,6 +127,19 @@ inline
 CSeq_interval::CSeq_interval(void)
 {
 }
+
+
+inline
+CSeq_interval::CSeq_interval(TId& id, TFrom from, TTo to, TStrand strand)
+{
+    SetId(id);
+    SetFrom(from);
+    SetTo(to);
+    if ( strand != eNa_strand_unknown ) {
+        SetStrand(strand);
+    }
+}
+
 
 // length return
 inline

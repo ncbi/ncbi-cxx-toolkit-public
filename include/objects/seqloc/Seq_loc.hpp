@@ -64,9 +64,19 @@ public:
     typedef CPacked_seqpnt_Base::TPoints TPoints;
     typedef CPacked_seqint_Base::Tdata   TIntervals;
     typedef CSeq_loc_mix_Base::Tdata     TLocations;
+    typedef CSeq_id                      TId;
+    typedef ENa_strand                   TStrand;
+    typedef TSeqPos                      TPoint;
+    typedef CPacked_seqint::TRanges      TRanges;
 
     // constructor
     CSeq_loc(void);
+    CSeq_loc(E_Choice index);
+    CSeq_loc(TId& id, TPoint point, TStrand strand = eNa_strand_unknown);
+    CSeq_loc(TId& id, const TPoints& points, TStrand strand = eNa_strand_unknown);
+    CSeq_loc(TId& id, TPoint from, TPoint to, TStrand strand = eNa_strand_unknown);
+    CSeq_loc(TId& id, TRanges ivals, TStrand strand = eNa_strand_unknown);
+
     // destructor
     virtual ~CSeq_loc(void);
 
@@ -77,17 +87,14 @@ public:
     //   const CSeq_id& GetId(const CSeq_loc&, CScope*)
     //   TSeqPos GetStart(const CSeq_loc&, CScope*)
     //   sequence::ECompare Compare(const CSeq_loc&, CSeq_loc&, CScope*)
+    //   sequence::SeqLocMerge(...)
     //
 
     typedef CRange<TSeqPos> TRange;
 
     TRange GetTotalRange(void) const;
-    TRange GetTotalRangeCheckId(const CSeq_id*& id) const;
-    TRange CalculateTotalRange(void) const;
-    TRange CalculateTotalRangeCheckId(const CSeq_id*& id) const;
-    void InvalidateTotalRangeCache(void);
-    void InvalidateTotalRangeCacheAll(void);
-
+    void CheckId(const CSeq_id*& id) const;
+    
     // Special case for circular sequences. No ID is checked for
     // circular locations. If the sequence is not circular
     // (seq_len == kInvalidSeqPos) all functions work like GetTotalRange()
@@ -116,13 +123,23 @@ public:
     // or throw exception.
     int Compare(const CSeq_loc& loc) const;
 
+    void Add(const CSeq_loc& other);
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
     CSeq_loc& operator= (const CSeq_loc&);
 
     TRange x_UpdateTotalRange(void) const;
-    static void x_UpdateId(const CSeq_id*& total_id, const CSeq_id& id);
+    TRange x_CalculateTotalRangeCheckId(const CSeq_id*& id) const;
+    void x_InvalidateTotalRangeCache(void);
+    void x_CheckId(const CSeq_id*& id) const;
+    void x_InvalidateIdCache(void);
+    void x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const;
+    void x_ChangeToMix(const CSeq_loc& other);
+    void x_ChangeToPackedInt(const CSeq_loc& other);
+    void x_ChangeToPackedPnt(const CSeq_loc& other);
+    void x_InvalidateCache(void);
 
     enum {
         kDirtyCache = -2,
@@ -218,10 +235,24 @@ private:
 /////////////////// CSeq_loc inline methods
 
 inline
-void CSeq_loc::InvalidateTotalRangeCache(void)
+void CSeq_loc::x_InvalidateTotalRangeCache(void)
 {
     m_TotalRangeCache.SetFrom(TSeqPos(kDirtyCache));
+}
+
+
+inline 
+void CSeq_loc::x_InvalidateIdCache(void)
+{
     m_IdCache = 0;
+}
+
+
+inline 
+void CSeq_loc::x_InvalidateCache(void)
+{
+    x_InvalidateTotalRangeCache();
+    x_InvalidateIdCache();
 }
 
 
@@ -229,7 +260,7 @@ void CSeq_loc::InvalidateTotalRangeCache(void)
 inline
 CSeq_loc::CSeq_loc(void)
 {
-    InvalidateTotalRangeCache();
+    x_InvalidateCache();
 }
 
 
@@ -244,23 +275,23 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 
 
 inline
-CSeq_loc::TRange CSeq_loc::GetTotalRangeCheckId(const CSeq_id*& id) const
+void CSeq_loc::CheckId(const CSeq_id*& id) const
 {
-    TRange range = m_TotalRangeCache;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) )
-        range = x_UpdateTotalRange();
-    if ( m_IdCache )
-        x_UpdateId(id, *m_IdCache);
-    return range;
+    if ( m_IdCache == 0 ) {
+        x_CheckId(m_IdCache);
+    }
+    x_UpdateId(id, m_IdCache);
 }
 
 
 inline
 void CSeq_loc::SetId(const CSeq_id& id)
 {
+    x_InvalidateIdCache();
     CRef<CSeq_id> nc_id(new CSeq_id);
     nc_id->Assign(id);
     SetId(*nc_id);
+    m_IdCache = nc_id;
 }
 
 
@@ -397,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/01/28 17:16:31  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 1.31  2003/12/31 15:36:07  grichenk
  * Moved CompareLocations() from CSeq_feat to CSeq_loc,
  * renamed it to Compare().

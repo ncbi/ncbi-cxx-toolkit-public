@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqloc/Packed_seqint_.hpp>
+#include <util/range.hpp>
 
 // generated classes
 
@@ -53,8 +54,14 @@ class NCBI_SEQLOC_EXPORT CPacked_seqint : public CPacked_seqint_Base
 {
     typedef CPacked_seqint_Base Tparent;
 public:
+    typedef CSeq_id                    TId;
+    typedef ENa_strand                 TStrand;
+    typedef vector< CRange<TSeqPos> >  TRanges;
+
     // constructor
     CPacked_seqint(void);
+    CPacked_seqint(TId& id, const TRanges& ivals, TStrand strand = eNa_strand_unknown);
+
     // destructor
     ~CPacked_seqint(void);
 
@@ -62,8 +69,12 @@ public:
     TSeqPos GetLength(void) const;
 
     /// for convenience
+    void AddInterval(const CSeq_interval& ival);
     void AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
                      ENa_strand strand = eNa_strand_unknown);
+    void AddIntervals(const CPacked_seqint& ivals);
+    void AddIntervals(const Tdata& ivals);
+
 private:
     // Prihibit copy constructor & assignment operator
     CPacked_seqint(const CPacked_seqint&);
@@ -80,7 +91,6 @@ CPacked_seqint::CPacked_seqint(void)
 {
 }
 
-
 /////////////////// end of CPacked_seqint inline methods
 
 
@@ -92,6 +102,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/01/28 17:14:55  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 1.5  2003/08/11 14:39:00  ucko
  * +AddInterval; CVS log to end
  *

@@ -67,6 +67,12 @@ public:
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
 
+    // Add a Seq-loc to the mix.
+    // NB: This is just a structural change, no guarantees as to the biological
+    // validity of the data are made.
+    // See sequence::MergeLocations(..) for context aware function.
+    void AddSeqLoc(const CSeq_loc& other);
+    void AddSeqLoc(CSeq_loc& other);
     // convenience function; automatically optimizes down points
     void AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
                      ENa_strand strand = eNa_strand_unknown);
@@ -82,7 +88,6 @@ private:
 
 /////////////////// CSeq_loc_mix inline methods
 
-
 /////////////////// end of CSeq_loc_mix inline methods
 
 
@@ -94,6 +99,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/01/28 17:15:37  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 1.13  2003/05/23 20:23:57  ucko
  * +AddInterval (also handles points automatically); CVS log -> end
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/01/28 17:15:09  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 1.4  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *
@@ -77,8 +80,14 @@ public:
 
     // constructor
     CPacked_seqpnt(void);
+    CPacked_seqpnt(TId& id, const TPoints& points, TStrand strand = eNa_strand_unknown);
+
     // destructor
     ~CPacked_seqpnt(void);
+
+    // Add a point to the collection. 
+    void AddPoint(TSeqPos point);
+    void AddPoints(const TPoints& points);
     
 private:
     // Prohibit copy constructor and assignment operator
@@ -95,6 +104,31 @@ private:
 inline
 CPacked_seqpnt::CPacked_seqpnt(void)
 {
+}
+
+
+inline
+CPacked_seqpnt::CPacked_seqpnt(TId& id, const TPoints& points, TStrand strand)
+{
+    SetId(id);
+    copy(points.begin(), points.end(), back_inserter(SetPoints()));
+    if ( strand != eNa_strand_unknown ) {
+        SetStrand(strand);
+    }
+}
+
+
+inline
+void CPacked_seqpnt::AddPoint(TSeqPos point)
+{
+    SetPoints().push_back(point);
+}
+
+
+inline
+void CPacked_seqpnt::AddPoints(const TPoints& points)
+{
+    copy(points.begin(), points.end(), back_inserter(SetPoints()));
 }
 
 
