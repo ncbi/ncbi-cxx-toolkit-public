@@ -3,8 +3,8 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-APP_PROJ = blast2seq
-EXPENDABLE_APP_PROJ = blast remote_blast dust
+APP_PROJ = blast2seq blast
+EXPENDABLE_APP_PROJ = remote_blast dust
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
