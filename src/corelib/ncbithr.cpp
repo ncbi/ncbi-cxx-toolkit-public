@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/12/09 18:41:59  vakatov
+ * Fixed for the extremely smart IRIX MIPSpro73 compiler
+ *
  * Revision 1.1  2000/12/09 00:04:21  vakatov
  * First draft:  Fake implementation of Mutex and RW-lock API
  *
@@ -121,7 +124,7 @@ CMutex& CMutex::operator= (const CMutex&)
 
 CMutexGuard::CMutexGuard(const CMutexGuard&)  {}
 CMutexGuard& CMutexGuard::operator= (const CMutexGuard&)
-{ return *(CMutexGuard*)0; }
+{ return *this; }
 
 
 
@@ -225,7 +228,7 @@ CRWLock& CRWLock::operator= (const CRWLock&)
 
 CRWLockGuard::CRWLockGuard(const CRWLockGuard&)  {}
 CRWLockGuard& CRWLockGuard::operator= (const CRWLockGuard&)
-{ return *(CRWLockGuard*)0; }
+{ return *this; }
 
 
 
@@ -234,10 +237,12 @@ CRWLockGuard& CRWLockGuard::operator= (const CRWLockGuard&)
 //  CReadLockGuard::
 //
 
+static CRWLock* s_NULL_CRWLock = 0;
+
 CReadLockGuard::CReadLockGuard(const CReadLockGuard&)
-    : CRWLockGuard(*(CRWLock*)0)  {}
+    : CRWLockGuard(*s_NULL_CRWLock)  {}
 CReadLockGuard& CReadLockGuard::operator= (const CReadLockGuard&)
-{ return *(CReadLockGuard*)0; }
+{ return *this; }
 
 
 
@@ -247,10 +252,9 @@ CReadLockGuard& CReadLockGuard::operator= (const CReadLockGuard&)
 //
 
 CWriteLockGuard::CWriteLockGuard(const CWriteLockGuard&)
-    : CRWLockGuard(*(CRWLock*)0)  {}
+    : CRWLockGuard(*s_NULL_CRWLock)  {}
 CWriteLockGuard& CWriteLockGuard::operator= (const CWriteLockGuard&)
-{ return *(CWriteLockGuard*)0; }
-
+{ return *this; }
 
 
 END_NCBI_SCOPE
