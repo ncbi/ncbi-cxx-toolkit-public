@@ -25,12 +25,15 @@ TEST_IF__STAMP      = @if exist     $(THIRDPARTY_CFG_PATH)
 
 
 FLTK_SRC            = $(FLTK_BINPATH)\$(INTDIR)
-install_fltk:
-	$(TEST_NOT_STAMP)\fltk$(STAMP_SUFFIX).installed       echo Copying FLTK DLLs...
-	$(TEST_IF__STAMP)\fltk$(STAMP_SUFFIX).installed       echo FLTK DLLs are already installed
-	$(TEST_NOT_STAMP)\fltk$(STAMP_SUFFIX).installed       copy /Y $(FLTK_SRC)\*.dll $(INSTALL_BINPATH) > NUL
-	$(TEST_NOT_STAMP)\fltk$(STAMP_SUFFIX).installed       if exist "$(FLTK_SRC)\*.pdb" copy /Y $(FLTK_SRC)\*.pdb $(INSTALL_BINPATH) > NUL
-	$(TEST_NOT_STAMP)\fltk$(STAMP_SUFFIX).installed       echo "" > $(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed
+
+install_fltk : $(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed
+
+$(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed : $(FLTK_SRC)/fltkdll.dll
+    echo $(FLTK_SRC)/fltkdll.dll
+	echo Copying FLTK DLLs...
+	copy /Y $(FLTK_SRC)\fltkdll.dll $(INSTALL_BINPATH) > NUL
+	if exist "$(FLTK_SRC)\fltkdll.pdb" copy /Y $(FLTK_SRC)\fltkdll.pdb $(INSTALL_BINPATH) > NUL
+	echo "" > $(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed
 
 BERKELEYDB_SRC      = $(BERKELEYDB_BINPATH)\$(INTDIR)
 install_berkeleydb:
