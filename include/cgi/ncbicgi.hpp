@@ -309,23 +309,26 @@ private:
     struct SData : public CObject
     {
         SData(const string& value, const string& filename,
-              unsigned int position)
-            : m_Value(value), m_Filename(filename), m_Position(position) { }
+              unsigned int position, const string& type)
+            : m_Value(value), m_Filename(filename),
+              m_ContentType(type), m_Position(position)
+            { }
         SData(const SData& data)
             : m_Value(data.m_Value), m_Filename(data.m_Filename),
-            m_Position(data.m_Position){ }
+              m_ContentType(data.m_ContentType), m_Position(data.m_Position)
+            { }
 
-        string       m_Value, m_Filename;
+        string       m_Value, m_Filename, m_ContentType;
         unsigned int m_Position;
     };
 
 public:
     CCgiEntry(const string& value, const string& filename = kEmptyStr,
-              unsigned int position = 0)
-        : m_Data(new SData(value, filename, position)) { }
+              unsigned int position = 0, const string& type = kEmptyStr)
+        : m_Data(new SData(value, filename, position, type)) { }
     CCgiEntry(const char* value, const string& filename = kEmptyStr,
-              unsigned int position = 0)
-        : m_Data(new SData(value, filename, position)) { }
+              unsigned int position = 0, const string& type = kEmptyStr)
+        : m_Data(new SData(value, filename, position, type)) { }
     CCgiEntry(const CCgiEntry& e) : m_Data(e.m_Data) { }
 
     const string& GetValue() const
@@ -335,6 +338,7 @@ public:
     void          SetValue(const string& v)
         { x_ForceUnique(); m_Data->m_Value = v; }
 
+    // Only available for certain fields of POSTed forms
     const string& GetFilename() const
         { return m_Data->m_Filename; }
     string&       SetFilename()
@@ -350,6 +354,14 @@ public:
         { x_ForceUnique(); return m_Data->m_Position; }
     void          SetPosition(int p)
         { x_ForceUnique(); m_Data->m_Position = p; }
+
+    // May be available for some fields of POSTed forms
+    const string& GetContentType() const
+        { return m_Data->m_ContentType; }
+    string&       SetContentType()
+        { x_ForceUnique(); return m_Data->m_ContentType; }
+    void          SetContentType(const string& f)
+        { x_ForceUnique(); m_Data->m_ContentType = f; }
 
     operator const string&() const     { return GetValue(); }
     operator       string&()           { return SetValue(); }
@@ -386,8 +398,11 @@ private:
 inline
 bool operator ==(const CCgiEntry& e1, const CCgiEntry& e2)
 {
+    // conservative; some may be irrelevant in many cases
     return (e1.GetValue() == e2.GetValue() 
-            &&  e1.GetFilename() == e2.GetFilename());
+            &&  e1.GetFilename() == e2.GetFilename()
+            &&  e1.GetPosition() == e2.GetPosition()
+            &&  e1.GetContentType() == e2.GetContentType());
 }
 
 inline
@@ -755,6 +770,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.65  2004/12/13 21:43:38  ucko
+* CCgiEntry: support Content-Type headers from POST submissions.
+*
 * Revision 1.64  2004/12/08 12:48:36  kuznets
 * Optional case sensitivity when processing CGI args
 *

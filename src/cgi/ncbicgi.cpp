@@ -546,10 +546,11 @@ static SIZE_TYPE s_URL_Decode(string& str)
 // Add another entry to the container of entries
 void s_AddEntry(TCgiEntries& entries, const string& name,
                 const string& value, unsigned int position,
-                const string& filename = kEmptyStr)
+                const string& filename = kEmptyStr,
+                const string& type = kEmptyStr)
 {
     entries.insert(TCgiEntries::value_type
-                   (name, CCgiEntry(value, filename, position)));
+                   (name, CCgiEntry(value, filename, position, type)));
 }
 
 
@@ -691,7 +692,7 @@ static void s_ParseMultipartEntries(const string& boundary,
     while (pos < end_pos) {
         SIZE_TYPE next_boundary = str.find(s_Eol + boundary, pos);
         _ASSERT(next_boundary != NPOS);
-        string name, filename;
+        string name, filename, type;
         bool found = false;
         for (;;) {
             SIZE_TYPE bol_pos = pos, eol_pos = str.find(s_Eol, pos);
@@ -709,6 +710,12 @@ static void s_ParseMultipartEntries(const string& boundary,
                             bol_pos);
             }
             if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
+                                    "Content-Type") == 0) {
+                type = NStr::TruncateSpaces
+                    (str.substr(pos + 1, eol_pos - pos - 1));
+                pos = eol_pos + eol_size;
+                continue;
+            } else if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
                                     "Content-Disposition") != 0) {
                 ERR_POST(Warning << s_Me << ": ignoring unrecognized header: "
                          + str.substr(bol_pos, eol_pos - bol_pos));
@@ -732,7 +739,7 @@ static void s_ParseMultipartEntries(const string& boundary,
                         s_Me + ": missing Content-Disposition header", pos);
         }
         s_AddEntry(entries, name, str.substr(pos, next_boundary - pos),
-                   num++, filename);
+                   num++, filename, type);
         pos = next_boundary + 2*eol_size + boundary_size;
     }
 }
@@ -1266,6 +1273,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.80  2004/12/13 21:43:44  ucko
+* CCgiEntry: support Content-Type headers from POST submissions.
+*
 * Revision 1.79  2004/12/08 12:49:31  kuznets
 * Optional case sensitivity when processing CGI args
 *
