@@ -844,7 +844,7 @@ dbapi_driver_ctlib
 </dt></li>
 
 <li>
-<i>Sybase CTLIB</i> libraries and headers used by the driver
+<i>Sybase CTLIB</i> libraries and headers used by the driver (UNIX)
 <dt><dd><tt>
 <a href="../config.html#ref_Localization">
 $(SYBASE_LIBS)</a>
@@ -852,6 +852,22 @@ $(SYBASE_LIBS)</a>
 <dd><tt>
 <a href="../config.html#ref_Localization">
 $(SYBASE_INCLUDE)</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Sybase CTLIB</i> libraries and headers used by the driver (MS Windows)
+<dt>
+<dd><tt>
+You will need Sybase OpenClient package installed on your PC.
+</tt></dd>
+<dd><tt>
+Libraries: LIBCT.LIB LIBCS.LIB LIBBLK.LIB
+</tt></dd>
+<dd><tt>
+In MSVC++, go to "Tools" / "Options..." / "Directories"
+and set up the path to Sybase OpenClient libraries and headers
+(for example "C:\Sybase\lib" and "C:\Sybase\include" respectively)
 </tt></dd>
 </dt></li>
 
@@ -920,7 +936,7 @@ dbapi_driver_dblib
 </dt></li>
 
 <li>
-<i>Sybase DBLIB</i> libraries and headers used by the driver
+<i>Sybase DBLIB</i> libraries and headers used by the driver (UNIX)
 <dt><dd><tt>
 <a href="../config.html#ref_Localization">
 $(SYBASE_DBLIBS)</a>
@@ -928,6 +944,22 @@ $(SYBASE_DBLIBS)</a>
 <dd><tt>
 <a href="../config.html#ref_Localization">
 $(SYBASE_INCLUDE)</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>Sybase DBLIB</i> libraries and headers used by the driver (MS Windows)
+<dt>
+<dd><tt>
+You will need Sybase OpenClient package installed on your PC.
+</tt></dd>
+<dd><tt>
+Libraries: LIBSYBDB.LIB
+</tt></dd>
+<dd><tt>
+In MSVC++, go to "Tools" / "Options..." / "Directories"
+and set up the path to Sybase OpenClient libraries and headers
+(for example "C:\Sybase\lib" and "C:\Sybase\include" respectively)
 </tt></dd>
 </dt></li>
 
@@ -942,8 +974,8 @@ dbapi/driver/dblib/interfaces.hpp</a>
 <li>
 <i>DBLIB</i>-specific driver context attributes
 <dt><dd><tt>
-"version", <i>default =</i> <b>&lt;DBVERSION_UNKNOWN&gt;</b>
-(also allowed: <b>"46"</b>, <b>"100"</b>)
+"version", <i>default =</i> <b>"46"</b>
+(also allowed: <b>"100"</b>)
 </tt></dd>
 </dt></li>
 
@@ -958,8 +990,8 @@ and this cannot be fixed (as it was fixed for
 ) as we do not have access to the DBLIB source code.
 </tt></dd>
 <li><tt>
-DB Library version level "100" is recommended for communication with Sybase
-server 12.5, because the default version level (&lt;DBVERSION_UNKNOWN&gt;)
+DB Library version level <b>"100"</b> is recommended for communication with Sybase
+server 12.5, because the default version level (<b>"46"</b>)
 is not working correctly with this server.
 </tt></dd>
 </ol></li>
@@ -996,7 +1028,7 @@ Driver default name (for the run-time loading from a DLL)
 <li>
 Driver library
 <dt><dd><tt>
-MSDBLIB.LIB
+dbapi_driver_msdblib
 </tt></dd>
 </dt></li>
 
@@ -1114,13 +1146,8 @@ public toolkit, it retains its own license:
 GNU Library General Public License</a>.
 </tt></dd>
 <li><tt>
-BCP operations do not work at all. -- However, there is a version
-of FreeTDS libraries already in testing which will be installed to
-public shortly, and which has this feature implemented.
-</tt></dd>
-<li><tt>
 The "compute results" functionality (like from SELECT ... AVERAGE ...)
-does not work as the current FreeTDS implementation cannot decipher
+does not work because current FreeTDS implementation cannot decipher
 the "compute results" specific result set returned by server.
 </tt></dd>
 <li><tt>
@@ -1130,9 +1157,8 @@ the OpenServer it is communicating with has language handler installed
 </tt></dd>
 <li><tt>
 The FreeTDS client library (the one using TDS protocol version 7.0)
-presently installed in NCBI at "/netopt/Sybase/clients-mssql/current"
 was tweaked to work with the MS SQL server and significantly optimized.
-However it will not work with Sybase server.
+However, it will not work with Sybase server.
 </tt></dd>
 <li><tt>
 Another, earlier non-tweaked version of FreeTDS client library
@@ -1171,7 +1197,7 @@ Driver default name (for the run-time loading from a DLL)
 <li>
 Driver library
 <dt><dd><tt>
-ODBC.LIB
+dbapi_driver_odbc
 </tt></dd>
 </dt></li>
 
@@ -1211,13 +1237,23 @@ The <b>CDB_Result::GetImageOrTextDescriptor()</b> does not work for ODBC driver.
 <a href="../lxr/ident?i=CDB_ITDescriptor&d=C">CDB_ITDescriptor</a> instead. The other way to deal
 with <b>texts/images</b> in ODBC is through the <a href="../lxr/ident?i=CDB_CursorCmd&d=C">CDB_CursorCmd</a>
  methods: <b>UpdateTextImage</b> and <b>SendDataCmd</b>.
-</tt></dd>
+</tt>
+
+<li><tt>
+On most NCBI PCs, there is an old header "odbcss.h" (from 4/24/1998)
+installed. The symptom is that although everything compiles just fine, however
+in the linking stage there are dozens of unresolved symbol errors for ODBC
+functions. Ask "pc.systems" to fix this for your PC.
+</tt>
+
+</dd>
 </ol></li>
 
 </ul>
 
 <!-- --------------------------------- -->
-
+<p>
+<hr>
 
 <p>
 
