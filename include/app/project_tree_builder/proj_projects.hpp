@@ -110,9 +110,8 @@ public:
         return false;
     }
 
-private:
     typedef list<string> TPath;
-
+private:
     string m_RootSrcDir;
 
     struct SLstElement
@@ -142,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/04 13:24:58  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.6  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

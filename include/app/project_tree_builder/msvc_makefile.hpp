@@ -60,6 +60,7 @@ public:
 /// Interface of msvc project makefile
 class IMsvcProjectMakefile
 {
+public:
     virtual bool IsExcludeProject (bool default_val)             const = 0;
 
     virtual void GetAdditionalSourceFiles
@@ -334,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/04 13:24:58  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.10  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

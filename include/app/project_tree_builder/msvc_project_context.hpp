@@ -126,7 +126,10 @@ public:
         return m_PreBuilds;
     }
 
-
+    bool IsExpendable(void) const
+    {
+        return m_Expendable;
+    }
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
@@ -164,6 +167,8 @@ private:
     list<string> m_PreBuilds;
 
     list<string> m_NcbiCLibs;
+    
+    bool m_Expendable;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -512,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/04 13:24:58  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.17  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

@@ -68,14 +68,17 @@ struct SMakeProjectT
         } TMakeinType;
 
         SMakeInInfo(TMakeinType          type,
-                    const list<string>&  names)
+                    const list<string>&  names,
+                    bool expendable = false)
             :m_Type     (type),
-             m_ProjNames(names)
+             m_ProjNames(names),
+             m_Expendable(expendable)
         {
         }
         
         TMakeinType   m_Type;
         list<string>  m_ProjNames;
+        bool m_Expendable;
     };
 
     typedef list<SMakeInInfo> TMakeInInfoList;
@@ -144,7 +147,8 @@ struct SAppProjectT : public SMakeProjectT
                              const string&      proj_name,
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
-                             CProjectItemsTree* tree);
+                             CProjectItemsTree* tree,
+                             bool expendable);
 };
 
 
@@ -162,7 +166,8 @@ struct SLibProjectT : public SMakeProjectT
                              const string&      proj_name,
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
-                             CProjectItemsTree* tree);
+                             CProjectItemsTree* tree,
+                             bool expendable);
 };
 
 
@@ -184,7 +189,8 @@ struct SAsnProjectT : public SMakeProjectT
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
-                             CProjectItemsTree* tree);
+                             CProjectItemsTree* tree,
+                             bool expendable);
     
     typedef enum {
             eNoAsn,
@@ -213,7 +219,8 @@ struct SAsnProjectSingleT : public SAsnProjectT
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
-                             CProjectItemsTree* tree);
+                             CProjectItemsTree* tree,
+                             bool expendable);
 };
 
 
@@ -232,7 +239,8 @@ struct SAsnProjectMultipleT : public SAsnProjectT
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
-                             CProjectItemsTree* tree);
+                             CProjectItemsTree* tree,
+                             bool expendable);
 };
 
 
@@ -250,7 +258,8 @@ struct SMsvcProjectT : public SMakeProjectT
                              const string&      proj_name,
                              const string&      applib_mfilepath,
                              const TFiles&      makemsvc, 
-                             CProjectItemsTree* tree);
+                             CProjectItemsTree* tree,
+                             bool expendable);
 };
 
 
@@ -319,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/04 13:24:58  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.6  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

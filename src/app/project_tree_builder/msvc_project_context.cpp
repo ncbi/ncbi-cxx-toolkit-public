@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 //-----------------------------------------------------------------------------
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
+    m_Expendable = project.m_Expendable;
     //MSVC project name created from project type and project ID
     m_ProjectName  = CreateProjectName(CProjKey(project.m_ProjType, 
                                                 project.m_ID));
@@ -553,9 +554,10 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
     //Pre-build event - special case for LIB projects
     if (project_context.ProjectType() == CProjKey::eLib) {
         m_PreBuildEvent.reset(new CPreBuildEventToolLibImpl
-                                                (project_context.PreBuilds()));
+                                                (project_context.PreBuilds(),
+                                                 project_context.IsExpendable()));
     } else {
-        m_PreBuildEvent.reset(new CPreBuildEventToolDummyImpl());
+        m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.IsExpendable()));
     }
     m_PreLinkEvent.reset(new CPreLinkEventToolDummyImpl());
 
@@ -845,6 +847,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/08/04 13:27:24  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.34  2004/07/13 15:58:40  gouriano
  * Add more parameterization
  *

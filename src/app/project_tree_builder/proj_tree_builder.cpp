@@ -282,11 +282,21 @@ void SMakeProjectT::AnalyzeMakeIn
 
         info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second)); 
     }
+    p = makein_contents.m_Contents.find("EXPENDABLE_LIB_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second, true)); 
+    }
 
     p = makein_contents.m_Contents.find("APP_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
         info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second)); 
+    }
+    p = makein_contents.m_Contents.find("EXPENDABLE_APP_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second, true)); 
     }
 
     p = makein_contents.m_Contents.find("ASN_PROJ");
@@ -394,7 +404,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                                 const string& proj_name,
                                 const string& applib_mfilepath,
                                 const TFiles& makeapp , 
-                                CProjectItemsTree* tree)
+                                CProjectItemsTree* tree,
+                                bool expendable)
 {
     CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
@@ -505,7 +516,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                       requires,
                       libs_3_party,
                       include_dirs,
-                      defines);
+                      defines,
+                      expendable);
     //
     project.m_NcbiCLibs = ncbi_clibs;
 
@@ -545,7 +557,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                 const string& proj_name,
                                 const string& applib_mfilepath,
                                 const TFiles& makelib , 
-                                CProjectItemsTree* tree)
+                                CProjectItemsTree* tree,
+                                bool expendable)
 {
     TFiles::const_iterator m = makelib.find(applib_mfilepath);
     if (m == makelib.end()) {
@@ -624,7 +637,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            requires,
                                            libs_3_party,
                                            include_dirs,
-                                           defines);
+                                           defines,
+                                           expendable);
     return proj_key;
 }
 
@@ -635,7 +649,8 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                 const string& applib_mfilepath,
                                 const TFiles& makeapp, 
                                 const TFiles& makelib, 
-                                CProjectItemsTree* tree)
+                                CProjectItemsTree* tree,
+                                bool expendable)
 {
     TAsnType asn_type = GetAsnProjectType(applib_mfilepath, makeapp, makelib);
     if (asn_type == eMultiple) {
@@ -644,7 +659,7 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                               applib_mfilepath,
                                               makeapp, 
                                               makelib, 
-                                              tree);
+                                              tree, expendable);
     }
     if(asn_type == eSingle) {
         return SAsnProjectSingleT::DoCreate(source_base_dir,
@@ -652,7 +667,7 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                               applib_mfilepath,
                                               makeapp, 
                                               makelib, 
-                                              tree);
+                                              tree, expendable);
     }
 
     LOG_POST(Error << "Unsupported ASN project" + NStr::IntToString(asn_type));
@@ -693,7 +708,8 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
                                       const string& applib_mfilepath,
                                       const TFiles& makeapp, 
                                       const TFiles& makelib, 
-                                      CProjectItemsTree* tree)
+                                      CProjectItemsTree* tree,
+                                      bool expendable)
 {
     CProjItem::TProjType proj_type = 
         SMakeProjectT::GetProjType(source_base_dir, proj_name);
@@ -701,9 +717,9 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     CProjKey proj_id = 
         proj_type == CProjKey::eLib? 
             SLibProjectT::DoCreate(source_base_dir, 
-                               proj_name, applib_mfilepath, makelib, tree) : 
+                               proj_name, applib_mfilepath, makelib, tree, expendable) : 
             SAppProjectT::DoCreate(source_base_dir, 
-                               proj_name, applib_mfilepath, makeapp, tree);
+                               proj_name, applib_mfilepath, makeapp, tree, expendable);
     if ( proj_id.Id().empty() )
         return CProjKey();
     
@@ -740,7 +756,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
                                         const string& applib_mfilepath,
                                         const TFiles& makeapp, 
                                         const TFiles& makelib, 
-                                        CProjectItemsTree* tree)
+                                        CProjectItemsTree* tree,
+                                        bool expendable)
 {
     CProjItem::TProjType proj_type = 
         SMakeProjectT::GetProjType(source_base_dir, proj_name);
@@ -808,9 +825,9 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     CProjKey proj_id = 
         proj_type == CProjKey::eLib? 
         SLibProjectT::DoCreate(source_base_dir, 
-                               proj_name, applib_mfilepath, makelib, tree) :
+                               proj_name, applib_mfilepath, makelib, tree, expendable) :
         SAppProjectT::DoCreate(source_base_dir, 
-                               proj_name, applib_mfilepath, makeapp, tree);
+                               proj_name, applib_mfilepath, makeapp, tree, expendable);
     if ( proj_id.Id().empty() )
         return CProjKey();
     
@@ -860,7 +877,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                  const string&      proj_name,
                                  const string&      applib_mfilepath,
                                  const TFiles&      makemsvc, 
-                                 CProjectItemsTree* tree)
+                                 CProjectItemsTree* tree,
+                                 bool expendable)
 {
     TFiles::const_iterator m = makemsvc.find(applib_mfilepath);
     if (m == makemsvc.end()) {
@@ -943,7 +961,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            requires,
                                            libs_3_party,
                                            include_dirs,
-                                           defines);
+                                           defines,
+                                           expendable);
     return proj_key;
 }
 //-----------------------------------------------------------------------------
@@ -1335,6 +1354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/04 13:27:24  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.14  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *

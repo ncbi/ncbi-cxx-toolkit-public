@@ -492,23 +492,44 @@ private:
 	CPreBuildEventToolDummyImpl& operator= (const CPreBuildEventToolDummyImpl&);
 };
 
-
-class CPreBuildEventToolLibImpl : public IPreBuildEventTool // for LIB
+class CPreBuildEventTool : public IPreBuildEventTool
 {
 public:
-    CPreBuildEventToolLibImpl(const list<string>& lib_depends)
-        :m_LibDepends(lib_depends)
+    CPreBuildEventTool(bool expendable)
+        : m_Expendable(expendable)
     {
     }
-
     virtual string Name(void) const
     {
 	    return "VCPreBuildEventTool";
+    }
+    virtual string CommandLine(void) const
+    {
+        string command_line;
+        if (m_Expendable) {
+            command_line += "@echo EXPENDABLE project\n";
+        }
+        return command_line;
+    }
+private:    
+    bool m_Expendable;
+
+	CPreBuildEventTool(const CPreBuildEventTool&);
+	CPreBuildEventTool& operator= (const CPreBuildEventTool&);
+};
+
+class CPreBuildEventToolLibImpl : public CPreBuildEventTool // for LIB
+{
+public:
+    CPreBuildEventToolLibImpl(const list<string>& lib_depends, bool expendable)
+        : CPreBuildEventTool(expendable), m_LibDepends(lib_depends)
+    {
     }
 
     virtual string CommandLine(void) const
     {
         string command_line, cmd;
+        command_line += CPreBuildEventTool::CommandLine();
         if ( !m_LibDepends.empty() ) {
 #if 0
             command_line += "@echo on\n";
@@ -538,7 +559,7 @@ public:
         }
 #if 1
         if (!cmd.empty()) {
-            command_line  = "@echo " + cmd + "\n" + cmd;
+            command_line += "@echo " + cmd + "\n" + cmd;
         }
 #endif
         return command_line;
@@ -568,7 +589,7 @@ public:\
 private:\
     C(const C&);\
     C& operator= (const C&);\
-};
+}
 
 DEFINE_NAME_ONLY_DUMMY_TOOL(CCustomBuildToolDummyImpl,
                             ICustomBuildTool, 
@@ -711,6 +732,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/04 13:24:58  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.17  2004/07/20 13:39:29  gouriano
  * Added conditional macro definition
  *

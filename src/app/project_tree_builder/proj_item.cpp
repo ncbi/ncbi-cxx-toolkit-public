@@ -138,7 +138,8 @@ CProjItem::CProjItem(TProjType type,
                      const list<string>&   requires,
                      const list<string>&   libs_3_party,
                      const list<string>&   include_dirs,
-                     const list<string>&   defines)
+                     const list<string>&   defines,
+                     bool expendable)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
@@ -148,7 +149,8 @@ CProjItem::CProjItem(TProjType type,
     m_Requires(requires),
     m_Libs3Party (libs_3_party),
     m_IncludeDirs(include_dirs),
-    m_Defines (defines)
+    m_Defines (defines),
+    m_Expendable(expendable)
 {
 }
 
@@ -162,6 +164,7 @@ CProjItem::~CProjItem(void)
 void CProjItem::Clear(void)
 {
     m_ProjType = CProjKey::eNoProj;
+    m_Expendable = false;
 }
 
 
@@ -179,6 +182,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_DatatoolSources= item.m_DatatoolSources;
     m_Defines        = item.m_Defines;
     m_NcbiCLibs      = item.m_NcbiCLibs;
+    m_Expendable     = item.m_Expendable;
 }
 
 
@@ -187,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/08/04 13:27:24  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.23  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -104,7 +104,8 @@ public:
               const list<string>&   requires,
               const list<string>&   libs_3_party,
               const list<string>&   include_dirs,
-              const list<string>&   defines);
+              const list<string>&   defines,
+              bool expendable);
     
     ~CProjItem(void);
 
@@ -145,6 +146,9 @@ public:
 
     /// Libraries from NCBI C Toolkit to link with
     list<string>  m_NcbiCLibs;
+    
+    /// If the project is EXPENDABLE
+    bool m_Expendable;
 
 
 private:
@@ -158,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/08/04 13:24:58  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.18  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

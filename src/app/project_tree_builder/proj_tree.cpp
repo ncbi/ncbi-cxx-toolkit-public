@@ -137,12 +137,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         SAsnProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, makelib, tree);
+                                               makeapp, makelib, tree, info.m_Expendable);
                     } else {
                         SAppProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, tree);
+                                               makeapp, tree, info.m_Expendable);
                     }
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eLib) {
@@ -156,12 +156,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         SAsnProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, makelib, tree);
+                                               makeapp, makelib, tree, info.m_Expendable);
                     } else {
                         SLibProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makelib, tree);
+                                               makelib, tree, info.m_Expendable);
                     }
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eAsn) {
@@ -169,14 +169,14 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     SAsnProjectT::DoCreate(source_base_dir, 
                                            proj_name, 
                                            applib_mfilepath, 
-                                           makeapp, makelib, tree);
+                                           makeapp, makelib, tree, info.m_Expendable);
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eMsvc) {
 
                     SMsvcProjectT::DoCreate(source_base_dir,
                                             proj_name,
                                             applib_mfilepath,
-                                            makemsvc, tree);
+                                            makemsvc, tree, info.m_Expendable);
                 }
             }
         }
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/08/04 13:27:24  gouriano
+ * Added processing of EXPENDABLE projects
+ *
  * Revision 1.3  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
