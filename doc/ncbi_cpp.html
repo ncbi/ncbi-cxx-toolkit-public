@@ -14,6 +14,7 @@
 <li> <a href=#ref_NamingTypes>Type Names</a>
 <li> <a href=#ref_NamingConst>Constants</a>
 <li> <a href=#ref_NamingVar>Variable scope</a>
+<li> <a href=#ref_NamingFunc>Function scope</a>
 </ul>
     <li> <a href=#ref_Remarks>Remarks</a>
   </ul>
@@ -91,7 +92,7 @@ public:
 <a name=ref_NamingConst>
       <tr><th>Constants</th></tr>
       <tr><td><i><b>k</b>ConstantName</i></td><td>const Int2 kMyConst;</td></tr>
-      <tr><td><i><b>k</b>EnumConstantName</i></td>
+      <tr><td><i><b>e</b>EnumConstantName</i></td>
 	<td>enum EMyEnum { <br>
 	     &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
 	      &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
@@ -100,10 +101,17 @@ public:
 
 <a name=ref_NamingVar>
       <tr><th>Variable scope</th></tr>
-      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>Int1 m_MyClassData;</td></tr>
-      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>Int4 sm_MyClassStaticData;</td></tr>
-      <tr><td><i><b>s_</b>StaticVarName</i></td><td>FloatLo s_MyStaticVar;</td></tr>
-      <tr><td><i><b>g_</b>GlobalVarName</i></td><td>FloatHi g_MyGlobalVar;</td></tr>
+      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>class X { Int1 m_MyClassData; }</td></tr>
+      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>class X { static Int4 sm_MyClassStaticData; }</td></tr>
+      <tr><td><i><b>s_</b>StaticVarName</i></td><td>static FloatLo s_MyStaticVar;</td></tr>
+      <tr><td><i><b>g_</b>GlobalVarName</i></td><td>extern FloatHi g_MyGlobalVar;</td></tr>
+
+<a name=ref_NamingFunc>
+      <tr><th>Function scope</th></tr>
+      <tr><td><i><b>m_</b>ClassMethodName</i></td><td>class X { Int2 m_MyClassFunc(void); }</td></tr>
+      <tr><td><i><b>sm_</b>ClassStaticMethodName</i></td><td>class X { static void sm_MyClassStaticFunc(void); }</td></tr>
+      <tr><td><i><b>s_</b>StaticFunctionName</i></td><td>static Int2 s_MyStaticFunc(void);</td></tr>
+      <tr><td><i><b>g_</b>GlobalFunctionName</i></td><td>extern void g_MyGlobalFunc(VoidPtr ptr);</td></tr>
 
     </table>
 
