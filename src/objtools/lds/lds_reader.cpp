@@ -36,6 +36,7 @@
 #include <serial/objistr.hpp>
 
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 #include <objmgr/util/obj_sniff.hpp>
 
@@ -79,7 +80,7 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
         {
         in.seekg(obj_descr.offset);
         auto_ptr<CObjectIStream> 
-               is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
+          is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Bioseq") {
             //
             // If object is a bare Bioseq: read it and 
@@ -108,12 +109,62 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
 }
 
 
+CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db, 
+                               const CLDS_Query::SObjectDescr& obj_descr)
+{
+    CNcbiIfstream in(obj_descr.file_name.c_str(), 
+                     IOS_BASE::in | IOS_BASE::binary);
+    if (!in.is_open()) {
+        string msg = "Cannot open file:";
+        msg.append(obj_descr.file_name);
+        LDS_THROW(eFileNotFound, msg);
+    }
+
+    switch (obj_descr.format) {
+    case CFormatGuess::eTextASN:
+    case CFormatGuess::eXml:
+    case CFormatGuess::eBinaryASN:
+        {
+        in.seekg(obj_descr.offset);
+        auto_ptr<CObjectIStream> 
+          is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
+        if (obj_descr.type_str == "Seq-annot") {
+            //
+            // If object is a bare Bioseq: read it and 
+            // construct a Seq_entry on it
+            //
+            CRef<CSeq_annot> annot(new CSeq_annot());
+            is->Read(ObjectInfo(*annot));
+            return annot;
+        } else 
+        if (obj_descr.type_str == "Seq-align") {
+            CRef<CSeq_align> align(new CSeq_align());
+            is->Read(ObjectInfo(*align));
+            CRef<CSeq_annot> annot(new CSeq_annot());
+            annot->SetData().SetAlign().push_back(align);
+            return annot;
+        } else {
+            LDS_THROW(eInvalidDataType, 
+                      "Non Seq-aanot compatible object type");
+        }
+
+        }
+        break;
+    default:
+        LDS_THROW(eNotImplemented, "Invalid file format");
+    }
+    
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/14 19:47:01  kuznets
+ * + new annotation reader
+ *
  * Revision 1.4  2003/07/10 20:10:09  kuznets
  * Code clean up
  *
