@@ -42,12 +42,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <vector>
 #include <string>
 
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(objects);
 
 // Exceptions
 //
@@ -103,14 +104,15 @@ public:
     // Run generic Needleman-Wunsch algorithm, return the alignment's score
     virtual TScore Run();
 
-    // Create human-readable representation of the alignment
+    // Formatters
     enum EFormat {
         eFormatType1,
         eFormatType2,
         eFormatAsn,
         eFormatFastA
     };
-    string Format(size_t line_width, EFormat type, int param = 0) const;
+    string FormatAsText(size_t line_width, EFormat type, int param = 0) const;
+    void   FormatAsSeqAlign(CSeq_align*) const;
 
     // Retrieve transcript string
     string GetTranscript() const;
@@ -121,13 +123,14 @@ public:
     void SetWg  (TScore value)  { m_Wg  = value; }
     void SetWs  (TScore value)  { m_Ws  = value; }
 
+    void SetSeqIds(const string& id1, const string& id2);
+
     // Getters
     static TScore GetDefaultWm  () { return  1; }
     static TScore GetDefaultWms () { return -3; }
     static TScore GetDefaultWg  () { return -5; }
     static TScore GetDefaultWs  () { return -2; }
 
-    // Merge transcript into higher-level list
     enum ETranscriptSymbol {
         eNone = 0,
         eInsert,
@@ -145,20 +148,22 @@ protected:
     TScore   m_Ws;   // gap extension penalty
 
     // Pairwise scoring matrix
-    TScore   m_Matrix [256][256];
-    void     x_LoadScoringMatrix();
+    EScoringMatrixType    m_MatrixType;
+    TScore                m_Matrix [256][256];
+    void x_LoadScoringMatrix();
 
-    // Source sequences and their lengths
+    // Source sequences
+    string                m_Seq1Id;
     const char*           m_Seq1;
     size_t                m_SeqLen1;
+    string                m_Seq2Id;
     const char*           m_Seq2;
     size_t                m_SeqLen2;
-    EScoringMatrixType    m_MatrixType;
-
     size_t x_CheckSequence(const char* seq, size_t len) const;
 
-    // Transcript and backtrace
+    // Transcript and score
     vector<ETranscriptSymbol> m_Transcript;
+    TScore                    m_score;
 
     void   x_DoBackTrace(const unsigned char* backtrace_matrix);
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
@@ -173,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/01/28 12:36:52  kapustin
+ * Format() --> FormatAsText(). Add FormatAsSeqAlign() and support for sequence ids
+ *
  * Revision 1.5  2003/01/24 16:48:36  kapustin
  * Support more output formats - type 2 and gapped FastA
  *
