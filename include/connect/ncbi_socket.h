@@ -597,12 +597,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  *                other code denotes an error, but some bytes might have
  *                been sent nevertheless (always check *n_written to know).
  *
- * NOTE: With eIO_WritePlain the call returns eIO_Success iff some data
- *       were actually written to the socket. If no data could be written
- *       (and perhaps timeout expired) this call always returns an error.
- * NOTE: eIO_WritePlain and eIO_WritePersist differs that the latter can
- *       flag an error condition even if some data were actually written
- *       (see "the rule of thumb" in the comments for SOCK_Read() above).
+ * NOTE1: With eIO_WritePlain the call returns eIO_Success iff some data
+ *        were actually written to the socket. If no data could be written
+ *        (and perhaps timeout expired) this call always returns an error.
+ * NOTE2: eIO_WritePlain and eIO_WritePersist differs that the latter can
+ *        flag an error condition even if some data were actually written
+ *        (see "the rule of thumb" in the comments for SOCK_Read() above).
+ * NOTE3: if "size"==0, return value can be eIO_Success if no pending data
+ *        left in the socket, or eIO_Timeout if there are still data pending.
+ *        In either case, "*n_written" is set to 0 on return.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 (SOCK            sock,
@@ -874,6 +877,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2003/05/20 21:24:32  lavr
+ * SOCK_Write(): note added on writing 0 bytes to a socket
+ *
  * Revision 6.37  2003/05/19 16:42:07  lavr
  * +SOCK_SetReuseAddress[API]() - both EXPERIMENTAL!
  *
