@@ -169,6 +169,13 @@ public:
     vector<int>&       SetMinusCuts(void);
     const vector<int>& GetMinusCuts(void) const;
 
+    // compare
+    bool operator==(const CRSpec& rhs) const {
+        return m_seq == rhs.m_seq 
+            && m_plus_cuts == rhs.m_plus_cuts
+            && m_minus_cuts == rhs.m_minus_cuts;
+    }
+
     // reset everything
     void Reset(void);
 private:
@@ -367,6 +374,19 @@ public:
         results.reserve(results.size() + enzymes.size());
 
         ITERATE (vector<CREnzyme>, enzyme, enzymes) {
+            // if the specificity list of the enzyme is
+            // the same as that of the previous, just copy results
+            if (enzyme != enzymes.begin()) {
+                if (enzyme->GetSpecs() == (enzyme - 1)->GetSpecs()) {
+                    CRef<CREnzResult> 
+                        result(new CREnzResult(enzyme->GetName(),
+                                               results.back()->GetDefiniteSites(),
+                                               results.back()->GetPossibleSites()));
+                    results.push_back(result);
+
+                    continue;
+                }
+            }
             definite_sites.clear();
             possible_sites.clear();
             const vector<CRSpec>& specs = enzyme->GetSpecs();
@@ -520,6 +540,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/15 16:57:17  jcherry
+ * For consecutive enzymes with identical specificities, reuse
+ * search results.  This saves a bunch of time.
+ *
  * Revision 1.5  2003/08/15 15:26:12  jcherry
  * Changed so that restriction site searching (CFindRSites::Find) returns
  * a vector of CRefs rather than a vector of objects.  This speeds sorting.
