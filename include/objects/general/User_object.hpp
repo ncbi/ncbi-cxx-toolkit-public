@@ -51,9 +51,9 @@ class NCBI_GENERAL_EXPORT CUser_object : public CUser_object_Base
 {
     typedef CUser_object_Base Tparent;
 public:
-    // constructor
+    /// constructor
     CUser_object(void);
-    // destructor
+    /// destructor
     ~CUser_object(void);
 
     /// how to interpret the value in the AddField() conversion functions below.
@@ -62,7 +62,7 @@ public:
         eParse_Number     ///< Parse a real or integer number, otherwise string
     };
 
-    // add a data field to the user object that holds a given value
+    /// add a data field to the user object that holds a given value
     CUser_object& AddField(const string& label, const string& value,
                            EParseField parse = eParse_String);
     CUser_object& AddField(const string& label, int           value);
@@ -79,64 +79,70 @@ public:
     CUser_object& AddField(const string& label,
                            const vector< CRef<CUser_field> >& value);
 
-    // access a named field in this user object.  This is a little
-    // sneaky in that it interprets a delimiter for recursion.
-    // The GetXXX() version will throw an exception if the field
-    // doesn't exist.
+    /// Access a named field in this user object.  This is a little
+    /// sneaky in that it interprets a delimiter for recursion.
+    /// This version will throw an exception if the field
+    /// doesn't exist.
     const CUser_field& GetField(const string& str,
                                 const string& delim = ".") const;
 
+    /// Access a named field in this user object.  This is a little
+    /// sneaky in that it interprets a delimiter for recursion.  The
+    /// 'obj_subtype' parameter is used to set the subtype of a 
+    /// sub-object if a new sub-object needs to be created
     CUser_field&       SetField(const string& str,
-                                const string& delim = ".");
+                                const string& delim = ".",
+                                const string& obj_subtype = kEmptyStr);
 
+    /// Verify that a named field exists
     bool               HasField(const string& str,
                                 const string& delim = ".") const;
 
-    // enum controlling what to return for a label
-    // this mirrors a request inside of feature::GetLabel()
+    /// enum controlling what to return for a label
+    /// this mirrors a request inside of feature::GetLabel()
     enum ELabelContent {
         eType,
         eContent,
         eBoth
     };
 
-    // Append a label to label.  The type defaults to content for
-    // backward compatibility
+    /// Append a label to label.  The type defaults to content for
+    /// backward compatibility
     void GetLabel(string* label, ELabelContent mode = eContent) const;
 
-    //
-    // enums for implicit typing of user objects
-    //
+    ///
+    /// enums for implicit typing of user objects
+    ///
 
-    // general category
+    /// general category
     enum ECategory {
         eCategory_Unknown = -1,
         eCategory_Experiment
     };
 
-    // sub-category experiment
+    /// sub-category experiment
     enum EExperiment {
         eExperiment_Unknown = -1,
         eExperiment_Sage
     };
 
-    // accessors: classify a given user object
+    /// accessors: classify a given user object
     ECategory GetCategory(void) const;
 
-    // sub-category accessors:
+    /// sub-category accessors:
     EExperiment GetExperimentType(void) const;
     const CUser_object& GetExperiment(void) const;
 
-    // format a user object as a given type.  This returns a user-object
-    // that is suitable for containing whatever specifics might be needed
+    /// format a user object as a given type.  This returns a user-object
+    /// that is suitable for containing whatever specifics might be needed
     CUser_object& SetCategory(ECategory category);
 
-    // format a user object as a given type.  This returns a user-object
-    // that is suitable for containing whatever specifics might be needed
+    /// format a user object as a given type.  This returns a user-object
+    /// that is suitable for containing whatever specifics might be needed
     CUser_object& SetExperiment(EExperiment category);
 
 private:
-    // Prohibit copy constructor and assignment operator
+    /// Prohibit copy constructor and assignment operator
     CUser_object(const CUser_object& value);
     CUser_object& operator=(const CUser_object& value);
 
@@ -165,6 +171,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/10/28 18:38:57  dicuccio
+* Doxygenated comments. Extended SetField() to take a type string for sub-object
+* creation
+*
 * Revision 1.7  2004/09/21 15:07:42  kans
 * added EParseField parameter to AddField so it can optionally interpret the string value as numeric
 *
