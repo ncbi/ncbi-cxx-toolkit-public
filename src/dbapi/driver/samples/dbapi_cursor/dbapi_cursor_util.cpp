@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.5  2003/02/27 20:21:35  starchen
+* correct a lang call
+*
 * Revision 1.4  2002/12/09 16:25:21  starchen
 * remove the text files from samples
 *
@@ -190,18 +193,29 @@ int CreateTable (CDB_Connection* con)
    CDB_BCPInCmd* bcp;
 
    try {
-       CDB_LangCmd* lcmd =
-        con->LangCmd (  " IF EXISTS(select * from sysobjects WHERE name = 'CursorSample'"
-                       " AND   user_name(uid) = 'dbo'"
+ 
+       CDB_LangCmd* lcmd = con->LangCmd ( 
+                     " IF EXISTS(select * from sysobjects WHERE name = 'CursorSample'"
                        " AND   type = 'U') begin "
-                       " DROP TABLE dbo.CursorSample end"
-                     " create table CursorSample"
-                     " (int_val int not null,fl_val real not null,"
-                     " date_val datetime not null ,str_val varchar(255) null,"
-                     " text_val text null, primary key clustered(int_val))");
+                       " DROP TABLE CursorSample end ");
        lcmd->Send();
 
        while (lcmd->HasMoreResults()) {
+            CDB_Result* r = lcmd->Result();
+            if (!r) {
+                continue;
+            }
+            delete r;
+        }
+        delete lcmd;
+
+        lcmd = con->LangCmd (  " create table CursorSample"
+                     " (int_val int not null,fl_val real not null,"
+                     " date_val datetime not null ,str_val varchar(255) null,"
+                     " text_val text null, primary key clustered(int_val))");
+        lcmd->Send();
+
+        while (lcmd->HasMoreResults()) {
             CDB_Result* r = lcmd->Result();
             if (!r) {
                 continue;

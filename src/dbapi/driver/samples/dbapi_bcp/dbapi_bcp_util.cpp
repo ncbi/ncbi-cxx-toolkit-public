@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.4  2003/02/27 20:21:34  starchen
+* correct a lang call
+*
 * Revision 1.3  2002/12/09 16:25:20  starchen
 * remove the text files from samples
 *
@@ -177,15 +180,24 @@ int CreateTable (CDB_Connection* con)
    try {
        CDB_LangCmd* lcmd =
         con->LangCmd ( " IF EXISTS(select * from sysobjects WHERE name = 'BcpSample'"
-                       " AND   user_name(uid) = 'dbo'"
                        " AND   type = 'U') begin "
-                       " DROP TABLE dbo.BcpSample end"
-                       " create table BcpSample"
-                       " (int_val int not null,fl_val real not null,"
-                       " date_val datetime not null  ,str_val varchar(255) null,txt_val text null)");
+                       " DROP TABLE BcpSample end )");
        lcmd->Send();
 
        while (lcmd->HasMoreResults()) {
+            CDB_Result* r = lcmd->Result();
+            if (!r) {
+                continue;
+            }
+            delete r;
+        }
+        delete lcmd;
+        lcmd =  con->LangCmd (  " create table BcpSample"
+                       " (int_val int not null,fl_val real not null,"
+                       " date_val datetime not null  ,str_val varchar(255) null,txt_val text null)");
+        lcmd->Send();
+
+        while (lcmd->HasMoreResults()) {
             CDB_Result* r = lcmd->Result();
             if (!r) {
                 continue;
