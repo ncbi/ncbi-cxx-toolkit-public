@@ -310,9 +310,9 @@ void CException::x_Assign(const CException& src)
     m_Module   = src.m_Module;
     m_Class    = src.m_Class;
     m_Function = src.m_Function;
-
-    delete m_Predecessor;
-    m_Predecessor = src.m_Predecessor ? src.m_Predecessor->x_Clone() : NULL;
+    if (!m_Predecessor && src.m_Predecessor) {
+        m_Predecessor = src.m_Predecessor->x_Clone();
+    }
 }
 
 
@@ -462,6 +462,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/10/04 20:50:01  gouriano
+ * Corrected copying predecessor info in CException::x_Assign
+ *
  * Revision 1.41  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
