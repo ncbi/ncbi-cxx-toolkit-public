@@ -36,6 +36,8 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+
 #include <string>
 
 #ifdef __WXMSW__
@@ -80,7 +82,7 @@ public:
     void SendCommand(const std::string& toApp, const std::string& command, const std::string& data);
 
     // public methods
-    bool LoadFile(const char *filename, bool force = false);
+    bool LoadData(const char *filename, bool force = false, ncbi::objects::CNcbi_mime_asn1 *mimeData = NULL);
     bool SaveDialog(bool prompt, bool canCancel);
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
@@ -264,6 +266,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/01/17 00:17:32  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.9  2004/01/08 15:31:03  thiessen
 * remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
 *

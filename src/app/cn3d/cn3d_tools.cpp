@@ -47,6 +47,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+
 #ifdef __WXMSW__
 #include <windows.h>
 #include <wx/msw/winundef.h>
@@ -55,6 +59,7 @@
 #include <wx/file.h>
 
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/asn_reader.hpp"
 
 #include <memory>
 
@@ -283,11 +288,37 @@ void LaunchWebPage(const char *url)
 #endif
 }
 
+CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
+{
+    CSeq_entry seqEntry;
+    string err;
+    static const string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
+    string args = string("view=0&maxplex=1&save=idf&val=") + id;
+    INFOMSG("Trying to load sequence from URL " << host << path << '?' << args);
+
+    CRef < CBioseq > bioseq;
+    if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
+        if (seqEntry.IsSeq())
+            bioseq.Reset(&(seqEntry.SetSeq()));
+        else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
+            bioseq.Reset(&(seqEntry.SetSet().SetSeq_set().front()->SetSeq()));
+        else
+            ERRORMSG("FetchSequenceViaHTTP() - confused by SeqEntry format");
+    }
+    if (bioseq.Empty())
+        ERRORMSG("FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed");
+
+    return bioseq;
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/01/17 00:17:30  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.5  2003/12/16 02:16:49  ucko
 * +<memory> for auto_ptr<>
 *

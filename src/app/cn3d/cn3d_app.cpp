@@ -37,7 +37,20 @@
 #include <ctools/ctools.h>
 #include <serial/objostr.hpp>
 
+#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#include <objects/ncbimime/Biostruc_seq.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/mmdb2/Biostruc_model.hpp>
+#include <objects/mmdb2/Model_type.hpp>
+#include <objects/mmdb1/Biostruc_graph.hpp>
+#include <objects/mmdb1/Molecule_graph.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
 #include <algorithm>
+#include <vector>
 
 #ifdef __WXMSW__
 #include <windows.h>
@@ -48,6 +61,7 @@
 #include <wx/fs_zip.h>
 
 #include "cn3d/cn3d_app.hpp"
+#include "cn3d/asn_reader.hpp"
 #include "cn3d/structure_window.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/structure_set.hpp"
@@ -56,6 +70,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/cn3d_cache.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -208,15 +223,21 @@ Cn3DApp::Cn3DApp() : wxGLApp()
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info);   // report all messages
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
+#ifdef _DEBUG
+    SetDiagPostFlag(eDPF_File);
+    SetDiagPostFlag(eDPF_Line);
+#else
     UnsetDiagTraceFlag(eDPF_File);
     UnsetDiagTraceFlag(eDPF_Line);
+#endif
     SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
     // C++ object verification
     CSerialObject::SetVerifyDataGlobal(eSerialVerifyData_Always);
     CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
-    if (!InitGLVisual(NULL)) FATALMSG("InitGLVisual failed");
+    if (!InitGLVisual(NULL))
+        FATALMSG("InitGLVisual failed");
 }
 
 void Cn3DApp::InitRegistry(void)
@@ -305,6 +326,77 @@ void Cn3DApp::InitRegistry(void)
     LoadRegistry();
 }
 
+static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel_type model)
+{
+    // read Biostruc
+    CRef < CBiostruc > biostruc(new CBiostruc());
+    string err;
+    SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+    bool okay = (ReadASNFromFile(filename.c_str(), biostruc.GetPointer(), true, &err) ||
+                 ReadASNFromFile(filename.c_str(), biostruc.GetPointer(), false, &err));
+    SetDiagPostLevel(eDiag_Info);
+    if (!okay) {
+        ERRORMSG("This file is not a valid Biostruc");
+        return NULL;
+    }
+
+    // remove all but desired model coordinates
+    CRef < CBiostruc_model > desiredModel;
+    CBiostruc::TModel::const_iterator m, me = biostruc->GetModel().end();
+    for (m=biostruc->GetModel().begin(); m!=me; m++) {
+        if ((*m)->GetType() == model) {
+            desiredModel = *m;
+            break;
+        }
+    }
+    if (desiredModel.Empty()) {
+        ERRORMSG("Ack! There's no appropriate model in this Biostruc");
+        return NULL;
+    }
+    biostruc->ResetModel();
+    biostruc->SetModel().push_back(desiredModel);
+
+    // package Biostruc inside a mime object
+    CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
+    CRef < CBiostruc_seq > strucseq(new CBiostruc_seq());
+    mime->SetStrucseq(*strucseq);
+    strucseq->SetStructure(*biostruc);
+
+    // get list of gi's to import
+    vector < int > gis;
+    CBiostruc_graph::TMolecule_graphs::const_iterator g,
+        ge = biostruc->GetChemical_graph().GetMolecule_graphs().end();
+    for (g=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); g!=ge; g++) {
+        if ((*g)->IsSetSeq_id() && (*g)->GetSeq_id().IsGi())
+            gis.push_back((*g)->GetSeq_id().GetGi());
+    }
+    if (gis.size() == 0) {
+        ERRORMSG("Can't find any sequence gi identifiers in this Biostruc");
+        return NULL;
+    }
+
+    // fetch sequences and store in mime
+    CRef < CSeq_entry > seqs(new CSeq_entry());
+    strucseq->SetSequences().push_back(seqs);
+    CRef < CBioseq_set > seqset(new CBioseq_set());
+    seqs->SetSet(*seqset);
+    for (int i=0; i<gis.size(); i++) {
+        wxString id;
+        id.Printf("%i", gis[i]);
+        CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
+        if (bioseq.NotEmpty()) {
+            CRef < CSeq_entry > seqentry(new CSeq_entry());
+            seqentry->SetSeq(*bioseq);
+            seqset->SetSeq_set().push_back(seqentry);
+        } else {
+            ERRORMSG("Failed to retrieve all Bioseqs");
+            return NULL;
+        }
+    }
+
+    return mime.Release();
+}
+
 bool Cn3DApp::OnInit(void)
 {
     INFOMSG("Welcome to Cn3D " << CN3D_VERSION_STRING << "!");
@@ -325,6 +417,10 @@ bool Cn3DApp::OnInit(void)
         { wxCMD_LINE_OPTION, "m", "message", "message file",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
         { wxCMD_LINE_OPTION, "a", "targetapp", "messaging target application name",
+            wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
+        { wxCMD_LINE_OPTION, "o", "model", "model choice: alpha, single, or PDB",
+            wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
+        { wxCMD_LINE_OPTION, "d", "id", "MMDB/PDB ID to load via network",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
         { wxCMD_LINE_PARAM, NULL, NULL, "input file",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL},
@@ -412,12 +508,50 @@ bool Cn3DApp::OnInit(void)
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
     if (showLog) RaiseLogWindow();
 
-    // get file name from command line, if present
+    // get model type from -o
+    EModel_type model = eModel_type_other;
+    wxString modelStr;
+    if (commandLine.Found("o", &modelStr)) {
+        if (modelStr == "alpha")
+            model = eModel_type_ncbi_backbone;
+        else if (modelStr == "single")
+            model = eModel_type_ncbi_all_atom;
+        else if (modelStr == "PDB")
+            model = eModel_type_pdb_model;
+        else
+            ERRORMSG("Model type (-o) must be one of alpha|single|PDB");
+    }
+
+    // load file given on command line
     if (commandLine.GetParamCount() == 1) {
-        INFOMSG("command line file: " << commandLine.GetParam(0).c_str());
-        structureWindow->LoadFile(commandLine.GetParam(0).c_str(), commandLine.Found("f"));
-    } else {
+        wxString filename = commandLine.GetParam(0).c_str();
+        INFOMSG("command line file: " << filename.c_str());
+        // if -o is present, assume param is a Biostruc file
+        if (model != eModel_type_other) {   // -o present
+            CNcbi_mime_asn1 *mime = CreateMimeFromBiostruc(filename, model);
+            if (mime)
+                structureWindow->LoadData(NULL, commandLine.Found("f"), mime);
+        } else {
+            structureWindow->LoadData(filename.c_str(), commandLine.Found("f"));
+        }
+    }
+
+    // if no file passed but there is -o, see if there's a -d parameter (MMDB/PDB ID to fetch)
+    else if (model != eModel_type_other) {  // -o present
+        wxString id;
+        if (commandLine.Found("d", &id)) {
+            CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model);
+            if (mime)
+                structureWindow->LoadData(NULL, commandLine.Found("f"), mime);
+        } else {
+            ERRORMSG("-o requires either -d or Biostruc file name");
+        }
+    }
+
+    // if no structure loaded, show the logo
+    if (!structureWindow->glCanvas->structureSet) {
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
+        structureWindow->glCanvas->Refresh(false);
     }
 
     // set up messaging file communication
@@ -488,6 +622,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/17 00:17:28  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.11  2004/01/08 15:31:02  thiessen
 * remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
 *

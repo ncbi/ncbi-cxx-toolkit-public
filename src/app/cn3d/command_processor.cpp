@@ -232,7 +232,7 @@ IMPLEMENT_COMMAND_FUNCTION(LoadFile)
     }
 
     wxString stripped(wxString(dataIn.c_str()).Strip(wxString::both));
-    if (!structureWindow->LoadFile(stripped.c_str()))
+    if (!structureWindow->LoadData(stripped.c_str()))
         ADD_REPLY_ERROR(string("Error loading file '") + stripped.c_str() + "'");
 }
 
@@ -250,6 +250,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/01/17 00:17:31  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.6  2003/09/02 19:34:52  thiessen
 * implement Exit message
 *

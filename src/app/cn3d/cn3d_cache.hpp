@@ -63,6 +63,8 @@ typedef std::list < ncbi::CRef < ncbi::objects::CBioseq > > BioseqRefList;
 // uid can either be an integer MMDB ID or a 4-character PDB ID
 bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
     ncbi::CRef < ncbi::objects::CBiostruc >& biostruc, BioseqRefList *sequences);
+ncbi::objects::CNcbi_mime_asn1 *
+    LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType);
 
 // utility function for mimes
 bool ExtractBiostrucAndBioseqs(ncbi::objects::CNcbi_mime_asn1& mime,
@@ -79,6 +81,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/01/17 00:17:29  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.5  2003/04/02 17:49:18  thiessen
 * allow pdb id's in structure import dialog
 *

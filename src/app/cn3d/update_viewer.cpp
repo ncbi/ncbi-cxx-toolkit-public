@@ -319,33 +319,13 @@ void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSe
     wxStringTokenizer tkz(ids, " ,;\t\r\n", wxTOKEN_STRTOK);
     while (tkz.HasMoreTokens()) {
         wxString id = tkz.GetNextToken();
-
-        CSeq_entry seqEntry;
-        string err;
-        static const string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
-
-        string args = string("view=0&maxplex=1&save=idf&val=") + id.c_str();
-        INFOMSG("Trying to load sequence from " << host << path << '?' << args);
-        if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
-            CRef < CBioseq > bioseq;
-            if (seqEntry.IsSeq())
-                bioseq.Reset(&(seqEntry.SetSeq()));
-            else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
-                bioseq.Reset(&(seqEntry.SetSet().SetSeq_set().front()->SetSeq()));
+        CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
+        const Sequence *sequence = sSet->CreateNewSequence(*bioseq);
+        if (sequence) {
+            if (sequence->isProtein)
+                newSequences->push_back(sequence);
             else
-                ERRORMSG("UpdateViewer::FetchSequenceViaHTTP() - confused by SeqEntry format");
-            if (!bioseq.Empty()) {
-                // create Sequence
-                const Sequence *sequence = sSet->CreateNewSequence(*bioseq);
-                if (sequence) {
-                    if (sequence->isProtein)
-                        newSequences->push_back(sequence);
-                    else
-                        ERRORMSG("The sequence must be a protein");
-                }
-            }
-        } else {
-            ERRORMSG("UpdateViewer::FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed");
+                ERRORMSG("The sequence must be a protein");
         }
     }
 }
@@ -1180,6 +1160,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/01/17 00:17:32  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.68  2004/01/05 17:09:16  thiessen
 * abort import and warn if same accession different gi
 *

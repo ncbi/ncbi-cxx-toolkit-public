@@ -1250,7 +1250,7 @@ void StructureWindow::SetColoringMenuFlag(int which)
     menuBar->Check(MID_ELEMENT, (which == MID_ELEMENT));
 }
 
-bool StructureWindow::LoadFile(const char *filename, bool force)
+bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1 *mimeData)
 {
     SetCursor(*wxHOURGLASS_CURSOR);
     glCanvas->SetCurrent();
@@ -1270,84 +1270,95 @@ bool StructureWindow::LoadFile(const char *filename, bool force)
         glCanvas->Refresh(false);
     }
 
-    if (wxIsAbsolutePath(filename))
-        userDir = string(wxPathOnly(filename).c_str()) + wxFILE_SEP_PATH;
-    else if (wxPathOnly(filename) == "")
-        userDir = GetWorkingDir();
-    else
-        userDir = GetWorkingDir() + wxPathOnly(filename).c_str() + wxFILE_SEP_PATH;
-    INFOMSG("user dir: " << userDir.c_str());
-
-    // try to decide if what ASN type this is, and if it's binary or ascii
-    CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
-    if (!(*inStream)) {
-        ERRORMSG("Cannot open file '" << filename << "' for reading");
-        SetCursor(wxNullCursor);
-        delete inStream;
-        return false;
-    }
-    currentFile = wxFileNameFromPath(filename);
-
-    string firstWord;
-    *inStream >> firstWord;
-    delete inStream;
-
-    static const string
-        asciiMimeFirstWord = "Ncbi-mime-asn1",
-        asciiCDDFirstWord = "Cdd";
-    bool isMime = false, isCDD = false, isBinary = true;
-    if (firstWord == asciiMimeFirstWord) {
-        isMime = true;
-        isBinary = false;
-    } else if (firstWord == asciiCDDFirstWord) {
-        isCDD = true;
-        isBinary = false;
-    }
-
     // get current structure limit
     int structureLimit = kMax_Int;
     if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, &structureLimit))
         WARNINGMSG("Can't get structure limit from registry");
 
-    // try to read the file as various ASN types (if it's not clear from the first ascii word).
-    // If read is successful, the StructureSet will own the asn data object, to keep it
-    // around for output later on
-    bool readOK = false;
-    string err;
-    if (!isCDD) {
-        TRACEMSG("trying to read file '" << filename << "' as " <<
-            ((isBinary) ? "binary" : "ascii") << " mime");
-        CNcbi_mime_asn1 *mime = new CNcbi_mime_asn1();
-        SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-        readOK = ReadASNFromFile(filename, mime, isBinary, &err);
-        SetDiagPostLevel(eDiag_Info);
-        if (readOK) {
-            glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
-            // if CDD is contained in a mime, then show CDD splash screen
-            if (glCanvas->structureSet->IsCDD()) ShowCDDOverview();
-        } else {
-            TRACEMSG("error: " << err);
-            delete mime;
-        }
+    // use passed-in data if present, otherwise load from file
+    if (mimeData) {
+        glCanvas->structureSet = new StructureSet(mimeData, structureLimit, glCanvas->renderer);
+        userDir = GetWorkingDir();
+        currentFile = "";
     }
-    if (!readOK) {
-        TRACEMSG("trying to read file '" << filename << "' as " <<
-            ((isBinary) ? "binary" : "ascii") << " cdd");
-        CCdd *cdd = new CCdd();
-        SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-        readOK = ReadASNFromFile(filename, cdd, isBinary, &err);
-        SetDiagPostLevel(eDiag_Info);
-        if (readOK) {
-            glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
-        } else {
-            TRACEMSG("error: " << err);
-            delete cdd;
+
+    else {
+        // set up various paths relative to given filename
+        if (wxIsAbsolutePath(filename))
+            userDir = string(wxPathOnly(filename).c_str()) + wxFILE_SEP_PATH;
+        else if (wxPathOnly(filename) == "")
+            userDir = GetWorkingDir();
+        else
+            userDir = GetWorkingDir() + wxPathOnly(filename).c_str() + wxFILE_SEP_PATH;
+        INFOMSG("user dir: " << userDir.c_str());
+
+        // try to decide if what ASN type this is, and if it's binary or ascii
+        CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
+        if (!(*inStream)) {
+            ERRORMSG("Cannot open file '" << filename << "' for reading");
+            SetCursor(wxNullCursor);
+            delete inStream;
+            return false;
         }
-    }
-    if (!readOK) {
-        ERRORMSG("File not found, not readable, or is not a recognized data type");
-        SetCursor(wxNullCursor);
-        return false;
+        currentFile = wxFileNameFromPath(filename);
+
+        string firstWord;
+        *inStream >> firstWord;
+        delete inStream;
+
+        static const string
+            asciiMimeFirstWord = "Ncbi-mime-asn1",
+            asciiCDDFirstWord = "Cdd";
+        bool isMime = false, isCDD = false, isBinary = true;
+        if (firstWord == asciiMimeFirstWord) {
+            isMime = true;
+            isBinary = false;
+        } else if (firstWord == asciiCDDFirstWord) {
+            isCDD = true;
+            isBinary = false;
+        }
+
+        // try to read the file as various ASN types (if it's not clear from the first ascii word).
+        // If read is successful, the StructureSet will own the asn data object, to keep it
+        // around for output later on
+        bool readOK = false;
+        string err;
+        if (!isCDD) {
+            TRACEMSG("trying to read file '" << filename << "' as " <<
+                ((isBinary) ? "binary" : "ascii") << " mime");
+            CNcbi_mime_asn1 *mime = new CNcbi_mime_asn1();
+            SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+            readOK = ReadASNFromFile(filename, mime, isBinary, &err);
+            SetDiagPostLevel(eDiag_Info);
+            if (readOK) {
+                glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
+                // if CDD is contained in a mime, then show CDD splash screen
+                if (glCanvas->structureSet->IsCDD())
+                    ShowCDDOverview();
+            } else {
+                TRACEMSG("error: " << err);
+                delete mime;
+            }
+        }
+        if (!readOK) {
+            TRACEMSG("trying to read file '" << filename << "' as " <<
+                ((isBinary) ? "binary" : "ascii") << " cdd");
+            CCdd *cdd = new CCdd();
+            SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+            readOK = ReadASNFromFile(filename, cdd, isBinary, &err);
+            SetDiagPostLevel(eDiag_Info);
+            if (readOK) {
+                glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
+            } else {
+                TRACEMSG("error: " << err);
+                delete cdd;
+            }
+        }
+        if (!readOK) {
+            ERRORMSG("File not found, not readable, or is not a recognized data type");
+            SetCursor(wxNullCursor);
+            return false;
+        }
     }
 
     SetWorkingTitle(glCanvas->structureSet);
@@ -1400,7 +1411,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
         wxOPEN | wxFILE_MUST_EXIST);
 
     if (!filestr.IsEmpty())
-        LoadFile(filestr.c_str());
+        LoadData(filestr.c_str());
 }
 
 void StructureWindow::OnSave(wxCommandEvent& event)
@@ -1423,7 +1434,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
     wxString outputFilename;
 
     // don't ask for filename if Save As is disabled
-    if (prompt && fileMenu->IsEnabled(MID_SAVE_AS)) {
+    if ((prompt && fileMenu->IsEnabled(MID_SAVE_AS)) || currentFile.size() == 0) {
         wxFileName fn(currentFile.c_str());
         wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
 #ifdef __WXGTK__
@@ -1492,6 +1503,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/01/17 00:17:31  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.24  2004/01/08 15:31:03  thiessen
 * remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
 *

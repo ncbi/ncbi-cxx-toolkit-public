@@ -114,20 +114,19 @@ bool ExtractBiostrucAndBioseqs(CNcbi_mime_asn1& mime,
     return true;
 }
 
-static bool GetStructureFromCacheFolder(int mmdbID, EModel_type modelType,
-    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
+static CNcbi_mime_asn1 * GetStructureFromCacheFolder(int mmdbID, EModel_type modelType)
 {
     // try to load from cache
     INFOMSG("looking for " << mmdbID << " (model type " << (int) modelType << ") in cache:");
     string err, cacheFile = GetCacheFilePath(mmdbID, modelType);
-    CNcbi_mime_asn1 mime;
+    CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
     SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-    bool gotFile = ReadASNFromFile(cacheFile.c_str(), &mime, true, &err);
+    bool gotFile = ReadASNFromFile(cacheFile.c_str(), mime.GetPointer(), true, &err);
     SetDiagPostLevel(eDiag_Info);
-    if (!gotFile || !ExtractBiostrucAndBioseqs(mime, biostruc, sequences)) {
+    if (!gotFile) {
         WARNINGMSG("failed to load " << mmdbID
             << " (model type " << (int) modelType << ") from cache: " << err);
-        return false;
+        return NULL;
     }
 
     // if successful, 'touch' the file to mark it as recently used
@@ -136,14 +135,12 @@ static bool GetStructureFromCacheFolder(int mmdbID, EModel_type modelType,
     if (!fn.Touch())
         WARNINGMSG("error touching " << cacheFile);
 
-    return true;
+    return mime.Release();
 }
 
-static bool GetStructureViaHTTPAndAddToCache(const string& uid, int mmdbID, EModel_type modelType,
-    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
+static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
+    const string& uid, int mmdbID, EModel_type modelType)
 {
-    bool gotStructure = false;
-
     // construct URL
     static const wxString host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
     wxString args;
@@ -162,21 +159,21 @@ static bool GetStructureViaHTTPAndAddToCache(const string& uid, int mmdbID, EMod
     // load from network
     INFOMSG("Trying to load structure data from " << host.c_str() << path.c_str() << '?' << args.c_str());
     string err;
-    CNcbi_mime_asn1 mime;
-    gotStructure = (GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), &mime, &err) &&
-        ExtractBiostrucAndBioseqs(mime, biostruc, sequences));
+    CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
 
-    if (!gotStructure) {
-        ERRORMSG("Failed to read structure from network\nreason: " << err);
+    if (!GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), mime.GetPointer(), &err) ||
+            !mime->IsStrucseq()) {
+        ERRORMSG("Failed to read structure " << uid << " from network\nreason: " << err);
+        return NULL;
 
     } else {
         // get MMDB ID from biostruc if not already known
         if (mmdbID == 0) {
-            if (biostruc->GetId().front()->IsMmdb_id())
-                mmdbID = biostruc->GetId().front()->GetMmdb_id().Get();
+            if (mime->GetStrucseq().GetStructure().GetId().front()->IsMmdb_id())
+                mmdbID = mime->GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get();
             else {
                 ERRORMSG("Can't get MMDB ID from Biostruc!");
-                return true;
+                return mime.Release();
             }
         }
 
@@ -184,7 +181,7 @@ static bool GetStructureViaHTTPAndAddToCache(const string& uid, int mmdbID, EMod
         if (RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled) {
             // add to cache
             if (CreateCacheFolder() &&
-                WriteASNToFile(GetCacheFilePath(mmdbID, modelType).c_str(), mime, true, &err)) {
+                WriteASNToFile(GetCacheFilePath(mmdbID, modelType).c_str(), *mime, true, &err)) {
                 INFOMSG("stored " << mmdbID << " (model type " << (int) modelType << ") in cache");
                 // trim cache to appropriate size if we've added a new file
                 int size;
@@ -197,14 +194,11 @@ static bool GetStructureViaHTTPAndAddToCache(const string& uid, int mmdbID, EMod
         }
     }
 
-    return gotStructure;
+    return mime.Release();
 }
 
-bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
-    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
+CNcbi_mime_asn1 * LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType)
 {
-    bool gotStructure = false;
-
     // determine whether this is an integer MMDB ID or alphanumeric PDB ID
     int mmdbID = 0;
     if (uid.size() == 4 && (isalpha(uid[1]) || isalpha(uid[2]) || isalpha(uid[3]))) {
@@ -222,15 +216,24 @@ bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type mo
 
     // try loading from local cache folder first, if cache enabled in registry (but only with known mmdb id)
     bool cacheEnabled;
+    CNcbi_mime_asn1 *mime = NULL;
     if (mmdbID > 0 &&
-            RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled)
-        gotStructure = GetStructureFromCacheFolder(mmdbID, modelType, biostruc, sequences);
+            RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) &&
+            cacheEnabled)
+        mime = GetStructureFromCacheFolder(mmdbID, modelType);
 
     // otherwise, load via HTTP (and save in cache folder)
-    if (!gotStructure)
-        gotStructure = GetStructureViaHTTPAndAddToCache(uid, mmdbID, modelType, biostruc, sequences);
+    if (!mime)
+        mime = GetStructureViaHTTPAndAddToCache(uid, mmdbID, modelType);
 
-    return gotStructure;
+    return mime;
+}
+
+bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
+    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
+{
+    CRef < CNcbi_mime_asn1 > mime(LoadStructureViaCache(uid, modelType));
+    return (mime.NotEmpty() && ExtractBiostrucAndBioseqs(*mime, biostruc, sequences));
 }
 
 void TruncateCache(int maxSize)
@@ -294,6 +297,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/01/17 00:17:29  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.11  2003/04/02 17:49:18  thiessen
 * allow pdb id's in structure import dialog
 *

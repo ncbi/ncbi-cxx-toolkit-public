@@ -38,6 +38,7 @@
 #include <corelib/ncbidiag.hpp>
 
 #include <objects/cn3d/Cn3d_style_settings_set.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <string>
 #include <vector>
@@ -98,6 +99,8 @@ extern void RaiseLogWindow(void);
 
 // launch web browser on given URL
 extern void LaunchWebPage(const char *url);
+
+ncbi::CRef < ncbi::objects::CBioseq > FetchSequenceViaHTTP(const std::string& id);
 
 // top-level window (the main structure window)
 extern wxFrame * GlobalTopWindow(void);
@@ -212,6 +215,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/01/17 00:17:30  thiessen
+* add Biostruc and network structure load
+*
 * Revision 1.30  2003/12/03 15:07:10  thiessen
 * add more sophisticated animation controls
 *
