@@ -188,6 +188,7 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("feat_subtype", "FeatSubType",
                             "Subtype of features to select",
                             CArgDescriptions::eInteger, "-1");
+    arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
 
 #ifdef HAVE_BERKELEY_DB
     arg_desc->AddFlag("cache",
@@ -287,6 +288,7 @@ int CDemoApp::Run(void)
     bool include_allnamed = args["allnamed"];
     bool whole_tse = args["whole_tse"];
     bool whole_sequence = args["whole_sequence"];
+    bool used_memory_check = args["used_memory_check"];
     set<string> include_named;
     if ( args["named"] ) {
         string names = args["named"].AsString();
@@ -410,6 +412,9 @@ int CDemoApp::Run(void)
     if ( args["file"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["file"].AsInputFile() >> MSerial_AsnText >> *entry;
+        if ( used_memory_check ) {
+            exit(0);
+        }
         scope.AddTopLevelSeqEntry(*entry);
     }
     if ( args["bfile"] ) {
@@ -808,6 +813,9 @@ int CDemoApp::Run(void)
             }
             NcbiCout << "Align count (loc range, any):\t" <<count<<NcbiEndl;
         }
+        if ( used_memory_check ) {
+            exit(0);
+        }
     }
 
     NcbiCout << "Done" << NcbiEndl;
@@ -835,6 +843,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2004/08/17 15:41:20  vasilche
+* Added -used_memory_check option.
+*
 * Revision 1.78  2004/08/11 17:58:17  vasilche
 * Added -print_cds option.
 *
