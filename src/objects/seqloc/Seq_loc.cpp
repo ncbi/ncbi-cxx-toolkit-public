@@ -56,7 +56,7 @@ CSeq_loc::~CSeq_loc(void)
 // in the location
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
-    TRange total_range(TRange::GetEmptyFrom(), TRange::GetEmptyTo());
+    TRange total_range;
 
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
@@ -73,25 +73,29 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
         }
     case CSeq_loc::e_Int:
         {
-            total_range.Set(GetInt().GetFrom(), GetInt().GetTo());
+            const CSeq_interval& loc = GetInt();
+            total_range.Set(loc.GetFrom(), loc.GetTo());
             break;
         }
     case CSeq_loc::e_Pnt:
         {
-            total_range.Set(GetPnt().GetPoint(), GetPnt().GetPoint());
+            TSeqPos pos = GetPnt().GetPoint();
+            total_range.Set(pos, pos);
             break;
         }
     case CSeq_loc::e_Packed_int:
         {
             iterate ( CPacked_seqint::Tdata, ii, GetPacked_int().Get() ) {
-                total_range += TRange((*ii)->GetFrom(), (*ii)->GetTo());
+                const CSeq_interval& loc = **ii;
+                total_range += TRange(loc.GetFrom(), loc.GetTo());
             }
             break;
         }
     case CSeq_loc::e_Packed_pnt:
         {
             iterate ( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
-                total_range += TRange(*pi, *pi);
+                TSeqPos pos = *pi;
+                total_range += TRange(pos, pos);
             }
             break;
         }
@@ -111,9 +115,12 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
         }
     case CSeq_loc::e_Bond:
         {
-            total_range = TRange(GetBond().GetA().GetPoint(), GetBond().GetA().GetPoint());
-            if ( GetBond().IsSetB() ) {
-                total_range = TRange(GetBond().GetB().GetPoint(), GetBond().GetB().GetPoint());
+            const CSeq_bond& loc = GetBond();
+            TSeqPos pos = loc.GetA().GetPoint();
+            total_range = TRange(pos, pos);
+            if ( loc.IsSetB() ) {
+                pos = loc.GetB().GetPoint();
+                total_range = TRange(pos, pos);
             }
             break;
         }
@@ -194,7 +201,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         {
             SLoc_Info info;
             info.m_Id = &loc.GetWhole();
-            info.m_Range.Set(TRange::GetWholeFrom(), TRange::GetWholeTo());
+            info.m_Range = TRange::GetWhole();
             info.m_Loc = &loc;
             m_LocList.push_back(info);
             return;
@@ -559,6 +566,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.22  2003/01/22 20:17:33  vasilche
+ * Optimized CSeq_loc::GetTotalRange().
+ *
  * Revision 6.21  2002/12/30 19:37:02  vasilche
  * Rewrote CSeq_loc::GetTotalRange() to avoid using CSeq_loc_CI -
  * it's too expensive.
