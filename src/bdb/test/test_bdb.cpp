@@ -645,6 +645,41 @@ static void s_TEST_BDB_BLOB_File(void)
     ret = blob.Insert(test_data2, lob_len);
     assert(ret == eBDB_Ok);
 
+    {{
+
+    blob.i1 = 1;
+    blob.i2 = 4;
+
+    CBDB_BLobStream* bstream = blob.CreateStream();
+
+    unsigned len = strlen(test_data);
+    for (unsigned i = 0; i < len+1; ++i) {
+        char ch = test_data[i];
+        bstream->Write(&ch, 1);
+    }
+
+    delete bstream;
+
+    blob.i1 = 1;
+    blob.i2 = 4;
+
+    ret = blob.Fetch();
+    assert(ret == eBDB_Ok);
+    unsigned len1 = blob.LobSize();
+    assert(len1 == strlen(test_data)+1);
+
+    char buf[256] = {0,};
+    ret = blob.GetData(buf, sizeof(buf));
+    assert(ret == eBDB_Ok);
+
+    if (strcmp(buf, test_data) != 0) {
+        cout << "BLOB content comparison error!" << endl;
+        cout << "BLobData:" << buf << endl;
+        assert(0);
+    }
+
+
+    }}
 
     cout << "Testing two-phase read." << endl;
     blob.Reopen(CBDB_LobFile::eReadOnly);
@@ -667,6 +702,8 @@ static void s_TEST_BDB_BLOB_File(void)
         assert(0);
     }
 
+
+
     buf[0] = 0;
 
     cout << "Testing BLOB based cursor" << endl;
@@ -679,18 +716,43 @@ static void s_TEST_BDB_BLOB_File(void)
     const char* tdata = test_data;
     while (cur.Fetch() == eBDB_Ok) {
     
-        assert(blob.i2 == 2 || blob.i2 == 3);
+        assert(blob.i2 == 2 || blob.i2 == 3 || blob.i2 == 4);
         unsigned len = blob.LobSize();
         ret = blob.GetData(buf, sizeof(buf));
         assert(ret == eBDB_Ok);
         if (strcmp(buf, tdata) != 0) {
-            cout << "BLOB content comparison error!" << endl;
-            cout << "BLobData:" << buf << endl;
-            assert(0);
+            int i2 = blob.i2;
+            if (i2 == 4) {
+                assert(strcmp(buf, test_data) ==0);
+            }
+            else {
+                cout << "BLOB content comparison error!" << endl;
+                cout << "BLobData:" << buf << endl;
+                assert(0);
+            }
         }
         cout << "Lob len=" << len << endl;
         tdata = test_data2;
     }
+
+    cout << "Testing read stream" << endl;
+
+    blob.i1 = 1;
+    blob.i2 = 2;
+
+    CBDB_BLobStream* bstream = blob.CreateStream();
+
+    char ch;
+    unsigned bytes_read = 0;
+
+    for(int i=0;;++i) {
+        bstream->Read(&ch, 1, &bytes_read);
+        if (bytes_read == 0)
+            break;
+        assert(ch == test_data[i]);
+    }
+
+    delete bstream;
 
     cout << "======== BLob file test ok." << endl;
 }
@@ -1110,6 +1172,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/09/17 18:19:02  kuznets
+ * Added test for BLOB streaming
+ *
  * Revision 1.17  2003/09/16 15:15:16  kuznets
  * Test corrected to use Int2 field
  *
