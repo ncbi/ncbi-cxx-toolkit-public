@@ -84,29 +84,34 @@ sub preprocess
         $_ = <IN>;
       }
       
-      if(/ *class/ && ! /;\n$/)
+      if(/^ *class/ && ! /;\n$/)
       {
         s/^( *class +([_A-Za-z][_A-Za-z0-9]*))/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
-      elsif(/ *struct/ && ! /;\n$/)
+      elsif(/^ *struct/ && ! /;\n$/)
       {
         s/^( *struct +([_A-Za-z][_A-Za-z0-9]*))/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
-      elsif(/ *enum/ && ! /;\n$/)
+      elsif(/^ *enum/ && ! /;\n$/)
       {
         s/^( *enum +([_A-Za-z][_A-Za-z0-9]*))/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
-      elsif(/ *typedef/)
+      elsif(/^ *typedef/)
       {
         s/^( *typedef.* +([_A-Za-z][_A-Za-z0-9]*));$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
-      elsif(/ *extern/)
+      elsif(/^ *extern/)
       {
         s/^( *extern.* +([_A-Za-z][_A-Za-z0-9]*) *\(.*)$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
+      elsif(/^ *# *define/)
+      {
+        s/^( *# *define +([_A-Za-z][_A-Za-z0-9]*) *\(*.*)$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
+      }
       {
         if(! /^ *if[^A-Za-z_]/ && ! /^ *return[^A-Za-z_]/ && 
-           ! /^ *while[^A-Za-z_]/ && ! / *for[^A-Za-z_]/ && ! / *throw[^A-Za-z_]/)
+           ! /^ *while[^A-Za-z_]/ && ! / *for[^A-Za-z_]/ && 
+           ! / *throw[^A-Za-z_]/ && ! /::/)
         {
           s/^(    [a-zA-Z])/\n    \/\/\/\n$1/;
           s/^(        [a-zA-Z])/\n        \/\/\/\n$1/;
