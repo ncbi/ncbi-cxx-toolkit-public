@@ -120,6 +120,7 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("transl_except",     e_Transl_except);
     ADD_ENUM_VALUE("transl_table",      e_Transl_table);
     ADD_ENUM_VALUE("translation",       e_Translation);
+    ADD_ENUM_VALUE("transposon",        e_Transposon);
     ADD_ENUM_VALUE("usedin",            e_Usedin);
 }
 END_ENUM_INFO
@@ -518,6 +519,7 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_type );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Rpt_unit );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Transposon );
     Associate( CSeqFeatData::eSubtype_repeat_region, CGbqualType::e_Usedin );
 
     // repeat_unit
@@ -1081,6 +1083,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/02/07 21:04:10  shomrat
+* Added transposon as a legal qual for repeat_region
+*
 * Revision 1.4  2003/01/21 19:45:55  shomrat
 * Added IsBlankString and IsBlankStringList
 *
