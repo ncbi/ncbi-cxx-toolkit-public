@@ -581,12 +581,15 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         } else if (c->m_RuntimeLibrary == "1") {
             ofs << "MT" << endl << "Debug" << endl;
         } else if (c->m_RuntimeLibrary == "2") {
-            ofs << "MT" << endl << "DLL" << endl;
+            ofs << "MT" << endl;
         } else if (c->m_RuntimeLibrary == "3") {
-            ofs << "MT" << endl << "DLL" << endl << "Debug" << endl;
+            ofs << "MT" << endl << "Debug" << endl;
         } else if (c->m_RuntimeLibrary == "4") {
         } else if (c->m_RuntimeLibrary == "5") {
             ofs << "Debug" << endl;
+        }
+        if (GetBuildType().GetType() == CBuildType::eDll) {
+            ofs << "DLL" << endl;
         }
         ofs << "mswin" << endl;
         const set<string>& epackages =
@@ -947,6 +950,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/02/16 19:28:28  gouriano
+ * Corrected logging DLL feature
+ *
  * Revision 1.51  2005/02/15 19:04:29  gouriano
  * Added list of standard features
  *
