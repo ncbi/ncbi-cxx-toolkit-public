@@ -1390,7 +1390,8 @@ CTSE_LoadLock::operator CTSE_Lock(void) const
 {
     _ASSERT(*this);
     _ASSERT(IsLoaded());
-    return CTSE_Lock(*this);
+    CTSE_Lock lock(*this);
+    return lock;
 }
 
 
