@@ -1,0 +1,6 @@
+# $Id$
+
+ASN_DEP = seq
+
+LIB = xalntool
+SRC = alngraphic
