@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/17 19:11:07  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.9  2000/04/12 15:36:49  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -184,15 +188,12 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
     bool rootClass = GetParentType() == 0;
     AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(IdName(),
                                                             ClassName()));
-    const CNamespace& ns = Namespace();
-    if ( rootClass )
-        code->SetClassNamespace(ns);
+
     bool haveUserClass = rootClass;
     code->SetHaveUserClass(haveUserClass);
     code->SetObject(true);
     iterate ( TMembers, i, GetMembers() ) {
         AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
-        varType->SetContextNamespace(ns);
         code->AddVariant((*i)->GetName(), varType);
     }
     SetParentClassTo(*code);

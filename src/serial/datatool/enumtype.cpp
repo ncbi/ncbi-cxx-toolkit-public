@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/17 19:11:08  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.9  2000/04/12 15:36:51  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -232,8 +236,7 @@ AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
                                                      IsInteger(),
                                                      m_Values,
                                                      enumInfo.valuePrefix));
-    if ( GetParentType() == 0 )
-        e->SetEnumNamespace(Namespace());
+
     return AutoPtr<CTypeStrings>(e.release());
 }
 

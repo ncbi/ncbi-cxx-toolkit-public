@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.5  2000/04/12 15:36:41  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -92,22 +96,13 @@ public:
     CTypeStrings(const CNamespace& ns);
     virtual ~CTypeStrings(void);
 
-    const CNamespace& GetContextNamespace(void) const
-        {
-            return m_ContextNamespace;
-        }
-    void SetContextNamespace(const CNamespace& ns);
-    string GetNamespaceRef(const CNamespace& ns) const
-        {
-            return m_ContextNamespace.GetNamespaceRef(ns);
-        }
-
-    virtual string GetCType(void) const = 0;
+    virtual string GetCType(const CNamespace& ns) const = 0;
     virtual string GetRef(void) const = 0;
 
     virtual bool CanBeKey(void) const;
     virtual bool CanBeInSTL(void) const;
     virtual bool IsObject(void) const;
+    virtual bool IsString(void) const;
     virtual bool NeedSetFlag(void) const;
 
     virtual string NewInstance(const string& init) const;
@@ -129,8 +124,6 @@ public:
     virtual string GetTypeInfoCode(const string& externalName,
                                    const string& memberName) const;
 
-private:
-    CNamespace m_ContextNamespace;
 };
 
 END_NCBI_SCOPE

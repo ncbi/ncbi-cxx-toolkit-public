@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.2  2000/04/07 19:26:11  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -65,7 +69,7 @@ public:
 
     void GenerateTypeCode(CClassContext& ctx) const;
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     bool CanBeKey(void) const;
@@ -89,7 +93,7 @@ public:
     CRefTypeStrings(AutoPtr<CTypeStrings> type);
     ~CRefTypeStrings(void);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     string GetInitializer(void) const;

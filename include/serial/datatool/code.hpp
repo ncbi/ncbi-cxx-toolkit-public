@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/17 19:11:04  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.6  2000/04/12 15:36:40  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -93,14 +97,10 @@ class CClassCode : public CClassContext
 {
 public:
     CClassCode(CClassContext& ownerClass, const string& className);
-    CClassCode(CClassContext& ownerClass, const string& className,
-               const CNamespace& ns);
     virtual ~CClassCode(void);
 
-    const CNamespace& GetNamespace(void) const
-        {
-            return m_Namespace;
-        }
+    const CNamespace& GetNamespace(void) const;
+
     const string& GetClassName(void) const
         {
             return m_ClassName;
@@ -179,7 +179,6 @@ public:
 private:
     CClassContext& m_Code;
     string m_ClassName;
-    CNamespace m_Namespace;
     string m_ParentClassName;
     CNamespace m_ParentClassNamespace;
 

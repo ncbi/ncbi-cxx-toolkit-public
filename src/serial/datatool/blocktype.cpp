@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/17 19:11:07  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.14  2000/04/12 15:36:48  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -199,9 +203,6 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
     bool isRootClass = GetParentType() == 0;
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
                                                           ClassName()));
-    const CNamespace& ns = Namespace();
-    if ( isRootClass )
-        code->SetClassNamespace(ns);
 
     bool haveUserClass = isRootClass;
     bool isObject;
@@ -223,7 +224,6 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         }
 
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
-        memberType->SetContextNamespace(ns);
         code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("Pointer"),
                         optional, defaultCode);

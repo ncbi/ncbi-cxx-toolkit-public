@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/17 19:11:04  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.7  2000/04/12 15:36:40  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -105,7 +109,6 @@ public:
         string mName; // member name
         string tName; // typedef name
         AutoPtr<CTypeStrings> type; // value type
-        string cType;   // type->GetCType()
         string ptrType; // "*" or "NCBI_NS_NCBI::CRef"
         string valueName; // value name (mName or '*'+mName)
         bool optional;  // have OPTIONAL or DEFAULT attribute
@@ -140,7 +143,7 @@ public:
                    const string& pointerType,
                    bool optional, const string& defaultValue);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     bool CanBeKey(void) const;
@@ -192,7 +195,7 @@ public:
     CClassRefTypeStrings(const string& className, const CNamespace& ns,
                          const string& fileName);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     bool CanBeKey(void) const;

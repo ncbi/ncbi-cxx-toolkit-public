@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/17 19:11:04  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.3  2000/04/12 15:36:40  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -91,7 +95,7 @@ public:
 
     void SetEnumNamespace(const CNamespace& ns);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
     string GetInitializer(void) const;
     string GetTypeInfoCode(const string& externalName,
@@ -116,7 +120,7 @@ public:
                         const CNamespace& ns,
                         const string& fileName);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
     string GetInitializer(void) const;
 

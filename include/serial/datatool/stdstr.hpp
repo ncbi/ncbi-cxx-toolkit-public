@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.4  2000/04/12 15:36:41  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -86,7 +90,7 @@ class CStdTypeStrings : public CTypeStrings
 public:
     CStdTypeStrings(const string& type);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
     string GetInitializer(void) const;
 
@@ -101,7 +105,7 @@ private:
 class CNullTypeStrings : public CTypeStrings
 {
 public:
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
     string GetInitializer(void) const;
 
@@ -114,6 +118,8 @@ class CStringTypeStrings : public CStdTypeStrings
     typedef CStdTypeStrings CParent;
 public:
     CStringTypeStrings(const string& type);
+
+    bool IsString(void) const;
 
     string GetInitializer(void) const;
     string GetResetCode(const string& var) const;

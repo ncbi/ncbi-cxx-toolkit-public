@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/17 19:11:04  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.6  2000/04/12 15:36:39  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -102,7 +106,6 @@ public:
         string cName;
         EMemberType memberType;
         AutoPtr<CTypeStrings> type;
-        string cType;
 
         SVariantInfo(const string& name, AutoPtr<CTypeStrings> type);
     };

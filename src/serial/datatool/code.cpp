@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/04/17 19:11:08  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.30  2000/04/12 15:36:50  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -92,14 +96,6 @@ CClassCode::CClassCode(CClassContext& owner, const string& className)
 {
 }
 
-CClassCode::CClassCode(CClassContext& owner, const string& className,
-                       const CNamespace& ns)
-    : m_Code(owner),
-      m_ClassName(className), m_Namespace(ns),
-      m_VirtualDestructor(false)
-{
-}
-
 CClassCode::~CClassCode(void)
 {
     {
@@ -117,6 +113,11 @@ CClassCode::~CClassCode(void)
         GenerateCPP(cpp);
         m_Code.AddCPPCode(cpp);
     }
+}
+
+const CNamespace& CClassCode::GetNamespace(void) const
+{
+    return m_Code.GetNamespace();
 }
 
 void CClassCode::AddHPPCode(const CNcbiOstrstream& code)

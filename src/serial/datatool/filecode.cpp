@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/04/17 19:11:08  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.19  2000/04/12 15:36:51  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -210,6 +214,12 @@ CFileCode::TIncludes& CFileCode::CPPIncludes(void)
 void CFileCode::AddForwardDeclaration(const string& cls, const CNamespace& ns)
 {
     m_ForwardDeclarations[cls] = ns;
+}
+
+const CNamespace& CFileCode::GetNamespace(void) const
+{
+    _ASSERT(m_CurrentClass != 0);
+    return m_CurrentClass->ns;
 }
 
 void CFileCode::AddHPPCode(const CNcbiOstrstream& code)

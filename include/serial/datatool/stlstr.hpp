@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.5  2000/04/07 19:26:13  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -102,7 +106,7 @@ public:
             return m_Arg1Type.get();
         }
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     bool CanBeKey(void) const;
@@ -169,7 +173,7 @@ public:
             return m_Arg2Type.get();
         }
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
@@ -201,7 +205,7 @@ public:
     CVectorTypeStrings(const string& charType);
     ~CVectorTypeStrings(void);
 
-    string GetCType(void) const;
+    string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;
 
     bool CanBeKey(void) const;

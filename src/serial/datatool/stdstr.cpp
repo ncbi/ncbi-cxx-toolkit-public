@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/17 19:11:09  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.4  2000/04/12 15:36:52  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -103,10 +107,10 @@ CStdTypeStrings::CStdTypeStrings(const string& type)
     }
 }
 
-string CStdTypeStrings::GetCType(void) const
+string CStdTypeStrings::GetCType(const CNamespace& ns) const
 {
     if ( m_Namespace )
-        return GetNamespaceRef(m_Namespace)+m_CType;
+        return ns.GetNamespaceRef(m_Namespace)+m_CType;
     else
         return m_CType;
 }
@@ -134,7 +138,7 @@ string CStdTypeStrings::GetTypeInfoCode(const string& externalName,
         "NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR("+memberName+")))";
 }
 
-string CNullTypeStrings::GetCType(void) const
+string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
 {
     return "bool";
 }
@@ -158,6 +162,11 @@ string CNullTypeStrings::GetInitializer(void) const
 CStringTypeStrings::CStringTypeStrings(const string& type)
     : CParent(type)
 {
+}
+
+bool CStringTypeStrings::IsString(void) const
+{
+    return true;
 }
 
 string CStringTypeStrings::GetInitializer(void) const

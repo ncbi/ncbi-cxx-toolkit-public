@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/04/17 19:11:07  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.16  2000/04/12 15:36:49  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -145,18 +149,12 @@ CClassTypeStrings::~CClassTypeStrings(void)
 {
 }
 
-void CClassTypeStrings::SetClassNamespace(const CNamespace& ns)
-{
-    SetContextNamespace(ns);
-}
-
 void CClassTypeStrings::AddMember(const string& name,
                                   AutoPtr<CTypeStrings> type,
                                   const string& pointerType,
                                   bool optional,
                                   const string& defaultValue)
 {
-    _ASSERT(type->GetContextNamespace() == GetContextNamespace());
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue));
@@ -207,10 +205,9 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
         haveFlag = true;
     
     canBeNull = ref && optional && !haveFlag;
-    cType = type->GetCType();
 }
 
-string CClassTypeStrings::GetCType(void) const
+string CClassTypeStrings::GetCType(const CNamespace& /*ns*/) const
 {
     return GetClassName();
 }
@@ -232,7 +229,7 @@ bool CClassTypeStrings::CanBeInSTL(void) const
 
 string CClassTypeStrings::NewInstance(const string& init) const
 {
-    return GetCType()+"::New("+init+')';
+    return GetCType(CNamespace::KEmptyNamespace)+"::New("+init+')';
 }
 
 bool CClassTypeStrings::IsObject(void) const
@@ -303,7 +300,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     string codeClassName = GetClassName();
     if ( haveUserClass )
         codeClassName += "_Base";
-    CClassCode code(ctx, codeClassName, GetContextNamespace());
+    CClassCode code(ctx, codeClassName);
     if ( m_ParentClassName.empty() ) {
         code.SetParentClass("CObject", CNamespace::KNCBINamespace);
     }
@@ -320,9 +317,12 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         GenerateNewMethod(code.ClassPublic(), codeClassName);
     }
 
+    string ncbiNamespace =
+        code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
+
     code.ClassPublic() <<
         "    // type info\n"
-        "    static const "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CTypeInfo* GetTypeInfo(void);\n"
+        "    static const "<<ncbiNamespace<<"CTypeInfo* GetTypeInfo(void);\n"
         "\n";
 
     GenerateClassCode(code,
@@ -392,12 +392,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() <<
             "    // members types\n";
         iterate ( TMembers, i, m_Members ) {
+            string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
-                "    typedef "<<i->type->GetCType()<<" "<<i->tName<<";\n";
+                "    typedef "<<cType<<" "<<i->tName<<";\n";
         }
         code.ClassPublic() << 
             "\n";
     }
+
+    string ncbiNamespace =
+        code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
 
     bool generateMainReset = true;
     // generate member getters & setters
@@ -505,9 +509,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 "}\n"
                 "\n";
 
+            string cType = i->type->GetCType(code.GetNamespace());
             // generate getter
             code.ClassPublic() <<
-                "    const "<<i->cType<<"& Get"<<i->cName<<"(void) const;\n";
+                "    const "<<cType<<"& Get"<<i->cName<<"(void) const;\n";
             code.MethodStart(!i->ref) <<
                 "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                 "{\n"
@@ -519,7 +524,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->ref ) {
                 // generate reference setter
                 setters <<
-                    "    void Set"<<i->cName<<"(const "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CRef< "<<i->cType<<" >& value);\n";
+                    "    void Set"<<i->cName<<"(const "<<ncbiNamespace<<"CRef< "<<cType<<" >& value);\n";
                 code.Methods() <<
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
                     "{\n";
@@ -539,7 +544,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 setters <<
-                    "    "<<i->cType<<"& Set"<<i->cName<<"(void);\n";
+                    "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
                 if ( i->canBeNull ) {
                     // we have to init ref before returning
                     _ASSERT(!i->haveFlag);
@@ -571,7 +576,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 if ( i->type->CanBeInSTL() ) {
                     setters <<
-                        "    void Set"<<i->cName<<"(const "<<i->cType<<"& value);\n";
+                        "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
                     code.InlineMethods() <<
                         "inline\n"
                         "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
@@ -586,7 +591,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "\n";
                 }
                 setters <<
-                    "    "<<i->cType<<"& Set"<<i->cName<<"(void);\n";
+                    "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
                 code.InlineMethods() <<
                     "inline\n"<<
                     methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
@@ -608,8 +613,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     THROW1_TRACE(runtime_error, "the only member of adaptor class is optional");
                 }
                 code.ClassPublic() <<
-                    "    operator const "<<i->cType<<"& (void) const;\n"
-                    "    operator "<<i->cType<<"& (void);\n";
+                    "    operator const "<<cType<<"& (void) const;\n"
+                    "    operator "<<cType<<"& (void);\n";
                 code.InlineMethods() <<
                     "inline\n"<<
                     methodPrefix<<"operator const "<<methodPrefix<<i->tName<<"& (void) const\n"
@@ -646,7 +651,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 			iterate ( TMembers, i, m_Members ) {
                 if ( i->ref ) {
                     code.ClassPrivate() <<
-                        "    "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
+                        "    "<<ncbiNamespace<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
                 }
                 else {
                     code.ClassPrivate() <<
@@ -837,14 +842,14 @@ void CClassRefTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
     ctx.CPPIncludes().insert(m_FileName);
 }
 
-string CClassRefTypeStrings::GetCType(void) const
+string CClassRefTypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetNamespaceRef(m_Namespace)+m_ClassName;
+    return ns.GetNamespaceRef(m_Namespace)+m_ClassName;
 }
 
 string CClassRefTypeStrings::GetRef(void) const
 {
-    return '&'+GetCType()+"::GetTypeInfo";
+    return '&'+GetCType(CNamespace::KEmptyNamespace)+"::GetTypeInfo";
 }
 
 bool CClassRefTypeStrings::CanBeKey(void) const
@@ -859,7 +864,7 @@ bool CClassRefTypeStrings::CanBeInSTL(void) const
 
 string CClassRefTypeStrings::NewInstance(const string& init) const
 {
-    return GetCType()+"::New("+init+')';
+    return GetCType(CNamespace::KEmptyNamespace)+"::New("+init+')';
 }
 
 bool CClassRefTypeStrings::IsObject(void) const

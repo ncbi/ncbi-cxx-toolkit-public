@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/17 19:11:09  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.14  2000/04/12 15:36:53  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -104,11 +108,6 @@ CTypeStrings::~CTypeStrings(void)
 {
 }
 
-void CTypeStrings::SetContextNamespace(const CNamespace& ns)
-{
-    m_ContextNamespace = ns;
-}
-
 string CTypeStrings::GetInitializer(void) const
 {
     return NcbiEmptyString;
@@ -139,6 +138,11 @@ bool CTypeStrings::IsObject(void) const
     return false;
 }
 
+bool CTypeStrings::IsString(void) const
+{
+    return false;
+}
+
 bool CTypeStrings::NeedSetFlag(void) const
 {
     return true;
@@ -146,7 +150,7 @@ bool CTypeStrings::NeedSetFlag(void) const
 
 string CTypeStrings::NewInstance(const string& init) const
 {
-    return "new "+GetCType()+'('+init+')';
+    return "new "+GetCType(CNamespace::KEmptyNamespace)+'('+init+')';
 }
 
 string CTypeStrings::GetIsSetCode(const string& /*var*/) const
@@ -164,8 +168,6 @@ CTypeStrings* CTypeStrings::ToPointer(void)
 
 void CTypeStrings::GenerateCode(CClassContext& ctx) const
 {
-    //    AddForwardDeclarations(ctx);
-    //    AddIncludes(ctx.HPPIncludes(), ctx.CPPIncludes());
     GenerateTypeCode(ctx);
 }
 
@@ -192,7 +194,7 @@ string CTypeStrings::GetTypeInfoCode(const string& externalName,
     return "NCBI_NS_NCBI::AddMember("
         "info->GetMembers(), "
         "\""+externalName+"\", "
-        "NCBI_NS_NCBI::Check< "+GetCType()+" >::Ptr(MEMBER_PTR("+memberName+")), "
+        "NCBI_NS_NCBI::Check< "+GetCType(CNamespace::KEmptyNamespace)+" >::Ptr(MEMBER_PTR("+memberName+")), "
         +GetRef()+')';
 }
 

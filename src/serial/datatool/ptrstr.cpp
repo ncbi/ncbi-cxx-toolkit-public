@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/17 19:11:09  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.3  2000/04/12 15:36:52  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -80,9 +84,9 @@ bool CPointerTypeStrings::NeedSetFlag(void) const
     return false;
 }
 
-string CPointerTypeStrings::GetCType(void) const
+string CPointerTypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetDataType()->GetCType()+'*';
+    return GetDataType()->GetCType(ns)+'*';
 }
 
 string CPointerTypeStrings::GetRef(void) const
@@ -133,14 +137,14 @@ CRefTypeStrings::~CRefTypeStrings(void)
 {
 }
 
-string CRefTypeStrings::GetCType(void) const
+string CRefTypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType()+" >";
+    return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType(ns)+" >";
 }
 
 string CRefTypeStrings::GetRef(void) const
 {
-    return "&NCBI_NS_NCBI::CRefTypeInfo< "+GetDataType()->GetCType()+" >::GetTypeInfo, "+GetDataType()->GetRef();
+    return "&NCBI_NS_NCBI::CRefTypeInfo< "+GetDataType()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo, "+GetDataType()->GetRef();
 }
 
 string CRefTypeStrings::GetInitializer(void) const

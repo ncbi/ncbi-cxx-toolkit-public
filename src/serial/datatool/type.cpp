@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/04/17 19:11:09  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.45  2000/04/12 15:36:52  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -124,40 +128,6 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
         typeInfo = new CAutoPointerTypeInfo(typeInfo);
     return typeInfo;
 }
-
-/*
-string CDataType::GetTemplateHeader(const string& tmpl)
-{
-    if ( tmpl == "multiset" )
-        return "<set>";
-    if ( tmpl == "multimap" )
-        return "<map>";
-    if ( tmpl == "auto_ptr" )
-        return "<memory>";
-    if ( tmpl == "AutoPtr" )
-        return "<corelib/ncbiutil.hpp>";
-    return '<' + tmpl + '>';
-}
-
-bool CDataType::IsSimplePointerTemplate(const string& tmpl)
-{
-    if ( tmpl == "AutoPtr" )
-        return true;
-    return false;
-}
-
-CNamespace CDataType::GetTemplateNamespace(const string& tmpl)
-{
-    if ( tmpl == "AutoPtr" )
-        return "NCBI_NS_NCBI";
-    return "NCBI_NS_STD";
-}
-
-string CDataType::GetTemplateMacro(const string& tmpl)
-{
-    return "STL_" + tmpl;
-}
-*/
 
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
@@ -421,11 +391,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
                                                           ClassName()));
-    const CNamespace& ns = Namespace();
-    if ( GetParentType() == 0 )
-        code->SetClassNamespace(ns);
     AutoPtr<CTypeStrings> dType = GetFullCType();
-    dType->SetContextNamespace(ns);
     code->AddMember(NcbiEmptyString, dType, NcbiEmptyString,
                     false, NcbiEmptyString);
     SetParentClassTo(*code);

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/17 19:11:04  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.3  2000/04/07 19:26:07  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -95,6 +99,7 @@ public:
     virtual void AddHPPCode(const CNcbiOstrstream& code) = 0;
     virtual void AddINLCode(const CNcbiOstrstream& code) = 0;
     virtual void AddCPPCode(const CNcbiOstrstream& code) = 0;
+    virtual const CNamespace& GetNamespace(void) const = 0;
 };
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.7  2000/04/12 15:36:41  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -115,6 +119,8 @@ public:
 
     CFileCode(const string& baseName);
     ~CFileCode(void);
+
+    const CNamespace& GetNamespace(void) const;
 
     bool AddType(const CDataType* type);
 

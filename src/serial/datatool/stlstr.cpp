@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/17 19:11:09  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
 * Revision 1.7  2000/04/12 15:36:52  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -116,9 +120,9 @@ CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
 {
 }
 
-string CTemplate1TypeStrings::GetCType(void) const
+string CTemplate1TypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
+    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+" >";
 }
 
 string CTemplate1TypeStrings::GetRef(void) const
@@ -128,7 +132,7 @@ string CTemplate1TypeStrings::GetRef(void) const
 
 string CTemplate1TypeStrings::GetRefTemplate(void) const
 {
-    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >::GetTypeInfo";
+    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo";
 }
 
 bool CTemplate1TypeStrings::CanBeKey(void) const
@@ -189,9 +193,9 @@ CTemplate2TypeStrings::~CTemplate2TypeStrings(void)
 {
 }
 
-string CTemplate2TypeStrings::GetCType(void) const
+string CTemplate2TypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType()+", "+GetArg2Type()->GetCType()+" >";
+    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+", "+GetArg2Type()->GetCType(ns)+" >";
 }
 
 string CTemplate2TypeStrings::GetRef(void) const
@@ -201,7 +205,7 @@ string CTemplate2TypeStrings::GetRef(void) const
 
 string CTemplate2TypeStrings::GetRefTemplate(void) const
 {
-    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType()+", "+GetArg2Type()->GetCType()+" >::GetTypeInfo";
+    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType(CNamespace::KEmptyNamespace)+", "+GetArg2Type()->GetCType(CNamespace::KEmptyNamespace)+" >::GetTypeInfo";
 }
 
 void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -239,7 +243,7 @@ string CSetTypeStrings::GetDestructionCode(const string& expr) const
         return string();
     return
         "{\n"
-        "    for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
+        "    for ( "+GetCType(CNamespace::KEmptyNamespace)+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
         +code+
         "    }\n"
         "}\n";
@@ -264,7 +268,7 @@ CListTypeStrings::~CListTypeStrings(void)
 string CListTypeStrings::GetRefTemplate(void) const
 {
     if ( m_ExternalSet )
-        return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >::GetSetTypeInfo";
+        return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType(CNamespace::KEmptyNamespace)+" >::GetSetTypeInfo";
     return CParent::GetRefTemplate();
 }
 
@@ -287,7 +291,7 @@ string CListTypeStrings::GetDestructionCode(const string& expr) const
         return string();
     return
         "{\n"
-        "    for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
+        "    for ( "+GetCType(CNamespace::KEmptyNamespace)+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
         +code+
         "    }\n"
         "}\n";
@@ -330,7 +334,7 @@ string CMapTypeStrings::GetDestructionCode(const string& expr) const
         return string();
     return
         "{\n"
-        "    for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
+        "    for ( "+GetCType(CNamespace::KEmptyNamespace)+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
         +code+
         "    }\n"
         "}\n";
@@ -355,9 +359,9 @@ void CVectorTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     ctx.HPPIncludes().insert("<vector>");
 }
 
-string CVectorTypeStrings::GetCType(void) const
+string CVectorTypeStrings::GetCType(const CNamespace& ns) const
 {
-    return GetNamespaceRef(CNamespace::KSTDNamespace)+"vector< " + m_CharType + " >";
+    return ns.GetNamespaceRef(CNamespace::KSTDNamespace)+"vector< " + m_CharType + " >";
 }
 
 string CVectorTypeStrings::GetRef(void) const
