@@ -134,7 +134,7 @@ bool CMySQL_RowResult::Fetch()
                                "Failed: mysql_fetch_lengths");
     }
     m_CurrItem = 0;
-    return m_Row;
+    return m_Row != 0;
 }
 
 
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/26 17:10:35  kuznets
+ * Fixed int->bool warning in MSVC
+ *
  * Revision 1.4  2003/01/06 20:29:13  vakatov
  * Guarantee "m_CurrItem" to be invalid before first Fetch() and after
  * a failed Fetch().
