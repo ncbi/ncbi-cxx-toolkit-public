@@ -105,6 +105,12 @@ public:
     }
 };
 
+enum EListPick {
+    EListAlgo = 1,
+    EListProg
+};
+
+
 /// This is base class for classes that operate on the option set.
 ///
 /// Functors that operate on the set of options in NetblastSearchOpts
@@ -234,37 +240,43 @@ public:
                  CUserOpt("gap_open"),
                  CNetName("gap-open"),
                  CArgKey ("GapOpenCost"),
-                 COptDesc("Gap-open cost."));
+                 COptDesc("Gap-open cost."),
+                 EListAlgo);
         
         op.Same (m_GapExtend,
                  CUserOpt("gap_extend"),
                  CNetName("gap-extend"),
                  CArgKey ("GapExtendCost"),
-                 COptDesc("Gap-extend cost."));
+                 COptDesc("Gap-extend cost."),
+                 EListAlgo);
         
         op.Same (m_WordSize,
                  CUserOpt("wordsize"),
                  CNetName("word-size"),
                  CArgKey ("WordSize"),
-                 COptDesc("Word size."));
+                 COptDesc("Word size."),
+                 EListAlgo);
         
         op.Same (m_Matrix,
                  CUserOpt("matrix"),
                  CNetName("matrix"),
                  CArgKey ("Matrix"),
-                 COptDesc("Search frequency matrix."));
+                 COptDesc("Search frequency matrix."),
+                 EListAlgo);
         
         op.Same (m_NucPenalty,
                  CUserOpt("nucpenalty"),
                  CNetName("nucl-penalty"),
                  CArgKey ("NucPenalty"),
-                 COptDesc("Penalty for a nucleotide mismatch (blastn only)."));
+                 COptDesc("Penalty for a nucleotide mismatch (blastn only)."),
+                 EListAlgo);
         
         op.Same (m_NucReward,
                  CUserOpt("nucreward"),
                  CNetName("nucl-reward"),
                  CArgKey ("NucReward"),
-                 COptDesc("Reward for a nucleotide match (blastn only)."));
+                 COptDesc("Reward for a nucleotide match (blastn only)."),
+                 EListAlgo);
         
         op.Local(m_NumDesc,
                  CUserOpt("numdesc"),
@@ -285,48 +297,54 @@ public:
                  CUserOpt("qugencode"),
                  CNetName("genetic-code"),    
                  CArgKey ("QuGenCode"),     
-                 COptDesc("Query Genetic code to use."));
+                 COptDesc("Query Genetic code to use."),
+                 EListAlgo);
         
         op.Same (m_DbGenCode,
                  CUserOpt("dbgencode"),
                  CNetName("db-genetic-code"), 
                  CArgKey ("DbGenCode"),     
-                 COptDesc("DB Genetic code to use."));
+                 COptDesc("DB Genetic code to use."),
+                 EListAlgo);
         
         op.Same (m_Searchspc,
                  CUserOpt("searchspc"),
                  CNetName("searchsp-eff"),    
                  CArgKey ("SearchSpc"),     
-                 COptDesc("Effective length of the search space."));
+                 COptDesc("Effective length of the search space."),
+                 EListProg);
         
         op.Same (m_PhiQuery,
                  CUserOpt("phi_query"),
                  CNetName("phi-pattern"),     
                  CArgKey ("PhiQuery"),      
-                 COptDesc("Pattern Hit Initiated search expression."));
+                 COptDesc("Pattern Hit Initiated search expression."),
+                 EListAlgo);
         
         op.Same (m_FilterString,
                  CUserOpt("filter_string"),
                  CNetName("filter"),
                  CArgKey ("FilterString"),
-                 COptDesc("Specifies the types of filtering to do."));
+                 COptDesc("Specifies the types of filtering to do."),
+                 EListAlgo);
         
         op.Same (m_EntrezQuery,
                  CUserOpt("entrez_query"),
                  CNetName("entrez-query"),
                  CArgKey ("EntrezQuery"),
-                 COptDesc("Search only in entries matching this Entrez query."));
+                 COptDesc("Search only in entries matching this Entrez query."),
+                 EListProg);
         
         // Computations & Remote values
         
         if (op.NeedRemote()) {
             // Gapped is the default
             TOptBool ungapped = TOptBool::Invert(m_Gapped);
-            op.Remote(ungapped, CNetName("ungapped-alignment"));
+            op.Remote(ungapped, CNetName("ungapped-alignment"), EListAlgo);
             
             // Network only needs max
             TOptInteger num_hits = TOptInteger::Max(m_NumAlgn, m_NumDesc);
-            op.Remote(num_hits, CNetName("hitlist-size"));
+            op.Remote(num_hits, CNetName("hitlist-size"), EListProg);
             
             if (m_Evalue.Exists()) {
                 typedef objects::CBlast4_cutoff TCutoff;
@@ -335,7 +353,7 @@ public:
                 
                 COptional< CRef<TCutoff> > cutoff_opt(cutoff);
                 
-                op.Remote(cutoff_opt, CNetName("cutoff"));
+                op.Remote(cutoff_opt, CNetName("cutoff"), EListAlgo);
             }
         }
     }
@@ -382,6 +400,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2003/12/29 19:48:30  bealer
+ * - Change code to accomodate first half of new ASN changes.
+ *
  * Revision 1.4  2003/11/21 20:42:13  bealer
  * - Add entrez_query option to blast_client
  *

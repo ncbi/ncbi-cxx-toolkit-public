@@ -236,8 +236,10 @@ s_Submit(CRef<CBlast4_request_body> body, bool echo = true)
 class CSearchParamBuilder : public COptionWalker
 {
 public:
-    CSearchParamBuilder(list< CRef<CBlast4_parameter> > & l)
-        : m_List(l)
+    CSearchParamBuilder(list< CRef<CBlast4_parameter> > & algo,
+                        list< CRef<CBlast4_parameter> > & prog)
+        : m_Algo(algo),
+          m_Prog(prog)
     {}
     
     template <class T>
@@ -245,8 +247,15 @@ public:
               CUserOpt,
               CNetName     nb_name,
               CArgKey,
-              COptDesc)
-    { s_SetpOpt(m_List, nb_name, valobj); }
+              COptDesc,
+              EListPick    lp)
+    {
+        if (EListAlgo == lp) {
+            s_SetpOpt(m_Algo, nb_name, valobj);
+        } else if (EListProg == lp) {
+            s_SetpOpt(m_Prog, nb_name, valobj);
+        }
+    }
     
     template <class T>
     void Local(T &,
@@ -255,20 +264,28 @@ public:
                COptDesc)
     { }
     
-    template <class T> void Remote(T & valobj, CNetName net_name)
-    { s_SetpOpt(m_List, net_name, valobj); }
+    template <class T> void Remote(T & valobj, CNetName net_name, EListPick lp)
+    {
+        if (EListAlgo == lp) {
+            s_SetpOpt(m_Algo, net_name, valobj);
+        } else if (EListProg == lp) {
+            s_SetpOpt(m_Prog, net_name, valobj);
+        }
+    }
     
     bool NeedRemote(void) { return true; }
     
 private:
-    list< CRef<CBlast4_parameter> > & m_List;
+    list< CRef<CBlast4_parameter> > & m_Algo;
+    list< CRef<CBlast4_parameter> > & m_Prog;
 };
 
 static void
 s_SetSearchParams(CNetblastSearchOpts             & opts,
-                  list< CRef<CBlast4_parameter> > & l)
+                  list< CRef<CBlast4_parameter> > & algo,
+                  list< CRef<CBlast4_parameter> > & prog)
 {
-    CSearchParamBuilder spb(l);
+    CSearchParamBuilder spb(algo, prog);
     
     opts.Apply(spb);
 }
@@ -286,29 +303,30 @@ s_QueueSearch(string              & program,
     
     CRef<CBlast4_subject> subject(new CBlast4_subject);
     subject->SetDatabase(database);
-        
+    
     CRef<CBlast4_queue_search_request> qsr(new CBlast4_queue_search_request);
     qsr->SetProgram(program);
     qsr->SetService(service);
-        
+    
     qsr->SetSubject(*subject);
-        
+    
     if (query->GetSeq_set().front()->IsSeq()) {
         qsr->SetQueries(*query);
     } else {
         const CBioseq_set * myset = & query->GetSeq_set().front()->GetSet();
         CBioseq_set * myset2 = (CBioseq_set *) myset;
-                
+        
         qsr->SetQueries(*myset2);
     }
-                
-    list< CRef<CBlast4_parameter> > & l = qsr->SetAlgorithm_options().Set();
     
-    s_SetSearchParams(opts, l);
-        
+    list< CRef<CBlast4_parameter> > & algo = qsr->SetAlgorithm_options().Set();
+    list< CRef<CBlast4_parameter> > & prog = qsr->SetProgram_options().Set();
+    
+    s_SetSearchParams(opts, algo, prog);
+    
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetQueue_search(*qsr);
-        
+    
     CRef<CBlast4_reply> reply = s_Submit(body, verbose);
     
     if (reply->CanGetBody()  &&
@@ -532,6 +550,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2003/12/29 19:48:30  bealer
+ * - Change code to accomodate first half of new ASN changes.
+ *
  * Revision 1.4  2003/12/24 01:01:56  ucko
  * Bandaid to compile with current ASN.1 spec.  All parameters are
  * currently classified as algorithm options, and still need to be

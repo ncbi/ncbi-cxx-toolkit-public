@@ -56,7 +56,8 @@ public:
               CUserOpt   user_opt,
               CNetName,
               CArgKey,
-              COptDesc)
+              COptDesc,
+              EListPick)
     {
         ReadOpt(m_args, valobj, user_opt);
     }
@@ -70,7 +71,7 @@ public:
         ReadOpt(m_args, valobj, user_opt);
     }
     
-    template <class T> void Remote(T &, CNetName)
+    template <class T> void Remote(T &, CNetName, EListPick)
     {
     }
     
@@ -100,7 +101,8 @@ public:
               CUserOpt   user_opt,
               CNetName,
               CArgKey    arg_key,
-              COptDesc   descr)
+              COptDesc   descr,
+              EListPick)
     {
         AddOpt(m_ui, valobj, user_opt, arg_key, descr);
     }
@@ -115,7 +117,7 @@ public:
     }
     
     template <class T>
-    void Remote(T &, CNetName)
+    void Remote(T &, CNetName, EListPick)
     {
     }
     
@@ -216,6 +218,9 @@ void COptionWalker::ReadOpt(const ncbi::CArgs & args,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2003/12/29 19:48:30  bealer
+ * - Change code to accomodate first half of new ASN changes.
+ *
  * Revision 1.2  2003/09/26 20:00:48  bealer
  * - Fix compile warning.
  *
