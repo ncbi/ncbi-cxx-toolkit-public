@@ -71,7 +71,7 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
 
-    _ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
+    ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
 
     for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
         buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
@@ -166,7 +166,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int* len, CScope* scope,
     // required. As in readdb, remainder (sv.size()%4 != 0) goes in the last 
     // 2 bits of the last byte.
     case NCBI2NA_ENCODING:
-        _ASSERT(add_nucl_sentinel == false);
+        ASSERT(add_nucl_sentinel == false);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = (sv.size()/COMPRESSION_RATIO) + 1;
         if (strand == eNa_strand_both)
@@ -232,11 +232,14 @@ BLASTFindGeneticCode(int genetic_code)
     TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
             CSeq_data::e_Ncbistdaa);
 
-    _ASSERT(gc_ncbistdaa.IsNcbistdaa());
-    _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
+    ASSERT(gc_ncbistdaa.IsNcbistdaa());
+    ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
 
-    if ( !(retval = new(nothrow) unsigned char[nconv]))
+    try {
+        retval = new unsigned char[nconv];
+    } catch (bad_alloc& ba) {
         return NULL;
+    }
 
     for (unsigned int i = 0; i < nconv; i++)
         retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
@@ -367,6 +370,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/09/05 19:06:31  camacho
+* Use regular new to allocate genetic code string
+*
 * Revision 1.19  2003/09/03 19:36:27  camacho
 * Fix include path for blast_setup.hpp
 *
