@@ -136,7 +136,8 @@ COMMON_LimitTextFileSize()
     size=`expr $size / 1024`
     test $size -lt $maxsize  &&  return $size
 
-    lines=`cat $file_out | wc -l`
+    lines=`wc -l < $file_out`
+    sysdep="${NCBI:-/netopt/ncbi_tools}/c++.metastable/Debug/sysdep.sh"
  
     while [ $size -ge $maxsize ]; do
         lines=`expr $lines / 2`
@@ -145,8 +146,8 @@ COMMON_LimitTextFileSize()
             echo "..."
             echo
         } > $file_out
-        tail -$lines $file_in >> $file_out
-        size=`cat $file_out | wc -c`
+        $sysdep tl $lines $file_in >> $file_out
+        size=`wc -c < $file_out`
         size=`expr $size / 1024`
         test $lines -eq 1  &&   break
     done
