@@ -227,6 +227,9 @@ static void s_InitalizeDllProj(const string&                  dll_id,
     dll_project_dir = 
         CDirEntry::ConcatPath(dll_project_dir, 
                               GetApp().GetBuildType().GetTypeStr());
+    dll_project_dir =
+        CDirEntry::ConcatPath(dll_project_dir,
+                              GetApp().GetRegSettings().m_ProjectsSubdir);
     dll_project_dir = 
         CDirEntry::ConcatPath(dll_project_dir, dll_id);
 
@@ -490,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/04/13 17:07:52  gorelenk
+ * Changed implementation of s_InitalizeDllProj .
+ *
  * Revision 1.11  2004/03/23 14:39:41  gorelenk
  * Changed implementation of functions s_InitalizeDllProj and
  * CreateDllBuildTree to use whole build tree by GetApp().GetWholeTree().
