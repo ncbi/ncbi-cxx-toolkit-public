@@ -511,16 +511,16 @@ static Int4 BlastNaLookupAddWordHit(LookupTablePtr lookup, Uint1Ptr w,
  * @param location What part of the query should be indexed? [in]
  */
 Int4 BlastNaLookupIndexQuery(LookupTablePtr lookup, BLAST_SequenceBlkPtr query,
-			ValNodePtr location)
+			ListNodePtr location)
 {
-  ValNodePtr loc;
+  ListNodePtr loc;
   Int4 from, to;
   Int4 offset;
   Uint1Ptr sequence;
 
   for(loc=location; loc; loc=loc->next) {
-     from = ((DoubleIntPtr) loc->data.ptrvalue)->i1;
-     to = ((DoubleIntPtr) loc->data.ptrvalue)->i2;
+     from = ((DoubleIntPtr) loc->ptr)->i1;
+     to = ((DoubleIntPtr) loc->ptr)->i2;
      
      sequence = query->sequence + from;
      /* Make the offsets point to the ends of the words */

@@ -43,6 +43,7 @@ Detailed Contents:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <math.h>
 #include <ctype.h>
 #include <assert.h>
@@ -186,27 +187,20 @@ Adapted 8-15-90 by WRG from code by S. Altschul.
 long Gcd(register long a, register long b);
 /******************************************************************************/
 
-typedef union DataVal {
-	VoidPtr ptrvalue;
-	Int4 intvalue;
-	FloatHi realvalue;
-	Boolean boolvalue;
-	FnPtr	funcvalue;
-	Int8    bigintvalue;
-}	DataVal, *DataValPtr;
-
-typedef struct ValNode {
+/** A generic linked list node structure */
+typedef struct ListNode {
 	Uint1 choice;          /* to pick a choice */
-	Uint1 extended;        /* extra fields reserved to NCBI allocated in structure */
-	DataVal data;              /* attached data */
-	struct ValNode *next;  /* next in linked list */
-} ValNode, *ValNodePtr;
+	void *ptr;              /* attached data */
+	struct ListNode *next;  /* next in linked list */
+} ListNode, *ListNodePtr;
 
-ValNodePtr ValNodeAddPointer (ValNodePtr PNTR head, Int2 choice, VoidPtr value);
-ValNodePtr ValNodeFree (ValNodePtr vnp);
-ValNodePtr ValNodeFreeData (ValNodePtr vnp);
-ValNodePtr ValNodeSort (ValNodePtr list, int (*compar) (VoidPtr, VoidPtr));
-ValNodePtr ValNodeCopyStr (ValNodePtr PNTR head, Int2 choice, CharPtr str);
+ListNodePtr ListNodeAddPointer (ListNodePtr PNTR head, Int2 choice, 
+                                void *value);
+ListNodePtr ListNodeFree (ListNodePtr vnp);
+ListNodePtr ListNodeFreeData (ListNodePtr vnp);
+ListNodePtr ListNodeSort (ListNodePtr list, 
+               int (*compar) (const void *, const void *));
+ListNodePtr ListNodeCopyStr (ListNodePtr PNTR head, Int2 choice, CharPtr str);
 
 void * MemDup (const void *orig, size_t size);
 Boolean FindPath(const Char* file, const Char* section, const Char* type, Char* buf, Int2 buflen);

@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.18  2003/07/30 17:58:25  dondosha
+ * Changed ValNode to ListNode
+ *
  * Revision 1.17  2003/07/30 17:15:00  dondosha
  * Minor fixes for very strict compiler warnings
  *
@@ -288,7 +291,7 @@ BLAST_MATRIX_NOMINAL,
 add two lines before the return at the end of the function: 
 
         matrix_info = MatrixInfoNew("TESTMATRIX", testmatrix_values, testmatrix_prefs, TESTMATRIX_VALUES_MAX);
-        ValNodeAddPointer(&retval, 0, matrix_info);
+        ListNodeAddPointer(&retval, 0, matrix_info);
 
 
 
@@ -755,7 +758,7 @@ BLAST_ScoreBlkDestruct(BLAST_ScoreBlkPtr sbp)
     sfree(sbp->kbp_gap_psi);
     sbp->matrix_struct = BlastMatrixDestruct(sbp->matrix_struct);
     sfree(sbp->maxscore);
-    sbp->comments = ValNodeFreeData(sbp->comments);
+    sbp->comments = ListNodeFreeData(sbp->comments);
     sfree(sbp->name);
     sfree(sbp->ambiguous_res);
     
@@ -1364,7 +1367,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         if (buf[0] == COMMENT_CHR) {
             /* save the comment line in a linked list */
             *strchr(buf, '\n') = NULLB;
-            ValNodeCopyStr(&sbp->comments, 0, buf+1);
+            ListNodeCopyStr(&sbp->comments, 0, buf+1);
             continue;
         }
         if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
@@ -2155,64 +2158,64 @@ MatrixInfoNew(CharPtr name, array_of_8 *values, Int4Ptr prefs, Int4 max_number)
 	return matrix_info;
 }
 
-static ValNodePtr
-BlastMatrixValuesDestruct(ValNodePtr vnp)
+static ListNodePtr
+BlastMatrixValuesDestruct(ListNodePtr vnp)
 
 {
-	ValNodePtr head;
+	ListNodePtr head;
 
 	head = vnp;
 	while (vnp)
 	{
-		MatrixInfoDestruct((MatrixInfoPtr) vnp->data.ptrvalue);
+		MatrixInfoDestruct((MatrixInfoPtr) vnp->ptr);
 		vnp = vnp->next;
 	}
 
-	head = ValNodeFree(head);
+	head = ListNodeFree(head);
 
 	return head;
 }
 
 /*
-	ValNodePtr BlastLoadMatrixValues (void)
+	ListNodePtr BlastLoadMatrixValues (void)
 	
-	Loads all the matrix values, returns a ValNodePtr chain that contains
+	Loads all the matrix values, returns a ListNodePtr chain that contains
 	MatrixInfoPtr's.
 
 */
-static ValNodePtr 
+static ListNodePtr 
 BlastLoadMatrixValues (void)
 
 {
 	MatrixInfoPtr matrix_info;
-	ValNodePtr retval=NULL;
+	ListNodePtr retval=NULL;
 
 	matrix_info = MatrixInfoNew("BLOSUM80", blosum80_values, blosum80_prefs, BLOSUM80_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("BLOSUM62", blosum62_values, blosum62_prefs, BLOSUM62_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("BLOSUM50", blosum50_values, blosum50_prefs, BLOSUM50_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("BLOSUM45", blosum45_values, blosum45_prefs, BLOSUM45_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("PAM250", pam250_values, pam250_prefs, PAM250_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("BLOSUM62_20", blosum62_20_values, blosum62_20_prefs, BLOSUM62_20_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("BLOSUM90", blosum90_values, blosum90_prefs, BLOSUM90_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("PAM30", pam30_values, pam30_prefs, PAM30_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	matrix_info = MatrixInfoNew("PAM70", pam70_values, pam70_prefs, PAM70_VALUES_MAX);
-	ValNodeAddPointer(&retval, 0, matrix_info);
+	ListNodeAddPointer(&retval, 0, matrix_info);
 
 	return retval;
 }
@@ -2272,7 +2275,7 @@ BlastKarlinGetMatrixValuesEx2(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR ex
 	Int4Ptr open_array=NULL, extension_array=NULL, decline_align_array=NULL, pref_flags_array=NULL, prefs;
 	FloatHiPtr lambda_array=NULL, K_array=NULL, H_array=NULL, alpha_array=NULL, beta_array=NULL;
 	MatrixInfoPtr matrix_info;
-	ValNodePtr vnp, head;
+	ListNodePtr vnp, head;
 
 	if (matrix == NULL)
 		return 0;
@@ -2281,7 +2284,7 @@ BlastKarlinGetMatrixValuesEx2(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR ex
 
 	while (vnp)
 	{
-		matrix_info = vnp->data.ptrvalue;
+		matrix_info = vnp->ptr;
 		if (strcasecmp(matrix_info->name, matrix) == 0)
 		{
 			values = matrix_info->values;
@@ -2469,7 +2472,7 @@ BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_exten
 		if (status == 1)
 		{
 			MatrixInfoPtr matrix_info;
-			ValNodePtr vnp, head; 		
+			ListNodePtr vnp, head; 		
 
 			vnp = head = BlastLoadMatrixValues();
 
@@ -2478,7 +2481,7 @@ BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_exten
 
 			while (vnp)
 			{
-				matrix_info = vnp->data.ptrvalue;
+				matrix_info = vnp->ptr;
 				sprintf(buffer, "%s is a supported matrix", matrix_info->name);
             Blast_MessageWrite(error_return, 2, 0, 0, buffer);
 				vnp = vnp->next;
@@ -2516,7 +2519,7 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, I
 	Int2 status=0;
 	Int4 index, max_number_values=0;
 	MatrixInfoPtr matrix_info;
-	ValNodePtr vnp, head;
+	ListNodePtr vnp, head;
 	
 	if (matrix_name == NULL)
 		return -1;
@@ -2526,7 +2529,7 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, I
 	vnp = head = BlastLoadMatrixValues();
 	while (vnp)
 	{
-		matrix_info = vnp->data.ptrvalue;
+		matrix_info = vnp->ptr;
 		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;
@@ -2583,7 +2586,7 @@ PrintMatrixMessage(const Char *matrix_name)
 	CharPtr buffer=calloc(1024, sizeof(Char));
 	CharPtr ptr;
 	MatrixInfoPtr matrix_info;
-        ValNodePtr vnp, head;
+        ListNodePtr vnp, head;
 
 	ptr = buffer;
         sprintf(ptr, "%s is not a supported matrix, supported matrices are:\n", matrix_name);
@@ -2594,7 +2597,7 @@ PrintMatrixMessage(const Char *matrix_name)
 
         while (vnp)
         {
-        	matrix_info = vnp->data.ptrvalue;
+        	matrix_info = vnp->ptr;
         	sprintf(ptr, "%s \n", matrix_info->name);
 		ptr += strlen(ptr);
 		vnp = vnp->next;
@@ -2612,7 +2615,7 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 	CharPtr buffer, ptr;
 	Int4 index, max_number_values=0;
 	MatrixInfoPtr matrix_info;
-	ValNodePtr vnp, head;
+	ListNodePtr vnp, head;
 
 	ptr = buffer = calloc(2048, sizeof(Char));
 
@@ -2628,7 +2631,7 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 	vnp = head = BlastLoadMatrixValues();
 	while (vnp)
 	{
-		matrix_info = vnp->data.ptrvalue;
+		matrix_info = vnp->ptr;
 		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;
@@ -2666,12 +2669,12 @@ BlastKarlinReportAllowedValues(const Char *matrix_name,
 	Char buffer[256];
 	Int4 index, max_number_values=0;
 	MatrixInfoPtr matrix_info;
-	ValNodePtr vnp, head;
+	ListNodePtr vnp, head;
 
 	vnp = head = BlastLoadMatrixValues();
 	while (vnp)
 	{
-		matrix_info = vnp->data.ptrvalue;
+		matrix_info = vnp->ptr;
 		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;

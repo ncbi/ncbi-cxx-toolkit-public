@@ -821,7 +821,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 
 Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
         const LookupTableOptionsPtr lookup_options,	
-        ValNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
+        ListNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
         LookupTableWrapPtr PNTR lookup_wrap_ptr)
 {
    LookupTableWrapPtr lookup_wrap;

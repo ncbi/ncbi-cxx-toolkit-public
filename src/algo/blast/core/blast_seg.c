@@ -772,9 +772,9 @@ static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr PNTR seg_
       dip->i2 = segs->end + offset;
 
       if (!last_slp) {
-         last_slp = ValNodeAddPointer(&head_slp, 0, dip);
+         last_slp = ListNodeAddPointer(&head_slp, 0, dip);
       } else {
-         last_slp = ValNodeAddPointer(&last_slp, 0, dip);
+         last_slp = ListNodeAddPointer(&last_slp, 0, dip);
       }
    }
 

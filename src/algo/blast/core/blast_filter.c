@@ -54,7 +54,7 @@ BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to)
 
    di->i1 = from;
    di->i2 = to;
-   loc->data.ptrvalue = di;
+   loc->ptr = di;
    return loc;
 }
 
@@ -65,7 +65,7 @@ BlastSeqLocPtr BlastSeqLocFree(BlastSeqLocPtr loc)
 
    while (loc) {
       next_loc = loc->next;
-      dintp = (DoubleIntPtr) loc->data.ptrvalue;
+      dintp = (DoubleIntPtr) loc->ptr;
       sfree(dintp);
       sfree(loc);
       loc = next_loc;
@@ -88,10 +88,10 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
 /** Used for qsort, compares two SeqLoc's by starting position. */
 static int DoubleIntSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
 {
-   ValNodePtr v1 = *((ValNodePtr PNTR) vp1);
-   ValNodePtr v2 = *((ValNodePtr PNTR) vp2);
-   DoubleIntPtr loc1 = (DoubleIntPtr) v1->data.ptrvalue;
-   DoubleIntPtr loc2 = (DoubleIntPtr) v2->data.ptrvalue;
+   ListNodePtr v1 = *((ListNodePtr PNTR) vp1);
+   ListNodePtr v2 = *((ListNodePtr PNTR) vp2);
+   DoubleIntPtr loc1 = (DoubleIntPtr) v1->ptr;
+   DoubleIntPtr loc2 = (DoubleIntPtr) v2->ptr;
    
    if (loc1->i1 < loc2->i1)
       return -1;
@@ -134,18 +134,18 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
    
    /* Sort them by starting position. */
    loc_head = (BlastSeqLocPtr) 
-      ValNodeSort ((ValNodePtr) loc_head, 
+      ListNodeSort ((ListNodePtr) loc_head, 
                    DoubleIntSortByStartPosition);
    
-   di = (DoubleIntPtr) loc_head->data.ptrvalue;
+   di = (DoubleIntPtr) loc_head->ptr;
    start = di->i1;
    stop = di->i2;
    loc_var = loc_head;
    
    while (loc_var) {
-      di = loc_var->data.ptrvalue;
+      di = loc_var->ptr;
       if (loc_var->next)
-         di_next = loc_var->next->data.ptrvalue;
+         di_next = loc_var->next->ptr;
       if (di_next && stop+1 >= di_next->i1) {
          stop = MAX(stop, di_next->i2);
       } else {
@@ -153,9 +153,9 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
          di_tmp->i1 = start;
          di_tmp->i2 = stop;
          if (!new_loc)
-            new_loc_last = ValNodeAddPointer(&new_loc, 0, di_tmp);
+            new_loc_last = ListNodeAddPointer(&new_loc, 0, di_tmp);
          else
-            new_loc_last = ValNodeAddPointer(&new_loc_last, 0, di_tmp);
+            new_loc_last = ListNodeAddPointer(&new_loc_last, 0, di_tmp);
          if (loc_var->next) {
                start = di_next->i1;
                stop = di_next->i2;
@@ -212,9 +212,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          double_int->i1 = start_offset;
          double_int->i2 = end_offset;
          if (!last_loc)
-            last_loc = ValNodeAddPointer(complement_mask, 0, double_int);
+            last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
          else 
-            last_loc = ValNodeAddPointer(&last_loc, 0, double_int);
+            last_loc = ListNodeAddPointer(&last_loc, 0, double_int);
          continue;
       }
       
@@ -234,7 +234,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
 
       for ( ; loc; loc = loc->next) {
-         di = loc->data.ptrvalue;
+         di = loc->ptr;
          if (reverse) {
             filter_start = end_offset - di->i2;
             filter_end = end_offset - di->i1;
@@ -267,9 +267,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          double_int->i2 = filter_start - 1;
 
          if (!last_loc)
-            last_loc = ValNodeAddPointer(complement_mask, 0, double_int);
+            last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
          else 
-            last_loc = ValNodeAddPointer(&last_loc, 0, double_int);
+            last_loc = ListNodeAddPointer(&last_loc, 0, double_int);
          if (filter_end >= end_offset) {
             /* last masked region at end of sequence */
             last_interval_open = FALSE;
@@ -281,16 +281,16 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
 
       if (reverse) {
-         start_loc = ValNodeFree(start_loc);
+         start_loc = ListNodeFree(start_loc);
       }
       
       if (last_interval_open) {
          /* Need to finish DoubleIntPtr for last interval. */
          double_int->i2 = end_offset;
          if (!last_loc)
-            last_loc = ValNodeAddPointer(complement_mask, 0, double_int);
+            last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
          else 
-            last_loc = ValNodeAddPointer(&last_loc, 0, double_int);
+            last_loc = ListNodeAddPointer(&last_loc, 0, double_int);
          last_interval_open = FALSE;
       }
    }
@@ -573,7 +573,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	SeqLocPtr repeat_slp=NULL, vs_slp=NULL;
 	SeqAlignPtr seqalign;
 	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
-	ValNodePtr vnp=NULL, vnp_var;
+	ListNodePtr vnp=NULL, vnp_var;
 #endif
 
 #ifdef CC_FILTER_ALLOWED
@@ -767,7 +767,7 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 			vnp_var = vnp;
 			while (vnp_var)
 			{
-				seqloc_tmp = vnp_var->data.ptrvalue;
+				seqloc_tmp = vnp_var->ptr;
 				if (vs_slp == NULL)
 				{
 					vs_slp = seqloc_tmp;
@@ -779,10 +779,10 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 						seqloc_var = seqloc_var->next;
 					seqloc_var->next = seqloc_tmp;
 				}
-				vnp_var->data.ptrvalue = NULL;
+				vnp_var->ptr = NULL;
 				vnp_var = vnp_var->next;
 			}
-			vnp = ValNodeFree(vnp);
+			vnp = ListNodeFree(vnp);
 			seqalign = SeqAlignSetFree(seqalign);
 			sfree(vs_database);
 			if (myslp_allocated)
@@ -798,15 +798,15 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
                                                       return. */
 #if 0
 		if (seg_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, seg_slp);
+			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, seg_slp);
 		if (cc_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, cc_slp);
+			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, cc_slp);
 		if (dust_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, dust_slp);
+			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, dust_slp);
 		if (repeat_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, repeat_slp);
+			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, repeat_slp);
 		if (vs_slp)
-			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, vs_slp);
+			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, vs_slp);
 #endif
       if (dust_loc)
          seqloc_list = dust_loc;

@@ -366,7 +366,7 @@ Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap,
 Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlkPtr query,
-			       ValNodePtr locations,
+			       ListNodePtr locations,
 			       Int4 num_queries)
 {
   Int4 i;
@@ -394,16 +394,16 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
 Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlkPtr query,
-			      ValNodePtr location)
+			      ListNodePtr location)
 {
-  ValNodePtr loc;
+  ListNodePtr loc;
   Int4 from, to;
   Int4 w;
 
   for(loc=location; loc; loc=loc->next)
     {
-      from = ((DoubleIntPtr) loc->data.ptrvalue)->i1;
-      to = ((DoubleIntPtr) loc->data.ptrvalue)->i2 - lookup->wordsize;
+      from = ((DoubleIntPtr) loc->ptr)->i1;
+      to = ((DoubleIntPtr) loc->ptr)->i2 - lookup->wordsize;
 
       for(w=from;w<=to;w++)
 	{

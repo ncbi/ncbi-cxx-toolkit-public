@@ -252,10 +252,10 @@ dust_triplet_find (Uint1Ptr seq_start, Int4 icur, Int4 max, Uint1Ptr s1)
 /* look for dustable locations (as slpDust from dust.c */
 
 static Int2 
-GetDustLocations (ValNodePtr PNTR loc, DREGION PNTR reg, Int4 nreg)
+GetDustLocations (ListNodePtr PNTR loc, DREGION PNTR reg, Int4 nreg)
 {
    Int4 i;
-   ValNodePtr last_loc = NULL;
+   ListNodePtr last_loc = NULL;
    DoubleIntPtr dintp;
         
    if (!loc)
@@ -273,9 +273,9 @@ GetDustLocations (ValNodePtr PNTR loc, DREGION PNTR reg, Int4 nreg)
          dintp->i1 = reg->from;
          dintp->i2 = reg->to;
          if (!last_loc)
-            last_loc = ValNodeAddPointer (loc, 0, dintp);
+            last_loc = ListNodeAddPointer (loc, 0, dintp);
          else 
-            last_loc = ValNodeAddPointer (&last_loc, 0, dintp);
+            last_loc = ListNodeAddPointer (&last_loc, 0, dintp);
          reg = reg->next;
       }
    }

@@ -92,7 +92,7 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
 */
 static Int2
 BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
-	ValNodePtr mask_loc, Boolean reverse, Int4 offset)
+	ListNodePtr mask_loc, Boolean reverse, Int4 offset)
 {
    DoubleIntPtr loc = NULL;
    Int2 status = 0;
@@ -105,7 +105,7 @@ BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
       mask_letter = 21;
    
    for ( ; mask_loc; mask_loc = mask_loc->next) {
-      loc = (DoubleIntPtr) mask_loc->data.ptrvalue;
+      loc = (DoubleIntPtr) mask_loc->ptr;
       if (reverse)	{
          start = max_length - 1 - loc->i2;
          stop = max_length - 1 - loc->i1;

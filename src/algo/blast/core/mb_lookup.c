@@ -103,7 +103,7 @@ DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
 }
 
 /** Documentation in mb_lookup.h */
-Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
+Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
         MBLookupTablePtr PNTR mb_lt_ptr,
         LookupTableOptionsPtr lookup_options)
 {
@@ -131,7 +131,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    Int2 bytes_in_word;
    Uint1 width;
    Int4 from, to;
-   ValNodePtr loc;
+   ListNodePtr loc;
    Int4 longest_chain = 0;
    Int4 pcount, pcount1=0;
    
@@ -226,8 +226,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    }
 
    for (loc = location; loc; loc = loc->next) {
-      from = ((DoubleIntPtr) loc->data.ptrvalue)->i1;
-      to = ((DoubleIntPtr) loc->data.ptrvalue)->i2;
+      from = ((DoubleIntPtr) loc->ptr)->i1;
+      to = ((DoubleIntPtr) loc->ptr)->i2;
 
       seq = query->sequence_start + from;
       pos = seq + word_length;
