@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/04 17:57:45  vasilche
+* Fixed for new generated classes interface.
+*
 * Revision 1.5  2000/01/20 21:51:28  vakatov
 * Fixed to follow changes of the "CNcbiApplication" interface
 *
@@ -131,16 +134,15 @@ void InvalidArgument(const string& arg)
 }
 
 static
-const string& StringArgument(const CNcbiArguments& args, SIZE_TYPE i)
+const string& StringArgument(const CNcbiArguments& args, size_t index)
 {
-    if (i >= args.Size()  ||  args[i].empty()) {
+    if ( index >= args.Size() || args[index].empty() )
         InvalidArgument("Argument required");
-    }
-    return args[i];
+    return args[index];
 }
 
 static
-void SeqEntryProcess(Seq_entry* sep);  /* dummy function */
+void SeqEntryProcess(Seq_entry& sep);  /* dummy function */
 
 
 /*****************************************************************************
@@ -158,37 +160,41 @@ int CAsn2Asn::Run(void)
     string logFile;
     CNcbiDiagStream logStream(&NcbiCerr);
 
-    if (GetArguments().Size() == 1)
+    if ( GetArguments().Size() == 1 )
         PrintUsage();
 
-    for (SIZE_TYPE i = 1;  i < GetArguments().Size();  i++) {
-        const string& arg = GetArguments()[i];
-        if (arg[0] == '-') {
-            switch ( arg[1] ) {
-            case 'i':
-                inFile = StringArgument(GetArguments(), ++i);
-                break;
-            case 'e':
-                inSeqEntry = true;
-                break;
-            case 'b':
-                inBinary = true;
-                break;
-            case 'o':
-                outFile = StringArgument(GetArguments(), ++i);
-                break;
-            case 's':
-                outBinary = true;
-                break;
-            case 'l':
-                logFile = StringArgument(GetArguments(), ++i);
-                break;
-            default:
+    {
+        for ( size_t i = 1; i < GetArguments().Size(); ++i ) {
+            const string& arg = GetArguments()[i];
+            if ( arg[0] == '-' ) {
+                switch ( arg[1] ) {
+                case 'i':
+                    inFile = StringArgument(GetArguments(), ++i);
+                    break;
+                case 'e':
+                    inSeqEntry = true;
+                    break;
+                case 'b':
+                    inBinary = true;
+                    break;
+                case 'o':
+                    outFile = StringArgument(GetArguments(), ++i);
+                    break;
+                case 's':
+                    outBinary = true;
+                    break;
+                case 'l':
+                    logFile = StringArgument(GetArguments(), ++i);
+                    break;
+                default:
+                    InvalidArgument(arg);
+                    break;
+                }
+            }
+            else {
                 InvalidArgument(arg);
                 break;
             }
-        } else {
-            InvalidArgument(arg);
         }
     }
 
@@ -243,19 +249,17 @@ int CAsn2Asn::Run(void)
     }
 
     if ( inSeqEntry ) { /* read one Seq-entry */
-        Seq_entry* entry = 0;
-        TTypeInfo typeInfo =
-            CChoicePointerTypeInfo::GetTypeInfo(Seq_entry::GetTypeInfo());
-        inObject->Read(&entry, typeInfo);
+        Seq_entry entry;
+        *inObject >> entry;
         SeqEntryProcess(entry);     /* do any processing */
         if ( outObject.get() )
-            outObject->Write(&entry, typeInfo);
+            *outObject << entry;
 	}
 	else {              /* read Seq-entry's from a Bioseq-set */
         Bioseq_set entries;
         *inObject >> entries;
         iterate ( Bioseq_set::TSeq_set, i, entries.GetSeq_set() ) {
-            SeqEntryProcess(*i);     /* do any processing */
+            SeqEntryProcess(**i);     /* do any processing */
         }
         if ( outObject.get() )
             *outObject << entries;
@@ -275,10 +279,7 @@ int CAsn2Asn::Run(void)
 *
 *****************************************************************************/
 static
-void SeqEntryProcess (Seq_entry* sep)
+void SeqEntryProcess (Seq_entry& sep)
 {
-	if (sep == NULL)
-		return;
-	return;
 }
 
