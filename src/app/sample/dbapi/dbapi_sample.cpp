@@ -101,6 +101,7 @@ int CDbapiTest::Run()
         CDriverManager &dm = CDriverManager::GetInstance();
 
         string server = args["s"].AsString();
+        string driver = args["d"].AsString();
 
 
 #ifdef WIN32
@@ -112,12 +113,12 @@ int CDbapiTest::Run()
         if( NStr::CompareNocase(server, "STRAUSS") == 0 ) {
             map<string,string> attr;
             attr["version"] = "100";
-            ds = dm.CreateDs(args["d"].AsString(), &attr);
+            ds = dm.CreateDs(driver, &attr);
         }
         else
-            ds = dm.CreateDs(args["d"].AsString());
+            ds = dm.CreateDs(driver);
 
-        ds->SetLogStream(0);
+        //ds->SetLogStream(0);
 
 
         //ds->SetLogStream(&NcbiCerr);
@@ -133,14 +134,33 @@ int CDbapiTest::Run()
                       "DBAPI_Sample");
     
         NcbiCout << "Using server: " << server
-                 << ", driver: " << args["d"].AsString() << endl;
+                 << ", driver: " << driver << endl;
+/*
+        // Test section start
+        try {
+            IDataSource *ds2 = dm.CreateDs(driver);
 
-    
+            IConnection* conn2 = ds2->CreateConnection();
+            
+            conn2->Connect("kholodov",
+                           "newuser",
+                           "MOZART");
+            IStatement *stmt = conn2->CreateStatement();
+            stmt->ExecuteUpdate("print 'Test print from MOZART'");
+            delete conn2;
+        }
+        catch (exception& e) {
+            NcbiCerr << e.what() << endl;
+        }
+
+        exit(0);
+        // Test section end
+*/    
         IStatement *stmt = conn->CreateStatement();
 
         string sql = "select int_val, fl_val, date_val, str_val \
 from SelectSample ";
-        NcbiCout << "Testing simple select..." << endl
+        NcbiCout << endl << "Testing simple select..." << endl
                  << sql << endl;
 
         conn->MsgToEx(true);
@@ -196,17 +216,70 @@ from SelectSample ";
         }
         catch(CDB_Exception& e) {
             NcbiCout << "Exception: " << e.what() << endl;
-            NcbiCout << ds->GetErrorInfo();
+            NcbiCout << conn->GetErrorInfo();
         } 
 
         NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
 
         conn->MsgToEx(false);
+/*
+        // Testing MSSQL XML output
+        sql += " for xml auto, elements";
+        NcbiCout << "Testing simple select with XML output..." << endl
+                 << sql << endl;
 
+        conn->MsgToEx(true);
+
+        try {
+            stmt->Execute(sql);
+    
+            while( stmt->HasMoreResults() ) {
+                if( stmt->HasRows() ) {   
+                    IResultSet *rs = stmt->GetResultSet();
+                    const IResultSetMetaData *rsMeta = rs->GetMetaData();
+
+                    rs->BindBlobToVariant(true);
+
+                    for(int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
+                        NcbiCout << rsMeta->GetName(i) << "  ";
+
+                    NcbiCout << endl;
+
+                    while(rs->Next()) { 
+                        for(int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
+                            if( rsMeta->GetType(i) == eDB_Text
+                                || rsMeta->GetType(i) == eDB_Image ) {
+
+                                CDB_Stream *b = dynamic_cast<CDB_Stream*>(rs->GetVariant(i).GetData());
+                                _ASSERT(b);
+
+                                char *buf = new char[b->Size() + 1];
+                                b->Read(buf, b->Size());
+                                buf[b->Size()] = '\0';
+                                NcbiCout << buf << "|";
+                                delete buf;
+                                
+                            }
+                            else
+                                NcbiCout << rs->GetVariant(i).GetString() << "|";
+                        }
+                        NcbiCout << endl;
+                    
+                    } 
+                    
+                }
+            }
+        }
+        catch(CDB_Exception& e) {
+            NcbiCout << "Exception: " << e.what() << endl;
+            NcbiCout << ds->GetErrorInfo();
+        } 
+        
+        exit(1);
         //delete stmt;
-
+*/
         // Testing bulk insert w/o BLOBs
-        NcbiCout << "Creating BulkSample table..." << endl;
+        NcbiCout << endl << "Creating BulkSample table..." << endl;
         sql = "if exists( select * from sysobjects \
 where name = 'BulkSample' \
 AND type = 'U') \
@@ -277,15 +350,18 @@ begin \
   where int_val < @id and fl_val <= @f \
   select @o = 555 \
   select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
+  print 'Print test output' \
   return @id \
 end";
+        //  raiserror('Raise Error test output', 1, 1) \
 
         stmt->ExecuteUpdate(sql);
+        stmt->ExecuteUpdate("print 'test'");
 
         float f = 2.999f;
 
         // call stored procedure
-        NcbiCout << "Calling stored procedure..." << endl;
+        NcbiCout << endl << "Calling stored procedure..." << endl;
         
         ICallableStatement *cstmt = conn->PrepareCall("SampleProc", 3);
         cstmt->SetParam(CVariant(5), "@id");
@@ -331,12 +407,13 @@ end";
             }
         }
         NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
+        NcbiCout << endl << ds->GetErrorInfo() << endl;
 
        
         delete cstmt;
 
         // call stored procedure using language call
-        NcbiCout << "Calling stored procedure using language call..." << endl;
+        NcbiCout << endl << "Calling stored procedure using language call..." << endl;
         
         sql = "exec SampleProc @id, @f, @o output";
         stmt->SetParam(CVariant(5), "@id");
@@ -393,7 +470,7 @@ end";
         //exit(1);
 
         // Reconnect
-        NcbiCout << "Reconnecting..." << endl;
+        NcbiCout << endl << "Reconnecting..." << endl;
 
         delete conn;
         conn = ds->CreateConnection();
@@ -408,7 +485,7 @@ end";
 
         stmt = conn->CreateStatement();
 
-        NcbiCout << "Reading BLOB..." << endl;
+        NcbiCout << endl << "Reading BLOB..." << endl;
 
         // Read blob to vector
         vector<char> blob;
@@ -447,7 +524,7 @@ from SelectSample where int_val = 1");
 
     
         // create a table
-        NcbiCout << "Creating BlobSample table..." << endl;
+        NcbiCout << endl << "Creating BlobSample table..." << endl;
         sql = "if exists( select * from sysobjects \
 where name = 'BlobSample' \
 AND type = 'U') \
@@ -510,7 +587,11 @@ end";
 #ifndef WIN32 // Not supported by ODBC driver
         NcbiCout << "Writing BLOB using resultset..." << endl;
 
-        stmt->Execute("select id, blob from BlobSample at isolation read uncommitted");
+        sql = "select id, blob from BlobSample";
+        if( NStr::CompareNocase(driver, "ctlib") == 0 )
+            sql += " at isolation read uncommitted";
+
+        stmt->Execute(sql);
     
         cnt = 0;
         while( stmt->HasMoreResults() ) {
@@ -605,6 +686,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/10/09 21:25:36  kholodov
+* Several tests added
+*
 * Revision 1.8  2003/03/06 16:17:21  kholodov
 * Fixed: incorrect TDS version for STRAUSS
 *
