@@ -8,14 +8,14 @@
     <h1> Smart Pointers: the <i>CObject</i> and <i>CRef</i> Classes</h1>
 
 <ul>
-  <li> <a href="#autoptr"> STL auto_ptrs </a> 
-  <li> <a href="#cref"> The CRef Class </a>
-  <li> <a href="#cobject"> The CObject Class </a>
-  <li> <a href="#exmpl"> Using smart pointers for standard types: The <i>CObjectFor</i> class</a>
+  <li> <a href="#autoptr"> <i>STL auto_ptrs</i> </a> 
+  <li> <a href="#cref"> The <i>CRef</i> Class </a>
+  <li> <a href="#cobject"> The <i>CObject</i> Class </a>
+  <li> <a href="#exmpl"> The <i>CObjectFor</i> class: Using smart pointers for standard types</a>
 </ul>
 
-<a name="autoptr"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/AutoPtr.html">
- <h3> STL auto_ptrs </h3> </a>
+<a name="autoptr"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/auto_ptr.html">
+ <h3> <i>STL auto_ptrs</i> </h3> </a>
 C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
 the case, the good news is also the bad news: 
 <ul>
@@ -34,7 +34,7 @@ pointer.  The wrapper class's constructors and destructors can then handle memor
 the object goes in and out of scope. The problem with this solution is that it does not handle
 multiple pointers to the same resource properly, and it raises the issue of ownership. This is
 essentially what the 
-<a name="autoptr"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/AutoPtr.html">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/auto_ptr.html">
 <i>auto_ptr</i></a> offers, but this strategy is only safe to use when the
 resource maps to a single pointer variable.<p>
 
@@ -50,7 +50,7 @@ For example, the following code has two very serious problems:
 
 The first problem occurs inside the block where the two <i>auto_ptrs</i> are defined.
 Both are referencing the same variable pointed to by yet another <i>C</i> pointer, and
-each considers itself to be the owner of that reference. Thus when the block is exited,
+each considers itself to be the owner of that reference. Thus, when the block is exited,
 the <i>delete[]</i> operation is executed twice for the same pointer. <p>
 
 Even if this first problem did not occur - for example if only one <i>auto_ptr</i> had been
@@ -58,8 +58,8 @@ defined - the second problem occurs when we try to dereference <i>ip</i>. The
 <i>delete</i> operation occurring as the block exits has now reset <i>*ip</i> to <i>0</i>, 
 so an attempt to divide by zero occurs. 
 
-<a name="cref"> <a name="autoptr"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CRef.html">
-<h3>The CRef Class </h3></a>
+<a name="cref"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CRef.html">
+<h3>The <i>CRef</i> Class </h3></a>
 
 These issues are addressed in the NCBI C++ Toolkit by using <i>reference-counted</i> smart
 pointers: a resource cannot be deallocated until <i>all</i> references to it have ceased to
@@ -138,12 +138,13 @@ such as <i>int</i>, <i>string</i> etc. The <i>CObjectFor</i> class, described be
 designed for this purpose.
 
 <p>
-<a name="exmpl"> <h3>Using smart pointers for standard types: The 
+<a name="exmpl"> <h3>
+The 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectFor.html">
-<i>CObjectFor</i> class</a></h3>
+<i>CObjectFor</i> class</a>: Using smart pointers for standard types</h3>
 
 The <i>CObjectFor</i> class is derived directly from <i>CObject</i>, and is implemented as a
-template class whose argument specifies the STL type that will be pointed to. In addition to
+template class whose argument specifies the standard type that will be pointed to. In addition to
 the reference counter inherited from its parent class, <i>CObjectFor</i> has a private 
 data member of the parameterized type, and a member function <i>GetData()</i> to access it.<p>
 
@@ -158,10 +159,12 @@ program tests whether or not the reference is still accessible after an auxillia
 which goes out of scope has also been used to reference it. The same sequence is then tested
 using <i>CRef</i> objects instead. <p>
 
-In the first case, the original <i>auto_ptr, <a href="smart_cpp.html#orig">
-orig-ap</a>,</i> becomes NULL at the moment that ownership is transferred to
-<i>copy_ap</i> by the copy constructor.  Using <i>CRef</i>s however, the original
-reference remains accessible in all blocks where <i>orig</i> is defined.
+In the first case, the original <i>auto_ptr,
+orig_ap,</i> becomes NULL at the moment when ownership is transferred to
+<i>copy_ap</i> by the copy constructor.  Using <i>CRef</i>s however, the reference 
+contained in the original <i>CRef</i> remains accessible (via <i>orig</i>) in all blocks where <i>orig</i> 
+is defined. Moreover, the reference itself, i.e. the object pointed to, continues to exist
+until <i>all</i> references to it have been removed.
 
 	  <p>
 
