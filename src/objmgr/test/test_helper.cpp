@@ -27,79 +27,9 @@
 *
 * File Description:
 *   Bio sequence data generator to test Object Manager
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.21  2002/12/26 16:39:24  vasilche
-* Object manager class CSeqMap rewritten.
-*
-* Revision 1.20  2002/12/20 20:54:25  grichenk
-* Added optional location/product switch to CFeat_CI
-*
-* Revision 1.19  2002/12/19 20:18:57  grichenk
-* Fixed test case for minus strand location
-*
-* Revision 1.18  2002/11/08 19:43:37  grichenk
-* CConstRef<> constructor made explicit
-*
-* Revision 1.17  2002/09/10 19:55:54  grichenk
-* Catch exceptions when resolving seq-maps; new arguments for GetSeqVector()
-*
-* Revision 1.16  2002/07/25 15:01:53  grichenk
-* Replaced non-const GetXXX() with SetXXX()
-*
-* Revision 1.15  2002/07/03 14:40:46  ucko
-* Use typedef rather than hard-coded type for Dense_diag.ids.
-*
-* Revision 1.14  2002/06/07 16:13:24  ucko
-* GetTitle() is now in sequence::.
-*
-* Revision 1.13  2002/06/06 19:49:54  clausen
-* Changed CBioseq_Handle::GetTitle() call to GetTitle()
-*
-* Revision 1.12  2002/05/24 14:57:14  grichenk
-* SerialAssign<>() -> CSerialObject::Assign()
-*
-* Revision 1.11  2002/05/21 18:39:31  grichenk
-* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
-*
-* Revision 1.10  2002/05/09 14:21:50  grichenk
-* Turned GetTitle() test on, removed unresolved seq-map test
-*
-* Revision 1.9  2002/05/06 03:28:53  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.8  2002/05/03 21:28:12  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.7  2002/04/25 18:15:25  grichenk
-* Adjusted tests to work with the updated CSeqVector
-*
-* Revision 1.6  2002/04/23 15:26:07  gouriano
-* added test_assert.h
-*
-* Revision 1.5  2002/04/22 20:07:45  grichenk
-* Commented calls to CBioseq::ConstructExcludedSequence()
-*
-* Revision 1.4  2002/04/22 18:33:48  gouriano
-* corrected feature counts
-*
-* Revision 1.3  2002/03/28 21:22:38  grichenk
-* More tests for location-exclusive bioseq
-*
-* Revision 1.2  2002/03/18 21:47:15  grichenk
-* Moved most includes to test_helper.cpp
-* Added test for CBioseq::ConstructExcludedSequence()
-*
-* Revision 1.1  2002/03/13 18:06:31  gouriano
-* restructured MT test. Put common functions into a separate file
-*
-*
-* ===========================================================================
 */
 
 #include "test_helper.hpp"
-#include <sstream>
 #include <objects/seqloc/Seq_point.hpp>
 #include <serial/object.hpp>
 #include <serial/objistr.hpp>
@@ -1168,3 +1098,78 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.22  2002/12/26 20:34:53  ucko
+* Drop unused header <sstream>, which older compilers (such as GCC 2.9x) lack;
+* move CVS log to end.
+*
+* Revision 1.21  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
+* Revision 1.20  2002/12/20 20:54:25  grichenk
+* Added optional location/product switch to CFeat_CI
+*
+* Revision 1.19  2002/12/19 20:18:57  grichenk
+* Fixed test case for minus strand location
+*
+* Revision 1.18  2002/11/08 19:43:37  grichenk
+* CConstRef<> constructor made explicit
+*
+* Revision 1.17  2002/09/10 19:55:54  grichenk
+* Catch exceptions when resolving seq-maps; new arguments for GetSeqVector()
+*
+* Revision 1.16  2002/07/25 15:01:53  grichenk
+* Replaced non-const GetXXX() with SetXXX()
+*
+* Revision 1.15  2002/07/03 14:40:46  ucko
+* Use typedef rather than hard-coded type for Dense_diag.ids.
+*
+* Revision 1.14  2002/06/07 16:13:24  ucko
+* GetTitle() is now in sequence::.
+*
+* Revision 1.13  2002/06/06 19:49:54  clausen
+* Changed CBioseq_Handle::GetTitle() call to GetTitle()
+*
+* Revision 1.12  2002/05/24 14:57:14  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
+* Revision 1.11  2002/05/21 18:39:31  grichenk
+* CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
+*
+* Revision 1.10  2002/05/09 14:21:50  grichenk
+* Turned GetTitle() test on, removed unresolved seq-map test
+*
+* Revision 1.9  2002/05/06 03:28:53  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.8  2002/05/03 21:28:12  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.7  2002/04/25 18:15:25  grichenk
+* Adjusted tests to work with the updated CSeqVector
+*
+* Revision 1.6  2002/04/23 15:26:07  gouriano
+* added test_assert.h
+*
+* Revision 1.5  2002/04/22 20:07:45  grichenk
+* Commented calls to CBioseq::ConstructExcludedSequence()
+*
+* Revision 1.4  2002/04/22 18:33:48  gouriano
+* corrected feature counts
+*
+* Revision 1.3  2002/03/28 21:22:38  grichenk
+* More tests for location-exclusive bioseq
+*
+* Revision 1.2  2002/03/18 21:47:15  grichenk
+* Moved most includes to test_helper.cpp
+* Added test for CBioseq::ConstructExcludedSequence()
+*
+* Revision 1.1  2002/03/13 18:06:31  gouriano
+* restructured MT test. Put common functions into a separate file
+*
+* ===========================================================================
+*/
