@@ -37,6 +37,7 @@
 
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_trans.hpp>
 #include <corelib/ncbimtx.hpp>
 
 #include <corelib/ncbitime.hpp>
@@ -244,6 +245,10 @@ public:
         // Dumping the buffer
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+        CBDB_Transaction trans(*m_AttrDB.GetEnv());
+        m_AttrDB.SetTransaction(&trans);
+        m_BlobDB.SetTransaction(&trans);
+
         if (m_Buffer) {
             LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
@@ -251,6 +256,7 @@ public:
             delete m_Buffer;
         }
         delete m_BlobStream;
+
 
         m_AttrDB.key = m_BlobKey.c_str();
         m_AttrDB.version = m_Version;
@@ -266,6 +272,8 @@ public:
         }
         m_AttrDB.UpdateInsert();
         m_AttrDB.Sync();
+
+        trans.Commit();
     }
 
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -429,7 +437,7 @@ void CBDB_Cache::Open(const char* cache_path,
     } 
     catch (CBDB_Exception&)
     {
-        m_Env->OpenWithLocks(cache_path);
+        m_Env->OpenWithTrans(cache_path);
     }
 
     m_CacheDB = new SCacheDB();
@@ -504,6 +512,11 @@ void CBDB_Cache::Store(const string&  key,
         Purge(key, subkey, 0, m_VersionFlag);
     }
 
+    CBDB_Transaction trans(*m_Env);
+    m_CacheDB->SetTransaction(&trans);
+    m_CacheAttrDB->SetTransaction(&trans);
+
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     unsigned overflow = 0;
@@ -549,6 +562,8 @@ void CBDB_Cache::Store(const string&  key,
     m_CacheAttrDB->overflow = overflow;
 
     m_CacheAttrDB->UpdateInsert();
+
+    trans.Commit();
 }
 
 
@@ -784,6 +799,10 @@ void CBDB_Cache::Remove(const string& key)
 
     }}
 
+    CBDB_Transaction trans(*m_Env);
+    m_CacheDB->SetTransaction(&trans);
+    m_CacheAttrDB->SetTransaction(&trans);
+
     // Now delete all objects
 
     ITERATE(vector<SCacheDescr>, it, cache_elements) {
@@ -820,6 +839,8 @@ void CBDB_Cache::Remove(const string& key)
                    it->subkey.c_str(), 
                    it->overflow);
     }
+
+    trans.Commit();
 
 }
 
@@ -881,12 +902,18 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
     } // while
 
+    CBDB_Transaction trans(*m_Env);
+    m_CacheDB->SetTransaction(&trans);
+    m_CacheAttrDB->SetTransaction(&trans);
+
     ITERATE(vector<SCacheDescr>, it, cache_entries) {
         x_DropBlob(it->key.c_str(), 
                    it->version, 
                    it->subkey.c_str(), 
                    it->overflow);
     }
+
+    trans.Commit();
 
 }
 
@@ -936,6 +963,10 @@ void CBDB_Cache::Purge(const string&    key,
 
     } // while
 
+    CBDB_Transaction trans(*m_Env);
+    m_CacheDB->SetTransaction(&trans);
+    m_CacheAttrDB->SetTransaction(&trans);
+
     ITERATE(vector<SCacheDescr>, it, cache_entries) {
         x_DropBlob(it->key.c_str(), 
                    it->version, 
@@ -943,6 +974,8 @@ void CBDB_Cache::Purge(const string&    key,
                    it->overflow);
     }
     
+    trans.Commit();
+
 }
 
 
@@ -968,6 +1001,10 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
                                     int            version,
                                     const string&  subkey)
 {
+    CBDB_Transaction trans(*m_Env);
+    m_CacheDB->SetTransaction(&trans);
+    m_CacheAttrDB->SetTransaction(&trans);
+
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
     m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
@@ -981,6 +1018,8 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
     m_CacheAttrDB->time_stamp = (unsigned)time_stamp.GetTimeT();
 
     m_CacheAttrDB->UpdateInsert();
+
+    trans.Commit();
 }
 
 
@@ -1936,6 +1975,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/12/16 13:45:11  kuznets
+ * ICache implementation made transaction protected
+ *
  * Revision 1.31  2003/12/08 16:13:15  kuznets
  * Added plugin mananger support
  *
