@@ -105,12 +105,12 @@ private:
     
     friend class CSeqDB;
     
-    CSeqDBIter(CSeqDB *, Uint4 oid);
+    CSeqDBIter(const CSeqDB *, Uint4 oid);
     
-    CSeqDB     * m_DB;
-    TOID         m_OID;
-    const char * m_Data;
-    Uint4        m_Length;
+    const CSeqDB     * m_DB;
+    TOID               m_OID;
+    const char       * m_Data;
+    Uint4              m_Length;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -158,7 +158,7 @@ public:
     
     
     /// Returns the sequence length in base pairs or residues.
-    Int4 GetSeqLength(TOID oid);
+    Int4 GetSeqLength(TOID oid) const;
     
     /// Returns an unbiased, approximate sequence length.
     ///
@@ -167,15 +167,15 @@ public:
     /// examination of the sequence data.  This method avoids doing
     /// that, returning an approximation ranging from L-3 to L+3
     /// (where L indicates the exact length), and unbiased on average.
-    Int4 GetSeqLengthApprox(TOID oid);
+    Int4 GetSeqLengthApprox(TOID oid) const;
     
     /// Get the ASN.1 header for the sequence.
-    CRef<CBlast_def_line_set> GetHdr(TOID oid);
+    CRef<CBlast_def_line_set> GetHdr(TOID oid) const;
     
     /// Get a CBioseq of the sequence.
     CRef<CBioseq> GetBioseq(TOID                oid,
                             bool use_objmgr   = true,
-                            bool insert_ctrlA = false);
+                            bool insert_ctrlA = false) const;
     
 
     /// Get a pointer to raw sequence data.
@@ -186,7 +186,7 @@ public:
     /// @return
     ///   In case of an error, -1 is returned; otherwise the return
     ///   value is the sequence length (in base pairs or residues).
-    Int4 GetSequence(TOID oid, const char ** buffer);
+    Int4 GetSequence(TOID oid, const char ** buffer) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -199,7 +199,7 @@ public:
     /// @return
     ///   In case of an error, -1 is returned; otherwise the return
     ///   value is the sequence length (in base pairs or residues).
-    Int4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code);
+    Int4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -223,7 +223,7 @@ public:
     Int4 GetAmbigSeqAlloc(TOID               oid,
                           char            ** buffer,
                           Uint4              nucl_code,
-                          ESeqDBAllocType    strategy);
+                          ESeqDBAllocType    strategy) const;
     
     /// Returns any resources associated with the sequence.
     /// 
@@ -231,54 +231,54 @@ public:
     /// is in read only memory; also, this method has no effect.  If
     /// memory mapping failed, the sequence is probably in dynamically
     /// allocated memory and this method frees that memory.
-    void RetSequence(const char ** buffer);
+    void RetSequence(const char ** buffer) const;
     
     /// Gets a list of sequence identifiers.
     /// 
     /// This returns the list of CSeq_id identifiers associated with
     /// the sequence specified by the given OID.
-    list< CRef<CSeq_id> > GetSeqIDs(TOID oid);
+    list< CRef<CSeq_id> > GetSeqIDs(TOID oid) const;
     
     /// Returns the type of database opened - protein or nucleotide.
     /// 
     /// This uses the same constants as the constructor.
-    char GetSeqType(void);
+    char GetSeqType(void) const;
     
     /// Returns the database title.
     ///
     /// This is usually read from database volumes or alias files.  If
     /// multiple databases were passed to the constructor, this will
     /// be a concatenation of those databases' titles.
-    string GetTitle(void);
+    string GetTitle(void) const;
     
     /// Returns the construction date of the database.
     /// 
     /// This is encoded in the database.  If multiple databases or
     /// multiple volumes were accessed, the first available date will
     /// be used.
-    string GetDate(void);
+    string GetDate(void) const;
     
     /// Returns the number of sequences available.
-    Uint4 GetNumSeqs(void);
+    Uint4 GetNumSeqs(void) const;
     
     /// Returns the sum of the lengths of all available sequences.
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  It provides an exact value, without iterating
     /// over individual sequences.
-    Uint8 GetTotalLength(void);
+    Uint8 GetTotalLength(void) const;
     
     /// Returns the length of the largest sequence in the database.
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  This might be used to chose buffer sizes.
-    Uint4 GetMaxLength(void);
+    Uint4 GetMaxLength(void) const;
     
     /// Returns a sequence iterator.
     ///
     /// This gets an iterator designed to allow traversal of the
     /// database from beginning to end.
-    CSeqDBIter Begin(void);
+    CSeqDBIter Begin(void) const;
     
     /// Restrict iterators to range of OIDs.
     ///
@@ -294,14 +294,14 @@ public:
     /// calls, if iterating over the db.
     /// @return
     ///   True if a valid OID was found, false otherwise.
-    bool CheckOrFindOID(TOID & next_oid);
+    bool CheckOrFindOID(TOID & next_oid) const;
     
     /// Get list of database names.
     ///
     /// This returns the database name list used at construction.
     /// @return
     ///   List of database names.
-    const string & GetDBNameList(void);
+    const string & GetDBNameList(void) const;
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
