@@ -85,6 +85,7 @@ struct NCBI_BDB_EXPORT SCache_AttrDB : public CBDB_File
 };
 
 class CPIDGuard;
+class CCacheCleanerThread;
 
 
 /// BDB cache implementation.
@@ -127,6 +128,22 @@ public:
         eNoLock,     ///< Do not lock-protect cache instance
         ePidLock     ///< Create PID lock on cache (exception if failed) 
     };
+
+    /// Schedule a background Purge thread 
+    /// (cleans the cache from the obsolete entries)
+    /// SetPurgeBatchSize and SetBatchSleep should be used to regulate the thread
+    /// priority
+    ///  
+    /// @param purge_delay
+    ///    Sleep delay in seconds between consequtive Purge Runs
+    /// @note Actual thread is started by Open()
+    /// (works only in MT builds)
+    /// 
+    /// @sa SetPurgeBatchSize, SetBatchSleep
+    void RunPurgeThread(unsigned purge_delay =  30);
+
+    /// Stop background thread
+    void StopPurgeThread();
 
     /// Underlying BDB database can be configured using transactional
     /// or non-transactional API. Transactional provides better protection
@@ -433,6 +450,14 @@ private:
     unsigned                m_CleanLogOnPurge;
     /// Number of times we run purge
     unsigned                m_PurgeCount;
+    /// Purge thread
+    CRef<CCacheCleanerThread>  m_PurgeThread;
+    /// Flag that Purge is already running
+    bool                       m_PurgeNowRunning; 
+    /// Run a background purge thread
+    bool                       m_RunPurgeThread;
+    /// Delay in seconds between Purge runs
+    unsigned                   m_PurgeThreadDelay;
 };
 
 
@@ -494,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/10/27 17:02:41  kuznets
+ * Added option to run a background cleaning(Purge) thread
+ *
  * Revision 1.36  2004/10/18 16:06:22  kuznets
  * Implemented automatic (on Purge) log cleaning
  *

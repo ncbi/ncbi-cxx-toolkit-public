@@ -46,6 +46,7 @@
 #include <corelib/ncbitime.hpp>
 
 #include <util/cache/icache_cf.hpp>
+#include <util/cache/icache_clean_thread.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -466,7 +467,8 @@ CBDB_Cache::CBDB_Cache()
   m_BatchSleep(0),
   m_PurgeStop(false),
   m_CleanLogOnPurge(0),
-  m_PurgeCount(0)
+  m_PurgeCount(0),
+  m_RunPurgeThread(false)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -646,6 +648,18 @@ void CBDB_Cache::Open(const char* cache_path,
     
     }}
 
+    if (m_RunPurgeThread) {
+# ifdef NCBI_THREADS
+       LOG_POST(Info << "Starting cache cleaning thread.");
+       m_PurgeThread.Reset(
+           new CCacheCleanerThread(this, m_PurgeThreadDelay, 5));
+       m_PurgeThread->Run();
+# else
+        LOG_POST(Warning << 
+                 "Cannot run background thread in non-MT configuration.");
+# endif
+    }
+
     if (m_TimeStampFlag & fPurgeOnStartup) {
         unsigned batch_sleep = m_BatchSleep;
         unsigned batch_size = m_PurgeBatchSize;
@@ -665,6 +679,7 @@ void CBDB_Cache::Open(const char* cache_path,
         m_BatchSleep = batch_sleep;
         m_PurgeBatchSize = batch_size;
     }
+    
     m_Env->TransactionCheckpoint();
 
     m_ReadOnly = false;
@@ -675,6 +690,24 @@ void CBDB_Cache::Open(const char* cache_path,
 
 }
 
+void CBDB_Cache::RunPurgeThread(unsigned purge_delay)
+{
+    m_RunPurgeThread = true;
+    m_PurgeThreadDelay = purge_delay;
+}
+
+void CBDB_Cache::StopPurgeThread()
+{
+# ifdef NCBI_THREADS
+    if (!m_PurgeThread.Empty()) {
+        LOG_POST(Info << "Stopping cache cleaning thread...");
+        StopPurge();
+        m_PurgeThread->RequestStop();
+        m_PurgeThread->Join();
+        LOG_POST(Info << "Stopped.");
+    }
+# endif
+}
 
 void CBDB_Cache::OpenReadOnly(const char*  cache_path, 
                               const char*  cache_name,
@@ -718,6 +751,8 @@ void CBDB_Cache::OpenReadOnly(const char*  cache_path,
 
 void CBDB_Cache::Close()
 {
+    StopPurgeThread();
+
     if (m_CacheAttrDB) {
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
         x_SaveAttrStorage();
@@ -1284,9 +1319,31 @@ void CBDB_Cache::StopPurge()
     m_PurgeStop = true;
 }
 
+/// @internal
+class CPurgeFlagGuard
+{
+public:
+    CPurgeFlagGuard() : m_Flag(0) {}
+    ~CPurgeFlagGuard() { m_Flag ? *m_Flag = false : 0; }
+
+    void SetFlag(bool* flag) { m_Flag = flag; *m_Flag = true; }
+private:
+    bool*  m_Flag;
+};
+
 void CBDB_Cache::Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version)
 {
+    // Protect Purge form double (run from different threads)
+    CPurgeFlagGuard pf_guard;
+    {{
+        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+        if (m_PurgeNowRunning)
+            return;
+        pf_guard.SetFlag(&m_PurgeNowRunning);
+    }}
+
+
     unsigned delay = 0;
     if (IsReadOnly()) {
         return;
@@ -1888,6 +1945,9 @@ static const string kCFParam_use_transactions  = "use_transactions";
 static const string kCFParam_purge_batch_size  = "purge_batch_size";
 static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
 static const string kCFParam_purge_clean_log    = "purge_clean_log";
+static const string kCFParam_purge_thread       = "purge_thread";
+static const string kCFParam_purge_thread_delay = "purge_thread_delay";
+
 
 
 ICache* CBDB_CacheReaderCF::CreateInstance(
@@ -1969,6 +2029,15 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamInt(params, kCFParam_purge_clean_log, false, 0);
     drv->CleanLogOnPurge(purge_clean_factor);
 
+    bool purge_thread = 
+        GetParamBool(params, kCFParam_purge_thread, false, false);
+    unsigned purge_thread_delay = 
+        GetParamInt(params, kCFParam_purge_thread_delay, false, 30);
+
+    if (purge_thread) {
+        drv->RunPurgeThread(purge_thread_delay);
+    }
+
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
@@ -2026,6 +2095,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2004/10/27 17:02:53  kuznets
+ * Added option to run a background cleaning(Purge) thread
+ *
  * Revision 1.87  2004/10/21 17:35:50  kuznets
  * Changed Purge priority(high)
  *
