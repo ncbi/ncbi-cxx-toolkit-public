@@ -1731,7 +1731,6 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         m_Dst_loc.Reset();
         const CSeq_bond& src_bond = src_loc.GetBond();
         CRef<CSeq_loc> dst_loc(new CSeq_loc);
-        dst_loc->SetBond();
         CRef<CSeq_loc> pntA;
         CRef<CSeq_loc> pntB;
         TRangeFuzz fuzzA(kEmptyFuzz, kEmptyFuzz);
@@ -1748,10 +1747,6 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         if ( resA ) {
             pntA = x_GetMappedSeq_loc();
             _ASSERT(pntA);
-            if ( !pntA->IsPnt() ) {
-                NCBI_THROW(CLocMapperException, eBadLocation,
-                           "Bond point A can not be mapped to a point");
-            }
         }
         else {
             pntA.Reset(new CSeq_loc);
@@ -1774,10 +1769,6 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         if ( resB ) {
             pntB = x_GetMappedSeq_loc();
             _ASSERT(pntB);
-            if ( !pntB->IsPnt() ) {
-                NCBI_THROW(CLocMapperException, eBadLocation,
-                           "Bond point B can not be mapped to a point");
-            }
         }
         else {
             pntB.Reset(new CSeq_loc);
@@ -1785,10 +1776,26 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         }
         m_Dst_loc = prev;
         if ( resA  ||  resB  ||  m_KeepNonmapping ) {
-            CSeq_bond& dst_bond = dst_loc->SetBond();
-            dst_bond.SetA(pntA->SetPnt());
-            if ( src_bond.IsSetB() ) {
-                dst_bond.SetB(pntB->SetPnt());
+            if (pntA->IsPnt()  &&  pntB->IsPnt()) {
+                // Mapped locations are points - pack into bond
+                CSeq_bond& dst_bond = dst_loc->SetBond();
+                dst_bond.SetA(pntA->SetPnt());
+                if ( src_bond.IsSetB() ) {
+                    dst_bond.SetB(pntB->SetPnt());
+                }
+            }
+            else {
+                // Convert the whole bond to mix, add gaps between A and B
+                CSeq_loc_mix& dst_mix = dst_loc->SetMix();
+                if ( pntA ) {
+                    dst_mix.Set().push_back(pntA);
+                }
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix.Set().push_back(null_loc);
+                if ( pntB ) {
+                    dst_mix.Set().push_back(pntB);
+                }
             }
             x_PushLocToDstMix(dst_loc);
         }
@@ -2009,6 +2016,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/02/10 16:21:03  grichenk
+* Fixed mapping of bonds
+*
 * Revision 1.35  2005/02/01 21:55:11  grichenk
 * Added direction flag for mapping between top level sequence
 * and segments.
