@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/12/13 19:45:36  gouriano
+ * added xxValidateAction functions
+ *
  * Revision 1.1  2001/03/26 20:31:13  vakatov
  * Initial revision (moved code from "ncbithr.cpp")
  *
@@ -40,31 +43,10 @@
  */
 
 #include <corelib/ncbimtx.hpp>
-#include <assert.h>
 
+#include "ncbidbg_p.hpp"
 
 BEGIN_NCBI_SCOPE
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  Auxiliary
-//
-
-
-#if defined(_DEBUG)
-#  define verify(expr) assert(expr)
-#  define s_Verify(state, message)  assert(((void) message, (state)))
-#else  /* _DEBUG */
-#  define verify(expr) ((void)(expr))
-inline
-void s_Verify(bool state, const char* message)
-{
-    if ( !state ) {
-        throw runtime_error(message);
-    }
-}
-#endif  /* _DEBUG */
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -75,11 +57,11 @@ CInternalMutex::CInternalMutex(void)
 {
     // Create platform-dependent mutex handle
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
-             "CInternalMutex::CInternalMutex() -- error creating mutex");
+    xncbi_Validate((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
+                   "CInternalMutex::CInternalMutex() -- error creating mutex");
 #elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_mutex_init(&m_Handle, 0) == 0,
-             "CInternalMutex::CInternalMutex() -- error creating mutex");
+    xncbi_Validate(pthread_mutex_init(&m_Handle, 0) == 0,
+                   "CInternalMutex::CInternalMutex() -- error creating mutex");
 #endif
     m_Initialized = true;
     return;
@@ -90,9 +72,9 @@ CInternalMutex::~CInternalMutex(void)
 {
     // Destroy system mutex handle
 #if defined(NCBI_WIN32_THREADS)
-    verify(CloseHandle(m_Handle) != 0);
+    xncbi_Verify(CloseHandle(m_Handle) != 0);
 #elif defined(NCBI_POSIX_THREADS)
-    verify(pthread_mutex_destroy(&m_Handle) == 0);
+    xncbi_Verify(pthread_mutex_destroy(&m_Handle) == 0);
 #endif
     m_Initialized = false;
     return;

@@ -1,6 +1,7 @@
 # $Id$
 
-SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
-         ncbistd ncbiobj ncbitime ncbimtx ncbi_safe_static ncbi_system ncbifile
+LIBOBJ = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
+         ncbistd ncbiobj ncbitime ncbimtx ncbi_safe_static ncbi_system ncbifile \
+         ncbidbg
 
 LIB    = xncbi

@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2001/12/13 19:45:37  gouriano
+ * added xxValidateAction functions
+ *
  * Revision 1.13  2001/12/12 17:11:23  vakatov
  * [NCBI_POSIX_THREADS] CSemaphore::Post() -- assert(0) just to make sure
  *
@@ -92,31 +95,9 @@
 #include <memory>
 #include <assert.h>
 
+#include "ncbidbg_p.hpp"
 
 BEGIN_NCBI_SCOPE
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  Auxiliary
-//
-
-
-#if defined(_DEBUG)
-#  define verify(expr) assert(expr)
-#  define s_Verify(state, message)  assert(((void) message, (state)))
-#else  /* _DEBUG */
-#  define verify(expr) ((void)(expr))
-inline
-void s_Verify(bool state, const char* message)
-{
-    if ( !state ) {
-        throw runtime_error(message);
-    }
-}
-#endif  /* _DEBUG */
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -149,11 +130,9 @@ CTlsBase::CTlsBase(void)
 
     // Create platform-dependent TLS key (index)
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify((m_Key = TlsAlloc()) != DWORD(-1),
-             "CTlsBase::CTlsBase() -- error creating key");
+    xncbi_Verify((m_Key = TlsAlloc()) != DWORD(-1));
 #elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_key_create(&m_Key, 0) == 0,
-             "CTlsBase::CTlsBase() -- error creating key");
+    xncbi_Verify(pthread_key_create(&m_Key, 0) == 0);
 #else
     m_Key = 0;
 #endif
@@ -213,9 +192,9 @@ inline
 void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
 {
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify(TlsSetValue(key, data), err_message);
+    xncbi_Validate(TlsSetValue(key, data), err_message);
 #elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_setspecific(key, data) == 0, err_message);
+    xncbi_Validate(pthread_setspecific(key, data) == 0, err_message);
 #else
     key = data;
     assert(err_message);  // to get rid of the "unused variable" warning
@@ -237,8 +216,9 @@ void CTlsBase::x_SetValue(void*        value,
     // Create and initialize TLS structure, if it was not present
     if ( !tls_data ) {
         tls_data = new STlsData;
-        s_Verify(tls_data != 0,
-                 "CTlsBase::x_SetValue() -- cannot alloc memory for TLS data");
+        xncbi_Validate(tls_data != 0,
+                       "CTlsBase::x_SetValue() -- cannot allocate "
+                       "memory for TLS data");
         tls_data->m_Value       = 0;
         tls_data->m_CleanupFunc = 0;
         tls_data->m_CleanupData = 0;
@@ -404,8 +384,8 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
         s_ThreadCount++;
 
         thread_obj->m_ID = s_ThreadCount;
-        s_Verify(thread_obj->m_ID != 0,
-                 "CThread::Wrapper() -- error assigning thread ID");
+        xncbi_Validate(thread_obj->m_ID != 0,
+                       "CThread::Wrapper() -- error assigning thread ID");
         GetThreadsTls().SetValue(thread_obj);
     }}
 
@@ -456,8 +436,9 @@ CThread::CThread(void)
 #if defined(HAVE_PTHREAD_SETCONCURRENCY)  &&  defined(NCBI_POSIX_THREADS)
     // Adjust concurrency for Solaris etc.
     if (pthread_getconcurrency() < 2) {
-        s_Verify(pthread_setconcurrency(2) == 0,
-                 "CThread::CThread() -- pthread_setconcurrency(2) failed");
+        xncbi_Validate(pthread_setconcurrency(2) == 0,
+                       "CThread::CThread() -- pthread_setconcurrency(2) "
+                       "failed");
     }
 #endif
 }
@@ -483,8 +464,8 @@ bool CThread::Run(void)
     CFastMutexGuard state_guard(s_ThreadMutex);
 
     // Check
-    s_Verify(!m_IsRun,
-             "CThread::Run() -- called for already started thread");
+    xncbi_Validate(!m_IsRun,
+                   "CThread::Run() -- called for already started thread");
 
 #if defined(NCBI_WIN32_THREADS)
     // We need this parameter in WinNT - can not use NULL instead!
@@ -495,22 +476,22 @@ bool CThread::Run(void)
         (NULL, 0,
          reinterpret_cast<FSystemWrapper>(Wrapper),
          this, 0, &thread_id);
-    s_Verify(thread_handle != NULL,
-             "CThread::Run() -- error creating thread");
-    s_Verify(DuplicateHandle(GetCurrentProcess(), thread_handle,
-                             GetCurrentProcess(), &m_Handle,
-                             0, FALSE, DUPLICATE_SAME_ACCESS),
-             "CThread::Run() -- error getting thread handle");
-    s_Verify(CloseHandle(thread_handle),
-             "CThread::Run() -- error closing thread handle");
+    xncbi_Validate(thread_handle != NULL,
+                   "CThread::Run() -- error creating thread");
+    xncbi_Validate(DuplicateHandle(GetCurrentProcess(), thread_handle,
+                                   GetCurrentProcess(), &m_Handle,
+                                   0, FALSE, DUPLICATE_SAME_ACCESS),
+                   "CThread::Run() -- error getting thread handle");
+    xncbi_Validate(CloseHandle(thread_handle),
+                   "CThread::Run() -- error closing thread handle");
 #elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_create
-             (&m_Handle, 0,
-              reinterpret_cast<FSystemWrapper>(Wrapper), this) == 0,
-             "CThread::Run() -- error creating thread");
+    xncbi_Validate(pthread_create
+                   (&m_Handle, 0,
+                    reinterpret_cast<FSystemWrapper>(Wrapper), this) == 0,
+                   "CThread::Run() -- error creating thread");
 #else
-    s_Verify(0,
-             "CThread::Run() -- system does not support threads");
+    xncbi_Validate(0,
+                   "CThread::Run() -- system does not support threads");
 #endif
 
     // Indicate that the thread is run
@@ -524,18 +505,18 @@ void CThread::Detach(void)
     CFastMutexGuard state_guard(s_ThreadMutex);
 
     // Check the thread state: it must be run, but not detached yet
-    s_Verify(m_IsRun,
-             "CThread::Detach() -- called for not yet started thread");
-    s_Verify(!m_IsDetached,
-             "CThread::Detach() -- called for already detached thread");
+    xncbi_Validate(m_IsRun,
+                   "CThread::Detach() -- called for not yet started thread");
+    xncbi_Validate(!m_IsDetached,
+                   "CThread::Detach() -- called for already detached thread");
 
     // Detach the thread
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify(CloseHandle(m_Handle),
-             "CThread::Detach() -- error closing thread handle");
+    xncbi_Validate(CloseHandle(m_Handle),
+                   "CThread::Detach() -- error closing thread handle");
 #elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_detach(m_Handle) == 0,
-             "CThread::Detach() -- error detaching thread");
+    xncbi_Validate(pthread_detach(m_Handle) == 0,
+                   "CThread::Detach() -- error detaching thread");
 #endif
 
     // Indicate the thread is detached
@@ -553,28 +534,28 @@ void CThread::Join(void** exit_data)
     // Check the thread state: it must be run, but not detached yet
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
-        s_Verify(m_IsRun,
-                 "CThread::Join() -- called for not yet started thread");
-        s_Verify(!m_IsDetached,
-                 "CThread::Join() -- called for already detached thread");
-        s_Verify(!m_IsJoined,
-                 "CThread::Join() -- called for already joined thread");
+        xncbi_Validate(m_IsRun,
+                       "CThread::Join() -- called for not yet started thread");
+        xncbi_Validate(!m_IsDetached,
+                       "CThread::Join() -- called for detached thread");
+        xncbi_Validate(!m_IsJoined,
+                       "CThread::Join() -- called for already joined thread");
         m_IsJoined = true;
     }}
 
     // Join (wait for) and destroy
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0,
-             "CThread::Join() -- can not join thread");
+    xncbi_Validate(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0,
+                   "CThread::Join() -- can not join thread");
     DWORD status;
-    s_Verify(GetExitCodeThread(m_Handle, &status) &&
-             status != DWORD(STILL_ACTIVE),
-             "CThread::Join() -- thread is still running after join");
-    s_Verify(CloseHandle(m_Handle),
-             "CThread::Join() -- can not close thread handle");
+    xncbi_Validate(GetExitCodeThread(m_Handle, &status) &&
+                   status != DWORD(STILL_ACTIVE),
+                   "CThread::Join() -- thread is still running after join");
+    xncbi_Validate(CloseHandle(m_Handle),
+                   "CThread::Join() -- can not close thread handle");
 #elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_join(m_Handle, 0) == 0,
-             "CThread::Join() -- can not join thread");
+    xncbi_Validate(pthread_join(m_Handle, 0) == 0,
+                   "CThread::Join() -- can not join thread");
 #endif
 
     // Set exit_data value
@@ -594,8 +575,8 @@ void CThread::Exit(void* exit_data)
 {
     // Don't exit from the main thread
     CThread* x_this = GetThreadsTls().GetValue();
-    s_Verify(x_this != 0,
-             "CThread::Exit() -- attempt to call it for the main thread");
+    xncbi_Validate(x_this != 0,
+                   "CThread::Exit() -- attempt to call for the main thread");
 
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
@@ -719,8 +700,8 @@ CInternalRWLock::CInternalRWLock(void)
         CloseHandle(m_Rsema);
     }
     m_Initialized = false;
-    s_Verify(0,
-             "CInternalRMLock::InternalRWLock() -- initialization error");
+    xncbi_Validate(0,
+                   "CInternalRMLock::InternalRWLock() -- init. error");
 #elif defined(NCBI_POSIX_THREADS)
     if (pthread_cond_init(&m_Rcond, 0) == 0) {
         if (pthread_cond_init(&m_Wcond, 0) == 0) {
@@ -729,8 +710,8 @@ CInternalRWLock::CInternalRWLock(void)
         pthread_cond_destroy(&m_Rcond);
     }
     m_Initialized = false;
-    s_Verify(0,
-             "CInternalRMLock::InternalRWLock() -- initialization error");
+    xncbi_Validate(0,
+                   "CInternalRMLock::InternalRWLock() -- init. error");
 #else
     return;
 #endif
@@ -741,11 +722,11 @@ inline
 CInternalRWLock::~CInternalRWLock(void)
 {
 #if defined(NCBI_WIN32_THREADS)
-    verify(CloseHandle(m_Rsema));
-    verify(CloseHandle(m_Wsema));
+    xncbi_Verify(CloseHandle(m_Rsema));
+    xncbi_Verify(CloseHandle(m_Wsema));
 #elif defined(NCBI_POSIX_THREADS)
-    verify(pthread_cond_destroy(&m_Rcond) == 0);
-    verify(pthread_cond_destroy(&m_Wcond) == 0);
+    xncbi_Verify(pthread_cond_destroy(&m_Rcond) == 0);
+    xncbi_Verify(pthread_cond_destroy(&m_Wcond) == 0);
 #endif
     m_Initialized = false;
 }
@@ -774,19 +755,19 @@ CRWLock::~CRWLock(void)
     if (m_Count < 0  &&  m_Owner == self_id) {
         // Release system resources if W-locked by the calling thread
 #if defined(NCBI_WIN32_THREADS)
-        verify(ReleaseSemaphore(m_RW->m_Rsema, 1, NULL));
-        verify(ReleaseSemaphore(m_RW->m_Wsema, 1, NULL));
+        xncbi_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, NULL));
+        xncbi_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, NULL));
 #elif defined(NCBI_POSIX_THREADS)
-        verify(pthread_cond_broadcast(&m_RW->m_Rcond) == 0);
-        verify(pthread_cond_signal(&m_RW->m_Wcond) == 0);
+        xncbi_Verify(pthread_cond_broadcast(&m_RW->m_Rcond) == 0);
+        xncbi_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0);
 #endif
     }
     else if (m_Count > 0) {
         // Release system resources if R-locked by any thread
 #if defined(NCBI_WIN32_THREADS)
-        verify(ReleaseSemaphore(m_RW->m_Wsema, 1, NULL));
+        xncbi_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, NULL));
 #elif defined(NCBI_POSIX_THREADS)
-        verify(pthread_cond_signal(&m_RW->m_Wcond) == 0);
+        xncbi_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0);
 #endif
 
     }
@@ -821,35 +802,37 @@ void CRWLock::ReadLock(void)
 
         m_Mutex.Unlock();
         wait_res = WaitForMultipleObjects(2, obj, TRUE, INFINITE);
-        s_Verify(wait_res >= WAIT_OBJECT_0  &&  wait_res < WAIT_OBJECT_0 + 2,
-                 "CRWLock::ReadLock() -- R-lock waiting error");
+        xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
+                       wait_res < WAIT_OBJECT_0 + 2,
+                       "CRWLock::ReadLock() -- R-lock waiting error");
         // Success, check the semaphore
         LONG prev_sema;
-        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
-                 "CRWLock::ReadLock() -- failed to release R-semaphore");
-        s_Verify(prev_sema == 0,
-                 "CRWLock::ReadLock() -- invalid R-semaphore state");
+        xncbi_Validate(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
+                       "CRWLock::ReadLock() -- failed to release R-semaphore");
+        xncbi_Validate(prev_sema == 0,
+                       "CRWLock::ReadLock() -- invalid R-semaphore state");
         if (m_Count == 0) {
-            s_Verify(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
-                     "CRWLock::ReadLock() - failed to lock W-semaphore");
+            xncbi_Validate(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
+                           "CRWLock::ReadLock() - failed to lock W-semaphore");
         }
 #elif defined(NCBI_POSIX_THREADS)
         while (m_Count < 0) {
-            s_Verify(pthread_cond_wait(&m_RW->m_Rcond,
-                                       &m_Mutex.m_Mtx.m_Handle) == 0,
-                     "CRWLock::ReadLock() -- R-lock waiting error");
+            xncbi_Validate(pthread_cond_wait(&m_RW->m_Rcond,
+                                             &m_Mutex.m_Mtx.m_Handle) == 0,
+                           "CRWLock::ReadLock() -- R-lock waiting error");
         }
 #else
         // Can not be already W-locked by another thread without MT
-        s_Verify(0,
-                 "CRWLock::ReadLock() -- weird R-lock error in non-MT mode");
+        xncbi_Validate(0,
+                       "CRWLock::ReadLock() -- weird R-lock error "
+                       "in non-MT mode");
 #endif
 
         // Update mutex owner -- now it belongs to this thread
         m_Mutex.m_Owner = self_id;
 
-        s_Verify(m_Count >= 0,
-                 "CRWLock::ReadLock() -- invalid readers counter");
+        xncbi_Validate(m_Count >= 0,
+                       "CRWLock::ReadLock() -- invalid readers counter");
         m_Count++;
         m_Owner = self_id;
     }
@@ -857,8 +840,8 @@ void CRWLock::ReadLock(void)
         // Unlocked
 #if defined(NCBI_WIN32_THREADS)
         // Lock against writers
-        s_Verify(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
-                 "CRWLock::ReadLock() - failed to lock W-semaphore");
+        xncbi_Validate(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
+                       "CRWLock::ReadLock() - failed to lock W-semaphore");
 #endif
         m_Count = 1;
         m_Owner = self_id;
@@ -909,36 +892,42 @@ void CRWLock::WriteLock(void)
         if (m_Count == 0) {
             // Unlocked - lock both semaphores
             wait_res = WaitForMultipleObjects(2, obj, TRUE, 0);
-            s_Verify(wait_res >= WAIT_OBJECT_0 && wait_res < WAIT_OBJECT_0+2,
-                     "CRWLock::WriteLock() -- error locking R&W-semaphores");
+            xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
+                           wait_res < WAIT_OBJECT_0+2,
+                           "CRWLock::WriteLock() -- error "
+                           "locking R&W-semaphores");
         }
         else {
             // Locked by another thread - wait for unlock
             m_Mutex.Unlock();
             wait_res = WaitForMultipleObjects(3, obj, TRUE, INFINITE);
-            s_Verify(wait_res >= WAIT_OBJECT_0 && wait_res < WAIT_OBJECT_0+3,
-                     "CRWLock::WriteLock() -- error locking R&W-semaphores");
+            xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
+                           wait_res < WAIT_OBJECT_0+3,
+                           "CRWLock::WriteLock() -- error "
+                           "locking R&W-semaphores");
         }
 #elif defined(NCBI_POSIX_THREADS)
         while (m_Count != 0) {
-            s_Verify(pthread_cond_wait(&m_RW->m_Wcond,
-                                       &m_Mutex.m_Mtx.m_Handle) == 0,
-                     "CRWLock::WriteLock() -- error locking R&W-conditionals");
+            xncbi_Validate(pthread_cond_wait(&m_RW->m_Wcond,
+                                             &m_Mutex.m_Mtx.m_Handle) == 0,
+                           "CRWLock::WriteLock() -- error "
+                           "locking R&W-conditionals");
         }
 #endif
 
         // Update mutex owner - now it's this thread
         m_Mutex.m_Owner = self_id;
 
-        s_Verify(m_Count >= 0,
-                 "CRWLock::WriteLock() -- invalid readers counter");
+        xncbi_Validate(m_Count >= 0,
+                       "CRWLock::WriteLock() -- invalid readers counter");
         m_Count = -1;
         m_Owner = self_id;
     }
     else {
         // R-locked by the same thread, not always detectable in POSIX
-        s_Verify(0,
-                 "CRWLock::WriteLock() -- attempt to set W-after-R lock");
+        xncbi_Validate(0,
+                       "CRWLock::WriteLock() -- attempt "
+                       "to set W-after-R lock");
     }
 
     // No readers allowed
@@ -965,8 +954,10 @@ bool CRWLock::TryReadLock(void)
 #if defined(NCBI_WIN32_THREADS)
         if (m_Count == 0) {
             // Lock W-semaphore in MSWIN
-            s_Verify(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
-                     "CRWLock::TryReadLock() -- can not lock W-semaphore");
+            xncbi_Validate(WaitForSingleObject(m_RW->m_Wsema, 0)
+                           == WAIT_OBJECT_0,
+                           "CRWLock::TryReadLock() -- can not lock "
+                           "W-semaphore");
         }
 #endif
         m_Count++;
@@ -1009,8 +1000,10 @@ bool CRWLock::TryWriteLock(void)
         obj[1] = m_RW->m_Wsema;
         DWORD wait_res;
         wait_res = WaitForMultipleObjects(2, obj, TRUE, 0);
-        s_Verify(wait_res >= WAIT_OBJECT_0  &&  wait_res < WAIT_OBJECT_0 + 2,
-                 "CRWLock::TryWriteLock() -- error locking R&W-semaphores");
+        xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
+                       wait_res < WAIT_OBJECT_0 + 2,
+                       "CRWLock::TryWriteLock() -- error "
+                       "locking R&W-semaphores");
 #endif
         m_Count = -1;
         m_Owner = self_id;
@@ -1044,28 +1037,28 @@ void CRWLock::Unlock(void)
     CThread::TID self_id = CThread::GetSelf();
 
     // Check it is R-locked or W-locked by the same thread
-    s_Verify(m_Count != 0,
-             "CRWLock::Unlock() -- RWLock is not locked");
-    s_Verify(m_Count >= 0 || m_Owner == self_id,
-             "CRWLock::Unlock() -- RWLock is locked by another thread");
+    xncbi_Validate(m_Count != 0,
+                   "CRWLock::Unlock() -- RWLock is not locked");
+    xncbi_Validate(m_Count >= 0 || m_Owner == self_id,
+                   "CRWLock::Unlock() -- RWLock is locked by another thread");
 
     if (m_Count == -1) {
         // Unlock the last W-lock
 #if defined(NCBI_WIN32_THREADS)
         LONG prev_sema;
-        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
-                 "CRWLock::Unlock() -- error releasing R-semaphore");
-        s_Verify(prev_sema == 0,
-                 "CRWLock::Unlock() -- invalid R-semaphore state");
-        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
-                 "CRWLock::Unlock() -- error releasing W-semaphore");
-        s_Verify(prev_sema == 0,
-                 "CRWLock::Unlock() -- invalid W-semaphore state");
+        xncbi_Validate(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
+                       "CRWLock::Unlock() -- error releasing R-semaphore");
+        xncbi_Validate(prev_sema == 0,
+                       "CRWLock::Unlock() -- invalid R-semaphore state");
+        xncbi_Validate(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
+                       "CRWLock::Unlock() -- error releasing W-semaphore");
+        xncbi_Validate(prev_sema == 0,
+                       "CRWLock::Unlock() -- invalid W-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-        s_Verify(pthread_cond_broadcast(&m_RW->m_Rcond) == 0,
-                 "CRWLock::Unlock() -- error signalling unlock");
-        s_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0,
-                 "CRWLock::Unlock() -- error signalling unlock");
+        xncbi_Validate(pthread_cond_broadcast(&m_RW->m_Rcond) == 0,
+                       "CRWLock::Unlock() -- error signalling unlock");
+        xncbi_Validate(pthread_cond_signal(&m_RW->m_Wcond) == 0,
+                       "CRWLock::Unlock() -- error signalling unlock");
 #endif
         // Update mutex owner - now it's this thread
         m_Mutex.m_Owner = self_id;
@@ -1081,13 +1074,13 @@ void CRWLock::Unlock(void)
         // Unlock the last R-lock
 #if defined(NCBI_WIN32_THREADS)
         LONG prev_sema;
-        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
-                 "CRWLock::Unlock() -- error releasing W-semaphore");
-        s_Verify(prev_sema == 0,
-                 "CRWLock::Unlock() -- invalid W-semaphore state");
+        xncbi_Validate(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
+                       "CRWLock::Unlock() -- error releasing W-semaphore");
+        xncbi_Validate(prev_sema == 0,
+                       "CRWLock::Unlock() -- invalid W-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-        s_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0,
-                 "CRWLock::Unlock() -- error signaling unlock");
+        xncbi_Validate(pthread_cond_signal(&m_RW->m_Wcond) == 0,
+                       "CRWLock::Unlock() -- error signaling unlock");
 #endif
 
         m_Count = 0;
@@ -1145,10 +1138,11 @@ struct SSemaphore
 
 CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 {
-    s_Verify(max_count != 0,
-             "CSemaphore::CSemaphore() -- max_count passed zero");
-    s_Verify(init_count <= max_count,
-             "CSemaphore::CSemaphore() -- init_count greater than max_count");
+    xncbi_Validate(max_count != 0,
+                   "CSemaphore::CSemaphore() -- max_count passed zero");
+    xncbi_Validate(init_count <= max_count,
+                   "CSemaphore::CSemaphore() -- init_count "
+                   "greater than max_count");
 
     m_Sem = new SSemaphore;
     auto_ptr<SSemaphore> auto_sem(m_Sem);
@@ -1158,15 +1152,15 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
     m_Sem->count     = init_count;
     m_Sem->wait_count = 0;
 
-    s_Verify(pthread_mutex_init(&m_Sem->mutex, 0) == 0,
-             "CSemaphore::CSemaphore() -- pthread_mutex_init() failed");
-    s_Verify(pthread_cond_init(&m_Sem->cond, 0) == 0,
-             "CSemaphore::CSemaphore() -- pthread_cond_init() failed");
+    xncbi_Validate(pthread_mutex_init(&m_Sem->mutex, 0) == 0,
+                   "CSemaphore::CSemaphore() -- pthread_mutex_init() failed");
+    xncbi_Validate(pthread_cond_init(&m_Sem->cond, 0) == 0,
+                   "CSemaphore::CSemaphore() -- pthread_cond_init() failed");
 
 #elif defined(NCBI_WIN32_THREADS)
     m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
-    s_Verify(m_Sem->sem != NULL,
-             "CSemaphore::CSemaphore() -- CreateSemaphore() failed");
+    xncbi_Validate(m_Sem->sem != NULL,
+                   "CSemaphore::CSemaphore() -- CreateSemaphore() failed");
 
 #else
     m_Sem->max_count = max_count;
@@ -1181,11 +1175,11 @@ CSemaphore::~CSemaphore(void)
 {
 #if defined(NCBI_POSIX_THREADS)
     assert(m_Sem->wait_count == 0);
-    verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
-    verify(pthread_cond_destroy (&m_Sem->cond)  == 0);
+    xncbi_Verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
+    xncbi_Verify(pthread_cond_destroy (&m_Sem->cond)  == 0);
 
 #elif defined(NCBI_WIN32_THREADS)
-    verify( CloseHandle(m_Sem->sem) );
+    xncbi_Verify( CloseHandle(m_Sem->sem) );
 #endif
 
     delete m_Sem;
@@ -1195,8 +1189,8 @@ CSemaphore::~CSemaphore(void)
 void CSemaphore::Wait(void)
 {
 #if defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
-             "CSemaphore::Wait() -- pthread_mutex_lock() failed");
+    xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
+                   "CSemaphore::Wait() -- pthread_mutex_lock() failed");
 
     if (m_Sem->count != 0) {
         m_Sem->count--;
@@ -1205,26 +1199,28 @@ void CSemaphore::Wait(void)
         m_Sem->wait_count++;
         do {
             if (pthread_cond_wait(&m_Sem->cond, &m_Sem->mutex) != 0) {
-                s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                         "CSemaphore::Wait() -- pthread_cond_wait() and "
-                         "pthread_mutex_unlock() failed");
-                s_Verify(0,"CSemaphore::Wait() -- pthread_cond_wait() failed");
+                xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                               "CSemaphore::Wait() -- pthread_cond_wait() and "
+                               "pthread_mutex_unlock() failed");
+                xncbi_Validate(0, "CSemaphore::Wait() -- pthread_cond_wait() "
+                               "failed");
             }
         } while (m_Sem->count == 0);
         m_Sem->wait_count--;
         m_Sem->count--;
     }
 
-    s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-             "CSemaphore::Wait() -- pthread_mutex_unlock() failed");
+    xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                   "CSemaphore::Wait() -- pthread_mutex_unlock() failed");
 
 #elif defined(NCBI_WIN32_THREADS)
-    s_Verify(WaitForSingleObject(m_Sem->sem, INFINITE) == WAIT_OBJECT_0,
-             "CSemaphore::Wait() -- WaitForSingleObject() failed");
+    xncbi_Validate(WaitForSingleObject(m_Sem->sem, INFINITE) == WAIT_OBJECT_0,
+                   "CSemaphore::Wait() -- WaitForSingleObject() failed");
 
 #else
-    s_Verify(m_Sem->count != 0,
-             "CSemaphore::Wait() -- wait with zero count in 1-thread mode(?)");
+    xncbi_Validate(m_Sem->count != 0,
+                   "CSemaphore::Wait() -- wait with zero count in "
+                   "one-thread mode(?!)");
     m_Sem->count--;
 #endif
 }
@@ -1233,8 +1229,8 @@ void CSemaphore::Wait(void)
 bool CSemaphore::TryWait(void)
 {
 #if defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
-             "CSemaphore::TryWait() -- pthread_mutex_lock() failed");
+    xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
+                   "CSemaphore::TryWait() -- pthread_mutex_lock() failed");
 
     bool retval;
     if (m_Sem->count != 0) {
@@ -1245,15 +1241,15 @@ bool CSemaphore::TryWait(void)
         retval = false;
     }
 
-    s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-             "CSemaphore::TryWait() -- pthread_mutex_unlock() failed");
+    xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                   "CSemaphore::TryWait() -- pthread_mutex_unlock() failed");
 
     return retval;
 
 #elif defined(NCBI_WIN32_THREADS)
     DWORD res = WaitForSingleObject(m_Sem->sem, 0);
-    s_Verify(res == WAIT_OBJECT_0  ||  res == WAIT_TIMEOUT,
-             "CSemaphore::TryWait() -- WaitForSingleObject() failed");
+    xncbi_Validate(res == WAIT_OBJECT_0  ||  res == WAIT_TIMEOUT,
+                   "CSemaphore::TryWait() -- WaitForSingleObject() failed");
     return (res == WAIT_OBJECT_0);
 
 #else
@@ -1271,18 +1267,18 @@ void CSemaphore::Post(unsigned int count)
         return;
 
 #if defined (NCBI_POSIX_THREADS)
-    s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
-             "CSemaphore::Post() -- pthread_mutex_lock() failed");
+    xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
+                   "CSemaphore::Post() -- pthread_mutex_lock() failed");
 
     if (m_Sem->count > kMax_UInt - count  ||
         m_Sem->count + count > m_Sem->max_count) {
-        s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                 "CSemaphore::Post() -- attempt to exceed max_count and "
-                 "pthread_mutex_unlock() failed");
-        s_Verify(m_Sem->count <= kMax_UInt - count,
-                 "CSemaphore::Post() -- would result in counter > MAX_UINT");
-        s_Verify(m_Sem->count + count <= m_Sem->max_count,
-                 "CSemaphore::Post() -- attempt to exceed max_count");
+        xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                       "CSemaphore::Post() -- attempt to exceed max_count and "
+                       "pthread_mutex_unlock() failed");
+        xncbi_Validate(m_Sem->count <= kMax_UInt - count,
+                       "CSemaphore::Post() -- would result in counter > MAX_UINT");
+        xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
+                       "CSemaphore::Post() -- attempt to exceed max_count");
         assert(0);
     }
 
@@ -1305,26 +1301,26 @@ void CSemaphore::Post(unsigned int count)
     // Success
     if (err_code == 0) {
         m_Sem->count += count;
-        s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-                 "CSemaphore::Post() -- pthread_mutex_unlock() failed");
+        xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                       "CSemaphore::Post() -- pthread_mutex_unlock() failed");
         return;
     }
 
     // Error
-    s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
-             "CSemaphore::Post() -- pthread_cond_signal/broadcast() and "
-             "pthread_mutex_unlock() failed");
-    s_Verify(0,
-             "CSemaphore::Post() -- pthread_cond_signal/broadcast() "
-             "failed");
+    xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                   "CSemaphore::Post() -- pthread_cond_signal/broadcast() and "
+                   "pthread_mutex_unlock() failed");
+    xncbi_Validate(0,
+                   "CSemaphore::Post() -- pthread_cond_signal/broadcast() "
+                   "failed");
 
 #elif defined(NCBI_WIN32_THREADS)
-    s_Verify(ReleaseSemaphore(m_Sem->sem, count, NULL),
-             "CSemaphore::Post() -- ReleaseSemaphore() failed");
+    xncbi_Validate(ReleaseSemaphore(m_Sem->sem, count, NULL),
+                   "CSemaphore::Post() -- ReleaseSemaphore() failed");
 
 #else
-    s_Verify(m_Sem->count + count <= m_Sem->max_count,
-             "CSemaphore::Post() -- attempt to exceed max_count");
+    xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
+                   "CSemaphore::Post() -- attempt to exceed max_count");
     m_Sem->count += count;
 #endif
 }
