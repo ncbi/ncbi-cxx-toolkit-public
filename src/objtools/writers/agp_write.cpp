@@ -155,17 +155,19 @@ void AgpWrite(CNcbiOstream& os,
 // are indicated, the "more finished" takes precedence, i.e.,
 // F > A > D > P, and the maximum according to this ordering is used.
 // If none of these attributes are present, an O (other) is returned.
+
+enum EAgpType
+{
+    eO,
+    eP,
+    eD,
+    eA,
+    eF
+};
+
 static char s_DetermineComponentType(const CSeq_id& id, CScope& scope)
 {
-    enum EType
-    {
-        eO,
-        eP,
-        eD,
-        eA,
-        eF
-    };
-    EType type = eO;
+    EAgpType type = eO;
 
     CConstRef<CBioseq> bioseq = scope.GetBioseqHandle(id).GetCompleteBioseq();
     if (bioseq->CanGetDescr()) {
@@ -222,6 +224,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/06/29 16:26:59  ucko
+ * Move E(Agp)Type's definition out of s_DetermineComponentType because
+ * templates (namely, max) can't necessarily use local types.
+ *
  * Revision 1.1  2004/06/29 13:29:29  jcherry
  * Initial version
  *
