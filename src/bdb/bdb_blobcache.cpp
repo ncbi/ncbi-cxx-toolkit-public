@@ -462,8 +462,8 @@ CBDB_Cache::CBDB_Cache()
   m_VersionFlag(eDropOlder),
   m_PageSizeHint(eLarge),
   m_WSync(eWriteNoSync),
-  m_PurgeBatchSize(50),
-  m_BatchSleep(100),
+  m_PurgeBatchSize(150),
+  m_BatchSleep(0),
   m_PurgeStop(false),
   m_CleanLogOnPurge(0),
   m_PurgeCount(0)
@@ -2026,6 +2026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2004/10/21 17:35:50  kuznets
+ * Changed Purge priority(high)
+ *
  * Revision 1.86  2004/10/19 17:24:50  kuznets
  * Set 100M checkpoint limit
  *
