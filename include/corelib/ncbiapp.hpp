@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/11/15 15:53:27  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
 * Revision 1.10  1999/04/27 14:49:50  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -77,12 +80,14 @@ BEGIN_NCBI_SCOPE
 // CNcbiApplication
 //
 
+class CNcbiRegistry;
+
 class CNcbiApplication {
 public:
     static CNcbiApplication* Instance(void); // Singleton method
 
     // (throw exception if not-only instance)
-    CNcbiApplication();
+    CNcbiApplication(void);
     virtual ~CNcbiApplication(void);
 
     virtual void Init(void); // initialization
@@ -91,12 +96,45 @@ public:
     virtual int AppMain(int argc, char** argv);
 
     virtual int Run(void) = 0; // main loop
+
+    const CNcbiRegistry& GetConfig(void) const;
+    CNcbiRegistry& GetConfig(void);
+
+protected:
+
+    virtual CNcbiRegistry* LoadConfig(void);
+
+private:
+
+    CNcbiRegistry& x_GetConfig(void) const;    
     
 protected: 
+
+    // data members
+    
     static CNcbiApplication* m_Instance;
     int    m_Argc;
     char** m_Argv;
+
+private:
+
+    auto_ptr<CNcbiRegistry> m_config;    
 };
+
+inline CNcbiRegistry& CNcbiApplication::x_GetConfig(void) const
+{
+    return *m_config;
+}
+
+inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const
+{
+    return x_GetConfig();
+}
+
+inline CNcbiRegistry& CNcbiApplication::GetConfig(void)
+{
+    return x_GetConfig();
+}
 
 END_NCBI_SCOPE
 

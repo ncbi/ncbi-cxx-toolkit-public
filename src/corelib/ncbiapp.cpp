@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/11/15 15:54:59  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
 * Revision 1.18  1999/06/11 20:30:37  vasilche
 * We should catch exception by reference, because catching by value
 * doesn't preserve comment string.
@@ -117,6 +120,7 @@ CNcbiApplication::CNcbiApplication(void)
                           "cannot create second instance");
     }
     m_Instance = this;
+    m_config.reset( new CNcbiRegistry );
 }
 
 CNcbiApplication::~CNcbiApplication(void)
@@ -125,15 +129,14 @@ CNcbiApplication::~CNcbiApplication(void)
 }
 
 void CNcbiApplication::Init(void)
-{
-    // exceptions not used for now
-    // CNcbiOSException::SetDefHandler();
-    // set_unexpected( CNcbiOSException::UnexpectedHandler ); 
+{   
+    m_config.reset(LoadConfig());
     return;
 }
 
 void CNcbiApplication::Exit(void)
 {
+    m_config.reset(0);
     return;
 }
 
@@ -169,6 +172,27 @@ int CNcbiApplication::AppMain(int argc, char** argv)
     }
 
     return res;
+}
+
+CNcbiRegistry* CNcbiApplication::LoadConfig(void)
+{
+    auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
+    string fileName = m_Argv[0];
+    if (fileName.length() > 4  &&
+        fileName.substr(fileName.length() - 4, 4).compare(".exe") == 0)
+        fileName.resize(fileName.length() - 4);
+    fileName += ".ini";
+
+    CNcbiIfstream is(fileName.c_str());
+    if( !is ) {
+        ERR_POST(Warning <<
+                 "CNcbiApplication::LoadConfig: cannot open registry file: "
+                 << fileName);
+    }
+    else {
+        config->Read(is);
+    }
+    return config.release();
 }
 
 //

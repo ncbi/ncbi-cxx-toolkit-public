@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/11/15 15:54:53  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
 * Revision 1.14  1999/10/21 16:10:53  vasilche
 * Fixed memory leak in CNcbiOstrstream::str()
 *
@@ -108,12 +111,16 @@ CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
 }
 
 CCgiContext::~CCgiContext( void )
+{}
+
+const CNcbiRegistry& CCgiContext::GetConfig(void) const
 {
+    return m_app.GetConfig();
 }
 
-CNcbiRegistry& CCgiContext::x_GetConfig(void) const
+CNcbiRegistry& CCgiContext::GetConfig(void)
 {
-    return m_app.x_GetConfig();
+    return m_app.GetConfig();
 }
 
 CNcbiResource& CCgiContext::x_GetResource(void) const
@@ -127,7 +134,7 @@ CCgiServerContext& CCgiContext::x_GetServCtx( void ) const
     if ( !context ) {
         context = m_app.LoadServerContext(const_cast<CCgiContext&>(*this));
         if ( !context ) {
-            ERR_POST("CCg13iContext::GetServCtx: no server context set");
+            ERR_POST("CCgiContext::GetServCtx: no server context set");
             throw runtime_error("no server context set");
         }
         const_cast<CCgiContext&>(*this).m_srvCtx.reset(context);

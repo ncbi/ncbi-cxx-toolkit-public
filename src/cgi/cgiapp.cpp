@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/11/15 15:54:53  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
 * Revision 1.17  1999/10/21 14:50:49  sandomir
 * optimization for overflow() (internal buffer added)
 *
@@ -231,39 +234,14 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 
 void CCgiApplication::Init(void)
 {
-    CParent::Init();
-    m_config.reset(LoadConfig());
-    if ( !m_config.get() )
-        throw runtime_error("CCgiApplication::Run: config is null");
+    CParent::Init();       
     m_resource.reset(LoadResource());
 }
 
 void CCgiApplication::Exit(void)
 {
-    m_resource.reset(0);
-    m_config.reset(0);
+    m_resource.reset(0);    
     CParent::Exit();
-}
-
-CNcbiRegistry* CCgiApplication::LoadConfig(void)
-{
-    auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
-    string fileName = m_Argv[0];
-    if (fileName.length() > 4  &&
-        fileName.substr(fileName.length() - 4, 4).compare(".exe") == 0)
-        fileName.resize(fileName.length() - 4);
-    fileName += ".ini";
-
-    CNcbiIfstream is(fileName.c_str());
-    if ( !is ) {
-        ERR_POST(Warning <<
-                 "CCgiApplication::LoadConfig: cannot open registry file: "
-                 << fileName);
-    }
-    else {
-        config->Read(is);
-    }
-    return config.release();
 }
 
 CNcbiResource* CCgiApplication::LoadResource(void)

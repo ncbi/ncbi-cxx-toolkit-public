@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/11/15 15:53:20  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
 * Revision 1.11  1999/10/28 16:53:53  vasilche
 * Fixed bug with error message node.
 *
@@ -185,7 +188,6 @@ public:
     const string& GetSelfURL( void ) const;
 
 private:
-    CNcbiRegistry& x_GetConfig(void) const;
     CNcbiResource& x_GetResource(void) const;
     CCgiServerContext& x_GetServCtx(void) const;
 

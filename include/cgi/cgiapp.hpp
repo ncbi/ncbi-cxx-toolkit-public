@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/11/15 15:53:19  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
 * Revision 1.17  1999/05/14 19:21:48  pubmed
 * myncbi - initial version; minor changes in CgiContext, history, query
 *
@@ -108,10 +111,7 @@ class CCgiApplication : public CNcbiApplication
     typedef CNcbiApplication CParent;
 public:
 
-    static CCgiApplication* Instance(void); // Singleton method
-
-    const CNcbiRegistry& GetConfig(void) const;
-    CNcbiRegistry& GetConfig(void);
+    static CCgiApplication* Instance(void); // Singleton method    
     
     // these methods will throw exception if no server context set
     const CNcbiResource& GetResource(void) const;
@@ -122,8 +122,7 @@ public:
 
     virtual int Run(void);
     virtual int ProcessRequest(CCgiContext& context) = 0;
-
-    virtual CNcbiRegistry* LoadConfig(void);
+    
     virtual CNcbiResource* LoadResource(void);
     virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
 
@@ -137,10 +136,8 @@ protected:
                                         );
 
 private:
-    CNcbiRegistry& x_GetConfig(void) const;
     CNcbiResource& x_GetResource(void) const;
 
-    auto_ptr<CNcbiRegistry> m_config;
     auto_ptr<CNcbiResource> m_resource;
 
     friend class CCgiContext;
