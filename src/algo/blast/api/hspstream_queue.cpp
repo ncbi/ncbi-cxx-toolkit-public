@@ -27,7 +27,7 @@
  *
  */
 
-/** @file hspstream_queue.c
+/** @file hspstream_queue.cpp
  * C++ implementation of the BlastHSPStream interface for producing 
  * BLAST results on the fly.
  */
