@@ -79,11 +79,14 @@ public:
     ///   The base name of the volumes files
     /// @param prot_nucl
     ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl
+    /// @param user_gilist
+    ///   If specified, will be used to filter deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread.
     CSeqDBVol(CSeqDBAtlas    & atlas,
               const string   & name,
               char             prot_nucl,
+              CSeqDBGiList   * user_gilist,
               CSeqDBLockHold & locked);
     
     /// Sequence length for protein databases
@@ -156,15 +159,12 @@ public:
     ///   Membership bit to filter deflines
     /// @param locked
     ///   The lock holder object for this thread
-    /// @param gi_list
-    ///   If specified, will be used to filter the deflines by GI.
     /// @return
     ///   The set of blast-def-lines describing this sequence
     CRef<CBlast_def_line_set>
     GetFilteredHeader(int                  oid,
                       bool                 have_oidlist,
                       int                  membership_bit,
-                      CRef<CSeqDBGiList>   gi_list,
                       CSeqDBLockHold     & locked) const;
     
     /// Get the sequence type stored in this database
@@ -199,8 +199,6 @@ public:
     ///   If specified, only deflines containing this GI will be returned
     /// @param tax_info
     ///   The taxonomy database object
-    /// @param gi_list
-    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
@@ -211,7 +209,6 @@ public:
               int                   memb_bit,
               int                   pref_gi,
               CRef<CSeqDBTaxInfo>   tax_info,
-              CRef<CSeqDBGiList>    gi_list,
               CSeqDBLockHold      & locked) const;
     
     /// Get the sequence data
@@ -281,8 +278,6 @@ public:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
-    /// @param gi_list
-    ///   If specified, will be used to filter the list of SeqIDs by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
@@ -290,7 +285,6 @@ public:
     list< CRef<CSeq_id> > GetSeqIDs(int                  oid,
                                     bool                 have_oidlist,
                                     int                  membership_bit,
-                                    CRef<CSeqDBGiList>   gi_list,
                                     CSeqDBLockHold     & locked) const;
     
     /// Get the volume title
@@ -455,6 +449,23 @@ public:
                    CSeqDBGiList   & gis,
                    CSeqDBLockHold & locked) const;
     
+    /// Filter this volume using the specified GI list.
+    ///
+    /// A volume can be filtered by a GI list.  This method attaches a
+    /// GI list to the volume, replacing the currently attached GI
+    /// list if there is one.  In the current design, the constructor
+    /// takes a user specified GI list, but this method is used to
+    /// override that with a GI list specified in an alias file.  The
+    /// GI list, if any, will primarily be used to filter the ASN.1
+    /// defline objects.
+    ///
+    /// @param gilist
+    ///   A list of GIs to use as a filter.
+    void AttachGiList(CRef<CSeqDBGiList> gilist) const
+    {
+        m_GiList = gilist;
+    }
+    
 private:
     /// Get sequence header object
     /// 
@@ -499,8 +510,6 @@ private:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
-    /// @param gi_list
-    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     void
@@ -508,7 +517,6 @@ private:
                               vector<char>   & hdr_data,
                               bool             have_oidlist,
                               int              membership_bit,
-                              CRef<CSeqDBGiList>   gi_list,
                               CSeqDBLockHold & locked) const;
     
     /// Get sequence header information
@@ -525,8 +533,6 @@ private:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
-    /// @param gi_list
-    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
@@ -535,7 +541,6 @@ private:
     x_GetFilteredHeader(int                  oid,
                         bool                 have_oidlist,
                         int                  membership_bit,
-                        CRef<CSeqDBGiList>   gi_list,
                         CSeqDBLockHold     & locked) const;
     
     /// Get sequence header information structures
@@ -551,8 +556,6 @@ private:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
-    /// @param gi_list
-    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
@@ -560,7 +563,6 @@ private:
     CRef<CSeqdesc> x_GetAsnDefline(int                  oid,
                                    bool                 have_oidlist,
                                    int                  membership_bit,
-                                   CRef<CSeqDBGiList>   gi_list,
                                    CSeqDBLockHold     & locked) const;
     
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
@@ -658,13 +660,13 @@ private:
     ///     Specify true if the atlas lock can be released
     /// @return
     ///     The length of the sequence in bases
-  int x_GetSequence(int              oid,
-                    const char    ** buffer,
-                    bool             keep,
-                    CSeqDBLockHold & locked,
-                    bool             can_release) const;
+    int x_GetSequence(int              oid,
+                      const char    ** buffer,
+                      bool             keep,
+                      CSeqDBLockHold & locked,
+                      bool             can_release) const;
     
-  /// Get defline filtered by several criteria
+    /// Get defline filtered by several criteria
     ///
     /// This method returns the set of deflines for a sequence.  If
     /// there is an OID list and membership bit, these will be
@@ -680,8 +682,6 @@ private:
     ///     Specify the value of the membership bit if one exists
     /// @param preferred_gi
     ///     This GI's defline (if found) will be put at the front of the list
-    /// @param gi_list
-    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///     The lock holder object for this thread
     /// @return
@@ -691,7 +691,6 @@ private:
                     bool                 have_oidlist,
                     int                  membership_bit,
                     int                  preferred_gi,
-                    CRef<CSeqDBGiList>   gi_list,
                     CSeqDBLockHold     & locked) const;
     
     /// Get taxonomic descriptions of a sequence
@@ -714,8 +713,6 @@ private:
     ///     This GI's defline (if found) will be put at the front of the list
     /// @param tax_info
     ///     Taxonomic info to encode
-    /// @param gi_list
-    ///     If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///     The lock holder object for this thread
     /// @return
@@ -726,7 +723,6 @@ private:
                   int                   membership_bit,
                   int                   preferred_gi,
                   CRef<CSeqDBTaxInfo>   tax_info,
-                  CRef<CSeqDBGiList>    gi_list,
                   CSeqDBLockHold      & locked) const;
     
     /// Returns the base-offset of the specified oid
@@ -773,6 +769,9 @@ private:
     
     /// This cache allows CBioseqs to share taxonomic objects.
     mutable map< int, CRef<CSeqdesc> > m_TaxCache;
+    
+    /// The User GI list, or volume GI list, if available.
+    mutable CRef<CSeqDBGiList> m_GiList;
 };
 
 END_NCBI_SCOPE

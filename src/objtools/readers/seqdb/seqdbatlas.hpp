@@ -203,6 +203,48 @@ private:
 };
 
 
+/// CSeqDBMemReg
+/// 
+/// This class is used to keep track of bytes allocated externally to
+/// the atlas, but included under its memory bound.
+
+class CSeqDBMemReg {
+public:
+    /// Constructor
+    /// 
+    /// This object constructs to an empty state, which means that the
+    /// atlas does not consider this object to "own" any bytes.
+    ///
+    /// @param atlas
+    ///   A reference to the atlas object.
+    CSeqDBMemReg(class CSeqDBAtlas & atlas)
+        : m_Atlas(atlas),
+          m_Bytes(0)
+    {
+    }
+    
+    /// Destructor
+    /// 
+    /// The class will unlock the atlas's lock on destruction (if it
+    /// is the owner of that lock).
+    inline ~CSeqDBMemReg();
+    
+private:
+    /// Private method to prevent copy construction.
+    CSeqDBMemReg(CSeqDBMemReg & oth);
+    
+    /// Only the atlas code is permitted to modify this object - it
+    /// does so simply by editing the m_Locked member as needed.
+    friend class CSeqDBAtlas;
+    
+    /// This reference allows unlock on exit.
+    class CSeqDBAtlas & m_Atlas;
+    
+    /// This object "owns" this many bytes of the atlas memory bound.
+    size_t m_Bytes;
+};
+
+
 /// CRegionMap
 /// 
 /// This object stores data relevant to a mapped portion of a file.
@@ -717,8 +759,8 @@ private:
     /// End offset of the data relative to the start of the file.
     TIndx m_End;
     
-    /// Points to the object that manages the file region.
-    class CRegionMap * m_RMap;
+    /// Points to the object that manages the file region. 
+   class CRegionMap * m_RMap;
 };
 
 
@@ -741,7 +783,7 @@ class CSeqDBAtlas {
     /// Default slice sizes and limits used by the atlas.
     enum {
         eTriggerGC         = 1024 * 1024 * 128,
-        eDefaultBound      = 1024 * 1024 * (512+256),
+        eDefaultBound      = 1024 * 1024 * 1024,
         eDefaultSliceSize  = 1024 * 1024 * 128,
         eDefaultOverhang   = 1024 * 1024 * 4,
         eMaxOpenRegions    = 500,
@@ -999,6 +1041,39 @@ public:
     /// @param locked
     ///   The lock hold object for this thread.
     void Free(const char * freeme, CSeqDBLockHold & locked);
+    
+    /// Register externally allocated memory.
+    /// 
+    /// This method tells the atlas code that memory was allocated
+    /// external to the atlas code, and should be included under the
+    /// memory bound enforced by the atlas.  These areas of memory
+    /// will not be managed by the atlas, but may influence the atlas
+    /// by causing database volume files or auxiliary files to be
+    /// unmapped earlier or more often.  This method may trigger atlas
+    /// garbage collection.  RegisterFree() should be called when the
+    /// memory is freed.
+    /// 
+    /// @param memreg
+    ///   Memory registration tracking object.
+    /// @param bytes
+    ///   Amount of memory externally allocated.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    void RegisterExternal(CSeqDBMemReg   & memreg,
+                          size_t           bytes,
+                          CSeqDBLockHold & locked);
+    
+    /// Unregister externally allocated memory.
+    /// 
+    /// This method tells the atlas that external memory registered
+    /// with RegisterExternal() has been freed.  The atlas lock is
+    /// assumed to be held.
+    /// 
+    /// @param memreg
+    ///   Memory registration tracking object.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    void UnregisterExternal(CSeqDBMemReg & memreg);
     
     /// Lock the atlas.
     /// 
@@ -1449,6 +1524,11 @@ bool CRegionMap::operator < (const CRegionMap & other) const
 inline CSeqDBLockHold::~CSeqDBLockHold()
 {
     m_Atlas.Unlock(*this);
+}
+
+inline CSeqDBMemReg::~CSeqDBMemReg()
+{
+    m_Atlas.UnregisterExternal(*this);
 }
 
 inline void CSeqDBMemLease::IncrementRefCnt()

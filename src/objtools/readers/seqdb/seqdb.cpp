@@ -504,5 +504,25 @@ CSeqDB::FindVolumePaths(vector<string> & paths) const
     m_Impl->FindVolumePaths(paths);
 }
 
+void
+CSeqDB::GetGis(int oid, vector<int> & gis, bool append) const
+{
+    // This could be done a little faster at a lower level, but not
+    // necessarily by too much.  If this operation is important to
+    // performance, that decision can be revisited.
+    
+    list< CRef<CSeq_id> > seqids = GetSeqIDs(oid);
+    
+    if (! append) {
+        gis.clear();
+    }
+    
+    ITERATE(list< CRef<CSeq_id> >, seqid, seqids) {
+        if ((**seqid).IsGi()) {
+            gis.push_back((**seqid).GetGi());
+        }
+    }
+}
+
 END_NCBI_SCOPE
 

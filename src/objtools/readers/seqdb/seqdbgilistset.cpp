@@ -65,7 +65,9 @@ public:
 /// CSeqDBNodeGiList
 /// 
 /// This class defines a simple CSeqDBGiList subclass which is read
-/// from a gi list file using the CSeqDBAtlas.
+/// from a gi list file using the CSeqDBAtlas.  It uses the atlas for
+/// file access and registers the memory used by the vector with the
+/// atlas layer.
 
 class CSeqDBNodeFileGiList : public CSeqDBGiList {
 public:
@@ -83,6 +85,7 @@ public:
     CSeqDBNodeFileGiList(CSeqDBAtlas    & atlas,
                          const string   & fname,
                          CSeqDBLockHold & locked)
+        : m_VectorMemory(atlas)
     {
         CSeqDBAtlas::TIndx file_size(0);
         
@@ -104,8 +107,21 @@ public:
             throw;
         }
         memlease.Clear();
+        
+        int vector_size = m_GisOids.size() * sizeof(m_GisOids[0]);
+        atlas.RegisterExternal(m_VectorMemory, vector_size, locked);
     }
+    
+    /// Destructor
+    virtual ~CSeqDBNodeFileGiList()
+    {
+    }
+    
+private:
+    /// Memory associated with the m_GisOids vector.
+    CSeqDBMemReg m_VectorMemory;
 };
+
 
 CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas        & atlas,
                                  const CSeqDBVolSet & volset,
@@ -164,8 +180,6 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
                                const CSeqDBVol * volp,
                                int               vol_start,
                                int               vol_end,
-                               //int               oid_start,
-                               //int               oid_end,
                                CSeqDBLockHold  & locked)
 {
     // Note: possibly the atlas should have a method to add and
@@ -188,6 +202,12 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
     if (m_UserList.Empty()) {
         volp->GisToOids(vol_start, vol_end, *gilist, locked);
     }
+    
+    // If there is a volume GI list, it will also be attached to the
+    // volume, and replaces the user GI list attachment (if there was
+    // one).
+    
+    volp->AttachGiList(gilist);
     
     return gilist;
 }

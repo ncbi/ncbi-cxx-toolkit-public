@@ -37,14 +37,15 @@ BEGIN_NCBI_SCOPE
 
 CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
                            const vector<string> & vol_names,
-                           char                   prot_nucl)
+                           char                   prot_nucl,
+                           CSeqDBGiList         * user_gilist)
     : m_RecentVol(0)
 {
     CSeqDBLockHold locked(atlas);
     
     try {
         for(int i = 0; i < (int) vol_names.size(); i++) {
-            x_AddVolume(atlas, vol_names[i], prot_nucl, locked);
+            x_AddVolume(atlas, vol_names[i], prot_nucl, user_gilist, locked);
             
             if (prot_nucl == kSeqTypeUnkn) {
                 // Once one volume picks a prot/nucl type, enforce that
@@ -91,9 +92,10 @@ CSeqDBVolSet::~CSeqDBVolSet()
 void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas    & atlas,
                                const string   & nm,
                                char             pn,
+                               CSeqDBGiList   * user_gilist,
                                CSeqDBLockHold & locked)
 {
-    CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn, locked);
+    CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn, user_gilist, locked);
     
     CSeqDBVolEntry new_vol( new_volp );
     new_vol.SetStartEnd( x_GetNumOIDs() );

@@ -548,7 +548,7 @@ private:
     /// True if OID list setup is done (or was not required).
     mutable bool m_OidListSetup;
     
-    /// True if OID list setup is done (or was not required).
+    /// The User GI list for the entire CSeqDB object.
     mutable CRef<CSeqDBGiList> m_UserGiList;
 };
 

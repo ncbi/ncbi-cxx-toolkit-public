@@ -306,10 +306,11 @@ public:
     }
     
     /// Write timing output.
-    void Mark()
+    double Mark()
     {
         double e2 = m_Watch.Elapsed();
         cout << "Completed task [" << m_Msg << "] in " << (e2-m_E1) << " seconds.\n" << endl;
+        return e2-m_E1;
     }
     
 private:
@@ -533,6 +534,46 @@ int test1(int argc, char ** argv)
             
             return 0;
         } else desc += " [-gi2bs] [-gi2bs-target]";
+        
+        if ((s == "-gi2bs-ugl")) {
+            if ((args.size() < 2) || (! isdigit(args.begin()->c_str()[0]))) {
+                cout << "The gi2bs command needs a GI and user-gi-list filename to work with." << endl;
+                return 1;
+            }
+            
+            int gi = atoi(args.begin()->c_str());
+            args.pop_front();
+            
+            CRef<CSeqDBGiList> gilist(new CSeqDBFileGiList(*args.begin()));
+            args.pop_front();
+            
+            CSeqDB db(dbname, seqtype, 0, 0, true, gilist);
+            
+            int target_gi = 0;
+            
+            if (gi < 1) {
+                cout << "The GI " << gi << " is not valid." << endl;
+                return 1;
+            }
+            
+            int oid(0);
+            
+            if (! db.GiToOid(gi, oid)) {
+                cout << "The GI " << gi << " was not found." << endl;
+                return 0;
+            }
+            
+            CRef<CBioseq> bs = db.GetBioseq(oid, target_gi);
+            
+            cout << "--- gi " << gi << " ---" << endl;
+            
+            auto_ptr<CObjectOStream>
+                outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+            
+            *outpstr << *bs;
+            
+            return 0;
+        } else desc += " [-gi2bs-ugl]";
         
         if (s == "-taxid") {
             int oid = 12;
@@ -2554,8 +2595,137 @@ int test1(int argc, char ** argv)
             }
             t4.Mark();
             
+            cout << "Total number of oids found: " << count << endl;
             return 0;
         } else desc += " [-euknt]";
+        
+        if (s == "-translate-gis") {
+            string listfile;
+            if (! args.empty()) {
+                listfile = args.front();
+                args.pop_front(); 
+            } else {
+                cout << "Usage: test_pin -translate-gis <filename>" << endl;
+                return 0;
+            }
+            
+            string blastdb_path("/net/fridge/vol/export/blast/db/blast/Eukaryota");
+            blastdb_path.append((seqtype == CSeqDB::eProtein) ? ".p.gil" : ".n.gil");
+            
+            CTimedTask t1("build gi list (" + blastdb_path + ")");
+            CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList(blastdb_path));
+            t1.Mark();
+            
+            CTimedTask t2(string("build seqdb (") + dbname + ")");
+            CSeqDB db(dbname, seqtype, 0, 0, use_mm, gi_list);
+            t2.Mark();
+            
+            int count = 0;
+            
+            CTimedTask t3("find first oid");
+            int oid = 0;
+            db.CheckOrFindOID(oid);
+            t3.Mark();
+            
+            CTimedTask t4("find rest of oids");
+            for(oid = 0; db.CheckOrFindOID(oid); oid++) {
+                count ++;
+            }
+            cout << "Total number of oids found: " << count << endl;
+            t4.Mark();
+            
+            CTimedTask t5("read gis from file");
+            vector<int> gis;
+            SeqDB_ReadGiList(listfile, gis);
+            cout << "  Total number of gis read from file: " << gis.size() << endl;
+            t5.Mark();
+            
+            CTimedTask t5a("sort gis read from file");
+            sort(gis.begin(), gis.end());
+            cout << "  Gis after sorting: " << gis.size() << endl;
+            t5a.Mark();
+            
+            CTimedTask t5b("uniquify sorted gis");
+            {
+                int prev_gi = -1;
+                vector<int> unique;
+                ITERATE(vector<int>, gi_iter, gis) {
+                    if (prev_gi != *gi_iter) {
+                        unique.push_back(prev_gi = *gi_iter);
+                    }
+                }
+                unique.swap(gis);
+            }
+            cout << "  Total number of gis after uniquification: " << gis.size() << endl;
+            t5b.Mark();
+            
+            CTimedTask t6("convert to oids");
+            vector<int> oids;
+            ITERATE(vector<int>, gi_iter, gis) {
+                int oid(0);
+                if (db.GiToOid(*gi_iter, oid)) {
+                    oids.push_back(oid);
+                }
+            }
+            double e6sec = t6.Mark();
+            cout << "    Total number of oids corresponding to GIs: " << oids.size() << endl;
+            cout << "    Time: " << e6sec << ", oids found per second: " << (oids.size()/(e6sec)) << "\n\n";
+            
+            CTimedTask t7("convert oids (back) to gis");
+            vector<int> gis2;
+            gis2.reserve(oids.size());
+            
+            ITERATE(vector<int>, oid_iter, oids) {
+                db.GetGis(*oid_iter, gis2, true);
+            }
+            double e7sec = t7.Mark();
+            
+            cout << "    Total number of gis corresponding to OIDs: " << gis2.size() << endl;
+            cout << "    Time: " << e7sec << ", gis found per second: " << (gis2.size()/(e7sec)) << endl;
+            cout << "    Time: " << e7sec << ", oids translated per second: " << (oids.size()/e7sec) << endl;
+            
+            cout << "    Total number of oids found: " << count << endl;
+            return 0;
+        } else desc += " [-translate-gis <filename>]";
+        
+        if (s == "-refrna") {
+            string gil_name("Danio_rerio.n");
+            //string gil_name("Homo_sapiens.n");
+            CTimedTask t1(string("build ") + gil_name + " list");
+            string gilist_fname(string("/net/fridge/vol/export/blast/db/blast/") + gil_name + ".gil");
+            CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList(gilist_fname));
+            
+            //CTimedTask t1("build euk gi list");
+            //CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("/net/fridge/vol/export/blast/db/blast/Eukaryota.n.gil"));
+            t1.Mark();
+            
+            CTimedTask t2("build refseq_rna seqdb");
+            string dbn = "refseq_rna";
+            CSeqDB db(dbn, CSeqDB::eNucleotide, 0, 0, use_mm, gi_list);
+            t2.Mark();
+            
+            int count = 0;
+            
+            CTimedTask t3("find first oid");
+            int oid = 0;
+            db.CheckOrFindOID(oid);
+            t3.Mark();
+            
+            CTimedTask t4("find rest of oids");
+            vector<int> gis;
+            for(oid = 0; db.CheckOrFindOID(oid); oid++) {
+                db.GetGis(oid, gis, true);
+                count ++;
+            }
+            t4.Mark();
+            
+//             cout << "Dumping genomic ids:" << endl;
+//             for(int q = 0; q<gis.size(); q++) {
+//                 cout << "xgi:" << gis[q] << "\n";
+//             }
+            cout << "Total number of oids found: " << count << endl;
+            return 0;
+        } else desc += " [-refrna]";
         
         if (s == "-user-gi-list") {
             int gi = 129295;
@@ -2722,8 +2892,21 @@ int test1(int argc, char ** argv)
         
         if (s == "-dogs") {
             CSeqDB al("cfa_genome/cra_dog_assembly", CSeqDB::eNucleotide);
-            
+            return 0;
         } else desc += " [-dogs]";
+        
+        if (s == "-simple-iteration") {
+            CTimedTask t1("iterate over db");
+            CSeqDB db(dbname, seqtype);
+            int count =0;
+            for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+                count++;
+            }
+            double spent = t1.Mark();
+            cout << "OIDs found: " << count << " per second: " << (count / spent) << endl;
+            
+            return 0;
+        } else desc += " [-simple-iteration]";
         
         if (s == "-megabarley") {
             CStopWatch sw(true);

@@ -46,7 +46,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     : m_Atlas        (use_mmap, & m_FlushCB),
       m_DBNames      (db_name_list),
       m_Aliases      (m_Atlas, db_name_list, prot_nucl),
-      m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl),
+      m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl, gi_list),
       m_RestrictBegin(oid_begin),
       m_RestrictEnd  (oid_end),
       m_NextChunkOID (0),
@@ -294,7 +294,6 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi) const
                               memb_bit,
                               target_gi,
                               m_TaxInfo,
-                              m_UserGiList,
                               locked);
     }
     
@@ -361,7 +360,6 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
         return vol->GetSeqIDs(vol_oid,
                               have_oidlist,
                               memb_bit,
-                              m_UserGiList,
                               locked);
     }
     
@@ -454,7 +452,6 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
         return vol->GetFilteredHeader(vol_oid,
                                       have_oidlist,
                                       memb_bit,
-                                      m_UserGiList,
                                       locked);
     }
     
@@ -545,6 +542,17 @@ bool CSeqDBImpl::OidToPig(int oid, int & pig) const
 bool CSeqDBImpl::GiToOid(int gi, int & oid) const
 {
     CSeqDBLockHold locked(m_Atlas);
+    
+    // This could be accellerated (a little) if a GI list is used.
+    // However, this should be done (if at all) at the volume layer,
+    // not in *Impl.  This volume may mask a particular GI that the
+    // user gi list DOES NOT mask.  Or, the user GI list may assign
+    // this GI an OID that belongs to a different volume, for example,
+    // if the same GI appears in more than one volume.  In such cases,
+    // the volume GI list (if one exists) is probably a better filter,
+    // because it represents the restrictions of both the volume GI
+    // list and the User GI list.  It's also smaller, and therefore
+    // should be easier to binary search.
     
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
         if (m_VolSet.GetVol(i)->GiToOid(gi, oid, locked)) {

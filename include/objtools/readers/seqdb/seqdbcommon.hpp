@@ -145,8 +145,7 @@ public:
     /// Possible sorting states
     enum ESortOrder {
         eNone,
-        eGi,
-        eOid
+        eGi
     };
     
     /// Constructor
@@ -160,8 +159,14 @@ public:
     /// Sort if necessary to insure order of elements.
     void InsureOrder(ESortOrder order);
     
-    /// Test for existence of an OID, GI pair.
-    void FindGis(const vector<int> & oids, vector<int> & gis);
+    /// Test for existence of a GI.
+    bool FindGi(int gi);
+    
+    /// Find a GI and return the associated OID.
+    bool GiToOid(int gi, int & oid);
+    
+    /// Find a GI, returning the index and the associated OID.
+    bool GiToOid(int gi, int & oid, int & index);
     
     /// Access an element of the array.
     const SGiOid & operator[](int index) const
@@ -186,7 +191,6 @@ public:
     ///   The oid to store in that element.
     void SetTranslation(int index, int oid)
     {
-        _ASSERT(m_CurrentOrder != eOid);
         m_GisOids[index].oid = oid;
     }
     
@@ -207,9 +211,6 @@ private:
     
     /// Prevent assignment.
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
-    
-    /// Test for existence of an OID, GI pair.
-    void x_FindOid(int oid, int & indexB, int & indexE);
 };
 
 
@@ -226,6 +227,11 @@ NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadGiList(const string                 & fname,
                       vector<CSeqDBGiList::SGiOid> & gis,
                       bool                         * in_order = 0);
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadGiList(const string  & fname,
+                      vector<int>   & gis,
+                      bool          * in_order = 0);
 
 
 /// CSeqDBFileGiList

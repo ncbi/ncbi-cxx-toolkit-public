@@ -399,6 +399,21 @@ public:
     ///   A list of Seq-id objects for this sequence.
     list< CRef<CSeq_id> > GetSeqIDs(int oid) const;
     
+    /// Gets a list of GIs for an OID.
+    /// 
+    /// This returns the GIs associated with the sequence specified by
+    /// the given OID.  If append is true, gis will be appended to the
+    /// end of the provided vector; otherwise the vector will be
+    /// emptied first.
+    /// 
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @param gis
+    ///   The returned list of gis.
+    /// @param append
+    ///   Specify true to append to gis, keeping existing elements.
+    void GetGis(int oid, vector<int> & gis, bool append = false) const;
+    
     /// Returns the type of database opened - protein or nucleotide..
     /// [This method is obsolete; use GetSequenceType() instead.]
     /// 

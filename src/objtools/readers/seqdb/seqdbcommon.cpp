@@ -303,79 +303,51 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
             }
             break;
             
-        case eOid:
-            {
-                // This is a major time sink for GI list processing.
-                // It would probably be faster to build the OID mask
-                // without this (by creating a second bitmap and
-                // combining the two with AND).
-                
-                CSeqDB_SortOidLessThan sorter;
-                sort(m_GisOids.begin(), m_GisOids.end(), sorter);
-            }
-            break;
+        default:
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Unrecognized sort order requested.");
         }
         
         m_CurrentOrder = order;
     }
 }
 
-void CSeqDBGiList::x_FindOid(int oid, int & indexB, int & indexE)
+bool CSeqDBGiList::FindGi(int gi)
 {
-    // This approach chosen for this problem is a single binary search
-    // followed by expansion of the matching region, because there are
-    // only a few OIDs per GI.
-    // 
-    // If each OID had many GIs, two binary searches would be used to
-    // find the two boundaries between the three regions (<, =, >).
-    
-    int b(0), e((int)m_GisOids.size());
-    
-    while(1) {
-        int m((b+e) >> 1);
-        int oid_m = m_GisOids[m].oid;
-        
-        if (oid_m == oid) {
-            indexB = m;
-            indexE = m + 1;
-            break;
-        } else {
-            if (b == e) {
-                break;
-            }
-            
-            if (oid_m > oid) {
-                e = m;
-            } else {
-                b = m + 1;
-            }
-        }
-    }
-    
-    if (indexB != indexE) {
-        while(indexB > 0 && m_GisOids[indexB-1].oid == oid) {
-            -- indexB;
-        }
-        while(indexE < (int)m_GisOids.size() && m_GisOids[indexE].oid == oid) {
-            ++ indexE;
-        }
-    }
+    int oid(0), index(0);
+    return GiToOid(gi, oid, index);
 }
 
-void CSeqDBGiList::FindGis(const vector<int> & oids, vector<int> & gis)
+bool CSeqDBGiList::GiToOid(int gi, int & oid)
 {
-    gis.clear();
-    gis.reserve(oids.size());
+    int index(0);
+    return GiToOid(gi, oid, index);
+}
+
+bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
+{
+    InsureOrder(eGi);  // would assert be better?
     
-    ITERATE(vector<int>, oid, oids) {
-        int b(0), e(0);
+    int b(0), e(m_GisOids.size());
+    
+    while(b < e) {
+        int m = (b + e)/2;
+        int m_gi = m_GisOids[m].gi;
         
-        x_FindOid(*oid, b, e);
-        
-        for(int i = b; i<e; i++) {
-            gis.push_back(m_GisOids[i].gi);
+        if (m_gi < gi) {
+            b = m + 1;
+        } else if (m_gi > gi) {
+            e = m;
+        } else {
+            oid = m_GisOids[m].oid;
+            index = m;
+            return true;
         }
     }
+    
+    oid = index = -1;
+    return false;
 }
 
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
@@ -559,6 +531,20 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, 
     const char * fendp   = fbeginp + (int)file_size;
     
     SeqDB_ReadMemoryGiList(fbeginp, fendp, gis, in_order);
+}
+
+void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
+{
+    typedef vector<CSeqDBGiList::SGiOid> TPairList;
+    
+    TPairList pairs;
+    SeqDB_ReadGiList(fname, pairs, in_order);
+    
+    gis.reserve(pairs.size());
+    
+    ITERATE(TPairList, iter, pairs) {
+        gis.push_back(iter->gi);
+    }
 }
 
 CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)

@@ -221,41 +221,28 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
         return;
     }
     
-    // Sort resulting array by OID.  This is necessary due to the way
-    // in which the AND operation is accomplished.
+    // This is the trivial way to 'sort' OIDs
     
-    gis.InsureOrder(CSeqDBGiList::eOid);
+    vector<bool> gilist_oids(m_NumOIDs);
     
-    // Clear any OID bits between the included OIDs.
-    
-    if (gis[gis_size-1].oid == -1) {
-        x_ClearBitRange(0, m_NumOIDs);
-        m_NumOIDs = 0;
-    } else {
-        int prev_oid = -1;
+    for(int j = 0; j < gis_size; j++) {
+        int oid = gis[j].oid;
         
-        for(int j = 0; j < gis_size; j++) {
-            int this_oid = gis[j].oid;
-            
-            if (this_oid == -1) {
-                // 1. All -1s should be at start.
-                
-                _ASSERT(prev_oid == -1);
-                continue;
-            }
-            
-            if ((this_oid - prev_oid) > 1) {
-                x_ClearBitRange(prev_oid + 1, this_oid);
-            }
-            
-            prev_oid = this_oid;
+        if ((oid != -1) && (oid < m_NumOIDs)) {
+            gilist_oids[oid] = true;
         }
-        
-        prev_oid = gis[gis_size-1].oid;
-        
-        if ((m_NumOIDs - prev_oid) > 1) {
-            x_ClearBitRange(prev_oid + 1, m_NumOIDs);
-            m_NumOIDs = prev_oid + 1;
+    }
+    
+    // Intersect the user GI list with the OID bit map.
+    
+    // Iterate over the bitmap, clearing bits we find there but not in
+    // the bool vector.  For very dense OID bit maps, it might be
+    // faster to use two similarly implemented bitmaps and AND them
+    // together word-by-word.
+    
+    for(int oid = 0; x_FindNext(oid); oid ++) {
+        if (! gilist_oids[oid]) {
+            x_ClearBit(oid);
         }
     }
 }

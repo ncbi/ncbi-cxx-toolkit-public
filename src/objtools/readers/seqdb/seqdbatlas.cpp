@@ -1120,6 +1120,29 @@ void CSeqDBAtlas::SetMemoryBound(Uint8 mb, Uint8 ss)
     m_SliceSize   = ss;
 }
 
+void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,
+                                   size_t           bytes,
+                                   CSeqDBLockHold & locked)
+{
+    if (bytes > 0) {
+        Lock(locked);
+        PossiblyGarbageCollect(bytes);
+        
+        _ASSERT(memreg.m_Bytes == 0);
+        m_CurAlloc += memreg.m_Bytes = bytes;
+    }
+}
+
+void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
+{
+    size_t bytes = memreg.m_Bytes;
+    
+    if (bytes > 0) {
+        _ASSERT(m_CurAlloc >= bytes);
+        m_CurAlloc     -= bytes;
+        memreg.m_Bytes = 0;
+    }
+}
 
 END_NCBI_SCOPE
 
