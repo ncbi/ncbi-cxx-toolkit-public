@@ -550,11 +550,11 @@ public:
     // may differ but LevelBegin() always precedes LevelEnd().
     class I4Each {
     public:
-        virtual ITreeIterator::EAction
+        virtual EAction
         LevelBegin(const ITaxon1Node* /*pParent*/)
         { return eOk; }
-        virtual ITreeIterator::EAction Execute(const ITaxon1Node* pNode)= 0;
-        virtual ITreeIterator::EAction LevelEnd(const ITaxon1Node* /*pParent*/)
+        virtual EAction Execute(const ITaxon1Node* pNode)= 0;
+        virtual EAction LevelEnd(const ITaxon1Node* /*pParent*/)
         { return eOk; }
     };
     
@@ -649,6 +649,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.18  2004/06/30 20:24:37  jcherry
+// Removed qualifiers for the sake of MSVC6.
+//
 // Revision 1.17  2004/06/30 16:06:43  jcherry
 // Qualified type in nested class with name of enclosing class
 // for SWIG.  Tabs->spaces.

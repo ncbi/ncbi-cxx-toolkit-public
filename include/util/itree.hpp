@@ -77,20 +77,20 @@ public:
     typedef CConstRef<CObject> mapped_type;
 
     typedef SLinkedSetValue<coordinate_type> TMapValue;
-    struct STreeMapValue : public CIntervalTreeTraits::TMapValue
+    struct STreeMapValue : public TMapValue
     {
         STreeMapValue(coordinate_type key, coordinate_type y,
                       const mapped_type& value)
-            : CIntervalTreeTraits::TMapValue(key), m_Y(y), m_Value(value)
+            : TMapValue(key), m_Y(y), m_Value(value)
         {
         }
 
-        CIntervalTreeTraits::coordinate_type m_Y;
-        CIntervalTreeTraits::mapped_type m_Value;
+        coordinate_type m_Y;
+        mapped_type m_Value;
 
-        CIntervalTreeTraits::interval_type GetInterval(void) const
+        interval_type GetInterval(void) const
         {
-            return CIntervalTreeTraits::interval_type(GetKey(), m_Y);
+            return interval_type(GetKey(), m_Y);
         }
     };
     typedef STreeMapValue TTreeMapValue;
@@ -98,15 +98,15 @@ public:
     typedef TTreeMap::iterator TTreeMapI;
     typedef TTreeMap::const_iterator TTreeMapCI;
 
-    struct SNodeMapValue : public CIntervalTreeTraits::TMapValue
+    struct SNodeMapValue : public TMapValue
     {
-        SNodeMapValue(CIntervalTreeTraits::coordinate_type key,
-                      CIntervalTreeTraits::TTreeMapI value)
-            : CIntervalTreeTraits::TMapValue(key), m_Value(value)
+        SNodeMapValue(coordinate_type key,
+                      TTreeMapI value)
+            : TMapValue(key), m_Value(value)
         {
         }
 
-        CIntervalTreeTraits::TTreeMapI m_Value;
+        TTreeMapI m_Value;
     };
     typedef SNodeMapValue TNodeMapValue;
     typedef CLinkedMultiset<TNodeMapValue> TNodeMap;
@@ -428,6 +428,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/30 20:21:41  jcherry
+* Removed qualifiers for the sake of MSVC6.
+*
 * Revision 1.7  2004/06/30 16:42:28  jcherry
 * Qualified some type names in nested structures for SWIG.
 *
