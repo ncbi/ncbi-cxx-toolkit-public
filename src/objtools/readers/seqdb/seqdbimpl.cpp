@@ -38,19 +38,17 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
                        Uint4          oid_begin,
                        Uint4          oid_end,
                        bool           use_mmap)
-    : m_DBNames      (db_name_list),
-      m_Aliases      (db_name_list, prot_nucl, use_mmap),
-      m_VolSet       (m_MemPool,
-                      m_Aliases.GetVolumeNames(),
-                      prot_nucl,
-                      use_mmap),
+    : m_Atlas        (use_mmap),
+      m_DBNames      (db_name_list),
+      m_Aliases      (m_Atlas, db_name_list, prot_nucl, use_mmap),
+      m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl),
       m_RestrictBegin(oid_begin),
       m_RestrictEnd  (oid_end)
 {
     m_Aliases.SetMasks(m_VolSet);
     
     if ( m_VolSet.HasMask() ) {
-        m_OIDList.Reset( new CSeqDBOIDList(m_VolSet, use_mmap) );
+        m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet, use_mmap) );
     }
     
     if ((oid_begin == oid_end) || (m_RestrictEnd > GetNumSeqs())) {
@@ -60,6 +58,11 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
 
 CSeqDBImpl::~CSeqDBImpl(void)
 {
+    m_VolSet.UnLease();
+    
+    if (m_OIDList.NotEmpty()) {
+        m_OIDList->UnLease();
+    }
 }
 
 bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
@@ -129,7 +132,11 @@ CSeqDBImpl::GetBioseq(Uint4 oid,
 
 void CSeqDBImpl::RetSequence(const char ** buffer) const
 {
-    m_MemPool.Free((void*) *buffer);
+    // This can return either an allocated object or a reference to
+    // part of a memory mapped region.
+    
+    m_Atlas.RetRegion(*buffer);
+    *buffer = 0;
 }
 
 Uint4 CSeqDBImpl::GetSequence(Uint4 oid, const char ** buffer) const

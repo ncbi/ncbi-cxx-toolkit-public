@@ -34,10 +34,15 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBOIDList::CSeqDBOIDList(CSeqDBVolSet & volset, bool use_mmap)
-    : m_NumOIDs (0),
+CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas  & atlas,
+                             CSeqDBVolSet & volset,
+                             bool           use_mmap)
+    : m_Atlas   (atlas),
+      m_Lease   (atlas),
+      m_NumOIDs (0),
       m_Bits    (0),
-      m_BitEnd  (0)
+      m_BitEnd  (0),
+      m_BitOwner(false)
 {
     _ASSERT( volset.HasMask() );
     
@@ -50,21 +55,24 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBVolSet & volset, bool use_mmap)
 
 CSeqDBOIDList::~CSeqDBOIDList()
 {
+    if (m_BitOwner) {
+        _ASSERT(m_Bits != 0);
+        m_Atlas.Free((const char *) m_Bits);
+    }
 }
 
 void CSeqDBOIDList::x_Setup(const string  & filename,
                             bool            use_mmap)
 {
-    m_RawFile.Reset( new CSeqDBRawFile(m_MemPool, use_mmap) );
+    Uint8 file_length = 0;
     
-    m_RawFile->Open(filename);
-    m_RawFile->ReadSwapped(& m_NumOIDs);
+    m_Atlas.GetFile(m_Lease, filename, file_length);
     
-    Uint4 file_length = (Uint4) m_RawFile->GetFileLength();
-    
-    m_Bits   = (unsigned char*) m_RawFile->GetRegion(sizeof(Int4), file_length);
-    m_BitEnd = m_Bits + file_length - sizeof(Int4);
+    m_NumOIDs = SeqDB_GetStdOrd((Uint4 *) m_Lease.GetPtr(0));
+    m_Bits    = (unsigned char*) m_Lease.GetPtr(sizeof(Uint4));
+    m_BitEnd  = m_Bits + file_length - sizeof(Uint4);
 }
+
 
 // The general rule I am following in these methods is to use byte
 // computations except during actual looping.
@@ -80,8 +88,9 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
     Uint4 num_oids = volset.GetNumSeqs();
     Uint4 byte_length = ((num_oids + 31) / 32) * 4;
     
-    m_Bits   = (TUC*) m_MemPool.Alloc(byte_length);
+    m_Bits   = (TUC*) m_Atlas.Alloc(byte_length);
     m_BitEnd = m_Bits + byte_length;
+    m_BitOwner = true;
     
     memset((void*) m_Bits, 0, byte_length);
     
@@ -163,14 +172,15 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
     TCUC* bitmap = 0;
     TCUC* bitend = 0;
     
-    CSeqDBMemPool mempool;
-    CSeqDBRawFile volmask(mempool, use_mmap);
+    CSeqDBRawFile volmask(m_Atlas);
     
     {
         Uint4 num_oids = 0;
         
         volmask.Open(mask_fname);
-        volmask.ReadSwapped(& num_oids);
+        
+        CSeqDBMemLease lease(m_Atlas);
+        volmask.ReadSwapped(lease, 0, & num_oids);
         
         Uint4 file_length = (Uint4) volmask.GetFileLength();
         
@@ -247,6 +257,8 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
             srcp++;
         }
     }
+    
+    m_Atlas.RetRegion((const char*) bitmap);
 }
 
 void CSeqDBOIDList::x_SetBitRange(Uint4          oid_start,

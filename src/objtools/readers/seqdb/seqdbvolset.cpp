@@ -32,14 +32,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBVolSet::CSeqDBVolSet(CSeqDBMemPool        & mempool,
+CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
                            const vector<string> & vol_names,
-                           char                   prot_nucl,
-                           bool                   use_mmap)
+                           char                   prot_nucl)
     : m_RecentVol(0)
 {
     for(Uint4 i = 0; i < vol_names.size(); i++) {
-        x_AddVolume(mempool, vol_names[i], prot_nucl, use_mmap);
+        x_AddVolume(atlas, vol_names[i], prot_nucl);
         
         if (prot_nucl == kSeqTypeUnkn) {
             // Once one volume picks a prot/nucl type, enforce that
@@ -49,6 +48,17 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBMemPool        & mempool,
             prot_nucl = m_VolList.back().Vol()->GetSeqType();
         }
     }
+}
+
+void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas  & atlas,
+                               const string & nm,
+                               char           pn)
+{
+    CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn);
+    
+    CVolEntry new_vol( new_volp );
+    new_vol.SetStartEnd( x_GetNumSeqs() );
+    m_VolList.push_back( new_vol );
 }
 
 END_NCBI_SCOPE

@@ -46,7 +46,9 @@ class CSeqDBOIDList : public CObject {
 public:
     typedef Uint4 TOID;
     
-    CSeqDBOIDList(CSeqDBVolSet & volumes, bool use_mmap);
+    CSeqDBOIDList(CSeqDBAtlas  & atlas,
+                  CSeqDBVolSet & volumes,
+                  bool           use_mmap);
     
     ~CSeqDBOIDList();
     
@@ -56,6 +58,11 @@ public:
             return true;
         }
         return x_FindNext(next_oid);
+    }
+    
+    void UnLease()
+    {
+        m_Lease.Clear();
     }
     
 private:
@@ -73,12 +80,14 @@ private:
     
     // Data
     
-    CSeqDBMemPool         m_MemPool;
-    CRef<CSeqDBRawFile>   m_RawFile;
-    Uint4                 m_NumOIDs;
+    CSeqDBAtlas    & m_Atlas;
+    CSeqDBMemLease   m_Lease;
+    Uint4            m_NumOIDs;
     
-    TUC                 * m_Bits;
-    TUC                 * m_BitEnd;
+    TUC            * m_Bits;
+    TUC            * m_BitEnd;
+    
+    bool             m_BitOwner;
 };
 
 

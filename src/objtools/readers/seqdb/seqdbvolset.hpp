@@ -42,10 +42,9 @@ using namespace ncbi::objects;
 
 class CSeqDBVolSet : public CObject {
 public:
-    CSeqDBVolSet(CSeqDBMemPool        & mempool,
+    CSeqDBVolSet(CSeqDBAtlas          & atlas,
                  const vector<string> & vol_names,
-                 char                   prot_nucl,
-                 bool                   use_mmap);
+                 char                   prot_nucl);
     
     const CSeqDBVol * FindVol(Uint4 oid, Uint4 & vol_oid) const
     {
@@ -209,7 +208,16 @@ public:
         v->SetIncludeAll();
     }
     
+    void UnLease()
+    {
+        for(Uint4 index = 0; index < m_VolList.size(); index++) {
+            return m_VolList[index].Vol()->UnLease();
+        }
+    }
+    
 private:
+    CSeqDBVolSet(const CSeqDBVolSet &);
+    CSeqDBVolSet & operator=(const CSeqDBVolSet &);
     
     class CVolEntry {
     public:
@@ -302,15 +310,9 @@ private:
         return m_VolList.back().OIDEnd();
     }
     
-    void x_AddVolume(CSeqDBMemPool & mempool,
-                     const string  & nm,
-                     char            pn,
-                     bool            use_mm)
-    {
-        CVolEntry new_vol( new CSeqDBVol(mempool, nm, pn, use_mm) );
-        new_vol.SetStartEnd( x_GetNumSeqs() );
-        m_VolList.push_back( new_vol );
-    }
+    void x_AddVolume(CSeqDBAtlas  & atlas,
+                     const string & nm,
+                     char           pn);
     
     const CVolEntry * x_FindVolName(const string & volname) const
     {
@@ -344,8 +346,8 @@ private:
     // 3. It is always treated as a hint; there is always fallback
     //    code to search for the correct volume.
     
-    vector<CVolEntry>      m_VolList;
-    mutable volatile Uint4 m_RecentVol;
+    vector<CVolEntry>        m_VolList;
+    mutable volatile Uint4   m_RecentVol;
 };
 
 END_NCBI_SCOPE

@@ -80,266 +80,95 @@ Uint8 BytesToUint8(char * bytes_sc)
 
 bool CSeqDBRawFile::Open(const string & name)
 {
-    Clear();
+    bool success = m_Atlas.GetFileSize(name, m_Length);
     
-    if (m_UseMMap) {
-        try {
-            m_Mapped = new CMemoryFile(name);
-            x_SetLength(false);
-        }
-        catch(...) {
-        }
+    if (success) {
+        m_FileName = name;
     }
     
-    if (! m_Mapped) {
-        try {
-            // For now, no file creation
-            CFastMutexGuard guard(m_FileLock);
-            
-            m_Stream.clear();
-            m_Stream.open(name.data());
-            
-            if (m_Stream) {
-                m_Opened = true;
-                x_SetLength(true);
-            }
-        }
-        catch(...) {
-        }
+    return success;
+}
+
+const char * CSeqDBRawFile::GetRegion(Uint8 start, Uint8 end) const
+{
+    _ASSERT(! m_FileName.empty());
+    _ASSERT(start    <  end);
+    _ASSERT(m_Length >= end);
+    
+    return m_Atlas.GetRegion(m_FileName, start, end);
+}
+
+Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4 * buf) const
+{
+    if (! lease.Contains(offset, offset + sizeof(*buf))) {
+        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*buf));
     }
     
-    return Valid();
+    *buf = SeqDB_GetStdOrd((Uint4 *) lease.GetPtr(offset));
+    
+    return offset + sizeof(*buf);
 }
 
-void CSeqDBRawFile::Clear(void)
+Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+                                 Uint8            offset,
+                                 Uint8          * buf) const
 {
-    if (m_Mapped) {
-        delete m_Mapped;
-        m_Mapped = 0;
+    if (! lease.Contains(offset, offset + sizeof(*buf))) {
+        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(*buf));
     }
     
-    // It might be good to clear out the parts of the mempool that
-    // relate to this file, by range... but only if the design was
-    // changed so that volumes could expire, or be cleaned up in some
-    // way, before the destruction of CSeqDB.
+    *buf = SeqDB_GetBroken((Int8 *) lease.GetPtr(offset));
+    
+    return offset + sizeof(*buf);
 }
 
-const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end) const
+Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+                                 Uint8            offset,
+                                 string         * v) const
 {
-    const char * retval = 0;
-        
-    if (m_Mapped) {
-        if (x_ValidGet(start, end, (Uint4)m_Mapped->GetSize())) {
-            retval = ((const char *)m_Mapped->GetPtr()) + start;
-        }
-    } else if (m_Opened && x_ValidGet(start, end, (Uint4) m_Length)) {
-        //  Note that a more 'realistic' approach would involve a
-        //  cache of blocks or sections that have been brought in;
-        //  and would either free these on a refcount basis, or
-        //  return pointers to the insides of existing blocks, or
-        //  both.  In an advanced design, you might expand all
-        //  requests to block boundaries or powers of two, and
-        //  cache lists of existing blocks at different sizes.
-        //
-        //  Many of these would be an improvement, but if the mmap
-        //  fails, it may be impossible to do a good job with the
-        //  "open file" size of the equation, because there may
-        //  simply not be enough memory to do everything we want,
-        //  regardless.
-        
-        char * region = (char*) m_MemPool.Alloc(end-start);
-        
-        if (region) {
-            if (! x_ReadFileRegion(region, start, end)) {
-                m_MemPool.Free((void*)region);
-                region = 0;
-            } else {
-                retval = region;
-            }
-        }
+    Uint4 len = 0;
+    
+    if (! lease.Contains(offset, offset + sizeof(len))) {
+        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(len));
     }
     
-    return retval;
-}
-
-void CSeqDBRawFile::x_SetLength(bool have_lock)
-{
-    if (m_Mapped) {
-        m_Length = m_Mapped->GetSize();
-    } else if (m_Opened) {
-        CFastMutexGuard guard;
-        
-        if (! have_lock) {
-            guard.Guard(m_FileLock);
-        }
-        
-        CT_POS_TYPE p = m_Stream.tellg();
-        
-        m_Stream.seekg(0, ios::end);
-        CT_POS_TYPE retval = m_Stream.tellg();
-        
-        m_Stream.seekg(p);
-        
-        m_Length = retval - CT_POS_TYPE(0);
-    }
-}
-
-void CSeqDBRawFile::ReadSwapped(Uint4 * z)
-{
-    if (m_Mapped) {
-        Uint4 offset = m_Offset;
-        m_Offset += 4;
-        *z = SeqDB_GetStdOrd( (const Uint4 *)(((char *)m_Mapped->GetPtr()) + offset) );
-    } else if (m_Opened) {
-        CFastMutexGuard guard(m_FileLock);
-        
-        char buf[4];
-        Uint4 offset = m_Offset;
-        m_Stream.seekg(offset, ios::beg);
-        m_Stream.read(buf, 4);
-        // Should throw if .bad()?
-            
-        m_Offset += 4;
-        *z = SeqDB_GetStdOrd( (const Uint4 *)(buf) );
-    } else {
-        NCBI_THROW(CSeqDBException, eFileErr, "Could not open [raw] file.");
-    }
-}
-
-void CSeqDBRawFile::ReadSwapped(Uint8 * z)
-{
-    if (m_Mapped) {
-        Uint4 offset = m_Offset;
-        m_Offset += 8;
-	*z = SeqDB_GetBroken((Int8 *) (((char *)m_Mapped->GetPtr()) + offset));
-    } else if (m_Opened) {
-        CFastMutexGuard guard(m_FileLock);
-        
-        char buf[8];
-        Uint4 offset = m_Offset;
-        m_Stream.seekg(offset, ios::beg);
-        m_Stream.read(buf, 8);
-        // Should throw if .bad()?
-            
-        m_Offset += 8;
-	*z = SeqDB_GetBroken((Int8 *) buf);
-    } else {
-	NCBI_THROW(CSeqDBException, eFileErr, "Could not open [raw] file.");
-    }
-}
-
-void CSeqDBRawFile::ReadSwapped(string * z)
-{
-    // This reads a string from byte data, assuming that the
-    // string is represented as the four bytes length followed by
-    // the contents.
+    len = SeqDB_GetStdOrd((Int4 *) lease.GetPtr(offset));
     
-    if (m_Mapped) {
-        Uint4 offset = m_Offset;
-        m_Offset += sizeof(offset);
-	
-	Uint4 string_size = SeqDB_GetStdOrd((Uint4 *)(((char *)m_Mapped->GetPtr()) + offset));
-        const char * str = ((const char *)m_Mapped->GetPtr()) + m_Offset;
-	
-        m_Offset += string_size;
-	
-        z->assign(str, str + string_size);
-    } else if (m_Opened) {
-        CFastMutexGuard guard(m_FileLock);
-        
-        char sl_buf[4];
-        m_Stream.seekg(m_Offset, ios::beg);
-        m_Stream.read(sl_buf, 4);
-        Uint4 string_size = SeqDB_GetStdOrd((Uint4 *) sl_buf);
-	
-        char * strbuf = new char[string_size+1];
-        strbuf[string_size] = 0;
-        m_Stream.read(strbuf, string_size);
-            
-        // Should throw something if read fails? i.e. if .gcount()!=string_size
-            
-        z->assign(strbuf, strbuf + string_size);
-        m_Offset += string_size + 4;
-            
-        delete [] strbuf;
-    } else { 
-        NCBI_THROW(CSeqDBException, eFileErr, "Could not open [raw] file.");
+    offset += sizeof(len);
+    
+    if (! lease.Contains(offset, offset + len)) {
+        m_Atlas.GetRegion(lease, m_FileName, offset, offset + sizeof(len));
     }
+    
+    v->assign(lease.GetPtr(offset), (int) len);
+    
+    return offset + len;
 }
+
 
 // Does not modify (or use) internal file offset
 
-bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end) const
+bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
+                              char           * buf,
+                              Uint8            start,
+                              Uint8            end) const
 {
-    // Read bytes from memory, no handling or adjustments.
-    if (m_Mapped) {
-        if (! x_ValidGet(start, end, (Uint4) m_Mapped->GetSize())) {
-            NCBI_THROW(CSeqDBException, eFileErr,
-                       "Invalid file offset: possible file corruption.");
-        }
-        
-        memcpy(z, ((char *) m_Mapped->GetPtr()) + start, end - start);
-        
-        return true;
-    } else if (m_Opened) {
-        if (! x_ValidGet(start, end, (Uint4) m_Length)) {
-            NCBI_THROW(CSeqDBException, eFileErr,
-                       "Invalid file offset: possible file corruption.");
-        }
-        
-        CFastMutexGuard guard(m_FileLock);
-        
-        m_Stream.seekg(start, ios::beg);
-        m_Stream.read((char *) z, end - start);
-        
-        return true;
+    if (! lease.Contains(start, end)) {
+        m_Atlas.GetRegion(lease, m_FileName, start, end);
     }
     
-    return false;
+    memcpy(buf, lease.GetPtr(start), end-start);
+    
+    return true;
 }
 
-bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end) const
-{
-    CFastMutexGuard guard(m_FileLock);
-    
-    bool retval = false;
-    _ASSERT(m_Opened);
-    
-    m_Stream.seekg(start, ios::beg);
-    
-    Int4 size_left = end - start;
-    
-    while ((size_left > 0) && m_Stream) {
-        m_Stream.read(region, size_left);
-        Int4 gcnt = m_Stream.gcount();
-        
-        if (gcnt <= 0) {
-            NCBI_THROW(CSeqDBException, eFileErr,
-                       "Failed file read: possible file corruption.");
-        }
-        
-        if (gcnt > size_left) {
-            break;
-        } else if (gcnt <= size_left) {
-            size_left -= gcnt;
-            region    += gcnt;
-        }
-    }
-    
-    if (size_left == 0) {
-        retval = true;
-        //m_Offset += end - start;
-    }
-        
-    return retval;
-}
-
-CSeqDBExtFile::CSeqDBExtFile(CSeqDBMemPool & mempool,
+CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
                              const string  & dbfilename,
-                             char            prot_nucl,
-                             bool            use_mmap)
-    : m_FileName(dbfilename),
-      m_File    (mempool, use_mmap)
+                             char            prot_nucl)
+    : m_Atlas   (atlas),
+      m_Lease   (atlas),
+      m_FileName(dbfilename),
+      m_File    (atlas)
 {
     if ((prot_nucl != kSeqTypeProt) && (prot_nucl != kSeqTypeNucl)) {
         NCBI_THROW(CSeqDBException,
@@ -350,23 +179,25 @@ CSeqDBExtFile::CSeqDBExtFile(CSeqDBMemPool & mempool,
     x_SetFileType(prot_nucl);
     
     if (! m_File.Open(m_FileName)) {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Error: File could not be found.");
+        string msg = string("Error: File (") + m_FileName + ") not found.";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
     }
 }
 
-CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBMemPool & mempool,
+CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas   & atlas,
                              const string  & dbname,
-                             char            prot_nucl,
-                             bool            use_mmap)
-    : CSeqDBExtFile(mempool, dbname + ".-in", prot_nucl, use_mmap),
+                             char            prot_nucl)
+    : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl),
       m_NumSeqs       (0),
       m_TotLen        (0),
       m_MaxLen        (0),
-      m_HdrHandle     (0),
-      m_SeqHandle     (0),
-      m_AmbCharHandle (0)
+      m_HdrOffset     (0),
+      m_SeqOffset     (0),
+      m_AmbCharOffset (0),
+      m_HdrLease      (atlas),
+      m_SeqLease      (atlas),
+      m_AmbLease      (atlas)
 {
     // Input validation
     
@@ -378,10 +209,14 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBMemPool & mempool,
                    "Error: Invalid sequence type requested.");
     }
     
-    Uint4 f_format_version = 0; // L3064
-    Uint4 f_db_seqtype = 0;     // L3077
+    Uint8 offset = 0;
     
-    x_ReadSwapped(& f_format_version);
+    Uint4 f_format_version = 0;
+    Uint4 f_db_seqtype = 0;
+    
+    CSeqDBMemLease lease(m_Atlas);
+    
+    offset = x_ReadSwapped(lease, offset, & f_format_version);
     
     if (f_format_version != 4) {
         NCBI_THROW(CSeqDBException,
@@ -389,29 +224,34 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBMemPool & mempool,
                    "Error: Not a valid version 4 database.");
     }
     
-    x_ReadSwapped(& f_db_seqtype);
-    x_ReadSwapped(& m_Title);
-    x_ReadSwapped(& m_Date);
-    x_ReadSwapped(& m_NumSeqs);
-    x_ReadSwapped(& m_TotLen);
-    x_ReadSwapped(& m_MaxLen);
-        
-    Uint4 file_offset = x_GetFileOffset();
-        
-    Uint4 region_bytes = 4 * (m_NumSeqs + 1);
-        
-    Uint4 off1, off2, off3, offend;
-        
-    off1   = file_offset;
+    offset = x_ReadSwapped(lease, offset, & f_db_seqtype);
+    offset = x_ReadSwapped(lease, offset, & m_Title);
+    offset = x_ReadSwapped(lease, offset, & m_Date);
+    offset = x_ReadSwapped(lease, offset, & m_NumSeqs);
+    offset = x_ReadSwapped(lease, offset, & m_TotLen);
+    offset = x_ReadSwapped(lease, offset, & m_MaxLen);
+    
+    Uint8 region_bytes = 4 * (m_NumSeqs + 1);
+    
+    Uint8 off1, off2, off3, offend;
+    
+    off1   = offset;
     off2   = off1 + region_bytes;
     off3   = off2 + region_bytes;
     offend = off3 + region_bytes;
-        
-    m_HdrHandle     = x_GetRegion(off1, off2);
-    m_SeqHandle     = x_GetRegion(off2, off3);
-    m_AmbCharHandle = x_GetRegion(off3, offend);
     
-    x_SetFileOffset(offend);
+    // This could still be done this way, for example, by keeping
+    // leases on the parts of the index file.  If this was done a
+    // little effort may be needed to insure proper destruction order.
+    // For now, I will keep offsets and get the lease each time it is
+    // needed.  The atlas will still contain all the pieces.
+    
+    m_HdrOffset     = off1;
+    m_SeqOffset     = off2;
+    m_AmbCharOffset = off3;
+    
+    // The file offset now lives on the stack.
+    //x_SetFileOffset(offend);
     
     char db_seqtype = ((f_db_seqtype == 1)
                        ? kSeqTypeProt
