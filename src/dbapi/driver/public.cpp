@@ -47,6 +47,7 @@ CDB_Connection::CDB_Connection(I_Connection* c)
                            "No valid connection provided");
     }
     m_Connect = c;
+    m_Connect->SetResultProcessor(0); // to clean up the result processor if any
     m_Connect->Acquire((CDB_BaseEnt**) &m_Connect);
 }
 
@@ -750,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/08 18:55:40  soussov
+ * adds code which cleans up a result processor if any in reusable connection
+ *
  * Revision 1.9  2004/06/08 18:17:42  soussov
  * adds code which protects result processor from hung pointers to connection and/or other processor
  *
