@@ -58,11 +58,11 @@ private:
 
     CFlatFileGenerator* x_CreateFlatFileGenerator(CScope& scope, 
         const CArgs& args);
-    TFormat x_GetFormat(const CArgs& args);
-    TMode   x_GetMode(const CArgs& args);
-    TStyle  x_GetStyle(const CArgs& args);
-    TFlags  x_GetFlags(const CArgs& args);
-    TFilter x_GetFilter(const CArgs& args);
+    TFormat         x_GetFormat(const CArgs& args);
+    TMode           x_GetMode(const CArgs& args);
+    TStyle          x_GetStyle(const CArgs& args);
+    TFlatFileFlags  x_GetFlags(const CArgs& args);
+    TView           x_GetView(const CArgs& args);
 };
 
 
@@ -101,6 +101,15 @@ void CAsn2FlatApp::Init(void)
             "Output file name", CArgDescriptions::eOutputFile);
     }}
     
+
+    // loaders
+    {{
+        arg_desc->AddOptionalKey("load", "Loader", "Add data loader",
+            CArgDescriptions::eString);
+        // currently we support only the Genbank loader.
+        arg_desc->SetConstraint("load", &(*new CArgAllow_Strings, "gb"));
+    }}
+
     // report
     {{
         // format (default: genbank)
@@ -154,12 +163,16 @@ void CAsn2FlatApp::Init(void)
 
 int CAsn2FlatApp::Run(void)
 {
+    const CArgs&   args = GetArgs();
+
     CRef<CObjectManager> objmgr(new CObjectManager);
     if ( !objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
-    objmgr->RegisterDataLoader(*new CGBDataLoader("ID"),
+    if ( args["load"]  &&  args["load"].AsString() == "gb" ) {
+        objmgr->RegisterDataLoader(*new CGBDataLoader("ID"),
                                  CObjectManager::eDefault);
+    }
 
     CRef<CScope> scope(new CScope(*objmgr));
     if ( !scope) {
@@ -167,8 +180,6 @@ int CAsn2FlatApp::Run(void)
     }
     scope->AddDefaults();
     
-    const CArgs&   args = GetArgs();
-
     // open the input file (default: stdin)
     auto_ptr<CObjectIStream> in(x_OpenIStream(args));
 
@@ -226,13 +237,13 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator
  const CArgs& args)
 {
     // !!! need to get format, style. mode etc. currently using defaults
-    TFormat format = x_GetFormat(args);
-    TMode   mode   = x_GetMode(args);
-    TStyle  style  = x_GetStyle(args);
-    TFlags  flags  = x_GetFlags(args);
-    TFilter filter = x_GetFilter(args);
+    TFormat         format = x_GetFormat(args);
+    TMode           mode   = x_GetMode(args);
+    TStyle          style  = x_GetStyle(args);
+    TFlatFileFlags  flags  = x_GetFlags(args);
+    TView           view   = x_GetView(args);
 
-    return new CFlatFileGenerator(scope, format, mode, style, filter, flags);
+    return new CFlatFileGenerator(scope, format, mode, style, view, flags);
 }
 
 
@@ -253,6 +264,7 @@ TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
         return eFormat_GFF;
     }
 
+    // default
     return eFormat_GenBank;
 }
 
@@ -270,6 +282,7 @@ TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
         return eMode_Dump;
     } 
 
+    // default
     return eMode_GBench;
 }
 
@@ -287,28 +300,30 @@ TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
         return eStyle_Contig;
     } 
 
+    // default
     return eStyle_Normal;
 }
 
 
-TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
+TFlatFileFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
 {
     return args["flags"].AsInteger();
 }
 
 
-TFilter CAsn2FlatApp::x_GetFilter(const CArgs& args)
+TView CAsn2FlatApp::x_GetView(const CArgs& args)
 {
     const string& view = args["view"].AsString();
     if ( view == "all" ) {
-        return fSkipNone;
+        return fViewAll;
     } else if ( view == "prot" ) {
-        return fSkipNucleotides;
+        return fViewProteins;
     } else if ( view == "nuc" ) {
-        return fSkipProteins;
+        return fViewNucleotides;
     } 
 
-    return fSkipProteins;
+    // default
+    return fViewNucleotides;
 }
 
 
@@ -325,6 +340,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/31 19:23:47  shomrat
+* name changes
+*
 * Revision 1.5  2004/03/25 21:07:54  shomrat
 * Use handles
 *
