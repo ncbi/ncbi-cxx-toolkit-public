@@ -1,3 +1,4 @@
+#! /opt/local/bin/perl
 
 # $Id$
 # Author:  Anton Butanaev, NCBI  (butanaev@ncbi.nlm.nih.gov)
@@ -7,17 +8,17 @@
 # Using DOC++:
 #    http://src.doc.ic.ac.uk/packages/Linux/sunsite.unc-mirror/apps/doctools/
 
-
 retrieve();
 genlists();
 preprocess();
 docxx();
 exit;
 
+
 sub retrieve
 {
   $ncbi = $ENV{'NCBI'};
-  open(CVS, "$ncbi/c++/scripts/cvs_core.sh sources --with-objects --without-cvs|");
+  open(CVS, "$ncbi/c++/scripts/cvs_core.sh sources --with-objects --without-cvs --unix|");
   while(<CVS>)
   {
     print;
@@ -56,7 +57,7 @@ sub preprocess
 {
   $href1 = '<b><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=';
   $href2 = '">Locate <i>';
-  $href3 = '</i></a></b> in the source code'
+  $href3 = '</i></a></b> in the source code';
   open(LISTIN, "sources.in");
   while(<LISTIN>)
   {
