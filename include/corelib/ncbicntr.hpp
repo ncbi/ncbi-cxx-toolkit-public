@@ -101,7 +101,7 @@
 #elif defined(NCBI_OS_DARWIN)
 #  include <CarbonCore/DriverSynchronization.h> // Is this right?
    typedef SInt32 TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) AddAtomic(d, p)
+#  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
 #elif defined(NCBI_OS_MAC)
 #  include <OpenTransport.h> // Is this right?
    typedef SInt32 TNCBIAtomicValue;
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/06/03 15:35:07  rsmith
+* OS_DARWIN's AddAtomic returns the previous value, not the incremented value as we require.
+*
 * Revision 1.14  2003/05/23 18:16:07  rsmith
 * proper definitions for NCBI_COUNTER_ADD on Mac/Darwin
 *
