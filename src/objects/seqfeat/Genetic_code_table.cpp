@@ -36,9 +36,9 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
-#include <corelib/ncbithr.hpp>
 
 // generated includes
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -238,8 +238,9 @@ void CTrans_table::x_InitFsaTransl (const string *ncbieaa,
 class CGen_code_table_imp : public CObject
 {
 public:
-    // constructor
+    // constructors (the default uses sm_GenCodeTblMemStr)
     CGen_code_table_imp(void);
+    CGen_code_table_imp(CObjectIStream& ois);
     // destructor
     ~CGen_code_table_imp(void);
 
@@ -272,12 +273,11 @@ private:
 
 // single instance of implementation class is initialized before Main
 auto_ptr<CGen_code_table_imp> CGen_code_table::sm_Implementation;
+DEFINE_STATIC_FAST_MUTEX(s_ImplementationMutex);
 
 void CGen_code_table::x_InitImplementation()
 {
-    DEFINE_STATIC_FAST_MUTEX(s_Implementation_mutex);
-
-    CFastMutexGuard   LOCK(s_Implementation_mutex);
+    CFastMutexGuard LOCK(s_ImplementationMutex);
     if ( !sm_Implementation.get() ) {
         sm_Implementation.reset(new CGen_code_table_imp());
     }
@@ -359,6 +359,21 @@ int CGen_code_table::CodonToIndex(char base1, char base2, char base3)
 }
 
 
+void CGen_code_table::LoadTransTable(CObjectIStream& ois)
+{
+    CFastMutexGuard LOCK(s_ImplementationMutex);
+    sm_Implementation.reset(new CGen_code_table_imp(ois));
+}
+
+
+void CGen_code_table::LoadTransTable(const string& path,
+                                     ESerialDataFormat format)
+{
+    auto_ptr<CObjectIStream> ois(CObjectIStream::Open(path, format));
+    LoadTransTable(*ois);
+}
+
+
 static bool s_ValidCodon(const string& codon) 
 {
     if ( codon.length() != 3 ) return false;
@@ -406,7 +421,7 @@ int CGen_code_table::CodonToIndex(const string& codon)
 
 
 
-// constructor
+// constructors
 CGen_code_table_imp::CGen_code_table_imp(void)
 {
     // initialize common CTrans_table tables
@@ -426,6 +441,18 @@ CGen_code_table_imp::CGen_code_table_imp(void)
     // read single copy of genetic-code table
     m_GcTable = new CGenetic_code_table;
     *asn_codes_in >> *m_GcTable;
+}
+
+CGen_code_table_imp::CGen_code_table_imp(CObjectIStream& ois)
+{
+    if ( !CTrans_table::sm_NextState[0] ) {
+        CTrans_table::x_InitFsaTable ();
+    }
+
+    // read single copy of genetic-code table
+    m_GcTable = new CGenetic_code_table;
+    ois >> *m_GcTable;
+    // perform additional sanity checks?
 }
 
 // destructor
@@ -698,6 +725,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.19  2004/12/14 16:42:04  ucko
+* +CGen_code_table::LoadTransTable to support optionally replacing the
+* builtin copy.
+* Clean up includes slightly.
+*
 * Revision 6.18  2004/12/09 22:27:37  kans
 * added GTG, ATA, and TTG as alternative start codons to code 13 Ascidian Mitochondrial
 *
