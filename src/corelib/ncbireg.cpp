@@ -37,25 +37,14 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbimtx.hpp>
 
-// Platform-specific EndOfLine
-#if   defined(NCBI_OS_MAC)
-const char s_Endl[] = "\r";
-#elif defined(NCBI_OS_MSWIN)
-const char s_Endl[] = "\r\n";
-#else /* assume UNIX-like EOLs */
-const char s_Endl[] = "\n";
-#endif
+#include <algorithm>
+#include <set>
 
 
 BEGIN_NCBI_SCOPE
 
-
-#define CHECK_FLAGS(func_name, flags, allowed_flags)  do { \
-    if (flags & ~((TFlags)(allowed_flags))) \
-        _TRACE("CNcbiRegistry::" func_name "(): extra flags passed: " \
-               << setiosflags(IOS_BASE::hex) << flags); \
-    flags = flags & (TFlags)(allowed_flags); \
-} while (0)
+typedef CRegistryReadGuard  TReadGuard;
+typedef CRegistryWriteGuard TWriteGuard;
 
 
 /* Valid symbols for a section/entry name
@@ -71,12 +60,14 @@ inline bool s_IsNameSectionSymbol(char ch)
  */
 static bool s_IsNameSection(const string& str)
 {
-    if ( str.empty() )
+    if (str.empty()) {
         return false;
+    }
 
     ITERATE (string, it, str) {
-        if ( !s_IsNameSectionSymbol(*it) )
+        if (!s_IsNameSectionSymbol(*it)) {
             return false;
+        }
     }
     return true;
 }
@@ -120,12 +111,12 @@ static bool s_WriteComment(CNcbiOstream& os, const string& comment)
     if (!comment.length())
         return true;
 
-    if (strcmp(s_Endl, "\n") == 0) {
+    if (strcmp(Endl(), "\n") == 0) {
         os << comment;
     } else {
         ITERATE(string, i, comment) {
             if (*i == '\n') {
-                os << s_Endl;
+                os << Endl();
             } else {
                 os << *i;
             }
@@ -134,122 +125,391 @@ static bool s_WriteComment(CNcbiOstream& os, const string& comment)
     return os.good();
 }
 
-
-// Protective mutex for registry Get() and Set() functions
-DEFINE_STATIC_FAST_MUTEX(s_RegMutex);
-
-
-CNcbiRegistry::CNcbiRegistry(void)
-    : m_Modified(false), m_Written(false)
+// Does pos follow an odd number of backslashes?
+inline bool s_Backslashed(const string& s, SIZE_TYPE pos)
 {
-    return;
+    if (pos == 0) {
+        return false;
+    }
+    SIZE_TYPE last_non_bs = s.find_last_not_of("\\", pos - 1);
+    return (pos - last_non_bs) % 2 == 0;
 }
 
 
-CNcbiRegistry::~CNcbiRegistry(void)
+//////////////////////////////////////////////////////////////////////
+//
+// IRegistry
+
+bool IRegistry::Empty(TFlags flags) const
 {
-    return;
+    x_CheckFlags("IRegistry::Empty", flags, fLayerFlags);
+    if ( !(flags & fTPFlags) ) {
+        flags |= fTPFlags;
+    }
+    TReadGuard LOCK(*this);
+    return x_Empty(flags);
 }
 
-
-CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
-    : m_Modified(false), m_Written(false)
+bool IRegistry::Modified(TFlags flags) const
 {
-    CHECK_FLAGS("CNcbiRegistry", flags, eTransient);
-    Read(is, flags);
+    x_CheckFlags("IRegistry::Modified", flags, fLayerFlags);
+    if ( !(flags & fTransient) ) {
+        flags |= fPersistent;
+    }
+    TReadGuard LOCK(*this);
+    return x_Modified(flags);
 }
 
-
-bool CNcbiRegistry::Empty(void) const {
-    return m_Registry.empty();
+void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
+{
+    x_CheckFlags("IRegistry::SetModifiedFlag", flags, fLayerFlags);
+    if ( !(flags & fTransient) ) {
+        flags |= fPersistent;
+    }
+    TReadGuard LOCK(*this); // Treat the flag as semi-mutable
+    x_SetModifiedFlag(modified, flags);
 }
 
-
-bool CNcbiRegistry::Modified(void) const
+// Somewhat inefficient, but that can't really be helped....
+bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 {
-    return m_Modified;
+    x_CheckFlags("IRegistry::Write", flags, fLayerFlags);
+    if ( !(flags & fTransient) ) {
+        flags |= fPersistent;
+    }
+    if ( !(flags & fNotJustCore) ) {
+        flags |= fJustCore;
+    }
+    TReadGuard LOCK(*this);
+
+    // Write file comment
+    if ( !s_WriteComment(os, GetComment(kEmptyStr, kEmptyStr, flags)) )
+        return false;
+
+    list<string> sections;
+    EnumerateSections(&sections, flags);
+
+    ITERATE (list<string>, section, sections) {
+        if ( !s_WriteComment(os, GetComment(*section, kEmptyStr, flags)) ) {
+            return false;
+        }
+        os << '[' << *section << ']' << Endl();
+        if ( !os ) {
+            return false;
+        }
+        list<string> entries;
+        EnumerateEntries(*section, &entries, flags);
+        ITERATE (list<string>, entry, entries) {
+            s_WriteComment(os, GetComment(*section, *entry, flags));
+            // XXX - produces output that older versions can't handle
+            // when the value contains control characters other than
+            // CR (\r) or LF (\n).
+            os << *entry << " = \""
+               << NStr::PrintableString(Get(*section, *entry, flags)) << "\""
+               << Endl();
+            if ( !os ) {
+                return false;
+            }
+        }
+    }
+
+    // Clear the modified bit (checking it first so as to perform the
+    // const_cast<> only if absolutely necessary).
+    if (Modified(flags)) {
+        const_cast<IRegistry*>(this)->SetModifiedFlag(false, flags);
+    }
+
+    return true;
 }
 
-
-/* Read data to reqistry from stream
- */
-void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
+const string& IRegistry::Get(const string& section, const string& name,
+                             TFlags flags) const
 {
-    CHECK_FLAGS("Read", flags, eTransient | eNoOverride);
+    x_CheckFlags("IRegistry::Get", flags, fLayerFlags);
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !s_IsNameSection(clean_section) ) {
+        _TRACE("IRegistry::Get: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return kEmptyStr;
+    }
+    string clean_name = NStr::TruncateSpaces(name);
+    if ( !s_IsNameSection(clean_name) ) {
+        _TRACE("IRegistry::Get: bad entry name \""
+               << NStr::PrintableString(name) << '\"');
+        return kEmptyStr;
+    }
+    TReadGuard LOCK(*this);
+    return x_Get(clean_section, clean_name, flags);
+}
 
-    // If to consider this read to be (unconditionally) non-modifying
-    bool non_modifying = !m_Modified  &&  !m_Written  &&  x_IsAllTransient();
+bool IRegistry::HasEntry(const string& section, const string& name,
+                         TFlags flags) const
+{
+    x_CheckFlags("IRegistry::HasEntry", flags, fLayerFlags);
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !s_IsNameSection(clean_section) ) {
+        _TRACE("IRegistry::HasEntry: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return false;
+    }
+    string clean_name = NStr::TruncateSpaces(name);
+    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name) ) {
+        _TRACE("IRegistry::HasEntry: bad entry name \""
+               << NStr::PrintableString(name) << '\"');
+        return false;
+    }
+    TReadGuard LOCK(*this);
+    return x_HasEntry(clean_section, clean_name, flags);
+}
+
+const string& IRegistry::GetString(const string& section, const string& name,
+                                   const string& default_value, TFlags flags)
+    const
+{
+    const string& value = Get(section, name, flags);
+    return value.empty() ? default_value : value;
+}
+
+int IRegistry::GetInt(const string& section, const string& name,
+                      int default_value, TFlags flags, EErrAction err_action)
+    const
+{
+    const string& value = Get(section, name, flags);
+    if (value.empty()) {
+        return default_value;
+    }
+
+    try {
+        return NStr::StringToInt(value);
+    } catch (CStringException& ex) {
+        if (err_action == eReturn) {
+            return default_value;
+        }
+
+        string msg = "IRegistry::GetInt(): [" + section + ']' + name;
+
+        if (err_action == eThrow) {
+            NCBI_RETHROW_SAME(ex, msg);
+        } else if (err_action == eErrPost) {
+            ERR_POST(ex.what() << msg);
+        }
+
+        return default_value;
+    }
+}
+
+bool IRegistry::GetBool(const string& section, const string& name,
+                        bool default_value, TFlags flags,
+                        EErrAction err_action) const
+{
+    const string& value = Get(section, name, flags);
+    if (value.empty()) {
+        return default_value;
+    }
+
+    try {
+        return NStr::StringToBool(value);
+    } catch (CStringException& ex) {
+        if (err_action == eReturn) {
+            return default_value;
+        }
+
+        string msg = "IRegistry::GetBool(): [" + section + ']' + name;
+
+        if (err_action == eThrow) {
+            NCBI_RETHROW_SAME(ex, msg);
+        } else if (err_action == eErrPost) {
+            ERR_POST(ex.what() << msg);
+        }
+
+        return default_value;
+    }
+}
+
+double IRegistry::GetDouble(const string& section, const string& name,
+                            double default_value, TFlags flags,
+                            EErrAction err_action) const
+{
+    const string& value = Get(section, name, flags);
+    if (value.empty()) {
+        return default_value;
+    }
+
+    try {
+        return NStr::StringToDouble(value);
+    } catch (CStringException& ex) {
+        if (err_action == eReturn) {
+            return default_value;
+        }
+
+        string msg = "IRegistry::GetDouble()";
+        msg += " Reg entry:" + section + ":" + name;
+
+        if (err_action == eThrow) {
+            NCBI_RETHROW_SAME(ex, msg);
+        } else if (err_action == eErrPost) {
+            ERR_POST(ex.what() << msg);
+        }
+
+        return default_value;
+    }
+}
+
+const string& IRegistry::GetComment(const string& section, const string& name,
+                                    TFlags flags) const
+{
+    x_CheckFlags("IRegistry::GetComment", flags, fLayerFlags);
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section) ) {
+        _TRACE("IRegistry::GetComment: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return kEmptyStr;
+    }
+    string clean_name = NStr::TruncateSpaces(name);
+    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name) ) {
+        _TRACE("IRegistry::GetComment: bad entry name \""
+               << NStr::PrintableString(name) << '\"');
+        return kEmptyStr;
+    }
+    TReadGuard LOCK(*this);
+    return x_GetComment(clean_section, clean_name, flags);
+}
+
+void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
+{
+    x_CheckFlags("IRegistry::EnumerateSections", flags, fLayerFlags);
+    if ( !(flags & fTPFlags) ) {
+        flags |= fTPFlags;
+    }
+    _ASSERT(sections);
+    sections->clear();
+    TReadGuard LOCK(*this);
+    return x_Enumerate(kEmptyStr, *sections, flags);
+}
+
+void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
+                                 TFlags flags) const
+{
+    x_CheckFlags("IRegistry::EnumerateEntries", flags, fLayerFlags);
+    if ( !(flags & fTPFlags) ) {
+        flags |= fTPFlags;
+    }
+    _ASSERT(entries);
+    entries->clear();
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section) ) {
+        _TRACE("IRegistry::EnumerateEntries: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return;
+    }
+    TReadGuard LOCK(*this);
+    return x_Enumerate(clean_section, *entries, flags);
+}
+
+void IRegistry::ReadLock (void)
+{
+    x_ChildLockAction(&IRegistry::ReadLock);
+    m_Lock.ReadLock();
+}
+
+void IRegistry::WriteLock(void)
+{
+    x_ChildLockAction(&IRegistry::WriteLock);
+    m_Lock.WriteLock();
+}
+
+void IRegistry::Unlock(void)
+{
+    m_Lock.Unlock();
+    x_ChildLockAction(&IRegistry::Unlock);
+}
+
+void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
+{
+    if (flags & ~allowed)
+        _TRACE(func << "(): extra flags passed: "
+               << setiosflags(IOS_BASE::hex) << flags);
+    flags &= allowed;
+}
+
+//////////////////////////////////////////////////////////////////////
+//
+// IRWRegistry
+
+void IRWRegistry::Clear(TFlags flags)
+{
+    x_CheckFlags("IRWRegistry::Clear", flags, fLayerFlags);
+    TWriteGuard LOCK(*this);
+    if ( (flags & fPersistent)  &&  !x_Empty(fPersistent) ) {
+        x_SetModifiedFlag(true, flags & ~fTransient);
+    }
+    if ( (flags & fTransient)  &&  !x_Empty(fTransient) ) {
+        x_SetModifiedFlag(true, flags & ~fPersistent);
+    }
+    x_Clear(flags);
+}
+
+void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
+{
+    x_CheckFlags("IRWRegistry::Read", flags, fTransient | fNoOverride);
+
+    // Whether to consider this read to be (unconditionally) non-modifying
+    EFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
+    bool   non_modifying = Empty(layer)  &&  !Modified(layer);
 
     // Adjust flags for Set()
-    if (flags & eTransient) {
-        flags &= ~((TFlags) eTransient);
-    } else {
-        flags |= ePersistent;
-    }
+    flags = (flags & ~fTPFlags) | layer;
 
     string    str;          // the line being parsed
     SIZE_TYPE line;         // # of the line being parsed
     string    section;      // current section name
     string    comment;      // current comment
 
-    for (line = 1;  NcbiGetlineEOL(is, str);  line++) {
+    for (line = 1;  NcbiGetlineEOL(is, str);  ++line) {
         SIZE_TYPE len = str.length();
-        SIZE_TYPE beg;
+        SIZE_TYPE beg = 0;
 
-        for (beg = 0;  beg < len  &&  isspace(str[beg]);  beg++)
-            continue;
+        while (beg < len  &&  isspace(str[beg])) {
+            ++beg;
+        }
         if (beg == len) {
             comment += str;
             comment += '\n';
             continue;
         }
 
-        switch ( str[beg] ) {
+        switch (str[beg]) {
 
         case '#':  { // file comment
-            m_Comment += str;
-            m_Comment += '\n';
+            SetComment(GetComment() + str + '\n');
             break;
         }
 
-        case ';':  { // comment
+        case ';':  { // section or entry comment
             comment += str;
             comment += '\n';
             break;
         }
 
         case '[':  { // section name
-            beg++;
-            SIZE_TYPE end = str.find_first_of(']');
-            if (end == NPOS)
+            ++beg;
+            SIZE_TYPE end = str.find_first_of(']', beg + 1);
+            if (end == NPOS) {
                 NCBI_THROW2(CRegistryException, eSection,
                             "Invalid registry section(']' is missing): `"
                             + str + "'", line);
-            while ( isspace(str[beg]) )
-                beg++;
-            if (str[beg] == ']') {
+            }
+            section = NStr::TruncateSpaces(str.substr(beg, end - beg));
+            if (section.empty()) {
                 NCBI_THROW2(CRegistryException, eSection,
                             "Unnamed registry section: `" + str + "'", line);
-            }
-
-            for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++)
-                continue;
-            section = str.substr(beg, end - beg);
-
-            // an extra validity check
-            while ( isspace(str[end]) )
-                end++;
-            _ASSERT( end <= str.find_first_of(']', 0) );
-            if (str[end] != ']')
+            } else if ( !s_IsNameSection(section) ) {
                 NCBI_THROW2(CRegistryException, eSection,
                             "Invalid registry section name: `"
                             + str + "'", line);
+            }
             // add section comment
             if ( !comment.empty() ) {
-                _ASSERT( s_IsNameSection(section) );
-                // create section if it not exist
-                m_Registry.insert(TRegistry::value_type(section,
-                                                        TRegSection()));
                 SetComment(GetComment(section) + comment, section);
                 comment.erase();
             }
@@ -257,96 +517,65 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
         }
 
         default:  { // regular entry
-            if (!s_IsNameSectionSymbol(str[beg])  ||
-                str.find_first_of('=') == NPOS)
+            string name, value;
+            if ( !NStr::SplitInTwo(str, "=", name, value) ) {
                 NCBI_THROW2(CRegistryException, eEntry,
                             "Invalid registry entry format: '" + str + "'",
                             line);
-            // name
-            SIZE_TYPE mid;
-            for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++)
-                continue;
-            string name = str.substr(beg, mid - beg);
-
-            // '=' and surrounding spaces
-            while ( isspace(str[mid]) )
-                mid++;
-            if (str[mid] != '=')
+            }
+            NStr::TruncateSpacesInPlace(name);
+            if ( !s_IsNameSection(name) ) {
                 NCBI_THROW2(CRegistryException, eEntry,
                             "Invalid registry entry name: '" + str + "'",
                             line);
-            for (mid++;  mid < len  &&  isspace(str[mid]);  mid++)
-                continue;
-            _ASSERT( mid <= len );
-
-            // ? empty value
-            if (mid == len) {
-                if ( !(flags & eNoOverride) ) {
+            }
+            
+            NStr::TruncateSpacesInPlace(value);
+            if (value.empty()) {
+                if ( !(flags & fNoOverride) ) {
                     Set(section, name, kEmptyStr, flags, comment);
                     comment.erase();
                 }
                 break;
             }
+            // read continuation lines, if any
+            string cont;
+            while (s_Backslashed(value, value.size())
+                   &&  NcbiGetlineEOL(is, cont)) {
+                ++line;
+                value[value.size() - 1] = '\n';
+                value += NStr::TruncateSpaces(cont);
+                str   += 'n' + cont; // for presentation in exceptions
+            }
 
-            // value
-            string value;
-            beg = mid;
-            if (str[beg] == '"')
-                beg++;
-
-            bool read_next_line;
-            do {
-                read_next_line = false;
-
-                // strip trailing spaces, check for an empty string
-                if ( str.empty() )
-                    break;
-                SIZE_TYPE end;
-                for (end = str.length() - 1;
-                     end > beg  &&  isspace(str[end]);  end--)
+            // Historically, " may appear unescaped at the beginning,
+            // end, both, or neither.
+            beg = 0;
+            SIZE_TYPE end = value.size();
+            for (SIZE_TYPE pos = value.find('\"');  pos < end  &&  pos != NPOS;
+                 pos = value.find('\"', pos + 1)) {
+                if (s_Backslashed(value, pos)) {
                     continue;
-                if (end < beg  ||  isspace(str[end]) )
-                    break;
-
-                // un-escape the value
-                for (SIZE_TYPE i = beg;  i <= end;  i++) {
-                    if (str[i] == '"') {
-                        if (i != end) {
-                            NCBI_THROW2(CRegistryException, eValue,
-                                        "Single(unescaped) '\"' in the middle "
-                                        "of registry value: '" + str + "'",
-                                        line);
-                        }
-                        break;
-                    }
-
-                    if (str[i] != '\\') {
-                        value += str[i];
-                        continue;
-                    }
-                    // process back-slash
-                    if (i == end) {
-                        value += '\n';
-                        beg = 0;
-                        read_next_line = true;
-                        line++;
-                    } else if (str[i+1] == 'r') {
-                        value += '\r';
-                        i++;
-                    } else if (str[i+1] == '\\') {
-                        value += '\\';
-                        i++;
-                    } else if (str[i+1] == '"') {
-                        value += '"';
-                        i++;
-                    } else {
-                        NCBI_THROW2(CRegistryException, eValue,
-                                    "Badly placed '\\' in the registry "
-                                    "value: '" + str + "'", line);
-                    }
+                } else if (pos == beg) {
+                    ++beg;
+                } else if (pos == end - 1) {
+                    --end;
+                } else {
+                    NCBI_THROW2(CRegistryException, eValue,
+                                "Single(unescaped) '\"' in the middle "
+                                "of registry value: '" + str + "'",
+                                line);
                 }
-            } while (read_next_line  &&  NcbiGetlineEOL(is, str));
+            }
 
+            try {
+                value = NStr::ParseEscapes(value.substr(beg, end - beg));
+            } catch (CStringException&) {
+                NCBI_THROW2(CRegistryException, eValue,
+                            "Badly placed '\\' in the registry value: '"
+                            + str + "'", line);
+
+            }
             Set(section, name, value, flags, comment);
             comment.erase();
         }
@@ -359,516 +588,695 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
     }
 
     if ( non_modifying ) {
-        m_Modified = false;
+        SetModifiedFlag(false, layer);
+    }
+}
+
+bool IRWRegistry::Set(const string& section, const string& name,
+                      const string& value, TFlags flags,
+                      const string& comment)
+{
+    x_CheckFlags("IRWRegistry::Set", flags,
+                 fPersistent | fNoOverride | fTruncate);
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !s_IsNameSection(clean_section) ) {
+        _TRACE("IRWRegistry::Set: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return false;
+    }
+    string clean_name = NStr::TruncateSpaces(name);
+    if ( !s_IsNameSection(clean_name) ) {
+        _TRACE("IRWRegistry::Set: bad entry name \""
+               << NStr::PrintableString(name) << '\"');
+        return false;
+    }
+    SIZE_TYPE beg = 0, end = value.size();
+    if (flags & fTruncate) {
+        // don't use TruncateSpaces, since newlines should stay
+        beg = value.find_first_not_of(" \r\t\v");
+        end = value.find_last_not_of (" \r\t\v");
+        if (beg == NPOS) {
+            _ASSERT(end == NPOS);
+            beg = 1;
+            end = 0;
+        }
+    }
+    TWriteGuard LOCK(*this);
+    if (x_Set(clean_section, clean_name, value.substr(beg, end - beg + 1),
+              flags, s_ConvertComment(comment, section.empty()))) {
+        x_SetModifiedFlag(true, flags);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool IRWRegistry::SetComment(const string& comment, const string& section,
+                             const string& name, TFlags flags)
+{
+    x_CheckFlags("IRWRegistry::SetComment", flags, fTransient | fNoOverride);
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section) ) {
+        _TRACE("IRWRegistry::SetComment: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return false;
+    }
+    string clean_name = NStr::TruncateSpaces(name);
+    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name) ) {
+        _TRACE("IRWRegistry::SetComment: bad entry name \""
+               << NStr::PrintableString(name) << '\"');
+        return false;
+    }
+    TWriteGuard LOCK(*this);
+    if (x_SetComment(s_ConvertComment(comment, section.empty()),
+                     clean_section, clean_name, flags)) {
+        x_SetModifiedFlag(true, fPersistent);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool IRWRegistry::MaybeSet(string& target, const string& value, TFlags flags)
+{
+    if (target.empty()) {
+        target = value;
+        return !value.empty();
+    } else if ( !(flags & fNoOverride) ) {
+        target = value;
+        return true;
+    } else {
+        return false;
     }
 }
 
 
-/* Write data from reqistry to stream
- */
-bool CNcbiRegistry::Write(CNcbiOstream& os)
-    const
+//////////////////////////////////////////////////////////////////////
+//
+// CMemoryRegistry
+
+bool CMemoryRegistry::x_Empty(TFlags) const
 {
-    CFastMutexGuard LOCK(s_RegMutex);
+    TReadGuard LOCK(*this);
+    return m_Sections.empty()  &&  m_RegistryComment.empty();
+}
 
-    // write file comment
-    if ( !s_WriteComment(os, m_Comment) )
+const string& CMemoryRegistry::x_Get(const string& section, const string& name,
+                                     TFlags) const
+{
+    TSections::const_iterator sit = m_Sections.find(section);
+    if (sit == m_Sections.end()) {
+        return kEmptyStr;
+    }
+    const TEntries& entries = sit->second.entries;
+    TEntries::const_iterator eit = entries.find(name);
+    return (eit == entries.end()) ? kEmptyStr : eit->second.value;
+}
+
+bool CMemoryRegistry::x_HasEntry(const string& section, const string& name,
+                                 TFlags) const
+{
+    TSections::const_iterator sit = m_Sections.find(section);
+    if (sit == m_Sections.end()) {
         return false;
+    } else if (name.empty()) {
+        return true;
+    }
+    const TEntries& entries = sit->second.entries;
+    TEntries::const_iterator eit = entries.find(name);
+    return eit != entries.end();
+}
 
-    // write data
-    ITERATE (TRegistry, section, m_Registry) {
-        //
-        const TRegSection& reg_section = section->second;
-        _ASSERT( !reg_section.empty() );
+const string& CMemoryRegistry::x_GetComment(const string& section,
+                                            const string& name,
+                                            TFlags) const
+{
+    if (section.empty()) {
+        return m_RegistryComment;
+    }
+    TSections::const_iterator sit = m_Sections.find(section);
+    if (sit == m_Sections.end()) {
+        return kEmptyStr;
+    } else if (name.empty()) {
+        return sit->second.comment;
+    }
+    const TEntries& entries = sit->second.entries;
+    TEntries::const_iterator eit = entries.find(name);
+    return (eit == entries.end()) ? kEmptyStr : eit->second.comment;
+}
 
-        // write section comment, if any
-        TRegSection::const_iterator comm_entry = reg_section.find(kEmptyStr);
-        if (comm_entry != reg_section.end()  &&
-            !s_WriteComment(os, comm_entry->second.comment) ) {
-            return false;
+void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
+                                  TFlags) const
+{
+    if (section.empty()) {
+        ITERATE (TSections, it, m_Sections) {
+            entries.push_back(it->first);
         }
-
-        // write section header
-        os << '[' << section->first << ']' << s_Endl;
-        if ( !os )
-            return false;
-
-        // write section entries
-        ITERATE (TRegSection, entry, reg_section) {
-            // if this entry is actually a section comment, then skip it
-            if (entry == comm_entry)
-                continue;
-
-            // dump only persistent entries
-            if ( entry->second.persistent.empty() )
-                continue;
-
-            // write entry comment
-            if ( !s_WriteComment(os, entry->second.comment) )
-                return false;
-
-            // write next entry;  escape all back-slash and new-line symbols;
-            // add "\\i" to the beginning/end of the string if it has
-            // spaces there
-            os << entry->first << " = ";
-            const char* cs = entry->second.persistent.c_str();
-            if (isspace(*cs)  &&  *cs != '\n')
-                os << '"';
-            for ( ;  *cs;  cs++) {
-                switch ( *cs ) {
-                case '\n':
-                    os << '\\' << s_Endl;  break;
-                case '\r':
-                    os << "\\r";  break;
-                case '\\':
-                    os << "\\\\";  break;
-                case '"':
-                    os << "\\\"";  break;
-                default:
-                    os << *cs;
-                }
+    } else {
+        TSections::const_iterator sit = m_Sections.find(section);
+        if (sit != m_Sections.end()) {
+            ITERATE (TEntries, it, sit->second.entries) {
+                entries.push_back(it->first);
             }
-            cs--;
-            if (isspace(*cs)  &&  *cs != '\n')
-                os << '"';
-
-            os << s_Endl;
-            if ( !os )
-                return false;
         }
     }
-
-    m_Modified = false;
-    m_Written  = true;
-    return true;
 }
 
-
-
-void CNcbiRegistry::Clear(void)
+void CMemoryRegistry::x_Clear(TFlags)
 {
-    m_Modified = (m_Modified  ||  !x_IsAllTransient());
-    m_Comment.erase();
-    m_Registry.clear();
+    m_RegistryComment.erase();
+    m_Sections.clear();
 }
 
-
-
-const string& CNcbiRegistry::Get(const string& section, const string& name,
-                                 TFlags flags)
-    const
+bool CMemoryRegistry::x_Set(const string& section, const string& name,
+                            const string& value, TFlags flags,
+                            const string& comment)
 {
-    CHECK_FLAGS("Get", flags, ePersistent);
-
-    // Truncate marginal spaces of "section" and "name"
-    // Make sure they aren't empty and consist of alpanum and '_' only
-    string x_section = NStr::TruncateSpaces(section);
-    if ( !s_IsNameSection(x_section) ) {
-        _TRACE("CNcbiRegistry::Get():  bad or empty section name: " + section);
-        return kEmptyStr;
-    }
-    string x_name = NStr::TruncateSpaces(name);
-    if ( !s_IsNameSection(x_name) ) {
-        _TRACE("CNcbiRegistry::Get():  bad or empty entry name: " + name);
-        return kEmptyStr;
-    }
-
-    CFastMutexGuard LOCK(s_RegMutex);
-
-    // find section
-    TRegistry::const_iterator find_section = m_Registry.find(x_section);
-    if (find_section == m_Registry.end())
-        return kEmptyStr;
-
-    // find entry in the section
-    const TRegSection& reg_section = find_section->second;
-    _ASSERT( !reg_section.empty() );
-    TRegSection::const_iterator find_entry = reg_section.find(x_name);
-    if (find_entry == reg_section.end())
-        return kEmptyStr;
-
-    // ok -- found the requested entry
-    const TRegEntry& entry = find_entry->second;
-    _ASSERT( !entry.persistent.empty()  ||  !entry.transient.empty() );
-    return ((flags & ePersistent) == 0  &&  !entry.transient.empty()) ?
-        entry.transient : entry.persistent;
-}
-
-
-const string CNcbiRegistry::GetString
-(const string& section,
- const string& name,
- const string& default_value,
- TFlags        flags)
-    const
-{
-    const string& value = Get(section, name, flags);
-    return value.empty() ? default_value : value;
-}
-
-
-int CNcbiRegistry::GetInt
-(const string& section,
- const string& name,
- int           default_value,
- TFlags        flags,
- EErrAction    err_action)
-    const
-{
-    const string& value = Get(section, name, flags);
-    if ( value.empty() )
-        return default_value;
-
-    try {
-        return NStr::StringToInt(value);
-    } catch (CStringException& ex) {
-        if (err_action == eReturn) 
-            return default_value;
-
-        string msg = "CNcbiRegistry::GetInt()";
-        msg += " Reg entry:" + section + ":" + name;
-
-        if (err_action == eThrow)
-            NCBI_RETHROW_SAME(ex, msg);
-        if (err_action == eErrPost)
-            ERR_POST(ex.what() << msg);
-
-        return default_value;
-    }
-}
-
-
-bool CNcbiRegistry::GetBool
-(const string& section,
- const string& name,
- bool          default_value,
- TFlags        flags,
- EErrAction    err_action)
-    const
-{
-    const string& value = Get(section, name, flags);
-    if ( value.empty() )
-        return default_value;
-
-    try {
-        return NStr::StringToBool(value);
-    } catch (CStringException& ex) {
-        if (err_action == eReturn) 
-            return default_value;
-
-        string msg = "CNcbiRegistry::GetBool()";
-        msg += " Reg entry:" + section + ":" + name;
-
-        if (err_action == eThrow)
-            NCBI_RETHROW_SAME(ex, msg);
-        if (err_action == eErrPost)
-            ERR_POST(ex.what() << msg);
-
-        return default_value;
-    }
-}
-
-
-double CNcbiRegistry::GetDouble
-(const string& section,
- const string& name,
- double        default_value,
- TFlags        flags,
- EErrAction    err_action)
-    const
-{
-    const string& value = Get(section, name, flags);
-    if ( value.empty() )
-        return default_value;
-
-    try {
-        return NStr::StringToDouble(value);
-    } catch (CStringException& ex) {
-        if (err_action == eReturn) 
-            return default_value;
-
-        string msg = "CNcbiRegistry::GetDouble()";
-        msg += " Reg entry:" + section + ":" + name;
-
-        if (err_action == eThrow)
-            NCBI_RETHROW_SAME(ex, msg);
-        if (err_action == eErrPost)
-            ERR_POST(ex.what() << msg);
-
-        return default_value;
-    }
-}
-
-
-bool CNcbiRegistry::Set(const string& section, const string& name,
-                        const string& value, TFlags flags,
-                        const string& comment)
-{
-    CHECK_FLAGS("Set", flags, ePersistent | eNoOverride | eTruncate);
-
-    // Truncate marginal spaces of "section" and "name"
-    // Make sure they aren't empty and consist of alpanum and '_' only
-    string x_section = NStr::TruncateSpaces(section);
-    if ( !s_IsNameSection(x_section) ) {
-        _TRACE("CNcbiRegistry::Set():  bad or empty section name: " + section);
-        return false;
-    }
-    string x_name = NStr::TruncateSpaces(name);
-
-    // is the entry name valid ?
-    if ( !s_IsNameSection(x_name) ) {
-        _TRACE("CNcbiRegistry::Set():  bad or empty entry name: " + name);
-        return false;
-    }
-
-    // MT-protect everything down the function code
-    CFastMutexGuard LOCK(s_RegMutex);
-
-    // find section
-    TRegistry::iterator find_section = m_Registry.find(x_section);
-    if (find_section == m_Registry.end()) {
-        if ( value.empty() )  // the "unset" case
+    if (value.empty()) {
+        if (flags & fNoOverride) {
             return false;
-        // new section, new entry
-        x_SetValue(m_Registry[x_section][x_name], value, flags, comment);
-        return true;
-    }
-
-    // find entry within the found section
-    TRegSection& reg_section = find_section->second;
-    _ASSERT( !reg_section.empty() );
-    TRegSection::iterator find_entry = reg_section.find(x_name);
-    if (find_entry == reg_section.end()) {
-        if ( value.empty() )  // the "unset" case
-            return false;
-        // new entry
-        x_SetValue(reg_section[x_name], value, flags, comment);
-        return true;
-    }
-
-    // modifying an existing entry...
-    if (flags & eNoOverride)
-        return false;  // cannot override
-
-    TRegEntry& entry = find_entry->second;
-
-    // check if it tries to unset an already unset value
-    bool transient = (flags & ePersistent) == 0;
-    if (value.empty()  &&
-        (( transient  &&  entry.transient.empty())  ||
-         (!transient  &&  entry.persistent.empty())))
-        return false;
-
-    // modify an existing entry
-    x_SetValue(entry, value, flags, comment);
-
-    // unset(remove) the entry, if empty
-    if (entry.persistent.empty()  &&  entry.transient.empty()) {
-        reg_section.erase(find_entry);
-        // remove the section, if empty
-        if (reg_section.empty() ) {
-            m_Registry.erase(find_section);
         }
-    }
-
-    return true;
-}
-
-
-
-bool CNcbiRegistry::SetComment(const string& comment, const string& section,
-                               const string& name)
-{
-    CFastMutexGuard LOCK(s_RegMutex);
-
-    // If "section" is empty string, then set as the registry comment
-    string x_section = NStr::TruncateSpaces(section);
-    if (x_section == kEmptyStr) {
-        m_Comment = s_ConvertComment(comment, true);
-        m_Modified = true;
-        return true;
-    }
-
-    // Find section
-    TRegistry::iterator find_section = m_Registry.find(x_section);
-    if (find_section == m_Registry.end()) {
-        return false;
-    }
-    TRegSection& reg_section = find_section->second;
-
-    string x_name    = NStr::TruncateSpaces(name);
-    string x_comment = s_ConvertComment(comment);
-
-    // If "name" is empty string, then set as the "section" comment
-    if (name == kEmptyStr) {
-        TRegSection::iterator comm_entry = reg_section.find(kEmptyStr);
-        if (comm_entry != reg_section.end()) {
-            // replace old comment
-            comm_entry->second.comment = x_comment;
-            m_Modified = true;
+        // remove
+        TSections::iterator sit = m_Sections.find(section);
+        if (sit == m_Sections.end()) {
+            return false;
+        }
+        TEntries& entries = sit->second.entries;
+        TEntries::iterator eit = entries.find(name);
+        if (eit == entries.end()) {
+            return false;
         } else {
-            // new comment
-            x_SetValue(m_Registry[x_section][kEmptyStr],
-                       kEmptyStr, ePersistent, x_comment);
+            entries.erase(eit);
+            if (entries.empty()  &&  sit->second.comment.empty()) {
+                m_Sections.erase(sit);
+            }
+            return true;
         }
+    } else {
+        SEntry& entry = m_Sections[section].entries[name];
+#if 0
+        if (entry.value == value) {
+            if (entry.comment != comment) {
+                return MaybeSet(entry.comment, comment, flags);
+            }
+            return false; // not actually modified
+        }
+#endif
+        if (MaybeSet(entry.value, value, flags)) {
+            MaybeSet(entry.comment, comment, flags);
+            return true;
+        }
+        return false;
+    }
+}
+
+bool CMemoryRegistry::x_SetComment(const string& comment,
+                                   const string& section, const string& name,
+                                   TFlags flags)
+{
+    if (comment.empty()  &&  (flags & fNoOverride)) {
+        return false;
+    }
+    if (section.empty()) {
+        return MaybeSet(m_RegistryComment, comment, flags);
+    }
+    TSections::iterator sit = m_Sections.find(section);
+    if (sit == m_Sections.end()) {
+        if (comment.empty()) {
+            return false;
+        } else {
+            sit = m_Sections.insert(make_pair(section, SSection())).first;
+        }
+    }
+    TEntries& entries = sit->second.entries;
+    if (name.empty()) {
+        if (comment.empty()  &&  entries.empty()) {
+            m_Sections.erase(sit);
+            return true;
+        } else {
+            return MaybeSet(sit->second.comment, comment, flags);
+        }
+    }
+    TEntries::iterator eit = entries.find(name);
+    if (eit == entries.end()) {
+        return false;
+    } else {
+        return MaybeSet(eit->second.comment, comment, flags);
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+// CCompoundRegistry
+
+void CCompoundRegistry::Add(const IRegistry& reg, TPriority prio,
+                            const string& name)
+{
+    // Needed for some operations that touch (only) metadata...
+    IRegistry& nc_reg = const_cast<IRegistry&>(reg);
+    // XXX - Check whether reg is a duplicate, at least in debug mode?
+    m_PriorityMap.insert(make_pair(prio, CRef<IRegistry>(&nc_reg)));
+    if (name.size()) {
+        CRef<IRegistry>& preg = m_NameMap[name];
+        if (preg) {
+            NCBI_THROW2(CRegistryException, eErr,
+                        "CCompoundRegistry::Add: name " + name
+                        + " already in use", 0);
+        } else {
+            preg.Reset(&nc_reg);
+        }
+    }
+}
+
+void CCompoundRegistry::Remove(const IRegistry& reg)
+{
+    NON_CONST_ITERATE (TNameMap, it, m_NameMap) {
+        if (it->second == &reg) {
+            m_NameMap.erase(it);
+            break; // subregistries should be unique
+        }
+    }
+    NON_CONST_ITERATE (TPriorityMap, it, m_PriorityMap) {
+        if (it->second == &reg) {
+            m_PriorityMap.erase(it);
+            return; // subregistries should be unique
+        }
+    }
+    // already returned if found...
+    NCBI_THROW2(CRegistryException, eErr,
+                "CCompoundRegistry::Remove:"
+                " reg is not a (direct) subregistry of this.", 0);
+}
+
+CConstRef<IRegistry> CCompoundRegistry::FindByName(const string& name) const
+{
+    TNameMap::const_iterator it = m_NameMap.find(name);
+    return it == m_NameMap.end() ? CConstRef<IRegistry>() : it->second;
+}
+
+#define REV_ITERATE(Type, Var, Cont) \
+    for ( Type::const_reverse_iterator Var = (Cont).rbegin(), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
+
+CConstRef<IRegistry> CCompoundRegistry::FindByContents(const string& section,
+                                                       const string& entry,
+                                                       TFlags flags) const
+{
+    REV_ITERATE(TPriorityMap, it, m_PriorityMap) {
+        if (it->second->HasEntry(section, entry, flags & ~fJustCore)) {
+            return it->second;
+        }
+    }
+    return null;
+}
+
+bool CCompoundRegistry::x_Empty(TFlags flags) const
+{
+    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+        if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
+            break;
+        }
+        if ( !it->second->Empty(flags & ~fJustCore) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CCompoundRegistry::x_Modified(TFlags flags) const
+{
+    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+        if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
+            break;
+        }
+        if ( it->second->Modified(flags & ~fJustCore) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CCompoundRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
+{
+    _ASSERT( !modified );
+    for (TPriorityMap::reverse_iterator it = m_PriorityMap.rbegin();
+         it != m_PriorityMap.rend();  ++it) {
+        if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
+            break;
+        }
+        it->second->SetModifiedFlag(modified, flags & ~fJustCore);
+    }
+}
+
+const string& CCompoundRegistry::x_Get(const string& section,
+                                       const string& name,
+                                       TFlags flags) const
+{
+    CConstRef<IRegistry> reg = FindByContents(section, name,
+                                              flags & ~fJustCore);
+    return reg ? reg->Get(section, name, flags & ~fJustCore) : kEmptyStr;
+}
+
+bool CCompoundRegistry::x_HasEntry(const string& section, const string& name,
+                                   TFlags flags) const
+{
+    return FindByContents(section, name, flags);
+}
+
+const string& CCompoundRegistry::x_GetComment(const string& section,
+                                              const string& name, TFlags flags)
+    const
+{
+    if ( m_PriorityMap.empty() ) {
+        return kEmptyStr;
+    }
+
+    CConstRef<IRegistry> reg;
+    if (section.empty()) {
+        reg = m_PriorityMap.rbegin()->second;
+    } else {
+        reg = FindByContents(section, name, flags);
+    }
+    return reg ? reg->GetComment(section, name, flags & ~fJustCore)
+        : kEmptyStr;
+}
+
+void CCompoundRegistry::x_Enumerate(const string& section,
+                                    list<string>& entries, TFlags flags) const
+{
+    set<string> accum;
+    REV_ITERATE (TPriorityMap, it, m_PriorityMap) {
+        if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
+            break;
+        }
+        list<string> tmp;
+        it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
+        ITERATE (list<string>, it2, tmp) {
+            accum.insert(*it2);
+        }
+    }
+    ITERATE (set<string>, it, accum) {
+        entries.push_back(*it);
+    }
+}
+
+void CCompoundRegistry::x_ChildLockAction(FLockAction action)
+{
+    NON_CONST_ITERATE (TPriorityMap, it, m_PriorityMap) {
+        (it->second->*action)();
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//
+// CTwoLayerRegistry
+
+CTwoLayerRegistry::CTwoLayerRegistry(IRWRegistry* persistent)
+    : m_Transient(CRegRef(new CMemoryRegistry)),
+      m_Persistent(CRegRef(persistent ? persistent : new CMemoryRegistry))
+{
+}
+
+bool CTwoLayerRegistry::x_Empty(TFlags flags) const
+{
+    // mask out fTPFlags whe 
+    if (flags & fTransient  &&  !m_Transient->Empty(flags | fTPFlags) ) {
+        return false;
+    } else if (flags & fPersistent
+               &&  !m_Persistent->Empty(flags | fTPFlags) ) {
+        return false;
+    } else {
         return true;
     }
-
-    // This is an entry comment
-    _ASSERT( !reg_section.empty() );
-    TRegSection::iterator find_entry = reg_section.find(x_name);
-    if (find_entry == reg_section.end())
-        return false;
-
-    // (Re)set entry comment
-    find_entry->second.comment = x_comment;
-
-    m_Modified = true;
-    return true;
 }
 
-
-
-const string& CNcbiRegistry::GetComment(const string& section,
-                                        const string& name)
-    const
+bool CTwoLayerRegistry::x_Modified(TFlags flags) const
 {
-    CFastMutexGuard LOCK(s_RegMutex);
-
-    // If "section" is empty string, then get the registry's comment.
-    string x_section = NStr::TruncateSpaces(section);
-    if (x_section == kEmptyStr) {
-        return m_Comment;
-    }
-
-    // Find section
-    TRegistry::const_iterator find_section = m_Registry.find(x_section);
-    if (find_section == m_Registry.end()) {
-        return kEmptyStr;
-    }
-    const TRegSection& reg_section = find_section->second;
-
-    // If "name" is empty string, then get "section"'s comment.
-    string x_name = NStr::TruncateSpaces(name);
-    if (x_name == kEmptyStr) {
-        TRegSection::const_iterator comm_entry = reg_section.find(kEmptyStr);
-        if (comm_entry == reg_section.end()) {
-            return kEmptyStr;
-        }
-        return comm_entry->second.comment;
-    }
-
-    // Get "section:entry"'s comment
-    _ASSERT( !reg_section.empty() );
-    TRegSection::const_iterator find_entry = reg_section.find(x_name);
-    if (find_entry == reg_section.end()) {
-        return kEmptyStr;
-    }
-    return find_entry->second.comment;
-}
-
-
-
-void CNcbiRegistry::EnumerateSections(list<string>* sections)
-    const
-{
-    CFastMutexGuard LOCK(s_RegMutex);
-
-    sections->clear();
-    ITERATE (TRegistry, section, m_Registry) {
-        sections->push_back(section->first);
-    }
-}
-
-
-void CNcbiRegistry::EnumerateEntries(const string& section,
-                                     list<string>* entries)
-    const
-{
-    CFastMutexGuard LOCK(s_RegMutex);
-
-    entries->clear();
-
-    string x_section = NStr::TruncateSpaces(section);
-    if (x_section.empty())
-        return;
-
-    // find section
-    TRegistry::const_iterator find_section = m_Registry.find(x_section);
-    if (find_section == m_Registry.end())
-        return;
-
-    const TRegSection& reg_section = find_section->second;
-    _ASSERT( !reg_section.empty() );
-
-    // enumerate through the entries in the found section
-    ITERATE (TRegSection, entry, reg_section) {
-        if ( entry->first.empty() )
-            continue;  // skip section comment
-
-        entries->push_back(entry->first);
-    }
-}
-
-
-bool CNcbiRegistry::x_IsAllTransient(void)
-    const
-{
-    if ( !m_Comment.empty() ) {
+    if (flags & fTransient  &&  m_Transient->Modified(flags | fTPFlags)) {
+        return true;
+    } else if (flags & fPersistent
+               &&  m_Persistent->Modified(flags | fTPFlags)) {
+        return true;
+    } else {
         return false;
     }
+}
 
-    ITERATE (TRegistry, section, m_Registry) {
-        ITERATE (TRegSection, entry, section->second) {
-            if (section->first.empty()  || !entry->second.persistent.empty()) {
-                return false;  // section comment or non-transient entry
-            }
+void CTwoLayerRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
+{
+    if (flags & fTransient) {
+        m_Transient->SetModifiedFlag(modified, flags | fTPFlags);
+    }
+    if (flags & fPersistent) {
+        m_Persistent->SetModifiedFlag(modified, flags | fTPFlags);
+    }
+}
+
+const string& CTwoLayerRegistry::x_Get(const string& section,
+                                       const string& name, TFlags flags) const
+{
+    if ( !(flags & fPersistent) ) {
+        const string& result = m_Transient->Get(section, name,
+                                                flags & ~fTPFlags);
+        if ( !result.empty() ) {
+            return result;
         }
     }
+    return m_Persistent->Get(section, name, flags & ~fTPFlags);
+}
 
-    return true;
+bool CTwoLayerRegistry::x_HasEntry(const string& section, const string& name,
+                                   TFlags flags) const
+{
+    if ( !(flags & fPersistent)
+        &&  m_Transient->HasEntry(section, name, flags & ~fTPFlags) ) {
+        return true;
+    } else {
+        return m_Persistent->HasEntry(section, name, flags & ~fTPFlags);
+    }
+}
+
+const string& CTwoLayerRegistry::x_GetComment(const string& section,
+                                              const string& name,
+                                              TFlags flags) const
+{
+    if (flags & fTransient) {
+        const string& result = m_Transient->GetComment(section, name,
+                                                       flags & ~fTPFlags);
+        if ( !result.empty()  ||  !(flags & fPersistent) ) {
+            return result;
+        }
+    }
+    return m_Persistent->GetComment(section, name, flags & ~fTPFlags);
+}
+
+void CTwoLayerRegistry::x_Enumerate(const string& section,
+                                    list<string>& entries, TFlags flags) const
+{
+    switch (flags & fTPFlags) {
+    case fTransient:
+        m_Transient->EnumerateEntries(section, &entries, flags | fTPFlags);
+        break;
+    case fPersistent:
+        m_Persistent->EnumerateEntries(section, &entries, flags | fTPFlags);
+        break;
+    case fTPFlags:
+    {
+        list<string> tl, pl;
+        m_Transient ->EnumerateEntries(section, &tl, flags | fTPFlags);
+        m_Persistent->EnumerateEntries(section, &pl, flags | fTPFlags);
+        set_union(pl.begin(), pl.end(), tl.begin(), tl.end(),
+                  back_inserter(entries));
+        break;
+    }
+    default:
+        _TROUBLE;
+    }
+}
+
+void CTwoLayerRegistry::x_ChildLockAction(FLockAction action)
+{
+    (m_Transient->*action)();
+    (m_Persistent->*action)();
+}
+
+void CTwoLayerRegistry::x_Clear(TFlags flags)
+{
+    if (flags & fTransient) {
+        m_Transient->Clear(flags | fTPFlags);
+    }
+    if (flags & fPersistent) {
+        m_Persistent->Clear(flags | fTPFlags);
+    }
+}
+
+bool CTwoLayerRegistry::x_Set(const string& section, const string& name,
+                              const string& value, TFlags flags,
+                              const string& comment)
+{
+    if (flags & fPersistent) {
+        return m_Persistent->Set(section, name, value, flags & ~fTPFlags,
+                                 comment);
+    } else {
+        return m_Transient->Set(section, name, value, flags & ~fTPFlags,
+                                comment);
+    }
+}
+
+bool CTwoLayerRegistry::x_SetComment(const string& comment,
+                                     const string& section, const string& name,
+                                     TFlags flags)
+{
+    if (flags & fTransient) {
+        return m_Transient->SetComment(comment, section, name,
+                                       flags & ~fTPFlags);
+    } else {
+        return m_Persistent->SetComment(comment, section, name,
+                                        flags & ~fTPFlags);
+    }
 }
 
 
-void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
-                               TFlags flags, const string& comment)
+
+//////////////////////////////////////////////////////////////////////
+//
+// CNcbiRegistry -- mostly just a wrapper around a general-purpose setup
+
+const char kReservedName[] = "__MAIN__";
+
+CNcbiRegistry::CNcbiRegistry(void)
+    : m_MainRegistry(new CTwoLayerRegistry),
+      m_AllRegistries(new CCompoundRegistry)
 {
-    bool persistent = (flags & ePersistent) != 0;
+    m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
+    m_AllRegistries->Add(*m_MainRegistry, ePriority_Reserved, kReservedName);
+}
 
-    if ( persistent ) {
-        m_Modified = true;
+CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
+    : m_MainRegistry(new CTwoLayerRegistry),
+      m_AllRegistries(new CCompoundRegistry)
+{
+    x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags, fTransient);
+    m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
+    m_AllRegistries->Add(*m_MainRegistry, ePriority_Reserved, kReservedName);
+    Read(is, flags);
+}
+
+CNcbiRegistry::TPriority CNcbiRegistry::GetCoreCutoff(void)
+{
+    return m_AllRegistries->GetCoreCutoff();
+}
+
+void CNcbiRegistry::SetCoreCutoff(TPriority prio)
+{
+    m_AllRegistries->SetCoreCutoff(prio);
+}
+
+void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
+                        const string& name)
+{
+    if (name == kReservedName) {
+        NCBI_THROW2(CRegistryException, eErr,
+                    "The sub-registry name " + name + " is reserved.", 0);
     }
-
-    if ( !comment.empty() ) {
-        entry.comment = s_ConvertComment(comment);
+    if (prio >= ePriority_Reserved) {
+        ERR_POST(Warning
+                 << "Reserved priority value automatically downgraded.");
+        prio = ePriority_Max;
     }
+    m_AllRegistries->Add(reg, prio, name);
+}
 
-    string* to = persistent ? &entry.persistent : &entry.transient;
-
-    if ((flags & eTruncate) == 0  ||  value.empty()) {
-        *to = value;
-        return;
+void CNcbiRegistry::Remove(const IRegistry& reg)
+{
+    if (&reg == m_MainRegistry.GetPointer()) {
+        NCBI_THROW2(CRegistryException, eErr,
+                    "The primary portion of the registry may not be removed.",
+                    0);
+    } else {
+        m_AllRegistries->Remove(reg);
     }
+}
 
-    SIZE_TYPE beg;
-    for (beg = 0;
-         beg < value.length()  &&  isspace(value[beg])  &&  value[beg] != '\n';
-         beg++)
-        continue;
+CConstRef<IRegistry> CNcbiRegistry::FindByName(const string& name) const
+{
+    return m_AllRegistries->FindByName(name);
+}
 
-    if (beg == value.length()) {
-        to->erase();
-        return;
+CConstRef<IRegistry> CNcbiRegistry::FindByContents(const string& section,
+                                                   const string& entry,
+                                                   TFlags        flags) const
+{
+    return m_AllRegistries->FindByContents(section, entry, flags);
+}
+
+bool CNcbiRegistry::x_Empty(TFlags flags) const
+{
+    return m_AllRegistries->Empty(flags);
+}
+
+bool CNcbiRegistry::x_Modified(TFlags flags) const
+{
+    return m_AllRegistries->Modified(flags);
+}
+
+void CNcbiRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
+{
+    if (modified) {
+        m_MainRegistry->SetModifiedFlag(modified, flags);
+    } else {
+        // CCompoundRegistry only permits clearing...
+        m_AllRegistries->SetModifiedFlag(modified, flags);
     }
+}
 
-    SIZE_TYPE end;
-    for (end = value.length() - 1;
-         isspace(value[end])  &&  value[end] != '\n';
-         end--)
-        continue;
+const string& CNcbiRegistry::x_Get(const string& section, const string& name,
+                                   TFlags flags) const
+{
+    return m_AllRegistries->Get(section, name, flags);
+}
 
-    _ASSERT(beg <= end);
-    *to = value.substr(beg, end - beg + 1);
+bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
+                               TFlags flags) const
+{
+    return m_AllRegistries->HasEntry(section, name, flags);
+}
+
+const string& CNcbiRegistry::x_GetComment(const string& section,
+                                          const string& name,
+                                          TFlags flags) const
+{
+    return m_AllRegistries->GetComment(section, name, flags);
+}
+
+void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
+                                TFlags flags) const
+{
+    m_AllRegistries->EnumerateEntries(section, &entries, flags);
+}
+
+void CNcbiRegistry::x_ChildLockAction(FLockAction action)
+{
+    m_AllRegistries->x_ChildLockAction(action);
+}
+
+void CNcbiRegistry::x_Clear(TFlags flags)
+{
+    m_MainRegistry->Clear(flags);
+}
+
+bool CNcbiRegistry::x_Set(const string& section, const string& name,
+                          const string& value, TFlags flags,
+                          const string& comment)
+{
+    return m_MainRegistry->Set(section, name, value, flags, comment);
+}
+
+bool CNcbiRegistry::x_SetComment(const string& comment, const string& section,
+                                 const string& name, TFlags flags)
+{
+    return m_MainRegistry->SetComment(comment, section, name, flags);
 }
 
 
@@ -879,6 +1287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/12/20 15:28:34  ucko
+ * Extensively refactor, and add support for subregistries.
+ *
  * Revision 1.41  2004/07/28 18:59:53  kuznets
  * Fixed CNcbiRegistry::EnumerateEntries (added section name trim)
  *

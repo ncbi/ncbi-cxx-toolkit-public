@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Authors:  Denis Vakatov, Aaron Ucko
  *
  */
 
@@ -46,8 +46,9 @@
 /// C++ Toolkit documentation.
 
 
-#include <corelib/ncbistd.hpp>
-#include <list>
+#include <corelib/ncbi_limits.h>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <map>
 
 
@@ -60,11 +61,633 @@
 BEGIN_NCBI_SCOPE
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IRegistry --
+///
+/// Base class for organized configuration data.
+///
+/// Does not define a specific in-memory representation, just a
+/// read-only API and some convenience methods.
+
+class NCBI_XNCBI_EXPORT IRegistry : public CObject
+{
+public:
+    /// Flags controlling the behavior of registry methods.  Please note:
+    /// - Although CNcbiRegistry supports a full complement of layers, other
+    ///   derived classes may ignore some or all level-related flags.
+    /// - Most read-only operations consider all layers; the only exception
+    ///   is Write, which defaults to fPersistent and fJustCore.
+    enum EFlags {
+        fTransient   = 0x1,     ///< Transient -- not saved by default
+        fPersistent  = 0x100,   ///< Persistent -- saved when file is written
+        fOverride    = 0x2,     ///< Existing value can be overriden
+        fNoOverride  = 0x200,   ///< Cannot change existing value
+        fTruncate    = 0x4,     ///< Leading, trailing blanks can be truncated
+        fNoTruncate  = 0x400,   ///< Cannot truncate parameter value
+        fJustCore    = 0x8,     ///< Ignore auxiliary subregistries
+        fNotJustCore = 0x800,   ///< Include auxiliary subregistries
+        fAllLayers   = fTransient | fPersistent | fNotJustCore
+    };
+    typedef int TFlags;  ///< Binary OR of "EFlags"
+
+    /// Verify if Registry is empty.
+    /// @param flags
+    ///   Layer(s) to check.
+    /// @return
+    ///   TRUE if the registry contains no entries.
+    bool Empty(TFlags flags = fAllLayers) const;
+
+    /// Verify if persistent values have been modified.
+    /// @param flags
+    ///   Layer(s) to check.
+    /// @return
+    ///   TRUE if the relevant part(s) of the registry were modified since the
+    ///   last call to SetModifiedFlag(false).
+    bool Modified(TFlags flags = fPersistent) const;
+
+    /// Indicate whether any relevant values are out of sync with some
+    /// external resource (typically a configuration file).  You
+    /// should normally not need to call this explicitly.
+    /// @param flags
+    ///   Relevant layer(s).
+    void SetModifiedFlag(bool modified, TFlags flags = fPersistent);
+
+    /// Write the registry content to output stream.
+    /// @param os
+    ///   Output stream to write the registry to.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
+    /// @param flags
+    ///   Layer(s) to write.  By default, only persistent entries are
+    ///   written, and only entries from the core layer(s) are written.
+    /// @return
+    ///   TRUE if operation is successful.
+    /// @sa
+    ///   IRWRegistry::Read()
+    bool Write(CNcbiOstream& os, TFlags flags = 0) const;
+
+    /// Get the parameter value.
+    ///
+    /// Get the parameter with the specified "name" from the specified
+    /// "section".  First, search for the transient parameter value, and if
+    /// cannot find in there, then continue the search in the non-transient
+    /// parameters. If "fPersistent" flag is set in "flags", then don't
+    /// search in the transient parameters at all.
+    /// @param section
+    ///   Section name to search under (case-insensitive).
+    /// @param name
+    ///   Parameter name to search for (case-insensitive).
+    /// @param flags
+    ///   To control search.
+    /// @return
+    ///   The parameter value, or empty string if the parameter is not found.
+    /// @sa
+    ///   GetString()
+    const string& Get(const string& section,
+                      const string& name,
+                      TFlags        flags = 0) const;
+
+    bool HasEntry(const string& section,
+                  const string& name = kEmptyStr,
+                  TFlags        flags = 0) const;
+
+    /// Get the parameter string value.
+    ///
+    /// Similar to the "Get()", but if the configuration parameter is not
+    /// found, then return 'default_value' rather than empty string.
+    /// @sa
+    ///   Get()
+    const string& GetString(const string& section,
+                            const string& name,
+                            const string& default_value,
+                            TFlags        flags = 0) const;
+
+    /// What to do if parameter value is present but cannot be converted into
+    /// the requested type.
+    enum EErrAction {
+        eThrow,   ///< Throw an exception if an error occurs
+        eErrPost, ///< Log the error message and return default value
+        eReturn   ///< Return default value
+    };
+
+    /// Get integer value of specified parameter name.
+    ///
+    /// Like "GetString()", plus convert the value into integer.
+    /// @param err_action
+    ///   What to do if error encountered in converting parameter value.
+    /// @sa
+    ///   GetString()
+    int GetInt(const string& section,
+               const string& name,
+               int           default_value,
+               TFlags        flags      = 0,
+               EErrAction    err_action = eThrow) const;
+
+    /// Get boolean value of specified parameter name.
+    ///
+    /// Like "GetString()", plus convert the value into boolean.
+    /// @param err_action
+    ///   What to do if error encountered in converting parameter value.
+    /// @sa
+    ///   GetString()
+    bool GetBool(const string& section,
+                 const string& name,
+                 bool          default_value,
+                 TFlags        flags      = 0,
+                 EErrAction    err_action = eThrow) const;
+
+    /// Get double value of specified parameter name.
+    ///
+    /// Like "GetString()", plus convert the value into double.
+    /// @param err_action
+    ///   What to do if error encountered in converting parameter value.
+    /// @sa
+    ///   GetString()
+    double GetDouble(const string& section,
+                     const string& name,
+                     double        default_value,
+                     TFlags        flags = 0,
+                     EErrAction    err_action = eThrow) const;
+
+    /// Get comment of the registry entry "section:name".
+    ///
+    /// @param section
+    ///   Section name.
+    ///   If passed empty string, then get the registry comment.
+    /// @param name
+    ///   Parameter name.
+    ///   If empty string, then get the "section" comment.
+    /// @param flags
+    ///   To control search.
+    /// @return
+    ///   Comment string. If not found, return an empty string.
+    const string& GetComment(const string& section = kEmptyStr,
+                             const string& name    = kEmptyStr,
+                             TFlags        flags   = 0) const;
+
+    /// Enumerate section names.
+    ///
+    /// Write all section names to the "sections" list in
+    /// (case-insensitive) order.  Previous contents of the list are
+    /// erased.
+    /// @param flags
+    ///   To control search.
+    void EnumerateSections(list<string>* sections,
+                           TFlags        flags = fAllLayers) const;
+
+    /// Enumerate parameter names for a specified section.
+    ///
+    /// Write all parameter names for specified "section" to the "entries"
+    /// list in order.  Previous contents of the list are erased.  Enumerates
+    /// sections rather than entries if section is empty.
+    /// @param flags
+    ///   To control search.
+    void EnumerateEntries(const string& section,
+                          list<string>* entries,
+                          TFlags        flags = fAllLayers) const;
+
+    /// Support for locking.  Individual operations already use these
+    /// to ensure atomicity, but the locking mechanism is recursive,
+    /// so users can also make entire sequences of operations atomic.
+    void ReadLock (void);
+    void WriteLock(void);
+    void Unlock   (void);
+
+protected:
+    enum EMasks {
+        fLayerFlags = fAllLayers | fJustCore,
+        fTPFlags    = fTransient | fPersistent
+    };
+
+    static void x_CheckFlags(const string& func, TFlags& flags,
+                             TFlags allowed);
+    /// Implementations of the fundamental operations above, to be run with
+    /// the lock already acquired and some basic sanity checks performed.
+    virtual bool x_Empty(TFlags flags) const = 0;
+    virtual bool x_Modified(TFlags flags) const { return false; }
+    virtual void x_SetModifiedFlag(bool modified, TFlags flags) {}
+    virtual const string& x_Get(const string& section, const string& name,
+                                TFlags flags) const = 0;
+    virtual bool x_HasEntry(const string& section, const string& name,
+                            TFlags flags) const = 0;
+    virtual const string& x_GetComment(const string& section,
+                                       const string& name, TFlags flags)
+        const = 0;
+    // enumerate sections rather than entries if section is empty
+    virtual void x_Enumerate(const string& section, list<string>& entries,
+                             TFlags flags) const = 0;
+
+    typedef void (IRegistry::*FLockAction)(void);
+    virtual void x_ChildLockAction(FLockAction action) {}
+
+private:
+    mutable CRWLock m_Lock;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IRWRegistry --
+///
+/// Abstract subclass for modifiable registries.
+///
+/// To avoid confusion, all registry classes that support modification
+/// should inherit from this class.
+
+class NCBI_XNCBI_EXPORT IRWRegistry : public IRegistry
+{
+public:
+    /// Reset the registry content.
+    void Clear(TFlags flags = fAllLayers);
+
+    /// Read and parse the stream "is", and merge its content with current
+    /// Registry entries.
+    ///
+    /// Once the Registry has been initialized by the constructor, it is 
+    /// possible to load other parameters from other files using this method.
+    /// @param is
+    ///   Input stream to read and parse.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
+    /// @param flags
+    ///   How parameters are stored. The default is for all values to be read
+    ///   as persistent with the capability of overriding any previously
+    ///   loaded value associated with the same name. The default can be
+    ///   modified by specifying "fTransient", "fNoOverride" or 
+    ///   "fTransient | fNoOverride". If there is a conflict between the old
+    ///   and the new (loaded) entry value and if "fNoOverride" flag is set,
+    ///   then just ignore the new value; otherwise, replace the old value by
+    ///   the new one. If "fTransient" flag is set, then store the newly
+    ///   retrieved parameters as transient;  otherwise, store them as
+    ///   persistent.
+    /// @sa
+    ///   Write()
+    void Read(CNcbiIstream& is, TFlags flags = 0);
+
+    /// Set the configuration parameter value.
+    ///
+    /// Unset the parameter if specified "value" is empty.
+    ///
+    /// @param value
+    ///   Value that the parameter is set to.
+    /// @param flags
+    ///   To control search.
+    ///   Valid flags := { fPersistent, fNoOverride, fTruncate }
+    ///   If there was already an entry with the same <section,name> key:
+    ///     if "fNoOverride" flag is set then do not override old value
+    ///     and return FALSE;  else override the old value and return TRUE.
+    ///   If "fPersistent" flag is set then store the entry as persistent;
+    ///     else store it as transient.
+    ///   If "fTruncate" flag is set then truncate the leading and trailing
+    ///     spaces -- " \r\t\v" (NOTE:  '\n' is not considered a space!).
+    /// @param comment
+    ///   Optional comment string describing parameter.
+    /// @return
+    ///   TRUE if successful (including replacing a value with itself)
+    bool Set(const string& section,
+             const string& name,
+             const string& value,
+             TFlags        flags   = 0,
+             const string& comment = kEmptyStr);
+
+    /// Set comment "comment" for the registry entry "section:name".
+    ///
+    /// @param comment
+    ///   Comment string value.
+    ///   Set to kEmptyStr to delete the comment.
+    /// @param section
+    ///   Section name.
+    ///   If "section" is empty string, then set as the registry comment.
+    /// @param name
+    ///   Parameter name.
+    ///   If "name" is empty string, then set as the "section" comment.
+    /// @param flags
+    ///   How the comment is stored. The default is for comments to be
+    ///   stored as persistent with the capability of overriding any
+    ///   previously loaded value associated with the same name. The
+    ///   default can be modified by specifying "fTransient", "fNoOverride"
+    ///   or "fTransient | fNoOverride". If there is a conflict between the
+    ///   old and the new comment and if "fNoOverride" flag is set, then
+    ///   just ignore the new comment; otherwise, replace the old comment
+    ///   by the new one. If "fTransient" flag is set, then store the new
+    ///   comment as transient (generally not desired); otherwise, store it
+    ///   as persistent.
+    /// @return
+    ///   FALSE if "section" and/or "name" do not exist in registry.
+    bool SetComment(const string& comment,
+                    const string& section = kEmptyStr,
+                    const string& name    = kEmptyStr,
+                    TFlags        flags   = 0);
+
+
+protected:
+    /// Called locked, like the virtual methods inherited from IRegistry.
+    virtual void x_Clear(TFlags flags) = 0;
+    virtual bool x_Set(const string& section, const string& name,
+                       const string& value, TFlags flags,
+                       const string& comment) = 0;
+    virtual bool x_SetComment(const string& comment, const string& section,
+                              const string& name, TFlags flags) = 0;
+
+    // for use by implementations
+    static bool MaybeSet(string& target, const string& value, TFlags flags);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMemoryRegistry --
+///
+/// Straightforward monolithic modifiable registry.
+
+class NCBI_XNCBI_EXPORT CMemoryRegistry : public IRWRegistry
+{
+protected:
+    bool x_Empty(TFlags flags) const;
+    bool x_Modified(TFlags) const { return m_IsModified; }
+    void x_SetModifiedFlag(bool modified, TFlags) { m_IsModified = modified; }
+    const string& x_Get(const string& section, const string& name,
+                        TFlags flags) const;
+    bool x_HasEntry(const string& section, const string& name, TFlags flags)
+        const;
+    const string& x_GetComment(const string& section, const string& name,
+                               TFlags flags) const;
+    void x_Enumerate(const string& section, list<string>& entries,
+                     TFlags flags) const;
+
+    void x_Clear(TFlags flags);
+    bool x_Set(const string& section, const string& name,
+               const string& value, TFlags flags,
+               const string& comment);
+    bool x_SetComment(const string& comment, const string& section,
+                      const string& name, TFlags flags);
+
+private:
+    struct SEntry {
+        string value, comment;
+    };
+    typedef map<string, SEntry, PNocase> TEntries;
+    struct SSection {
+        string   comment;
+        TEntries entries;
+    };
+    typedef map<string, SSection, PNocase> TSections;
+
+    bool      m_IsModified;
+    string    m_RegistryComment;
+    TSections m_Sections;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCompoundRegistry --
+///
+/// Prioritized read-only collection of sub-registries.
+///
+/// @sa
+///  CTwoLayerRegistry
+
+class NCBI_XNCBI_EXPORT CCompoundRegistry : public IRegistry
+{
+public:
+    CCompoundRegistry(void) : m_CoreCutoff(ePriority_Default) { }
+
+    /// Priority for sub-registries; entries in higher-priority
+    /// sub-registries take precedence over (identically named) entries
+    /// in lower-priority ones.  Ties are broken arbitrarily.
+    enum EPriority {
+        ePriority_Min     = kMin_Int,
+        ePriority_Default = 0,
+        ePriority_Max     = kMax_Int
+    };
+    typedef int TPriority; ///< Not restricted to ePriority_*.
+
+    /// Non-empty names must be unique within each compound registry,
+    /// but there is no limit to the number of anonymous sub-registries.
+    /// Sub-registries themselves may not (directly) appear more than once.
+    void Add(const IRegistry& reg,
+             TPriority        prio = ePriority_Default,
+             const string&    name = kEmptyStr);
+
+    /// Remove sub-registry "reg".
+    /// Throw an exception if "reg" is not a (direct) sub-registry.
+    void Remove(const IRegistry& reg);
+
+    /// Subregistries whose priority is less than the core cutoff
+    /// (ePriority_Default by default) will be ignored for fJustCore
+    /// operations, such as Write by default.
+    TPriority GetCoreCutoff(void)           { return m_CoreCutoff; }
+    void      SetCoreCutoff(TPriority prio) { m_CoreCutoff = prio; }
+
+    /// Return a pointer to the sub-registry with the given name, or
+    /// NULL if not found.
+    CConstRef<IRegistry> FindByName(const string& name) const;
+
+    /// Return a pointer to the highest-priority sub-registry with a
+    /// section named SECTION containing (if ENTRY is non-empty) an entry
+    /// named ENTRY, or NULL if not found.
+    CConstRef<IRegistry> FindByContents(const string& section,
+                                        const string& entry = kEmptyStr,
+                                        TFlags        flags = 0) const;
+
+    // allow enumerating sub-registries?
+
+protected:    
+    // virtual methods of IRegistry
+
+    /// True iff all sub-registries are empty
+    bool x_Empty(TFlags flags) const;
+
+    /// True iff any sub-registry is modified
+    bool x_Modified(TFlags flags) const;
+    void x_SetModifiedFlag(bool modified, TFlags flags);
+    const string& x_Get(const string& section, const string& name,
+                        TFlags flags) const;
+    bool x_HasEntry(const string& section, const string& name, TFlags flags)
+        const;
+    const string& x_GetComment(const string& section, const string& name,
+                               TFlags flags) const;
+    void x_Enumerate(const string& section, list<string>& entries,
+                     TFlags flags) const;
+    void x_ChildLockAction(FLockAction action);
+
+private:
+    typedef multimap<TPriority, CRef<IRegistry> > TPriorityMap;
+    typedef map<string, CRef<IRegistry> >         TNameMap;
+
+    TPriorityMap m_PriorityMap; 
+    TNameMap     m_NameMap;     ///< excludes anonymous sub-registries
+    TPriority    m_CoreCutoff;
+
+    friend class CNcbiRegistry;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CTwoLayerRegistry --
+///
+/// Limited to two direct layers (transient above persistent), but
+/// supports modification.
+///
+/// @sa
+///  CCompoundRegistry
+
+class NCBI_XNCBI_EXPORT CTwoLayerRegistry : public IRWRegistry
+{
+public:
+    /// Constructor.  The transient layer is always a new memory registry,
+    /// and so is the persistent layer by default.
+    CTwoLayerRegistry(IRWRegistry* persistent = 0);
+
+protected:
+    bool x_Empty(TFlags flags) const;
+    bool x_Modified(TFlags flags) const;
+    void x_SetModifiedFlag(bool modified, TFlags flags);
+    const string& x_Get(const string& section, const string& name,
+                        TFlags flags) const;
+    bool x_HasEntry(const string& section, const string& name,
+                    TFlags flags) const;
+    const string& x_GetComment(const string& section, const string& name,
+                               TFlags flags)
+        const;
+    void x_Enumerate(const string& section, list<string>& entries,
+                     TFlags flags) const;
+    void x_ChildLockAction(FLockAction action);
+
+    void x_Clear(TFlags flags);
+    bool x_Set(const string& section, const string& name,
+               const string& value, TFlags flags,
+               const string& comment);
+    bool x_SetComment(const string& comment, const string& section,
+                      const string& name, TFlags flags);
+
+private:
+    typedef CRef<IRWRegistry> CRegRef;
+    CRegRef m_Transient;
+    CRegRef m_Persistent;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNcbiRegistry --
+///
+/// Define the Registry.
+///
+/// Load, access, modify and store runtime information (usually used
+/// to work with configuration files).  Consists of a compound
+/// registry whose top layer is a two-layer registry; all writes go to
+/// the two-layer registry.
+
+class NCBI_XNCBI_EXPORT CNcbiRegistry : public IRWRegistry
+{
+public:
+    enum ECompatFlags {
+        eTransient   = fTransient,
+        ePersistent  = fPersistent,
+        eOverride    = fOverride,
+        eNoOverride  = fNoOverride,
+        eTruncate    = fTruncate,
+        eNoTruncate  = fNoTruncate
+    };
+
+    /// Constructor.
+    CNcbiRegistry(void);
+
+    /// Constructor.
+    ///
+    /// @param is
+    ///   Input stream to load the Registry from.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
+    /// @param flags
+    ///   How parameters are stored. The default is to store all parameters as
+    ///   persistent unless the  "eTransient" flag is set in which case the
+    ///   newly retrieved parameters are stored as transient.
+    /// @sa
+    ///   Read()
+    CNcbiRegistry(CNcbiIstream& is, TFlags flags = 0);
+
+    // The below interfaces provide access to the embedded compound registry.
+
+    /// Priority for sub-registries; entries in higher-priority
+    /// sub-registries take precedence over (identically named) entries
+    /// in lower-priority ones.  Ties are broken arbitrarily.
+    enum EPriority {
+        ePriority_Min      = CCompoundRegistry::ePriority_Min,
+        ePriority_Default  = CCompoundRegistry::ePriority_Default,
+        ePriority_Max      = CCompoundRegistry::ePriority_Max - 1,
+        ePriority_Reserved = CCompoundRegistry::ePriority_Max
+    };
+    typedef int TPriority; ///< Not restricted to ePriority_*.
+
+    /// Subregistries whose priority is less than the core cutoff
+    /// (ePriority_Reserved by default) will be ignored for fJustCore
+    /// operations, such as Write by default.
+    TPriority GetCoreCutoff(void);
+    void      SetCoreCutoff(TPriority prio);
+
+    /// Non-empty names must be unique within each compound registry,
+    /// but there is no limit to the number of anonymous sub-registries.
+    /// Sub-registries themselves may not (directly) appear more than once.
+    void Add(const IRegistry& reg,
+             TPriority        prio = ePriority_Default,
+             const string&    name = kEmptyStr);
+
+    /// Remove sub-registry "reg".
+    /// Throw an exception if "reg" is not a (direct) sub-registry.
+    void Remove(const IRegistry& reg);
+
+    /// Return a pointer to the sub-registry with the given name, or
+    /// NULL if not found.
+    CConstRef<IRegistry> FindByName(const string& name) const;
+
+    /// Return a pointer to the highest-priority sub-registry with a
+    /// section named SECTION containing (if ENTRY is non-empty) an entry
+    /// named ENTRY, or NULL if not found.
+    CConstRef<IRegistry> FindByContents(const string& section,
+                                        const string& entry = kEmptyStr,
+                                        TFlags        flags = 0) const;
+
+protected:
+    bool x_Empty(TFlags flags) const;
+    bool x_Modified(TFlags flags) const;
+    void x_SetModifiedFlag(bool modified, TFlags flags);
+    const string& x_Get(const string& section, const string& name,
+                        TFlags flags) const;
+    bool x_HasEntry(const string& section, const string& name,
+                    TFlags flags) const;
+    const string& x_GetComment(const string& section, const string& name,
+                               TFlags flags) const;
+    void x_Enumerate(const string& section, list<string>& entries,
+                     TFlags flags) const;
+    void x_ChildLockAction(FLockAction action);
+
+    void x_Clear(TFlags flags);
+    bool x_Set(const string& section, const string& name,
+               const string& value, TFlags flags,
+               const string& comment);
+    bool x_SetComment(const string& comment, const string& section,
+                      const string& name, TFlags flags);
+
+private:
+    CRef<CTwoLayerRegistry> m_MainRegistry;
+    CRef<CCompoundRegistry> m_AllRegistries;
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CRegistryException --
 ///
-/// Define exceptions generated by CNcbiRegistry.
+/// Define exceptions generated by IRegistry and derived classes.
 ///
 /// CRegistryException inherits its basic functionality from
 /// CCParseTemplException<CCoreException> and defines additional error codes
@@ -103,275 +726,21 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CNcbiRegistry --
+/// CRegistry{Read,Write}Guard --
 ///
-/// Define the Registry.
-///
-/// Load, access, modify and store runtime information (usually used to
-/// work with configuration files).
+/// Guard classes to ensure one-thread-at-a-time access to registries.
 
-class NCBI_XNCBI_EXPORT CNcbiRegistry
+class NCBI_XNCBI_EXPORT CRegistryReadGuard
+    : public CGuard<IRegistry, SSimpleReadLock<IRegistry> >
 {
 public:
-    /// Registry parameter settings.
-    ///
-    /// A Registry parameter can be either transient or persistent,
-    /// overridable or not overridable, truncatable or not truncatable.
-    enum EFlags {
-        eTransient   = 0x1,     ///< Transient -- Wont be saved (by Write())
-        ePersistent  = 0x100,   ///< Persistent -- Saved when file is written
-        eOverride    = 0x2,     ///< Existing value can be overriden
-        eNoOverride  = 0x200,   ///< Cannot change existing value
-        eTruncate    = 0x4,     ///< Leading, trailing blanks can be truncated
-        eNoTruncate  = 0x400    ///< Cannot truncate parameter value
-    };
-    typedef int TFlags;  ///< Binary OR of "EFlags"
-
-    /// Constructor.
-    CNcbiRegistry(void);
-
-    /// Destructor.
-    ~CNcbiRegistry(void);
-
-    /// Constructor.
-    ///
-    /// @param is
-    ///   Input stream to load the Registry from.
-    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
-    /// @param flags
-    ///   How parameters are stored. The default is to store all parameters as
-    ///   persistent unless the  "eTransient" flag is set in which case the
-    ///   newly retrieved parameters is stored as transient.
-    /// @sa
-    ///   Read()
-    CNcbiRegistry(CNcbiIstream& is, TFlags flags = 0); 
-
-    /// Verify if Registry is empty.
-    ///
-    /// @return
-    ///   TRUE if the registry contains no entries.
-    bool Empty(void) const;
-
-    /// Verify if persistent values have been modified.
-    ///
-    /// @return
-    ///   TRUE if the persistent part of the registry (i.e. persistent
-    ///   value(s) and the all-registry comment) was modified since:
-    ///   - the last successful Write(), or
-    ///   - the registry creation and maybe immediate read after the creation.
-    bool Modified(void) const;
-
-    /// Read and parse the stream "is", and merge its content with current
-    /// Registry entries.
-    ///
-    /// Once the Registry has been initialized by the constructor, it is 
-    /// possible to load other parameters from other files using this method.
-    /// @param is
-    ///   Input stream to read and parse.
-    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
-    /// @param flags
-    ///   How parameters are stored. The default is for all values to be read
-    ///   as persistent with the capability of overriding any previously
-    ///   loaded value associated with the same name. The default can be
-    ///   modified by specifying "eTransient", "eNoOverride" or 
-    ///   "eTransient | eNoOverride". If there is a conflict between the old
-    ///   and the new(loaded) entry value and if "eNoOverride" flag is set,
-    ///   then just ignore the new value; otherwise, replace the old value by
-    ///   the new one. If "eTransient" flag is set, then store the newly
-    ///   retrieved parameters as transient;  otherwise, store them as
-    ///   persistent.
-    /// @sa
-    ///   Write()
-    void Read(CNcbiIstream& is, TFlags flags = 0);
-
-    /// Write the registry content to output stream.
-    /// @param os
-    ///   Output stream to write the registry to.
-    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
-    /// @return
-    ///   TRUE if operation is successful.
-    /// @sa
-    ///   Read()
-    bool Write(CNcbiOstream& os) const;
-
-    /// Reset the registry content.
-    void Clear(void);
-
-    /// Get the parameter value.
-    ///
-    /// Get the parameter with the specified "name" from the specified 
-    /// "section".  First, search for the transient parameter value, and if
-    /// cannot find in there, then continue the search in the non-transient
-    /// paramters. If "ePersistent" flag is set in "flags", then don't search
-    /// in the transient transient parameters at all.
-    /// @param section
-    ///   Section name to search under.
-    /// @param name
-    ///   Parameter name to search for.
-    /// @param flags
-    ///   To control search.
-    /// @return
-    ///   The parameter value, or empty string if the parameter is not found.
-    /// @sa
-    ///   GetString()
-    const string& Get(const string& section, const string& name,
-                      TFlags flags = 0) const;
-
-    /// Get the parameter string value.
-    ///
-    /// Similar to the "Get()", but if the configuration parameter is not
-    /// found, then return 'default_value' rather than empty string.
-    /// @sa
-    ///   Get()
-    const string GetString(const string& section, const string& name,
-                           const string& default_value, TFlags flags = 0)
-        const;
-
-    /// What to do if parameter value is present but cannot be converted into
-    /// the requested type.
-    enum EErrAction {
-        eThrow,   ///< Throw an exception if an error occurs
-        eErrPost, ///< Log the error message and return default value
-        eReturn   ///< Return default value
-    };
-
-    /// Get integer value of specified parameter name.
-    ///
-    /// Like "GetString()", plus convert the value into integer.
-    /// @param err_action
-    ///   What to do if error encountered in converting parameter value.
-    /// @sa
-    ///   GetString()
-    int GetInt(const string& section, const string& name,
-               int default_value, TFlags flags = 0,
-               EErrAction err_action = eThrow) const;
-
-    /// Get boolean value of specified parameter name.
-    ///
-    /// Like "GetString()", plus convert the value into boolean.
-    /// @param err_action
-    ///   What to do if error encountered in converting parameter value.
-    /// @sa
-    ///   GetString()
-    bool GetBool(const string& section, const string& name,
-                 bool default_value,  TFlags flags = 0,
-                 EErrAction err_action = eThrow) const;
-
-    /// Get double value of specified parameter name.
-    ///
-    /// Like "GetString()", plus convert the value into double.
-    /// @param err_action
-    ///   What to do if error encountered in converting parameter value.
-    /// @sa
-    ///   GetString()
-    double GetDouble(const string& section, const string& name,
-                     double default_value, TFlags flags = 0,
-                     EErrAction err_action = eThrow) const;
-
-    /// Set the configuration parameter value.
-    ///
-    /// Unset the parameter if specified "value" is empty.
-    ///
-    /// @param value
-    ///   Value that the parameter is set to.
-    /// @param flags
-    ///   To control search.
-    ///   Valid flags := { ePersistent, eNoOverride, eTruncate }
-    ///   If there was already an entry with the same <section,name> key:
-    ///     if "eNoOverride" flag is set then do not override old value
-    ///     and return FALSE;  else override the old value and return TRUE.
-    ///   If "ePersistent" flag is set then store the entry as persistent;
-    ///     else store it as transient.
-    ///   If "eTruncate" flag is set then truncate the leading and trailing
-    ///     spaces -- " \r\t\v" (NOTE:  '\n' is not considered a space!).
-    /// @param comment
-    ///   Optional comment string describing parameter.
-    /// @return
-    ///   TRUE if specified parameter is set; FALSE otherwise.
-    bool Set(const string& section, const string& name, const string& value,
-             TFlags flags = 0, const string& comment = kEmptyStr);
-
-    /// Set comment "comment" for the registry entry "section:name".
-    ///
-    /// @param comment
-    ///   Comment string value.
-    ///   Set to kEmptyStr to delete the comment.
-    /// @param section
-    ///   Section name.
-    ///   If "section" is empty string, then set as the registry comment.
-    /// @param name
-    ///   Parameter name.
-    ///   If "name" is empty string, then set as the "section" comment.
-    /// @return
-    ///   FALSE if "section" and/or "name" do not exist in registry.
-    bool SetComment(const string& comment,
-                    const string& section = kEmptyStr,
-                    const string& name    = kEmptyStr);
-
-    /// Get comment of the registry entry "section:name".
-    ///
-    /// @param section
-    ///   Section name.
-    ///   If passed empty string, then get the registry comment.
-    /// @param name
-    ///   Parameter name.
-    ///   If empty string, then get the "section" comment.
-    /// @return
-    ///   Comment string. If not found, return an empty string.
-    const string& GetComment(const string& section = kEmptyStr,
-                             const string& name    = kEmptyStr) const;
-
-    /// Enumerate section names.
-    ///
-    /// Write all section names to the "sections" list.
-    /// Previous contents of the list are erased.
-    void EnumerateSections(list<string>* sections) const;
-
-    /// Enumerate parameter names for a specfiied section.
-    ///
-    /// Write all parameter names for specified "section" to the "entries"
-    /// list. Previous contents of the list are erased.
-    void EnumerateEntries(const string& section, list<string>* entries) const;
-
-private:
-    /// Hold values for Registry entry.
-    struct TRegEntry {
-        string persistent;  ///< Non-transient value
-        string transient;   ///< Transient value
-        string comment;     ///< Entry's comment string
-    };
-
-    /// Define Registry section as a map of entry parameter names
-    /// and the parameter values.
-    typedef map<string, TRegEntry,   PNocase>  TRegSection; 
-
-    /// Define Registry as a map of section names and section
-    /// values (TRegSection).
-    typedef map<string, TRegSection, PNocase>  TRegistry;
-
-    TRegistry    m_Registry;  ///< Internal representation of registry.
-
-    string       m_Comment;   ///< All-registry comment
-
-    mutable bool m_Modified;  ///< Persistent value(s) changed
-    mutable bool m_Written;   ///< Method Write() was called at least once
-
-
-    /// Helper method to set registry entry value and comment string.
-    void x_SetValue(TRegEntry& entry, const string& value,
-                    TFlags flags, const string& comment);
-
-    /// Helper method to check if the registry contains only transient entries
-    /// and comments.
-    bool x_IsAllTransient(void) const;
-
-    /// Private copy constructor to prohibit default intitialization.
-    CNcbiRegistry(const CNcbiRegistry&);
-
-    /// Private assignment operator to prohibit default assignment.
-    CNcbiRegistry& operator= (const CNcbiRegistry&);
+    typedef CGuard<IRegistry, SSimpleReadLock<IRegistry> > TParent;
+    CRegistryReadGuard(const IRegistry& reg)
+        : TParent(const_cast<IRegistry&>(reg))
+        { }
 };
 
+typedef CGuard<IRegistry, SSimpleWriteLock<IRegistry> > CRegistryWriteGuard;
 
 END_NCBI_SCOPE
 
@@ -382,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/12/20 15:28:26  ucko
+ * Extensively refactor, and add support for subregistries.
+ *
  * Revision 1.33  2004/08/19 13:01:51  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *
