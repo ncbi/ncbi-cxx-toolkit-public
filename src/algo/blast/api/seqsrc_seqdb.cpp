@@ -259,13 +259,7 @@ static ListNode* SeqDbGetSeqId(void* seqdb_handle, void* args)
  */
 static char* SeqDbGetSeqIdStr(void* seqdb_handle, void* args)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
-    Int4* oid = (Int4*) args;
-
-    ASSERT(seqdb);
-    ASSERT(oid);
-
-    char* seqid_str;
+    char* seqid_str = NULL;
     ListNode* seqid_wrap = NULL;
 
     seqid_wrap = SeqDbGetSeqId(seqdb_handle, args);
@@ -470,6 +464,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/05/19 15:26:47  dondosha
+ * Removed unused variables
+ *
  * Revision 1.8  2004/05/17 18:11:15  dondosha
  * Minor: eliminates strict compiler warning
  *
