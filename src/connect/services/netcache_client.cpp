@@ -193,7 +193,7 @@ void CNetCacheClient::CreateSocket(const string& hostname,
     m_OwnSocket = eTakeOwnership;
 }
 
-void CNetCacheClient::CheckConnect(const string key)
+void CNetCacheClient::CheckConnect(const string& key)
 {
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
         return; // we are connected, nothing to do
@@ -451,6 +451,8 @@ CNetCacheClient::GetData(const string&  key,
 
 void CNetCacheClient::ShutdownServer()
 {
+    CheckConnect(kEmptyStr);
+
     SendClientName();
 
     const char command[] = "SHUTDOWN";
@@ -520,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/11/04 21:50:42  kuznets
+ * CheckConnect() in Shutdown()
+ *
  * Revision 1.17  2004/11/02 17:30:15  kuznets
  * Implemented reconnection mode and no-default server mode
  *
