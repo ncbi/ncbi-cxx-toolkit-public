@@ -35,6 +35,12 @@
 #include <corelib/ncbistd.hpp>
 
 
+/** @addtogroup Exception
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -150,9 +156,15 @@ public:
 END_NCBI_SCOPE
 
 
+//* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/03/31 16:40:07  siyan
+ * Added doxygen support
+ *
  * Revision 1.6  2003/02/24 19:54:52  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *

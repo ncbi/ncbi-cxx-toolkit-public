@@ -150,6 +150,13 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
     return e;
 }
 
+
+/** @addtogroup Exception
+ *
+ * @{
+ */
+
+
 // Example:  RETHROW_TRACE;
 #  define RETHROW_TRACE do { \
     _TRACE("EXCEPTION: re-throw"); \
@@ -206,6 +213,10 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
     throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
         exception_class exception_args, #exception_class)
 
+
+/* @} */
+
+
 #else  /* _DEBUG */
 
 #  define RETHROW_TRACE \
@@ -230,6 +241,12 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
     throw exception_class exception_args
 
 #endif  /* else!_DEBUG */
+
+
+/** @addtogroup Exception
+ *
+ * @{
+ */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -444,6 +461,7 @@ public: \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
 
+
 // GCC compiler v.2.95 has a bug:
 // one should not use virtual base class in exception declarations -
 // a program crashes when deleting such an exception
@@ -460,6 +478,7 @@ public: \
 #else
 #  define EXCEPTION_VIRTUAL_BASE virtual
 #endif
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -711,9 +730,15 @@ public: \
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2003/03/31 16:40:21  siyan
+ * Added doxygen support
+ *
  * Revision 1.41  2003/02/24 19:54:52  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
