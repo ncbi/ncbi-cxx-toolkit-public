@@ -86,12 +86,12 @@ public:
     /// Return a specified DB xref.  This will find the *first* item in the
     /// given referenced database.  If no item is found, an empty CConstRef<>
     /// is returned.
-    CConstRef<CDbtag> GetNamedDbxref(const string& db);
+    CConstRef<CDbtag> GetNamedDbxref(const string& db) const;
 
     /// Return a named qualifier.  This will return the first item matching the
     /// qualifier name.  If no such qualifier is found, an empty string is
     /// returned.
-    string GetNamedQual(const string& qual_name);
+    string GetNamedQual(const string& qual_name) const;
 
     /// Optional locations are used for features with locations
     /// re-mapped to a master sequence
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2004/10/12 13:36:56  dicuccio
+* GetNamedDbxref() / GetNamedQual(): made const
+*
 * Revision 1.17  2004/10/04 17:20:45  dicuccio
 * Doxygen-ated comments.  Added GetNamedDbxref() / GetNamedQual()
 *
