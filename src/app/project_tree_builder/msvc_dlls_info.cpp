@@ -252,6 +252,18 @@ static void s_InitalizeDllProj(const string&                  dll_id,
 
 static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
 {
+    // If this library is available as a third-party,
+    // then we'll require it
+    if (GetApp().GetSite().GetChoiceForLib(lib.m_ID) 
+                                                   == CMsvcSite::e3PartyLib ) {
+        CMsvcSite::SLibChoice choice = 
+            GetApp().GetSite().GetLibChoiceForLib(lib.m_ID);
+        dll->m_Requires.push_back(choice.m_3PartyLib);
+        dll->m_Requires.sort();
+        dll->m_Requires.unique();
+        return;
+    }
+
     CMsvcPrjProjectContext lib_context(lib);
     CMsvcPrjFilesCollector collector(lib_context, lib);
     // Sources - all pathes are relative to one dll->m_SourcesBaseDir
@@ -533,6 +545,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/06/01 16:05:40  gorelenk
+ * Changed implementation of s_AddProjItemToDll : added conditional branch for
+ * processing lib_choice when library to add is available as a third-party .
+ *
  * Revision 1.16  2004/05/26 17:58:03  gorelenk
  * Changed implementation of s_AddProjItemToDll - added registration of
  * inline source files.
