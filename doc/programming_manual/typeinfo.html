@@ -304,28 +304,30 @@ calls the appropriate <i>GetPrimitiveValueXxx()</i> method depending on the bran
         }
 </pre></font>
 
-Data member and choice variant iterator methods are also defined in the <i>CConstObjectInfo</i> class, with 
-a similar interface to that found in the <i>CObjectTypeInfo</i> class. In this case however, the dereferencing
-operators return a <i>CConstObjectInfo</i> object - <i>not</i> a <i>CObjectTypeInfo()</i> object - for
-the current member or choice variant. The names of these member functions are:
+Member iterator methods are also defined in the <i>CConstObjectInfo</i> class, with a similar
+interface to that found in the <i>CObjectTypeInfo</i> class. In this case however, the dereferencing
+operators return a <i>CConstObjectInfo</i> object - <i>not</i> a <i>CObjectTypeInfo()</i> object -
+for the current member. For C++ <i>class</i> objects, these member functions are:
 
-<ul><li> For C++ <i>class</i> objects:
     <ul><li><i> CMemberIterator BeginMembers(void) const;</i>
 	<li><i> CMemberIterator FindClassMember(const string& memberName) const;</i>
 	<li><i> CMemberIterator FindClassMemberByTag(int memberTag) const;</i></ul>
 
-    <li> For C++ <i>choice</i> objects:
-    <ul><li><i> TMemberIndex GetCurrentChoiceVariantIndex(void) const;</i>
-        <li><i> CChoiceVariant GetCurrentChoiceVariant(void) const;</i></ul>
-</ul>
-Similarly, for <i>pointer</i> type objects, the type returned by the method <i>GetPointedObject()</i>
-is also a <i>CConstObjectInfo</i> for the object - not a <i>CObjectTypeInfo</i> object.<p>
+For C++ <i>choice</i> objects, only one variant is ever selected, and only that choice variant is
+instantiated. As it does not make sense to define a <i>CConstObjectInfo iterator</i> for
+uninstantiated variants, the method <i>GetCurrentChoiceVariant()</i> is provided instead.  The
+dereferencing operator (*) can be applied to the object returned by this method to obtain a
+<i>CConstObjectInfo</i> for the variant. Of course, type information for unselected variants can
+still be accessed using the <i>CObjectTypeInfo</i> methods.<p>
 
-The <i>CConstObjectInfo</i> class also defines an <i>element</i> iterator for container 
-type objects. Like other bidirectional iterators, the <i>CElementIterator</i> interface
-includes increment, decrement, testing, and dereferencing operators. In this case, the
-dereferencing operator (*) returns an STL <i>pair&lt;const void*, const CTypeInfo*></i> that
-references the current element.
+The <i>CConstObjectInfo</i> class also defines an <i>element</i> iterator for container type
+objects. Like other bidirectional iterators, the <i>CElementIterator</i> interface includes
+increment, decrement, testing, and dereferencing operators. In this case, the dereferencing operator
+(*) returns an STL <i>pair&lt;const void*, const CTypeInfo*></i> that references the current
+element.<p>
+
+Finally, for <i>pointer</i> type objects, the type returned by the method <i>GetPointedObject()</i>
+is also a <i>CConstObjectInfo</i> for the object - not a <i>CObjectTypeInfo</i> object.<p>
 
 <p>
 <a name= "objinfo"> 
