@@ -41,6 +41,7 @@
 #include <time.h>
 #include <string>
 #include <list>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -270,6 +271,13 @@ public:
     static list<string>& Split(const string& str,
                                const string& delim,
                                list<string>& arr);
+                               
+    /// Tokenize string "str" using symbols from "delim" as delimeters
+    /// Add the resultant tokens to the vector "arr". Return reference on "arr".
+    /// When delimiter is empty the input string appended to "arr" as is
+    static vector<string> Tokenize(const string& str,
+                                   const string& delim,
+                                   vector<string>& arr);
 
     /// Join the strings in "arr" into a single string, separating
     /// each pair with "delim".
@@ -706,6 +714,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2003/01/14 21:16:12  kuznets
+ * +NStr::Tokenize
+ *
  * Revision 1.31  2003/01/10 22:15:56  kuznets
  * Working on String2Int8
  *
