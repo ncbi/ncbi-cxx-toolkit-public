@@ -98,9 +98,13 @@ void CAlnMrgApp::Init(void)
 
     arg_desc->AddDefaultKey
         ("asnout", "asn_out_file_name",
-         "ASN output",
-         CArgDescriptions::eOutputFile, "-",
-         CArgDescriptions::fPreOpen);
+         "Text ASN output",
+         CArgDescriptions::eOutputFile, "-");
+
+    arg_desc->AddOptionalKey
+        ("asnoutb", "asn_out_file_name_b",
+         "Text ASN output, to a file opened in binary mode (for MS-Win tests)",
+         CArgDescriptions::eOutputFile, CArgDescriptions::fBinary);
 
     arg_desc->AddDefaultKey
         ("b", "bin_obj_type",
@@ -360,8 +364,10 @@ void CAlnMrgApp::PrintMergedAlignment(void)
 {
     const CArgs& args = GetArgs();
     auto_ptr<CObjectOStream> asn_out 
-        (CObjectOStream::Open(eSerial_AsnText,
-                              args["asnout"].AsOutputFile()));
+        (CObjectOStream::Open
+         (eSerial_AsnText,
+          args["asnoutb"] ?
+          args["asnoutb"].AsOutputFile() : args["asnout"].AsOutputFile()));
 
     *asn_out << m_Mix->GetDenseg();
 }
@@ -455,6 +461,12 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2004/09/28 00:53:29  vakatov
+* Added -asnoutb key to be able to use it in the place of -asnout when we
+* want to open output file in "binary" mode. This is to work around our
+* Win-specific testsuite glitch -- it checks out the test data files on UNIX,
+* so with UNIX EOLs.
+*
 * Revision 1.27  2004/09/22 21:21:42  todorov
 * - CArgDescriptions::fPreOpen
 *
