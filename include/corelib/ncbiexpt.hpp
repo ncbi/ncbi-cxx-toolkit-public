@@ -28,12 +28,16 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *   NCBI C++ exception handling
- *   Includes auxiliary ad hoc macros to "catch" and macros
- *   for the C++ exception specification
  *
  */
+
+/// @file ncbiexpt.hpp
+/// Defines NCBI C++ exception handling.
+///
+/// Contains support for the NCBI C++ exception handling mechanisms and
+/// auxiliary ad hoc macros to "catch" certain types of errors, and macros for
+/// the C++ exception specification.
+
 
 #include <corelib/ncbidiag.hpp>
 #include <errno.h>
@@ -43,14 +47,19 @@
 #include <typeinfo>
 
 
+/** @addtogroup Exception
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
-
-/////////////////////////////////////////////////////////////////////////////
-// The use of C++ exception specification mechanism, like:
-//   "f(void) throw();"       <==  "f(void) THROWS_NONE;"
-//   "g(void) throw(e1,e2);"  <==  "f(void) THROWS((e1,e2));"
-
+/// Define THROWS macros for C++ exception specification.
+///
+/// Define use of C++ exception specification mechanism:
+///   "f(void) throw();"       <==  "f(void) THROWS_NONE;"
+///   "g(void) throw(e1,e2);"  <==  "f(void) THROWS((e1,e2));"
 #if defined(NCBI_USE_THROW_SPEC)
 #  define THROWS_NONE throw()
 #  define THROWS(x) throw x
@@ -59,48 +68,37 @@ BEGIN_NCBI_SCOPE
 #  define THROWS(x)
 #endif
 
-
-/////////////////////////////////////////////////////////////////////////////
-// Macro to trace the exceptions being thrown(for the -D_DEBUG mode only):
-//   RETHROW_TRACE
-// The following macros accept objects of types:
-//      std::string, char*, const char* and std::exception
-//   THROW0_TRACE
-//   THROW1_TRACE
-//   THROW_TRACE
-// The following macros accept objects of any printable type (any type which
-//      allow output to std::ostream via operator <<):
-//      int, double, complex etc.
-//   THROW0p_TRACE
-//   THROW1p_TRACE
-//   THROWp_TRACE
-// The following macros accept objects of any type:
-//   THROW0np_TRACE
-//   THROW1np_TRACE
-//   THROWnp_TRACE
-
-// Specify if to call "abort()" inside the DoThrowTraceAbort().
-// By default, this feature is not activated unless
-//   1)  environment variable $ABORT_ON_THROW is set (to any value), or
-//   2)  registry value of ABORT_ON_THROW, section DEBUG is set (to any value)
+/// ABORT_ON_THROW controls if program should be aborted.
 #define ABORT_ON_THROW "ABORT_ON_THROW"
+
+/// Specify whether to call "abort()" inside the DoThrowTraceAbort().
+///
+/// By default, this feature is not activated unless
+/// -  environment variable $ABORT_ON_THROW is set (to any value), or
+/// -  registry value of ABORT_ON_THROW, section DEBUG is set (to any value)
 extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 
-// "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW
+/// "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW.
 extern void DoThrowTraceAbort(void);
 
+/// Print the specified debug message.
 NCBI_XNCBI_EXPORT
 extern void DoDbgPrint(const char* file, int line, const char* message);
 
+/// Print the specified debug message.
 NCBI_XNCBI_EXPORT
 extern void DoDbgPrint(const char* file, int line, const string& message);
 
+/// Print the specified debug messages.
 NCBI_XNCBI_EXPORT
 extern void DoDbgPrint(const char* file, int line,
                        const char* msg1, const char* msg2);
 
 #if defined(_DEBUG)
 
+/// Templated function for printing debug message.
+///
+/// Print debug message for the specified exception type.
 template<typename T>
 inline
 const T& DbgPrint(const char* file, int line,
@@ -110,6 +108,7 @@ const T& DbgPrint(const char* file, int line,
     return e;
 }
 
+/// Print debug message for "const char*" object.
 inline
 const char* DbgPrint(const char* file, int line,
                      const char* e, const char* )
@@ -118,6 +117,7 @@ const char* DbgPrint(const char* file, int line,
     return e;
 }
 
+/// Print debug message for "char*" object.
 inline
 char* DbgPrint(const char* file, int line,
                char* e, const char* )
@@ -126,6 +126,7 @@ char* DbgPrint(const char* file, int line,
     return e;
 }
 
+/// Print debug message for "std::string" object.
 inline
 const string& DbgPrint(const char* file, int line,
                        const string& e, const char* )
@@ -134,6 +135,11 @@ const string& DbgPrint(const char* file, int line,
     return e;
 }
 
+/// Create diagnostic stream for printing specified message and "abort()" the
+/// program if set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
+/// @sa
+///   SetThrowTraceAbort(), DoThrowTraceAbort()
 template<typename T>
 inline
 const T& DbgPrintP(const char* file, int line, const T& e, const char* e_str)
@@ -143,6 +149,11 @@ const T& DbgPrintP(const char* file, int line, const T& e, const char* e_str)
     return e;
 }
 
+/// Create diagnostic stream for printing specified message.
+///
+/// Similar to DbgPrintP except that "abort()" not executed.
+/// @sa
+///   DbgPrintP()
 template<typename T>
 inline
 const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
@@ -151,74 +162,203 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
     return e;
 }
 
-
-/** @addtogroup Exception
- *
- * @{
- */
-
-
-// Example:  RETHROW_TRACE;
+/// Rethrow trace.
+///
+/// Reason for do {...} while in macro definition is to permit a natural
+/// syntax usage when a user wants to write something like:
+///
+/// if (expression)
+///     RETHROW_TRACE;
+/// else do_something_else;
+/// 
+/// Example:
+/// -  RETHROW_TRACE;
 #  define RETHROW_TRACE do { \
     _TRACE("EXCEPTION: re-throw"); \
     NCBI_NS_NCBI::DoThrowTraceAbort(); \
     throw; \
 } while(0)
 
-// Example:  THROW0_TRACE("Throw just a string");
-// Example:  THROW0_TRACE(runtime_error("message"));
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Argument can be a simple string, or an exception object.
+/// 
+/// Example:
+/// -  THROW0_TRACE("Throw just a string");
+/// -  THROW0_TRACE(runtime_error("message"));
 #  define THROW0_TRACE(exception_object) \
     throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
         exception_object, #exception_object)
 
-// Example:  THROW0p_TRACE(123);
-// Example:  THROW0p_TRACE(complex(1,2));
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Argument can be any printable object; that is, any object with a defined
+/// output operator.
+///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
+/// Example:
+/// -  THROW0p_TRACE(123);
+/// -  THROW0p_TRACE(complex(1,2));
+/// @sa
+///   THROW0np_TRACE
 #  define THROW0p_TRACE(exception_object) \
     throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
         exception_object, #exception_object)
 
-// Example:  THROW0np_TRACE(vector<char>());
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Argument can be any printable object; that is, any object with a defined
+/// output operator. 
+///
+/// Similar to THROW0p_TRACE except that program is not "aborted" when
+/// exception is thrown, and argument type can be an aggregate type such as
+/// Vector<T> where T is a printable argument.
+///
+/// Example:
+/// -  THROW0np_TRACE(vector<char>());
+/// @sa
+///   THROW0p_TRACE
 #  define THROW0np_TRACE(exception_object) \
     throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
         exception_object, #exception_object)
 
-// Example:  THROW1_TRACE(runtime_error, "Something is weird...");
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Arguments can be any exception class with the specified initialization
+/// argument. The class argument need not be derived from std::exception as
+/// a new class object is constructed using the specified class name and 
+/// initialization argument.
+///
+/// Example:
+/// -  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) \
     throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
         exception_class(exception_arg), #exception_class)
 
-// Example:  THROW1p_TRACE(int, 32);
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Arguments can be any exception class with a the specified initialization
+/// argument. The class argument need not be derived from std::exception as
+/// a new class object is constructed using the specified class name and 
+/// initialization argument.
+///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
+/// Example:
+/// -  THROW1p_TRACE(int, 32);
+/// @sa
+///   THROW1np_TRACE
 #  define THROW1p_TRACE(exception_class, exception_arg) \
     throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
         exception_class(exception_arg), #exception_class)
 
-// Example:  THROW1np_TRACE(CUserClass, "argument");
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Arguments can be any exception class with a the specified initialization
+/// argument. The class argument need not be derived from std::exception as
+/// a new class object is constructed using the specified class name and 
+/// initialization argument.
+///
+/// Similar to THROW1p_TRACE except that program is not "aborted" when
+/// exception is thrown, and argument type can be an aggregate type such as
+/// Vector<T> where T is a printable argument.
+///
+/// Example:
+/// -  THROW1np_TRACE(CUserClass, "argument");
 #  define THROW1np_TRACE(exception_class, exception_arg) \
     throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
         exception_class(exception_arg), #exception_class)
 
-// Example:  THROW_TRACE(bad_alloc, ());
-// Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
-// Example:  THROW_TRACE(CParseException, ("Some parse error", 123));
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Arguments can be any exception class with a the specified initialization
+/// arguments. The class argument need not be derived from std::exception as
+/// a new class object is constructed using the specified class name and 
+/// initialization arguments.
+///
+/// Similar to THROW1_TRACE except that the exception class can have multiple
+/// initialization arguments instead of just one.
+///
+/// Example:
+/// -  THROW_TRACE(bad_alloc, ());
+/// -  THROW_TRACE(runtime_error, ("Something is weird..."));
+/// -  THROW_TRACE(CParseException, ("Some parse error", 123));
+/// @sa
+///   THROW1_TRACE
 #  define THROW_TRACE(exception_class, exception_args) \
     throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
         exception_class exception_args, #exception_class)
 
-// Example:  THROWp_TRACE(complex, (2, 3));
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Arguments can be any exception class with a the specified initialization
+/// arguments. The class argument need not be derived from std::exception as
+/// a new class object is constructed using the specified class name and 
+/// initialization arguments.
+///
+/// Program may abort if so set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+///
+/// Similar to THROW1p_TRACE except that the exception class can have multiple
+/// initialization arguments instead of just one.
+///
+/// Example: 
+/// - THROWp_TRACE(complex, (2, 3));
+/// @sa
+///   THROW1p_TRACE
 #  define THROWp_TRACE(exception_class, exception_args) \
     throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
         exception_class exception_args, #exception_class)
 
-// Example:  THROWnp_TRACE(CUserClass, (arg1, arg2));
+/// Throw trace.
+///
+/// Combines diagnostic message trace and exception throwing. First the
+/// diagnostic message is printed, and then exception is thrown.
+///
+/// Arguments can be any exception class with a the specified initialization
+/// argument. The class argument need not be derived from std::exception as
+/// a new class object is constructed using the specified class name and 
+/// initialization argument.
+///
+/// Argument type can be an aggregate type such as Vector<T> where T is a
+/// printable argument.
+///
+/// Similar to THROWp_TRACE except that program is not "aborted" when
+/// exception is thrown.
+///
+/// Example:
+/// -  THROWnp_TRACE(CUserClass, (arg1, arg2));
 #  define THROWnp_TRACE(exception_class, exception_args) \
     throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
         exception_class exception_args, #exception_class)
 
-
-/* @} */
-
-
 #else  /* _DEBUG */
+
+// No trace/debug versions of these macros.
 
 #  define RETHROW_TRACE \
     throw
@@ -244,15 +384,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 #endif  /* else!_DEBUG */
 
 
-/** @addtogroup Exception
- *
- * @{
- */
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Standard handling of "exception"-derived exceptions
-
+/// Standard handling of "exception"-derived exceptions.
 #define STD_CATCH(message) \
 catch (NCBI_NS_STD::exception& e) { \
       NCBI_NS_NCBI::CNcbiDiag() << NCBI_NS_NCBI::Error \
@@ -260,8 +392,8 @@ catch (NCBI_NS_STD::exception& e) { \
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// Standard handling of "exception"-derived and all other exceptions
+/// Standard handling of "exception"-derived exceptions; catches non-standard
+/// exceptiuons and generates "unknown exception" for all other exceptions.
 #define STD_CATCH_ALL(message) \
 STD_CATCH(message) \
     catch (...) { \
@@ -273,18 +405,23 @@ STD_CATCH(message) \
 /////////////////////////////////////////////////////////////////////////////
 // CException: useful macros
 
+/// Generic macro to throw an exception, given the exception class,
+/// error code and message string.
 #define NCBI_THROW(exception_class, err_code, message) \
     throw exception_class(__FILE__, __LINE__, \
         0,exception_class::err_code, (message))
 
+/// Generic macro to re-throw an exception.
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
     throw exception_class(__FILE__, __LINE__, \
         &(prev_exception), exception_class::err_code, (message))
 
+/// Generic macro to re-throw the same exception.
 #define NCBI_RETHROW_SAME(prev_exception, message) \
     do { prev_exception.AddBacklog(__FILE__, __LINE__, message); \
     throw; }  while (0)
 
+/// Generate a report on the exception.
 #define NCBI_REPORT_EXCEPTION(title,ex) \
     CExceptionReporter::ReportDefault(__FILE__,__LINE__,title,ex,eDPF_Default)
 
@@ -293,132 +430,177 @@ STD_CATCH(message) \
 /////////////////////////////////////////////////////////////////////////////
 // CException
 
+// Forward declaration of CExceptionReporter.
 class CExceptionReporter;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CException --
+///
+/// Define an extended exception class based on the C+++ std::exception.
+///
+/// CException inherits its basic functionality from std::exception and
+/// defines additional generic error codes for applications, and error
+/// reporting capabilities.
 
 class NCBI_XNCBI_EXPORT CException : public std::exception
 {
 public:
-    // Each derived class has its own err.codes and their interpretations
+    /// Error types that an application can generate.
+    ///
+    /// Each derived class has its own error codes and their interpretations.
+    /// Define two generic error codes "eInvalid" and "eUnknown" to be used
+    /// by all NCBI applications.
     enum EErrCode {
-        eInvalid = -1, // to be used ONLY as a return value,
-                       // Please, NEVER throw an exception with this code
-        eUnknown = 0
+        eInvalid = -1, ///< To be used ONLY as a return value;
+                       ///< please, NEVER throw an exception with this code.
+        eUnknown = 0   ///< Unknown exception.
     };
 
-    // When throwing an exception initially, "prev_exception" must be 0
+    /// Constructor.
+    ///
+    /// When throwing an exception initially, "prev_exception" must be 0.
     CException(const char* file, int line,
                const CException* prev_exception,
                EErrCode err_code,const string& message) throw();
 
-    // Copy constructor
+    /// Copy constructor.
     CException(const CException& other) throw();
 
-    // Add a message to backlog (to re-throw the same exception then)
+    /// Add a message to backlog (to re-throw the same exception then).
     void AddBacklog(const char* file, int line,const string& message);
 
 
     // ---- Reporting --------------
 
-    // Standard report (includes full backlog)
+    /// Standard report (includes full backlog).
     virtual const char* what(void) const throw();
 
-    // Report the exception using "reporter";
-    // if "reporter" is not specified (passed 0), then use the default reporter
-    // (as set with CExceptionReporter::SetDefault)
+    /// Report the exception.
+    ///
+    /// Report the exception using "reporter" exception reporter.
+    /// If "reporter" is not specified (value 0), then use the default
+    /// reporter as set with CExceptionReporter::SetDefault.
     void Report(const char* file, int line,
                 const string& title, CExceptionReporter* reporter = 0,
                 TDiagPostFlags flags = eDPF_Trace) const;
 
-    // Report as a string
-    // this exception only, no backlog attached
+    /// Report this exception only.
+    ///
+    /// Report as a string this exception only. No backlog is attached.
     string ReportThis(TDiagPostFlags flags = eDPF_Trace) const;
-    // including full backlog
+
+    /// Report all exceptions.
+    ///
+    /// Report as a string all exceptions. Include full backlog.
     string ReportAll (TDiagPostFlags flags = eDPF_Trace) const;
 
-    // Report "standard" attributes (file, line, type, err.code, user message)
-    // into the "out" stream (this exception only, no backlog)
+    /// Report "standard" attributes.
+    ///
+    /// Report "standard" attributes (file, line, type, err.code, user message)
+    /// into the "out" stream (this exception only, no backlog).
     void ReportStd(ostream& out, TDiagPostFlags flags = eDPF_Trace) const;
 
-    // Report "non-standard" attributes (those of derived class)
-    // into the "out" stream
+    /// Report "non-standard" attributes.
+    ///
+    /// Report "non-standard" attributes (those of derived class) into the
+    /// "out" stream.
     virtual void ReportExtra(ostream& out) const;
 
-    // If _enabled_, then calling what() or ReportAll() would
-    // also report exception to the default exception reporter.
-    // Return the previous state of the flag.
+    /// Enable background reporting.
+    ///
+    /// If background reporting is enabled, then calling what() or ReportAll()
+    /// would also report exception to the default exception reporter.
+    /// @return
+    ///   The previous state of the flag.
     static bool EnableBackgroundReporting(bool enable);
 
 
     // ---- Attributes ---------
 
-    // Class name as a string
+    /// Get class name as a string.
     virtual const char* GetType(void) const { return "CException"; }
 
-    // Interpretation of error code (as text)
+    /// Get error code interpreted as text.
     virtual const char* GetErrCodeString(void) const;
 
-    // Other standard attributes
-    const string& GetFile    (void) const { return m_File; }
-    int           GetLine    (void) const { return m_Line; }
-    EErrCode      GetErrCode (void) const;
-    const string& GetMsg     (void) const { return m_Msg;  }
+    /// Get file name used for reporting.
+    const string& GetFile(void) const { return m_File; }
 
+    /// Get line number where error occurred.
+    int GetLine(void) const { return m_Line; }
 
-    // Get "previous" exception from the backlog
+    /// Get error code.
+    EErrCode GetErrCode(void) const;
+
+    /// Get message string.
+    const string& GetMsg (void) const { return m_Msg;  }
+
+    /// Get "previous" exception from the backlog.
     const CException* GetPredecessor(void) const { return m_Predecessor; }
 
-    // Destructor
+    /// Destructor.
     virtual ~CException(void) throw();
 
 protected:
-    // Required in case of multiple inheritance
+    /// Constructor with no arguments.
+    ///
+    /// Required in case of multiple inheritance.
     CException(void) throw();
 
-    // Report to the system debugger
+    /// Helper method for reporting to the system debugger.
     void x_ReportToDebugger(void) const;
 
-    // Clone the exception
+    /// Helper method for cloning the exception.
     virtual const CException* x_Clone(void) const;
 
-    // Init exception data
+    /// Helper method for initializing exception data.
     void x_Init(const string& file,int line,const string& message,
                 const CException* prev_exception);
-    // Copy exception data
-    void x_Assign(const CException& src);
 
+    /// Helper method for copying exception data.
+    void x_Assign(const CException& src);
     
+    /// Helper method for assigning error code.
     void x_AssignErrCode(const CException& src);
+
+    /// Helper method for initializing error code.
     void x_InitErrCode(CException::EErrCode err_code);
+
+    /// Helper method for getting error code.
     int  x_GetErrCode(void) const { return m_ErrCode; }
 
 private:
-    string  m_File;
-    int     m_Line;
-    int     m_ErrCode;
-    string  m_Msg;
+    string  m_File;                  ///< File to report on
+    int     m_Line;                  ///< Line number
+    int     m_ErrCode;               ///< Error code
+    string  m_Msg;                   ///< Message string
 
-    mutable string m_What;
-    const CException* m_Predecessor;
+    mutable string m_What;           ///< What type of exception
+    const CException* m_Predecessor; ///< Previous exception
 
-    mutable bool m_InReporter;
-    static bool sm_BkgrEnabled;
+    mutable bool m_InReporter;       ///< Reporter flag
+    static bool sm_BkgrEnabled;      ///< Background reporting enabled flag
 
-    // Prohibit assignment
+    /// Private assignment operator to prohibit assignment.
     CException& operator= (const CException&) throw();
 };
 
 
-// Return valid pointer to uppermost derived class only if "from" is _really_ 
-// the object of the desired type.
-// Do not cast to intermediate types (return NULL if such cast is attempted).
+/// Return valid pointer to uppermost derived class only if "from" is _really_ 
+/// the object of the desired type.
+///
+/// Do not cast to intermediate types (return NULL if such cast is attempted).
 template <class TTo, class TFrom>
 const TTo* UppermostCast(const TFrom& from)
 {
     return typeid(from) == typeid(TTo) ? dynamic_cast<const TTo*>(&from) : 0;
 }
 
-// helper macro - to be used in NCBI_EXCEPTION_DEFAULT below
-
+/// Helper macro for default exception implementation.
+/// @sa
+///   NCBI_EXCEPTION_DEFAULT
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
     { \
         x_Init(file,line,message, prev_exception); \
@@ -448,10 +630,10 @@ private: \
     static void xx_unused_##exception_class(void)
 
 
-// Macro to help declare new exception class
-// This can be used ONLY if the derived class
-// does not have any additional (non-standard) data members
-
+/// To help declare new exception class.
+///
+/// This can be used ONLY if the derived class does not have any additional
+/// (non-standard) data members.
 #define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
 public: \
     exception_class(const char* file,int line, \
@@ -462,11 +644,10 @@ public: \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
 
-// Helper macro added to support templatized exceptions
-// GCC starting from 3.2.2 warns about implicit typenames
-// this macro fixes the warning
-
-
+/// Helper macro added to support templatized exceptions.
+///
+/// GCC starting from 3.2.2 warns about implicit typenames - this macro fixes
+/// the warning.
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(exception_class, base_class) \
     { \
         x_Init(file,line,message, prev_exception); \
@@ -498,11 +679,11 @@ private: \
 
 
 
-// GCC compiler v.2.95 has a bug:
-// one should not use virtual base class in exception declarations -
-// a program crashes when deleting such an exception
-// (this is fixed in newer versions of the compiler)
-
+/// Exception bug workaround for GCC version less than 3.00.
+///
+/// GCC compiler v.2.95 has a bug: one should not use virtual base class in
+/// exception declarations - a program crashes when deleting such an exception
+/// (this is fixed in newer versions of the compiler).
 #if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION < 300
 #    define EXCEPTION_BUG_WORKAROUND
@@ -518,70 +699,96 @@ private: \
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CExceptionReporter
+///
+/// CExceptionReporter --
+///
+/// Define exception reporter.
 
 class NCBI_XNCBI_EXPORT CExceptionReporter
 {
 public:
+    /// Constructor.
     CExceptionReporter(void);
+
+    /// Destructor.
     virtual ~CExceptionReporter(void);
 
-    // Default reporter
+    /// Set default reporter.
     static void SetDefault(const CExceptionReporter* handler);
+
+    /// Get default reporter.
     static const CExceptionReporter* GetDefault(void);
 
-    // Enable/disable using default reporter
-    // Return previous state of this flag
+    /// Enable/disable using default reporter.
+    ///
+    /// @return
+    ///   Previous state of this flag.
     static bool EnableDefault(bool enable);
 
-    // Report exception using default reporter
+    /// Report exception using default reporter.
     static void ReportDefault(const char* file, int line,
                               const string& title, const CException& ex,
                               TDiagPostFlags flags = eDPF_Trace);
 
-    // Report exception with _this_ reporter
+    /// Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
                         const string& title, const CException& ex,
                         TDiagPostFlags flags = eDPF_Trace) const = 0;
 
 private:
-    static const CExceptionReporter* sm_DefHandler;
-    static bool                      sm_DefEnabled;
+    static const CExceptionReporter* sm_DefHandler; ///< Default handler
+    static bool                      sm_DefEnabled; ///< Default enable flag
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CExceptionReporterStream
+///
+/// CExceptionReporterStream --
+///
+/// Define exception reporter stream.
 
 class NCBI_XNCBI_EXPORT CExceptionReporterStream : public CExceptionReporter
 {
 public:
+    /// Constructor.
     CExceptionReporterStream(ostream& out);
+
+    /// Destructor.
     virtual ~CExceptionReporterStream(void);
 
+    /// Report specified exception on output stream.
     virtual void Report(const char* file, int line,
                         const string& title, const CException& ex,
                         TDiagPostFlags flags = eDPF_Trace) const;
 private:
-    ostream& m_Out;
+    ostream& m_Out;   ///< Output stream
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CCoreException - corelib exceptions
-
+///
+/// CCoreException --
+///
+/// Define corelib exception.  CCoreException inherits its basic
+/// functionality from CException and defines additional error codes for
+/// applications.
 
 class NCBI_XNCBI_EXPORT CCoreException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
+    /// Error types that  corelib can generate.
+    ///
+    /// These generic error conditions can occur for corelib applications. 
     enum EErrCode {
-        eCore,
-        eNullPtr,
-        eDll,
-        eInvalidArg
+        eCore,          ///< Generic corelib error
+        eNullPtr,       ///< Null pointer error
+        eDll,           ///< Dll error
+        eInvalidArg     ///< Invalid argument error
     };
+
+    /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -592,21 +799,28 @@ public:
         default:          return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CCoreException,CException);
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CCoreException, CException);
 };
 
+
+
 /////////////////////////////////////////////////////////////////////////////
-// Auxiliary class to wrap up strerror function
-//   CStrErrAdapt
-//
+///
+/// CStrErrAdapt --
+///
+/// Auxiliary class to wrap up strerror function.
 
 class CStrErrAdapt
 {
 public:
+    /// Inlined conditionally at end of file due to a weird
+    /// platform-specific GCC bug
     static const char* strerror(int errnum);
-    // inlined conditionally at end of file due to a weird
-    // platform-specific GCC bug
 };
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Auxiliary exception classes:
@@ -615,15 +829,26 @@ public:
 //
 
 
+/// Define function type for "strerror" function.
 typedef const char* (*TStrerror)(int errnum);
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CErrnoTemplExceptionEx --
+///
+/// Define template class for easy generation of Errno-like exception classes.
 
 template <class TBase, TStrerror PErrstr=CStrErrAdapt::strerror >
 class CErrnoTemplExceptionEx : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
+    /// Error type that an application can generate.
     enum EErrCode {
-        eErrno
+        eErrno          ///< Error code
     };
+
+    /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -632,7 +857,8 @@ public:
         }
     }
 
-    CErrnoTemplExceptionEx(const char* file,int line,
+    /// Constructor.
+    CErrnoTemplExceptionEx(const char* file, int line,
         const CException* prev_exception,
         EErrCode err_code, const string& message) throw()
           : TBase(file, line, prev_exception,
@@ -644,6 +870,7 @@ public:
         x_InitErrCode((CException::EErrCode) err_code);
     }
 
+    /// Constructor.
     CErrnoTemplExceptionEx(const char* file,int line,
         const CException* prev_exception,
         EErrCode err_code, const string& message, 
@@ -658,50 +885,72 @@ public:
         x_InitErrCode((CException::EErrCode) err_code);
     }
 
+    /// Copy constructor.
     CErrnoTemplExceptionEx(const CErrnoTemplExceptionEx<TBase, PErrstr>& other) throw()
         : TBase( other)
     {
         m_Errno = other.m_Errno;
         x_Assign(other);
     }
+
+    /// Destructor.
     virtual ~CErrnoTemplExceptionEx(void) throw() {}
 
+    /// Report error number on stream.
     virtual void ReportExtra(ostream& out) const
     {
         out << "m_Errno = " << m_Errno;
     }
 
-    // Attributes
+    // Attributes.
+
+    /// Get type of class.
     virtual const char* GetType(void) const {return "CErrnoTemplException";}
+
+    /// Get error code.
     EErrCode GetErrCode(void) const
     {
         return typeid(*this) == typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
             (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) x_GetErrCode() :
             (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) CException::eInvalid;
     }
+
+    /// Get error number.
     int GetErrno(void) const throw() { return m_Errno; }
 
 protected:
+    /// Constructor.
     CErrnoTemplExceptionEx(void) throw()
     {
         m_Errno = errno;
     }
+
+    /// Helper clone method.
     virtual const CException* x_Clone(void) const
     {
         return new CErrnoTemplExceptionEx<TBase, PErrstr>(*this);
     }
+
 private:
-    int m_Errno;
+    int m_Errno;        ///< Error number
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CErrnoTemplException --
+///
+/// Define template class for easy generation of Errno-like exception classes.
 
 template<class TBase> class CErrnoTemplException :
                         public CErrnoTemplExceptionEx<TBase, CStrErrAdapt::strerror>
 {
 public:
+    /// Parent class type.
     typedef CErrnoTemplExceptionEx<TBase, CStrErrAdapt::strerror> CParent;
-public:
+
+    /// Constructor.
     CErrnoTemplException<TBase>(const char* file,int line,
         const CException* prev_exception,
         typename CParent::EErrCode err_code,const string& message) throw()
@@ -713,13 +962,27 @@ public:
 
 
 class NStr;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CParseTemplException --
+///
+/// Define template class for parsing exception. This class is used to define
+/// exceptions for complex parsing tasks and includes an additional m_Pos
+/// data member. The constructor requires that an additional postional
+/// parameter be supplied along with the description message.
+
 template <class TBase>
 class CParseTemplException : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
+    /// Error types that for exception class.
     enum EErrCode {
-        eErr
+        eErr        ///< Generic error 
     };
+
+    /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -728,7 +991,9 @@ public:
         }
     }
 
-    // Report "pos" along with "what"
+    /// Constructor.
+    ///
+    /// Report "pos" along with "what".
     CParseTemplException(const char* file,int line,
         const CException* prev_exception,
         EErrCode err_code,const string& message,
@@ -743,6 +1008,7 @@ public:
         x_InitErrCode((CException::EErrCode) err_code);
     }
 
+    /// Constructor.
     CParseTemplException(const CParseTemplException<TBase>& other) throw()
         : TBase(other)
     {
@@ -750,16 +1016,21 @@ public:
         x_Assign(other);
     }
 
+    /// Destructor.
     virtual ~CParseTemplException(void) throw() {}
 
-    // Reporting
+    /// Report error position.
     virtual void ReportExtra(ostream& out) const
     {
         out << "m_Pos = " << m_Pos;
     }
 
-    // Attributes
+    // Attributes.
+
+    /// Get exception class type.
     virtual const char* GetType(void) const {return "CParseTemplException";}
+
+    /// Get error code.
     EErrCode GetErrCode(void) const
     {
         return typeid(*this) == typeid(CParseTemplException<TBase>) ?
@@ -767,38 +1038,48 @@ public:
             (CParseTemplException<TBase>::EErrCode) CException::eInvalid;
     }
 
-    // Extra
+    /// Get error position.
     string::size_type GetPos(void) const throw() { return m_Pos; }
 
 protected:
+    /// Constructor.
     CParseTemplException(void) throw()
     {
         m_Pos = 0;
     }
+
+    /// Helper clone method.
     virtual const CException* x_Clone(void) const
     {
         return new CParseTemplException<TBase>(*this);
     }
 
 private:
-    string::size_type m_Pos;
+    string::size_type m_Pos;    ///< Error position
 };
 
 
-// To throw exceptions with one additional parameter (e.g. CParseException)
-
+/// Throw exception with extra parameter.
+///
+/// Required to throw exceptions with one additional parameter
+/// (e.g. positional information for CParseException).
 #define NCBI_THROW2(exception_class, err_code, message, extra) \
     throw exception_class(__FILE__, __LINE__, \
         0,exception_class::err_code, (message), (extra))
 
+/// Re-throw exception with extra parameter.
+///
+/// Required to re-throw exceptions with one additional parameter
+/// (e.g. positional information for CParseException).
 #define NCBI_RETHROW2(prev_exception,exception_class,err_code,message,extra) \
     throw exception_class(__FILE__, __LINE__, \
         &(prev_exception), exception_class::err_code, (message), (extra))
 
 
-// To define exceptions with one additional parameter
-// (e.g. derived from CParseException)
-
+/// Define exception default with one additional parameter.
+///
+/// Required to define exception default with one additional parameter
+/// (e.g. derived from CParseException).
 #define NCBI_EXCEPTION_DEFAULT2(exception_class, base_class, extra_type) \
 public: \
     exception_class(const char* file,int line, \
@@ -840,6 +1121,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2003/08/01 15:17:21  siyan
+ * Documentation changes. Removed superfluous (extra)
+ * "public" keyword in CErrnoTemplException.
+ *
  * Revision 1.46  2003/05/27 15:19:55  kuznets
  * Included <string.h> (declaration of 'strerror')
  *
