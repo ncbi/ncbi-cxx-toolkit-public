@@ -514,6 +514,8 @@ void CBDB_Cache::Open(const char* cache_path,
     m_Env->SetDirectDB(true);
     m_Env->SetDirectLog(true);
 
+    m_Env->CleanLog();
+
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
 
@@ -1599,6 +1601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2004/08/09 16:30:54  kuznets
+ * Remove log files when opening cache db
+ *
  * Revision 1.63  2004/08/09 14:26:47  kuznets
  * Add delayed attribute update (performance opt.)
  *
