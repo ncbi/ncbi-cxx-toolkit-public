@@ -183,20 +183,20 @@ extern char* LOG_ComposeMessage
 #else /*NCBI_OS_MSWIN*/
         static const char timefmt[] = "%D %T ";
         struct tm* tm;
-#ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_CXX_TOOLKIT
         time_t t = time(0);
-#  ifdef HAVE_LOCALTIME_R
+#    ifdef HAVE_LOCALTIME_R
         struct tm temp;
         localtime_r(&t, &temp);
         tm = &temp;
-#  else /*HAVE_LOCALTIME_R*/
+#    else /*HAVE_LOCALTIME_R*/
         tm = localtime(&t);
-#  endif/*HAVE_LOCALTIME_R*/
-#else /*NCBI_CXX_TOOLKIT*/
+#    endif/*HAVE_LOCALTIME_R*/
+#  else /*NCBI_CXX_TOOLKIT*/
         struct tm temp;
         Nlm_GetDayTime(&temp);
         tm = &temp;
-#endif/*NCBI_CXX_TOOLKIT*/
+#  endif/*NCBI_CXX_TOOLKIT*/
         datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
 #endif/*NCBI_OS_MSWIN*/
     }
@@ -504,11 +504,15 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/09/02 21:05:14  lavr
+ * Proper indentation of compilation conditionals
+ *
  * Revision 6.28  2003/05/05 20:19:13  lavr
  * LOG_ComposeMessage() to check raw_size instead of raw_data ptr
  *
  * Revision 6.27  2003/05/05 11:41:09  rsmith
- * added defines and declarations to allow cross compilation Mac->Win32 using Metrowerks Codewarrior.
+ * added defines and declarations to allow cross compilation Mac->Win32
+ * using Metrowerks Codewarrior.
  *
  * Revision 6.26  2003/01/17 15:55:13  lavr
  * Fix errno reporting (comma was missing if errno == 0)
