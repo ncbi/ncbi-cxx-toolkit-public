@@ -229,8 +229,9 @@ to be used there, as in: "<i>-name value</i>" (or "<i>-name"</i>).</dd>
 The automatically generated <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></i>
 messages include a description for each argument, with the format:</dd>
 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<i>-name [synopsis] type [mandatory | optional]</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<i>-name
+[synopsis] type [mandatory | optional]</i>
 <dt>
 <i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 comment</i></dt>
@@ -573,7 +574,6 @@ and is added to a container managed by the <i>CArgs</i> object.&nbsp; All
 arguments can be accessed&nbsp; using the [] operator, as in: <i>myCArgs["f"]</i>,
 where "f" is the name registered for that argument. There are two ways
 to access the <i>Nth</i> unnamed positional argument: <i>myCArgs["#N"]
-
 </i>and&nbsp; <i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
@@ -625,9 +625,7 @@ demonstrates the usage of these classes for argument processing. See also
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
 and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
-<p>
-<i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; 
-<i><a href="../index.html">up&nbsp;    </a></i>&nbsp;&nbsp;&nbsp; 
+<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;&nbsp;&nbsp;
 <i><a href="diag.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
