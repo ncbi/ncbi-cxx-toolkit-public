@@ -651,7 +651,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
  * This call is available for stream sockets only.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
-(SOCK sock                  /* [in]  data to write to the socket             */
+(SOCK sock
  );
 
 
@@ -918,6 +918,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2003/09/23 21:04:43  lavr
+ * SOCK_Abort():  argument comment removed as irrelevant (cut&paste mishap)
+ *
  * Revision 6.41  2003/08/25 14:38:00  lavr
  * Introduce POLLABLE_Poll() and [L]SOCK<->POLLABLE conversion routines
  *
