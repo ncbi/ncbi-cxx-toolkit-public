@@ -564,13 +564,12 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param word_options The options related to initial word extension [in]
- * @param sbp The scoring information block [in]
+ * @param matrix the substitution matrix [in]
  * @param ewp The structure containing word extension information [in]
  * @param q_off The offset in the query sequence [in]
  * @param s_start The start of this hit in the subject sequence [in]
  * @param s_off The offset in the subject sequence [in]
- * @param init_hitlist The structure containing information about all initial
- *        hits [in] [out]
+ * @param init_hitlist The structure containing information about all initial hits [in] [out]
  */
 static Int2
 BlastnExtendInitialHit(BLAST_SequenceBlkPtr query, 

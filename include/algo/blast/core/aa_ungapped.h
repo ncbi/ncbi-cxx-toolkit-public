@@ -38,7 +38,20 @@
 extern "C" {
 #endif
 
-
+/** Scan a subject sequence for word hits
+ *
+ * @param subject the subject sequence [in]
+ * @param query the query sequence [in]
+ * @param lookup the lookup table [in]
+ * @param matrix the substitution matrix [in]
+ * @param word_params word parameters, needed for cutoff and dropoff [in]
+ * @param ewp extend parameters, needed for diagonal tracking [in]
+ * @param query_offsets array for storing query offsets [out]
+ * @param subject_offsets array for storing subject offsets [out]
+ * @param offset_array_size the number of elements in each offset array [in]
+ * @param init_hitlist hsps resulting from the ungapped extension [out]
+ * @return the number of hits found 
+ */
 Int4 BlastAaWordFinder(BLAST_SequenceBlkPtr subject,
 		       BLAST_SequenceBlkPtr query,
 		       LookupTableWrapPtr lookup,
@@ -56,6 +69,7 @@ Int4 BlastAaWordFinder(BLAST_SequenceBlkPtr subject,
  * @param query the query sequence [in]
  * @param lookup_wrap the lookup table [in]
  * @param diag the diagonal array structure [in/out]
+ * @param matrix the substitution matrix [in]
  * @param cutoff cutoff score for saving ungapped HSPs [in]
  * @param dropoff x dropoff [in]
  * @param query_offsets array for storing query offsets [out]
@@ -83,6 +97,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
  * @param query the query sequence
  * @param lookup_wrap the lookup table
  * @param diag the diagonal array structure
+ * @param matrix the substitution matrix [in]
  * @param cutoff cutoff score for saving ungapped HSPs [in]
  * @param dropoff x dropoff [in]
  * @param query_offsets array for storing query offsets
@@ -109,7 +124,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
  * extend to the right until the cumulative score becomes negative or
  * drops by at least dropoff.
  *
- * @param lookup the lookup table [in]
+ * @param matrix the substitution matrix [in]
  * @param subject subject sequence [in]
  * @param query query sequence [in]
  * @param s_off subject offset [in]
@@ -133,7 +148,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
  * extend to the left until the cumulative score becomes negative or
  * drops by at least dropoff.
  *
- * @param lookup the lookup table [in]
+ * @param matrix the substitution matrix [in]
  * @param subject subject sequence [in]
  * @param query query sequence [in]
  * @param s_off subject offset [in]
@@ -155,8 +170,8 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 /** Perform a one-hit extension. Beginning at the specified hit,
  * extend to the left, then extend to the right. 
  *
- * @param lookup lookup table [in]
  * @param diag diagonal table [in/out]
+ * @param matrix the substitution matrix [in]
  * @param subject subject sequence [in]
  * @param query query sequence [in]
  * @param s_off subject offset [in]
@@ -183,8 +198,8 @@ Int4 BlastAaExtendOneHit(const BLAST_DiagTablePtr diag,
  * at R and extend to the left. If we do not reach L, abort the extension.
  * Otherwise, begin at R and extend to the right.
  *
- * @param lookup lookup table [in]
  * @param diag diagonal table [in/out]
+ * @param matrix the substitution matrix [in]
  * @param subject subject sequence [in]
  * @param query query sequence [in]
  * @param s_left_off left subject offset [in]
@@ -211,6 +226,7 @@ Int4 BlastAaExtendTwoHit(BLAST_DiagTablePtr diag,
 
 /** Create a new diagonal array structure.
   * @param diag handle to diagonal array structure [in/modified]
+  * @param window_size the window size for the two-hit heuristic
   * @param longest_seq length of the longest subject or query sequence
   */
 
@@ -218,7 +234,6 @@ Int4 DiagNew(BLAST_DiagTablePtr * diag, Int4 window_size, Int4 longest_seq);
 
 /** Update the offset for use with a new sequence.
   * @param diag pointer to the diagonal array structure [in]
-  * @param window_size the window size for the two-hit heuristic
   * @param length length of the new sequence [in]
   */
   

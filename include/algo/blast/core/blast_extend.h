@@ -241,6 +241,9 @@ MB_ExtendInitialHit(BlastInitialWordOptionsPtr word_options,
  * @param matrix The scoring matrix [in]
  * @param word_params Parameters for the initial word extension [in]
  * @param ewp Structure needed for initial word information maintenance [in]
+ * @param q_offsets pointer to previously-allocated query offset array [in]
+ * @param s_offsets pointer to previously-allocated query offset array [in]
+ * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
  */
@@ -283,6 +286,9 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
  * @param matrix The scoring matrix [in]
  * @param word_params Parameters for the initial word extension [in]
  * @param ewp Structure needed for initial word information maintenance [in]
+ * @param q_offsets pointer to previously-allocated query offset array [in]
+ * @param s_offsets pointer to previously-allocated query offset array [in]
+ * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
  */
@@ -308,6 +314,9 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
  * @param matrix The scoring matrix [in]
  * @param word_params Parameters for the initial word extension [in]
  * @param ewp Structure needed for initial word information maintenance [in]
+ * @param q_offsets pointer to previously-allocated query offset array [in]
+ * @param s_offsets pointer to previously-allocated query offset array [in]
+ * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
  */

@@ -175,6 +175,7 @@ Int4 BlastAaLookupDestruct(LookupTablePtr lookup);
 /** Index an array of queries.
  *
  * @param lookup the lookup table [in/modified]
+ * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
  * @param unmasked_regions an array of ValNodePtrs, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
  * @param num_queries the number of queries [in]
@@ -189,6 +190,7 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
 /** Index a single query.
  *
  * @param lookup the lookup table [in/modified]
+ * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
  * @param unmasked_regions a ValNodePtr which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
 i
@@ -222,6 +224,7 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup);
  * occurring in the subject sequence.
  *
  * @param lookup the lookup table [in/modified]
+ * @param matrix the substitution matrix [in]
  * @param query the query sequence [in]
  * @param offset the offset of the word
  * @param context the context identifier of the query

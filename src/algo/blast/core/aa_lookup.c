@@ -509,7 +509,8 @@ Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBl
 /**
  *  Compute the score of a pair of words using a subtitution matrix.
  *
- * @param lookup the lookup table [in]
+ * @param matrix the substitution matrix [in]
+ * @param wordsize the word size [in]
  * @param w1 the first word [in
  * @param w2 the second word [in]
  * @param exact a pointer to a boolean which specifies whether or not this was an exact match or not.
