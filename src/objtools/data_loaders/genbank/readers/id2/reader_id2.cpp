@@ -222,7 +222,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
         }
     }
     if ( !m_NextConnectTime.IsEmpty() ) {
-        int wait_seconds = m_NextConnectTime - CTime(CTime::eCurrent);
+        int wait_seconds = (m_NextConnectTime - CTime(CTime::eCurrent)).GetTotalSeconds();
         if ( wait_seconds > 0 ) {
             _TRACE("CId2Reader: "
                    "waiting "<<wait_seconds<<" before new connection");
