@@ -167,7 +167,7 @@ typedef CTreePairNode<string, string>  TPluginManagerParamTree;
 /// IClassFactory should be implemented for collection of drivers
 /// and exported by hosts
 
-template <class TClass>
+template <class TClass, class TIfVer = CInterfaceVersion<TClass> >
 class IClassFactory
 {
 public:
@@ -205,7 +205,8 @@ public:
     ///  NULL on any error (not found entry point, version mismatch, etc.)
     virtual TClass* CreateInstance
       (const string&  driver  = kEmptyStr,
-       CVersionInfo   version = NCBI_INTERFACE_VERSION(TClass),
+       CVersionInfo   version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
+                                             TIfVer::ePatchLevel),
        const TPluginManagerParamTree* params = 0) const = 0;
 
     /// Versions of the interface exported by the factory
@@ -231,11 +232,11 @@ class CPluginManager_DllResolver;
 ///
 /// Template class is protected by mutex and safe for use from diffrent threads
 
-template <class TClass>
+template <class TClass, class TIfVer = CInterfaceVersion<TClass> >
 class CPluginManager
 {
 public:
-    typedef IClassFactory<TClass> TClassFactory;
+    typedef IClassFactory<TClass, TIfVer> TClassFactory;
 
     /// Create class instance
     /// @return
@@ -243,7 +244,8 @@ public:
     /// @sa GetFactory()
     TClass* CreateInstance
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass),
+     const CVersionInfo& version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
+                                                TIfVer::ePatchLevel),
      const TPluginManagerParamTree* params = 0)
     {
         TClassFactory* factory = GetFactory(driver, version);
@@ -266,7 +268,8 @@ public:
     ///  Never return NULL -- always throw exception on error.
     TClassFactory* GetFactory
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass));
+     const CVersionInfo& version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
+                                                TIfVer::ePatchLevel));
 
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
@@ -353,7 +356,8 @@ public:
 
     /// Scan DLLs for specified driver using attached resolvers
     void Resolve(const string&       driver  = kEmptyStr,
-                 const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass));
+                 const CVersionInfo& version = CVersionInfo
+                 (TIfVer::eMajor, TIfVer::eMinor, TIfVer::ePatchLevel));
 
     // ctors
     CPluginManager(void) {}
@@ -509,10 +513,10 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 
 
-template <class TClass>
-typename CPluginManager<TClass>::TClassFactory* 
-CPluginManager<TClass>::GetFactory(const string&       driver,
-                                   const CVersionInfo& version)
+template <class TClass, class TIfVer>
+typename CPluginManager<TClass, TIfVer>::TClassFactory* 
+CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
+                                           const CVersionInfo& version)
 {
     CFastMutexGuard guard(m_Mutex);
 
@@ -538,10 +542,10 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
 }
 
 
-template <class TClass>
-typename CPluginManager<TClass>::TClassFactory* 
-CPluginManager<TClass>::FindClassFactory(const string&  driver,
-                                         const CVersionInfo& version)
+template <class TClass, class TIfVer>
+typename CPluginManager<TClass, TIfVer>::TClassFactory* 
+CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
+                                                 const CVersionInfo& version)
 {
     TClassFactory* best_factory = 0;
     int best_major = -1;
@@ -551,17 +555,15 @@ CPluginManager<TClass>::FindClassFactory(const string&  driver,
     NON_CONST_ITERATE(typename set<TClassFactory*>, it, m_Factories) {
         TClassFactory* cf = *it;
 
-        typename IClassFactory<TClass>::TDriverList drv_list;
+        typename TClassFactory::TDriverList drv_list;
 
         if (!cf)
             continue;
 
         cf->GetDriverVersions(drv_list);
 
-        NON_CONST_ITERATE(typename IClassFactory<TClass>::TDriverList, 
-                          it2, 
-                          drv_list) {
-             typename IClassFactory<TClass>::SDriverInfo& drv_info = *it2;
+        NON_CONST_ITERATE(typename TClassFactory::TDriverList, it2, drv_list) {
+             typename TClassFactory::SDriverInfo& drv_info = *it2;
              if (!driver.empty()) {
                 if (driver != drv_info.name) {
                     continue;
@@ -580,8 +582,8 @@ CPluginManager<TClass>::FindClassFactory(const string&  driver,
 }
 
 
-template <class TClass>
-void CPluginManager<TClass>::RegisterFactory(TClassFactory& factory)
+template <class TClass, class TIfVer>
+void CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
 {
     CFastMutexGuard guard(m_Mutex);
 
@@ -589,8 +591,8 @@ void CPluginManager<TClass>::RegisterFactory(TClassFactory& factory)
 }
 
 
-template <class TClass>
-bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
+template <class TClass, class TIfVer>
+bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
 {
     CFastMutexGuard guard(m_Mutex);
 
@@ -602,8 +604,8 @@ bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 }
 
 
-template <class TClass>
-void CPluginManager<TClass>::RegisterWithEntryPoint
+template <class TClass, class TIfVer>
+void CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
 (FNCBI_EntryPoint plugin_entry_point)
 {
     TDriverInfoList drv_list;
@@ -623,24 +625,25 @@ void CPluginManager<TClass>::RegisterWithEntryPoint
 
 
 
-template <class TClass>
-void CPluginManager<TClass>::AddResolver(CPluginManager_DllResolver* resolver)
+template <class TClass, class TIfVer>
+void CPluginManager<TClass, TIfVer>::AddResolver
+(CPluginManager_DllResolver* resolver)
 {
     _ASSERT(resolver);
     m_Resolvers.push_back(resolver);
 }
 
 
-template <class TClass>
-void CPluginManager<TClass>::AddDllSearchPath(const string& path)
+template <class TClass, class TIfVer>
+void CPluginManager<TClass, TIfVer>::AddDllSearchPath(const string& path)
 {
     m_DllSearchPaths.push_back(path);
 }
 
 
-template <class TClass>
-void CPluginManager<TClass>::Resolve(const string&       /*driver*/,
-                                     const CVersionInfo& /*version*/)
+template <class TClass, class TIfVer>
+void CPluginManager<TClass, TIfVer>::Resolve(const string&       /*driver*/,
+                                             const CVersionInfo& /*version*/)
 {
     vector<CDllResolver*> resolvers;
 
@@ -676,8 +679,8 @@ void CPluginManager<TClass>::Resolve(const string&       /*driver*/,
 }
 
 
-template <class TClass>
-CPluginManager<TClass>::~CPluginManager()
+template <class TClass, class TIfVer>
+CPluginManager<TClass, TIfVer>::~CPluginManager()
 {
     {{
         typename set<TClassFactory*>::iterator it = m_Factories.begin();
@@ -715,6 +718,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/02/10 20:21:13  ucko
+ * Make the interface version class a template parameter with the
+ * appropriate default value to work around limitations in IBM's
+ * VisualAge compiler.  (It otherwise effectively ignores specializations
+ * of CInterfaceVersion that follow the templates that use them.)
+ *
  * Revision 1.19  2004/01/13 17:21:23  kuznets
  * Class factory CreateInstance method received an additional parameter
  * TPluginManagerParamTree (to specify initialization parameters or prefrences)
