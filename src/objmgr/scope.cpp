@@ -185,11 +185,14 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
     CMutexGuard guard(m_Scope_Mtx);
     CBioseq_Handle& bh = m_Cache[id];
     if ( !bh ) {
-        CSeqMatch_Info match = x_BestResolve(CSeq_id_Mapper::GetSeq_id(id));
+        CSeqMatch_Info match = x_BestResolve(id);
         if (match) {
             x_AddToHistory(*match);
-            bh = match.GetDataSource()->GetBioseqHandle(*this, match);
+            CBioseq_Info* bsi = match.GetDataSource()->GetBioseqHandle(match);
+            _ASSERT(bsi);
+            bh = CBioseq_Handle(match.GetIdHandle(), *this, *bsi);
         }
+        m_Cache[id] = bh;
     }
     return bh;
 }
@@ -211,9 +214,12 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     x_GetIdMapper().GetMatchingHandles(id.GetSeqId(), hset);
     ITERATE ( TSeq_id_HandleSet, hit, hset ) {
         CSeqMatch_Info match(id, *bh.m_Bioseq_Info->m_TSE_Info);
-        ret = match.GetDataSource()->GetBioseqHandle(*this, match);
-        if ( ret )
+        CBioseq_Info* bsi = match.GetDataSource()->GetBioseqHandle(match);
+        if ( bsi ) {
+            ret = CBioseq_Handle(match.GetIdHandle(), *this, *bsi);
+            m_Cache[id] = ret;
             break;
+        }
     }
     return ret;
 }
@@ -260,7 +266,7 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 }
 
 
-CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
+CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
 {
     //### Use priority flag, do not scan all DSs - find the first one.
     // Protected by m_Scope_Mtx in upper-level functions
@@ -270,7 +276,7 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
         // Do not search in lower-priority sources
         if (pr < it->m_Priority)
             continue;
-        CSeqMatch_Info info = it->m_DataSource->BestResolve(id, *this);
+        CSeqMatch_Info info = it->m_DataSource->BestResolve(idh);
         if ( info ) {
             bm_set.insert(info);
             pr = it->m_Priority;
@@ -327,11 +333,12 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 
 
 void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                              CSeq_annot::C_Data::E_Choice sel)
+                              CSeq_annot::C_Data::E_Choice sel,
+                              const CSeq_entry* limit_entry)
 {
     //CMutexGuard guard(m_Scope_Mtx);
     ITERATE (TDataSourceSet, it, m_setDataSrc) {
-        it->m_DataSource->UpdateAnnotIndex(loc, sel);
+        it->m_DataSource->UpdateAnnotIndex(loc, sel, limit_entry);
     }
 }
 
@@ -390,6 +397,10 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 void CScope::x_AddToHistory(CTSE_Info& tse)
 {
     m_History.insert(CTSE_Lock(&tse));
+    NON_CONST_ITERATE (CTSE_Info::TBioseqMap, bsi, tse.m_BioseqMap) {
+        CBioseq_Handle bsh(bsi->first, *this, *bsi->second);
+        m_Cache[bsi->first] = bsh;
+    }
 }
 
 
@@ -517,6 +528,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/03/18 14:52:59  grichenk
+* Removed obsolete methods, replaced seq-id with seq-id handle
+* where possible. Added argument to limit annotations update to
+* a single seq-entry.
+*
 * Revision 1.51  2003/03/12 20:09:34  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

@@ -142,21 +142,6 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
 		      coding, strand);
 }
 
-/*
-CConstRef<CSeqMap>
-CBioseq_Handle::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
-                                      ENa_strand strand) const
-{
-    return CSeqMap::CreateSeqMapForStrand(seqMap, strand);
-
-}
-
-
-CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByStrand(ENa_strand strand) const
-{
-    return CreateSeqMapForStrand(CConstRef<CSeqMap>(&GetSeqMap()), strand);
-}
-*/
 
 CConstRef<CSeqMap>
 CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
@@ -231,21 +216,6 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 }
 
 
-void CBioseq_Handle::x_ResolveTo(
-    CScope& scope, CBioseq_Info& bioseq)
-{
-    m_Scope = &scope;
-    m_Bioseq_Info.Reset(&bioseq);
-    m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
-}
-
-/*
-const CSeqMap& CBioseq_Handle::CreateResolvedSeqMap(void) const
-{
-    return x_GetDataSource().GetResolvedSeqMap(*this);
-}
-*/
-
 void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
 {
     _ASSERT(bool(m_Bioseq_Info)  &&  bool(m_Bioseq_Info->m_Entry));
@@ -275,6 +245,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/03/18 14:52:59  grichenk
+* Removed obsolete methods, replaced seq-id with seq-id handle
+* where possible. Added argument to limit annotations update to
+* a single seq-entry.
+*
 * Revision 1.33  2003/03/12 20:09:33  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

@@ -97,9 +97,13 @@ public:
                       const CSeq_annot& old_annot,
                       CSeq_annot& new_annot);
 
-    /// Get Bioseq handle by Seq-Id.
+    /// Get TSE info by seq-id handle. This should also get the list of all
+    /// seq-ids for all bioseqs and the list of seq-ids used in annotations.
+    CTSE_Lock GetBlobById(const CSeq_id_Handle& idh);
+
+    /// Get Bioseq info by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
-    CBioseq_Handle GetBioseqHandle(CScope& scope, CSeqMatch_Info& info);
+    CBioseq_Info* GetBioseqHandle(CSeqMatch_Info& info);
 
     // Filter set of CSeq_id (setSource)
     // Select from the setSource ones which are "owned" by this DataSource
@@ -128,18 +132,6 @@ public:
 
     /// Get sequence map
     const CSeqMap& GetSeqMap(const CBioseq_Handle& handle);
-    /// Get sequence map with resolved multi-level references
-    //const CSeqMap& GetResolvedSeqMap(const CBioseq_Handle& handle);
-    //const CSeqMap& GetResolvedSeqMap(const CBioseq_Handle& handle, CScope& scope);
-
-    /// Get a piece of seq. data ("seq_piece"), which the "point" belongs to:
-    ///   "length"     -- length   of the data piece the "point" is found in;
-    ///   "dest_start" -- position of the data piece in the dest. Bioseq;
-    ///   "src_start"  -- position of the data piece in the source Bioseq;
-    ///   "src_data"   -- Seq-data of the last Bioseq found in the chain;
-    /// Return FALSE if the final source Bioseq (i.e. the Bioseq that actually
-    /// describe the piece of sequence data containing the "point") cannot be
-    /// found.
 
     CDataLoader* GetDataLoader(void);
     CSeq_entry* GetTopEntry(void);
@@ -155,10 +147,10 @@ public:
     typedef map<const CObject*, CRef<CAnnotObject_Info> >     TAnnotObjects;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          CSeq_annot::C_Data::E_Choice sel);
+                          CSeq_annot::C_Data::E_Choice sel,
+                          const CSeq_entry* limit_entry);
     void GetSynonyms(const CSeq_id_Handle& id,
-                     set<CSeq_id_Handle>& syns,
-                     CScope& scope);
+                     set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              set<CTSE_Lock>& tse_set,
                              CScope& scope);
@@ -172,9 +164,9 @@ public:
                        set<CBioseq_Handle>& handles,
                        CSeq_inst::EMol filter);
 
-    CSeqMatch_Info BestResolve(const CSeq_id& id, CScope& scope);
+    CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
 
-    bool IsSynonym(const CSeq_id& id1, CSeq_id& id2) const;
+    bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
 
     string GetName(void) const;
 
@@ -196,12 +188,10 @@ private:
     // The best bioseq is the bioseq from the live TSE or from the
     // only one TSE containing the ID (no matter live or dead).
     // If no matches were found, return 0.
-    CTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle,
-                            const CScope::TRequestHistory& history) const;
+    CTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle) const;
 
     // Create CSeqMap for a bioseq
-    void x_CreateSeqMap(const CBioseq& seq, CScope& scope);
-    //const CSeqMap& x_CreateResolvedSeqMap(const CSeqMap& rmap, CScope& scope);
+    void x_CreateSeqMap(const CBioseq& seq);
     void x_LocToSeqMap(const CSeq_loc& loc, TSeqPos& pos, CSeqMap& seqmap);
     void x_AppendDataToSeqMap(const CSeq_data& data,
                               TSeqPos len,
@@ -267,42 +257,6 @@ private:
     // Change live/dead status of a TSE
     void x_UpdateTSEStatus(CSeq_entry& tse, bool dead);
 
-    // Resolve the reference to rh, add the resolved interval(s) to dmap.
-    // "start" is referenced region position on the "rh" sequence.
-    // "dpos" is the starting point on the master sequence.
-    void x_ResolveMapSegment(const CSeq_id_Handle& rh,
-                             TSeqPos start, TSeqPos len,
-                             CSeqMap& dmap, TSeqPos& dpos, TSeqPos dstop,
-                             CScope& scope);
-
-    void x_AppendLoc(const CSeq_loc& loc,
-                     vector<CSeqMap::CSegment>& segments);
-    void x_AppendRef(const CSeq_id_Handle& ref,
-                     TSeqPos from,
-                     TSeqPos length,
-                     bool minus_strand,
-                     vector<CSeqMap::CSegment>& segments);
-    void x_AppendRef(const CSeq_id_Handle& ref,
-                     TSeqPos from,
-                     TSeqPos length,
-                     ENa_strand strand,
-                     vector<CSeqMap::CSegment>& segments);
-    void x_AppendRef(const CSeq_id_Handle& ref,
-                     const CSeq_interval& interval,
-                     vector<CSeqMap::CSegment>& segments);
-    void x_AppendRef(const CSeq_interval& interval,
-                     vector<CSeqMap::CSegment>& segments);
-/*
-    void x_AppendResolved(const CSeq_id_Handle& seqid,
-                          TSeqPos ref_pos,
-                          TSeqPos ref_len,
-                          bool minus_strand,
-                          vector<CSeqMap::CSegment>& segments,
-                          CScope& scope);
-*/
-    void x_AppendDelta(const CDelta_ext& delta,
-                       vector<CSeqMap::CSegment>& segments);
-    
     // Used to lock: m_Entries, m_TSE_seq, m_TSE_ref, m_SeqMaps
     mutable CMutex m_DataSource_Mtx;
 
@@ -357,6 +311,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/03/18 14:52:57  grichenk
+* Removed obsolete methods, replaced seq-id with seq-id handle
+* where possible. Added argument to limit annotations update to
+* a single seq-entry.
+*
 * Revision 1.44  2003/03/11 14:15:50  grichenk
 * +Data-source priority
 *

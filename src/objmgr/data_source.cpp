@@ -88,8 +88,7 @@ CDataSource::~CDataSource(void)
 
 
 CTSE_Lock
-CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
-                           const CScope::TRequestHistory& history) const
+CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
 {
 //### Don't forget to unlock TSE in the calling function!
     TTSESet* p_tse_set = 0;
@@ -106,28 +105,12 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
     // The map should not contain empty entries
     _ASSERT(p_tse_set->size() > 0);
     TTSESet live;
-    CTSE_Lock from_history;
     ITERATE(TTSESet, tse, *p_tse_set) {
-        // Check history
-        CScope::TRequestHistory::const_iterator hst =
-            history.find(CTSE_Lock(*tse));
-        if (hst != history.end()) {
-            if ( from_history ) {
-                THROW1_TRACE(runtime_error,
-                             "CDataSource::x_FindBestTSE() -- "
-                             "Multiple history matches");
-            }
-            from_history.Set(*tse);
-        }
         // Find live TSEs
         if ( !(*tse)->m_Dead ) {
             // Make sure there is only one live TSE
             live.insert(*tse);
         }
-    }
-    // History is always the best choice
-    if (from_history) {
-        return from_history;
     }
 
     // Check live
@@ -157,19 +140,34 @@ CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
 }
 
 
-CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope,
-                                            CSeqMatch_Info& info)
+CTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
+{
+    TTSEMap::iterator tse_set = m_TSE_seq.find(idh);
+    if (tse_set == m_TSE_seq.end()) {
+        // Request TSE-info from loader if any
+        if ( m_Loader ) {
+            //
+        }
+        else {
+            // No such blob, no loader to call
+            return CTSE_Lock();
+        }
+//###
+    }
+//###
+    return CTSE_Lock();
+}
+
+
+CBioseq_Info* CDataSource::GetBioseqHandle(CSeqMatch_Info& info)
 {
     // The TSE is locked by the scope, so, it can not be deleted.
     //### CMutexGuard guard(sm_DataSource_Mtx);
     TBioseqMap::iterator found =
         info->m_BioseqMap.find(info.GetIdHandle());
     if ( found == info->m_BioseqMap.end() )
-        return CBioseq_Handle();
-    CBioseq_Handle h(info.GetIdHandle());
-    h.x_ResolveTo(scope, *found->second);
-    // Locked by BestResolve() in CScope::x_BestResolve()
-    return h;
+        return 0;
+    return found->second.GetPointer();
 }
 
 
@@ -267,7 +265,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
         }
 
         // Create sequence map
-        x_CreateSeqMap(GetBioseq(handle), *handle.m_Scope);
+        x_CreateSeqMap(GetBioseq(handle));
         found = m_SeqMaps.find(core);
         if (found == m_SeqMaps.end()) {
             THROW1_TRACE(runtime_error,
@@ -663,7 +661,7 @@ void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 }
 
 
-void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& /*scope*/)
+void CDataSource::x_CreateSeqMap(const CBioseq& seq)
 {
     //### Make sure the bioseq is not deleted while creating the seq-map
     CConstRef<CBioseq> guard(&seq);
@@ -675,8 +673,15 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& /*scope*/)
 
 
 void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                                   CSeq_annot::C_Data::E_Choice sel)
+                                   CSeq_annot::C_Data::E_Choice sel,
+                                   const CSeq_entry* limit_entry)
 {
+    if ( limit_entry ) {
+        TEntries::const_iterator tse = m_Entries.find(CConstRef<CSeq_entry>(limit_entry));
+        if ( tse == m_Entries.end() )
+            // This is an alien entry, no need to update anything
+            return;
+    }
     //### Lock all TSEs found, unlock all filtered out in the end.
     if ( m_Loader ) {
         // Send request to the loader
@@ -707,12 +712,11 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
 
 
 void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
-                              set<CSeq_id_Handle>& syns,
-                              CScope& scope)
+                              set<CSeq_id_Handle>& syns)
 {
     //### The TSE returns locked, unlock it
     CSeq_id_Handle idh = main_idh;
-    CTSE_Lock tse_info = x_FindBestTSE(main_idh, scope.m_History);
+    CTSE_Lock tse_info = x_FindBestTSE(main_idh);
     if ( !tse_info ) {
         // Try to find the best matching id (not exactly equal)
         const CSeq_id& id = idh.GetSeqId();
@@ -721,7 +725,7 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
         ITERATE(TSeq_id_HandleSet, hit, hset) {
             if ( tse_info  &&  idh.IsBetter(*hit) )
                 continue;
-            CTSE_Lock tmp_tse = x_FindBestTSE(*hit, scope.m_History);
+            CTSE_Lock tmp_tse = x_FindBestTSE(*hit);
             if ( tmp_tse ) {
                 tse_info = tmp_tse;
                 idh = *hit;
@@ -1210,33 +1214,30 @@ void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
 }
 
 
-CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
+CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
 {
     //### Lock all TSEs found, unlock all filtered out in the end.
     TTSESet loaded_tse_set;
     if ( m_Loader ) {
         // Send request to the loader
         //### Need a better interface to request just a set of IDs
-        CSeq_id_Handle idh = GetSeq_id_Mapper().GetHandle(id);
+        // CSeq_id_Handle idh = GetSeq_id_Mapper().GetHandle(id);
         CHandleRangeMap hrm;
         hrm.AddRange(idh,
                      CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
     CSeqMatch_Info match;
-    CSeq_id_Handle idh = GetSeq_id_Mapper().GetHandle(id, true);
-    if ( !idh ) {
-        return match; // The seq-id is not even mapped yet
-    }
-    CTSE_Lock tse = x_FindBestTSE(idh, scope.m_History);
+    CTSE_Lock tse = x_FindBestTSE(idh);
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
         TSeq_id_HandleSet hset;
-        GetSeq_id_Mapper().GetMatchingHandles(id, hset);
+        GetSeq_id_Mapper().GetMatchingHandles(
+            GetSeq_id_Mapper().GetSeq_id(idh), hset);
         ITERATE(TSeq_id_HandleSet, hit, hset) {
             if ( tse  &&  idh.IsBetter(*hit) )
                 continue;
-            CTSE_Lock tmp_tse = x_FindBestTSE(*hit, scope.m_History);
+            CTSE_Lock tmp_tse = x_FindBestTSE(*hit);
             if ( tmp_tse ) {
                 tse = tmp_tse;
                 idh = *hit;
@@ -1259,10 +1260,11 @@ string CDataSource::GetName(void) const
 }
 
 
-bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
+bool CDataSource::IsSynonym(const CSeq_id_Handle& h1,
+                            const CSeq_id_Handle& h2) const
 {
-    CSeq_id_Handle h1 = GetSeq_id_Mapper().GetHandle(id1);
-    CSeq_id_Handle h2 = GetSeq_id_Mapper().GetHandle(id2);
+    //CSeq_id_Handle h1 = GetSeq_id_Mapper().GetHandle(id1);
+    //CSeq_id_Handle h2 = GetSeq_id_Mapper().GetHandle(id2);
 
     CMutexGuard guard(m_DataSource_Mtx);    
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
@@ -1313,8 +1315,7 @@ bool CDataSource::GetTSEHandles(CScope& scope,
     }
     // Convert each map entry into bioseq handle
     NON_CONST_ITERATE (TEntryToInfo, eit, bioseq_map) {
-        CBioseq_Handle h(*eit->second->m_Synonyms.begin());
-        h.x_ResolveTo(scope, *eit->second);
+        CBioseq_Handle h(*eit->second->m_Synonyms.begin(), scope, *eit->second);
         handles.insert(h);
     }
     return true;
@@ -1393,6 +1394,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2003/03/18 14:52:59  grichenk
+* Removed obsolete methods, replaced seq-id with seq-id handle
+* where possible. Added argument to limit annotations update to
+* a single seq-entry.
+*
 * Revision 1.91  2003/03/12 20:09:34  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

@@ -732,7 +732,24 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
                               CSeq_loc_Conversion* cvt)
 {
-    m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice);
+    switch ( m_LimitObjectType ) {
+    case eLimit_TSE:
+    case eLimit_Entry:
+    {
+        // Limit update to one seq-entry
+        const CSeq_entry* tse = 
+            static_cast<const CSeq_entry*>(m_LimitObject.GetPointer());
+        m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice, tse);
+        break;
+    }
+    case eLimit_Annot:
+        // Do not update datasources: if we have seq-annot,
+        // it's already loaded and indexed (?)
+    default:
+        // eLimit_None
+        m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice);
+        break;
+    }
 
     ITERATE ( CHandleRangeMap, idit, loc ) {
         if ( idit->second.Empty() ) {
@@ -811,6 +828,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/03/18 14:52:59  grichenk
+* Removed obsolete methods, replaced seq-id with seq-id handle
+* where possible. Added argument to limit annotations update to
+* a single seq-entry.
+*
 * Revision 1.56  2003/03/14 19:10:41  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *
