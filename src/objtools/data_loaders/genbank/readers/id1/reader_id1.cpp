@@ -296,7 +296,7 @@ void CId1Reader::x_SendRequest(const CSeqref& seqref,
 }
 
 
-static void s_SkipBytes(CByteSourceReader& reader, size_t to_skip)
+void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
 {
     // skip 2 bytes of hacked header
     const size_t kBufferSize = 128;
@@ -322,7 +322,7 @@ CId1Reader::x_ReceiveSNPAnnot(CConn_ServiceStream* stream)
         
         CStreamByteSourceReader src(0, stream);
         
-        s_SkipBytes(src, kSkipHeader);
+        Id1ReaderSkipBytes(src, kSkipHeader);
         
         CResultZBtSrc src2(&src);
         
@@ -331,7 +331,7 @@ CId1Reader::x_ReceiveSNPAnnot(CConn_ServiceStream* stream)
         
         snp_annot_info->Read(*in);
         
-        s_SkipBytes(src, kSkipFooter);
+        Id1ReaderSkipBytes(src, kSkipFooter);
     }}
 
     return snp_annot_info;
@@ -344,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.46  2003/10/01 18:08:14  kuznets
+ * s_SkipBytes renamed to Id1ReaderSkipBytes (made non static)
+ *
  * Revision 1.45  2003/09/30 19:38:26  vasilche
  * Added support for cached id1 reader.
  *
