@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/07/03 15:03:05  kholodov
+* Added: throw exception when driver cannot be loaded
+*
 * Revision 1.4  2002/04/29 19:13:13  kholodov
 * Modified: using C_DriverMgr as parent class of CDriverManager
 *
@@ -60,7 +63,7 @@ static CSafeStaticPtr<CDriverManager> singleDM;
 
 CDriverManager& CDriverManager::GetInstance()
 {
-  return singleDM.Get();
+    return singleDM.Get();
 }
 
 CDriverManager::CDriverManager()
@@ -70,73 +73,77 @@ CDriverManager::CDriverManager()
 
 CDriverManager::~CDriverManager()
 {
-  map<string, IDataSource*>::iterator i_ds_list = m_ds_list.begin();
+    map<string, IDataSource*>::iterator i_ds_list = m_ds_list.begin();
 
-  for( ; i_ds_list != m_ds_list.end(); ++i_ds_list ) {
-    delete (*i_ds_list).second;
-  }
-  m_ds_list.clear();
+    for( ; i_ds_list != m_ds_list.end(); ++i_ds_list ) {
+        delete (*i_ds_list).second;
+    }
+    m_ds_list.clear();
 }
 
 
 IDataSource* CDriverManager::CreateDs(const string& driver_name,
-				      map<string, string> *attr)
+                                      map<string, string> *attr)
 {
-  FDBAPI_CreateContext ctx_func = GetDriver(driver_name);
-  if( ctx_func != 0 ) {
-    I_DriverContext *ctx = ctx_func(attr);
-    if( ctx != 0 ) {
-      return RegisterDs(driver_name, ctx);
+    string err;
+
+    FDBAPI_CreateContext ctx_func = GetDriver(driver_name, &err);
+    if( ctx_func != 0 ) {
+        I_DriverContext *ctx = ctx_func(attr);
+        if( ctx != 0 ) {
+            return RegisterDs(driver_name, ctx);
+        }
     }
-  }
-  return 0;
+
+    throw CDbapiException(err);
+    return 0;
 }
 
 IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
-					  CNcbiRegistry* reg)
+                                          CNcbiRegistry* reg)
 {
-  list<string> names;
-  NStr::Split(drivers, ":", names);
+    list<string> names;
+    NStr::Split(drivers, ":", names);
 
-  list<string>::iterator i_name = names.begin();
-  for( ; i_name != names.end(); ++i_name ) {
-    FDBAPI_CreateContext ctx_func = GetDriver(*i_name);
-    if( ctx_func != 0 ) {
-      I_DriverContext *ctx = 0;
-      if( reg != 0 ) {
-	// Get parameters from registry, if any
-	map<string, string> attr;
-	list<string> entries;
-	reg->EnumerateEntries(*i_name, &entries);
-	list<string>::iterator i_param = entries.begin();
-	for( ; i_param != entries.end(); ++i_param ) {
-	  attr[*i_param] = reg->Get(*i_name, *i_param);
-	}
-	ctx = ctx_func(&attr);
-      }
-      else {
-	ctx = ctx_func(0);
-      }
+    list<string>::iterator i_name = names.begin();
+    for( ; i_name != names.end(); ++i_name ) {
+        FDBAPI_CreateContext ctx_func = GetDriver(*i_name);
+        if( ctx_func != 0 ) {
+            I_DriverContext *ctx = 0;
+            if( reg != 0 ) {
+                // Get parameters from registry, if any
+                map<string, string> attr;
+                list<string> entries;
+                reg->EnumerateEntries(*i_name, &entries);
+                list<string>::iterator i_param = entries.begin();
+                for( ; i_param != entries.end(); ++i_param ) {
+                    attr[*i_param] = reg->Get(*i_name, *i_param);
+                }
+                ctx = ctx_func(&attr);
+            }
+            else {
+                ctx = ctx_func(0);
+            }
 
-      if( ctx != 0 ) { 
-	return RegisterDs(*i_name, ctx);
-      }
+            if( ctx != 0 ) { 
+                return RegisterDs(*i_name, ctx);
+            }
+        }
     }
-  }
-  return 0;
+    return 0;
 }
 
 IDataSource* CDriverManager::RegisterDs(const string& driver_name,
-					I_DriverContext* ctx)
+                                        I_DriverContext* ctx)
 {
-  map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
-  if( i_ds == m_ds_list.end() ) {
-    IDataSource *ds = new CDataSource(ctx, 0);
-    m_ds_list[driver_name] = ds;
-    return ds;
-  }
-  else
-    return (*i_ds).second;
+    map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
+    if( i_ds == m_ds_list.end() ) {
+        IDataSource *ds = new CDataSource(ctx, 0);
+        m_ds_list[driver_name] = ds;
+        return ds;
+    }
+    else
+        return (*i_ds).second;
 }
 
 END_NCBI_SCOPE
