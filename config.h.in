@@ -35,6 +35,7 @@
 
 /* Compiler name and version */
 #undef NCBI_COMPILER_GCC
+#undef NCBI_COMPILER_KCC
 #undef NCBI_COMPILER_WORKSHOP
 #undef NCBI_COMPILER_MIPSPRO
 #undef NCBI_COMPILER_MSVC
