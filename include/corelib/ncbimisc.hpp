@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/07/19 19:03:52  vakatov
+* StringToBool() -- short and case-insensitive versions of "true"/"false"
+* ToUpper/ToLower(string&) -- fixed
+*
 * Revision 1.39  2000/04/17 19:30:12  vakatov
 * Allowed case-insensitive comparison for StartsWith() and EndsWith()
 *
@@ -174,7 +178,7 @@ private:
 
 // tools
 struct NStr {
-    // conversion functions
+    // conversion functions (throw an exception on the conversion error)
     static int StringToInt(const string& str, int base = 10);
     static unsigned int StringToUInt(const string& str, int base = 10);
     static long StringToLong(const string& str, int base = 10);
@@ -183,9 +187,12 @@ struct NStr {
     static string IntToString(long value, bool sign=false);
     static string UIntToString(unsigned long value);
     static string DoubleToString(double value);
-    static string BoolToString(bool value);
-    static bool   StringToBool(const string& str);
     static string PtrToString(const void* ptr);
+
+    // 'true, 'false'
+    static string BoolToString(bool value);
+    // 'true, 't', 'false', 'f'  (case-insensitive)
+    static bool   StringToBool(const string& str);
 
     /*  str[pos:pos+n) == pattern  --> return 0
      *  str[pos:pos+n) <  pattern  --> return negative value

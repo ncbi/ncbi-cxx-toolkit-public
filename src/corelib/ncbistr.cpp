@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/07/19 19:03:55  vakatov
+* StringToBool() -- short and case-insensitive versions of "true"/"false"
+* ToUpper/ToLower(string&) -- fixed
+*
 * Revision 1.30  2000/06/01 19:05:40  vasilche
 * NStr::StringToInt now reports errors for tailing symbols in release version too
 *
@@ -264,46 +268,39 @@ int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 
 
 char* NStr::ToLower(char* str) {
-    char* s = str;
-    for ( ;  *str;  str++) {
+    char* s;
+    for (s = str;  *str;  str++) {
         *str = tolower(*str);
     }
     return s;
 }
 
 string& NStr::ToLower(string& str) {
-    char* data = const_cast<char*>(str.data());
-    for (SIZE_TYPE i = str.length();  i;  i--, data++) {
-        *data = tolower(*data);
+    for (string::iterator it = str.begin();  it != str.end();  ++it) {
+        *it = tolower(*it);
     }
     return str;
 }
 
 char* NStr::ToUpper(char* str) {
-    char* s = str;
-    for ( ;  *str;  str++) {
+    char* s;
+    for (s = str;  *str;  str++) {
         *str = toupper(*str);
     }
     return s;
 }
 
 string& NStr::ToUpper(string& str) {
-    char* data = const_cast<char*>(str.data());
-    for (SIZE_TYPE i = str.length();  i;  i--, data++) {
-        *data = toupper(*data);
+    for (string::iterator it = str.begin();  it != str.end();  ++it) {
+        *it = toupper(*it);
     }
     return str;
 }
 
-//#ifdef _DEBUG
-#if 1
 # define CHECK_ENDPTR() \
-    if ( *endptr != '\0' ) { \
+    if (*endptr != '\0') { \
         THROW1_TRACE(runtime_error, "no symbols should be after number"); \
     }
-#else
-# define CHECK_ENDPTR()
-#endif
 
 
 
@@ -394,20 +391,26 @@ string NStr::PtrToString(const void* value)
     return buffer;
 }
 
-static const string kTrueString  = "true";
-static const string kFalseString = "false";
+static const string s_kTrueString  = "true";
+static const string s_kFalseString = "false";
+static const string s_kTString     = "t";
+static const string s_kFString     = "f";
 
 string NStr::BoolToString(bool value)
 {
-    return value ? kTrueString : kFalseString;
+    return value ? s_kTrueString : s_kFalseString;
 }
 
 bool NStr::StringToBool(const string& str)
 {
-    if ( AStrEquiv(str, kTrueString,  PNocase()) )
+    if (AStrEquiv(str, s_kTrueString,  PNocase())  ||
+        AStrEquiv(str, s_kTString,  PNocase()) )
         return true;
-    if ( AStrEquiv(str, kFalseString, PNocase()) )
+
+    if ( AStrEquiv(str, s_kFalseString, PNocase())  ||
+         AStrEquiv(str, s_kFString, PNocase()))
         return false;
+
     throw runtime_error("NStr::StringToBool(): cannot convert");
 }
 
