@@ -109,13 +109,15 @@ TSignedSeqPos FindPolyA(const char* seq, TSignedSeqPos possCleavageSite)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// PRE : null-terminated string containing sequence; possible cleavage site
+// PRE : null-terminated string containing sequence; possible 3' cleavage
+// site, possible 5' cleavage site (if submitted reversed)
 // POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
 // head, or neither
 EPolyTail FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
-                       TSignedSeqPos possCleavageSite)
+                       TSignedSeqPos possCleavageSite3p,
+                       TSignedSeqPos possCleavageSite5p)
 {
-    cleavageSite = FindPolyA(seq, possCleavageSite);
+    cleavageSite = FindPolyA(seq, possCleavageSite3p);
     if (cleavageSite >= 0) {
         return ePolyTail_A3;
     } else {
@@ -124,12 +126,8 @@ EPolyTail FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
         CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, seqLen,
                                      otherStrand.get());
 
-        if (possCleavageSite >= 0) {
-            cleavageSite = FindPolyA(otherStrand.get(),
-                                     seqLen - possCleavageSite - 1);
-        } else {
-            cleavageSite = FindPolyA(otherStrand.get());
-        }
+        cleavageSite = FindPolyA(otherStrand.get(), (possCleavageSite5p >= 0) ?
+                                 seqLen - possCleavageSite5p - 1 : -1);
 
         if (cleavageSite >= 0) {
             cleavageSite = seqLen - cleavageSite - 1;
@@ -143,6 +141,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.4  2003/12/31 20:41:40  johnson
+* FindPolySite takes cleavage prompt for both 3' poly-A and 5' poly-T
+*
 * Revision 1.3  2003/12/31 00:33:22  johnson
 * minor bug fixes
 *

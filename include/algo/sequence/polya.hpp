@@ -50,18 +50,23 @@ TSignedSeqPos NCBI_XALGOSEQ_EXPORT
 FindPolyA(const char* seq, TSignedSeqPos possCleavageSite = -1);
 
 ///////////////////////////////////////////////////////////////////////////////
-/// PRE : null-terminated string containing sequence; possible cleavage site
+/// PRE : null-terminated string containing sequence; possible 3' cleavage
+/// site, possible 5' cleavage site (if submitted reversed)
 /// POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
 /// head, or neither
 EPolyTail NCBI_XALGOSEQ_EXPORT
 FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
-             TSignedSeqPos possCleavageSite = -1);
+             TSignedSeqPos possCleavageSite3p = -1,
+             TSignedSeqPos possCleavageSite5p = -1);
 
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2003/12/31 20:41:39  johnson
+* FindPolySite takes cleavage prompt for both 3' poly-A and 5' poly-T
+*
 * Revision 1.2  2003/12/30 21:28:31  johnson
 * added msvc export specifiers
 *
