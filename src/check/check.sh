@@ -104,6 +104,7 @@ esac
 
 ####  RUN CHECKS
 
+MAKEFLAGS=
 "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
 $run_script ./check.sh run
 
