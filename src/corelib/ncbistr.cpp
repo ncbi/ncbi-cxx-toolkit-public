@@ -863,7 +863,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 {
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
-    bool          is_html  = flags & fWrap_HTMLPre;
+    bool          is_html  = flags & fWrap_HTMLPre ? true : false;
     SIZE_TYPE     column   = s_VisibleWidth(s,     is_html);
     SIZE_TYPE     delwidth = s_VisibleWidth(delim, is_html);
     bool          at_start = true;
@@ -922,6 +922,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2003/01/31 03:39:11  lavr
+ * Heed int->bool performance warning
+ *
  * Revision 1.69  2003/01/27 20:06:59  ivanov
  * Get rid of compilation warnings in StringToUInt8() and DoubleToString()
  *
