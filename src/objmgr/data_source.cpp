@@ -1116,9 +1116,19 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
     lock.ReleaseLoadLock();
 }
 
-
-static unsigned sx_CacheSize = GetConfigInt("OBJMGR", "BLOB_CACHE", 10);
-
+static unsigned s_GetCacheSize(void)
+{
+    static unsigned sx_Value = kMax_UInt;
+    unsigned value = sx_Value;
+    if ( value == kMax_UInt ) {
+        value = GetConfigInt("OBJMGR", "BLOB_CACHE", 10);
+        if ( value == kMax_UInt ) {
+            --value;
+        }
+        sx_Value = value;
+    }
+    return value;
+}
 
 void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
 {
@@ -1147,7 +1157,9 @@ void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
         _ASSERT(tse->m_CachePosition ==
                 find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
         
-        while ( m_Blob_Cache.size() > sx_CacheSize ) {
+
+        unsigned cache_size = s_GetCacheSize();
+        while ( m_Blob_Cache.size() > cache_size ) {
             CRef<CTSE_Info> del_tse = m_Blob_Cache.front();
             m_Blob_Cache.pop_front();
             del_tse->m_CacheState = CTSE_Info::eNotInCache;

@@ -50,12 +50,25 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static bool sx_ScopeAutoReleaseEnabled = GetConfigFlag("OBJMGR",
-                                                       "SCOPE_AUTORELEASE",
-                                                       true);
-static int sx_ScopeAutoReleaseSize = GetConfigInt("OBJMGR",
-                                                  "SCOPE_AUTORELEASE_SIZE",
-                                                  10);
+
+static unsigned s_GetScopeAutoReleaseSize(void)
+{
+    static unsigned sx_Value = kMax_UInt;
+    unsigned value = sx_Value;
+    if ( value == kMax_UInt ) {
+        if ( GetConfigFlag("OBJMGR", "SCOPE_AUTORELEASE", true) ) {
+            value = GetConfigInt("OBJMGR", "SCOPE_AUTORELEASE_SIZE", 10);
+            if ( value == kMax_UInt ) {
+                --value;
+            }
+        }
+        else {
+            value = 0;
+        }
+        sx_Value = value;
+    }
+    return value;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -66,11 +79,11 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
                                              CDataSource& ds)
     : m_Scope(&scope),
       m_DataSource(&ds),
-      m_CanBeUnloaded(sx_ScopeAutoReleaseEnabled &&
+      m_CanBeUnloaded(s_GetScopeAutoReleaseSize() &&
                       ds.GetDataLoader() &&
                       ds.GetDataLoader()->CanGetBlobById()),
       m_NextTSEIndex(0),
-      m_TSE_UnlockQueue(sx_ScopeAutoReleaseSize)
+      m_TSE_UnlockQueue(s_GetScopeAutoReleaseSize())
 {
 }
 
@@ -985,6 +998,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/03/14 17:05:56  vasilche
+* Thread safe retrieval of configuration variables.
+*
 * Revision 1.12  2005/01/05 18:45:57  vasilche
 * Added GetConfigXxx() functions.
 *
