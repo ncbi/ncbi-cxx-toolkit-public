@@ -66,11 +66,19 @@ public:
     // Get ASN data
     const SeqAnnotList& GetSeqAnnots(void);
 
+    // Get SequenceSet (e.g. for use in AlignmentSet::CreateFromMultiple)
+    const SequenceSet * GetSequenceSet(void) const {return m_sequenceSet;}
+
 	// Get the PSSM associated with this alignment (implies IBM); returns NULL on failure
 	const BLAST_Matrix_ * GetPSSM(void);
 
     // Get the BlockMultipleAlignment (implies IBM); returns NULL on failure
     const BlockMultipleAlignment * GetBlockMultipleAlignment(void);
+
+    // Configure object with a different alignment - clones the bma passed in.
+    // New bma may have deleted or reordered rows, but for any rows having new
+    // sequences those sequences must be explicitly added.
+    void SetBlockMultipleAlignment(const BlockMultipleAlignment* bma);
 
     // compute the score-vs-PSSM for a row (implies IBM), as sum of scores of aligned residues;
     // returns kMin_Int on error
@@ -116,6 +124,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/09/07 18:51:03  lanczyck
+* add SetBlockMultipleAlignment & GetSequenceSet methods
+*
 * Revision 1.8  2004/07/15 13:52:14  thiessen
 * calculate max loops before row extraction; add quertFrom/To parameters
 *

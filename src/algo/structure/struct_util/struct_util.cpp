@@ -473,6 +473,14 @@ const BlockMultipleAlignment * AlignmentUtility::GetBlockMultipleAlignment(void)
     return m_currentMultiple;
 }
 
+void AlignmentUtility::SetBlockMultipleAlignment(const BlockMultipleAlignment* bma) {
+    if (bma) {
+        RemoveMultiple();
+        RemoveAlignAnnot();
+        m_currentMultiple = bma->Clone();
+    }
+}
+
 int AlignmentUtility::ScoreRowByPSSM(unsigned int row)
 {
     // first we need to do IBM -> BlockMultipleAlignment
@@ -512,6 +520,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/09/07 18:51:20  lanczyck
+* add SetBlockMultipleAlignment & GetSequenceSet methods
+*
 * Revision 1.14  2004/07/28 23:06:03  thiessen
 * show all scores before and after
 *
