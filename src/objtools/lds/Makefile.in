@@ -5,6 +5,7 @@
 
 LIB_PROJ = lds
 SUB_PROJ = admin
+REQUIRES = bdb
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
