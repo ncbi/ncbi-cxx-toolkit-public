@@ -109,8 +109,8 @@ AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor")
 AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
 
 #### Use right command shell in scripts and makefiles
-script_sh="#! /bin/sh"
-make_shell="SHELL=/bin/sh"
+script_sh="#! ${CONFIG_SHELL:=/bin/sh}"
+make_shell="SHELL=${CONFIG_SHELL:=/bin/sh}"
 
 #### Tools
 AC_LANG_CPLUSPLUS
@@ -222,16 +222,6 @@ AC_TRY_COMPILE(
    AC_DEFINE_UNQUOTED(HAVE_NO_AUTO_PTR, 1)
 )
 AC_MSG_RESULT()
-
-AC_MSG_CHECKING(for snprintf() function)
-AC_TRY_LINK(
-   [#include <stdio.h>],
-   [snprintf(0,0,0); ],
-   ,
-   AC_DEFINE_UNQUOTED(HAVE_NO_SNPRINTF, 1)
-)
-AC_MSG_RESULT()
-
 
 
 dnl Check for C standard types
