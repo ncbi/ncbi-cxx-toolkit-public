@@ -82,7 +82,7 @@ int CTest::Run(void)
     assert( app_c != 0 );
 
     const char* app_p  = "ls";
-    const char* app_pp = "-l";
+    const char* app_pp = "..";
 
     const char* my_env[] =   // Environment for Spawn*E
     {
@@ -240,6 +240,10 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2004/10/13 14:56:02  ivanov
+ * Do not make a ls for current directory, run it for parent dir '..'
+ * -- this fixed a problem with ls on Cygwin.
+ *
  * Revision 6.19  2004/08/18 16:00:50  ivanov
  * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
  *
