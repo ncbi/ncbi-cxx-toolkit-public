@@ -25,15 +25,20 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   Blast exception class
-*
 */
+
+/// @file blast_exception.hpp
+/// Declares the BLAST exception class.
 
 #ifndef ALGO_BLAST_API___BLAST_EXCEPTION__HPP
 #define ALGO_BLAST_API___BLAST_EXCEPTION__HPP
 
 #include <corelib/ncbiexpt.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -76,10 +81,15 @@ public:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/19 18:56:04  camacho
+* Move to doxygen AlgoBlast group
+*
 * Revision 1.8  2004/03/15 22:59:24  dondosha
 * Removed unnecessary function ThrowBlastException
 *

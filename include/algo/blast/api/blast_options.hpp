@@ -48,6 +48,11 @@ class CBlastGapAlignTest;
 class CBlastDbTest;
 class CBlastTraceBackTest; 
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
@@ -2348,10 +2353,15 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/03/19 18:56:04  camacho
+* Move to doxygen AlgoBlast group
+*
 * Revision 1.53  2004/03/09 18:41:06  dondosha
 * Removed single hsp cutoff evalue and score, since these are calculated, and not set by user
 *

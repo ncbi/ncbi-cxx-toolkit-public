@@ -25,10 +25,11 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   C++ Wrappers to NewBlast structures
-*
 */
+
+/// @file blast_aux.hpp
+/// Contains C++ wrapper classes to structures in algo/blast/core as well as
+/// some auxiliary functions to convert CSeq_loc to/from BlastMask structures.
 
 #ifndef ALGO_BLAST_API___BLAST_AUX__HPP
 #define ALGO_BLAST_API___BLAST_AUX__HPP
@@ -46,6 +47,11 @@
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -87,6 +93,8 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask, TSeqLocVector &slp);
  */
 
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
+/** Wrapper class for struct_name. */\
+\
 class C##struct_name : public CDebugDumpable \
 { \
 public: \
@@ -141,10 +149,15 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, BLAST_ResultsFree);
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/03/19 18:56:04  camacho
+* Move to doxygen AlgoBlast group
+*
 * Revision 1.31  2004/03/18 13:50:38  camacho
 * Remove unused CDeleter template specializations
 *

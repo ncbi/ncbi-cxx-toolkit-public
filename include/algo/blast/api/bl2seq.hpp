@@ -25,16 +25,20 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   Blast2Sequences class interface
-*
 */
+
+/// @file bl2seq.hpp
+/// Declares the CBl2Seq (BLAST 2 Sequences) class
 
 #ifndef ALGO_BLAST_API___BL2SEQ__HPP
 #define ALGO_BLAST_API___BL2SEQ__HPP
 
-#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -46,6 +50,7 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 /// Runs the BLAST algorithm between 2 sequences.
+
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
@@ -251,10 +256,15 @@ CBl2Seq::GetFilteredQueryRegions() const
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2004/03/19 18:56:04  camacho
+* Move to doxygen AlgoBlast group
+*
 * Revision 1.29  2004/03/15 19:55:28  dondosha
 * Use sequence source instead of accessing subjects directly
 *

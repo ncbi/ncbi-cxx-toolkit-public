@@ -43,11 +43,11 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
-class CBlastException;
 
+class CBlastException;
 class CBlastOptionsHandle;
 
-/**
+/** 
 * Creates BlastOptionsHandle objects with default values for the 
 * programs/tasks requested.
 *
@@ -184,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/19 18:56:04  camacho
+ * Move to doxygen AlgoBlast group
+ *
  * Revision 1.10  2004/03/19 14:53:24  camacho
  * Move to doxygen group AlgoBlast
  *
