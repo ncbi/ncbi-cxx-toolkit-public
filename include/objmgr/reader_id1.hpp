@@ -66,6 +66,9 @@ protected:
     virtual void x_ReadBlob(CID1server_back& id1_reply,
                             const CSeqref& seqref, CNcbiIstream& in);
 
+    void x_SendRequest(const CSeqref& seqref,
+                       CConn_ServiceStream* stream,
+                       bool is_snp);
 private:
 
     void x_RetrieveSeqrefs(TSeqrefs& sr,
@@ -77,9 +80,6 @@ private:
     int x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
                               CConn_ServiceStream* stream);
 
-    void x_SendRequest(const CSeqref& seqref,
-                       CConn_ServiceStream* stream,
-                       bool is_snp);
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
     CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
 
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.19  2003/10/01 16:54:50  kuznets
+* Relaxed scope restriction of CId1Reader::x_SendRequest() (private->protected)
+*
 * Revision 1.18  2003/09/30 19:38:26  vasilche
 * Added support for cached id1 reader.
 *
