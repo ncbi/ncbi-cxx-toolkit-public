@@ -42,7 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 #include "blast_tabular.hpp"
-#include "blast_setup.hpp"
+#include "../blast_setup.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -260,6 +260,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/06/15 20:24:35  dondosha
+* Corrected path to blast_setup.hpp header
+*
 * Revision 1.1  2004/06/15 18:51:16  dondosha
 * Implementation of a thread producing on-the-fly output from a BLAST search
 *
