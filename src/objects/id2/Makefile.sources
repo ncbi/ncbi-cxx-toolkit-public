@@ -1,0 +1,18 @@
+# $Id$
+
+ASN_DEP = seqsplit
+
+all: sources
+
+sources:
+	for x in $(ASN_DEP); do \
+	    d=$(srcdir)/../$$x ; \
+	    (cd $$d  &&  $(builddir)/new_module.sh) ; \
+	    test -f $${x}__.cpp  ||  \
+	        echo "#include \"$$d/$${x}__.cpp\""  > $${x}__.cpp ; \
+	    test -f $${x}___.cpp  ||  \
+	        echo "#include \"$$d/$${x}___.cpp\"" > $${x}___.cpp ; \
+	done
+
+clean:;
+purge:;

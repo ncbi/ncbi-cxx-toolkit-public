@@ -74,6 +74,7 @@ public:
     
     // Get seq-id handle. Create new handle if not found and
     // do_not_create is false. Get only the exactly equal seq-id handle.
+    CSeq_id_Handle GetGiHandle(int gi) const;
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
 
     // Get the list of matching handles, do not create new handles
@@ -139,12 +140,30 @@ CConstRef<CSeq_id> CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& h)
 }
 
 
+inline
+CSeq_id_Handle CSeq_id_Mapper::GetGiHandle(int gi) const
+{
+    return CSeq_id_Handle(m_GiInfo, gi);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/01/22 20:10:38  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.20  2004/01/07 20:42:00  grichenk
 * Fixed matching of accession to accession.version
 *

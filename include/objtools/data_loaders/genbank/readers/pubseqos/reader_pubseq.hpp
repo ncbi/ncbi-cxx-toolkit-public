@@ -61,9 +61,7 @@ public:
     virtual void ResolveSeq_id(TSeqrefs& sr, const CSeq_id& id, TConn conn);
     virtual void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
 
-    virtual CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
-                                       const CSeqref& seqref,
-                                       TConn conn);
+    virtual CRef<CTSE_Info> GetTSEBlob(const CSeqref& seqref, TConn conn);
     virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref,
                                                   TConn conn);
 
@@ -114,6 +112,17 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.25  2004/01/22 20:10:34  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.24  2004/01/13 21:58:42  vasilche
 * Requrrected new version
 *

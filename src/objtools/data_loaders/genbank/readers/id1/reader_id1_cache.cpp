@@ -29,6 +29,7 @@
  */
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
+#include <objtools/data_loaders/genbank/split_parser.hpp>
 
 #include <corelib/ncbitime.hpp>
 
@@ -637,7 +638,7 @@ void CCachedId1Reader::GetTSEChunk(const CSeqref& seqref,
         *in >> *chunk;
         size = in->GetStreamOffset();
     }}
-    chunk_info.Load(*chunk);
+    CSplitParser::Load(chunk_info, *chunk);
     
     // everything is fine
     if ( CollectStatistics() ) {
@@ -998,7 +999,7 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
 
             if ( CollectStatistics() ) {
                 double time = sw.Elapsed();
-                size_t size = m_OldBlobCache->GetSize(key, ver);
+                size_t size = m_BlobCache->GetSize(key, ver, subkey);
                 LogBlobStat("CId1Cache: read SNP blob",
                             seqref, size, time);
                 snp_load_count++;
@@ -1302,6 +1303,17 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.21  2004/01/22 20:10:37  vasilche
+ * 1. Splitted ID2 specs to two parts.
+ * ID2 now specifies only protocol.
+ * Specification of ID2 split data is moved to seqsplit ASN module.
+ * For now they are still reside in one resulting library as before - libid2.
+ * As the result split specific headers are now in objects/seqsplit.
+ * 2. Moved ID2 and ID1 specific code out of object manager.
+ * Protocol is processed by corresponding readers.
+ * ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+ * 3. Updated OBJMGR_LIBS correspondingly.
+ *
  * Revision 1.20  2004/01/20 16:56:04  vasilche
  * Allow storing version of any blob (not only SNP).
  *

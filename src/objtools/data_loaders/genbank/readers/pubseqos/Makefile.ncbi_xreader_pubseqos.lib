@@ -2,15 +2,10 @@
 
 SRC = reader_pubseq
 
-LIB    = ncbi_xreader_pubseqos
-
-CPPFLAGS = $(ORIG_CPPFLAGS)
-
-REQUIRES =
+LIB = ncbi_xreader_pubseqos
 
 # Build shared version when possible
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = 
-#$(GENBANK_READER_PUBSEQOS_LDEP)
+DLL_LIB = dbapi_driver ncbi_xreader

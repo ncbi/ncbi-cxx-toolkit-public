@@ -55,19 +55,19 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
-#include <objects/id2/ID2S_Split_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Id.hpp>
-#include <objects/id2/ID2S_Chunk.hpp>
-#include <objects/id2/ID2S_Chunk_Data.hpp>
-#include <objects/id2/ID2S_Chunk_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Content.hpp>
-#include <objects/id2/ID2S_Seq_annot_Info.hpp>
-#include <objects/id2/ID2S_Feat_type_Info.hpp>
-#include <objects/id2/ID2_Seq_loc.hpp>
-#include <objects/id2/ID2_Id_Range.hpp>
-#include <objects/id2/ID2_Seq_range.hpp>
-#include <objects/id2/ID2_Interval.hpp>
-#include <objects/id2/ID2_Packed_Seq_ints.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Id.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Data.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Content.hpp>
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
+#include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
+#include <objects/seqsplit/ID2_Seq_loc.hpp>
+#include <objects/seqsplit/ID2_Id_Range.hpp>
+#include <objects/seqsplit/ID2_Seq_range.hpp>
+#include <objects/seqsplit/ID2_Interval.hpp>
+#include <objects/seqsplit/ID2_Packed_Seq_ints.hpp>
 
 #include <objmgr/split/blob_splitter.hpp>
 #include <objmgr/split/object_splitinfo.hpp>
@@ -242,21 +242,21 @@ CRef<CID2_Seq_loc> MakeLoc(int gi, const TGiInt_set& int_set)
 {
     CRef<CID2_Seq_loc> loc(new CID2_Seq_loc);
     if ( int_set.size() == 1 ) {
-        CID2_Interval& interval = loc->SetInt();
+        CID2_Interval& interval = loc->SetInterval();
         interval.SetGi(gi);
         const CSeqsRange::TRange& range = *int_set.begin();
         interval.SetStart(range.GetFrom());
         interval.SetLength(range.GetLength());
     }
     else {
-        CID2_Packed_Seq_ints& seq_ints = loc->SetInt_set();
+        CID2_Packed_Seq_ints& seq_ints = loc->SetPacked_ints();
         seq_ints.SetGi(gi);
         ITERATE ( TGiInt_set, it, int_set ) {
             CRef<CID2_Seq_range> add(new CID2_Seq_range);
             const CSeqsRange::TRange& range = *it;
             add->SetStart(range.GetFrom());
             add->SetLength(range.GetLength());
-            seq_ints.SetInts().push_back(add);
+            seq_ints.SetIntervals().push_back(add);
         }
     }
     return loc;
@@ -292,14 +292,14 @@ void AddLoc(CRef<CID2_Seq_loc>& loc, int gi_start, int gi_count)
     if ( gi_count < 4 ) {
         for ( int i = 0; i < gi_count; ++i ) {
             CRef<CID2_Seq_loc> add(new CID2_Seq_loc);
-            add->SetWhole(gi_start + i);
+            add->SetGi_whole(gi_start + i);
             AddLoc(loc, add);
         }
     }
     else {
         CRef<CID2_Seq_loc> add(new CID2_Seq_loc);
-        add->SetWhole_range().SetStart(gi_start);
-        add->SetWhole_range().SetCount(gi_count);
+        add->SetGi_whole_range().SetStart(gi_start);
+        add->SetGi_whole_range().SetCount(gi_count);
         AddLoc(loc, add);
     }
 }
@@ -540,6 +540,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/22 20:10:42  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.7  2004/01/07 17:36:24  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

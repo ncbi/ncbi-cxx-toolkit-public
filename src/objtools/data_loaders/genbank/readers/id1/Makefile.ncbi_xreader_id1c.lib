@@ -2,15 +2,10 @@
 
 SRC = reader_id1_cache
 
-LIB    = ncbi_xreader_id1c
-
-CPPFLAGS = $(ORIG_CPPFLAGS)
-
-REQUIRES =
+LIB = ncbi_xreader_id1c
 
 # Build shared version when possible
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = 
-#$(GENBANK_READER_ID1C_LDEP)
+DLL_LIB = ncbi_xreader_id1

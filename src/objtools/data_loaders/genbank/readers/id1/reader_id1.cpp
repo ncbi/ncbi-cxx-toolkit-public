@@ -32,8 +32,10 @@
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
+#include <objtools/data_loaders/genbank/split_parser.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbitime.hpp>
@@ -46,6 +48,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/id1/id1__.hpp>
+#include <objects/id2/ID2S_Split_Info.hpp>
 
 #include <serial/enumvalues.hpp>
 #include <serial/iterator.hpp>
@@ -376,9 +379,12 @@ void CId1Reader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
         const CDbtag& dbtag = id.GetGeneral();
         const CObject_id& objid = dbtag.GetTag();
         if ( dbtag.GetDb() == "ti" && objid.IsId() ) {
-            // "TRACE"
-            srs.push_back(Ref(new CSeqref(0, kTRACE_Sat, objid.GetId())));
-            return;
+            int num_id = objid.GetId();
+            if ( num_id > 0 ) {
+                // "TRACE"
+                srs.push_back(Ref(new CSeqref(0, kTRACE_Sat, objid.GetId())));
+                return;
+            }
         }
     }
     CReader::ResolveSeq_id(srs, id, conn);
@@ -502,14 +508,14 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
 }
 
 
-CRef<CTSE_Info> CId1Reader::GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
-                                       const CSeqref& seqref,
+CRef<CTSE_Info> CId1Reader::GetTSEBlob(const CSeqref& seqref,
                                        TConn conn)
 {
     if ( seqref.GetFlags() & CSeqref::fPrivate ) {
         NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
     }
     CID1server_back id1_reply;
+    CRef<CID2S_Split_Info> split_info;
     x_GetTSEBlob(id1_reply, split_info, seqref, conn);
 
     CRef<CSeq_entry> seq_entry;
@@ -541,6 +547,11 @@ CRef<CTSE_Info> CId1Reader::GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
                    "bad ID1server-back type");
     }
     CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry, dead));
+    if ( split_info ) {
+        ITERATE ( CID2S_Split_Info::TChunks, it, split_info->GetChunks() ) {
+            CSplitParser::Parse(**it)->x_TSEAttach(*ret);
+        } 
+    }
     return ret;
 }
 
@@ -787,6 +798,17 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.70  2004/01/22 20:10:36  vasilche
+ * 1. Splitted ID2 specs to two parts.
+ * ID2 now specifies only protocol.
+ * Specification of ID2 split data is moved to seqsplit ASN module.
+ * For now they are still reside in one resulting library as before - libid2.
+ * As the result split specific headers are now in objects/seqsplit.
+ * 2. Moved ID2 and ID1 specific code out of object manager.
+ * Protocol is processed by corresponding readers.
+ * ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+ * 3. Updated OBJMGR_LIBS correspondingly.
+ *
  * Revision 1.69  2004/01/13 21:54:49  vasilche
  * Requrrected new version
  *

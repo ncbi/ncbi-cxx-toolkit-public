@@ -37,19 +37,6 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/annot_object.hpp>
 
-#include <objects/id2/ID2_Seq_loc.hpp>
-#include <objects/id2/ID2_Id_Range.hpp>
-#include <objects/id2/ID2_Interval.hpp>
-#include <objects/id2/ID2_Packed_Seq_ints.hpp>
-#include <objects/id2/ID2_Seq_range.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Info.hpp>
-#include <objects/id2/ID2S_Chunk.hpp>
-#include <objects/id2/ID2S_Chunk_Data.hpp>
-#include <objects/id2/ID2S_Chunk_Content.hpp>
-#include <objects/id2/ID2S_Seq_annot_Info.hpp>
-#include <objects/id2/ID2S_Feat_type_Info.hpp>
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -57,36 +44,28 @@ BEGIN_SCOPE(objects)
 // CTSE_Chunk_Info
 /////////////////////////////////////////////////////////////////////////////
 
-CTSE_Chunk_Info::CTSE_Chunk_Info(CTSE_Info* tse_info,
-                                 const CID2S_Chunk_Info& info)
-    : m_TSE_Info(tse_info),
-      m_ChunkInfo(&info),
+
+CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
+    : m_TSE_Info(0),
+      m_ChunkId(id),
       m_DirtyAnnotIndex(true),
       m_NotLoaded(true)
 {
-    _ASSERT(tse_info->m_Chunks.find(GetChunkId()) == tse_info->m_Chunks.end());
-    tse_info->m_Chunks[GetChunkId()].Reset(this);
-    tse_info->x_SetDirtyAnnotIndex();
-
-    ITERATE ( CID2S_Chunk_Info::TContent, it, info.GetContent() ) {
-        x_AttachContent(**it);
-    }
 }
-
 
 CTSE_Chunk_Info::~CTSE_Chunk_Info(void)
 {
 }
 
 
-CTSE_Chunk_Info::TChunkId CTSE_Chunk_Info::GetChunkId(void) const
+void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
 {
-    return m_ChunkInfo->GetId();
-}
+    _ASSERT(!m_TSE_Info);
+    _ASSERT(tse_info.m_Chunks.find(GetChunkId()) == tse_info.m_Chunks.end());
+    m_TSE_Info = &tse_info;
+    tse_info.m_Chunks[GetChunkId()].Reset(this);
+    tse_info.x_SetDirtyAnnotIndex();
 
-
-void CTSE_Chunk_Info::x_AttachContent(const CID2S_Chunk_Content& /*content*/)
-{
 }
 
 
@@ -115,152 +94,58 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndex(void)
 }
 
 
+void CTSE_Chunk_Info::x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id)
+{
+    m_AnnotPlaces.push_back(TPlace(place_type, place_id));
+}
+
+
+void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
+                                     const SAnnotTypeSelector& annot_type,
+                                     const TLocationId& location_id,
+                                     const TLocationRange& location_range)
+{
+    TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
+    dst.push_back(TLocation(location_id, location_range));
+}
+
+
+void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
+                                     const SAnnotTypeSelector& annot_type,
+                                     const TLocationSet& location)
+{
+    TLocationSet& dst = m_AnnotContents[annot_name][annot_type];
+    dst.insert(dst.end(), location.begin(), location.end());
+}
+
+
 void CTSE_Chunk_Info::x_UpdateAnnotIndexThis(void)
 {
-    ITERATE ( CID2S_Chunk_Info::TContent, ctit, m_ChunkInfo->GetContent() ) {
-        const CID2S_Chunk_Content& content = **ctit;
-        if ( content.Which() != CID2S_Chunk_Content::e_Seq_annot ) {
-            continue;
-        }
-
-        const CID2S_Seq_annot_Info& annot_info = content.GetSeq_annot();
-        CAnnotName name;
-        if ( annot_info.IsSetName() ) {
-            name.SetNamed(annot_info.GetName());
-        }
-        m_ObjectInfosList.push_back(TObjectInfos(name));
+    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+        m_ObjectInfosList.push_back(TObjectInfos(it->first));
         TObjectInfos& infos = m_ObjectInfosList.back();
-        _ASSERT(infos.GetName() == name);
+        _ASSERT(infos.GetName() == it->first);
         
         // first count object infos to store
         size_t count = 0;
-        if ( annot_info.IsSetAlign() ) {
-            ++count;
-        }
-        if ( annot_info.IsSetGraph() ) {
-            ++count;
-        }
-        ITERATE ( CID2S_Seq_annot_Info::TFeat, it, annot_info.GetFeat() ) {
-            const CID2S_Feat_type_Info& feat_type = **it;
-            if ( feat_type.IsSetSubtypes() ) {
-                count += feat_type.GetSubtypes().size();
-            }
-            else {
-                ++count;
-            }
+        ITERATE ( TAnnotTypes, tit, it->second ) {
+            count += tit->second.size();
         }
         infos.Reserve(count);
         
-        const CID2_Seq_loc& loc = annot_info.GetSeq_loc();
-
-        if ( annot_info.IsSetAlign() ) {
-            SAnnotTypeSelector sel(CSeq_annot::TData::e_Align);
-            x_MapAnnotStub(sel, loc, infos);
-        }
-        if ( annot_info.IsSetGraph() ) {
-            SAnnotTypeSelector sel(CSeq_annot::TData::e_Graph);
-            x_MapAnnotStub(sel, loc, infos);
-        }
-        
-        ITERATE ( CID2S_Seq_annot_Info::TFeat, it, annot_info.GetFeat() ) {
-            const CID2S_Feat_type_Info& feat_type = **it;
-            if ( feat_type.IsSetSubtypes() ) {
-                ITERATE ( CID2S_Feat_type_Info::TSubtypes, sit,
-                          feat_type.GetSubtypes() ) {
-                    SAnnotTypeSelector sel(CSeqFeatData::ESubtype(+*sit));
-                    x_MapAnnotStub(sel, loc, infos);
-                }
-            }
-            else {
-                SAnnotTypeSelector sel
-                    (CSeqFeatData::E_Choice(feat_type.GetType()));
-                x_MapAnnotStub(sel, loc, infos);
+        ITERATE ( TAnnotTypes, tit, it->second ) {
+            CAnnotObject_Info* info =
+                infos.AddInfo(CAnnotObject_Info(*this, tit->first));
+            ITERATE ( TLocationSet, lit, tit->second ) {
+                SAnnotObject_Key key;
+                SAnnotObject_Index annotRef;
+                key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
+                key.m_Handle = CSeq_id_Handle::GetGiHandle(lit->first);
+                key.m_Range = lit->second;
+                GetTSE_Info().x_MapAnnotObject(key, annotRef, infos);
             }
         }
     }
-}
-
-
-void CTSE_Chunk_Info::x_MapAnnotStub(const SAnnotTypeSelector& sel,
-                                     const CID2_Seq_loc& loc,
-                                     TObjectInfos& infos)
-{
-    x_MapAnnotStub(infos.AddInfo(CAnnotObject_Info(*this, sel)), infos, loc);
-}
-
-
-void CTSE_Chunk_Info::x_MapAnnotStub(CAnnotObject_Info* info,
-                                     TObjectInfos& infos,
-                                     const CID2_Seq_loc& loc)
-{
-    switch ( loc.Which() ) {
-    case CID2_Seq_loc::e_Whole:
-    {
-        CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole();
-        x_MapAnnotStub(info, infos, loc.GetWhole(), range);
-        break;
-    }
-    
-    case CID2_Seq_loc::e_Whole_range:
-    {
-        const CID2_Id_Range& id_range = loc.GetWhole_range();
-        CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole();
-        for ( int cnt = id_range.GetCount(), gi = id_range.GetStart();
-              cnt > 0;  --cnt, ++gi ) {
-            x_MapAnnotStub(info, infos, gi, range);
-        }
-        break;
-    }
-
-    case CID2_Seq_loc::e_Int:
-    {
-        const CID2_Interval& interval = loc.GetInt();
-        CRange<TSeqPos> range;
-        range.SetFrom(interval.GetStart());
-        range.SetLength(interval.GetLength());
-        x_MapAnnotStub(info, infos, interval.GetGi(), range);
-        break;
-    }
-
-    case CID2_Seq_loc::e_Int_set:
-    {
-        const CID2_Packed_Seq_ints& ints = loc.GetInt_set();
-        ITERATE ( CID2_Packed_Seq_ints::TInts, rit, ints.GetInts() ) {
-            const CID2_Seq_range& interval = **rit;
-            CRange<TSeqPos> range;
-            range.SetFrom(interval.GetStart());
-            range.SetLength(interval.GetLength());
-            x_MapAnnotStub(info, infos, ints.GetGi(), range);
-        }
-        break;
-    }
-
-    case CID2_Seq_loc::e_Loc_set:
-    {
-        const CID2_Seq_loc::TLoc_set& loc_set = loc.GetLoc_set();
-        ITERATE ( CID2_Seq_loc::TLoc_set, it, loc_set ) {
-            x_MapAnnotStub(info, infos, **it);
-        }
-        break;
-    }
-
-    }
-}
-
-
-void CTSE_Chunk_Info::x_MapAnnotStub(CAnnotObject_Info* info,
-                                     TObjectInfos& infos,
-                                     int gi,
-                                     const CRange<TSeqPos>& range)
-{
-    SAnnotObject_Key key;
-    SAnnotObject_Index annotRef;
-    key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
-    key.m_Range = range;
-    CSeq_id gi_id;
-    gi_id.SetGi(gi);
-    key.m_Handle = CSeq_id_Handle::GetHandle(gi_id);
-    GetTSE_Info().x_MapAnnotObject(key, annotRef, infos);
 }
 
 
@@ -279,56 +164,25 @@ void CTSE_Chunk_Info::x_DropAnnotObjects(void)
 }
 
 
-CSeq_entry_Info& CTSE_Chunk_Info::GetBioseq_set(int id)
+CSeq_entry_Info& CTSE_Chunk_Info::x_GetSeq_entry(const TPlace& place)
 {
-    return GetTSE_Info().GetBioseq_set(id);
-}
-
-
-CSeq_entry_Info& CTSE_Chunk_Info::GetBioseq(int gi)
-{
-    return GetTSE_Info().GetBioseq(gi).GetSeq_entry_Info();
-}
-
-
-void CTSE_Chunk_Info::Load(const CID2S_Chunk& chunk)
-{
-    ITERATE ( CID2S_Chunk::TData, it, chunk.GetData() ) {
-        x_Add(**it);
+    if ( place.first == eBioseq ) {
+        return GetTSE_Info().GetBioseq(place.second).GetSeq_entry_Info();
+    }
+    else {
+        return GetTSE_Info().GetBioseq_set(place.second);
     }
 }
 
 
-void CTSE_Chunk_Info::x_Add(const CID2S_Chunk_Data& data)
+void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
+                                  CSeq_annot_Info& annot)
 {
-    CRef<CSeq_entry_Info> entry;
-    switch ( data.GetId().Which() ) {
-    case CID2S_Chunk_Data::TId::e_Bioseq_set:
-        entry.Reset(&GetBioseq_set(data.GetId().GetBioseq_set()));
-        break;
-    case CID2S_Chunk_Data::TId::e_Gi:
-        entry.Reset(&GetBioseq(data.GetId().GetGi()));
-        break;
-    }
-    ITERATE ( CID2S_Chunk_Data::TAnnots, it, data.GetAnnots() ) {
-        CSeq_annot& annot = const_cast<CSeq_annot&>(**it);
-        CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(annot));
-        annot_info->x_Seq_entryAttach(*entry);
-        if ( GetTSE_Info().HaveDataSource() ) {
-            annot_info->x_DSAttach();
-        }
-        GetTSE_Info().UpdateAnnotIndex(*annot_info);
-    }
-}
-
-
-void CTSE_Chunk_Info::LoadAnnotBioseq_set(int id, CSeq_annot_Info& annot_info)
-{
-    annot_info.x_Seq_entryAttach(GetBioseq_set(id));
+    annot.x_Seq_entryAttach(x_GetSeq_entry(place));
     if ( GetTSE_Info().HaveDataSource() ) {
-        annot_info.x_DSAttach();
+        annot.x_DSAttach();
     }
-    GetTSE_Info().UpdateAnnotIndex(annot_info);
+    GetTSE_Info().UpdateAnnotIndex(annot);
 }
 
 
@@ -338,6 +192,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/01/22 20:10:41  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.5  2003/11/26 18:59:56  ucko
 * Remove stray semicolon after BEGIN_SCOPE(objects) to fix the WorkShop build.
 *

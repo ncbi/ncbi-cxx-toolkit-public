@@ -115,7 +115,7 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
     if ( type == CSeq_id::e_Gi ) {
         int gi = id.GetGi();
         if ( gi != 0 ) {
-            return CSeq_id_Handle(m_GiInfo, gi);
+            return GetGiHandle(gi);
         }
     }
     else if ( type == CSeq_id::e_not_set ) {
@@ -216,6 +216,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/01/22 20:10:41  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.40  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

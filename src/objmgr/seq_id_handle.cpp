@@ -113,6 +113,12 @@ CConstRef<CSeq_id> CSeq_id_Handle::GetSeqIdOrNull(void) const
 }
 
 
+CSeq_id_Handle CSeq_id_Handle::GetGiHandle(int gi)
+{
+    return CSeq_id_Mapper::GetSeq_id_Mapper().GetGiHandle(gi);
+}
+
+
 CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
 {
     return CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
@@ -269,6 +275,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/01/22 20:10:41  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.17  2004/01/07 20:42:01  grichenk
 * Fixed matching of accession to accession.version
 *

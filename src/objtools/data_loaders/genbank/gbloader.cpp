@@ -974,7 +974,6 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     bool got = false;
 
     CConstRef<CSeq_id> seq_id = h.GetSeqId();
-#if 1
     for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
         osr.clear();
         CTimerGuard tg(m_Timer);
@@ -1002,83 +1001,6 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Multiple attempts to resolve Seq-id failed");
     }
-#else
-    if ( !seq_id->IsGi() ) {
-        //LOG_POST("ResolveHandle-b("<<h.AsString()<<") "<<sr->m_Sr.size());
-
-        int gi = 0;
-        
-        for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
-            osr.clear();
-            CTimerGuard tg(m_Timer);
-            CReader::TConn conn = m_Locks.m_Pool.Select(key);
-            try {
-                gi = m_Driver->ResolveSeq_id_to_gi(*seq_id, conn);
-                got = true;
-                break;
-            }
-            catch ( CLoaderException& e ) {
-                if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
-                    throw;
-                }
-                LOG_POST(e.what());
-            }
-            catch ( const exception& e ) {
-                LOG_POST(e.what());
-            }
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
-        }
-        if ( !got ) {
-            ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve failed: "
-                     "exceeded maximum attempts count");
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Multiple attempts to resolve Seq-id failed");
-        }
-
-        g.Lock();
-        CSeq_id gi_id;
-        gi_id.SetGi(gi);
-        CRef<SSeqrefs> gi_sr =
-            x_ResolveHandle(CSeq_id_Handle::GetHandle(gi_id));
-        if ( gi_sr ) {
-            osr = gi_sr->m_Sr;
-        }
-    }
-    else {
-        int gi = seq_id->GetGi();
-        //LOG_POST("ResolveHandle-b("<<h.AsString()<<") "<<sr->m_Sr.size());
-        if ( gi != 0 ) {
-            for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
-                CTimerGuard tg(m_Timer);
-                CReader::TConn conn = m_Locks.m_Pool.Select(key);
-                try {
-                    osr.clear();
-                    m_Driver->RetrieveSeqrefs(osr, gi, conn);
-                    got = true;
-                    break;
-                }
-                catch ( CLoaderException& e ) {
-                    if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
-                        throw;
-                    }
-                    LOG_POST(e.what());
-                }
-                catch ( const exception &e ) {
-                    LOG_POST(e.what());
-                }
-                LOG_POST("GenBank connection failed: Reconnecting....");
-                m_Driver->Reconnect(conn);
-            }
-            if ( !got ) {
-                ERR_POST("CGBLoader:x_ResolveHandle: gi resolve failed: "
-                         "exceeded maximum attempts count");
-                NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "Multiple attempts to resolve Seq-id failed");
-            }
-        }
-    }
-#endif
 
     g.Lock(); // will unlock everything and lock lookupMutex again 
 
@@ -1238,6 +1160,17 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2004/01/22 20:10:35  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.100  2004/01/13 21:52:06  vasilche
 * Resurrected new version.
 *

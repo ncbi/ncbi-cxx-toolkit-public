@@ -56,7 +56,6 @@ class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
 class CTSE_Chunk_Info;
-class CID2S_Split_Info;
 
 class CDataSource;
 class CHandleRange;
@@ -148,8 +147,6 @@ public:
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(CSeq_annot_Info& annot_info);
-
-    void SetSplitInfo(const CID2S_Split_Info& info);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -386,6 +383,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/01/22 20:10:39  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.43  2003/11/26 17:55:55  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

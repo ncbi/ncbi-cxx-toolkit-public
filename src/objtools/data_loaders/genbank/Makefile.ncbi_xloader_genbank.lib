@@ -8,5 +8,4 @@ LIB = ncbi_xloader_genbank
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = 
-#$(GENBANK_LDEP)
+DLL_LIB = ncbi_xreader #ncbi_xreader_id1 ncbi_xreader_pubseqos

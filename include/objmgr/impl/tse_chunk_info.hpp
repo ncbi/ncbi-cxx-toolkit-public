@@ -40,7 +40,9 @@
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 
+#include <vector>
 #include <list>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,37 +50,59 @@ BEGIN_SCOPE(objects)
 class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
-class CID2S_Chunk_Info;
-class CID2S_Chunk;
-class CID2S_Chunk_Data;
-class CID2S_Split_Info;
-class CID2S_Chunk_Content;
-class CID2S_Seq_annot_Info;
-class CID2_Seq_loc;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
 public:
+    // chunk identification
     typedef int TChunkId;
 
-    CTSE_Chunk_Info(CTSE_Info* tse_info, const CID2S_Chunk_Info& info);
+    // contents place identification
+    enum EPlaceType {
+        eBioseq,
+        eBioseq_set
+    };
+    typedef int TPlaceId;
+    typedef pair<EPlaceType, TPlaceId> TPlace;
+    typedef vector<TPlace> TPlaces;
+
+    // annot contents identification
+    typedef int TLocationId;
+    typedef CRange<TSeqPos> TLocationRange;
+    typedef pair<TLocationId, TLocationRange> TLocation;
+    typedef vector<TLocation> TLocationSet;
+    typedef map<SAnnotTypeSelector, TLocationSet> TAnnotTypes;
+    typedef map<CAnnotName, TAnnotTypes> TAnnotContents;
+
+    // annot contents indexing
+    typedef SAnnotObjects_Info TObjectInfos;
+    typedef list<TObjectInfos> TObjectInfosList;
+
+    // constructors
+    CTSE_Chunk_Info(TChunkId id);
     virtual ~CTSE_Chunk_Info(void);
 
     CTSE_Info& GetTSE_Info(void);
 
     TChunkId GetChunkId(void) const;
 
-    typedef SAnnotObjects_Info TObjectInfos;
-    typedef list<TObjectInfos> TObjectInfosList;
-
     bool NotLoaded(void) const;
     void Load(void);
 
-    void Load(const CID2S_Chunk& chunk);
-    void LoadAnnotBioseq_set(int id, CSeq_annot_Info& annot_info);
+    void x_TSEAttach(CTSE_Info& tse_info);
 
-    CSeq_entry_Info& GetBioseq_set(int id);
-    CSeq_entry_Info& GetBioseq(int gi);
+    void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
+    CSeq_entry_Info& x_GetSeq_entry(const TPlace& place);
+
+    void x_AddAnnotType(const CAnnotName& annot_name,
+                        const SAnnotTypeSelector& annot_type,
+                        const TLocationId& location_id,
+                        const TLocationRange& location_range);
+    void x_AddAnnotType(const CAnnotName& annot_name,
+                        const SAnnotTypeSelector& annot_type,
+                        const TLocationSet& location);
+
+    void x_LoadAnnot(const TPlace& place, CSeq_annot_Info& annot_info);
 
 protected:
     virtual void x_Load(void);
@@ -88,21 +112,6 @@ protected:
     void x_UnmapAnnotObjects(void);
     void x_DropAnnotObjects(void);
 
-    void x_AttachContent(const CID2S_Chunk_Content& content);
-
-    void x_MapAnnotStub(const SAnnotTypeSelector& sel,
-                        const CID2_Seq_loc& loc,
-                        TObjectInfos& infos);
-    void x_MapAnnotStub(CAnnotObject_Info* info,
-                        TObjectInfos& infos,
-                        const CID2_Seq_loc& loc);
-    void x_MapAnnotStub(CAnnotObject_Info* info,
-                        TObjectInfos& infos,
-                        int gi,
-                        const CRange<TSeqPos>& range);
-
-    void x_Add(const CID2S_Chunk_Data& data);
-
 private:
     friend class CTSE_Info;
 
@@ -110,12 +119,14 @@ private:
     CTSE_Chunk_Info& operator=(const CTSE_Chunk_Info&);
 
     CTSE_Info*      m_TSE_Info;
-
-    CConstRef<CID2S_Chunk_Info> m_ChunkInfo;
+    TChunkId        m_ChunkId;
 
     bool            m_DirtyAnnotIndex;
-
     bool            m_NotLoaded;
+
+    TPlaces         m_AnnotPlaces;
+    TAnnotContents  m_AnnotContents;
+
     CFastMutex      m_LoadLock;
 
     TObjectInfosList  m_ObjectInfosList;
@@ -126,6 +137,13 @@ inline
 CTSE_Info& CTSE_Chunk_Info::GetTSE_Info(void)
 {
     return *m_TSE_Info;
+}
+
+
+inline
+CTSE_Chunk_Info::TChunkId CTSE_Chunk_Info::GetChunkId(void) const
+{
+    return m_ChunkId;
 }
 
 
@@ -143,6 +161,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/22 20:10:39  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.3  2003/11/26 17:55:55  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

@@ -56,9 +56,9 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Id.hpp>
-#include <objects/id2/ID2S_Chunk.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Id.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
 
 // Object manager includes
 #include <objmgr/object_manager.hpp>
@@ -547,12 +547,11 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         return;
     }
 
-    CSeq_id seq_id;
-    seq_id.SetGi(seqref.GetGi());
     CBioseq_Handle bh;
     {{
         WAIT_LINE << "Loading...";
-        bh = m_Scope->GetBioseqHandle(seq_id);
+        bh = m_Scope->GetBioseqHandle
+            (CSeq_id_Handle::GetGiHandle(seqref.GetGi()));
     }}
     if ( !bh ) {
         LINE("Skipping: no bioseq???");
@@ -667,6 +666,17 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/01/22 20:10:37  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.12  2004/01/13 16:55:57  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

@@ -347,9 +347,7 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
 }
 
 
-CRef<CTSE_Info> CPubseqReader::GetTSEBlob(CRef<CID2S_Split_Info>& /*info*/,
-                                          const CSeqref& seqref,
-                                          TConn conn)
+CRef<CTSE_Info> CPubseqReader::GetTSEBlob(const CSeqref& seqref, TConn conn)
 {
     CDB_Connection* db_conn = x_GetConnection(conn);
     auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn, false));
@@ -530,6 +528,17 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.49  2004/01/22 20:10:38  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.48  2004/01/20 16:55:28  vasilche
 * Do more common check first.
 *

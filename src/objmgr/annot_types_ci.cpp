@@ -728,6 +728,9 @@ void CAnnotTypes_CI::x_Sort(void)
                  CAnnotObject_Ref_Reverse_Less<CAnnotObject_Less>());
         }
         break;
+    default:
+        // do nothing
+        break;
     }
 }
 
@@ -890,6 +893,9 @@ void CAnnotTypes_CI::x_GetTSE_Info(void)
         m_DataCollector->m_LimitObjectInfo.Reset(info.GetPointer());
         break;
     }
+    default:
+        // no limit object -> do nothing
+        break;
     }
     _ASSERT(m_DataCollector->m_LimitObjectInfo);
     _ASSERT(tse_info);
@@ -1230,6 +1236,9 @@ void CAnnotTypes_CI::x_SearchAll(void)
         x_SearchAll(dynamic_cast<const CSeq_annot_Info&>(
             *m_DataCollector->m_LimitObjectInfo));
         break;
+    default:
+        // no limit object -> do nothing
+        break;
     }
 }
 
@@ -1343,6 +1352,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2004/01/22 20:10:40  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.103  2003/11/26 17:55:56  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

@@ -34,9 +34,9 @@
 #include <objmgr/split/blob_splitter.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
-#include <objects/id2/ID2S_Chunk_Id.hpp>
-#include <objects/id2/ID2S_Chunk.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk_Id.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -47,6 +47,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/22 20:10:42  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.3  2004/01/07 17:36:23  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

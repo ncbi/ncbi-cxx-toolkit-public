@@ -40,7 +40,6 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/handle_range.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -323,14 +322,6 @@ void CTSE_Info::x_ResetBioseq_setId(int key,
         _ASSERT(iter->second == info);
         m_Bioseq_sets.erase(iter);
     }
-}
-
-
-void CTSE_Info::SetSplitInfo(const CID2S_Split_Info& info)
-{
-    ITERATE ( CID2S_Split_Info::TChunks, it, info.GetChunks() ) {
-        new CTSE_Chunk_Info(this, **it);
-    } 
 }
 
 
@@ -789,9 +780,7 @@ CSeq_entry_Info& CTSE_Info::GetBioseq_set(int id)
 
 CBioseq_Info& CTSE_Info::GetBioseq(int gi)
 {
-    CSeq_id gi_id;
-    gi_id.SetGi(gi);
-    TBioseqs::iterator iter = m_Bioseqs.find(CSeq_id_Handle::GetHandle(gi_id));
+    TBioseqs::iterator iter = m_Bioseqs.find(CSeq_id_Handle::GetGiHandle(gi));
     if ( iter == m_Bioseqs.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot find Bioseq by gi");
@@ -878,6 +867,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/01/22 20:10:41  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.36  2003/11/26 17:56:00  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

@@ -36,6 +36,7 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -44,12 +45,9 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#include <objects/id2/ID2_Seq_loc.hpp>
-#include <objects/id2/ID2S_Split_Info.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
-#include <serial/objistrasn.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 
@@ -216,72 +214,38 @@ CRef<CTSE_Info> CReader::GetBlob(const CSeqref& seqref,
         }
     }
     else {
-        CRef<CID2S_Split_Info> split_info;
         if ( IsSNPSeqref(seqref) ) {
-            ret = GetSNPBlob(split_info, seqref, conn);
+            ret = GetSNPBlob(seqref, conn);
         }
         else {
-            ret = GetTSEBlob(split_info, seqref, conn);
-        }
-        if ( split_info ) {
-            ret->SetSplitInfo(*split_info);
+            ret = GetTSEBlob(seqref, conn);
         }
     }
     return ret;
 }
 
 
-CRef<CTSE_Info> CReader::GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
-                                    const CSeqref& seqref, TConn /*conn*/)
+CRef<CTSE_Info> CReader::GetSNPBlob(const CSeqref& seqref, TConn /*conn*/)
 {
     _ASSERT(IsSNPSeqref(seqref));
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
-    {{
-        // make Seq-entry
-        CNcbiStrstream str;
-        str <<
-            "Seq-entry ::= set {\n"
-            "  id id " << kSNP_EntryId << ",\n"
-            "  seq-set {\n" // it's not optional
-            "  }\n"
-            "}";
-        CObjectIStreamAsn in(str);
-        in >> *seq_entry;
-    }}
+    seq_entry->SetSet().SetSeq_set();
+    seq_entry->SetSet().SetId().SetId(kSNP_EntryId);
+
     // create CTSE_Info
     CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry));
     ret->SetName("SNP");
 
-    // make ID2S-Split-Info
-    CRef<CID2S_Split_Info> info(new CID2S_Split_Info);
-    {{
-        CNcbiStrstream str;
-        str <<
-            "ID2S-Split-Info ::= {\n"
-            "  chunks {\n"
-            "    {\n"
-            "      id "<<kSNP_ChunkId<<",\n"
-            "      content {\n"
-            "        seq-annot {\n"
-            "          name \"SNP\",\n"
-            "          feat {\n"
-            "            {\n"
-            "              type "<<CSeqFeatData::e_Imp<<",\n"
-            "              subtypes {\n"
-            "                "<<CSeqFeatData::eSubtype_variation<<"\n"
-            "              }\n"
-            "            }\n"
-            "          },\n"
-            "          seq-loc whole "<<seqref.GetGi()<<"\n"
-            "        }\n"
-            "      }\n"
-            "    }\n"
-            "  }\n"
-            "}";
-        CObjectIStreamAsn in(str);
-        in >> *info;
-    }}
-    split_info = info;
+    CRef<CTSE_Chunk_Info> info(new CTSE_Chunk_Info(kSNP_ChunkId));
+
+    info->x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
+
+    info->x_AddAnnotType(CAnnotName("SNP"),
+                         SAnnotTypeSelector(CSeqFeatData::eSubtype_variation),
+                         seqref.GetGi(),
+                         CTSE_Chunk_Info::TLocationRange::GetWhole());
+
+    info->x_TSEAttach(*ret);
     return ret;
 }
 
@@ -296,14 +260,15 @@ void CReader::GetTSEChunk(const CSeqref& seqref,
 
 
 void CReader::GetSNPChunk(const CSeqref& seqref,
-                          CTSE_Chunk_Info& chunk_info,
+                          CTSE_Chunk_Info& chunk,
                           TConn conn)
 {
     _ASSERT(IsSNPSeqref(seqref));
-    _ASSERT(chunk_info.GetChunkId() == kSNP_ChunkId);
+    _ASSERT(chunk.GetChunkId() == kSNP_ChunkId);
     CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(seqref, conn);
     CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
-    chunk_info.LoadAnnotBioseq_set(kSNP_EntryId, *annot_info);
+    CTSE_Chunk_Info::TPlace place(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
+    chunk.x_LoadAnnot(place, *annot_info);
 }
 
 
@@ -313,6 +278,17 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.29  2004/01/22 20:10:35  vasilche
+ * 1. Splitted ID2 specs to two parts.
+ * ID2 now specifies only protocol.
+ * Specification of ID2 split data is moved to seqsplit ASN module.
+ * For now they are still reside in one resulting library as before - libid2.
+ * As the result split specific headers are now in objects/seqsplit.
+ * 2. Moved ID2 and ID1 specific code out of object manager.
+ * Protocol is processed by corresponding readers.
+ * ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+ * 3. Updated OBJMGR_LIBS correspondingly.
+ *
  * Revision 1.28  2004/01/13 16:55:55  vasilche
  * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
  * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

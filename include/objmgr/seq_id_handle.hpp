@@ -91,10 +91,12 @@ class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
 {
 public:
     // 'ctors
-    CSeq_id_Handle(CSeq_id_Info* info = 0, int gi = 0);
+    CSeq_id_Handle(void);
+    CSeq_id_Handle(CSeq_id_Info* info, int gi = 0);
     CSeq_id_Handle(const CSeq_id_Handle& handle);
     ~CSeq_id_Handle(void);
 
+    static CSeq_id_Handle GetGiHandle(int gi);
     static CSeq_id_Handle GetHandle(const CSeq_id& id);
 
     const CSeq_id_Handle& operator= (const CSeq_id_Handle& handle);
@@ -252,10 +254,18 @@ void CSeq_id_Handle::x_RemoveReferenceIfSet(void)
 
 
 inline
+CSeq_id_Handle::CSeq_id_Handle(void)
+    : m_Info(0), m_Gi(0)
+{
+}
+
+
+inline
 CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Info* info, int gi)
     : m_Info(info), m_Gi(gi)
 {
-    x_AddReferenceIfSet();
+    _ASSERT(info);
+    x_AddReference();
 }
 
 
@@ -352,6 +362,17 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/01/22 20:10:38  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.20  2004/01/07 20:42:00  grichenk
 * Fixed matching of accession to accession.version
 *

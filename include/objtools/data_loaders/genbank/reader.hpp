@@ -47,7 +47,6 @@ class CSeq_id;
 class CTSE_Info;
 class CSeq_annot_SNP_Info;
 class CTSE_Chunk_Info;
-class CID2S_Split_Info;
 
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
@@ -70,10 +69,8 @@ public:
                                     TConn conn,
                                     CTSE_Chunk_Info* chunk_info = 0);
 
-    virtual CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
-                                       const CSeqref& seqref, TConn conn) = 0;
-    virtual CRef<CTSE_Info> GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
-                                       const CSeqref& seqref, TConn conn);
+    virtual CRef<CTSE_Info> GetTSEBlob(const CSeqref& seqref, TConn conn) = 0;
+    virtual CRef<CTSE_Info> GetSNPBlob(const CSeqref& seqref, TConn conn);
 
     virtual void GetTSEChunk(const CSeqref& seqref,
                              CTSE_Chunk_Info& chunk_info,
@@ -129,6 +126,17 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.37  2004/01/22 20:10:33  vasilche
+* 1. Splitted ID2 specs to two parts.
+* ID2 now specifies only protocol.
+* Specification of ID2 split data is moved to seqsplit ASN module.
+* For now they are still reside in one resulting library as before - libid2.
+* As the result split specific headers are now in objects/seqsplit.
+* 2. Moved ID2 and ID1 specific code out of object manager.
+* Protocol is processed by corresponding readers.
+* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+* 3. Updated OBJMGR_LIBS correspondingly.
+*
 * Revision 1.36  2004/01/13 16:55:52  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

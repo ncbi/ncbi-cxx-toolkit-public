@@ -221,11 +221,11 @@ void CSeq_annot_Info::x_UpdateAnnotIndexThis(void)
     case CSeq_annot::C_Data::e_Graph:
         x_MapAnnotObjects(data.SetGraph());
         break;
+    default:
+        break;
     }
     if ( m_SNP_Info ) {
-        CSeq_id id;
-        id.SetGi(m_SNP_Info->GetGi());
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+        CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(m_SNP_Info->GetGi());
         GetTSE_Info().x_MapSNP_Table(GetName(), idh, m_SNP_Info);
     }
 }
@@ -234,9 +234,7 @@ void CSeq_annot_Info::x_UpdateAnnotIndexThis(void)
 void CSeq_annot_Info::x_TSEDetach(void)
 {
     if ( m_SNP_Info ) {
-        CSeq_id id;
-        id.SetGi(m_SNP_Info->GetGi());
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+        CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(m_SNP_Info->GetGi());
         GetTSE_Info().x_UnmapSNP_Table(GetName(), idh, m_SNP_Info);
     }
     x_UnmapAnnotObjects();
@@ -382,6 +380,17 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/01/22 20:10:40  vasilche
+ * 1. Splitted ID2 specs to two parts.
+ * ID2 now specifies only protocol.
+ * Specification of ID2 split data is moved to seqsplit ASN module.
+ * For now they are still reside in one resulting library as before - libid2.
+ * As the result split specific headers are now in objects/seqsplit.
+ * 2. Moved ID2 and ID1 specific code out of object manager.
+ * Protocol is processed by corresponding readers.
+ * ID2 split parsing is processed by ncbi_xreader library - used by all readers.
+ * 3. Updated OBJMGR_LIBS correspondingly.
+ *
  * Revision 1.11  2003/11/26 17:56:00  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.

@@ -1,0 +1,176 @@
+--$Revision: 1.1 $
+--********************************************************************
+--
+--  Network Id server network access
+--  Vasilchenko 2003
+--
+--
+--*********************************************************************
+--
+--  ID2.asn
+--
+--     messages for id server network access
+--
+--*********************************************************************
+
+NCBI-Seq-split DEFINITIONS ::=
+BEGIN
+
+EXPORTS ID2S-Chunk-Id;
+
+IMPORTS Seq-id, Seq-loc FROM NCBI-Seqloc
+        Seq-annot, Seq-descr, Seq-literal
+                        FROM NCBI-Sequence
+        Seq-align       FROM NCBI-Seqalign;
+
+----------------------------------------------------------------------------
+-- Blob split info types
+----------------------------------------------------------------------------
+
+
+ID2S-Split-Info ::= SEQUENCE {
+        bioseqs-info    SET OF ID2S-Bioseqs-Info OPTIONAL,
+        chunks          SET OF ID2S-Chunk-Info
+}
+
+
+ID2S-Bioseqs-Info ::= SEQUENCE {
+        info            ID2S-Bioseq-Info,
+        bioseqs         ID2-Id-Range
+}
+
+
+ID2S-Bioseq-Info ::= SEQUENCE {
+        gap-count       INTEGER OPTIONAL,
+        seq-map-has-ref BOOLEAN OPTIONAL,
+        sequence-split  ID2S-Sequence-Split-Info OPTIONAL
+}
+
+
+ID2S-Sequence-Split-Info ::= SEQUENCE {
+        block-size      INTEGER,
+        chunk-start     ID2S-Chunk-Id,
+        chunk-blocks    SEQUENCE OF INTEGER
+}
+
+
+ID2S-Chunk-Info ::= SEQUENCE {
+        id              ID2S-Chunk-Id,
+        content         SET OF ID2S-Chunk-Content
+}
+
+
+ID2S-Chunk-Content ::= CHOICE {
+        seq-descr       ID2S-Seq-descr-Info,
+        seq-annot       ID2S-Seq-annot-Info,
+        seq-assembly    ID2S-Seq-assembly-Info,
+        seq-map         ID2S-Seq-map-Info,
+        seq-data        ID2S-Seq-data-Info,
+        seq-annot-place ID2S-Seq-annot-place-Info
+}
+
+
+ID2S-Seq-descr-Info ::= SEQUENCE {
+        type-mask       INTEGER, -- mask of Seq-descr types,
+        bioseqs         SET OF ID2-Id-Range OPTIONAL,
+        bioseq-sets     SET OF ID2-Id-Range OPTIONAL
+}
+
+
+ID2S-Seq-annot-Info ::= SEQUENCE {
+        -- name is set if this is named annot
+        -- name may be empty which differ from unnamed annot
+        name            VisibleString OPTIONAL,
+        align           NULL OPTIONAL,
+        graph           NULL OPTIONAL,
+        feat            SET OF ID2S-Feat-type-Info OPTIONAL,
+        seq-loc         ID2-Seq-loc
+}
+
+
+ID2S-Seq-annot-place-Info ::= SEQUENCE {
+        name            VisibleString OPTIONAL,
+        bioseqs         SET OF ID2-Id-Range OPTIONAL,
+        bioseq-sets     SET OF ID2-Id-Range OPTIONAL
+}
+
+
+ID2S-Feat-type-Info ::=  SEQUENCE {
+        type            INTEGER,
+        subtypes        SET OF INTEGER OPTIONAL
+}
+
+
+ID2S-Seq-assembly-Info ::= SEQUENCE {
+        bioseqs         SET OF ID2-Id-Range
+}
+
+
+ID2S-Seq-map-Info ::= ID2-Seq-loc
+
+
+ID2S-Seq-data-Info ::= ID2-Seq-loc
+
+
+ID2S-Chunk ::= SEQUENCE {
+        data            SET OF ID2S-Chunk-Data
+}
+
+
+ID2S-Chunk-Data ::= SEQUENCE {
+        id              CHOICE {
+                bioseq-set      INTEGER,
+                gi              INTEGER
+        },
+        descrs          SET OF Seq-descr OPTIONAL,
+        annots          SET OF Seq-annot OPTIONAL,
+        assembly        SET OF Seq-align OPTIONAL,
+        seq-map         SEQUENCE OF Seq-literal OPTIONAL,
+        seq-data        SEQUENCE OF Seq-literal OPTIONAL
+}
+
+
+----------------------------------------------------------------------------
+-- utility types
+----------------------------------------------------------------------------
+
+
+ID2S-Chunk-Id ::= INTEGER
+
+
+ID2-Id-Range ::= SEQUENCE {
+        start           INTEGER,  -- gi for Bioseq, local id for Bioseq-set
+        count           INTEGER DEFAULT 1
+}
+
+
+ID2-Seq-loc ::= CHOICE {
+        gi-whole        INTEGER,
+        interval        ID2-Interval,
+        packed-ints     ID2-Packed-Seq-ints,
+        gi-whole-range  ID2-Id-Range,
+        loc-set         SET OF ID2-Seq-loc,
+        seq-loc         Seq-loc
+}
+
+
+ID2-Interval ::= SEQUENCE {
+        gi              INTEGER,
+        start           INTEGER,
+        length          INTEGER DEFAULT 1
+}
+
+
+ID2-Seq-range ::= SEQUENCE {
+        start           INTEGER,
+        length          INTEGER DEFAULT 1
+}
+
+
+ID2-Packed-Seq-ints ::= SEQUENCE {
+        gi              INTEGER,
+        intervals       SET OF ID2-Seq-range
+}
+
+
+END
