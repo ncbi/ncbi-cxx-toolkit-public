@@ -688,7 +688,11 @@ private:
 ///
 /// Allows for recursive locks by the same thread. Checks the mutex
 /// owner before unlocking. This mutex should be used when performance
-/// is less important than data protection.
+/// is less important than data protection. For faster performance see
+/// CFastMutex.
+///
+/// @sa
+///   http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.threads#CMutex
 
 class NCBI_XNCBI_EXPORT CMutex
 {
@@ -1108,6 +1112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/10/30 14:56:27  siyan
+ * Added a test for @sa hyperlink.
+ *
  * Revision 1.31  2003/09/30 16:07:39  vasilche
  * Allow release and reacqure rw lock in guard.
  *
