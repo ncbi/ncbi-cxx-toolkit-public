@@ -440,13 +440,19 @@ void CObject::DoDeleteThisObject(void)
     }}
     NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
 }
+
+static bool s_EnvFlag(const char* env_var_name)
+{
+    const char* value = getenv(env_var_name);
+    return value  &&  (*value == 'Y'  ||  *value == 'y' || *value == '1');
+}
                         
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
 {
     CCoreException::x_InitErrCode(err_code);
-    static bool abort_on_throw = getenv("ABORT_ON_COBJECT_THROW") != 0;
+    static bool abort_on_throw = s_EnvFlag("NCBI_ABORT_ON_COBJECT_THROW");
     if ( abort_on_throw ) {
-        abort();
+        Abort();
     }
 }
 
@@ -461,6 +467,10 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 
 void CObject::ThrowNullPointerException(void)
 {
+    static bool abort_on_null = s_EnvFlag("NCBI_ABORT_ON_NULL");
+    if ( abort_on_null ) {
+        Abort();
+    }
     NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
 }
 
@@ -471,6 +481,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2003/09/17 15:58:29  vasilche
+ * Allow debug abort when:
+ * CObjectException is thrown - env var NCBI_ABORT_ON_COBJECT_THROW=[Yy1],
+ * CNullPointerException is thrown - env var NCBI_ABORT_ON_NULL=[Yy1].
+ * Allow quit abort in debug mode and coredump in release mode:
+ * env var DIAG_SILENT_ABORT=[Yy1Nn0].
+ *
  * Revision 1.39  2003/09/17 15:20:46  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.

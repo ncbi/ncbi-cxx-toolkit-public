@@ -915,17 +915,21 @@ extern void Abort(void)
     
     // If don't defined handler or application doesn't still terminated
 
-#if defined(_DEBUG)
     // Check environment variable for silent exit
     const char* value = getenv("DIAG_SILENT_ABORT");
-    if (value  &&  (*value == 'Y'  ||  *value == 'y')) {
+    if (value  &&  (*value == 'Y'  ||  *value == 'y'  ||  *value == '1')) {
         ::exit(255);
-    } else {
+    }
+    else if (value  &&  (*value == 'N'  ||  *value == 'n' || *value == '0')) {
         ::abort();
     }
+    else {
+#if defined(_DEBUG)
+        ::abort();
 #else
-    ::exit(255);
+        ::exit(255);
 #endif
+    }
 }
 
 
@@ -1101,6 +1105,13 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.74  2003/09/17 15:58:29  vasilche
+ * Allow debug abort when:
+ * CObjectException is thrown - env var NCBI_ABORT_ON_COBJECT_THROW=[Yy1],
+ * CNullPointerException is thrown - env var NCBI_ABORT_ON_NULL=[Yy1].
+ * Allow quit abort in debug mode and coredump in release mode:
+ * env var DIAG_SILENT_ABORT=[Yy1Nn0].
+ *
  * Revision 1.73  2003/05/19 21:12:46  vakatov
  * CNcbiDiag::DiagValidate() -- get rid of "unused func arg" compilation warning
  *
