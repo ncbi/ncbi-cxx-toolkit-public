@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/11/18 20:12:43  vakatov
+* DoDbgPrint() -- prototyped in both _DEBUG and NDEBUG
+*
 * Revision 1.11  1999/10/04 16:21:04  vasilche
 * Added full set of macros THROW*_TRACE
 *
@@ -100,19 +103,20 @@ extern void DoThrowTraceAbort(void)
         ::abort();
 }
 
-void DoDbgPrint(const char* file, int line, const char* message)
+extern void DoDbgPrint(const char* file, int line, const char* message)
 {
     CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
     DoThrowTraceAbort();
 }
 
-void DoDbgPrint(const char* file, int line, const string& message)
+extern void DoDbgPrint(const char* file, int line, const string& message)
 {
     CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
     DoThrowTraceAbort();
 }
 
-void DoDbgPrint(const char* file, int line, const char* msg1, const char* msg2)
+extern void DoDbgPrint(const char* file, int line,
+                       const char* msg1, const char* msg2)
 {
     CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << msg1 << ": " << msg2;
     DoThrowTraceAbort();

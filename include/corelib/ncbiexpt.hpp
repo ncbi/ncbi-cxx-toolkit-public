@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/11/18 20:12:40  vakatov
+* DoDbgPrint() -- prototyped in both _DEBUG and NDEBUG
+*
 * Revision 1.16  1999/10/04 16:20:56  vasilche
 * Added full set of macros THROW*_TRACE
 *
@@ -134,8 +137,6 @@ BEGIN_NCBI_SCOPE
 //   THROW1np_TRACE
 //   THROWnp_TRACE
 
-#if defined(_DEBUG)
-
 // Specify if to call "abort()" inside the DoThrowTraceAbort()
 // NOTE:  if SetThrowTraceAbort() is not called then the program
 //        checks if the env. variable $ABORT_ON_THROW is set
@@ -145,9 +146,12 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 // "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW
 extern void DoThrowTraceAbort(void);
 
-void DoDbgPrint(const char* file, int line, const char* message);
-void DoDbgPrint(const char* file, int line, const string& message);
-void DoDbgPrint(const char* file, int line, const char* msg1, const char* msg2);
+extern void DoDbgPrint(const char* file, int line, const char* message);
+extern void DoDbgPrint(const char* file, int line, const string& message);
+extern void DoDbgPrint(const char* file, int line,
+                       const char* msg1, const char* msg2);
+
+#if defined(_DEBUG)
 
 template<typename T>
 inline
