@@ -27,26 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2003/03/10 18:54:25  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.3  2001/05/17 15:07:07  lavr
-* Typos corrected
-*
-* Revision 1.2  2000/12/15 15:38:43  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.1  2000/10/20 15:51:39  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -98,6 +78,11 @@ CObjectTypeInfo CObjectTypeInfo::GetElementType(void) const
 }
 
 // pointer interface
+CObjectTypeInfo CObjectTypeInfo::GetPointedType(void) const
+{
+    return GetPointerTypeInfo()->GetPointedType();
+}
+
 CConstObjectInfo CConstObjectInfo::GetPointedObject(void) const
 {
     const CPointerTypeInfo* pointerType = GetPointerTypeInfo();
@@ -317,3 +302,29 @@ void CObjectTypeInfo::ResetGlobalCopyHook(void) const
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.5  2003/04/16 19:58:26  ucko
+* Actually implement CObjectTypeInfo::GetPointedType; move CVS log to end.
+*
+* Revision 1.4  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
+* Revision 1.3  2001/05/17 15:07:07  lavr
+* Typos corrected
+*
+* Revision 1.2  2000/12/15 15:38:43  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.1  2000/10/20 15:51:39  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* ===========================================================================
+*/
