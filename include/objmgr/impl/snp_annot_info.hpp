@@ -40,6 +40,7 @@
 
 #include <vector>
 #include <map>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -344,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/08/15 19:34:53  vasilche
+* Added missing #include <algorigm>
+*
 * Revision 1.3  2003/08/15 19:19:15  vasilche
 * Fixed memory leak in string packing hooks.
 * Fixed processing of 'partial' flag of features.
