@@ -603,14 +603,6 @@ public:
 END_NCBI_SCOPE
 
 
-#if defined(NCBI_OS_MSWIN)
-#include <io.h>
-inline int close(int fd)
-{
-    return _close(fd);
-}
-#endif
-
 
 /* @} */
 
@@ -618,6 +610,9 @@ inline int close(int fd)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/02/25 16:07:38  soussov
+ * removes wrapper for _close out of this file
+ *
  * Revision 1.33  2005/02/25 14:54:43  lavr
  * Fix last check-in's change log entry
  *
