@@ -332,6 +332,7 @@ CDMLConnPool::Clear(void)
     // Close the DML connection ...
     m_LocalStmt.release();
     m_DMLConnection.release();
+    m_Started = false;
 }
 
 IStatement&
@@ -344,7 +345,7 @@ CDMLConnPool::GetLocalStmt(void) const
 void
 CDMLConnPool::commit(void) const
 {
-    if ( m_Started ) {
+    if ( m_Started && m_DMLConnection.get() != NULL ) {
         try {
             GetLocalStmt().ExecuteUpdate( "COMMIT TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -358,7 +359,7 @@ CDMLConnPool::commit(void) const
 void
 CDMLConnPool::rollback(void) const
 {
-    if ( m_Started ) {
+    if ( m_Started && m_DMLConnection.get() != NULL ) {
         try {
             GetLocalStmt().ExecuteUpdate( "ROLLBACK TRANSACTION" );
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -1760,6 +1761,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/01/28 16:24:14  ssikorsk
+* Fixed: transactional behavior bug
+*
 * Revision 1.3  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object
