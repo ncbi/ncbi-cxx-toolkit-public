@@ -109,7 +109,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
 */
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, char* instructions, Boolean *mask_at_hash, BlastSeqLoc* *seqloc_retval);
+   Int4 offset, const char* instructions, Boolean *mask_at_hash, BlastSeqLoc* *seqloc_retval);
 
 
 /** Does preparation for filtering and then calls BlastSetUp_Filter
@@ -124,7 +124,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 */
 Int2
 BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
-    Uint1 program_number, char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
+    Uint1 program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
     Blast_Message* *blast_message);
 
 /** Masks the letters in buffer.

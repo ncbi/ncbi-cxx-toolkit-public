@@ -554,7 +554,7 @@ BlastSetUp_load_options_to_buffer(const char *instructions, char* buffer)
 
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, char* instructions, Boolean *mask_at_hash, 
+   Int4 offset, const char* instructions, Boolean *mask_at_hash, 
    BlastSeqLoc* *seqloc_retval)
 {
 	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
@@ -835,7 +835,7 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 }
 
 static Int2
-GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, Uint1 program_number, char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
+GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, Uint1 program_number, const char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
 {
         Int2 status = 0;
         Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
@@ -900,7 +900,7 @@ GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo*
 
 
 Int2
-BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Uint1 program_number, char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash, Blast_Message * *blast_message)
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Uint1 program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash, Blast_Message * *blast_message)
 {
 
     Int2 status = 0;
