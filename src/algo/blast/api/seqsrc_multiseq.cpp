@@ -36,7 +36,6 @@
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/core/blast_def.h>
 #include "blast_setup.hpp"
-#include <algo/blast/api/blast_exception.hpp>
 
 #include <memory>
 
@@ -53,12 +52,7 @@ CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
 {
     m_ibIsProt = (program == eBlastp || program == eBlastx);
     
-    try {
-        SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
-    } catch (const CBlastException& exptn) {
-        Blast_MessageWrite(&m_icErrMsg, BLAST_SEV_ERROR, exptn.GetErrCode(),
-                           1, exptn.GetErrCodeString());
-    }
+    SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
 
     // Do not set right away
     m_iAvgLength = 0;
@@ -265,21 +259,36 @@ static Int2 MultiSeqGetNextChunk(void* multiseq_handle,
     return BLAST_SEQSRC_SUCCESS;
 }
 
-Blast_Message* MultiSeqGetErrorMessage(void* multiseq_handle, void*)
-{
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
-    return seq_info->GetErrorMessage();
-}
+/// Encapsulates the arguments needed to initialize multi-sequence source.
+struct SMultiSeqSrcNewArgs {
+    TSeqLocVector seq_vector;
+    EProgram program;
+
+    SMultiSeqSrcNewArgs(TSeqLocVector sv, EProgram p)
+        : seq_vector(sv), program(p) {}
+};
 
 BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 {
-    SMultiSeqSrcNewArgs* seqsrc_args = (SMultiSeqSrcNewArgs*) args;
+    if ( !retval ) {
+        return (BlastSeqSrc*) NULL;
+    }
 
-    if (!retval)
-        return NULL;
+    SMultiSeqSrcNewArgs* seqsrc_args = (SMultiSeqSrcNewArgs*) args;
+    ASSERT(seqsrc_args);
     
-    CMultiSeqInfo* seq_info = 
-        new CMultiSeqInfo(seqsrc_args->seq_vector, seqsrc_args->program);
+    CMultiSeqInfo* seq_info =  NULL;
+    try {
+        seq_info = new CMultiSeqInfo(seqsrc_args->seq_vector, 
+                                     seqsrc_args->program);
+    } catch (const ncbi::CException& e) {
+        SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
+    } catch (const std::exception& e) {
+        SetInitErrorStr(retval, strdup(e.what()));
+    } catch (...) {
+        SetInitErrorStr(retval, strdup("Caught unknown exception from "
+                                       "CMultiSeqInfo constructor"));
+    }
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
@@ -295,7 +304,6 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     SetGetSeqLen(retval, &MultiSeqGetSeqLen);
     SetGetNextChunk(retval, &MultiSeqGetNextChunk);
     SetIterNext(retval, &MultiSeqIteratorNext);
-    SetGetError(retval, &MultiSeqGetErrorMessage);
     SetRetSequence(retval, &MultiSeqRetSequence);
 
     return retval;
@@ -317,26 +325,19 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src)
 }
 
 BlastSeqSrc*
-MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
+MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
 {
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
-    auto_ptr<SMultiSeqSrcNewArgs> args(new SMultiSeqSrcNewArgs);
-    args->seq_vector = (TSeqLocVector) seq_vector;
-    args->program = program;
+
+    auto_ptr<SMultiSeqSrcNewArgs> args
+        (new SMultiSeqSrcNewArgs(const_cast<TSeqLocVector&>(seq_vector),
+                                 program));
+
     bssn_info.constructor = &MultiSeqSrcNew;
     bssn_info.ctor_argument = (void*) args.get();
 
     seq_src = BlastSeqSrcNew(&bssn_info);
-    Blast_Message* error_msg = BLASTSeqSrcGetError(seq_src);
-    if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
-        seq_src = BlastSeqSrcFree(seq_src);
-        CBlastException::EErrCode code = (CBlastException::EErrCode) error_msg->code;
-        string message(error_msg->message);
-        Blast_MessageFree(error_msg);
-        throw CBlastException(DIAG_COMPILE_INFO, 0, code, message.c_str());
-    }
-    Blast_MessageFree(error_msg);
     return seq_src;
 }
 
@@ -350,6 +351,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2004/11/17 20:22:38  camacho
+ * 1. Implemented error handling at initialization time.
+ * 2. Made initialization function name consistent with other BlastSeqSrc
+ *    implementations
+ *
  * Revision 1.22  2004/10/06 14:56:13  dondosha
  * Remove methods that are no longer supported by interface
  *
