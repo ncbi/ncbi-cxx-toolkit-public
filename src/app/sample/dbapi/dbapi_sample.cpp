@@ -27,6 +27,8 @@
 *
 * File Description:
 *   String representation of the database character types.
+*
+* ===========================================================================
 */
 
 #include <corelib/ncbiapp.hpp>
@@ -42,7 +44,7 @@ USING_NCBI_SCOPE;
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-class CSampleDbapiApplication : public CNcbiApplication
+class CDbapiTest : public CNcbiApplication
 {
 private:
     virtual void Init();
@@ -54,7 +56,7 @@ private:
 };
 
 
-void CSampleDbapiApplication::Init()
+void CDbapiTest::Init()
 {
 
     argList = new CArgDescriptions();
@@ -67,19 +69,22 @@ void CSampleDbapiApplication::Init()
                            "Server <sybase|mssql>",
                            CArgDescriptions::eString, "sybase");
 
-    argList->AddDefaultKey("d", "string",
-                           "Driver <ctlib|dblib|ftds>",
-                           CArgDescriptions::eString, 
 #ifdef WIN32
+    argList->AddDefaultKey("d", "string",
+                           "Driver <ctlib|dblib|ftds|odbc>",
+                           CArgDescriptions::eString, 
                            "odbc");
 #else
+    argList->AddDefaultKey("d", "string",
+                           "Driver <ctlib|dblib|ftds|odbc>",
+                           CArgDescriptions::eString, 
                            "ctlib");
 #endif
 
     SetupArgDescriptions(argList);
 }
   
-int CSampleDbapiApplication::Run() 
+int CDbapiTest::Run() 
 {
 
     CArgs args = GetArgs();
@@ -91,7 +96,7 @@ int CSampleDbapiApplication::Run()
         string server = "STRAUSS";
 
         if( !NStr::Compare("mssql", args["s"].AsString()) ) {
-            server = "MSSQL3";
+            server = "MSSQL2";
         }
 
 #ifdef WIN32
@@ -105,6 +110,8 @@ int CSampleDbapiApplication::Run()
         ds->SetLogStream(&NcbiCerr);
 
         IConnection* conn = ds->CreateConnection();
+
+        conn->SetMode(IConnection::eBulkInsert);
 
         conn->Connect("anyone",
                       "allowed",
@@ -140,8 +147,9 @@ int CSampleDbapiApplication::Run()
                              << endl;
                 } 
             }
-            NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
         }
+
+        NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
 
 
         //stmt->Close();
@@ -193,6 +201,22 @@ end";
 
        
         cstmt->Close();
+
+        // Reconnect
+        NcbiCout << "Reconnecting..." << endl;
+
+        delete conn;
+        conn = ds->CreateConnection();
+
+        conn->SetMode(IConnection::eBulkInsert);
+
+        conn->Connect("anyone",
+                      "allowed",
+                      server,
+                      "DBAPI_Sample");
+
+
+        stmt = conn->CreateStatement();
 
         NcbiCout << "Reading BLOB..." << endl;
 
@@ -246,17 +270,14 @@ end";
         sql = "\
 create table BlobSample (\
 	id int null, \
-	blob image null, unique (id))";
+	blob text null, unique (id))";
         stmt->ExecuteUpdate(sql);
 
-        // initialize table
-        NcbiCout << "Initializing BlobSample table..." << endl;
-        sql = "insert BlobSample (id) values (1)";
-        stmt->ExecuteUpdate(sql);
-   
-        // before we put blob into the table, the column must not be NULL
-        stmt->ExecuteUpdate("update BlobSample set blob = 0x0 where id = 1");
+        // Write BLOB several times
+        const int COUNT = 5;
+        int cnt = 0;
 
+        // Create alternate blob storage
         char *buf = new char[blob.size()];
         char *p = buf;
         vector<char>::iterator i_b = blob.begin();
@@ -264,32 +285,50 @@ create table BlobSample (\
             *p++ = *i_b;
         }
 
+        //Initialize table using bulk insert
+        NcbiCout << "Initializing BlobSample table..." << endl;
+        IBulkInsert *bi = conn->CreateBulkInsert("BlobSample", 2);
+        CVariant col1 = CVariant(eDB_Int);
+        CVariant col2 = CVariant(eDB_Text);
+        bi->Bind(1, &col1);
+        bi->Bind(2, &col2);
+        for(int i = 0; i < COUNT; ++i ) {
+            string im = "BLOB data " + NStr::IntToString(i);
+            col1 = i;
+            col2.Truncate();
+            col2.Append(im.c_str(), im.size());
+            bi->AddRow();
+        }
+        bi->Complete();
+
+
         NcbiCout << "Writing BLOB using cursor..." << endl;
-
-
 
         ICursor *blobCur = conn->CreateCursor("test", 
            "select id, blob from BlobSample for update of blob");
     
         IResultSet *blobRs = blobCur->Open();
         while(blobRs->Next()) {
-                ostream& out = blobCur->GetBlobOStream(2, blob.size());
+                NcbiCout << "Writing BLOB " << ++cnt << endl;
+                ostream& out = blobCur->GetBlobOStream(2, blob.size(), eDisableLog);
                 out.write(buf, blob.size());
                 out.flush();
         }
      
         blobCur->Close();
 
-#ifndef WIN32
+#ifndef WIN32 // Not supported by ODBC driver
         NcbiCout << "Writing BLOB using resultset..." << endl;
 
-        stmt->Execute("select id, blob from BlobSample where id = 1");
+        stmt->Execute("select id, blob from BlobSample at isolation read uncommitted");
     
+        cnt = 0;
         while( stmt->HasMoreResults() ) {
             if( stmt->HasRows() ) {
                 IResultSet *rs = stmt->GetResultSet();
                 while(rs->Next()) {
-                    ostream& out = rs->GetBlobOStream(blob.size());
+                    NcbiCout << "Writing BLOB " << ++cnt << endl;
+                    ostream& out = rs->GetBlobOStream(blob.size(), eDisableLog);
                     out.write(buf, blob.size());
                     out.flush();
                 }
@@ -330,14 +369,14 @@ from BlobSample where id = 1");
         }
 
         // Cursor test (remove blob)
-        NcbiCout << "Cursor test, removing blob" << endl;
+        NcbiCout << "Cursor test, removing blobs" << endl;
 
         ICursor *cur = conn->CreateCursor("test", 
                                           "select id, blob from BlobSample for update of blob");
     
         IResultSet *rs = cur->Open();
         while(rs->Next()) {
-            cur->Update("BlobSample", "update BlobSample set blob = 0x0");
+            cur->Update("BlobSample", "update BlobSample set blob = ' '");
         }
      
         cur->Close();
@@ -346,6 +385,8 @@ from BlobSample where id = 1");
         NcbiCout << "Deleting BlobSample table..." << endl;
         sql = "drop table BlobSample";
         stmt->ExecuteUpdate(sql);
+        NcbiCout << "Done." << endl;
+
     }
     catch(exception& e) {
         NcbiCout << e.what() << endl;
@@ -353,7 +394,7 @@ from BlobSample where id = 1");
     return 0;
 }
 
-void CSampleDbapiApplication::Exit()
+void CDbapiTest::Exit()
 {
 
 }
@@ -361,15 +402,20 @@ void CSampleDbapiApplication::Exit()
 
 int main(int argc, const char* argv[])
 {
-    return CSampleDbapiApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CDbapiTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 /*
-* ===========================================================================
-*
+* ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.1  2002/08/13 15:47:27  ucko
-* Add DBAPI sample (from src/dbapi/sample) to central location
+* Revision 1.2  2002/09/17 21:17:15  kholodov
+* Filed moved to new location
+*
+* Revision 1.5  2002/09/16 21:08:33  kholodov
+* Added: bulk insert operations
+*
+* Revision 1.4  2002/09/03 18:41:53  kholodov
+* Added multiple BLOB updates, use of IResultSetMetaData
 *
 * Revision 1.3  2002/07/12 19:23:03  kholodov
 * Added: update BLOB using cursor for all platforms
@@ -381,5 +427,4 @@ int main(int argc, const char* argv[])
 * First commit
 *
 *
-* ===========================================================================
 */
