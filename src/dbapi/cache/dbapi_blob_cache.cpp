@@ -430,7 +430,7 @@ private:
             ret = x_SaveBlob(out);
         }
         if (&*m_TmpFile) {
-            size_t total_bytes = m_TmpFile->tellg();
+            CT_OFF_TYPE total_bytes = m_TmpFile->tellg() - CT_POS_TYPE(0);
             ostream& out = cur.GetBlobOStream(1, total_bytes); 
             ret = x_SaveBlob(out);
         }
@@ -1128,6 +1128,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/20 00:54:13  ucko
+ * Tweak for our patched version of GCC 3.3.3, which is really strict
+ * about stream-related types.
+ *
  * Revision 1.5  2004/07/19 20:27:55  ucko
  * Actually return something from CDBAPI_TransGuard::operator=.
  *
