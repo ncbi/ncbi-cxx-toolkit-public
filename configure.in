@@ -43,6 +43,15 @@ AC_INIT(include/corelib/ncbitype.h)
 #############################################################################
 
 
+#### Check for special options
+if test "$with_extra_action" = "yes" ; then
+   AC_MSG_ERROR(["--with-extra-action must have a value after ="])
+fi
+if test "$with_extra_action" = "no" ; then
+   AC_MSG_ERROR(["--without-extra-action is not allowed"])
+fi
+
+
 #### Get the running host's properties
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(HOST,        "$host")
@@ -448,15 +457,13 @@ changequote([, ])dnl
 ### ------------------------------------------------------------------
 ### ------------------------------------------------------------------
 
-dnl Check for header files.
-dnl ---------------------------------
+### Check for header files.
 AC_CHECK_HEADERS(iostream  iostream.h)
 AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
 
 
-dnl Check for the platform (very roughly)
-dnl ---------------------------------
+### Check for the platform (very roughly)
 AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
 AC_CHECK_HEADERS(windows.h, x_have_windows="yes")
 
@@ -472,8 +479,7 @@ else
 fi
 
 
-dnl Check for some library functions.
-dnl ------------------------------------------------------
+### Check for some library functions.
 AC_MSG_CHECKING(for gethostbyname_r)
 AC_TRY_COMPILE(
    [#include <netdb.h>],
@@ -497,8 +503,7 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-dnl Check for typedefs, structures, and compiler features.
-dnl ------------------------------------------------------
+### Check for typedefs, structures, and compiler features.
 AC_CXX_CONST
 AC_TYPE_SIZE_T
 
@@ -587,8 +592,8 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-dnl Check for the availability of other packages
-dnl --------------------------------------------
+### Check for the availability of other packages
+### --------------------------------------------
 
 ### System and miscellaneous libs
 THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
@@ -596,7 +601,6 @@ NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
 
 
 ### Save original compilator/linker flags
-###
 orig_CPPFLAGS="$CPPFLAGS"
 orig_LIBS="$LIBS"
 
@@ -683,12 +687,22 @@ fi
 AC_MSG_RESULT([$FASTCGI_PATH])
 
 
-## NCBI SSS DB library
-AC_MSG_CHECKING(if NCBI SSS DB library is available)
+## NCBI SSS libraries
 if test "$with_sybase" = "no" ; then
    with_sssdb="no"
-elif test "$with_sssdb" != "no" ; then
-   NCBI_SSSDB_PATH=${NCBI_SSSDB_PATH:="/net/neptune/pubmed1/sss/db"}
+fi
+if test "$with_sss" = "no" ; then
+   with_sssdb="no"
+   with_sssutils="no"
+   NCBI_SSS_PATH=
+else
+   NCBI_SSS_PATH=${NCBI_SSS_PATH:="/net/neptune/pubmed1/sss"}
+fi
+
+# SSS DB
+AC_MSG_CHECKING(if NCBI SSS DB library is available)
+if test "$with_sssdb" != "no" ; then
+   NCBI_SSSDB_PATH=${NCBI_SSSDB_PATH:="$NCBI_SSS_PATH/db"}
    NCBI_SSSDB_INCLUDE="-I$NCBI_SSSDB_PATH"
    if test "$with_debug" = "no" ; then
      NCBI_SSSDB_LIBS="-L$NCBI_SSSDB_PATH/Release -lsssdb"
@@ -699,7 +713,7 @@ elif test "$with_sssdb" != "no" ; then
    LIBS="$NCBI_SSSDB_LIBS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <cslink.hpp>],
-      [ (new CSLink)->connect2server("srv", "user", "pwd", "db");  return 0; ],
+      [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
       [AC_DEFINE_UNQUOTED(HAVE_LIBSSSDB, 1)],
       [with_sssdb="no"]
    )
@@ -711,8 +725,34 @@ if test "$with_sssdb" = "no" ; then
 fi
 AC_MSG_RESULT([$NCBI_SSSDB_PATH])
 
+# SSS UTILS
+AC_MSG_CHECKING(if NCBI SSS UTILS library is available)
+if test "$with_sssutils" != "no" ; then
+   NCBI_SSSUTILS_PATH=${NCBI_SSSUTILS_PATH:="$NCBI_SSS_PATH/utils"}
+   NCBI_SSSUTILS_INCLUDE="-I$NCBI_SSSUTILS_PATH"
+   if test "$with_debug" = "no" ; then
+     NCBI_SSSUTILS_LIBS="-L$NCBI_SSSUTILS_PATH/Release -lsssutils"
+   else
+     NCBI_SSSUTILS_LIBS="-L$NCBI_SSSUTILS_PATH/Debug -lsssutils"
+   fi
+   CPPFLAGS="$NCBI_SSSUTILS_INCLUDE $orig_CPPFLAGS"
+   LIBS="$NCBI_SSSUTILS_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <hashtab.hpp>],
+      [ (new C_HashTab(123))->Clear(); ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBSSSUTILS, 1)],
+      [with_sssutils="no"]
+   )
+fi
+if test "$with_sssutils" = "no" ; then
+   NCBI_SSSUTILS_PATH="No_NCBI_SSSUTILS"
+   NCBI_SSSUTILS_INCLUDE=
+   NCBI_SSSUTILS_LIBS=
+fi
+AC_MSG_RESULT([$NCBI_SSSUTILS_PATH])
 
-# NCBI PubMed
+
+## NCBI PubMed
 AC_MSG_CHECKING(if NCBI PubMed libraries are available)
 if test "$with_ncbi_c" = "no" ; then
    with_pubmed="no"
@@ -723,7 +763,7 @@ elif test "$with_pubmed" != "no" ; then
    AC_TRY_LINK(
       [#include <ncbistr.hpp>],
       [ CNcbiString("abc"); ],
-      [AC_DEFINE_UNQUOTED(HAVE_PUBMED, 1)],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBPUBMED, 1)],
       [with_pubmed="no"]
    )
 fi
@@ -734,15 +774,12 @@ AC_MSG_RESULT([$NCBI_PM_PATH])
 
 
 ### Restore original compilator/linker flags
-###
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
 
 
-dnl Optional projects
-dnl --------------------------------------------
-
-if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sssdb" = "no" || test "$with_pubmed" = "no" ; then
+## Optional projects
+if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" ; then
   with_internal="no"
 fi
 
@@ -759,8 +796,8 @@ else
 fi
 
 
-dnl Check for C standard types an sizes
-dnl ---------------------------------
+### Check for C standard types an sizes
+### ---------------------------------
 AC_C_BIGENDIAN
 AC_C_CHAR_UNSIGNED
 AC_CHECK_SIZEOF(void*)
@@ -774,8 +811,7 @@ AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 
 
-dnl Cleanup
-dnl -------
+### Cleanup
 if test "$compiler" = "WorkShop5" ; then
   test -d SunWS_cache  &&  rm -r SunWS_cache
 fi
@@ -793,9 +829,7 @@ if test -z "$configurables" ; then
 fi
 
 
-dnl Template substitutions
-dnl ----------------------
-
+### Template substitutions
 AC_SUBST(exec_prefix)
 
 AC_SUBST(top_srcdir)
@@ -846,6 +880,8 @@ AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
 AC_SUBST(NCBI_SSSDB_INCLUDE)
 AC_SUBST(NCBI_SSSDB_LIBS)
+AC_SUBST(NCBI_SSSUTILS_INCLUDE)
+AC_SUBST(NCBI_SSSUTILS_LIBS)
 AC_SUBST(NCBI_PM_PATH)
 
 AC_SUBST(NCBI_C_ncbi)
@@ -861,24 +897,31 @@ AC_SUBST(serial_ws50_rtti_kludge)
 #############################################################################
 ### Create output files and do some post-configuration
 
-# compose a list of target files
+## Compose a list of target files
 changequote(<<, >>)dnl
 x_configurables=`echo "$configurables" | sed 's/:[^:][^:]*\.in//g'`
 changequote([, ])dnl
 
-# deploy the target directory tree
+## Deploy the target directory tree
 echo "$x_configurables" | while read x_file ; do
    x_dir=`dirname $x_file`
    test -d "$x_dir"  ||  mkdir -p "$x_dir"
 done
 
-# configure the compiler/flag-dependent header
+## Configure the compiler/flag-dependent header
 AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
 
-# configure makefiles, shell scripts, etc.
+##
+## Configure makefiles, shell scripts, etc.
+##
 AC_OUTPUT(
+
+dnl AC_OUTPUT - 1
+dnl list of files to configure
 ${configurables},
 
+dnl AC_OUTPUT - 2
+dnl restore some variables from the main configure script saved by AC_OUTPUT-3
 builddir="$SAVE_builddir"
 exec_prefix="$SAVE_exec_prefix"
 x_configurables="$SAVE_x_configurables"
@@ -887,21 +930,39 @@ CFLAGS="$SAVE_CFLAGS"
 CXXFLAGS="$SAVE_CXXFLAGS"
 CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
+with_extra_action="$SAVE_with_extra_action"
 
+dnl adjust "/$builddir" to "/src"
 echo "$x_configurables" | while read x_file ; do
    mv "$x_file" "$x_file.tmp"
    cat "$x_file.tmp" | sed "s%/$builddir%/src%g" > "$x_file"
    rm "$x_file.tmp"
 done
 
+dnl make all shell scripts *.sh be executable
 find "$exec_prefix/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
 
+dnl save status, cache, and log files to the build tree dir "status/"
 status_dir="$exec_prefix/status"
 test -d  "$status_dir"  ||  mkdir -p "$status_dir"
 mv config.status config.cache config.log "$status_dir"/
 
+dnl execute extra-action
+if test -n "$with_extra_action" ; then
+   with_extra_action=`echo "$with_extra_action" | sed "s%{}%$exec_prefix%g"`
+   echo
+   echo "executing:  $with_extra_action..."
+   eval $with_extra_action
+   exit_code="$?"
+   if test $exit_code -ne 0 ; then
+      echo "WARNING! non-zero exit code ($exit_code):  $with_extra_action"
+   fi
+   echo
+fi
+
+dnl printout additional configuration options
 cat << EOCONF
 Configuration completed.
 
@@ -909,16 +970,16 @@ Optional configure flags:
  --without-debug         build non-debug versions of libs and apps
  --without-optimization  turn off optimization flags
  --with-dll              build all libraries as DLLs
- --without-bincopy       do not check whether the copied binaries are identical
  --with-internal         build all projects including the internal ones
  --without-sybase        do not use SYBASE libraries
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-fastcgi       do not use Fast-CGI library
- --without-sssdb         do not use NCBI SSS DB library
+ --without-sss[db,utils] do not use NCBI SSS library(es)
  --without-pubmed        do not use NCBI PubMed libraries
  --exec-prefix           specify a non-default build directory name
  --without-debug-sfx     do not add Release/Debug to the build dir name
  --with-hostspec         add full host specs(OS, CPU) to the build dir name
+ --with-extra-action=    in command after '=' -- "{}" stands for the build dir
 
 CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS
@@ -931,6 +992,8 @@ To build everything:  cd $builddir && make all_r
 EOCONF
 ,
 
+dnl AC_OUTPUT - 3
+dnl save some variables to use in the AC_OUTPUT-2
 SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
 SAVE_x_configurables="$x_configurables"
@@ -939,4 +1002,5 @@ SAVE_CFLAGS="$CFLAGS"
 SAVE_CXXFLAGS="$CXXFLAGS"
 SAVE_CPPFLAGS="$CPPFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
+SAVE_with_extra_action="$with_extra_action"
 )
