@@ -9415,6 +9415,10 @@ fi
    ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
    if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
       X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
+   elif test "$OSTYPE:$host_cpu" = "solaris:i386" -a \
+      -d /usr/ncbi/include/GL; then
+      X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
+      X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
    fi
    echo "$as_me:$LINENO: checking for OpenGL" >&5
 echo $ECHO_N "checking for OpenGL... $ECHO_C" >&6
