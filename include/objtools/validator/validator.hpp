@@ -39,6 +39,8 @@
 #include <serial/objectinfo.hpp>
 #include <serial/serialbase.hpp>
 
+#include <map>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -108,19 +110,23 @@ public:
     };
 
     // constructors
-    CValidError
-    (CObjectManager&   objmgr,
-     const CSeq_entry& se,
-     unsigned int      options = 0);
+    CValidError(CObjectManager& objmgr, const CSeq_entry& se,
+        Uint4 options = 0);
 
-    CValidError
-    (CObjectManager&    objmgr,
-     const CSeq_submit& ss,
-     unsigned int       options = 0);
+    CValidError(CObjectManager& objmgr, const CSeq_submit& ss,
+        Uint4 options = 0);
 
+    
     void AddValidErrItem(const CValidErrItem* item);
 
-    size_t size(void) const { return m_ErrItems.size(); }
+    // Statistics
+    SIZE_TYPE TotalSize(void)    const;
+    SIZE_TYPE Size(EDiagSev sev) const;
+    SIZE_TYPE InfoSize(void)     const;
+    SIZE_TYPE WarningSize(void)  const;
+    SIZE_TYPE ErrorSize(void)    const;
+    SIZE_TYPE CriticalSize(void) const;
+    SIZE_TYPE FatalSize(void)    const;
 
     // destructor
     ~CValidError(void);
@@ -133,6 +139,9 @@ private:
 
     // Error list
     TErrs m_ErrItems;
+
+    // statistics
+    map<EDiagSev, SIZE_TYPE>     m_Stats;
 
     friend class CValidError_CI;
 };
@@ -170,6 +179,55 @@ private:
 };
 
 
+inline
+SIZE_TYPE CValidError::TotalSize(void) const 
+{
+    return m_ErrItems.size();
+}
+
+
+inline
+SIZE_TYPE CValidError::Size(EDiagSev sev) const 
+{
+    return const_cast<CValidError*>(this)->m_Stats[sev]; 
+}
+
+
+inline
+SIZE_TYPE CValidError::InfoSize(void) const
+{
+    return Size(eDiag_Info);
+}
+
+
+inline
+SIZE_TYPE CValidError::WarningSize(void) const
+{
+    return Size(eDiag_Warning);
+}
+
+
+inline
+SIZE_TYPE CValidError::ErrorSize(void) const
+{
+    return Size(eDiag_Error);
+}
+
+
+inline
+SIZE_TYPE CValidError::CriticalSize(void) const
+{
+    return Size(eDiag_Critical);
+}
+
+
+inline
+SIZE_TYPE CValidError::FatalSize(void) const
+{
+    return Size(eDiag_Fatal);
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -179,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/03/10 18:11:53  shomrat
+* Added statistics information
+*
 * Revision 1.6  2003/03/06 19:31:57  shomrat
 * Bug fix and code cleanup in CValidError_CI
 *
