@@ -159,7 +159,7 @@ case "$host:$compiler" in
    with_bincopy=${with_bincopy:="no"}
    if test -n "$WS64_CFLAGS" ; then
       if test "$host" != "sparc-sun-solaris2.7" ; then
-        echo "64bit flags are for sparc-sun-solaris2.7 only:  $WS64_CFLAGS"
+        echo "64-bit flags are for sparc-sun-solaris2.7 only:  $WS64_CFLAGS"
         exit 1
       fi
       compiler_extra="_64"
@@ -167,8 +167,8 @@ case "$host:$compiler" in
    else
       compiler_extra="_32"
    fi
-   CFLAGS="-mt $WS64_CFLAGS"
-   CXXFLAGS="-mt +w +w2 $WS64_CFLAGS"
+   CFLAGS="$WS64_CFLAGS"
+   CXXFLAGS="+w +w2 $WS64_CFLAGS"
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
    AR="$CXX -xar -o"
    STRIP=":"
@@ -258,16 +258,35 @@ if test "$with_dll" = "yes" ; then
       fi
       ;;
    esac
-fi
 
-if test "$with_dll" = "yes" ; then
    case "$host:$compiler" in
     *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop5 | *:MIPSpro73 )
       ;;
     * )
-         AC_MSG_WARN(["DLLs may not be buildable by $CXX $compiler_ver on $host"])
+      AC_MSG_WARN(["DLLs may not be buildable by $CXX $compiler_ver on $host"])
       ;;
    esac
+fi
+
+
+#### Multi-Thread safety
+with_mt=${with_mt:="no"}
+if test "$with_mt" = "yes" ; then
+   case "$compiler" in
+    GCC )
+      CPPFLAGS="$CPPFLAGS -D_REENTRANT"
+      ;;
+    WorkShop5 )
+      CFLAGS="-mt $CFLAGS"
+      CXXFLAGS="-mt $CXXFLAGS"
+      ;;
+    MIPSpro73 )
+      ;;
+    * )
+      AC_MSG_ERROR(["Dont know how to build MT-safe with compiler $CXX $compiler_ver"])
+      ;;
+   esac
+   AC_DEFINE_UNQUOTED(NCBI_MT, 1)
 fi
 
 
@@ -296,16 +315,19 @@ AC_CHECK_PROG(STRIP, strip, strip, :)
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
    exec_prefix="${srcdir}/${compiler}${compiler_extra}"
 else
-   with_debug_sfx=${with_debug_sfx:="no"}
+   with_suffix=${with_suffix:="no"}
 fi
 
 
-#### Add "Release"/"Debug" suffix to "${exec_prefix}"
-if test "$with_debug_sfx" != "no" ; then
+#### Add "Release"/"Debug" and/or "MT" suffixes to "${exec_prefix}"
+if test "$with_suffix" != "no" ; then
    if test "$with_debug" = "no" ; then
       exec_prefix="${exec_prefix}-Release"
    else
       exec_prefix="${exec_prefix}-Debug"
+   fi
+   if test "$with_mt" = "yes" ; then
+      exec_prefix="${exec_prefix}MT"
    fi
 fi
 
@@ -425,10 +447,9 @@ if test "$compiler" != "MSVC" ; then
       if echo "$CXXFLAGS" |grep -v >/dev/null '\-g' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
       if test "$with_optimization" = "no" ; then
-         CPPFLAGS="-D_DEBUG $CPPFLAGS"
-      fi
+         CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-g' ;
-         then LDFLAGS="$LDFLAGS -g"   ; fi
+         then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP=":"
    fi
 
@@ -443,7 +464,7 @@ if test "$compiler" != "MSVC" ; then
          CFLAGS="$CFLAGS -O" ; fi
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
-         LDFLAGS="$LDFLAGS -O"   ; fi
+         LDFLAGS="$LDFLAGS -O" ; fi
    fi
 
    if test "$with_debug" = "no"  &&  test "$with_optimization" = "no" ; then
@@ -688,29 +709,44 @@ AC_MSG_RESULT([$FASTCGI_PATH])
 
 
 ## NCBI SSS libraries
+with_sss=${with_sss:="yes"}
+with_sssdb=${with_sssdb:="yes"}
+with_sssutils=${with_sssutils:="yes"}
+
 if test "$with_sybase" = "no" ; then
    with_sssdb="no"
 fi
+
 if test "$with_sss" = "no" ; then
    with_sssdb="no"
    with_sssutils="no"
    NCBI_SSS_PATH=
+   NCBI_SSS_INCLUDE=
+   NCBI_SSS_LIBPATH=
 else
-   NCBI_SSS_PATH=${NCBI_SSS_PATH:="/net/neptune/pubmed1/sss"}
+   NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
+   NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="-I$NCBI_SSS_PATH/include"}
+   if test -z "$NCBI_SSS_LIBPATH" ; then
+      NCBI_SSS_LIBPATH="-L${NCBI_SSS_PATH}/lib"
+      if test "$with_debug" = "no" ; then
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}/Release"
+      else
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}/Debug"
+      fi
+      if test "$compiler" = "GCC" ; then
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
+      fi
+      if test "$with_mt" = "yes" ; then
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
+      fi
+   fi
 fi
 
 # SSS DB
 AC_MSG_CHECKING(if NCBI SSS DB library is available)
 if test "$with_sssdb" != "no" ; then
-   NCBI_SSSDB_PATH=${NCBI_SSSDB_PATH:="$NCBI_SSS_PATH/db"}
-   NCBI_SSSDB_INCLUDE="-I$NCBI_SSSDB_PATH"
-   if test "$with_debug" = "no" ; then
-     NCBI_SSSDB_LIBS="-L$NCBI_SSSDB_PATH/Release -lsssdb"
-   else
-     NCBI_SSSDB_LIBS="-L$NCBI_SSSDB_PATH/Debug -lsssdb"
-   fi
-   CPPFLAGS="$NCBI_SSSDB_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-   LIBS="$NCBI_SSSDB_LIBS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+   CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+   LIBS="$NCBI_SSS_LIBPATH -lsssdb $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <cslink.hpp>],
       [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
@@ -718,25 +754,13 @@ if test "$with_sssdb" != "no" ; then
       [with_sssdb="no"]
    )
 fi
-if test "$with_sssdb" = "no" ; then
-   NCBI_SSSDB_PATH="No_NCBI_SSSDB"
-   NCBI_SSSDB_INCLUDE=
-   NCBI_SSSDB_LIBS=
-fi
-AC_MSG_RESULT([$NCBI_SSSDB_PATH])
+AC_MSG_RESULT([$with_sssdb])
 
 # SSS UTILS
 AC_MSG_CHECKING(if NCBI SSS UTILS library is available)
 if test "$with_sssutils" != "no" ; then
-   NCBI_SSSUTILS_PATH=${NCBI_SSSUTILS_PATH:="$NCBI_SSS_PATH/utils"}
-   NCBI_SSSUTILS_INCLUDE="-I$NCBI_SSSUTILS_PATH"
-   if test "$with_debug" = "no" ; then
-     NCBI_SSSUTILS_LIBS="-L$NCBI_SSSUTILS_PATH/Release -lsssutils"
-   else
-     NCBI_SSSUTILS_LIBS="-L$NCBI_SSSUTILS_PATH/Debug -lsssutils"
-   fi
-   CPPFLAGS="$NCBI_SSSUTILS_INCLUDE $orig_CPPFLAGS"
-   LIBS="$NCBI_SSSUTILS_LIBS $orig_LIBS"
+   CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+   LIBS="$NCBI_SSS_LIBPATH -lsssutils $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <hashtab.hpp>],
       [ (new C_HashTab(123))->Clear(); ],
@@ -744,12 +768,7 @@ if test "$with_sssutils" != "no" ; then
       [with_sssutils="no"]
    )
 fi
-if test "$with_sssutils" = "no" ; then
-   NCBI_SSSUTILS_PATH="No_NCBI_SSSUTILS"
-   NCBI_SSSUTILS_INCLUDE=
-   NCBI_SSSUTILS_LIBS=
-fi
-AC_MSG_RESULT([$NCBI_SSSUTILS_PATH])
+AC_MSG_RESULT([$with_sssutils])
 
 
 ## NCBI PubMed
@@ -883,10 +902,8 @@ AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
-AC_SUBST(NCBI_SSSDB_INCLUDE)
-AC_SUBST(NCBI_SSSDB_LIBS)
-AC_SUBST(NCBI_SSSUTILS_INCLUDE)
-AC_SUBST(NCBI_SSSUTILS_LIBS)
+AC_SUBST(NCBI_SSS_INCLUDE)
+AC_SUBST(NCBI_SSS_LIBPATH)
 AC_SUBST(NCBI_PM_PATH)
 
 AC_SUBST(NCBI_C_ncbi)
@@ -973,18 +990,17 @@ Configuration completed.
 
 Optional configure flags:
  --without-debug         build non-debug versions of libs and apps
- --without-optimization  turn off optimization flags
+ --without-optimization  turn off optimization flags (default if without-debug)
  --with-dll              build all libraries as DLLs
+ --with-mt               compile in a MultiThread-safe manner
  --with-internal         build all projects including the internal ones
  --without-sybase        do not use SYBASE libraries
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-fastcgi       do not use Fast-CGI library
- --without-sss[db,utils] do not use NCBI SSS library(es)
+ --without-sssdb/utils   do not use NCBI SSS library(es)
  --without-pubmed        do not use NCBI PubMed libraries
- --exec-prefix           specify a non-default build directory name
- --without-debug-sfx     do not add Release/Debug to the build dir name
- --with-hostspec         add full host specs(OS, CPU) to the build dir name
- --with-extra-action=    in command after '=' -- "{}" stands for the build dir
+ --exec-prefix=          specify a non-default build directory name
+ --without-suffix        do not add Release/Debug and MT to the build dir name
 
 CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS

@@ -22,6 +22,8 @@
 			<i>Debug</i> vs. <i>Release</i> configuration</a>
 		   <li> <a href="#ref_DLL">
 			Building shared libraries (DLLs)</a>
+		   <li> <a href="#ref_MT">
+			Multi-Thread safe compilation, and linking with MT libraries</a>
 		   <li> <a href="#ref_NamingBuildTree">
 			Naming the <i>build tree</i></a>
 		   <li> <a href="#ref_AfterConf">
@@ -107,7 +109,7 @@ The resultant <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> will conta
 
   <li> <i><b>doc/</b></i> -- NCBI C++ documentation, manuals (including
        this one, <i>doc/config.html</i>) and guidelines
-       for (hopefully) <b>everybody</b> writing on C++ in NCBI SWG
+       for <b>everybody</b> writing on C++ in NCBI SWG
 
   <li> <i><b>scripts/</b></i> -- auxiliary scripts, such as
 		  <a href="new_proj.html#ref_OutsideImport">
@@ -270,15 +272,16 @@ flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
   <li> <i><b>--with-debug</b></i> --
        engage <b>-D_DEBUG</b> and <b>-g</b>,
        <br>strip <b>-DNDEBUG</b> and <b>-O</b>
-       (if not <i><b>--with-release</b></i>)
+       (if not <i><b>--with-optimization</b></i>)
   <li> <i><b>--without-debug</b></i> --
        strip <b>-D_DEBUG</b> and <b>-g</b>,
        <br>engage <b>-DNDEBUG</b> and <b>-O</b>
-		 (if not <i><b>--without-release</b></i>)
-  <li> <i><b>--with-release</b></i> --
-       engage <b>-DNDEBUG</b> and <b>-O</b>
-  <li> <i><b>--without-release</b></i> --
-       strip <b>-DNDEBUG</b> and <b>-O</b>
+		 (if not <i><b>--without-optimization</b></i>)
+  <li> <i><b>--with-optimization</b></i> --
+       unconditionally engage <b>-DNDEBUG</b> and <b>-O</b>
+  <li> <i><b>--without-optimization</b></i> --
+       unconditionally strip <b>-DNDEBUG</b> and <b>-O</b>
+  <li> default: <i><b>--with-debug --without-optimization</b></i>
 </ul>
 
 
@@ -291,13 +294,13 @@ On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
 <ul>
   <li> <i><b>--with-dll</b></i> --
        compile position-independent code (PIC),
-       build <i>dynamic</i> libraries.
+       build <i>dynamic</i> libraries
   <li> <i><b>--without-dll</b></i> --
        do not compile PIC,
-       build <i>static</i> libraries.
-  <li> by default --
+       build <i>static</i> libraries
+  <li> default:
        compile position-independent code (PIC),
-       build <i>static</i> libraries.
+       but build <i>static</i> libraries
 </ul>
 HINT:  To build both <i>dynamic</i> and <i>static</i> libraries without
 recompiling all sources:
@@ -333,6 +336,22 @@ the following platforms:
 </ul>
 
 
+<p>
+<br>
+<a name="ref_MT"></a>
+<h4>Multi-Thread safe compilation, and linking with MT libraries</h4>
+
+<ul>
+  <li> <i><b>--with-mt</b></i> --
+		  compile all code in an MT-safe manner
+  <li> <i><b>--without-mt</b></i> --
+		  compile with no regard to the MT-safety
+<!-- ; also, unset makefile variable
+		  <a href="#ref_TableLocalization"><b><i>$(THREAD_LIBS)</i></b></a> -->
+  <li> default: <i><b>--without-mt</b></i>
+</ul>
+
+
 
 <p>
 <br>
@@ -346,9 +365,11 @@ suffix, e.g.:  <i><b>GCC-Release/</b></i>. The default <i>build tree</i>
 name can be alternated by passing the following flags to the
 <i><b>configure</b></i> script:
 <ul>
-  <li> <i><b>--without-debug-sfx</b></i> --
-       do not add <i>Release/Debug</i> suffix to the <i>build tree</i> name
-       <br><i>Example:</i> <i><b>GCC/</b></i>
+  <li> <i><b>--without-suffix</b></i> --
+       do not add <i>Release/Debug</i> and/or <i>MT</i> suffixes
+       to the <i>build tree</i> name
+       <br><i>Example:</i>
+       <i><b>GCC/</b></i> instead of <i><b>GCC-ReleaseMT/</b></i>
   <li> <i><b>--with-hostspec</b></i> --
        add full host specs to the <i>build tree</i> name
        <br><i>Example:</i> <i><b>GCC-Debug--i586-pc-linux-gnu/</b></i>
@@ -356,19 +377,19 @@ name can be alternated by passing the following flags to the
        specify your own <i>build tree</i> path and name
 </ul>
 
-With <i><b>--exec-prefix=</b></i>, you still can explicitly use
-<i><b>--with-debug-sfx</b></i> and <i><b>--with-hostspec</b></i>
+With <i><b>--exec-prefix=</b></i> you still can explicitly use
+<i><b>--with-suffix</b></i> and <i><b>--with-hostspec</b></i>
 to add suffix(es) to your <i>build tree</i> name in a manner described above.
 <br><i>Example:</i>
 <i><b>--exec-prefix=</b>/home/foo/bar</i>
-<i><b>--without-debug</b></i>
-<i><b>--with-debug-sfx</b></i>
+<i><b>--with-mt </b></i>
+<i><b>--with-suffix</b></i>
 would deploy the new <i>build tree</i> in
-<i><b>/home/foo/bar-Release</b></i>.
+<i><b>/home/foo/bar-DebugMT</b></i>.
 
 <p>
-There is also a special case with <i><b>--exec_prefix=</b>.</i>
--- for those who prefer to put object files, libraries and executables to where
+There is also a special case with "<i><b>--exec_prefix=</b>.</i>"
+for those who prefer to put object files, libraries and executables to where
 the sources are located. But be advised that this will disallow you
 to configure for other <i>build trees</i>.
 
@@ -570,7 +591,7 @@ to the "generic" ones
 
   <tr>
 	 <td><b>NCBI_SSS_PATH</b></td>
-	 <td><i>/net/neptune/pubmed1/sss</i></td>
+	 <td><i>$NCBI/sss/BUILD</i></td>
 	 <td>Path to the NCBI SSS package</td>
   </tr>
 
@@ -657,31 +678,17 @@ to use in the generated makefiles:
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_SSSDB_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/db</td>
-	 <td><i>#include</i> NCBI SSS DB headers</td>
+	 <td><i><b>NCBI_SSS_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/include</td>
+	 <td><i>#include</i> NCBI SSS headers</td>
   </tr>
 
   <tr>
-	 <td><i><b>NCBI_SSSDB_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/db/Release -<b>l</b>sssdb</i> <br>or<br>
-        <i><b>-L</b></i>$NCBI_SSS_PATH<i>/db/Debug -<b>l</b>sssdb</i>
+	 <td><i><b>NCBI_SSS_LIBPATH</b></i></td>
+	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/lib/.... <br>
+					 ....{Release|Debug}[GNU][mt]</i>
     </td>
-	 <td>link with NCBI SSS DB libs</td>
-  </tr>
-
-  <tr>
-	 <td><i><b>NCBI_SSSUTILS_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/utils</td>
-	 <td><i>#include</i> NCBI SSS UTILS headers</td>
-  </tr>
-
-  <tr>
-	 <td><i><b>NCBI_SSSUTILS_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/utils/Release -<b>l</b>sssutils</i> <br>or<br>
-        <i><b>-L</b></i>$NCBI_SSS_PATH<i>/utils/Debug -<b>l</b>sssutils</i>
-    </td>
-	 <td>link with NCBI SSS UTILS libs</td>
+	 <td>link with NCBI SSS libs</td>
   </tr>
 
   <tr>
