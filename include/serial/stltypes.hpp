@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2002/06/27 21:19:49  ucko
+* Fix a memory leak in CStlClassInfoFunctions<>::AddElement (used by Assign)
+*
 * Revision 1.60  2002/06/19 21:42:58  ucko
 * Tweak CStlClassInfo_(multi)map<>::CreateTypeInfo() to avoid GCC 3.1
 * warnings -- yes, we should technically be using pointer-to-member
@@ -460,11 +463,10 @@ public:
             container.allocation_size(container.size());
 #endif
             //container.push_back(CTypeConverter<TElementType>::Get(elementPtr));
-            TElementType* elm = &CTypeConverter<TElementType>::Get
-                (containerType->GetElementType()->Create());
+            TElementType elm;
             containerType->GetElementType()->Assign
-                (elm, &CTypeConverter<TElementType>::Get(elementPtr));
-            container.push_back(*elm);
+                (&elm, &CTypeConverter<TElementType>::Get(elementPtr));
+            container.push_back(elm);
         }
     static void AddElementIn(const CContainerTypeInfo* containerType,
                              TObjectPtr containerPtr, CObjectIStream& in)
