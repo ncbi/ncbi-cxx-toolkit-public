@@ -71,7 +71,8 @@ class NCBI_XNCBI_EXPORT CFileException : public CCoreException
 public:
     /// Error types that file operations can generate.
     enum EErrCode {
-        eMemoryMap
+        eMemoryMap,
+        eRelativePath
     };
 
     /// Translate from the error code value to its string representation.
@@ -227,16 +228,14 @@ public:
     /// @param path_from 
     ///   Absolute path that defines the start of the relative path.
     /// @param path_to
-    ///   Absolute path that defines the defines the endpoint of the relative path.
-    /// @param path
-    ///   Created relative path.
+    ///   Absolute path that defines the endpoint of the relative path.
     /// @return
-    ///   Return true if relative path was created.
-    ///   Return false if input pathes are not absolute,
-    ///   or it's impossible to create relative path (different diskc on MSWIN ).
-    static bool CreateRelativePath( const string& path_from, 
-                                    const string& path_to, 
-                                    string& path);
+    ///   Return the relative path (empty string if the paths are the same).
+    ///   Throw CFileException on error (e.g. if any of the paths is not
+    ///   absolute, or if it is impossible to create relative path, such
+    ///   as in case of different disks on MS-Windows).
+    static string CreateRelativePath(const string& path_from, 
+                                     const string& path_to);
 
     /// Concatenate the two parts of the path for the current OS.
     ///
@@ -1004,6 +1003,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/01/05 21:41:55  gorelenk
+ * += Exception throwing in CDirEntry::CreateRelativePath()
+ *
  * Revision 1.34  2004/01/05 20:06:44  gorelenk
  * + CDirEntry::CreateRelativePath()
  *

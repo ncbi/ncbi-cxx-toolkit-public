@@ -535,31 +535,33 @@ static void s_TEST_Dir(void)
     string rel_path;
 
 #if defined(NCBI_OS_MSWIN)
-    assert(CDirEntry::CreateRelativePath(
-        "C:\\x\\y\\z\\",
-        "C:\\x\\a\\b\\", rel_path));
-    assert(rel_path == string("..\\..\\a\\b\\"));
+    assert( CDirEntry::CreateRelativePath(
+            "C:\\x\\y\\z\\",
+            "C:\\x\\a\\b\\") == "..\\..\\a\\b\\" );
 
-    assert(CDirEntry::CreateRelativePath(
-        "C:\\x\\y\\z\\", 
-        "C:\\x\\y\\z\\", rel_path));
-    assert(rel_path.empty());
+    assert( CDirEntry::CreateRelativePath(
+            "C:\\x\\y\\z\\",
+            "C:\\x\\a\\b\\file.txt") == "..\\..\\a\\b\\file.txt" );
+ 
+    assert( CDirEntry::CreateRelativePath(
+            "C:\\x\\y\\z\\", 
+            "C:\\x\\y\\z\\").empty() );
     
-    assert(CDirEntry::CreateRelativePath(
-        "C:\\x\\y\\z\\", 
-        "C:\\x\\y\\a\\", rel_path));
-    assert(rel_path == string("..\\a\\"));
+
+    assert( CDirEntry::CreateRelativePath(
+            "C:\\x\\y\\z\\", 
+            "C:\\x\\y\\a\\") == "..\\a\\" );
+
+    assert( CDirEntry::CreateRelativePath(
+            "\\x\\y\\z\\", 
+            "\\x\\y\\") == "..\\" );
 
 #elif defined(NCBI_OS_UNIX )
-//    assert(CDirEntry::CreateRelativePath("/usr/bin/", "/usr/",
-//                                         rel_path));
-//    assert(rel_path == string("../"));
-//    assert(CDirEntry::CreateRelativePath("/usr/bin/", "/usr/",
-//                                         rel_path));
-//    assert(rel_path == string("../"));
-//    assert(CDirEntry::CreateRelativePath("/usr/bin/", "/usr/",
-//                                         rel_path));
-//    assert(rel_path == string("../"));
+
+// TODO
+//    assert( CDirEntry::CreateRelativePath(
+//            "/usr/bin/", "/usr/" ) == "../" );
+
 #elif defined(NCBI_OS_MAC)
     // NOT implemented!
 #endif
@@ -722,6 +724,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/01/05 21:41:26  gorelenk
+ * += Exception throwing in CDirEntry::CreateRelativePath()
+ *
  * Revision 1.33  2004/01/05 20:05:06  gorelenk
  * + Test for CDirEntry::CreateRelativePath()
  *
