@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/04/24 20:48:47  vasilche
+* Added missing header.
+*
 * Revision 1.11  2003/03/27 21:54:58  grichenk
 * Renamed test applications and makefiles, updated references
 *
@@ -70,6 +73,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
