@@ -83,7 +83,7 @@ void CSoapBody::Reset(void)
 BEGIN_NAMED_IMPLICIT_CLASS_INFO("Body", CSoapBody)
 {
     SET_CLASS_MODULE("soap");
-    ADD_NAMED_MEMBER("", m_data, STL_list, (STL_CRef, (CLASS, (C_E))))->SetSetFlag(MEMBER_PTR(m_set_State[0]));
+    ADD_NAMED_MEMBER("", m_data, STL_list, (STL_CRef, (CLASS, (C_E))))->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
     info->RandomOrder();
 }
 END_CLASS_INFO
@@ -103,6 +103,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/22 15:00:07  gouriano
+* Corrected typeinfo definition
+*
 * Revision 1.3  2004/05/17 21:03:24  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
