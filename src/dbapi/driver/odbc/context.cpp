@@ -365,6 +365,38 @@ void CODBCContext::xReportConError(SQLHDBC con)
 //
 
 
+///////////////////////////////////////////////////////////////////////
+// Driver manager related functions
+//
+
+I_DriverContext* ODBC_CreateContext(map<string,string>* attr = 0)
+{
+    SQLINTEGER version= SQL_OV_ODBC3;
+
+    if(attr) {
+        string vers= (*attr)["version"];
+	if(vers.find("3") != string::npos)
+	    version= SQL_OV_ODBC3;
+	else if(vers.find("2") != string::npos)
+	    version= SQL_OV_ODBC2;
+
+    }
+
+    return new CODBCContext(version);
+}
+
+void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("odbc", ODBC_CreateContext);
+}
+
+extern "C" {
+    void* DBAPI_E_odbc()
+    {
+        return (void*)DBAPI_RegisterDriver_ODBC;
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -373,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/07/02 20:52:54  soussov
+ * adds RegisterDriver for ODBC
+ *
  * Revision 1.1  2002/06/18 22:06:24  soussov
  * initial commit
  *
