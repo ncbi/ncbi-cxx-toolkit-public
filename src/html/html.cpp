@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/07/20 20:37:19  vasilche
+* Fixed null pointer dereference.
+*
 * Revision 1.56  2000/07/18 19:08:55  vasilche
 * Fixed uninitialized members.
 * Fixed NextCell to advance to next cell.
@@ -514,7 +517,8 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
         const TMode* previous = mode.GetPreviousContext();
         if ( previous ) {
             CNCBINode* parent = previous->GetNode();
-            if ( parent->HaveChildren() && parent->Children().size() > 1 )
+            if ( parent && parent->HaveChildren() &&
+                 parent->Children().size() > 1 )
                 out << '\n'; // separate child nodes by newline
         }
         else {
@@ -1412,6 +1416,8 @@ CHTML_reset::~CHTML_reset(void)
 }
 
 // button tag
+/*
+  commented out because it's not supported in most browsers
 CHTML_button::CHTML_button(const string& text, EButtonType type)
     : CParent("button", text)
 {
@@ -1465,6 +1471,7 @@ CHTML_button* CHTML_button::SetSubmit(const string& name,
 CHTML_button::~CHTML_button(void)
 {
 }
+*/
 
 // text tag 
 
