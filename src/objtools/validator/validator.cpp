@@ -339,6 +339,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_MultipleAccessions",
     "SEQ_INST_HistAssemblyMissing",
     "SEQ_INST_TerminalNs",
+    "SEQ_INST_UnexpectedIdentifierChange",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -613,6 +614,9 @@ This should be annotated or calculated by the database, resulting in a PRIMARY \
 block visible in the flatfile.",
 
 "The Bioseq has one or more N bases at the end.",
+
+"The set of sequence identifiers on a Bioseq are not consistent with the \
+previous version of the record in the database."
 
 /* SEQ_DESCR */
 
@@ -1082,6 +1086,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/03/21 16:20:33  shomrat
+* Added error SEQ_INST_UnexpectedIdentifierChange
+*
 * Revision 1.13  2003/03/20 18:54:00  shomrat
 * Added CValidator implementation
 *
