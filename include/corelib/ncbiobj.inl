@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/26 21:22:51  vakatov
+* Minor cosmetics
+*
 * Revision 1.4  2001/03/13 22:43:49  vakatov
 * Made "CObject" MT-safe
 * + CObject::DoDeleteThisObject()
@@ -140,7 +143,7 @@ void CObject::AddReference(void) const
     TCounter oldCounter;
 
     {{
-        CFastMutexGuard LOCK(sm_Mutex);
+        CFastMutexGuard LOCK(sm_ObjectMutex);
         oldCounter = m_Counter;
 
         TCounter newCounter = oldCounter + TCounter(eCounterStep);
@@ -158,7 +161,7 @@ inline
 void CObject::RemoveReference(void) const
 {
     {{
-        CFastMutexGuard LOCK(sm_Mutex);
+        CFastMutexGuard LOCK(sm_ObjectMutex);
         if ( ObjectStateDoubleReferenced(m_Counter) ) {
             m_Counter -= eCounterStep;
             return;

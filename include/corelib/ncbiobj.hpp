@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/03/26 21:22:51  vakatov
+* Minor cosmetics
+*
 * Revision 1.21  2001/03/13 22:43:48  vakatov
 * Made "CObject" MT-safe
 * + CObject::DoDeleteThisObject()
@@ -209,7 +212,7 @@ private:
 
 
     mutable TCounter  m_Counter;  // reference counter
-    static CFastMutex sm_Mutex;   // reference counter's protective mutex
+    static CFastMutex sm_ObjectMutex;   // reference counter's protective mutex
 };
 
 
@@ -613,6 +616,7 @@ public:
 private:
     T m_Data;
 };
+
 
 
 #include <corelib/ncbiobj.inl>

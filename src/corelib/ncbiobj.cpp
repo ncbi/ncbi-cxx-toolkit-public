@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/03/26 21:22:52  vakatov
+* Minor cosmetics
+*
 * Revision 1.13  2001/03/13 22:43:50  vakatov
 * Made "CObject" MT-safe
 * + CObject::DoDeleteThisObject()
@@ -88,7 +91,6 @@
 BEGIN_NCBI_SCOPE
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  CNullPointerError::
 //
@@ -117,7 +119,7 @@ const char* CNullPointerError::what() const
 //
 
 
-CFastMutex CObject::sm_Mutex;
+CFastMutex CObject::sm_ObjectMutex;
 
 
 // CObject local new operator to mark allocation in heap
@@ -267,7 +269,7 @@ void CObject::ReleaseReference(void) const
 {
     TCounter counter;
     {{
-        CFastMutexGuard LOCK(sm_Mutex);
+        CFastMutexGuard LOCK(sm_ObjectMutex);
         counter = m_Counter;
         if ( ObjectStateReferenced(counter) ) {
             // release reference to object in heap
@@ -291,7 +293,7 @@ void CObject::DoNotDeleteThisObject(void)
 {
     bool is_valid;
     {{
-        CFastMutexGuard LOCK(sm_Mutex);
+        CFastMutexGuard LOCK(sm_ObjectMutex);
         is_valid = ObjectStateValid(m_Counter);
         if (is_valid  &&  !ObjectStateReferenced(m_Counter)) {
             m_Counter = eCounterNotInHeap;
@@ -313,7 +315,7 @@ void CObject::DoNotDeleteThisObject(void)
 void CObject::DoDeleteThisObject(void)
 {
     {{
-        CFastMutexGuard LOCK(sm_Mutex);
+        CFastMutexGuard LOCK(sm_ObjectMutex);
         if ( ObjectStateValid(m_Counter) ) {
             m_Counter |= eStateBitsInHeap;
             return;
