@@ -790,7 +790,7 @@ public:
         memcpy(m_Body, arr, sizeof(m_Body));
         return *this;
     }
- 
+
     CDB_Numeric& operator= (const char* val) {
         x_MakeFromString(m_Precision, m_Scale, val);
         return *this;
@@ -814,6 +814,7 @@ protected:
     unsigned char m_Body[34];
 };
 
+CDB_Object* new_CDB_Object(EDB_Type type, size_t size);
 
 END_NCBI_SCOPE
 
@@ -824,6 +825,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/02/13 22:14:50  sapojnik
+ * new_CDB_Object() (needed for rdblib)
+ *
  * Revision 1.5  2002/02/06 22:21:58  soussov
  * fixes the numeric default constructor
  *

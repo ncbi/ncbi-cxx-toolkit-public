@@ -275,7 +275,7 @@ size_t CDB_Stream::Size() const
 {
     return m_Store->GetDataSize();
 }
- 
+
 void CDB_Stream::Truncate(size_t nof_bytes)
 {
     m_Store->Truncate(nof_bytes);
@@ -639,6 +639,40 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
     m_Null      = false;
 }
 
+CDB_Object* new_CDB_Object(EDB_Type type, size_t size)
+{
+    switch(type) {
+        case eDB_Int          : return new CDB_Int          ();
+        case eDB_SmallInt     : return new CDB_SmallInt     ();
+        case eDB_TinyInt      : return new CDB_TinyInt      ();
+        case eDB_BigInt       : return new CDB_BigInt       ();
+        case eDB_VarChar      : return new CDB_VarChar      ();
+        case eDB_Char         :
+          if((int)size == -1) {
+            return new CDB_Char();
+          }
+          else{
+            return new CDB_Char(size);
+          }
+        case eDB_VarBinary    : return new CDB_VarBinary    ();
+        case eDB_Binary       :
+          if((int)size == -1) {
+            return new CDB_Binary();
+          }
+          else{
+            return new CDB_Binary(size);
+          }
+        case eDB_Float        : return new CDB_Float        ();
+        case eDB_Double       : return new CDB_Double       ();
+        case eDB_DateTime     : return new CDB_DateTime     ();
+        case eDB_SmallDateTime: return new CDB_SmallDateTime();
+        case eDB_Text         : return new CDB_Text         ();
+        case eDB_Image        : return new CDB_Image        ();
+        case eDB_Bit          : return new CDB_Bit          ();
+        case eDB_Numeric      : return new CDB_Numeric      ();
+    }
+    return NULL;
+}
 
 END_NCBI_SCOPE
 
@@ -647,6 +681,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/02/13 22:14:50  sapojnik
+ * new_CDB_Object() (needed for rdblib)
+ *
  * Revision 1.4  2002/02/06 22:22:54  soussov
  * fixes the string to numeric assignment
  *
