@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/29 15:51:42  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+*
 * Revision 1.1  2000/02/01 21:46:18  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -66,6 +69,8 @@
 #include <memory>
 
 USING_NCBI_SCOPE;
+
+static const size_t MAX_FILE_NAME_LENGTH = 31;
 
 class SourceFile
 {
@@ -150,6 +155,9 @@ private:
 
 // return combined dir and name, inserting if needed '/'
 string Path(const string& dir, const string& name);
+
+// file name will be valid after adding at most addLength symbols
+string MakeFileName(const string& s, size_t addLength = 0);
 
 // return base name of file i.e. without dir and extension
 string BaseName(const string& path);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/29 15:51:41  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+*
 * Revision 1.4  2000/03/17 16:47:38  vasilche
 * Added copyright message to generated files.
 * All objects pointers in choices now share the only CObject pointer.
@@ -106,12 +109,14 @@ public:
         {
             return m_HeaderPrefix;
         }
-    string GetHPPName(void) const;
-    string GetCPPName(void) const;
+    string GetUserFileBaseName(void) const;
+    string GetBaseFileBaseName(void) const;
+    string GetBaseHPPName(void) const;
+    string GetBaseCPPName(void) const;
     string GetUserHPPName(void) const;
     string GetUserCPPName(void) const;
-    string GetBaseDefine(void) const;
-    string GetHPPDefine(void) const;
+    string GetDefineBase(void) const;
+    string GetBaseHPPDefine(void) const;
     string GetUserHPPDefine(void) const;
 
     string GetMethodPrefix(void) const;

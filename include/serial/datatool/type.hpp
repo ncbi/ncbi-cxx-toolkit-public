@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/29 15:51:42  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+*
 * Revision 1.2  2000/03/10 15:01:45  vasilche
 * Fixed OPTIONAL members reading.
 *
@@ -240,7 +243,7 @@ private:
     bool m_Checked;
 
     AutoPtr<CTypeInfo> m_CreatedTypeInfo;
-
+    mutable string m_CachedFileName;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);
