@@ -1,0 +1,7 @@
+# $Id$
+
+# Build library "lds_admin"
+###############################
+
+SRC = lds_admin lds_coreobjreader lds_files lds_object
+LIB = lds_admin
