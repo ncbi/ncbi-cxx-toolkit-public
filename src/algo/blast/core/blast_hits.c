@@ -432,7 +432,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    BLAST_SequenceBlkPtr query_blk, BLAST_SequenceBlkPtr subject_blk, 
    BlastHitSavingOptionsPtr hit_options, BlastQueryInfoPtr query_info, 
    BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 
-   ReadDBFILEPtr rdfp)
+   const BlastSeqSrcPtr bssp)
 {
    Int4 sum, score, gap_open, gap_extend;
    Int4Ptr PNTR matrix;
@@ -449,6 +449,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    Int2 status = 0;
    Int4 align_length;
    BLAST_KarlinBlkPtr PNTR kbp;
+   GetSeqArg seq_arg = { NULLB };
 
    if (!hsp_list)
       return status;
@@ -486,11 +487,19 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
       sequence_start element of the subject structure.
       NB: for the BLAST 2 Sequences case, the uncompressed sequence must 
       already be there */
-   if (rdfp) {
+   if (bssp) {
+      seq_arg.oid = subject_blk->oid;
+      seq_arg.encoding = BLASTNA_ENCODING;
+      BLASTSeqSrcGetSequence(bssp, (void*) &seq_arg);
+
+#if 0
       readdb_get_sequence_ex(rdfp, subject_blk->oid, 
          &subject_blk->sequence_start, &buf_len, TRUE);
       subject_blk->sequence = subject_blk->sequence_start + 1;
       subject_blk->sequence_start_allocated = TRUE;
+#endif
+      subject_blk->sequence_start = seq_arg.seq->sequence_start;
+      subject_blk->sequence = seq_arg.seq->sequence_start + 1;
    }
    /* The sequence in blastna encoding is now stored in sequence_start */
    subject_start = subject_blk->sequence_start + 1;
@@ -624,6 +633,9 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    /* Check for HSP inclusion once more */
    if (hsp_list->hspcnt > 1)
       status = BlastSortUniqHspArray(hsp_list);
+
+   BlastSequenceBlkFree(seq_arg.seq);
+   subject_blk->sequence = NULL;
 
    return status;
 }
@@ -855,7 +867,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
         BLAST_SequenceBlkPtr subject, BlastResultsPtr results, 
         BlastHSPListPtr hsp_list, BlastHitSavingParametersPtr hit_parameters, 
         BlastQueryInfoPtr query_info, BLAST_ScoreBlkPtr sbp, 
-        BlastScoringOptionsPtr score_options, ReadDBFILEPtr rdfp, 
+        BlastScoringOptionsPtr score_options, const BlastSeqSrcPtr bssp,
         BlastThrInfoPtr thr_info)
 {
    Int2 status;
@@ -870,7 +882,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
 
    if (program == blast_type_blastn) {
       status = BLAST_ReevaluateWithAmbiguities(hsp_list, query, subject, 
-                  hit_options, query_info, sbp, score_options, rdfp);
+                  hit_options, query_info, sbp, score_options, bssp);
       context_factor = 2;
    } else if (program == blast_type_blastx || 
               program == blast_type_tblastx) {
@@ -889,10 +901,13 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
     * IF THERE WILL BE A CALLBACK TO FORMAT RESULTS ON THE FLY, IT SHOULD
     * BE CALLED HERE.
     * *******************************************************************/
+#if 0
+   /* FIXME: this is not implemented yet! */
    if (hit_options->handle_results_method != 0) {
       hit_parameters->handle_results(query, subject, hsp_list, hit_options,
                                      query_info, sbp, rdfp);
    }
+#endif
 
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {

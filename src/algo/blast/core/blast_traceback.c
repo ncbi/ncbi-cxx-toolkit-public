@@ -35,9 +35,7 @@ Detailed Contents:
 
         - Functions responsible for the traceback stage of the BLAST algorithm
 
-******************************************************************************
- * $Revision$
- * */
+******************************************************************************/
 
 #include <blast_traceback.h>
 #include <blast_util.h>
@@ -841,7 +839,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
    BlastQueryInfoPtr query_info,
    BlastGapAlignStructPtr gap_align, BLAST_ScoreBlkPtr sbp, 
    BlastScoringOptionsPtr score_options,
-   BlastHitSavingParametersPtr hit_params, 
+   BlastHitSavingParametersPtr hit_params,
    BlastDatabaseParametersPtr db_params)
 {
    Int4 index, index1, index2;
@@ -1206,7 +1204,7 @@ static Uint1 GetTracebackEncoding(Uint1 program_number)
 
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results, 
         BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-        ReadDBFILEPtr rdfp, BlastGapAlignStructPtr gap_align,
+        const BlastSeqSrcPtr bssp, BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params,
@@ -1218,9 +1216,9 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
    BlastHSPListPtr hsp_list;
    BLAST_ScoreBlkPtr sbp;
    Uint1 encoding;
-   BLAST_SequenceBlkPtr subject;
+   GetSeqArg seq_arg = { NULLB };
    
-   if (!results || !query_info || !rdfp) {
+   if (!results || !query_info || !bssp) {
       return 0;
    }
    
@@ -1235,9 +1233,6 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
    
    encoding = GetTracebackEncoding(program_number);
 
-   /* Allocate subject sequence block once */
-   subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
-
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
       hit_list = results->hitlist_array[query_index];
 
@@ -1250,23 +1245,23 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
             continue;
 
          if (!hsp_list->traceback_done) {
-            MakeBlastSequenceBlk(rdfp, &subject, hsp_list->oid, 
-                                 encoding);
+            seq_arg.oid = hsp_list->oid;
+            seq_arg.encoding = encoding;
+            BlastSequenceBlkClean(seq_arg.seq);
+            if (BLASTSeqSrcGetSequence(bssp, (void*) &seq_arg) < 0)
+                continue;
 
             BlastHSPListGetTraceback(program_number, hsp_list, query, 
-               subject, query_info, gap_align, sbp, score_options, 
+               seq_arg.seq, query_info, gap_align, sbp, score_options, 
                hit_params, db_params);
-
-            BlastSequenceBlkClean(subject);
          }
       }
    }
 
-   subject = MemFree(subject);
-
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed */
    BLAST_SortResults(results);
+   BlastSequenceBlkFree(seq_arg.seq);
 
    return status;
 }

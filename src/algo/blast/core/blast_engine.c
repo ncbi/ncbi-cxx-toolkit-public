@@ -31,21 +31,20 @@ Author: Ilya Dondoshansky
 
 Contents: High level BLAST functions
 
-******************************************************************************
- * $Revision$
- * */
+******************************************************************************/
 
 static char const rcsid[] = "$Id$";
 
 #include <blast_engine.h>
-#include <readdb.h>
 #include <aa_ungapped.h>
 #include <blast_util.h>
 #include <blast_gapalign.h>
 #include <blast_traceback.h>
 
+#if 0
 extern OIDListPtr LIBCALL 
 BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
+#endif
 
 /** Deallocates all memory in BlastCoreAuxStruct */
 static BlastCoreAuxStructPtr 
@@ -56,6 +55,7 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
    BlastHSPListFree(aux_struct->hsp_list);
    MemFree(aux_struct->query_offsets);
    MemFree(aux_struct->subject_offsets);
+   BlastSeqSrcFree(aux_struct->bssp);
    
    return (BlastCoreAuxStructPtr) MemFree(aux_struct);
 }
@@ -418,6 +418,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  */
 static Int2 
 BLAST_SetUpAuxStructures(Uint1 program_number,
+   const BlastSeqSrcNewInfoPtr bssn_info,
    const BlastScoringOptionsPtr scoring_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    LookupTableWrapPtr lookup_wrap,	
@@ -438,7 +439,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    Boolean ag_blast = (Boolean)
       (word_options->extend_word_method & EXTEND_WORD_AG);
    Int4 offset_array_size = 0;
-   Boolean translated_subject;
    BLAST_ExtendWordPtr ewp;
    BlastCoreAuxStructPtr aux_struct;
 
@@ -470,6 +470,12 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 
    *aux_struct_ptr = aux_struct = (BlastCoreAuxStructPtr)
       MemNew(sizeof(BlastCoreAuxStruct));
+
+   /* Initialize the BlastSeqSrc */
+   if (bssn_info) {
+       aux_struct->bssp = BlastSeqSrcNew(bssn_info);
+   }
+
    aux_struct->ewp = ewp;
 
    /* pick which gapped alignment algorithm to use */
@@ -503,6 +509,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    return status;
 }
 
+#if 0
 static Boolean 
 BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
    Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info)
@@ -614,6 +621,19 @@ static BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
    
    return thr_info;
 }
+#endif
+
+#define BLAST_DB_CHUNK_SIZE 1024
+static BlastThrInfoPtr BLAST_ThrInfoNew(Int4 last_oid2search)
+{
+   BlastThrInfoPtr thr_info;
+   
+   thr_info = MemNew(sizeof(BlastThrInfo));
+   thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
+   thr_info->final_db_seq = last_oid2search;
+   
+   return thr_info;
+}
 
 static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
 {
@@ -632,7 +652,7 @@ static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
    const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info,
-   ReadDBFILEPtr rdfp, BLAST_ScoreBlkPtr sbp,
+   const BlastSeqSrcNewInfoPtr bssn_info,  BLAST_ScoreBlkPtr sbp,
    const BlastScoringOptionsPtr score_options, 
    LookupTableWrapPtr lookup_wrap,
    const BlastInitialWordOptionsPtr word_options, 
@@ -643,7 +663,6 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastDatabaseParametersPtr db_params,
    BlastResultsPtr results, BlastReturnStatPtr return_stats)
 {
-   ReadDBFILEPtr db; /* Loop variable */
    Uint4 max_subject_length = 0; /* Longest subject sequence */
    BlastCoreAuxStructPtr aux_struct = NULL;
    BlastThrInfoPtr thr_info = NULL;
@@ -657,33 +676,26 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BlastExtensionParametersPtr ext_params;
    BlastHitSavingParametersPtr hit_params;
    BlastGapAlignStructPtr gap_align;
+   GetSeqArg seq_arg = { NULLB };
    Int2 status = 0;
    
-   if (!rdfp)
-      return -1;
-   
-   for (db = rdfp; db; db = db->next) {
-      max_subject_length = 
-         MAX(max_subject_length, readdb_get_maxlen(db));
-   }
-
    if ((status = 
-       BLAST_SetUpAuxStructures(program_number, score_options, 
-          eff_len_options, lookup_wrap, word_options, ext_options, 
-          hit_options, query, query_info, sbp, 
+       BLAST_SetUpAuxStructures(program_number, bssn_info,
+          score_options, eff_len_options, lookup_wrap, word_options, 
+          ext_options, hit_options, query, query_info, sbp, 
           max_subject_length, &gap_align, &word_params, &ext_params, 
           &hit_params, &aux_struct)) != 0)
       return status;
 
+   max_subject_length = BLASTSeqSrcGetMaxSeqLen(aux_struct->bssp);
+
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
 
-   thr_info = BLAST_ThrInfoNew(rdfp);
-   if (BlastGetVirtualOIDList(rdfp))
-      oid_list = MemNew((thr_info->db_chunk_size+33)*sizeof(Int4));
-   
-   /* Allocate subject sequence block once for the entire run */
-   subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
+   /* FIXME: will only work for full databases */
+   /*thr_info = BLAST_ThrInfoNew(eff_len_options->dbseq_num);*/
+   stop = eff_len_options->dbseq_num;
 
+#if 0
    while (!BLAST_GetDbChunk(rdfp, &start, &stop, oid_list, 
                             &oid_list_length, thr_info)) {
       use_oid_list = (oid_list && (oid_list_length > 0));
@@ -691,44 +703,52 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
          start = 0;
          stop = oid_list_length;
       }
-      
-      /* iterate over all subject sequences */
-      for (index = start; index < stop; index++) {
-         oid = (use_oid_list ? oid_list[index] : index);
-
-         MakeBlastSequenceBlk(rdfp, &subject, oid, BLASTP_ENCODING);
-
-         BLAST_SearchEngineCore(program_number, query, query_info,
-            subject, lookup_wrap, gap_align, score_options, word_params, 
-            ext_params, hit_params, psi_options, db_params,
-            return_stats, aux_struct, &hsp_list);
-
-         if (hsp_list && hsp_list->hspcnt > 0) {
-            return_stats->prelim_gap_passed += hsp_list->hspcnt;
-            /* Save the HSPs into a hit list */
-            BLAST_SaveHitlist(program_number, query, subject, results, 
-               hsp_list, hit_params, query_info, gap_align->sbp, 
-               score_options, rdfp, thr_info);
-         }
-         BlastSequenceBlkClean(subject);
+#endif
+   
+   /* iterate over all subject sequences */
+   for (index = start; index < stop; index++) {
+      seq_arg.oid = (use_oid_list ? oid_list[index] : index);
+      seq_arg.encoding = BLASTP_ENCODING; /* shouldn't use a different encoding?*/
+      BlastSequenceBlkClean(seq_arg.seq);
+      if (BLASTSeqSrcGetSequence(aux_struct->bssp, (void*) &seq_arg) < 0)
+          continue;
+ 
+      BLAST_SearchEngineCore(program_number, query, query_info,
+         seq_arg.seq, lookup_wrap, gap_align, score_options, word_params, 
+         ext_params, hit_params, psi_options, db_params,
+         return_stats, aux_struct, &hsp_list);
+ 
+      if (hsp_list && hsp_list->hspcnt > 0) {
+         return_stats->prelim_gap_passed += hsp_list->hspcnt;
+         /* Save the HSPs into a hit list */
+         BLAST_SaveHitlist(program_number, query, subject, results, 
+            hsp_list, hit_params, query_info, gap_align->sbp, 
+            score_options, aux_struct->bssp, thr_info);
       }
+         /*BlastSequenceBlkClean(subject);*/
    }
-   BLAST_ThrInfoFree(thr_info);
+#if 0
+   }    /* end while!(BLAST_GetDbChunk...) */
+#endif
+
+   BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
    oid_list = MemFree(oid_list);
-   subject = MemFree(subject);
-   BlastCoreAuxStructFree(aux_struct);
+   BlastSequenceBlkFree(seq_arg.seq);
+
    /* Now sort the hit lists for all queries */
    BLAST_SortResults(results);
 
    if (hit_options->is_gapped) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
-            rdfp, gap_align, score_options, ext_params, hit_params, db_params);
+            aux_struct->bssp, gap_align, score_options, ext_params, hit_params,
+            db_params);
    }
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
+   BlastCoreAuxStructFree(aux_struct);
 
    hit_params = MemFree(hit_params);
    ext_params = MemFree(ext_params);
@@ -763,7 +783,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
       return -1;
 
    if ((status = 
-        BLAST_SetUpAuxStructures(program_number, score_options, 
+        BLAST_SetUpAuxStructures(program_number, NULL, score_options, 
            eff_len_options, lookup_wrap, word_options, ext_options, 
            hit_options, query, query_info, 
            sbp, subject->length, &gap_align, &word_params, &ext_params, 
@@ -800,7 +820,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 
    ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
    hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
-   
+
    return status;
 }
 
