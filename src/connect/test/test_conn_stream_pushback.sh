@@ -4,7 +4,10 @@
 #
 
 i=0
-while [ $i -lt 5 ]; do
+j=`expr $$ % 2 + 1`
+while [ $i -lt $j ]; do
+  date
   test_conn_stream_pushback  ||  exit
   i="`expr $i + 1`"
 done
+date
