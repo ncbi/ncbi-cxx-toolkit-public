@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/07/17 22:39:54  vakatov
+* CCgiResponse:: Made GetOutput() fully consistent with out().
+* Prohibit copy constructor and assignment operator.
+* Retired "ncbicgir.inl", moved inline functions to the header itself, made
+* some non-inline. Improved comments, got rid of some unused STL headers.
+* Well-groomed the code.
+*
 * Revision 1.11  2000/11/01 20:36:31  vasilche
 * Added HTTP_EOL string macro.
 *
@@ -68,77 +75,60 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <cgi/ncbicgir.hpp>
-#include <list>
-#include <map>
 #include <time.h>
 
 
-// This is to use the ANSI C++ standard templates without the "std::" prefix
-// NCBI_USING_NAMESPACE_STD;
-
-// This is to use the ANSI C++ standard templates without the "std::" prefix
-// and to use NCBI C++ entities without the "ncbi::" prefix
-// USING_NCBI_SCOPE;
-
 BEGIN_NCBI_SCOPE
 
-static const tm kZeroTime = { 0 };
 
-const string CCgiResponse::sm_ContentTypeName = "Content-Type";
+const string CCgiResponse::sm_ContentTypeName    = "Content-Type";
 const string CCgiResponse::sm_ContentTypeDefault = "text/html";
-const string CCgiResponse::sm_HTTPStatusDefault = "HTTP/1.1 200 OK";
+const string CCgiResponse::sm_HTTPStatusDefault  = "HTTP/1.1 200 OK";
+
 
 inline bool s_ZeroTime(const tm& date)
 {
+    static const tm kZeroTime = { 0 };
     return ::memcmp(&date, &kZeroTime, sizeof(tm)) == 0;
 }
 
-CCgiResponse::CCgiResponse(CNcbiOstream* out)
-    : m_RawCgi(false), m_Output(out)
+
+CCgiResponse::CCgiResponse(CNcbiOstream* os)
+    : m_IsRawCgi(false),
+      m_Output(os ? os : &NcbiCout)
 {
+    return;
 }
 
-CCgiResponse::CCgiResponse(const CCgiResponse& response)
+
+CCgiResponse::~CCgiResponse(void)
 {
-    *this = response;
+    return;
 }
 
-CCgiResponse::~CCgiResponse()
-{
-}
-
-CCgiResponse& CCgiResponse::operator=(const CCgiResponse& response)
-{
-    m_RawCgi = response.m_RawCgi;
-    m_HeaderValues = response.m_HeaderValues;
-    m_Cookies.Clear();
-    m_Cookies.Add(response.m_Cookies);
-    return *this;
-}
 
 bool CCgiResponse::HaveHeaderValue(const string& name) const
 {
     return m_HeaderValues.find(name) != m_HeaderValues.end();
 }
 
+
 string CCgiResponse::GetHeaderValue(const string &name) const
 {
     TMap::const_iterator ptr = m_HeaderValues.find(name);
-    
-    if ( ptr == m_HeaderValues.end() )
-        return string();
 
-    return ptr->second;
+    return (ptr == m_HeaderValues.end()) ? kEmptyStr : ptr->second;
 }
+
 
 void CCgiResponse::RemoveHeaderValue(const string& name)
 {
     m_HeaderValues.erase(name);
 }
 
-void CCgiResponse::SetHeaderValue(const string &name, const string& value)
+
+void CCgiResponse::SetHeaderValue(const string& name, const string& value)
 {
     if ( value.empty() ) {
         RemoveHeaderValue(name);
@@ -147,51 +137,63 @@ void CCgiResponse::SetHeaderValue(const string &name, const string& value)
     }
 }
 
-void CCgiResponse::SetHeaderValue(const string &name, const tm& date)
+
+void CCgiResponse::SetHeaderValue(const string& name, const tm& date)
 {
     if ( s_ZeroTime(date) ) {
         RemoveHeaderValue(name);
-    } else {
-        char buff[64];
-        if ( !::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", &date) )
-            throw runtime_error("CCgiResponse::SetHeaderValue() -- strftime() failed");
-        SetHeaderValue(name, buff);
+        return;
     }
+
+    char buff[64];
+    if ( !::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", &date) ) {
+        THROW1_TRACE(CErrnoException,
+                     "CCgiResponse::SetHeaderValue() -- strftime() failed");
+    }
+    SetHeaderValue(name, buff);
 }
+
 
 CNcbiOstream& CCgiResponse::out(void) const
 {
     if ( !m_Output ) {
-        return NcbiCout;
+        THROW1_TRACE(runtime_error, "CCgiResponse::out() on NULL out.stream");
     }
     return *m_Output;
 }
 
-CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
+
+CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 {
+    // HTTP status line (if "raw CGI" response)
     if ( IsRawCgi() ) {
-        // Write HTTP status line for raw CGI response
-        out << sm_HTTPStatusDefault << HTTP_EOL;
+        os << sm_HTTPStatusDefault << HTTP_EOL;
     }
 
-    // write default content type (if not set by user)
+    // Default content type (if it's not specified by user already)
     if ( !HaveHeaderValue(sm_ContentTypeName) ) {
-        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << HTTP_EOL;
+        os << sm_ContentTypeName << ": " << sm_ContentTypeDefault << HTTP_EOL;
     }
 
-    // write cookies
+    // Cookies (if any)
     if ( !Cookies().Empty() ) {
-        out << m_Cookies;
+        os << m_Cookies;
     }
 
-    // Write all header lines in alphabetic order
-    for ( TMap::const_iterator i = m_HeaderValues.begin();
-          i != m_HeaderValues.end(); ++i ) {
-        out << i->first << ": " << i->second << HTTP_EOL;
+    // All header lines (in alphabetical order)
+    iterate (TMap, i, m_HeaderValues) {
+        os << i->first << ": " << i->second << HTTP_EOL;
     }
 
-    // write empty line - end of header
-    return out << HTTP_EOL;
+    // End of header (empty line)
+    return os << HTTP_EOL;
 }
+
+
+void CCgiResponse::Flush(void) const
+{
+    out() << NcbiFlush;
+}
+
 
 END_NCBI_SCOPE

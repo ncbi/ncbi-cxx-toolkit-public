@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/07/17 22:39:53  vakatov
+* CCgiResponse:: Made GetOutput() fully consistent with out().
+* Prohibit copy constructor and assignment operator.
+* Retired "ncbicgir.inl", moved inline functions to the header itself, made
+* some non-inline. Improved comments, got rid of some unused STL headers.
+* Well-groomed the code.
+*
 * Revision 1.10  2001/05/17 14:49:37  lavr
 * Typos corrected
 *
@@ -68,98 +75,129 @@
 */
 
 #include <cgi/ncbicgi.hpp>
-#include <list>
 #include <map>
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
-class CCgiResponse {
+
+class CCgiResponse
+{
 public:
-    // Constructor
-    CCgiResponse(CNcbiOstream* out = 0);
-    // Destructor
-    ~CCgiResponse();
+    // 'ctors
+    CCgiResponse(CNcbiOstream* os = 0); // (default sets out.stream to "cout")
+    ~CCgiResponse(void);
 
-    // Copy constructor
-    CCgiResponse(const CCgiResponse& response);
-    // Copy assignement operator
-    CCgiResponse &operator=(const CCgiResponse& response);
-
-    // Set/query raw type of response
-    void SetRawCgi(bool raw);
+    // Set/get the "raw CGI" response type
+    void SetRawCgi(bool is_raw);
     bool IsRawCgi(void) const;
 
     // Header setters
-    void SetHeaderValue(const string& name, const string& value);
-    void SetHeaderValue(const string& name, const tm& value);
+    void SetHeaderValue   (const string& name, const string& value);
+    void SetHeaderValue   (const string& name, const tm&     value);
     void RemoveHeaderValue(const string& name);
 
     // Header getter
-    string GetHeaderValue(const string& name) const;
-    bool HaveHeaderValue(const string& name) const;
+    string GetHeaderValue (const string& name) const;
+    bool   HaveHeaderValue(const string& name) const;
 
-    // Specific header setters:
-    // Set content type
-    void SetContentType(const string &type);
-
-    // Specific header getters:
-    // Get content type
+    // Set/get content type
+    void   SetContentType(const string& type);
     string GetContentType(void) const;
 
     // Get cookies set
     const CCgiCookies& Cookies(void) const;
-    CCgiCookies& Cookies(void);
+    CCgiCookies&       Cookies(void);
 
-    // Set default output stream
-    // returns previous output stream
-    CNcbiOstream* SetOutput(CNcbiOstream* out);
-
-    // Query output stream
+    // Set/get output stream (NULL here means "no output stream")
+    void          SetOutput(CNcbiOstream* os);
     CNcbiOstream* GetOutput(void) const;
 
-    // Conversion to ostream so that it's possible to write:
-    //    response.out() << something << flush;
+    // Get output stream.  Throw exception if GetOutput() is NULL
     CNcbiOstream& out(void) const;
 
-    // Flushes output stream
-    void Flush() const;
+    // Flush output stream
+    void Flush(void) const;
 
-    // Write HTTP response header
+    // Write HTTP response header to the output stream
     CNcbiOstream& WriteHeader(void) const;
-    CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
+    CNcbiOstream& WriteHeader(CNcbiOstream& os) const;
 
 protected:
+    static const string sm_ContentTypeName;     // Content type header name
+    static const string sm_ContentTypeDefault;  // Default content type
+    static const string sm_HTTPStatusDefault;   // Default HTTP status line
+    
     typedef map<string, string> TMap;
 
-    // Content type header name
-    static const string sm_ContentTypeName;
-    // Default content type
-    static const string sm_ContentTypeDefault;
-    // Default HTTP status line
-    static const string sm_HTTPStatusDefault;
-    
-    // Raw CGI flag
-    bool m_RawCgi;
+    bool          m_IsRawCgi;      // The "raw CGI" flag
+    TMap          m_HeaderValues;  // Header lines in alphabetical order
+    CCgiCookies   m_Cookies;       // Cookies
+    CNcbiOstream* m_Output;        // Default output stream
 
-    // Header lines in alphabetical order
-    TMap m_HeaderValues;
-
-    // Cookies
-    CCgiCookies m_Cookies;
-
-    // Default output stream
-    CNcbiOstream* m_Output;
+    // Prohibit copy constructor and assignment operator
+    CCgiResponse(const CCgiResponse& response);
+    CCgiResponse& operator=(const CCgiResponse& response);
 };
 
 
-///////////////////////////////////////////////////////
-// All inline function implementations and internal data
-// types, etc. are in this file
-#include <cgi/ncbicgir.inl>
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiResponse::
+//
+
+inline void CCgiResponse::SetRawCgi(bool is_raw)
+{
+    m_IsRawCgi = is_raw;
+}
+
+inline bool CCgiResponse::IsRawCgi(void) const
+{
+    return m_IsRawCgi;
+}
+
+inline void CCgiResponse::SetContentType(const string& type)
+{
+    SetHeaderValue(sm_ContentTypeName, type);
+}
+
+inline string CCgiResponse::GetContentType(void) const
+{
+    return GetHeaderValue(sm_ContentTypeName);
+}
+
+inline const CCgiCookies& CCgiResponse::Cookies(void) const
+{
+    return m_Cookies;
+}
+
+inline CCgiCookies& CCgiResponse::Cookies(void)
+{
+    return m_Cookies;
+}
+
+inline void CCgiResponse::SetOutput(CNcbiOstream* out)
+{
+    m_Output = out;
+}
+
+inline CNcbiOstream* CCgiResponse::GetOutput(void) const
+{
+    return m_Output;
+}
+
+inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
+{
+    return WriteHeader(out());
+}
+
+
 END_NCBI_SCOPE
 
 #endif  /* NCBICGIR__HPP */
