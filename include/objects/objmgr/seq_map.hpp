@@ -158,9 +158,10 @@ public:
     TSegment_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
 
     enum EFlags {
-        fFindData = (1<<0),
-        fFindGap  = (1<<1),
-        fFindRef  = (1<<2),
+        fFindData     = (1<<0),
+        fFindGap      = (1<<1),
+        fFindRef      = (1<<2),
+        fFindFirst    = (1<<3),
         fDefaultFlags = fFindData | fFindGap
     };
     typedef int TFlags;
@@ -330,6 +331,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/02/24 18:57:21  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.32  2003/02/05 15:55:26  vasilche
 * Added eSeqEnd segment at the beginning of seq map.
 * Added flags to CSeqMap_CI to stop on data, gap, or references.

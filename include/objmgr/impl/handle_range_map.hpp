@@ -48,6 +48,7 @@ class CHandleRangeMap
 {
 public:
     typedef map<CSeq_id_Handle, CHandleRange> TLocMap;
+    typedef TLocMap::const_iterator const_iterator;
 
     CHandleRangeMap(void);
     CHandleRangeMap(const CHandleRangeMap& rmap);
@@ -58,27 +59,35 @@ public:
     // Add all ranges for each seq-id from a seq-loc
     void AddLocation(const CSeq_loc& loc);
     // Add range substituting with handle "h"
-    void AddRange(const CSeq_id_Handle& h, CHandleRange::TRange range, ENa_strand strand);
+    void AddRange(const CSeq_id_Handle& h,
+                  CHandleRange::TRange range, ENa_strand strand);
     // Add ranges from "range" with handle "h"
     void AddRanges(const CSeq_id_Handle& h, const CHandleRange& hr);
+    CHandleRange& AddRanges(const CSeq_id_Handle& h);
+
     // Get the ranges map
     const TLocMap& GetMap(void) const { return m_LocMap; }
+    bool empty(void) const { return m_LocMap.empty(); }
+
+    // iterate
+    const_iterator begin(void) const { return m_LocMap.begin(); }
+    const_iterator end(void) const { return m_LocMap.end(); }
 
     bool IntersectingWithLoc(const CSeq_loc& loc) const;
     bool IntersectingWithMap(const CHandleRangeMap& rmap) const;
     bool TotalRangeIntersectingWith(const CHandleRangeMap& rmap) const;
 
-private:
     void AddRange(const CSeq_id& id, TSeqPos from, TSeqPos to,
                   ENa_strand strand = eNa_strand_unknown);
     void AddRange(const CSeq_id& id, CHandleRange::TRange range,
                   ENa_strand strand = eNa_strand_unknown);
 
+private:
     // Split the location and add range lists to the locmap
     void x_ProcessLocation(const CSeq_loc& loc);
 
     CSeq_id_Mapper* m_IdMapper;
-    mutable TLocMap m_LocMap;
+    TLocMap m_LocMap;
 };
 
 
@@ -97,6 +106,13 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2003/02/24 18:57:21  vasilche
+ * Make feature gathering in one linear pass using CSeqMap iterator.
+ * Do not use feture index by sub locations.
+ * Sort features at the end of gathering in one vector.
+ * Extracted some internal structures and classes in separate header.
+ * Delay creation of mapped features.
+ *
  * Revision 1.10  2003/02/05 17:57:41  dicuccio
  * Moved into include/objects/objmgr/impl to permit data loaders to be defined
  * outside of xobjmgr.

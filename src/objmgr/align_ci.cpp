@@ -32,7 +32,7 @@
 
 #include <objects/objmgr/align_ci.hpp>
 
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -42,10 +42,11 @@ BEGIN_SCOPE(objects)
 CAlign_CI::CAlign_CI(CScope& scope,
                      const CSeq_loc& loc,
                      CAnnot_CI::EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     EResolveMethod resolve,
+                     const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
           SAnnotSelector(CSeq_annot::C_Data::e_Align),
-          overlap_type, resolve)
+          overlap_type, resolve, entry)
 {
     return;
 }
@@ -70,17 +71,17 @@ CAlign_CI::~CAlign_CI(void)
 
 const CSeq_align& CAlign_CI::operator* (void) const
 {
-    const CAnnotObject_Ref* annot = Get();
-    _ASSERT(annot  &&  annot->Get().IsAlign());
-    return annot->Get().GetAlign();
+    const CAnnotObject_Ref& annot = Get();
+    _ASSERT(annot.Get().IsAlign());
+    return annot.Get().GetAlign();
 }
 
 
 const CSeq_align* CAlign_CI::operator-> (void) const
 {
-    const CAnnotObject_Ref* annot = Get();
-    _ASSERT(annot  &&  annot->Get().IsAlign());
-    return &annot->Get().GetAlign();
+    const CAnnotObject_Ref& annot = Get();
+    _ASSERT(annot.Get().IsAlign());
+    return &annot.Get().GetAlign();
 }
 
 END_SCOPE(objects)
@@ -89,6 +90,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.13  2003/02/13 14:34:34  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

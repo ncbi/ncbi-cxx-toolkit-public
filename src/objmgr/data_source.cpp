@@ -32,8 +32,9 @@
 
 
 #include <objects/objmgr/impl/data_source.hpp>
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -86,36 +87,35 @@ CDataSource::~CDataSource(void)
 }
 
 
-CTSE_Info* CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
-                                      const CScope::TRequestHistory& history) const
+CTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
+                                     const CScope::TRequestHistory& history) const
 {
 //### Don't forget to unlock TSE in the calling function!
     TTSESet* p_tse_set = 0;
     CMutexGuard ds_guard(m_DataSource_Mtx);
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
     if ( tse_set == m_TSE_seq.end() ) {
-        return 0;
+        return CTSE_Lock();
     }
     p_tse_set = const_cast<TTSESet*>(&tse_set->second);
     if ( p_tse_set->size() == 1) {
         // There is only one TSE, no matter live or dead
-        const CTSE_Info* info = *p_tse_set->begin();
-        info->LockCounter();
-        return const_cast<CTSE_Info*>(info);
+        return CTSE_Lock(const_cast<CTSE_Info&>(**p_tse_set->begin()));
     }
     // The map should not contain empty entries
     _ASSERT(p_tse_set->size() > 0);
     TTSESet live;
-    const CTSE_Info* from_history = 0;
+    CTSE_Lock from_history;
     iterate(TTSESet, tse, *p_tse_set) {
         // Check history
-        CScope::TRequestHistory::const_iterator hst = history.find(*tse);
+        CScope::TRequestHistory::const_iterator hst =
+            history.find(CTSE_Lock(*tse));
         if (hst != history.end()) {
             if ( from_history ) {
                 THROW1_TRACE(runtime_error,
                     "CDataSource::x_FindBestTSE() -- Multiple history matches");
             }
-            from_history = *tse;
+            from_history.Set(*tse);
         }
         // Find live TSEs
         if ( !(*tse)->m_Dead ) {
@@ -125,24 +125,19 @@ CTSE_Info* CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
     }
     // History is always the best choice
     if (from_history) {
-        from_history->LockCounter();
-        return const_cast<CTSE_Info*>(from_history);
+        return from_history;
     }
 
     // Check live
     if (live.size() == 1) {
         // There is only one live TSE -- ok to use it
-        CTSE_Info* info = const_cast<CTSE_Info*>(live.begin()->GetPointer());
-        info->LockCounter();
-        return info;
+        return CTSE_Lock(*live.begin());
     }
     else if ((live.size() == 0)  &&  m_Loader) {
         // No live TSEs -- try to select the best dead TSE
         CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, *p_tse_set));
         if ( best ) {
-            const CTSE_Info* info = *p_tse_set->find(best);
-            info->LockCounter();
-            return const_cast<CTSE_Info*>(info);
+            return CTSE_Lock(*p_tse_set->find(best));
         }
         THROW1_TRACE(runtime_error,
             "CDataSource::x_FindBestTSE() -- Multiple seq-id matches found");
@@ -151,9 +146,7 @@ CTSE_Info* CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
     // TSEs may change)
     CRef<CTSE_Info> best(m_Loader->ResolveConflict(handle, live));
     if ( best ) {
-        const CTSE_Info* info = *p_tse_set->find(best);
-        info->LockCounter();
-        return const_cast<CTSE_Info*>(info);
+        return CTSE_Lock(*p_tse_set->find(best));
     }
     THROW1_TRACE(runtime_error,
         "CDataSource::x_FindBestTSE() -- Multiple live entries found");
@@ -167,15 +160,13 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope,
     CSeq_entry* se = 0;
     {{
         //### CMutexGuard guard(sm_DataSource_Mtx);
-        TBioseqMap::iterator found = info.m_TSE->
-            m_BioseqMap.find(info.m_Handle);
-        _ASSERT(found != info.m_TSE->m_BioseqMap.end());
+        TBioseqMap::iterator found = info->m_BioseqMap.find(info.GetIdHandle());
+        _ASSERT(found != info->m_BioseqMap.end());
         se = found->second->m_Entry;
     }}
-    CBioseq_Handle h(info.m_Handle);
-    h.x_ResolveTo(scope, *this, *se, *info.m_TSE);
+    CBioseq_Handle h(info.GetIdHandle());
+    h.x_ResolveTo(scope, *this, *se, *info);
     // Locked by BestResolve() in CScope::x_BestResolve()
-    info.m_TSE->UnlockCounter();
     return h;
 }
 
@@ -302,12 +293,11 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
     CBioseq_Handle rhandle = handle; // resolved handle for local use
     if ( !entry ) {
         //### The TSE returns locked - unlock it
-        CTSE_Info* info = x_FindBestTSE(rhandle.GetKey(), scope.m_History);
+        CTSE_Lock info = x_FindBestTSE(rhandle.GetKey(), scope.m_History);
         CTSE_Guard guard(*info);
         if ( !info )
             return false;
-        info->UnlockCounter();
-        entry = info->m_BioseqMap[rhandle.GetKey()]->m_Entry;
+        entry = info->m_BioseqMap.find(rhandle.GetKey())->second->m_Entry;
         rhandle.x_ResolveTo(scope, *this, *entry, *info);
     }
     _ASSERT(entry->IsSeq());
@@ -420,7 +410,7 @@ CTSE_Info* CDataSource::AddTSE(CSeq_entry& se, TTSESet* tse_set, bool dead)
 
 CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 {
-    CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
+    CConstRef<CSeq_entry> ref(&entry);
     //### CMutexGuard guard(sm_DataSource_Mtx);
     //### Lock the entries list to prevent "found" destruction
     CMutexGuard guard(m_DataSource_Mtx);
@@ -442,7 +432,7 @@ bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
         return false;
     }
     // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[CRef<CSeq_entry>(found)]);
+    CTSE_Guard tse_guard(*m_Entries[CConstRef<CSeq_entry>(found)]);
     _ASSERT(found  &&  found->IsSet());
 
     found->SetSet().SetSeq_set().push_back(CRef<CSeq_entry>(&bioseq));
@@ -470,7 +460,7 @@ bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
         return false;
     }
     // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[CRef<CSeq_entry>(found)]);
+    CTSE_Guard tse_guard(*m_Entries[CConstRef<CSeq_entry>(found)]);
 
     CSeq_entry& entry = *found;
     _ASSERT(entry.IsSeq());
@@ -512,7 +502,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
         return false;
     }
     // Lock the TSE
-    CTSE_Guard tse_guard(*m_Entries[CRef<CSeq_entry>(found)]);
+    CTSE_Guard tse_guard(*m_Entries[CConstRef<CSeq_entry>(found)]);
 
     CSeq_entry& entry = *found;
     _ASSERT( entry.IsSeq() );
@@ -621,7 +611,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
 #endif
 
 bool CDataSource::AttachAnnot(const CSeq_entry& entry,
-                           CSeq_annot& annot)
+                              CSeq_annot& annot)
 {
     //### CMutexGuard guard(sm_DataSource_Mtx);
     //### Lock the entry to prevent destruction or modification
@@ -753,29 +743,26 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                                      bool dead,
                                      TTSESet* tse_set)
 {
-    CTSE_Info* tse_info = 0;
+    CTSE_Lock tse_info;
     // Lock indexes to prevent duplicate indexing
     CMutexGuard entries_guard(m_DataSource_Mtx);    
 
     TEntries::iterator found_tse = m_Entries.find(CRef<CSeq_entry>(&tse));
     if (found_tse == m_Entries.end()) {
         // New TSE info
-        tse_info = new CTSE_Info;
+        tse_info.Set(new CTSE_Info);
         tse_info->m_TSE = &tse;
         tse_info->m_Dead = dead;
         // Do not lock TSE if there is no tse_set -- none will unlock it
-        if (tse_set) {
-            tse_info->LockCounter();
-        }
     }
     else {
         // existing TSE info
-        tse_info = found_tse->second;
+        tse_info.Set(found_tse->second);
     }
     _ASSERT(tse_info);
     CTSE_Guard tse_guard(*tse_info);
      
-    m_Entries[CRef<CSeq_entry>(&entry)] = tse_info;
+    m_Entries[CRef<CSeq_entry>(&entry)].Reset(&*tse_info);
     if ( entry.IsSeq() ) {
         CBioseq* seq = &entry.SetSeq();
         CBioseq_Info* info = new CBioseq_Info(entry);
@@ -789,10 +776,10 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                     break;
             }
             if (tse_it == seq_tse_set.end()) {
-                seq_tse_set.insert(CRef<CTSE_Info>(tse_info));
+                seq_tse_set.insert(CRef<CTSE_Info>(&*tse_info));
             }
             else {
-                tse_info = const_cast<CTSE_Info*>(tse_it->GetPointer());
+                tse_info.Set(const_cast<CTSE_Info&>(**tse_it));
             }
             TBioseqMap::iterator found = tse_info->m_BioseqMap.find(key);
             if ( found != tse_info->m_BioseqMap.end() ) {
@@ -839,9 +826,9 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
         }
     }
     if (tse_set) {
-        tse_set->insert(CRef<CTSE_Info>(tse_info));
+        tse_set->insert(CRef<CTSE_Info>(&*tse_info));
     }
-    return tse_info;
+    return &*tse_info;
 }
 
 
@@ -1249,144 +1236,8 @@ void CDataSource::x_AppendLoc(const CSeq_loc& loc,
 }
 #endif
 
-void CDataSource::x_MapFeature(const CSeq_feat& feat,
-                               CSeq_annot_Info& annot,
-                               CTSE_Info& tse)
-{
-    // Lock indexes
-    CMutexGuard guard(m_DataSource_Mtx);    
-
-    // Create annotation object. It will split feature location
-    // to a handle-ranges map.
-    CRef<CAnnotObject_Info> aobj(new CAnnotObject_Info(annot, feat));
-    m_AnnotObjectMap.insert(TAnnotObjectMap::value_type(&feat, aobj));
-    // Iterate handles
-    iterate ( CHandleRangeMap::TLocMap,
-              mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
-
-        CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap_ByTotal[mapit->first];
-        CTSE_Info::TAnnotSelectorMap& selMapInt =
-            tse.m_AnnotMap_ByInt[mapit->first];
-        CTSE_Info::TRangeMap::value_type
-            ins(mapit->second.GetOverlappingRange(), aobj);
-        SAnnotSelector ss[2];
-        ss[0] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                               feat.GetData().Which());
-        ss[1] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable);
-        for ( int i = 0; i < 2; ++i ) {
-            selMapTotal[ss[i]].insert(ins);
-        }
-        iterate (CHandleRange::TRanges, rgit, mapit->second) {
-            CTSE_Info::TRangeMap::value_type ins(rgit->first, aobj);
-            for ( int i = 0; i < 2; ++i ) {
-                selMapInt[ss[i]].insert(ins);
-            }
-        }
-    }
-    if ( aobj->GetProductMap() ) {
-        iterate ( CHandleRangeMap::TLocMap,
-                  mapit, aobj->GetProductMap()->GetMap() ) {
-            m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
-            
-            CTSE_Info::TAnnotSelectorMap& selMapTotal =
-                tse.m_AnnotMap_ByTotal[mapit->first];
-            CTSE_Info::TAnnotSelectorMap& selMapInt =
-                tse.m_AnnotMap_ByInt[mapit->first];
-            CTSE_Info::TRangeMap::value_type
-                ins(mapit->second.GetOverlappingRange(), aobj);
-
-            SAnnotSelector ss[2];
-            ss[0] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                                   feat.GetData().Which(),
-                                   true);
-            ss[1] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                                   CSeqFeatData::e_not_set,
-                                   true);
-            for ( int i = 0; i < 2; ++i ) {
-                selMapTotal[ss[i]].insert(ins);
-            }
-            iterate (CHandleRange::TRanges, rgit, mapit->second) {
-                CTSE_Info::TRangeMap::value_type ins(rgit->first, aobj);
-                for ( int i = 0; i < 2; ++i ) {
-                    selMapInt[ss[i]].insert(ins);
-                }
-            }
-        }
-    }
-}
-
-
-void CDataSource::x_MapAlign(const CSeq_align& align,
-                             CSeq_annot_Info& annot,
-                             CTSE_Info& tse)
-{
-    // Lock indexes
-    CMutexGuard guard(m_DataSource_Mtx);    
-
-    // Create annotation object. It will process the align locations
-    CRef<CAnnotObject_Info> aobj(new CAnnotObject_Info(annot, align));
-    m_AnnotObjectMap.insert(TAnnotObjectMap::value_type(&align, aobj));
-    // Iterate handles
-    iterate ( CHandleRangeMap::TLocMap,
-              mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
-
-        CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap_ByTotal[mapit->first];
-        CTSE_Info::TAnnotSelectorMap& selMapInt =
-            tse.m_AnnotMap_ByInt[mapit->first];
-        CTSE_Info::TRangeMap::value_type ins
-            (mapit->second.GetOverlappingRange(), CRef<CAnnotObject_Info>(aobj));
-
-        selMapTotal[SAnnotSelector(CSeq_annot::C_Data::e_Align)].insert(ins);
-        iterate (CHandleRange::TRanges, rgit, mapit->second) {
-            CTSE_Info::TRangeMap::value_type ins
-                (rgit->first, CRef<CAnnotObject_Info>(aobj));
-            selMapInt[SAnnotSelector(CSeq_annot::C_Data::e_Align)].
-                insert(ins);
-        }
-    }
-}
-
-
-void CDataSource::x_MapGraph(const CSeq_graph& graph,
-                             CSeq_annot_Info& annot,
-                             CTSE_Info& tse)
-{
-    // Lock indexes
-    CMutexGuard guard(m_DataSource_Mtx);    
-
-    // Create annotation object. It will split graph location
-    // to a handle-ranges map.
-    CRef<CAnnotObject_Info> aobj(new CAnnotObject_Info(annot, graph));
-    m_AnnotObjectMap.insert(TAnnotObjectMap::value_type(&graph, aobj));
-    // Iterate handles
-    iterate ( CHandleRangeMap::TLocMap,
-        mapit, aobj->GetRangeMap().GetMap() ) {
-        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
-
-        CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap_ByTotal[mapit->first];
-        CTSE_Info::TAnnotSelectorMap& selMapInt =
-            tse.m_AnnotMap_ByInt[mapit->first];
-        CTSE_Info::TRangeMap::value_type ins
-            (mapit->second.GetOverlappingRange(), CRef<CAnnotObject_Info>(aobj));
-
-        selMapTotal[SAnnotSelector(CSeq_annot::C_Data::e_Graph)].insert(ins);
-        iterate (CHandleRange::TRanges, rgit, mapit->second) {
-            CTSE_Info::TRangeMap::value_type ins
-                (rgit->first, CRef<CAnnotObject_Info>(aobj));
-            selMapInt[SAnnotSelector(CSeq_annot::C_Data::e_Graph)].
-                insert(ins);
-        }
-    }
-}
-
-
 void CDataSource::PopulateTSESet(CHandleRangeMap& loc,
-                                 TTSESet& tse_set,
+                                 set<CTSE_Lock>& tse_set,
                                  CSeq_annot::C_Data::E_Choice sel,
                                  CScope& scope)
 {
@@ -1455,7 +1306,7 @@ without the sequence but with references to the id and all dead TSEs
         CRef<CTSE_Info> unique_from_history;
         CRef<CTSE_Info> unique_live;
         iterate (TTSESet, with_seq, selected_with_seq) {
-            if (scope.m_History.find(*with_seq) != scope.m_History.end()) {
+            if (scope.m_History.find(CTSE_Lock(*with_seq)) != scope.m_History.end()) {
                 if ( unique_from_history ) {
                     THROW1_TRACE(runtime_error,
                         "CDataSource::PopulateTSESet() -- "
@@ -1490,11 +1341,11 @@ without the sequence but with references to the id and all dead TSEs
                 "Ambigous request: multiple TSEs found");
         }
         iterate(TTSESet, tse, selected_with_ref) {
-            if ( !(*tse)->m_Dead  ||  scope.m_History.find(*tse) != scope.m_History.end()) {
+            if ( !(*tse)->m_Dead  ||  scope.m_History.find(CTSE_Lock(*tse)) != scope.m_History.end()) {
                 // Select only TSEs present in the history and live TSEs
                 // Different sets for in-history and non-history TSEs for
                 // the future filtering.
-                if (scope.m_History.find(*tse) != scope.m_History.end()) {
+                if (scope.m_History.find(CTSE_Lock(*tse)) != scope.m_History.end()) {
                     tmp_tse_set.insert(*tse); // in-history TSE
                 }
                 else {
@@ -1523,20 +1374,8 @@ without the sequence but with references to the id and all dead TSEs
             tmp_tse_set.insert(*tse_it);
         }
     }
-    // Unlock unused TSEs
-    iterate (TTSESet, lit, loaded_tse_set) {
-        if (tmp_tse_set.find(*lit) == tmp_tse_set.end()) {
-            (*lit)->UnlockCounter();
-        }
-    }
-    // Lock used TSEs loaded before this call (the scope does not know
-    // which TSE should be unlocked, so it unlocks all of them).
     iterate (TTSESet, lit, tmp_tse_set) {
-        TTSESet::iterator loaded_it = loaded_tse_set.find(*lit);
-        if (loaded_it == loaded_tse_set.end()) {
-            (*lit)->LockCounter();
-        }
-        tse_set.insert(*lit);
+        tse_set.insert(CTSE_Lock(*lit));
     }
 }
 
@@ -1548,7 +1387,7 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
         CSeq_id_Handle idh = it->first;
         //### The TSE returns locked, unlock it
-        CTSE_Info* tse_info = x_FindBestTSE(it->first, history);
+        CTSE_Lock tse_info = x_FindBestTSE(it->first, history);
         if ( !tse_info ) {
             // Try to find the best matching id (not exactly equal)
             const CSeq_id& id = GetSeq_id_Mapper().GetSeq_id(idh);
@@ -1557,11 +1396,8 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
             iterate(TSeq_id_HandleSet, hit, hset) {
                 if ( tse_info  &&  idh.IsBetter(*hit) )
                     continue;
-                CTSE_Info* tmp_tse = x_FindBestTSE(*hit, history);
+                CTSE_Lock tmp_tse = x_FindBestTSE(*hit, history);
                 if ( tmp_tse ) {
-                    if (tse_info != 0) {
-                        tse_info->UnlockCounter();
-                    }
                     tse_info = tmp_tse;
                     idh = *hit;
                 }
@@ -1582,7 +1418,6 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
                     tmp.AddRanges(*syn_it, it->second);
                 }
             }
-            tse_info->UnlockCounter();
         }
         else {
             // Just copy the existing range map
@@ -1727,175 +1562,194 @@ void CDataSource::x_DropAnnotMap(const CSeq_entry& entry)
 }
 
 
+bool CDataSource::x_MakeGenericSelector(SAnnotSelector& annotSelector) const
+{
+    // make more generic selector
+    if ( annotSelector.m_FeatChoice != CSeqFeatData::e_not_set ) {
+        annotSelector.m_FeatChoice = CSeqFeatData::e_not_set;
+    }
+    else {
+        // we already did most generic selector
+        return false;
+    }
+    return true;
+}
+
+
+void CDataSource::x_MapAnnot(CTSE_Info::TRangeMap& mapByRange,
+                             const CTSE_Info::TRange& range,
+                             const SAnnotObject_Index& annotRef)
+{
+    mapByRange.insert(CTSE_Info::TRangeMap::value_type(range, annotRef));
+}
+
+
+void CDataSource::x_MapAnnot(CTSE_Info& tse,
+                             CRef<CAnnotObject_Info> annotObj,
+                             const CHandleRangeMap& hrm,
+                             SAnnotSelector annotSelector)
+{
+    SAnnotObject_Index annotRef;
+    annotRef.m_AnnotObject = annotObj;
+    annotRef.m_IndexBy = annotSelector.m_FeatProduct;
+    // Iterate handles
+    iterate ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
+        annotRef.m_HandleRange = mapit;
+        m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
+
+        CTSE_Info::TAnnotSelectorMap& selMapTotal =
+            tse.m_AnnotMap_ByTotal[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapInt =
+            tse.m_AnnotMap_ByInt[mapit->first];
+
+        // repeat for more generic types of selector
+        do {
+            x_MapAnnot(selMapTotal[annotSelector], 
+                       mapit->second.GetOverlappingRange(),
+                       annotRef);
+
+            CTSE_Info::TRangeMap& mapInt = selMapInt[annotSelector];
+            iterate ( CHandleRange::TRanges, rgit, mapit->second ) {
+                x_MapAnnot(mapInt, rgit->first, annotRef);
+            }
+        } while ( x_MakeGenericSelector(annotSelector) );
+    }
+}
+
+
+bool CDataSource::x_DropAnnot(CTSE_Info::TRangeMap& mapByRange,
+                              const CTSE_Info::TRange& range,
+                              const CConstRef<CAnnotObject_Info>& annotObj)
+{
+    for ( CTSE_Info::TRangeMap::iterator it = mapByRange.find(range);
+          it != mapByRange.end() && it->first == range; ++it ) {
+        if ( it->second.m_AnnotObject == annotObj ) {
+            mapByRange.erase(it);
+            break;
+        }
+    }
+    return mapByRange.empty();
+}
+
+
+void CDataSource::x_DropAnnot(CTSE_Info& tse,
+                              CRef<CAnnotObject_Info> annotObj,
+                              const CHandleRangeMap& hrm,
+                              SAnnotSelector annotSelector)
+{
+    // Iterate id handles
+    iterate ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
+        CTSE_Info::TAnnotSelectorMap& selMapTotal =
+            tse.m_AnnotMap_ByTotal[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMapInt =
+            tse.m_AnnotMap_ByInt[mapit->first];
+
+        // repeat for more generic types of selector
+        do {
+            if ( x_DropAnnot(selMapTotal[annotSelector],
+                             mapit->second.GetOverlappingRange(),
+                             annotObj) ) {
+                selMapTotal.erase(annotSelector);
+            }
+
+            CTSE_Info::TRangeMap& mapInt = selMapInt[annotSelector];
+            iterate ( CHandleRange::TRanges, rgit, mapit->second ) {
+                if ( x_DropAnnot(mapInt, rgit->first, annotObj) ) {
+                    selMapInt.erase(annotSelector);
+                    break;
+                }
+            }
+        } while ( x_MakeGenericSelector(annotSelector) );
+
+        if ( selMapTotal.empty()  &&  selMapInt.empty() ) {
+            tse.m_AnnotMap_ByTotal.erase(mapit->first);
+            tse.m_AnnotMap_ByInt.erase(mapit->first);
+            m_TSE_ref[mapit->first].erase(CRef<CTSE_Info>(&tse));
+            if (m_TSE_ref[mapit->first].empty()) {
+                m_TSE_ref.erase(mapit->first);
+            }
+        }
+    }
+}
+
+
+void CDataSource::x_MapAnnot(CTSE_Info& tse,
+                             CAnnotObject_Info* annotPtr)
+{
+    CRef<CAnnotObject_Info> annotObj(annotPtr);
+    m_AnnotObjects[annotObj->GetObject().GetPointer()] = annotObj;
+    SAnnotSelector annotSel(annotObj->Which());
+    if ( annotObj->IsFeat() ) {
+        annotSel.m_FeatChoice = annotObj->GetFeat().GetData().Which();
+    }
+    x_MapAnnot(tse, annotObj, annotObj->GetRangeMap(), annotSel);
+    if ( annotObj->IsFeat() && annotObj->GetProductMap() ) {
+        annotSel.m_FeatProduct = true;
+        x_MapAnnot(tse, annotObj, *annotObj->GetProductMap(), annotSel);
+    }
+}
+
+
+void CDataSource::x_DropAnnot(const CObject* annotPtr)
+{
+    TAnnotObjects::iterator aoit = m_AnnotObjects.find(annotPtr);
+    if ( aoit == m_AnnotObjects.end() ) {
+        // not indexed
+        return;
+    }
+    CRef<CAnnotObject_Info> annotObj = aoit->second;
+    m_AnnotObjects.erase(aoit);
+
+    const CSeq_entry& seqEntry = annotObj->GetSeq_entry();
+    CTSE_Info* tse = m_Entries[CConstRef<CSeq_entry>(&seqEntry)];
+
+    SAnnotSelector annotSel(annotObj->Which());
+    if ( annotObj->IsFeat() ) {
+        annotSel.m_FeatChoice = annotObj->GetFeat().GetData().Which();
+    }
+    x_DropAnnot(*tse, annotObj, annotObj->GetRangeMap(), annotSel);
+    if ( annotObj->IsFeat() && annotObj->GetProductMap() ) {
+        annotSel.m_FeatProduct = true;
+        x_DropAnnot(*tse, annotObj, *annotObj->GetProductMap(), annotSel);
+    }
+}    
+
+
+void CDataSource::x_MapFeature(const CSeq_feat& feat,
+                               CSeq_annot_Info& annot,
+                               CTSE_Info& tse)
+{
+    // Lock indexes
+    CMutexGuard guard(m_DataSource_Mtx);
+    x_MapAnnot(tse, new CAnnotObject_Info(annot, feat));
+}
+
+
+void CDataSource::x_MapAlign(const CSeq_align& align,
+                             CSeq_annot_Info& annot,
+                             CTSE_Info& tse)
+{
+    // Lock indexes
+    CMutexGuard guard(m_DataSource_Mtx);
+    x_MapAnnot(tse, new CAnnotObject_Info(annot, align));
+}
+
+
+void CDataSource::x_MapGraph(const CSeq_graph& graph,
+                             CSeq_annot_Info& annot,
+                             CTSE_Info& tse)
+{
+    // Lock indexes
+    CMutexGuard guard(m_DataSource_Mtx);
+    x_MapAnnot(tse, new CAnnotObject_Info(annot, graph));
+}
+
+
 void CDataSource::x_DropFeature(const CSeq_feat& feat,
                                 const CSeq_annot& annot,
                                 const CSeq_entry* entry)
 {
-    // Get annot object to iterate all seq-id handles
-    TAnnotObjectMap::iterator found = m_AnnotObjectMap.find(&feat);
-    if (found == m_AnnotObjectMap.end())
-        return;
-    CRef<CAnnotObject_Info> aobj(found->second);
-    // Iterate id handles
-    iterate ( CHandleRangeMap::TLocMap,
-              mapit, aobj->GetRangeMap().GetMap() ) {
-        // Find TSEs containing references to the id
-        // The whole DS should be locked by DropTSE()
-        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-        if (tse_set == m_TSE_ref.end())
-            continue; // The referenced ID is not currently loaded
-
-        SAnnotSelector ss[2];
-        ss[0] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                               feat.GetData().Which());
-        ss[1] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable);
-        CRange<TSeqPos> range = mapit->second.GetOverlappingRange();
-
-        // Find the TSE containing the feature
-        for ( TTSESet::iterator tse_info = tse_set->second.begin();
-              tse_info != tse_set->second.end(); ++tse_info) {
-            CTSE_Info::TAnnotMap& amt =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
-            CTSE_Info::TAnnotMap& ami =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
-            TAnnotMap::iterator annot_itt = amt.find(mapit->first);
-            TAnnotMap::iterator annot_iti = ami.find(mapit->first);
-            if ( annot_itt != amt.end() ) {
-                for ( int i = 0; i < 2; ++i ) {
-                    CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                        annot_itt->second.find(ss[i]);
-                    if ( sel_it == annot_itt->second.end() )
-                        continue;
-                    TRangeMap::iterator rg = sel_it->second.begin(range);
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsFeat()  &&
-                            &(rg->second->GetFeat()) == &feat)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the feature from all indexes
-                    sel_it->second.erase(rg);
-                    if (sel_it->second.empty()) {
-                        annot_itt->second.erase(sel_it);
-                    }
-                }
-            }
-            if ( annot_iti != ami.end() ) {
-                for ( int i = 0; i < 2; ++i ) {
-                    CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                        annot_iti->second.find(ss[i]);
-                    if ( sel_it == annot_iti->second.end() )
-                        continue;
-                    TRangeMap::iterator rg = sel_it->second.begin(range);
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsFeat()  &&
-                            &(rg->second->GetFeat()) == &feat)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the feature from all indexes
-                    sel_it->second.erase(rg);
-                    if (sel_it->second.empty()) {
-                        annot_iti->second.erase(sel_it);
-                    }
-                }
-            }
-            if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
-                amt.erase(annot_itt);
-                ami.erase(annot_iti);
-                tse_set->second.erase(tse_info);
-            }
-            if (tse_set->second.empty()) {
-                m_TSE_ref.erase(tse_set);
-            }
-            break;
-        }
-    }
-    if ( aobj->GetProductMap() ) {
-        // Repeat it for product if any
-        iterate ( CHandleRangeMap::TLocMap,
-                  mapit, aobj->GetProductMap()->GetMap() ) {
-            // Find TSEs containing references to the id
-            // The whole DS should be locked by DropTSE()
-            TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-            if (tse_set == m_TSE_ref.end())
-                continue; // The referenced ID is not currently loaded
-
-            SAnnotSelector ss[2];
-            ss[0] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                                   feat.GetData().Which(),
-                                   true);
-            ss[1] = SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                                   CSeqFeatData::e_not_set,
-                                   true);
-            CRange<TSeqPos> range = mapit->second.GetOverlappingRange();
-            
-            // Find the TSE containing the feature
-            for ( TTSESet::iterator tse_info = tse_set->second.begin();
-                  tse_info != tse_set->second.end(); ++tse_info) {
-                CTSE_Info::TAnnotMap& amt =
-                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
-                CTSE_Info::TAnnotMap& ami =
-                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
-                TAnnotMap::iterator annot_itt = amt.find(mapit->first);
-                TAnnotMap::iterator annot_iti = ami.find(mapit->first);
-                if (annot_itt != amt.end()) {
-                    for ( int i = 0; i < 2; ++i ) {
-                        CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                            annot_itt->second.find(ss[i]);
-                        if ( sel_it == annot_itt->second.end() )
-                            continue;
-                        TRangeMap::iterator rg = sel_it->second.begin(range);
-                        for ( ; rg != sel_it->second.end(); ++rg) {
-                            if (rg->second->IsFeat()  &&
-                                &(rg->second->GetFeat()) == &feat)
-                                break;
-                        }
-                        if (rg == sel_it->second.end())
-                            continue;
-                        // Delete the feature from all indexes
-                        sel_it->second.erase(rg);
-                        if (sel_it->second.empty()) {
-                            annot_itt->second.erase(sel_it);
-                        }
-                    }
-                }
-                if (annot_iti != ami.end()) {
-                    for ( int i = 0; i < 2; ++i ) {
-                        CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                            annot_iti->second.find(ss[i]);
-                        if ( sel_it == annot_iti->second.end() )
-                            continue;
-                        TRangeMap::iterator rg = sel_it->second.begin(range);
-                        for ( ; rg != sel_it->second.end(); ++rg) {
-                            if (rg->second->IsFeat()  &&
-                                &(rg->second->GetFeat()) == &feat)
-                                break;
-                        }
-                        if (rg == sel_it->second.end())
-                            continue;
-                        // Delete the feature from all indexes
-                        sel_it->second.erase(rg);
-                        if (sel_it->second.empty()) {
-                            annot_iti->second.erase(sel_it);
-                        }
-                    }
-                }
-                if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
-                    amt.erase(annot_itt);
-                    ami.erase(annot_iti);
-                    tse_set->second.erase(tse_info);
-                }
-                if (tse_set->second.empty()) {
-                    m_TSE_ref.erase(tse_set);
-                }
-                break;
-            }
-        }
-    }
-    m_AnnotObjectMap.erase(found);
+    x_DropAnnot(&feat);
 }
 
 
@@ -1903,81 +1757,7 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
                               const CSeq_annot& annot,
                               const CSeq_entry* entry)
 {
-    // Get annot object to iterate all seq-id handles
-    TAnnotObjectMap::iterator found = m_AnnotObjectMap.find(&align);
-    if (found == m_AnnotObjectMap.end())
-        return;
-    CRef<CAnnotObject_Info> aobj(found->second);
-    // Iterate handles
-    iterate ( CHandleRangeMap::TLocMap,
-              mapit, aobj->GetRangeMap().GetMap() ) {
-        // Find TSEs containing references to the id
-        // The whole DS should be locked by DropTSE()
-        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-        if (tse_set == m_TSE_ref.end())
-            continue; // The referenced ID is not currently loaded
-
-        // Find the TSE containing the align
-        for ( TTSESet::iterator tse_info = tse_set->second.begin();
-              tse_info != tse_set->second.end(); ++tse_info) {
-            CTSE_Info::TAnnotMap& amt =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
-            CTSE_Info::TAnnotMap& ami =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
-            TAnnotMap::iterator annot_itt = amt.find(mapit->first);
-            TAnnotMap::iterator annot_iti = ami.find(mapit->first);
-            if (annot_itt != amt.end()) {
-                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                    annot_itt->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Align));
-                if ( sel_it != annot_itt->second.end() ) {
-                    TRangeMap::iterator rg = sel_it->second.begin(
-                        mapit->second.GetOverlappingRange());
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsAlign()  &&
-                            &(rg->second->GetAlign()) == &align)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the align from all indexes
-                    sel_it->second.erase(rg);
-                    if ( sel_it->second.empty() ) {
-                        annot_itt->second.erase(sel_it);
-                    }
-                }
-            }
-            if (annot_iti != amt.end()) {
-                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                    annot_iti->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Align));
-                if ( sel_it != annot_iti->second.end() ) {
-                    TRangeMap::iterator rg = sel_it->second.begin(
-                        mapit->second.GetOverlappingRange());
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsAlign()  &&
-                            &(rg->second->GetAlign()) == &align)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the align from all indexes
-                    sel_it->second.erase(rg);
-                    if ( sel_it->second.empty() ) {
-                        annot_iti->second.erase(sel_it);
-                    }
-                }
-            }
-            if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
-                amt.erase(annot_itt);
-                ami.erase(annot_iti);
-                tse_set->second.erase(tse_info);
-            }
-            if (tse_set->second.empty()) {
-                m_TSE_ref.erase(tse_set);
-            }
-            break;
-        }
-    }
-    m_AnnotObjectMap.erase(found);
+    x_DropAnnot(&align);
 }
 
 
@@ -1985,81 +1765,7 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
                               const CSeq_annot& annot,
                               const CSeq_entry* entry)
 {
-    // Get annot object to iterate all seq-id handles
-    TAnnotObjectMap::iterator found = m_AnnotObjectMap.find(&graph);
-    if (found == m_AnnotObjectMap.end())
-        return;
-    CRef<CAnnotObject_Info> aobj(found->second);
-    // Iterate handles
-    iterate ( CHandleRangeMap::TLocMap,
-              mapit, aobj->GetRangeMap().GetMap() ) {
-        // Find TSEs containing references to the id
-        // The whole DS should be locked by DropTSE()
-        TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
-        if (tse_set == m_TSE_ref.end())
-            continue; // The referenced ID is not currently loaded
-
-        // Find the TSE containing the graph
-        for ( TTSESet::iterator tse_info = tse_set->second.begin();
-              tse_info != tse_set->second.end(); ++tse_info) {
-            CTSE_Info::TAnnotMap& amt =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByTotal);
-            CTSE_Info::TAnnotMap& ami =
-                const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap_ByInt);
-            TAnnotMap::iterator annot_itt = amt.find(mapit->first);
-            TAnnotMap::iterator annot_iti = ami.find(mapit->first);
-            if (annot_itt != amt.end()) {
-                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                    annot_itt->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Graph));
-                if ( sel_it != annot_itt->second.end() ) {
-                    TRangeMap::iterator rg = sel_it->second.begin(
-                        mapit->second.GetOverlappingRange());
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsGraph()  &&
-                            &(rg->second->GetGraph()) == &graph)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the graph from all indexes
-                    sel_it->second.erase(rg);
-                    if ( sel_it->second.empty() ) {
-                        annot_itt->second.erase(sel_it);
-                    }
-                }
-            }
-            if (annot_iti != ami.end()) {
-                CTSE_Info::TAnnotSelectorMap::iterator sel_it =
-                    annot_iti->second.find(SAnnotSelector(CSeq_annot::C_Data::e_Graph));
-                if ( sel_it != annot_iti->second.end() ) {
-                    TRangeMap::iterator rg = sel_it->second.begin(
-                        mapit->second.GetOverlappingRange());
-                    for ( ; rg != sel_it->second.end(); ++rg) {
-                        if (rg->second->IsGraph()  &&
-                            &(rg->second->GetGraph()) == &graph)
-                            break;
-                    }
-                    if (rg == sel_it->second.end())
-                        continue;
-                    // Delete the graph from all indexes
-                    sel_it->second.erase(rg);
-                    if ( sel_it->second.empty() ) {
-                        annot_iti->second.erase(sel_it);
-                    }
-                }
-            }
-            if (annot_itt->second.empty()  &&  annot_iti->second.empty()) {
-                amt.erase(annot_itt);
-                ami.erase(annot_iti);
-                tse_set->second.erase(tse_info);
-            }
-            if (tse_set->second.empty()) {
-                m_TSE_ref.erase(tse_set);
-            }
-            break;
-        }
-    }
-    m_AnnotObjectMap.erase(found);
+    x_DropAnnot(&graph);
 }
 
 
@@ -2109,7 +1815,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     if ( !idh ) {
         return match; // The seq-id is not even mapped yet
     }
-    CTSE_Info* tse = x_FindBestTSE(idh, scope.m_History);
+    CTSE_Lock tse = x_FindBestTSE(idh, scope.m_History);
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
         TSeq_id_HandleSet hset;
@@ -2117,31 +1823,15 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
         iterate(TSeq_id_HandleSet, hit, hset) {
             if ( tse  &&  idh.IsBetter(*hit) )
                 continue;
-            CTSE_Info* tmp_tse = x_FindBestTSE(*hit, scope.m_History);
+            CTSE_Lock tmp_tse = x_FindBestTSE(*hit, scope.m_History);
             if ( tmp_tse ) {
-                if (tse != 0) {
-                    tse->UnlockCounter();
-                }
                 tse = tmp_tse;
                 idh = *hit;
             }
         }
     }
-    if (tse != 0) {
+    if ( tse ) {
         match = CSeqMatch_Info(idh, *tse, *this);
-        tse->UnlockCounter();
-    }
-    bool just_loaded = false;
-    iterate (TTSESet, lit, loaded_tse_set) {
-        if (lit->GetPointer() != tse) {
-            (*lit)->UnlockCounter();
-        }
-        else {
-            just_loaded = true;
-        }
-    }
-    if ( !just_loaded  &&  match ) {
-        match.m_TSE->LockCounter(); // will be unlocked by the scope
     }
     return match;
 }
@@ -2479,6 +2169,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.82  2003/02/24 14:51:11  grichenk
 * Minor improvements in annot indexing
 *

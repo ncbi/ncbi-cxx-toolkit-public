@@ -34,53 +34,18 @@
 */
 
 
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/seq_id_handle.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
-#include <util/rangemap.hpp>
 #include <corelib/ncbistd.hpp>
+//#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/seq_id_handle.hpp>
+#include <objects/objmgr/annot_selector.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
+#include <util/rangemap.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+struct SAnnotObject_Index;
 class CAnnotObject_Info;
-
-// Structure to select type of Seq-annot
-struct SAnnotSelector
-{
-    typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
-    typedef CSeqFeatData::E_Choice       TFeatChoice;
-
-    SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
-                   TFeatChoice  feat  = CSeqFeatData::e_not_set,
-                   bool feat_product = false)
-        : m_AnnotChoice(annot),
-          m_FeatChoice(feat),
-          m_FeatProduct(feat_product)
-    {}
-
-    bool operator==(const SAnnotSelector& sel) const
-        {
-            return m_AnnotChoice == sel.m_AnnotChoice &&
-                m_FeatChoice == sel.m_FeatChoice &&
-                m_FeatProduct == sel.m_FeatProduct;
-        }
-    bool operator< (const SAnnotSelector& sel) const
-        {
-            return m_AnnotChoice < sel.m_AnnotChoice ||
-                (m_AnnotChoice == sel.m_AnnotChoice &&
-                 (m_FeatChoice < sel.m_FeatChoice ||
-                  (m_FeatChoice == sel.m_FeatChoice &&
-                   m_FeatProduct < sel.m_FeatProduct)));
-        }
-
-    TAnnotChoice m_AnnotChoice;  // Annotation type
-    TFeatChoice  m_FeatChoice;   // Seq-feat subtype
-    bool         m_FeatProduct;  // set to "true" for searching products
-};
-
-
 class CHandleRangeMap;
 class CTSE_Info;
 
@@ -91,7 +56,7 @@ class NCBI_XOBJMGR_EXPORT CAnnot_CI
 {
 public:
     typedef CRange<TSeqPos>                                          TRange;
-    typedef CRangeMultimap<CRef<CAnnotObject_Info>,TRange::position_type> TRangeMap;
+    typedef CRangeMultimap<SAnnotObject_Index,TRange::position_type> TRangeMap;
     typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
     typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
 
@@ -111,12 +76,13 @@ public:
 
     CAnnot_CI& operator++ (void);
     operator bool (void) const;
-    CAnnotObject_Info& operator* (void) const;
-    CAnnotObject_Info* operator-> (void) const;
+    const SAnnotObject_Index& GetIndex(void) const;
+    const CAnnotObject_Info& operator* (void) const;
+    const CAnnotObject_Info* operator-> (void) const;
 
 private:
 
-    typedef TRangeMap::iterator     TRangeIter;
+    typedef TRangeMap::const_iterator     TRangeIter;
 
     // Check if the location intersects with the current m_Location.
     bool x_ValidLocation(const CHandleRangeMap& loc) const;
@@ -129,9 +95,9 @@ private:
     void x_Walk(void);
 
     // The TSEInfo is locked by CAnnotTypes_CI, not here.
-    CRef<CTSE_Info>   m_TSEInfo;
+    CTSE_Lock         m_TSEInfo;
     SAnnotSelector    m_Selector;
-    TRangeMap*        m_RangeMap;
+    const TRangeMap*  m_RangeMap;
     TRange            m_CoreRange;
     TRangeIter        m_Current;
     CHandleRangeMap*  m_HandleRangeMap;
@@ -153,17 +119,24 @@ CAnnot_CI::operator bool (void) const
 }
 
 inline
-CAnnotObject_Info& CAnnot_CI::operator* (void) const
-{
-    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
-    return *m_Current->second;
-}
-
-inline
-CAnnotObject_Info* CAnnot_CI::operator-> (void) const
+const SAnnotObject_Index& CAnnot_CI::GetIndex(void) const
 {
     _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
     return m_Current->second;
+}
+
+inline
+const CAnnotObject_Info& CAnnot_CI::operator* (void) const
+{
+    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
+    return *m_Current->second.m_AnnotObject;
+}
+
+inline
+const CAnnotObject_Info* CAnnot_CI::operator-> (void) const
+{
+    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
+    return m_Current->second.m_AnnotObject.GetPointer();
 }
 
 
@@ -173,6 +146,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/02/24 18:57:20  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.16  2003/02/13 14:34:31  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

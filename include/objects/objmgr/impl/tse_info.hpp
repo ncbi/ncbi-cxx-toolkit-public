@@ -35,7 +35,9 @@
 
 
 #include <objects/objmgr/impl/bioseq_info.hpp>
-#include <objects/objmgr/annot_ci.hpp>
+//#include <objects/objmgr/annot_ci.hpp>
+#include <objects/objmgr/annot_selector.hpp>
+#include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -60,6 +62,15 @@ class CSeq_entry;
 class CBioseq;
 class CAnnotObject_Info;
 
+
+struct SAnnotObject_Index {
+    CRef<CAnnotObject_Info>                   m_AnnotObject;
+    int                                       m_IndexBy;
+    CHandleRangeMap::TLocMap::const_iterator  m_HandleRange;
+};
+
+class CTSE_Lock;
+
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject, public CMutableAtomicCounter
 {
 public:
@@ -67,21 +78,18 @@ public:
     CTSE_Info(void);
     virtual ~CTSE_Info(void);
 
-    void LockCounter(void) const;
-    void UnlockCounter(void) const;
-    bool CounterLocked(void) const;
-
     bool IsIndexed(void) const { return m_Indexed; }
     void SetIndexed(bool value) { m_Indexed = value; }
 
     bool operator< (const CTSE_Info& info) const;
     bool operator== (const CTSE_Info& info) const;
 
-    typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >                 TBioseqMap;
-    typedef CRange<TSeqPos>                                          TRange;
-    typedef CRangeMultimap<CRef<CAnnotObject_Info>,TRange::position_type> TRangeMap;
+    typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >         TBioseqMap;
+
+    typedef CRange<TSeqPos>                                  TRange;
+    typedef CRangeMultimap<SAnnotObject_Index, TRange::position_type> TRangeMap;
     typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
-    typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
+    typedef map<CSeq_id_Handle, TAnnotSelectorMap>           TAnnotMap;
 
     // Reference to the TSE
     CRef<CSeq_entry> m_TSE;
@@ -95,7 +103,14 @@ public:
     void CounterUnderflow(void) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    bool CounterLocked(void) const;
+
 private:
+    friend class CTSE_Lock;
+
+    void LockCounter(void) const;
+    void UnlockCounter(void) const;
+
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
@@ -110,7 +125,7 @@ private:
 class CTSE_Guard
 {
 public:
-    CTSE_Guard(const CTSE_Info& tse);
+    explicit CTSE_Guard(const CTSE_Info& tse);
     ~CTSE_Guard(void);
 private:
     // Prohibit copy operation
@@ -118,6 +133,41 @@ private:
     CTSE_Guard& operator= (const CTSE_Guard&);
 
     CMutexGuard m_Guard;
+};
+
+
+class CTSE_Lock
+{
+public:
+    CTSE_Lock(void);
+    explicit CTSE_Lock(CTSE_Info& tse);
+    explicit CTSE_Lock(CTSE_Info* tse);
+    explicit CTSE_Lock(const CRef<CTSE_Info>& tse);
+    ~CTSE_Lock(void);
+
+    CTSE_Lock(const CTSE_Lock&);
+    CTSE_Lock& operator=(const CTSE_Lock&);
+
+    void Set(CTSE_Info& tse);
+    void Set(CTSE_Info* tse);
+    void Set(const CRef<CTSE_Info>& tse);
+
+    operator bool(void) const;
+    bool operator!(void) const;
+
+    CTSE_Info& operator*(void) const;
+    CTSE_Info* operator->(void) const;
+    CTSE_Info* GetPointer(void) const;
+
+    bool operator==(const CTSE_Lock& lock) const;
+    bool operator!=(const CTSE_Lock& lock) const;
+    bool operator<(const CTSE_Lock& lock) const;
+
+private:
+    void x_Lock(void) const;
+    void x_Unlock(void) const;
+
+    CRef<CTSE_Info> m_TSE;
 };
 
 
@@ -181,12 +231,179 @@ CTSE_Guard::~CTSE_Guard(void)
 }
 
 
+inline
+CTSE_Info& CTSE_Lock::operator*(void) const
+{
+    return const_cast<CTSE_Info&>(*m_TSE);
+}
+
+
+inline
+CTSE_Info* CTSE_Lock::operator->(void) const
+{
+    return const_cast<CTSE_Info*>(&*m_TSE);
+}
+
+
+inline
+CTSE_Info* CTSE_Lock::GetPointer(void) const
+{
+    return const_cast<CTSE_Info*>(m_TSE.GetPointer());
+}
+
+
+inline
+void CTSE_Lock::x_Lock(void) const
+{
+    if ( m_TSE ) {
+        m_TSE->LockCounter();
+    }
+}
+
+
+inline
+void CTSE_Lock::x_Unlock(void) const
+{
+    if ( m_TSE ) {
+        m_TSE->UnlockCounter();
+    }
+}
+
+
+inline
+CTSE_Lock::CTSE_Lock(void)
+{
+}
+
+
+inline
+CTSE_Lock::CTSE_Lock(CTSE_Info* tse)
+    : m_TSE(tse)
+{
+    x_Lock();
+}
+
+
+inline
+CTSE_Lock::CTSE_Lock(CTSE_Info& tse)
+    : m_TSE(&tse)
+{
+    x_Lock();
+}
+
+
+inline
+CTSE_Lock::CTSE_Lock(const CRef<CTSE_Info>& tse)
+    : m_TSE(tse)
+{
+    x_Lock();
+}
+
+
+inline
+CTSE_Lock::~CTSE_Lock(void)
+{
+    x_Unlock();
+}
+
+
+inline
+CTSE_Lock::CTSE_Lock(const CTSE_Lock& lock)
+    : m_TSE(lock.m_TSE)
+{
+    x_Lock();
+}
+
+
+inline
+void CTSE_Lock::Set(CTSE_Info* tse)
+{
+    if ( m_TSE.GetPointerOrNull() != tse ) {
+        x_Unlock();
+        m_TSE.Reset(tse);
+        x_Lock();
+    }
+}
+
+
+inline
+void CTSE_Lock::Set(CTSE_Info& tse)
+{
+    if ( m_TSE.GetPointerOrNull() != &tse ) {
+        x_Unlock();
+        m_TSE.Reset(&tse);
+        x_Lock();
+    }
+}
+
+
+inline
+void CTSE_Lock::Set(const CRef<CTSE_Info>& tse)
+{
+    if ( m_TSE != tse ) {
+        x_Unlock();
+        m_TSE = tse;
+        x_Lock();
+    }
+}
+
+
+inline
+CTSE_Lock& CTSE_Lock::operator=(const CTSE_Lock& lock)
+{
+    Set(lock.m_TSE);
+    return *this;
+}
+
+
+inline
+CTSE_Lock::operator bool(void) const
+{
+    return m_TSE;
+}
+
+
+inline
+bool CTSE_Lock::operator!(void) const
+{
+    return !m_TSE;
+}
+
+
+inline
+bool CTSE_Lock::operator==(const CTSE_Lock& lock) const
+{
+    return m_TSE == lock.m_TSE;
+}
+
+
+inline
+bool CTSE_Lock::operator!=(const CTSE_Lock& lock) const
+{
+    return m_TSE != lock.m_TSE;
+}
+
+
+inline
+bool CTSE_Lock::operator<(const CTSE_Lock& lock) const
+{
+    return m_TSE < lock.m_TSE;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/02/24 18:57:21  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.18  2003/02/13 14:34:32  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

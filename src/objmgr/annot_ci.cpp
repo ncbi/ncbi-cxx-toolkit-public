@@ -31,7 +31,7 @@
 */
 
 #include <objects/objmgr/annot_ci.hpp>
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/objmgr/impl/tse_info.hpp>
 
@@ -79,16 +79,15 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
       m_OverlapType(overlap_type)
 {
     CTSE_Guard guard(tse);
-    m_TSEInfo->LockCounter();
-    TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
+    const TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
         &m_TSEInfo->m_AnnotMap_ByInt : &m_TSEInfo->m_AnnotMap_ByTotal;
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
-            TAnnotMap::iterator ait =
+            TAnnotMap::const_iterator ait =
                 annot_map->find(it->first);
             if (ait == annot_map->end())
                 continue;
-            TAnnotSelectorMap::iterator sit =
+            TAnnotSelectorMap::const_iterator sit =
                 ait->second.find(selector);
             if ( sit == ait->second.end() )
                 continue;
@@ -117,18 +116,12 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
       m_OverlapType(iter.m_OverlapType)
 {
     //### Prevent TSE destruction between "if" and "lock"
-    if ( m_TSEInfo ) {
-        m_TSEInfo->LockCounter();
-    }
     return;
 }
 
 
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
-    if ( m_TSEInfo ) {
-        m_TSEInfo->UnlockCounter();
-    }
     m_TSEInfo = iter.m_TSEInfo;
     m_Selector = iter.m_Selector;
     m_RangeMap = iter.m_RangeMap;
@@ -138,18 +131,12 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
     m_CurrentHandle = iter.m_CurrentHandle;
     m_OverlapType = iter.m_OverlapType;
     //### Prevent TSE destruction between "if" and "lock"
-    if ( m_TSEInfo ) {
-        m_TSEInfo->LockCounter();
-    }
     return *this;
 }
 
 
 CAnnot_CI::~CAnnot_CI(void)
 {
-    if ( m_TSEInfo ) {
-        m_TSEInfo->UnlockCounter();
-    }
     return;
 }
 
@@ -172,7 +159,7 @@ bool CAnnot_CI::x_IsValid(void) const
         return true; // Do not need to walk ahead
     if (m_Selector.m_AnnotChoice == CSeq_annot::C_Data::e_not_set)
         return true;
-    const CAnnotObject_Info& obj = *m_Current->second;
+    const CAnnotObject_Info& obj = *m_Current->second.m_AnnotObject;
     //_TRACE("found annot: " << obj.Which() << " at " << obj.GetRangeMap());
     if (m_Selector.m_AnnotChoice != obj.Which())
         return false;
@@ -208,15 +195,15 @@ void CAnnot_CI::x_Walk(void)
     // to select the next one.
     CHandleRangeMap::TLocMap::const_iterator h =
         m_HandleRangeMap->GetMap().find(m_CurrentHandle);
-    TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
+    const TAnnotMap* annot_map = m_OverlapType == eOverlap_Intervals ?
         &m_TSEInfo->m_AnnotMap_ByInt : &m_TSEInfo->m_AnnotMap_ByTotal;
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
         if ( !h->second.Empty() ) {
-            TAnnotMap::iterator ait =
+            TAnnotMap::const_iterator ait =
                 annot_map->find(h->first);
             if (ait == annot_map->end())
                 continue;
-            TAnnotSelectorMap::iterator sit =
+            TAnnotSelectorMap::const_iterator sit =
                 ait->second.find(m_Selector);
             if ( sit == ait->second.end() )
                 continue;
@@ -241,6 +228,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.17  2003/02/13 14:34:34  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

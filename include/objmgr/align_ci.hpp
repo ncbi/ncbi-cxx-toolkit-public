@@ -49,7 +49,8 @@ public:
               CAnnot_CI::EOverlapType overlap_type =
               CAnnot_CI::eOverlap_Intervals,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
+              CAnnotTypes_CI::eResolve_TSE,
+              const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               CAnnot_CI::EOverlapType overlap_type =
@@ -109,6 +110,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/24 18:57:20  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.15  2002/12/26 20:42:55  dicuccio
 * Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
 *

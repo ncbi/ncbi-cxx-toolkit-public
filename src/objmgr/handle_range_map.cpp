@@ -188,6 +188,12 @@ void CHandleRangeMap::AddRanges(const CSeq_id_Handle& h,
 }
 
 
+CHandleRange& CHandleRangeMap::AddRanges(const CSeq_id_Handle& h)
+{
+    return m_LocMap[h];
+}
+
+
 bool CHandleRangeMap::IntersectingWithLoc(const CSeq_loc& loc) const
 {
     CHandleRangeMap rmap;
@@ -201,9 +207,9 @@ bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap) const
     if ( rmap.m_LocMap.size() > m_LocMap.size() ) {
         return rmap.IntersectingWithMap(*this);
     }
-    iterate ( TLocMap, it1, rmap.m_LocMap ) {
-        TLocMap::iterator it2 = m_LocMap.find(it1->first);
-        if ( it2 != m_LocMap.end() &&it1->second.IntersectingWith(it2->second) ) {
+    iterate ( CHandleRangeMap, it1, rmap ) {
+        const_iterator it2 = m_LocMap.find(it1->first);
+        if ( it2 != end() && it1->second.IntersectingWith(it2->second) ) {
             return true;
         }
     }
@@ -216,10 +222,9 @@ bool CHandleRangeMap::TotalRangeIntersectingWith(const CHandleRangeMap& rmap) co
     if ( rmap.m_LocMap.size() > m_LocMap.size() ) {
         return rmap.TotalRangeIntersectingWith(*this);
     }
-    iterate ( TLocMap, it1, rmap.m_LocMap ) {
-        TLocMap::iterator it2 = m_LocMap.find(it1->first);
-        if ( it2 != m_LocMap.end() &&
-             it1->second.GetOverlappingRange()
+    iterate ( CHandleRangeMap, it1, rmap ) {
+        TLocMap::const_iterator it2 = m_LocMap.find(it1->first);
+        if ( it2 != end() && it1->second.GetOverlappingRange()
              .IntersectingWith(it2->second.GetOverlappingRange()) ) {
             return true;
         }
@@ -234,6 +239,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.11  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

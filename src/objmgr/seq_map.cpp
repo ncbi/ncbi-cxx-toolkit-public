@@ -82,30 +82,21 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
 
 
 CSeqMap::CSeqMap(CDataSource* source)
-    : //m_ParentSeqMap(0),
-      //m_ParentIndex(0),
-      m_Resolved(0),
+    : m_Resolved(0),
       m_Source(source)
 {
-    //m_LockCounter.Set(0);
 }
 
 
-CSeqMap::CSeqMap(CSeqMap* parent, size_t index)
-    : //m_ParentSeqMap(parent),
-      //m_ParentIndex(index),
-      m_Resolved(0),
+CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
+    : m_Resolved(0),
       m_Source(parent->m_Source)
 {
-    //m_LockCounter.Set(0);
-    //parent->x_Lock();
 }
 
 
 CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
-    : //m_ParentSeqMap(0),
-      //m_ParentIndex(0),
-      m_Resolved(0),
+    : m_Resolved(0),
       m_Source(source)
 {
     x_AddEnd();
@@ -115,9 +106,7 @@ CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
 
 
 CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
-    : //m_ParentSeqMap(0),
-      //m_ParentIndex(0),
-      m_Resolved(0),
+    : m_Resolved(0),
       m_Source(source)
 {
     x_AddEnd();
@@ -127,9 +116,7 @@ CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
 
 
 CSeqMap::CSeqMap(TSeqPos length, CDataSource* source)
-    : //m_ParentSeqMap(0),
-      //m_ParentIndex(0),
-      m_Resolved(0),
+    : m_Resolved(0),
       m_Source(source)
 {
     x_AddEnd();
@@ -142,41 +129,8 @@ CSeqMap::~CSeqMap(void)
 {
     m_Resolved = 0;
     m_Segments.clear();
-    //_ASSERT(m_LockCounter.Get() == 0);
-    /*
-    if ( const CSeqMap* parent = m_ParentSeqMap ) {
-        parent->x_Unlock();
-    }
-    */
 }
 
-/*
-void CSeqMap::x_SetParent(CSeqMap* parent, size_t index)
-{
-    _ASSERT(!m_ParentSeqMap);
-    m_ParentSeqMap = parent;
-    m_ParentIndex = index;
-    m_Source = parent->m_Source;
-    parent->x_Lock();
-}
-*/
-/*
-void CSeqMap::x_Lock(void) const
-{
-    if ( m_LockCounter.Add(1) == 1 ) {
-        m_LockCounter.Add(1);
-    }
-}
-
-
-void CSeqMap::x_Unlock(void) const
-{
-    if ( m_LockCounter.Add(-1) == 1 ) {
-        // m_LastUsed = CTime::Now(); // update time field
-        m_LockCounter.Add(-1);
-    }
-}
-*/
 
 void CSeqMap::x_GetSegmentException(size_t /*index*/) const
 {
@@ -804,6 +758,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.31  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

@@ -29,7 +29,7 @@
 *
 */
 
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
@@ -94,10 +94,10 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
             int dim    = denseg.GetDim();
             int numseg = denseg.GetNumseg();
             // claimed dimension may not be accurate :-/
-            if (dim * numseg > denseg.GetStarts().size()) {
+            if (dim * numseg > (int)denseg.GetStarts().size()) {
                 dim = denseg.GetStarts().size() / numseg;
             }
-            if (dim > denseg.GetLens().size()) {
+            if (dim > (int)denseg.GetLens().size()) {
                 dim = denseg.GetLens().size();
             }
             CDense_seg::TStarts::const_iterator it_start =
@@ -107,7 +107,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
             CDense_seg::TStrands::const_iterator it_strand;
             if ( denseg.IsSetStrands() ) {
                 it_strand = denseg.GetStrands().begin();
-                if (dim * numseg > denseg.GetStrands().size()) {
+                if (dim * numseg > (int)denseg.GetStrands().size()) {
                     dim = denseg.GetStrands().size() / numseg;
                 }
             }
@@ -150,13 +150,13 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
             int dim    = packed.GetDim();
             int numseg = packed.GetNumseg();
             // claimed dimension may not be accurate :-/
-            if (dim * numseg > packed.GetStarts().size()) {
+            if (dim * numseg > (int)packed.GetStarts().size()) {
                 dim = packed.GetStarts().size() / numseg;
             }
-            if (dim * numseg > packed.GetPresent().size()) {
+            if (dim * numseg > (int)packed.GetPresent().size()) {
                 dim = packed.GetPresent().size() / numseg;
             }
-            if (dim > packed.GetLens().size()) {
+            if (dim > (int)packed.GetLens().size()) {
                 dim = packed.GetLens().size();
             }
             CPacked_seg::TStarts::const_iterator it_start =
@@ -168,7 +168,7 @@ void CAnnotObject_Info::x_ProcessAlign(const CSeq_align& align)
             CPacked_seg::TStrands::const_iterator it_strand;
             if ( packed.IsSetStrands() ) {
                 it_strand = packed.GetStrands().begin();
-                if (dim * numseg > packed.GetStrands().size()) {
+                if (dim * numseg > (int)packed.GetStrands().size()) {
                     dim = packed.GetStrands().size() / numseg;
                 }
             }
@@ -281,6 +281,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.17  2003/02/13 14:34:34  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

@@ -31,7 +31,7 @@
 */
 
 #include <objects/objmgr/graph_ci.hpp>
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -54,10 +54,11 @@ CMappedGraph& CMappedGraph::Set(const CAnnotObject_Ref& annot)
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
                      CAnnot_CI::EOverlapType overlap_type,
-                     EResolveMethod resolve)
+                     EResolveMethod resolve,
+                     const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
       SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-      overlap_type, resolve)
+      overlap_type, resolve, entry)
 {
     return;
 }
@@ -83,17 +84,13 @@ CGraph_CI::~CGraph_CI(void)
 
 const CMappedGraph& CGraph_CI::operator* (void) const
 {
-    const CAnnotObject_Ref* annot = Get();
-    _ASSERT(annot);
-    return m_Graph.Set(*annot);
+    return m_Graph.Set(Get());
 }
 
 
 const CMappedGraph* CGraph_CI::operator-> (void) const
 {
-    const CAnnotObject_Ref* annot = Get();
-    _ASSERT(annot);
-    m_Graph.Set(*annot);
+    m_Graph.Set(Get());
     return &m_Graph;
 }
 
@@ -103,6 +100,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.15  2003/02/13 14:34:34  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

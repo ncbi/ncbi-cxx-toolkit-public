@@ -188,7 +188,8 @@ public:
     CGraph_CI(CScope& scope, const CSeq_loc& loc,
               CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE);
+              CAnnotTypes_CI::eResolve_TSE,
+              const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq
     CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
@@ -250,6 +251,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/02/24 18:57:20  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.19  2003/02/13 14:57:36  dicuccio
 * Changed interface to match new 'dataool'-generated code (built-in types
 * returned by value, not reference).

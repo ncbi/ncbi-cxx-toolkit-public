@@ -49,7 +49,7 @@ CSeqMatch_Info::CSeqMatch_Info(void)
 CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
                                CTSE_Info& tse,
                                CDataSource& ds)
-    : m_Handle(h), m_TSE(&tse), m_DataSource(&ds)
+    : m_Handle(h), m_TSE(&tse), m_Lock(&tse), m_DataSource(&ds)
 {
 }
 
@@ -57,6 +57,7 @@ CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
 CSeqMatch_Info::CSeqMatch_Info(const CSeqMatch_Info& info)
     : m_Handle(info.m_Handle),
       m_TSE(info.m_TSE),
+      m_Lock(info.m_TSE),
       m_DataSource(info.m_DataSource)
 {
 }
@@ -68,6 +69,7 @@ CSeqMatch_Info::operator= (const CSeqMatch_Info& info)
     if (&info != this) {
         m_Handle = info.m_Handle;
         m_TSE = info.m_TSE;
+        m_Lock.Set(m_TSE);
         m_DataSource = info.m_DataSource;
     }
     return *this;
@@ -100,6 +102,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.7  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

@@ -80,6 +80,8 @@ public:
 
     string AsString() const;
 
+    const CSeq_id& GetSeqId(void) const;
+
 private:
     // This constructor should be used by mappers only
     CSeq_id_Handle(CSeq_id_Mapper& mapper,
@@ -158,6 +160,13 @@ bool CSeq_id_Handle::operator! (void) const
 }
 
 
+inline
+const CSeq_id& CSeq_id_Handle::GetSeqId(void) const
+{
+    return *x_GetSeqId();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -172,6 +181,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/02/24 18:57:21  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.11  2003/02/21 14:33:50  grichenk
 * Display warning but don't crash on uninitialized seq-ids.
 *

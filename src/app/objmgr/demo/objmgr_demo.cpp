@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.12  2002/12/06 15:36:01  grichenk
 * Added overlap type for annot-iterators
 *
@@ -125,6 +132,10 @@ void CDemoApp::Init(void)
     // GI to fetch
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
          CArgDescriptions::eInteger);
+    // GI to fetch
+    arg_desc->AddDefaultKey("count", "RepeatCount", "repeat test work RepeatCount times",
+         CArgDescriptions::eInteger, "1");
+    arg_desc->AddFlag("resolve_all", "resolve far references");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -143,6 +154,9 @@ int CDemoApp::Run(void)
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
     int gi = args["gi"].AsInteger();
+    int count = args["count"].AsInteger();
+    CFeat_CI::EResolveMethod resolve =
+        args["resolve_all"]? CFeat_CI::eResolve_All: CFeat_CI::eResolve_TSE;
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -173,121 +187,127 @@ int CDemoApp::Run(void)
         return 0;
     }
 
-    // List other sequences in the same TSE
-    NcbiCout << "TSE sequences:" << NcbiEndl;
-    CBioseq_CI bit;
-    bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
-    for ( ; bit; ++bit) {
-        NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
-    }
+    for ( int c = 0; c < count; ++c ) {
+        // List other sequences in the same TSE
+        NcbiCout << "TSE sequences:" << NcbiEndl;
+        CBioseq_CI bit;
+        bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
+        for ( ; bit; ++bit) {
+            NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
+        }
 
-    // Get the bioseq
-    CConstRef<CBioseq> bioseq(&handle.GetBioseq());
-    // -- use the bioseq: print the first seq-id
-    NcbiCout << "First ID = " <<
-        (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
+        // Get the bioseq
+        CConstRef<CBioseq> bioseq(&handle.GetBioseq());
+        // -- use the bioseq: print the first seq-id
+        NcbiCout << "First ID = " <<
+            (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
 
-    // Get the sequence using CSeqVector. Use default encoding:
-    // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-    CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-    // -- use the vector: print length and the first 10 symbols
-    NcbiCout << "Sequence: length=" << seq_vect.size();
-    NcbiCout << " data=";
-    string sout = "";
-    for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
-        // Convert sequence symbols to printable form
-        sout += seq_vect[i];
-    }
-    NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-
-    // CSeq_descr iterator: iterates all descriptors starting
-    // from the bioseq and going the seq-entries tree up to the
-    // top-level seq-entry.
-    int count = 0;
-    for (CDesc_CI desc_it(handle);
-        desc_it;  ++desc_it) {
-        count++;
-    }
-    NcbiCout << "Desc count: " << count << NcbiEndl;
-
-    // CSeq_feat iterator: iterates all features which can be found in the
-    // current scope including features from all TSEs.
-    // Construct seq-loc to get features for.
-    CSeq_loc loc;
-    // No region restrictions -- the whole bioseq is used:
-    loc.SetWhole().SetGi(gi);
-    count = 0;
-    // Create CFeat_CI using the current scope and location.
-    // No feature type restrictions.
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-         feat_it;  ++feat_it) {
-        count++;
-        // Get seq-annot containing the feature
-        CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
-    }
-    NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
-
-    count = 0;
-    // The same region (whole sequence), but restricted feature type:
-    // searching for e_Cdregion features only. If the sequence is
-    // segmented (constructed), search for features on the referenced
-    // sequences in the same top level seq-entry, ignore far pointers.
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Cdregion,
-        CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_TSE);
-         feat_it;  ++feat_it) {
-        count++;
-        // Get seq vector filtered with the current feature location.
-        // e_ViewMerged flag forces each residue to be shown only once.
-        CSeqVector cds_vect = handle.GetSequenceView
-            (feat_it->GetLocation(), CBioseq_Handle::eViewMerged,
-             CBioseq_Handle::eCoding_Iupac);
-        // Print first 10 characters of each cd-region
-        NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
-        sout = "";
-        for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
+        // Get the sequence using CSeqVector. Use default encoding:
+        // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
+        CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        // -- use the vector: print length and the first 10 symbols
+        NcbiCout << "Sequence: length=" << seq_vect.size();
+        NcbiCout << " data=";
+        string sout = "";
+        for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
             // Convert sequence symbols to printable form
-            sout += cds_vect[i];
+            sout += seq_vect[i];
         }
         NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-    }
-    NcbiCout << "Feat count (whole, cds):      " << count << NcbiEndl;
 
-    // Region set to interval 0..9 on the bioseq. Any feature
-    // intersecting with the region should be selected.
-    loc.SetInt().SetId().SetGi(gi);
-    loc.SetInt().SetFrom(0);
-    loc.SetInt().SetTo(9);
-    count = 0;
-    // Iterate features. No feature type restrictions.
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-        feat_it;  ++feat_it) {
-        count++;
-    }
-    NcbiCout << "Feat count (int. 0..9, any):   " << count << NcbiEndl;
+        // CSeq_descr iterator: iterates all descriptors starting
+        // from the bioseq and going the seq-entries tree up to the
+        // top-level seq-entry.
+        int count = 0;
+        for (CDesc_CI desc_it(handle);
+             desc_it;  ++desc_it) {
+            count++;
+        }
+        NcbiCout << "Desc count: " << count << NcbiEndl;
 
-    // Search features only in the TSE containing the target bioseq.
-    // Since only one seq-id may be used as the target bioseq, the
-    // iterator is constructed not from a seq-loc, but from a bioseq handle
-    // and start/stop points on the bioseq. If both start and stop are 0 the
-    // whole bioseq is used. The last parameter may be used for type filtering.
-    count = 0;
-    for (CFeat_CI feat_it(handle, 0, 999, CSeqFeatData::e_not_set);
-        feat_it;  ++feat_it) {
-        count++;
-    }
-    NcbiCout << "Feat count (TSE only, 0..9):   " << count << NcbiEndl;
+        // CSeq_feat iterator: iterates all features which can be found in the
+        // current scope including features from all TSEs.
+        // Construct seq-loc to get features for.
+        CSeq_loc loc;
+        // No region restrictions -- the whole bioseq is used:
+        loc.SetWhole().SetGi(gi);
+        count = 0;
+        // Create CFeat_CI using the current scope and location.
+        // No feature type restrictions.
+        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
+                              CAnnot_CI::eOverlap_Intervals, resolve);
+             feat_it;  ++feat_it) {
+            count++;
+            // Get seq-annot containing the feature
+            CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
+        }
+        NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
 
-    // The same way may be used to iterate aligns and graphs,
-    // except that there is no type filter for both of them.
-    // No region restrictions -- the whole bioseq is used:
-    loc.SetWhole().SetGi(gi);
-    count = 0;
-    // Create CAnnot_CI using the current scope and location.
-    for (CAlign_CI align_it(scope, loc); align_it;  ++align_it) {
-        count++;
-    }
-    NcbiCout << "Annot count (whole, any):       " << count << NcbiEndl;
+        continue;
 
+        count = 0;
+        // The same region (whole sequence), but restricted feature type:
+        // searching for e_Cdregion features only. If the sequence is
+        // segmented (constructed), search for features on the referenced
+        // sequences in the same top level seq-entry, ignore far pointers.
+        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Cdregion,
+                              CAnnot_CI::eOverlap_Intervals, resolve);
+             feat_it;  ++feat_it) {
+            count++;
+            // Get seq vector filtered with the current feature location.
+            // e_ViewMerged flag forces each residue to be shown only once.
+            CSeqVector cds_vect = handle.GetSequenceView
+                (feat_it->GetLocation(), CBioseq_Handle::eViewMerged,
+                 CBioseq_Handle::eCoding_Iupac);
+            // Print first 10 characters of each cd-region
+            NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
+            sout = "";
+            for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
+                // Convert sequence symbols to printable form
+                sout += cds_vect[i];
+            }
+            NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+        }
+        NcbiCout << "Feat count (whole, cds):      " << count << NcbiEndl;
+
+        // Region set to interval 0..9 on the bioseq. Any feature
+        // intersecting with the region should be selected.
+        loc.SetInt().SetId().SetGi(gi);
+        loc.SetInt().SetFrom(0);
+        loc.SetInt().SetTo(9);
+        count = 0;
+        // Iterate features. No feature type restrictions.
+        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
+                              CAnnot_CI::eOverlap_Intervals, resolve);
+             feat_it;  ++feat_it) {
+            count++;
+        }
+        NcbiCout << "Feat count (int. 0..9, any):   " << count << NcbiEndl;
+
+        // Search features only in the TSE containing the target bioseq.
+        // Since only one seq-id may be used as the target bioseq, the
+        // iterator is constructed not from a seq-loc, but from a bioseq handle
+        // and start/stop points on the bioseq. If both start and stop are 0 the
+        // whole bioseq is used. The last parameter may be used for type filtering.
+        count = 0;
+        for (CFeat_CI feat_it(handle, 0, 999, CSeqFeatData::e_not_set,
+                              CAnnot_CI::eOverlap_Intervals, resolve);
+             feat_it;  ++feat_it) {
+            count++;
+        }
+        NcbiCout << "Feat count (TSE only, 0..9):   " << count << NcbiEndl;
+
+        // The same way may be used to iterate aligns and graphs,
+        // except that there is no type filter for both of them.
+        // No region restrictions -- the whole bioseq is used:
+        loc.SetWhole().SetGi(gi);
+        count = 0;
+        // Create CAnnot_CI using the current scope and location.
+        for (CAlign_CI align_it(scope, loc); align_it;  ++align_it) {
+            count++;
+        }
+        NcbiCout << "Annot count (whole, any):       " << count << NcbiEndl;
+    }
     NcbiCout << "Done" << NcbiEndl;
     return 0;
 }

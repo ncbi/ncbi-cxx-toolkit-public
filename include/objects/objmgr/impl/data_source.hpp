@@ -150,15 +150,15 @@ public:
     typedef CTSE_Info::TRange                       TRange;
     typedef CTSE_Info::TRangeMap                    TRangeMap;
     typedef CTSE_Info::TAnnotMap                    TAnnotMap;
-    typedef map<CRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
+    typedef map<CConstRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
     typedef CTSE_Info::TBioseqMap                   TBioseqMap;
     typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
     typedef map<CBioseq_Handle::TBioseqCore, CRef<CSeqMap> >  TSeqMaps;
-    typedef map<const CObject*, CRef<CAnnotObject_Info> >     TAnnotObjectMap;
+    typedef map<const CObject*, CRef<CAnnotObject_Info> >     TAnnotObjects;
 
     // Get TSEs containing annotations for the given location
     void PopulateTSESet(CHandleRangeMap& loc,
-                        TTSESet& tse_set,
+                        set<CTSE_Lock>& tse_set,
                         CSeq_annot::C_Data::E_Choice sel,
                         CScope& scope);
 
@@ -195,18 +195,13 @@ private:
     // The best bioseq is the bioseq from the live TSE or from the
     // only one TSE containing the ID (no matter live or dead).
     // If no matches were found, return 0.
-    CTSE_Info* x_FindBestTSE(const CSeq_id_Handle& handle,
-        const CScope::TRequestHistory& history) const;
+    CTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle,
+                            const CScope::TRequestHistory& history) const;
 
     // Create CSeqMap for a bioseq
     void x_CreateSeqMap(const CBioseq& seq, CScope& scope);
     //const CSeqMap& x_CreateResolvedSeqMap(const CSeqMap& rmap, CScope& scope);
     void x_LocToSeqMap(const CSeq_loc& loc, TSeqPos& pos, CSeqMap& seqmap);
-#if 0
-    void x_DataToSeqMap(const CSeq_data& data,
-                        TSeqPos& pos, TSeqPos len,
-                        CSeqMap& seqmap);
-#endif
     void x_AppendDataToSeqMap(const CSeq_data& data,
                               TSeqPos len,
                               CSeqMap& seqmap);
@@ -214,7 +209,18 @@ private:
     CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
     //const CSeqMap& x_GetResolvedSeqMap(const CBioseq_Handle& handle);
 
+    bool x_MakeGenericSelector(SAnnotSelector& annotSelector) const;
+
     // Process a single data element
+    void x_MapAnnot(CTSE_Info::TRangeMap& mapByRange,
+                    const CTSE_Info::TRange& range,
+                    const SAnnotObject_Index& annotRef);
+    void x_MapAnnot(CTSE_Info& tse,
+                    CRef<CAnnotObject_Info> annotObj,
+                    const CHandleRangeMap& hrm,
+                    SAnnotSelector annotSelector);
+    void x_MapAnnot(CTSE_Info& tse, CAnnotObject_Info* annotObj);
+    
     void x_MapFeature(const CSeq_feat& feat,
                       CSeq_annot_Info& annot,
                       CTSE_Info& tse);
@@ -235,6 +241,15 @@ private:
     void x_DropAnnotMapRecursive(const CSeq_entry& entry);
 
     // Process a single data element
+    bool x_DropAnnot(CTSE_Info::TRangeMap& mapByRange,
+                     const CTSE_Info::TRange& range,
+                     const CConstRef<CAnnotObject_Info>& annotObj);
+    void x_DropAnnot(CTSE_Info& tse,
+                     CRef<CAnnotObject_Info> annotObj,
+                     const CHandleRangeMap& hrm,
+                     SAnnotSelector annotSelector);
+    void x_DropAnnot(const CObject* annotPtr);
+
     void x_DropFeature(const CSeq_feat& feat,
                        const CSeq_annot& annot,
                        const CSeq_entry* entry);
@@ -307,7 +322,7 @@ private:
     // delayed indexing is allowed.
     bool                  m_IndexedAnnot;
     // map feature/align/graph to CAnnotObject_Info (need for faster dropping)
-    TAnnotObjectMap       m_AnnotObjectMap;
+    TAnnotObjects         m_AnnotObjects;
 
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI; // using mutex etc.
@@ -346,6 +361,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/02/24 18:57:21  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.38  2003/02/24 14:51:10  grichenk
 * Minor improvements in annot indexing
 *

@@ -31,10 +31,63 @@
 */
 
 #include <objects/objmgr/feat_ci.hpp>
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/general/Dbtag.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
+{
+    if (!m_MappedFeat) {
+        if ( m_MappedLoc  ||  m_MappedProd ) {
+            CSeq_feat& dst = *new CSeq_feat;
+            m_MappedFeat = &dst;
+            CSeq_feat& src = const_cast<CSeq_feat&>(*m_Feat);
+            if ( src.IsSetId() )
+                dst.SetId(src.SetId());
+            dst.SetData(src.SetData());
+            if ( src.IsSetPartial() )
+                dst.SetPartial(src.GetPartial());
+            if ( src.IsSetExcept() )
+                dst.SetExcept(src.GetExcept());
+            if ( src.IsSetComment() )
+                dst.SetComment(src.GetComment());
+            if ( src.IsSetProduct() )
+                dst.SetProduct(m_MappedProd?
+                               const_cast<CSeq_loc&>(*m_MappedProd):
+                               src.SetProduct());
+            dst.SetLocation(m_MappedLoc?
+                            const_cast<CSeq_loc&>(*m_MappedLoc):
+                            src.SetLocation());
+            if ( src.IsSetQual() )
+                dst.SetQual() = src.SetQual();
+            if ( src.IsSetTitle() )
+                dst.SetTitle(src.GetTitle());
+            if ( src.IsSetExt() )
+                dst.SetExt(src.SetExt());
+            if ( src.IsSetCit() )
+                dst.SetCit(src.SetCit());
+            if ( src.IsSetExp_ev() )
+                dst.SetExp_ev(src.GetExp_ev());
+            if ( src.IsSetXref() )
+                dst.SetXref() = src.SetXref();
+            if ( src.IsSetDbxref() )
+                dst.SetDbxref() = src.SetDbxref();
+            if ( src.IsSetPseudo() )
+                dst.SetPseudo(src.GetPseudo());
+            if ( src.IsSetExcept_text() )
+                dst.SetExcept_text(src.GetExcept_text());
+        }
+        else {
+            m_MappedFeat = m_Feat;
+        }
+    }
+    return *m_MappedFeat;
+}
 
 
 CMappedFeat& CMappedFeat::Set(const CAnnotObject_Ref& annot)
@@ -57,17 +110,13 @@ CMappedFeat& CMappedFeat::Set(const CAnnotObject_Ref& annot)
 
 const CMappedFeat& CFeat_CI::operator* (void) const
 {
-    const CAnnotObject_Ref* annot = Get();
-    _ASSERT(annot);
-    return m_Feat.Set(*annot);
+    return m_Feat.Set(Get());
 }
 
 
 const CMappedFeat* CFeat_CI::operator-> (void) const
 {
-    const CAnnotObject_Ref* annot = Get();
-    _ASSERT(annot);
-    m_Feat.Set(*annot);
+    m_Feat.Set(Get());
     return &m_Feat;
 }
 
@@ -77,6 +126,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.14  2003/02/13 14:34:34  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

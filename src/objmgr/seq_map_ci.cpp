@@ -253,11 +253,11 @@ void CSeqMap_CI::x_Push(CConstRef<CSeqMap> seqMap,
     TSeqPos findOffset = !minusStrand? pos: length - 1 - pos;
     push.m_Index = seqMap->x_FindSegment(from + findOffset, GetScope());
     if ( push.m_Index == size_t(-1) ) {
-	_ASSERT(length == 0);
-	push.m_Index = !minusStrand? seqMap->x_GetSegmentsCount(): 0;
+        _ASSERT(length == 0);
+        push.m_Index = !minusStrand? seqMap->x_GetSegmentsCount(): 0;
     }
     else {
-	_ASSERT(push.m_Index < seqMap->x_GetSegmentsCount());
+        _ASSERT(push.m_Index < seqMap->x_GetSegmentsCount());
     }
     // update length of current segment
     seqMap->x_GetSegmentLength(push.m_Index, GetScope());
@@ -377,7 +377,8 @@ bool CSeqMap_CI::x_SettlePrev(void)
 
 bool CSeqMap_CI::Next(bool resolveCurrentExternal)
 {
-    return x_Next(resolveCurrentExternal && m_MaxResolveCount > 0) && x_SettleNext();
+    return x_Next(resolveCurrentExternal && m_MaxResolveCount > 0) &&
+        x_SettleNext();
 }
 
 
@@ -400,6 +401,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.7  2003/02/11 19:26:18  vasilche
 * Fixed CSeqMap_CI with ending NULL segment.
 *

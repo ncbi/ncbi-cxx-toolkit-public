@@ -34,7 +34,7 @@
 #include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/objmgr/impl/data_source.hpp>
-#include "annot_object.hpp"
+#include <objects/objmgr/impl/annot_object.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/reader_pubseq.hpp>
@@ -160,7 +160,7 @@ bool
 CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
                           TTSESet* tse_set)
 {
-  GC();
+    //GC();
 
   bool unreleased_mutex_run;
   int count=0;
@@ -826,6 +826,13 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.46  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

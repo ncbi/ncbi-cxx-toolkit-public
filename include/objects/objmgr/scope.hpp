@@ -120,7 +120,7 @@ public:
     virtual void SetFindMode(EFindMode mode);
 
     // History of requests
-    typedef set< CConstRef<CTSE_Info> > TRequestHistory;
+    typedef set<CTSE_Lock> TRequestHistory;
 
     void ResetHistory(void);
 
@@ -133,7 +133,7 @@ private:
     // Get requests history (used by data sources to process requests)
     const TRequestHistory& x_GetHistory(void);
     // Add an entry to the requests history, lock the TSE by default
-    void x_AddToHistory(const CTSE_Info& tse, bool lock=true);
+    void x_AddToHistory(CTSE_Info& tse);
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(const CSeq_id& id);
@@ -189,6 +189,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/02/24 18:57:21  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.28  2003/01/22 20:11:53  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

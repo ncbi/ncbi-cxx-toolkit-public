@@ -97,20 +97,40 @@ bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
 
 bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 {
-    //if ( hloc.m_Handle0 != m_Handle0 )
-    //    return false;
-    //### Optimize this
-    iterate ( TRanges, it1, hr.m_Ranges ) {
-        if ( it1->first.Empty() )
-            continue;
-        iterate ( TRanges, it2, m_Ranges ) {
-            if ( it2->first.Empty() )
-                continue;
-            if ( it2->first.GetFrom() >= it1->first.GetToOpen() )
+    TRanges::const_iterator it1 = m_Ranges.begin();
+    TRanges::const_iterator end1 = m_Ranges.end();
+    if ( it1 == end1 ) {
+        return false;
+    }
+    TRanges::const_iterator it2 = hr.m_Ranges.begin();
+    TRanges::const_iterator end2 = hr.m_Ranges.end();
+    if ( it2 == end2 ) {
+        return false;
+    }
+    for ( ;; ) {
+        if ( it2->first.Empty() ||
+             it2->first.GetToOpen() <= it1->first.GetFrom() ) {
+            if ( ++it2 == end2 ) {
                 break;
-            if ( x_IntersectingStrands(it1->second, it2->second)  &&
-                it1->first.IntersectingWith(it2->first)) {
-                return true;
+            }
+        }
+        else if ( it1->first.Empty() ||
+                  it1->first.GetToOpen() <= it2->first.GetFrom() ) {
+            if ( ++it1 == end1 ) {
+                break;
+            }
+        }
+        else if ( x_IntersectingStrands(it1->second, it2->second) ) {
+            return true;
+        }
+        else if ( it1->first.GetToOpen() < it2->first.GetToOpen() ) {
+            if ( ++it1 == end1 ) {
+                break;
+            }
+        }
+        else {
+            if ( ++it2 == end2 ) {
+                break;
             }
         }
     }
@@ -156,6 +176,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.13  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

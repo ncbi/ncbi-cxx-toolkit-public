@@ -178,8 +178,8 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
     if ( !bh ) {
         CSeqMatch_Info match = x_BestResolve(CSeq_id_Mapper::GetSeq_id(id));
         if (match) {
-            x_AddToHistory(*match.m_TSE);
-            bh = match.m_DataSource->GetBioseqHandle(*this, match);
+            x_AddToHistory(*match);
+            bh = match.GetDataSource()->GetBioseqHandle(*this, match);
         }
     }
     return bh;
@@ -242,13 +242,14 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
     bool best_is_live = false;
     CSeqMatch_Info extra_live;
     iterate (set<CSeqMatch_Info>, bm_it, bm_set) {
-        TRequestHistory::const_iterator hist = m_History.find(bm_it->m_TSE);
+        TRequestHistory::const_iterator hist =
+            m_History.find(CTSE_Lock(const_cast<CTSE_Info&>(**bm_it)));
         if (hist != m_History.end()) {
             if ( !best_is_in_history ) {
                 // The first TSE from the history -- save it
                 best = *bm_it;
                 best_is_in_history = true;
-                best_is_live = !bm_it->m_TSE->m_Dead;
+                best_is_live = !(*bm_it)->m_Dead;
                 continue;
             }
             else {
@@ -257,7 +258,7 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
         }
         if ( best_is_in_history )
             continue; // Don't check TSEs not in the history
-        if ( !bm_it->m_TSE->m_Dead ) {
+        if ( !(*bm_it)->m_Dead ) {
             if ( !best_is_live ) {
                 // The first live TSE -- save it
                 best = *bm_it;
@@ -272,7 +273,7 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
         }
         if ( best_is_live )
             continue; // Don't check for dead TSEs not in the history
-        if ( !best  ||  bm_it->m_Handle.IsBetter(best.m_Handle) ) {
+        if ( !best  ||  bm_it->GetIdHandle().IsBetter(best.GetIdHandle()) ) {
             //###
             // This is not good - some ids may have no version and will be
             // treated as older versions.
@@ -281,13 +282,6 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
     }
     if ( extra_live ) {
         x_ThrowConflict(eConflict_Live, best, extra_live);
-    }
-    if ( best ) {
-        best.m_TSE->LockCounter(); // Lock the best TSE
-    }
-    iterate (set<CSeqMatch_Info>, bm_it, bm_set) {
-        // Unlock all TSEs
-        bm_it->m_TSE->UnlockCounter();
     }
     return best;
 }
@@ -304,7 +298,6 @@ void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
     //### Filter the set depending on the requests history?
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
         x_AddToHistory(**tse_it);
-        (*tse_it)->UnlockCounter();
     }
 }
 
@@ -317,9 +310,8 @@ bool CScope::x_GetSequence(const CBioseq_Handle& handle,
     CSeqMatch_Info match = x_BestResolve(*handle.GetSeqId());
     if (!match)
         return false;
-    x_AddToHistory(*match.m_TSE);
-    match.m_TSE->UnlockCounter();
-    return match.m_DataSource->GetSequence(handle, point, seq_piece, *this);
+    x_AddToHistory(*match);
+    return match.GetDataSource()->GetSequence(handle, point, seq_piece, *this);
 }
 
 
@@ -347,11 +339,9 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 }
 
 
-void CScope::x_AddToHistory(const CTSE_Info& tse, bool lock)
+void CScope::x_AddToHistory(CTSE_Info& tse)
 {
-    if ( m_History.insert(CConstRef<CTSE_Info>(&tse)).second  &&  lock ) {
-        tse.LockCounter();
-    }
+    m_History.insert(CTSE_Lock(&tse));
 }
 
 
@@ -363,20 +353,20 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
     case eConflict_History:
         {
             ERR_POST(Fatal << "CScope -- multiple history matches: " <<
-                info1.m_DataSource->GetName() << "::" <<
-                x_GetIdMapper().GetSeq_id(info1.m_Handle).DumpAsFasta() <<
+                info1.GetDataSource()->GetName() << "::" <<
+                x_GetIdMapper().GetSeq_id(info1.GetIdHandle()).DumpAsFasta() <<
                 " vs " <<
-                info2.m_DataSource->GetName() << "::" <<
-                x_GetIdMapper().GetSeq_id(info2.m_Handle).DumpAsFasta());
+                info2.GetDataSource()->GetName() << "::" <<
+                x_GetIdMapper().GetSeq_id(info2.GetIdHandle()).DumpAsFasta());
         }
     case eConflict_Live:
         {
             ERR_POST(Fatal << "CScope -- multiple live TSE matches: " <<
-                info1.m_DataSource->GetName() << "::" <<
-                x_GetIdMapper().GetSeq_id(info1.m_Handle).DumpAsFasta() <<
+                info1.GetDataSource()->GetName() << "::" <<
+                x_GetIdMapper().GetSeq_id(info1.GetIdHandle()).DumpAsFasta() <<
                 " vs " <<
-                info2.m_DataSource->GetName() << "::" <<
-                x_GetIdMapper().GetSeq_id(info2.m_Handle).DumpAsFasta());
+                info2.GetDataSource()->GetName() << "::" <<
+                x_GetIdMapper().GetSeq_id(info2.GetIdHandle()).DumpAsFasta());
         }
     }
 }
@@ -385,9 +375,6 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
 void CScope::ResetHistory(void)
 {
     CMutexGuard guard(m_Scope_Mtx);
-    iterate(TRequestHistory, it, m_History) {
-        (*it)->UnlockCounter();
-    }
     m_History.clear();
 }
 
@@ -409,19 +396,12 @@ CScope::x_DetachFromOM(void)
     CMutexGuard guard(m_Scope_Mtx);
     // Drop and release all TSEs
     m_Cache.clear();
-    if(!m_History.empty())
-      {
-        iterate(TRequestHistory, it, m_History) {
-            (*it)->UnlockCounter();
-        }
-        m_History.clear();
-      }
-    if(m_pObjMgr)
-      {
+    m_History.clear();
+    if(m_pObjMgr) {
         m_pObjMgr->ReleaseDataSources(m_setDataSrc);
         m_pObjMgr->RevokeScope(*this);
         m_pObjMgr=0;
-      }
+    }
 }
 
 
@@ -453,6 +433,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.41  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

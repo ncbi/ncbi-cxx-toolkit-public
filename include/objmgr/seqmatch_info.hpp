@@ -65,8 +65,34 @@ public:
     operator bool (void);
     bool operator! (void);
 
+    const CSeq_id_Handle& GetIdHandle(void) const
+        {
+            return m_Handle;
+        }
+    CTSE_Info& operator*(void)
+        {
+            return *m_TSE;
+        }
+    const CTSE_Info& operator*(void) const
+        {
+            return *m_TSE;
+        }
+    CTSE_Info* operator->(void)
+        {
+            return &*m_TSE;
+        }
+    const CTSE_Info* operator->(void) const
+        {
+            return &*m_TSE;
+        }
+    CDataSource* GetDataSource(void) const
+        {
+            return m_DataSource;
+        }
+private:
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
     CRef<CTSE_Info>   m_TSE;        // TSE, containing the best match
+    CTSE_Lock         m_Lock;       // TSE, containing the best match
     CDataSource      *m_DataSource; // Data source, containing the match
 };
 
@@ -78,6 +104,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/02/24 18:57:21  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.8  2003/02/05 17:58:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

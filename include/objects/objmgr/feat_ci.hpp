@@ -78,24 +78,7 @@ public:
         }
     // Feature mapped to the master sequence.
     // WARNING! The function is rather slow and should be used with care.
-    const CSeq_feat& GetMappedFeature(void) const
-        {
-            if (!m_MappedFeat) {
-                if (m_MappedLoc.GetPointer()  ||  m_MappedProd.GetPointer()) {
-                    CSeq_feat* tmp = new CSeq_feat;
-                    m_MappedFeat = tmp;
-                    tmp->Assign(*m_Feat);
-                    if (m_MappedLoc)
-                        tmp->SetLocation().Assign(*m_MappedLoc);
-                    if (m_MappedProd)
-                        tmp->SetProduct().Assign(*m_MappedProd);
-                }
-                else {
-                    m_MappedFeat = m_Feat;
-                }
-            }
-            return *m_MappedFeat;
-        }
+    const CSeq_feat& GetMappedFeature(void) const;
 
     bool IsSetId(void) const
         { return m_Feat->IsSetId(); }
@@ -177,6 +160,7 @@ public:
 private:
     friend class CFeat_CI;
     CMappedFeat& Set(const CAnnotObject_Ref& annot);
+    const CSeq_feat& x_MakeMappedFeature(void) const;
 
     CConstRef<CSeq_feat>         m_Feat;
     mutable CConstRef<CSeq_feat> m_MappedFeat;
@@ -206,7 +190,8 @@ public:
              CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
              CAnnotTypes_CI::EResolveMethod resolve =
              CAnnotTypes_CI::eResolve_TSE,
-             EFeat_Location loc_type = e_Location);
+             EFeat_Location loc_type = e_Location,
+             const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
     // the whole bioseq is searched. References are resolved depending on the
     // "resolve" flag (see above).
@@ -242,6 +227,7 @@ CFeat_CI::CFeat_CI(void)
     return;
 }
 
+
 inline
 CFeat_CI::CFeat_CI(const CFeat_CI& iter)
     : CAnnotTypes_CI(iter)
@@ -249,11 +235,13 @@ CFeat_CI::CFeat_CI(const CFeat_CI& iter)
     return;
 }
 
+
 inline
 CFeat_CI::~CFeat_CI(void)
 {
     return;
 }
+
 
 inline
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
@@ -272,21 +260,24 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
     return;
 }
 
+
 inline
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector::TFeatChoice feat_choice,
                    CAnnot_CI::EOverlapType overlap_type,
                    EResolveMethod resolve,
-                   EFeat_Location loc_type)
+                   EFeat_Location loc_type,
+                   const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
           SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
                          feat_choice,
                          loc_type == e_Product),
-          overlap_type, resolve)
+          overlap_type, resolve, entry)
 {
     return;
 }
+
 
 inline
 CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
@@ -295,6 +286,7 @@ CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
     return *this;
 }
 
+
 inline
 CFeat_CI& CFeat_CI::operator++ (void)
 {
@@ -302,10 +294,18 @@ CFeat_CI& CFeat_CI::operator++ (void)
     return *this;
 }
 
+
 inline
 CFeat_CI::operator bool (void) const
 {
     return IsValid();
+}
+
+
+inline
+const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
+{
+    return m_MappedFeat? *m_MappedFeat: x_MakeMappedFeature();
 }
 
 
@@ -315,6 +315,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/02/24 18:57:20  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
 * Revision 1.21  2003/02/13 14:57:36  dicuccio
 * Changed interface to match new 'dataool'-generated code (built-in types
 * returned by value, not reference).
