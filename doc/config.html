@@ -224,6 +224,12 @@ in it.
 This technique also helps if some <i>"*.in"</i> files have been modified
 in the result of CVS update in your <i>source tree</i>.
 
+<p>
+If you <b>added</b> or <b>removed</b> any of <i>"*.in"</i> files then you must
+reconfigure your <i>build tree</i> anew by calling the configuration script
+again, just like you did it for the original configuration.
+(NOTE: In this case, you must also manualy remove the appropriate
+<i>"inc/ncbiconf.h"</i> file before running the configure script.)
 
 
 <br></br>
@@ -238,7 +244,7 @@ source directory. The <i>wrapper scripts</i> provide a "right environment"
 (compiler, tools and flags) specific for the given compiler, and
 then run <b><i>configure</i></b> in this environment. Yet, user may need to
 perform an additional customization of the <i>wrapper scripts</i>
-to adapt for his local environment.
+to adopt for his local environment.
 
 <p>
 It is even possible to use <b><i>configure</i></b> under Windows NT,
@@ -250,6 +256,13 @@ MSVC++-specific environment variables, paths and flags, and then
 executes <b><i>configure</i></b>.
 The produced makefiles can be processed by the GNU <b><i>make</i></b>
 utility for NT.
+
+<p>
+And, if you have installed
+<a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a>
+enviroment and "egc" GNU C/C++ compiler on your NT, then you can use
+<b><i>compilers/egc_nt.bash</i></b> to configure your <i>build tree</i>.
+
 
 <p>
 <a name="ref_PreBuiltHeaders"></a>
@@ -296,6 +309,7 @@ libraries and tools:
 <ul>
   <li> MSVC++ 6.XX for MS Windows on PC
   <li> WorkShop Compilers 5.0 for Solaris 2.6 on Sun
+  <li> egc-2.91.57 for CYGWIN_NT-4.0 on PC
 </ul>
 
 
