@@ -47,7 +47,11 @@ using namespace ncbi::objects;
 
 class CSeqDBImpl {
 public:
-    CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mmap);
+    CSeqDBImpl(const string & db_name_list,
+               char           prot_nucl,
+               bool           use_mmap,
+               Uint4          oid_begin,
+               Uint4          oid_end);
     
     ~CSeqDBImpl(void);
     
@@ -78,15 +82,13 @@ public:
     
     string GetDate(void) const;
     
-    Uint4  GetNumSeqs(void) const;
+    Uint4 GetNumSeqs(void) const;
     
-    Uint8  GetTotalLength(void) const;
+    Uint8 GetTotalLength(void) const;
     
-    Uint4  GetMaxLength(void) const;
+    Uint4 GetMaxLength(void) const;
     
-    bool   CheckOrFindOID(Uint4 & next_oid) const;
-    
-    void   SetOIDRange(Uint4 first, Uint4 last);
+    bool CheckOrFindOID(Uint4 & next_oid) const;
     
     const string & GetDBNameList(void) const;
     
@@ -96,8 +98,8 @@ private:
     CSeqDBAliasFile       m_Aliases;
     CSeqDBVolSet          m_VolSet;
     CRef<CSeqDBOIDList>   m_OIDList;
-    Uint4                 m_RestrictFirst;
-    Uint4                 m_RestrictLast;
+    Uint4                 m_RestrictBegin;
+    Uint4                 m_RestrictEnd;
 };
 
 END_NCBI_SCOPE

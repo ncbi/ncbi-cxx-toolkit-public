@@ -32,11 +32,19 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBImpl::CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mmap)
+CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
+                       char           prot_nucl,
+                       bool           use_mmap,
+                       Uint4          oid_begin,
+                       Uint4          oid_end)
     : m_DBNames      (db_name_list),
       m_Aliases      (db_name_list, prot_nucl, use_mmap),
-      m_VolSet       (m_MemPool, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap),
-      m_RestrictFirst(0)
+      m_VolSet       (m_MemPool,
+                      m_Aliases.GetVolumeNames(),
+                      prot_nucl,
+                      use_mmap),
+      m_RestrictBegin(oid_begin),
+      m_RestrictEnd  (oid_end)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -44,39 +52,31 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mma
         m_OIDList.Reset( new CSeqDBOIDList(m_VolSet, use_mmap) );
     }
     
-    m_RestrictLast = GetNumSeqs() - 1;
+    if ((oid_begin == oid_end) || (m_RestrictEnd > GetNumSeqs())) {
+        m_RestrictEnd = GetNumSeqs();
+    }
 }
 
 CSeqDBImpl::~CSeqDBImpl(void)
 {
 }
 
-void CSeqDBImpl::SetOIDRange(Uint4 first, Uint4 last)
-{
-    m_RestrictFirst = first;
-    m_RestrictLast  = last;
-    
-    if (m_RestrictLast >= GetNumSeqs()) {
-        m_RestrictLast = GetNumSeqs() - 1;
-    }
-}
-
 bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
 {
     bool success = true;
     
-    if (next_oid < m_RestrictFirst) {
-        next_oid = m_RestrictFirst;
+    if (next_oid < m_RestrictBegin) {
+        next_oid = m_RestrictBegin;
     }
     
-    if (next_oid > m_RestrictLast) {
+    if (next_oid >= m_RestrictEnd) {
         success = false;
     }
     
     if (success && m_OIDList.NotEmpty()) {
         success = m_OIDList->CheckOrFindOID(next_oid);
         
-        if (next_oid > m_RestrictLast) {
+        if (next_oid > m_RestrictEnd) {
             success = false;
         }
     }

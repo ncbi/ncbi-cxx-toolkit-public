@@ -33,7 +33,6 @@ BEGIN_NCBI_SCOPE
 
 char CSeqDBVol::GetSeqType(void) const
 {
-    CFastMutexGuard guard(m_Lock);
     return x_GetSeqType();
 }
 
@@ -44,8 +43,6 @@ char CSeqDBVol::x_GetSeqType(void) const
 
 Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx) const
 {
-    CFastMutexGuard guard(m_Lock);
-    
     Uint4 start_offset = 0;
     Uint4 end_offset   = 0;
     
@@ -549,8 +546,6 @@ CSeqDBVol::GetBioseq(Int4 oid,
                      bool use_objmgr,
                      bool insert_ctrlA) const
 {
-    CFastMutexGuard guard(m_Lock);
-    
     // 1. Declare variables.
     
     CRef<CBioseq> null_result;
@@ -707,7 +702,6 @@ CSeqDBVol::GetBioseq(Int4 oid,
 
 Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer) const
 {
-    CFastMutexGuard guard(m_Lock);
     return x_GetSequence(oid, buffer);
 }
 
@@ -745,8 +739,6 @@ Int4 CSeqDBVol::GetAmbigSeq(Int4            oid,
                             Uint4           nucl_code,
                             ESeqDBAllocType alloc_type) const
 {
-    CFastMutexGuard guard(m_Lock);
-    
     char * buf1 = 0;
     Int4 baselen = x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type);
     
@@ -874,8 +866,6 @@ Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer) const
 
 list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid) const
 {
-    CFastMutexGuard guard(m_Lock);
-    
     list< CRef< CSeq_id > > seqids;
     
     CRef<CBlast_def_line_set> defline_set(x_GetHdr(oid));
@@ -893,13 +883,11 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid) const
 
 Uint8 CSeqDBVol::GetTotalLength(void) const
 {
-    CFastMutexGuard guard(m_Lock);
     return m_Idx.GetTotalLength();
 }
 
 CRef<CBlast_def_line_set> CSeqDBVol::GetHdr(Uint4 oid) const
 {
-    CFastMutexGuard guard(m_Lock);
     return x_GetHdr(oid);
 }
 
@@ -979,25 +967,21 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars) const
 
 Uint4 CSeqDBVol::GetNumSeqs(void) const
 {
-    CFastMutexGuard guard(m_Lock);
     return m_Idx.GetNumSeqs();
 }
 
 string CSeqDBVol::GetTitle(void) const
 {
-    CFastMutexGuard guard(m_Lock);
     return m_Idx.GetTitle();
 }
 
 string CSeqDBVol::GetDate(void) const
 {
-    CFastMutexGuard guard(m_Lock);
     return m_Idx.GetDate();
 }
 
 Uint4 CSeqDBVol::GetMaxLength(void) const
 {
-    CFastMutexGuard guard(m_Lock);
     return m_Idx.GetMaxLength();
 }
 

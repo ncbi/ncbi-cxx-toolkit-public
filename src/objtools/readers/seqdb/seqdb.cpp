@@ -38,9 +38,18 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDB::CSeqDB(const string & dbname, char prot_nucl, bool use_mmap)
+CSeqDB::CSeqDB(const string & dbname, char prot_nucl)
 {
-    m_Impl = new CSeqDBImpl(dbname, prot_nucl, use_mmap);
+    m_Impl = new CSeqDBImpl(dbname, prot_nucl, 0, 0, true);
+}
+
+CSeqDB::CSeqDB(const string & dbname,
+               char           prot_nucl,
+               Uint4          oid_begin,
+               Uint4          oid_end,
+               bool           use_mmap)
+{
+    m_Impl = new CSeqDBImpl(dbname, prot_nucl, oid_begin, oid_end, use_mmap);
 }
 
 Int4 CSeqDB::GetSeqLength(Uint4 oid) const
@@ -139,11 +148,6 @@ CSeqDBIter CSeqDB::Begin(void) const
 bool CSeqDB::CheckOrFindOID(TOID & oid) const
 {
     return m_Impl->CheckOrFindOID(oid);
-}
-
-void CSeqDB::SetOIDRange(TOID first, TOID last)
-{
-    m_Impl->SetOIDRange(first, last);
 }
 
 const string & CSeqDB::GetDBNameList(void) const
