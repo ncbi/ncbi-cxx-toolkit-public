@@ -75,6 +75,12 @@ function VerifyTask(oTask)
 		WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
 		err = true;
     }
+	if ( !oFso.FolderExists(oTask.ToolkitSrcPath) ||
+			!oFso.FolderExists(oTask.ToolkitSrcPath + "\\include") ||
+			!oFso.FolderExists(oTask.ToolkitSrcPath + "\\src")) {
+		WScript.Echo("ERROR: Pre-built NCBI C++ toolkit sources are not found in:\n\"" + oTask.ToolkitPath + "\"");
+		err = true;
+	}
 	if (err) {
 		WScript.Quit(1);	
 	}
@@ -109,15 +115,27 @@ function Task()
     } else {
         this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path; 
     }
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    var src_root = this.ToolkitPath;
+    var src_path = src_root + "\\src";
+    while (!oFso.FolderExists(src_path)) {
+        src_root = oFso.GetParentFolderName(src_root)
+        if (src_root == "") {
+            break;
+        }
+        src_path = src_root + "\\src";
+    }
+    this.ToolkitSrcPath = src_root;
 }
 // Diagnostic dump of task object
 function DumpTask(oTask)
 {
-    VerboseEcho("ProjectName: " + oTask.ProjectName        );
-    VerboseEcho("ToolkitPath: " + oTask.ToolkitPath        );
-    VerboseEcho("DllBuild:    " + oTask.DllBuild.toString());
-    VerboseEcho("CopyDlls:    " + oTask.CopyDlls.toString());
-    VerboseEcho("CopyRes:     " + oTask.CopyRes.toString());
+    VerboseEcho("ProjectName    = " + oTask.ProjectName        );
+    VerboseEcho("ToolkitPath    = " + oTask.ToolkitPath        );
+    VerboseEcho("ToolkitSrcPath = " + oTask.ToolkitSrcPath     );
+    VerboseEcho("DllBuild       = " + oTask.DllBuild.toString());
+    VerboseEcho("CopyDlls       = " + oTask.CopyDlls.toString());
+    VerboseEcho("CopyRes        = " + oTask.CopyRes.toString());
 }
 
 // Fill local tree
