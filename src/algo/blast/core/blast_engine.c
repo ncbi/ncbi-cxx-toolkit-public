@@ -608,9 +608,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params);
 
-   /* save the resulting list of HSPs. 'query' and 'subject' are
+   /* Save the resulting list of HSPs. 'query' and 'subject' are
       still reversed */
-
    if (hsp_list && hsp_list->hspcnt > 0) {
       /* Save the HSPs into a hit list */
       BlastHSPStreamWrite(hsp_stream, &hsp_list);
@@ -742,14 +741,22 @@ BLAST_SearchEngine(Uint1 program_number,
       if (hsp_list && hsp_list->hspcnt > 0) {
          if (program_number == blast_type_blastn) {
             if (prelim_traceback || !score_options->gapped_calculation) {
-	       status = 
-		  Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
+               status = 
+                  Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
                      seq_arg.seq, hit_options, query_info, sbp, score_params, 
                      seq_src);
-	    }
+            }
             /* Check for HSP inclusion */
             status = Blast_HSPListUniqSort(hsp_list);
          }
+         /* Calculate and fill the bit scores, but only if final scores are
+            already available, i.e. either traceback has already been done,
+            or this is an ungapped search. */
+         if (prelim_traceback || !score_options->gapped_calculation) {
+            Blast_HSPListGetBitScores(hsp_list, 
+               score_options->gapped_calculation, sbp);
+         }
+         /* Save the results. */
          BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
    }
