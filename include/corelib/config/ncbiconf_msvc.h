@@ -21,6 +21,7 @@
 #define HOST_OS      "win32"
 
 #define HAVE_STRDUP              1
+#define HAVE_STRICMP             1
 #define NCBI_USE_THROW_SPEC      1
 #define HAVE_NO_AUTO_PTR         1
 #define HAVE_NO_MINMAX_TEMPLATE  1
