@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/08 21:24:35  gouriano
+* fixed errors with unresolvable references
+*
 * Revision 1.6  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -147,11 +150,14 @@ size_t CSeqVector::size(void)
                         const CSeq_id* id =
                             &CSeq_id_Mapper::GetSeq_id(
                             (*m_SeqMap)[i].m_RefSeq);
-                        CBioseq_Handle::TBioseqCore ref_seq =
-                            (m_Scope->GetBioseqHandle(*id)).GetBioseqCore();
-                        if (ref_seq.GetPointer()  &&
-                            ref_seq->GetInst().IsSetLength()) {
-                            m_Size += ref_seq->GetInst().GetLength();
+                        CBioseq_Handle bh = m_Scope->GetBioseqHandle(*id);
+                        if (bh) {
+                            CBioseq_Handle::TBioseqCore ref_seq =
+                                bh.GetBioseqCore();
+                            if (ref_seq.GetPointer()  &&
+                                ref_seq->GetInst().IsSetLength()) {
+                                m_Size += ref_seq->GetInst().GetLength();
+                            }
                         }
                         break;
                     }

@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/08 21:25:30  gouriano
+* fixed errors with unresolvable references
+*
 * Revision 1.7  2002/02/25 21:05:26  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -163,7 +166,7 @@ private:
 
 private:
     // Get the segment containing point "pos"
-    CSegmentInfo& x_FindSegment(int pos);
+    int x_FindSegment(int pos);
     // Try to resolve segment lengths up to the "pos". Return index of the
     // segment containing "pos".
     CSegmentInfo x_Resolve(int pos, CScope& scope);

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/08 21:24:35  gouriano
+* fixed errors with unresolvable references
+*
 * Revision 1.7  2002/02/25 21:05:29  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -101,7 +104,7 @@ void CSeqMap::Add(CSegmentInfo& interval)
 }
 
 
-CSeqMap::CSegmentInfo& CSeqMap::x_FindSegment(int pos)
+int CSeqMap::x_FindSegment(int pos)
 {
     int seg_idx = 0;
     // Ignore eSeqEnd
@@ -111,46 +114,67 @@ CSeqMap::CSegmentInfo& CSeqMap::x_FindSegment(int pos)
         if (next_pos > pos  || (next_pos == pos  &&  cur_pos == pos))
             break;
     }
-    return *m_Data[seg_idx];
+    return seg_idx;
 }
 
 
 CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
 {
-    int seg_idx = 0;
     CBioseq_Handle::TBioseqCore seq;
-    CSegmentInfo seg = x_FindSegment(pos);
-    if ( !seg.m_Resolved ) {
+    int seg_idx = x_FindSegment(pos);
+    CSegmentInfo seg = *(m_Data[seg_idx]);
+    if ( seg_idx >=  m_FirstUnresolvedPos) {
         // Resolve map segments
+        int iStillUnresolved = -1;
         int shift = 0;
         for (int i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
             if (m_Data[i]->m_position+shift > pos  ||
                 m_Data[i]->m_SegType == CSeqMap::eSeqEnd)
                 break;
             seg_idx = i;
-            m_Data[i]->m_Resolved = true;
             m_Data[i]->m_position += shift;
-            if (m_Data[i]->m_SegType != CSeqMap::eSeqRef)
+            if (m_Data[i]->m_SegType != CSeqMap::eSeqRef) {
+                m_Data[i]->m_Resolved = true;
                 continue; // not a reference - nothing to resolve
-            if (m_Data[i]->m_RefLen != 0)
+            }
+            if (m_Data[i]->m_RefLen != 0) {
+                m_Data[i]->m_Resolved = true;
                 continue; // resolved reference, known length
+            }
             CConstRef<CSeq_id> id(
                 &CSeq_id_Mapper::GetSeq_id(m_Data[i]->m_RefSeq));
-            seq = scope.GetBioseqHandle(*id).GetBioseqCore();
-            if ( seq->GetInst().IsSetLength() ) {
-                m_Data[i]->m_RefLen = seq->GetInst().GetLength();
-                shift += m_Data[i]->m_RefLen;
+            CBioseq_Handle bh = scope.GetBioseqHandle(*id);
+            if (bh) {
+                seq = bh.GetBioseqCore();
+                if ( seq->GetInst().IsSetLength() ) {
+                    m_Data[i]->m_Resolved = true;
+                    m_Data[i]->m_RefLen = seq->GetInst().GetLength();
+                    shift += m_Data[i]->m_RefLen;
+                }
+                else {
+                    iStillUnresolved = i;
+                }
+            }
+            else {
+                iStillUnresolved = i;
             }
         }
         // Update positions of segments following the seg_idx-th segment
-        m_FirstUnresolvedPos = seg_idx + 1;
+        m_FirstUnresolvedPos = (iStillUnresolved >=0) ?
+            iStillUnresolved : (seg_idx + 1);
         if (shift > 0) {
             for (int i = seg_idx+1; i < m_Data.size(); i++) {
                 m_Data[i]->m_position += shift;
             }
         }
-        seg = *m_Data[seg_idx];
+        // now find again
+        seg_idx = x_FindSegment(pos);
     }
+    // this could happen in case of unresolvable references
+    if (m_Data[seg_idx]->m_SegType == CSeqMap::eSeqEnd) {
+        seg_idx = 0;
+    }
+    seg = *(m_Data[seg_idx]);
     if ( !seq  &&  seg.m_RefSeq ) {
         CConstRef<CSeq_id> id(
             &CSeq_id_Mapper::GetSeq_id(seg.m_RefSeq));
