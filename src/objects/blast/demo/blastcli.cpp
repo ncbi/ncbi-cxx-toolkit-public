@@ -148,7 +148,7 @@ get_sequences()
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_sequences(*gsr);
 
-	return body;
+	return CRef<CBlast4_request_body>(body);
 }
 
 //	==========================================================================
@@ -309,7 +309,6 @@ queue_search()
     q->SetQueries(*seqset);
 	q->SetSubject(*subject);
 
-/*
     CRef<CBlast4_cutoff> cutoff(new CBlast4_cutoff);
     cutoff->SetE_value(2e4);
 
@@ -320,7 +319,6 @@ queue_search()
     setp(l, "gap-extend", 1);
     setp(l, "word-size", 2);
 	setp(l, "matrix", "PAM30");
-*/
 
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetQueue_search(*q);
@@ -372,7 +370,7 @@ CBlastcliApplication::Run(void)
 	request4->SetBody(*body);
 	write(cout, request4);
 	CRef<CBlast4_reply> reply4(new CBlast4_reply);
-	CBlastClient().Ask(*request4, *reply4);
+	CBlast4Client().Ask(*request4, *reply4);
 	write(cout, reply4);
 	return 0;
 }
