@@ -26,9 +26,9 @@
 *
 * ===========================================================================
 *
-* Authors:  Anton  Butanayev <butanaev@ncbi.nlm.nih.gov>
-*           Denis  Vakatov
-*           Ivanov Vladimir
+* Authors:  Anton    Butanayev <butanaev@ncbi.nlm.nih.gov>
+*           Denis    Vakatov
+*           Vladimir Ivanov
 *
 * File Description:
 *   CTime   - the standard Date/Time class;  it also can be used
@@ -41,6 +41,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/04/29 03:06:10  lavr
+* #include <time.h>" moved from .cpp to ncbitime.hpp
+*
 * Revision 1.3  2001/04/27 20:42:29  ivanov
 * Support for Local and UTC time added.
 * Support for work with nanoseconds added.
@@ -57,6 +60,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <time.h>
 
 BEGIN_NCBI_SCOPE
 

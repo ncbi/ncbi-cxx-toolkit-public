@@ -25,6 +25,9 @@
  * Authors:  Anton Butanayev, Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/04/29 03:06:10  lavr
+ * #include <time.h>" moved from .cpp to ncbitime.hpp
+ *
  * Revision 6.4  2001/04/27 20:39:47  ivanov
  * Tests for check Local/UTC time and Nanoseconds added.
  * Also speed test added.
@@ -44,7 +47,6 @@
 
 
 #include <corelib/ncbitime.hpp>
-#include <time.h>
 #include <stdio.h>
 
 
