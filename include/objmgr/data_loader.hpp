@@ -53,13 +53,10 @@ BEGIN_SCOPE(objects)
 
 
 // fwd decl
-class CSeq_loc;
-class CSeq_entry;
 class CDataSource;
-class CHandleRangeMap;
 class CTSE_Info;
 class CTSE_Chunk_Info;
-struct SAnnotTypeSelector;
+class CBioseq_Info;
 
 /////////////////////////////////////////////////////////////////////////////
 // structure to describe required data set
@@ -70,17 +67,28 @@ struct SRequestDetails
     typedef CRange<TSeqPos> TRange;
     typedef set<SAnnotTypeSelector> TAnnotTypesSet;
     typedef map<CAnnotName, TAnnotTypesSet> TAnnotSet;
+    enum FAnnotBlobType {
+        fAnnotBlobNone      = 0,
+        fAnnotBlobInternal  = 1<<0,
+        fAnnotBlobExternal  = 1<<1,
+        fAnnotBlobOrphan    = 1<<2,
+        fAnnotBlobAll       = (fAnnotBlobInternal |
+                               fAnnotBlobExternal |
+                               fAnnotBlobOrphan)
+    };
+    typedef int TAnnotBlobType;
     
     SRequestDetails(void)
         : m_NeedSeqMap(TRange::GetEmpty()),
-          m_NeedSeqData(TRange::GetEmpty())
+          m_NeedSeqData(TRange::GetEmpty()),
+          m_AnnotBlobType(fAnnotBlobNone)
         {
         }
 
-    TRange      m_NeedSeqMap;
-    TRange      m_NeedSeqData;
-    TAnnotSet   m_NeedExternalAnnots;
-    TAnnotSet   m_NeedInternalAnnots;
+    TRange          m_NeedSeqMap;
+    TRange          m_NeedSeqData;
+    TAnnotSet       m_NeedAnnots;
+    TAnnotBlobType  m_AnnotBlobType;
 };
 
 
@@ -192,13 +200,9 @@ public:
         eExtGraph,    //< external graph annotations
         eExtAlign,    //< external aligns
         eExtAnnot,    //< all external annotations
+        eOrphanAnnot, //< all external annotations if no Bioseq exists 
         eAll          //< all blobs (main and external)
     };
-    
-    // Request from a datasource for data specified in "choice".
-    // The data loaded will be sent back to the datasource through
-    // CDataSource::AppendXXX() methods.
-    //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
     
     typedef set<TTSE_Lock>          TTSE_LockSet;
     typedef CRef<CTSE_Chunk_Info>   TChunk;
@@ -211,8 +215,13 @@ public:
 
     /// Request from a datasource using handles and ranges instead of seq-loc
     /// The TSEs loaded in this call will be added to the tse_set.
-    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
-                                    const SRequestDetails& details);
+    /// Default implementation will call GetRecords().
+    virtual TTSE_LockSet GetDetailedRecords(const CSeq_id_Handle& idh,
+                                            const SRequestDetails& details);
+
+    /// Request from a datasource set of blobs with external annotations.
+    /// CDataLoader has reasonable default implementation.
+    virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
 
     typedef vector<CSeq_id_Handle> TIds;
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
@@ -221,7 +230,6 @@ public:
     typedef CConstRef<CObject> TBlobId;
     typedef int TBlobVersion;
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
-    TBlobId GetBlobId(const CSeq_id& id);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
 
     virtual bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
@@ -289,6 +297,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/10/25 16:53:25  vasilche
+* Removed obsolete comments and methods.
+* Added support for orphan annotations.
+* One of GetRecords() methods renamed to avoid name conflict.
+*
 * Revision 1.35  2004/09/27 14:13:50  kononenk
 * Added doxygen formating
 *
