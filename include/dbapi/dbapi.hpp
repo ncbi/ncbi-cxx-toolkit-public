@@ -401,10 +401,14 @@ public:
 //
 class IDataSource
 {
-public:
 
+    friend class CDriverManager;
 
+protected:
+    // Prohibit explicit deletion. Use CDriverManager::DestroyDs() call
     virtual ~IDataSource();
+
+public:
 
     // Get connection
     virtual IConnection* CreateConnection() = 0;
@@ -433,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/02/10 17:17:15  kholodov
+ * Modified: made IDataSource::dtor() non-public
+ *
  * Revision 1.17  2002/11/27 17:21:30  kholodov
  * Added: Error output redirection to CToMultiExHandler object
  * in IConnection interface.
