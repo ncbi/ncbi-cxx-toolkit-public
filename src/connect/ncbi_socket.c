@@ -247,6 +247,9 @@ typedef int TSOCK_Handle;
 #  ifdef NETDB_INTERNAL
 #    undef NETDB_INTERNAL
 #  endif /*NETDB_INTERNAL*/
+#  ifndef INADDR_LOOPBACK
+#    define	INADDR_LOOPBACK	0x7F000001
+#  endif /*INADDR_LOOPBACK*/
 
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
@@ -4063,6 +4066,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.147  2004/07/23 20:26:44  lavr
+ * INADDR_LOOPBACK defined conditionally for Mac
+ *
  * Revision 6.146  2004/07/23 19:05:52  lavr
  * LSOCK_CreateEx() to accept flags and allow to bind to localhost
  *
