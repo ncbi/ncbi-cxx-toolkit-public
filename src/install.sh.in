@@ -170,11 +170,18 @@ case "`uname`" in
   Darwin ) bs=63 ;;
   *      ) bs=200 ;;
 esac
-for d in $install_dirs ; do
-   ( cd $build_dir  &&  tar cfb - $bs $d ) |  \
-     ( cd $install_dir  &&  tar xfb - $bs )
-   test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
-done
+if test "`uname`" = Darwin -a -x /Developer/Tools/CpMac; then
+   for d in $install_dirs ; do
+      /Developer/Tools/CpMac -pr $build_dir/$d $install_dir/$d
+      test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
+   done
+else
+   for d in $install_dirs ; do
+      ( cd $build_dir  &&  tar cfb - $bs $d ) |  \
+        ( cd $install_dir  &&  tar xfb - $bs )
+      test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
+   done
+fi
 
 # Fix gbench-related symlinks
 if test -d "$install_dir/bin/.gbench/bin"; then
