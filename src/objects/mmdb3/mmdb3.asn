@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -62,7 +62,7 @@ Biostruc-feature-set-descr ::= CHOICE {
 -- as needed by molecular graphics programs.
  
 Biostruc-feature ::= SEQUENCE {
-	id		Biostruc-feature-id,
+	id		Biostruc-feature-id OPTIONAL,
 	name		VisibleString OPTIONAL,
 	type	INTEGER {	helix(1),
 				strand(2),
@@ -99,7 +99,7 @@ Biostruc-feature ::= SEQUENCE {
 				region		Region-pntrs,   
 				alignment	Chem-graph-alignment,
 				similarity	Region-similarity, 
-				indirect	Other-feature } } -- new
+				indirect	Other-feature } OPTIONAL } -- new
 
 -- Other-feature allows for specifying location via reference to another
 -- Biostruc-feature and its location.
@@ -316,33 +316,17 @@ Trans-matrix ::= SEQUENCE {
 
 -- The camera is a position relative to the world coordinates
 -- of the structure referred to by a location.  
-
--- In the 'examine' mode, the camera orbits around an arbitrary fixed point,
--- always facing it, thus only x, y, z, center, and up are required.
-
--- In the 'fly' and 'free' mode, x, y, z, up, fore, and norm are required.
-
--- In the 'walk' mode, the walk plane is always the world's xz origin plane  
--- and the world's +y direction specifies the 'up' direction.  For this mode,
--- x, y, z, and fore are required, and y is constrained.
--- fore is a normal vector indicating a viewer direction.
--- In all modes, cutoff slabs 'tooclose' and 'toofar' can be specified.
+-- this is used to set the initial position of the
+-- camera using OpenGL.  scale is the value used to scale the
+-- other values from floating point to integer
 
 Camera ::= SEQUENCE {
-	mode		INTEGER {	examine(1),
-					fly(2),
-					walk(3),
-					free(4),
-					other(255) },
-	x		Model-space-point,
-	y		Model-space-point,
-	z		Model-space-point,
-	up		Model-space-point,
-	fore		Model-space-point OPTIONAL,
-	norm		Model-space-point OPTIONAL,
-	center		Model-space-point OPTIONAL,
-	tooclose	RealValue OPTIONAL,
-	toofar		RealValue OPTIONAL }
+	x		INTEGER,
+	y		INTEGER,
+	distance	INTEGER,
+	angle		INTEGER,
+	scale		INTEGER }
+
 
 Color-prop ::= SEQUENCE {
 	r		INTEGER OPTIONAL, 
