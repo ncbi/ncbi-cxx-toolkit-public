@@ -38,6 +38,7 @@ egrep -v -e '
 '$std_incpath_Cstd'\./strstream", line 147: Warning:
 '$std_incpath_Cstd'\./strstream", line 182: Warning:
 '$std_incpath_Cstd'\./strstream", line 222: Warning:
+fox/FX.*\.h", line [0-9][0-9]*: Warning:
 ^: ' |
 
 sed '
