@@ -211,8 +211,17 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         // extract the size parameters
         int width = 0;
         int height = 0;
+        int depth = 0;
         TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH,  &width);
         TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
+        TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &depth);
+
+        if (depth != 3  &&  depth != 4) {
+            string msg("CImageIOTiff::ReadImage(): unhandled image depth: ");
+            msg += NStr::IntToString(depth);
+            NCBI_THROW(CImageException, eReadError, msg);
+        }
+
 
         // allocate a temporary buffer for the image
         raster = (uint32*)_TIFFmalloc(width * height * sizeof(uint32));
@@ -224,19 +233,49 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         }
 
         // now we need to copy this data and pack it appropriately
-        image = new CImage(width, height, 4);
+        // according to the TIFFRGBAImage man page, TIFFRGBAImage and
+        // TIFFReadRGBAImage create the image in *RASTER* format - i.e.,
+        // with (0, 0) being the lower-left corner, not the upper-left
+        // corner as everyone else in the world expects
+        image = new CImage(width, height, depth);
         unsigned char* data = image->SetData();
-        for (int j = 0;  j < height;  ++j) {
-            for (int i = 0;  i < width;  ++i) {
-                size_t idx = j * width + i;
+        for (size_t j = 0;  j < height;  ++j) {
+            // implicit inversion
+            size_t from_idx_base = j * width;
+            size_t to_idx_base   = (height - j - 1) * width;
 
-                // TIFFReadRGBAImage(0 returns data in ABGR image, packed as a
-                // 32-bit value, so we need to pick this apart here
-                uint32 pixel = raster[idx];
-                data[4 * idx + 0] = (unsigned char)((pixel & 0x000000ff));
-                data[4 * idx + 1] = (unsigned char)((pixel & 0x0000ff00) >> 8);
-                data[4 * idx + 2] = (unsigned char)((pixel & 0x00ff0000) >> 16);
-                data[4 * idx + 3] = (unsigned char)((pixel & 0xff000000) >> 24);
+            size_t i;
+            switch (depth) {
+            case 3:
+                for (i = 0;  i < width;  ++i) {
+                    size_t from_idx = from_idx_base + i;
+                    size_t to_idx   = to_idx_base + i;
+
+                    // TIFFReadRGBAImage() returns data in ABGR image,
+                    // packed as a 32-bit value, so we need to pick this
+                    // apart here
+                    uint32 pixel = raster[from_idx];
+                    data[3 * to_idx + 0] = TIFFGetR(pixel);
+                    data[3 * to_idx + 1] = TIFFGetG(pixel);
+                    data[3 * to_idx + 2] = TIFFGetB(pixel);
+                }
+                break;
+
+            case 4:
+                for (i = 0;  i < width;  ++i) {
+                    size_t from_idx = from_idx_base + i;
+                    size_t to_idx   = to_idx_base + i;
+
+                    // TIFFReadRGBAImage() returns data in ABGR image,
+                    // packed as a 32-bit value, so we need to pick this
+                    // apart here
+                    uint32 pixel = raster[from_idx];
+                    data[4 * to_idx + 0] = TIFFGetR(pixel);
+                    data[4 * to_idx + 1] = TIFFGetG(pixel);
+                    data[4 * to_idx + 2] = TIFFGetB(pixel);
+                    data[4 * to_idx + 3] = TIFFGetA(pixel);
+                }
+                break;
             }
         }
 
@@ -425,6 +464,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/18 13:50:15  dicuccio
+ * Fixed image reversal bug: TIFFReadRGBAImage() reads the image in raster-order,
+ * not image-order.  Fixed setting of correct depth on image read.
+ *
  * Revision 1.5  2003/12/16 16:16:55  dicuccio
  * Fixed compiler warnings
  *
