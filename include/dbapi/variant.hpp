@@ -2,37 +2,35 @@
 #define DBAPI___VARIANT__HPP
 
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE                          
-*               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
-*
-* ===========================================================================
-*
-* File Name:  $Id$
-*
-* Author:  Michael Kholodov
-*   
-* File Description:  CVariant class implementation
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE                          
+ *               National Center for Biotechnology Information
+ *                                                                          
+ *  This software/database is a "United States Government Work" under the   
+ *  terms of the United States Copyright Act.  It was written as part of    
+ *  the author's official duties as a United States Government employee and 
+ *  thus cannot be copyrighted.  This software/database is freely available 
+ *  to the public for use. The National Library of Medicine and the U.S.    
+ *  Government have not placed any restriction on its use or reproduction.  
+ *                                                                          
+ *  Although all reasonable efforts have been taken to ensure the accuracy  
+ *  and reliability of the software and data, the NLM and the U.S.          
+ *  Government do not and cannot warrant the performance or results that    
+ *  may be obtained by using this software or data. The NLM and the U.S.    
+ *  Government disclaim all warranties, express or implied, including       
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.                                                                
+ *                                                                          
+ *  Please cite the author in any work or product based on this material.   
+ *
+ * ===========================================================================
+ *
+ * Author:  Michael Kholodov
+ *   
+ * File Description:  CVariant class implementation
+ *
+ */
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitype.h>
@@ -54,8 +52,8 @@ BEGIN_NCBI_SCOPE
 //  CVariantException::
 //
 //  
-//
-class CVariantException : public std::exception 
+
+class NCBI_DBAPI_EXPORT CVariantException : public std::exception 
 {
 
 public:
@@ -69,12 +67,14 @@ private:
     const string m_msg;
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  EDateTimeFormat::
 //
 //  DateTime format
 //
+
 enum EDateTimeFormat { 
     eShort, 
     eLong 
@@ -87,10 +87,10 @@ enum EDateTimeFormat {
 //
 //  CVariant data type
 //
-class CVariant
+
+class NCBI_DBAPI_EXPORT CVariant
 {
 public:
-
     // Contructors to create CVariant from various primitive types
     explicit CVariant(Int8 v);
     explicit CVariant(Int4 v);
@@ -174,7 +174,7 @@ public:
     bool operator<(const CVariant& v) const;
 
 
-   // Get pointer to the data buffer
+    // Get pointer to the data buffer
     // NOTE: internal use only!
     CDB_Object* GetData() const;
 
@@ -237,8 +237,13 @@ void CVariant::VerifyType(bool e) const
 
 END_NCBI_SCOPE
 
+
 /*
+ * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/12/15 20:05:41  ivanov
+ * Added export specifier for building DLLs in MS Windows.
+ *
  * Revision 1.18  2003/12/10 22:34:04  kholodov
  * Added: MoveTo() method
  *
@@ -299,8 +304,7 @@ END_NCBI_SCOPE
  * Revision 1.1  2002/01/30 14:51:24  kholodov
  * User DBAPI implementation, first commit
  *
- *
- *
+ * ===========================================================================
  */
 
 

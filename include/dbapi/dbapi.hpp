@@ -28,7 +28,7 @@
  *
  * Author:  Michael Kholodov
  *   
- * File Description: Database API interface
+ * File Description:  Database API interface
  *
  */
 
@@ -80,7 +80,7 @@ enum EAllowLog {
 //  total number of columns, type, name, etc.
 //
 
-class IResultSetMetaData 
+class NCBI_DBAPI_EXPORT IResultSetMetaData 
 {
 public:
     virtual ~IResultSetMetaData();
@@ -100,7 +100,7 @@ public:
 //  Used to retrieve a resultset from a query or cursor
 //
 
-class IResultSet 
+class NCBI_DBAPI_EXPORT IResultSet
 {
 public:
     virtual ~IResultSet();
@@ -158,13 +158,15 @@ public:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  IStatement::
 //
 //  Interface for a SQL statement
 //
-class IStatement
+
+class NCBI_DBAPI_EXPORT IStatement
 {
 public:
     virtual ~IStatement();
@@ -215,13 +217,15 @@ public:
 
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  ICallableStatement::
 //
 //  Used for calling a stored procedure thru RPC call
 //
-class ICallableStatement : public virtual IStatement
+
+class NCBI_DBAPI_EXPORT ICallableStatement : public virtual IStatement
 {
 public:
     virtual ~ICallableStatement();
@@ -254,13 +258,15 @@ protected:
 
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  ICursor::
 //
 //  Interface for a cursor
 //
-class ICursor
+
+class NCBI_DBAPI_EXPORT ICursor
 {
 public:
 
@@ -296,13 +302,15 @@ public:
     virtual class IConnection* GetParentConn() = 0;
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  IBulkInsert::
 //
 //  Interface for bulk insert
 //
-class IBulkInsert
+
+class NCBI_DBAPI_EXPORT IBulkInsert
 {
 public:
 
@@ -325,7 +333,6 @@ public:
 
     // Close
     virtual void Close() = 0;
-  
 };
 
 
@@ -336,7 +343,8 @@ public:
 //
 //  Interface for a database connection
 //
-class IConnection 
+
+class NCBI_DBAPI_EXPORT IConnection 
 {
 public:
     enum EConnMode {
@@ -413,15 +421,16 @@ public:
     virtual CDB_Connection* GetCDB_Connection() = 0;
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  IDataSource::
 //
 //  Interface for a datasource
 //
-class IDataSource
-{
 
+class NCBI_DBAPI_EXPORT IDataSource
+{
     friend class CDriverManager;
 
 protected:
@@ -429,7 +438,6 @@ protected:
     virtual ~IDataSource();
 
 public:
-
     // Get connection
     virtual IConnection* CreateConnection() = 0;
 
@@ -460,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/12/15 20:05:40  ivanov
+ * Added export specifier for building DLLs in MS Windows.
+ *
  * Revision 1.25  2003/11/18 17:32:26  ucko
  * Make IConnection::CloneConnection pure virtual.
  *

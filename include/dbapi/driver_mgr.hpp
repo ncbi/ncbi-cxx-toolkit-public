@@ -28,7 +28,7 @@
  *
  * Author:  Michael Kholodov, Denis Vakatov
  *   
- * File Description: Driver Manager definition
+ * File Description:  Driver Manager definition
  *
  */
 
@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 //  Static class for registering drivers and getting the datasource
 //
 
-class CDriverManager : public C_DriverMgr
+class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
     friend class CSafeStaticPtr<CDriverManager>;
 
@@ -89,6 +89,7 @@ protected:
     map<string, class IDataSource*> m_ds_list;
 };
 
+
 END_NCBI_SCOPE
 
 
@@ -98,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/15 20:05:41  ivanov
+ * Added export specifier for building DLLs in MS Windows.
+ *
  * Revision 1.4  2003/04/11 17:45:57  siyan
  * Added doxygen support
  *
