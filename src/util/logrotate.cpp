@@ -38,10 +38,14 @@ BEGIN_NCBI_SCOPE
 
 
 CRotatingLogStreamBuf::CRotatingLogStreamBuf(CRotatingLogStream* stream,
-                                             const string& filename,
-                                             CT_POS_TYPE limit,
-                                             IOS_BASE::openmode mode)
-    : m_Stream(stream), m_FileName(filename), m_Size(0), m_Limit(limit), m_Mode(mode)
+                                             const string&       filename,
+                                             CT_POS_TYPE         limit,
+                                             IOS_BASE::openmode  mode)
+    : m_Stream(stream),
+      m_FileName(filename),
+      m_Size(0),
+      m_Limit(limit),
+      m_Mode(mode)
 {
     open(m_FileName.c_str(), m_Mode);
     m_Size = seekoff(0, IOS_BASE::cur, IOS_BASE::out);
@@ -60,6 +64,7 @@ void CRotatingLogStreamBuf::Rotate(void)
     open(m_FileName.c_str(), m_Mode);
     m_Size = seekoff(0, IOS_BASE::cur, IOS_BASE::out);
 }
+
 
 // The use of new_size in overflow and sync is to avoid
 // double-counting when one calls the other.  (Which, if either, is
@@ -105,7 +110,8 @@ int CRotatingLogStreamBuf::sync(void)
 }
 
 
-string CRotatingLogStream::x_BackupName(string& name) {
+string CRotatingLogStream::x_BackupName(string& name)
+{
 #if defined(NCBI_OS_UNIX) && !defined(NCBI_OS_CYGWIN)
     return name + CurrentTime().AsString(".Y-M-D-Z-h:m:s");
 #else
@@ -117,10 +123,15 @@ string CRotatingLogStream::x_BackupName(string& name) {
 
 END_NCBI_SCOPE
 
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/03/27 23:17:41  vakatov
+* Ident
+*
 * Revision 1.5  2003/03/26 18:45:16  kans
 * add initialize default for m_Size (RS)
 *
@@ -136,7 +147,6 @@ END_NCBI_SCOPE
 *
 * Revision 1.1  2002/11/25 17:21:00  ucko
 * Add support for automatic log rotation (CRotatingLogStream)
-*
 *
 * ===========================================================================
 */
