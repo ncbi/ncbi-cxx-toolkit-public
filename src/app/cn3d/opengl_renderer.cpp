@@ -263,7 +263,7 @@ void OpenGLRenderer::Display(void)
     }
 
     int first = 1, last = stereoOn ? 2 : 1;
-    for (int e=first; e<=last; e++) {
+    for (int e=first; e<=last; ++e) {
 
         glLoadMatrixd(viewMatrix);
 
@@ -282,7 +282,7 @@ void OpenGLRenderer::Display(void)
 
         if (structureSet) {
             if (currentFrame == ALL_FRAMES) {
-                for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
+                for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; ++i) {
                     PushMatrix(*(structureSet->transformMap[i]));
                     glCallList(i);
                     PopMatrix();
@@ -291,7 +291,7 @@ void OpenGLRenderer::Display(void)
             } else {
                 StructureSet::DisplayLists::const_iterator
                     l, le=structureSet->frameMap[currentFrame].end();
-                for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++) {
+                for (l=structureSet->frameMap[currentFrame].begin(); l!=le; ++l) {
                     PushMatrix(*(structureSet->transformMap[*l]));
                     glCallList(*l);
                     PopMatrix();
@@ -512,7 +512,7 @@ bool OpenGLRenderer::IsFrameEmpty(unsigned int frame) const
     if (!structureSet) return false;
 
     StructureSet::DisplayLists::const_iterator l, le=structureSet->frameMap[frame].end();
-    for (l=structureSet->frameMap[frame].begin(); l!=le; l++)
+    for (l=structureSet->frameMap[frame].begin(); l!=le; ++l)
         if (!displayListEmpty[*l])
             return false;
     return true;
@@ -523,7 +523,7 @@ void OpenGLRenderer::ShowFirstFrame(void)
     if (!structureSet) return;
     currentFrame = 0;
     while (IsFrameEmpty(currentFrame) && currentFrame < structureSet->frameMap.size() - 1)
-        currentFrame++;
+        ++currentFrame;
 }
 
 void OpenGLRenderer::ShowLastFrame(void)
@@ -531,7 +531,7 @@ void OpenGLRenderer::ShowLastFrame(void)
     if (!structureSet) return;
     currentFrame = structureSet->frameMap.size() - 1;
     while (IsFrameEmpty(currentFrame) && currentFrame > 0)
-        currentFrame--;
+        --currentFrame;
 }
 
 void OpenGLRenderer::ShowNextFrame(void)
@@ -543,7 +543,7 @@ void OpenGLRenderer::ShowNextFrame(void)
         if (currentFrame == structureSet->frameMap.size() - 1)
             currentFrame = 0;
         else
-            currentFrame++;
+            ++currentFrame;
     } while (IsFrameEmpty(currentFrame) && currentFrame != originalFrame);
 }
 
@@ -556,7 +556,7 @@ void OpenGLRenderer::ShowPreviousFrame(void)
         if (currentFrame == 0)
             currentFrame = structureSet->frameMap.size() - 1;
         else
-            currentFrame--;
+            --currentFrame;
     } while (IsFrameEmpty(currentFrame) && currentFrame != originalFrame);
 }
 
@@ -588,16 +588,16 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
     int i, j, p=0, n, top=0;
     GLuint minZ=0;
     *name = NO_NAME;
-    for (i=0; i<hits; i++) {
-        n = selectBuf[p++];                 // # names
+    for (i=0; i<hits; ++i) {
+        n = selectBuf[++p];                 // # names
         if (i==0 || minZ > selectBuf[p]) {  // find item with min depth
             minZ = selectBuf[p];
             top = 1;
         } else
             top = 0;
-        p++;
-        p++;                                // skip max depth
-        for (j=0; j<n; j++) {               // loop through n names
+        ++p;
+        ++p;                                // skip max depth
+        for (j=0; j<n; ++j) {               // loop through n names
             switch (j) {
                 case 0:
                     if (top) *name = static_cast<unsigned int>(selectBuf[p]);
@@ -605,7 +605,7 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
                 default:
                     WARNINGMSG("GL select: Got more than 1 name!");
             }
-            p++;
+            ++p;
         }
     }
 
@@ -728,7 +728,7 @@ void OpenGLRenderer::ConstructLogo(void)
     /* create logo */
     SetColor(GL_DIFFUSE, logoColor[0], logoColor[1], logoColor[2]);
 
-    for (n = 0; n < 2; n++) { /* helix strand */
+    for (n = 0; n < 2; ++n) { /* helix strand */
         if (n == 0) {
             startRad = maxRad;
             midRad = minRad;
@@ -738,7 +738,7 @@ void OpenGLRenderer::ConstructLogo(void)
             midRad = maxRad;
             phase = PI;
         }
-        for (g = 0; g <= segments; g++) { /* segment (bottom to top) */
+        for (g = 0; g <= segments; ++g) { /* segment (bottom to top) */
 
             if (g < segments/2)
                 currentRad = startRad + (midRad - startRad) *
@@ -753,15 +753,15 @@ void OpenGLRenderer::ConstructLogo(void)
             CR[0] = bigRad * sin(phase);
 
             /* make a strip around the strand circumference */
-            for (s = 0; s < LOGO_SIDES; s++) {
+            for (s = 0; s < LOGO_SIDES; ++s) {
                 V[0] = CR[0];
                 V[2] = CR[2];
                 V[1] = 0;
                 length = sqrt(V[0]*V[0] + V[1]*V[1] + V[2]*V[2]);
-                for (i = 0; i < 3; i++) V[i] /= length;
+                for (i = 0; i < 3; ++i) V[i] /= length;
                 H[0] = H[2] = 0;
                 H[1] = 1;
-                for (i = 0; i < 3; i++) {
+                for (i = 0; i < 3; ++i) {
                     pRingNorm[3*s + i] = V[i] * cos(PI * 2 * s / LOGO_SIDES) +
                                          H[i] * sin(PI * 2 * s / LOGO_SIDES);
                     pRingPts[3*s + i] = CR[i] + pRingNorm[3*s + i] * currentRad;
@@ -769,7 +769,7 @@ void OpenGLRenderer::ConstructLogo(void)
             }
             if (g > 0) {
                 glBegin(GL_TRIANGLE_STRIP);
-                for (s = 0; s < LOGO_SIDES; s++) {
+                for (s = 0; s < LOGO_SIDES; ++s) {
                     glNormal3d(pPrevNorm[3*s], pPrevNorm[3*s + 1], pPrevNorm[3*s + 2]);
                     glVertex3d(pPrevRing[3*s], pPrevRing[3*s + 1], pPrevRing[3*s + 2]);
                     glNormal3d(pRingNorm[3*s], pRingNorm[3*s + 1], pRingNorm[3*s + 2]);
@@ -789,10 +789,10 @@ void OpenGLRenderer::ConstructLogo(void)
             else
                 glNormal3d(1, 0, 0);
             if (g == 0) {
-                for (s = 0; s < LOGO_SIDES; s++)
+                for (s = 0; s < LOGO_SIDES; ++s)
                     glVertex3d(pRingPts[3*s], pRingPts[3*s + 1], pRingPts[3*s + 2]);
             } else if (g == segments) {
-                for (s = LOGO_SIDES - 1; s >= 0; s--)
+                for (s = LOGO_SIDES - 1; s >= 0; --s)
                     glVertex3d(pRingPts[3*s], pRingPts[3*s + 1], pRingPts[3*s + 2]);
             }
             glEnd();
@@ -846,7 +846,7 @@ void OpenGLRenderer::AddTransparentSpheresForList(unsigned int list)
 
     SphereList::const_iterator i, ie=sphereList.end();
     const Matrix *slaveTransform;
-    for (i=sphereList.begin(); i!=ie; i++, sph++) {
+    for (i=sphereList.begin(); i!=ie; ++i, ++sph) {
         sph->siteGL = i->site;
         slaveTransform = *(structureSet->transformMap[list]);
         if (slaveTransform)
@@ -872,7 +872,7 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
 
     // render spheres in order (farthest first)
     SpherePtrList::reverse_iterator i, ie=transparentSpheresToRender.rend();
-    for (i=transparentSpheresToRender.rbegin(); i!=ie; i++) {
+    for (i=transparentSpheresToRender.rbegin(); i!=ie; ++i) {
         SetColor(GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
         glLoadName(static_cast<GLuint>(i->ptr->name));
         glPushMatrix();
@@ -956,7 +956,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 
     if (wormSides % 2) {
         WARNINGMSG("worm sides must be an even number");
-        wormSides++;
+        ++wormSides;
     }
     GLdouble *fblock = NULL;
 
@@ -970,13 +970,13 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
      * Multiply MG=Mh.Gh, where Gh = [ P(1) P(2) R(1) R(2) ]. This
      * 4x1 matrix of vectors is constant for each segment.
      */
-    for (i = 0; i < 4; i++) {   /* calculate Mh.Gh */
+    for (i = 0; i < 4; ++i) {   /* calculate Mh.Gh */
         MG[i][0] = Mh[i][0] * p1.x + Mh[i][1] * p2.x + Mh[i][2] * R1.x + Mh[i][3] * R2.x;
         MG[i][1] = Mh[i][0] * p1.y + Mh[i][1] * p2.y + Mh[i][2] * R1.y + Mh[i][3] * R2.y;
         MG[i][2] = Mh[i][0] * p1.z + Mh[i][1] * p2.z + Mh[i][2] * R1.z + Mh[i][3] * R2.z;
     }
 
-    for (i = 0; i <= wormSegments; i++) {
+    for (i = 0; i <= wormSegments; ++i) {
 
         /* t goes from [0,1] from P(1) to P(2) (and we want to go halfway only),
            and the function Q(t) defines the curve of this segment. */
@@ -1048,7 +1048,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 
             /* finally, the worm circumference points (C) and normals (N) are
                simple trigonometric combinations of H and V */
-            for (j = 0; j < wormSides; j++) {
+            for (j = 0; j < wormSides; ++j) {
                 cosj = cos(2 * PI * j / wormSides);
                 sinj = sin(2 * PI * j / wormSides);
                 Nx[j] = H.x * cosj + V.x * sinj;
@@ -1062,9 +1062,9 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             /* figure out which points on the previous circle "match" best
                with these, to minimize envelope twisting */
             if (i > 0) {
-                for (m = 0; m < wormSides; m++) {
+                for (m = 0; m < wormSides; ++m) {
                     len = 0.0;
-                    for (j = 0; j < wormSides; j++) {
+                    for (j = 0; j < wormSides; ++j) {
                         k = j + m;
                         if (k >= wormSides)
                             k -= wormSides;
@@ -1082,7 +1082,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             /* create triangles from points along this and previous circle */
             if (i > 0) {
                 glBegin(GL_TRIANGLE_STRIP);
-                for (j = 0; j < wormSides; j++) {
+                for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
                     glNormal3d(Nx[k], Ny[k], Nz[k]);
@@ -1102,7 +1102,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
                 glBegin(GL_POLYGON);
                 dQt.normalize();
                 glNormal3d(-dQt.x, -dQt.y, -dQt.z);
-                for (j = wormSides - 1; j >= 0; j--) {
+                for (j = wormSides - 1; j >= 0; --j) {
                     glVertex3d(Cx[j], Cy[j], Cz[j]);
                 }
                 glEnd();
@@ -1111,7 +1111,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
                 glBegin(GL_POLYGON);
                 dQt.normalize();
                 glNormal3d(dQt.x, dQt.y, dQt.z);
-                for (j = 0; j < wormSides; j++) {
+                for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
@@ -1317,7 +1317,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     if (style.style == StyleManager::eObjectWithArrow)
         lCterm -= a * style.arrowLength;
 
-    for (i=0; i<3; i++) {
+    for (i=0; i<3; ++i) {
         c000[i] =  Nterm[i] - h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
         c001[i] = lCterm[i] - h[i]*style.width/2 - unitNormal[i]*style.thickness/2;
         c010[i] =  Nterm[i] - h[i]*style.width/2 + unitNormal[i]*style.thickness/2;
@@ -1330,35 +1330,35 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 
     glBegin(GL_QUADS);
 
-    for (i=0; i<3; i++) n[i] = unitNormal[i];
+    for (i=0; i<3; ++i) n[i] = unitNormal[i];
     glNormal3dv(n);
     glVertex3dv(c010);
     glVertex3dv(c011);
     glVertex3dv(c111);
     glVertex3dv(c110);
 
-    for (i=0; i<3; i++) n[i] = -unitNormal[i];
+    for (i=0; i<3; ++i) n[i] = -unitNormal[i];
     glNormal3dv(n);
     glVertex3dv(c000);
     glVertex3dv(c100);
     glVertex3dv(c101);
     glVertex3dv(c001);
 
-    for (i=0; i<3; i++) n[i] = h[i];
+    for (i=0; i<3; ++i) n[i] = h[i];
     glNormal3dv(n);
     glVertex3dv(c100);
     glVertex3dv(c110);
     glVertex3dv(c111);
     glVertex3dv(c101);
 
-    for (i=0; i<3; i++) n[i] = -h[i];
+    for (i=0; i<3; ++i) n[i] = -h[i];
     glNormal3dv(n);
     glVertex3dv(c000);
     glVertex3dv(c001);
     glVertex3dv(c011);
     glVertex3dv(c010);
 
-    for (i=0; i<3; i++) n[i] = -a[i];
+    for (i=0; i<3; ++i) n[i] = -a[i];
     glNormal3dv(n);
     glVertex3dv(c000);
     glVertex3dv(c010);
@@ -1366,7 +1366,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     glVertex3dv(c100);
 
     if (style.style == StyleManager::eObjectWithoutArrow) {
-        for (i=0; i<3; i++) n[i] = a[i];
+        for (i=0; i<3; ++i) n[i] = a[i];
         glNormal3dv(n);
         glVertex3dv(c001);
         glVertex3dv(c101);
@@ -1376,7 +1376,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     } else {
         GLdouble FT[3], LT[3], RT[3], FB[3], LB[3], RB[3];
 
-        for (i=0; i<3; i++) {
+        for (i=0; i<3; ++i) {
             FT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 +
                 a[i]*style.arrowLength;
             LT[i] = lCterm[i] + unitNormal[i]*style.thickness/2 +
@@ -1392,7 +1392,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         }
 
         // the back-facing rectangles on the base of the arrow
-        for (i=0; i<3; i++) n[i] = -a[i];
+        for (i=0; i<3; ++i) n[i] = -a[i];
         glNormal3dv(n);
         glVertex3dv(c111);
         glVertex3dv(LT);
@@ -1405,10 +1405,10 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         glVertex3dv(RT);
 
         // the left side of the arrow
-        for (i=0; i<3; i++) h[i] = FT[i] - LT[i];
+        for (i=0; i<3; ++i) h[i] = FT[i] - LT[i];
         Vector nL = vector_cross(unitNormal, h);
         nL.normalize();
-        for (i=0; i<3; i++) n[i] = nL[i];
+        for (i=0; i<3; ++i) n[i] = nL[i];
         glNormal3dv(n);
         glVertex3dv(FT);
         glVertex3dv(FB);
@@ -1416,10 +1416,10 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         glVertex3dv(LT);
 
         // the right side of the arrow
-        for (i=0; i<3; i++) h[i] = FT[i] - RT[i];
+        for (i=0; i<3; ++i) h[i] = FT[i] - RT[i];
         Vector nR = vector_cross(h, unitNormal);
         nR.normalize();
-        for (i=0; i<3; i++) n[i] = nR[i];
+        for (i=0; i<3; ++i) n[i] = nR[i];
         glNormal3dv(n);
         glVertex3dv(FT);
         glVertex3dv(RT);
@@ -1430,13 +1430,13 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         glBegin(GL_TRIANGLES);
 
         // the top and bottom arrow triangles
-        for (i=0; i<3; i++) n[i] = unitNormal[i];
+        for (i=0; i<3; ++i) n[i] = unitNormal[i];
         glNormal3dv(n);
         glVertex3dv(FT);
         glVertex3dv(LT);
         glVertex3dv(RT);
 
-        for (i=0; i<3; i++) n[i] = -unitNormal[i];
+        for (i=0; i<3; ++i) n[i] = -unitNormal[i];
         glNormal3dv(n);
         glVertex3dv(FB);
         glVertex3dv(RB);
@@ -1566,7 +1566,7 @@ void OpenGLRenderer::GetViewport(int *viewport)
     glCanvas->SetCurrent();
     GLint viewportGL[4];    // just in case GLint != int
     glGetIntegerv(GL_VIEWPORT, viewportGL);
-    for (int i=0; i<4; i++) viewport[i] = (int) viewportGL[i];
+    for (int i=0; i<4; ++i) viewport[i] = (int) viewportGL[i];
 }
 
 const wxFont& OpenGLRenderer::GetGLFont(void) const
@@ -1614,6 +1614,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2004/03/15 17:51:29  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.75  2004/02/19 17:05:00  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

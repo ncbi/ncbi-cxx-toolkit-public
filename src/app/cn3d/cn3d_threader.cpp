@@ -601,10 +601,10 @@ static void GetVirtualCoordinates(const Molecule *mol, const AtomSet *atomSet,
     for (r=mol->residues.begin(); r!=re; ++r) {
         if (prevResidue)
             GetVirtualPeptide(atomSet, mol,
-                prevResidue, r->second, &((*virtualCoordinates)[++i]));
+                prevResidue, r->second, &((*virtualCoordinates)[i++]));
         prevResidue = r->second;
         GetVirtualResidue(atomSet, mol,
-            r->second, &((*virtualCoordinates)[++i]));
+            r->second, &((*virtualCoordinates)[i++]));
     }
 }
 
@@ -1237,6 +1237,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/03/15 17:59:20  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.41  2004/03/15 17:33:12  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *
