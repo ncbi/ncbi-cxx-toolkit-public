@@ -50,49 +50,10 @@ GetPrivatTranslationTable PROTO((CharPtr genetic_code,
 extern OIDListPtr LIBCALL 
 BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 
-/** Gapped extension function pointer type */
-typedef Int2 (LIBCALLBACK *BlastGetGappedScoreType) 
-     (Uint1, BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr, 
-      BlastGapAlignStructPtr, BlastScoringOptionsPtr,
-      BlastExtensionParametersPtr, BlastHitSavingParametersPtr,
-      BlastInitHitListPtr, BlastHSPListPtr PNTR);
-     
-/** Word finder function pointer type */
-typedef Int4 (LIBCALLBACK *BlastWordFinderType) 
-     (BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr,
-      LookupTableWrapPtr, Int4Ptr PNTR, BlastInitialWordParametersPtr,
-      BLAST_ExtendWordPtr, Uint4Ptr, Uint4Ptr, Int4, BlastInitHitListPtr);
-
-/** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
-    to various preallocated structures and arrays. */
-typedef struct BlastCoreAuxStruct {
-   LookupTableWrapPtr lookup_wrap; /**< Lookup table for finding initial 
-                                      word matches */
-   BLAST_ExtendWordPtr ewp; /**< Structure for keeping track of diagonal
-                               information for initial word matches */
-   BlastWordFinderType WordFinder; /**< Word finder function pointer */
-   BlastGetGappedScoreType GetGappedScore; /**< Gapped extension function
-                                              pointer */
-   BlastInitHitListPtr init_hitlist; /**< Placeholder for HSPs after 
-                                        ungapped extension */
-   BlastHSPListPtr hsp_list; /**< Placeholder for HSPs after gapped 
-                                extension */
-   Uint4Ptr query_offsets; /**< Placeholder for initial word match query 
-                              offsets */
-   Uint4Ptr subject_offsets; /**< Placeholder for initial word match  
-                              subject offsets */
-   Uint1Ptr translation_buffer; /**< Placeholder for translated subject
-                                   sequences */
-   Uint1Ptr translation_table; /**< Translation table for forward strand */
-   Uint1Ptr translation_table_rc; /**< Translation table for reverse 
-                                     strand */
-} BlastCoreAuxStruct, PNTR BlastCoreAuxStructPtr;
-
 /** Deallocates all memory in BlastCoreAuxStruct */
 static BlastCoreAuxStructPtr 
 BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
 {
-   BlastLookupTableDestruct(aux_struct->lookup_wrap);
    BlastExtendWordFree(aux_struct->ewp);
    MemFree(aux_struct->translation_buffer);
    MemFree(aux_struct->translation_table);
@@ -113,7 +74,7 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
 static Int2
 BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query, 
    BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
-   BlastGapAlignStructPtr gap_align, 
+   LookupTableWrapPtr lookup, BlastGapAlignStructPtr gap_align, 
    const BlastScoringOptionsPtr score_options, 
    BlastInitialWordParametersPtr word_params, 
    BlastExtensionParametersPtr ext_params, 
@@ -126,7 +87,6 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
 {
    BlastInitHitListPtr init_hitlist = aux_struct->init_hitlist;
    BlastHSPListPtr hsp_list = aux_struct->hsp_list;
-   LookupTableWrapPtr lookup = aux_struct->lookup_wrap;
    BLAST_ExtendWordPtr ewp = aux_struct->ewp;
    Uint4Ptr query_offsets = aux_struct->query_offsets;
    Uint4Ptr subject_offsets = aux_struct->subject_offsets;
@@ -275,16 +235,7 @@ FillReturnXDropoffsInfo(BlastReturnStatPtr return_stats,
    return 0;
 }
 
-/** Function to calculate effective query length and db length as well as
- * effective search space. 
- * @param program_number blastn, blastp, blastx, etc. [in]
- * @param scoring_options options for scoring. [in]
- * @param eff_len_options used to calc. effective lengths [in]
- * @param sbp Karlin-Altschul parameters [out]
- * @param query_info The query information block, which stores the effective
- *                   search spaces for all queries [in] [out]
-*/
-static Int2 BLAST_CalcEffLengths (Uint1 program_number, 
+Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptionsPtr scoring_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options, 
    const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info)
@@ -384,20 +335,17 @@ static Int2 BLAST_CalcEffLengths (Uint1 program_number,
    return 0;
 }
 
-/** Setup of the auxiliary BLAST structures: lookup table, diagonal table for 
- * word extension, structure with memory for gapped alignment; also calculates
- * internally used parameters from options. 
+/** Setup of the auxiliary BLAST structures; 
+ * also calculates internally used parameters from options. 
  * @param program_number blastn, blastp, blastx, etc. [in]
  * @param scoring_options options for scoring. [in]
  * @param eff_len_options  used to calc. eff len. [in]
- * @param lookup_options options for lookup table. [in]
+ * @param lookup_wrap Lookup table, already constructed. [in]
  * @param word_options options for initial word finding. [in]
  * @param ext_options options for gapped extension. [in]
  * @param hit_options options for saving hits. [in]
  * @param db_options Database options (containing database genetic code)[in]
  * @param query The query sequence block [in]
- * @param lookup_segments Start/stop locations for non-masked query 
- *                        segments [in]
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
  * @param max_subject_length Length of the longest subject sequence [in]
@@ -412,14 +360,13 @@ static Int2
 BLAST_SetUpAuxStructures(Uint1 program_number,
    const BlastScoringOptionsPtr scoring_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
-   const LookupTableOptionsPtr lookup_options,	
+   LookupTableWrapPtr lookup_wrap,	
    const BlastInitialWordOptionsPtr word_options,
    const BlastExtensionOptionsPtr ext_options,
    const BlastHitSavingOptionsPtr hit_options,
    const BlastDatabaseOptionsPtr db_options,
-   BLAST_SequenceBlkPtr query, ValNodePtr lookup_segments,
-   BlastQueryInfoPtr query_info, BLAST_ScoreBlkPtr sbp, 
-   Uint4 max_subject_length,
+   BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
+   BLAST_ScoreBlkPtr sbp, Uint4 max_subject_length,
    BlastGapAlignStructPtr PNTR gap_align, 
    BlastInitialWordParametersPtr PNTR word_params,
    BlastExtensionParametersPtr PNTR ext_params,
@@ -427,55 +374,21 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    BlastCoreAuxStructPtr PNTR aux_struct_ptr)
 {
    Int2 status = 0;
-   Boolean blastp = (lookup_options->lut_type == AA_LOOKUP_TABLE);
-   Boolean mb_lookup = (lookup_options->lut_type == MB_LOOKUP_TABLE);
+   Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE);
+   Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
    Boolean ag_blast = (Boolean)
       (word_options->extend_word_method & EXTEND_WORD_AG);
    Int4 offset_array_size = 0;
    Boolean translated_subject;
-   LookupTableWrapPtr lookup_wrap;
    BLAST_ExtendWordPtr ewp;
    BlastCoreAuxStructPtr aux_struct;
 
-   /* Construct the lookup table. */
-   lookup_wrap = MemNew(sizeof(LookupTableWrap));
-   lookup_wrap->lut_type = lookup_options->lut_type;
-
-   switch ( lookup_options->lut_type ) {
-   case AA_LOOKUP_TABLE:
-      BlastAaLookupNew(lookup_options, (LookupTablePtr *)
-                       &lookup_wrap->lut);
-      BlastAaLookupIndexQueries( (LookupTablePtr) lookup_wrap->lut,
-                                 sbp->matrix, query, lookup_segments, 1);
-      _BlastAaLookupFinalize((LookupTablePtr) lookup_wrap->lut);
-      break;
-   case MB_LOOKUP_TABLE:
-      MB_LookupTableNew(query, lookup_segments, 
-         (MBLookupTablePtr *) &(lookup_wrap->lut), lookup_options);
-      break;
-   case NA_LOOKUP_TABLE:
-      LookupTableNew(lookup_options, 
-         (LookupTablePtr *) &(lookup_wrap->lut), FALSE);
-	    
-      BlastNaLookupIndexQuery((LookupTablePtr) lookup_wrap->lut, query,
-                              lookup_segments);
-      _BlastAaLookupFinalize((LookupTablePtr) lookup_wrap->lut);
-      break;
-   default:
-      {
-         /* FIXME - emit error condition here */
-      }
-   } /* end switch */
 
    if ((status = 
       BLAST_ExtendWordInit(query, word_options, eff_len_options->db_length, 
                            eff_len_options->dbseq_num, &ewp)) != 0)
       return status;
       
-   if ((status = BLAST_CalcEffLengths(program_number, scoring_options,
-                    eff_len_options, sbp, query_info)) != 0)
-      return status;
-
    BlastExtensionParametersNew(program_number, ext_options, sbp, query_info, 
                                ext_params);
 
@@ -500,7 +413,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    *aux_struct_ptr = aux_struct = (BlastCoreAuxStructPtr)
       MemNew(sizeof(BlastCoreAuxStruct));
    aux_struct->ewp = ewp;
-   aux_struct->lookup_wrap = lookup_wrap;
 
    /* pick which gapped alignment algorithm to use */
    if (ext_options->algorithm_type == EXTEND_DYN_PROG)
@@ -565,8 +477,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BLAST_SequenceBlkPtr query,  BlastQueryInfoPtr query_info,
    ReadDBFILEPtr rdfp, BLAST_ScoreBlkPtr sbp,
    const BlastScoringOptionsPtr score_options, 
-   const LookupTableOptionsPtr lookup_options,
-   ValNodePtr lookup_segments, 
+   LookupTableWrapPtr lookup_wrap,
    const BlastInitialWordOptionsPtr word_options, 
    const BlastExtensionOptionsPtr ext_options, 
    const BlastHitSavingOptionsPtr hit_options,
@@ -601,8 +512,8 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 
    if ((status = 
        BLAST_SetUpAuxStructures(program_number, score_options, 
-          eff_len_options, lookup_options, word_options, ext_options, 
-          hit_options, db_options, query, lookup_segments, query_info, sbp, 
+          eff_len_options, lookup_wrap, word_options, ext_options, 
+          hit_options, db_options, query, query_info, sbp, 
           max_subject_length, &gap_align, &word_params, &ext_params, 
           &hit_params, &aux_struct)) != 0)
       return status;
@@ -631,7 +542,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
          MakeBlastSequenceBlk(rdfp, &subject, oid, BLASTP_ENCODING);
 
          BLAST_SearchEngineCore(program_number, query, query_info,
-            subject, gap_align, score_options, word_params, 
+            subject, lookup_wrap, gap_align, score_options, word_params, 
             ext_params, hit_params, psi_options, db_options,
             return_stats, aux_struct, &hsp_list);
 
@@ -674,8 +585,7 @@ Int4
 BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query, 
    BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
    BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr score_options, 
-   const LookupTableOptionsPtr lookup_options,
-   ValNodePtr lookup_segments, 
+   LookupTableWrapPtr lookup_wrap,
    const BlastInitialWordOptionsPtr word_options, 
    const BlastExtensionOptionsPtr ext_options, 
    const BlastHitSavingOptionsPtr hit_options, 
@@ -697,8 +607,8 @@ BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query,
 
    if ((status = 
         BLAST_SetUpAuxStructures(program_number, score_options, 
-           eff_len_options, lookup_options, word_options, ext_options, 
-           hit_options, db_options, query, lookup_segments, query_info, 
+           eff_len_options, lookup_wrap, word_options, ext_options, 
+           hit_options, db_options, query, query_info, 
            sbp, subject->length, &gap_align, &word_params, &ext_params, 
            &hit_params, &aux_struct)) != 0)
       return status;
@@ -706,8 +616,9 @@ BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query,
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
 
    BLAST_SearchEngineCore(program_number, query, query_info, subject, 
-      gap_align, score_options, word_params, ext_params, hit_params, 
-      psi_options, db_options, return_stats, aux_struct, &hsp_list);
+      lookup_wrap, gap_align, score_options, word_params, ext_params, 
+      hit_params, psi_options, db_options, return_stats, aux_struct, 
+      &hsp_list);
 
    if (hsp_list && hsp_list->hspcnt > 0) {
       return_stats->prelim_gap_passed += hsp_list->hspcnt;
@@ -737,3 +648,42 @@ BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query,
    return status;
 }
 
+Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
+        const LookupTableOptionsPtr lookup_options,	
+        ValNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
+        LookupTableWrapPtr PNTR lookup_wrap_ptr)
+{
+   LookupTableWrapPtr lookup_wrap;
+
+   /* Construct the lookup table. */
+   *lookup_wrap_ptr = lookup_wrap = MemNew(sizeof(LookupTableWrap));
+   lookup_wrap->lut_type = lookup_options->lut_type;
+
+   switch ( lookup_options->lut_type ) {
+   case AA_LOOKUP_TABLE:
+      BlastAaLookupNew(lookup_options, (LookupTablePtr *)
+                       &lookup_wrap->lut);
+      BlastAaLookupIndexQueries( (LookupTablePtr) lookup_wrap->lut,
+                                 sbp->matrix, query, lookup_segments, 1);
+      _BlastAaLookupFinalize((LookupTablePtr) lookup_wrap->lut);
+      break;
+   case MB_LOOKUP_TABLE:
+      MB_LookupTableNew(query, lookup_segments, 
+         (MBLookupTablePtr *) &(lookup_wrap->lut), lookup_options);
+      break;
+   case NA_LOOKUP_TABLE:
+      LookupTableNew(lookup_options, 
+         (LookupTablePtr *) &(lookup_wrap->lut), FALSE);
+	    
+      BlastNaLookupIndexQuery((LookupTablePtr) lookup_wrap->lut, query,
+                              lookup_segments);
+      _BlastAaLookupFinalize((LookupTablePtr) lookup_wrap->lut);
+      break;
+   default:
+      {
+         /* FIXME - emit error condition here */
+      }
+   } /* end switch */
+
+   return 0;
+}
