@@ -699,14 +699,6 @@ void CAnnotTypes_CI::x_Initialize(const CObject& limit_info)
 
 
 inline
-bool CAnnotTypes_CI::x_MatchTrigger(const CAnnotObject_Info& annot_info) const
-{
-    // !!! Does the same as x_MatchType(), should be changed !!!
-    return x_MatchType(annot_info);
-}
-
-
-inline
 bool
 CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 {
@@ -824,7 +816,6 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
     }
 
     bool found = false;
-
     ITERATE ( TTSE_LockSet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
 
@@ -839,6 +830,9 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         if ( x_NeedSNPs() ) {
             ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
                 const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
+                if (!found) {
+                    found = true;
+                }
                 CSeq_annot_SNP_Info::const_iterator snp_it =
                     snp_annot.LowerBound(range);
                 if ( snp_it != snp_annot.end() ) {
@@ -873,24 +867,28 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         }
         for ( size_t index = idxs.first; index < idxs.second; ++index ) {
             const CTSE_Info::TRangeMap& rmap = objs->m_AnnotSet[index];
+
+            // Found at least one annotation in the sequence TSE regardless of
+            // its range.
+            if (!found ) {
+                found = !rmap.empty()  &&  tse_info.ContainsSeqid(id);
+            }
+
             for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
                   aoit; ++aoit ) {
                 const CAnnotObject_Info& annot_info =
                     *aoit->second.m_AnnotObject_Info;
-                if (!found  &&  x_MatchTrigger(annot_info)) {
-                    found = true;
-                }
 
                 if ( !x_MatchLimitObject(annot_info) ) {
                     continue;
                 }
 
-                _ASSERT(x_MatchType(annot_info));
-
                 if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
                     continue;
                 }
                 
+                _ASSERT(x_MatchType(annot_info));
+
                 CAnnotObject_Ref annot_ref(annot_info);
                 if ( cvt ) {
                     cvt->Convert(annot_ref, m_FeatProduct);
@@ -1093,6 +1091,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/09/12 15:50:10  grichenk
+* Updated adaptive-depth triggering
+*
 * Revision 1.86  2003/09/11 17:45:07  grichenk
 * Added adaptive-depth option to annot-iterators.
 *

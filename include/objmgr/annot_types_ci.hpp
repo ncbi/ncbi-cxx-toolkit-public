@@ -221,7 +221,6 @@ private:
     void x_ReleaseAll(void);
 
     bool x_NeedSNPs(void) const;
-    bool x_MatchTrigger(const CAnnotObject_Info& annot_info) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
     bool x_MatchType(const CAnnotObject_Info& annot_info) const;
     bool x_MatchRange(const CHandleRange& hr,
@@ -464,6 +463,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/09/12 15:50:09  grichenk
+* Updated adaptive-depth triggering
+*
 * Revision 1.51  2003/09/11 17:45:06  grichenk
 * Added adaptive-depth option to annot-iterators.
 *
