@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/17 19:04:09  vasilche
+* NcbiEmptyString made extern.
+*
 * Revision 1.21  1999/11/26 19:29:09  golikov
 * fix
 *
@@ -106,6 +109,8 @@
 
 BEGIN_NCBI_SCOPE
 
+const char   NcbiEmptyCStr[] = "";
+const string NcbiEmptyString;
 
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/12/17 19:04:06  vasilche
+* NcbiEmptyString made extern.
+*
 * Revision 1.31  1999/12/03 21:36:45  vasilche
 * Added forward decaration of CEnumeratedTypeValues
 *
@@ -125,8 +128,8 @@
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
-const char   NcbiEmptyCStr[] = "";
-const string NcbiEmptyString;
+extern const char   NcbiEmptyCStr[];
+extern const string NcbiEmptyString;
 // tools
 
 struct NStr {
