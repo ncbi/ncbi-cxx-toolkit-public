@@ -6,8 +6,6 @@ Seq-entry ::= set {
 EOF
 
 length=1000
-from=400
-to=600
 for i in 0 1 2 3 4 5 6 7 8 9; do
     gi="$i"500
     cat <<EOF
@@ -27,87 +25,103 @@ for i in 0 1 2 3 4 5 6 7 8 9; do
       annot {
         {
           data ftable {
+EOF
+    for bef in "" 1; do
+        for aft in "" 1; do
+            for minus in "" 1; do
+              for ints in 1 2; do
+                if test "$ints" = 1; then
+                    from=400
+                    to=600
+                else
+                    from=300
+                    fromm=400
+                    tom=600
+                    to=700
+                fi
+
+                label="$gi: "
+                if test -n "$bef"; then
+                    label="$label+"
+                fi
+                label="$label$from-$to"
+                if test -n "$aft"; then
+                    label="$label+"
+                fi
+                if test -n "$minus"; then
+                    label="$label minus"
+                fi
+
+                echo "{"
+                echo "  data region \"$label\","
+                if test -n "$bef$aft"; then
+                    echo "  partial TRUE,"
+                fi
+                if test "$ints" = 1; then
+                    echo "  location int {"
+                    echo "    from $from,"
+                    echo "    to $to,"
+                    if test -n "$minus"; then
+                        echo "    strand minus,"
+                    fi
+                    echo "    id gi $gi"
+                    if test -n "$bef"; then
+                        echo ",   fuzz-from lim lt"
+                    fi
+                    if test -n "$aft"; then
+                        echo ",   fuzz-to lim gt"
+                    fi
+                    echo "  }"
+                elif test -z "$minus"; then
+                    echo "  location mix {"
+                    echo "   int {"
+                    echo "    from $from,"
+                    echo "    to $fromm,"
+                    echo "    id gi $gi"
+                    if test -n "$bef"; then
+                        echo ",   fuzz-from lim lt"
+                    fi
+                    echo "   },"
+                    echo "   int {"
+                    echo "    from $tom,"
+                    echo "    to $to,"
+                    echo "    id gi $gi"
+                    if test -n "$aft"; then
+                        echo ",   fuzz-to lim gt"
+                    fi
+                    echo "   }"
+                    echo "  }"
+                else
+                    echo "  location mix {"
+                    echo "   int {"
+                    echo "    from $tom,"
+                    echo "    to $to,"
+                    echo "    strand minus,"
+                    echo "    id gi $gi"
+                    if test -n "$aft"; then
+                        echo ",   fuzz-to lim gt"
+                    fi
+                    echo "   },"
+                    echo "   int {"
+                    echo "    from $from,"
+                    echo "    to $fromm,"
+                    echo "    strand minus,"
+                    echo "    id gi $gi"
+                    if test -n "$bef"; then
+                        echo ",   fuzz-from lim lt"
+                    fi
+                    echo "   }"
+                    echo "  }"
+                fi
+                echo "},"
+              done
+            done
+        done
+    done
+    cat <<EOF
             {
-              data region "$gi: $from-$to",
-              location int {
-                from $from,
-                to $to,
-                id gi $gi
-              }
-            },
-            {
-              data region "$gi: $from-$to+",
-              partial TRUE,
-              location int {
-                from $from,
-                to $to,
-                id gi $gi,
-                fuzz-to lim gt
-              }
-            },
-            {
-              data region "$gi:+$from-$to",
-              partial TRUE,
-              location int {
-                from $from,
-                to $to,
-                id gi $gi,
-                fuzz-from lim lt
-              }
-            },
-            {
-              data region "$gi:+$from-$to+",
-              partial TRUE,
-              location int {
-                from $from,
-                to $to,
-                id gi $gi,
-                fuzz-from lim lt,
-                fuzz-to lim gt
-              }
-            },
-            {
-              data region "$gi: $to-$from",
-              location int {
-                from $from,
-                to $to,
-                strand minus,
-                id gi $gi
-              }
-            },
-            {
-              data region "$gi:+$to-$from",
-              partial TRUE,
-              location int {
-                from $from,
-                to $to,
-                strand minus,
-                id gi $gi,
-                fuzz-to lim gt
-              }
-            },
-            {
-              data region "$gi: $to-$from+",
-              partial TRUE,
-              location int {
-                from $from,
-                to $to,
-                strand minus,
-                id gi $gi,
-                fuzz-from lim lt
-              }
-            },
-            {
-              data region "$gi:+$to-$from+",
-              partial TRUE,
-              location int {
-                from $from,
-                to $to,
-                strand minus,
-                id gi $gi,
-                fuzz-from lim lt,
-                fuzz-to lim gt
-              }
+              data region "dummy",
+              location null NULL
             }
           }
         }
