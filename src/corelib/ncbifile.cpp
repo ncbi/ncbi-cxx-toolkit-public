@@ -333,8 +333,18 @@ string CDirEntry::AddTrailingPathSeparator(const string& path)
         return string(1,GetPathSeparator());
     }
 #endif
-    if (len  &&  string(ALL_SEPARATORS).find(path.at(len - 1)) == NPOS) {
+    if (len  &&  string(ALL_SEPARATORS).rfind(path.at(len - 1)) == NPOS) {
         return path + GetPathSeparator();
+    }
+    return path;
+}
+
+
+string CDirEntry::DeleteTrailingPathSeparator(const string& path)
+{
+    size_t pos = path.find_last_not_of(ALL_SEPARATORS);
+    if (pos + 1 < path.length()) {
+        return path.substr(0, pos + 1);
     }
     return path;
 }
@@ -1668,6 +1678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2003/10/08 15:45:09  ivanov
+ * Added CDirEntry::DeleteTrailingPathSeparator()
+ *
  * Revision 1.58  2003/10/01 14:32:09  ucko
  * +EFollowLinks
  *

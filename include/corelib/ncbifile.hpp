@@ -203,8 +203,11 @@ public:
     /// Check character "c" as path separator symbol specific for the platform.
     static bool IsPathSeparator(const char c);
 
-    /// Add a trailing path separator, if needed.
+    /// Add trailing path separator, if needed.
     static string AddTrailingPathSeparator(const string& path);
+
+    /// Delete trailing path separator, if needed.
+    static string DeleteTrailingPathSeparator(const string& path);
 
     /// Convert relative "path" on any OS to current OS dependent relative
     /// path. 
@@ -812,7 +815,7 @@ private:
 inline
 void CDirEntry::Reset(const string& path)
 {
-    m_Path = path;
+    m_Path = DeleteTrailingPathSeparator(path);
 }
 
 inline
@@ -912,6 +915,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/10/08 15:44:53  ivanov
+ * Added CDirEntry::DeleteTrailingPathSeparator()
+ *
  * Revision 1.27  2003/10/01 14:32:09  ucko
  * +EFollowLinks
  *
