@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.8 2004/12/15 14:35:11 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.9 2005/01/14 13:21:48 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -113,6 +113,7 @@ PC-XRefData ::= CHOICE {
         pmid             INTEGER,                 -- PubMed ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         gi               INTEGER,                 -- GenBank General ID
+                                                  --   Note: Please use protein-gi or nucleotide-gi, if possible
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         mmdb             INTEGER,                 -- MMDB ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
@@ -122,7 +123,13 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         dburl            VisibleString,           -- Depositor Source Database Homepage
         sburl            VisibleString,           -- Depositor Homepage for a Substance
-        asurl            VisibleString            -- Depositor Homepage for an Assay
+        asurl            VisibleString,           -- Depositor Homepage for an Assay
+        protein-gi       INTEGER,                 -- GenBank General ID for a Protein
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        nucleotide-gi    INTEGER,                 -- GenBank General ID for a Nucleotide
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        taxonomy         INTEGER                  -- Taxonomy ID for an Organism
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
 }
 
 
@@ -213,7 +220,7 @@ PC-InfoData ::= SEQUENCE {
     urn            PC-Urn,                              -- Universal Resource Name  [for Value Qualification]
     value          CHOICE {                             -- Data Value
                           bval    BOOLEAN,                   -- Boolean or Binary
-                          blist   SEQUENCE OF BOOLEAN,       -- List of Booleans
+                          bvec    SEQUENCE OF BOOLEAN,       -- Boolean Vector
                           ival    INTEGER,                   -- Integer (signed or unsigned)
                           ivec    SEQUENCE OF INTEGER,       -- Integer Vector
                           fval    REAL,                      -- Float or Double
@@ -638,6 +645,10 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.9  2005/01/14 13:21:48  bolton
+-- Update to add protein GI, nucleotide GI, and taxonomy Xref ID's.  Minor
+-- variable name change.
+--
 -- Revision 1.8  2004/12/15 14:35:11  bolton
 -- New version of the spec that removed old "CID" namespace and renames the
 -- "CIG" namespace to "CID".  Many changes impacting mixture registration.
@@ -705,5 +716,3 @@ END
 -- structural information.
 --
 -- ===========================================================================
-
-
