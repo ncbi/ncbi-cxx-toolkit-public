@@ -97,8 +97,9 @@ void CEmblFormatter::FormatLocus
     const string& mol = ctx.UseEmblMolType() ? 
         embl_mol[locus.GetBiomol()] : s_GenbankMol[locus.GetBiomol()];
             
+    id_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
     id_line 
-        << setw(9) << left << locus.GetName()
+        << setw(9) << locus.GetName()
         << hup << "; "
         << topology << mol << "; "
         << locus.GetDivision() << "; "

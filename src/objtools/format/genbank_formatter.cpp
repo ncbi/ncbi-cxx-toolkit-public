@@ -566,13 +566,14 @@ void CGenbankFormatter::FormatBasecount
 
     CNcbiOstrstream bc_line;
 
-    bc_line 
-        << right << setw(7) << bc.GetA() << " a"
-        << right << setw(7) << bc.GetC() << " c"
-        << right << setw(7) << bc.GetG() << " g"
-        << right << setw(7) << bc.GetT() << " t";
+    bc_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
+    bc_line
+        << setw(7) << bc.GetA() << " a"
+        << setw(7) << bc.GetC() << " c"
+        << setw(7) << bc.GetG() << " g"
+        << setw(7) << bc.GetT() << " t";
     if ( bc.GetOther() > 0 ) {
-        bc_line << right << setw(7) << bc.GetOther() << " others";
+        bc_line << setw(7) << bc.GetOther() << " others";
     }
     Wrap(l, "BASE COUNT", CNcbiOstrstreamToString(bc_line));
     text_os.AddParagraph(l);
@@ -595,7 +596,8 @@ void CGenbankFormatter::FormatSequence
     TSeqPos base_count = seq.GetFrom();
     CSeqVector::const_iterator iter = vec.begin();
     while ( iter ) {
-        seq_line << setw(9) << right << base_count;
+        seq_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
+        seq_line << setw(9) << base_count;
         for ( TSeqPos count = 0; count < 60  &&  iter; ++count, ++iter, ++base_count ) {
             if ( count % 10 == 0 ) {
                 seq_line << ' ';
@@ -729,6 +731,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/12/19 00:14:44  ucko
+* Eliminate remaining uses of LEFT and RIGHT manipulators.
+*
 * Revision 1.3  2003/12/18 21:23:41  ucko
 * Avoid using LEFT and RIGHT manipulators lacking in GCC 2.9x.
 *
