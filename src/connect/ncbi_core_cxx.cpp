@@ -232,11 +232,13 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
  *                                 Init                                *
  ***********************************************************************/
 
-extern void CONNECT_Init(CNcbiRegistry* reg, CRWLock* lock)
+extern void CONNECT_Init(CNcbiRegistry*    reg,
+                         CRWLock*          lock,
+                         FConnectInitFlags flag)
 {
-    CORE_SetLOCK(MT_LOCK_cxx2c(lock));
+    CORE_SetLOCK(MT_LOCK_cxx2c(lock, flag & eConnectInit_OwnLock));
     CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(reg));
+    CORE_SetREG(REG_cxx2c(reg, flag & eConnectInit_OwnRegistry));
 }
 
 
@@ -246,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2004/07/14 15:46:08  lavr
+ * +flags (=0) for CONNECT_Init()
+ *
  * Revision 6.19  2004/07/08 14:28:34  lavr
  * Additional parameter lock for CONNET_Init()
  * Do not pass ownership of the registry in CONNECT_Init()

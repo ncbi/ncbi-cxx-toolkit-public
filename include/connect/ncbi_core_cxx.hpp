@@ -65,8 +65,18 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_cxx2c
  );
 
 
-extern NCBI_XCONNECT_EXPORT void CONNECT_Init(CNcbiRegistry* reg = 0,
-                                              CRWLock*      lock = 0);
+typedef enum {
+    eConnectInit_OwnNothing  = 0,
+    eConnectInit_OwnRegistry = 0x01,
+    eConnectInit_OwnLock     = 0x02
+} EConnectInitFlags;
+
+typedef unsigned int FConnectInitFlags;  /* bitwise OR of EConnectInitFlags*/
+
+
+extern NCBI_XCONNECT_EXPORT void CONNECT_Init(CNcbiRegistry*    reg  = 0,
+                                              CRWLock*          lock = 0,
+                                              FConnectInitFlags flag = 0);
 
 
 END_NCBI_SCOPE
@@ -78,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2004/07/14 15:45:52  lavr
+ * +flags (=0) for CONNECT_Init()
+ *
  * Revision 6.12  2004/07/08 14:27:39  lavr
  * Additional parameter lock=0 for CONNET_Init()
  *
