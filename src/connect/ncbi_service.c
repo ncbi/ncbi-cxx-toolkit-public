@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2001/11/09 20:03:14  lavr
+ * Minor fix to remove a trailing space in client version tag
+ *
  * Revision 6.31  2001/10/01 19:52:38  lavr
  * Call update directly; do not remove time from server specs in SERV_Print()
  *
@@ -388,9 +391,11 @@ char* SERV_Print(SERV_ITER iter)
         if (isspace((unsigned char) revision[i]))
             break;
     while (revision[i] && buflen + 2 < sizeof(buffer)) {
-        if (revision[i] == '$')
+        if (revision[i] == '$') {
+            if (isspace((unsigned char) revision[i - 1]))
+                --buflen;
             break;
-        else
+        } else
             buffer[buflen++] = revision[i++];
     }
     strcpy(&buffer[buflen], "\r\n");
