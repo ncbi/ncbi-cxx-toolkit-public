@@ -41,13 +41,8 @@
 #   include <sys/time.h>
 #endif
 
-#if defined(NCBI_OS_MAC)  ||  defined(NCBI_OS_DARWIN)
-#  ifdef NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 #    include <OSUtils.h>
-#  else
-#    include <CoreServices/CoreServices.h>
-#  endif
-
 typedef
 struct MyTZDLS {
 	long timezone;
@@ -452,13 +447,9 @@ time_t CTime::GetTimeT(void) const
     CFastMutexGuard LOCK(s_TimeMutex);
 
     struct tm t;
-#if !defined(HAVE_TIMEGM)
-    struct tm *ttemp;
-    time_t timer;
-#endif
 
     // Convert time to time_t value at base local time
-#if defined(HAVE_TIMEGM)
+#if defined(HAVE_TIMEGM) || defined(NCBI_OS_DARWIN)
     t.tm_sec   = Second();
 #else
     t.tm_sec   = Second() + (int) (IsGmtTime() ? -TimeZone() : 0);
@@ -469,9 +460,14 @@ time_t CTime::GetTimeT(void) const
     t.tm_mon   = Month()-1;
     t.tm_year  = Year()-1900;
     t.tm_isdst = -1;
-#if defined(HAVE_TIMEGM)
+#if defined(NCBI_OS_DARWIN)
+    time_t tt = mktime(&t);
+    return IsGmtTime() ? tt+t.tm_gmtoff : tt;
+#elif defined(HAVE_TIMEGM)
     return IsGmtTime() ? timegm(&t) : mktime(&t);
 #else
+    struct tm *ttemp;
+    time_t timer;
     timer = mktime(&t);
 
     // Correct timezone for GMT time
@@ -1154,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/06/26 20:47:45  lebedev
+ * Darwin specific: ncbitime changes
+ *
  * Revision 1.20  2002/06/19 17:18:05  ucko
  * Fix confusing indentation introduced by R1.19.
  *
