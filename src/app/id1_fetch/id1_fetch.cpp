@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2001/09/05 16:25:56  ucko
+ * Adapted to latest revision of object manager interface.
+ *
  * Revision 1.9  2001/09/05 14:44:37  ucko
  * Use NStr::IntToString instead of Stringify.
  *
@@ -336,7 +339,7 @@ int CId1FetchApp::Run(void)
         (new CConn_ServiceStream("Entrez2", fSERV_Any, 0, &tmout));
 
     // Set up object manager.
-    m_Scope = m_ObjMgr.CreateScope();
+    m_Scope = &m_ObjMgr.CreateScope();
 
     if (args["gi"]) {
         if ( !LookUpGI(args["gi"].AsInteger()) )
