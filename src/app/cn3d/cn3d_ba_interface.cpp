@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/09/20 17:48:39  thiessen
+* fancier trace statements
+*
 * Revision 1.14  2002/09/19 14:09:41  thiessen
 * position options dialog higher up
 *
@@ -296,7 +299,10 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
             }
         }
         if (p == pe) frozenBlocks[i] = -1;
-//        TESTMSG("block " << (i+1) << " frozen at query " << (frozenBlocks[i]+1));
+//        if (frozenBlocks[i] >= 0)
+//            TESTMSG("block " << (i+1) << " frozen at query " << (frozenBlocks[i]+1));
+//        else
+//            TESTMSG("block " << (i+1) << " unfrozen");
     }
 }
 
@@ -371,6 +377,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         for (i=0; i<numBlocks-1; i++)
             allowedGaps[i] = blockStarts[i+1] - blockEnds[i] - 1 + gapAddition;
     }
+//    for (i=0; i<numBlocks-1; i++)
+//        TESTMSG("allowed gap after block " << (i+1) << ": " << allowedGaps[i]);
 
     // set up PSSM
     BLAST_Matrix *matrix = BLASTer::CreateBLASTMatrix(multiple, NULL);
