@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2001/12/30 19:40:32  lavr
+ * +ConnNetInfo_ParseURL()
+ * Added recordkeeping of service name for which the info was created
+ *
  * Revision 6.24  2001/12/04 15:56:28  lavr
  * Use strdup() instead of explicit strcpy(malloc(...), ...)
  *
@@ -198,12 +202,14 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 #define REG_VALUE(name, value, def_value) \
     s_GetValue(service, name, value, sizeof(value), def_value)
 
-    SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo));
-
+    SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo) +
+                                                (service  &&  *service
+                                                 ? strlen(service) + 1 : 0));
     /* aux. storage for the string-to-int conversions, etc. */
     char   str[32];
     int    val;
     double dbl;
+    char*  s;
 
     /* client host */
     SOCK_gethostname(info->client_host, sizeof(info->client_host));
@@ -304,6 +310,13 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->http_user_header = 0;
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
+    /* remember the service name for which this structure has been created */
+    if (service  &&  *service) {
+        s = (char*) info + sizeof(info);
+        strcpy(s, service);
+    } else
+        s = 0;
+    info->service = s;
 
     /* done */
     return info;
@@ -341,6 +354,77 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 }
 
 
+extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
+{
+    const char *s, *a;
+    char* p;
+
+    if (info->http_proxy_adjusted) {
+        /* undo proxy adjustment */
+        SConnNetInfo* temp = ConnNetInfo_Create(info->service);
+        int /*bool*/ success = ConnNetInfo_ParseURL(temp, info->path);
+        if (!success) {
+            ConnNetInfo_Destroy(temp);
+            return 0/*failure*/;
+        }
+        memcpy(info->host, temp->host, sizeof(info->host));
+        info->port = temp->port;
+        memcpy(info->path, temp->path, sizeof(info->path));
+        ConnNetInfo_Destroy(temp);
+        info->http_proxy_adjusted = 0/*false*/;
+    }
+
+    /* host & port first */
+    if ((s = strstr(url, "//")) != 0) {
+        const char* h = s + 2; /* host starts here */
+        const char* p;         /* host ends here   */
+
+        if (strncmp(url, "http://", 7) != 0)
+            return 0/*failure*/;
+        if (!(s = strchr(h, '/')))
+            s = h + strlen(h);
+        if ((p = strchr(h, ':')) != 0 && p < s) {
+            unsigned short port;
+            int n;
+
+            if (sscanf(p, ":%hu%n", &port, &n) < 1 || p + n != s)
+                return 0/*failure*/;
+            info->port = port;
+        } else
+            p = s;
+        if ((size_t)(p - h) < sizeof(info->host)) {
+            memcpy(info->host, h, (size_t)(p - h));
+            info->host[(size_t)(p - h)] = '\0';
+        } else {
+            memcpy(info->host, h, sizeof(info->host) - 1);
+            info->host[sizeof(info->host) - 1] = '\0';
+        }
+    } else
+        s = url;
+
+    /* arguments */
+    if ((a = strchr(s, '?')) != 0) {
+        strncpy(info->args, a + 1, sizeof(info->args));
+        info->args[sizeof(info->args) - 1] = '\0';
+    } else
+        a = s + strlen(s);
+
+    /* path (can be relative) */
+    if (*s == '/' || !(p = strrchr(info->path, '/')))
+        p = info->path - 1;
+    p++;
+    if ((size_t)(a - s) < sizeof(info->path) - (size_t)(p - info->path)) {
+        memcpy(p, s, (size_t)(a - s));
+        p[(size_t)(a - s)] = '\0';
+    } else {
+        memcpy(p, s, sizeof(info->path) - (size_t)(p - info->path) - 1);
+        info->path[sizeof(info->path) - 1] = '\0';
+    }
+
+    return 1/*success*/;
+}
+
+
 extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
                                       const char*   user_header)
 {
@@ -356,11 +440,18 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     if ( !info )
         return 0;
 
-    x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo));
+    x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo) +
+                                    (info->service
+                                     ? strlen(info->service) + 1 : 0));
     *x_info = *info;
-    if (info->timeout && info->timeout != CONN_DEFAULT_TIMEOUT) {
+    if (info->timeout  &&  info->timeout != CONN_DEFAULT_TIMEOUT) {
         x_info->tmo = *info->timeout;
         x_info->timeout = &x_info->tmo;
+    }
+    if (info->service) {
+        char* s = (char*) x_info + sizeof(*x_info);
+        strcpy(s, info->service);
+        x_info->service = s;
     }
     x_info->http_user_header = 0;
     ConnNetInfo_SetUserHeader(x_info, info->http_user_header);
@@ -386,6 +477,8 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
     fprintf(fp, "\n----- [BEGIN] ConnNetInfo_Print -----\n");
 
     if ( info ) {
+        s_PrintString(fp, "service",        (info->service ?
+                                             info->service : "<none>"));
         s_PrintString(fp, "client_host",     info->client_host);
         s_PrintString(fp, "host",            info->host);
         s_PrintULong (fp, "port",            info->port);
