@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/05/24 21:28:12  lavr
+ * Timeout for skip servers increased to 1 year period
+ *
  * Revision 6.20  2001/05/17 15:02:51  lavr
  * Typos corrected
  *
@@ -178,7 +181,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
             return 0;
         }
         memcpy(info, skip[i], infolen);
-        info->time = t + 3600*24*60 /* 2 months - long enough :-) */;
+        info->time = t + 3600/*hour*/*24/*day*/*365/*year - long enough :-) */;
         if (!s_AddSkipInfo(iter, info)) {
             free(info);
             SERV_Close(iter);
