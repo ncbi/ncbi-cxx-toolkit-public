@@ -346,6 +346,12 @@ void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
                                 const CSeq_id_Handle& id)
 {
+    if ( !id.IsGi() ) {
+        m_AnnotIdsFlags |= fAnnotIds_NonGi;
+        if ( id.HaveMatchingHandles() ) {
+            m_AnnotIdsFlags |= fAnnotIds_Matching;
+        }
+    }
     if ( ContainsMatchingBioseq(id) ) {
         return;
     }
