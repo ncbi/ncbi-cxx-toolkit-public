@@ -873,14 +873,15 @@ void CCgiRequest::x_Init
     }
 
     // Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
-    {{
-        const string* query_string = 0;
+    if ( !(flags & fIgnoreQueryString) ) {
+        const string* query_string = NULL;
+
         if ( GetProperty(eCgi_RequestMethod).empty() ) {
             // special case: "$REQUEST_METHOD" undefined, so use cmd.-line args
             if (args  &&  args->Size() > 1)
                 query_string = &(*args)[1];
         }
-        else if ( !(flags & fIgnoreQueryString) ) {
+        else {
             // regular case -- read from "$QUERY_STRING"
             query_string = &GetProperty(eCgi_QueryString);
         }
@@ -889,10 +890,11 @@ void CCgiRequest::x_Init
             s_ParseQuery(*query_string, m_Entries, m_Indexes,
                          (flags & fIndexesNotEntries) == 0);
         }
-    }}
+    }
 
     // POST method?
     if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
+
         if ( !istr ) {
             istr = &NcbiCin;  // default input stream
             ifd = STDIN_FILENO;
@@ -1281,6 +1283,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.82  2005/02/03 19:40:28  vakatov
+* fIgnoreQueryString to affect cmd.-line arg as well
+*
 * Revision 1.81  2005/01/28 17:35:03  vakatov
 * + CCgiCookies::GetAll()
 * Quick-and-dirty Doxygen'ization

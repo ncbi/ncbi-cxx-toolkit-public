@@ -500,7 +500,7 @@ public:
     enum Flags {
         /// do not handle indexes as regular FORM entries with empty value
         fIndexesNotEntries   = (1 << 0),
-        /// do not parse $QUERY_STRING
+        /// do not parse $QUERY_STRING (or cmd.line if $REQUEST_METHOD not def)
         fIgnoreQueryString   = (1 << 1),
         /// own the passed "env" (and destroy it in the destructor)
         fOwnEnvironment      = (1 << 2),
@@ -799,6 +799,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.68  2005/02/03 19:40:28  vakatov
+* fIgnoreQueryString to affect cmd.-line arg as well
+*
 * Revision 1.67  2005/01/28 17:35:03  vakatov
 * + CCgiCookies::GetAll()
 * Quick-and-dirty Doxygen'ization
