@@ -122,7 +122,7 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
             uuu->can_connect = eCC_None;
             return 0/*failure*/;
         }
-    } else if (uuu->adjust_net_info &&
+    } else if (!uuu->adjust_net_info ||
                uuu->adjust_net_info(uuu->net_info,
                                     uuu->adjust_data,
                                     uuu->failure_count) == 0) {
@@ -814,7 +814,8 @@ static EIO_Status s_VT_Status
  EIO_Event dir)
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
-    return uuu->sock ? SOCK_Status(uuu->sock, dir) : eIO_Success;
+    return uuu->sock ? SOCK_Status(uuu->sock, dir) :
+        (uuu->can_connect == eCC_None ? eIO_Closed : eIO_Success);
 }
 
 
@@ -947,6 +948,10 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2003/06/04 20:58:13  lavr
+ * s_Adjust() to return failure if no adjustment callback specified
+ * s_VT_Status() to return eIO_Closed if connector failed/closed
+ *
  * Revision 6.52  2003/05/31 05:15:15  lavr
  * Add ARGSUSED where args are meant to be unused
  *
