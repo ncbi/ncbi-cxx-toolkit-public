@@ -27,24 +27,6 @@
 *
 * File Description:
 *   Framework for a multithreaded network server
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.4  2002/01/25 15:39:29  ucko
-* Completely reorganized threaded servers.
-*
-* Revision 6.3  2002/01/24 20:19:18  ucko
-* Add magic TemporarilyStopListening overflow processor
-* More cleanups
-*
-* Revision 6.2  2002/01/24 18:35:56  ucko
-* Allow custom queue-overflow handling.
-* Clean up SOCKs and CONNs when done with them.
-*
-* Revision 6.1  2001/12/11 19:55:22  ucko
-* Introduce thread-pool-based servers.
-*
-* ===========================================================================
 */
 
 #include <connect/threaded_server.hpp>
@@ -77,15 +59,20 @@ void CThreadedServer::Run(void)
         return;
     }
 
-    LSOCK             lsock;
+    EIO_Status        status;
+    LSOCK             lsock = 0;
     CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
 
     pool.Spawn(m_InitThreads);
-    LSOCK_Create(m_Port, 5, &lsock);
+    status = LSOCK_Create(m_Port, 5, &lsock);
+    if ( status != eIO_Success  ||  !lsock ) {
+        ERR_POST("CThreadedServer::Run: Unable to create listening socket");
+        return;
+    }
 
     for (;;) {
         SOCK sock;
-        EIO_Status status = LSOCK_Accept(lsock, NULL, &sock);
+        status = LSOCK_Accept(lsock, NULL, &sock);
         if (status == eIO_Success) {
             try {
                 pool.AcceptRequest(new CSocketRequest(*this, sock));
@@ -108,3 +95,28 @@ void CThreadedServer::Run(void)
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 6.5  2002/08/20 19:23:44  ucko
+* Check return status from LSOCK_Create() in CThreadedServer::Run().
+* Move CVS log to end of file.
+*
+* Revision 6.4  2002/01/25 15:39:29  ucko
+* Completely reorganized threaded servers.
+*
+* Revision 6.3  2002/01/24 20:19:18  ucko
+* Add magic TemporarilyStopListening overflow processor
+* More cleanups
+*
+* Revision 6.2  2002/01/24 18:35:56  ucko
+* Allow custom queue-overflow handling.
+* Clean up SOCKs and CONNs when done with them.
+*
+* Revision 6.1  2001/12/11 19:55:22  ucko
+* Introduce thread-pool-based servers.
+*
+* ===========================================================================
+*/
