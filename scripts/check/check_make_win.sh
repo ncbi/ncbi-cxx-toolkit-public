@@ -213,9 +213,6 @@ esac
 # Export some global vars
 top_srcdir="\$root_dir"
 export top_srcdir
-bin="static/bin"
-lib="static/lib"
-
 
 # Add current, build and scripts directories to PATH
 PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
@@ -248,7 +245,7 @@ RunTest() {
    x_requires="\$7"
    x_conf="\$8"
 
-   x_work_dir="\$build_dir/\$x_wdir"
+   x_work_dir="\$build_dir/\${BUILDTREE}\$x_wdir"
 
    # Features detection
    features="ODBC OpenGL serial objects dbapi app ctools gui algo"
