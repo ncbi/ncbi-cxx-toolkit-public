@@ -103,17 +103,17 @@ public:
 
 
     // Add default data loaders from object manager
-    void AddDefaults(CPriorityNode::TPriority priority = 99);
+    void AddDefaults(CPriorityNode::TPriority priority = kPriority_NotSet);
     // Add data loader by name.
     // The loader (or its factory) must be known to Object Manager.
     void AddDataLoader(const string& loader_name,
-                       CPriorityNode::TPriority priority = 99);
+                       CPriorityNode::TPriority priority = kPriority_NotSet);
     // Add seq_entry, default priority is higher than for defaults or loaders
     void AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                             CPriorityNode::TPriority priority = 9);
+                             CPriorityNode::TPriority priority = kPriority_NotSet);
 
     // Add the scope's datasources as a single group with the given priority
-    void AddScope(CScope& scope, CPriorityNode::TPriority priority = 9);
+    void AddScope(CScope& scope, CPriorityNode::TPriority priority = kPriority_NotSet);
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/08/12 18:25:39  grichenk
+* Fixed default priorities
+*
 * Revision 1.57  2003/08/06 20:51:14  grichenk
 * Removed declarations of non-existent methods
 *
