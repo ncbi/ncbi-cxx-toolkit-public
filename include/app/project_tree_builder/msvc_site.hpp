@@ -114,6 +114,8 @@ public:
     };
     struct SLibChoice
     {
+        SLibChoice(void);
+
         SLibChoice(const CMsvcSite& site,
                    const string&    lib,
                    const string&    lib_3party);
@@ -122,15 +124,19 @@ public:
         string     m_LibId;
         string     m_3PartyLib;
     };
-    bool IsLibWithChoice      (const string& lib_id) const;
-    bool Is3PartyLibWithChoice(const string& lib3party_id) const;
+    bool IsLibWithChoice            (const string& lib_id) const;
+    bool Is3PartyLibWithChoice      (const string& lib3party_id) const;
 
-    ELibChoice GetChoiceForLib      (const string& lib) const;
-    ELibChoice GetChoiceFor3PartyLib(const string& lib_3party) const;
+    ELibChoice GetChoiceForLib      (const string& lib_id) const;
+    ELibChoice GetChoiceFor3PartyLib(const string& lib3party_id) const;
 
-    void GetLibChoiceIncludes (const string& cpp_flags_define, 
-                               list<string>* abs_includes) const;
+    void GetLibChoiceIncludes       (const string& cpp_flags_define, 
+                                     list<string>* abs_includes) const;
 
+    SLibChoice GetLibChoiceForLib   (const string& lib_id) const;
+
+
+    
     string GetAppDefaultResource(void) const;
 
 
@@ -157,6 +163,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/06/01 16:02:40  gorelenk
+ * + GetLibChoiceForLib to class CMsvcSite,
+ * + default constructor for struct SLibChoice.
+ *
  * Revision 1.14  2004/05/24 14:39:17  gorelenk
  * Added declaration member-functions for third-party libs
  * auto-install support: GetThirdPartyLibsToInstall,
