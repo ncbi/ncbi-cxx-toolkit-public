@@ -1,0 +1,666 @@
+<!--#set var="TITLE" value="NCBI DBAPI Driver Reference" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+
+<h1>
+NCBI DBAPI Driver Reference</h1>
+
+
+<h2>Contents</h2>
+
+<ul>
+    <li> <a href="#ref_Overview">Overview</a> </li>
+    <li> <a href="#ref_DriverArch">The driver architecture</a> </li>
+    <li> <a href="#ref_SampleProgram">Sample program</a> </li>
+    <li> <a href="#ref_Topics">Topics</a> </li>
+    <ul>
+		<li> <a href="#ref_Errors">Error handling</a> </li>
+		<li> <a href="#ref_Context">Driver context and connections</a> </li>
+		<li> <a href="#ref_TextImage">Text and Image Data Handling</a> </li>
+		<li> <a href="#ref_Results">Results loop</a> </li>
+    </ul>
+</ul>
+
+
+<p>
+<hr>
+
+
+<a name="ref_Overview"></a>
+<h2>
+Overview</h2>
+The <a href="../libs.html#TableDBAPI_DRIVER"><i>NCBI DBAPI driver</i> library</a>
+describes and implements a set of objects needed to provide a
+uniform low-level access to the various relational database management
+systems (RDBMS). The basic driver functionality is the same as in most
+other RDBMS client APIs. It allows to open a connection to a server, execute
+a command (query) on this connection and get the results back. The main
+advantage of using the driver is that you don't have to change your own
+upper-level code if you need to move from one RDBMS client API to another.
+<p>The driver can use two different methods to access the particular RDBMS.
+If RDBMS provides a client library for a given computer system (i.e. Sun/Solaris),
+then driver utilizes this library. If there is no client library, then
+driver connects to RDBMS through a special <i>gateway server</i> which
+is running on a computer system where such library does exist.
+
+
+<a name="ref_DriverArch"></a>
+<h2>
+The driver architecture</h2>
+There are two major groups of the driver's objects: the RDBMS independent
+objects, and the objects which are specific to a particular RDBMS. The
+only RDBMS specific object which user should be aware of is a "Driver Context".
+The "Driver Context" is effectively a "Connection" factory. The only way
+to make a connection to the server is to call the <i>Connect()</i> method
+of a "Driver context" object. So, before doing anything with RDBMS, you
+need to create at least one driver context object. All driver contexts
+implement the same interface defined in <a href="docxx/I_DriverContext.html">I_DriverContext</a>
+class. If you are working on a library which could be used with various
+RDBMS it is a good idea do not create the driver context inside the library,
+but take a pointer to
+<a href="lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a>
+instead. There is no factory for the driver contexts provided. The reason
+for that is it's not always possible to statically link in one binary the
+RDBMS libraries from the different vendors. Most of them are written in
+C and the name collisions do exist.
+<p>The driver context creates the connection which is RDBMS specific, but
+before return it to the caller it puts it into an "envelope" of RDBMS independent
+object <a href="docxx/CDB_Connection.html">CDB_Connection</a>.
+The same is true for the commands and for the results - user gets the pointer
+to RDBMS independent "envelope object" instead of the real one. This is
+a caller responsibility to delete those objects. The life spans of the
+real object and the envelope one are not necessarily the same.
+<p>Once you have got the connection object, you could use it as a factory
+for the different types of commands. The command object in it's turn serves
+as a factory for the results. The connection is always single threaded,
+that means that you have to execute the commands and process their results
+sequentially one by one. If you need to execute the several commands in
+parallel, you can do it using multiple connections.
+<p>Another important part of the driver is an error and message handling.
+There are two different mechanisms implemented. The first one is exceptions.
+All exceptions which could be thrown by the driver are inherited from the
+single base class <a href="docxx/CDB_Exception.html">CDB_Exception</a>.
+Driver uses the exception mechanism whenever it's possible, but in many
+cases the underlying client library uses the callbacks or handlers to report
+the error messages and prevents from throwing the exceptions. The driver
+supply a handler's stack mechanism to manage these cases.
+<p>To send and to receive the data through the driver you have to use the
+driver provided datatypes. The collection of the datatypes includes: <a href="docxx/CDB_TinyInt.html">one</a>,
+<a href="docxx/CDB_SmallInt.html">two</a>,
+<a href="docxx/CDB_Int.html">four</a>
+and <a href="docxx/CDB_BigInt.html">eight</a>
+		byte integers; <a href="docxx/CDB_Float.html">float</a>
+and <a href="docxx/CDB_Double.html">double</a>;
+<a href="docxx/CDB_Numeric.html">numeric</a>;
+<a href="docxx/CDB_Char.html">char</a>,
+<a href="docxx/CDB_VarChar.html">varchar</a>,
+<a href="docxx/CDB_Binary.html">binary</a>,
+<a href="docxx/CDB_VarBinary.html">varbinary</a>;
+<a href="docxx/CDB_DateTime.html">datetime</a>
+and <a href="docxx/CDB_SmallDateTime.html">smalldatetime</a>;
+<a href="docxx/CDB_Text.html">text</a>
+and <a href="docxx/CDB_Image.html">image</a>.
+All datatypes are derived from a single base class <a href="docxx/CDB_Object.html">CDB_Object</a>.
+
+<a name="ref_SampleProgram"></a>
+<h2>
+Sample program</h2>
+This program opens one connection to the server and selects the database
+names and the date when each database was created (assuming that table
+"sysdatabases" does exist). In this example the string "XXX" should be
+replaced with the real driver name.
+<pre>#include &lt;iostream>
+#include &lt;dbapi/driver/public.hpp>
+#include &lt;dbapi/driver/exception.hpp>
+#include &lt;dbapi/driver/XXXlib/interfaces.hpp> /* XXXlib has to be replaced with the real name */
+
+
+USING_NCBI_SCOPE;
+
+int main()
+{
+    
+    try { // to be sure that we are catching all driver related exceptions 
+
+        // We need to create a driver context first
+        CXXXContext my_context; // In real program we have to replace CXXXContext with something real
+
+        // connecting to server "MyServer" with user name "my_user_name" and password "my_password"
+        CDB_Connection* con= my_context.Connect("MyServer", "my_user_name", "my_password", 0); 
+
+        // Preparing a SQL query
+        CDB_LangCmd* lcmd= con->LangCmd("select name, crdate from sysdatabases");
+    
+        // Sending this query to a server
+        lcmd->Send();
+
+        CDB_Char dbname(64);
+        CDB_DateTime crdate;
+
+        // the result loop
+        while(lcmd->HasMoreResults()) {
+            CDB_Result* r= lcmd->Result();
+            // skip all but row result
+            if (r == 0  ||  r->ResultType() != eDB_RowResult) {
+                delete r;
+                continue;
+            }
+
+            // printing the names of selected columns
+            cout &lt;&lt; r->ItemName(0) &lt;&lt; " \t\t\t" &lt;&lt; r->ItemName(1) &lt;&lt; endl;
+
+            // fetching the rows
+            while(r->Fetch()) {
+                r->GetItem(&amp;dbname); // get the database name
+                r->GetItem(&amp;crdate); // get the creation date
+
+                cout &lt;&lt; dbname.Value() &lt;&lt; ' ' &lt;&lt; crdate.Value().AsString("M/D/Y h:m") &lt;&lt; endl
+            }
+            delete r; // we don't need this result anymore
+        }
+        delete lcmd; // delete the command
+        delete con;  // delete the connection
+    }
+    catch (CDB_Exception&amp; e) { // printing the error messages 
+        CDB_UserHandler_Stream myExHandler(&amp;cerr);
+
+        myExHandler.HandleIt(&amp;e);
+    }
+}</pre>
+
+<a name="ref_Topics"></a>
+<h2>
+Topics</h2>
+
+<a name="ref_Errors"></a>
+<h3>
+Error handling</h3>
+The error handling is almost always a pain when you are working with RDBMS.
+The different systems implement the different approaches. You could get
+the error messages through the return codes, callbacks, handlers and/or
+exceptions. These messages could have a different formats. It could be
+just integer (error code) or some structure or a set of callback's arguments.
+The <i>NCBI DBAPI driver</i> intercepts all those error messages in all
+different formats and converts them into the objects of <a href="docxx/CDB_Exception.html">CDB_Exception</a>
+derived types. The following types are used:
+<dl>
+<dt>
+<a href="docxx/CDB_SqlEx.html">CDB_SQLEx</a></dt>
+
+<dd>
+This type is used if error message has come from a SQL server and indicates
+an error in SQL query. It could be a wrong table or column name or just
+a wrong syntax of SQL query. The message details could be obtained using
+the following methods:</dd>
+
+<ul>
+<li>
+<i>OriginatedFrom()</i> - returns a SQL server name</li>
+
+<li>
+<i>BatchLine()</i> - returns a line number in SQL batch which did generate an
+error</li>
+
+<li>
+<i>Message()</i> - returns the error message itself</li>
+
+<li>
+<i>Severity()</i> - returns the severity of this message (assigned by SQL server)</li>
+
+<li>
+<i>ErrCode()</i> - returns the integer code for this message (assigned by SQL
+server)</li>
+
+<li>
+<i>SqlState()</i> - returns a byte string describing an error (it's not useful
+most of the time)</li>
+</ul>
+
+<dt>
+<a href="docxx/CDB_RPCEx.html">CDB_RPCEx</a></dt>
+
+<dd>
+An error message has come while RPC or stored procedure was executed on
+a server. The methods to use:</dd>
+
+<ul>
+<li>
+<i>OriginatedFrom()</i> - returns a server name</li>
+
+<li>
+<i>ProcName()</i> - returns a procedure name</li>
+
+<li>
+<i>ProcLine()</i> - returns a line number inside the procedure</li>
+
+<li>
+<i>Message()</i> - returns the error message itself</li>
+
+<li>
+<i>Severity()</i> - returns the severity of this message (assigned by a server)</li>
+
+<li>
+<i>ErrCode()</i> - returns the integer code for this message (assigned by a server)</li>
+</ul>
+
+<dt>
+<a href="docxx/CDB_DeadlockEx.html">CDB_DeadlockEx</a></dt>
+
+<dd>
+To report about deadlock. The methods to use:</dd>
+
+<ul>
+<li>
+<i>OriginatedFrom()</i> - returns a SQL server name</li>
+
+<li>
+<i>Message()</i> - returns the error message itself</li>
+</ul>
+
+<dt>
+<a href="docxx/CDB_DSEx.html">CDB_DSEx</a></dt>
+
+<dd>
+Any error which has come from a RDBMS and is not a SQL query or RPC related.
+The methods to use:</dd>
+
+<ul>
+<li>
+<i>OriginatedFrom()</i> - returns a server name</li>
+
+<li>
+<i>Message()</i> - returns the error message itself</li>
+
+<li>
+<i>Severity()</i> - returns the severity of this message (assigned by a server)</li>
+
+<li>
+<i>ErrCode()</i> - returns the integer code for this message (assigned by a server)</li>
+</ul>
+
+<dt>
+<a href="docxx/CDB_TimeoutEx.html">CDB_TimeoutEx</a></dt>
+
+<dd>
+To report about timeout. The methods to use:</dd>
+
+<ul>
+<li>
+<i>OriginatedFrom()</i> - returns a server name</li>
+
+<li>
+<i>Message()</i> - returns the error message itself</li>
+</ul>
+
+<dt>
+<a href="docxx/CDB_ClientEx.html">CDB_ClientEx</a></dt>
+
+<dd>
+Any client side error. The methods to use:</dd>
+
+<ul>
+<li>
+<i>OriginatedFrom()</i> - returns the name of method or function which reports
+the error</li>
+
+<li>
+<i>Message()</i> - returns the error message itself</li>
+
+<li>
+<i>Severity()</i> - returns the severity of this message</li>
+
+<li>
+<i>ErrCode()</i> - returns the integer code for this message</li>
+</ul>
+</dl>
+Driver uses two ways to deliver the error message object to an application.
+If it is possible to <b>throw</b> an exception, then driver throws the
+error message object. If not, then driver calls the <a href="docxx/CDB_UserHandler.html">user's
+error handler</a> with a pointer to this object as an argument. It's not
+always convenient to process all types of error messages in one error handler.
+Some users may want to use a special error message handler inside some
+function or block and a default error handler outside. To accommodate these
+cases the driver provides a <a href="lxr/ident?i=CDBHandlerStack&d=C">handler
+stack mechanism</a>. The top handler in the stack gets the error message
+object first. If it knows how to deal with this message, then it processes
+the message and returns <b>true</b>. If handler wants to pass this message
+to the other handlers, then it returns <b>false</b>. So, driver pushing
+the error message object through the stack until it gets true from the
+handler. The <a href="docxx/CDB_UserHandler_Stream.html">default
+driver's error handler</a> which just printout the error message to stderr
+is always on a bottom of the stack. The another tool which user may want
+to use for error handling is the <a href="docxx/CDB_MultiEx.html">CDB_MultiEx</a>
+objects. This tool allows to collect the multiple <a href="docxx/CDB_Exception.html">CDB_Exception</a>
+objects into one container and than <b>throw</b> this container as one
+object.
+
+
+<a name="ref_Context"></a>
+<h3>
+Driver context and connections</h3>
+Every program which is going to work with <i>NCBI DBAPI driver</i> should
+create at least one Driver Context object first. The main purpose of this
+object is to be a Connection factory, but it's a good idea to customize
+this object a little bit prior to open any connection. The first step is
+to setup two message handler stacks. The first one is for error messages
+which are not bound to some particular connection or could occur inside
+the
+<i>Connect()</i> method. Use <i>PushCntxMsgHandler()</i> to populate
+it. The other stack serves as a initial message handler stack for all connections
+which will be derived from this context. Use <i>PushDefConnMsgHandler()</i>
+method to populate this stack. The second step of customization is a time-outs
+setting. The <i>SetLoginTimeout()</i> and <i>SetTimeout()</i> methods do
+the job. If you are going to work with text or image objects in your program,
+you need to call <i>SetMaxTextImageSize()</i> to define the maximal size
+for such objects. Objects which exceed this limit could be truncated.
+<pre>class CMyHandlerForConnectionBoundErrors : public CDB_UserHandler
+{
+    virtual bool HandleIt(CDB_Exception* ex);
+    ...
+};
+
+class CMyHandlerForOtherErrors : public CDB_UserHandler
+{
+    virtual bool HandleIt(CDB_Exception* ex);
+    ...
+};
+
+...
+int main()
+{
+    CMyHandlerForConnectionBoundErrors conn_handler;
+    CMyHandlerForOtherErrors           other_handler;
+    ...
+    try { // to be sure that we are catching all driver related exceptions 
+
+        // We need to create a driver context first
+        CXXXContext my_context; // In real program we have to replace CXXXContext with something real
+        my_context.PushCntxMsgHandler(&amp;other_handler);
+        my_context.PushDefConnMsgHandler(&amp;conn_handler);
+        my_context.SetLoginTimeout(10); // set a 10 seconds timeout for logins
+        my_context.SetTimeout(15);      // set a 15 seconds timeout for client/server communications
+        my_context.SetMaxTextImageSize(0x7FFFFFFF); // set the text/image size limit
+        ...
+        CDB_Connection* my_con= my_context.Connect("MyServer", "my_user_name", "my_password", I_DriverContext::fBcpIn);
+        ...
+    }
+    catch (CDB_Exception&amp; e) {
+        other_handler.HandleIt(&amp;e);
+    }
+}</pre>
+The only way to get a connection to a server in <i>NCBI DBAPI driver</i>
+is through a <i>Connect()</i> method in <a href="docxx/I_DriverContext.html">driver
+context</a>. The first three arguments: server name, user name and password
+are obvious. Values for <i>mode</i> are constructed by a bitwise-inclusive-OR
+of flags defined in EConnectionMode. If <i>reusable</i> is <b>false</b>,
+then driver creates a new connection which will be destroyed as soon as
+user delete the correspondent <a href="lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a>
+(the <i>pool_name</i> is ignored in this case).
+<p>Opening a connection to a server is an expensive operation. If program
+opens and closes connections to the same server multiple times it worth
+to call the <i>Connect()</i> method with <i>reusable</i> set to <b>true</b>.
+In this case driver does not close the connection when the correspondent
+CDB_Connection is deleted, but keeps it around in a "recycle bin". Every
+time an application calls the <i>Connect()</i> method with <i>reusable</i>
+set to <b>true</b>, driver tries to satisfy the request from a "recycle
+bin" first and opens a new connection only if it is necessary.
+<p>The <i>pool_name</i> argument is just an arbitrary string. Application
+could use this argument to assign a name to one or more connections (to
+create a connection pool) or to invoke a connection by name from this pool.
+<pre>    ...
+    // Create a pool of four connections (two to one server and two to another) with the default database "DatabaseA"
+    CDB_Connection* con[4];
+    int i;
+    for(i= 4; i--;) {
+        con[i]= my_context.Connect((i%2 == 0)? "MyServer1" : "MyServer2", 
+                                   "my_user_name", "my_password", 0, true, "ConnectionPoolA");
+        CDB_LangCmd* lcmd= con[i]->LangCmd("use DatabaseA");
+        lcmd->Send();
+        while(lcmd->HasMoreResults()) {
+            CDB_Result* r= lcmd->Result();
+            if(r) delete r;
+        }
+        delete lcmd;
+    }
+    // return all connections to a "recycle bin"
+    for(i= 0; i &lt; 4; delete con_array[i++]);
+    ...
+
+    // in some other part of the program
+    // we want to get a connection from "ConnectionPoolA" but we don't want driver to open a
+    // new connection if pool is empty
+    try {
+        CDB_Connection* my_con= my_context.Connect("","","",0,true,"ConnectionPoolA");
+        // Note that server name, user name and password are empty
+        ...
+    }
+    catch (CDB_Exception&amp; e) {
+        // the pool is empty
+        ...
+    }</pre>
+Application could combine in one pool the connections to the different
+servers. This mechanism could also be used to group together the connections
+with some particular settings (default database, transaction isolation
+level, etc.).
+
+<a name="ref_TextImage"></a>
+<h3>
+Text and Image Data Handling</h3>
+The <b>text</b> and <b>image</b> are SQL datatypes which can hold up to
+2Gb of data. Because they could be huge, RDBMS keep these values separately
+from the other data in the table. In most cases the table itself keeps
+just a special pointer to a text/image value and an actual value occupies
+a separate disk space. This implicates some difficulties in text/image
+data handling.
+<p>When you retrieves a large text/image value, you often prefer to "stream"
+it into your program and process it chunk by chunk rather than get it as
+one piece. Some RDBMS clients allow to stream the text/image values only
+if a correspondent column is the only column in select statement.
+<p>Let's suppose that you do have a table:
+<br>table T (i_val int, t_val text)
+<br>And you need to select all i_val, t_val where i_val > 0.
+<br>The simplest way is to use a query:
+<pre><i>select</i> i_val, t_val <i>from</i> T <i>where</i> i_val > 0</pre>
+But it could be expensive. Because two columns are selected, some clients
+will put the whole row in a buffer prior to give the access to it to the
+user. The better way to do this is to use two selects:
+<pre><i>select</i> i_val <i>from</i> T <i>where</i> i_val > 0
+<i>select</i> t_val <i>from</i> T <i>where</i> i_val > 0</pre>
+Looks ugly, but could save you a lot of memory.
+<p>Updating and inserting the text/image data is also not a straightforward
+process. For small texts and images it is possible to use just SQL <i>insert</i>
+and <i>update</i> statements, but it will be inefficient (if possible at
+all) for the large ones. The better ways to insert and to update the texts
+and images is to use <i>SendData()</i> method of <a href="lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a>
+object or to use the
+<a href="lxr/ident?i=CDB_SendDataCmd&d=C">CDB_SendDataCmd</a>
+object.
+<p>Recommended algorithm for inserting the text/image data:
+<ul>
+<li>
+Using a SQL <i>insert</i> statement insert a new row into a table. Use
+<b>" "</b> value for each <i>text</i> column (<b>0x0</b> for <i>image</i>
+column) you are going to populate. Use <b>NULL</b> only if this value is
+going to remain <b>NULL</b>.</li>
+
+<li>
+Using a SQL <i>select</i> statement select all text/image columns from
+this row.</li>
+
+<li>
+Fetch the row result and get a I_ITDescriptor for each column</li>
+
+<li>
+Finish the results loop</li>
+
+<li>
+Use <i>SendData()</i> method or <a href="docxx/CDB_SendDataCmd.html">CDB_SendDataCmd</a>
+object to populate the columns.</li>
+</ul>
+<b>Example</b>
+<p>Let's suppose that we want to insert a new row into table T described
+above.
+<pre>CDB_Connection* con;
+...
+// preparing the query
+CDB_LangCmd* lcmd= con->LangCmd("insert T (i_val, t_val) values(100, ' ')\n");
+lcmd->More("select t_val from T where i_val = 100");
+
+// Sending this query to a server
+lcmd->Send();
+
+I_ITDescriptor* my_descr;
+
+// the result loop
+while(lcmd->HasMoreResults()) {
+    CDB_Result* r= lcmd->Result();
+    // skip all but row result
+    if (r == 0  ||  r->ResultType() != eDB_RowResult) {
+        delete r;
+        continue;
+    }
+    // fetching the row
+    while(r->Fetch()) {
+        r->ReadItem(0, 0); // Reading 0 bytes from the text (some clients need this trick)
+        my_deskr= r->GetImageOrTextDescriptor();
+    }
+    delete r; // we don't need this result anymore
+}
+
+delete lcmd; // delete the command
+
+CDB_Text my_text;
+my_text.Append("This is a text I want to insert");
+
+//sending the text
+con->SendData(my_descr, my_text);
+
+delete my_descr; // we don't need this descriptor anymore
+...</pre>
+Recommended algorithm for updating the text/image data:
+<ul>
+<li>
+Using a SQL <i>update</i> statement replace the current value with <b>"
+"</b> for text column (<b>0x0</b> for image)</li>
+
+<li>
+Using a SQL <i>select</i> statement select all text/image columns you want
+to update in this row.</li>
+
+<li>
+Fetch the row result and get a I_ITDescriptor for each column</li>
+
+<li>
+Finish the results loop</li>
+
+<li>
+Use <i>SendData()</i> method or <a href="docxx/CDB_SendDataCmd.html">CDB_SendDataCmd</a>
+object to populate the columns.</li>
+</ul>
+<b>Example</b>
+<pre>CDB_Connection* con;
+...
+// preparing the query
+CDB_LangCmd* lcmd= con->LangCmd("update T set t_val= ' ' where i_val =  100");
+lcmd->More("select t_val from T where i_val = 100");
+
+// Sending this query to a server
+lcmd->Send();
+
+I_ITDescriptor* my_descr;
+
+// the result loop
+while(lcmd->HasMoreResults()) {
+    CDB_Result* r= lcmd->Result();
+    // skip all but row result
+    if (r == 0  ||  r->ResultType() != eDB_RowResult) {
+        delete r;
+        continue;
+    }
+    // fetching the row
+    while(r->Fetch()) {
+        r->ReadItem(0, 0); // Reading 0 bytes from the text (some clients need this trick)
+        my_deskr= r->GetImageOrTextDescriptor();
+    }
+    delete r; // we don't need this result anymore
+}
+
+delete lcmd; // delete the command
+
+CDB_Text my_text;
+my_text.Append("This is a text I want to see as an update");
+
+//sending the text
+con->SendData(my_descr, my_text);
+
+delete my_descr; // we don't need this descriptor anymore
+...
+</pre>
+
+
+<a name="ref_Results"></a>
+<h3>
+Results loop</h3>
+The connection in <i>NCBI DBAPI driver</i> is always single threaded.
+Application has to retrieve all results from a current command prior to executing a new one.
+Not all of the results are always meaningful for the application (i.e. an RPC always
+returns a status result regardles of either a procedure has a "<em>return</em> something" statement or not),
+but all of them need to be retrieved. The following results loop is recommended for all types of the commands:
+<pre>
+CDB_XXXCmd* cmd; // XXX could be Lang, RPC, etc.
+...
+while(cmd-&gt;HasMoreResults()) {// HasMoreResults() method returns <b>true</b>
+                                 // if the Result() method needs to be called.
+                                 // It doesn't guarantee that Result() will return not NULL result
+   CDB_Result* res= cmd-&gt;Result();
+   if(res == 0) continue; // if res is NULL it doesn't mean that there is no more results
+   switch(res-&gt;ResultType()) {
+      case eDB_RowResult: // row result 
+          while(res-&gt;Fetch()) {
+             ...
+          }
+          break;
+      case eDB_ParamResult: // Output parameters
+          while(res-&gt;Fetch()) {
+             ...
+          }
+          break;
+      case eDB_ComputeResult: // Compute result
+          while(res-&gt;Fetch()) {
+             ...
+          }
+          break;
+      case eDB_StatusResult: // Status result
+          while(res-&gt;Fetch()) {
+             ...
+          }
+          break;
+      case eDB_CursorResult: // Cursor result
+          while(res-&gt;Fetch()) {
+             ...
+          }
+          break;
+   }
+   delete res;
+}
+</pre>
+
+If you don't want to process some particular type of result, just skip the <b>while</b>(res-&gt;Fetch()){...}
+in the corresponding <b>case</b>.
+
+
+<p>
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp@ncbi.nlm.nih.gov">Vladimir Soussov</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+
+
+<!--#include virtual="../ssi/footer.shtml" -->
