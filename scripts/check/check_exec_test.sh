@@ -39,14 +39,16 @@ tmp=./$2.stdin.$$
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
-# Run command
+# Run command; enforce a minimum effective run time to avoid races,
+# since not all shells support waiting for children that have already
+# terminated even though POSIX requires them to.
 if [ "X$1" = "X-stdin" ]; then
   trap 'rm -f $tmp' 1 2 15
   cat - > $tmp
   shift
-  $@ < $tmp &
+  (sleep 1  &  "$@" < $tmp ;  status=$? ;  wait ;  exit $status) &
 else
-  "$@" &
+  (sleep 1  &  "$@" ;  status=$? ;  wait ;  exit $status) &
 fi
 pid=$!
 trap 'kill $pid; rm -f $tmp' 1 2 15
