@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/01/07 14:53:57  vasilche
+* CButtonList displays nothing if list is empty.
+*
 * Revision 1.13  1999/01/06 21:35:37  vasilche
 * Avoid use of Clone.
 * Fixed default CHTML_text width.
@@ -148,6 +151,9 @@ CNCBINode* CButtonList::CloneSelf(void) const
 
 void CButtonList::CreateSubNodes()
 {
+    if ( m_List.empty() )
+        return; // nothing to display
+
     AppendChild(new CHTML_submit(m_Name));
 
     CHTML_select * Select = new CHTML_select(m_Select);
