@@ -1033,6 +1033,186 @@ extern char* strdup(const char* str)
 }
 #endif
 
+/////////////////////////////////////////////////////////////////////////////
+//  CStringUTF8
+
+void CStringUTF8::x_Append(const char* src)
+{
+    const char* srcBuf;
+    size_t needed = 0;
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        Uint1 ch = *srcBuf;
+        if (ch < 0x80) {
+            ++needed;
+        } else {
+            needed += 2;
+        }
+    }
+
+    if ( !needed )
+        return;
+
+    reserve(length()+needed+1);
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        Uint1 ch = *srcBuf;
+        if (ch < 0x80) {
+            append(1, ch);
+        } else {
+            append(1, Uint1((ch >> 6) | 0xC0));
+            append(1, Uint1((ch & 0x3F) | 0x80));
+        }
+    }
+}
+
+#if defined(HAVE_WSTRING)
+void CStringUTF8::x_Append(const wchar_t* src)
+{
+    const wchar_t* srcBuf;
+    size_t needed = 0;
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        Uint2 ch = *srcBuf;
+        if (ch < 0x80) {
+            ++needed;
+        } else if (ch < 0x800) {
+            needed += 2;
+        } else {
+            needed += 3;
+        }
+    }
+
+    if ( !needed )
+        return;
+
+    reserve(length()+needed+1);
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        Uint2 ch = *srcBuf;
+        if (ch < 0x80) {
+            append(1, ch);
+        }
+        else if (ch < 0x800) {
+            append(1, Uint2((ch >> 6) | 0xC0));
+            append(1, Uint2((ch & 0x3F) | 0x80));
+        } else {
+            append(1, Uint2((ch >> 12) | 0xE0));
+            append(1, Uint2(((ch >> 6) & 0x3F) | 0x80));
+            append(1, Uint2((ch & 0x3F) | 0x80));
+        }
+    }
+}
+#endif // HAVE_WSTRING
+
+string CStringUTF8::AsAscii(void) const
+{
+    string result;
+    const char* srcBuf;
+    size_t needed = 0;
+    bool bad = false;
+    bool enough = true;
+    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
+        Uint1 ch = *srcBuf;
+        if ((ch & 0x80) == 0) {
+            ++needed;
+        } else if ((ch & 0xE0) == 0xC0) {
+            enough = (ch & 0x1F) <= 0x03;
+            if (enough) {
+                ++needed;
+                ch = *(++srcBuf);
+                bad = (ch & 0xC0) != 0x80;
+            }
+        } else if ((ch & 0xF0) == 0xE0) {
+            enough = false;
+        } else {
+            bad = true;
+        }
+        if (!enough) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "Cannot convert UTF8 string to single-byte string",
+                        s_DiffPtr(srcBuf,c_str()));
+        }
+        if (bad) {
+            NCBI_THROW2(CStringException, eFormat,
+                        "Wrong UTF8 format",
+                        s_DiffPtr(srcBuf,c_str()));
+        }
+    }
+    result.reserve( needed+1);
+    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
+        Uint1 chRes;
+        size_t more;
+        Uint1 ch = *srcBuf;
+        if ((ch & 0x80) == 0) {
+            chRes = ch;
+            more = 0;
+        } else {
+            chRes = (ch & 0x1F);
+            more = 1;
+        }
+        while (more--) {
+            ch = *(++srcBuf);
+            chRes = (chRes << 6) | (ch & 0x3F);
+        }
+        result += chRes;
+    }
+    return result;
+}
+
+#if defined(HAVE_WSTRING)
+wstring CStringUTF8::AsUnicode(void) const
+{
+    wstring result;
+    const char* srcBuf;
+    size_t needed = 0;
+    bool bad = false;
+    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
+        Uint1 ch = *srcBuf;
+        if ((ch & 0x80) == 0) {
+            ++needed;
+        } else if ((ch & 0xE0) == 0xC0) {
+            ++needed;
+            ch = *(++srcBuf);
+            bad = (ch & 0xC0) != 0x80;
+        } else if ((ch & 0xF0) == 0xE0) {
+            ++needed;
+            ch = *(++srcBuf);
+            bad = (ch & 0xC0) != 0x80;
+            if (!bad) {
+                ch = *(++srcBuf);
+                bad = (ch & 0xC0) != 0x80;
+            }
+        } else {
+            bad = true;
+        }
+        if (bad) {
+            NCBI_THROW2(CStringException, eFormat,
+                        "Wrong UTF8 format",
+                        s_DiffPtr(srcBuf,c_str()));
+        }
+    }
+    result.reserve( needed+1);
+    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
+        Uint2 chRes;
+        size_t more;
+        Uint1 ch = *srcBuf;
+        if ((ch & 0x80) == 0) {
+            chRes = ch;
+            more = 0;
+        } else if ((ch & 0xE0) == 0xC0) {
+            chRes = (ch & 0x1F);
+            more = 1;
+        } else {
+            chRes = (ch & 0x0F);
+            more = 2;
+        }
+        while (more--) {
+            ch = *(++srcBuf);
+            chRes = (chRes << 6) | (ch & 0x3F);
+        }
+        result += chRes;
+    }
+    return result;
+}
+#endif // HAVE_WSTRING
+
 
 END_NCBI_SCOPE
 
@@ -1040,6 +1220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2003/05/22 20:09:29  gouriano
+ * added UTF8 strings
+ *
  * Revision 1.91  2003/05/14 21:52:09  ucko
  * Move FindNoCase out of line and reimplement it to avoid making
  * lowercase copies of both strings.

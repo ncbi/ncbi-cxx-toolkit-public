@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/05/22 20:10:25  gouriano
+* added UTF8 strings
+*
 * Revision 1.25  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -365,12 +368,16 @@ const char* CRealDataType::GetDefaultCType(void) const
     return "double";
 }
 
-CStringDataType::CStringDataType(void)
+CStringDataType::CStringDataType(EType type)
+    : m_Type(type)
 {
 }
 
 const char* CStringDataType::GetASNKeyword(void) const
 {
+    if (m_Type == eStringTypeUTF8) {
+        return "UTF8String";
+    }
     return "VisibleString";
 }
 
@@ -393,6 +400,9 @@ bool CStringDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
 {
+    if (m_Type == eStringTypeUTF8) {
+        return new (CStringUTF8*)(new CStringUTF8(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+    }
     return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
 }
 
@@ -444,6 +454,9 @@ AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
 
 const char* CStringDataType::GetDefaultCType(void) const
 {
+    if (m_Type == eStringTypeUTF8) {
+        return "ncbi::CStringUTF8";
+    }
     return "NCBI_NS_STD::string";
 }
 

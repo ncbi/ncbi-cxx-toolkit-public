@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/05/22 20:09:04  gouriano
+* added UTF8 strings
+*
 * Revision 1.9  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -160,7 +163,12 @@ public:
 class CStringDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
-    CStringDataType(void);
+    enum EType {
+        eStringTypeVisible,
+        eStringTypeUTF8
+    };
+
+    CStringDataType(EType type = eStringTypeVisible);
 
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
@@ -173,6 +181,8 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
+protected:
+    EType m_Type;
 };
 
 class CStringStoreDataType : public CStringDataType {

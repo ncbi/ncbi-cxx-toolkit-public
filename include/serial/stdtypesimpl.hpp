@@ -203,14 +203,24 @@ class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoString : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
+    enum EType {
+        eStringTypeVisible,
+        eStringTypeUTF8
+    };
     typedef string TObjectType;
 
-    CPrimitiveTypeInfoString(void);
+    CPrimitiveTypeInfoString(EType type = eStringTypeVisible);
 
     char GetValueChar(TConstObjectPtr objectPtr) const;
     void SetValueChar(TObjectPtr objectPtr, char value) const;
     void GetValueString(TConstObjectPtr objectPtr, string& value) const;
     void SetValueString(TObjectPtr objectPtr, const string& value) const;
+    EType GetStringType(void)
+    {
+        return m_Type;
+    }
+private:
+    EType m_Type;
 };
 
 template<typename T>
@@ -260,6 +270,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/05/22 20:08:42  gouriano
+* added UTF8 strings
+*
 * Revision 1.10  2003/04/15 16:18:59  siyan
 * Added doxygen support
 *

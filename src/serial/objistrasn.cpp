@@ -530,7 +530,7 @@ void CObjectIStreamAsn::UnendedString(size_t startLine)
                NStr::UIntToString(startLine));
 }
 
-void CObjectIStreamAsn::ReadString(string& s)
+void CObjectIStreamAsn::ReadString(string& s, EStringType type)
 {
     Expect('\"', true);
     s.erase();
@@ -569,8 +569,10 @@ void CObjectIStreamAsn::ReadString(string& s)
                     m_Input.SkipChars(i + 1);
                     s.reserve(s.size());
                     // Check the string for non-printable characters
-                    for (i = 0; i < s.length(); i++) {
-                        CheckVisibleChar(s[i], m_FixMethod, startLine);
+                    if (type == eStringTypeVisible) {
+                        for (i = 0; i < s.length(); i++) {
+                            CheckVisibleChar(s[i], m_FixMethod, startLine);
+                        }
                     }
                     return;
                 }
@@ -698,7 +700,7 @@ void CObjectIStreamAsn::SkipFNumber(void)
         ThrowError(fFormatError, "illegal REAL base (must be 2 or 10)");
 }
 
-void CObjectIStreamAsn::SkipString(void)
+void CObjectIStreamAsn::SkipString(EStringType type)
 {
     Expect('\"', true);
     size_t startLine = m_Input.GetLine();
@@ -728,7 +730,9 @@ void CObjectIStreamAsn::SkipString(void)
                 }
                 break;
             default:
-                CheckVisibleChar(c, m_FixMethod, startLine);
+                if (type == eStringTypeVisible) {
+                    CheckVisibleChar(c, m_FixMethod, startLine);
+                }
                 // ok: skip char
                 if ( ++i == 128 ) {
                     // too long string -> flush it
@@ -1200,6 +1204,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.81  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *

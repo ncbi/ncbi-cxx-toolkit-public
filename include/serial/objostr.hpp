@@ -76,6 +76,10 @@ class CWriteObjectList;
 class NCBI_XSERIAL_EXPORT CObjectOStream : public CObjectStack
 {
 public:
+    enum EStringType {
+        eStringTypeVisible,
+        eStringTypeUTF8
+    };
     typedef size_t TObjectIndex;
 
     // open methods
@@ -192,6 +196,7 @@ public:
 
     // string
     void WriteStd(const string& data);
+    void WriteStd(const CStringUTF8& data);
 
     // C string; VisualAge can't cope with refs here.
     void WriteStd(const char* const data);
@@ -218,7 +223,8 @@ public:
 #endif
 
     // string
-    virtual void WriteString(const string& str) = 0;
+    virtual void WriteString(const string& str,
+                             EStringType type = eStringTypeVisible) = 0;
     virtual void CopyString(CObjectIStream& in) = 0;
 
     // StringStore
@@ -498,6 +504,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/05/22 20:08:41  gouriano
+* added UTF8 strings
+*
 * Revision 1.74  2003/05/15 17:45:25  gouriano
 * added GetStreamOffset method
 *

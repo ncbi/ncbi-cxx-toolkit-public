@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.40  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -735,7 +738,7 @@ void CObjectIStreamXml::ReadNull(void)
         ThrowError(fFormatError, "empty tag expected");
 }
 
-void CObjectIStreamXml::ReadString(string& str)
+void CObjectIStreamXml::ReadString(string& str, EStringType /*type*/)
 {
     str.erase();
     if ( !EndOpeningTagSelfClosed() )
@@ -1722,7 +1725,7 @@ void CObjectIStreamXml::SkipFNumber(void)
     ReadDouble();
 }
 
-void CObjectIStreamXml::SkipString(void)
+void CObjectIStreamXml::SkipString(EStringType /*type*/)
 {
     BeginData();
     while ( ReadEscapedChar(m_Attlist ? '\"' : '<') >= 0 )

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/05/22 20:10:25  gouriano
+* added UTF8 strings
+*
 * Revision 1.15  2003/01/31 03:38:41  lavr
 * Heed int->bool performance warnings
 *
@@ -398,6 +401,7 @@ TToken ASNLexer::LookupKeyword(void)
         break;
     case 10:
         CHECK("ENUMERATED", K_ENUMERATED, 10);
+        CHECK("UTF8String", K_UTF8String, 10);
         break;
     case 11:
         CHECK("StringStore", K_StringStore, 11);

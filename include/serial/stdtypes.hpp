@@ -285,6 +285,16 @@ public:
 };
 
 EMPTY_TEMPLATE
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<ncbi::CStringUTF8>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+    static TTypeInfo GetTypeInfoStringStore(void);
+    static CTypeInfo* CreateTypeInfoStringStore(void);
+};
+
+EMPTY_TEMPLATE
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<char*>
 {
 public:
@@ -338,6 +348,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/05/22 20:08:42  gouriano
+* added UTF8 strings
+*
 * Revision 1.28  2003/04/15 16:18:57  siyan
 * Added doxygen support
 *

@@ -93,14 +93,14 @@ protected:
     virtual Int8 ReadInt8(void);
     virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
-    virtual void ReadString(string& s);
+    virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
 
     virtual void SkipBool(void);
     virtual void SkipChar(void);
     virtual void SkipSNumber(void);
     virtual void SkipUNumber(void);
     virtual void SkipFNumber(void);
-    virtual void SkipString(void);
+    virtual void SkipString(EStringType type = eStringTypeVisible);
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
 
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/05/22 20:08:41  gouriano
+* added UTF8 strings
+*
 * Revision 1.55  2003/04/15 16:18:21  siyan
 * Added doxygen support
 *

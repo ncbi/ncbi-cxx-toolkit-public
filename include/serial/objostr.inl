@@ -231,6 +231,12 @@ void CObjectOStream::WriteStd(const string& data)
     WriteString(data);
 }
 
+inline
+void CObjectOStream::WriteStd(const CStringUTF8& data)
+{
+    WriteString(data,eStringTypeUTF8);
+}
+
 // C string
 inline
 void CObjectOStream::WriteStd(const char* const data)
@@ -355,6 +361,9 @@ bool CObjectOStream::GetVerifyData(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/05/22 20:08:42  gouriano
+* added UTF8 strings
+*
 * Revision 1.20  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

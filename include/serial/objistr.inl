@@ -377,6 +377,18 @@ void CObjectIStream::SkipStd(const string& )
     SkipString();
 }
 
+inline
+void CObjectIStream::ReadStd(CStringUTF8& data)
+{
+    ReadString(data, eStringTypeUTF8);
+}
+
+inline
+void CObjectIStream::SkipStd(CStringUTF8& )
+{
+    SkipString(eStringTypeUTF8);
+}
+
 // C string
 inline
 void CObjectIStream::ReadStd(char* & data)
@@ -425,6 +437,9 @@ char& CheckVisibleChar(char& c,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/05/22 20:08:41  gouriano
+* added UTF8 strings
+*
 * Revision 1.20  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

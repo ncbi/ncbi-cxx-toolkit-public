@@ -75,7 +75,7 @@ protected:
     virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadNull(void);
-    virtual void ReadString(string& s);
+    virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
     virtual char* ReadCString(void);
     TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
@@ -84,7 +84,7 @@ protected:
     virtual void SkipSNumber(void);
     virtual void SkipUNumber(void);
     virtual void SkipFNumber(void);
-    virtual void SkipString(void);
+    virtual void SkipString(EStringType type = eStringTypeVisible);
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
 
@@ -233,6 +233,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/05/22 20:08:41  gouriano
+* added UTF8 strings
+*
 * Revision 1.24  2003/04/15 16:18:25  siyan
 * Added doxygen support
 *

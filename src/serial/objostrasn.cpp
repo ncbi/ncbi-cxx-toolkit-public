@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.78  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -557,9 +560,14 @@ void CObjectOStreamAsn::WriteCString(const char* str)
     }
 }
 
-void CObjectOStreamAsn::WriteString(const string& str)
+void CObjectOStreamAsn::WriteString(const string& str, EStringType type)
 {
+    EFixNonPrint fix = m_FixMethod;
+    if (type == eStringTypeUTF8) {
+        m_FixMethod = eFNP_Allow;
+    }
     WriteString(str.data(), str.size());
+    m_FixMethod = fix;
 }
 
 void CObjectOStreamAsn::WriteStringStore(const string& str)

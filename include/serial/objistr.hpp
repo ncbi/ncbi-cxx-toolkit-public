@@ -81,6 +81,10 @@ class CReadObjectList;
 class NCBI_XSERIAL_EXPORT CObjectIStream : public CObjectStack
 {
 public:
+    enum EStringType {
+        eStringTypeVisible,
+        eStringTypeUTF8
+    };
     // typedefs
     typedef size_t TObjectIndex;
 
@@ -207,6 +211,8 @@ public:
     // string
     void ReadStd(string& data);
     void SkipStd(const string& );
+    void ReadStd(CStringUTF8& data);
+    void SkipStd(CStringUTF8& data);
 
     // C string
     void ReadStd(char* & data);
@@ -257,8 +263,9 @@ public:
     virtual void SkipFNumber(void) = 0;
 
     // string
-    virtual void ReadString(string& s) = 0;
-    virtual void SkipString(void) = 0;
+    virtual void ReadString(string& s,
+                            EStringType type = eStringTypeVisible) = 0;
+    virtual void SkipString(EStringType type = eStringTypeVisible) = 0;
 
     // StringStore
     virtual void ReadStringStore(string& s);
@@ -557,6 +564,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/05/22 20:08:41  gouriano
+* added UTF8 strings
+*
 * Revision 1.82  2003/05/15 17:45:25  gouriano
 * added GetStreamOffset method
 *

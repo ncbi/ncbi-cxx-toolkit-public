@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.76  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -856,13 +859,15 @@ void CObjectOStreamAsnBinary::WriteFloat(float data)
     WriteDouble2(data, FLT_DIG);
 }
 
-void CObjectOStreamAsnBinary::WriteString(const string& str)
+void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 {
     string strcopy = str;
     size_t length = strcopy.size();
     // Check the string for non-printable characters
-    for (size_t i = 0; i < length; i++) {
-        CheckVisibleChar(strcopy[i], m_FixMethod);
+    if (type == eStringTypeVisible) {
+        for (size_t i = 0; i < length; i++) {
+            CheckVisibleChar(strcopy[i], m_FixMethod);
+        }
     }
     WriteSysTag(eVisibleString);
     WriteLength(length);

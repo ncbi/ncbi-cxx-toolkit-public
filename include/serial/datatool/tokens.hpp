@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/05/22 20:09:04  gouriano
+* added UTF8 strings
+*
 * Revision 1.8  2002/11/14 21:07:10  gouriano
 * added support of XML attribute lists
 *
@@ -108,6 +111,7 @@ static const TToken K_TRUE = 122;
 static const TToken K_OPTIONAL = 123;
 static const TToken K_DEFAULT = 124;
 static const TToken K_BIGINT = 125;
+static const TToken K_UTF8String = 126;
 
 
 static const TToken T_ENTITY   =  11;

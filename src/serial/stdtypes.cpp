@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.34  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -1100,7 +1103,8 @@ CTypeInfo* CStdTypeInfo<long double>::CreateTypeInfo(void)
 }
 #endif
 
-class CStringFunctions : public CPrimitiveTypeFunctions<string>
+template<typename T>
+class CStringFunctions : public CPrimitiveTypeFunctions<T>
 {
 public:
     static TObjectPtr Create(TTypeInfo )
@@ -1125,15 +1129,30 @@ public:
         }
 };
 
-CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(void)
-    : CParent(sizeof(string), ePrimitiveValueString)
+CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(EType type)
+    : CParent(sizeof(string), ePrimitiveValueString), m_Type(type)
 {
-    typedef CStringFunctions TFunctions;
-    SetMemFunctions(&TFunctions::Create,
-                    &TFunctions::IsDefault, &TFunctions::SetDefault,
-                    &TFunctions::Equals, &TFunctions::Assign);
-    SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
-                   &TFunctions::Copy, &TFunctions::Skip);
+    if (type == eStringTypeUTF8) {
+        SetMemFunctions(&CStringFunctions<CStringUTF8>::Create,
+                        &CStringFunctions<CStringUTF8>::IsDefault,
+                        &CStringFunctions<CStringUTF8>::SetDefault,
+                        &CStringFunctions<CStringUTF8>::Equals,
+                        &CStringFunctions<CStringUTF8>::Assign);
+        SetIOFunctions(&CStringFunctions<CStringUTF8>::Read,
+                       &CStringFunctions<CStringUTF8>::Write,
+                       &CStringFunctions<CStringUTF8>::Copy,
+                       &CStringFunctions<CStringUTF8>::Skip);
+    } else {
+        SetMemFunctions(&CStringFunctions<string>::Create,
+                        &CStringFunctions<string>::IsDefault,
+                        &CStringFunctions<string>::SetDefault,
+                        &CStringFunctions<string>::Equals,
+                        &CStringFunctions<string>::Assign);
+        SetIOFunctions(&CStringFunctions<string>::Read,
+                       &CStringFunctions<string>::Write,
+                       &CStringFunctions<string>::Copy,
+                       &CStringFunctions<string>::Skip);
+    }
 }
 
 void CPrimitiveTypeInfoString::GetValueString(TConstObjectPtr object,
@@ -1172,7 +1191,18 @@ CTypeInfo* CStdTypeInfo<string>::CreateTypeInfo(void)
     return new CPrimitiveTypeInfoString();
 }
 
-class CStringStoreFunctions : public CStringFunctions
+TTypeInfo CStdTypeInfo<ncbi::CStringUTF8>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<ncbi::CStringUTF8>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoString(CPrimitiveTypeInfoString::eStringTypeUTF8);
+}
+
+class CStringStoreFunctions : public CStringFunctions<string>
 {
 public:
     static void Read(CObjectIStream& in, TTypeInfo , TObjectPtr objectPtr)

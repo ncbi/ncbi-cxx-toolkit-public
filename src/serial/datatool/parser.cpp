@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/05/22 20:10:25  gouriano
+* added UTF8 strings
+*
 * Revision 1.30  2003/05/14 14:41:36  gouriano
 * corrected writing comments
 *
@@ -247,7 +250,8 @@ AutoPtr<CDataType> ASNParser::Type(void)
 
 CDataType* ASNParser::x_Type(void)
 {
-    switch ( Next() ) {
+    TToken tok = Next();
+    switch ( tok ) {
     case K_BOOLEAN:
         Consume();
         return new CBoolDataType();
@@ -296,8 +300,12 @@ CDataType* ASNParser::x_Type(void)
         Consume();
         return TypesBlock(new CChoiceDataType(), false);
     case K_VisibleString:
+    case K_UTF8String:
         Consume();
-        return new CStringDataType();
+        return new CStringDataType(
+            tok == K_UTF8String ?
+                CStringDataType::eStringTypeUTF8 :
+                CStringDataType::eStringTypeVisible);
     case K_StringStore:
         Consume();
         return new CStringStoreDataType();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.60  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -779,10 +782,15 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     return data;
 }
 
-void CObjectIStreamAsnBinary::ReadString(string& s)
+void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 {
     ExpectSysTag(eVisibleString);
+    EFixNonPrint fix = m_FixMethod;
+    if (type == eStringTypeUTF8) {
+        m_FixMethod = eFNP_Allow;
+    }
     ReadStringValue(s);
+    m_FixMethod = fix;
 }
 
 void CObjectIStreamAsnBinary::ReadStringStore(string& s)
@@ -1250,7 +1258,7 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
     EndOfTag();
 }
 
-void CObjectIStreamAsnBinary::SkipString(void)
+void CObjectIStreamAsnBinary::SkipString(EStringType /*type*/)
 {
     ExpectSysTag(eVisibleString);
     SkipTagData();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/05/22 20:10:02  gouriano
+* added UTF8 strings
+*
 * Revision 1.54  2003/05/16 18:02:18  gouriano
 * revised exception error messages
 *
@@ -558,7 +561,7 @@ void CObjectOStreamXml::WriteCString(const char* str)
     }
 }
 
-void CObjectOStreamXml::WriteString(const string& str)
+void CObjectOStreamXml::WriteString(const string& str, EStringType /*type*/)
 {
     for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
         WriteEscapedChar(*i);

@@ -82,7 +82,8 @@ protected:
     virtual void WriteDouble(double data);
     void WriteDouble2(double data, size_t digits);
     virtual void WriteCString(const char* str);
-    virtual void WriteString(const string& str);
+    virtual void WriteString(const string& str,
+                             EStringType type = eStringTypeVisible);
     virtual void WriteStringStore(const string& str);
     virtual void CopyString(CObjectIStream& in);
     virtual void CopyStringStore(CObjectIStream& in);
@@ -171,6 +172,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/05/22 20:08:42  gouriano
+* added UTF8 strings
+*
 * Revision 1.44  2003/04/15 16:18:29  siyan
 * Added doxygen support
 *
