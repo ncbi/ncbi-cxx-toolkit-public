@@ -1,0 +1,48 @@
+--$Id: blastdb.asn,v 6.1 2000/09/14 20:05:00 shavirin Exp $
+--
+-- Notes:
+--
+-- taxonomy: an integer is proposed, which would require some sort of 
+-- table (or network connection) to do the conversions from integer 
+-- to various names.  This could save quite a bit of space for databases 
+-- that are predominantly of one organism (e.g., human in htgs).
+-- I've proposed here that table contain scientific-, common-, and 
+-- blast-names at the advice of Scott Federhen.  Scott also was in 
+-- favor of having the complete lineage in the file, but it seems like 
+-- this would be seldom used and we could have a view with a link back 
+-- to the taxonomy page for anyone needing it. Since one file would 
+-- suffice for all blast databases, it seems like this should be a new file.
+--
+-- memberships: a sequence of integers is proposed.  Each bit of an integer 
+-- would indicate membership in some (virtual) blast database (e.g., pdb, 
+-- swissprot) or some classification (e.g., mRNA, genomic).
+--
+-- links: a sequence of integers is proposed.  Each bit of an integer would 
+-- indicate a link that could be established based upon the gi of the 
+-- database sequence.
+--
+-- $Revision: 6.1 $
+--
+-- $Log: blastdb.asn,v $
+-- Revision 6.1  2000/09/14 20:05:00  shavirin
+-- Initial revision.
+--
+--
+NCBI-BlastDL DEFINITIONS ::=
+BEGIN
+
+EXPORTS Blast-defline-set, Blast-defline;
+        
+IMPORTS Seq-id FROM NCBI-Seqloc;
+
+Blast-defline-set ::= SEQUENCE OF Blast-defline  -- all deflines for an entry
+
+Blast-defline ::= SEQUENCE {
+	title VisibleString ,                     -- simple title
+	seqid SEQUENCE OF Seq-id,                 -- Regular NCBI Seq-Id
+	taxid  INTEGER ,                          -- taxonomy id
+	memberships SEQUENCE OF INTEGER OPTIONAL, -- bit arrays
+	links SEQUENCE OF INTEGER OPTIONAL        -- bit arrays
+}
+
+END
