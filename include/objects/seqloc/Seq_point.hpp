@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.4  2002/09/12 21:14:20  kans
  * IsPartialLeft and IsPartialRight are const
  *
@@ -64,7 +67,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_point : public CSeq_point_Base
+class NCBI_SEQLOC_EXPORT CSeq_point : public CSeq_point_Base
 {
     typedef CSeq_point_Base Tparent;
 public:

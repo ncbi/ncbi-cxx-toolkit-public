@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CUser_object : public CUser_object_Base
+class NCBI_GENERAL_EXPORT CUser_object : public CUser_object_Base
 {
     typedef CUser_object_Base Tparent;
 public:
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/26 12:40:33  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.2  2002/10/03 19:01:02  clausen
 * Removed extra whitespace
 *

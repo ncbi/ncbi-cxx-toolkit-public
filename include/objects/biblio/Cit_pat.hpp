@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/12/26 12:38:37  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.2  2002/01/16 18:56:22  grichenk
  * Removed CRef<> argument from choice variant setter, updated sources to
  * use references instead of CRef<>s
@@ -60,7 +63,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CCit_pat : public CCit_pat_Base
+class NCBI_BIBLIO_EXPORT CCit_pat : public CCit_pat_Base
 {
     typedef CCit_pat_Base Tparent;
 public:

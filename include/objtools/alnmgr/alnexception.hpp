@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 
-class CAlnException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XALNMGR_EXPORT CAlnException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/12/26 12:38:07  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.4  2002/12/18 15:00:26  ucko
  * +eMergeFailure
  *

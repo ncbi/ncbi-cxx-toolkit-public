@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/12/26 12:42:59  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.4  2002/05/03 21:28:03  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -64,7 +67,7 @@ class CGenetic_code;
 
 // Public front-end for hidden singleton object of class
 // CGencode_implementation.
-class CGencode
+class NCBI_SEQ_EXPORT CGencode
 {
 public:
     typedef vector<pair<TSeqPos, char> > TCodeBreaks;

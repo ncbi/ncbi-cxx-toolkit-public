@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/12/26 12:43:27  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.2  2002/01/28 19:49:32  domrach
  * Get/Set tax id methods added
  *
@@ -58,7 +61,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class COrg_ref : public COrg_ref_Base
+class NCBI_SEQFEAT_EXPORT COrg_ref : public COrg_ref_Base
 {
     typedef COrg_ref_Base Tparent;
 public:

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.3  2002/06/07 11:19:37  clausen
  * Added related function comment
  *
@@ -61,7 +64,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CPacked_seqpnt : public CPacked_seqpnt_Base
+class NCBI_SEQLOC_EXPORT CPacked_seqpnt : public CPacked_seqpnt_Base
 {
     typedef CPacked_seqpnt_Base Tparent;
 public:

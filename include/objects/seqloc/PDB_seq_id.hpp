@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.5  2001/06/25 18:52:01  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -67,7 +70,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CPDB_seq_id : public CPDB_seq_id_Base
+class NCBI_SEQLOC_EXPORT CPDB_seq_id : public CPDB_seq_id_Base
 {
     typedef CPDB_seq_id_Base Tparent;
 public:

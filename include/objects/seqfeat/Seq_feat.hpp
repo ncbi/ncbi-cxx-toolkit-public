@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_feat : public CSeq_feat_Base
+class NCBI_SEQFEAT_EXPORT CSeq_feat : public CSeq_feat_Base
 {
     typedef CSeq_feat_Base Tparent;
 public:
@@ -77,7 +77,7 @@ private:
 };
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-bool operator< (const CSeq_feat& f1, const CSeq_feat& f2);
+NCBI_SEQFEAT_EXPORT bool operator< (const CSeq_feat& f1, const CSeq_feat& f2);
 
 /////////////////// CSeq_feat inline methods
 
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/12/26 12:43:27  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.6  2002/12/19 22:12:03  kans
 * include Gene_ref.hpp and Prot_ref.hpp, move log to bottom of file
 *

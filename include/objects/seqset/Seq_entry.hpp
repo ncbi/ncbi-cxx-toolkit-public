@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
+class NCBI_SEQSET_EXPORT CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
 {
     typedef CSeq_entry_Base Tparent;
 public:
@@ -87,6 +87,7 @@ typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 // keeps going until EOF or parse error (-> CParseException) unless
 // fReadFasta_OneSeq is set
 // see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
+NCBI_SEQ_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0);
 
 
@@ -124,6 +125,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2002/12/26 12:44:06  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.8  2002/10/29 22:08:55  ucko
  * +fReadFasta_OneSeq
  *

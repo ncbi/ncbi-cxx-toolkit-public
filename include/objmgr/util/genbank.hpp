@@ -53,7 +53,7 @@ class CSeq_feat;
 class CSeq_loc;
 class CSeq_interval;
 
-class CGenbankWriter
+class NCBI_XOBJUTIL_EXPORT CGenbankWriter
 {
 public:
     enum EFormat {
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/12/26 12:44:39  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.9  2002/10/10 17:57:36  ucko
 * Make most methods const (and m_Stream consequently mutable) to keep
 * WorkShop from complaining when CGenbankWriter is used as a temporary.

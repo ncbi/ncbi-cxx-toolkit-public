@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/12/26 12:42:22  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.1  2002/01/10 19:35:40  clausen
  * Added GetLabel
  *
@@ -55,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CPub_equiv : public CPub_equiv_Base
+class NCBI_PUB_EXPORT CPub_equiv : public CPub_equiv_Base
 {
     typedef CPub_equiv_Base Tparent;
 public:

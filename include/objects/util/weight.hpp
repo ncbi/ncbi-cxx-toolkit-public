@@ -43,7 +43,7 @@ class CSeq_loc;
 class CSeqVector;
 
 
-class CBadResidueException : public runtime_error
+class NCBI_XOBJUTIL_EXPORT CBadResidueException : public runtime_error
 {
 public:
     CBadResidueException(const string& s) : runtime_error(s) { }
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/12/26 12:44:39  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.6  2002/12/24 16:11:54  ucko
 * Make handle const per recent changes to CFeat_CI.
 *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/12/26 12:40:33  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.3  2002/01/10 19:48:26  clausen
  * Added GetLabel
  *
@@ -61,7 +64,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CDbtag : public CDbtag_Base
+class NCBI_GENERAL_EXPORT CDbtag : public CDbtag_Base
 {
     typedef CDbtag_Base Tparent;
 public:

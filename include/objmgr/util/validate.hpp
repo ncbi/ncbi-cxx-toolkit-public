@@ -52,7 +52,7 @@ class CCit_sub;
 
 BEGIN_SCOPE(validator)
 
-class CValidErrItem : public CObject {
+class NCBI_XOBJUTIL_EXPORT CValidErrItem : public CObject {
 public:
     // constructor
     CValidErrItem(EDiagSev             sev,
@@ -85,7 +85,7 @@ private:
 
 typedef vector < CRef < CValidErrItem > > TErrs;
 
-class CValidError
+class NCBI_XOBJUTIL_EXPORT CValidError
 {
 public:
 
@@ -126,7 +126,7 @@ private:
 };
 
 
-class CValidError_CI
+class NCBI_XOBJUTIL_EXPORT CValidError_CI
 {
 public:
     CValidError_CI(void);
@@ -159,6 +159,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/12/26 12:44:39  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.7  2002/10/29 19:36:24  clausen
 * Moved CvalidException to validate.cpp
 *

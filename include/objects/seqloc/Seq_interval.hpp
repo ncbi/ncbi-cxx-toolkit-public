@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.9  2002/12/19 20:11:02  grichenk
  * Fixed GetLength() for minus strand
  *
@@ -79,7 +82,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_interval : public CSeq_interval_Base
+class NCBI_SEQLOC_EXPORT CSeq_interval : public CSeq_interval_Base
 {
     typedef CSeq_interval_Base Tparent;
 public:

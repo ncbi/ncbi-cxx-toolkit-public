@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.3  2002/05/03 21:28:04  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -61,7 +64,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CPacked_seqint : public CPacked_seqint_Base
+class NCBI_SEQLOC_EXPORT CPacked_seqint : public CPacked_seqint_Base
 {
     typedef CPacked_seqint_Base Tparent;
 public:

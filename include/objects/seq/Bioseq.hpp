@@ -54,7 +54,7 @@ class CSeq_loc;
 class CDelta_ext;
 class CSeq_id;
 
-class CBioseq : public CBioseq_Base, public CSerialUserOp
+class NCBI_SEQ_EXPORT CBioseq : public CBioseq_Base, public CSerialUserOp
 {
     typedef CBioseq_Base Tparent;
 public:
@@ -147,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/12/26 12:42:59  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.15  2002/12/19 20:10:27  kans
  * added IsNa and IsAa methods
  *

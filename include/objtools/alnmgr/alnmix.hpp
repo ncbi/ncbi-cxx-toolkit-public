@@ -50,7 +50,7 @@ class CAlnMixSegment;
 class CAlnMixSeq;
 class CAlnMixMatch;
 
-class CAlnMix : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMix : public CObject
 {
 public:
 
@@ -265,6 +265,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2002/12/26 12:38:08  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.11  2002/12/24 16:20:57  todorov
 * Fixed initializing of a CTypeConstIterator
 *

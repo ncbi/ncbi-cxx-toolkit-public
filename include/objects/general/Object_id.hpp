@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/12/26 12:40:33  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.4  2001/06/25 18:51:58  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -64,7 +67,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CObject_id : public CObject_id_Base
+class NCBI_GENERAL_EXPORT CObject_id : public CObject_id_Base
 {
     typedef CObject_id_Base Tparent;
 public:

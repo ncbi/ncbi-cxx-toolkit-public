@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CBioSource : public CBioSource_Base
+class NCBI_SEQFEAT_EXPORT CBioSource : public CBioSource_Base
 {
     typedef CBioSource_Base Tparent;
 public:
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/12/26 12:43:27  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.1  2002/11/26 18:45:28  shomrat
 * Add GetGenCode
 *

@@ -54,7 +54,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_loc : public CSeq_loc_Base
+class NCBI_SEQLOC_EXPORT CSeq_loc : public CSeq_loc_Base
 {
 public:
     typedef CSeq_loc_Base Tparent;
@@ -100,7 +100,7 @@ private:
 
 // Seq-loc iterator class -- iterates all intervals from a seq-loc
 // in the correct order.
-class CSeq_loc_CI
+class NCBI_SEQLOC_EXPORT CSeq_loc_CI
 {
 public:
     CSeq_loc_CI(void);
@@ -299,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.16  2002/12/23 17:19:26  grichenk
  * Added GetSeq_loc() to CSeq_loc_CI
  *

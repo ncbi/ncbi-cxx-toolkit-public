@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_inst : public CSeq_inst_Base
+class NCBI_SEQ_EXPORT CSeq_inst : public CSeq_inst_Base
 {
     typedef CSeq_inst_Base Tparent;
 public:
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/12/26 12:42:59  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.1  2002/12/19 20:10:12  kans
 * added IsNa and IsAa methods
 *

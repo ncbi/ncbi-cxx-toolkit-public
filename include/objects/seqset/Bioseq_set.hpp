@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CBioseq_set : public CBioseq_set_Base
+class NCBI_SEQSET_EXPORT CBioseq_set : public CBioseq_set_Base
 {
     typedef CBioseq_set_Base Tparent;
 public:
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/12/26 12:44:06  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.16  2002/10/03 18:58:33  clausen
  * Removed extra whitespace
  *

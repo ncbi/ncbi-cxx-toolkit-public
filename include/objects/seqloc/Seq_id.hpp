@@ -51,8 +51,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CBioseq;
 
 
-class CSeq_id : public CSeq_id_Base,
-                public CSerializable
+class NCBI_SEQLOC_EXPORT CSeq_id : public CSeq_id_Base,
+                                   public CSerializable
 {
     typedef CSeq_id_Base Tparent;
 
@@ -360,6 +360,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.28  2002/11/26 15:12:15  dicuccio
  * Added general processing function to retrieve sequence id descriptions in a
  * number of formats.

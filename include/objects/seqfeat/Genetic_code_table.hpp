@@ -52,7 +52,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CGen_code_table_imp;
 
 
-class CGenetic_code_table : public CGenetic_code_table_Base
+class NCBI_SEQFEAT_EXPORT CGenetic_code_table : public CGenetic_code_table_Base
 {
     typedef CGenetic_code_table_Base Tparent;
 public:
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/12/26 12:43:27  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.6  2002/11/26 18:40:16  shomrat
 * Add convenience method for codon conversions and ncbieaa string retrieval
 *

@@ -50,8 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // Forward declarations
-class CSeq_point;
-class CInt_fuzz : public CInt_fuzz_Base
+class NCBI_GENERAL_EXPORT CInt_fuzz : public CInt_fuzz_Base
 {
     typedef CInt_fuzz_Base Tparent;
 public:
@@ -90,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/26 12:40:33  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.2  2002/10/03 19:02:27  clausen
  * Removed extra whitespace
  *

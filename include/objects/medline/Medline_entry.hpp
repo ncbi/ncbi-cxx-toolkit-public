@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/12/26 12:41:07  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.2  2002/01/16 18:56:24  grichenk
  * Removed CRef<> argument from choice variant setter, updated sources to
  * use references instead of CRef<>s
@@ -60,7 +63,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CMedline_entry : public CMedline_entry_Base
+class NCBI_MEDLINE_EXPORT CMedline_entry : public CMedline_entry_Base
 {
     typedef CMedline_entry_Base Tparent;
 public:

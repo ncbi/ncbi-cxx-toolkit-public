@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.6  2001/08/31 16:00:36  clausen
  * Added new constructors for FastA construction.
  *
@@ -70,7 +73,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CTextseq_id : public CTextseq_id_Base
+class NCBI_SEQLOC_EXPORT CTextseq_id : public CTextseq_id_Base
 {
     typedef CTextseq_id_Base Tparent;
 

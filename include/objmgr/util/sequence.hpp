@@ -81,35 +81,44 @@ enum ECompare {
 
 
 // Get sequence length if scope not null, else return max possible TSeqPos
+NCBI_XOBJUTIL_EXPORT
 TSeqPos GetLength(const CSeq_id& id, CScope* scope = 0);
 
 // Get length of sequence represented by CSeq_loc, if possible
+NCBI_XOBJUTIL_EXPORT
 TSeqPos GetLength(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNoLength));
 
 // Get length of CSeq_loc_mix == sum (length of embedded CSeq_locs)
+NCBI_XOBJUTIL_EXPORT
 TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope = 0)
     THROWS((sequence::CNoLength));
 
 // Checks that point >= 0 and point < length of Bioseq
+NCBI_XOBJUTIL_EXPORT
 bool IsValid(const CSeq_point& pt, CScope* scope = 0);
 
 // Checks that all points >=0 and < length of CBioseq. If scope is 0
 // assumes length of CBioseq is max value of TSeqPos.
+NCBI_XOBJUTIL_EXPORT
 bool IsValid(const CPacked_seqpnt& pts, CScope* scope = 0);
 
 // Checks from and to of CSeq_interval. If from < 0, from > to, or
 // to >= length of CBioseq this is an interval for, returns false, else true.
+NCBI_XOBJUTIL_EXPORT
 bool IsValid(const CSeq_interval& interval, CScope* scope = 0);
 
 // Determines if two CSeq_ids represent the same CBioseq
+NCBI_XOBJUTIL_EXPORT
 bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope = 0);
 
 // Returns true if all embedded CSeq_ids represent the same CBioseq, else false
+NCBI_XOBJUTIL_EXPORT
 bool IsOneBioseq(const CSeq_loc& loc, CScope* scope = 0);
 
 // If all CSeq_ids embedded in CSeq_loc refer to the same CBioseq, returns
 // the first CSeq_id found, else throws exception CNotUnique()
+NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
@@ -117,12 +126,14 @@ const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0)
 // Returns eNa_strand_other if multiple strands in same loc
 // Returns eNa_strand_both if loc is a Whole
 // Returns strand otherwise
+NCBI_XOBJUTIL_EXPORT
 ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope = 0);
 
 // If only one CBioseq is represented by CSeq_loc, returns the lowest residue
 // position represented. If not null, scope is used to determine if two
 // CSeq_ids represent the same CBioseq. Throws exception CNotUnique if
 // CSeq_loc does not represent one CBioseq.
+NCBI_XOBJUTIL_EXPORT
 TSeqPos GetStart(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
@@ -130,10 +141,12 @@ TSeqPos GetStart(const CSeq_loc& loc, CScope* scope = 0)
 // position represented. If not null, scope is used to determine if two
 // CSeq_ids represent the same CBioseq. Throws exception CNotUnique if
 // CSeq_loc does not represent one CBioseq.
+NCBI_XOBJUTIL_EXPORT
 TSeqPos GetStop(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
 // Returns the sequence::ECompare containment relationship between CSeq_locs
+NCBI_XOBJUTIL_EXPORT
 sequence::ECompare Compare(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,
                            CScope* scope = 0);
@@ -147,16 +160,19 @@ enum EGetTitleFlags {
     fGetTitle_Organism    = 0x2  // append [organism]
 };
 typedef int TGetTitleFlags;
+NCBI_XOBJUTIL_EXPORT
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 
 // Change a CSeq_id to the one for the CBioseq that it represents
 // that has the best rank or worst rank according on value of best.
 // Just returns if scope == 0
+NCBI_XOBJUTIL_EXPORT
 void ChangeSeqId(CSeq_id* id, bool best, CScope* scope = 0);
 
 // Change each of the CSeq_ids embedded in a CSeq_loc to the best
 // or worst CSeq_id accoring to the value of best. Just returns if
 // scope == 0
+NCBI_XOBJUTIL_EXPORT
 void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope = 0);
 
 enum ESeqLocCheck {
@@ -172,6 +188,7 @@ enum ESeqLocCheck {
 // If no mixed strands and lengths are valid, returns eSeqLocCheck_ok. If
 // only mixed strands/CBioseq error, then returns eSeqLocCheck_warning. If 
 // length error, then returns eSeqLocCheck_error.
+NCBI_XOBJUTIL_EXPORT
 ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope);
 
 // Returns true if the order of Seq_locs is bad, otherwise, false
@@ -186,6 +203,7 @@ enum ES2PFlags {
     fS2P_AllowTer = 0x2  // map the termination codon as a legal location
 };
 typedef int TS2PFlags; // binary OR of ES2PFlags
+NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
                                const CSeq_loc& source_loc, TS2PFlags flags = 0,
                                CScope* scope = 0, int* frame = 0);
@@ -194,6 +212,7 @@ enum EP2SFlags {
     fP2S_Extend = 0x1  // if hitting ends, extend to include partial codons
 };
 typedef int TP2SFlags; // binary OR of ES2PFlags
+NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
 
@@ -217,6 +236,7 @@ enum EOverlapType {
 };
 
 // Check if the two locations have ovarlap of a given type
+NCBI_XOBJUTIL_EXPORT
 int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type);
 
 enum ESeqlocPartial {
@@ -238,7 +258,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 END_SCOPE(sequence)
 
 // FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
-class CFastaOstream {
+class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
         eAssembleParts   = 0x1,
@@ -280,7 +300,7 @@ private:
 // for rapid translation from a given genetic code, allowing all
 // of the iupac nucleotide ambiguity characters
 
-class CCdregion_translate
+class NCBI_XOBJUTIL_EXPORT CCdregion_translate
 {
 public:
     // translation coding region into ncbieaa protein sequence
@@ -303,7 +323,7 @@ public:
 // Location relative to a base Seq-loc: one (usually) or more ranges
 // of offsets
 // XXX - handle fuzz?
-struct SRelLoc
+struct NCBI_XOBJUTIL_EXPORT SRelLoc
 {
     enum EFlags {
         fNoMerge = 0x1 // don't merge adjacent intervals
@@ -338,7 +358,7 @@ struct SRelLoc
 //
 //
 //
-class CSeqSearch
+class NCBI_XOBJUTIL_EXPORT CSeqSearch
 {
 public:
 
@@ -456,6 +476,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2002/12/26 12:44:39  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.17  2002/12/23 13:48:34  dicuccio
 * Added predeclaration for CSeq_entry.
 *

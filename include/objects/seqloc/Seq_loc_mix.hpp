@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2002/12/26 12:43:42  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.11  2002/09/12 21:15:11  kans
  * added IsPartialLeft and IsPartialRight
  *
@@ -85,7 +88,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_loc_mix : public CSeq_loc_mix_Base
+class NCBI_SEQLOC_EXPORT CSeq_loc_mix : public CSeq_loc_mix_Base
 {
     typedef CSeq_loc_mix_Base Tparent;
 public:

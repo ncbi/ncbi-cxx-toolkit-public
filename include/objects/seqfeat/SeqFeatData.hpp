@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/12/26 12:43:27  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.1  2001/10/30 20:25:56  ucko
  * Implement feature labels/keys, subtypes, and sorting
  *
@@ -55,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeqFeatData : public CSeqFeatData_Base
+class NCBI_SEQFEAT_EXPORT CSeqFeatData : public CSeqFeatData_Base
 {
     typedef CSeqFeatData_Base Tparent;
 public:

@@ -46,7 +46,7 @@ class CObjectManager;
 class CScope;
 
 
-class CAlnVec : public CAlnMap
+class NCBI_XALNMGR_EXPORT CAlnVec : public CAlnMap
 {
     typedef CAlnMap                         Tparent;
     typedef CSeqVector::TResidue            TResidue;
@@ -295,6 +295,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2002/12/26 12:38:08  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.11  2002/10/21 19:15:12  todorov
  * added GetAlnSeqString
  *

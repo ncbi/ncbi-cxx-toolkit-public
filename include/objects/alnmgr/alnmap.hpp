@@ -43,7 +43,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // forward declarations
 // _none_so_far
 
-class CAlnMap : public CObject
+class NCBI_XALNMGR_EXPORT CAlnMap : public CObject
 {
     typedef CObject TParent;
 
@@ -179,7 +179,7 @@ public:
     CRef<CAlnChunkVec> GetAlnChunks(TNumrow row, const TSignedRange& range,
                                     TGetChunkFlags flags = 0) const;
 
-    class CAlnChunkVec : public CObject
+    class NCBI_XALNMGR_EXPORT CAlnChunkVec : public CObject
     {
     public:
         CAlnChunkVec(const CAlnMap& aln_map, TNumrow row)
@@ -211,7 +211,7 @@ public:
         TSeqPos         m_RightDelta;
     };
 
-    class CAlnChunk : public CObject
+    class NCBI_XALNMGR_EXPORT CAlnChunk : public CObject
     {
     public:    
         TSegTypeFlags GetType(void) const { return m_TypeFlags; }
@@ -544,6 +544,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2002/12/26 12:38:08  dicuccio
+* Added Win32 export specifiers
+*
 * Revision 1.12  2002/10/21 19:14:36  todorov
 * reworked aln chunks: now supporting more types; added chunk aln coords
 *

@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CDate : public CDate_Base
+class NCBI_GENERAL_EXPORT CDate : public CDate_Base
 {
     typedef CDate_Base Tparent;
 public:
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2002/12/26 12:40:33  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.7  2002/12/09 17:30:10  ucko
  * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
  *

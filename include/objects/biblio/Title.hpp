@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/12/26 12:38:37  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.1  2002/01/10 20:07:54  clausen
  * Added GetTitle
  *
@@ -55,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CTitle : public CTitle_Base
+class NCBI_BIBLIO_EXPORT CTitle : public CTitle_Base
 {
     typedef CTitle_Base Tparent;
 public:

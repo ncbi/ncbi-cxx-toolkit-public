@@ -49,7 +49,7 @@ BEGIN_objects_SCOPE
 class CSeqportUtil_implementation;
 
 
-class CSeqportUtil
+class NCBI_SEQ_EXPORT CSeqportUtil
 {
 public:
 
@@ -58,15 +58,15 @@ public:
     typedef pair<TIndex, TIndex> TPair;
     
     // Classes thrown as errors
-    struct CBadIndex : public runtime_error
+    struct NCBI_SEQ_EXPORT CBadIndex : public runtime_error
     {
         CBadIndex() : runtime_error("CSeqportUtil: bad index specified") {}
     };
-    struct CBadSymbol : public runtime_error 
+    struct NCBI_SEQ_EXPORT CBadSymbol : public runtime_error 
     {
         CBadSymbol() : runtime_error("CSeqportUtil: bad symbol specified") {}
     };
-    struct CBadType : public runtime_error 
+    struct NCBI_SEQ_EXPORT CBadType : public runtime_error 
     {
         CBadType() : runtime_error("CSeqportUtil: specified code or code "
                                    "combination not supported") {}
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/12/26 12:42:59  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.7  2002/09/13 20:43:01  ucko
  * +#include <memory> (for auto_ptr<>)
  *
