@@ -75,6 +75,74 @@ BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist)
    return NULL;
 }
 
+/** Callback for sorting an array of initial HSP structures (not pointers to
+ * structures!) by score. 
+ */
+static int
+score_compare_match(const void* v1, const void* v2)
+
+{
+    BlastInitHSP* h1,* h2;
+
+    h1 = (BlastInitHSP*) v1;
+    h2 = (BlastInitHSP*) v2;
+
+    /* Check if ungapped_data substructures are initialized. If not, move
+       those array elements to the end. In reality this should never happen.*/
+    if (h1->ungapped_data == NULL && h2->ungapped_data == NULL)
+        return 0;
+    else if (h1->ungapped_data == NULL)
+        return 1;
+    else if (h2->ungapped_data == NULL)
+        return -1;
+
+    if (h1->ungapped_data->score < h2->ungapped_data->score) 
+        return 1;
+    if (h1->ungapped_data->score > h2->ungapped_data->score)
+        return -1;
+    
+    
+    /* Tie breaks: starting offset in subject; then length
+     * (equivalent to ending offset in subject), then starting
+     * offset in query.
+     */
+    if (h1->ungapped_data->s_start < h2->ungapped_data->s_start)
+        return 1;
+    if (h1->ungapped_data->s_start > h2->ungapped_data->s_start )
+        return -1;
+
+    if (h1->ungapped_data->length < h2->ungapped_data->length)
+        return 1;
+    if (h1->ungapped_data->length > h2->ungapped_data->length)
+        return -1;
+
+    if( h1->ungapped_data->q_start < h2->ungapped_data->q_start )
+        return 1;
+    if( h1->ungapped_data->q_start > h2->ungapped_data->q_start )
+        return -1;
+   
+    return 0;
+}
+
+void Blast_InitHitListSortByScore(BlastInitHitList* init_hitlist) 
+{
+    qsort(init_hitlist->init_hsp_array, init_hitlist->total,
+          sizeof(BlastInitHSP), score_compare_match);
+}
+
+Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist)
+{
+    Int4 index;
+    BlastInitHSP* init_hsp_array = init_hitlist->init_hsp_array;
+
+    for (index = 0; index < init_hitlist->total - 1; ++index) {
+        if (score_compare_match(&init_hsp_array[index],
+                                &init_hsp_array[index+1]) > 0)
+            return FALSE;
+    }
+    return TRUE;
+}
+
 /** Allocates memory for the BLAST_DiagTable*. This function also 
  * sets many of the parametes such as diag_array_length etc.
  * @param qlen Length of the query [in]
@@ -1076,6 +1144,9 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
    Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended, 
                              init_hitlist->total);
 
+   if (word_params->options->ungapped_extension)
+       Blast_InitHitListSortByScore(init_hitlist);
+
    return 0;
 } 
 
@@ -1327,6 +1398,10 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
    Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended, 
                              init_hitlist->total);
 
+   if (word_options->ungapped_extension)
+       Blast_InitHitListSortByScore(init_hitlist);
+
+
    return 0;
 }
 
@@ -1371,6 +1446,9 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 
    Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended, 
                              init_hitlist->total);
+
+   if (word_params->options->ungapped_extension)
+       Blast_InitHitListSortByScore(init_hitlist);
 
    return 0;
 } 

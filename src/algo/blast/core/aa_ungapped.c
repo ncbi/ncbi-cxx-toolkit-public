@@ -72,6 +72,8 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                                         init_hitlist, ungapped_stats);
     }
 
+  Blast_InitHitListSortByScore(init_hitlist);
+
   return status;
 }
 
