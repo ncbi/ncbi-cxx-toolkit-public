@@ -197,7 +197,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
     string                 line;
 
     while ( !in.eof() ) {
-        if ((flags & fReadFasta_OneSeq)  &&  seq  &&  (in.peek() == '>')) {
+        if ((flags & fReadFasta_OneSeq)  &&  seq.NotEmpty()
+            &&  (in.peek() == '>')) {
             break;
         }
         NcbiGetlineEOL(in, line);
@@ -336,6 +337,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.7  2002/10/30 02:34:41  ucko
+ * Change seq to seq.NotEmpty() in compound test to make MSVC happy.
+ *
  * Revision 6.6  2002/10/29 22:09:36  ucko
  * +fReadFasta_OneSeq
  *
