@@ -112,7 +112,10 @@ public:
 
     void AddDatabase(CLDS_Database* db) { m_DataBases.push_back(db); }
 
-    CLDS_Database* GetDefaultDatabase() { return *(m_DataBases.begin()); }
+    CLDS_Database* GetDefaultDatabase() 
+    { 
+        return m_DataBases.empty() ? 0 : *(m_DataBases.begin()); 
+    }
 
     /// Find LDS database by the alias
     CLDS_Database* GetDatabase(const string& alias);
@@ -140,6 +143,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/11/05 13:32:24  kuznets
+ * Fixed a bug in GetDefaultDatabase() (resulted in core when there are no
+ * databases attached)
+ *
  * Revision 1.20  2003/10/29 16:22:49  kuznets
  * +CLDS_DatabaseHolder::EnumerateAliases
  *
