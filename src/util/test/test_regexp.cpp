@@ -78,7 +78,7 @@ int CRegexApplication::Run(void)
     }    
     
     // Set new pattern and ignore case
-    pattern.Set("t\\w*e", CRegexp::eCompile_ignore_case);
+    pattern.Set("t\\w*e", CRegexp::fCompile_ignore_case);
     
     // Find all matches to pattern
     size_t start = 0;
@@ -98,7 +98,7 @@ int CRegexApplication::Run(void)
     strcpy(txt, text.c_str());
     while (true)
     {
-        pattern.GetMatch(txt, start, 0, CRegexp::eMatch_default, true);
+        pattern.GetMatch(txt, start, 0, CRegexp::fMatch_default, true);
         if (pattern.NumFound() > 0) {
             const int *rslt = pattern.GetResults(0);
             start = rslt[1];
@@ -135,6 +135,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/11/22 17:20:50  ivanov
+ * Use fCompile_* and fMatch_* flags.
+ *
  * Revision 1.5  2004/11/22 16:47:57  ivanov
  * Use CRegexp::eMatch_default instead of 0 as default pattern match flags.
  *

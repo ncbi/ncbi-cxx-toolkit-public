@@ -59,11 +59,11 @@ const char* kEOL = "\n";
 const char* kTemplate = "@@@";
 
 /// Single/Multiline PCRE compilation flags.
-const CRegexp::TCompile kSL = CRegexp::eCompile_dotall |
-                              CRegexp::eCompile_ungreedy;
-const CRegexp::TCompile kML = CRegexp::eCompile_newline | 
-                              CRegexp::eCompile_ungreedy;
-const CRegexp::TCompile kDF = CRegexp::eCompile_default;
+const CRegexp::TCompile kSL = CRegexp::fCompile_dotall |
+                              CRegexp::fCompile_ungreedy;
+const CRegexp::TCompile kML = CRegexp::fCompile_newline | 
+                              CRegexp::fCompile_ungreedy;
+const CRegexp::TCompile kDF = CRegexp::fCompile_default;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -952,6 +952,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/22 17:20:50  ivanov
+ * Use fCompile_* and fMatch_* flags.
+ *
  * Revision 1.12  2004/11/22 16:49:21  ivanov
  * Use CRegexp:: eCompile_* and eMatch_* flags instead of PCRE_*.
  *
