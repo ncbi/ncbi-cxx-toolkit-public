@@ -23,6 +23,9 @@
  *
  */
 
+/* NOTE: File was modified to fix include paths
+ */
+
 /* NOTE: This is an internal header file, included by other STL headers.
  *   You should not attempt to use it directly.
  */
@@ -588,7 +591,8 @@ private:
 
 #define _STLP_TEMPLATE_HEADER template <class _Val, class _Key, class _HF, class _ExK, class _EqK, class _All>
 #define _STLP_TEMPLATE_CONTAINER hashtable<_Val,_Key,_HF,_ExK,_EqK,_All>
-#include <stl/_relops_hash_cont.h>
+// MODIFIED - fixed path
+#include <corelib/hash_impl/_relops_hash_cont.h>
 #undef _STLP_TEMPLATE_CONTAINER
 #undef _STLP_TEMPLATE_HEADER
 

@@ -23,6 +23,9 @@
  *
  */
 
+/* NOTE: File was modified to fix include paths
+ */
+
 /* NOTE: This is an internal header file, included by other STL headers.
  *   You should not attempt to use it directly.
  */
@@ -377,11 +380,13 @@ public:
 #define _STLP_TEMPLATE_HEADER template <class _Key, class _Tp, class _HashFcn, class _EqlKey, class _Alloc>
 #define _STLP_TEMPLATE_CONTAINER hash_map<_Key,_Tp,_HashFcn,_EqlKey,_Alloc>
 
-#include <stl/_relops_hash_cont.h>
+// MODIFIED - fixed path
+#include <corelib/hash_impl/_relops_hash_cont.h>
 
 #undef _STLP_TEMPLATE_CONTAINER
 #define _STLP_TEMPLATE_CONTAINER hash_multimap<_Key,_Tp,_HashFcn,_EqlKey,_Alloc>
-#include <stl/_relops_hash_cont.h>
+// MODIFIED - fixed path
+#include <corelib/hash_impl/_relops_hash_cont.h>
 
 #undef _STLP_TEMPLATE_CONTAINER
 #undef _STLP_TEMPLATE_HEADER

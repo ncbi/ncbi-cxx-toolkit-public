@@ -89,6 +89,7 @@ NCBI_USING_NAMESPACE_STD;
 // Do not try to include *.c from *.h - this is done
 // explicitely in this header
 #define _STLP_LINK_TIME_INSTANTIATION
+#define _STLP_USE_EXCEPTIONS
 
 // Need to undefine to avoid namespace conflicts
 #define _STLP_NO_CLASS_PARTIAL_SPECIALIZATION
