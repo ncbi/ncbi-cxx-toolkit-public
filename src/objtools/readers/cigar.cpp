@@ -148,7 +148,7 @@ CRef<CSeq_align> SCigarAlignment::operator()(const CSeq_interval& ref,
 
     TSeqPos refpos = (refsign > 0) ? ref.GetFrom() : ref.GetTo();
     TSeqPos tgtpos = (tgtsign > 0) ? tgt.GetFrom() : tgt.GetTo();
-    iterate (TSegments, it, segments) {
+    ITERATE (TSegments, it, segments) {
         CRef<CSeq_loc> refseg = x_NextChunk(*refid, refpos,
                                             it->len * refscale * refsign);
         CRef<CSeq_loc> tgtseg = x_NextChunk(*tgtid, tgtpos,
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/11/08 14:46:10  dicuccio
+* iterate -> ITERATE
+*
 * Revision 1.2  2004/06/21 18:44:07  ucko
 * Fix GFF 3 alignment parsing logic.
 *
