@@ -74,34 +74,35 @@ public:
 
     enum EFlags {
         // customization flags
-        fDoHTML               = 0x1,
-        fShowContigFeatures   = 0x2, // not just source features
-        fShowContigSources    = 0x4, // not just focus
-        fShowFarTranslations  = 0x8,
-        fTranslateIfNoProduct = 0x10,
-        fAlwaysTranslateCDS   = 0x20,
-        fOnlyNearFeatures     = 0x40,
-        fFavorFarFeatures     = 0x80,  // ignore near feats on segs w/far feats
-        fCopyCDSFromCDNA      = 0x100, // for gen-prod sets
-        fCopyGeneToCDNA       = 0x200, // for gen-prod sets
-        fShowContigInMaster   = 0x400,
-        fHideImpFeats         = 0x800,
-        fHideRemoteImpFeats   = 0x1000,
-        fHideSNPFeatures      = 0x2000,
-        fHideExonFeatures     = 0x4000,
-        fHideIntronFeatures   = 0x8000,
-        fHideMiscFeatures     = 0x10000,
-        fHideCDSProdFeatures  = 0x20000,
-        fHideCDDFeats         = 0x40000,
-        fShowTranscript       = 0x80000,
-        fShowPeptides         = 0x100000,
-        fHideGeneRIFs         = 0x200000,
-        fOnlyGeneRIFs         = 0x400000,
-        fLatestGeneRIFs       = 0x800000,
-        fShowContigAndSeq     = 0x1000000,
-        fHideSourceFeats      = 0x2000000,
-        fShowFtableRefs       = 0x4000000,
-        fOldFeatsOrder        = 0x8000000
+        fDoHTML                = 1,
+        fShowContigFeatures    = 1 << 1,  // not just source features
+        fShowContigSources     = 1 << 2,  // not just focus
+        fShowFarTranslations   = 1 << 3,
+        fTranslateIfNoProduct  = 1 << 4,
+        fAlwaysTranslateCDS    = 1 << 5,
+        fOnlyNearFeatures      = 1 << 6,
+        fFavorFarFeatures      = 1 << 7,  // ignore near feats on segs w/far feats
+        fCopyCDSFromCDNA       = 1 << 8,  // for gen-prod sets
+        fCopyGeneToCDNA        = 1 << 9,  // for gen-prod sets
+        fShowContigInMaster    = 1 << 10,
+        fHideImpFeatures       = 1 << 11,
+        fHideRemoteImpFeatures = 1 << 12,
+        fHideSNPFeatures       = 1 << 13,
+        fHideExonFeatures      = 1 << 14,
+        fHideIntronFeatures    = 1 << 15,
+        fHideMiscFeatures      = 1 << 16,
+        fHideCDSProdFeatures   = 1 << 17,
+        fHideCDDFeatures       = 1 << 18,
+        fShowTranscript        = 1 << 19,
+        fShowPeptides          = 1 << 20,
+        fHideGeneRIFs          = 1 << 21,
+        fOnlyGeneRIFs          = 1 << 22,
+        fLatestGeneRIFs        = 1 << 23,
+        fShowContigAndSeq      = 1 << 24,
+        fHideSourceFeatures    = 1 << 25,
+        fShowFtableRefs        = 1 << 26,
+        fOldFeaturesOrder      = 1 << 27,
+        fHideGapFeatures       = 1 << 28
     };
 
     enum EView {
@@ -191,37 +192,38 @@ public:
     // getters
     const TFlags& GetFlags(void) const { return m_Flags; }
     // custumizable flags
-    bool DoHTML              (void) const;
-    bool HideImpFeats        (void) const;
-    bool HideSNPFeatures     (void) const;
-    bool HideExonFeatures    (void) const;
-    bool HideIntronFeatures  (void) const;
-    bool HideMiscFeatures    (void) const;
-    bool HideRemoteImpFeats  (void) const;
-    bool HideGeneRIFs        (void) const;
-    bool OnlyGeneRIFs        (void) const;
-    bool HideCDSProdFeatures (void) const;
-    bool HideCDDFeats        (void) const;
-    bool LatestGeneRIFs      (void) const;
-    bool ShowContigFeatures  (void) const;
-    bool ShowContigSources   (void) const;
-    bool ShowContigAndSeq    (void) const;
-    bool CopyGeneToCDNA      (void) const;
-    bool ShowContigInMaster  (void) const;
-    bool CopyCDSFromCDNA     (void) const;
-    bool HideSourceFeats     (void) const;
-    bool AlwaysTranslateCDS  (void) const;
-    bool OnlyNearFeatures    (void) const;
-    bool FavorFarFeatures    (void) const;
-    bool ShowFarTranslations (void) const;
-    bool TranslateIfNoProduct(void) const;
-    bool ShowTranscript      (void) const;
-    bool ShowPeptides        (void) const;
-    bool ShowFtableRefs      (void) const;
-    bool OldFeatsOrder       (void) const;
+    bool DoHTML                (void) const;
+    bool HideImpFeatures       (void) const;
+    bool HideSNPFeatures       (void) const;
+    bool HideExonFeatures      (void) const;
+    bool HideIntronFeatures    (void) const;
+    bool HideMiscFeatures      (void) const;
+    bool HideRemoteImpFeatures (void) const;
+    bool HideGeneRIFs          (void) const;
+    bool OnlyGeneRIFs          (void) const;
+    bool HideCDSProdFeatures   (void) const;
+    bool HideCDDFeatures       (void) const;
+    bool LatestGeneRIFs        (void) const;
+    bool ShowContigFeatures    (void) const;
+    bool ShowContigSources     (void) const;
+    bool ShowContigAndSeq      (void) const;
+    bool CopyGeneToCDNA        (void) const;
+    bool ShowContigInMaster    (void) const;
+    bool CopyCDSFromCDNA       (void) const;
+    bool HideSourceFeatures    (void) const;
+    bool AlwaysTranslateCDS    (void) const;
+    bool OnlyNearFeatures      (void) const;
+    bool FavorFarFeatures      (void) const;
+    bool ShowFarTranslations   (void) const;
+    bool TranslateIfNoProduct  (void) const;
+    bool ShowTranscript        (void) const;
+    bool ShowPeptides          (void) const;
+    bool ShowFtableRefs        (void) const;
+    bool OldFeaturesOrder      (void) const;
+    bool HideGapFeatures       (void) const;
     // mode dependant flags
     bool SuppressLocalId     (void) const;
-    bool ValidateFeats       (void) const;
+    bool ValidateFeatures    (void) const;
     bool IgnorePatPubs       (void) const;
     bool DropShortAA         (void) const;
     bool AvoidLocusColl      (void) const;
@@ -247,36 +249,37 @@ public:
     bool ForGBRelease        (void) const;
     bool HideUnclassPartial  (void) const;
     
-    // setters
+    // setters (for customization flags)
     void SetFlags(const TFlags& flags) { m_Flags = flags; }
-    CFlatFileConfig& SetDoHTML              (bool val = true);
-    CFlatFileConfig& SetHideImpFeats        (bool val = true);
-    CFlatFileConfig& SetHideSNPFeatures     (bool val = true);
-    CFlatFileConfig& SetHideExonFeatures    (bool val = true);
-    CFlatFileConfig& SetHideIntronFeatures  (bool val = true);
-    CFlatFileConfig& SetHideMiscFeatures    (bool val = true);
-    CFlatFileConfig& SetHideRemoteImpFeats  (bool val = true);
-    CFlatFileConfig& SetHideGeneRIFs        (bool val = true);
-    CFlatFileConfig& SetOnlyGeneRIFs        (bool val = true);
-    CFlatFileConfig& SetHideCDSProdFeatures (bool val = true);
-    CFlatFileConfig& SetHideCDDFeats        (bool val = true);
-    CFlatFileConfig& SetLatestGeneRIFs      (bool val = true);
-    CFlatFileConfig& SetShowContigFeatures  (bool val = true);
-    CFlatFileConfig& SetShowContigSources   (bool val = true);
-    CFlatFileConfig& SetShowContigAndSeq    (bool val = true);
-    CFlatFileConfig& SetCopyGeneToCDNA      (bool val = true);
-    CFlatFileConfig& SetShowContigInMaster  (bool val = true);
-    CFlatFileConfig& SetCopyCDSFromCDNA     (bool val = true);
-    CFlatFileConfig& SetHideSourceFeats     (bool val = true);
-    CFlatFileConfig& SetAlwaysTranslateCDS  (bool val = true);
-    CFlatFileConfig& SetOnlyNearFeatures    (bool val = true);
-    CFlatFileConfig& SetFavorFarFeatures    (bool val = true);
-    CFlatFileConfig& SetShowFarTranslations (bool val = true);
-    CFlatFileConfig& SetTranslateIfNoProduct(bool val = true);
-    CFlatFileConfig& SetShowTranscript      (bool val = true);
-    CFlatFileConfig& SetShowPeptides        (bool val = true);
-    CFlatFileConfig& SetShowFtableRefs      (bool val = true);
-    CFlatFileConfig& SetOldFeatsOrder       (bool val = true);
+    CFlatFileConfig& SetDoHTML               (bool val = true);
+    CFlatFileConfig& SetHideImpFeatures      (bool val = true);
+    CFlatFileConfig& SetHideSNPFeatures      (bool val = true);
+    CFlatFileConfig& SetHideExonFeatures     (bool val = true);
+    CFlatFileConfig& SetHideIntronFeatures   (bool val = true);
+    CFlatFileConfig& SetHideMiscFeatures     (bool val = true);
+    CFlatFileConfig& SetHideRemoteImpFeatures(bool val = true);
+    CFlatFileConfig& SetHideGeneRIFs         (bool val = true);
+    CFlatFileConfig& SetOnlyGeneRIFs         (bool val = true);
+    CFlatFileConfig& SetHideCDSProdFeatures  (bool val = true);
+    CFlatFileConfig& SetHideCDDFeatures      (bool val = true);
+    CFlatFileConfig& SetLatestGeneRIFs       (bool val = true);
+    CFlatFileConfig& SetShowContigFeatures   (bool val = true);
+    CFlatFileConfig& SetShowContigSources    (bool val = true);
+    CFlatFileConfig& SetShowContigAndSeq     (bool val = true);
+    CFlatFileConfig& SetCopyGeneToCDNA       (bool val = true);
+    CFlatFileConfig& SetShowContigInMaster   (bool val = true);
+    CFlatFileConfig& SetCopyCDSFromCDNA      (bool val = true);
+    CFlatFileConfig& SetHideSourceFeatures   (bool val = true);
+    CFlatFileConfig& SetAlwaysTranslateCDS   (bool val = true);
+    CFlatFileConfig& SetOnlyNearFeatures     (bool val = true);
+    CFlatFileConfig& SetFavorFarFeatures     (bool val = true);
+    CFlatFileConfig& SetShowFarTranslations  (bool val = true);
+    CFlatFileConfig& SetTranslateIfNoProduct (bool val = true);
+    CFlatFileConfig& SetShowTranscript       (bool val = true);
+    CFlatFileConfig& SetShowPeptides         (bool val = true);
+    CFlatFileConfig& SetShowFtableRefs       (bool val = true);
+    CFlatFileConfig& SetOldFeaturesOrder     (bool val = true);
+    CFlatFileConfig& SetHideGapFeatures      (bool val = true);
 
 private:
     // mode specific flags
@@ -295,7 +298,8 @@ private:
 // inilne methods
 
 // custom flags
-#define CUSTOM_FLAG_GET(x) inline \
+#define CUSTOM_FLAG_GET(x) \
+inline \
 bool CFlatFileConfig::x(void) const \
 { \
     return (m_Flags & f##x) != 0; \
@@ -317,16 +321,16 @@ CUSTOM_FLAG_GET(x) \
 CUSTOM_FLAG_SET(x)
 
 CUSTOM_FLAG_IMP(DoHTML)
-CUSTOM_FLAG_IMP(HideImpFeats)
+CUSTOM_FLAG_IMP(HideImpFeatures)
 CUSTOM_FLAG_IMP(HideSNPFeatures)
 CUSTOM_FLAG_IMP(HideExonFeatures)
 CUSTOM_FLAG_IMP(HideIntronFeatures)
 CUSTOM_FLAG_IMP(HideMiscFeatures)
-CUSTOM_FLAG_IMP(HideRemoteImpFeats)
+CUSTOM_FLAG_IMP(HideRemoteImpFeatures)
 CUSTOM_FLAG_IMP(HideGeneRIFs)
 CUSTOM_FLAG_IMP(OnlyGeneRIFs)
 CUSTOM_FLAG_IMP(HideCDSProdFeatures)
-CUSTOM_FLAG_IMP(HideCDDFeats)
+CUSTOM_FLAG_IMP(HideCDDFeatures)
 CUSTOM_FLAG_IMP(LatestGeneRIFs)
 CUSTOM_FLAG_IMP(ShowContigFeatures)
 CUSTOM_FLAG_IMP(ShowContigSources)
@@ -334,7 +338,7 @@ CUSTOM_FLAG_IMP(ShowContigAndSeq)
 CUSTOM_FLAG_IMP(CopyGeneToCDNA)
 CUSTOM_FLAG_IMP(ShowContigInMaster)
 CUSTOM_FLAG_IMP(CopyCDSFromCDNA)
-CUSTOM_FLAG_IMP(HideSourceFeats)
+CUSTOM_FLAG_IMP(HideSourceFeatures)
 CUSTOM_FLAG_IMP(AlwaysTranslateCDS)
 CUSTOM_FLAG_IMP(OnlyNearFeatures)
 CUSTOM_FLAG_IMP(FavorFarFeatures)
@@ -343,7 +347,8 @@ CUSTOM_FLAG_IMP(TranslateIfNoProduct)
 CUSTOM_FLAG_IMP(ShowTranscript)
 CUSTOM_FLAG_IMP(ShowPeptides)
 CUSTOM_FLAG_IMP(ShowFtableRefs)
-CUSTOM_FLAG_IMP(OldFeatsOrder)
+CUSTOM_FLAG_IMP(OldFeaturesOrder)
+CUSTOM_FLAG_IMP(HideGapFeatures)
 
 #undef CUSTOM_FLAG_IMP
 #undef CUSTOM_FLAG_GET
@@ -360,6 +365,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/11/24 16:47:04  shomrat
+* Standardize customization flags
+*
 * Revision 1.4  2004/09/01 20:00:38  shomrat
 * Added missing setter/getter for flags
 *
