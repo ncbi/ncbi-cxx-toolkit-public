@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.5  2001/03/26 18:36:39  lavr
+* CT_EQ_INT_TYPE used throughout to compare CT_INT_TYPE values
+*
 * Revision 6.4  2001/03/24 00:34:40  lavr
 * Accurate converions between CT_CHAR_TYPE and CT_INT_TYPE
 * (BUGFIX: promotion of 255 as signed char to int caused EOF (-1) gets returned)
@@ -115,7 +118,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             ? CT_NOT_EOF(CT_EOF) : sputc(CT_TO_CHAR_TYPE(c));
     }
 
-    if (c != CT_EOF) {
+    if (!CT_EQ_INT_TYPE(c, CT_EOF)) {
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         // send char
         x_CheckThrow
@@ -125,7 +128,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         
         return c;
     } 
-
+    
     return CT_NOT_EOF(CT_EOF);
 }
 
@@ -133,7 +136,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 CT_INT_TYPE CConn_Streambuf::underflow(void)
 {
     if (m_Tie  &&  pbase()  &&  pptr() > pbase()) {
-        _VERIFY(overflow(CT_EOF) != CT_EOF);
+        _VERIFY(!CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF));
     }
 
     size_t n_read;
@@ -152,7 +155,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
 int CConn_Streambuf::sync(void)
 {
-    return overflow(CT_EOF) != CT_EOF ? 0 : -1;
+    return CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF) ? -1 : 0;
 }
 
 
