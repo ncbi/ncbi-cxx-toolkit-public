@@ -33,28 +33,55 @@
 BEGIN_NCBI_SCOPE
 
 CSeqDBImpl::CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mmap)
-    : m_DBNames(db_name_list),
-      m_Aliases(db_name_list, prot_nucl, use_mmap),
-      m_VolSet (m_MemPool, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
+    : m_DBNames      (db_name_list),
+      m_Aliases      (db_name_list, prot_nucl, use_mmap),
+      m_VolSet       (m_MemPool, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap),
+      m_RestrictFirst(0)
 {
     m_Aliases.SetMasks(m_VolSet);
     
     if ( m_VolSet.HasMask() ) {
         m_OIDList.Reset( new CSeqDBOIDList(m_VolSet, use_mmap) );
     }
+    
+    m_RestrictLast = GetNumSeqs() - 1;
 }
 
 CSeqDBImpl::~CSeqDBImpl(void)
 {
 }
 
+void CSeqDBImpl::SetOIDRange(Uint4 first, Uint4 last)
+{
+    m_RestrictFirst = first;
+    m_RestrictLast  = last;
+    
+    if (m_RestrictLast >= GetNumSeqs()) {
+        m_RestrictLast = GetNumSeqs() - 1;
+    }
+}
+
 bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid)
 {
-    if (m_OIDList.Empty()) {
-        return next_oid < GetNumSeqs();
+    bool success = true;
+    
+    if (next_oid < m_RestrictFirst) {
+        next_oid = m_RestrictFirst;
     }
     
-    return m_OIDList->CheckOrFindOID(next_oid);
+    if (next_oid > m_RestrictLast) {
+        success = false;
+    }
+    
+    if (success && m_OIDList.NotEmpty()) {
+        success = m_OIDList->CheckOrFindOID(next_oid);
+        
+        if (next_oid > m_RestrictLast) {
+            success = false;
+        }
+    }
+    
+    return success;
 }
 
 Int4 CSeqDBImpl::GetSeqLength(Uint4 oid)

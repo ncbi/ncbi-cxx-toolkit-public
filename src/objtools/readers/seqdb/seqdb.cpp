@@ -127,6 +127,11 @@ bool CSeqDB::CheckOrFindOID(TOID & oid)
     return m_Impl->CheckOrFindOID(oid);
 }
 
+void CSeqDB::SetOIDRange(TOID first, TOID last)
+{
+    m_Impl->SetOIDRange(first, last);
+}
+
 const string & CSeqDB::GetDBNameList(void)
 {
     return m_Impl->GetDBNameList();

@@ -83,6 +83,8 @@ public:
     
     bool   CheckOrFindOID(Uint4 & next_oid);
     
+    void   SetOIDRange(Uint4 first, Uint4 last);
+    
     const string & GetDBNameList(void);
     
 private:
@@ -91,6 +93,8 @@ private:
     CSeqDBAliasFile     m_Aliases;
     CSeqDBVolSet        m_VolSet;
     CRef<CSeqDBOIDList> m_OIDList;
+    Uint4               m_RestrictFirst;
+    Uint4               m_RestrictLast;
 };
 
 END_NCBI_SCOPE
