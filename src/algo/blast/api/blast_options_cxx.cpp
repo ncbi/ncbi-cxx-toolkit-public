@@ -39,7 +39,6 @@
 #include "blast_setup.hpp"
 
 #include <algo/blast/core/blast_extend.h>
-#include <algo/blast/core/blast_gapalign.h>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/blast/Blast4_cutoff.hpp>
@@ -593,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/05/17 15:31:31  madden
+* Removed unneeded blast_gapalign.h include
+*
 * Revision 1.41  2004/03/24 22:12:46  dondosha
 * Fixed memory leaks
 *
