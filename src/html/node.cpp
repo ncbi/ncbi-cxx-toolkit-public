@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/11/01 20:37:38  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.21  2000/10/17 18:00:10  vasilche
 * CNCBINode::AppendChild() can throw exception if added child was not
 * allocated on heap.
@@ -112,17 +115,16 @@
 BEGIN_NCBI_SCOPE
 
 CNCBINode::CNCBINode(void)
-    : CObject(eCanDelete)
 {
 }
 
 CNCBINode::CNCBINode(const string& name)
-    : CObject(eCanDelete), m_Name(name)
+    : m_Name(name)
 {
 }
 
 CNCBINode::CNCBINode(const char* name)
-    : CObject(eCanDelete), m_Name(name)
+    : m_Name(name)
 {
 }
 
@@ -133,10 +135,6 @@ CNCBINode::~CNCBINode(void)
 // append a child
 void CNCBINode::DoAppendChild(CNCBINode* child)
 {
-    if ( !child->CanBeDeleted() ) {
-        THROW1_TRACE(runtime_error,
-                     "AppendChild() of node allocated in stack");
-    }
     GetChildren().push_back(child);
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/01 20:38:37  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.10  2000/10/20 15:51:38  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -258,10 +261,10 @@ bool CClassTypeInfoBase::IsCObject(void) const
 
 const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) const
 {
-    if ( m_IsCObject )
+    if ( m_IsCObject ) {
         return static_cast<const CObject*>(objectPtr);
-    else
-        return 0;
+    }
+    return 0;
 }
 
 bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
@@ -309,7 +312,7 @@ private:
 };
 
 CPostReadHook::CPostReadHook(TPostReadFunction func)
-    : CParent(eCanDelete), m_PostRead(func)
+    : m_PostRead(func)
 {
 }
 
@@ -335,7 +338,7 @@ private:
 };
 
 CPreWriteHook::CPreWriteHook(TPreWriteFunction func)
-    : CParent(eCanDelete), m_PreWrite(func)
+    : m_PreWrite(func)
 {
 }
 

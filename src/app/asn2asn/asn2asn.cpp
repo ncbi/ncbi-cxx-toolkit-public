@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/11/01 20:38:28  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.30  2000/10/27 14:42:59  ostell
 * removed extra CreateArguments call so that usage shows properly
 *
@@ -250,10 +253,6 @@ private:
 class CReadSeqSetHook : public CReadClassMemberHook
 {
 public:
-    CReadSeqSetHook(void)
-        : CReadClassMemberHook(eCanDelete)
-        {
-        }
     void ReadClassMember(CObjectIStream& in,
                          const CObjectInfo::CMemberIterator& member);
 
@@ -263,12 +262,16 @@ public:
 class CWriteSeqSetHook : public CWriteClassMemberHook
 {
 public:
-    CWriteSeqSetHook(void)
-        : CWriteClassMemberHook(eCanDelete)
-        {
-        }
     void WriteClassMember(CObjectOStream& out,
                           const CConstObjectInfo::CMemberIterator& member);
+
+    CCounter m_Level;
+};
+
+class CWriteSeqEntryHook : public CWriteObjectHook
+{
+public:
+    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object);
 
     CCounter m_Level;
 };
@@ -372,6 +375,7 @@ int CAsn2Asn::Run(void)
             }
             else {
                 TSeqEntry entry;
+                entry.DoNotDeleteThisObject();
                 if ( displayMessages )
                     NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
                 *in >> entry;
@@ -397,6 +401,7 @@ int CAsn2Asn::Run(void)
             }
             else {
                 CBioseq_set entries;
+                entries.DoNotDeleteThisObject();
                 if ( displayMessages )
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
@@ -416,9 +421,15 @@ int CAsn2Asn::Run(void)
                     if ( displayMessages )
                         NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
                     if ( writeHook ) {
+#if 0
                         CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
                         bioseqSetType.FindMember("seq-set")
                             .SetLocalWriteHook(*out, new CWriteSeqSetHook);
+#else
+                        CObjectTypeInfo seqEntryType = Type<CSeq_entry>();
+                        seqEntryType
+                            .SetLocalWriteHook(*out, new CWriteSeqEntryHook);
+#endif
                         *out << entries;
                     }
                     else {
@@ -450,12 +461,28 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
     if ( m_Level == 1 ) {
         for ( CIStreamContainer i(in, member); i; ++i ) {
             TSeqEntry entry;
+            entry.DoNotDeleteThisObject();
             i >> entry;
             SeqEntryProcess(entry);
         }
     }
     else {
         in.ReadClassMember(member);
+    }
+}
+
+void CWriteSeqEntryHook::WriteObject(CObjectOStream& out,
+                                     const CConstObjectInfo& object)
+{
+    CInc inc(m_Level);
+    if ( m_Level == 1 ) {
+        NcbiCerr << "entry" << NcbiEndl;
+        const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
+        object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+    }
+    else {
+        const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
+        object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
     }
 }
 

@@ -35,14 +35,8 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.3  2000/04/18 20:04:56  vasilche
- * Use BEGIN_objects_SCOPE
- *
- * Revision 1.2  2000/04/07 19:27:36  vasilche
- * Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
- *
- * Revision 1.1  2000/04/06 16:12:24  vasilche
- * Added PostRead test method.
+ * Revision 1.4  2000/11/01 20:38:33  vasilche
+ * Removed ECanDelete enum and related constructors.
  *
  *
  * ===========================================================================
@@ -57,29 +51,14 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE
-
-// constructor for static/automatic objects
-CBioseq_set::CBioseq_set(void)
-{
-}
-
-// constructor for dynamic objects
-CBioseq_set::CBioseq_set(NCBI_NS_NCBI::CObject::ECanDelete)
-    : Tparent(NCBI_NS_NCBI::CObject::eCanDelete)
-{
-}
+BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // destructor
 CBioseq_set::~CBioseq_set(void)
 {
 }
 
-void CBioseq_set::PostRead(void)
-{
-    _TRACE("Bioseq-set loaded");
-}
-
-END_objects_SCOPE
+END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
+

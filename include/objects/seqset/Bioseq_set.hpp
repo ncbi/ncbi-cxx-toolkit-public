@@ -35,20 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.12  2000/04/18 20:04:36  vasilche
- * Use BEGIN_objects_SCOPE
+ * Revision 1.13  2000/11/01 20:35:13  vasilche
+ * Removed ECanDelete enum and related constructors.
  *
- * Revision 1.11  2000/04/07 19:27:31  vasilche
- * Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
- *
- * Revision 1.10  2000/04/06 16:11:52  vasilche
- * Added PostRead test method.
- *
- * Revision 1.9  2000/03/29 15:56:58  vasilche
- * Generated base files now have _ suffix instead of original _Base
- *
- * Revision 1.8  2000/03/17 16:46:52  vasilche
- * Added copyright message to generated files.
  *
  * ===========================================================================
  */
@@ -60,48 +49,40 @@
 // generated includes
 #include <objects/seqset/Bioseq_set_.hpp>
 
+// generated classes
+
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE
+BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// generated classes
 class CBioseq_set : public CBioseq_set_Base
 {
     typedef CBioseq_set_Base Tparent;
 public:
-    // constructor for static/automatic objects
+    // constructor
     CBioseq_set(void);
     // destructor
     ~CBioseq_set(void);
 
-    // create dynamically allocated object
-    static CBioseq_set* New(void)
-        {
-            return new CBioseq_set(NCBI_NS_NCBI::CObject::eCanDelete);
-        }
-
-    // public getters
-    const TSeq_set& GetSeq_set(void) const
-        {
-            return Tparent::GetSeq_set();
-        }
-    TSeq_set& SetSeq_set(void)
-        {
-            return Tparent::SetSeq_set();
-        }
-
-    void PostRead(void);
-
-protected:
-    // hidden constructor for dynamic objects
-    CBioseq_set(NCBI_NS_NCBI::CObject::ECanDelete);
-
 };
 
-NCBISER_HAVE_POST_READ(CBioseq_set)
 
-END_objects_SCOPE
+
+/////////////////// CBioseq_set inline methods
+
+// constructor
+inline
+CBioseq_set::CBioseq_set(void)
+{
+}
+
+
+/////////////////// end of CBioseq_set inline methods
+
+
+END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
+
 
 #endif // OBJECTS_SEQSET_BIOSEQ_SET_HPP

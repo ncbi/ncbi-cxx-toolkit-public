@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/01 20:38:37  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.6  2000/09/01 13:16:14  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -74,7 +77,7 @@ CByteSourceReader::~CByteSourceReader(void)
 
 CRef<CSubSourceCollector> CByteSourceReader::SubSource(size_t /*prevent*/)
 {
-    return new CMemorySourceCollector(eCanDelete);
+    return new CMemorySourceCollector();
 }
 
 CSubSourceCollector::~CSubSourceCollector(void)
@@ -98,7 +101,7 @@ bool CByteSourceReader::EndOfData(void) const
 
 CRef<CByteSourceReader> CStreamByteSource::Open(void)
 {
-    return new CStreamByteSourceReader(eCanDelete, this, m_Stream);
+    return new CStreamByteSourceReader(this, m_Stream);
 }
 
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
@@ -112,10 +115,8 @@ bool CStreamByteSourceReader::EndOfData(void) const
     return m_Stream->eof();
 }
 
-CFStreamByteSource::CFStreamByteSource(ECanDelete canDelete,
-                                       const string& fileName, bool binary)
-    : CStreamByteSource(canDelete,
-                        *new CNcbiIfstream(fileName.c_str(),
+CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
+    : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
 {
     if ( !*m_Stream )
@@ -127,41 +128,34 @@ CFStreamByteSource::~CFStreamByteSource(void)
     delete m_Stream;
 }
 
-CFileByteSource::CFileByteSource(ECanDelete canDelete,
-                                 const string& fileName, bool binary)
-    : CByteSource(canDelete),
-      m_FileName(fileName), m_Binary(binary)
+CFileByteSource::CFileByteSource(const string& fileName, bool binary)
+    : m_FileName(fileName), m_Binary(binary)
 {
 }
 
-CFileByteSource::CFileByteSource(ECanDelete canDelete,
-                                 const CFileByteSource& file)
-    : CByteSource(canDelete),
-      m_FileName(file.m_FileName), m_Binary(file.m_Binary)
+CFileByteSource::CFileByteSource(const CFileByteSource& file)
+    : m_FileName(file.m_FileName), m_Binary(file.m_Binary)
 {
 }
 
 CRef<CByteSourceReader> CFileByteSource::Open(void)
 {
-    return new CFileByteSourceReader(eCanDelete, this);
+    return new CFileByteSourceReader(this);
 }
 
-CSubFileByteSource::CSubFileByteSource(ECanDelete canDelete, 
-                                       const CFileByteSource& file,
+CSubFileByteSource::CSubFileByteSource(const CFileByteSource& file,
                                        TFilePos start, TFileOff length)
-    : CParent(canDelete, file),
-      m_Start(start), m_Length(length)
+    : CParent(file), m_Start(start), m_Length(length)
 {
 }
 
 CRef<CByteSourceReader> CSubFileByteSource::Open(void)
 {
-    return new CSubFileByteSourceReader(eCanDelete, this, m_Start, m_Length);
+    return new CSubFileByteSourceReader(this, m_Start, m_Length);
 }
 
-CFileByteSourceReader::CFileByteSourceReader(ECanDelete canDelete,
-                                             const CFileByteSource* source)
-    : CStreamByteSourceReader(canDelete, source, 0),
+CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
+    : CStreamByteSourceReader(source, 0),
       m_FileSource(source),
       m_FStream(source->GetFileName().c_str(),
                 IFStreamFlags(source->IsBinary()))
@@ -171,11 +165,10 @@ CFileByteSourceReader::CFileByteSourceReader(ECanDelete canDelete,
     m_Stream = &m_FStream;
 }
 
-CSubFileByteSourceReader::CSubFileByteSourceReader(ECanDelete canDelete, 
-                                                   const CFileByteSource* s,
+CSubFileByteSourceReader::CSubFileByteSourceReader(const CFileByteSource* s,
                                                    TFilePos start,
                                                    TFileOff length)
-    : CParent(canDelete, s), m_Length(length)
+    : CParent(s), m_Length(length)
 {
     m_Stream->seekg(start);
 }
@@ -196,15 +189,13 @@ bool CSubFileByteSourceReader::EndOfData(void) const
 
 CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(size_t prepend)
 {
-    return new CFileSourceCollector(eCanDelete, m_FileSource,
+    return new CFileSourceCollector(m_FileSource,
                                     m_Stream->tellg() - TFileOff(prepend));
 }
 
-CFileSourceCollector::CFileSourceCollector(ECanDelete canDelete,
-                                           const CConstRef<CFileByteSource>& s,
+CFileSourceCollector::CFileSourceCollector(const CConstRef<CFileByteSource>& s,
                                            TFilePos start)
-    : CSubSourceCollector(canDelete),
-      m_FileSource(s),
+    : m_FileSource(s),
       m_Start(start), m_Length(0)
 {
 }
@@ -217,15 +208,14 @@ void CFileSourceCollector::AddChunk(const char* /*buffer*/,
 
 CRef<CByteSource> CFileSourceCollector::GetSource(void)
 {
-    return new CSubFileByteSource(eCanDelete, *m_FileSource,
+    return new CSubFileByteSource(*m_FileSource,
                                   m_Start, m_Length);
 }
 
 
-CMemoryChunk::CMemoryChunk(ECanDelete canDelete,
-                           const char* data, size_t dataSize,
+CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
                            CRef<CMemoryChunk>& prevChunk)
-    : CObject(canDelete), m_Data(new char[dataSize]), m_DataSize(dataSize)
+    : m_Data(new char[dataSize]), m_DataSize(dataSize)
 {
     memcpy(m_Data, data, dataSize);
     if ( prevChunk )
@@ -244,7 +234,7 @@ CMemoryByteSource::~CMemoryByteSource(void)
 
 CRef<CByteSourceReader> CMemoryByteSource::Open(void)
 {
-    return new CMemoryByteSourceReader(eCanDelete, m_Bytes);
+    return new CMemoryByteSourceReader(m_Bytes);
 }
 
 size_t CMemoryByteSourceReader::GetCurrentChunkAvailable(void) const
@@ -277,23 +267,17 @@ bool CMemoryByteSourceReader::EndOfData(void) const
     return !m_CurrentChunk;
 }
 
-CMemorySourceCollector::CMemorySourceCollector(ECanDelete canDelete)
-    : CSubSourceCollector(canDelete)
-{
-}
-
 void CMemorySourceCollector::AddChunk(const char* buffer,
                                       size_t bufferLength)
 {
-    m_LastChunk = new CMemoryChunk(eCanDelete, buffer, bufferLength,
-                                   m_LastChunk);
+    m_LastChunk = new CMemoryChunk(buffer, bufferLength, m_LastChunk);
     if ( !m_FirstChunk )
         m_FirstChunk = m_LastChunk;
 }
 
 CRef<CByteSource> CMemorySourceCollector::GetSource(void)
 {
-    return new CMemoryByteSource(eCanDelete, m_FirstChunk);
+    return new CMemoryByteSource(m_FirstChunk);
 }
 
 END_NCBI_SCOPE

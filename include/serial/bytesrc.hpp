@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/01 20:35:27  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.4  2000/07/03 18:42:32  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -65,35 +68,14 @@ class CIStreamBuffer;
 
 class CByteSource : public CObject
 {
-protected:
-    CByteSource(void)
-        {
-        }
-    CByteSource(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
 public:
     virtual ~CByteSource(void);
 
     virtual CRef<CByteSourceReader> Open(void) = 0;
-
-private:
-    // to prevent copy
-    CByteSource(const CByteSource&);
-    CByteSource& operator==(const CByteSource&);
 };
 
 class CByteSourceReader : public CObject
 {
-protected:
-    CByteSourceReader(void)
-        {
-        }
-    CByteSourceReader(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
 public:
     virtual ~CByteSourceReader(void);
 
@@ -106,36 +88,22 @@ public:
     virtual bool EndOfData(void) const;
 
     virtual CRef<CSubSourceCollector> SubSource(size_t prepend);
-
-private:
-    // to prevent copy
-    CByteSourceReader(const CByteSourceReader&);
-    CByteSourceReader& operator==(const CByteSourceReader&);
 };
 
 class CSubSourceCollector : public CObject
 {
 public:
-    CSubSourceCollector(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CSubSourceCollector(void);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength) = 0;
     virtual CRef<CByteSource> GetSource(void) = 0;
-
-private:
-    // to prevent copy
-    CSubSourceCollector(const CSubSourceCollector&);
-    CSubSourceCollector& operator==(const CSubSourceCollector&);
 };
 
 class CStreamByteSource : public CByteSource
 {
 public:
-    CStreamByteSource(ECanDelete canDelete, CNcbiIstream& in)
-        : CByteSource(canDelete), m_Stream(&in)
+    CStreamByteSource(CNcbiIstream& in)
+        : m_Stream(&in)
         {
         }
 
@@ -148,20 +116,19 @@ protected:
 class CFStreamByteSource : public CStreamByteSource
 {
 public:
-    CFStreamByteSource(ECanDelete canDelete, CNcbiIstream& in)
-        : CStreamByteSource(canDelete, in)
+    CFStreamByteSource(CNcbiIstream& in)
+        : CStreamByteSource(in)
         {
         }
-    CFStreamByteSource(ECanDelete canDelete,
-                       const string& fileName, bool binary);
+    CFStreamByteSource(const string& fileName, bool binary);
     ~CFStreamByteSource(void);
 };
 
 class CFileByteSource : public CByteSource
 {
 public:
-    CFileByteSource(ECanDelete canDelete, const string& name, bool binary);
-    CFileByteSource(ECanDelete canDelete, const CFileByteSource& file);
+    CFileByteSource(const string& name, bool binary);
+    CFileByteSource(const CFileByteSource& file);
 
     CRef<CByteSourceReader> Open(void);
 
@@ -182,9 +149,8 @@ private:
 class CStreamByteSourceReader : public CByteSourceReader
 {
 public:
-    CStreamByteSourceReader(ECanDelete canDelete,
-                            const CByteSource* source, CNcbiIstream* stream)
-        : CByteSourceReader(canDelete), m_Source(source), m_Stream(stream)
+    CStreamByteSourceReader(const CByteSource* source, CNcbiIstream* stream)
+        : m_Source(source), m_Stream(stream)
         {
         }
 
@@ -199,7 +165,7 @@ protected:
 class CFileByteSourceReader : public CStreamByteSourceReader
 {
 public:
-    CFileByteSourceReader(ECanDelete canDelete, const CFileByteSource* source);
+    CFileByteSourceReader(const CFileByteSource* source);
 
     CRef<CSubSourceCollector> SubSource(size_t prepend);
 private:
@@ -209,7 +175,7 @@ private:
 
 class CMemoryChunk : public CObject {
 public:
-    CMemoryChunk(ECanDelete canDelete, const char* data, size_t dataSize,
+    CMemoryChunk(const char* data, size_t dataSize,
                  CRef<CMemoryChunk>& prevChunk);
     ~CMemoryChunk(void);
     
@@ -237,9 +203,8 @@ private:
 class CMemoryByteSource : public CByteSource
 {
 public:
-    CMemoryByteSource(ECanDelete canDelete,
-                      const CConstRef<CMemoryChunk>& bytes)
-        : CByteSource(canDelete), m_Bytes(bytes)
+    CMemoryByteSource(const CConstRef<CMemoryChunk>& bytes)
+        : m_Bytes(bytes)
         {
         }
     ~CMemoryByteSource(void);
@@ -253,10 +218,8 @@ private:
 class CMemoryByteSourceReader : public CByteSourceReader
 {
 public:
-    CMemoryByteSourceReader(ECanDelete canDelete,
-                            const CConstRef<CMemoryChunk>& bytes)
-        : CByteSourceReader(canDelete),
-          m_CurrentChunk(bytes), m_CurrentChunkOffset(0)
+    CMemoryByteSourceReader(const CConstRef<CMemoryChunk>& bytes)
+        : m_CurrentChunk(bytes), m_CurrentChunkOffset(0)
         {
         }
     
@@ -273,8 +236,6 @@ private:
 class CMemorySourceCollector : public CSubSourceCollector
 {
 public:
-    CMemorySourceCollector(ECanDelete canDelete);
-
     virtual void AddChunk(const char* buffer, size_t bufferLength);
     virtual CRef<CByteSource> GetSource(void);
 
@@ -294,8 +255,7 @@ public:
     typedef CNcbiIstream::off_type TFileOff;
 #endif
 
-    CFileSourceCollector(ECanDelete canDelete,
-                         const CConstRef<CFileByteSource>& source,
+    CFileSourceCollector(const CConstRef<CFileByteSource>& source,
                          TFilePos start);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
@@ -313,7 +273,7 @@ class CSubFileByteSource : public CFileByteSource
 public:
     typedef CFileSourceCollector::TFilePos TFilePos;
     typedef CFileSourceCollector::TFileOff TFileOff;
-    CSubFileByteSource(ECanDelete canDelete, const CFileByteSource& file,
+    CSubFileByteSource(const CFileByteSource& file,
                        TFilePos start, TFileOff length);
 
     CRef<CByteSourceReader> Open(void);
@@ -339,8 +299,7 @@ public:
     typedef CFileSourceCollector::TFilePos TFilePos;
     typedef CFileSourceCollector::TFileOff TFileOff;
 
-    CSubFileByteSourceReader(ECanDelete canDelete,
-                             const CFileByteSource* source,
+    CSubFileByteSourceReader(const CFileByteSource* source,
                              TFilePos start, TFileOff length);
 
     size_t Read(char* buffer, size_t bufferLength);

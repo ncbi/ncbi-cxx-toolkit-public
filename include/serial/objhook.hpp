@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/01 20:35:27  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.4  2000/10/03 17:22:34  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -82,13 +85,6 @@ class CObjectTypeInfoCV;
 class CReadObjectHook : public CObject
 {
 public:
-    CReadObjectHook(void)
-        {
-        }
-    CReadObjectHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CReadObjectHook(void);
     
     virtual void ReadObject(CObjectIStream& in,
@@ -98,13 +94,6 @@ public:
 class CReadClassMemberHook : public CObject
 {
 public:
-    CReadClassMemberHook(void)
-        {
-        }
-    CReadClassMemberHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CReadClassMemberHook(void);
 
     virtual void ReadClassMember(CObjectIStream& in,
@@ -116,13 +105,6 @@ public:
 class CReadChoiceVariantHook : public CObject
 {
 public:
-    CReadChoiceVariantHook(void)
-        {
-        }
-    CReadChoiceVariantHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CReadChoiceVariantHook(void);
 
     virtual void ReadChoiceVariant(CObjectIStream& in,
@@ -132,13 +114,6 @@ public:
 class CReadContainerElementHook : public CObject
 {
 public:
-    CReadContainerElementHook(void)
-        {
-        }
-    CReadContainerElementHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CReadContainerElementHook(void);
 
     virtual void ReadContainerElement(CObjectIStream& in,
@@ -148,13 +123,6 @@ public:
 class CWriteObjectHook : public CObject
 {
 public:
-    CWriteObjectHook(void)
-        {
-        }
-    CWriteObjectHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CWriteObjectHook(void);
     
     virtual void WriteObject(CObjectOStream& out,
@@ -164,13 +132,6 @@ public:
 class CWriteClassMemberHook : public CObject
 {
 public:
-    CWriteClassMemberHook(void)
-        {
-        }
-    CWriteClassMemberHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CWriteClassMemberHook(void);
     
     virtual void WriteClassMember(CObjectOStream& out,
@@ -180,13 +141,6 @@ public:
 class CWriteChoiceVariantHook : public CObject
 {
 public:
-    CWriteChoiceVariantHook(void)
-        {
-        }
-    CWriteChoiceVariantHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CWriteChoiceVariantHook(void);
 
     virtual void WriteChoiceVariant(CObjectOStream& in,
@@ -196,13 +150,6 @@ public:
 class CCopyObjectHook : public CObject
 {
 public:
-    CCopyObjectHook(void)
-        {
-        }
-    CCopyObjectHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CCopyObjectHook(void);
     
     virtual void CopyObject(CObjectStreamCopier& copier,
@@ -212,13 +159,6 @@ public:
 class CCopyClassMemberHook : public CObject
 {
 public:
-    CCopyClassMemberHook(void)
-        {
-        }
-    CCopyClassMemberHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CCopyClassMemberHook(void);
     
     virtual void CopyClassMember(CObjectStreamCopier& copier,
@@ -230,13 +170,6 @@ public:
 class CCopyChoiceVariantHook : public CObject
 {
 public:
-    CCopyChoiceVariantHook(void)
-        {
-        }
-    CCopyChoiceVariantHook(ECanDelete canDelete)
-        : CObject(canDelete)
-        {
-        }
     virtual ~CCopyChoiceVariantHook(void);
 
     virtual void CopyChoiceVariant(CObjectStreamCopier& copier,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2000/11/01 20:38:37  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.67  2000/10/20 19:29:36  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -333,7 +336,7 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
     if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
          (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
          (openFlags & eSerial_StdWhenStd) && fileName == "stdin" ) {
-        return new CStreamByteSource(CObject::eCanDelete, NcbiCin);
+        return new CStreamByteSource(NcbiCin);
     }
     else {
         bool binary;
@@ -352,13 +355,11 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
         
         if ( (openFlags & eSerial_UseFileForReread) )  {
             // use file as permanent file
-            return new CFileByteSource(CObject::eCanDelete,
-                                       fileName, binary);
+            return new CFileByteSource(fileName, binary);
         }
         else {
             // open file as stream
-            return new CFStreamByteSource(CObject::eCanDelete,
-                                          fileName, binary);
+            return new CFStreamByteSource(fileName, binary);
         }
     }
 }
@@ -367,10 +368,10 @@ CRef<CByteSource> CObjectIStream::GetSource(CNcbiIstream& inStream,
                                             bool deleteInStream)
 {
     if ( deleteInStream ) {
-        return new CFStreamByteSource(CObject::eCanDelete, inStream);
+        return new CFStreamByteSource(inStream);
     }
     else {
-        return new CStreamByteSource(CObject::eCanDelete, inStream);
+        return new CStreamByteSource(inStream);
     }
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/01 20:35:27  vasilche
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.1  2000/10/13 16:28:29  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -128,9 +131,7 @@ public:
         }
     static void* CreateCObject(TTypeInfo /*typeInfo*/)
         {
-            CObject* object = new CClassType();
-            object->SetCanDelete();
-            return object;
+            return new CClassType();
         }
 
 
