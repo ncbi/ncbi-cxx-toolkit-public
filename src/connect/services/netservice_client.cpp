@@ -31,11 +31,15 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_system.hpp>
+
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/netservice_client.hpp>
+
 #include <memory>
 
 
@@ -183,7 +187,38 @@ void CNetServiceClient::CreateSocket(const string& hostname,
         m_Sock = new CSocket(hostname, port);
         m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     } else {
-        m_Sock->Connect(hostname, port, &m_Timeout);
+        unsigned conn_repeats = 0;
+        const unsigned max_repeats = 3;
+        
+        do {
+            EIO_Status io_st = 
+                m_Sock->Connect(hostname, port, &m_Timeout, eOn);
+            
+            if (io_st != eIO_Success) {
+                if (io_st == eIO_Unknown) {
+                    
+                    // most likely this is an indication we have too many 
+                    // open ports on the client side 
+                    // (this kernel limitation manifests itself on Linux)
+                    //
+                    
+                    if (++conn_repeats > max_repeats) {
+                        NCBI_IO_CHECK(io_st);
+                    }
+                    // give system a chance to recover
+                    
+                    SleepMilliSec(1000 * conn_repeats);
+                } else {
+                    NCBI_IO_CHECK(io_st);
+                }
+            } else {
+                break;
+            }
+            
+        } while (1);
+        
+        m_Sock->SetDataLogging(eDefault);
+        
     }
     m_Sock->DisableOSSendDelay();
     m_OwnSocket = eTakeOwnership;
@@ -209,7 +244,7 @@ void CNetServiceClient::TrimErr(string* err_msg)
     _ASSERT(err_msg);
     if (err_msg->find("ERR:") == 0) {
         err_msg->erase(0, 4);
-    }    
+    }
 }
 
 END_NCBI_SCOPE
@@ -217,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/14 13:49:33  kuznets
+ * Added delay if client cannot connect to the server when there are no available TCP/IP ports
+ *
  * Revision 1.3  2005/02/11 14:28:27  kuznets
  * Cleanup.Removed unused static function
  *
