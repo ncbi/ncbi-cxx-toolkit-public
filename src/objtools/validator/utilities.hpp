@@ -98,6 +98,7 @@ public:
         e_Transl_except,
         e_Transl_table,
         e_Translation,
+        e_Transposon,
         e_Usedin
     };
 
@@ -212,6 +213,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/02/07 21:03:20  shomrat
+* Added transposo to gbqual types
+*
 * Revision 1.5  2003/01/21 19:45:35  shomrat
 * Added IsBlankString and IsBlankStringList
 *
