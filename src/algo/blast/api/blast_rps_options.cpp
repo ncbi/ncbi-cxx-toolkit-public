@@ -92,7 +92,6 @@ void
 CBlastRPSOptionsHandle::SetScoringOptionsDefaults()
 {
     SetGappedMode();
-    m_Opts->SetMatrixName("BLOSUM62");
     // set invalid values for options that are not applicable
     m_Opts->SetOutOfFrameMode(false);
     m_Opts->SetFrameShiftPenalty(INT2_MAX);
@@ -144,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/29 20:47:23  papadopo
+ * use the actual underlying score matrix name from the RPS DB, rather than just hardwiring BLOSUM62
+ *
  * Revision 1.8  2004/08/03 21:10:42  dondosha
  * Set DbSeqNum option to 0 by default - the real value is set in parameter structure
  *

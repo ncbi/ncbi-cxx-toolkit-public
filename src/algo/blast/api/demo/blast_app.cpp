@@ -329,6 +329,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     if (program_number == eRPSBlast ||
         program_number == eRPSTblastn) {
         ASSERT(rps_info != NULL);
+        opt.SetMatrixName(rps_info->aux_info.orig_score_matrix);
         opt.SetGapOpeningCost(rps_info->aux_info.gap_open_penalty);
         opt.SetGapExtensionCost(rps_info->aux_info.gap_extend_penalty);
     }
