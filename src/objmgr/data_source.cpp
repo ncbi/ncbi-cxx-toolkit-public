@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/04/11 12:08:21  grichenk
+* Fixed GetResolvedSeqMap() implementation
+*
 * Revision 1.32  2002/04/05 21:23:08  grichenk
 * More duplicate id warnings fixed
 *
@@ -135,6 +138,7 @@
 
 #include "annot_object.hpp"
 #include "handle_range_map.hpp"
+#include <objects/objmgr1/seq_vector.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -830,7 +834,7 @@ void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse, bool dead)
             TBioseqMap::iterator found = tse_info->m_BioseqMap.find(key);
             if ( found != tse_info->m_BioseqMap.end() ) {
                 // No duplicate bioseqs in the same TSE
-                CBioseq* seq2 = &found->second->m_Entry->GetSeq();
+                // CBioseq* seq2 = &found->second->m_Entry->GetSeq();
                 ERR_POST(Fatal <<
                     " duplicate Bioseq: " << (*id)->DumpAsFasta());
                 // _ASSERT(SerialEquals<CBioseq>(*seq, *seq2));
@@ -1315,7 +1319,7 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
         }
         TSeqMaps::iterator map_it = m_SeqMaps.find(&seq);
         if (map_it != m_SeqMaps.end()) {
-            for (int i = 0; i < map_it->second->size(); i++) {
+            for (size_t i = 0; i < map_it->second->size(); i++) {
                 // Un-lock seq-id handles
                 const CSeqMap::CSegmentInfo& info = (*(map_it->second))[i];
                 if (info.m_SegType == CSeqMap::eSeqRef) {
@@ -1542,7 +1546,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id,
     CMutexGuard guard(sm_DataSource_Mutex);
     CTSE_Info* tse = x_FindBestTSE(idh, history);
     if (tse) {
-        return (CSeqMatch_Info(idh, *tse, *this));
+        return CSeqMatch_Info(idh, *tse, *this);
     }
     else {
         return CSeqMatch_Info();
@@ -1555,8 +1559,113 @@ string CDataSource::GetName(void) const
     if ( m_Loader )
         return m_Loader->GetName();
     else
-        return "";
+        return kEmptyStr;
 }
+
+
+const CSeqMap& CDataSource::GetResolvedSeqMap(CBioseq_Handle handle)
+{
+    // Get the source map
+    CSeqMap& smap = x_GetSeqMap(handle);
+    smap.x_Resolve(handle.GetSeqVector().size()-1, *handle.m_Scope);
+    // Create destination map (not stored in the indexes,
+    // must be deleted by user or user's CRef).
+    CRef<CSeqMap> dmap(new CSeqMap());
+
+    int pos = 0; // recalculate positions
+    for (size_t seg = 0; seg < smap.size(); seg++)
+    {
+        switch (smap[seg].m_SegType) {
+        case CSeqMap::eSeqData:
+        case CSeqMap::eSeqGap:
+        case CSeqMap::eSeqEnd:
+            {
+                // Copy gaps and literals
+                dmap->Add(smap[seg].m_SegType, pos, smap[seg].m_Length,
+                    smap[seg].m_MinusStrand);
+                pos += smap[seg].m_Length;
+                break;
+            }
+        case CSeqMap::eSeqRef:
+            {
+                // Resolve references
+                x_ResolveMapSegment(smap[seg].m_RefSeq,
+                    smap[seg].m_RefPos, smap[seg].m_Length,
+                    *dmap, pos, pos + smap[seg].m_Length,
+                    *handle.m_Scope);
+                break;
+            }
+        }
+    }
+
+    return *dmap.Release();
+}
+
+
+void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
+                                      int start, int len,
+                                      CSeqMap& dmap, int& dpos, int dstop,
+                                      CScope& scope)
+{
+    CBioseq_Handle rbsh = scope.GetBioseqHandle(
+        GetIdMapper().GetSeq_id(rh));
+    // This tricky way of getting the seq-map is used to obtain
+    // the non-const reference.
+    CSeqMap& rmap = rbsh.x_GetDataSource().x_GetSeqMap(rbsh);
+    // Resolve the reference map up to the end of the referenced region
+    rmap.x_Resolve(start + len, scope);
+    size_t rseg = rmap.x_FindSegment(start);
+
+    // Get enough segments to cover the "start+length" range on the
+    // destination sequence
+    while (dpos < dstop) {
+        // Get and adjust the segment start
+        int rstart = rmap[rseg].m_Position;
+        int rlength = rmap[rseg].m_Length;
+        if (rstart < start) {
+            rlength -= start - rstart;
+            rstart = start;
+        }
+        if (rstart + rlength > start + len)
+            rlength = start + len - rstart;
+        switch (rmap[rseg].m_SegType) {
+        case CSeqMap::eSeqData:
+            {
+                // Put the final reference
+                CSeqMap::CSegmentInfo* new_seg = new CSeqMap::CSegmentInfo(
+                    CSeqMap::eSeqRef, dpos, rlength, rmap[rseg].m_MinusStrand);
+                new_seg->m_RefPos = rstart;
+                new_seg->m_RefSeq = rmap[rseg].m_RefSeq;
+                dmap.Add(*new_seg);
+                dpos += rlength;
+                break;
+            }
+        case CSeqMap::eSeqGap:
+        case CSeqMap::eSeqEnd:
+            {
+                // Copy gaps and literals
+                dmap.Add(rmap[rseg].m_SegType, dpos, rlength,
+                    rmap[rseg].m_MinusStrand);
+                dpos += rlength;
+                break;
+            }
+        case CSeqMap::eSeqRef:
+            {
+                // Resolve multi-level references
+                int rshift = rmap[rseg].m_RefPos - rmap[rseg].m_Position;
+                x_ResolveMapSegment(rmap[rseg].m_RefSeq,
+                    rstart + rshift, rlength,
+                    dmap, dpos, dstop, scope);
+                break;
+            }
+        }
+        start += rlength;
+        len -= rlength;
+        if (++rseg >= rmap.size())
+            break;
+    }
+}
+
 
 
 END_SCOPE(objects)

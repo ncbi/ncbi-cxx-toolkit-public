@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/04/11 12:08:21  grichenk
+* Fixed GetResolvedSeqMap() implementation
+*
 * Revision 1.17  2002/03/28 14:02:31  grichenk
 * Added scope history checks to CDataSource::x_FindBestTSE()
 *
@@ -177,6 +180,8 @@ public:
 
     /// Get sequence map
     const CSeqMap& GetSeqMap(const CBioseq_Handle& handle);
+    /// Get sequence map with resolved multi-level references
+    const CSeqMap& GetResolvedSeqMap(CBioseq_Handle handle);
 
     /// Get a piece of seq. data ("seq_piece"), which the "point" belongs to:
     ///   "length"     -- length   of the data piece the "point" is found in;
@@ -268,6 +273,14 @@ private:
     // range sets for each synonym of each handle
     void x_ResolveLocationHandles(CHandleRangeMap& loc,
         const CScope::TRequestHistory& history) const;
+
+    // Resolve the reference to rh, add the resolved interval(s) to dmap.
+    // "start" is referenced region position on the "rh" sequence.
+    // "dpos" is the starting point on the master sequence.
+    void x_ResolveMapSegment(CSeq_id_Handle rh,
+                             int start, int len,
+                             CSeqMap& dmap, int& dpos, int dstop,
+                             CScope& scope);
 
     static CMutex sm_DataSource_Mutex;
 
