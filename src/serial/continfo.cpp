@@ -27,57 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2004/05/19 17:27:52  gouriano
-* Reset the contents of container when assigning
-*
-* Revision 1.11  2004/05/17 21:03:02  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.10  2004/03/25 15:57:08  gouriano
-* Added possibility to copy and compare serial object non-recursively
-*
-* Revision 1.9  2003/08/14 20:03:58  vasilche
-* Avoid memory reallocation when reading over preallocated object.
-* Simplified CContainerTypeInfo iterators interface.
-*
-* Revision 1.8  2003/03/10 18:54:25  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.7  2002/10/08 18:59:38  grichenk
-* Check for null pointers in containers (assert in debug mode,
-* warning in release).
-*
-* Revision 1.6  2000/10/17 18:45:33  vasilche
-* Added possibility to turn off object cross reference detection in
-* CObjectIStream and CObjectOStream.
-*
-* Revision 1.5  2000/10/13 16:28:39  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.4  2000/09/18 20:00:21  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.3  2000/09/13 15:10:15  vasilche
-* Fixed type detection in type iterators.
-*
-* Revision 1.2  2000/09/01 13:16:15  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.1  2000/07/03 18:42:43  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -176,6 +125,12 @@ public:
         {
             Throw("illegal call");
         }
+
+    static size_t GetElementCount(const CContainerTypeInfo*, TConstObjectPtr)
+        {
+            Throw("illegal call");
+            return 0;
+        }
 };
 
 void CContainerTypeInfo::InitContainerTypeInfoFunctions(void)
@@ -188,6 +143,7 @@ void CContainerTypeInfo::InitContainerTypeInfoFunctions(void)
     m_InitIterator = &CContainerTypeInfoFunctions::InitIterator;
     m_AddElement = &CContainerTypeInfoFunctions::AddElement;
     m_AddElementIn = &CContainerTypeInfoFunctions::AddElementIn;
+    m_GetElementCount = &CContainerTypeInfoFunctions::GetElementCount;
 }
 
 void CContainerTypeInfo::SetAddElementFunctions(TAddElement addElement,
@@ -195,6 +151,13 @@ void CContainerTypeInfo::SetAddElementFunctions(TAddElement addElement,
 {
     m_AddElement = addElement;
     m_AddElementIn = addElementIn;
+}
+
+void CContainerTypeInfo::SetCountFunctions(TGetElementCount getElementCount,
+                                           TReserveElements reserveElements)
+{
+    m_GetElementCount = getElementCount;
+    m_ReserveElements = reserveElements;
 }
 
 void CContainerTypeInfo::SetConstIteratorFunctions(TInitIteratorConst init,
@@ -333,3 +296,61 @@ void CContainerTypeInfo::SkipContainer(CObjectIStream& in,
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.13  2004/07/27 15:03:28  ucko
+* Add GetElementCount and ReserveElements operations.
+* Move CVS log to end.
+*
+* Revision 1.12  2004/05/19 17:27:52  gouriano
+* Reset the contents of container when assigning
+*
+* Revision 1.11  2004/05/17 21:03:02  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.10  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
+* Revision 1.9  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
+* Revision 1.8  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
+* Revision 1.7  2002/10/08 18:59:38  grichenk
+* Check for null pointers in containers (assert in debug mode,
+* warning in release).
+*
+* Revision 1.6  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
+* Revision 1.5  2000/10/13 16:28:39  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* Revision 1.4  2000/09/18 20:00:21  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.3  2000/09/13 15:10:15  vasilche
+* Fixed type detection in type iterators.
+*
+* Revision 1.2  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.1  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* ===========================================================================
+*/
