@@ -299,6 +299,8 @@ CTrans_table::CTrans_table(const CGenetic_code & gc)
             case CGenetic_code::C_E::e_Sncbieaa :
                 sncbieaa = & (*gcd)->GetSncbieaa ();
                 break;
+            default:
+                break;
         }
     }
 
@@ -312,6 +314,8 @@ CTrans_table::CTrans_table(const CGenetic_code & gc)
 
 const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
 {
+    _ASSERT(id >= 0);
+
     if (id < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
@@ -370,15 +374,18 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (const CGenetic_code & g
     iterate (CGenetic_code::Tdata, gcd, gc.Get ()) {
         switch ((*gcd)->Which ()) {
             case CGenetic_code::C_E::e_Id :
+            {
                 // lookup table by ID
                 int id = (*gcd)->GetId ();
                 return GetTransTable (id);
-                break;
+            }
             case CGenetic_code::C_E::e_Ncbieaa :
                 ncbieaa = & (*gcd)->GetNcbieaa ();
                 break;
             case CGenetic_code::C_E::e_Sncbieaa :
                 sncbieaa = & (*gcd)->GetSncbieaa ();
+                break;
+            default:
                 break;
         }
     }
@@ -471,6 +478,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2002/09/09 21:12:05  ucko
+* Add braces around e_Id case to avoid scoping error.
+* Add default cases to make GCC happy.
+* Make sure id >= 0.
+*
 * Revision 6.1  2002/09/09 20:58:21  kans
 * added CTrans_table and CGen_code_table classes
 *
