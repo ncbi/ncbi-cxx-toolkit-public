@@ -30,8 +30,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.17  2002/03/07 21:42:06  grichenk
-* +Test for GetSeq_annot()
+* Revision 1.18  2002/03/08 21:23:50  gouriano
+* reorganized and classified tests
 *
 * Revision 1.16  2002/03/05 16:08:16  grichenk
 * Moved TSE-restriction to new constructors
@@ -169,6 +169,7 @@ private:
     static CRef<CSeq_entry> CreateTestEntry1(int index);
     static CRef<CSeq_entry> CreateTestEntry2(int index);
     static CRef<CSeq_entry> CreateTestEntry1a(int index);
+    static CRef<CSeq_entry> CreateConstructedEntry(int idx, int index);
 
     void ProcessBioseq(CScope& scope, CSeq_id& id,
         int seq_len_unresolved, int seq_len_resolved,
@@ -180,29 +181,48 @@ private:
         int align_annots_cnt, int alignrg_annots_cnt,
         bool tse_feat_test = false);
 
+    void TestDataRetrieval( CScope& scope, int idx, int delta=0);
+
     CRef<CObjectManager> m_ObjMgr;
 };
 
 
+/************************************************************************
+    1.2.1.1. Bio sequences for testing
+    Test entry = 1 top-level entry + 2 sub-entries (continuous sequence)
+    TSE contains 1 description
+    each sub-entry has
+        two Seq_ids: local and GI, (local ids = 11+1000i, 12+1000i)
+        one description,
+        two annotations (Seq_feat)
+            first - for an interval, local Seq_id:
+                "plus" strand for one sub-entry,
+                "minus" strand for another one
+            second - for the whole seq, GI Seq_id
+    one sub-entry has also an alignment annotation
+************************************************************************/
 CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
 {
-    // TSE
+    // create top level seq entry
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq_set& set = entry->SetSet();
+    // class = nucleic acid and coded proteins
     set.SetClass(CBioseq_set::eClass_nuc_prot);
+    // add description (name)
     list< CRef<CSeqdesc> >& descr = set.SetDescr().Set();
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetName("D1 from TSE1-"+NStr::IntToString(index));
     descr.push_back(desc);
+    // list of sub-entries
     list< CRef<CSeq_entry> >& seq_set = set.SetSeq_set();
 
-    // Seq 11
+    // Sub-entry Seq 11
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr("seq"+NStr::IntToString(11+index*1000));
         id_list.push_back(id);
@@ -210,35 +230,45 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
         id->SetGi(11+index*1000);
         id_list.push_back(id);
 
-        // Descr
+        // Description (name)
         list< CRef<CSeqdesc> >& descr1 = seq.SetDescr().Set();
         CRef<CSeqdesc> desc1(new CSeqdesc);
         desc1->SetName("D1 from BS11-"+NStr::IntToString(index));
         descr1.push_back(desc1);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
+        // representation class = continuous sequence
         inst.SetRepr(CSeq_inst::eRepr_raw);
+        // molecule class in living organism = dna
         inst.SetMol(CSeq_inst::eMol_dna);
+        // length of sequence in residues
         inst.SetLength(40);
+        // seq data in Iupacna
         inst.SetSeq_data().SetIupacna().Set(
             "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC");
+        // strandedness in living organism = double strand
         inst.SetStrand(CSeq_inst::eStrand_ds);
 
-        // Annot
+        // Annotations
         list< CRef<CSeq_annot> >& annot_list = seq.SetAnnot();
         CRef<CSeq_annot> annot(new CSeq_annot);
+        // list of features
         list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
         {{
             CRef<CSeq_feat> feat(new CSeq_feat);
+            // feature Id
             feat->SetId().SetLocal().SetStr("F1: lcl|11");
+            // the specific data
             CSeqFeatData& fdata = feat->SetData();
             CCdregion& cdreg = fdata.SetCdregion();
             cdreg.SetFrame(CCdregion::eFrame_one);
+            // genetic code used
             list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
             CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
             ce->SetId(111); // TSE=1; seq=1; feat=1
             gcode.push_back(ce);
+            // feature location on the sequence: Seq_interval (local seq_Id)
             CSeq_interval& floc = feat->SetLocation().SetInt();
             floc.SetId().SetLocal().SetStr
                 ("seq"+NStr::IntToString(11+index*1000));
@@ -248,14 +278,18 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
         }}
         {{
             CRef<CSeq_feat> feat(new CSeq_feat);
+            // feature Id
             feat->SetId().SetLocal().SetStr("F2: gi|11");
+            // the specific data
             CSeqFeatData& fdata = feat->SetData();
             CCdregion& cdreg = fdata.SetCdregion();
             cdreg.SetFrame(CCdregion::eFrame_one);
+            // genetic code used
             list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
             CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
             ce->SetId(112); // TSE=1; seq=1; feat=2
             gcode.push_back(ce);
+            // feature location on the sequence (seq_Id + "whole" sequence)
             feat->SetLocation().SetWhole().SetGi(11+index*1000);
             ftable.push_back(feat);
         }}
@@ -265,13 +299,13 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
         seq_set.push_back(sub_entry);
     }}
 
-    // Seq 12
+    // Sub-entry Seq 12
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr("seq"+NStr::IntToString(12+index*1000));
         id_list.push_back(id);
@@ -279,48 +313,63 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
         id->SetGi(12+index*1000);
         id_list.push_back(id);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
+        // representation class = continuous sequence
         inst.SetRepr(CSeq_inst::eRepr_raw);
+        // molecule class in living organism = dna
         inst.SetMol(CSeq_inst::eMol_dna);
+        // length of sequence in residues
         inst.SetLength(40);
+        // seq data in Iupacna
         inst.SetSeq_data().SetIupacna().Set(
             "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC");
+        // strandedness in living organism = double strand
         inst.SetStrand(CSeq_inst::eStrand_ds);
 
-        // Annot
+        // Annotations
         list< CRef<CSeq_annot> >& annot_list = seq.SetAnnot();
         {{
             CRef<CSeq_annot> annot(new CSeq_annot);
+            // list of features
             list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
             {{
                 CRef<CSeq_feat> feat(new CSeq_feat);
+                // feature Id
                 feat->SetId().SetLocal().SetStr("F3: gi|12");
+                // the specific data
                 CSeqFeatData& fdata = feat->SetData();
                 CCdregion& cdreg = fdata.SetCdregion();
                 cdreg.SetFrame(CCdregion::eFrame_one);
+                // genetic code used
                 list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
                 CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
                 ce->SetId(123); // TSE=1; seq=2; feat=3
                 gcode.push_back(ce);
+                // feature location on the sequence: Seq_interval (gi seq_Id)
                 CSeq_interval& floc = feat->SetLocation().SetInt();
                 floc.SetId().SetGi(12+index*1000);
                 floc.SetFrom(20);
                 floc.SetTo(30);
+                // minus strand
                 floc.SetStrand(eNa_strand_minus);
                 ftable.push_back(feat);
             }}
             {{
                 CRef<CSeq_feat> feat(new CSeq_feat);
+                // feature Id
                 feat->SetId().SetLocal().SetStr("F4: lcl|12");
+                // the specific data
                 CSeqFeatData& fdata = feat->SetData();
                 CCdregion& cdreg = fdata.SetCdregion();
                 cdreg.SetFrame(CCdregion::eFrame_one);
+                // genetic code used
                 list< CRef< CGenetic_code::C_E > >& gcode =
                     cdreg.SetCode().Set();
                 CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
                 ce->SetId(124); // TSE=1; seq=2; feat=4
                 gcode.push_back(ce);
+                // feature location on the sequence (seq_Id + "whole" sequence)
                 feat->SetLocation().SetWhole().SetLocal().SetStr
                     ("seq"+NStr::IntToString(12+index*1000));
                 ftable.push_back(feat);
@@ -329,15 +378,20 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
         }}
         {{
             CRef<CSeq_annot> annot(new CSeq_annot);
+            // list of seq alignments
             list< CRef<CSeq_align> >& atable = annot->SetData().SetAlign();
             {{
                 // CAGCAGC:
                 // 11[0], 12[9]
                 CRef<CSeq_align> align(new CSeq_align);
+                // alignment data
                 CSeq_align::C_Segs& segs = align->SetSegs();
+                // for (multiway) diagonals
                 CSeq_align::C_Segs::TDendiag& diag_list = segs.SetDendiag();
                 CRef<CDense_diag> diag(new CDense_diag);
+                // dimensionality = 2
                 diag->SetDim(2);
+                // list of Seq_ids (gi) (sequences in order)
                 list< CRef<CSeq_id> >& id_list = diag->SetIds();
                 CRef<CSeq_id> id(new CSeq_id);
                 id->SetGi(11+index*1000);
@@ -345,6 +399,7 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
                 id.Reset(new CSeq_id);
                 id->SetGi(12+index*1000);
                 id_list.push_back(id);
+                // start OFFSETS in ids order
                 list<int>& start_list = diag->SetStarts();
                 start_list.push_back(0);
                 start_list.push_back(9);
@@ -362,21 +417,29 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1(int index)
 }
 
 
+/************************************************************************
+    1.2.1.2. Bio sequences for testing
+    Test entry = 1 top-level entry + 2 sub-entries (continuous sequence)
+    each sub-entry has
+        two Seq_ids: local and GI, (local ids = 11+1000i, 12+1000i)
+    No descriptions, No annotations
+************************************************************************/
 CRef<CSeq_entry> CTestApp::CreateTestEntry1a(int index)
 {
-    // TSE
+    // create top level seq entry
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq_set& set = entry->SetSet();
+    // class = nucleic acid and coded proteins
     set.SetClass(CBioseq_set::eClass_nuc_prot);
     list< CRef<CSeq_entry> >& seq_set = set.SetSeq_set();
 
-    // Seq 11
+    // Sub-entry Seq 11
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr("seq"+NStr::IntToString(11+index*1000));
         id_list.push_back(id);
@@ -384,26 +447,31 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1a(int index)
         id->SetGi(11+index*1000);
         id_list.push_back(id);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
+        // representation class = continuous sequence
         inst.SetRepr(CSeq_inst::eRepr_raw);
+        // molecule class in living organism = dna
         inst.SetMol(CSeq_inst::eMol_dna);
+        // length of sequence in residues
         inst.SetLength(40);
+        // seq data in Iupacna
         inst.SetSeq_data().SetIupacna().Set(
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        // strandedness in living organism = double strand
         inst.SetStrand(CSeq_inst::eStrand_ds);
 
         // Add sub-entry
         seq_set.push_back(sub_entry);
     }}
 
-    // Seq 12
+    // Sub-entry Seq 12
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr("seq"+NStr::IntToString(12+index*1000));
         id_list.push_back(id);
@@ -411,11 +479,13 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1a(int index)
         id->SetGi(12+index*1000);
         id_list.push_back(id);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
         inst.SetRepr(CSeq_inst::eRepr_raw);
         inst.SetMol(CSeq_inst::eMol_dna);
+        // length of sequence in residues
         inst.SetLength(40);
+        // seq data in Iupacna
         inst.SetSeq_data().SetIupacna().Set(
             "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
         inst.SetStrand(CSeq_inst::eStrand_ds);
@@ -428,21 +498,44 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry1a(int index)
 }
 
 
+/************************************************************************
+    1.2.1.3. Bio sequences for testing
+    Test entry = 1 top-level entry + 3 sub-entries
+    TSE
+        one annotation (Seq_feat), which refers to ids 12+1000i and 21+1000i
+    1 sub-entry
+        two Seq_ids: local and GI, (local id = 21+1000i)
+        one description
+        segmented sequence: references to
+            an interval, ( id= 11+1000i)
+            whole seq,   ( id= 12+1000i)
+            self         ( id= 21+1000i)
+        two annotations (Seq_feat)
+            both - for an interval,  local Seq_id = 11+1000i
+    2 sub-entry
+        two Seq_ids: local and GI, (local id = 22+1000i)
+        continuous sequence
+    3 sub-entry
+        two Seq_ids: local and GI, (local id = 23+1000i)
+        continuous sequence
+        conversion from one seq.data format to another
+************************************************************************/
 CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
 {
-    // TSE
+    // create top level seq entry
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq_set& set = entry->SetSet();
+    // class = nucleic acid and coded proteins
     set.SetClass(CBioseq_set::eClass_nuc_prot);
     list< CRef<CSeq_entry> >& seq_set = set.SetSeq_set();
 
-    // Seq 21
+    // Sub-entry Seq 21
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr("seq"+NStr::IntToString(21+index*1000));
         id_list.push_back(id);
@@ -450,31 +543,39 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
         id->SetGi(21+index*1000);
         id_list.push_back(id);
 
-        // Descr
+        // Description (name)
         list< CRef<CSeqdesc> >& descr1 = seq.SetDescr().Set();
         CRef<CSeqdesc> desc1(new CSeqdesc);
         desc1->SetName("D3 from bioseq 21-"+NStr::IntToString(index));
         descr1.push_back(desc1);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
+        // representation class = segmented sequence
         inst.SetRepr(CSeq_inst::eRepr_seg);
+        // molecule class in living organism = dna
         inst.SetMol(CSeq_inst::eMol_dna);
+        // segments = list of Seq_locs
         CSeg_ext::Tdata& seg_list = inst.SetExt().SetSeg();
+
+        // Seq_interval (gi)
         CRef<CSeq_loc> loc(new CSeq_loc);
         CSeq_interval& ref_loc = loc->SetInt();
-
         ref_loc.SetId().SetGi(11+index*1000);
         ref_loc.SetFrom(0);
         ref_loc.SetTo(4);
         seg_list.push_back(loc);
+
+        // whole sequence (gi)
         loc = new CSeq_loc;
         loc->SetWhole().SetGi(12+index*1000);
         seg_list.push_back(loc);
 
+        // Seq_interval (gi)
         loc = new CSeq_loc;
         CSeq_interval& ref_loc2 = loc->SetInt();
-        ref_loc2.SetId().SetGi(21+index*1000); // self-reference
+        // "simple" self-reference
+        ref_loc2.SetId().SetGi(21+index*1000);
         ref_loc2.SetFrom(0);
         ref_loc2.SetTo(9);
         seg_list.push_back(loc);
@@ -489,38 +590,48 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
 
         inst.SetStrand(CSeq_inst::eStrand_ds);
 
-        // Annot
+        // Annotations
         list< CRef<CSeq_annot> >& annot_list = seq.SetAnnot();
         CRef<CSeq_annot> annot(new CSeq_annot);
+        // list of features
         list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
         {{
             CRef<CSeq_feat> feat(new CSeq_feat);
+            // feature Id
             feat->SetId().SetLocal().SetStr("F5: lcl|11");
+            // the specific data
             CSeqFeatData& fdata = feat->SetData();
             CCdregion& cdreg = fdata.SetCdregion();
             cdreg.SetFrame(CCdregion::eFrame_one);
+            // genetic code used
             list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
             CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
             ce->SetId(215); // TSE=2; seq=1; feat=5
             gcode.push_back(ce);
+            // feature location on the sequence: Seq_interval (local seq_Id)
             CSeq_interval& floc = feat->SetLocation().SetInt();
             floc.SetId().SetLocal().SetStr
                 ("seq"+NStr::IntToString(11+index*1000));
             floc.SetFrom(20);
             floc.SetTo(30);
+            // plus strand
             floc.SetStrand(eNa_strand_plus);
             ftable.push_back(feat);
         }}
         {{
             CRef<CSeq_feat> feat(new CSeq_feat);
+            // feature Id
             feat->SetId().SetLocal().SetStr("F6: gi|11");
+            // the specific data
             CSeqFeatData& fdata = feat->SetData();
             CCdregion& cdreg = fdata.SetCdregion();
             cdreg.SetFrame(CCdregion::eFrame_one);
+            // genetic code used
             list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
             CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
             ce->SetId(216); // TSE=2; seq=1; feat=6
             gcode.push_back(ce);
+            // feature location on the sequence: Seq_interval (gi seq_Id)
             CSeq_interval& floc = feat->SetLocation().SetInt();
             floc.SetId().SetGi(11+index*1000);
             floc.SetFrom(5);
@@ -533,13 +644,13 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
         seq_set.push_back(sub_entry);
     }}
 
-    // Seq 22
+    // Sub-entry Seq 22
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr
             ("seq"+NStr::IntToString(22+index*1000));
@@ -548,25 +659,30 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
         id->SetGi(22+index*1000);
         id_list.push_back(id);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
+        // representation class = continuous sequence
         inst.SetRepr(CSeq_inst::eRepr_raw);
+        // molecule class in living organism = aa (amino acid)
         inst.SetMol(CSeq_inst::eMol_aa);
+        // length of sequence in residues
         inst.SetLength(20);
+        // seq data in Ncbieaa
         inst.SetSeq_data().SetNcbieaa().Set("QGCGEQTMTLLAPTLAASRY");
+        // single strand
         inst.SetStrand(CSeq_inst::eStrand_ss);
 
         // Add sub-entry
         seq_set.push_back(sub_entry);
     }}
 
-    // Seq 23
+    // Sub-entry Seq 23
     {{
         CRef<CSeq_entry> sub_entry(new CSeq_entry);
         CBioseq& seq = sub_entry->SetSeq();
         CBioseq::TId& id_list = seq.SetId();
 
-        // Id
+        // list of Ids (local + gi)
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetStr
             ("seq"+NStr::IntToString(23+index*1000));
@@ -575,15 +691,22 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
         id->SetGi(23+index*1000);
         id_list.push_back(id);
 
-        // Inst
+        // Instance (sequence data)
         CSeq_inst& inst = seq.SetInst();
+        // representation class = continuous sequence
         inst.SetRepr(CSeq_inst::eRepr_raw);
+        // molecule class in living organism = dna
         inst.SetMol(CSeq_inst::eMol_dna);
+        // length of sequence in residues
         inst.SetLength(13);
+        // seq data in Iupacna
         inst.SetSeq_data().SetIupacna().Set("ATGCAGCTGTACG");
+        // double strand
         inst.SetStrand(CSeq_inst::eStrand_ds);
 
         CRef<CSeq_data> packed_data(new CSeq_data);
+        // convert seq data to another format
+        // (NCBI2na = 2 bit nucleic acid code)
         CSeqportUtil::Convert(inst.GetSeq_data(),
                               packed_data,
                               CSeq_data::e_Ncbi2na);
@@ -593,25 +716,31 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
         seq_set.push_back(sub_entry);
     }}
 
-    // Annot
+    // Annotations
     list< CRef<CSeq_annot> >& set_annot_list = set.SetAnnot();
     CRef<CSeq_annot> annot(new CSeq_annot);
+    // list of features
     list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
     {{
         CRef<CSeq_feat> feat(new CSeq_feat);
+        // feature Id
         feat->SetId().SetLocal().SetStr("F7: lcl|21 + gi|12");
+        // the specific data
         CSeqFeatData& fdata = feat->SetData();
         CCdregion& cdreg = fdata.SetCdregion();
         cdreg.SetFrame(CCdregion::eFrame_one);
+        // genetic code used
         list< CRef< CGenetic_code::C_E > >& gcode = cdreg.SetCode().Set();
         CRef< CGenetic_code::C_E > ce(new CGenetic_code::C_E);
         ce->SetId(207); // TSE=2; no seq; feat=7
         gcode.push_back(ce);
+        // feature location on the sequence: Seq_interval (local seq_Id)
         CSeq_interval& floc = feat->SetLocation().SetInt();
         floc.SetId().SetLocal().SetStr
             ("seq"+NStr::IntToString(21+index*1000));
         floc.SetFrom(1);
         floc.SetTo(20);
+        // product of process (seq_loc = whole, gi)
         feat->SetProduct().SetWhole().SetGi(12+index*1000);
         ftable.push_back(feat);
     }}
@@ -620,7 +749,55 @@ CRef<CSeq_entry> CTestApp::CreateTestEntry2(int index)
     return entry;
 }
 
+/************************************************************************
+    1.2.1.4. Bio sequences for testing
+    Test entry = 1 top-level entry
+    TSE
+        only contains references to other sequences
+************************************************************************/
+CRef<CSeq_entry> CTestApp::CreateConstructedEntry(int idx, int index)
+{
+    CSeq_loc constr_loc;
+    list< CRef<CSeq_interval> >& int_list = constr_loc.SetPacked_int();
 
+    CRef<CSeq_interval> int_ref(new CSeq_interval);
+    int_ref->SetId().SetGi(11+idx*1000);
+    int_ref->SetFrom(5);
+    int_ref->SetTo(10);
+    if (index == 2)
+    {
+        int_ref->SetStrand(eNa_strand_minus);
+    }
+    int_list.push_back(int_ref);
+
+    int_ref.Reset(new CSeq_interval);
+    int_ref->SetId().SetGi(12+idx*1000);
+    int_ref->SetFrom(0);
+    int_ref->SetTo(20);
+    int_list.push_back(int_ref);
+
+    CRef<CBioseq> constr_seq(new CBioseq(constr_loc,
+        "constructed"+NStr::IntToString(index)));
+    CRef<CSeq_entry> constr_entry(new CSeq_entry);
+    constr_entry->SetSeq(*constr_seq);
+    return constr_entry;
+}
+
+
+/************************************************************************
+    1.2.2. Test function
+    Input: scope + seq_id
+        other parameters - only to verify results.
+    Operations:
+        investigate SeqMap, verify lengths
+        investigate SeqVector, verify seq.data (as strings)
+        investigate SeqMap again - some references may be resolved now
+        enumerate descriptions
+        enumerate features for the whole sequence
+        enumerate features for an interval
+        enumerate alignments for the whole sequence
+        enumerate alignments for an interval
+************************************************************************/
 void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
                              int seq_len_unresolved, int seq_len_resolved,
                              string seq_str, string seq_str_compl,
@@ -826,52 +1003,69 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
 }
 
 
+void CTestApp::TestDataRetrieval( CScope& scope, int idx, int delta)
+{
+    CSeq_id id;
+
+    // find seq. by local id
+    id.SetLocal().SetStr("seq" + NStr::IntToString(11+idx*1000));
+    // iterate through the whole Scope
+    ProcessBioseq(scope, id,
+        40, 40,
+        "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
+        "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
+        2, 4+delta, 2+delta, 1, 0, 2+delta, 2+delta, 1, 0);
+    // iterate through the specific sequence only
+    ProcessBioseq(scope, id,
+        40, 40,
+        "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
+        "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
+        2, 1, 0, 0, 0, 1, 0, 0, 0, true);
+    // find seq. by GI
+    id.SetGi(12+idx*1000);
+    ProcessBioseq(scope, id,
+        40, 40,
+        "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
+        "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
+        1, 3, 2, 1, 1, 2, 2, 1, 1);
+    // segmented sequence
+    id.SetGi(21+idx*1000);
+    ProcessBioseq(scope, id,
+        22, 62,
+        "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
+        "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
+        1, 1, 1, 0, 0, 1, 1, 0, 0);
+    id.SetGi(22+idx*1000);
+    ProcessBioseq(scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
+    // another seq.data format
+    id.SetGi(23+idx*1000);
+    ProcessBioseq(scope, id,
+        13, 13,
+        "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
+        "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+
 int CTestApp::Run(void)
 {
     NcbiCout << "Testing ObjectManager..." << NcbiEndl;
     CSeq_id id;
+    int idx;
 
     m_ObjMgr = new CObjectManager;
-    {
-        CScope Scope(*m_ObjMgr);
-        CRef<CSeq_entry> entry1 = CreateTestEntry1(0);
-        Scope.AddTopLevelSeqEntry(*entry1);
-        CRef<CSeq_entry> entry2 = CreateTestEntry2(0);
-        Scope.AddTopLevelSeqEntry(*entry2);
 
-        // Test global scope
-        id.SetLocal().SetStr("seq11");
-        ProcessBioseq(Scope, id,
-            40, 40,
-            "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
-            "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 4, 2, 1, 0, 2, 2, 1, 0);
-        ProcessBioseq(Scope, id,
-            40, 40,
-            "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
-            "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 1, 0, 0, 0, 1, 0, 0, 0, true);
-        id.SetGi(12);
-        ProcessBioseq(Scope, id,
-            40, 40,
-            "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
-            "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-            1, 3, 2, 1, 1, 2, 2, 1, 1);
-        id.SetGi(21);
-        ProcessBioseq(Scope, id,
-            22, 62,
-            "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
-            "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
-        id.SetGi(22);
-        ProcessBioseq(Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
-        id.SetGi(23);
-        ProcessBioseq(Scope, id,
-            13, 13,
-            "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
-            "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
+    // 1.2.3. Scope is an object on the stack
+    for (idx = 0; idx <= 0; idx++) {
+        CScope Scope(*m_ObjMgr);
+        // populate
+        CRef<CSeq_entry> entry1 = CreateTestEntry1(idx);
+        Scope.AddTopLevelSeqEntry(*entry1);
+        CRef<CSeq_entry> entry2 = CreateTestEntry2(idx);
+        Scope.AddTopLevelSeqEntry(*entry2);
+        // retrieve data
+        TestDataRetrieval( Scope, 0);
 
         // Find seq_id
         {
@@ -879,42 +1073,29 @@ int CTestApp::Run(void)
             Scope.FindSeqid(setId, "seq11.3");
         }
     }
-    
-    for (int idx = 1; idx <= 1; idx++) {
+    // 1.2.4. Scope is an object on the heap
+    for (idx = 1; idx <= 1; idx++) {
         CRef<CScope> pScope(new CScope(*m_ObjMgr));
+        // populate
         CRef<CSeq_entry> entry1 = CreateTestEntry1(idx);
-        CRef<CSeq_entry> entry2 = CreateTestEntry2(idx);
         pScope->AddTopLevelSeqEntry(*entry1);
+        CRef<CSeq_entry> entry2 = CreateTestEntry2(idx);
+        pScope->AddTopLevelSeqEntry(*entry2);
+        // retrieve data
+        TestDataRetrieval( *pScope, idx);
+    }
+
+    // 1.2.5 add annotation to one sequence
+    // verify that others did not change
+    for (idx = 1; idx <= 1; idx++) {
+        CRef<CScope> pScope(new CScope(*m_ObjMgr));
+        // populate
+        CRef<CSeq_entry> entry1 = CreateTestEntry1(idx);
+        pScope->AddTopLevelSeqEntry(*entry1);
+        CRef<CSeq_entry> entry2 = CreateTestEntry2(idx);
         pScope->AddTopLevelSeqEntry(*entry2);
 
-        id.SetLocal().SetStr("seq" + NStr::IntToString(11+idx*1000));
-        ProcessBioseq(*pScope, id,
-            40, 40,
-            "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
-            "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 4, 2, 1, 0, 2, 2, 1, 0);
-        id.SetGi(12+idx*1000);
-        ProcessBioseq(*pScope, id,
-            40, 40,
-            "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
-            "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-            1, 3, 2, 1, 1, 2, 2, 1, 1);
-        id.SetGi(21+idx*1000);
-        ProcessBioseq(*pScope, id,
-            22, 62,
-            "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
-            "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
-        id.SetGi(22+idx*1000);
-        ProcessBioseq(*pScope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
-        id.SetGi(23+idx*1000);
-        ProcessBioseq(*pScope, id,
-            13, 13,
-            "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
-            "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
-
+        // add annotation
         CRef<CSeq_annot> annot(new CSeq_annot);
         list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
         {{
@@ -932,109 +1113,65 @@ int CTestApp::Run(void)
             ftable.push_back(feat);
         }}
         pScope->AttachAnnot(*entry1, *annot);
+        // retrieve data
+        TestDataRetrieval( *pScope, idx, 1); // delta=1 - one more annotation
+    }
 
-        id.SetLocal().SetStr("seq" + NStr::IntToString(11+idx*1000));
-        ProcessBioseq(*pScope, id,
-            40, 40,
-            "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
-            "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 5, 3, 1, 0, 3, 3, 1, 0);
-        id.SetGi(12+idx*1000);
-        ProcessBioseq(*pScope, id,
-            40, 40,
-            "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
-            "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-            1, 3, 2, 1, 1, 2, 2, 1, 1);
-        id.SetGi(21+idx*1000);
-        ProcessBioseq(*pScope, id,
-            62, 62,
-            "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
-            "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
-        id.SetGi(22+idx*1000);
-        ProcessBioseq(*pScope, id, 20, 20,
-            "QGCGEQTMTLLAPTLAASRY", "",
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
-        id.SetGi(23+idx*1000);
-        ProcessBioseq(*pScope, id,
-            13, 13,
-            "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
-            "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-            0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-        // Constructed bioseqs
+    // 1.2.6. Constructed bio sequences
+    for (idx = 1; idx <= 1; idx++) {
+        CScope Scope(*m_ObjMgr);
+        CRef<CSeq_entry> entry1 = CreateTestEntry1(idx);
+        Scope.AddTopLevelSeqEntry(*entry1);
         {{
-            CSeq_loc constr_loc;
-            list< CRef<CSeq_interval> >& int_list = constr_loc.SetPacked_int();
-
-            CRef<CSeq_interval> int_ref(new CSeq_interval);
-            int_ref->SetId().SetGi(11+idx*1000);
-            int_ref->SetFrom(5);
-            int_ref->SetTo(10);
-            int_list.push_back(int_ref);
-
-            int_ref.Reset(new CSeq_interval);
-            int_ref->SetId().SetGi(12+idx*1000);
-            int_ref->SetFrom(0);
-            int_ref->SetTo(20);
-            int_list.push_back(int_ref);
-
-            CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed1"));
-            CRef<CSeq_entry> constr_entry(new CSeq_entry);
-            constr_entry->SetSeq(*constr_seq);
-            pScope->AddTopLevelSeqEntry(*constr_entry);
+            CRef<CSeq_entry> constr_entry = CreateConstructedEntry( idx, 1);
+            Scope.AddTopLevelSeqEntry(*constr_entry);
+            // test
             id.SetLocal().SetStr("constructed1");
-            ProcessBioseq(*pScope, id,
+            ProcessBioseq(Scope, id,
                 27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0);
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
         {{
-            CSeq_loc constr_loc;
-            list< CRef<CSeq_interval> >& int_list = constr_loc.SetPacked_int();
-
-            CRef<CSeq_interval> int_ref(new CSeq_interval);
-            int_ref->SetId().SetGi(11+idx*1000);
-            int_ref->SetFrom(5);
-            int_ref->SetTo(10);
-            int_ref->SetStrand(eNa_strand_minus);
-            int_list.push_back(int_ref);
-
-            int_ref.Reset(new CSeq_interval);
-            int_ref->SetId().SetGi(12+idx*1000);
-            int_ref->SetFrom(0);
-            int_ref->SetTo(20);
-            int_list.push_back(int_ref);
-
-            CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed2"));
-            CRef<CSeq_entry> constr_entry(new CSeq_entry);
-            constr_entry->SetSeq(*constr_seq);
-            pScope->AddTopLevelSeqEntry(*constr_entry);
+            CRef<CSeq_entry> constr_entry = CreateConstructedEntry( idx, 2);
+            Scope.AddTopLevelSeqEntry(*constr_entry);
+            // test
             id.SetLocal().SetStr("constructed2");
-            ProcessBioseq(*pScope, id,
+            ProcessBioseq(Scope, id,
                 27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0);
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
+    }
 
+    // 1.2.7. one entry in two scopes
+    for (idx = 1; idx <= 1; idx++) {
+        // populate scopes
+        CScope Scope1(*m_ObjMgr);
         CRef<CScope> pScope2 = new CScope(*m_ObjMgr);
+        CRef<CSeq_entry> entry1 = CreateTestEntry1(idx);
+        CRef<CSeq_entry> entry2 = CreateTestEntry2(idx);
+        Scope1.AddTopLevelSeqEntry(*entry1);
+        Scope1.AddTopLevelSeqEntry(*entry2);
         pScope2->AddTopLevelSeqEntry(*entry2);
+        // Test with unresolvable references
         id.SetGi(21+idx*1000);
-        // Test with unresolved references
         ProcessBioseq(*pScope2, id,
-            62, 62,
-            "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
-            "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+            22, 22,
+            "NNNNNNNNNNNNNNNNNNNNNN",
+            "NNNNNNNNNNNNNNNNNNNNNN",
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
+        // add more data to the scope - to make references resolvable
         CRef<CSeq_entry> entry1a = CreateTestEntry1a(idx);
         pScope2->AddTopLevelSeqEntry(*entry1a);
+        // Test with resolvable references
         id.SetGi(21+idx*1000);
-        // Test with resolved references
         ProcessBioseq(*pScope2, id,
-            62, 62,
+            22, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
             1, 1, 1, 0, 0, 1, 1, 0, 0);
-        // Test scope history
+
+        // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b = CreateTestEntry1(idx);
         pScope2->AddTopLevelSeqEntry(*entry1b);
         id.SetLocal().SetStr("seq"+NStr::IntToString(11+idx*1000));
