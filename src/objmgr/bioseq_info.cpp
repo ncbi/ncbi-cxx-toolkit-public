@@ -192,6 +192,9 @@ void CBioseq_Info::x_SetObject(TObject& obj)
     _ASSERT(!m_Object);
 
     m_Object.Reset(&obj);
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     if ( obj.IsSetId() ) {
         ITERATE ( TObject::TId, it, obj.GetId() ) {
             m_Id.push_back(CSeq_id_Handle::GetHandle(**it));
@@ -208,6 +211,9 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info)
     _ASSERT(!m_Object);
 
     m_Object = sx_ShallowCopy(*info.m_Object);
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     m_Id = info.m_Id;
     m_SeqMap = info.m_SeqMap;
     if ( info.IsSetAnnot() ) {
@@ -788,6 +794,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/08/17 15:55:37  vasilche
+* Added mapping and unmapping CBioseq -> CBioseq_Info in x_SetObject().
+*
 * Revision 1.24  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.
