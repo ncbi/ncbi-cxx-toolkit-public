@@ -115,8 +115,11 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
    } else {
       (*options)->window_size = BLAST_WINDOW_SIZE_NUCL;
       (*options)->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
+      (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
    }
-
+   /* Except in one special case of greedy gapped extension, we always do 
+      ungapped extension. Let the special case unset this option. */
+   (*options)->ungapped_extension = TRUE;
 
    return 0;
 }
@@ -153,16 +156,9 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
       return 1;
 
    /* Ungapped extension is performed in all cases except when greedy
-      gapped extension is used */
-   if (program != eBlastTypeBlastn) {
-      options->ungapped_extension = TRUE;
-      options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
-   } else if (!greedy) {
-      options->ungapped_extension = TRUE;
-      options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
-   } else {
-      options->ungapped_extension = FALSE;
-   }
+      gapped extension is used. */
+   if (program == eBlastTypeBlastn && greedy)
+       options->ungapped_extension = FALSE;
 
    if (window_size != 0)
       options->window_size = window_size;
@@ -197,9 +193,13 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 		(*options)->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
 		(*options)->gap_x_dropoff_final = 
                    BLAST_GAP_X_DROPOFF_FINAL_PROT;
-		(*options)->ePrelimGapExt = eDynProgExt;
-		(*options)->eTbackExt = eDynProgTbck;
-	}
+    } else {
+        (*options)->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
+        (*options)->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
+    }
+
+    (*options)->ePrelimGapExt = eDynProgExt;
+    (*options)->eTbackExt = eDynProgTbck;
 
 	return 0;
 }
@@ -298,9 +298,14 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
       (*options)->is_ooframe = FALSE;
       (*options)->gap_open = BLAST_GAP_OPEN_PROT;
       (*options)->gap_extend = BLAST_GAP_EXTN_PROT;
+      (*options)->matrix = strdup(BLAST_DEFAULT_MATRIX);
    } else {	/* nucleotide-nucleotide options. */
       (*options)->penalty = BLAST_PENALTY;
       (*options)->reward = BLAST_REWARD;
+      /* This is correct except when greedy extension is used. In that case 
+         these values would have to be reset. */
+      (*options)->gap_open = BLAST_GAP_OPEN_NUCL;
+      (*options)->gap_extend = BLAST_GAP_EXTN_NUCL;
    }
    (*options)->decline_align = INT2_MAX;
    (*options)->gapped_calculation = TRUE;
@@ -317,15 +322,10 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
       return 1;
 
    if (program_number != eBlastTypeBlastn) {	/* protein-protein options. */
-      if (matrix) {
-         unsigned int i;
-         options->matrix = strdup(matrix);
-         /* Make it all upper case */
-         for (i=0; i<strlen(options->matrix); ++i)
-            options->matrix[i] = toupper(options->matrix[i]);
-      } else {
-         options->matrix = strdup("BLOSUM62");
-      }
+      /* If matrix name is not provided, keep the default "BLOSUM62" value filled in 
+         BlastScoringOptionsNew, otherwise reset it. */
+      if (matrix)
+          BlastScoringOptionsSetMatrix(options, matrix);
    } else {	/* nucleotide-nucleotide options. */
       if (penalty)
          options->penalty = penalty;
@@ -458,6 +458,21 @@ BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions*
     return 0;
 }
 
+Int2 BlastScoringOptionsSetMatrix(BlastScoringOptions* opts,
+                                  const char* matrix_name)
+{
+    Uint4 i;
+
+    if (matrix_name) {
+        sfree(opts->matrix);
+        sfree(opts->matrix_path);
+        opts->matrix = strdup(matrix_name);
+        /* Make it all upper case */
+        for (i=0; i<strlen(opts->matrix); ++i)
+            opts->matrix[i] = toupper(opts->matrix[i]);
+    }
+    return 0;
+}
 
 BlastEffectiveLengthsOptions*
 BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options)
@@ -948,6 +963,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.152  2005/02/02 18:55:33  dondosha
+ * Added BlastScoringOptionsSetMatrix; added setting of more default values in some of the BlastXXXOptionsNew functions
+ *
  * Revision 1.151  2005/01/10 13:21:23  madden
  * Move some fields from InitialWordOptions to InitialWordParameters, remove function CalculateBestStride
  *
