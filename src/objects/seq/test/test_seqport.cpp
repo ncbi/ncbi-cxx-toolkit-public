@@ -78,14 +78,11 @@ public:
               CSeq_data*           out_seq,
               CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void TranslateTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength); 
     void ConvertTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
               CSeq_data::E_Choice  to_code,
@@ -94,76 +91,50 @@ public:
               bool                 bAmbig);
     void AppendTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void InPlaceReverseComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void InCopyReverseComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void InPlaceReverseTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void InCopyReverseTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void InPlaceComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void InCopyComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void FastValidateTest(const CSeq_data&     in_seq,
-              CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void ValidateTest(const CSeq_data&     in_seq,
-              CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void GetCopyTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     void KeepTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos         uBeginIdx,
-              TSeqPos         uLength,
-              bool                 bAmbig);
+              TSeqPos         uLength);
     void PackTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig);
+              TSeqPos              uLength);
     
     
     // Testing methods that do not require CSeq_data
@@ -220,8 +191,6 @@ int CSeqportTestApp::Run()
             break;
         }
     }
-                
-    return 0;
 }
 
 
@@ -552,9 +521,6 @@ void CSeqportTestApp::NonSeqDataTest()
                 }
                 cout << msg << endl;
             } 
-            catch (CSeqportUtil::CBadSymbol) {}
-            catch (CSeqportUtil::CBadIndex) {}
-            catch (CSeqportUtil::CBadType) {}
         }
     }    
 }
@@ -810,58 +776,58 @@ void CSeqportTestApp::SeqDataTest()
             return;
         case 1:
             GetAmbigsTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength);
             break;
         case 2:
             TranslateTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 3:
             ConvertTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
             break;
         case 4:
-            AppendTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            AppendTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 5:
             InPlaceReverseComplementTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 6:
             InCopyReverseComplementTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 7:
             InPlaceReverseTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 8:
             InCopyReverseTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 9:
             InPlaceComplementTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 10:
             InCopyComplementTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 11:
             FastValidateTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, uBeginIdx, uLength);
             break;
         case 12:
             ValidateTest
-                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+                (*in_seq, uBeginIdx, uLength);
             break;
         case 13:
-            GetCopyTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            GetCopyTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 14:
-            KeepTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            KeepTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
         case 15:
-            PackTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            PackTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
         default:
             break;
@@ -874,8 +840,7 @@ void CSeqportTestApp::GetAmbigsTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
               CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
     
@@ -932,10 +897,8 @@ void CSeqportTestApp::GetAmbigsTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::TranslateTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength) 
 {
     int nResponse;
 
@@ -1123,10 +1086,8 @@ void CSeqportTestApp::ConvertTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::AppendTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
     
@@ -1168,10 +1129,8 @@ void CSeqportTestApp::AppendTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::InPlaceReverseComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1197,10 +1156,8 @@ void CSeqportTestApp::InPlaceReverseComplementTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::InCopyReverseComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1226,10 +1183,8 @@ void CSeqportTestApp::InCopyReverseComplementTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::InPlaceReverseTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1256,10 +1211,8 @@ void CSeqportTestApp::InPlaceReverseTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::InCopyReverseTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1285,10 +1238,8 @@ void CSeqportTestApp::InCopyReverseTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::InPlaceComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1315,10 +1266,8 @@ void CSeqportTestApp::InPlaceComplementTest(const CSeq_data&     in_seq,
  
 void CSeqportTestApp::InCopyComplementTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1343,11 +1292,8 @@ void CSeqportTestApp::InCopyComplementTest(const CSeq_data&     in_seq,
 }
 
 void CSeqportTestApp::FastValidateTest(const CSeq_data&     in_seq,
-              CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1371,11 +1317,8 @@ void CSeqportTestApp::FastValidateTest(const CSeq_data&     in_seq,
 }
 
 void CSeqportTestApp::ValidateTest(const CSeq_data&     in_seq,
-              CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1409,10 +1352,8 @@ void CSeqportTestApp::ValidateTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::GetCopyTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
     TSeqPos uSeqLen=0;
 
@@ -1437,10 +1378,8 @@ void CSeqportTestApp::GetCopyTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::KeepTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
 
     try{
@@ -1465,10 +1404,8 @@ void CSeqportTestApp::KeepTest(const CSeq_data&     in_seq,
 
 void CSeqportTestApp::PackTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
-              CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
-              TSeqPos              uLength,
-              bool                 bAmbig)
+              TSeqPos              uLength)
 {
 
     try{
@@ -1591,6 +1528,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/07/01 16:15:08  clausen
+ * Fixed defined but not used warnings
+ *
  * Revision 1.7  2002/05/14 17:42:32  ucko
  * Fix type of from_to.
  *
