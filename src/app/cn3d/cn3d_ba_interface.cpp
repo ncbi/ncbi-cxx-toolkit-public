@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
 * Revision 1.21  2002/12/20 02:51:46  thiessen
 * fix Prinf to self problems
 *
@@ -115,7 +118,6 @@
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/wx_tools.hpp"
-#include "cn3d/cn3d_blast.hpp"
 #include "cn3d/cn3d_tools.hpp"
 
 // necessary C-toolkit headers
@@ -413,7 +415,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 //        TESTMSG("allowed gap after block " << (i+1) << ": " << allowedGaps[i]);
 
     // set up PSSM
-    BLAST_Matrix *matrix = BLASTer::CreateBLASTMatrix(multiple, NULL);
+    const BLAST_Matrix *matrix = multiple->GetPSSM();
     thisScoreMat = matrix->matrix;
 
     Int4 *frozenBlocks = (Int4*) MemNew(numBlocks * sizeof(Int4));
@@ -504,8 +506,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                             ERR_POST(Error << "BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
                                 "called with merge on, but NULL nRowsAddedToMultiple pointer");
                         // recalculate PSSM
-                        BLAST_MatrixDestruct(matrix);
-                        matrix = BLASTer::CreateBLASTMatrix(multiple, NULL);
+                        matrix = multiple->GetPSSM();
                         thisScoreMat = matrix->matrix;
 
                     } else {                 // otherwise keep it
@@ -545,7 +546,6 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     }
 
     // cleanup
-    BLAST_MatrixDestruct(matrix);
     MemFree(blockStarts);
     MemFree(blockEnds);
     MemFree(allowedGaps);

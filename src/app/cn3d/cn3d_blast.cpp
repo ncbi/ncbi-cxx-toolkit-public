@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
 * Revision 1.25  2002/12/20 02:51:46  thiessen
 * fix Prinf to self problems
 *
@@ -125,8 +128,6 @@
 #include <objseq.h>
 #include <blast.h>
 #include <blastkar.h>
-#include <thrdatd.h>
-#include <thrddecl.h>
 
 #include "cn3d/cn3d_blast.hpp"
 #include "cn3d/structure_set.hpp"
@@ -154,7 +155,7 @@ BEGIN_SCOPE(Cn3D)
 const std::string BLASTer::BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
 // gives BLAST residue number for a character (or # for 'X' if char not found)
-static int LookupBLASTResidueNumberFromCharacter(char r)
+int LookupBLASTResidueNumberFromCharacter(char r)
 {
     typedef std::map < char, int > Char2Int;
     static Char2Int charMap;
@@ -172,7 +173,7 @@ static int LookupBLASTResidueNumberFromCharacter(char r)
 }
 
 // gives BLAST residue number for a threader residue number (or # for 'X' if char == -1)
-static int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
+int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
 {
     r = toupper(r);
     return LookupBLASTResidueNumberFromCharacter(
@@ -183,121 +184,11 @@ static int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
 #define PRINT_PSSM // for testing/debugging
 #endif
 
-static Int4 Round(double d)
-{
-    if (d >= 0.0)
-        return (Int4) (d + 0.5);
-    else
-        return (Int4) (d - 0.5);
-}
-
-BLAST_Matrix * BLASTer::CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM,
-    BLAST_KarlinBlkPtr givenKarlinBlock)
-{
-    // for now, use threader's SeqMtf
-    BLAST_KarlinBlkPtr karlinBlock = givenKarlinBlock ? givenKarlinBlock : BlastKarlinBlkCreate();
-    Seq_Mtf *seqMtf = Threader::CreateSeqMtf(multipleForPSSM, 1.0, karlinBlock);
-
-    BLAST_Matrix *matrix = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
-    matrix->is_prot = TRUE;
-    matrix->name = StringSave("BLOSUM62");
-    matrix->karlinK = karlinBlock->K;
-    matrix->rows = seqMtf->n + 1;
-    matrix->columns = 26;
-
-#ifdef PRINT_PSSM
-    FILE *f = fopen("blast_matrix.txt", "w");
-#endif
-
-    int i, j;
-    matrix->matrix = (Int4 **) MemNew(matrix->rows * sizeof(Int4 *));
-    for (i=0; i<matrix->rows; i++) {
-        matrix->matrix[i] = (Int4 *) MemNew(matrix->columns * sizeof(Int4));
-#ifdef PRINT_PSSM
-        fprintf(f, "matrix %i : ", i);
-#endif
-
-        // set scores from threader matrix
-        if (i < seqMtf->n) {
-            // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
-            for (j=0; j<matrix->columns; j++)
-                matrix->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
-
-            for (j=0; j<seqMtf->AlphabetSize; j++) {
-                matrix->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    Round(((double) seqMtf->ww[i][j]) / Threader::SCALING_FACTOR);
-            }
-        } else {
-            // initialize last row with BLAST_SCORE_MIN
-            for (j=0; j<matrix->columns; j++)
-                matrix->matrix[i][j] = BLAST_SCORE_MIN;
-        }
-#ifdef PRINT_PSSM
-        for (j=0; j<matrix->columns; j++)
-            fprintf(f, "%i ", matrix->matrix[i][j]);
-        fprintf(f, "\n");
-#endif
-    }
-
-#ifdef PRINT_PSSM
-    // for diffing with scoremat stored in ascii CD
-    fprintf(f, "{\n");
-    for (i=0; i<seqMtf->n; i++) {
-        for (j=0; j<matrix->columns; j++) {
-            fprintf(f, "      %i,\n", matrix->matrix[i][j]);
-        }
-    }
-    fprintf(f, "}\n");
-    // for diffing with .mtx file
-    for (i=0; i<seqMtf->n; i++) {
-        for (j=0; j<matrix->columns; j++) {
-            fprintf(f, "%i  ", matrix->matrix[i][j]);
-        }
-        fprintf(f, "\n");
-    }
-#endif
-
-#ifdef _DEBUG
-    matrix->posFreqs = (Nlm_FloatHi **) MemNew(matrix->rows * sizeof(Nlm_FloatHi *));
-    for (i=0; i<matrix->rows; i++) {
-        matrix->posFreqs[i] = (Nlm_FloatHi *) MemNew(matrix->columns * sizeof(Nlm_FloatHi));
-#ifdef PRINT_PSSM
-        fprintf(f, "freqs %i : ", i);
-#endif
-        if (i < seqMtf->n) {
-            for (j=0; j<seqMtf->AlphabetSize; j++) {
-                matrix->posFreqs[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    seqMtf->freqs[i][j] / Threader::SCALING_FACTOR;
-            }
-        }
-#ifdef PRINT_PSSM
-        for (j=0; j<matrix->columns; j++)
-            fprintf(f, "%g ", matrix->posFreqs[i][j]);
-        fprintf(f, "\n");
-#endif
-    }
-
-    // we're not actually using the frequency table; just printing it out for debugging/testing
-    for (i=0; i<matrix->rows; i++) MemFree(matrix->posFreqs[i]);
-    MemFree(matrix->posFreqs);
-#endif // _DEBUG
-
-    matrix->posFreqs = NULL;
-
-#ifdef PRINT_PSSM
-    fclose(f);
-#endif
-
-    FreeSeqMtf(seqMtf);
-    if (!givenKarlinBlock) BlastKarlinBlkDestruct(karlinBlock);
-    return matrix;
-}
-
 static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
 {
     BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
-//    bob->db_length = 1000000;   // approx. # aligned columns in CDD database
-    bob->db_length = 923758;    // size of in-house CDD database
+//    bob->db_length = 2500000;   // approx. # aligned columns in CDD database
+    bob->db_length = 2,494,783;    // size of CDD database v1.60
     bob->scalingFactor = 1.0;
     return bob;
 }
@@ -358,9 +249,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
     slaveSeqLoc->data.ptrvalue = slaveSeqInt;
 
     // create BLAST_Matrix if using PSSM from multiple
-    BLAST_Matrix *BLASTmatrix = NULL;
-    if (usePSSM)
-        BLASTmatrix = CreateBLASTMatrix(multiple, NULL);
+    const BLAST_Matrix *BLASTmatrix = NULL;
+    if (usePSSM) BLASTmatrix = multiple->GetPSSM();
 
     std::string err;
     AlignmentList::const_iterator s, se = toRealign.end();
@@ -397,7 +287,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                 masterSeqLoc, slaveSeqLoc,
                 "blastp", options,
                 NULL, NULL, NULL,
-                BLASTmatrix);
+                const_cast<BLAST_Matrix*>(BLASTmatrix));
         } else {
             TESTMSG("calling BlastTwoSequencesByLoc()");
             salp = BlastTwoSequencesByLoc(masterSeqLoc, slaveSeqLoc, "blastp", options);
@@ -527,7 +417,6 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
     }
 
     BLASTOptionDelete(options);
-    if (BLASTmatrix) BLAST_MatrixDestruct(BLASTmatrix);
     masterSeqInt->id = NULL;    // don't free Seq-id, since it belongs to the Bioseq
     SeqIntFree(masterSeqInt);
     MemFree(masterSeqLoc);
@@ -574,7 +463,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     slaveSeqLoc->data.ptrvalue = slaveSeqInt;
 
     // create BLAST_Matrix if using PSSM from multiple
-    BLAST_Matrix *BLASTmatrix = CreateBLASTMatrix(multiple, NULL);
+    const BLAST_Matrix *BLASTmatrix = multiple->GetPSSM();
 
     std::string err;
     int row;
@@ -601,7 +490,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
             masterSeqLoc, slaveSeqLoc,
             "blastp", options,
             NULL, NULL, NULL,
-            BLASTmatrix);
+            const_cast<BLAST_Matrix*>(BLASTmatrix));
 
         // process the result
         double score = -1.0;
@@ -652,7 +541,6 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         << nSelfHits << '/' << multiple->NRows() << ')' << setprecision(6));
 
     BLASTOptionDelete(options);
-    BLAST_MatrixDestruct(BLASTmatrix);
     masterSeqInt->id = NULL;    // don't free Seq-id, since it belongs to the Bioseq
     SeqIntFree(masterSeqInt);
     MemFree(masterSeqLoc);

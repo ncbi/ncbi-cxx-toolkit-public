@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
 * Revision 1.7  2002/08/01 12:51:36  thiessen
 * add E-value display to block aligner
 *
@@ -60,10 +63,6 @@
 #include <corelib/ncbistl.hpp>
 
 #include <list>
-#include <vector>
-
-#include <ncbi.h>
-#include <blastkar.h>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -93,12 +92,11 @@ public:
     // aligned with the multiple using BLAST/PSSM. The scores will be placed in each row, -1.0
     // if no significant alignment is found.
     void CalculateSelfHitScores(const BlockMultipleAlignment *multiple);
-
-
-    // calculate BLAST_Matrix from alignment, optionally filling in karlin block (if !NULL)
-    static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM,
-        BLAST_KarlinBlkPtr karlinBlock);
 };
+
+// utility functions
+extern int LookupBLASTResidueNumberFromCharacter(char r);
+extern int LookupBLASTResidueNumberFromThreaderResidueNumber(char r);
 
 END_SCOPE(Cn3D)
 

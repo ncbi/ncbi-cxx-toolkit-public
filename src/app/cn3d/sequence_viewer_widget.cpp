@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
 * Revision 1.36  2002/10/07 13:29:32  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -314,7 +317,7 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(
         // set size of virtual area
         alignment->GetSize(&areaWidth, &areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return false;
-        TESTMSG(Info << "area height " << areaHeight);
+//        TESTMSG(Info << "area height " << areaHeight);
 
         // "+1" to make sure last real column and row are always visible, even
         // if visible area isn't exact multiple of cell size

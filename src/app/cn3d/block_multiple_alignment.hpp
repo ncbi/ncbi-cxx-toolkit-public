@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
 * Revision 1.31  2002/10/23 01:29:25  thiessen
 * fix block cache bug
 *
@@ -135,6 +138,10 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <objalign.h>
+#include <blast.h>
+#include <blastkar.h>
+#include <thrdatd.h>
+#include <thrddecl.h>
 
 #include <list>
 #include <vector>
@@ -257,6 +264,10 @@ public:
     // returns false if any residue in the range is unaligned (or out of range), true on success
     bool HighlightAlignedColumnsOfMasterRange(int from, int to) const;
 
+    // PSSM for this alignment (cached)
+    const BLAST_Matrix * GetPSSM(void) const;
+    void RemovePSSM(void) const;
+
 
     ///// editing functions /////
 
@@ -316,6 +327,7 @@ public:
 
 private:
     ConservationColorer *conservationColorer;
+    mutable BLAST_Matrix *pssm;
 
     typedef std::list < Block * > BlockList;
     BlockList blocks;
