@@ -94,7 +94,7 @@
 #  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
-#  ifndef NCBI_OS_BEOS
+#  if ! defined(NCBI_OS_BEOS) &&  ! defined(NCBI_COMPILER_MW_MSL)
 #    include <arpa/inet.h>
 #  endif /*NCBI_OS_BEOS*/
 #  include <signal.h>
@@ -2979,6 +2979,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.91  2003/04/04 20:44:35  rsmith
+ * do not include arpa/inet.h on CW with MSL.
+ *
  * Revision 6.90  2003/04/03 14:16:18  rsmith
  * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
  *
