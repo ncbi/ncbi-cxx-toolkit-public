@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/20 02:43:35  thiessen
+* fix Printf to self problems
+*
 * Revision 1.8  2002/10/10 16:58:56  thiessen
 * add const where required
 *
@@ -235,8 +238,10 @@ static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMa
         TaxonomyTreeNode::SequenceMap::const_iterator s, se = node.sequences.end();
         for (s=node.sequences.begin(); s!=se; s++) {
             wxString name(s->first->identifier->ToString().c_str());
-            if (s->second > 1)
-                name.Printf("%s (x%i)", name.c_str(), s->second);
+            if (s->second > 1) {
+	    	wxString tmp = name;
+                name.Printf("%s (x%i)", tmp.c_str(), s->second);
+	    }
             const wxTreeItemId& child = tree->AppendItem(id, name);
             tree->SetItemData(child, new NodeData(s->first));
         }
@@ -255,7 +260,8 @@ static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMa
                 if (childNode->name != name.c_str())
                     name += wxString(" . . . ") + childNode->name.c_str();
             }
-            name.Printf("%s (%i)", name.c_str(), childNode->nDescendentLeaves);
+	    wxString tmp = name;
+            name.Printf("%s (%i)", tmp.c_str(), childNode->nDescendentLeaves);
             wxTreeItemId childId = tree->AppendItem(id, name);
             AppendChildrenToTree(tree, treeMap, *childNode, childId, abbreviated);
         }
