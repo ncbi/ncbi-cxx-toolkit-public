@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/03/26 23:12:51  grichenk
+ * CMutex destructor releases the mutex if owned by the calling thread
+ *
  * Revision 1.5  2001/03/26 21:45:29  vakatov
  * Workaround static initialization/destruction traps:  provide better
  * timing control, and allow safe use of the objects which are
@@ -561,9 +564,12 @@ CMutex::CMutex(void)
 
 CMutex::~CMutex(void)
 {
-    // check if the mutex is unlocked
-    assert(m_Owner == kThreadID_None);
-    assert(m_Count == 0);
+    // Release system mutex if owned by this thread
+    if (m_Owner == CThread::GetSelf()) {
+        m_Mtx.Unlock();
+    }
+    assert(m_Owner == kThreadID_None  ||  m_Owner == CThread::GetSelf());
+
     return;
 }
 
