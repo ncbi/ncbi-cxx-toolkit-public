@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.6  2001/09/24 20:26:17  lavr
+* +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
+*
 * Revision 6.5  2001/01/12 23:49:19  lavr
 * Timeout and GetCONN method added
 *
@@ -98,23 +101,22 @@ static CONNECTOR s_HttpConnectorBuilder(const char*    host,
                                         const char*    user_hdr,
                                         THCC_Flags     flags)
 {
-    SConnNetInfo* info = ConnNetInfo_Create(0);
-    if (!info)
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    if (!net_info)
         return 0;
-
-    strncpy(info->host, host, sizeof(info->host) - 1);
-    info->host[sizeof(info->host) - 1] = '\0';
-    info->port = port;
-    strncpy(info->path, path, sizeof(info->path) - 1);
-    info->path[sizeof(info->path) - 1] = '\0';
+    strncpy(net_info->host, host, sizeof(net_info->host) - 1);
+    net_info->host[sizeof(net_info->host) - 1] = '\0';
+    net_info->port = port;
+    strncpy(net_info->path, path, sizeof(net_info->path) - 1);
+    net_info->path[sizeof(net_info->path) - 1] = '\0';
     if (args) {
-        strncpy(info->args, args, sizeof(info->args) - 1);
-        info->args[sizeof(info->args) - 1] = '\0';
+        strncpy(net_info->args, args, sizeof(net_info->args) - 1);
+        net_info->args[sizeof(net_info->args) - 1] = '\0';
     } else {
-        *info->args = '\0';
+        *net_info->args = '\0';
     }
-    CONNECTOR c = HTTP_CreateConnector(info, user_hdr, flags);
-    ConnNetInfo_Destroy(info);
+    CONNECTOR c = HTTP_CreateConnector(net_info, user_hdr, flags);
+    ConnNetInfo_Destroy(net_info);
     return c;
 }
 
@@ -139,25 +141,30 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* info,
+CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    const string&       user_header,
                                    THCC_Flags          flags,
                                    const STimeout*     timeout,
                                    streamsize          buf_size)
-    : CConn_IOStream(HTTP_CreateConnector(info, user_header.c_str(), flags),
+    : CConn_IOStream(HTTP_CreateConnector(net_info,
+                                          user_header.c_str(),
+                                          flags),
                      timeout, buf_size)
 {
     return;
 }
 
 
-CConn_ServiceStream::CConn_ServiceStream(const string&       service,
-                                         TSERV_Type          types,
-                                         const SConnNetInfo* info,
-                                         const STimeout*     timeout,
-                                         streamsize          buf_size)
+CConn_ServiceStream::CConn_ServiceStream(const string&         service,
+                                         TSERV_Type            types,
+                                         const SConnNetInfo*   net_info,
+                                         const SSERVICE_Extra* params,
+                                         const STimeout*       timeout,
+                                         streamsize            buf_size)
     : CConn_IOStream(SERVICE_CreateConnectorEx(service.c_str(),
-                                               types, info),
+                                               types,
+                                               net_info,
+                                               params),
                      timeout, buf_size)
 {
     return;

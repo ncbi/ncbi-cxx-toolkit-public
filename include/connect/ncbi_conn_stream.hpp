@@ -50,6 +50,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.8  2001/09/24 20:25:57  lavr
+* +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
+*
 * Revision 6.7  2001/04/24 21:18:41  lavr
 * Default timeout is set as a special value CONN_DEFAULT_TIMEOUT.
 * Removed wrong log for R6.6.
@@ -100,10 +103,11 @@ const streamsize kConn_DefBufSize = 4096;
 class CConn_IOStream : public iostream
 {
 public:
-    CConn_IOStream(CONNECTOR       connector,
-                   const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
-                   streamsize      buf_size = kConn_DefBufSize,
-                   bool            do_tie   = true);
+    CConn_IOStream
+    (CONNECTOR       connector,
+     const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
+     streamsize      buf_size = kConn_DefBufSize,
+     bool            do_tie   = true);
     CONN GetCONN() const;
     virtual ~CConn_IOStream(void);
 };
@@ -120,11 +124,12 @@ public:
 class CConn_SocketStream : public CConn_IOStream
 {
 public:
-    CConn_SocketStream(const string&   host,         /* host to connect to  */
-                       unsigned short  port,         /* ... and port number */
-                       unsigned int    max_try  = 3, /* number of attempts  */
-                       const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
-                       streamsize      buf_size = kConn_DefBufSize);
+    CConn_SocketStream
+    (const string&   host,         /* host to connect to  */
+     unsigned short  port,         /* ... and port number */
+     unsigned int    max_try  = 3, /* number of attempts  */
+     const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
+     streamsize      buf_size = kConn_DefBufSize);
 };
 
 
@@ -155,20 +160,24 @@ public:
 class CConn_HttpStream : public CConn_IOStream
 {
 public:
-    CConn_HttpStream(const string&   host,
-                     const string&   path,
-                     const string&   args        = kEmptyStr,
-                     const string&   user_header = kEmptyStr,
-                     unsigned short  port        = 80,
-                     THCC_Flags      flags       = fHCC_AutoReconnect,
-                     const STimeout* timeout     = CONN_DEFAULT_TIMEOUT,
-                     streamsize      buf_size    = kConn_DefBufSize);
-    
-    CConn_HttpStream(const SConnNetInfo* info        = 0,
-                     const string&       user_header = kEmptyStr,
-                     THCC_Flags          flags       = fHCC_AutoReconnect,
-                     const STimeout*     timeout     = CONN_DEFAULT_TIMEOUT,
-                     streamsize          buf_size    = kConn_DefBufSize);
+    CConn_HttpStream
+    (const string&   host,
+     const string&   path,
+     const string&   args        = kEmptyStr,
+     const string&   user_header = kEmptyStr,
+     unsigned short  port        = 80,
+     THCC_Flags      flags       = fHCC_AutoReconnect,
+     const STimeout* timeout     = CONN_DEFAULT_TIMEOUT,
+     streamsize      buf_size    = kConn_DefBufSize
+     );
+
+    CConn_HttpStream
+    (const SConnNetInfo* net_info    = 0,
+     const string&       user_header = kEmptyStr,
+     THCC_Flags          flags       = fHCC_AutoReconnect,
+     const STimeout*     timeout     = CONN_DEFAULT_TIMEOUT,
+     streamsize          buf_size    = kConn_DefBufSize
+     );
 };
 
 
@@ -190,11 +199,13 @@ public:
 class CConn_ServiceStream : public CConn_IOStream
 {
 public:
-    CConn_ServiceStream(const string&       service,
-                        TSERV_Type          types    = fSERV_Any,
-                        const SConnNetInfo* info     = 0,
-                        const STimeout*     timeout  = CONN_DEFAULT_TIMEOUT,
-                        streamsize          buf_size = kConn_DefBufSize);
+    CConn_ServiceStream
+    (const string&         service,
+     TSERV_Type            types    = fSERV_Any,
+     const SConnNetInfo*   net_info = 0,
+     const SSERVICE_Extra* params   = 0,
+     const STimeout*       timeout  = CONN_DEFAULT_TIMEOUT,
+     streamsize            buf_size = kConn_DefBufSize);
 };
 
 
