@@ -1,4 +1,4 @@
---$Revision: 1.1 $********************************************
+--$Revision: 1.2 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -145,10 +145,10 @@ Entrez2-term-pos ::= SEQUENCE {          -- request portions of term list
   number-of-terms INTEGER OPTIONAL }     -- optional for hierarchy only
 
 Entrez2-get-links ::= SEQUENCE {         -- request links of one type
-  uids Entrez2-id-list ,                -- docs to link from
+  uids Entrez2-id-list ,                 -- docs to link from
   linktype Entrez2-link-id ,             -- type of link
   max-UIDS INTEGER OPTIONAL ,            -- maximum number of links to return
-  count-only INTEGER OPTIONAL ,          -- return only the counts
+  count-only BOOLEAN OPTIONAL ,          -- return only the counts
   parents-persist BOOLEAN OPTIONAL }     -- allow original uids in list
 
   --**********************************************************
