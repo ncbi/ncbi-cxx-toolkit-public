@@ -1,5 +1,5 @@
-#ifndef NCBISTRE__HPP
-#define NCBISTRE__HPP
+#ifndef CORELIB___NCBISTRE__HPP
+#define CORELIB___NCBISTRE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -422,6 +422,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/08/24 14:32:43  siyan
+ * Added CORELIB___ prefix to the inclusion macros.
+ *
  * Revision 1.34  2003/08/24 02:18:40  siyan
  * Documentation changes.
  *
