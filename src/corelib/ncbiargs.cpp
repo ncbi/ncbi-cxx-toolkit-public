@@ -1443,6 +1443,12 @@ void CArgDescriptions::x_PreCheck(void) const
 }
 
 
+CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
+{
+    return CreateArgs(args.Size(), args);
+}
+
+
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
     _ASSERT(m_AutoHelp);
@@ -1450,7 +1456,6 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
         NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
     }
 }
-
 
 // (return TRUE if "arg2" was used)
 bool CArgDescriptions::x_CreateArg
@@ -1874,11 +1879,6 @@ string& CArgDescriptions::PrintUsage(string& str) const
 }
 
 
-CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
-{
-    return CreateArgs(args.Size(), args);
-}
-
 
 
 ///////////////////////////////////////////////////////
@@ -2153,6 +2153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2003/09/16 19:51:36  rsmith
+ * move CreateArgs definition to avoid new Codewarrior compiler bug.
+ *
  * Revision 1.46  2003/05/28 18:01:58  kuznets
  * Changed program help (usage section). Now prints flags as optional argument in []
  *
