@@ -1,0 +1,48 @@
+<html>
+<head>
+<script language="JavaScript1.2" src="http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js"></script>
+<link rel="stylesheet" type="text/css" href="http://www.ncbi.nlm.nih.gov/projects/webdev/javascript/popupmenu2/popupmenu2_styles.css">
+<script language="JavaScript1.2" src="http://www.ncbi.nlm.nih.gov/projects/webdev/javascript/popupmenu2/popupmenu2.js"></script>
+<script language="JavaScript1.2" src="http://www.ncbi.nlm.nih.gov/projects/webdev/javascript/popupmenu2/popupmenu2_layers.js"></script>
+</head>
+
+<body onClick="PopUpMenu2_Stop()">
+<script language="JavaScript1.2">
+<!--
+window.Menu1 = new Menu();
+Menu1.addMenuItem("Red","document.bgColor='red'","","","");
+Menu1.addMenuItem("White","document.bgColor='white'","","","");
+Menu1.addMenuSeparator();
+Menu1.addMenuItem("Green","document.bgColor='green'","","","");
+Menu1.fontColor = "black";
+Menu1.fontColorHilite = "yellow";
+//-->
+</script>
+<script language="JavaScript1.2">
+<!--
+var Menu2 = [
+["NCBI","window.location='http://ncbi.nlm.nih.gov'","",""],
+["Netscape","window.location='http://www.netscape.com'","",""],
+["Microsoft","top.location='http://www.microsoft.com'","",""]
+]
+//-->
+</script>
+<a href="#" onMouseOver="window.showMenu(window.Menu1);">Smith's Menu</a><p>
+<a href="#" onMouseOut="PopUpMenu2_Hide()" onMouseOver="PopUpMenu2_Set(Menu2,'','top','','yellow','');">Kurdin's Menu</a><p></p>
+
+<script language="JavaScript1.2">
+<!--
+function onLoad() {
+window.useDynamicMenu = false;
+window.defaultjsmenu = new Menu();
+defaultjsmenu.addMenuSeparator();
+defaultjsmenu.writeMenus();
+}
+// For IE & NS6
+if (!document.layers) onLoad();
+//-->
+</script>
+
+</body>
+</html>
+
