@@ -585,7 +585,17 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
 {
     rel_pathes->clear();
 
-    list<string> sources(project.m_Sources);
+    list<string> sources;
+    ITERATE(list<string>, p, project.m_Sources) {
+
+        const string& src_rel = *p;
+        string src_path = 
+            CDirEntry::ConcatPath(project.m_SourcesBaseDir, src_rel);
+        src_path = CDirEntry::NormalizePath(src_path);
+
+        sources.push_back(src_path);
+    }
+
     list<string> included_sources;
     context.GetMsvcProjectMakefile().GetAdditionalSourceFiles //TODO
                                             (SConfigInfo(),&included_sources);
@@ -695,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/03 17:20:47  gorelenk
+ * Changed implementation of method Generate of class CMsvcProjectGenerator.
+ *
  * Revision 1.10  2004/01/30 20:46:55  gorelenk
  * Added support of ASN projects.
  *
