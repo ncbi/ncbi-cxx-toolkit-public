@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/22 16:13:48  thiessen
+* change IFStreamFlags to macro
+*
 * Revision 1.3  2000/05/03 14:38:13  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -69,11 +72,15 @@ CSubSourceCollector::~CSubSourceCollector(void)
 {
 }
 
+/* Mac compiler doesn't like getting these flags as unsigned int (thiessen)
 static inline
 unsigned IFStreamFlags(bool binary)
 {
     return binary? (IOS_BASE::in | IOS_BASE::binary): IOS_BASE::in;
 }
+*/
+#define IFStreamFlags(isBinary) \
+  (isBinary? (IOS_BASE::in | IOS_BASE::binary): IOS_BASE::in)
 
 bool CByteSourceReader::EndOfData(void) const
 {
