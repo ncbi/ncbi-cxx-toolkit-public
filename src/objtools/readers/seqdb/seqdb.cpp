@@ -36,9 +36,49 @@
 
 BEGIN_NCBI_SCOPE
 
+static CSeqDBImpl *
+s_SeqDBInit(const string & dbname,
+            char           prot_nucl,
+            Uint4          oid_begin,
+            Uint4          oid_end,
+            bool           use_mmap)
+{
+    CSeqDBImpl * impl = 0;
+    
+    if (prot_nucl == '-') {
+        try {
+            prot_nucl = 'p';
+            impl = new CSeqDBImpl(dbname,
+                                  prot_nucl,
+                                  oid_begin,
+                                  oid_end,
+                                  use_mmap);
+        }
+        catch(CSeqDBException &) {
+            prot_nucl = 'n';
+        }
+    }
+    
+    if (! impl) {
+        impl = new CSeqDBImpl(dbname,
+                              prot_nucl,
+                              oid_begin,
+                              oid_end,
+                              use_mmap);
+    }
+    
+    _ASSERT(impl);
+    
+    return impl;
+}
+
 CSeqDB::CSeqDB(const string & dbname, char prot_nucl)
 {
-    m_Impl = new CSeqDBImpl(dbname, prot_nucl, 0, 0, true);
+    m_Impl = s_SeqDBInit(dbname,
+                         prot_nucl,
+                         0,
+                         0,
+                         true);
 }
 
 CSeqDB::CSeqDB(const string & dbname,
@@ -47,7 +87,11 @@ CSeqDB::CSeqDB(const string & dbname,
                Uint4          oid_end,
                bool           use_mmap)
 {
-    m_Impl = new CSeqDBImpl(dbname, prot_nucl, oid_begin, oid_end, use_mmap);
+    m_Impl = s_SeqDBInit(dbname,
+                         prot_nucl,
+                         oid_begin,
+                         oid_end,
+                         use_mmap);
 }
 
 Uint4 CSeqDB::GetSeqLength(TOID oid) const
