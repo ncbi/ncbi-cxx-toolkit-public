@@ -95,6 +95,9 @@ public:
                              size_t      count,
                              size_t*     bytes_written = 0) = 0;
 
+    /// Flush pending data (if any) down to output device.
+    virtual ERW_Result Flush(void) = 0;
+
     virtual ~IWriter() {}
 };
 
@@ -116,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/22 18:14:47  lavr
+ * IWriter::Flush() added
+ *
  * Revision 1.7  2003/09/29 16:06:59  lavr
  * Change ERW_Result enumeration and members names
  *
