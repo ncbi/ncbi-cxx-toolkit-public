@@ -133,6 +133,9 @@ public:
     ///    When NULL BLOB was not found (expired).
     IReader* GetData(const string& key);
 
+    /// Remove BLOB
+    void Remove(const string& key);
+
     enum EReadResult {
         eReadComplete, ///< The whole BLOB has been read
         eNotFound,     ///< BLOB not found or error
@@ -183,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/28 16:16:09  kuznets
+ * +CNetCacheClient::Remove()
+ *
  * Revision 1.7  2004/10/27 14:16:45  kuznets
  * BLOB key parser moved from netcached
  *

@@ -210,6 +210,7 @@ string CNetCacheClient::PutData(const void*  buf,
     return blob_id;
 }
 
+
 bool CNetCacheClient::IsAlive()
 {
     string version = ServerVersion();
@@ -264,6 +265,19 @@ void CNetCacheClient::SendClientName()
     if (client_len) {
         WriteStr(client, client_len + 1);
     }
+}
+
+void CNetCacheClient::Remove(const string& key)
+{
+    string request;
+    
+    const char* client = 
+        !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
+
+    request = client;
+    request.append("\r\nREMOVE");    
+    request += key;
+    WriteStr(request.c_str(), request.length() + 1);
 }
 
 
@@ -403,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/10/28 16:16:20  kuznets
+ * +CNetCacheClient::Remove()
+ *
  * Revision 1.12  2004/10/27 14:16:59  kuznets
  * BLOB key parser moved from netcached
  *
