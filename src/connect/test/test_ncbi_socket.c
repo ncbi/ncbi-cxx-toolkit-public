@@ -835,7 +835,6 @@ extern int main(int argc, char** argv)
      */
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-
     /* Printout local hostname
      */
     {{
@@ -924,6 +923,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/12/04 16:58:13  lavr
+ * No changes
+ *
  * Revision 6.18  2002/11/01 20:17:39  lavr
  * Change hostname buffers to hold up to 256 chars
  *
