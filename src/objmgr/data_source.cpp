@@ -114,10 +114,12 @@ void CDataSource::DropAllTSEs(void)
     // Lock indexes
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
 
+    // First clear all indices
     m_Bioseq_InfoMap.clear();
     m_Annot_InfoMap.clear();
     m_Entry_InfoMap.clear();
     m_TSE_InfoMap.clear();
+    
     m_TSE_seq.clear();
 
     {{
@@ -126,21 +128,26 @@ void CDataSource::DropAllTSEs(void)
         m_DirtyAnnot_TSEs.clear();
     }}
 
+    // then drop all TSEs
     {{
         TMainLock::TWriteLockGuard guard(m_DSCacheLock);
-        m_ManualBlob.Reset();
+        // check if any TSE is locked by user 
         ITERATE ( TBlob_Map, it, m_Blob_Map ) {
-            if ( IsLocked(*it->second) ) {
+            int lock_counter = it->second->m_LockCounter.Get();
+            int used_counter = it->second == m_ManualBlob;
+            if ( lock_counter != used_counter ) {
                 ERR_POST("CDataSource::DropAllTSEs: tse is locked");
             }
         }
-        m_Blob_Cache.clear();
-        if ( m_Loader ) {
-            NON_CONST_ITERATE ( TBlob_Map, it, m_Blob_Map ) {
-                m_Loader->DropTSE(it->second);
-            }
+        NON_CONST_ITERATE( TBlob_Map, it, m_Blob_Map ) {
+            x_ForgetTSE(it->second);
+        }
+        if ( m_ManualBlob ) {
+            _VERIFY(m_ManualBlob->m_LockCounter.Add(-1) == 0);
+            m_ManualBlob.m_Info.Reset();
         }
         m_Blob_Map.clear();
+        m_Blob_Cache.clear();
     }}
 }
 
@@ -277,11 +284,11 @@ TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
 {
     TTSE_Lock lock;
     _ASSERT(IsLoaded(*info));
-    _ASSERT(!IsLocked(*info));
+    _ASSERT(!info->IsLocked());
     _ASSERT(!info->HasDataSource());
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
     TMainLock::TWriteLockGuard guard2(m_DSCacheLock);
-    _ASSERT(!IsLocked(*info));
+    _ASSERT(!info->IsLocked());
     _ASSERT(!info->HasDataSource());
     TBlobId blob_id = info->GetBlobId();
     if ( !blob_id ) {
@@ -290,7 +297,7 @@ TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
     _VERIFY(m_Blob_Map.insert(TBlob_Map::value_type(blob_id, info)).second);
     info->x_DSAttach(*this);
     x_SetLock(lock, info);
-    _ASSERT(IsLocked(*info));
+    _ASSERT(info->IsLocked());
     return lock;
 }
 
@@ -300,7 +307,7 @@ bool CDataSource::DropTSE(CTSE_Info& info)
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
     CRef<CTSE_Info> ref(&info);
 
-    if ( IsLocked(info) ) {
+    if ( info.IsLocked() ) {
         _TRACE("DropTSE: DS="<<this<<" TSE_Info="<<&info<<" locked");
         return false; // Not really dropped, although found
     }
@@ -310,24 +317,38 @@ bool CDataSource::DropTSE(CTSE_Info& info)
     }
     _ASSERT(info.m_UsedMemory == 0 &&& info.GetDataSource() == this);
     info.m_UsedMemory = 1;
-    _ASSERT(!IsLocked(info));
+    _ASSERT(!info.IsLocked());
     x_DropTSE(ref);
+    _ASSERT(!info.IsLocked());
+    _ASSERT(!info.HasDataSource());
     return true;
+}
+
+
+void CDataSource::x_ForgetTSE(CRef<CTSE_Info> info)
+{
+    _TRACE("x_ForgetTSE("<<&*info<<")");
+    if ( m_Loader ) {
+        m_Loader->DropTSE(info);
+    }
+    info->m_CacheState = CTSE_Info::eNotInCache;
+    info->m_DataSource = 0;
+    _TRACE("x_ForgetTSE("<<&*info<<")");
 }
 
 
 void CDataSource::x_DropTSE(CRef<CTSE_Info> info)
 {
-    _TRACE("x_DropTSE("<<&*info);
-    _ASSERT(!IsLocked(*info));
+    _TRACE("x_DropTSE("<<&*info<<")");
+    _ASSERT(!info->IsLocked());
     if ( m_Loader ) {
         m_Loader->DropTSE(info);
     }
-    _TRACE("x_DropTSE("<<&*info);
-    _ASSERT(!IsLocked(*info));
+    _TRACE("x_DropTSE("<<&*info<<")");
+    _ASSERT(!info->IsLocked());
     info->x_DSDetach(*this);
-    _TRACE("x_DropTSE("<<&*info);
-    _ASSERT(!IsLocked(*info));
+    _TRACE("x_DropTSE("<<&*info<<")");
+    _ASSERT(!info->IsLocked());
     {{
         TCacheLock::TWriteLockGuard guard(m_DSCacheLock);
         TBlobId blob_id = info->GetBlobId();
@@ -336,13 +357,13 @@ void CDataSource::x_DropTSE(CRef<CTSE_Info> info)
         }
         _VERIFY(m_Blob_Map.erase(blob_id));
     }}
-    _ASSERT(!IsLocked(*info));
+    _ASSERT(!info->IsLocked());
     {{
         TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
         m_DirtyAnnot_TSEs.erase(info);
     }}
-    _ASSERT(!IsLocked(*info));
-    _TRACE("x_DropTSE("<<&*info);
+    _ASSERT(!info->IsLocked());
+    _TRACE("x_DropTSE("<<&*info<<")");
 }
 
 
@@ -351,6 +372,11 @@ inline
 void x_MapObject(Map& info_map, const Ref& ref, const Info& info)
 {
     _ASSERT(ref);
+    _TRACE("x_Map():" <<
+           " " << typeid(typename Ref::TObjectType).name() <<
+           " " << ref.GetPointerOrNull() <<
+           " " << typeid(typename Info::TObjectType).name() <<
+           " " << info.GetPointerOrNull());
     typedef typename Map::value_type value_type;
     pair<typename Map::iterator, bool> ins =
         info_map.insert(value_type(ref, info));
@@ -373,11 +399,19 @@ inline
 void x_UnmapObject(Map& info_map, const Ref& ref, const Info& _DEBUG_ARG(info))
 {
     _ASSERT(ref);
+    _TRACE("x_Unmap():" <<
+           " " << typeid(*ref).name() <<
+           " " << ref.GetPointerOrNull() <<
+           " " << typeid(*info).name() <<
+           " " << info);
     typename Map::iterator iter = info_map.lower_bound(ref);
-    //_ASSERT(iter != info_map.end() && iter->first == ref);
     if ( iter != info_map.end() && iter->first == ref ) {
         _ASSERT(iter->second == info);
         info_map.erase(iter);
+    }
+    else {
+        _ASSERT(iter != info_map.end() && iter->first == ref);
+        abort();
     }
 }
 
@@ -665,14 +699,16 @@ void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 
 void CDataSource::x_SetDirtyAnnotIndex(CTSE_Info& tse)
 {
-    _ASSERT(tse.x_DirtyAnnotIndex());
+    _TRACE("x_SetDirtyAnnotIndex("<<&tse<<")");
     TAnnotLock::TWriteLockGuard guard(m_DSAnnotLock);
+    _ASSERT(tse.x_DirtyAnnotIndex());
     _VERIFY(m_DirtyAnnot_TSEs.insert(Ref(&tse)).second);
 }
 
 
 void CDataSource::x_ResetDirtyAnnotIndex(CTSE_Info& tse)
 {
+    _TRACE("x_ResetDirtyAnnotIndex("<<&tse<<")");
     _ASSERT(!tse.x_DirtyAnnotIndex());
     _VERIFY(m_DirtyAnnot_TSEs.erase(Ref(&tse)));
 }
@@ -681,6 +717,7 @@ void CDataSource::x_ResetDirtyAnnotIndex(CTSE_Info& tse)
 void CDataSource::UpdateAnnotIndex(void)
 {
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
+    TAnnotLock::TWriteLockGuard guard2(m_DSAnnotLock);
     while ( !m_DirtyAnnot_TSEs.empty() ) {
         CRef<CTSE_Info> tse_info = *m_DirtyAnnot_TSEs.begin();
         tse_info->UpdateAnnotIndex();
@@ -879,6 +916,7 @@ void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
         x_IndexTSE(m_TSE_annot, it->first, tse_info);
     }
     if ( tse_info->x_DirtyAnnotIndex() ) {
+        _TRACE("x_IndexAnnotTSEs("<<tse_info<<")");
         _VERIFY(m_DirtyAnnot_TSEs.insert(Ref(tse_info)).second);
     }
 }
@@ -1145,12 +1183,6 @@ CTSE_LoadLock CDataSource::GetTSE_LoadLock(const TBlobId& blob_id)
 }
 
 
-bool CDataSource::IsLocked(const CTSE_Info& tse) const
-{
-    return tse.m_LockCounter.Get() != 0;
-}
-
-
 bool CDataSource::IsLoaded(const CTSE_Info& tse) const
 {
     return tse.m_LoadState != CTSE_Info::eNotLoaded;
@@ -1159,15 +1191,20 @@ bool CDataSource::IsLoaded(const CTSE_Info& tse) const
 
 void CDataSource::SetLoaded(CTSE_LoadLock& lock)
 {
-    TMainLock::TWriteLockGuard guard(m_DSMainLock);
-    _ASSERT(lock);
-    _ASSERT(lock.m_Info);
-    _ASSERT(!IsLoaded(*lock));
-    _ASSERT(lock.m_LoadLock);
-    _ASSERT(!lock->HasDataSource());
-    lock->x_DSAttach(*this);
-    lock->m_LoadState = CTSE_Info::eLoaded;
-    lock->m_LoadMutex.Reset();
+    {{
+        TMainLock::TWriteLockGuard guard(m_DSMainLock);
+        _ASSERT(lock);
+        _ASSERT(lock.m_Info);
+        _ASSERT(!IsLoaded(*lock));
+        _ASSERT(lock.m_LoadLock);
+        _ASSERT(!lock->HasDataSource());
+        lock->x_DSAttach(*this);
+    }}
+    {{
+        TMainLock::TWriteLockGuard guard2(m_DSCacheLock);
+        lock->m_LoadState = CTSE_Info::eLoaded;
+        lock->m_LoadMutex.Reset();
+    }}
     lock.ReleaseLoadLock();
 }
 
@@ -1196,25 +1233,34 @@ void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
     vector<TTSE_Ref> to_delete;
     {{
         TMainLock::TWriteLockGuard guard(m_DSCacheLock);
-        if ( IsLocked(*tse) ) { // already locked again
+        _TRACE("x_ReleaseLastTSELock("<<tse.GetPointerOrNull()<<")");
+        if ( tse->IsLocked() ) { // already locked again
             return;
         }
         if ( !IsLoaded(*tse) ) { // not loaded yet
             _ASSERT(!tse->HasDataSource());
             return;
         }
+        if ( !tse->HasDataSource() ) { // already released
+            return;
+        }
+        _ASSERT(&tse->GetDataSource() == this);
         
         if ( tse->m_CacheState != CTSE_Info::eInCache ) {
-            _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) == m_Blob_Cache.end());
-            tse->m_CachePosition = m_Blob_Cache.insert(m_Blob_Cache.end(), tse);
+            _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) ==
+                    m_Blob_Cache.end());
+            tse->m_CachePosition = m_Blob_Cache.insert(m_Blob_Cache.end(),tse);
             tse->m_CacheState = CTSE_Info::eInCache;
         }
-        _ASSERT(tse->m_CachePosition == find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
+        _ASSERT(tse->m_CachePosition ==
+                find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
         
         while ( m_Blob_Cache.size() > sx_CacheSize ) {
-            DropTSE(*m_Blob_Cache.front());
-            to_delete.push_back(m_Blob_Cache.front());
+            CRef<CTSE_Info> del_tse = m_Blob_Cache.front();
             m_Blob_Cache.pop_front();
+            del_tse->m_CacheState = CTSE_Info::eNotInCache;
+            to_delete.push_back(del_tse);
+            _VERIFY(DropTSE(*del_tse));
         }
     }}
 }
@@ -1230,13 +1276,16 @@ void CDataSource::x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const
     }
 
     TMainLock::TWriteLockGuard guard(m_DSCacheLock);
+    _TRACE("x_SetLock("<<tse.GetPointerOrNull()<<")");
     if ( tse->m_CacheState == CTSE_Info::eInCache ) {
-        _ASSERT(tse->m_CachePosition == find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
+        _ASSERT(tse->m_CachePosition ==
+                find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
         tse->m_CacheState = CTSE_Info::eNotInCache;
         m_Blob_Cache.erase(tse->m_CachePosition);
     }
     
-    _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) == m_Blob_Cache.end());
+    _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) ==
+            m_Blob_Cache.end());
 }
 
 
@@ -1281,7 +1330,7 @@ private:
 void CDataSource::x_SetLoadLock(CTSE_LoadLock& load, CTSE_Lock& lock)
 {
     _ASSERT(lock && !load);
-    _ASSERT(IsLocked(*lock));
+    _ASSERT(lock->IsLocked());
     load.m_DataSource.Reset(this);
     load.m_Info.Reset(const_cast<CTSE_Info*>(lock.GetNonNullPointer()));
     load.m_Info->m_LockCounter.Add(1);
@@ -1302,7 +1351,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load,
                                 CRef<CTSE_Info::CLoadMutex> load_mutex)
 {
     _ASSERT(!load);
-    _ASSERT(IsLocked(tse));
+    _ASSERT(tse.IsLocked());
     load.m_DataSource.Reset(this);
     _VERIFY(tse.m_LockCounter.Add(1) > 1);
     load.m_Info.Reset(&tse);
