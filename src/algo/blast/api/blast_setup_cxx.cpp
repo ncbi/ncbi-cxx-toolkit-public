@@ -437,8 +437,9 @@ SetupSubjects(const TSeqLocVector& subjects,
        
     // TODO: Should strand selection on the subject sequences be allowed?
     //ENa_strand strand = options->GetStrandOption(); 
-    Int8 dblength = 0;
     int index = 0; // Needed for lower case masks only.
+
+    *max_subjlen = 0;
 
     ITERATE(TSeqLocVector, itr, subjects) {
         BLAST_SequenceBlk* subj = NULL;
@@ -476,14 +477,11 @@ SetupSubjects(const TSeqLocVector& subjects,
                                    seqbuf.second - 2);
         }
 
-        dblength += subj->length;
         seqblk_vec->push_back(subj);
         (*max_subjlen) = MAX((*max_subjlen),
                 sequence::GetLength(*itr->seqloc, itr->scope));
 
     }
-    options->SetDbSeqNum(seqblk_vec->size());
-    options->SetDbLength(dblength);
 }
 
 TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
@@ -866,6 +864,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/03/09 18:53:25  dondosha
+* Do not set db length and number of sequences options to real values - these are calculated and assigned to parameters structure fields
+*
 * Revision 1.58  2004/03/06 00:39:47  camacho
 * Some refactorings, changed boolen parameter to enum in GetSequence
 *
