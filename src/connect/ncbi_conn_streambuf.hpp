@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.5  2001/05/14 16:47:46  lavr
+* streambuf::xsgetn commented out as it badly interferes
+* with truly-blocking stream reading via istream::read.
+*
 * Revision 6.4  2001/05/11 14:04:08  grichenk
 * + CConn_Streambuf::xsgetn(), CConn_Streambuf::showmanyc()
 *
@@ -67,7 +71,9 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
+#if 0
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
+#endif
     virtual streamsize  showmanyc(void);
 
     virtual int         sync(void);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.8  2001/05/14 16:47:45  lavr
+* streambuf::xsgetn commented out as it badly interferes
+* with truly-blocking stream reading via istream::read.
+*
 * Revision 6.7  2001/05/11 20:40:48  lavr
 * Workaround of compiler warning about comparison of streamsize and size_t
 *
@@ -162,11 +166,11 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-static const STimeout s_ZeroTimeout = {0, 0};
-
-
+#if 0
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
+    static const STimeout s_ZeroTimeout = {0, 0};
+
     /* Flush output buffer, if tied up to it */
     if (m_Tie  &&  pbase()  &&  pptr() > pbase()) {
         _VERIFY(!CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF));
@@ -205,6 +209,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     return (streamsize) (n_read + x_read);
 }
+#endif
 
 
 streamsize CConn_Streambuf::showmanyc(void)
