@@ -20,6 +20,8 @@
 	 <br></br>
 	 <a name="ref_Assert"><h2>Debug-mode(internal use) checks and diagnostics</h2></a>
 
+	 <p> <i>#include &lt;ncbidbg.hpp&gt;</i>
+
 	 <p>
 	 There are 4 preprocessor macros
 	 (<i>_TROUBLE</i>, <i>_ASSERT</i>, <i>_VERIFY</i> and <i>_TRACE</i>)
@@ -55,18 +57,65 @@
 		otherwise, it outputs the <b><i>message</i></b> using
 		<a href="#ref_Message">Standard NCBI C++ message posting</a>:
 		<ul>#define _TRACE(message)
-		{{CNcbiDiag xxx;  xxx &lt;&lt; Trace &lt;&lt; message; }}</ul> </ul>
+		{{CNcbiDiag diag;  diag &lt;&lt; Trace &lt;&lt; message; }}</ul> </ul>
 
 
 	 <br></br>
 	 <a name="ref_Exception"><h2>C++ exceptions</h2></a>
 
-	 <p>
+	 <p> <i>#include &lt;ncbiexpt.hpp&gt;</i>
 
+	 <p>
+	 One must use one of
+	 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-diagnostics.html#lib.std.exceptions">standard C++ exceptions</a>
+	 as much as possible.
+	 
+	 <p>
+	 Then, it is <b>strictly recommended</b> that when the basic functionality
+	 provided by standard C++ exceptions is unsufficient for some reason,
+	 one must derive the new ad hoc exception classes from one of the
+	 standard exception classes.	-- This is to provide a more uniform way
+	 of exceprion handling, for we could smartly catch/handle most of
+	 thrown exceptions using a STD_CATCH macro like:
+
+<pre>
+// Standard handling of "exception"-derived exceptions
+#define STD_CATCH(message) \
+catch (exception& e) { \
+    CNcbiDiag diag; \
+    diag << Error << "[" << message << "]" << "Exception: " << e.what(); \
+}
+
+// Standard handling of "exception"-derived and all other exceptions
+#define STD_CATCH_ALL(message) \
+STD_CATCH(message) \
+catch (...) { \
+    CNcbiDiag diag; \
+    diag << Error << "[" << message << "]" << "Unknown exception"; \
+}
+</pre>
+	 This way, the standard way of dealing with exception in the NCBI C++
+	 code will be like:
+<pre>
+class foreign_exception { ..... };
+class exception_derived_user : public exception { ..... };
+...........
+try {
+   SomeFunc("qq", 5);
+} catch (foreign_exception& fe) {
+   // do something special with some(not derived from "exception") exception
+} catch (exception_derived_user& eu)  {
+   // do something with "NCBI-standard"(derived from "exception") exception
+}
+// standard handling for all the rest "NCBI-standard" exceptions
+STD_CATCH("It happened inside SomeFunc()...");
+</pre>
 
 
 	 <br></br>
 	 <a name="ref_Message"><h2>Standard NCBI C++ message posting</h2></a>
+
+	 <p> <i>#include &lt;ncbidiag.hpp&gt;</i>
 
 	 <p>
 
