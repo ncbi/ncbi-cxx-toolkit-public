@@ -489,20 +489,49 @@ static void s_TEST_BDB_IdTable_FillStress(void)
 
     cout << "Table loaded..." << endl;    
 
+    {{
+    int idata;
+
+    CBDB_FileCursor cur(dbf1, CBDB_FileCursor::eReadModifyUpdate);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << 1 + (1 * 1000000);
+    EBDB_ErrCode ret = cur.FetchFirst();
+    assert (ret == eBDB_Ok);
+    idata = dbf1.idata;
+    NcbiCout << idata << NcbiEndl;
+
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << 2 + (1 * 1000000);
+    ret = cur.FetchFirst();
+    assert (ret == eBDB_Ok);
+
+    
+    idata = dbf1.idata;
+    NcbiCout << idata << NcbiEndl;
+    
+
+    }}
+
+    {{
+
+    CBDB_FileCursor cur(dbf1, CBDB_FileCursor::eReadModifyUpdate);
+    cur.Close();
+    CBDB_Transaction trans(env);
+
     for (i = 1; i < recs; ++i) {
+        cur.ReOpen(&trans);
+        bool b = cur.IsOpen();
+        assert(b);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
 
-        {{
-            CBDB_FileCursor cur(dbf1, CBDB_FileCursor::eReadModifyUpdate);
-            cur.SetCondition(CBDB_FileCursor::eEQ);
-
-            cur.From << i+ (1 * 1000000);
-            EBDB_ErrCode ret = cur.FetchFirst();
-            assert (ret == eBDB_Ok);
-        }}
-
+        cur.From << i+ (1 * 1000000);
+        EBDB_ErrCode ret = cur.FetchFirst();
+        assert (ret == eBDB_Ok);
+        cur.Close();
 
     } // for
 
+    }}
 
 
     // Read the table check if all records are in place
@@ -2021,6 +2050,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/02/22 14:08:40  kuznets
+ * Cursor reopen test
+ *
  * Revision 1.57  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
