@@ -479,6 +479,7 @@ public:
     operator const char* () const;
     const CBDB_FieldString& operator= (const CBDB_FieldString& str);
     const CBDB_FieldString& operator= (const char*             str);
+    const CBDB_FieldString& operator= (const string&           str);
 
     // if mute == true function do not report overflow condition, but just
     // truncates the string value
@@ -527,6 +528,11 @@ public:
     const CBDB_FieldStringCase& operator= (const char* str) 
     { 
         Set(str);
+        return *this;
+    }
+    const CBDB_FieldStringCase& operator= (const string& str) 
+    { 
+        Set(str.c_str());
         return *this;
     }
 
@@ -961,6 +967,10 @@ inline const CBDB_FieldString& CBDB_FieldString::operator= (const char* str)
     return *this;
 }
 
+inline const CBDB_FieldString& CBDB_FieldString::operator= (const string& str)
+{
+    return this->operator=(str.c_str());
+}
 
 
 
@@ -1167,6 +1177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/22 19:31:51  kuznets
+ * +CBDB_FieldString::operator= (const string& str)
+ *
  * Revision 1.3  2003/05/05 20:14:41  kuznets
  * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
  * management.
