@@ -45,6 +45,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 
+#include <util/cache/icache_cf.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -1628,12 +1629,12 @@ const char* kBDBCacheDriverName = "bdbcache";
 ///
 /// @internal
 ///
-class CBDB_CacheReaderCF : 
-    public CSimpleClassFactoryImpl<ICache, CBDB_Cache>
+class CBDB_CacheReaderCF : public CICacheCF<CBDB_Cache>
+    //CSimpleClassFactoryImpl<ICache, CBDB_Cache>
 {
 public:
-    typedef 
-      CSimpleClassFactoryImpl<ICache, CBDB_Cache> TParent;
+    typedef CICacheCF<CBDB_Cache> TParent;
+      //CSimpleClassFactoryImpl<ICache, CBDB_Cache> TParent;
 public:
     CBDB_CacheReaderCF() : TParent(kBDBCacheDriverName, 0)
     {
@@ -1711,9 +1712,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         lock = CBDB_Cache::ePidLock;
     }
 
-    const string& mem_size_str =
-        GetParam(params, kCFParam_mem_size, false, kEmptyStr);
-    unsigned mem_size = NStr::StringToUInt(mem_size_str);
+    unsigned mem_size = (unsigned)
+        GetParamInt(params, kCFParam_mem_size, false, 0);
 
     if (!page_size.empty()) {
         if (NStr::CompareNocase(page_size, "small") == 0) {
@@ -1721,16 +1721,15 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         } // any other variant makes deafult (large) page size
     }
 
-    const string& read_only =
-        GetParam(params, kCFParam_read_only, false, kEmptyStr);
-    bool ro = NStr::StringToBool(read_only);
+    bool ro =
+        GetParamBool(params, kCFParam_read_only, false, false);
 
-    const string& write_sync =
-        GetParam(params, kCFParam_write_sync, false, kEmptyStr);
-    bool w_sync = NStr::StringToBool(write_sync);
+    bool w_sync =
+        GetParamBool(params, kCFParam_write_sync, false, false);
     drv->SetWriteSync(w_sync ? 
-                      CBDB_Cache::eWriteSync : CBDB_Cache::eWriteNoSync);
+                        CBDB_Cache::eWriteSync : CBDB_Cache::eWriteNoSync);
 
+    ConfigureICache(drv.get(), params);
 
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
@@ -1738,10 +1737,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         drv->Open(path.c_str(), name.c_str(), lock, mem_size);
     }
 
-    const string& read_update_limit_str =
-        GetParam(params, kCFParam_read_update_limit, false, kEmptyStr);
-    unsigned ru_limit = NStr::StringToInt(read_update_limit_str);
-    drv->SetReadUpdateLimit(ru_limit);
+    unsigned ru_limit = 
+        GetParamInt(params, kCFParam_read_update_limit, false, 0);
+    if (ru_limit)
+        drv->SetReadUpdateLimit(ru_limit);
     
     return drv.release();
 
@@ -1787,6 +1786,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2004/09/21 14:27:55  kuznets
+ * BDB cache class factory reimplemented using common ICache CF
+ *
  * Revision 1.75  2004/09/16 13:09:16  kuznets
  * async write mode default
  *
