@@ -39,7 +39,6 @@
 
 
 AC_INIT(include/corelib/ncbitype.h)
-AC_CONFIG_HEADER(config.h:config.h.in)
 
 
 #############################################################################
@@ -83,21 +82,24 @@ case "${srcdir}" in
    *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
 esac
 
-#### Specify(derive) $includedir, $incdir, $libdir, $bindir and $builddir
+#### Specify and create $includedir, $incdir, $libdir, $bindir and $builddir
 includedir="$srcdir/include"
 incdir="$exec_prefix/inc"
 libdir="$exec_prefix/lib"
 bindir="$exec_prefix/bin"
+ncbiconf="$incdir/ncbiconf.h"
 if test "$exec_prefix" = "$srcdir" ; then
    builddir="$srcdir/src"
 else
    builddir="$exec_prefix/build"
 fi
 
+mkdir -p "$libdir" "$bindir" "$builddir"
 
-#### Check if the source directory already has a configured system in it.
-if test -f "${srcdir}/config.h" ; then
-   AC_MSG_ERROR([There is already a built "${srcdir}/config.h"!])
+
+#### Check if the target directory already has a configured system in it.
+if test -f "${ncbiconf}" ; then
+   AC_MSG_ERROR([There is already a built "${ncbiconf}"!])
 fi
 
 AC_CANONICAL_HOST
@@ -218,16 +220,18 @@ AC_CHECK_SIZEOF(long double)
 
 
 #############################################################################
-### Compose a list of makefile templates("Makefile.in") in subdirs,
-### then configure them into regular makefiles("Makefile")
+### Compose a list of configurables("*.in" -- makefiles, shell scripts, etc.)
+### in subdirs to configure
+### Compose their target counterparts
+### Configure
 
-makefiles=`cd "${srcdir}"  &&  find . -name 'Makefile*.in' -print | sed 's/\(Makefile.*\)\.in/\1/g'`
-scripts=`cd "${srcdir}"  &&  find . -name '*.sh.in' -print | sed 's/\(.*\.sh\)\.in/\1/g'`
-if test -z "$makefiles $scripts" ; then
-  AC_MSG_ERROR([Cannot find any of \"Makefile.in\" below \"${srcdir}\"!])
+configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | grep -v 'config\.h\.in' | grep -v 'configure\.in' | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+if test -z "$configurables" ; then
+  AC_MSG_ERROR([Cannot find any configurables below \"${srcdir}\"!])
 fi
 
-dnl Makefile substitutions
+
+dnl Template substitutions
 dnl ----------------------
 
 AC_SUBST(exec_prefix)
@@ -275,70 +279,49 @@ AC_SUBST(KeepStateTarget)
 
 
 #############################################################################
-### Create output files and render the "$exec_prefix" sub-dirs
+### Create output files and do some post-configuration
 
+# compose a list of target files
+changequote(<<, >>)dnl
+x_configurables=`echo "$configurables" | sed 's/:[^:][^:]*\.in//g'`
+changequote([, ])dnl
+
+# deploy the target directory tree
+echo "$x_configurables" | while read x_file ; do
+   x_dir=`dirname $x_file`
+   test -d "$x_dir"  ||  mkdir -p "$x_dir"
+done
+
+# configure the compiler/flag-dependent header
+AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
+
+# configure makefiles, shell scripts, etc.
 AC_OUTPUT(
-${makefiles} ${scripts},
+${configurables},
 
-### Create and render the "$exec_prefix" directory
-incdir="$SAVE_incdir"
-libdir="$SAVE_libdir"
-bindir="$SAVE_bindir"
 builddir="$SAVE_builddir"
 exec_prefix="$SAVE_exec_prefix"
-makefiles="$SAVE_makefiles"
-scripts="$SAVE_scripts"
+x_configurables="$SAVE_x_configurables"
 
-echo "Library directory:  $libdir"
-echo "Binary  directory:  $bindir"
-echo "Include directory:  $incdir"
-mkdir -p "$libdir" "$bindir" "$incdir"
+echo "$x_configurables" | while read x_file ; do
+   mv "$x_file" "$x_file.tmp"
+   cat "$x_file.tmp" | sed "s%/$builddir%/src%g" > "$x_file"
+   rm "$x_file.tmp"
+done
 
-echo "Configured header:  $incdir/ncbiconf.h"
-mv "$top_srcdir/config.h" "$incdir/ncbiconf.h"
-
-src_dir="$top_srcdir"/src
-if test "$exec_prefix" != "$top_srcdir" ; then
-   echo "Build   directory:  $builddir"
-   test -d  "$builddir"  ||  mkdir -p "$builddir"
-
-   echo "Scripts/makefiles:"
-   echo "    $src_dir  -->  $builddir"
-
-   cd "$src_dir"
-   ( find . -name '*.sh' -print ; find . -name 'Makefile*' -print ) |
-   grep -v 'Makefile.*\.in'  |
-   grep -v 'Makefile*~'      |
-   grep -v 'Makefile\..*\.lib' | 
-   grep -v 'Makefile\..*\.app' | 
-   while read x_file ; do
-      dest_dir="$builddir"/`dirname "$x_file"`
-      test -d "$dest_dir"  ||  mkdir -p "$dest_dir"
-      dest_file="$dest_dir"/`basename "$x_file"`
-      cp -p "$src_dir/$x_file" "$dest_file"
-      echo "$dest_file"|grep '.*\.sh'>/dev/null  &&  chmod a+x "$dest_file"
-   done
-
-   cd "$top_srcdir"
-   rm ${makefiles} ${scripts}
-else
-   find "$src_dir" -name '*.sh' -print | while read x_file ; do
-      chmod a+x "$x_file"
-   done
-fi
+find "$exec_prefix" -name '*.sh' -print | while read x_file ; do
+   chmod a+x "$x_file"
+done
 
 status_dir="$exec_prefix/status"
-echo "Status  directory:  $status_dir"
 test -d  "$status_dir"  ||  mkdir -p "$status_dir"
 mv config.status config.cache config.log "$status_dir"/
 
-echo "Configuration completed.",
+echo "Configuration completed."
+echo ""
+echo "To build everything:  cd $builddir ; make all_r",
 
-SAVE_incdir="$incdir"
-SAVE_libdir="$libdir"
-SAVE_bindir="$bindir"
 SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
-SAVE_makefiles="$makefiles"
-SAVE_scripts="$scripts"
+SAVE_x_configurables="$x_configurables"
 )
