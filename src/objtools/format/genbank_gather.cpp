@@ -109,7 +109,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     x_GatherComments();
     ItemOS() << new CPrimaryItem(ctx);
     ItemOS() << new CFeatHeaderItem(ctx);
-    if ( !cfg.HideSourceFeats() ) {
+    if ( !cfg.HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
@@ -196,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/11/24 16:52:50  shomrat
+* Standardize flat-file customization flags
+*
 * Revision 1.12  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -60,7 +60,7 @@ void CFtableGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     if ( ctx.Config().ShowFtableRefs() ) {
         x_GatherReferences();
     }
-    if ( !ctx.Config().HideSourceFeats() ) {
+    if ( !ctx.Config().HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/11/24 16:52:50  shomrat
+* Standardize flat-file customization flags
+*
 * Revision 1.4  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -91,7 +91,7 @@ void CEmblGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 
     // Features
     ItemOS() << new CFeatHeaderItem(ctx);
-    if ( !cfg.HideSourceFeats() ) {
+    if ( !cfg.HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/11/24 16:52:50  shomrat
+* Standardize flat-file customization flags
+*
 * Revision 1.10  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

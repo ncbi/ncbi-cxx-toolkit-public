@@ -94,7 +94,7 @@ bool CFlatFileConfig::x(void) const \
 } \
     
 MODE_FLAG_GET(SuppressLocalId, 0);
-MODE_FLAG_GET(ValidateFeats, 1);
+MODE_FLAG_GET(ValidateFeatures, 1);
 MODE_FLAG_GET(IgnorePatPubs, 2);
 MODE_FLAG_GET(DropShortAA, 3);
 MODE_FLAG_GET(AvoidLocusColl, 4);
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/11/24 16:52:50  shomrat
+* Standardize flat-file customization flags
+*
 * Revision 1.2  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

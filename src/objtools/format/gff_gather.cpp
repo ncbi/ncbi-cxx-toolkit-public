@@ -58,7 +58,7 @@ void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 
     ItemOS() << new CDateItem(ctx);  // for UpdateDate
     ItemOS() << new CLocusItem(ctx); // for strand
-    if ( !ctx.Config().HideSourceFeats() ) {
+    if ( !ctx.Config().HideSourceFeatures() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
@@ -81,6 +81,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/24 16:52:50  shomrat
+* Standardize flat-file customization flags
+*
 * Revision 1.9  2004/06/21 18:54:21  ucko
 * Gather alignments for GFF 3.
 *

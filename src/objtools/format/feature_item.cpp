@@ -294,7 +294,7 @@ static bool s_CheckMandatoryQuals(const CSeq_feat& feat, CBioseqContext& ctx)
         }
     case CSeqFeatData::eSubtype_gap:
         {
-            //return s_CheckQuals_gap(feat);
+            return s_CheckQuals_gap(feat);
         }
     default:
         break;
@@ -320,7 +320,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
     const CFlatFileConfig& cfg = ctx.Config();
 
     // check feature customization flags
-    if ( cfg.ValidateFeats()  &&
+    if ( cfg.ValidateFeatures()  &&
         (subtype == CSeqFeatData::eSubtype_bad  ||
          subtype == CSeqFeatData::eSubtype_virion) ) {
         return true;
@@ -330,7 +330,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
         return true;
     }
     
-    if ( cfg.HideImpFeats()  &&  type == CSeqFeatData::e_Imp ) {
+    if ( cfg.HideImpFeatures()  &&  type == CSeqFeatData::e_Imp ) {
         return true;
     }
     
@@ -346,7 +346,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
         return true;
     }
 
-    if ( cfg.HideRemoteImpFeats()  &&  type == CSeqFeatData::e_Imp ) {
+    if ( cfg.HideRemoteImpFeatures()  &&  type == CSeqFeatData::e_Imp ) {
         if ( subtype == CSeqFeatData::eSubtype_variation  ||
              subtype == CSeqFeatData::eSubtype_exon       ||
              subtype == CSeqFeatData::eSubtype_intron     ||
@@ -1799,6 +1799,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(cons_splice),
         DO_IMPORT(direction),
         DO_IMPORT(EC_number),
+        DO_IMPORT(estimated_length),
         DO_IMPORT(evidence),
         DO_IMPORT(frequency),
         DO_IMPORT(function),
@@ -1839,7 +1840,10 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         EFeatureQualifier   slot = eFQ_illegal_qual;
         if ( li != kLegalImportMap.end() ) {
             slot = li->second;
+        } else if (check_qual_syntax) {
+            continue;
         }
+
         // operon quals for non-operon feature is obtained from 
         // overlapping operon feature.
         if (!is_operon  &&  slot == eFQ_operon) {
@@ -1866,6 +1870,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
                 }
             }
             break;
+        case eFQ_estimated_length:
         case eFQ_evidence:
         case eFQ_mod_base:
         case eFQ_number:
@@ -2064,6 +2069,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(frequency);
     DO_QUAL(EC_number);
     x_FormatQual(eFQ_gene_map, "map", qvec);
+    DO_QUAL(estimated_length);
     DO_QUAL(allele);
     DO_QUAL(map);
     DO_QUAL(mod_base);
@@ -2215,10 +2221,11 @@ CFlatStringListQVal* CFeatureItem::x_GetStringListQual(EFeatureQualifier slot) c
 
 void CFeatureItem::x_CleanQuals(bool& had_prot_desc) const
 {
-    if ( GetContext()->Config().DropIllegalQuals() ) {
+    const CBioseqContext& ctx = *GetContext();
+
+    if (ctx.IsGED()  &&  !ctx.IsProt()  &&  ctx.Config().DropIllegalQuals()) {
         x_DropIllegalQuals();
     }
-
 
     CFlatStringListQVal* prod_names = x_GetStringListQual(eFQ_prot_names);
     const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
@@ -2345,6 +2352,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_direction, CSeqFeatData::eQual_direction),
     TQualPair(eFQ_EC_number, CSeqFeatData::eQual_EC_number),
     TQualPair(eFQ_encodes, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_estimated_length, CSeqFeatData::eQual_estimated_length),
     TQualPair(eFQ_evidence, CSeqFeatData::eQual_evidence),
     TQualPair(eFQ_exception, CSeqFeatData::eQual_exception),
     TQualPair(eFQ_exception_note, CSeqFeatData::eQual_note),
@@ -3457,6 +3465,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/11/24 16:52:50  shomrat
+* Standardize flat-file customization flags
+*
 * Revision 1.36  2004/11/19 15:13:41  shomrat
 * Fixed quals from Gene-ref
 *
