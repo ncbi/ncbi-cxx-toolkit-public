@@ -42,8 +42,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CDiscNucleotideOptionsHandle::CDiscNucleotideOptionsHandle()
+CDiscNucleotideOptionsHandle::CDiscNucleotideOptionsHandle(EAPILocality locality)
+    : CBlastNucleotideOptionsHandle(locality)
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
     SetDefaults();
     m_Opts->SetProgram(eBlastn);
 }
@@ -74,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/16 21:54:52  bealer
+ * - Blast4 API changes.
+ *
  * Revision 1.1  2003/11/26 18:24:01  camacho
  * +Blast Option Handle classes
  *

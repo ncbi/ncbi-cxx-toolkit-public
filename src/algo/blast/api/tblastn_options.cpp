@@ -41,8 +41,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CTBlastnOptionsHandle::CTBlastnOptionsHandle()
+CTBlastnOptionsHandle::CTBlastnOptionsHandle(EAPILocality locality)
+    : CBlastProteinOptionsHandle(locality)
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
     SetDefaults();
     m_Opts->SetProgram(eTblastn);
 }
@@ -83,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/16 21:54:51  bealer
+ * - Blast4 API changes.
+ *
  * Revision 1.2  2003/12/03 16:42:33  dondosha
  * SetDbGeneticCode takes care of setting both integer and string now
  *
