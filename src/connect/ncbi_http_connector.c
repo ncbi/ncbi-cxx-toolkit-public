@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Anton Lavrentiev
+ * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   Implement CONNECTOR for the HTTP-based network connection
@@ -75,8 +75,8 @@ typedef struct {
     BUF             obuf;         /* storage to accumulate output data       */
     BUF             ibuf;         /* storage to accumulate input data        */
     BUF             http;         /* storage for HTTP reply header           */
-    const STimeout* c_timeout;    /* NULL(infinite), default or ptr to next  */
-    STimeout        cc_timeout;   /* storage for a (finite) connect timeout  */
+    const STimeout* o_timeout;    /* NULL(infinite), default or ptr to next  */
+    STimeout        oo_timeout;   /* storage for a (finite) connect timeout  */
     const STimeout* w_timeout;    /* NULL(infinite), default or ptr to next  */
     STimeout        ww_timeout;   /* storage for a (finite) write timeout    */
     int/*bool*/     first_read;   /* if the 1st attempt to read after connect*/
@@ -97,8 +97,10 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
             free(*redirect);
             *redirect = 0;
         }
-        if (!drop_unread)
-            CORE_LOG(eLOG_Error,"[HTTP]  Too many failed attempts, giving up");
+        if (!drop_unread && uuu->failure_count > 1) {
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Too many failed attempts (%d), "
+                                   " giving up", uuu->failure_count));
+        }
         uuu->can_connect = eCC_None;
         return 0/*failure*/;
     }
@@ -116,8 +118,10 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
                uuu->adjust_net_info(uuu->net_info,
                                     uuu->adjust_data,
                                     uuu->failure_count) == 0) {
-        if (!drop_unread)
-            CORE_LOG(eLOG_Error,"[HTTP]  Retry attempts exhausted, giving up");
+        if (!drop_unread && uuu->failure_count > 1) {
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Retry attempts (%d) exhausted, "
+                                   "giving up", uuu->failure_count));
+        }
         uuu->can_connect = eCC_None;
         return 0/*failure*/;
     }
@@ -135,7 +139,7 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 {
     size_t http_size = BUF_Size(uuu->http);
     assert(uuu->sock);
-    if (BUF_Read(uuu->http, 0, http_size) != http_size) {
+    if (http_size  &&  BUF_Read(uuu->http, 0, http_size) != http_size) {
         CORE_LOG(eLOG_Error, "[HTTP]  Cannot drop HTTP header buffer");
         assert(0);
     }
@@ -182,7 +186,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
             (uuu->net_info->host, uuu->net_info->port,
              uuu->net_info->path, uuu->net_info->args,
              uuu->net_info->req_method, BUF_Size(uuu->obuf),
-             uuu->c_timeout, uuu->w_timeout,
+             uuu->o_timeout, uuu->w_timeout,
              uuu->net_info->http_user_header,
              (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs),
              uuu->net_info->debug_printout == eDebugPrintout_Data ? eOn :
@@ -250,11 +254,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
 
         if (status == eIO_Success) {
             /* shutdown the socket for writing */
-#if !defined(NCBI_OS_MSWIN)
-            /* (on MS-Win, socket shutdown on writing apparently messes up (?!)
-             *  with the later reading, esp. when reading a lot of data.) */
             SOCK_Shutdown(uuu->sock, eIO_Write);
-#endif
             break;
         }
 
@@ -290,8 +290,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
         if (status != eIO_Success) {
             const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
-            if (tmo->sec || tmo->usec)
-                CORE_LOG(eLOG_Error, "[HTTP]  Error reading header");
+            if (tmo && (tmo->sec || tmo->usec)) {
+                CORE_LOGF(eLOG_Error, ("[HTTP]  Error reading header (%s)",
+                                       IO_StatusStr(status)));
+            }
             return status;
         }
 
@@ -317,11 +319,22 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         server_error = http_status;
         if (http_status == 301  ||  http_status == 302)
             moved = 1;
+        else if (http_status == 403  ||  http_status == 404)
+            uuu->net_info->max_try = 0;
     }
 
     if (uuu->net_info->debug_printout) {
-        CORE_DATA(header, size,
-                  server_error ? "HTTP header (server error)" : "HTTP header");
+        const char* header_header;
+
+        if (!server_error) 
+            header_header = "HTTP header";
+        else if (moved)
+            header_header = "HTTP header (moved)";
+        else if (!uuu->net_info->max_try)
+            header_header = "HTTP header (unrecoverable error)";
+        else
+            header_header = "HTTP header (server error, can retry)";
+        CORE_DATA(header, size, header_header);
     }
 
     if (uuu->parse_http_hdr) {
@@ -368,18 +381,20 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         SOCK_SetTimeout(uuu->sock, eIO_Read, 0);
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
         assert(status != eIO_Success); /* cause reading until EOF */
-        if (!(size = BUF_Size(buf)))
-            CORE_LOG(eLOG_Trace, "[HTTP]  No body received along with error");
-        else if ((body = (char*) malloc(size)) != 0) {
+        if (!(size = BUF_Size(buf))) {
+            CORE_LOG(eLOG_Trace, "[HTTP]  No body received along with "
+                     "this error");
+        } else if ((body = (char*) malloc(size)) != 0) {
             if (BUF_Read(buf, body, size) != size) {
                 CORE_LOG(eLOG_Error, "[HTTP]  Cannot read HTTP body buffer");
                 assert(0);
             }
-            CORE_DATA(body, size, "HTTP server error");
+            CORE_DATA(body, size, "HTTP server error body");
             free(body);
-        } else
-            CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate body, %lu bytes",
-                                   (unsigned long) size));
+        } else {
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate server error "
+                                   "body, %lu bytes", (unsigned long) size));
+        }
         BUF_Destroy(buf);
     }
 
@@ -400,7 +415,6 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
                             const STimeout* timeout,
                             int/*bool*/     drop_unread)
 {
-    static const STimeout zero_timeout = {0, 0};
     char* redirect = 0;
     EIO_Status status;
 
@@ -427,8 +441,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             break;
         }
         /* if polling then bail out with eIO_Timeout */
-        if (status == eIO_Timeout && timeout &&
-            memcmp(timeout, &zero_timeout, sizeof(STimeout)) == 0)
+        if(status == eIO_Timeout && timeout && !timeout->sec && !timeout->usec)
             break;
 
         /* HTTP header read error; disconnect and try to use another server */
@@ -497,7 +510,7 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
 
     if (drop_unread) {
         size_t ibuf_size = BUF_Size(uuu->ibuf);
-        if (BUF_Read(uuu->ibuf, 0, ibuf_size) != ibuf_size) {
+        if (ibuf_size  &&  BUF_Read(uuu->ibuf, 0, ibuf_size) != ibuf_size) {
             CORE_LOG(eLOG_Error, "[HTTP]  Cannot drop input buffer");
             assert(0);
         }
@@ -534,16 +547,16 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
 
     /* store timeouts for later use */
     if (timeout) {
-        uuu->cc_timeout = *timeout;
-        uuu->c_timeout  = &uuu->cc_timeout;
+        uuu->oo_timeout = *timeout;
+        uuu->o_timeout  = &uuu->oo_timeout;
         uuu->ww_timeout = *timeout;
         uuu->w_timeout  = &uuu->ww_timeout;
     } else {
-        uuu->c_timeout  = timeout;
+        uuu->o_timeout  = timeout;
         uuu->w_timeout  = timeout;
     }
 
-    if (close && !uuu->sock && uuu->can_connect != eCC_None &&
+    if (close && uuu->can_connect != eCC_None && !uuu->sock &&
         ((uuu->flags & fHCC_SureFlush) || BUF_Size(uuu->obuf))) {
         /* "WRITE" mode and data (or just flag) pending */
         s_PreRead(uuu, timeout, 1/*drop_unread*/);
@@ -553,7 +566,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
 
     /* clear pending output data, if any */
     obuf_size = BUF_Size(uuu->obuf);
-    if (BUF_Read(uuu->obuf, 0, obuf_size) != obuf_size) {
+    if (obuf_size  &&  BUF_Read(uuu->obuf, 0, obuf_size) != obuf_size) {
         CORE_LOG(eLOG_Error, "[HTTP]  Cannot discard output buffer");
         assert(0);
     }
@@ -567,36 +580,37 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-    static const char* s_VT_GetType(CONNECTOR       connector);
-    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Wait   (CONNECTOR       connector,
-                                    EIO_Event       event,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Write  (CONNECTOR       connector,
-                                    const void*     buf,
-                                    size_t          size,
-                                    size_t*         n_written,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Flush  (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Read   (CONNECTOR       connector,
-                                    void*           buf,
-                                    size_t          size,
-                                    size_t*         n_read,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Status (CONNECTOR       connector,
-                                    EIO_Event       dir);
-    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
-                                    const STimeout* timeout);
+    static const char* s_VT_GetType (CONNECTOR       connector);
+    static char*       s_VT_Descr   (CONNECTOR       connector);
+    static EIO_Status  s_VT_Open    (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Wait    (CONNECTOR       connector,
+                                     EIO_Event       event,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Write   (CONNECTOR       connector,
+                                     const void*     buf,
+                                     size_t          size,
+                                     size_t*         n_written,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Flush   (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Read    (CONNECTOR       connector,
+                                     void*           buf,
+                                     size_t          size,
+                                     size_t*         n_read,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status  (CONNECTOR       connector,
+                                     EIO_Event       dir);
+    static EIO_Status  s_VT_Close   (CONNECTOR       connector,
+                                     const STimeout* timeout);
 
-    static void        s_Setup     (SMetaConnector *meta,
-                                    CONNECTOR connector);
-    static void        s_Destroy   (CONNECTOR connector);
+    static void        s_Setup      (SMetaConnector *meta,
+                                     CONNECTOR connector);
+    static void        s_Destroy    (CONNECTOR connector);
 #  ifdef IMPLEMENTED__CONN_WaitAsync
-    static EIO_Status  s_VT_WaitAsync(CONNECTOR     connector,
-                                      FConnectorAsyncHandler  func,
-                                      SConnectorAsyncHandler* data);
+    static EIO_Status s_VT_WaitAsync(CONNECTOR     connector,
+                                     FConnectorAsyncHandler  func,
+                                     SConnectorAsyncHandler* data);
 #  endif
 #ifdef __cplusplus
 } /* extern "C" */
@@ -610,6 +624,26 @@ static const char* s_VT_GetType
 }
 
 
+static char* s_VT_Descr
+(CONNECTOR connector)
+{
+    SHttpConnector* uuu = (SHttpConnector*) connector->handle;
+    size_t len = 7/*"http://"*/ + strlen(uuu->net_info->host) +
+        (uuu->net_info->port == 80 ? 0 : 6/*:port*/) +
+        strlen(uuu->net_info->path) +
+        (*uuu->net_info->args ? 2 + strlen(uuu->net_info->args) : 1);
+    char* buf = (char*) malloc(len);
+    if (buf) {
+        len = sprintf(buf, "http://%s", uuu->net_info->host);
+        if (uuu->net_info->port != 80)
+            len += sprintf(&buf[len], ":%hu", uuu->net_info->port);
+        sprintf(&buf[len], "%s%s%s", uuu->net_info->path,
+                *uuu->net_info->args ? "&" : "", uuu->net_info->args);
+    }
+    return buf;
+}
+
+
 static EIO_Status s_VT_Open
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -617,7 +651,7 @@ static EIO_Status s_VT_Open
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
     /* NOTE: the real connect will be performed on the first "READ", or
-     *"CLOSE", or on the "WAIT" on read -- see in "s_ConnectAndSend()";
+     * "CLOSE", or on "WAIT" on read -- see in "s_ConnectAndSend()";
      * we just close underlying socket and prepare to open it later */
     s_FlushAndDisconnect(uuu, timeout, 0/*open*/);
 
@@ -792,6 +826,7 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
+    CONN_SET_METHOD(meta, descr,      s_VT_Descr,     connector);
     CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
     CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
     CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
@@ -875,9 +910,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
     uuu->obuf = 0;
     uuu->ibuf = 0;
     uuu->http = 0;
-    uuu->c_timeout = CONN_DEFAULT_TIMEOUT; /* intentionally bad values --    */
-    uuu->w_timeout = CONN_DEFAULT_TIMEOUT; /* should be reset prior to usage */
-    uuu->can_connect = eCC_Once;           /* will be properly reset at open */
+    uuu->o_timeout   = CONN_DEFAULT_TIMEOUT; /* deliberately bad values --   */
+    uuu->w_timeout   = CONN_DEFAULT_TIMEOUT; /* should be reset prior to use */
+    uuu->can_connect = eCC_Once;             /* will be properly set at open */
 
     /* initialize connector structure */
     ccc->handle  = uuu;
@@ -893,6 +928,11 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2003/05/14 03:57:48  lavr
+ * Better logging; implementation of CONN_Description(); support of
+ * {0,0} connect timeouts; bug workaround of MSVC's lame shutdown() is
+ * now in ncbi_socket.c and moved away from this module
+ *
  * Revision 6.45  2003/04/30 17:01:42  lavr
  * One (unnecessary) variable removed from s_ReadHeader()
  *
