@@ -914,7 +914,7 @@ fstream* CFile::CreateTmpFile(const string& filename,
                               ETextBinary text_binary,
                               EAllowRead  allow_read)
 {
-    ios::openmode mode = ios::out;
+    ios::openmode mode = ios::out | ios::trunc;
     if ( text_binary == eBinary ) {
         mode = mode | ios::binary;
     }
@@ -1311,7 +1311,7 @@ void CMemoryFile::x_Map(const string&  file_name,
         string x_name = NStr::Replace(file_name, "\\", "/");
 
         // Translate attributes 
-        DWORD map_protect,  map_access, file_share, file_access;
+        DWORD map_protect = 0, map_access = 0, file_share = 0, file_access = 0;
         switch (protect_attr) {
             case eMMP_Read:
                 map_access  = FILE_MAP_READ;
@@ -1365,7 +1365,7 @@ void CMemoryFile::x_Map(const string&  file_name,
 
 #elif defined(NCBI_OS_UNIX)
         // Translate attributes 
-        int map_protect, map_share, file_access;
+        int map_protect = 0, map_share = 0, file_access = 0;
         switch (protect_attr) {
             case eMMP_Read:
                 map_protect = PROT_READ;
@@ -1518,6 +1518,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2003/02/14 19:30:50  ivanov
+ * Added mode ios::trunc by default for files creates in CFile::CreateTmpFile().
+ * Get read of some warnings - initialize variables in CMemoryFile::x_Map().
+ *
  * Revision 1.39  2003/02/06 16:14:28  ivanov
  * CMemomyFile::x_Map(): changed file access attribute from O_RDWR to
  * O_RDONLY in case of private sharing.
