@@ -343,45 +343,47 @@ SetupSubjects(const TSeqLocVector& subjects,
                        prog == eTblastn ||
                        prog == eTblastx);
 
-    Uint1 encoding = (subj_is_na ? NCBI2NA_ENCODING : BLASTP_ENCODING);
+    Uint1 encoding;
+    bool use_sentinels = true;
+    int status = 0;
 
+    if (prog == eBlastn) {
+        encoding = BLASTNA_ENCODING;
+    } else if (prog == eTblastn || prog == eTblastx) {
+        encoding = NCBI4NA_ENCODING;
+        use_sentinels = false;
+    } else {
+        encoding = BLASTP_ENCODING;
+    }
+       
     // TODO: Should strand selection on the subject sequences be allowed?
     //ENa_strand strand = options->GetStrandOption(); 
     Int8 dblength = 0;
 
     ITERATE(TSeqLocVector, itr, subjects) {
-        BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
-            calloc(1, sizeof(BLAST_SequenceBlk));
-
+        BLAST_SequenceBlk* subj = NULL;
         Uint1* seqbuf = NULL;
         TSeqPos seqbuflen = 0;
 
-        ENa_strand strand = sequence::GetStrand(*itr->seqloc, itr->scope);
-        //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf( 
         seqbuf =
             GetSequence(*itr->seqloc, encoding, itr->scope, &seqbuflen, 
-                        strand, false);
+                        eNa_strand_plus, use_sentinels);
+
+        BlastSetUp_SeqBlkNew(seqbuf, seqbuflen, 0, &subj, TRUE);
+        /* Should something more informative be done here????? */
+        ASSERT(subj);
+
+        /* If subject sequence is nucleotide, create compressed sequence 
+           buffer and save it in 'sequence'. For blastn, the sentinel 
+           bytes should not be included in the packed sequence. */
+        if (prog == eBlastn)
+            ++seqbuf;
 
         if (subj_is_na) {
-            subj->sequence = seqbuf;
+            BLAST_PackDNA(seqbuf, seqbuflen, encoding, &(subj->sequence));
             subj->sequence_allocated = TRUE;
-
-            encoding = (prog == eBlastn) ? BLASTNA_ENCODING : NCBI4NA_ENCODING;
-            bool use_sentinels = (prog == eBlastn) ?  true : false;
-
-            // Retrieve the sequence with ambiguities
-            //pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> sbuf2(
-            seqbuf = GetSequence(*itr->seqloc, encoding, itr->scope,
-                                 &seqbuflen, strand, use_sentinels);
-            subj->sequence_start = seqbuf;
-            subj->length = use_sentinels ? seqbuflen - 2 : seqbuflen;
-            subj->sequence_start_allocated = TRUE;
-        } else {
-            subj->sequence_start_allocated = TRUE;
-            subj->sequence_start = seqbuf;
-            subj->sequence = seqbuf + 1;// skips the sentinel byte
-            subj->length = seqbuflen - 2; // don't count the sentinel bytes
         }
+
         dblength += subj->length;
         seqblk_vec->push_back(subj);
         (*max_subjlen) = MAX((*max_subjlen),
@@ -390,6 +392,8 @@ SetupSubjects(const TSeqLocVector& subjects,
     options->SetDbSeqNum(seqblk_vec->size());
     options->SetDbLength(dblength);
 }
+
+#ifdef PACK_DNA_FROM_CSEQVECTOR /* Not needed. REMOVE??? */
 
 #define LAST2BITS 0x03
 
@@ -421,8 +425,9 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
             buffer[ci] |= ((vec[i] & LAST2BITS)<<bit_shift);
     }
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;    // Number of bases in the last byte.
-   
 }
+
+#endif /* PACK_DNA_FROM_CSEQVECTOR */
 
 //pair<Uint1*, TSeqPos>
 Uint1*
@@ -488,28 +493,20 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
         }
         break;
 
-    // Used only in Blast2Sequences for the subject sequence. No sentinels are
-    // required. As in readdb, remainder (sv.size()%4 != 0) goes in the last 
-    // 2 bits of the last byte.
+#ifdef PACK_DNA_FROM_CSEQVECTOR /* Not needed. REMOVE??? */
+    /* Used only in Blast2Sequences for the subject sequence. 
+     * No sentinels are required. As in readdb, remainder 
+     * (sv.size()%4 != 0) goes in the last 2 bits of the last byte.
+     */
     case NCBI2NA_ENCODING:
         ASSERT(add_nucl_sentinel == false);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = (sv.size()/COMPRESSION_RATIO) + 1;
-        if (strand == eNa_strand_both)
-            buflen *= 2;
 
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
-        PackDNA(sv, buf_var, (strand == eNa_strand_both) ? buflen/2 : buflen);
-
-        if (strand == eNa_strand_both) {
-            // Get the minus strand if both strands are required
-            sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi,
-                    eNa_strand_minus);
-            sv.SetCoding(CSeq_data::e_Ncbi2na);
-            buf_var += buflen/2;
-            PackDNA(sv, buf_var, buflen/2);
-        }
+        PackDNA(sv, buf_var, buflen);
         break;
+#endif /* PACK_DNA_FROM_CSEQVECTOR */
 
     default:
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
@@ -711,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/09/16 16:48:13  dondosha
+* Use BLAST_PackDNA and BlastSetUp_SeqBlkNew from the core blast library for setting up subject sequences
+*
 * Revision 1.28  2003/09/12 17:52:42  camacho
 * Stop using pair<> as return value from GetSequence
 *
