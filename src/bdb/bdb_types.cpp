@@ -63,8 +63,17 @@ int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2)
 {
     float v1, v2;
-    ::memcpy(&v1, val1->data, sizeof(float));
-    ::memcpy(&v2, val2->data, sizeof(float));
+    ::memcpy(&v1, val1->data, sizeof(v1));
+    ::memcpy(&v2, val2->data, sizeof(v2));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    double v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(v1));
+    ::memcpy(&v2, val2->data, sizeof(v2));
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -381,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/07/25 15:47:15  kuznets
+ * Added support for double field type
+ *
  * Revision 1.9  2003/07/23 20:21:43  kuznets
  * Implemented new improved scheme for setting BerkeleyDB comparison function.
  * When table has non-segmented key the simplest(and fastest) possible function

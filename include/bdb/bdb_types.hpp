@@ -66,6 +66,10 @@ int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
 // Simple and fast comparison function for tables with 
+// non-segmented "double" keys
+int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
 // non-segmented "C string" keys
 int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
 
@@ -326,8 +330,8 @@ public:
     virtual int Compare(const void* p1, const void* p2) const
     {
         T v1, v2;
-        ::memcpy(&v1, p1, sizeof(T));
-        ::memcpy(&v2, p2, sizeof(T));
+        ::memcpy(&v1, p1, sizeof(v1));
+        ::memcpy(&v2, p2, sizeof(v2));
         if (v1 < v2) return -1;
         if (v2 < v1) return 1;
         return 0;
@@ -511,6 +515,43 @@ public:
     virtual BDB_CompareFunction GetCompareFunction() const
     {
         return BDB_FloatCompare;
+    } 
+};
+
+
+//////////////////////////////////////////////////////////////////
+//
+//  Double precision floating point field type
+//
+
+class NCBI_BDB_EXPORT CBDB_FieldDouble : public CBDB_FieldSimpleFloat<double>
+{
+public:
+    const CBDB_FieldDouble& operator= (double val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    const CBDB_FieldDouble& operator= (const CBDB_FieldDouble& val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    virtual CBDB_Field* Construct(size_t /*buf_size*/) const
+    {
+        return new CBDB_FieldDouble();
+    }
+
+    operator double() const 
+    { 
+        return Get(); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction() const
+    {
+        return BDB_DoubleCompare;
     } 
 };
 
@@ -1233,6 +1274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/07/25 15:46:47  kuznets
+ * Added support for double field type
+ *
  * Revision 1.13  2003/07/23 20:21:27  kuznets
  * Implemented new improved scheme for setting BerkeleyDB comparison function.
  * When table has non-segmented key the simplest(and fastest) possible function
