@@ -1,4 +1,4 @@
---$Revision: 4.0 $
+--$Revision: 4.1 $
 --**********************************************************************
 --
 --  MEDLINE data definitions
@@ -9,7 +9,7 @@
 NCBI-Medline DEFINITIONS ::=
 BEGIN
 
-EXPORTS Medline-entry;
+EXPORTS Medline-entry, Medline-si;
 
 IMPORTS Cit-art FROM NCBI-Biblio
         Date FROM NCBI-General;
