@@ -26,7 +26,7 @@ incdir      = @incdir@
 libdir      = @libdir@
 bindir      = @bindir@
 
-STD_INCLUDE = -I$(incdir) -I$(srcdir) -I$(includedir) 
+STD_INCLUDE = -I$(incdir) -I$(includedir)
 
 
 ### Auxiliary commands
@@ -111,6 +111,9 @@ NETWORK_LIBS = @NETWORK_LIBS@
 # (see in "configure.in" for the pre-set defaults)
 #
 
+# Path to the Sybase package
+SYBASE_PATH = @SYBASE_PATH@
+
 # Path to the root of PubMed tree -- sources, headers and precompiled libs
 PM_PATH = @PM_PATH@
 
@@ -118,6 +121,11 @@ PM_PATH = @PM_PATH@
 NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
 # Path to the precompiled NCBI C toolkit libs
 NCBI_C_LIB = @NCBI_C_LIB@
+
+# Path to the SSS DB headers
+NCBI_SSS_INCLUDE = @NCBI_SSS_INCLUDE@
+# Path to the precompiled SSS DB libs
+NCBI_SSS_LIB = @NCBI_SSS_LIB@
 
 # Fast-CGI lib(external) and C++ modules(internal)
 FASTCGI_LIBS = @FASTCGI_LIBS@
