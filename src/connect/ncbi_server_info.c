@@ -178,7 +178,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
             else
                 s += sprintf(s, " Q=%hu", info->quorum);
         }
-        s += sprintf(s, " R=%.2f", info->rate);
+        s += sprintf(s," R=%.*f", fabs(info->rate) <= 0.01 ? 3 : 2,info->rate);
         if (!(info->type & fSERV_Http) && info->type != fSERV_Dns)
             s += sprintf(s, " S=%s", info->sful ? "yes" : "no");
         s += sprintf(s, " T=%lu", (unsigned long)info->time);
@@ -298,10 +298,10 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                 break;
             case 'R':
                 if (!rate && sscanf(str, "=%lf%n", &d, &n) >= 1) {
-                    if (fabs(d) < 0.01)
+                    if (fabs(d) < 0.001)
                         d = 0.0;
                     else if (fabs(d) > 100000.0)
-                        d = (d < 0 ? -1.0 : 1.0)*100000.0;
+                        d = (d < 0.0 ? -1.0 : 1.0)*100000.0;
                     info->rate = d;
                     str += n;
                     rate = 1;
@@ -839,6 +839,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2002/09/24 15:05:23  lavr
+ * Increase precision in SERV_Write() when R is small
+ *
  * Revision 6.40  2002/09/17 15:39:33  lavr
  * SSERV_Info::quorum moved past the reserved area
  *
