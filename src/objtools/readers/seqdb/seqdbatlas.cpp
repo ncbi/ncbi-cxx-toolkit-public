@@ -909,8 +909,8 @@ const char * CRegionMap::Data(TIndx begin, TIndx end)
     _ASSERT(begin  >= m_Begin);
     
     // Avoid solaris warning.
-    if (! end <= m_End) {
-        _ASSERT(end    <= m_End);
+    if (! (end <= m_End)) {
+        _ASSERT(end <= m_End);
     }
     
     return m_Data + begin - m_Begin;
