@@ -69,7 +69,13 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
 
 
-bool IsValidAccession(const string& accn);
+enum EAccValFlag
+{
+    eValidateAcc,
+    eValidateAccDotVer
+};
+
+bool IsValidAccession(const string& accn, EAccValFlag flag = eValidateAcc);
 void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
 
 struct SDeltaSeqSummary
@@ -119,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/01/31 16:31:59  shomrat
+* Added validation of accession.version
+*
 * Revision 1.14  2004/11/15 20:05:06  shomrat
 * ValidateAccession -> IsValidAccession
 *

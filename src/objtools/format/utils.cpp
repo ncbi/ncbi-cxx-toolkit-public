@@ -286,7 +286,7 @@ string JoinNoRedund(const list<string>& l, const string& delim)
 
 
 // Validate the correct format of an accession string.
-bool IsValidAccession(const string& acc)
+static bool s_IsValidAccession(const string& acc)
 {
     static const size_t kMaxAccLength = 16;
 
@@ -366,6 +366,35 @@ bool IsValidAccession(const string& acc)
     }
 
     return false;
+}
+
+
+static bool s_IsValidDotVersion(const string& accn)
+{
+    size_t pos = accn.find('.');
+    if (pos == NPOS) {
+        return false;
+    }
+    size_t num_digis = 0;
+    for (++pos; pos < accn.size(); ++pos) {
+        if (isdigit(accn[pos])) {
+            ++num_digis;
+        } else {
+            return false;
+        }
+    }
+
+    return (num_digis >= 1);
+}
+
+
+bool IsValidAccession(const string& accn, EAccValFlag flag)
+{
+    bool valid = s_IsValidAccession(accn);
+    if (valid  &&  flag == eValidateAccDotVer) {
+        valid = s_IsValidDotVersion(accn);
+    }
+    return valid;
 }
 
 
@@ -644,6 +673,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/01/31 16:32:05  shomrat
+* Added validation of accession.version
+*
 * Revision 1.18  2005/01/12 22:38:51  shomrat
 * Added AP and YP as valid RefSeq accessions
 *
