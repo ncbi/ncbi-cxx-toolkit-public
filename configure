@@ -3924,6 +3924,28 @@ if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    esac
 fi
 
+# Flag for setting the runtime library search path
+if test -z "$CONF_f_runpath" ; then
+   case "$host_os:$compiler" in
+    solaris*:WorkShop* | solaris*:KCC )
+      CONF_f_runpath="-R"
+      ;;
+    solaris*:GCC )
+      CONF_f_runpath="-Wl,-R"
+      ;;
+    linux*:GCC | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
+      CONF_f_runpath="-Wl,-rpath,"
+      ;;
+    linux*:ICC )
+      # trying to use "-Wl,-rpath," here sends "ld" to endless 100% CPU loop
+      CONF_f_runpath="-Xlinker -rpath -Xlinker "
+      ;;
+    irix*:* | linux*:KCC | *:Compaq )
+      CONF_f_runpath="-rpath "
+      ;;
+   esac
+fi
+
 case "$compiler:$compiler_version" in
   GCC:3* )
     # Need to specify runpath for compiler-provided libraries
@@ -3942,18 +3964,19 @@ case "$compiler:$compiler_version" in
             /*                  ) found=true; break ;;
         esac
     done
-    if test "$found" = "true"; then
+    if test "$found" = "true" -a -n "$CONF_f_runpath"; then
+        LDFLAGS="$CONF_f_runpath$dir $LDFLAGS"
         case "$host_os" in
-           solaris*) LDFLAGS="-Wl,-R$dir $LDFLAGS" ;;
-           darwin*)  ;; # each shared library specifies a preferred path
-           aix*)     ;; # automatically sets based on -L flags
-           *)        LDFLAGS="-Wl,-rpath,$dir $LDFLAGS" ;;
+           osf*)
+              # the linker doesn't merge -rpath flags...
+              CONF_f_runpath="$CONF_f_runpath$dir:"
+              ;;
         esac
     fi
     ;;
   ICC:6* )
     # Seems to use libcxa.so.1 even without -i_dynamic...
-    LDFLAGS="-Xlinker -rpath -Xlinker $compiler_root/lib $LDFLAGS"
+    LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
     ;;
   ICC:7* )
     # Favor the static version, as libcxa.so.3 isn't exactly common....
@@ -3961,61 +3984,6 @@ case "$compiler:$compiler_version" in
     LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
 esac
-
-# Provide runpath to the C++ Toolkit (or as specified by --with-runpath=) DLLs
-if test -z "$CONF_f_runpath" ; then
-   case "$host_os:$compiler" in
-    solaris*:WorkShop* | solaris*:KCC )
-      CONF_f_runpath="-R"
-      ;;
-    solaris*:GCC )
-      CONF_f_runpath="-Wl,-R"
-      ;;
-    linux*:GCC | *bsd*:GCC | cygwin*:GCC )
-      CONF_f_runpath="-Wl,-rpath,"
-      ;;
-    osf*:GCC )
-      # Won't work for GCC 3, as the linker doesn't merge -rpath flags.
-      if test "$compiler_version" -lt 300; then
-         CONF_f_runpath="-Wl,-rpath,"
-      fi
-      ;;
-    linux*:ICC )
-      # trying to use "-Wl,-rpath," here sends "ld" to endless 100% CPU loop
-      CONF_f_runpath="-Xlinker -rpath -Xlinker "
-      ;;
-    irix*:* | linux*:KCC | *:Compaq )
-      CONF_f_runpath="-rpath "
-      ;;
-    * )
-      CONF_f_runpath=${CONF_f_runpath:=""}
-      ;;
-   esac
-fi
-
-if   test "$with_runpath" = "no" ; then
-   runpath=
-   pure_runpath=
-elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
-   runpath="${CONF_f_runpath}${with_runpath}"
-   pure_runpath=$with_runpath
-   case "$host_os:$compiler" in
-    linux*:GCC | *bsd*:GCC | cygwin*:GCC )
-      runpath="$runpath -Wl,-rpath-link,\$(libdir)"
-      ;;
-   esac
-elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
-   runpath="${CONF_f_runpath}\$(libdir)"
-   pure_runpath='${build_root}/lib'
-else
-   runpath=
-   pure_runpath=
-fi
-if test -z "$CONF_f_runpath" ; then
-   # Drop the linker flag (since passing directory names doesn't work
-   # so well), but keep pure_runpath for other uses.
-   runpath=
-fi
 
 # DLLs and profiling don't mix on all platforms
 if test "$with_profiling" = "yes" ; then
@@ -4568,6 +4536,33 @@ case "${build_root}" in
    ;;
    *  ) build_root="`(cd ${build_root}; pwd)`" ;;
 esac
+
+
+#### Set runpath (may depend on build root)
+if   test "$with_runpath" = "no" ; then
+   runpath=
+   pure_runpath=
+elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
+   root_base=`basename $build_root`
+   runpath="${CONF_f_runpath}`echo ${with_runpath} | sed s/{}/$root_base/`"
+   pure_runpath=$with_runpath
+   case "$host_os:$compiler" in
+    linux*:GCC | *bsd*:GCC | cygwin*:GCC )
+      runpath="$runpath -Wl,-rpath-link,\$(libdir)"
+      ;;
+   esac
+elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
+   runpath="${CONF_f_runpath}\$(libdir)"
+   pure_runpath='${build_root}/lib'
+else
+   runpath=
+   pure_runpath=
+fi
+if test -z "$CONF_f_runpath" ; then
+   # Drop the linker flag (since passing directory names doesn't work
+   # so well), but keep pure_runpath for other uses.
+   runpath=
+fi
 
 
 #### Make "srcdir" absolute
