@@ -176,8 +176,6 @@ public:
                         size_t*        blob_size = 0);
 
 
-    /// Connects to server to make sure it is running.
-    bool IsAlive();
 
     /// Return version string
     string ServerVersion();
@@ -192,6 +190,8 @@ protected:
     /// Turn server-side logging on(off)
     ///
     void Logging(bool on_off);
+    /// Connects to server to make sure it is running.
+    bool IsAlive();
 
 protected:
 
@@ -406,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/02/15 15:20:05  kuznets
+ * IsAlive made protected
+ *
  * Revision 1.23  2005/02/07 13:00:41  kuznets
  * Part of functionality moved to netservice_client.hpp(cpp)
  *
