@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/02/17 20:07:18  vasilche
+* Generated class names now have 'C' prefix.
+*
 * Revision 1.7  2000/02/04 18:09:57  vasilche
 * Adde binary option to files.
 *
@@ -145,7 +148,7 @@ const string& StringArgument(const CNcbiArguments& args, size_t index)
 }
 
 static
-void SeqEntryProcess(Seq_entry& sep);  /* dummy function */
+void SeqEntryProcess(CSeq_entry& sep);  /* dummy function */
 
 
 /*****************************************************************************
@@ -261,16 +264,16 @@ int CAsn2Asn::Run(void)
     }
 
     if ( inSeqEntry ) { /* read one Seq-entry */
-        Seq_entry entry;
+        CSeq_entry entry;
         *inObject >> entry;
         SeqEntryProcess(entry);     /* do any processing */
         if ( outObject.get() )
             *outObject << entry;
 	}
 	else {              /* read Seq-entry's from a Bioseq-set */
-        Bioseq_set entries;
+        CBioseq_set entries;
         *inObject >> entries;
-        iterate ( Bioseq_set::TSeq_set, i, entries.GetSeq_set() ) {
+        iterate ( CBioseq_set::TSeq_set, i, entries.GetSeq_set() ) {
             SeqEntryProcess(**i);     /* do any processing */
         }
         if ( outObject.get() )
@@ -291,7 +294,7 @@ int CAsn2Asn::Run(void)
 *
 *****************************************************************************/
 static
-void SeqEntryProcess (Seq_entry& sep)
+void SeqEntryProcess (CSeq_entry& sep)
 {
 }
 

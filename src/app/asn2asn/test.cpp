@@ -63,7 +63,7 @@ void SkipComments(CStreamBuffer& b)
             }
         }
     }
-    catch ( CEofException& /* ignored */ ) {
+    catch ( CSerialEofException& /* ignored */ ) {
         ERR_POST("-SkipComments @ " << b.GetLine());
         return;
     }
@@ -135,9 +135,7 @@ size_t ReadId(CStreamBuffer& b)
     ERR_POST("ReadId @ " << b.GetLine());
     char c = SkipWhiteSpace(b);
     if ( c == '[' ) {
-        b.SkipChar();
-        b.MarkPos();
-        for ( size_t i = 0; ; ++i ) {
+        for ( size_t i = 1; ; ++i ) {
             switch ( b.PeekChar(i) ) {
             case '\r':
             case '\n':
@@ -152,7 +150,6 @@ size_t ReadId(CStreamBuffer& b)
         }
     }
 	else {
-        b.MarkPos();
         if ( !FirstIdChar(c) ) {
             ERR_POST("-ReadId @ " << b.GetLine());
             return 0;
@@ -387,61 +384,58 @@ int CTest::Run(void)
             type = eByteType;
         else {
             CNcbiIstream* fin = new CNcbiIfstream(GetArguments()[i].c_str());
-            static_cast<filebuf*>(fin->rdbuf())->setbuf(new char[8192], 8192);
             in = fin;
         }
     }
     CStreamBuffer b(*in);
     try {
-        try {
-            switch ( type ) {
-            case eByteType:
-                {
-                    size_t count;
-                    char buffer[8192];
+        switch ( type ) {
+        case eByteType:
+            {
+                size_t count = 0;
+                char buffer[8192];
+                for (;;) {
+                    in->read(buffer, sizeof(buffer));
+                    size_t c = in->gcount();
+                    if ( c == 0 )
+                        break;
+                    count += c;
+                }
+                NcbiCout << count << " chars" << NcbiEndl;
+            }
+            break;
+        case eCharType:
+            {
+                size_t count = 0;
+                try {
                     for (;;) {
-                        in->read(buffer, sizeof(buffer));
-                        size_t c = in->gcount();
-                        if ( c == 0 )
-                            break;
-                        count += c;
+                        b.GetChar();
+                        ++count;
                     }
-                    NcbiCout << count << " chars" << NcbiEndl;
                 }
-                break;
-            case eCharType:
-                {
-                    size_t count;
-                    try {
-                        for (;;) {
-                            b.GetChar();
-                            ++count;
-                        }
-                    }
-                    catch (...) {
-                        NcbiCout << count << " chars" << NcbiEndl;
-                        throw;
-                    }
-                    NcbiCout << count << " chars" << NcbiEndl;
+                catch ( CSerialEofException& /*exc*/ ) {
                 }
-                break;
-            case eWhiteSpaceType:
+                NcbiCout << count << " chars" << NcbiEndl;
+            }
+            break;
+        case eWhiteSpaceType:
+            try {
                 for (;;) {
                     SkipWhiteSpaceAndGetChar(b);
                 }
-                break;
-            case eFullParseType:
-                ReadId(b);
-                if ( SkipWhiteSpaceAndGetChar(b) != ':' ||
-                     b.GetChar() != ':' || b.GetChar() != '=' ) {
-                    b.UngetChar();
-                    THROW1_TRACE(runtime_error, "\"::=\" expected");
-                }
-                ReadValue(b);
-                break;
             }
-        }
-        catch ( CEofException& /*exc*/ ) {
+            catch ( CSerialEofException& /*exc*/ ) {
+            }
+            break;
+        case eFullParseType:
+            ReadId(b);
+            if ( SkipWhiteSpaceAndGetChar(b) != ':' ||
+                 b.GetChar() != ':' || b.GetChar() != '=' ) {
+                b.UngetChar();
+                THROW1_TRACE(runtime_error, "\"::=\" expected");
+            }
+            ReadValue(b);
+            break;
         }
     }
     catch (exception& exc) {

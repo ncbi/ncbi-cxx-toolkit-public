@@ -1,19 +1,20 @@
-#define Ncbi_mime_asn11 1
+#define Ncbi_mime_asn11 0
+#define Medline1 1
 
 #if Ncbi_mime_asn11
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#define Struct1 Ncbi_mime_asn1
+#define Struct1 CNcbi_mime_asn1
 #define Module1 ncbimime
 #define File1 "ncbimime"
 #endif
 #if Medline1
 #include <objects/medline/Medline_entry.hpp>
-#define Struct1 Medline_entry
+#define Struct1 CMedline_entry
 #define Module1 medline
 #define File1 "medline"
 #endif
 #include <objects/medlars/Medlars_entry.hpp>
-#define Struct2 Medlars_entry
+#define Struct2 CMedlars_entry
 #define Module2 medlars
 #define File2 "medlars"
 
