@@ -272,6 +272,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                     mol = CSeq_inst::eMol_aa;
                 }
             }
+            seq->SetInst().SetMol(mol);
 
             if (space != NPOS) {
                 CRef<CSeqdesc> desc(new CSeqdesc);
@@ -341,6 +342,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.11  2003/01/06 16:14:04  gouriano
+ * corrected ReadFasta: set sequence's molecule class
+ *
  * Revision 6.10  2003/01/03 13:16:08  dicuccio
  * Minor formatting change.  Added comment about intentional fall-through.  Fixed
  * big in parsing of FastA IDs: must skip trailing space in ID string
