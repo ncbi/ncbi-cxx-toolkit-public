@@ -472,6 +472,74 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
     return func;
 }
 
+/// Trace from the specified node to to the tree root
+///
+/// Trace path is a container of node const node pointers 
+/// (The only requirement is push_back method)
+/// The input node becomes first element, then comes its parent.
+/// If the node is a tree top its pointer is the only element of the trace
+/// vector
+///
+/// @param tree_node  
+///    Starting node (added to the trace first)
+/// @param trace 
+///    Trace container (vector<const TTreeNode*> or similar)
+///
+template<class TTreeNode, class TTraceContainer>
+void TreeTraceToRoot(const TTreeNode& tree_node, TTraceContainer& trace)
+{
+    const TTreeNode* node_ptr = &tree_node;
+
+    while (node_ptr) {
+        trace.push_back(node_ptr);
+        node_ptr = node_ptr->GetParent();
+    }
+}
+
+
+template<class TTreeNode>
+const TTreeNode* TreeFindCommonParent(const TTreeNode& tree_node_a,
+                                      const TTreeNode& tree_node_b)
+{
+    typedef vector<const TTreeNode*>  TTraceVector;
+
+    TTraceVector trace_a;
+    TTraceVector trace_b;
+
+    TreeTraceToRoot(tree_node_a, trace_a);
+    TreeTraceToRoot(tree_node_b, trace_b);
+
+    // trace comparison: go to the 
+
+    const TTreeNode* node_candidate = 0;
+
+
+    // We need this next variables because of a bug(?) in MSVC 6 
+    //    vector::rbegin() returns non const reverse iterator 
+    //    for a non const vector (sort of)
+
+    const TTraceVector& ctr_a = trace_a;
+    const TTraceVector& ctr_b = trace_b;
+
+    TTraceVector::const_reverse_iterator it_a = ctr_a.rbegin();
+    TTraceVector::const_reverse_iterator it_b = ctr_b.rbegin();
+
+    TTraceVector::const_reverse_iterator it_a_end = ctr_a.rend();
+    TTraceVector::const_reverse_iterator it_b_end = ctr_b.rend();
+    
+    for (;it_a != it_a_end || it_b != it_b_end; ++it_a, ++it_b) {
+        const TTreeNode* node_a = *it_a;
+        const TTreeNode* node_b = *it_b;
+
+        if (node_a != node_b) {
+            break;
+        }
+        node_candidate = node_a;        
+    }
+
+    return node_candidate;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -675,6 +743,7 @@ void CTreePairNode<TId, TValue>::FindNodes(const list<TId>& node_path,
 }
 
 
+
 template<class TId, class TValue>
 void CTreePairNode<TId, TValue>::FindNodes(const list<TId>&         node_path, 
                                            TConstPairTreeNodeList*  res) const
@@ -716,6 +785,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/04/08 11:47:46  kuznets
+ * + TreeFindCommonParent, + TreeTraceToRoot
+ *
  * Revision 1.24  2004/04/06 15:53:16  kuznets
  * Minor correction in the comments
  *
