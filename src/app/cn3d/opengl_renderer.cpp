@@ -509,7 +509,7 @@ void OpenGLRenderer::ShowAllFrames(void)
 
 bool OpenGLRenderer::IsFrameEmpty(unsigned int frame) const
 {
-    if (!structureSet) return false;
+    if (!structureSet || structureSet->frameMap.size() <= frame) return false;
 
     StructureSet::DisplayLists::const_iterator l, le=structureSet->frameMap[frame].end();
     for (l=structureSet->frameMap[frame].begin(); l!=le; ++l)
@@ -520,7 +520,7 @@ bool OpenGLRenderer::IsFrameEmpty(unsigned int frame) const
 
 void OpenGLRenderer::ShowFirstFrame(void)
 {
-    if (!structureSet) return;
+    if (!structureSet || structureSet->frameMap.size() == 0) return;
     currentFrame = 0;
     while (IsFrameEmpty(currentFrame) && currentFrame < structureSet->frameMap.size() - 1)
         ++currentFrame;
@@ -528,7 +528,7 @@ void OpenGLRenderer::ShowFirstFrame(void)
 
 void OpenGLRenderer::ShowLastFrame(void)
 {
-    if (!structureSet) return;
+    if (!structureSet || structureSet->frameMap.size() == 0) return;
     currentFrame = structureSet->frameMap.size() - 1;
     while (IsFrameEmpty(currentFrame) && currentFrame > 0)
         --currentFrame;
@@ -536,7 +536,7 @@ void OpenGLRenderer::ShowLastFrame(void)
 
 void OpenGLRenderer::ShowNextFrame(void)
 {
-    if (!structureSet) return;
+    if (!structureSet || structureSet->frameMap.size() == 0) return;
     if (currentFrame == ALL_FRAMES) currentFrame = structureSet->frameMap.size() - 1;
     int originalFrame = currentFrame;
     do {
@@ -549,7 +549,7 @@ void OpenGLRenderer::ShowNextFrame(void)
 
 void OpenGLRenderer::ShowPreviousFrame(void)
 {
-    if (!structureSet) return;
+    if (!structureSet || structureSet->frameMap.size() == 0) return;
     if (currentFrame == ALL_FRAMES) currentFrame = 0;
     int originalFrame = currentFrame;
     do {
@@ -1614,6 +1614,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2004/04/19 19:36:07  thiessen
+* fix frame switch bug when no structures present
+*
 * Revision 1.77  2004/03/15 17:59:20  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

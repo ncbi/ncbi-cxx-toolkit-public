@@ -410,7 +410,7 @@ static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel
 bool Cn3DApp::OnInit(void)
 {
     INFOMSG("Welcome to Cn3D " << CN3D_VERSION_STRING << "!");
-    INFOMSG("built " << __DATE__ << " with " << wxVERSION_STRING);
+    INFOMSG("built " << __DATE__ << " with wxWidgets " << wxVERSION_NUM_DOT_STRING);
 
     // set up command line parser
     static const wxCmdLineEntryDesc cmdLineDesc[] = {
@@ -632,6 +632,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/04/19 19:36:07  thiessen
+* fix frame switch bug when no structures present
+*
 * Revision 1.18  2004/03/15 18:19:23  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *
