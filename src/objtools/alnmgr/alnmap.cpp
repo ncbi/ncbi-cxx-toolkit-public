@@ -154,9 +154,11 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     }
         
     // add to cache
-    if (!m_RawSegTypes) {
-        m_RawSegTypes = new 
-            vector<TSegTypeFlags>(m_DS->GetDim() * m_DS->GetNumseg(), 0);
+    if ( !m_RawSegTypes ) {
+        // Using kZero for 0 works around a bug in Compaq's C++ compiler.
+        static const TSegTypeFlags kZero = 0;
+        m_RawSegTypes = new vector<TSegTypeFlags>
+            (m_DS->GetDim() * m_DS->GetNumseg(), kZero);
     }
     (*m_RawSegTypes)[row + m_DS->GetDim() * seg] = flags | fTypeIsSet;
 
@@ -499,6 +501,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/08/23 20:34:17  ucko
+* Work around a Compaq C++ compiler bug.
+*
 * Revision 1.2  2002/08/23 20:31:17  todorov
 * fixed neg strand deltas
 *
