@@ -92,9 +92,11 @@ extern "C" {
     Int4 ** thin_backbone; /* the "thin" backbone. for each index cell, maintain a pointer to a dynamically-allocated chain of hits. */
     LookupBackboneCell * thick_backbone; /* the "thick" backbone. after queries are indexed, compact the backbone to put at most HITS_ON_BACKBONE hits on the backbone, otherwise point to some overflow storage */
     Int4 * overflow; /* the overflow array for the compacted lookup table */
+    Int4  overflow_size; /* Number of elements in the overflow array (above). */
     PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
     Uint1* neighbors; /* neighboring word array */
     Int4 neighbors_length; /* length of neighboring word array */
+    Boolean use_pssm; /* if True use PSSM rather than (protein) sequence to construct lookup table. */
   } LookupTable;
   
   /** Create a mapping from word w to the supplied query offset

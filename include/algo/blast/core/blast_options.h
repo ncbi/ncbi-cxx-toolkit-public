@@ -46,6 +46,7 @@ Detailed Contents:
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blastkar.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -148,6 +149,7 @@ typedef struct LookupTableOptions {
    Int4 max_positions; /**< Max number of positions per word (MegaBlast only);
                          no restriction if 0 */
    Uint1 scan_step; /**< Step at which database sequence should be parsed */
+   Boolean use_pssm; /**< Use a PSSM rather than a (protein) query to construct lookup table */
 } LookupTableOptions;
 
 /** Options required for setting up the query sequence */
@@ -568,11 +570,13 @@ Int2 LookupTableOptionsNew(Uint1 program, LookupTableOptions* *options);
  * @param ag_blast Is AG BLAST approach to database scanning used? [in]
  * @param variable_wordsize Are only full bytes of a compressed sequence 
  *        checked to find initial words? [in]
+ * @param use_pssm Use PSSM rather than (protein) query to build lookup table.
  */
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program, Boolean is_megablast, Int4 threshold,
-   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize);
+   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
+   Boolean use_pssm);
 
 
 /** Deallocates memory for LookupTableOptions*.
