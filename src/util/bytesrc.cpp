@@ -126,7 +126,7 @@ size_t CIRByteSourceReader::Read(char* buffer, size_t bufferLength)
     return bytes_read;
 }
 
-bool EndOfData(void) const
+bool CIRByteSourceReader::EndOfData(void) const
 {
     return m_EOF;
 }
@@ -401,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.27  2003/10/01 19:27:57  kuznets
+ * Fixed compilation bug with CIRByteSourceReader::m_EOF
+ *
  * Revision 1.26  2003/10/01 18:45:33  kuznets
  * +CIRByteSourceReader
  *
