@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/04/11 17:50:28  thiessen
+* fix domain coloring bug
+*
 * Revision 1.63  2002/04/11 16:39:56  thiessen
 * fix style manager bug
 *
@@ -1277,9 +1280,10 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
         case StyleSettings::eDomain:
             {
                 int domainID = molecule->residueDomains[object3D.fromResidueID - 1];
-                objectStyle->color =
-                    GlobalColors()->
-                        Get(Colors::eCycle1, (domainID == Molecule::NO_DOMAIN_SET) ? 0 : domainID);
+                if (domainID == Molecule::NO_DOMAIN_SET)
+                    objectStyle->color = GlobalColors()->Get(Colors::eNoDomain);
+                else
+                    objectStyle->color = GlobalColors()->Get(Colors::eCycle1, domainID - 1);
             }
             break;
         case StyleSettings::eUserSelect:
