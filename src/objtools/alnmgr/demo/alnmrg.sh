@@ -1,7 +1,7 @@
 #! /bin/sh
 # $Id$
 #
-
+unset GENBANK_ID1_STATS
 test_dir="./data"
 prg="./alnmrg"
 tmp_out=$test_dir/out.asn
