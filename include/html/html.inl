@@ -33,6 +33,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/06/08 19:01:42  ivanov
+* Added base classes: CHTMLDualNode, CHTMLSpecialChar
+*     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
+* Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
+* Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
+* Added tags: OBJECT, NOSCRIPT
+* Added attribute "alt" for CHTML_img
+* Added CHTMLComment::Print() for disable print html-comments in plaintext mode
+*
 * Revision 1.25  2001/05/17 14:55:32  lavr
 * Typos corrected
 *
@@ -130,6 +139,7 @@
 *
 * ===========================================================================
 */
+
 
 inline
 const string& CHTMLPlainText::GetText(void) const

@@ -33,6 +33,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/06/08 19:01:41  ivanov
+* Added base classes: CHTMLDualNode, CHTMLSpecialChar
+*     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
+* Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
+* Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
+* Added tags: OBJECT, NOSCRIPT
+* Added attribute "alt" for CHTML_img
+* Added CHTMLComment::Print() for disable print html-comments in plaintext mode
+*
 * Revision 1.50  2001/06/05 15:36:10  ivanov
 * Added attribute "alt" to CHTML_image
 *
@@ -208,6 +217,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 // base class for html node
 class CHTMLNode : public CNCBINode
 {
@@ -278,6 +288,7 @@ public:
     void AppendHTMLText (const string& text);
 };
 
+
 // <@XXX@> mapping node
 class CHTMLTagNode : public CNCBINode
 {
@@ -288,6 +299,22 @@ public:
     ~CHTMLTagNode(void);
 
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+};
+
+
+// Dual print node
+class CHTMLDualNode : public CNCBINode
+{
+    typedef CNCBINode CParent;
+public:
+    CHTMLDualNode(const char* html, const char* plain);
+    CHTMLDualNode(CNCBINode* child, const char* plain);
+    ~CHTMLDualNode(void);
+
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+
+protected:
+    string m_Plain;
 };
 
 
@@ -318,6 +345,7 @@ private:
     bool m_NoEncode;
 };
 
+
 // A text node that contains html text with tags and possibly <@TAG@>
 class CHTMLText : public CNCBINode
 {
@@ -333,7 +361,8 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 };
 
-// An html tag
+
+// An <html> tag
 class CHTMLOpenElement: public CHTMLNode
 {
     typedef CHTMLNode CParent;
@@ -368,7 +397,8 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);   
 };
 
-// An html tag
+
+// An <html> tag
 class CHTMLInlineElement: public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -403,7 +433,8 @@ public:
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
 };
 
-// An html tag
+
+// An <html> tag
 class CHTMLElement: public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -438,6 +469,7 @@ public:
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
 };
 
+
 class CHTMLComment : public CHTMLNode
 {
     typedef CHTMLNode CParent;
@@ -459,9 +491,11 @@ public:
         }
     ~CHTMLComment(void);
 
+    virtual CNcbiOstream& Print(CNcbiOstream& out, TMode mode = eHTML);
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);
 };
+
 
 class CHTMLListElement : public CHTMLElement
 {
@@ -500,13 +534,31 @@ public:
     CHTMLListElement* SetCompact(void);
 };
 
+
+// An HTML special char
+class CHTMLSpecialChar: public CHTMLDualNode
+{
+    typedef CHTMLDualNode CParent;
+public:
+    // the "html" argument will be automagically wrapped into '&...;', e.g.
+    // 'amp' --> '&amp;'
+    CHTMLSpecialChar(const char* html, const char* plain, int count = 1);
+    ~CHTMLSpecialChar(void);
+
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+
+private:
+    int m_Count;
+};
+
+
 // table classes
 
 class CHTML_table; // table
-class CHTML_tr; // row
-class CHTML_tc; // any cell
-class CHTML_th; // header cell
-class CHTML_td; // data cell
+class CHTML_tr;    // row
+class CHTML_tc;    // any cell
+class CHTML_th;    // header cell
+class CHTML_td;    // data cell
 class CHTML_tc_Cache;
 class CHTML_tr_Cache;
 class CHTML_table_Cache;
@@ -571,7 +623,7 @@ protected:
     CHTML_table* m_Parent;
 };
 
-// the table tag
+// the <table> tag
 class CHTML_table : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -660,7 +712,7 @@ protected:
     void AppendRow(CHTML_tr* row);
 };
 
-// the form tag
+// the <form> tag
 class CHTML_form : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -682,7 +734,7 @@ public:
     void AddHidden(const string& name, int value);
 };
 
-// the legend tag
+// the <legend> tag
 class CHTML_legend : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -692,7 +744,7 @@ public:
     ~CHTML_legend(void);
 };
 
-// the fieldset tag
+// the <fieldset> tag
 class CHTML_fieldset : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -703,7 +755,7 @@ public:
     ~CHTML_fieldset(void);
 };
 
-// the label tag
+// the <label> tag
 class CHTML_label : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -715,7 +767,7 @@ public:
     void SetFor(const string& idRef);
 };
 
-// the textarea tag
+// the <textarea> tag
 class CHTML_textarea : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -726,7 +778,7 @@ public:
     ~CHTML_textarea(void);
 };
 
-// input tag
+// <input> tag
 class CHTML_input : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -735,7 +787,7 @@ public:
     ~CHTML_input(void);
 };
 
-// input type=checkbox tag
+// <input type=checkbox> tag
 class CHTML_checkbox : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -743,14 +795,14 @@ class CHTML_checkbox : public CHTML_input
 public:
     CHTML_checkbox(const string& name);
     CHTML_checkbox(const string& name, bool checked,
-                   const string& description = NcbiEmptyString);
+                   const string& description = kEmptyStr);
     CHTML_checkbox(const string& name, const string& value);
     CHTML_checkbox(const string& name, const string& value,
-                   bool checked, const string& description = NcbiEmptyString);
+                   bool checked, const string& description = kEmptyStr);
     ~CHTML_checkbox(void);
 };
 
-// input type=hidden tag
+// <input type=hidden> tag
 class CHTML_hidden : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -761,20 +813,20 @@ public:
     ~CHTML_hidden(void);
 };
 
-// input type=image tag
+// <input type=image> tag
 class CHTML_image : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
     CHTML_image(const string& name, const string& src, 
-                const string& alt = NcbiEmptyString);
+                const string& alt = kEmptyStr);
     CHTML_image(const string& name, const string& src, int border,
-                const string& alt = NcbiEmptyString);
+                const string& alt = kEmptyStr);
     ~CHTML_image(void);
 };
 
-// input type=radio tag
+// <input type=radio> tag
 class CHTML_radio : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -782,21 +834,21 @@ class CHTML_radio : public CHTML_input
 public:
     CHTML_radio(const string& name, const string& value);
     CHTML_radio(const string& name, const string& value,
-                bool checked, const string& description = NcbiEmptyString);
+                bool checked, const string& description = kEmptyStr);
     ~CHTML_radio(void);
 };
 
-// input type=text tag
+// <input type=text> tag
 class CHTML_reset : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
-    CHTML_reset(const string& label = NcbiEmptyString);
+    CHTML_reset(const string& label = kEmptyStr);
     ~CHTML_reset(void);
 };
 
-// input type=submit tag
+// <input type=submit> tag
 class CHTML_submit : public CHTML_input
 {
     typedef CHTML_input CParent;
@@ -807,7 +859,7 @@ public:
     ~CHTML_submit(void);
 };
 
-// the button tag
+// the <button> tag
 /*
   commented out because it's not supported in most browsers
 class CHTML_button : public CHTMLElement
@@ -822,43 +874,43 @@ public:
     CHTML_button(const string& text, EButtonType type);
     CHTML_button(CNCBINode* contents, EButtonType type);
     CHTML_button(const string& text, const string& name,
-                 const string& value = NcbiEmptyString);
+                 const string& value = kEmptyStr);
     CHTML_button(CNCBINode* contents, const string& name,
-                 const string& value = NcbiEmptyString);
+                 const string& value = kEmptyStr);
     ~CHTML_button(void);
 
     CHTML_button* SetType(EButtonType type);
     CHTML_button* SetSubmit(const string& name,
-                            const string& value = NcbiEmptyString);
+                            const string& value = kEmptyStr);
 };
 */
 
-// input type=text tag
+// <input type=text> tag
 class CHTML_text : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
     CHTML_text(const string& name,
-               const string& value = NcbiEmptyString);
+               const string& value = kEmptyStr);
     CHTML_text(const string& name, int size,
-               const string& value = NcbiEmptyString);
+               const string& value = kEmptyStr);
     CHTML_text(const string& name, int size, int maxlength,
-               const string& value = NcbiEmptyString);
+               const string& value = kEmptyStr);
     ~CHTML_text(void);
 };
 
-// input type=file tag
+// <input type=file> tag
 class CHTML_file : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
-    CHTML_file(const string& name, const string& value = NcbiEmptyString);
+    CHTML_file(const string& name, const string& value = kEmptyStr);
     ~CHTML_file(void);
 };
 
-// select tag
+// <select> tag
 class CHTML_select : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -877,7 +929,7 @@ public:
     CHTML_select* SetMultiple(void);
 };
 
-//option tag.  rarely used alone.  see select tag
+//<option> tag.  rarely used alone.  see <select> tag
 class CHTML_option : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -894,7 +946,7 @@ public:
     CHTML_option* SetSelected(void);
 };
 
-// the a tag
+// the <a> tag
 class CHTML_a : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
@@ -909,14 +961,14 @@ public:
     CHTML_a* SetHref(const string& href);
 };
 
-// break
+// <br> tag (break)
 class CHTML_br : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_br(void);
-    // create <number> of <br> tags
+    // create "number" of <br> tags
     CHTML_br(int number);
     ~CHTML_br(void);
 
@@ -928,12 +980,14 @@ class CHTML_img : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
 public:
-    CHTML_img(const string& url);
-    CHTML_img(const string& url, int width, int height);
+    CHTML_img(const string& url, const string& alt = kEmptyStr);
+    CHTML_img(const string& url, int width, int height, 
+              const string& alt = kEmptyStr);
     ~CHTML_img(void);
 };
 
-// dl tag
+
+// <dl> tag
 class CHTML_dl : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -951,6 +1005,7 @@ public:
     CHTML_dl* SetCompact(void);
 };
 
+
 class CHTML_ol : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -967,6 +1022,7 @@ public:
     CHTML_ol* SetStart(int start);
 };
 
+
 class CHTML_ul : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -977,6 +1033,7 @@ public:
     CHTML_ul(const string& type, bool compact = false);
     ~CHTML_ul(void);
 };
+
 
 class CHTML_dir : public CHTMLListElement
 {
@@ -989,6 +1046,7 @@ public:
     ~CHTML_dir(void);
 };
 
+
 class CHTML_menu : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
@@ -999,6 +1057,7 @@ public:
     CHTML_menu(const string& type, bool compact = false);
     ~CHTML_menu(void);
 };
+
 
 class CHTML_font : public CHTMLInlineElement
 {
@@ -1043,6 +1102,7 @@ public:
     CHTML_font* SetRelativeSize(int size);
 };
 
+
 class CHTML_basefont : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
@@ -1056,6 +1116,7 @@ public:
     CHTML_basefont* SetTypeFace(const string& typeface);
 };
 
+
 class CHTML_color : public CHTML_font
 {
     typedef CHTML_font CParent;
@@ -1064,6 +1125,9 @@ public:
     CHTML_color(const string& color, const string& text);
     ~CHTML_color(void);
 };
+
+
+// hr
 
 class CHTML_hr : public CHTMLOpenElement
 {
@@ -1082,7 +1146,41 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
+
+// <meta> tag
+class CHTML_meta : public CHTMLOpenElement
+{
+    typedef CHTMLOpenElement CParent;
+    static const char sm_TagName[];
+public:
+    enum EType {
+        eName,
+        eHttpEquiv
+    }; 
+    CHTML_meta(EType mtype, const string& var, const string& content);
+    ~CHTML_meta(void);
+};
+
+
+// <script> tag
+class CHTML_script : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+    static const char sm_TagName[];
+public:
+    CHTML_script(const string& stype);
+    CHTML_script(const string& stype, const string& url);
+    ~CHTML_script(void);
+
+    CHTML_script* AppendScript(const string& script);
+};
+
+
+
 #define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
+
+
+// Macro for declare html elements
 
 #define DECLARE_HTML_ELEMENT(Tag, Parent) \
 class CHTML_NAME(Tag) : public Parent \
@@ -1105,63 +1203,87 @@ public: \
     ~CHTML_NAME(Tag)(void); \
 }
 
-DECLARE_HTML_ELEMENT(html, CHTMLElement);
-DECLARE_HTML_ELEMENT(head, CHTMLElement);
-DECLARE_HTML_ELEMENT(body, CHTMLElement);
-DECLARE_HTML_ELEMENT(base, CHTMLElement);
-DECLARE_HTML_ELEMENT(isindex, CHTMLElement);
-DECLARE_HTML_ELEMENT(link, CHTMLElement);
-DECLARE_HTML_ELEMENT(meta, CHTMLElement);
-DECLARE_HTML_ELEMENT(script, CHTMLElement);
-DECLARE_HTML_ELEMENT(style, CHTMLElement);
-DECLARE_HTML_ELEMENT(title, CHTMLElement);
-DECLARE_HTML_ELEMENT(address, CHTMLElement);
-DECLARE_HTML_ELEMENT(blockquote, CHTMLElement);
-DECLARE_HTML_ELEMENT(center, CHTMLElement);
-DECLARE_HTML_ELEMENT(div, CHTMLElement);
-DECLARE_HTML_ELEMENT(h1, CHTMLElement);
-DECLARE_HTML_ELEMENT(h2, CHTMLElement);
-DECLARE_HTML_ELEMENT(h3, CHTMLElement);
-DECLARE_HTML_ELEMENT(h4, CHTMLElement);
-DECLARE_HTML_ELEMENT(h5, CHTMLElement);
-DECLARE_HTML_ELEMENT(h6, CHTMLElement);
-DECLARE_HTML_ELEMENT(p, CHTMLElement);
-DECLARE_HTML_ELEMENT(pnop, CHTMLOpenElement);
-DECLARE_HTML_ELEMENT(pre, CHTMLElement);
-DECLARE_HTML_ELEMENT(dt, CHTMLElement);
-DECLARE_HTML_ELEMENT(dd, CHTMLElement);
-DECLARE_HTML_ELEMENT(li, CHTMLElement);
-DECLARE_HTML_ELEMENT(caption, CHTMLElement);
-DECLARE_HTML_ELEMENT(col, CHTMLElement);
-DECLARE_HTML_ELEMENT(colgroup, CHTMLElement);
-DECLARE_HTML_ELEMENT(thead, CHTMLElement);
-DECLARE_HTML_ELEMENT(tbody, CHTMLElement);
-DECLARE_HTML_ELEMENT(tfoot, CHTMLElement);
-DECLARE_HTML_ELEMENT(th, CHTML_tc);
-DECLARE_HTML_ELEMENT(td, CHTML_tc);
-DECLARE_HTML_ELEMENT(applet, CHTMLElement);
-DECLARE_HTML_ELEMENT(param, CHTMLElement);
-DECLARE_HTML_ELEMENT(cite, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(code, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(dfn, CHTMLElement);
-DECLARE_HTML_ELEMENT(em, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(kbd, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(samp, CHTMLElement);
-DECLARE_HTML_ELEMENT(strike, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(strong, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(var, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(b, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(big, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(i, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(s, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(small, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(sub, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(sup, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(tt, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(u, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(blink, CHTMLInlineElement);
-DECLARE_HTML_ELEMENT(map, CHTMLElement);
-DECLARE_HTML_ELEMENT(area, CHTMLElement);
+
+// Macro for declare special chars
+
+#define DECLARE_HTML_SPECIAL_CHAR(Tag, plain) \
+class CHTML_NAME(Tag) : public CHTMLSpecialChar \
+{ \
+    typedef CHTMLSpecialChar CParent; \
+public: \
+    CHTML_NAME(Tag)(int count = 1) \
+        : CParent(#Tag, plain, count) \
+        { } \
+    ~CHTML_NAME(Tag)(void) { }; \
+}
+
+
+DECLARE_HTML_ELEMENT( html,       CHTMLElement);
+DECLARE_HTML_ELEMENT( head,       CHTMLElement);
+DECLARE_HTML_ELEMENT( body,       CHTMLElement);
+DECLARE_HTML_ELEMENT( base,       CHTMLElement);
+DECLARE_HTML_ELEMENT( isindex,    CHTMLOpenElement);
+DECLARE_HTML_ELEMENT( link,       CHTMLOpenElement);
+DECLARE_HTML_ELEMENT( noscript,   CHTMLElement);
+DECLARE_HTML_ELEMENT( object,     CHTMLElement);
+DECLARE_HTML_ELEMENT( style,      CHTMLElement);
+DECLARE_HTML_ELEMENT( title,      CHTMLElement);
+DECLARE_HTML_ELEMENT( address,    CHTMLElement);
+DECLARE_HTML_ELEMENT( blockquote, CHTMLElement);
+DECLARE_HTML_ELEMENT( center,     CHTMLElement);
+DECLARE_HTML_ELEMENT( div,        CHTMLElement);
+DECLARE_HTML_ELEMENT( h1,         CHTMLElement);
+DECLARE_HTML_ELEMENT( h2,         CHTMLElement);
+DECLARE_HTML_ELEMENT( h3,         CHTMLElement);
+DECLARE_HTML_ELEMENT( h4,         CHTMLElement);
+DECLARE_HTML_ELEMENT( h5,         CHTMLElement);
+DECLARE_HTML_ELEMENT( h6,         CHTMLElement);
+DECLARE_HTML_ELEMENT( p,          CHTMLElement);
+DECLARE_HTML_ELEMENT( pnop,       CHTMLOpenElement);
+DECLARE_HTML_ELEMENT( pre,        CHTMLElement);
+DECLARE_HTML_ELEMENT( dt,         CHTMLElement);
+DECLARE_HTML_ELEMENT( dd,         CHTMLElement);
+DECLARE_HTML_ELEMENT( li,         CHTMLElement);
+DECLARE_HTML_ELEMENT( caption,    CHTMLElement);
+DECLARE_HTML_ELEMENT( col,        CHTMLElement);
+DECLARE_HTML_ELEMENT( colgroup,   CHTMLElement);
+DECLARE_HTML_ELEMENT( thead,      CHTMLElement);
+DECLARE_HTML_ELEMENT( tbody,      CHTMLElement);
+DECLARE_HTML_ELEMENT( tfoot,      CHTMLElement);
+DECLARE_HTML_ELEMENT( th,         CHTML_tc);
+DECLARE_HTML_ELEMENT( td,         CHTML_tc);
+DECLARE_HTML_ELEMENT( applet,     CHTMLElement);
+DECLARE_HTML_ELEMENT( param,      CHTMLOpenElement);
+DECLARE_HTML_ELEMENT( cite,       CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( code,       CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( dfn,        CHTMLElement);
+DECLARE_HTML_ELEMENT( em,         CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( kbd,        CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( samp,       CHTMLElement);
+DECLARE_HTML_ELEMENT( strike,     CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( strong,     CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( var,        CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( b,          CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( big,        CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( i,          CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( s,          CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( small,      CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( sub,        CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( sup,        CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( tt,         CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( u,          CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( blink,      CHTMLInlineElement);
+DECLARE_HTML_ELEMENT( map,        CHTMLElement);
+DECLARE_HTML_ELEMENT( area,       CHTMLElement);
+
+DECLARE_HTML_SPECIAL_CHAR( nbsp, " ");
+DECLARE_HTML_SPECIAL_CHAR( gt,   ">");
+DECLARE_HTML_SPECIAL_CHAR( lt,   "<");
+DECLARE_HTML_SPECIAL_CHAR( quot, "\"");
+DECLARE_HTML_SPECIAL_CHAR( amp,  "&");
+DECLARE_HTML_SPECIAL_CHAR( copy, "(c)");
+DECLARE_HTML_SPECIAL_CHAR( reg,  "(r)");
+
 
 #include <html/html.inl>
 

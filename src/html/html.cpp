@@ -30,6 +30,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2001/06/08 19:00:22  ivanov
+* Added base classes: CHTMLDualNode, CHTMLSpecialChar
+*     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
+* Added realization for tags <meta> (CHTML_meta) and <script> (CHTML_script)
+* Changed base class for tags LINK, PARAM, ISINDEX -> CHTMLOpenElement
+* Added tags: OBJECT, NOSCRIPT
+* Added attribute "alt" for CHTML_img
+* Added CHTMLComment::Print() for disable print html-comments in plaintext mode
+*
 * Revision 1.64  2001/06/05 15:35:48  ivanov
 * Added attribute "alt" to CHTML_image
 *
@@ -257,6 +266,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 // CHTMLNode
 
 CHTMLNode::~CHTMLNode(void)
@@ -382,6 +392,7 @@ void CHTMLNode::AppendHTMLText(const char* appendstring)
         AppendChild(new CHTMLText(appendstring));
 }
 
+
 // <@XXX@> mapping tag node
 
 CHTMLTagNode::CHTMLTagNode(const char* name)
@@ -405,6 +416,34 @@ CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
         node->Print(out, mode);
     return out;
 }
+
+
+// dual text node
+
+CHTMLDualNode::CHTMLDualNode(const char* html, const char* plain)
+{ 
+    AppendChild(new CHTMLText(html));
+    m_Plain = plain; 
+}
+
+CHTMLDualNode::CHTMLDualNode(CNCBINode* child, const char* plain)
+{
+   AppendChild(child);
+   m_Plain = plain; 
+}
+
+CHTMLDualNode::~CHTMLDualNode(void) 
+{ 
+}
+
+CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    if ( mode == ePlainText ) 
+        return out << m_Plain; 
+    else
+        return CParent::PrintChildren(out, mode);
+}
+
 
 // plain text node
 
@@ -436,6 +475,7 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
         return out << CHTMLHelper::HTMLEncode(GetText());
     }
 }
+
 
 // text node
 
@@ -552,18 +592,30 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
             CNCBINode* parent = previous->GetNode();
             if ( parent && parent->HaveChildren() &&
                  parent->Children().size() > 1 )
-                out << '\n'; // separate child nodes by newline
+                out << endl; // separate child nodes by newline
         }
         else {
-            out << '\n';
+            out << endl;
         }
     }
     return out;
 }
 
+
 // HTML comment class
+
 CHTMLComment::~CHTMLComment(void)
 {
+}
+
+CNcbiOstream& CHTMLComment::Print(CNcbiOstream& out, TMode mode)
+{
+    if( mode == ePlainText ) {
+        return out;
+    }
+    else {
+        return CParent::Print(out, mode);
+    }
 }
 
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
@@ -607,6 +659,34 @@ CHTMLListElement* CHTMLListElement::SetCompact(void)
     SetOptionalAttribute("compact", true);
     return this;
 }
+
+
+// Special char
+
+CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain, 
+                                   int count)
+    : CParent("", plain)
+{ 
+    m_Name  = html;
+    m_Count = count; 
+}
+
+CHTMLSpecialChar::~CHTMLSpecialChar(void) 
+{ 
+}
+
+CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    if ( mode == ePlainText ) {
+        for ( int i = 0; i < m_Count; i++ ) 
+            out << m_Plain;
+    } else {
+        for ( int i = 0; i < m_Count; i++ )
+            out << "&" << m_Name << ";";
+    }
+    return out;
+}
+
 
 // TABLE element
 
@@ -675,6 +755,7 @@ public:
                     CHTML_tc* cellNode, TIndex colSpan);
     void SetUsedCells(TIndex colBegin, TIndex colEnd);
     void SetUsedCells(CHTML_tc* cellNode, TIndex colBegin, TIndex colEnd);
+
 private:
     CHTML_tr_Cache(const CHTML_tr_Cache&);
     CHTML_tr_Cache& operator=(const CHTML_tr_Cache&);
@@ -1192,6 +1273,7 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
     return CParent::PrintBegin(out, mode);
 }
 
+
 // form element
 
 CHTML_form::CHTML_form(void)
@@ -1246,6 +1328,7 @@ void CHTML_form::AddHidden(const string& name, int value)
 }
 
 // legend element
+
 CHTML_legend::CHTML_legend(const string& legend)
     : CParent("legend", legend)
 {
@@ -1261,6 +1344,7 @@ CHTML_legend::~CHTML_legend(void)
 }
 
 // fieldset element
+
 CHTML_fieldset::CHTML_fieldset(void)
     : CParent("fieldset")
 {
@@ -1281,6 +1365,7 @@ CHTML_fieldset::~CHTML_fieldset(void)
 }
 
 // label element
+
 CHTML_label::CHTML_label(const string& text)
     : CParent("label", text)
 {
@@ -1382,7 +1467,7 @@ CHTML_image::CHTML_image(const string& name, const string& src,
     : CParent(sm_InputType, name)
 {
     SetAttribute("src", src);
-    SetAttribute("alt", alt);
+    SetOptionalAttribute("alt", alt);
 }
 
 CHTML_image::CHTML_image(const string& name, const string& src, int border, 
@@ -1391,7 +1476,7 @@ CHTML_image::CHTML_image(const string& name, const string& src, int border,
 {
     SetAttribute("src", src);
     SetAttribute("border", border);
-    SetAttribute("alt", alt);
+    SetOptionalAttribute("alt", alt);
 }
 
 CHTML_image::~CHTML_image(void)
@@ -1421,6 +1506,7 @@ CHTML_radio::~CHTML_radio(void)
 }
 
 // hidden tag 
+
 const char CHTML_hidden::sm_InputType[] = "hidden";
 
 CHTML_hidden::CHTML_hidden(const string& name, const string& value)
@@ -1612,6 +1698,7 @@ CHTML_a* CHTML_a::SetHref(const string& href)
     return this;
 }
 
+
 // br tag
 
 const char CHTML_br::sm_TagName[] = "br";
@@ -1639,16 +1726,19 @@ CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
 
 // img tag
 
-CHTML_img::CHTML_img(const string& url)
+CHTML_img::CHTML_img(const string& url, const string& alt)
     : CParent("img")
 {
     SetAttribute("src", url);
+    SetOptionalAttribute("alt", alt);
 }
 
-CHTML_img::CHTML_img(const string& url, int width, int height)
+CHTML_img::CHTML_img(const string& url, int width, int height, 
+                     const string& alt)
     : CParent("img")
 {
     SetAttribute("src", url);
+    SetOptionalAttribute("alt", alt);    
     SetWidth(width);
     SetHeight(height);
 }
@@ -1656,6 +1746,7 @@ CHTML_img::CHTML_img(const string& url, int width, int height)
 CHTML_img::~CHTML_img(void)
 {
 }
+
 
 // dl tag
 
@@ -1768,6 +1859,7 @@ CHTML_color::~CHTML_color(void)
 {
 }
 
+
 // hr tag
 
 const char CHTML_hr::sm_TagName[] = "hr";
@@ -1792,11 +1884,59 @@ CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
     }
 }
 
+
+// meta tag
+
+const char CHTML_meta::sm_TagName[] = "meta";
+
+CHTML_meta::CHTML_meta(EType mtype, const string& var, const string& content)
+    : CParent(sm_TagName)
+{
+    SetAttribute(( mtype == eName ) ? "name" : "http-equiv", var);
+    SetAttribute("content", content);
+}
+
+CHTML_meta::~CHTML_meta(void) 
+{ 
+}
+
+
+// script tag
+
+const char CHTML_script::sm_TagName[] = "script";
+
+CHTML_script::CHTML_script(const string& stype)
+    : CParent(sm_TagName)
+{
+    SetAttribute("type", stype);
+}
+
+CHTML_script::CHTML_script(const string& stype, const string& url)
+    : CParent(sm_TagName)
+{
+    SetAttribute("type", stype);
+    SetAttribute("src", url);
+}
+
+CHTML_script::~CHTML_script(void) 
+{ 
+}
+
+CHTML_script* CHTML_script::AppendScript(const string& script)
+{
+    AppendChild(new CHTMLComment(script));
+    return this;
+}
+
+
+// other tags
+
 #define DEFINE_HTML_ELEMENT(Tag) \
 CHTML_NAME(Tag)::~CHTML_NAME(Tag)(void) \
 { \
 } \
 const char CHTML_NAME(Tag)::sm_TagName[] = #Tag
+
 
 DEFINE_HTML_ELEMENT(html);
 DEFINE_HTML_ELEMENT(head);
@@ -1804,8 +1944,8 @@ DEFINE_HTML_ELEMENT(body);
 DEFINE_HTML_ELEMENT(base);
 DEFINE_HTML_ELEMENT(isindex);
 DEFINE_HTML_ELEMENT(link);
-DEFINE_HTML_ELEMENT(meta);
-DEFINE_HTML_ELEMENT(script);
+DEFINE_HTML_ELEMENT(noscript);
+DEFINE_HTML_ELEMENT(object);
 DEFINE_HTML_ELEMENT(style);
 DEFINE_HTML_ELEMENT(title);
 DEFINE_HTML_ELEMENT(address);
@@ -1855,5 +1995,6 @@ DEFINE_HTML_ELEMENT(u);
 DEFINE_HTML_ELEMENT(blink);
 DEFINE_HTML_ELEMENT(map);
 DEFINE_HTML_ELEMENT(area);
+
 
 END_NCBI_SCOPE
