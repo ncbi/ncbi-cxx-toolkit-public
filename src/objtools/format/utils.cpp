@@ -36,6 +36,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/Date.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -235,7 +236,7 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 }
 
 
-static bool s_IsWholeWord(const string& str, size_t pos, const string& word)
+static bool s_IsWholeWord(const string& str, size_t pos)
 {
     // NB: To preserve the behavior of the C toolkit we only test on the left.
     // This was an old bug in the C toolkit that was never fixed and by now
@@ -258,10 +259,10 @@ void JoinNoRedund(string& to, const string& prefix, const string& str)
     
     size_t pos = NPOS;
     for ( pos = NStr::Find(to, str);
-          pos != NPOS  &&  !s_IsWholeWord(to, pos, str);
+          pos != NPOS  &&  !s_IsWholeWord(to, pos);
           pos += str.length());
 
-    if ( pos == NPOS  ||  !s_IsWholeWord(to, pos, str) ) {
+    if ( pos == NPOS  ||  !s_IsWholeWord(to, pos) ) {
         to += prefix;
         to += str;
     }
@@ -372,7 +373,7 @@ bool IsValidAccession(const string& acc)
 void DateToString(const CDate& date, string& str,  bool is_cit_sub)
 {
     static const string regular_format  = "%{%2D%|01%}-%{%3N%|JUN%}-%Y";
-    static const string cit_sub_format = "%{%2D%|??%}-%{%3N%|???%}-%Y";
+    static const string cit_sub_format = "%{%2D%|??%}-%{%3N%|???%}-%{%4Y%|/???%}";
 
     const string& format = is_cit_sub ? cit_sub_format : regular_format;
 
@@ -644,6 +645,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/01/11 20:45:38  shomrat
+* Fixed date format for cit_sub
+*
 * Revision 1.16  2004/11/15 20:05:03  shomrat
 * ValidateAccession -> IsValidAccession
 *
