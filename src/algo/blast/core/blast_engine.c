@@ -59,6 +59,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastInitialWordParametersPtr word_params, 
         BlastExtensionParametersPtr ext_params, 
         BlastHitSavingParametersPtr hit_params, 
+        PSIBlastOptionsPtr psi_options, 
+        BlastDatabaseOptionsPtr db_options,
         BlastResultsPtr PNTR results_ptr,
         BlastReturnStatPtr return_stats)
 {
@@ -165,7 +167,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
       translation_buffer = (Uint1Ptr) Malloc(3 + length/CODON_LENGTH);
 
-      gcp = GeneticCodeFind(1, NULL);
+      gcp = GeneticCodeFind(db_options->genetic_code, NULL);
       for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
            vnp = vnp->next) {
          if (vnp->choice == 3) {  /* ncbieaa */
@@ -624,6 +626,8 @@ BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query,
    BlastHitSavingOptionsPtr hit_options, 
    BlastInitialWordParametersPtr PNTR word_params_ptr, 
    BlastExtensionParametersPtr PNTR ext_params_ptr, 
+   PSIBlastOptionsPtr psi_options, 
+   BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr PNTR results, BlastReturnStatPtr return_stats)
 {
    BlastExtensionParametersPtr ext_params = NULL;
@@ -645,7 +649,7 @@ BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query,
    total_hits = 
       BLAST_SearchEngineCore(query, lookup, query_info, rdfp, subject,
          ewp, gap_align, score_options, word_params, ext_params, 
-         hit_params, results, return_stats);
+         hit_params, psi_options, db_options, results, return_stats);
 
    BlastExtendWordFree(ewp);
 
