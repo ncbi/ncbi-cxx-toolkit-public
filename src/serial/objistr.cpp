@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/02/11 17:10:24  vasilche
+* Optimized text parsing.
+*
 * Revision 1.38  2000/01/10 19:46:40  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -178,6 +181,8 @@
 # include <asn.h>
 #endif
 
+#define ALLOW_CYCLES 0
+
 BEGIN_NCBI_SCOPE
 
 CObjectIStream::CObjectIStream(void)
@@ -255,12 +260,14 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
             THROW1_TRACE(runtime_error,
                          "incompatible type " + name + "<>" +
                          typeInfo->GetName());
+#if ALLOW_CYCLES
         TIndex index = RegisterObject(object, typeInfo);
         if ( index ) {
             _TRACE("CObjectIStream::ReadData(" <<
                    NStr::PtrToString(object) << ", "
                    << typeInfo->GetName() << ") @" << index);
         }
+#endif
         ReadData(object, typeInfo);
     }
     catch (...) {
@@ -278,11 +285,13 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
+#if ALLOW_CYCLES
     TIndex index = RegisterObject(object, typeInfo);
     if ( index ) {
         _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
                << typeInfo->GetName() << ") @" << index);
     }
+#endif
     ReadData(object, typeInfo);
 }
 
@@ -441,7 +450,9 @@ CObject CObjectIStream::ReadObjectInfo(void)
             _TRACE("CObjectIStream::ReadPointer: new " << className);
             TTypeInfo typeInfo = MapType(className);
             TObjectPtr object = typeInfo->Create();
+#if ALLOW_CYCLES
             RegisterObject(object, typeInfo);
+#endif
             Read(object, typeInfo);
             ReadOtherPointerEnd();
             return CObject(object, typeInfo);
@@ -536,9 +547,9 @@ string CObjectIStream::MemberStack(void) const
             wasMember = true;
         }
         if ( stack.empty() )
-            stack = m->ToString();
+            stack = s;
         else
-            stack = m->ToString() + '.' + stack;
+            stack = s + '.' + stack;
     }
     return stack;
 }
@@ -785,18 +796,26 @@ CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
     if ( dynamic_cast<const CClassInfoTmpl*>(typeInfo) == 0 )
         return TIndex(-1);
 #endif
+#if ALLOW_CYCLES
     TIndex index = m_Objects.size();
     m_Objects.push_back(CObject(object, typeInfo));
     return index;
+#else
+    return TIndex(-1);
+#endif
 }
 
 const CObject& CObjectIStream::GetRegisteredObject(TIndex index) const
 {
+#if ALLOW_CYCLES
     if ( index >= m_Objects.size() ) {
         const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "invalid object index");
     }
     return m_Objects[index];
+#else
+    THROW1_TRACE(runtime_error, "invalid object index: NO_COLLECT defined");
+#endif
 }
 
 #if HAVE_NCBI_C

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/02/11 17:10:19  vasilche
+* Optimized text parsing.
+*
 * Revision 1.23  2000/02/01 21:44:35  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -208,10 +211,12 @@ private:
 public:
     // low level methods
     char GetChar(void);
-    void UngetChar(void);
+    char PeekChar(void);
+    void SkipChar(void);
 
 	// parse methods
     char GetChar(bool skipWhiteSpace);
+    char PeekChar(bool skipWhiteSpace);
 private:
     bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
@@ -222,6 +227,7 @@ private:
     static bool IdChar(char c);
 
     void SkipEndOfLine(char c);
+    char SkipWhiteSpace(void);
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
     void SkipString(void);

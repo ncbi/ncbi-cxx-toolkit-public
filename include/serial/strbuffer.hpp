@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/11 17:10:20  vasilche
+* Optimized text parsing.
+*
 * Revision 1.2  2000/02/02 19:07:38  vasilche
 * Added THROWS_NONE to constructor/destructor of exception.
 *
@@ -67,23 +70,23 @@ public:
 
     char PeekChar(size_t offset = 0)
         {
-            size_t pos = m_CurrentPos + offset;
+            char* pos = m_CurrentPos + offset;
             if ( pos >= m_DataEndPos )
                 pos = FillBuffer(pos);
-            return m_Buffer[pos];
+            return *pos;
         }
     char GetChar(void)
         {
-            size_t pos = m_CurrentPos;
+            char* pos = m_CurrentPos;
             if ( pos >= m_DataEndPos )
                 pos = FillBuffer(pos);
             m_CurrentPos = pos + 1;
-            return m_Buffer[pos];
+            return *pos;
         }
     void UngetChar(void)
         {
-            size_t pos = m_CurrentPos;
-            _ASSERT(pos > 0);
+            char* pos = m_CurrentPos;
+            _ASSERT(pos > m_Buffer);
             m_CurrentPos = pos - 1;
         }
     void SkipChars(size_t count)
@@ -96,6 +99,7 @@ public:
             SkipChars(1);
         }
     void SkipEndOfLine(char lastChar);
+    char SkipSpaces(void);
 
     void MarkPos(void)
         {
@@ -103,7 +107,7 @@ public:
         }
     const char* GetMarkPos(void) const
         {
-            return m_Buffer + m_MarkPos;
+            return m_MarkPos;
         }
 
     size_t GetLine(void) const
@@ -114,16 +118,16 @@ public:
     size_t ReadLine(char* buff, size_t size);
 
 protected:
-    size_t FillBuffer(size_t pos);
+    char* FillBuffer(char* pos);
 
 private:
     
     CNcbiIstream& m_Input;
     size_t m_BufferSize;
     char* m_Buffer;
-    size_t m_CurrentPos;
-    size_t m_DataEndPos;
-    size_t m_MarkPos;
+    char* m_CurrentPos;
+    char* m_DataEndPos;
+    char* m_MarkPos;
     size_t m_Line;
 };
 

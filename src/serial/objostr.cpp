@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/02/11 17:10:25  vasilche
+* Optimized text parsing.
+*
 * Revision 1.30  2000/01/10 19:46:41  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -148,6 +151,8 @@
 # include <asn.h>
 #endif
 
+#define ALLOW_CYCLES 0
+
 BEGIN_NCBI_SCOPE
 
 CObjectOStream::~CObjectOStream(void)
@@ -158,6 +163,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
+#if ALLOW_CYCLES
     _TRACE("CTypeInfo::CollectObjects: " << NStr::PtrToString(object));
     typeInfo->CollectObjects(m_Objects, object);
     COObjectInfo info(m_Objects, object, typeInfo);
@@ -176,9 +182,12 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
         _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
                << " @" << info.GetRootObjectInfo().GetIndex());
     }
+#endif
     WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
+#if ALLOW_CYCLES
     m_Objects.CheckAllWritten();
+#endif
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
@@ -192,6 +201,7 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
     _TRACE("CObjectOStream::RegisterAndWrite(" <<
            NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
+#if ALLOW_CYCLES
     if ( object != 0 ) {
         COObjectInfo info(m_Objects, object, typeInfo);
         if ( info.IsMember() ) {
@@ -208,6 +218,7 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
                    << " @" << info.GetRootObjectInfo().GetIndex());
         }
     }
+#endif
     WriteData(object, typeInfo);
 }
 
@@ -235,10 +246,24 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         WriteNullPointer();
         return;
     }
-
+#if ALLOW_CYCLES
     COObjectInfo info(m_Objects, object, typeInfo);
     WritePointer(info, typeInfo);
     _ASSERT(!info.IsMember());
+#else
+    TTypeInfo realTypeInfo = typeInfo->GetRealTypeInfo(object);
+    if ( typeInfo == realTypeInfo ) {
+        _TRACE("WritePointer: " <<
+               NStr::PtrToString(object) << ": new");
+        WriteThis(object, realTypeInfo);
+    }
+    else {
+        _TRACE("WritePointer: " <<
+               NStr::PtrToString(object)
+               << ": new " << realTypeInfo->GetName());
+        WriteOther(object, realTypeInfo);
+    }
+#endif
 }
 
 void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/11 17:10:25  vasilche
+* Optimized text parsing.
+*
 * Revision 1.2  2000/02/02 19:07:41  vasilche
 * Added THROWS_NONE to constructor/destructor of exception.
 *
@@ -60,7 +63,7 @@ size_t BiggerBufferSize(size_t size)
 CStreamBuffer::CStreamBuffer(CNcbiIstream& in)
     : m_Input(in),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
-      m_CurrentPos(0), m_DataEndPos(0), m_MarkPos(0),
+      m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer), m_MarkPos(m_Buffer),
       m_Line(1)
 {
 }
@@ -70,37 +73,80 @@ CStreamBuffer::~CStreamBuffer(void)
     delete[] m_Buffer;
 }
 
-size_t CStreamBuffer::FillBuffer(size_t pos)
+char CStreamBuffer::SkipSpaces(void)
+{
+    // cache pointers
+    char* pos = m_CurrentPos;
+    char* end = m_DataEndPos;
+    // make sure thire is at least one char in buffer
+    if ( pos == end ) {
+        // fill buffer
+        pos = FillBuffer(pos);
+        // cache m_DataEndPos
+        end = m_DataEndPos;
+    }
+    // main cycle
+    // at the beginning:
+    //     pos == m_CurrentPos
+    //     end == m_DataEndPos
+    //     pos < end
+    for (;;) {
+        // we use do{}while() cycle because condition is true at the beginning ( pos < end )
+        do {
+            // cache current char
+            char c = *pos;
+            if ( c != ' ' ) { // it's not space (' ')
+                // point m_CurrentPos to first non space char
+                m_CurrentPos = pos;
+                // return char value
+                return c;
+            }
+            // skip space char
+        } while ( ++pos < end );
+        // here pos == end == m_DataEndPos
+        // point m_CurrentPos to end of buffer
+        m_CurrentPos = pos;
+        // fill next portion
+        pos = FillBuffer(pos);
+        // cache m_DataEndPos
+        end = m_DataEndPos;
+    }
+}
+
+char* CStreamBuffer::FillBuffer(char* pos)
 {
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
-    size_t erase = m_CurrentPos;
+    _ASSERT(m_CurrentPos >= m_Buffer);
+    size_t erase = m_CurrentPos - m_Buffer;
     if ( erase > 0 ) {
-        size_t newPos = m_CurrentPos - erase;
-        memmove(m_Buffer + newPos, m_Buffer + m_CurrentPos,
-                m_DataEndPos - m_CurrentPos);
+        char* newPos = m_CurrentPos - erase;
+        memmove(newPos, m_CurrentPos, m_DataEndPos - m_CurrentPos);
         m_CurrentPos = newPos;
         m_DataEndPos -= erase;
-        m_MarkPos = 0;
+        m_MarkPos = m_Buffer;
         pos -= erase;
     }
-    if ( pos >= m_BufferSize ) {
+    size_t dataSize = m_DataEndPos - m_Buffer;
+    size_t size = pos - m_Buffer;
+    if ( size >= m_BufferSize ) {
         // reallocate buffer
         size_t newSize = BiggerBufferSize(m_BufferSize);
-        while ( pos >= newSize ) {
+        while ( size >= newSize ) {
             newSize = BiggerBufferSize(newSize);
         }
         char* newBuffer = new char[newSize];
-        memcpy(newBuffer, m_Buffer, m_DataEndPos);
+        memcpy(newBuffer, m_Buffer, dataSize);
+        m_CurrentPos = newBuffer + (m_CurrentPos - m_Buffer);
+        m_DataEndPos = newBuffer + dataSize;
+        m_MarkPos = newBuffer + (m_MarkPos - m_Buffer);
         delete[] m_Buffer;
         m_Buffer = newBuffer;
         m_BufferSize = newSize;
     }
-    size_t load = m_BufferSize - m_DataEndPos;
+    size_t load = m_BufferSize - dataSize;
     while ( load > 0 ) {
-        m_Input.read(m_Buffer + m_DataEndPos, load);
-/*        if ( !m_Input )
-            m_Input.clear();*/
+        m_Input.read(m_DataEndPos, load);
         size_t count = m_Input.gcount();
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
@@ -118,21 +164,20 @@ size_t CStreamBuffer::FillBuffer(size_t pos)
 
 void CStreamBuffer::SkipEndOfLine(char lastChar)
 {
-    _ASSERT(m_CurrentPos > 0 && m_Buffer[m_CurrentPos - 1] == lastChar);
+    _ASSERT(lastChar == '\n' || lastChar == '\r');
+    _ASSERT(m_CurrentPos > m_Buffer && m_CurrentPos[-1] == lastChar);
     m_Line++;
+    char nextChar;
     try {
-        if ( lastChar == '\r' ) {
-            if ( PeekChar() == '\n' )
-                SkipChar();
-        }
-        else {
-            _ASSERT(lastChar == '\n');
-            if ( PeekChar() == '\r' )
-                SkipChar();
-        }
+        nextChar = PeekChar();
     }
     catch ( CEofException& /* ignored */ ) {
+        return;
     }
+    // lastChar either '\r' or \n'
+    // if nextChar is compliment, skip it
+    if ( (lastChar + nextChar) == ('\r' + '\n') )
+        SkipChar();
 }
 
 size_t CStreamBuffer::ReadLine(char* buff, size_t size)
@@ -143,21 +188,16 @@ size_t CStreamBuffer::ReadLine(char* buff, size_t size)
             char c = *buff++ = GetChar();
             count++;
             size--;
-            
-            if ( size > 0 ) {
-                switch ( c ) {
-                case '\r':
-                    if ( PeekChar() != '\n' )
-                        continue;
-                    break;
-                case '\n':
-                    if ( PeekChar() != '\r' )
-                        continue;
-                    break;
-                }
-                *buff++ = GetChar();
-                count++;
-                size--;
+            switch ( c ) {
+            case '\r':
+                // replace leading '\r' by '\n'
+                buff[-1] = '\n';
+                if ( PeekChar() == '\n' )
+                    SkipChar();
+                return count;
+            case '\n':
+                if ( PeekChar() == '\r' )
+                    SkipChar();
                 return count;
             }
         }
