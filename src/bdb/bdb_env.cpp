@@ -88,24 +88,40 @@ void CBDB_Env::Open(const char* db_home, int flags)
 
 int CBDB_Env::x_Open(const char* db_home, int flags)
 {
+    int recover_requested = flags & DB_RECOVER;
+
     int ret = m_Env->open(m_Env, db_home, flags, 0664);
     if (ret == DB_RUNRECOVERY) {
         if (flags & DB_JOINENV) {  // join do not attempt recovery
             return ret;
         }
         int recover_flag;
-        
-        if (flags & DB_INIT_TXN) { // recovery needs transaction
-            recover_flag = flags | DB_RECOVER | DB_CREATE;
+
+        if (!recover_requested) {
+            if (flags & DB_INIT_TXN) { // recovery needs transaction
+                recover_flag = flags | DB_RECOVER | DB_CREATE;
+            } else {
+                goto fatal_recovery;
+            }
         } else {
-            recover_flag = flags | DB_CREATE | DB_RECOVER_FATAL;
+            goto fatal_recovery;
         }
 
         ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
 
-        if ((ret == DB_RUNRECOVERY) && (flags & DB_INIT_TXN)) {
-            recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
-            ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
+        if (!recover_requested) {
+            fatal_recovery:
+            LOG_POST(Warning << "BDB_Env: Trying fatal recovery.");
+            if ((ret == DB_RUNRECOVERY) && (flags & DB_INIT_TXN)) {
+                recover_flag &= ~DB_RECOVER;
+                recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
+
+                ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
+                if (ret) {
+                    LOG_POST(Warning << 
+                             "Fatal recovery returned error code=" << ret);
+                }
+            }
         }
     }
     m_HomePath = db_home;
@@ -140,11 +156,11 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
     if (opt & eRunRecovery) {
         // use private environment as prescribed by "db_recover" utility
         int recover_flag = flag | DB_RECOVER | DB_CREATE; 
-        
+
         if (!(recover_flag & DB_SYSTEM_MEM)) {
             recover_flag |= DB_PRIVATE;
         }
-        
+
         ret = x_Open(db_home, recover_flag);
         BDB_CHECK(ret, "DB_ENV");
         
@@ -354,11 +370,13 @@ void CBDB_Env::TransactionCheckpoint()
 void CBDB_Env::CleanLog()
 {
     char **nm_list = 0;
-	int ret = m_Env->log_archive(m_Env, &nm_list, DB_ARCH_ABS);
+	int ret = 
+        m_Env->log_archive(m_Env, &nm_list, DB_ARCH_ABS);
     BDB_CHECK(ret, "DB_ENV::CleanLog()");
 
 	if (nm_list != NULL) {
         for (char** file = nm_list; *file != NULL; ++file) {
+            LOG_POST(Info << "BDB_Env: Removing LOG file: " << *file);
             CDirEntry de(*file);
             de.Remove();
         }
@@ -388,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/10/15 14:03:59  kuznets
+ * Fixed BDB flags incompatibility and added some debug info
+ *
  * Revision 1.27  2004/08/24 14:06:28  kuznets
  * Added CBDB_ENv::CheckRemove()
  *
