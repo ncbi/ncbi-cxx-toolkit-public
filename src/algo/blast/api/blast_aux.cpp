@@ -347,6 +347,24 @@ CBlastSeqSrc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
      * BlastSeqSrc? Might be useful for debugging */
 }
 
+void 
+CBlastMaskLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CBlastMaskLoc");
+    if (!m_Ptr)
+        return;
+   
+    ddc.Log("total_size", m_Ptr->total_size);
+    for (int index = 0; index < m_Ptr->total_size; ++index) {
+        ddc.Log("context", index);
+        for (BlastSeqLoc* seqloc = m_Ptr->seqloc_array[index];
+             seqloc; seqloc = seqloc->next) {
+            ddc.Log("left", seqloc->ssr->left);
+            ddc.Log("right", seqloc->ssr->right);
+        }
+    }
+}
+
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 BlastSeqLoc*
@@ -574,6 +592,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.62  2004/12/28 18:48:13  dondosha
+ * Added DebugDump implementation for CBlastMaskLoc wrapper class
+ *
  * Revision 1.61  2004/12/28 16:47:43  camacho
  * 1. Use typedefs to AutoPtr consistently
  * 2. Remove exception specification from blast::SetupQueries
