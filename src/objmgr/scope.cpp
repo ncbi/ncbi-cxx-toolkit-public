@@ -561,15 +561,17 @@ CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info)
 
 
 bool CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
-                                    const CRef<CBioseq_ScopeInfo>& bioseq_info)
+                                    CBioseq_ScopeInfo& bioseq_info)
 {
     {{
         CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool);
         if ( init ) {
-            info.second.m_Bioseq_Info = bioseq_info;
+            _ASSERT(!info.second.m_Bioseq_Info);
+            info.second.m_Bioseq_Info.Reset(&bioseq_info);
+            return true;
         }
     }}
-    return info.second.m_Bioseq_Info == bioseq_info;
+    return info.second.m_Bioseq_Info.GetPointerOrNull() == &bioseq_info;
 }
 
 
@@ -610,6 +612,8 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
             TSeq_id_HandleSet hset;
             mapper.GetMatchingHandles(id, hset);
             ITERATE ( TSeq_id_HandleSet, hit, hset ) {
+                if ( *hit == id ) // already checked
+                    continue;
                 CSeqMatch_Info match(*hit, tse);
                 CConstRef<CBioseq_Info> bioseq = match.GetBioseq_Info();
                 if ( bioseq ) {
@@ -744,6 +748,7 @@ void CScope_Impl::FindSeqid(set< CConstRef<CSeq_id> >& setId,
 CDataSource_ScopeInfo*
 CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
                               const CSeq_id_Handle& idh,
+                              const TSeq_id_HandleSet* hset,
                               CSeqMatch_Info& match_info)
 {
     CDataSource_ScopeInfo* ret = 0;
@@ -762,7 +767,7 @@ CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
             last_priority = new_priority;
         }
         CDataSource_ScopeInfo* new_ret =
-            x_FindBioseqInfo(mit->second, idh, match_info);
+            x_FindBioseqInfo(mit->second, idh, hset, match_info);
         if ( new_ret ) {
             _ASSERT(!ret); // should be checked by match_info already
             ret = new_ret;
@@ -774,58 +779,47 @@ CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
 
 CDataSource_ScopeInfo*
 CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
-                              const CSeq_id_Handle& idh,
+                              const CSeq_id_Handle& main_idh,
+                              const TSeq_id_HandleSet* hset,
                               CSeqMatch_Info& match_info)
 {
     // skip already matched CDataSource
-    if ( match_info &&
-         &match_info.GetDataSource() == &ds_info.GetDataSource() ) {
+    CDataSource& ds = ds_info.GetDataSource();
+    if ( match_info && &match_info.GetDataSource() == &ds ) {
         return 0;
     }
     CSeqMatch_Info info;
     {{
         CFastMutexGuard guard(ds_info.GetMutex());
-        ITERATE(TTSE_LockSet, tse_it, ds_info.GetTSESet()) {
-            CSeq_id_Handle found_id = idh;
-            CTSE_Info::TBioseqs::const_iterator seq =
-                (*tse_it)->m_Bioseqs.find(idh);
-            if (seq == (*tse_it)->m_Bioseqs.end()) {
-                TSeq_id_HandleSet hset;
-                CSeq_id_Mapper::GetSeq_id_Mapper().GetMatchingHandles(idh,
-                                                                      hset);
-                ITERATE(TSeq_id_HandleSet, hit, hset) {
-                    seq = (*tse_it)->m_Bioseqs.find(*hit);
-                    if (seq != (*tse_it)->m_Bioseqs.end()) {
-                        found_id = *hit;
-                        break;
-                    }
+        info = ds.HistoryResolve(main_idh, ds_info.GetTSESet());
+        if ( !info && hset ) {
+            ITERATE(TSeq_id_HandleSet, hit, *hset) {
+                if ( *hit == main_idh ) // already checked
+                    continue;
+                if ( info  &&  info.GetIdHandle().IsBetter(*hit) ) // worse hit
+                    continue;
+                CSeqMatch_Info new_info =
+                    ds.HistoryResolve(*hit, ds_info.GetTSESet());
+                if ( !new_info )
+                    continue;
+                _ASSERT(&new_info.GetDataSource() == &ds);
+                if ( !info ) {
+                    info = new_info;
+                    continue;
                 }
-            }
-            if (seq != (*tse_it)->m_Bioseqs.end()) {
-                // Use cached TSE (same meaning as from history). If info
-                // is set but not in the history just ignore it.
-                if ( info ) {
-                    CSeqMatch_Info new_info(found_id, **tse_it);
-                    // Both are in the history -
-                    // can not resolve the conflict
-                    if (&info.GetDataSource() == &new_info.GetDataSource()) {
-                        CSeqMatch_Info* best_info =
-                            info.GetDataSource().ResolveConflict(
-                                found_id, info, new_info);
-                        if (best_info) {
-                            info = *best_info;
-                            continue;
-                        }
-                    }
-                    x_ThrowConflict(eConflict_History, info, new_info);
+                CSeqMatch_Info* best_info =
+                    ds.ResolveConflict(main_idh, info, new_info);
+                if (best_info) {
+                    info = *best_info;
+                    continue;
                 }
-                info = CSeqMatch_Info(found_id, **tse_it);
+                x_ThrowConflict(eConflict_History, info, new_info);
             }
         }
     }}
     if ( !info ) {
         // Try to load the sequence from the data source
-        info = ds_info.GetDataSource().BestResolve(idh);
+        info = ds_info.GetDataSource().BestResolve(main_idh);
     }
     if ( info ) {
         if ( match_info ) {
@@ -841,15 +835,16 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
 CDataSource_ScopeInfo*
 CScope_Impl::x_FindBioseqInfo(const CPriorityNode& node,
                               const CSeq_id_Handle& idh,
+                              const TSeq_id_HandleSet* hset,
                               CSeqMatch_Info& match_info)
 {
     if ( node.IsTree() ) {
         // Process sub-tree
-        return x_FindBioseqInfo(node.GetTree(), idh, match_info);
+        return x_FindBioseqInfo(node.GetTree(), idh, hset, match_info);
     }
     else if ( node.IsLeaf() ) {
         return x_FindBioseqInfo(const_cast<CDataSource_ScopeInfo&>(node.GetLeaf()),
-                                idh, match_info);
+                                idh, hset, match_info);
     }
     return 0;
 }
@@ -860,8 +855,17 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info)
     // Use priority, do not scan all DSs - find the first one.
     // Protected by m_Scope_Conf_RWLock in upper-level functions
     CSeqMatch_Info match_info;
+    auto_ptr<TSeq_id_HandleSet> hset;
+    CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+    if ( mapper.HaveMatchingHandles(id_info.first) ) {
+        hset.reset(new TSeq_id_HandleSet);
+        mapper.GetMatchingHandles(id_info.first, *hset);
+        hset->erase(id_info.first);
+        if ( hset->empty() )
+            hset.reset();
+    }
     CDataSource_ScopeInfo* ds_info =
-        x_FindBioseqInfo(m_setDataSrc, id_info.first, match_info);
+        x_FindBioseqInfo(m_setDataSrc, id_info.first, hset.get(), match_info);
     if ( !ds_info ) {
         _ASSERT(m_HeapScope);
         id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(&id_info));
@@ -1089,6 +1093,29 @@ CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CBioseq_Handle& bh)
 }
 
 
+void CScope_Impl::x_AddSynonym(const CSeq_id_Handle& idh,
+                               CSynonymsSet& syn_set,
+                               CBioseq_ScopeInfo& info)
+{
+    // Check current ID for conflicts, add to the set.
+    TSeq_idMapValue& seq_id_info = x_GetSeq_id_Info(idh);
+    if ( x_InitBioseq_Info(seq_id_info, info) ) {
+        // the same bioseq - add synonym
+        if ( !syn_set.ContainsSynonym(seq_id_info.first) ) {
+            syn_set.AddSynonym(&seq_id_info);
+        }
+    }
+    else {
+        CRef<CBioseq_ScopeInfo> info2 = seq_id_info.second.m_Bioseq_Info;
+        _ASSERT(info2 != &info);
+        LOG_POST(Warning << "CScope::GetSynonyms: Bioseq["<<
+                 info.GetBioseq_Info().IdsString()<<"]: id "<<
+                 idh.AsString()<<" is resolved to another Bioseq["<<
+                 info2->GetBioseq_Info().IdsString()<<"]");
+    }
+}
+
+
 CConstRef<CSynonymsSet>
 CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
 {
@@ -1097,35 +1124,21 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
         if ( init ) {
             // It's OK to use CRef, at least one copy should be kept
             // alive by the id cache (for the ID requested).
+            CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
             CRef<CSynonymsSet> syn_set(new CSynonymsSet);
             //syn_set->AddSynonym(id);
             if ( info->HasBioseq() ) {
                 ITERATE(CBioseq_Info::TSynonyms, it,
                         info->GetBioseq_Info().m_Synonyms) {
-                    TSeq_id_HandleSet hset;
-                    CSeq_id_Mapper::GetSeq_id_Mapper().
-                        GetMatchingHandles(*it, hset);
-                    ITERATE(TSeq_id_HandleSet, mit, hset) {
-                        // Check current ID for conflicts, add to the set.
-                        try {
-                            TSeq_idMapValue& seq_id_info =
-                                x_GetSeq_id_Info(*mit);
-                            if ( x_InitBioseq_Info(seq_id_info, info) ) {
-                                // the same bioseq - add synonym
-                                syn_set->AddSynonym(&seq_id_info);
-                            }
-                            else {
-                                CRef<CBioseq_ScopeInfo> info2 =
-                                    seq_id_info.second.m_Bioseq_Info;
-                                LOG_POST(Warning << "CScope::GetSynonyms: "
-                                         "Bioseq["<<info->GetBioseq_Info().IdsString()<<"]: id "<<mit->AsString()<<" is resolved to another Bioseq ["<<info2->GetBioseq_Info().IdsString()<<"]");
-                            }
+                    if ( mapper.HaveMatchingHandles(*it) ) {
+                        TSeq_id_HandleSet hset;
+                        mapper.GetMatchingHandles(*it, hset);
+                        ITERATE(TSeq_id_HandleSet, mit, hset) {
+                            x_AddSynonym(*it, *syn_set, *info);
                         }
-                        catch ( exception& exc ) {
-                            LOG_POST(Warning << "CScope::GetSynonyms: "
-                                     "Bioseq["<<info->GetBioseq_Info().IdsString()<<"]: id "<<mit->AsString()<<" cannot be resolved: "<<
-                                     exc.what());
-                        }
+                    }
+                    else {
+                        x_AddSynonym(*it, *syn_set, *info);
                     }
                 }
             }
@@ -1155,6 +1168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2004/02/02 14:46:43  vasilche
+* Several performance fixed - do not iterate whole tse set in CDataSource.
+*
 * Revision 1.97  2004/01/29 20:33:28  vasilche
 * Do not resolve any Seq-ids in CScope::GetSynonyms() -
 * assume all not resolved Seq-id as synonym.

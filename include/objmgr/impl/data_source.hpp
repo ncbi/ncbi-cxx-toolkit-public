@@ -45,6 +45,7 @@
 #include <set>
 #include <map>
 #include <list>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -274,6 +275,7 @@ public:
     typedef map<const CBioseq*, CBioseq_Info*>       TBioseq_InfoMap;
     typedef map<const CObject*, CAnnotObject_Info* > TAnnotObject_InfoMap;
     typedef CPriorityNode::TPriority                 TPriority;
+    typedef vector<CTSE_Info*>                       TTSE_annot_is_dirty;
 
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
@@ -295,6 +297,8 @@ public:
                             CBioseq_CI_Base::EBioseqLevelFlag level);
 
     CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
+    CSeqMatch_Info HistoryResolve(CSeq_id_Handle idh,
+                                  const TTSE_LockSet& tse_set);
 
     // Select the best of the two bioseqs if possible (e.g. dead vs live).
     CSeqMatch_Info* ResolveConflict(const CSeq_id_Handle& id,
@@ -393,7 +397,7 @@ private:
     TTSE_Lock x_FindBestTSE(const CSeq_id_Handle& handle) const;
 
     void x_IndexAllAnnots(CSeq_entry_Info& entry_info);
-    void x_SetDirtyAnnotIndex(void);
+    void x_SetDirtyAnnotIndex(CTSE_Info* tse_info);
 
     void x_IndexTSE(TTSEMap& tse_map,
                     const CSeq_id_Handle& id, CTSE_Info* tse_info);
@@ -450,8 +454,8 @@ private:
 
     TTSEMap               m_TSE_seq;           // id -> TSE with bioseq
     TTSEMap               m_TSE_annot;         // id -> TSE with annots
-    // > 0 if annotations need to be indexed.
-    bool                  m_TSE_annot_is_dirty;
+    // TSE with annotations need to be indexed.
+    TTSE_annot_is_dirty   m_TSE_annot_is_dirty;
 
     // Default priority for the datasource
     TPriority             m_DefaultPriority;
@@ -504,6 +508,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/02/02 14:46:42  vasilche
+* Several performance fixed - do not iterate whole tse set in CDataSource.
+*
 * Revision 1.68  2003/12/18 16:38:05  grichenk
 * Added CScope::RemoveEntry()
 *

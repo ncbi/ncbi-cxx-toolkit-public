@@ -144,7 +144,6 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader),
       m_pTopEntry(0),
       m_ObjMgr(&objmgr),
-      m_TSE_annot_is_dirty(false),
       m_DefaultPriority(99)
 {
     m_Loader->SetTargetDataSource(*this);
@@ -155,7 +154,6 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0),
       m_pTopEntry(&entry),
       m_ObjMgr(&objmgr),
-      m_TSE_annot_is_dirty(false),
       m_DefaultPriority(9)
 {
     AddTSE(entry, false);
@@ -198,7 +196,7 @@ void CDataSource::DropAllTSEs(void)
     {{
         TAnnotWriteLockGuard guard2(m_DSAnnotLock);
         m_TSE_annot.clear();
-        m_TSE_annot_is_dirty = false;
+        m_TSE_annot_is_dirty.clear();
     }}
 }
 
@@ -261,8 +259,8 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
             return best;
         }
     }
-        NCBI_THROW(CObjMgrException, eFindConflict,
-                   "Multiple live entries found");
+    NCBI_THROW(CObjMgrException, eFindConflict,
+               "Multiple live entries found");
 }
 
 
@@ -435,6 +433,15 @@ void CDataSource::x_DropTSE(CTSE_Info& info)
         m_Loader->DropTSE(info);
     }
     info.x_DSDetach(this);
+    {{
+        TAnnotWriteLockGuard guard2(m_DSAnnotLock);
+        NON_CONST_ITERATE ( TTSE_annot_is_dirty, iter, m_TSE_annot_is_dirty ) {
+            if ( *iter == &info ) {
+                m_TSE_annot_is_dirty.erase(iter);
+                break;
+            }
+        }
+    }}
 }
 
 
@@ -810,22 +817,24 @@ void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 }
 
 
-void CDataSource::x_SetDirtyAnnotIndex(void)
+void CDataSource::x_SetDirtyAnnotIndex(CTSE_Info* tse_info)
 {
     TAnnotWriteLockGuard guard(m_DSAnnotLock);
-    m_TSE_annot_is_dirty = true;
+    _ASSERT(find(m_TSE_annot_is_dirty.begin(),
+                  m_TSE_annot_is_dirty.end(),
+                  tse_info) == m_TSE_annot_is_dirty.end());
+    m_TSE_annot_is_dirty.push_back(tse_info);
 }
 
 
 void CDataSource::UpdateAnnotIndex(void)
 {
     TMainWriteLockGuard guard(m_DSMainLock);
-    if ( m_TSE_annot_is_dirty ) {
-        ITERATE ( TTSE_InfoMap, iter, m_TSE_InfoMap ) {
-            iter->second->UpdateAnnotIndex();
-        }
+    ITERATE( TTSE_annot_is_dirty, iter, m_TSE_annot_is_dirty ) {
+        _ASSERT(x_FindTSE_Info((*iter)->GetTSE()));
+        (*iter)->UpdateAnnotIndex();
     }
-    m_TSE_annot_is_dirty = false;
+    m_TSE_annot_is_dirty.clear();
 }
 
 
@@ -880,7 +889,9 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
             TSeq_id_HandleSet hset;
             mapper.GetMatchingHandles(idh, hset);
             ITERATE(TSeq_id_HandleSet, hit, hset) {
-                if ( bool(tse_info)  &&  idh.IsBetter(*hit) )
+                if ( *hit == main_idh ) // already checked
+                    continue;
+                if ( bool(tse_info)  &&  idh.IsBetter(*hit) ) // worse hit
                     continue;
                 TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
                 if ( tmp_tse ) {
@@ -983,7 +994,10 @@ void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
         x_IndexTSE(m_TSE_annot, it->first, tse_info);
     }
     if ( tse_info->m_DirtyAnnotIndex ) {
-        m_TSE_annot_is_dirty = true;
+        _ASSERT(find(m_TSE_annot_is_dirty.begin(),
+                     m_TSE_annot_is_dirty.end(),
+                     tse_info) == m_TSE_annot_is_dirty.end());
+        m_TSE_annot_is_dirty.push_back(tse_info);
     }
 }
 
@@ -1047,7 +1061,9 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
             TSeq_id_HandleSet hset;
             mapper.GetMatchingHandles(idh, hset);
             ITERATE(TSeq_id_HandleSet, hit, hset) {
-                if ( bool(tse)  &&  idh.IsBetter(*hit) )
+                if ( *hit == idh ) // already checked
+                    continue;
+                if ( bool(tse)  &&  idh.IsBetter(*hit) ) // worse hit
                     continue;
                 TTSE_Lock tmp_tse(x_FindBestTSE(*hit));
                 if ( tmp_tse ) {
@@ -1060,6 +1076,40 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
     if ( tse ) {
         match = CSeqMatch_Info(idh, *tse);
     }
+    return match;
+}
+
+
+CSeqMatch_Info CDataSource::HistoryResolve(CSeq_id_Handle idh,
+                                           const TTSE_LockSet& history)
+{
+    CSeqMatch_Info match;
+    {{
+        TMainReadLockGuard guard(m_DSMainLock);
+        TTSEMap::const_iterator tse_set = m_TSE_seq.find(idh);
+        if ( tse_set != m_TSE_seq.end() ) {
+            ITERATE ( CTSE_LockingSet, it, tse_set->second ) {
+                if ( history.find(TTSE_Lock(*it)) == history.end() ) {
+                    continue;
+                }
+                
+                CSeqMatch_Info new_match(idh, **it);
+                _ASSERT(new_match.GetBioseq_Info());
+                if ( !match ) {
+                    match = new_match;
+                    continue;
+                }
+
+                CNcbiOstrstream s;
+                s << "CDataSource("<<GetName()<<"): "
+                    "multiple history matches: Seq-id="<<idh.AsString()<<
+                    ": seq1=["<<match.GetBioseq_Info()->IdsString()<<
+                    "] seq2=["<<new_match.GetBioseq_Info()->IdsString()<<"]";
+                string msg = CNcbiOstrstreamToString(s);
+                NCBI_THROW(CObjMgrException, eFindConflict, msg);
+            }
+        }
+    }}
     return match;
 }
 
@@ -1174,6 +1224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.125  2004/02/02 14:46:43  vasilche
+* Several performance fixed - do not iterate whole tse set in CDataSource.
+*
 * Revision 1.124  2003/12/18 16:38:06  grichenk
 * Added CScope::RemoveEntry()
 *

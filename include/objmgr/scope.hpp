@@ -217,12 +217,15 @@ private:
     // Iterate over priorities, find all possible data sources
     CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityTree& tree,
                                             const CSeq_id_Handle& idh,
+                                            const TSeq_id_HandleSet* hset,
                                             CSeqMatch_Info& match_info);
     CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityNode& node,
                                             const CSeq_id_Handle& idh,
+                                            const TSeq_id_HandleSet* hset,
                                             CSeqMatch_Info& match_info);
     CDataSource_ScopeInfo* x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                                             const CSeq_id_Handle& idh,
+                                            const TSeq_id_HandleSet* hset,
                                             CSeqMatch_Info& match_info);
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
@@ -258,6 +261,8 @@ private:
                                     CBioseq_CI_Base::EBioseqLevelFlag level);
 
     CConstRef<CSynonymsSet> x_GetSynonyms(CRef<CBioseq_ScopeInfo> info);
+    void x_AddSynonym(const CSeq_id_Handle& idh,
+                      CSynonymsSet& syn_set, CBioseq_ScopeInfo& info);
 
     // Conflict reporting function
     enum EConflict {
@@ -274,7 +279,7 @@ private:
 
     CRef<CBioseq_ScopeInfo> x_InitBioseq_Info(TSeq_idMapValue& info);
     bool x_InitBioseq_Info(TSeq_idMapValue& info,
-                           const CRef<CBioseq_ScopeInfo>& bioseq_info);
+                           CBioseq_ScopeInfo& bioseq_info);
     CRef<CBioseq_ScopeInfo> x_GetBioseq_Info(const CSeq_id_Handle& id);
     CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id);
 
@@ -618,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/02/02 14:46:42  vasilche
+* Several performance fixed - do not iterate whole tse set in CDataSource.
+*
 * Revision 1.69  2004/01/29 20:33:27  vasilche
 * Do not resolve any Seq-ids in CScope::GetSynonyms() -
 * assume all not resolved Seq-id as synonym.

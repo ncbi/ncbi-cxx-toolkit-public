@@ -292,7 +292,8 @@ void CSeq_entry_Info::x_SetDirtyAnnotIndex(void)
             m_Parent->x_SetDirtyAnnotIndex();
         }
         else if ( HaveDataSource() ) {
-            GetDataSource().x_SetDirtyAnnotIndex();
+            _ASSERT(m_TSE_Info == this);
+            GetDataSource().x_SetDirtyAnnotIndex(m_TSE_Info);
         }
     }
 }
@@ -462,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/02 14:46:44  vasilche
+ * Several performance fixed - do not iterate whole tse set in CDataSource.
+ *
  * Revision 1.8  2004/01/29 19:33:07  vasilche
  * Fixed coredump on WorkShop when invalid Seq-entry is added to CScope.
  *
