@@ -1048,82 +1048,90 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
 // Assumes that seq is segmented and has Seq-ext data
 void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
 {
-    // Get parent CSeq_entry of seq
+    // Get parent CSeq_entry of seq and then find the next
+    // CSeq_entry in the set. This CSeq_entry should be a CBioseq_set
+    // of class parts.
     const CSeq_entry* parent = seq.GetParentEntry();
     if (!parent) {
         return;
     }
-
-    // Need to get seq-set containing parent and then find the next
-    // CSeq_entry in the set. This CSeq_entry should be a CBioseq_set
-    // of class parts.
-    const CSeq_entry* grand_parent = parent->GetParentEntry();
-    if (!grand_parent  ||  !grand_parent->IsSet()) {
+    if ( !parent->IsSet() ) {
         return;
     }
-    const CBioseq_set& set = grand_parent->GetSet();
-    const list< CRef<CSeq_entry> >& seq_set = set.GetSeq_set();
 
-    // Loop through seq_set looking for parent. When found, the next
-    // CSeq_entry should have the parts
-    const CSeq_entry* se = 0;
-    ITERATE (list< CRef<CSeq_entry> >, it, seq_set) {
-        if (parent == &(**it)) {
-            ++it;
-            se = &(**it);
+    // Loop through seq_set looking for the bioseq, when found, the next
+    // CSeq_entry should have the parts.
+    CBioseq_set::TSeq_set::const_iterator se_parts = 
+        parent->GetSet().GetSeq_set().end();
+    ITERATE ( CBioseq_set::TSeq_set, it, parent->GetSet().GetSeq_set() ) {
+        if ( parent == &(**it) ) {
+            se_parts = ++it;
             break;
         }
     }
-    if (!se) {
+    if ( se_parts == parent->GetSet().GetSeq_set().end() ) {
         return;
     }
 
-    // Check that se is a CBioseq_set of class parts
-    if (!se->IsSet()  ||  !se->GetSet().IsSetClass()  ||
-        se->GetSet().GetClass() != CBioseq_set::eClass_parts) {
+    // Check that se_parts is a CBioseq_set of class parts
+    if ( !(*se_parts)->IsSet()  ||  !(*se_parts)->GetSet().IsSetClass()  ||
+         (*se_parts)->GetSet().GetClass() != CBioseq_set::eClass_parts ) {
         return;
     }
 
-    // Get iterator for CSeq_entries in se
-    CTypeConstIterator<CSeq_entry> se_parts(ConstBegin(*se));
+    const CSeg_ext::Tdata& locs = seq.GetInst().GetExt().GetSeg().Get();
+    const CBioseq_set::TSeq_set& parts = (*se_parts)->GetSet().GetSeq_set();
 
-    // Now, simultaneously loop through the parts of se and CSeq_locs of seq's
-    // CSseq-ext. If don't compare, post error
-    const list< CRef<CSeq_loc> > locs = seq.GetInst().GetExt().GetSeg().Get();
-    ITERATE (list< CRef<CSeq_loc> >, lit, locs) {
-        if ((**lit).Which() == CSeq_loc::e_Null) {
-            continue;
+    // Make sure the number of locations (excluding null locations)
+    // match the number of parts
+    size_t nulls = 0;
+    ITERATE ( CSeg_ext::Tdata, loc, locs ) {
+        if ( (*loc)->IsNull() ) {
+            nulls++;
         }
-        if (!se_parts) {
-            PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-                "Parts set does not contain enough Bioseqs", seq);
-        }
-        if (se_parts->Which() == CSeq_entry::e_Seq) {
-            try {
-                const CBioseq& part = se_parts->GetSeq();
-                const CSeq_id& id = GetId(**lit, m_Scope);
-                if (!IsIdIn(id, part)) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-                        "Segmented bioseq seq_ext does not correspond to parts"
-                        "packaging order", seq);
-                }
-            } catch (const CNotUnique&) {
-                ERR_POST("Seq-loc not for unique sequence");
-                return;
-            } catch (...) {
-                ERR_POST("Unknown error");
+    }
+    if ( locs.size() - nulls < parts.size() ) {
+         PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+            "Parts set contains too many Bioseqs", seq);
+         return;
+    } else if ( locs.size() - nulls > parts.size() ) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+            "Parts set does not contain enough Bioseqs", seq);
+        return;
+    }
+
+    // Now, simultaneously loop through the parts of se_parts and CSeq_locs of 
+    // seq's CSseq-ext. If don't compare, post error.
+    size_t size = locs.size();  // == parts.size()
+    CSeg_ext::Tdata::const_iterator loc_it = locs.begin();
+    CBioseq_set::TSeq_set::const_iterator part_it = parts.begin();
+    for ( size_t i = 0; i < size; ++i ) {
+        try {
+            if ( (*loc_it)->IsNull() ) {
+                continue;
+            }
+            if ( !(*part_it)->IsSet() ) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+                    "Parts set component is not Bioseq", seq);
                 return;
             }
-        } else {
-            PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-                "Parts set component is not Bioseq", seq);
+            const CSeq_id& loc_id = GetId(**loc_it, m_Scope);
+            if ( !IsIdIn(loc_id, (*part_it)->GetSeq()) ) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
+                    "Segmented bioseq seq_ext does not correspond to parts"
+                    "packaging order", seq);
+            }
+            
+            // advance both iterators
+            ++loc_it;
+            ++part_it;
+        } catch (const CNotUnique&) {
+            ERR_POST("Seq-loc not for unique sequence");
+            return;
+        } catch (...) {
+            ERR_POST("Unknown error");
             return;
         }
-        ++se_parts;
-    }
-    if (se_parts) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_PartsOutOfOrder,
-            "Parts set contains too many Bioseqs", seq);
     }
 }
 
@@ -1936,7 +1944,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         }
 
         if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
-            if ( LocOnSeg(seq, fi->GetLocation()) ) {
+            if ( LocOnSeg(seq, fi->GetOriginalFeature().GetLocation()) ) {
                 if ( !IsDeltaOrFarSeg(fi->GetLocation(), m_Scope) ) {
                     sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
                     PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
@@ -3041,6 +3049,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/04/29 14:51:38  shomrat
+* Bug fix in ValidateSeqParts
+*
 * Revision 1.31  2003/04/10 19:32:50  shomrat
 * Added ValidateMolTypeContext; UnnecessaryBioSourceFocus not done on proteins, segmented bioseqs, or segmented parts
 *
