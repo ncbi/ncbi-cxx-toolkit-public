@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/26 12:56:20  thiessen
+* remove wxFLOAT_ON_PARENT, doesn't work on Mac
+*
 * Revision 1.9  2001/10/08 14:18:33  thiessen
 * fix show/hide dialog under wxGTK
 *
@@ -89,7 +92,7 @@ ShowHideDialog::ShowHideDialog(
     const wxString& title,
     const wxPoint& pos
 ) :
-    wxDialog(parent, id, title, pos, wxSize(MIN_SIZE), wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
+    wxDialog(parent, id, title, pos, wxSize(MIN_SIZE), wxCAPTION | wxRESIZE_BORDER),
     itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL), haveApplied(false)
 {
     SetAutoLayout(true);
