@@ -200,11 +200,33 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
 
 CBDB_FileCursor::~CBDB_FileCursor()
 {
+    Close();
+}
+
+void CBDB_FileCursor::Close()
+{
     if (m_DBC) {
         m_DBC->c_close(m_DBC);
+        m_DBC = 0;
     }
 }
 
+void CBDB_FileCursor::ReOpen(CBDB_Transaction* trans)
+{
+    Close();
+    if (trans == 0) {
+        trans = m_Dbf.GetTransaction();
+    }
+    m_DBC = m_Dbf.CreateCursor(trans);
+
+    From.m_Condition.ResetUnassigned();
+    To.m_Condition.ResetUnassigned();
+}
+
+bool CBDB_FileCursor::IsOpen() const
+{
+    return m_DBC != 0;
+}
 
 void CBDB_FileCursor::SetCondition(ECondition cond_from, ECondition cond_to)
 {
@@ -511,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/02/22 14:08:04  kuznets
+ * Added cursor reopen functions
+ *
  * Revision 1.16  2004/11/23 17:09:11  kuznets
  * Implemented BLOB update in cursor
  *

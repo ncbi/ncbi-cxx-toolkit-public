@@ -160,6 +160,21 @@ public:
 	/// Return database file on which cursor is based
 	CBDB_File& GetDBFile() { return m_Dbf; }
 
+    /// Close underlying cursor. 
+    /// All associated buffers remain, so cursor can be quickly 
+    /// reopened.
+    void Close();
+
+    /// Reopen cursor after Close.
+    ///
+    /// @param trans
+    ///    Transaction pointer (optional) 
+    ///      (ownership is NOT be taken.)
+    void ReOpen(CBDB_Transaction* trans);
+
+    /// TRUE when cursor open
+    bool IsOpen() const;
+
 protected:
     /// Test "TO" search criteria. Return "true" if current value satisfies it
     bool TestTo() const;
@@ -256,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/02/22 14:07:55  kuznets
+ * Added cursor reopen functions
+ *
  * Revision 1.14  2004/11/23 17:08:53  kuznets
  * Implemented BLOB update in cursor
  *
