@@ -2192,6 +2192,8 @@ fi
 
 
 
+
+
 #############################################################################
 ### Create output files and render the "$exec_prefix" sub-dirs
 
@@ -2357,6 +2359,7 @@ s%@PM_SRC_PATH@%$PM_SRC_PATH%g
 s%@PM_LIB_PATH@%$PM_LIB_PATH%g
 s%@NCBI_C_INCLUDE@%$NCBI_C_INCLUDE%g
 s%@NCBI_C_LIB_PATH@%$NCBI_C_LIB_PATH%g
+s%@KeepStateTarget@%$KeepStateTarget%g
 
 CEOF
 EOF

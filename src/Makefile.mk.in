@@ -75,8 +75,10 @@ LIBS     = @LIBS@
 
 
 ### Do not use any default suffix rules
-
 .SUFFIXES:
+
+### Use automatic auto-dependencies(SunOS make, .KEEP_STATE:)
+@KeepStateTarget@
 
 
 #################################
