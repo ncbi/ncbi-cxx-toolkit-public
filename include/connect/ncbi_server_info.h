@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2001/06/12 20:45:23  lavr
+ * Less ambiguous comment for SSERV_Info::time
+ *
  * Revision 6.22  2001/06/05 14:10:20  lavr
  * SERV_MIME_UNDEFINED split into 2 (typed) constants:
  * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
@@ -196,7 +199,7 @@ typedef struct {
     unsigned char/*bool*/ sful; /* true for stateful-only server (default=no)*/
     unsigned char/*bool*/ locl; /* true for local (LBSMD-only) server(def=no)*/
     ESERV_Flags           flag; /* algorithm flag for the server             */
-    time_t                time; /* relaxation/expiration time/period         */
+    time_t                time; /* relaxation period / expiration time       */
     double                coef; /* bonus coefficient for server run locally  */
     double                rate; /* rate of the server                        */
     EMIME_Type          mime_t; /* type and                                  */
