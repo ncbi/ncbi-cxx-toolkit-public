@@ -128,7 +128,8 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 
    for (index=0; index<mask_loc->total_size; index++)
    {
-      BlastSeqLocFree(mask_loc->seqloc_array[index]);
+      if (mask_loc->seqloc_array != NULL)
+         BlastSeqLocFree(mask_loc->seqloc_array[index]);
    }
    sfree(mask_loc);
    return NULL;
