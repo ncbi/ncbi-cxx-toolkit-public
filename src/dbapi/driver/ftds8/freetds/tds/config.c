@@ -614,12 +614,22 @@ static void lookup_host(
       strncpy(ip, inet_ntoa(*ptr), 17);
    }
    if (portname) {
+#ifdef NCBI_FTDS
+	 char* tail;
+	 num= (int)strtol(portname, &tail, 10);
+	 if((num == 0) || (tail != NULL && *tail != '\0')) {
+	   service = tds_getservbyname_r(portname, "tcp", &serv_result, buffer, sizeof(buffer));
+	   if(service) 
+		 num= ntohs(service->s_port);
+	 }
+#else
    	 service = tds_getservbyname_r(portname, "tcp", &serv_result, buffer, sizeof(buffer));
       if (service==NULL) {
          num = atoi(portname);
       } else {
          num = ntohs(service->s_port);
       }
+#endif
    }
 
    if (num==0) {
