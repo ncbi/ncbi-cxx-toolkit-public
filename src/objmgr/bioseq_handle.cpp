@@ -663,6 +663,24 @@ void CBioseq_EditHandle::Remove(void) const
 /////////////////////////////////////////////////////////////////////////////
 // Bioseq members
 
+void CBioseq_EditHandle::ResetId(void) const
+{
+    x_GetInfo().ResetId();
+}
+
+
+bool CBioseq_EditHandle::AddId(const CSeq_id_Handle& id) const
+{
+    return x_GetInfo().AddId(id);
+}
+
+
+bool CBioseq_EditHandle::RemoveId(const CSeq_id_Handle& id) const
+{
+    return x_GetInfo().RemoveId(id);
+}
+
+
 void CBioseq_EditHandle::SetDescr(TDescr& v) const
 {
     x_GetInfo().SetDescr(v);
@@ -769,6 +787,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/02/02 21:59:39  vasilche
+* Implemented CBioseq_Handle AddId() & RemoveId().
+*
 * Revision 1.83  2005/02/01 21:55:11  grichenk
 * Added direction flag for mapping between top level sequence
 * and segments.

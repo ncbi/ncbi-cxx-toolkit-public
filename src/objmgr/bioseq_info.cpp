@@ -314,24 +314,47 @@ const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
 }
 
 
+void CBioseq_Info::ResetId(void)
+{
+    m_Id.clear();
+    m_Object->ResetId();
+}
+
+
 bool CBioseq_Info::HasId(const CSeq_id_Handle& id) const
 {
     return find(m_Id.begin(), m_Id.end(), id) != m_Id.end();
 }
 
 
-void CBioseq_Info::AddId(const CSeq_id_Handle& id)
+bool CBioseq_Info::AddId(const CSeq_id_Handle& id)
 {
+    TId::iterator found = find(m_Id.begin(), m_Id.end(), id);
+    if ( found != m_Id.end() ) {
+        return false;
+    }
     m_Id.push_back(id);
+    CRef<CSeq_id> seq_id(new CSeq_id);
+    seq_id->Assign(*id.GetSeqId());
+    m_Object->SetId().push_back(seq_id);
+    return true;
 }
 
 
-void CBioseq_Info::RemoveId(const CSeq_id_Handle& id)
+bool CBioseq_Info::RemoveId(const CSeq_id_Handle& id)
 {
     TId::iterator found = find(m_Id.begin(), m_Id.end(), id);
-    if(found != m_Id.end()) {
-        m_Id.erase(found);
+    if ( found == m_Id.end() ) {
+        return false;
     }
+    m_Id.erase(found);
+    NON_CONST_ITERATE ( TObject::TId, it, m_Object->SetId() ) {
+        if ( CSeq_id_Handle::GetHandle(**it) == id ) {
+            m_Object->SetId().erase(it);
+            break;
+        }
+    }
+    return true;
 }
 
 
@@ -1005,6 +1028,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/02/02 21:59:39  vasilche
+* Implemented CBioseq_Handle AddId() & RemoveId().
+*
 * Revision 1.29  2005/01/04 16:31:07  grichenk
 * Added IsNa(), IsAa()
 *

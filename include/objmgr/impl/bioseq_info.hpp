@@ -92,9 +92,10 @@ public:
     bool IsSetId(void) const;
     bool CanGetId(void) const;
     const TId& GetId(void) const;
+    void ResetId(void);
     bool HasId(const CSeq_id_Handle& id) const;
-    void AddId(const CSeq_id_Handle& id);
-    void RemoveId(const CSeq_id_Handle& id);
+    bool AddId(const CSeq_id_Handle& id);
+    bool RemoveId(const CSeq_id_Handle& id);
     string IdString(void) const;
 
     bool x_IsSetDescr(void) const;
@@ -305,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2005/02/02 21:59:39  vasilche
+ * Implemented CBioseq_Handle AddId() & RemoveId().
+ *
  * Revision 1.23  2005/01/04 16:31:07  grichenk
  * Added IsNa(), IsAa()
  *
