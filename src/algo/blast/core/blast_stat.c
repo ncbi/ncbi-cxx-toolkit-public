@@ -59,10 +59,10 @@ static char const rcsid[] =
 #include "blast_psi_priv.h"
 
 /* OSF1 apparently doesn't like this. */
-#if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
+#if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1) /**< Rename HUGE_VAL for OSF1. */
 #define BLASTKAR_HUGE_VAL HUGE_VAL
 #else
-#define BLASTKAR_HUGE_VAL 1.e30
+#define BLASTKAR_HUGE_VAL 1.e30 /**< Redefine HUGE_VAL for OSF1. */
 #endif
 
 
@@ -75,26 +75,18 @@ static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 /* performs sump calculation, used by BlastSumPStd */
 static double BlastSumPCalc (int r, double s);
 
-#define COMMENT_CHR	'#'
-#define TOKSTR	" \t\n\r"
 #define BLAST_MAX_ALPHABET 40 /* ncbistdaa is only 26, this should be enough */
 
-/*
-	How many of the first bases are not ambiguous
-	(it's four, of course).
-*/
-#define NUMBER_NON_AMBIG_BP 4
 
-/* Used in BlastKarlinBlkGappedCalc */
-typedef double array_of_8[8];
+typedef double array_of_8[8]; /**< Holds values (gap-opening, extension, etc.) for a matrix. */
 
-/* Used to temporarily store matrix values for retrieval. */
+/** Used to temporarily store matrix values for retrieval. */
 
 typedef struct MatrixInfo {
-	char*		name;			/* name of matrix (e.g., BLOSUM90). */
-	array_of_8 	*values;		/* The values (below). */
-	Int4		*prefs;			/* Preferences for display. */
-	Int4		max_number_values;	/* number of values (e.g., BLOSUM90_VALUES_MAX). */
+	char*		name;			/**< name of matrix (e.g., BLOSUM90). */
+	array_of_8 	*values;		/**< The values (gap-opening, extension etc.). */
+	Int4		*prefs;			/**< Preferences for display. */
+	Int4		max_number_values;	/**< number of values (e.g., BLOSUM90_VALUES_MAX). */
 } MatrixInfo;
 
 
@@ -172,7 +164,7 @@ add two lines before the return at the end of the function:
 	
 	
 
-#define BLOSUM45_VALUES_MAX 14
+#define BLOSUM45_VALUES_MAX 14 /**< Number of different combinations supported for BLOSUM45. */
 static double  blosum45_values[BLOSUM45_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2291, 0.0924, 0.2514, 0.9113, -5.7},
     {13, 3, (double) INT2_MAX, 0.207, 0.049, 0.14, 1.5, -22},
@@ -188,7 +180,7 @@ static double  blosum45_values[BLOSUM45_VALUES_MAX][8] = {
     {18, 1, (double) INT2_MAX, 0.198, 0.032, 0.10, 2.0, -43},
     {17, 1, (double) INT2_MAX, 0.189, 0.024, 0.079, 2.4, -57},
     {16, 1, (double) INT2_MAX, 0.176, 0.016, 0.063, 2.8, -67},
-};
+};  /**< Supported values (gap-existence, extension, etc.) for BLOSUM45. */
 
 static Int4 blosum45_prefs[BLOSUM45_VALUES_MAX] = {
 BLAST_MATRIX_NOMINAL,
@@ -208,7 +200,7 @@ BLAST_MATRIX_NOMINAL
 };
 
 
-#define BLOSUM50_VALUES_MAX 16
+#define BLOSUM50_VALUES_MAX 16 /**< Number of different combinations supported for BLOSUM50. */
 static double  blosum50_values[BLOSUM50_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2318, 0.112, 0.3362, 0.6895, -4.0},
     {13, 3, (double) INT2_MAX, 0.212, 0.063, 0.19, 1.1, -16},
@@ -226,7 +218,7 @@ static double  blosum50_values[BLOSUM50_VALUES_MAX][8] = {
     {17, 1, (double) INT2_MAX, 0.198, 0.037, 0.12, 1.6, -33},
     {16, 1, (double) INT2_MAX, 0.186, 0.025, 0.10, 1.9, -42},
     {15, 1, (double) INT2_MAX, 0.171, 0.015, 0.063, 2.7, -76},
-};
+};  /**< Supported values (gap-existence, extension, etc.) for BLOSUM50. */
 
 static Int4 blosum50_prefs[BLOSUM50_VALUES_MAX] = {
 BLAST_MATRIX_NOMINAL,
@@ -247,7 +239,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };
 
-#define BLOSUM62_VALUES_MAX 12
+#define BLOSUM62_VALUES_MAX 12 /**< Number of different combinations supported for BLOSUM62. */
 static double  blosum62_values[BLOSUM62_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3176, 0.134, 0.4012, 0.7916, -3.2},
     {11, 2, (double) INT2_MAX, 0.297, 0.082, 0.27, 1.1, -10},
@@ -261,7 +253,7 @@ static double  blosum62_values[BLOSUM62_VALUES_MAX][8] = {
     {11, 1, (double) INT2_MAX, 0.267, 0.041, 0.14, 1.9, -30},
     {10, 1, (double) INT2_MAX, 0.243, 0.024, 0.10, 2.5, -44},
     {9, 1, (double) INT2_MAX, 0.206, 0.010, 0.052, 4.0, -87},
-};
+}; /**< Supported values (gap-existence, extension, etc.) for BLOSUM62. */
 
 static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
     BLAST_MATRIX_NOMINAL,
@@ -279,7 +271,7 @@ static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
 };
 
 
-#define BLOSUM80_VALUES_MAX 10
+#define BLOSUM80_VALUES_MAX 10 /**< Number of different combinations supported for BLOSUM80. */
 static double  blosum80_values[BLOSUM80_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3430, 0.177, 0.6568, 0.5222, -1.6},
     {25, 2, (double) INT2_MAX, 0.342, 0.17, 0.66, 0.52, -1.6},
@@ -291,7 +283,7 @@ static double  blosum80_values[BLOSUM80_VALUES_MAX][8] = {
     {11, 1, (double) INT2_MAX, 0.314, 0.095, 0.35, 0.90, -9},
     {10, 1, (double) INT2_MAX, 0.299, 0.071, 0.27, 1.1, -14},
     {9, 1, (double) INT2_MAX, 0.279, 0.048, 0.20, 1.4, -19},
-};
+}; /**< Supported values (gap-existence, extension, etc.) for BLOSUM80. */
 
 static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
     BLAST_MATRIX_NOMINAL,
@@ -305,7 +297,7 @@ static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
     BLAST_MATRIX_NOMINAL
 };
 
-#define BLOSUM90_VALUES_MAX 8
+#define BLOSUM90_VALUES_MAX 8 /**< Number of different combinations supported for BLOSUM90. */
 static double  blosum90_values[BLOSUM90_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3346, 0.190, 0.7547, 0.4434, -1.4},
     {9, 2, (double) INT2_MAX, 0.310, 0.12, 0.46, 0.67, -6},
@@ -315,7 +307,7 @@ static double  blosum90_values[BLOSUM90_VALUES_MAX][8] = {
     {11, 1, (double) INT2_MAX, 0.302, 0.093, 0.39, 0.78, -8},
     {10, 1, (double) INT2_MAX, 0.290, 0.075, 0.28, 1.04, -15},
     {9, 1, (double) INT2_MAX, 0.265, 0.044, 0.20, 1.3, -19},
-};
+};  /**< Supported values (gap-existence, extension, etc.) for BLOSUM90. */
 
 static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
 	BLAST_MATRIX_NOMINAL,
@@ -328,7 +320,7 @@ static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
 	BLAST_MATRIX_NOMINAL
 };
 
-#define PAM250_VALUES_MAX 16
+#define PAM250_VALUES_MAX 16 /**< Number of different combinations supported for PAM250. */
 static double  pam250_values[PAM250_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2252, 0.0868, 0.2223, 0.98, -5.0},
     {15, 3, (double) INT2_MAX, 0.205, 0.049, 0.13, 1.6, -23},
@@ -346,7 +338,7 @@ static double  pam250_values[PAM250_VALUES_MAX][8] = {
     {19, 1, (double) INT2_MAX, 0.192, 0.029, 0.083, 2.3, -52},
     {18, 1, (double) INT2_MAX, 0.183, 0.021, 0.070, 2.6, -60},
     {17, 1, (double) INT2_MAX, 0.171, 0.014, 0.052, 3.3, -86},
-};
+}; /**< Supported values (gap-existence, extension, etc.) for PAM250. */
 
 static Int4 pam250_prefs[PAM250_VALUES_MAX] = {
 BLAST_MATRIX_NOMINAL,
@@ -367,7 +359,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };
 
-#define PAM30_VALUES_MAX 7
+#define PAM30_VALUES_MAX 7 /**< Number of different combinations supported for PAM30. */
 static double  pam30_values[PAM30_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3},
     {7, 2, (double) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3},
@@ -376,7 +368,7 @@ static double  pam30_values[PAM30_VALUES_MAX][8] = {
     {10, 1, (double) INT2_MAX, 0.309, 0.15, 0.88, 0.35, -3},
     {9, 1, (double) INT2_MAX, 0.294, 0.11, 0.61, 0.48, -6},
     {8, 1, (double) INT2_MAX, 0.270, 0.072, 0.40, 0.68, -10},
-};
+}; /**< Supported values (gap-existence, extension, etc.) for PAM30. */
 
 static Int4 pam30_prefs[PAM30_VALUES_MAX] = {
 BLAST_MATRIX_NOMINAL,
@@ -389,7 +381,7 @@ BLAST_MATRIX_NOMINAL,
 };
 
 
-#define PAM70_VALUES_MAX 7
+#define PAM70_VALUES_MAX 7 /**< Number of different combinations supported for PAM70. */
 static double  pam70_values[PAM70_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7},
     {8, 2, (double) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5},
@@ -398,7 +390,7 @@ static double  pam70_values[PAM70_VALUES_MAX][8] = {
     {11, 1, (double) INT2_MAX, 0.305, 0.12, 0.52, 0.59, -6},
     {10, 1, (double) INT2_MAX, 0.291, 0.091, 0.41, 0.71, -9},
     {9, 1, (double) INT2_MAX, 0.270, 0.060, 0.28, 0.97, -14},
-};
+}; /**< Supported values (gap-existence, extension, etc.) for PAM70. */
 
 static Int4 pam70_prefs[PAM70_VALUES_MAX] = {
 BLAST_MATRIX_NOMINAL,
@@ -412,7 +404,7 @@ BLAST_MATRIX_NOMINAL
 
 
 
-#define BLOSUM62_20_VALUES_MAX 65
+#define BLOSUM62_20_VALUES_MAX 65 /**< Number of different combinations supported for BLOSUM62 with 1/20 bit scaling. */
 static double  blosum62_20_values[BLOSUM62_20_VALUES_MAX][8] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2},
     {100, 12, (double) INT2_MAX, 0.0300, 0.056, 0.21, 0.14, -15},
@@ -479,7 +471,7 @@ static double  blosum62_20_values[BLOSUM62_20_VALUES_MAX][8] = {
     {110,13,3, 0.0279, 0.034, 0.10, 0.27, -50},
     {115,12,3, 0.0282, 0.035, 0.12, 0.24, -42},
     {120,11,3, 0.0286, 0.037, 0.12, 0.24, -44},
-};
+}; /**< Supported values (gap-existence, extension, etc.) for BLOSUM62_20. */
 
 static Int4 blosum62_20_prefs[BLOSUM62_20_VALUES_MAX] = {
 BLAST_MATRIX_NOMINAL,
@@ -630,6 +622,10 @@ Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp)
 	return kbp;
 }
 
+/** Deallocates the SBLASTMatrix structure. 
+ * @param matrix_struct the object to be deallocated [in]
+ * @return NULL;
+ */
 static SBLASTMatrixStructure*
 BlastMatrixDestruct(SBLASTMatrixStructure* matrix_struct)
 
@@ -742,29 +738,37 @@ BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
 	return 0;
 }
 
-/* 
-	Fill in the matrix for blastn using the penaly and rewards
-
-	The query sequence alphabet is blastna, the subject sequence
-	is ncbi2na.  The alphabet blastna is defined in blastkar.h
-	and the first four elements of blastna are identical to ncbi2na.
-
-	The query is in the first index, the subject is the second.
-        if matrix==NULL, it is allocated and returned.
+/** Fill in the matrix for blastn using the penaly and rewards
+ * The query sequence alphabet is blastna, the subject sequence
+ * is ncbi2na.  The alphabet blastna is defined in blast_stat.h
+ * and the first four elements of blastna are identical to ncbi2na.
+ * if sbp->matrix==NULL, it is allocated.
+ * @param sbp the BlastScoreBlk on which reward, penalty, and matrix will be set [in|out]
+ * @return zero on success.
 */
 
-static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, 
-                                       Int4 reward)
+static Int2 BlastScoreBlkMatCreate(BlastScoreBlk* sbp)
 {
 
 	Int2	index1, index2, degen;
 	Int2 degeneracy[BLASTNA_SIZE+1];
+        Int4 reward; /* reward for match of bases. */
+        Int4 penalty; /* cost for mismatch of bases. */
+        Int4** matrix; /* matrix to be populated. */
+        const int k_number_non_ambig_bp = 4; /* How many of the first bases are ambiguous (four, of course). */
+
+        ASSERT(sbp);
+
+        reward = sbp->reward;
+        penalty = sbp->penalty;
+        matrix = sbp->matrix;
 	
         if(!matrix) {
             SBLASTMatrixStructure* matrix_struct;
             matrix_struct =BlastMatrixAllocate((Int2) BLASTNA_SIZE);
-            matrix = matrix_struct->matrix;
+            matrix = sbp->matrix = matrix_struct->matrix;
         }
+
 	for (index1 = 0; index1<BLASTNA_SIZE; index1++) /* blastna */
 		for (index2 = 0; index2<BLASTNA_SIZE; index2++) /* blastna */
 			matrix[index1][index2] = 0;
@@ -773,13 +777,13 @@ static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty,
 	/* ncbi4na gives them the value 1, 2, 4, and 8.  */
 
 	/* Set the first four bases to degen. one */
-	for (index1=0; index1<NUMBER_NON_AMBIG_BP; index1++)
+	for (index1=0; index1<k_number_non_ambig_bp; index1++)
 		degeneracy[index1] = 1;
 
-	for (index1=NUMBER_NON_AMBIG_BP; index1<BLASTNA_SIZE; index1++) /* blastna */
+	for (index1=k_number_non_ambig_bp; index1<BLASTNA_SIZE; index1++) /* blastna */
 	{
 		degen=0;
-		for (index2=0; index2<NUMBER_NON_AMBIG_BP; index2++) /* ncbi2na */
+		for (index2=0; index2<k_number_non_ambig_bp; index2++) /* ncbi2na */
 		{
 			if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2])
 				degen++;
@@ -815,33 +819,16 @@ static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty,
 	for (index1=0; index1<BLASTNA_SIZE; index1++) /* blastna */
            matrix[index1][BLASTNA_SIZE-1] = INT4_MIN / 2;
 
-	return matrix;
-}
-/* 
-	Fill in the matrix for blastn using the penaly and rewards on
-	the BlastScoreBlk*.
-
-	The query sequence alphabet is blastna, the subject sequence
-	is ncbi2na.  The alphabet blastna is defined in blastkar.h
-	and the first four elements of blastna are identical to ncbi2na.
-
-	The query is in the first index, the subject is the second.
-*/
-static Int2 BlastScoreBlkMatCreate(BlastScoreBlk* sbp)
-{
-   sbp->matrix = BlastScoreBlkMatCreateEx(sbp->matrix,sbp->penalty, sbp->reward);
 	sbp->mat_dim1 = BLASTNA_SIZE;
 	sbp->mat_dim2 = BLASTNA_SIZE;
 
 	return 0;
 }
 
-/* 
-	Read in the matrix from the FILE *fp.
-
-	This function ASSUMES that the matrices are in the ncbistdaa
-	format.  BLAST should be able to use any alphabet, though it
-	is expected that ncbistdaa will be used.
+/** Read in the matrix from the FILE *fp.
+ * This function ASSUMES that the matrices are in the ncbistdaa
+ * @param sbp the BlastScoreBlk with the matrix to be populated [in|out]
+ * @return zero on success
 */
 
 static Int2
@@ -860,6 +847,8 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     double	xscore;
     register int	index1, index2;
     Int2 status;
+    const char k_comment_chr = '#';
+    const char* k_token_str = " \t\n\r";
     
     matrix = sbp->matrix;	
     
@@ -883,15 +872,15 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
             return 2;
         }
 
-        if (buf[0] == COMMENT_CHR) {
+        if (buf[0] == k_comment_chr) {
             /* save the comment line in a linked list */
             *strchr(buf, '\n') = NULLB;
             ListNodeCopyStr(&sbp->comments, 0, buf+1);
             continue;
         }
-        if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
+        if ((cp = strchr(buf, k_comment_chr)) != NULL)
             *cp = NULLB;
-        lp = (char*)strtok(buf, TOKSTR);
+        lp = (char*)strtok(buf, k_token_str);
         if (lp == NULL) /* skip blank lines */
             continue;
         while (lp != NULL) {
@@ -903,7 +892,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
               ch = *lp;
            }
             a2chars[a2cnt++] = ch;
-            lp = (char*)strtok(NULL, TOKSTR);
+            lp = (char*)strtok(NULL, k_token_str);
         }
         
         break;	/* Exit loop after reading one line. */
@@ -921,13 +910,13 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         if ((cp = strchr(buf, '\n')) == NULL) {
             return 2;
         }
-        if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
+        if ((cp = strchr(buf, k_comment_chr)) != NULL)
             *cp = NULLB;
-        if ((lp = (char*)strtok(buf, TOKSTR)) == NULL)
+        if ((lp = (char*)strtok(buf, k_token_str)) == NULL)
             continue;
         ch = *lp;
         cp = (char*) lp;
-        if ((cp = strtok(NULL, TOKSTR)) == NULL) {
+        if ((cp = strtok(NULL, k_token_str)) == NULL) {
             return 2;
         }
         if (a1cnt >= DIM(a1chars)) {
@@ -966,7 +955,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
             
             m[(int)a2chars[index2++]] = score;
             
-            cp = strtok(NULL, TOKSTR);
+            cp = strtok(NULL, k_token_str);
         }
     }
     
@@ -1165,9 +1154,11 @@ Blast_ResFreqNew(const BlastScoreBlk* sbp)
 	return rfp;
 }
 
+/** Records probability of letter appearing in sequence.
+*/
 typedef struct BLAST_LetterProb {
-		char	ch;
-		double	p;
+		char	ch; /**< residue */
+		double	p;  /**< probability of residue. */
 	} BLAST_LetterProb;
 
 #if 0
@@ -3548,6 +3539,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2004/06/08 15:05:05  madden
+ * Doxygen fixes
+ *
  * Revision 1.80  2004/06/07 20:03:34  coulouri
  * use floating point constants for comparisons with floating point variables
  *
