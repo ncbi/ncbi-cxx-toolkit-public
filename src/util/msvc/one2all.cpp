@@ -311,7 +311,7 @@ void CMainApplication::ProcessFile(const string& file_name)
         }
         while ( is ) {
             char buf[16384];
-            is.read(buf, sizeof(buf));
+            is.read(buf, sizeof(buf)-1);
             size_t count = is.gcount();
             if ( count ) {
                 buf[count] = '\0';
@@ -950,6 +950,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/10/01 16:17:04  ivanov
+ * ProcessFile():: Fixed buffer overrun
+ *
  * Revision 1.10  2004/05/17 21:08:36  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
