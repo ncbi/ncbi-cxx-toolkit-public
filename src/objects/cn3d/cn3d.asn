@@ -1,4 +1,4 @@
---$Revision: 1.10 $
+--$Revision: 1.11 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -199,6 +199,13 @@ Cn3d-GL-matrix ::= SEQUENCE {
     m12 REAL, m13 REAL, m14 REAL, m15 REAL
 }
 
+-- a floating point 3d vector
+Cn3d-vector ::= SEQUENCE {
+    x REAL,
+    y REAL,
+    z REAL
+}
+
 -- parameters used to set up the camera in Cn3D
 Cn3d-view-settings ::= SEQUENCE {
     camera-distance REAL,       -- camera on +Z axis this distance from origin
@@ -207,7 +214,8 @@ Cn3d-view-settings ::= SEQUENCE {
     camera-look-at-Y REAL,
     camera-clip-near REAL,      -- distance of clipping planes from camera
     camera-clip-far REAL,
-    matrix Cn3d-GL-matrix       -- transformation of objects in the scene
+    matrix Cn3d-GL-matrix,      -- transformation of objects in the scene
+    rotation-center Cn3d-vector -- center of rotation of whole scene
 }
 
 -- The list of annotations for a given CDD/mime. If residue regions overlap
