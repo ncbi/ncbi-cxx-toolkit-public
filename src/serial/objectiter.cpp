@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/07/17 22:49:48  vasilche
+* Added missing methods.
+*
 * Revision 1.5  2003/07/17 20:02:51  vasilche
 * Added update of 'set' flag for non const class member dereference.
 * Added choice switch for non const choice variant dereference.
@@ -358,6 +361,12 @@ void CObjectTypeInfoCV::ResetLocalCopyHook(CObjectStreamCopier& stream) const
 void CObjectTypeInfoCV::ResetGlobalCopyHook(void) const
 {
     GetNCVariantInfo()->ResetGlobalCopyHook();
+}
+
+void CObjectTypeInfoCV::Init(const CConstObjectInfo& object)
+{
+    m_ChoiceTypeInfo = object.GetChoiceTypeInfo();
+    m_VariantIndex = object.GetCurrentChoiceVariantIndex();
 }
 
 pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoCV::GetVariantPair(void) const
