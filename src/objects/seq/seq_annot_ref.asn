@@ -1,0 +1,55 @@
+-- example of Seq-annot object to insert annotations from another sequence
+Seq-annot ::= {
+    desc {
+        -- optional name of source Seq-annot object
+        name "SNP", -- OPTIONAL
+        -- target sequence range, should be simple Seq-interval without strand
+        region int {
+            from 0,
+            to 100966,
+            id general {
+                db "TRACE_ASSM",
+                tag id 23
+            }
+        },
+        -- one or more descriptions of annotations' types in source location
+        user {
+            type str "Seq-annot.data.align", -- if aligns are there
+            data {
+            }
+        },
+        user {
+            type str "Seq-annot.data.graph", -- if graphs are there
+            data {
+            }
+        },
+        user {
+            type str "Seq-annot.data.ftable", -- if features are there
+            data {
+                {
+                    label id 1, -- e_Gene
+                    data int 1  -- eSubtype_gene
+                },
+                {
+                    label id 8, -- e_Imp
+                    data ints {
+                        24,     -- eSubtype_Imp_CDS
+                        70      -- eSubtype_variation
+                    }
+                }
+            }
+        }
+    },
+    data locs {
+        -- source location of annotations
+        -- should be only one Seq-loc object with length equal to target range
+        int {
+            from 0,
+            to 100966,
+            id general {
+                db "TR_ASSM_CH",
+                tag id 39
+            }
+        }
+    }
+}
