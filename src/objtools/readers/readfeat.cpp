@@ -226,6 +226,8 @@ private:
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    COrgMod::ESubtype mtype, const string& val);
 
+    bool x_StringIsJustQuotes (const string& str);
+
     int x_ParseTrnaString (const string& val);
 };
 
@@ -886,6 +888,18 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
 }
 
 
+bool CFeature_table_reader_imp::x_StringIsJustQuotes (const string& str)
+
+{
+    ITERATE (string, it, str) {
+      char ch = *it;
+      if (ch > ' ' && ch != '"' && ch != '\'') return false;
+    }
+
+    return true;
+}
+
+
 int CFeature_table_reader_imp::x_ParseTrnaString (const string& val)
 
 {
@@ -999,7 +1013,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
                 CSeq_feat::TQual& qlist = sfp->SetQual ();
                 CRef<CGb_qual> gbq (new CGb_qual);
                 gbq->SetQual (qual);
-                gbq->SetVal (val);
+                if (x_StringIsJustQuotes (val)) {
+                    gbq->SetVal ("\"\"");
+                } else {
+                    gbq->SetVal (val);
+                }
                 qlist.push_back (gbq);
                 return true;
             }
@@ -1317,7 +1335,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         CSeq_feat::TQual& qlist = sfp->SetQual ();
                         CRef<CGb_qual> gbq (new CGb_qual);
                         gbq->SetQual (qual);
-                        gbq->SetVal (val);
+                        if (x_StringIsJustQuotes (val)) {
+                            gbq->SetVal ("\"\"");
+                        } else {
+                            gbq->SetVal (val);
+                        }
                         qlist.push_back (gbq);
                         return true;
                     }
@@ -1622,7 +1644,11 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             CSeq_feat::TQual& qlist = sfp->SetQual ();
                             CRef<CGb_qual> gbq (new CGb_qual);
                             gbq->SetQual (qual);
-                            gbq->SetVal (val);
+                            if (x_StringIsJustQuotes (val)) {
+                                gbq->SetVal ("\"\"");
+                            } else {
+                                gbq->SetVal (val);
+                            }
                             qlist.push_back (gbq);
                         }
                     }
@@ -1756,7 +1782,11 @@ void CFeature_table_reader_imp::AddFeatQual (
                 CSeq_feat::TQual& qlist = sfp->SetQual ();
                 CRef<CGb_qual> gbq (new CGb_qual);
                 gbq->SetQual (qual);
-                gbq->SetVal (val);
+                if (x_StringIsJustQuotes (val)) {
+                    gbq->SetVal ("\"\"");
+                } else {
+                    gbq->SetVal (val);
+                }
                 qlist.push_back (gbq);
             }
         }
