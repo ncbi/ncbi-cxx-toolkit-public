@@ -101,6 +101,10 @@ public:
     //       will doing this self. But array of pointers must have length 1 or
     //       more. And You must assign parameters for new process beginning 
     //       from 1.
+    //
+    // NOTE: If some argument contains spaces that it could be interpret
+    //       different on different platforms (as 1 argument on UNIX or 
+    //       as few arguments on MS Windows for example).
 
     static int SpawnL  (const EMode mode, const char *cmdname, 
                         const char *argv, ... /*, NULL */);
@@ -132,6 +136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/06/10 18:55:27  ivanov
+ * Added comment note about arguments with spaces inside
+ *
  * Revision 1.2  2002/05/31 20:48:39  ivanov
  * Clean up code
  *
