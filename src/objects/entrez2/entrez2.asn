@@ -1,4 +1,4 @@
---$Revision: 1.8 $********************************************
+--$Revision: 1.9 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -96,7 +96,6 @@ Entrez2-request ::= SEQUENCE {           -- a standard request
   request E2Request ,                    -- the actual request
   version INTEGER ,                      -- ASN1 spec version
   tool VisibleString OPTIONAL ,          -- tool making request
-  key VisibleString OPTIONAL ,          -- history key for query
   cookie VisibleString OPTIONAL }        -- history session cookie
 
 E2Request ::= CHOICE {                   -- request types
@@ -175,6 +174,7 @@ Entrez2-reply ::= SEQUENCE {
   dt Entrez2-dt ,                       -- date/time stamp from server
   server VisibleString ,                -- server version info
   msg VisibleString OPTIONAL ,          -- possibly a message to the user
+  key VisibleString OPTIONAL ,          -- history key for query
   cookie VisibleString OPTIONAL }       -- history session cookie
 
 E2Reply ::= CHOICE {
