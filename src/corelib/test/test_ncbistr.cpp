@@ -796,6 +796,12 @@ int CTestApplication::Run(void)
         }
     }}
 
+    NcbiCout << NcbiEndl << "NStr::FindNoCase() tests...";
+    assert(NStr::FindNoCase(" abcd", " xyz") == NPOS);
+    assert(NStr::FindNoCase(" abcd", " xyz", 0, NPOS, NStr::eLast) == NPOS);
+    assert(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast) == 0);
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
     NcbiCout << NcbiEndl << "TEST_NCBISTR execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
 
@@ -817,6 +823,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.27  2004/05/26 19:26:29  ucko
+ * Add a(n incomplete) set of tests for FindNoCase.
+ *
  * Revision 6.26  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
