@@ -19,6 +19,8 @@
   <ul>
     <li> <a href="#ref_MakeMeta">
     <i>Meta-makefiles</i> (to provide multiple and/or recursive builds)</a>
+    <li> <a href="#ref_Expendable">
+      <i>Expendable</i> projects</a>
     <li> <a href="#ref_MakeProj">
     Project makefiles</a>
     <ul>
@@ -233,6 +235,23 @@ cd bar_sub_proj1  &&  make -f Makefile all_r
   <li> <a href="#ref_MakeProjTarget"><b>purge, purge_r</b></a> --
 	 .....with targets <b>purge</b> and <b>purge_r</b>, respectively
 </ul>
+
+<p>
+<br>
+<a name="ref_Expendable"></a>
+<h3>Expendable projects</h3>
+By default, failure of any project will cause make to exit immediately.
+Although this behavior can save a lot of time, it is not always
+desirable.  One way to avoid it is to run <tt>make -k</tt> rather than
+<tt>make</tt>, but then major problems affecting a large portion of
+the build will still waste a lot of time.
+
+<p>
+Consequently, the toolkit's build system supports an alternative
+approach: <a href="#ref_MakeMeta"><i>meta-makefiles</i></a> can define
+<i>expendable</i> projects which should be built if possible but are
+allowed to fail without interrupting the build.  The way to do this is
+to list such projects in <b>EXPENDABLE_*_PROJ</b> rather than <b>*_PROJ</b>.
 
 
 <p>
