@@ -30,8 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.28  2002/04/02 16:40:55  grichenk
-* Fixed literal segments handling
+* Revision 1.29  2002/04/03 18:06:47  grichenk
+* Fixed segmented sequence bugs (invalid positioning of literals
+* and gaps). Improved CSeqVector performance.
 *
 * Revision 1.27  2002/03/28 14:02:31  grichenk
 * Added scope history checks to CDataSource::x_FindBestTSE()
@@ -466,7 +467,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         case CSeqMap::eSeqData:
             {
                 _ASSERT(seg.m_RefData);
-                seq_piece->dest_start = seg.m_RefPos;
+                seq_piece->dest_start = seg.m_Position;
                 seq_piece->src_start = 0;
                 seq_piece->length = seg.m_Length;
                 seq_piece->src_data = seg.m_RefData;
@@ -508,6 +509,10 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
             }
         case CSeqMap::eSeqGap:
             {
+                seq_piece->dest_start = seg.m_Position;
+                seq_piece->src_start = 0;
+                seq_piece->length = seg.m_Length;
+                seq_piece->src_data = 0;
                 break;
             }
         case CSeqMap::eSeqEnd:

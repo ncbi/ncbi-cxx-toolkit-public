@@ -32,8 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.10  2002/04/02 16:40:55  grichenk
-* Fixed literal segments handling
+* Revision 1.11  2002/04/03 18:06:48  grichenk
+* Fixed segmented sequence bugs (invalid positioning of literals
+* and gaps). Improved CSeqVector performance.
 *
 * Revision 1.9  2002/03/08 21:36:21  gouriano
 * *** empty log message ***

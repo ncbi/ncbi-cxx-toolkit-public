@@ -30,8 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  2002/04/02 16:40:55  grichenk
-* Fixed literal segments handling
+* Revision 1.10  2002/04/03 18:06:48  grichenk
+* Fixed segmented sequence bugs (invalid positioning of literals
+* and gaps). Improved CSeqVector performance.
 *
 * Revision 1.8  2002/03/28 18:34:58  grichenk
 * Fixed convertions bug
@@ -205,118 +206,122 @@ const CSeqVector::TResidue kGap = 'N';
 CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
 {
     if (m_CachedPos < 0  ||  m_CachedLen <= 0) {
-        if (!m_CurData.src_data)
-            return kGap; // No data - return gap symbol
         m_CachedPos = m_CurData.dest_start;
         m_CachedLen = m_CurData.length;
-        // Need CRef<> to delete temporary object on return
-        CConstRef<CSeq_data> out;
-
-        TSeqPosition start = m_CurData.src_start;
-
-        if (m_CurData.src_data->Which() == m_Coding  ||
-            m_Coding == CSeq_data::e_not_set) {
-            out = m_CurData.src_data;
+        if (!m_CurData.src_data) {
+            // No data - fill with the gap symbol
+            m_CachedData = string(m_CachedLen, kGap);
         }
         else {
-            CSeq_data* tmp = new CSeq_data;
-            out.Reset(tmp);
-            CSeqportUtil::Convert(*m_CurData.src_data, tmp,
-                m_Coding, m_CurData.src_start, m_CurData.length);
-            // Adjust starting position
-            start = 0;
-        }
+            // Prepare real data
+            CConstRef<CSeq_data> out;
 
-        if ( !m_PlusStrand ) {
-            CSeq_data* tmp = new CSeq_data;
-            CSeqportUtil::Complement(*out, tmp);
-            out.Reset(tmp);
-        }
-        switch ( out->Which() ) {
-        case CSeq_data::e_Iupacna:
-            {
-                m_CachedData = out->GetIupacna().Get().
-                    substr(start, m_CachedLen);
-                break;
+            TSeqPosition start = m_CurData.src_start;
+
+            if (m_CurData.src_data->Which() == m_Coding  ||
+                m_Coding == CSeq_data::e_not_set) {
+                out = m_CurData.src_data;
             }
-        case CSeq_data::e_Iupacaa:
-            {
-                m_CachedData = out->GetIupacaa().Get().
-                    substr(start, m_CachedLen);
-                break;
+            else {
+                CSeq_data* tmp = new CSeq_data;
+                out.Reset(tmp);
+                CSeqportUtil::Convert(*m_CurData.src_data, tmp,
+                    m_Coding, m_CurData.src_start, m_CurData.length);
+                // Adjust starting position
+                start = 0;
             }
-        case CSeq_data::e_Ncbi2na:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbi2na().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += (buf[i/4] >> (6-(i%4)*2)) & 0x03;
+
+            if ( !m_PlusStrand ) {
+                CSeq_data* tmp = new CSeq_data;
+                CSeqportUtil::Complement(*out, tmp);
+                out.Reset(tmp);
+            }
+            switch ( out->Which() ) {
+            case CSeq_data::e_Iupacna:
+                {
+                    m_CachedData = out->GetIupacna().Get().
+                        substr(start, m_CachedLen);
+                    break;
                 }
-                break;
-            }
-        case CSeq_data::e_Ncbi4na:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbi4na().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += (buf[i/2] >> (4-(i % 2)*4)) & 0x0f;
+            case CSeq_data::e_Iupacaa:
+                {
+                    m_CachedData = out->GetIupacaa().Get().
+                        substr(start, m_CachedLen);
+                    break;
                 }
-                break;
-            }
-        case CSeq_data::e_Ncbi8na:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbi8na().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += buf[i];
+            case CSeq_data::e_Ncbi2na:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbi2na().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += (buf[i/4] >> (6-(i%4)*2)) & 0x03;
+                    }
+                    break;
                 }
-                break;
-            }
-        case CSeq_data::e_Ncbieaa:
-            {
-                m_CachedData = out->GetNcbieaa().Get().
-                    substr(start, m_CachedLen);
-                break;
-            }
-        case CSeq_data::e_Ncbipna:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbipna().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += buf[i];
+            case CSeq_data::e_Ncbi4na:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbi4na().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += (buf[i/2] >> (4-(i % 2)*4)) & 0x0f;
+                    }
+                    break;
                 }
-                break;
-            }
-        case CSeq_data::e_Ncbi8aa:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbi8aa().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += buf[i];
+            case CSeq_data::e_Ncbi8na:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbi8na().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += buf[i];
+                    }
+                    break;
                 }
-                break;
-            }
-        case CSeq_data::e_Ncbipaa:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbipaa().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += buf[i];
+            case CSeq_data::e_Ncbieaa:
+                {
+                    m_CachedData = out->GetNcbieaa().Get().
+                        substr(start, m_CachedLen);
+                    break;
                 }
-                break;
-            }
-        case CSeq_data::e_Ncbistdaa:
-            {
-                m_CachedData = "";
-                const vector<char>& buf = out->GetNcbistdaa().Get();
-                for (int i = start; i < start + m_CachedLen; i++) {
-                    m_CachedData += buf[i];
+            case CSeq_data::e_Ncbipna:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbipna().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += buf[i];
+                    }
+                    break;
                 }
-                break;
-            }
-        default:
-            {
-                return kGap;
+            case CSeq_data::e_Ncbi8aa:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbi8aa().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += buf[i];
+                    }
+                    break;
+                }
+            case CSeq_data::e_Ncbipaa:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbipaa().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += buf[i];
+                    }
+                    break;
+                }
+            case CSeq_data::e_Ncbistdaa:
+                {
+                    m_CachedData = "";
+                    const vector<char>& buf = out->GetNcbistdaa().Get();
+                    for (int i = start; i < start + m_CachedLen; i++) {
+                        m_CachedData += buf[i];
+                    }
+                    break;
+                }
+            default:
+                {
+                    return kGap;
+                }
             }
         }
     }
