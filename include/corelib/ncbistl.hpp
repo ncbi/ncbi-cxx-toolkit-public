@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/23 05:46:05  vakatov
+* [MSVC++]  disable warning C4250
+*
 * Revision 1.19  2000/11/09 18:14:37  vasilche
 * Fixed nonstandard behaviour of 'for' statement on MS VC.
 *
@@ -108,6 +111,8 @@
 #  pragma warning(disable: 4512)
 // synonymous name used
 #  pragma warning(disable: 4097)
+// inherits ... via dominance
+#  pragma warning(disable: 4250)
 #endif /* _MSC_VER >= 1200 */
 
 
