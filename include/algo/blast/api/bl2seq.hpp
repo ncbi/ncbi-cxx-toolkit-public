@@ -80,10 +80,8 @@ public:
     void SetOptions(const CBlastOptions& opts);
     const CBlastOptions& GetOptions() const;
 
-    // Perform BLAST search with one query sequence
-    virtual CRef<objects::CSeq_align_set> Run();
     // Perform BLAST search with multiple query sequences
-    virtual TSeqAlignVector MultiQRun();
+    virtual TSeqAlignVector Run();
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
@@ -246,6 +244,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/11/03 15:20:20  camacho
+* Make multiple query processing the default for Run().
+*
 * Revision 1.21  2003/10/16 03:16:39  camacho
 * Fix to setting queries/subjects
 *

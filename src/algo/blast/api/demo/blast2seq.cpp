@@ -427,7 +427,7 @@ int CBlast2seqApplication::Run(void)
     sw.Start();
     CBl2Seq blaster(query_loc, subject_loc, prog);
     ProcessCommandLineArgs(blaster.SetOptions());
-    TSeqAlignVector seqalignv = blaster.MultiQRun();
+    TSeqAlignVector seqalignv = blaster.Run();
 
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
@@ -534,6 +534,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/03 15:20:39  camacho
+ * Make multiple query processing the default for Run().
+ *
  * Revision 1.28  2003/10/27 20:52:29  dondosha
  * Made greedy option an integer, to specify number of extension stages
  *

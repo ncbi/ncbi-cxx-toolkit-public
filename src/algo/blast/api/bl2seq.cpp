@@ -138,20 +138,8 @@ CBl2Seq::x_ResetSubjectDs()
     //m_pOptions->SetDbLength(0);  // FIXME: Really needed?
 }
 
-CRef<CSeq_align_set>
-CBl2Seq::Run()
-{
-    TSeqAlignVector seqalignv = MultiQRun();
-
-    if (seqalignv.size()) {
-        return seqalignv[0];
-    } else {
-        return null;
-    }
-}
-
 TSeqAlignVector
-CBl2Seq::MultiQRun()
+CBl2Seq::Run()
 {
     SetupSearch();
     //m_pOptions->DebugDumpText(cerr, "m_pOptions", 1);
@@ -304,6 +292,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2003/11/03 15:20:39  camacho
+ * Make multiple query processing the default for Run().
+ *
  * Revision 1.35  2003/10/31 00:05:15  camacho
  * Changes to return discontinuous seq-aligns for each query-subject pair
  *
