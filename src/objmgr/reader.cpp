@@ -289,7 +289,7 @@ CRef<CTSE_Info> CReader::GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
             "  id id " << kSNP_EntryId << ",\n"
             "  seq-set {\n" // it's not optional
             "  }\n"
-            "}\n";
+            "}";
         CObjectIStreamAsn in(str);
         in >> *seq_entry;
     }}
@@ -322,7 +322,7 @@ CRef<CTSE_Info> CReader::GetSNPBlob(CRef<CID2S_Split_Info>& split_info,
             "      }\n"
             "    }\n"
             "  }\n"
-            "}\n";
+            "}";
         CObjectIStreamAsn in(str);
         in >> *info;
     }}
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.27  2003/11/28 17:53:15  vasilche
+ * Avoid calling CStreamUtils::Pushback() when constructing objects from text ASN.
+ *
  * Revision 1.26  2003/11/26 17:55:58  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.
