@@ -33,16 +33,16 @@
  *
  */
 
+/// @file bdb_expt.hpp
+/// Exception specifications for BDB library.
+
 #include <corelib/ncbiexpt.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Base BDB exception class
-//
+/// Base BDB exception class
 
 class NCBI_BDB_EXPORT CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 {
@@ -51,10 +51,8 @@ class NCBI_BDB_EXPORT CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Auxiliary class to wrap up Berkeley DB strerror function
-// 
+/// Auxiliary exception class to wrap up Berkeley DB strerror function
+/// 
 
 class NCBI_BDB_EXPORT CBDB_StrErrAdapt
 {
@@ -64,18 +62,16 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// BDB errno exception class. 
-// Berkley DB can return two types of error codes:
-//   0  - operation successfull
-//  >0  - positive error code (errno) (file locked, no space on device, etc)
-//  <0  - negative error code indicates Berkeley DB related problem.
-//
-//  db_strerror function provided by BerkeleyDB works as a superset of 
-// ::strerror function returning valid error messages for both errno and 
-// BDB error codes.
-//
+
+/// BDB errno exception class. 
+///
+/// Berkley DB can return two types of error codes:
+///   0  - operation successfull
+///  >0  - positive error code (errno) (file locked, no space on device, etc)
+///  <0  - negative error code indicates Berkeley DB related problem.
+///  db_strerror function provided by BerkeleyDB works as a superset of 
+/// ::strerror function returning valid error messages for both errno and 
+/// BDB error codes.
 
 class NCBI_BDB_EXPORT CBDB_ErrnoException : 
     public CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
@@ -84,9 +80,10 @@ public:
     typedef CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
             CParent;
 
+    /// Exception types
     enum EErrCode {
-        eSystem,      // GetErrno() to return system lib specific error code
-        eBerkeleyDB   // GetErrno() to return BerkeleyDB specific error code
+        eSystem,      //!< GetErrno() to return system lib specific error code
+        eBerkeleyDB   //!< GetErrno() to return BerkeleyDB specific error code
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -98,7 +95,7 @@ public:
         }
     }
 
-    // Returns Berkley DB related error code.
+    /// Return Berkley DB related error code.
     int BDB_GetErrno() const
     {
         return GetErrno();
@@ -109,11 +106,8 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// BDB library exception. 
-// Thrown if error is specific to the BDB C++ library.
-//
+/// BDB library exception. 
+/// Thrown if error is specific to the NCBI BDB C++ library.
 
 class NCBI_BDB_EXPORT CBDB_LibException : public CBDB_Exception
 {
@@ -178,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/26 19:51:00  kuznets
+ * Comments clean up
+ *
  * Revision 1.6  2003/07/22 19:20:29  kuznets
  * Added new error code: InvalidOperation.
  *
