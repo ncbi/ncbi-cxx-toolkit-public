@@ -27,9 +27,10 @@
  *
  */
 
-#include <corelib/ncbiexec.hpp>
 #include <stdio.h>
 #include <stdarg.h>
+#include <corelib/ncbiexec.hpp>
+#include <corelib/ncbi_process.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <process.h>
@@ -308,18 +309,9 @@ int CExec::SpawnVPE(EMode mode, const char *cmdname,
 }
 
 
-int CExec::Wait(int pid)
+int CExec::Wait(int handle, unsigned long timeout)
 {
-    int status;
-#if defined(NCBI_OS_MSWIN)
-    if ( cwait(&status, pid, 0) == -1 ) 
-        return -1;
-#elif defined(NCBI_OS_UNIX)
-    if ( waitpid(pid, &status, 0) == -1 ) 
-        return -1;
-    status = WEXITSTATUS(status);
-#endif
-    return status;
+    return CProcess(handle, CProcess::eHandle).Wait(timeout);
 }
 
 
@@ -329,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/09/25 17:02:20  ivanov
+ * CExec::Wait():  replaced all code with CProcess::Wait() call
+ *
  * Revision 1.14  2003/09/16 17:48:08  ucko
  * Remove redundant "const"s from arguments passed by value.
  *
