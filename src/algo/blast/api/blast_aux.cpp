@@ -261,21 +261,25 @@ CSeqLoc2BlastMask(const CSeq_loc *slp, int index)
     if (slp->IsNull())
         return NULL;
 
-    _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
+    _ASSERT(slp->IsInt() || slp->IsPacked_int());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
     BlastMask* mask = NULL;
 
-    for (CSeq_loc_CI itr(*slp); itr; ++itr) {
-    
-            curr = BlastSeqLocNew(itr.GetSeq_loc().GetInt().GetFrom(), 
-                                  itr.GetSeq_loc().GetInt().GetTo());
+    if (slp->IsInt()) {
+        bsl = 
+            BlastSeqLocNew(slp->GetInt().GetFrom(), slp->GetInt().GetTo());
+    } else if (slp->IsPacked_int()) {
+        ITERATE(list< CRef<CSeq_interval> >, itr, 
+                slp->GetPacked_int().Get()) {
+            curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
             if (!bsl) {
                 bsl = tail = curr;
             } else {
                 tail->next = curr;
                 tail = tail->next;
             }
+        }
     }
 
     mask = (BlastMask*) calloc(1, sizeof(BlastMask));
