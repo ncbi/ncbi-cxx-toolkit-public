@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/01/24 20:08:16  thiessen
+* fix local id problem
+*
 * Revision 1.5  2001/12/12 14:04:14  thiessen
 * add missing object headers after object loader change
 *
@@ -271,7 +274,11 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
     }
 
     if (sid.IsLocal() && sid.GetLocal().IsStr())
-        return (sid.GetLocal().GetStr() == accession);
+        return (sid.GetLocal().GetStr() == accession || (accession.size() == 0 &&
+                    // special case where local accession is actually a PDB identifier + extra stuff
+                    sid.GetLocal().GetStr().size() >= 7 && sid.GetLocal().GetStr()[4] == ' ' &&
+                    sid.GetLocal().GetStr()[6] == ' ' && isalpha(sid.GetLocal().GetStr()[5]) &&
+                    sid.GetLocal().GetStr().substr(0, 4) == pdbID && sid.GetLocal().GetStr()[5] == pdbChain));
 
     if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession())
         return (sid.GetGenbank().GetAccession() == accession);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/01/24 20:08:17  thiessen
+* fix local id problem
+*
 * Revision 1.44  2002/01/19 02:34:46  thiessen
 * fixes for changes in asn serialization API
 *
@@ -354,10 +357,12 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
                 pdbChain = ' ';
         } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
             accession = s->GetObject().GetLocal().GetStr();
-            // special case where local accession is actually a PDB chain
-            if (pdbID.size() == 0 && accession.size() >= 6 && accession[4] == ' ' && isalpha(accession[5])) {
+            // special case where local accession is actually a PDB chain + extra stuff
+            if (pdbID.size() == 0 && accession.size() >= 7 &&
+                    accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
                 pdbID = accession.substr(0, 4);
                 pdbChain = accession[5];
+                accession.erase();
             }
         } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
             accession = s->GetObject().GetGenbank().GetAccession();

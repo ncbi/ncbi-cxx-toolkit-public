@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/01/24 20:08:16  thiessen
+* fix local id problem
+*
 * Revision 1.33  2001/12/12 14:04:13  thiessen
 * add missing object headers after object loader change
 *
@@ -195,9 +198,16 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
                 else
                     pdbChain = ' ';
             }
-            else if (graph.GetSeq_id().IsLocal() &&
-                graph.GetSeq_id().GetLocal().IsStr())
+            else if (graph.GetSeq_id().IsLocal() && graph.GetSeq_id().GetLocal().IsStr()) {
                 accession = graph.GetSeq_id().GetLocal().GetStr();
+                // special case where local accession is actually a PDB chain + extra stuff
+                if (pdbID.size() == 0 && accession.size() >= 7 &&
+                        accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
+                    pdbID = accession.substr(0, 4);
+                    pdbChain = accession[5];
+                    accession.erase();
+                }
+            }
         }
         if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
             ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
