@@ -49,19 +49,16 @@ CConn_IOStreamBase::CConn_IOStreamBase()
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
-                               streamsize buf_size, bool do_tie)
-    : CNcbiIostream(0),
-      m_CSb(0)
+                               streamsize buf_size, bool do_tie) :
+    CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
         csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
-
-    if ( csb->GetCONN() ) {
+    if (csb->GetCONN()) {
         init(csb.get());
         m_CSb = csb.release();
-    } else {
+    } else
         init(0); // according to the standard (27.4.4.1.3), badbit is set here
-    }
 }
 
 
@@ -123,31 +120,23 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
 {
     SConnNetInfo* net_info = net_info_in ?
         ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(0);
-    if ( !net_info )
+    if (!net_info)
         return 0;
-
-    if (url  &&  !ConnNetInfo_ParseURL(net_info, url))
+    if (url && !ConnNetInfo_ParseURL(net_info, url))
         return 0;
-
-    if ( host ) {
+    if (host) {
         strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
         net_info->port = port;
     }
-
-    if ( path )
+    if (path)
         strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
-
-    if ( args )
+    if (args)
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
-
-    if (timeout  &&  timeout != kDefaultTimeout) {
+    if (timeout && timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
-    }
-    else if ( !timeout ) {
+    } else if (!timeout)
         net_info->timeout = 0;
-    }
-
     CONNECTOR c = HTTP_CreateConnector(net_info, user_hdr, flags);
     ConnNetInfo_Destroy(net_info);
     return c;
@@ -222,17 +211,13 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
 {
     SConnNetInfo* net_info = net_info_in ?
         ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(service);
-    if ( !net_info )
+    if (!net_info)
         return 0;
-
-    if (timeout  &&  timeout != kDefaultTimeout) {
+    if (timeout && timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
-    }
-    else if ( !timeout ) {
+    } else if (!timeout)
         net_info->timeout = 0;
-    }
-
     CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
     ConnNetInfo_Destroy(net_info);
     return c;
@@ -270,8 +255,7 @@ CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
                                        EOwnership lk_owner,
                                        streamsize buf_size)
     : CConn_IOStream(s_MemoryConnectorBuilder(0, lk, lk_owner, &m_Lock),
-                     0, buf_size),
-      m_Buf(0)
+                     0, buf_size), m_Buf(0)
 {
 }
 
@@ -281,8 +265,7 @@ CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                        EOwnership lk_owner,
                                        streamsize buf_size)
     : CConn_IOStream(s_MemoryConnectorBuilder(buf, lk, lk_owner, &m_Lock),
-                     0, buf_size),
-      m_Buf(buf)
+                     0, buf_size), m_Buf(buf)
 {
 }
 
@@ -299,7 +282,7 @@ string& CConn_MemoryStream::ToString(string& str)
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     str.resize(size);
-    if ( sb ) {
+    if (sb) {
         if (CONN_Read(sb->GetCONN(), &str[0], size, &size, eIO_ReadPersist)
             != eIO_Success) {
             str.resize(size);
@@ -314,9 +297,8 @@ char* CConn_MemoryStream::ToCStr(void)
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     char* str = new char[size + 1];
-    if ( sb ) {
+    if (sb)
         CONN_Read(sb->GetCONN(), str, size, &size, eIO_ReadPersist);
-    }
     str[size] = '\0';
     return str;
 }
@@ -328,8 +310,7 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const STimeout*       timeout,
                                    streamsize            buf_size)
     : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags, &m_Pipe),
-                     timeout, buf_size),
-      m_Pipe()
+                     timeout, buf_size), m_Pipe()
 {
 }
 
@@ -368,14 +349,13 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
                                                  path.c_str(), eDefault),
                      timeout, buf_size)
 {
-    if ( file.empty() )
-        return;
-
-    if (offset != 0) {
-        *this << "REST " << offset << endl;
-    }
-    if ( good() ) {
-        *this << "RETR " << file << endl;
+    if (file != kEmptyStr) {
+        if (offset != 0) {
+            *this << "REST " << offset << endl;
+        }
+        if (good()) {
+            *this << "RETR " << file << endl;
+        }
     }
 }
 
@@ -383,12 +363,11 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
 END_NCBI_SCOPE
 
 
-
 /*
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 6.41  2004/12/08 23:17:49  vakatov
- * Compilation fix for MSVC
+ * Revision 6.42  2004/12/09 13:36:04  lavr
+ * MSVC compilation fix
  *
  * Revision 6.40  2004/12/08 21:01:42  lavr
  * +CConn_FTPDownloadStream
