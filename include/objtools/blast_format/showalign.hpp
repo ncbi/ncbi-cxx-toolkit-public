@@ -111,8 +111,10 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         eMasterAnchored = (1 << 13),    // Query anchored, for 
                                         // multialignment only, default not 
                                         // anchored
-        eColorDifferentBases = (1 << 14)        // Coloring mismatches for
+        eColorDifferentBases = (1 << 14),       // Coloring mismatches for
                                                 // subject seq
+        eTranslateNucToNucAlignment = (1 << 15) //Show nuecleotide to nucleotide
+                                                //alignment as translated
     };
 
     // Need to set eShowMiddleLine to get this
@@ -356,6 +358,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.16  2003/12/29 18:37:22  jianye
+*Added nuc to nuc translation
+*
 *Revision 1.15  2003/12/22 21:05:55  camacho
 *Add const qualifier for Seq-align-set, indent
 *
