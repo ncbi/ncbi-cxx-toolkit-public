@@ -33,12 +33,12 @@
  */
 
 /// @file bdb_blobcache.hpp
-/// IBLOB_Cache interface implemented on top of Berkeley DB
+/// ICache interface implementation on top of Berkeley DB
 
 #include <corelib/ncbiobj.hpp>
 #include <util/cache/icache.hpp>
-#include <util/cache/blob_cache.hpp>
-#include <util/cache/int_cache.hpp>
+//#include <util/cache/blob_cache.hpp>
+//#include <util/cache/int_cache.hpp>
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_env.hpp>
@@ -186,7 +186,7 @@ private:
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 };
 
-
+/*
 /// BLOB storage file structure
 
 struct NCBI_BDB_EXPORT SBLOB_CacheDB : public CBDB_BLobFile
@@ -200,8 +200,9 @@ struct NCBI_BDB_EXPORT SBLOB_CacheDB : public CBDB_BLobFile
         BindKey("version", &version);
     }
 };
+*/
 
-
+		/*
 /// BLOB attributes file structure
 
 struct NCBI_BDB_EXPORT SBLOB_Cache_AttrDB : public CBDB_File
@@ -236,8 +237,9 @@ struct NCBI_BDB_EXPORT SIntCacheDB : public CBDB_BLobFile
         BindKey("time_stamp", &time_stamp);
     }
 };
+*/
 
-
+/*
 /// Int cache implementation
 ///
 /// Class implements IIntCache interface
@@ -262,7 +264,9 @@ private:
     SIntCacheDB&   m_IntCacheDB;
     time_t         m_ExpirationTime;
 };
-
+*/
+		
+/*
 /// BDB cache implementation.
 ///
 /// Class implements IBLOB_Cache interface using local Berkeley DB
@@ -340,7 +344,7 @@ private:
     SIntCacheDB             m_IntCacheDB; //!< Int cache storage
     CBDB_IntCache           m_IntCacheInstance; //!< Interface instance
 };
-
+*/
 
 extern NCBI_BDB_EXPORT const string kBDBCacheDriverName;
 
@@ -387,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/04/27 19:11:49  kuznets
+ * Commented old cache implementation
+ *
  * Revision 1.13  2004/02/27 17:29:05  kuznets
  * +CBDB_CacheHolder
  *

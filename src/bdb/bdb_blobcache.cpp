@@ -51,12 +51,13 @@ DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 // Mutex to sync int cache requests coming from different threads
 // All requests are protected with one mutex
+/*
 DEFINE_STATIC_FAST_MUTEX(x_BDB_IntCacheMutex);
-
+*/
 
 static const unsigned int s_WriterBufferSize = 256 * 1024;
 
-
+/*
 static void s_MakeOverflowFileName(string& buf,
                                    const string& path, 
                                    const string& blob_key,
@@ -64,7 +65,8 @@ static void s_MakeOverflowFileName(string& buf,
 {
     buf = path + blob_key + '_' + NStr::IntToString(version) + ".ov_";
 }
-
+*/
+		
 static void s_MakeOverflowFileName(string& buf,
                                    const string& path, 
                                    const string& key,
@@ -1130,7 +1132,7 @@ void CBDB_Cache::x_DropBlob(const char*    key,
 }
 
 
-
+/*
 class CBDB_BLOB_CacheIReader : public IReader
 {
 public:
@@ -1247,8 +1249,9 @@ private:
     size_t           m_BufferSize;
 
 };
+*/
 
-
+/*
 
 class CBDB_BLOB_CacheIWriter : public IWriter
 {
@@ -1400,10 +1403,10 @@ private:
     CNcbiOfstream*        m_OverflowFile;
 };
 
+*/
 
 
-
-
+/*
 CBDB_BLOB_Cache::CBDB_BLOB_Cache()
 : 
   m_PidGuard(0),
@@ -1713,8 +1716,9 @@ void CBDB_BLOB_Cache::Purge(const string&    key,
         }
     }    
 }
+*/
 
-
+/*		
 IReader* CBDB_BLOB_Cache::GetReadStream(const string& key, 
                                         int   version)
 {
@@ -1766,12 +1770,10 @@ IReader* CBDB_BLOB_Cache::GetReadStream(const string& key,
 
     return new CBDB_BLOB_CacheIReader(buf, bsize);
 
-/*
-    CBDB_BLobStream* bstream = m_BlobDB.CreateStream();
-    return new CBDB_BLOB_CacheIReader(bstream);
-*/
 }
+*/
 
+/*		
 IWriter* CBDB_BLOB_Cache::GetWriteStream(const string&    key, 
                                          int              version,
                                          EKeepVersions    keep_versions)
@@ -1794,7 +1796,9 @@ IWriter* CBDB_BLOB_Cache::GetWriteStream(const string&    key,
                                    m_BlobDB,
                                    m_AttrDB);
 }
+*/
 
+/*				
 void CBDB_BLOB_Cache::x_DropBLOB(const char*    key,
                                  int            version,
                                  int            overflow)
@@ -1818,7 +1822,9 @@ void CBDB_BLOB_Cache::x_DropBLOB(const char*    key,
 
     m_AttrDB.Delete(CBDB_RawFile::eIgnoreError);
 }
-
+*/
+		
+/*		
 
 CBDB_IntCache::CBDB_IntCache(SIntCacheDB& cache_db)
  : m_IntCacheDB(cache_db),
@@ -1979,7 +1985,7 @@ void CBDB_IntCache::Purge(time_t           time_point,
     }
 }
 
-
+*/
 
 const string kBDBCacheDriverName("bdbcache");
 
@@ -2028,6 +2034,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/04/27 19:12:01  kuznets
+ * Commented old cache implementation
+ *
  * Revision 1.47  2004/03/26 14:54:21  kuznets
  * Transaction checkpoint after database creation
  *
