@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
+#include <html/htmlhelper.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -287,6 +288,10 @@ public:
     void SetText(const string& text);
 
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
+
+private:
+    CNcbiOstream& x_PrintBegin(CNcbiOstream& out, TMode mode,
+                               const string& s) const;
 };
 
 
@@ -1232,6 +1237,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2002/09/25 01:24:29  dicuccio
+ * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
+ * string
+ *
  * Revision 1.58  2002/02/13 20:17:06  ivanov
  * Added support of dynamic popup menus. Changed EnablePopupMenu().
  *

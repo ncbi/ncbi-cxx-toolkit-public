@@ -32,6 +32,16 @@
  *
  */
 
+inline
+CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
+                                      const string& s) const
+{
+    if (mode == eHTML) {
+        return out << s;
+    } else {
+        return out << CHTMLHelper::StripTags(s);
+    }
+}
 
 inline
 const string& CHTMLPlainText::GetText(void) const
@@ -555,6 +565,10 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2002/09/25 01:24:29  dicuccio
+ * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
+ * string
+ *
  * Revision 1.27  2002/01/17 23:37:50  ivanov
  * Moved CVS Log to end of file
  *

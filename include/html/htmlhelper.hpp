@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/09/25 01:24:29  dicuccio
+* Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
+* string
+*
 * Revision 1.8  2000/10/13 19:54:52  vasilche
 * Fixed warnings on 64 bit compiler.
 *
@@ -114,6 +118,9 @@ class CHTMLHelper
 public:
     // HTML encodes a string. E.g. &lt;
     static string HTMLEncode(const string &);
+
+    // strip all HTML tags from a given string
+    static string StripTags(const string& s);
 
     typedef set<int> TIDList;
     typedef multimap<string, string> TCgiEntries;
