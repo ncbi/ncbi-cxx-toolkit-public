@@ -38,6 +38,7 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include <objmgr/util/obj_sniff.hpp>
 
@@ -97,7 +98,17 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
             CRef<CSeq_entry> seq_entry(new CSeq_entry());
             is->Read(ObjectInfo(*seq_entry));
             return seq_entry;
-        } else {
+        } else 
+        if (obj_descr.type_str == "Bioseq-set") {
+            CRef<CBioseq_set> bioseq_set(new CBioseq_set());
+            is->Read(ObjectInfo(*bioseq_set));
+
+            CRef<CSeq_entry> seq_entry(new CSeq_entry());
+            CSeq_entry::TSet& s = *bioseq_set;
+            seq_entry->SetSet(s);
+            return seq_entry;
+        }
+        else {
             LDS_THROW(eInvalidDataType, "Non Seq-entry object type");
         }
 
@@ -163,6 +174,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/01/11 17:59:54  kuznets
+ * Added missing code to read bioseq-set
+ *
  * Revision 1.6  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *
