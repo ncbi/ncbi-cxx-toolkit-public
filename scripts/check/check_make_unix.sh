@@ -277,12 +277,18 @@ RunTest() {
          x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
          # Run check
          check_exec="$x_root_dir/scripts/check/check_exec.sh"
-         \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
+         \$check_exec \$x_timeout time \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
          result=\$?
+
          sed -e '/ ["][$][@]["].*\$/ {
             s/^.*: //
             s/ ["][$][@]["].*$//
             }' $x_tmp/\$\$.out >> \$x_test_out
+
+         # Get application execution time
+         if [ \$result -eq 0 ]; then
+            exec_time=\`tail -3 $x_tmp/\$\$.out | tr '\n	' '? ' | sed -e 's/?$//' -e 's/?/, /g'\`
+         fi
          rm -f $x_tmp/\$\$.out
 
          # Write result of the test into the his output file
@@ -295,8 +301,8 @@ RunTest() {
 
          # And write result also on the screen and into the log
          if [ \$result -eq 0 ]; then
-            echo "OK  --  \$x_cmd"
-            echo "OK  --  \$x_cmd" >> \$res_log
+            echo "OK  --  \$x_cmd     (\$exec_time)"
+            echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
             count_ok=\`expr \$count_ok + 1\`
          else
             echo "ERR --  \$x_cmd"
