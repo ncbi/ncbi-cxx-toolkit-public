@@ -185,23 +185,23 @@ string IFlatFormatter::ExpandTildes(const string& s, ETildeStyle style)
     string result;
     while (start < length  &&  (tilde = s.find('~', start)) != NPOS) {
         result += s.substr(start, tilde - start);
-        char next = (tilde + 1) < length ? s[tilde + 1] : 0;
+        start = tilde + 1;
+        char next = start < length ? s[start] : 0;
         switch (style) {
         case eTilde_space:
-            if ((tilde + 1 < length  &&  isdigit(next))
-                ||  (tilde + 2 < length  &&  (next == ' '  ||  next == '(')
-                     &&  isdigit(s[tilde + 2]))) {
+            if ((start < length  &&  isdigit(next))
+                ||  (start + 1 < length  &&  (next == ' '  ||  next == '(')
+                     &&  isdigit(s[start + 1]))) {
                 result += '~';
             } else {
                 result += ' ';
             }
-            start = tilde + 1;
             break;
 
         case eTilde_newline:
-            if (tilde + 1 < length  &&  s[tilde + 1] == '~') {
+            if (next == '~') {
                 result += '~';
-                start = tilde + 2;
+                ++start;
             } else {
                 result += '\n';
             }
@@ -209,7 +209,6 @@ string IFlatFormatter::ExpandTildes(const string& s, ETildeStyle style)
 
         default: // just keep it, for lack of better ideas
             result += '~';
-            start = tilde + 1;
             break;
         }
     }
@@ -348,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/12/02 19:21:26  ucko
+* Fix a potential infinite loop in tilde expansion.
+*
 * Revision 1.6  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
