@@ -1,5 +1,5 @@
 # $Id$
 
-LIBOBJ = utf8 checksum bytesrc strbuffer itree
+LIBOBJ = utf8 checksum bytesrc strbuffer itree smalldns
 
 LIB    = xutil
