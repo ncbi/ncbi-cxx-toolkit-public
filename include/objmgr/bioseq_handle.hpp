@@ -58,6 +58,8 @@ class CScope;
 class CSeq_id;
 class CSeq_loc;
 class CBioseq_Info;
+class CSeq_descr;
+class CSeqdesc;
 class CTSE_Info;
 class CSeq_entry;
 class CSeq_annot;
@@ -431,7 +433,12 @@ public:
     bool AddId(const CSeq_id_Handle& id) const;
     bool RemoveId(const CSeq_id_Handle& id) const;
     // descr
+    void ResetDescr(void) const;
     void SetDescr(TDescr& v) const;
+    TDescr& SetDescr(void) const;
+    bool AddSeqdesc(CSeqdesc& d) const;
+    bool RemoveSeqdesc(const CSeqdesc& d) const;
+    void AddSeq_descr(const TDescr& v) const;
     // inst
     void SetInst(TInst& v) const;
     // inst.repr
@@ -682,6 +689,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/02/09 19:11:07  vasilche
+* Implemented setters for Bioseq.descr.
+*
 * Revision 1.73  2005/02/01 21:43:35  grichenk
 * Added comments
 *

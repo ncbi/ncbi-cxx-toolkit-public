@@ -681,9 +681,39 @@ bool CBioseq_EditHandle::RemoveId(const CSeq_id_Handle& id) const
 }
 
 
+void CBioseq_EditHandle::ResetDescr(void) const
+{
+    x_GetInfo().ResetDescr();
+}
+
+
 void CBioseq_EditHandle::SetDescr(TDescr& v) const
 {
     x_GetInfo().SetDescr(v);
+}
+
+
+CBioseq_EditHandle::TDescr& CBioseq_EditHandle::SetDescr(void) const
+{
+    return x_GetInfo().SetDescr();
+}
+
+
+bool CBioseq_EditHandle::AddSeqdesc(CSeqdesc& d) const
+{
+    return x_GetInfo().AddSeqdesc(d);
+}
+
+
+bool CBioseq_EditHandle::RemoveSeqdesc(const CSeqdesc& d) const
+{
+    return x_GetInfo().RemoveSeqdesc(d);
+}
+
+
+void CBioseq_EditHandle::AddSeq_descr(const TDescr& v) const
+{
+    x_GetInfo().AddSeq_descr(v);
 }
 
 
@@ -787,6 +817,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/02/09 19:11:07  vasilche
+* Implemented setters for Bioseq.descr.
+*
 * Revision 1.84  2005/02/02 21:59:39  vasilche
 * Implemented CBioseq_Handle AddId() & RemoveId().
 *
