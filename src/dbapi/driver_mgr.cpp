@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/09/04 22:18:57  vakatov
+* CDriverManager::CreateDs() -- Get rid of comp.warning, improve diagnostics
+*
 * Revision 1.6  2002/07/09 17:12:29  kholodov
 * Fixed duplicate context creation
 *
@@ -85,26 +88,30 @@ CDriverManager::~CDriverManager()
 }
 
 
-IDataSource* CDriverManager::CreateDs(const string& driver_name,
-                                      map<string, string> *attr)
+IDataSource* CDriverManager::CreateDs(const string&        driver_name,
+                                      map<string, string>* attr)
 {
-    string err;
-
     map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
-    if( i_ds != m_ds_list.end() ) {
+    if (i_ds != m_ds_list.end()) {
         return (*i_ds).second;
     }
+
+    string err;
     FDBAPI_CreateContext ctx_func = GetDriver(driver_name, &err);
-    if( ctx_func != 0 ) {
-        I_DriverContext *ctx = ctx_func(attr);
-        if( ctx != 0 ) {
-            return RegisterDs(driver_name, ctx);
-        }
+    if ( !ctx_func ) {
+        throw CDbapiException(err);
     }
 
-    throw CDbapiException(err);
-    return 0;
+    I_DriverContext* ctx = ctx_func(attr);
+    if ( !ctx ) {
+        throw CDbapiException
+            ("CDriverManager::CreateDs() -- Failed to get context for driver: "
+             + driver_name);
+    }
+
+    return RegisterDs(driver_name, ctx);
 }
+
 
 IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
                                           CNcbiRegistry* reg)
