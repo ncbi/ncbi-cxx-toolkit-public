@@ -1034,7 +1034,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                                      const IProjectFilter* filter,
                                      SMakeFiles*           makefiles)
 {
-#if 0
+#if 1
     // Do not collect makefile from root directory
     CDir dir(dir_name);
     CDir::TEntries contents = dir.GetEntries("*");
@@ -1066,7 +1066,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     }
 #endif
 
-#if 1
+#if 0
 
     // Node - Makefile.in should present
     string node_path = 
@@ -1334,6 +1334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/16 16:29:11  gorelenk
+ * Changed directories traversing proc.
+ *
  * Revision 1.12  2004/06/16 14:26:05  gorelenk
  * Re-designed CProjectTreeBuilder::ProcessDir .
  *
