@@ -132,38 +132,24 @@ struct CBioTreeEmptyNodeData
 ///
 template<class TNodeData     = CBioTreeEmptyNodeData, 
          class TNodeFeatures = CBioTreeFeatureList>
-struct BioTreeBaseNode
+class BioTreeBaseNode
 {
-    TBioTreeNodeId      uid;      ///< Unique node Id
-    TNodeData           data;     ///< additional node info
-    TNodeFeatures       features; ///< list of node features
-
+public:
     typedef  TNodeData        TNodeDataType;
     typedef  TNodeFeatures    TNodeFeaturesType;
-
+public:
 
     BioTreeBaseNode(TBioTreeNodeId uid_value = 0)
      : uid(uid_value)
     {}
 
-    BioTreeBaseNode(const BioTreeBaseNode<TNodeData, TNodeFeatures>& node)
-     : uid(node.uid),
-      data(node.data),
-      features(node.features)
-    {}
-
-    BioTreeBaseNode<TNodeData, TNodeFeatures>& 
-    operator=(const BioTreeBaseNode<TNodeData, TNodeFeatures>& node)
-    {
-        uid = node.uid;
-        data = node.data;
-        features = node.features;
-        return *this;
-    }
-
     TBioTreeNodeId GetId() const { return uid; }
 
     void SetId(TBioTreeNodeId id) { uid = id; }
+public:
+    TBioTreeNodeId      uid;      ///< Unique node Id
+    TNodeData           data;     ///< additional node info
+    TNodeFeatures       features; ///< list of node features
 };
 
 
@@ -226,52 +212,134 @@ template<class TBioNode>
 class CBioTree
 {
 public:
+    typedef CBioTree<TBioNode>   TBioTree;
+
+    class CBioNode : public CTreeNode<TBioNode>
+    {
+    public: 
+        typedef CTreeNode<TBioNode> TParent;
+        typedef CBioNode            TTreeType;
+
+
+        CBioNode(const TBioNode& value = TBioNode()) 
+        : TParent(value), m_ParentTree(0) 
+        {}
+
+        CBioNode(const CBioNode& bn)
+        : TParent(bn), m_ParentTree(bn.GetParentTree()) 
+        {}
+              
+        CBioNode& operator =(const CBioNode& tree)
+        {
+            TParent::operator=(tree);
+            m_ParentTree = tree.GetParentTree();
+        }
+
+        /// Associate node with the hosting class (non-recursive)
+        void SetParentTree(TBioTree* pt) { m_ParentTree = pt; }
+
+        /// Return pointer on the hosting tree (can be NULL)
+        const TBioTree* GetParentTree() const { return m_ParentTree; }
+
+        /// Return pointer on the hosting tree (can be NULL)
+        TBioTree* GetParentTree() { return m_ParentTree; }
+
+        TTreeType* DetachNode(TTreeType* subnode)
+        {
+            typename TParent::TTreeType* ptn = TParent::DetachNode(subnode);
+            if (ptn) {
+                TTreeType* n = (TTreeType*) ptn;
+                TBioTree* btr = GetParentTree();
+                if (btr) {
+                    btr->SetParentTree(*n, 0);
+                }
+                return n;
+            }
+            return 0;
+        }
+
+        TTreeType* DetachNode(TNodeList_I it)
+        {
+            typename TParent::TTreeType* ptn = TParent::DetachNode(it);
+            if (ptn) {
+                TTreeType* n = (TTreeType*) ptn;
+                TBioTree* btr = GetParentTree();
+                if (btr) {
+                    btr->SetParentTree(*n, 0);
+                }
+                return n;
+            }
+            return 0;
+        }
+
+        void AddNode(TTreeType* subnode)
+        {
+            if (TBioTree* btr = GetParentTree()) {
+                btr->SetParentTree(*subnode);
+            }
+            TParent::AddNode(subnode);
+        }
+
+        CBioNode* AddNode(const TBioNode& val = TBioNode())
+        {
+            CBioNode* subnode = new CBioNode(val);
+            AddNode(subnode);
+            return subnode;
+        }
+
+
+        /// Get dynamic feature by name
+        const string& GetFeature(const string& feature_name) const
+        {
+            const TBioTree* btr = GetParentTree();
+            _ASSERT(btr);
+            const CBioTreeFeatureDictionary& dict = btr->GetFeatureDict();
+            TBioTreeFeatureId fid = dict.GetId(feature_name);
+
+            if (fid == 0) 
+                return kEmptyStr;
+
+            const TBioNode& value = GetValue();
+            return value.features[fid];
+        }
+
+        void SetFeature(const string&  feature_name,
+                        const string&  feature_value)
+        {
+            TBioTree* btr = GetParentTree();
+            _ASSERT(btr);
+            btr->AddFeature(this, feature_name, feature_value);
+        }
+
+        const string& operator[](const string& feature_name) const
+        {
+            return GetFeature(feature_name);
+        }
+
+    protected:
+        TBioTree*   m_ParentTree;  ///< Pointer on the hosting class
+    };
+
     /// Biotree node (forms the tree hierarchy)
-    typedef CTreeNode<TBioNode> TBioTreeNode;
-
+    typedef CBioNode TBioTreeNode;
+    //typedef CTreeNode<TBioNode> TBioTreeNode;
+    typedef CBioNode            TBioTreeNode;
     typedef TBioNode            TBioNodeType;
-
 
 public:
 
-    CBioTree() 
-     : m_NodeIdCounter(0),
-       m_TreeNode(0)
-    {}
-
+    CBioTree(); 
 	virtual ~CBioTree() {}
 
-    CBioTree(const CBioTree<TBioNode>& btr)
-    : m_FeatureDict(btr.m_FeatureDict),
-      m_NodeIdCounter(btr.m_NodeIdCounter),
-      m_TreeNode(new TBioTreeNode(*(btr.m_TreeNode)))
-    {
-    }
+    CBioTree(const CBioTree<TBioNode>& btr);
 
-    CBioTree<TBioNode>&
-        operator=(const CBioTree<TBioNode>& btr)
-    {
-        m_FeatureDict = btr.m_FeatureDict;
-        m_NodeIdCounter = btr.m_NodeIdCounter;
-        m_TreeNode = new TBioTreeNode(*(btr.m_TreeNode));
-    }
-
+    CBioTree<TBioNode>& operator=(const CBioTree<TBioNode>& btr);
 
 
     /// Finds node by id.
     /// @return 
     ///     Node pointer or NULL if requested node id is unknown
-    const TBioTreeNode* FindNode(TBioTreeNodeId node_id) const
-    {
-        TBioTreeNode* tree_node = 
-            const_cast<TBioTreeNode*>(m_TreeNode.get());
-        if (tree_node == 0) {
-            return 0;
-        }
-        CFindUidFunc func = 
-          TreeDepthFirstTraverse(*tree_node, CFindUidFunc(node_id));
-        return func.GetNode();
-    }
+    const TBioTreeNode* FindNode(TBioTreeNodeId node_id) const;
 
 
     /// Add feature to the tree node
@@ -279,16 +347,7 @@ public:
     /// feature dictionary of this tree.
     void AddFeature(TBioTreeNode*      node, 
                     TBioTreeFeatureId  feature_id,
-                    const string&      feature_value)
-    {
-        // Check if this id is in the dictionary
-        bool id_found = m_FeatureDict.HasFeature(feature_id);
-        if (id_found) {
-            node->GetValue().features.SetFeature(feature_id, feature_value);
-        } else {
-            // TODO:throw an exception here
-        }
-    }
+                    const string&      feature_value);
 
     /// Add feature to the tree node
     /// Function controls that the feature is registered in the 
@@ -296,46 +355,21 @@ public:
     /// it is added to the dictionary
     void AddFeature(TBioTreeNode*      node, 
                     const string&      feature_name,
-                    const string&      feature_value)
-    {
-        // Check if this id is in the dictionary
-        TBioTreeFeatureId feature_id 
-            = m_FeatureDict.GetId(feature_name);
-        if (!feature_id) {
-            // Register the new feature type
-            feature_id = m_FeatureDict.Register(feature_name);
-        }
-        AddFeature(node, feature_id, feature_value);
-    }
-
+                    const string&      feature_value);
 
     /// Get new unique node id
-    virtual TBioTreeNodeId GetNodeId()
-    {
-        return m_NodeIdCounter++;
-    }
+    virtual TBioTreeNodeId GetNodeId() { return m_NodeIdCounter++; }
 
     /// Get new unique node id 
     /// (for cases when node id depends on the node's content
-    virtual TBioTreeNodeId GetNodeId(const TBioTreeNode& node)
-    {
-        return m_NodeIdCounter++;
-    }
+    virtual TBioTreeNodeId GetNodeId(const TBioTreeNode& node) 
+                                       { return m_NodeIdCounter++; }
 
     /// Assign new unique node id to the node
-    void SetNodeId(TBioTreeNode* node)
-    {
-        TBioTreeNodeId uid = GetNodeId(*node);
-        node->GetValue().uid = uid;
-    }
+    void SetNodeId(TBioTreeNode* node);
 
     /// Assign new top level tree node
-    void SetTreeNode(TBioTreeNode* node)
-    {
-        _ASSERT(node->GetParent() == 0);
-	m_TreeNode.release();
-        m_TreeNode.reset(node);
-    }
+    void SetTreeNode(TBioTreeNode* node);
 
     const TBioTreeNode* GetTreeNode() const { return m_TreeNode.get(); }
 
@@ -343,42 +377,34 @@ public:
 
     /// Add node to the tree (node location is defined by the parent id
     TBioTreeNode* AddNode(const TBioNodeType& node_value, 
-                          TBioTreeNodeId      parent_id)
-    {
-		TBioTreeNode* ret = 0;
-        const TBioTreeNode* pnode = FindNode(parent_id);
-        if (pnode) {
-            TBioTreeNode* parent_node = const_cast<TBioTreeNode*>(pnode);
-            ret = parent_node->AddNode(node_value);
-        }
-		return ret;
-    }
+                          TBioTreeNodeId      parent_id);
+
+    /// Recursively set this tree as parent tree for the node
+    void SetParentTree(CBioNode& node) { SetParentTree(node, this); }
+
+    /// Recursively set parent tree for the node
+    void SetParentTree(CBioNode& node, CBioTree* tr) 
+                       { TreeDepthFirstTraverse(node, CAssignTreeFunc(tr)); }
 	
-
     /// Clear the bio tree
-    void Clear()
-    {
-        m_FeatureDict.Clear();
-        m_NodeIdCounter = 0;
-        m_TreeNode.reset(0);
-    }
+    void Clear();
 
+    /// Return feature dictionary
     CBioTreeFeatureDictionary& GetFeatureDict() { return m_FeatureDict; }
+
+    /// Return feature dictionary
     const CBioTreeFeatureDictionary& GetFeatureDict() const 
-    { return m_FeatureDict; }
+                                                { return m_FeatureDict; }
 
 protected:
 
     /// Find node by UID functor
+    ///
+    /// @internal
     class CFindUidFunc 
     {
     public:
-        CFindUidFunc(TBioTreeNodeId uid)
-         : m_Uid(uid), 
-           m_Node(0)
-        {}
-
-        const TBioTreeNode* GetNode() const { return m_Node; }
+        CFindUidFunc(TBioTreeNodeId uid) : m_Uid(uid), m_Node(0) {}
 
         ETreeTraverseCode operator()(TBioTreeNode& tree_node, int delta)
         {
@@ -391,9 +417,26 @@ protected:
             return eTreeTraverse;
         }
 
+        const TBioTreeNode* GetNode() const { return m_Node; }
     private:
         TBioTreeNodeId  m_Uid;    ///< Node uid to search for
         TBioTreeNode*   m_Node;   ///< Search result
+    };
+
+    /// Functor to reset tree pointer in all nodes
+    ///
+    /// @internal
+    struct CAssignTreeFunc
+    {
+        CAssignTreeFunc(CBioTree* tree) : m_Tree(tree) {}
+        ETreeTraverseCode operator()(TBioTreeNode& tree_node, int delta)
+        {
+            if (delta == 0 || delta == 1) 
+                tree_node.SetParentTree(m_Tree);
+            return eTreeTraverse;
+        }
+    private:
+        CBioTree*   m_Tree;
     };
 
 protected:
@@ -427,12 +470,126 @@ void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
                const CBioTreeDynamic::TBioTreeNode& node);
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CBioTree<TBioNode>
+//
+
+
+template<class TBioNode>
+CBioTree<TBioNode>::CBioTree()
+: m_NodeIdCounter(0)
+{}
+
+template<class TBioNode>
+CBioTree<TBioNode>::CBioTree(const CBioTree<TBioNode>& btr)
+: m_FeatureDict(btr.m_FeatureDict),
+  m_NodeIdCounter(btr.m_NodeIdCounter),
+  m_TreeNode(new TBioTreeNode(*(btr.m_TreeNode)))
+{
+}
+
+template<class TBioNode>
+CBioTree<TBioNode>& 
+CBioTree<TBioNode>::operator=(const CBioTree<TBioNode>& btr)
+{
+    m_FeatureDict = btr.m_FeatureDict;
+    m_NodeIdCounter = btr.m_NodeIdCounter;
+    m_TreeNode = new TBioTreeNode(*(btr.m_TreeNode));
+    return *this;
+}
+
+template<class TBioNode>
+const typename CBioTree<TBioNode>::TBioTreeNode* 
+CBioTree<TBioNode>::FindNode(TBioTreeNodeId node_id) const
+{
+    TBioTreeNode* tree_node = 
+        const_cast<TBioTreeNode*>(m_TreeNode.get());
+    if (tree_node == 0) {
+        return 0;
+    }
+    CFindUidFunc func = 
+        TreeDepthFirstTraverse(*tree_node, CFindUidFunc(node_id));
+    return func.GetNode();
+}
+
+template<class TBioNode>
+void CBioTree<TBioNode>::AddFeature(TBioTreeNode*      node, 
+                                    TBioTreeFeatureId  feature_id,
+                                    const string&      feature_value)
+{
+    // Check if this id is in the dictionary
+    bool id_found = m_FeatureDict.HasFeature(feature_id);
+    if (id_found) {
+        node->GetValue().features.SetFeature(feature_id, feature_value);
+    } else {
+        // TODO:throw an exception here
+    }
+}
+
+template<class TBioNode>
+void CBioTree<TBioNode>::AddFeature(TBioTreeNode*      node, 
+                                    const string&      feature_name,
+                                    const string&      feature_value)
+{
+    // Check if this id is in the dictionary
+    TBioTreeFeatureId feature_id 
+        = m_FeatureDict.GetId(feature_name);
+    if (!feature_id) {
+        // Register the new feature type
+        feature_id = m_FeatureDict.Register(feature_name);
+    }
+    AddFeature(node, feature_id, feature_value);
+}
+
+template<class TBioNode>
+void CBioTree<TBioNode>::SetNodeId(TBioTreeNode* node)
+{
+    TBioTreeNodeId uid = GetNodeId(*node);
+    node->GetValue().uid = uid;
+}
+
+template<class TBioNode>
+void CBioTree<TBioNode>::SetTreeNode(TBioTreeNode* node)
+{
+    _ASSERT(node->GetParent() == 0);
+    TreeDepthFirstTraverse(*node, CAssignTreeFunc(this));
+    m_TreeNode.reset(node);
+}
+
+template<class TBioNode>
+typename CBioTree<TBioNode>::TBioTreeNode* 
+CBioTree<TBioNode>::AddNode(const TBioNodeType& node_value, 
+                            TBioTreeNodeId      parent_id)
+{
+	TBioTreeNode* ret = 0;
+    const TBioTreeNode* pnode = FindNode(parent_id);
+    if (pnode) {
+        TBioTreeNode* parent_node = const_cast<TBioTreeNode*>(pnode);
+        ret = parent_node->AddNode(node_value);
+        TreeDepthFirstTraverse(*ret, CAssignTreeFunc(this));
+    }
+	return ret;
+}
+
+template<class TBioNode>
+void CBioTree<TBioNode>::Clear()
+{
+    m_FeatureDict.Clear();
+    m_NodeIdCounter = 0;
+    m_TreeNode.reset(0);
+}
+
+
 END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/18 12:13:54  kuznets
+ * Usability improvements (new node design)
+ *
  * Revision 1.14  2004/08/03 16:16:20  jcherry
  * Added Newick and Nexus format writing for CBioTreeDynamic.
  * Made CBioTreeFeatureDictionary::HasFeature const.
