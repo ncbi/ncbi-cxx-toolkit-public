@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.34  2003/04/29 18:30:36  gouriano
 * object data member initialization verification
 *
@@ -427,8 +430,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        in.ThrowError(in.fFormatError,
-                      "choice variant id expected");
+        in.ThrowError(in.fFormatError, "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     if (variantInfo->GetId().IsAttlist()) {
         const CMemberInfo* memberInfo =
@@ -437,8 +439,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
         memberInfo->ReadMember(in,objectPtr);
         index = in.BeginChoiceVariant(choiceType);
         if ( index == kInvalidMember )
-            in.ThrowError(in.fFormatError,
-                          "choice variant id expected");
+            in.ThrowError(in.fFormatError, "choice variant id expected");
         variantInfo = choiceType->GetVariantInfo(index);
     }
     in.TopFrame().SetMemberId(variantInfo->GetId());
@@ -502,8 +503,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        in.ThrowError(in.fFormatError,
-                      "choice variant id expected");
+        in.ThrowError(in.fFormatError,"choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     if (variantInfo->GetId().IsAttlist()) {
         const CMemberInfo* memberInfo =
@@ -512,8 +512,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
         memberInfo->SkipMember(in);
         index = in.BeginChoiceVariant(choiceType);
         if ( index == kInvalidMember )
-            in.ThrowError(in.fFormatError,
-                          "choice variant id expected");
+            in.ThrowError(in.fFormatError,"choice variant id expected");
         variantInfo = choiceType->GetVariantInfo(index);
     }
 

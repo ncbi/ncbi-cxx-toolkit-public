@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/05/16 18:02:17  gouriano
+* revised exception error messages
+*
 * Revision 1.60  2003/03/26 16:14:22  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -906,7 +909,7 @@ CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
         flags |= ASNIO_BIN;
     else
         out.ThrowError(out.fIllegalCall,
-                       "incompatible stream format - must be ASN.1");
+                       "incompatible stream format - must be ASN.1 (text or binary)");
     m_AsnIo = AsnIoNew(flags, 0, this, 0, WriteAsn);
     if ( format == eSerial_AsnText ) {
         // adjust indent level and buffer
@@ -973,8 +976,9 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
                 while ( end > beg && isspace(end[-1]) )
                     end--;
                 if ( string(beg, end) != GetRootTypeName() ) {
-                    ERR_POST("AsnWrite: wrong ASN.1 type name: must be \"" <<
-                             GetRootTypeName() << "\"");
+                    ERR_POST("AsnWrite: wrong ASN.1 type name: is \""
+                             << string(beg, end) << "\", must be \""
+                             << GetRootTypeName() << "\"");
                 }
                 // skip header
                 size_t skip = p + 3 - data;
@@ -984,7 +988,8 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
                 length -= skip;
             }
             else {
-                ERR_POST("AsnWrite: no \"Asn-Type ::=\" header");
+                ERR_POST("AsnWrite: no \"Asn-Type ::=\" header  (data=\""
+                         << data << "\")");
             }
             m_Count = 1;
         }
@@ -998,9 +1003,11 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
 #if CHECK_STREAM_INTEGRITY
         _TRACE("WriteBytes: " << length);
         if ( out.m_CurrentTagState != out.eTagStart )
-            out.ThrowError(out.fIllegalCall, "AsnWrite only allowed at tag start");
+            out.ThrowError(out.fIllegalCall,
+                string("AsnWrite only allowed at tag start: data= ")+data);
         if ( out.m_CurrentPosition + length > out.m_CurrentTagLimit )
-            out.ThrowError(out.fIllegalCall, "tag DATA overflow");
+            out.ThrowError(out.fIllegalCall,
+                string("tag DATA overflow: data= ")+data);
         out.m_CurrentPosition += length;
 #endif
         out.m_Output.PutString(data, length);
@@ -1019,14 +1026,15 @@ CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
         flags |= ASNIO_BIN;
     else
         in.ThrowError(in.fIllegalCall,
-                      "incompatible stream format - must be ASN.1");
+            "incompatible stream format - must be ASN.1 (text or binary)");
     m_AsnIo = AsnIoNew(flags, 0, this, ReadAsn, 0);
     if ( format == eSerial_AsnBinary ) {
 #if CHECK_STREAM_INTEGRITY
         CObjectIStreamAsnBinary& sin =
             static_cast<CObjectIStreamAsnBinary&>(in);
         if ( sin.m_CurrentTagState != sin.eTagStart ) {
-            in.ThrowError(in.fIllegalCall, "double tag read");
+            in.ThrowError(in.fIllegalCall,
+                string("double tag read: rootTypeName= ")+ rootTypeName);
         }
 #endif
     }
@@ -1078,7 +1086,8 @@ size_t CObjectIStream::AsnIo::Read(char* data, size_t length)
             count = nameLength + 3;
             if ( length < count ) {
                 GetStream().ThrowError(GetStream().fFail,
-                                       "buffer too small to put structure name");
+                    string("buffer too small to put structure name in: name= ")
+                    + name);
             }
             memcpy(data, name.data(), nameLength);
             data[nameLength] = ':';

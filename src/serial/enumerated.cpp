@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.26  2003/03/11 20:08:07  kuznets
 * iterate -> ITERATE
 *
@@ -384,7 +387,7 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        in.ThrowError(in.fFormatError, "invalid enum value");
+        in.ThrowError(in.fFormatError,"invalid enum value");
     }
 }
 
@@ -402,7 +405,7 @@ void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        out.ThrowError(out.fInvalidData, "invalid enum value");
+        out.ThrowError(out.fInvalidData,"invalid enum value");
     }
 }
 
@@ -418,7 +421,7 @@ void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        copier.ThrowError(CObjectIStream::fFormatError, "invalid enum value");
+        copier.ThrowError(CObjectIStream::fFormatError,"invalid enum value");
     }
 }
 
@@ -434,7 +437,7 @@ void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
         NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
-        in.ThrowError(in.fFormatError, "invalid enum value");
+        in.ThrowError(in.fFormatError,"invalid enum value");
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.82  2003/05/15 17:44:38  gouriano
 * added GetStreamOffset method
 *
@@ -507,7 +510,7 @@ void CObjectOStream::Close(void)
         }
         catch (...) {
             if ( InGoodState() )
-                ThrowError(fWriteError, "cannot close");
+                ThrowError(fWriteError, "cannot close output stream");
         }
     }
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.53  2003/04/29 18:30:37  gouriano
 * object data member initialization verification
 *
@@ -601,7 +604,8 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         m_Output.PutInt8(index);
     else
-        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex"
+            "must be either sizeof(Int4) or sizeof(Int8)");
     m_Output.PutString("/>");
     m_EndTag = true;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.75  2003/04/10 20:13:39  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...
@@ -460,7 +463,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
         else {
             m_CurrentTagLengthSize = byte - 0x80;
             if ( m_CurrentTagLengthSize > sizeof(size_t) )
-                ThrowError(fOverflow, "too big length");
+                ThrowError(fOverflow, "tag length is too big");
             m_CurrentTagState = eLengthValueFirst;
         }
         break;
@@ -994,7 +997,8 @@ void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         WriteNumberValue(*this, Int8(index));
     else
-        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex"
+            "must be either sizeof(Int4) or sizeof(Int4)");
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)

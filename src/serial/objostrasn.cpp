@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.77  2003/03/26 16:14:23  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -493,7 +496,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     int exp;
     // calculate exponent
     if ( sscanf(ePos + 1, "%d", &exp) != 1 )
-        ThrowError(fFail, "double conversion error");
+        ThrowError(fFail, "double value conversion error");
 
     // remove trailing zeroes
     int fractDigits = int(ePos - dotPos - 1);
@@ -604,7 +607,8 @@ void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         m_Output.PutInt8(index);
     else
-        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex: "
+            "must be either sizeof(Int4) or sizeof(Int8)");
 }
 
 void CObjectOStreamAsn::WriteOtherBegin(TTypeInfo typeInfo)

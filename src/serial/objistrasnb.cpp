@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.59  2003/03/26 16:14:23  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -335,14 +338,16 @@ string CObjectIStreamAsnBinary::GetPosition(void) const
 Uint1 CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
     if ( m_CurrentTagState != eTagStart )
-        ThrowError(fIllegalCall, "bad PeekTagByte call");
+        ThrowError(fIllegalCall,
+            "illegal PeekTagByte call: only allowed at tag start");
     return m_Input.PeekChar(index);
 }
 
 Uint1 CObjectIStreamAsnBinary::StartTag(void)
 {
     if ( m_CurrentTagLength != 0 )
-        ThrowError(fIllegalCall, "bad StartTag call");
+        ThrowError(fIllegalCall,
+            "illegal StartTag call: current tag length != 0");
     return PeekTagByte();
 }
 #endif
@@ -364,7 +369,7 @@ TTag CObjectIStreamAsnBinary::PeekTag(void)
     const size_t KTagBits = sizeof(tag) * KBitsInByte - 1;
     do {
         if ( tag >= (1 << (KTagBits - 7)) ) {
-            ThrowError(fOverflow, "tag number is too big");
+            ThrowError(fOverflow, "tag number is too big: "+NStr::UIntToString(tag));
         }
         byte = PeekTagByte(i++);
         tag = (tag << 7) | (byte & 0x7f);
@@ -380,7 +385,9 @@ TTag CObjectIStreamAsnBinary::PeekTag(EClass cls, bool constructed)
 {
     if ( ExtractClassAndConstructed(PeekTagByte()) !=
          MakeTagByte(cls, constructed) ) {
-        ThrowError(fFormatError, "unexpected tag class/constructed");
+        ThrowError(fFormatError, "unexpected tag class/constructed: #"
+            + NStr::UIntToString(PeekTagByte()) + ", should be #"
+            + NStr::UIntToString(MakeTagByte(cls, constructed)));
     }
     return PeekTag();
 }
@@ -397,7 +404,7 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
     while ( ((c = PeekTagByte(i++)) & 0x80) != 0 ) {
         name += char(c & 0x7f);
         if ( i > 1024 ) {
-            ThrowError(fOverflow, "tag number is too big");
+            ThrowError(fOverflow, "tag number is too big (greater than 1024)");
         }
     }
     m_CurrentTagLength = i;
@@ -422,7 +429,7 @@ Uint1 CObjectIStreamAsnBinary::PeekAnyTag(void)
     Uint1 byte;
     do {
         if ( i > 1024 ) {
-            ThrowError(fOverflow, "tag number is too big");
+            ThrowError(fOverflow, "tag number is too big (greater than 1024)");
         }
         byte = PeekTagByte(i++);
     } while ( (byte & 0x80) != 0 );
@@ -533,7 +540,7 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
 void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 {
     if ( ReadShortLength() != length ) {
-        ThrowError(fFormatError, "length expected");
+        ThrowError(fFormatError, "length expected: "+NStr::UIntToString(length));
     }
 }
 
@@ -751,10 +758,11 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     ExpectSysTag(eReal);
     size_t length = ReadLength();
     if ( length < 2 ) {
-        ThrowError(fFormatError, "too short REAL data");
+        ThrowError(fFormatError, "too short REAL data: length < 2");
     }
     if ( length > kMaxDoubleLength ) {
-        ThrowError(fFormatError, "too long REAL data");
+        ThrowError(fFormatError, "too long REAL data: length > "
+            + NStr::UIntToString(kMaxDoubleLength));
     }
 
     ExpectByte(eDecimal);
@@ -1231,9 +1239,10 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
     ExpectSysTag(eReal);
     size_t length = ReadLength();
     if ( length < 2 )
-        ThrowError(fFormatError, "too short REAL data");
+        ThrowError(fFormatError, "too short REAL data: length < 2");
     if ( length > kMaxDoubleLength )
-        ThrowError(fFormatError, "too long REAL data");
+        ThrowError(fFormatError, "too long REAL data: length > "
+            + NStr::UIntToString(kMaxDoubleLength));
 
     ExpectByte(eDecimal);
     length--;

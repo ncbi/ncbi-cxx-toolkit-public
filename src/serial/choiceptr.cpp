@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.28  2003/03/10 18:54:24  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -301,7 +304,8 @@ public:
                      TObjectPtr objectPtr)
         {
             if ( objectPtr != 0 ) {
-                in.ThrowError(in.fInvalidData, "non null value");
+                in.ThrowError(in.fInvalidData,
+                    "non-null value when reading NULL member");
             }
             in.ReadNull();
         }
@@ -309,7 +313,8 @@ public:
                       TConstObjectPtr objectPtr)
         {
             if ( objectPtr != 0 ) {
-                out.ThrowError(out.fInvalidData, "non null value");
+                out.ThrowError(out.fInvalidData,
+                    "non-null value when writing NULL member");
             }
             out.WriteNull();
         }

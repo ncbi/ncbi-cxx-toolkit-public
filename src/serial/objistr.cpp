@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.105  2003/05/15 17:44:38  gouriano
 * added GetStreamOffset method
 *
@@ -671,8 +674,7 @@ const CReadObjectInfo&
 CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index)
 {
     if ( !m_Objects ) {
-        ThrowError(fFormatError,
-                   "invalid object index: NO_COLLECT defined");
+        ThrowError(fFormatError,"invalid object index: NO_COLLECT defined");
     }
     return m_Objects->GetRegisteredObject(index);
 }
@@ -889,7 +891,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectPtr = info.GetObjectPtr();
             if ( !objectPtr ) {
                 ThrowError(fFormatError,
-                           "invalid reference to skipped object");
+                    "invalid reference to skipped object: object ptr is NULL");
             }
             break;
         }
@@ -930,7 +932,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        ThrowError(fFormatError, "illegal pointer type");
+        ThrowError(fFormatError,"illegal pointer type");
         objectPtr = 0;
         objectType = 0;
         break;
@@ -938,7 +940,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
     while ( objectType != declaredType ) {
         // try to check parent class pointer
         if ( objectType->GetTypeFamily() != eTypeFamilyClass ) {
-            ThrowError(fFormatError, "incompatible member type");
+            ThrowError(fFormatError,"incompatible member type");
         }
         const CClassTypeInfo* parentClass =
             CTypeConverter<CClassTypeInfo>::SafeCast(objectType)->GetParentClassInfo();
@@ -946,7 +948,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectType = parentClass;
         }
         else {
-            ThrowError(fFormatError, "incompatible member type");
+            ThrowError(fFormatError,"incompatible member type");
         }
     }
     return make_pair(objectPtr, objectType);
@@ -1001,7 +1003,7 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        ThrowError(fFormatError, "illegal pointer type");
+        ThrowError(fFormatError,"illegal pointer type");
     }
 }
 
@@ -1227,7 +1229,7 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
     BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
     TMemberIndex index = BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        ThrowError(fFormatError, "choice variant id expected");
+        ThrowError(fFormatError,"choice variant id expected");
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     TopFrame().SetMemberId(variantInfo->GetId());

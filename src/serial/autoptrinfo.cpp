@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.17  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -164,7 +167,7 @@ void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,
 
     TTypeInfo dataType = autoPtrType->GetPointedType();
     if ( dataType->GetRealTypeInfo(dataPtr) != dataType )
-        out.ThrowError(out.fIllegalCall, "auto pointer have different type");
+        out.ThrowError(out.fIllegalCall,"auto pointer have different type");
     out.WriteObject(dataPtr, dataType);
 }
 
@@ -181,7 +184,7 @@ void CAutoPointerTypeInfo::ReadAutoPtr(CObjectIStream& in,
         autoPtrType->SetObjectPointer(objectPtr, dataPtr = dataType->Create());
     }
     else if ( dataType->GetRealTypeInfo(dataPtr) != dataType ) {
-        in.ThrowError(in.fIllegalCall, "auto pointer have different type");
+        in.ThrowError(in.fIllegalCall,"auto pointer have different type");
     }
     in.ReadObject(dataPtr, dataType);
 }

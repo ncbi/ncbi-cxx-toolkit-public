@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.33  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -321,28 +324,32 @@ void CVoidTypeFunctions::Assign(TObjectPtr , TConstObjectPtr )
 void CVoidTypeFunctions::Read(CObjectIStream& in, TTypeInfo ,
                               TObjectPtr )
 {
-    in.ThrowError(in.fIllegalCall, "cannot read");
+    in.ThrowError(in.fIllegalCall,
+                  "CVoidTypeFunctions::Read cannot read");
 }
 
 void CVoidTypeFunctions::Write(CObjectOStream& out, TTypeInfo ,
                                TConstObjectPtr )
 {
-    out.ThrowError(out.fIllegalCall, "cannot write");
+    out.ThrowError(out.fIllegalCall,
+                   "CVoidTypeFunctions::Write cannot write");
 }
 
 void CVoidTypeFunctions::Copy(CObjectStreamCopier& copier, TTypeInfo )
 {
-    copier.ThrowError(CObjectIStream::fIllegalCall, "cannot copy");
+    copier.ThrowError(CObjectIStream::fIllegalCall,
+                      "CVoidTypeFunctions::Copy cannot copy");
 }
 
 void CVoidTypeFunctions::Skip(CObjectIStream& in, TTypeInfo )
 {
-    in.ThrowError(in.fIllegalCall, "cannot skip");
+    in.ThrowError(in.fIllegalCall,
+                  "CVoidTypeFunctions::Skip cannot skip");
 }
 
 TObjectPtr CVoidTypeFunctions::Create(TTypeInfo objectType)
 {
-    ThrowException("create", objectType);
+    ThrowException("CVoidTypeFunctions::Create cannot create", objectType);
     return 0;
 }
 

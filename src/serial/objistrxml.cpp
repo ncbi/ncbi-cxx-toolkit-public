@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.39  2003/05/05 20:09:10  gouriano
 * fixed "skipping" an object
 *
@@ -449,7 +452,9 @@ CLightString CObjectIStreamXml::ReadName(char c)
 {
     _ASSERT(InsideTag());
     if ( !IsFirstNameChar(c) )
-        ThrowError(fFormatError, "bad first name symbol");
+        ThrowError(fFormatError,
+            "Name begins with an invalid character: #"
+            +NStr::UIntToString(c));
 
     // find end of tag name
     size_t i = 1;
@@ -544,7 +549,8 @@ string CObjectIStreamXml::ReadFileHeader(void)
                 }
                 else {
                     // unknown tag
-                    ThrowError(fFormatError, "bad tag");
+                    ThrowError(fFormatError,
+                        "unknown tag in file header: "+string(tagName));
                 }
             }
         default:
@@ -564,7 +570,7 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
         const size_t limit = 32;
         size_t offset = m_Input.PeekFindChar(';', limit);
         if ( offset >= limit )
-            ThrowError(fFormatError, "too long entity reference");
+            ThrowError(fFormatError, "entity reference is too long");
         const char* p = m_Input.GetCurrentPos(); // save entity string pointer
         m_Input.SkipChars(offset + 1); // skip it
         if ( offset == 0 )
@@ -589,7 +595,8 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
                     else if ( c >= 'a' && c <='f' )
                         v = v * 16 + (c - 'a' + 0xA);
                     else
-                        ThrowError(fFormatError, "bad char reference");
+                        ThrowError(fFormatError,
+                            "invalid symbol in char reference");
                 } while ( p < end );
             }
             else {
@@ -601,7 +608,8 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
                     if ( c >= '0' && c <= '9' )
                         v = v * 10 + (c - '0');
                     else
-                        ThrowError(fFormatError, "bad char reference");
+                        ThrowError(fFormatError,
+                            "invalid symbol in char reference");
                 } while ( p < end );
             }
             return v & 0xFF;
@@ -618,7 +626,7 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
                 return '\'';
             if ( e == "quot" )
                 return '"';
-            ThrowError(fFormatError, "unknown entity name");
+            ThrowError(fFormatError, "unknown entity name: " + string(e));
         }
     }
     else if ( c == endingChar ) {
@@ -659,7 +667,7 @@ bool CObjectIStreamXml::ReadBool(void)
 {
     CLightString attr = ReadAttributeName();
     if ( attr != "value" )
-        ThrowError(fFormatError, "attribute 'value' expected");
+        ThrowError(fFormatError, "attribute 'value' expected: "+string(attr));
     string sValue;
     ReadAttributeValue(sValue);
     bool value;
@@ -668,7 +676,7 @@ bool CObjectIStreamXml::ReadBool(void)
     else {
         if ( sValue != "false" ) {
             ThrowError(fFormatError,
-                       "'true' or 'false' attrubute value expected");
+                       "'true' or 'false' attrubute value expected: "+sValue);
         }
         value = false;
     }
@@ -717,7 +725,7 @@ double CObjectIStreamXml::ReadDouble(void)
     char* endptr;
     double data = strtod(s.c_str(), &endptr);
     if ( *endptr != 0 )
-        ThrowError(fFormatError, "bad float number");
+        ThrowError(fFormatError, "invalid float number");
     return data;
 }
 
@@ -789,7 +797,8 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
             } else {
                 CLightString attr = ReadAttributeName();
                 if ( attr != "value" )
-                    ThrowError(fFormatError, "attribute 'value' expected");
+                    ThrowError(fFormatError,
+                        "attribute 'value' expected: "+string(attr));
                 string valueName;
                 ReadAttributeValue(valueName);
                 value = values.FindValue(valueName);
@@ -852,7 +861,7 @@ CLightString CObjectIStreamXml::SkipTagName(CLightString tag,
 {
     if ( tag.GetLength() < length ||
          memcmp(tag.GetString(), str, length) != 0 )
-        ThrowError(fFormatError, "invalid tag name");
+        ThrowError(fFormatError, "invalid tag name: "+string(tag));
     return CLightString(tag.GetString() + length, tag.GetLength() - length);
 }
 
@@ -895,7 +904,7 @@ CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
 {
     tag = SkipStackTagName(tag, level);
     if ( tag.Empty() || *tag.GetString() != c )
-        ThrowError(fFormatError, "invalid tag name");
+        ThrowError(fFormatError, "invalid tag name: "+string(tag));
     return CLightString(tag.GetString() + 1, tag.GetLength() - 1);
 }
 
@@ -908,7 +917,7 @@ void CObjectIStreamXml::OpenTag(const string& e)
         tagName = RejectedName();
     }
     if ( tagName != e )
-        ThrowError(fFormatError, "tag '"+e+"' expected");
+        ThrowError(fFormatError, "tag '"+e+"' expected: "+string(tagName));
 }
 
 void CObjectIStreamXml::CloseTag(const string& e)
@@ -919,7 +928,7 @@ void CObjectIStreamXml::CloseTag(const string& e)
     else {
         CLightString tagName = ReadName(BeginClosingTag());
         if ( tagName != e )
-            ThrowError(fFormatError, "tag '"+e+"' expected");
+            ThrowError(fFormatError, "tag '"+e+"' expected: "+string(tagName));
         EndClosingTag();
     }
 }
@@ -932,7 +941,8 @@ void CObjectIStreamXml::OpenStackTag(size_t level)
         if (!x_IsStdXml()) {
             CLightString rest = SkipStackTagName(tagName, level);
             if ( !rest.Empty() )
-                ThrowError(fFormatError, "unexpected tag");
+                ThrowError(fFormatError,
+                    "unexpected tag: "+string(tagName)+string(rest));
         }
     } else {
         tagName = RejectedName();
@@ -952,7 +962,8 @@ void CObjectIStreamXml::CloseStackTag(size_t level)
             if (!x_IsStdXml()) {
                 CLightString rest = SkipStackTagName(tagName, level);
                 if ( !rest.Empty() )
-                    ThrowError(fFormatError, "unexpected tag");
+                    ThrowError(fFormatError,
+                        "unexpected tag: "+string(tagName)+string(rest));
             }
         }
         EndClosingTag();
@@ -1594,7 +1605,7 @@ int CObjectIStreamXml::GetHexChar(void)
     else {
         m_Input.UngetChar(c);
         if ( c != '<' )
-            ThrowError(fFormatError, "bad char in octet string");
+            ThrowError(fFormatError, "invalid char in octet string");
     }
     return -1;
 }
@@ -1673,7 +1684,7 @@ void CObjectIStreamXml::SkipSNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(fFormatError, "bad number");
+        ThrowError(fFormatError, "invalid symbol in number");
     }
     while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -1698,7 +1709,7 @@ void CObjectIStreamXml::SkipUNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(fFormatError, "bad number");
+        ThrowError(fFormatError, "invalid symbol in number");
     }
     while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -1746,7 +1757,7 @@ void CObjectIStreamXml::SkipByteBlock(void)
         }
         else {
             m_Input.UngetChar(c);
-            ThrowError(fFormatError, "bad char in octet string");
+            ThrowError(fFormatError, "invalid char in octet string");
         }
     }
     if ( m_Input.PeekChar() != 'H' )

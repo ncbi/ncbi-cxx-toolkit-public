@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/05/16 18:02:17  gouriano
+* revised exception error messages
+*
 * Revision 1.11  2003/03/26 16:14:23  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -182,8 +185,6 @@ void CObjectStack::PopErrorFrame(void)
     PopFrame();
 }
 
-#if defined(NCBI_SERIAL_IO_TRACE)
-
 const char* CObjectStackFrame::GetFrameTypeName(void) const
 {
     const char* s;
@@ -202,6 +203,8 @@ const char* CObjectStackFrame::GetFrameTypeName(void) const
     return s;
 }
 
+#if defined(NCBI_SERIAL_IO_TRACE)
+
 void CObjectStack::TracePushFrame(bool push) const
 {
     cout << endl ;
@@ -217,12 +220,13 @@ void CObjectStack::TracePushFrame(bool push) const
 
 string CObjectStackFrame::GetFrameInfo(void) const
 {
-    string info;
+    string info(" Frame type= ");
+    info += GetFrameTypeName();
     if (m_TypeInfo) {
-        info = " Type= " + m_TypeInfo->GetName();
+        info = ", Object type= " + m_TypeInfo->GetName();
     }
     if (m_MemberId) {
-        info = " Member= " + m_MemberId->GetName();
+        info = ", Member name= " + m_MemberId->GetName();
     }
     return info;
 }

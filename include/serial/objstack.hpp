@@ -82,9 +82,7 @@ public:
     void SetNotag(bool set=true);
     bool GetNotag(void) const;
 
-#if defined(NCBI_SERIAL_IO_TRACE)
     const char* GetFrameTypeName(void) const;
-#endif
     string GetFrameInfo(void) const;
 
 private:
@@ -205,6 +203,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/05/16 18:02:53  gouriano
+* revised exception error messages
+*
 * Revision 1.19  2003/04/15 16:18:33  siyan
 * Added doxygen support
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.9  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -185,14 +188,13 @@ void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        ThrowError(CObjectIStream::fFormatError, "illegal pointer type");
+        ThrowError(CObjectIStream::fFormatError,"illegal pointer type");
         return;
     }
     while ( typeInfo != declaredType ) {
         // try to check parent class pointer
         if ( typeInfo->GetTypeFamily() != eTypeFamilyClass ) {
-            ThrowError(CObjectIStream::fFormatError,
-                       "incompatible member type");
+            ThrowError(CObjectIStream::fFormatError,"incompatible member type");
         }
         const CClassTypeInfo* parentClass =
             CTypeConverter<CClassTypeInfo>::SafeCast(typeInfo)->GetParentClassInfo();
@@ -200,8 +202,7 @@ void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
             typeInfo = parentClass;
         }
         else {
-            ThrowError(CObjectIStream::fFormatError,
-                       "incompatible member type");
+            ThrowError(CObjectIStream::fFormatError,"incompatible member type");
         }
     }
     return;

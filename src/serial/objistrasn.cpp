@@ -495,7 +495,8 @@ double CObjectIStreamAsn::ReadDouble(void)
     char* endptr;
     double mantissa = strtod(buffer, &endptr);
     if ( *endptr != 0 )
-        ThrowError(fFormatError, "bad double in line " + NStr::UIntToString(m_Input.GetLine()));
+        ThrowError(fFormatError, "bad double in line "
+            + NStr::UIntToString(m_Input.GetLine()));
     Expect(',', true);
     unsigned base = ReadUint4();
     Expect(',', true);
@@ -650,7 +651,8 @@ void CObjectIStreamAsn::SkipSNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(fFormatError, "bad signed in line " + NStr::UIntToString(m_Input.GetLine()));
+        ThrowError(fFormatError, "bad signed integer in line "
+            + NStr::UIntToString(m_Input.GetLine()));
     }
     while ( (c = m_Input.PeekChar(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -674,7 +676,8 @@ void CObjectIStreamAsn::SkipUNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(fFormatError, "bad unsigned in line " + NStr::UIntToString(m_Input.GetLine()));
+        ThrowError(fFormatError, "bad unsigned integer in line "
+            + NStr::UIntToString(m_Input.GetLine()));
     }
     while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -777,7 +780,8 @@ void CObjectIStreamAsn::SkipByteBlock(void)
         }
         else {
             m_Input.UngetChar(c);
-            ThrowError(fFormatError, "bad char in octet string");
+            ThrowError(fFormatError, "bad char in octet string: #"
+                + NStr::IntToString(c));
         }
     }
     Expect('H', true);
@@ -1066,7 +1070,8 @@ int CObjectIStreamAsn::GetHexChar(void)
             break;
         default:
             m_Input.UngetChar(c);
-            ThrowError(fFormatError, "bad char in octet string");
+            ThrowError(fFormatError, "bad char in octet string: #"
+                + NStr::IntToString(c));
         }
     }
 }
@@ -1181,7 +1186,8 @@ CObjectIStream::TObjectIndex CObjectIStreamAsn::ReadObjectPointer(void)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         return TObjectIndex(ReadInt8());
     else
-        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex:"
+            " must be either sizeof(Int4) or sizeof(Int8)");
     return 0;
 }
 
@@ -1194,6 +1200,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
 * Revision 1.80  2003/02/28 15:09:28  gouriano
 * pass CEofException if there is no object in the input stream
 *
