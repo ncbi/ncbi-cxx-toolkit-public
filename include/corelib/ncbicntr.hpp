@@ -96,7 +96,11 @@ extern "C" {
 #elif defined(NCBI_COMPILER_GCC3)
 #  include <bits/atomicity.h>
    typedef _Atomic_word TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
+#  if NCBI_COMPILER_VERSION >= 340
+#    define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
+#  else
+#    define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
+#  endif
 #elif defined(NCBI_COMPILER_COMPAQ)
 #  include <machine/builtins.h>
    typedef int TNCBIAtomicValue;
@@ -308,8 +312,8 @@ THROWS_NONE
 #    ifdef NCBI_COMPILER_WORKSHOP
         result = NCBICORE_asm_cas(result, nv_value_p, old_value);
 #    else
-        asm volatile("cas [%3], %2, %1" : "+m" (*nv_value_p), "+r" (result)
-                     : "r" (old_value), "r" (nv_value_p));
+        asm volatile("cas [%3], %2, %1" : "=m" (*nv_value_p), "+r" (result)
+                     : "r" (old_value), "r" (nv_value_p), "m" (*nv_value_p));
 #    endif
         if (result == old_value) { // We win
             break;
@@ -324,8 +328,8 @@ THROWS_NONE
 #    ifdef NCBI_COMPILER_WORKSHOP
         result = NCBICORE_asm_swap(result, nv_value_p);
 #    else
-        asm volatile("swap [%2], %1" : "+m" (*nv_value_p), "+r" (result)
-                     : "r" (nv_value_p));
+        asm volatile("swap [%2], %1" : "=m" (*nv_value_p), "+r" (result)
+                     : "r" (nv_value_p), "m" (*nv_value_p));
 #    endif
         if (result != NCBI_COUNTER_RESERVED_VALUE) {
             break;
@@ -365,6 +369,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/04/26 14:31:46  ucko
+* GCC 3.4 has moved __exchange_and_add to the __gnu_cxx namespace.
+* Split up "+m" constraints for GCC assembly, as versions 3.4 and up
+* complain about them.
+*
 * Revision 1.22  2004/02/19 16:46:21  vasilche
 * Added spin counter before calling sched_yield().
 * Use volatile version of pointer for assignment in x_Add().
