@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/12/19 15:58:26  thiessen
+* fix quadric problem on Mac
+*
 * Revision 1.65  2002/10/11 17:21:39  thiessen
 * initial Mac OSX build
 *
@@ -329,14 +332,6 @@ OpenGLRenderer::OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas) :
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
         ERR_POST(Fatal << "Cn3D requires that sizeof(GLuint) >= sizeof(unsigned int)");
-
-    if (!qobj) { // initialize global qobj
-        qobj = gluNewQuadric();
-        if (!qobj) ERR_POST(Fatal << "unable to allocate GLUQuadricObj");
-        gluQuadricDrawStyle(qobj, (GLenum) GLU_FILL);
-        gluQuadricNormals(qobj, (GLenum) GLU_SMOOTH);
-        gluQuadricOrientation(qobj, (GLenum) GLU_OUTSIDE);
-    }
 }
 
 void OpenGLRenderer::Init(void) const
@@ -764,6 +759,15 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
 
 void OpenGLRenderer::Construct(void)
 {
+    // (re)initialize global qobj (do it here, since on Mac, drawing into memory buffer requires new qobj)
+    if (qobj) gluDeleteQuadric(qobj);
+    qobj = gluNewQuadric();
+    if (!qobj) ERR_POST(Fatal << "unable to allocate a GLUQuadricObj");
+    gluQuadricDrawStyle(qobj, (GLenum) GLU_FILL);
+    gluQuadricNormals(qobj, (GLenum) GLU_SMOOTH);
+    gluQuadricOrientation(qobj, (GLenum) GLU_OUTSIDE);
+    gluQuadricTexture(qobj, GL_FALSE);
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
