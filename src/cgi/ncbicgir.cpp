@@ -23,13 +23,18 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Authors:  Eugene Vasilchenko, Denis Vakatov
 *
 * File Description:
-*  NCBI CGI response generator
+*   CCgiResponse  -- CGI response generator class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/19 00:34:56  vakatov
+* Added convenience method CCgiResponse::SetStatus().
+* Treat the status right in WriteHeader() for both plain and "raw CGI" cases.
+* Made all header values to be case-insensitive.
+*
 * Revision 1.13  2001/10/04 18:17:53  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -81,10 +86,11 @@
 
 #include <cgi/ncbicgir.hpp>
 #include <time.h>
+
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#  include <unistd.h>
 #else
-#define STDOUT_FILENO 1
+#  define STDOUT_FILENO 1
 #endif
 
 
@@ -93,7 +99,8 @@ BEGIN_NCBI_SCOPE
 
 const string CCgiResponse::sm_ContentTypeName    = "Content-Type";
 const string CCgiResponse::sm_ContentTypeDefault = "text/html";
-const string CCgiResponse::sm_HTTPStatusDefault  = "HTTP/1.1 200 OK";
+const string CCgiResponse::sm_HTTPStatusName     = "Status";
+const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
 
 
 inline bool s_ZeroTime(const tm& date)
@@ -164,6 +171,20 @@ void CCgiResponse::SetHeaderValue(const string& name, const tm& date)
 }
 
 
+void CCgiResponse::SetStatus(unsigned int code, const string& reason)
+{
+    if (code > 999) {
+        THROW1_TRACE(runtime_error,
+                     "CCgiResponse::SetStatus() -- code too big, exceeds 999");
+    }
+    if (reason.find_first_of("\r\n") != string::npos) {
+        THROW1_TRACE(runtime_error,
+                     "CCgiResponse::SetStatus() -- text contains CR or LF");
+    }
+    SetHeaderValue(sm_HTTPStatusName, NStr::UIntToString(code) + ' ' + reason);
+}
+
+
 CNcbiOstream& CCgiResponse::out(void) const
 {
     if ( !m_Output ) {
@@ -176,8 +197,15 @@ CNcbiOstream& CCgiResponse::out(void) const
 CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 {
     // HTTP status line (if "raw CGI" response)
+    bool skip_status = false;
     if ( IsRawCgi() ) {
-        os << sm_HTTPStatusDefault << HTTP_EOL;
+        string status = GetHeaderValue(sm_HTTPStatusName);
+        if ( status.empty() ) {
+            status = sm_HTTPStatusDefault;
+        } else {
+            skip_status = true;  // filter out the status from the HTTP header
+        }
+        os << "HTTP/1.1 " << status << HTTP_EOL;
     }
 
     // Default content type (if it's not specified by user already)
@@ -192,6 +220,9 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 
     // All header lines (in alphabetical order)
     iterate (TMap, i, m_HeaderValues) {
+        if (skip_status  &&
+            NStr::CompareNocase(i->first, sm_HTTPStatusName) == 0)
+            break;
         os << i->first << ": " << i->second << HTTP_EOL;
     }
 

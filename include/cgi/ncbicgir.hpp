@@ -1,5 +1,5 @@
-#ifndef NCBICGIR__HPP
-#define NCBICGIR__HPP
+#ifndef CGI___NCBICGIR__HPP
+#define CGI___NCBICGIR__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,56 +26,11 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Authors:  Eugene Vasilchenko, Denis Vakatov
 *
 * File Description:
-*  NCBI CGI response generator class
+*   CCgiResponse  -- CGI response generator class
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2001/10/04 18:17:52  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* Revision 1.11  2001/07/17 22:39:53  vakatov
-* CCgiResponse:: Made GetOutput() fully consistent with out().
-* Prohibit copy constructor and assignment operator.
-* Retired "ncbicgir.inl", moved inline functions to the header itself, made
-* some non-inline. Improved comments, got rid of some unused STL headers.
-* Well-groomed the code.
-*
-* Revision 1.10  2001/05/17 14:49:37  lavr
-* Typos corrected
-*
-* Revision 1.9  1999/11/02 20:35:39  vakatov
-* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
-* cookie standard, smarter, and easier in use
-*
-* Revision 1.8  1999/05/11 03:11:46  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
-*
-* Revision 1.7  1999/04/28 16:54:19  vasilche
-* Implemented stream input processing for FastCGI applications.
-*
-* Revision 1.6  1998/12/30 21:50:27  vakatov
-* Got rid of some redundant headers
-*
-* Revision 1.5  1998/12/28 17:56:26  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.4  1998/12/11 22:00:32  vasilche
-* Added raw CGI response
-*
-* Revision 1.3  1998/12/11 18:00:52  vasilche
-* Added cookies and output stream
-*
-* Revision 1.2  1998/12/10 19:58:18  vasilche
-* Header option made more generic
-*
-* Revision 1.1  1998/12/09 20:18:10  vasilche
-* Initial implementation of CGI response generator
-*
-* ===========================================================================
 */
 
 #include <cgi/ncbicgi.hpp>
@@ -96,6 +51,11 @@ public:
     // Set/get the "raw CGI" response type
     void SetRawCgi(bool is_raw);
     bool IsRawCgi(void) const;
+
+    // Set response status.
+    // NOTE:  use this method rather than SetHeaderValue("Status", ...)
+    //        as it is safer and it works for the "raw CGI" response type, too.
+    void SetStatus(unsigned int code, const string& reason = kEmptyStr);
 
     // Header setters
     void SetHeaderValue   (const string& name, const string& value);
@@ -131,10 +91,11 @@ public:
 
 protected:
     static const string sm_ContentTypeName;     // Content type header name
-    static const string sm_ContentTypeDefault;  // Default content type
-    static const string sm_HTTPStatusDefault;   // Default HTTP status line
+    static const string sm_ContentTypeDefault;  // Dflt content type: text/html
+    static const string sm_HTTPStatusName;      // Status header name:   Status
+    static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
     
-    typedef map<string, string> TMap;
+    typedef map<string, string, PNocase> TMap;
 
     bool          m_IsRawCgi;      // The "raw CGI" flag
     TMap          m_HeaderValues;  // Header lines in alphabetical order
@@ -143,8 +104,8 @@ protected:
     int           m_OutputFD;      // Output file descriptor, if available.
 
     // Prohibit copy constructor and assignment operator
-    CCgiResponse(const CCgiResponse& response);
-    CCgiResponse& operator=(const CCgiResponse& response);
+    CCgiResponse(const CCgiResponse&);
+    CCgiResponse& operator= (const CCgiResponse&);
 };
 
 
@@ -200,7 +161,8 @@ inline CNcbiOstream* CCgiResponse::GetOutput(void) const
     return m_Output;
 }
 
-inline int CCgiResponse::GetOutputFD(void) const {
+inline int CCgiResponse::GetOutputFD(void) const
+{
     return m_OutputFD;
 }
 
@@ -212,4 +174,60 @@ inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
 
 END_NCBI_SCOPE
 
-#endif  /* NCBICGIR__HPP */
+
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.13  2002/03/19 00:34:54  vakatov
+ * Added convenience method CCgiResponse::SetStatus().
+ * Treat the status right in WriteHeader() for both plain and "raw CGI" cases.
+ * Made all header values to be case-insensitive.
+ *
+ * Revision 1.12  2001/10/04 18:17:52  ucko
+ * Accept additional query parameters for more flexible diagnostics.
+ * Support checking the readiness of CGI input and output streams.
+ *
+ * Revision 1.11  2001/07/17 22:39:53  vakatov
+ * CCgiResponse:: Made GetOutput() fully consistent with out().
+ * Prohibit copy constructor and assignment operator.
+ * Retired "ncbicgir.inl", moved inline functions to the header itself, made
+ * some non-inline. Improved comments, got rid of some unused STL headers.
+ * Well-groomed the code.
+ *
+ * Revision 1.10  2001/05/17 14:49:37  lavr
+ * Typos corrected
+ *
+ * Revision 1.9  1999/11/02 20:35:39  vakatov
+ * Redesigned of CCgiCookie and CCgiCookies to make them closer to the
+ * cookie standard, smarter, and easier in use
+ *
+ * Revision 1.8  1999/05/11 03:11:46  vakatov
+ * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+ *
+ * Revision 1.7  1999/04/28 16:54:19  vasilche
+ * Implemented stream input processing for FastCGI applications.
+ *
+ * Revision 1.6  1998/12/30 21:50:27  vakatov
+ * Got rid of some redundant headers
+ *
+ * Revision 1.5  1998/12/28 17:56:26  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.4  1998/12/11 22:00:32  vasilche
+ * Added raw CGI response
+ *
+ * Revision 1.3  1998/12/11 18:00:52  vasilche
+ * Added cookies and output stream
+ *
+ * Revision 1.2  1998/12/10 19:58:18  vasilche
+ * Header option made more generic
+ *
+ * Revision 1.1  1998/12/09 20:18:10  vasilche
+ * Initial implementation of CGI response generator
+ *
+ * ===========================================================================
+ */
+
+#endif  /* CGI___NCBICGIR__HPP */
