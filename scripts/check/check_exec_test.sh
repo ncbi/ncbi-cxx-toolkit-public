@@ -9,8 +9,10 @@
 # 
 #
 # Usage:
-#    check_exec_test.sh <cmd-line>
+#    check_exec_test.sh [-stdin] <cmd-line>
 #
+#    -stdin   - option used when application from <cmd-line> attempt
+#               to read from std input (cgi applications for example).
 #    cmd-line - command line to execute.
 #
 # Note:
@@ -28,8 +30,7 @@
 ###########################################################################
 
 # Get parameters
-timeout="$CHECK_TIMEOUT"
-test -z $timeout  &&  timeout=200
+timeout="${CHECK_TIMEOUT:-200}"
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
@@ -40,7 +41,7 @@ ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 if [ "-$1" == "--stdin" ]; then
   cat - > $0.stdin.$$
   shift
-  cat $0.stdin.$$ | "$@" &
+  $@ < $0.stdin.$$ &
   rm $0.stdin.$$ > /dev/null 2>&1
 else
   "$@" &
