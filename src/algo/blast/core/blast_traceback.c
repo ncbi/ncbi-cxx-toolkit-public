@@ -728,16 +728,15 @@ HSPAdjustSubjectOffset(BlastHSP* hsp, BLAST_SequenceBlk* subject_blk, Boolean is
             return;
 }
 
-/** Check whether an HSP is already contain within another higher scoring HSP.
+/** Check whether an HSP is already contained within another higher scoring HSP.
  * This is done AFTER the gapped alignment has been performed
  *
  * @param hsp_array Full Array of all HSP's found so far. [in][out]
  * @param hsp HSP to be compared to other HSP's [in]
  * @param max_index compare above HSP to all HSP's in hsp_array up to max_index [in]
- * @param new_hspcnt current count of HSP's,  [in]
  */
 static Boolean
-HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index, Int4* new_hspcnt)
+HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index)
 {
             BlastHSP* hsp2;
             Boolean keep=TRUE;
@@ -760,7 +759,6 @@ HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_in
                      keep = FALSE;
                      break;
                   } else {
-                     (*new_hspcnt)--;
                      hsp_array[index] = BlastHSPFree(hsp2);
                   }
                }
@@ -807,7 +805,6 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    BlastHSP** hsp_array;
    Int4 q_start, s_start;
    BlastHitSavingOptions* hit_options = hit_params->options;
-   Int4 new_hspcnt = 0;
    Int4 context_offset;
    Uint1* translation_buffer = NULL;
    Int4* frame_offsets = NULL;
@@ -947,11 +944,9 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             HSPAdjustSubjectOffset(hsp, subject_blk, k_is_ooframe, start_shift);
 
             if (keep)
-                keep = HSPCheckForDegenerateAlignments(hsp_array, hsp, index, &new_hspcnt);
+                keep = HSPCheckForDegenerateAlignments(hsp_array, hsp, index);
 
-            if (keep) {
-               new_hspcnt++;
-            } else {
+            if (!keep) {
                hsp_array[index] = BlastHSPFree(hsp);
             }
          } else {
@@ -974,13 +969,13 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
     /* Now try to detect simular alignments */
 
     BLASTCheckHSPInclusion(hsp_array, hsp_list->hspcnt, k_is_ooframe);
+    hsp_list->hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
     
-    /* Make up fake hitlist, relink and rereap. */
+    /* Relink and rereap the HSP list, if needed. */
 
     if (program_number == blast_type_blastx ||
         program_number == blast_type_tblastn ||
         program_number == blast_type_psitblastn) {
-        hsp_list->hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
         
         if (hit_params->do_sum_stats == TRUE) {
            BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
@@ -989,26 +984,23 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
            PHIGetEvalue(hsp_list, sbp);
         } else {
            BLAST_GetNonSumStatsEvalue(program_number, query_info, hsp_list, 
-                                      score_options, sbp);
+                                      score_options->gapped_calculation, sbp);
         }
         
         BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
     }
     
-    new_hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
-    
-    qsort(hsp_array,new_hspcnt,sizeof(BlastHSP*), score_compare_hsps);
+    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), score_compare_hsps);
     
     /* Remove extra HSPs if there is a user proveded limit on the number 
        of HSPs per database sequence */
-    if (hit_options->hsp_num_max > new_hspcnt) {
-       for (index=new_hspcnt; index<hit_options->hsp_num_max; ++index) {
+    if (hit_options->hsp_num_max > 0 && 
+        hit_options->hsp_num_max < hsp_list->hspcnt) {
+       for (index=hit_options->hsp_num_max; index<hsp_list->hspcnt; ++index) {
           hsp_array[index] = BlastHSPFree(hsp_array[index]);
        }
-       new_hspcnt = MIN(new_hspcnt, hit_options->hsp_num_max);
+       hsp_list->hspcnt = hit_options->hsp_num_max;
     }
-
-    hsp_list->hspcnt = new_hspcnt;
 
     return 0;
 }
