@@ -126,7 +126,7 @@ public:
     /// @sa CCgiRequest::Flags
     void SetRequestFlags(int flags) { m_RequestFlags = flags; }
 
-    void SetupArgDescriptions(CArgDescriptions* arg_desc);
+    virtual void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
     /// Get parsed command line arguments extended with CGI parameters
     ///
@@ -134,7 +134,7 @@ public:
     ///   The CArgs object containing parsed cmd.-line arguments and
     ///   CGI parameters
     ///
-    const CArgs& GetArgs(void) const;
+    virtual const CArgs& GetArgs(void) const;
 
 protected:
     /// This method is called if an exception is thrown during the processing
@@ -265,6 +265,9 @@ private:
     /// (becomes TRUE on first call of GetArgs())
     mutable bool              m_ArgContextSync;
 
+    /// Parsed cmd.-line args (cmdline + CGI)
+    mutable auto_ptr<CArgs>   m_CgiArgs;
+
     // forbidden
     CCgiApplication(const CCgiApplication&);
     CCgiApplication& operator=(const CCgiApplication&);
@@ -328,6 +331,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/03/10 18:03:58  vakatov
+* Made SetupArgDescriptions() and GetArgs() virtual.
+* Keep and use its own CArgs instance rather than the CNcbiApplication's one
+*
 * Revision 1.43  2004/12/27 20:31:38  vakatov
 * + CCgiApplication::OnEvent() -- to allow one catch and handle a variety of
 *   states and events happening in the CGI and Fast-CGI applications
