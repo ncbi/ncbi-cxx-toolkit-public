@@ -794,6 +794,12 @@ void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
     if (pat.IsSetAuthors()) {
         x_AddAuthors(pat.GetAuthors());
     }
+    if (pat.IsSetDate_issue()) {
+        m_Date.Reset(&pat.GetDate_issue());
+    } else if (pat.IsSetApp_date()) {
+        m_Date.Reset(&pat.GetApp_date());
+    }
+
     m_PatentId = ctx.GetPatentSeqId();
 }
 
@@ -1237,6 +1243,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/02/09 14:47:16  shomrat
+* Set date for patent
+*
 * Revision 1.28  2005/02/07 15:01:06  shomrat
 * Support for submissions
 *
