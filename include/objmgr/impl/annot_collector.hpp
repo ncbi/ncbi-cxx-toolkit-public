@@ -260,10 +260,12 @@ private:
 
     SAnnotSelector& GetSelector(void);
     CScope::EGetBioseqFlag GetGetFlag(void) const;
-    bool CanResolveId(const CSeq_id_Handle& idh, CBioseq_Handle& bh);
+    bool CanResolveId(const CSeq_id_Handle& idh, const CBioseq_Handle& bh);
 
     void x_Clear(void);
-    void x_Initialize(const CBioseq_Handle& bioseq);
+    void x_Initialize(const CBioseq_Handle& bioseq,
+                      const CRange<TSeqPos>& range,
+                      ENa_strand strand);
     void x_Initialize(const CHandleRangeMap& master_loc);
     void x_Initialize(void);
     void x_GetTSE_Info(void);
@@ -273,7 +275,7 @@ private:
                         const CHandleRange&   master_hr);
     bool x_SearchLoc(const CHandleRangeMap& loc,
                      CSeq_loc_Conversion*   cvt,
-                     const CTSE_Handle&     using_tse,
+                     const CTSE_Handle*     using_tse,
                      bool top_level = false);
     bool x_SearchTSE(const CTSE_Handle&    tse,
                      const CSeq_id_Handle& id,
@@ -779,6 +781,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/04/05 13:42:51  vasilche
+* Optimized annotation iterator from CBioseq_Handle.
+*
 * Revision 1.27  2005/03/28 20:40:44  jcherry
 * Added export specifiers
 *
