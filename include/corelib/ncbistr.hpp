@@ -2054,6 +2054,8 @@ struct PCase
 ///
 /// Used as arguments to template functions for specifying the type of 
 /// comparison.
+///
+/// @sa PNocase_Conditional
 
 struct PNocase
 {
@@ -2070,6 +2072,43 @@ struct PNocase
     bool operator()(const string& s1, const string& s2) const;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Define Case-insensitive string comparison methods.
+/// Case sensitivity can be turned on and off at runtime.
+///
+/// Used as arguments to template functions for specifying the type of 
+/// comparison.
+///
+/// @sa PNocase
+
+class PNocase_Conditional
+{
+public:
+    /// Construction
+    PNocase_Conditional(NStr::ECase case_sens = NStr::eCase);
+
+    /// Get comparison type
+    NStr::ECase GetCase() const { return m_CaseSensitive; }
+
+    /// Set comparison type
+    void SetCase(NStr::ECase case_sens) { m_CaseSensitive = case_sens; }
+
+    /// Return difference between "s1" and "s2".
+    int Compare(const string& s1, const string& s2) const;
+
+    /// Return TRUE if s1 < s2.
+    bool Less(const string& s1, const string& s2) const;
+
+    /// Return TRUE if s1 == s2.
+    bool Equals(const string& s1, const string& s2) const;
+
+    /// Return TRUE if s1 < s2 ignoring case.
+    bool operator()(const string& s1, const string& s2) const;
+private:
+    NStr::ECase m_CaseSensitive; ///< case sensitive when TRUE
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2473,7 +2512,7 @@ bool PCase::operator()(const string& s1, const string& s2) const
 
 
 
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //  PNocase::
 //
 
@@ -2501,6 +2540,40 @@ bool PNocase::operator()(const string& s1, const string& s2) const
     return Less(s1, s2);
 }
 
+////////////////////////////////////////////////////////////////////////////
+//  PNocase_Conditional::
+//
+
+inline
+PNocase_Conditional::PNocase_Conditional(NStr::ECase case_sens)
+    : m_CaseSensitive(case_sens)
+{}
+
+inline
+int PNocase_Conditional::Compare(const string& s1, const string& s2) const
+{
+    return NStr::Compare(s1, s2, m_CaseSensitive);
+}
+
+inline
+bool PNocase_Conditional::Less(const string& s1, const string& s2) const
+{
+    return Compare(s1, s2) < 0;
+}
+
+inline
+bool PNocase_Conditional::Equals(const string& s1, const string& s2) const
+{
+    return Compare(s1, s2) == 0;
+}
+
+inline
+bool PNocase_Conditional::operator()(const string& s1, const string& s2) const
+{
+    return Less(s1, s2);
+}
+
+
 
 END_NCBI_SCOPE
 
@@ -2509,6 +2582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.73  2004/12/08 12:47:16  kuznets
+ * +PNocase_Conditional (case sensitive/insensitive comparison for maps)
+ *
  * Revision 1.72  2004/11/24 15:16:13  shomrat
  * + fWrap_FlatFile - perform flat-file specific line wrap
  *
