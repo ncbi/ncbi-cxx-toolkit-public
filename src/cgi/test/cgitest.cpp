@@ -31,6 +31,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/12 17:50:05  vakatov
+* To be more careful with _DEBUG to suit some ugly MSVC++ features
+*
 * Revision 1.2  1999/11/02 20:35:44  vakatov
 * Redesigned of CCgiCookie and CCgiCookies to make them closer to the
 * cookie standard, smarter, and easier in use
@@ -41,10 +44,6 @@
 * ==========================================================================
 */
 
-#ifndef _DEBUG
-#define _DEBUG
-#endif
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
 #include <cgi/ncbires.hpp>
@@ -53,6 +52,12 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+// Workaround for non-Debug compilation
+#ifndef _DEBUG
+#undef _ASSERT
+#define _ASSERT(expr) ((void)(expr))
+#endif
 
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
