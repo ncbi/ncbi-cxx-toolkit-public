@@ -1986,7 +1986,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
 #  endif
 
-        if (!he  ||  strlen(he->h_name) > namelen - 1) {
+        if (!he  ||  strlen(he->h_name) >= namelen) {
             if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
                 name[0] = '\0';
                 name = 0;
@@ -2009,6 +2009,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2002/11/08 17:18:18  lavr
+ * Minor change: spare -1 in >= by replacing it with >
+ *
  * Revision 6.68  2002/11/01 20:12:55  lavr
  * Reimplement SOCK_gethostname() - was somewhat potentally buggy
  *
