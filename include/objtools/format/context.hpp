@@ -134,13 +134,15 @@ public:
     bool DoContigStyle(void) const;
     bool ShowGBBSource(void) const { return m_ShowGBBSource; }
 
-    bool IsInGPS(void) const { return m_IsInGPS; }  // Is in a gene-prod set?
+    bool IsInGPS    (void) const { return m_IsInGPS;     }  // Is in a gene-prod set?
+    bool IsInNucProt(void) const { return m_IsInNucProt; }  // Is in a nuc-prot set?
 
     // type of bioseq?
-    bool IsGED            (void) const { return m_IsGED; }  // Genbank, EMBL or DDBJ
-    bool IsPDB            (void) const { return m_IsPDB; }
-    bool IsSP             (void) const { return m_IsSP;  }  // SwissProt
-    bool IsTPA            (void) const { return m_IsTPA; }  // Third-Party Annotation
+    bool IsGED            (void) const { return m_IsGED;  }  // Genbank, EMBL or DDBJ
+    bool IsEMBL           (void) const { return m_IsEMBL; }  // EMBL
+    bool IsPDB            (void) const { return m_IsPDB;  }  // PDB
+    bool IsSP             (void) const { return m_IsSP;   }  // SwissProt
+    bool IsTPA            (void) const { return m_IsTPA;  }  // Third-Party Annotation
     bool IsPatent         (void) const { return m_IsPatent; }
     bool IsGbGenomeProject(void) const { return m_IsGbGenomeProject; } // AE
     bool IsNcbiCONDiv     (void) const { return m_IsNcbiCONDiv; }      // CH
@@ -178,6 +180,7 @@ private:
     CBioseq_Handle x_GetMasterForPart(void) const;
     SIZE_TYPE x_GetPartNumber(void);
     bool x_IsInGPS(void) const;
+    bool x_IsInNucProt(void) const;
     void x_SetLocation(const CSeq_loc* user_loc = 0);
     
     CSeq_inst::TRepr x_GetRepr(void) const;
@@ -202,12 +205,14 @@ private:
     // delta bioseq
     bool        m_IsDeltaLitOnly;
 
-    bool m_IsProt;  // Protein
-    bool m_IsInGPS; // Gene-Prod Set
-    bool m_IsGED;   // Genbank, Embl or Ddbj
-    bool m_IsPDB;
-    bool m_IsSP;    // SwissProt
-    bool m_IsTPA;   // Third Party Annotation
+    bool m_IsProt;      // Protein
+    bool m_IsInGPS;     // Gene-Prod Set
+    bool m_IsInNucProt; // Nuc-Prot Set
+    bool m_IsGED;       // Genbank, Embl or Ddbj
+    bool m_IsEMBL;      // EMBL
+    bool m_IsPDB;       // PDB
+    bool m_IsSP;        // SwissProt
+    bool m_IsTPA;       // Third Party Annotation
     bool m_IsRefSeq;
     unsigned int m_RefseqInfo;
     bool m_IsGbGenomeProject;  // GenBank Genome project data
@@ -489,6 +494,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/05/06 17:44:28  shomrat
+* + IsEMBL and IsInNucProt
+*
 * Revision 1.16  2004/04/27 15:09:31  shomrat
 * + IsGenbankFormat
 *

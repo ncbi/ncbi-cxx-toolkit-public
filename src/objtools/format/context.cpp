@@ -76,7 +76,9 @@ CBioseqContext::CBioseqContext
     m_IsDeltaLitOnly(false),
     m_IsProt(false),
     m_IsInGPS(false),
+    m_IsInNucProt(false),
     m_IsGED(false),
+    m_IsEMBL(false),
     m_IsPDB(false),
     m_IsSP(false),
     m_IsTPA(false),
@@ -150,7 +152,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     m_IsProt = CSeq_inst::IsAa(seq.GetInst_Mol());
 
-    m_IsInGPS = x_IsInGPS();
+    m_IsInGPS     = x_IsInGPS();
+    m_IsInNucProt = x_IsInNucProt();
 
     x_SetLocation(user_loc);
     
@@ -165,8 +168,10 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
     if ( user_loc != 0 ) {
         // map the location to the current bioseq
         CSeq_loc_Mapper mapper(m_Handle);
+        mapper.SetMergeAll();  // just to be safe
         source.Reset(mapper.Map(*user_loc));
         
+        // no need to map if doing the entire bioseq
         if ( source->IsWhole()  ||
              source->GetStart(kInvalidSeqPos) == 0  &&
              source->GetEnd(kInvalidSeqPos) == m_Handle.GetInst_Length() - 1) {
@@ -183,7 +188,9 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
             target.SetId(*m_PrimaryId);
 
             m_Mapper.Reset(new CSeq_loc_Mapper(*source, target, &scope));
-            m_Mapper->SetMergeAll();
+            m_Mapper->SetMergeAbutting();
+            m_Mapper->PreserveDestinationLocs();  // ???
+            m_Mapper->KeepNonmappingRanges();
         }
     }
     // if no location is specified do the entire sequence
@@ -216,8 +223,10 @@ void CBioseqContext::x_SetId(void)
 
         switch ( id.Which() ) {
         // Genbank, Embl or Ddbj
-        case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
+            m_IsEMBL = true;
+            // intentional fall through
+        case CSeq_id::e_Genbank:
         case CSeq_id::e_Ddbj:
             m_IsGED = true;
             m_IsGbGenomeProject = m_IsGbGenomeProject  ||
@@ -398,6 +407,14 @@ bool CBioseqContext::x_IsInGPS(void) const
 }
 
 
+bool CBioseqContext::x_IsInNucProt(void) const
+{
+    CSeq_entry_Handle e = 
+        m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+    return e;
+}
+
+
 bool CBioseqContext::DoContigStyle(void) const
 {
     const CFlatFileConfig& cfg = Config();
@@ -486,6 +503,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/05/06 17:48:49  shomrat
+* + IsEMBL and IsInNucProt
+*
 * Revision 1.15  2004/04/27 15:12:24  shomrat
 * Added logic for partial range formatting
 *
