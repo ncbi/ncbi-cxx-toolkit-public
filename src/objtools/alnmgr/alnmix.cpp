@@ -1814,7 +1814,7 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
     for (numrow = 0;  numrow < numrows;  numrow++) {
         TSignedSeqPos max_start = -1, start;
         bool plus = strands_exist ? 
-            strands[numrow] != eNa_strand_plus :
+            strands[numrow] != eNa_strand_minus :
             true;
 
         if (plus) {
@@ -1842,7 +1842,7 @@ void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
                     (widths.size() == numrows ?
                      widths[numrow] : 1);
             }
-            if (strands_exist ? strands[numrow] != eNa_strand_plus : true) {
+            if (plus) {
                 offset += numrows;
             } else {
                 offset -= numrows;
@@ -1859,6 +1859,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2003/09/08 19:24:04  todorov
+* fix strand
+*
 * Revision 1.70  2003/09/08 19:18:32  todorov
 * plus := all strands != minus
 *
