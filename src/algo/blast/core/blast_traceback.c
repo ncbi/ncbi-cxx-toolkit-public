@@ -397,7 +397,8 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    Boolean hsp_start_is_contained, hsp_end_is_contained, do_not_do;
    BlastHSP* hsp,* hsp1=NULL,* hsp2;
    Uint1* query,* subject,* subject_start = NULL;
-   Int4 query_length, subject_length, subject_length_orig=0;
+   Int4 query_length, query_length_orig;
+   Int4 subject_length, subject_length_orig=0;
    Int4 max_start = MAX_DBSEQ_LEN / 2, start_shift;
    BlastHSP** hsp_array;
    Int4 q_start, s_start, max_offset;
@@ -441,8 +442,6 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    }
 
    if (!is_ooframe) {
-      query = query_blk->sequence;
-      query_length = query_blk->length;
       if (!translate_subject) {
          subject_start = subject_blk->sequence;
          subject_length_orig = subject_blk->length;
@@ -450,13 +449,10 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    } else {
       /* Out-of-frame gapping: need to use a mixed-frame sequence */
       if (program_number == blast_type_blastx) {
-         query = query_blk->oof_sequence + CODON_LENGTH;
          subject = subject_start = subject_blk->sequence;
       } else {
-         query = query_blk->sequence;
          subject = subject_start = subject_blk->oof_sequence + CODON_LENGTH;
       }
-      query_length = query_blk->length;
       subject_length_orig = subject_blk->length;
    }
    
@@ -464,18 +460,27 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
       hsp_start_is_contained = FALSE;
       hsp_end_is_contained = FALSE;
       hsp = hsp_array[index];
-      if (is_ooframe && program_number == blast_type_blastx) {
+      if (program_number == blast_type_blastx || 
+          program_number == blast_type_tblastx) {
          Int4 context = hsp->context - hsp->context % 3;
          context_offset = query_info->context_offsets[context];
-         query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
-         query_length = 
-            query_info->context_offsets[context+3] - context_offset;
-       } else {
-         context_offset = query_info->context_offsets[hsp->context];
-         query = query_blk->sequence + context_offset;
-         query_length = BLAST_GetQueryLength(query_info, hsp->context);
+         query_length_orig = 
+            query_info->context_offsets[context+3] - context_offset - 1;
+         if (is_ooframe) {
+            query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
+            query_length = query_length_orig;
+         } else {
+            query = query_blk->sequence + 
+               query_info->context_offsets[hsp->context];
+            query_length = BLAST_GetQueryLength(query_info, hsp->context);
+         }
+      } else {
+         query = query_blk->sequence + 
+            query_info->context_offsets[hsp->context];
+         query_length = query_length_orig = 
+            BLAST_GetQueryLength(query_info, hsp->context);
       }
-      
+
       for (index1=0; index1<index; index1++) {
          hsp_start_is_contained = FALSE;
          hsp_end_is_contained = FALSE;
@@ -581,7 +586,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             if (hsp->gap_info) {
                hsp->gap_info->frame1 = hsp->query.frame;
                hsp->gap_info->frame2 = hsp->subject.frame;
-               hsp->gap_info->original_length1 = query_length;
+               hsp->gap_info->original_length1 = query_length_orig;
                hsp->gap_info->original_length2 = subject_blk->length;
                if (program_number == blast_type_blastx)
                   hsp->gap_info->translate1 = TRUE;
