@@ -12,6 +12,8 @@
 ###########################################################################
 
 
-SYBASE="C:\\Sybase"
-export SYBASE
+if test -z "$SYBASE"; ten
+   SYBASE="C:\\Sybase"
+   export SYBASE
+fi
 exec "$@"
