@@ -802,6 +802,7 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
     Int4 region_start = in_hsp->subject.offset;
     Int4 region_end = in_hsp->subject.end;
     Int4 middle;
+    Int4 tmp_index = 0;
 
     /* Descend the tree */
 
@@ -815,7 +816,7 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
            HSPs are not indexed in a tree format, so all HSPs
            in the list must be examined */
 
-        Int4 tmp_index = node->midptr;
+        tmp_index = node->midptr;
         while (tmp_index != 0) {
             SIntervalNode *tmp_node = tree->nodes + tmp_index;
 
@@ -867,6 +868,7 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
     Int4 region_start = query_start + hsp->query.offset;
     Int4 region_end = query_start + hsp->query.end;
     Int4 middle;
+    Int4 tmp_index = 0;
 
     ASSERT(region_start >= node->leftend);
     ASSERT(region_end <= node->rightend);
@@ -885,7 +887,7 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
         /* First perform containment tests on all of the HSPs
            in the midpoint tree for the current node */
 
-        Int4 tmp_index = node->midptr;
+        tmp_index = node->midptr;
         if (tmp_index > 0) {
             if (s_MidpointTreeContainsHSP(tree, tmp_index, 
                                           hsp, query_start,
