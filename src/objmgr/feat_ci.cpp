@@ -182,24 +182,17 @@ CMappedFeat::~CMappedFeat(void)
 
 CSeq_feat_Handle CMappedFeat::GetSeq_feat_Handle(void) const
 {
-    if ( m_FeatRef->IsSNPFeat() ) {
-        return CSeq_feat_Handle(m_Collector->GetScope(),
-            m_FeatRef->GetSeq_annot_SNP_Info(),
-            m_FeatRef->GetAnnotObjectIndex());
-    }
-    return CSeq_feat_Handle(m_Collector->GetScope(),
-        m_FeatRef->GetSeq_annot_Info(),
-        m_FeatRef->GetAnnotObjectIndex());
+    return CSeq_feat_Handle(GetAnnot(),
+                            m_FeatRef->IsSNPFeat()?
+                            CSeq_feat_Handle::eType_Seq_annot_SNP_Info:
+                            CSeq_feat_Handle::eType_Seq_annot_Info,
+                            m_FeatRef->GetAnnotObjectIndex());
 }
 
 
 CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 {
     return m_Collector->GetAnnot(*m_FeatRef);
-    /*
-    return CSeq_annot_Handle(m_Collector->GetScope(),
-        m_FeatRef->GetSeq_annot_Info());
-    */
 }
 
 
@@ -292,6 +285,19 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 }
 
 
+namespace {
+    inline
+    CSeq_entry_Handle GetLimitHandle(CScope& scope, const CSeq_entry* entry)
+    {
+        CSeq_entry_Handle ret;
+        if ( entry ) {
+            ret = scope.GetSeq_entryHandle(*entry);
+        }
+        return ret;
+    }
+}
+
+
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    TFeatType feat_type,
@@ -305,7 +311,8 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                      .SetByProduct(loc_type == e_Product)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve)
-                     .SetLimitSeqEntry(limitEntry))
+                     .SetLimitSeqEntry(GetLimitHandle(bioseq.GetScope(),
+                                                      limitEntry)))
 {
     ERR_POST_ONCE(Warning<<
         "Deprecated method:\n"
@@ -443,6 +450,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/12/22 15:56:09  vasilche
+* Used CSeq_annot_Handle GetAnnot() to get annotation handle.
+* Avoid use of deprecated API.
+*
 * Revision 1.36  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *
