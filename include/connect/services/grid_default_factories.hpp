@@ -35,6 +35,8 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
+#include <connect/services/netcache_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -185,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/30 21:26:01  didenko
+ * Added missing header files
+ *
  * Revision 1.2  2005/03/28 14:38:04  didenko
  * Cosmetics
  *
