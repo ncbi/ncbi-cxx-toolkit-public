@@ -62,10 +62,15 @@ CONN CConn_IOStream::GetCONN() const
 
 CConn_IOStream::~CConn_IOStream(void)
 {
+#ifndef HAVE_IOS_XALLOC
     streambuf* sb = rdbuf();
     delete sb;
     if (sb != m_CSb)
+#endif
         delete m_CSb;
+#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
+    rdbuf(0);
+#endif
 }
 
 
@@ -220,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/04/11 17:57:29  lavr
+ * Take advantage of HAVE_IOS_XALLOC
+ *
  * Revision 6.16  2003/03/25 22:17:18  lavr
  * Set timeouts from ctors in SConnNetInfo, too, for display unambigously
  *

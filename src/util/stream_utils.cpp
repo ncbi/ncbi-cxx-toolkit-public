@@ -83,6 +83,11 @@ private:
     streamsize          m_BufSize;
     void*               m_DelPtr;
 
+#ifdef HAVE_IOS_XALLOC
+    int                 m_Index;
+    static void         x_Callback(IOS_BASE::event, IOS_BASE&, int);
+#endif
+
     static const streamsize k_MinBufSize;
 };
 
@@ -90,24 +95,53 @@ private:
 const streamsize CPushback_Streambuf::k_MinBufSize = 4096;
 
 
+#ifdef HAVE_IOS_XALLOC
+void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
+                                     IOS_BASE&       ios,
+                                     int             index)
+{
+    if (event != IOS_BASE::erase_event)
+        return;
+
+    streambuf* sb = static_cast<streambuf*> (ios.pword(index));
+    if (!sb)
+        return;
+
+    ios.pword(index) = 0;
+    delete sb;
+}
+#endif
+
+
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          CT_CHAR_TYPE* buf,
                                          streamsize    buf_size,
                                          void*         del_ptr) :
-    m_Is(is), m_Sb(is.rdbuf()),
-    m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
+    m_Is(is), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
     setp(0, 0); // unbuffered output at this level of streambuf's hierarchy
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
-    m_Is.rdbuf(this);
+    m_Sb = m_Is.rdbuf(this);
+#ifdef HAVE_IOS_XALLOC
+    try {
+        m_Index             = m_Is.xalloc();
+        m_Is.pword(m_Index) = this;
+        m_Is.register_callback(x_Callback, m_Index);
+    }
+    STD_CATCH_ALL("CPushback_Streambuf::CPushback_Streambuf");
+#endif
 }
 
 
 CPushback_Streambuf::~CPushback_Streambuf()
 {
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
+#ifdef HAVE_IOS_XALLOC
+    m_Is.pword(m_Index) = 0;
+#else
     if (dynamic_cast<CPushback_Streambuf*> (m_Sb))
         delete m_Sb;
+#endif
 }
 
 
@@ -393,6 +427,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2003/04/11 17:57:52  lavr
+ * Take advantage of HAVE_IOS_XALLOC
+ *
  * Revision 1.21  2003/03/30 07:00:36  lavr
  * MIPS-specific workaround for lame-designed stream read ops
  *
