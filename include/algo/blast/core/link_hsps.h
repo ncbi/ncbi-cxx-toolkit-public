@@ -46,20 +46,6 @@ extern "C" {
 #define BLAST_SMALL_GAPS 0
 #define BLAST_LARGE_GAPS 1
 
-/* The helper arrays contains the info used frequently in the inner 
- * for loops. -cfj
- * One array of helpers will be allocated for each thread. See comments 
- * preceding link_hsps in link_hsps.c for more info.
- */
-typedef struct LinkHelpStruct {
-  BlastHSP* ptr;
-  Int4 q_off_trim;
-  Int4 s_off_trim;
-  Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS];
-  Int4 maxsum1;
-  Int4 next_larger;
-} LinkHelpStruct;
-
 /** Link HSPs using sum statistics.
  * @param program_number BLAST program [in]
  * @param hsp_list List of HSPs [in]
