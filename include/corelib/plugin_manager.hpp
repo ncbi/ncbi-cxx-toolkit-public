@@ -279,39 +279,28 @@ private:
 
 
 
-!!!  The above API is by-and-large worked through, all the rest of
-!!!  the file is absolutely not...
+//!!!  The above API is by-and-large worked through, all the rest of
+//!!!  the file is absolutely not...
+
+#if 0
 
 
-
-
-/// CDllResolver --
+/// CDllResolver_PluginManager<> --
 ///
-/// Class to resolve DLL by the plugin's class name, driver name, and version.
+/// Class to resolve DLL by driver name and version.
 /// Also allows to filter for and get entry point for CPluginManager.
 
-class NCBI_XNCBI_EXPORT CDllResolver
+class NCBI_XNCBI_EXPORT CDllResolver_PluginManager : public CDllResolver
 {
 public:
+    /// 
     /// Return list of absolute DLL names matching the prugin's class name,
     /// driver name, and driver version.
     virtual string<list> Resolve
-    (const string&       plugin,
+    (const string&       interface,
      const string&       driver,
      const CVersionInfo& version = CVersionInfo::kAny);
-
-    /// Adjustment of the DLL search path
-    /// @sa SetDllSearchPath()
-    enum ESetPath {
-        eOverride,  //<! Override the existing DLL search path with "path"
-        ePrepend,   //<! Add "path" to the head of the existing DLL search path
-        eAppend     //<! Add "path" to the tail of the existing DLL search path
-    };
-
-    /// Change DLL search path.
-    ///
-    /// The default search paths are regular system-dependent DLL search paths.
-    void SetDllSearchPath(const string& path, EModifyDllPath method);
+  
 
 protected:
     /// Compose a list of possible DLL names based on the plugin's class, name
@@ -346,6 +335,46 @@ protected:
      const string&       driver  = kEmptyStr,
      const CVersionInfo& version = CVersionInfo::kAny);
 
+    // default:
+    //  - "NCBI_EntryPoint_<TClassFactory::GetName()>_<name>"
+    virtual string GetEntryPointName
+    (const string&       driver  = kEmptyStr,
+     const CVersionInfo& version = CVersionInfo::kAny);
+
+    // ctors
+    CDllResolver_PluginManager(void) :
+        CDllResolver() {}
+    virtual ~CDllResolver_PluginManager() {}
+};
+
+
+
+/// CDllResolver --
+///
+/// Class to find DLLs.
+///
+/// The DLL search criteria include:
+///  - search path(s)
+///  - name mask(s)
+///  - entry point name mask(s)
+
+class NCBI_XNCBI_EXPORT CDllResolver
+{
+public:
+    /// Adjustment of the DLL search path
+    /// @sa SetDllSearchPath()
+    enum ESetPath {
+        eOverride,  //<! Override the existing DLL search path with "path"
+        ePrepend,   //<! Add "path" to the head of the existing DLL search path
+        eAppend     //<! Add "path" to the tail of the existing DLL search path
+    };
+
+    /// Change DLL search path.
+    ///
+    /// By default, search paths are regular system-dependent DLL search paths.
+    void SetDllSearchPath(const string& path, EModifyDllPath method);
+
+protected:
     /// 
     ///
     /// Default:  "ncbi_plugin_"
@@ -360,35 +389,7 @@ private:
     string m_DllPath;
 };
 
-
-
-/// CDllResolver_PluginManager<> --
-///
-/// Class to resolve DLL by the plugin's class name, driver name, and version.
-/// Also allows to filter for and get entry point for CPluginManager.
-
-template <class TClass, class TDllResolver = CDllResolver>
-class NCBI_XNCBI_EXPORT CDllResolver_PluginManager : public TDllResolver
-{
-public:
-    /// 
-    
-
-
-
-protected:
-    // default:
-    //  - "NCBI_EntryPoint_<TClassFactory::GetName()>_<name>"
-    virtual string GetEntryPointName
-    (const string&       name    = kEmptyStr,
-     const CVersionInfo& version = CVersionInfo::kAny);
-
-    // ctors
-    CDllResolver_PluginManager(void) :
-        CDllResolver() {}
-    virtual ~CDllResolver_PluginManager() {}
-};
-
+#endif /* NOT READY YET */
 
 
 END_NCBI_SCOPE
@@ -400,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/29 19:34:43  vakatov
+ * Comment out unfinished defined APIs (using "#if 0")
+ *
  * Revision 1.2  2003/10/28 22:29:04  vakatov
  * Draft-done with:
  *   general terminology
