@@ -27,26 +27,6 @@
  *          (also reviewed/fixed/groomed by Denis Vakatov)
  * File Description:
  *   
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2002/05/03 21:28:15  ucko
- * Introduce T(Signed)SeqPos.
- *
- * Revision 1.4  2002/01/10 20:34:15  clausen
- * Added tests for GetIupacaa3, GetCode, and GetIndex
- *
- * Revision 1.3  2001/12/07 18:52:05  grichenk
- * Updated "#include"-s and forward declarations to work with the
- * new datatool version.
- *
- * Revision 1.2  2001/11/13 12:14:29  clausen
- * Changed call to CGencode::Translate to reflect new type for code breaks
- *
- * Revision 1.1  2001/08/24 00:44:05  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiapp.hpp>
@@ -72,7 +52,6 @@
 #include <objects/seq/gencode.hpp>
 #include <objects/seq/seqport_util.hpp>
 
-#include <time.h>
 
 
 USING_NCBI_SCOPE;
@@ -93,22 +72,117 @@ public:
 
     void DisplaySeq(const CSeq_data& seq, unsigned int uSize=48);
 
-    void Test(const CSeq_data&     in_seq,
+    // Testing methods that require CSeq_data
+    void SeqDataTest();
+    void GetAmbigsTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
               CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
               bool                 bAmbig);
-
-    void ManualTest();
-
-    void AsnTest();
-
-    void GetSeqentryData(vector<CRef<CSeq_data> >&  seqs, 
-                         CRef<CSeq_entry>&          seq_entry);
-
-    void GetBioseqData(vector<CRef<CSeq_data> >&    seqs,
-                       CRef<CBioseq>&               seq); 
-                       
-    void GetBioseqSetData(vector<CRef<CSeq_data> >& seqs,
-                          CRef<CBioseq_set>&        seq_set); 
+    void TranslateTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void ConvertTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void AppendTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void InPlaceReverseComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void InCopyReverseComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void InPlaceReverseTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void InCopyReverseTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void InPlaceComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void InCopyComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void FastValidateTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void ValidateTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void GetCopyTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    void KeepTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos         uBeginIdx,
+              TSeqPos         uLength,
+              bool                 bAmbig);
+    void PackTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig);
+    
+    
+    // Testing methods that do not require CSeq_data
+    void NonSeqDataTest();
+    void GetIupacaa3();
+    void GetCodeEChoice();
+    void GetCodeESeq();
+    void GetNameEChoice();    
+    void GetNameESeq();
+    void GetIndexEChoice();
+    void GetIndexESeq();
+    void IsCodeAvailableEChoice();
+    void IsCodeAvailableESeq();
+    void GetCodeIndexFromToEChoice();
+    void GetCodeIndexFromToESeq();
+    void GetIndexComplementEChoice();
+    void GetIndexComplementESeq();
+    void GetMapToIndexEChoice();
+    void GetMapToIndexESeq();       
 };
 
 
@@ -125,223 +199,383 @@ void CSeqportTestApp::Init()
 
 int CSeqportTestApp::Run()
 {
-    cout << "Manual or ASN (0-Exit, 1-Manual, 2-ASN)? ";
-    int nResponse = 1;
-    cin >> nResponse;
-    switch(nResponse){
-    case 1:
-        ManualTest();
-        break;
-    case 2:
-        AsnTest();
-        break;
-    default:
-        break;
-    }
+    while ( true ) {
     
+        cout << "Enter type tests to run: " << endl
+             << "0) Done" << endl
+             << "1) Tests requiring CSeq_dat" << endl
+             << "2) Tests not requiring CSeq_dat" << endl; 
+
+        int resp;
+        cin >> resp;
+        
+        switch (resp) {
+        case 0:
+            return 0;
+        case 1:
+            SeqDataTest();
+            break;
+        case 2:
+            NonSeqDataTest();
+            break;
+        }
+    }
+                
     return 0;
 }
 
 
-void CSeqportTestApp::AsnTest()
+static int GetChoice()
 {
-    //Load ASN file. Only works for Seq-entry
-    string fname;
-    cout << "Enter file name: ";
-    cin >> fname;
-    auto_ptr<CObjectIStream>
-        asn_in(CObjectIStream::Open(fname.c_str(), eSerial_AsnText));
-    CRef<CSeq_entry> seq_entry(new CSeq_entry);
-    *asn_in >> *seq_entry;
+    int choice = -1;
+    while ( (choice < 0 || choice > 11) && (choice != 99) ) {
+        cout << "Enter code type choice:" << endl
+             << "0:  Not set" << endl
+             << "1:  Iupacna" << endl
+             << "2:  Iupacaa" << endl
+             << "3:  Ncbi2na" << endl
+             << "4:  Ncbi4na" << endl
+             << "5:  Ncbi8na" << endl
+             << "6:  Ncbipna" << endl
+             << "7:  Ncbi8aa" << endl
+             << "8:  Ncbieaa" << endl
+             << "9:  Ncbipaa" << endl
+             << "10: Ncbistdaa" << endl
+             << "11: Iupacaa3" << endl
+             << "99: Done" << endl;
+        cin >> choice;
+    }    
+    return choice;  
+}
+
+static CSeq_data::E_Choice GetEChoice()
+{
+    int choice = GetChoice();
     
-    //Get a vector of CSeq_data
-    vector<CRef<CSeq_data> > seqs;
-    GetSeqentryData(seqs, seq_entry);
-    
-    //Loop through seqs and test.
-    iterate (vector<CRef<CSeq_data> >, i_seqs, seqs) {
-	    
-        //Display in_seq type
-        switch((*i_seqs)->Which()){
-        case CSeq_data::e_Iupacna:
-            cout << "in_seq is Iupacna" << endl;
-            break;
-        case CSeq_data::e_Ncbi2na:
-            cout << "in_seq is Ncbi2na" << endl;
-            break;
-        case CSeq_data::e_Ncbi4na:
-            cout << "in_seq is Ncbi4na" << endl;
-            break;
-        case CSeq_data::e_Ncbieaa:
-            cout << "in_seq is Ncbieaa" << endl;
-            break;
-        case CSeq_data::e_Ncbistdaa:
-            cout << "in_seq is Ncbistdaa" << endl;
-            break;
-        case CSeq_data::e_Iupacaa:
-            cout << "in_seq is Iupacaa" << endl;
-            break;
-        default:
-            cout << "in_seq type not supported" << endl;
-            break;
-        }
-	
-	
-        cout << "Choice? (0-Quit, 1-Continue, 2-Skip): ";
-        int nResponse = 1;
-        cin >> nResponse;
-        bool bSkip;
-        switch(nResponse){
-        case 0:
-            return;
-        case 1:
-            bSkip = false;
-            break;
-        case 2:
-            bSkip = true;
-            break;
-        default:
-            bSkip = true;
-            break;
-        }
-	
-        if(bSkip)
-            continue;
-	    
-        //if seq is Ncbi2na or Ncbi4na, ask if want 
-        //converted to iupacna for Translate
-        if(((*i_seqs)->Which() == CSeq_data::e_Ncbi2na)  ||
-           ((*i_seqs)->Which() == CSeq_data::e_Ncbi4na)) {
-            cout << "Convert in_seq to Iupacna? (0-No, 1-Yes): ";
-            cin >> nResponse;
-            if (nResponse == 1) {
-                CRef<CSeq_data> in_seq(new CSeq_data);
-                CSeqportUtil::GetCopy(**i_seqs, in_seq.GetPointer(), 0, 0);
-                CSeqportUtil::Convert(*in_seq.GetPointer(), 
-                           (*i_seqs).GetPointer(), 
-                           CSeq_data::e_Iupacna,
-                           0,
-                           0);
-            }
-        }
-	    
-        //Enter out sequence type
-        int nOutSeqType = -1;
-        while(nOutSeqType<0) {
-            cout << "Enter out sequence type " << endl;
-            cout <<
-                "(0=ncbi2na, 1=ncbi4na, 2=iupacna, 3=ncbieaa, "
-                "4=ncbistdaa, 5=iupacaa): ";
-            cin >> nOutSeqType;
-            if(nOutSeqType > 5)
-                nOutSeqType = -1;
-        } 
-        bool bAmbig = false;
-        cout << "Randomly disambiguate (1 = Yes, 0 = No)? ";
-        unsigned int nAmbig = 0;
-        cin >> nAmbig;
-        if(nAmbig != 0)
-            bAmbig = true;
-	  
-        CSeq_data::E_Choice to_code;	 
-        switch(nOutSeqType) {
-        case 0:
-            to_code = CSeq_data::e_Ncbi2na;
-            break;
-        case 1:
-            to_code = CSeq_data::e_Ncbi4na;
-            break;
-        case 2:
-            to_code = CSeq_data::e_Iupacna;
-            break;
-        case 3:
-            to_code = CSeq_data::e_Ncbieaa;
-            break;
-        case 4:
-            to_code = CSeq_data::e_Ncbistdaa;
-            break;
-        case 5:
-            to_code = CSeq_data::e_Iupacaa;
-            break;
-        }	    
-    
-        Test(**i_seqs, to_code, bAmbig);
+    switch (choice) {
+    case 0:
+        return CSeq_data::e_not_set;
+    case 1:
+        return CSeq_data::e_Iupacna;
+    case 2:
+        return CSeq_data::e_Iupacaa;
+    case 3:
+        return CSeq_data::e_Ncbi2na;
+    case 4:
+        return CSeq_data::e_Ncbi4na;
+    case 5:
+        return CSeq_data::e_Ncbi8na;
+    case 6:
+        return CSeq_data::e_Ncbipna;
+    case 7:
+        return CSeq_data::e_Ncbi8aa;
+    case 8:
+        return CSeq_data::e_Ncbieaa;
+    case 9:
+        return CSeq_data::e_Ncbipaa;
+    case 10:
+        return CSeq_data::e_Ncbistdaa;
+    case 99:
+        throw runtime_error("Done");
     }
+    cout << "Requested code not CSeq_data:E_Choice" << endl;
+    cout << "Using CSeq_data::e_not_set" << endl;
+    return CSeq_data::e_not_set;
 }
 
-
-void CSeqportTestApp::GetSeqentryData(vector<CRef<CSeq_data> >&    seqs, 
-                                      CRef<CSeq_entry>&            seq_entry)
+static ESeq_code_type GetESeqCodeType()
 {
-    //Determine type of seq_entry
-    CSeq_entry::E_Choice eType = seq_entry->Which();
+    int choice = GetChoice();
     
-    switch(eType){  
-    case CSeq_entry::e_Seq:
-        {
-            CRef<CBioseq> seq(&seq_entry->GetSeq());
-            GetBioseqData(seqs, seq);
-            break;
-        }
-    case CSeq_entry::e_Set:
-        {
-            CRef<CBioseq_set> seq_set(&seq_entry->GetSet());
-            GetBioseqSetData(seqs, seq_set);
-            break;
-        }
-    default:
-        break;
-    }  
-}
-
-
-void CSeqportTestApp::GetBioseqData(vector<CRef<CSeq_data> >&   seqs,
-                                    CRef<CBioseq>&              seq)
-{
-    //Get the CSeq_inst
-    CRef<CSeq_inst> seq_inst(&seq->SetInst());
-    
-    //If CSeq_data is set get the data and put into seqs
-    if(seq_inst->IsSetSeq_data())
-        {
-            CRef<CSeq_data> seq_data(&seq_inst->SetSeq_data());
-            seqs.push_back(seq_data);
-        }
-}
-
-
-void CSeqportTestApp::GetBioseqSetData(vector<CRef<CSeq_data> >&     seqs,
-                                       CRef<CBioseq_set>&            seq_set)
-{
-    //Get the list of seq-entries
-    list<CRef<CSeq_entry> >& entry_list = seq_set->SetSeq_set();
-    
-    //Loop through the entry_list and call GetSeqentryData
-    //for each item in the list
-    non_const_iterate (list<CRef<CSeq_entry> >, i_set, entry_list) {
-        GetSeqentryData(seqs, *i_set);
+    switch (choice) {
+    case 1:
+        return eSeq_code_type_iupacna;
+    case 2:
+        return eSeq_code_type_iupacaa;
+    case 3:
+        return eSeq_code_type_ncbi2na;
+    case 4:
+        return eSeq_code_type_ncbi4na;
+    case 5:
+        return eSeq_code_type_ncbi8na;
+    case 6:
+        return eSeq_code_type_ncbipna;
+    case 7:
+        return eSeq_code_type_ncbi8aa;
+    case 8:
+        return eSeq_code_type_ncbieaa;
+    case 9:
+        return eSeq_code_type_ncbipaa;
+    case 10:
+        return eSeq_code_type_ncbistdaa;
+    case 11:
+        return eSeq_code_type_iupacaa3;
+    case 99:
+        throw runtime_error("Done");
     }
+    cout << "Requested code no an ESeq_code_type. Using iupacna." << endl;
+    return eSeq_code_type_iupacna;
 }
 
 
-void CSeqportTestApp::ManualTest()
+void CSeqportTestApp::GetIupacaa3()
+{
+    unsigned int ncbistdaa;
+    cout << "Enter Ncbistdaa index: ";
+    cin >> ncbistdaa;
+    string iupacaa3;
+    iupacaa3 = CSeqportUtil::GetIupacaa3(ncbistdaa);
+    cout << "Iupacaa3 is : " << iupacaa3 << endl;
+    throw runtime_error("Done");
+}
+
+void CSeqportTestApp::GetCodeEChoice()
+{   
+    CSeq_data::E_Choice code_type = GetEChoice();  
+    CSeqportUtil::TIndex idx;
+    cout << "Enter index: ";
+    cin >> idx;
+    string code;
+    code = CSeqportUtil::GetCode(code_type, idx);
+    cout << "Code is : " << code << endl;
+}
+
+void CSeqportTestApp::GetCodeESeq()
+{
+    ESeq_code_type code_type = GetESeqCodeType();
+    int idx;
+    cout << "Enter index: ";
+    cin >> idx;
+    string code;
+    code = CSeqportUtil::GetCode(code_type, idx);
+    cout << "Code is : " << code << endl;
+}
+
+void CSeqportTestApp::GetNameEChoice()
+{
+    CSeq_data::E_Choice code_type = GetEChoice();
+    int idx;
+    cout << "Enter index: ";
+    cin >> idx;
+    string code;
+    code = CSeqportUtil::GetName(code_type, idx);
+    cout << "Name is : " << code << endl;
+}
+
+void CSeqportTestApp::GetNameESeq()
+{
+    ESeq_code_type code_type = GetESeqCodeType();
+    int idx;
+    cout << "Enter index: ";
+    cin >> idx;
+    string code;
+    code = CSeqportUtil::GetName(code_type, idx);
+    cout << "Name is : " << code << endl;
+}
+
+void CSeqportTestApp::GetIndexEChoice()
+{
+    CSeq_data::E_Choice code_type = GetEChoice();
+    string code;
+    cout << "Enter code: ";
+    cin >> code;
+    int idx = CSeqportUtil::GetIndex(code_type, code);
+    cout << "Index is : " << idx << endl;
+}
+
+void CSeqportTestApp::GetIndexESeq()
+{
+    ESeq_code_type code_type = GetESeqCodeType();
+    string code;
+    cout << "Enter code: ";
+    cin >> code;
+    int idx = CSeqportUtil::GetIndex(code_type, code);
+    cout << "Index is : " << idx << endl;
+}
+
+void CSeqportTestApp::IsCodeAvailableEChoice()
+{
+    CSeq_data::E_Choice code_type = GetEChoice();
+    bool avail = CSeqportUtil::IsCodeAvailable(code_type);
+    cout << "Code availabe is " << avail << endl;
+}
+
+void CSeqportTestApp::IsCodeAvailableESeq()
+{
+    ESeq_code_type code_type = GetESeqCodeType();
+    bool avail= CSeqportUtil::IsCodeAvailable(code_type);
+    cout << "Code availabe is " << avail << endl;
+}
+
+void CSeqportTestApp::GetCodeIndexFromToEChoice()
+{
+    CSeq_data::E_Choice code_type = GetEChoice();
+    pair<int, int> from_to = 
+        CSeqportUtil::GetCodeIndexFromTo(code_type);
+    cout << "From is " << from_to.first
+         << ": To is " << from_to.second << endl;
+}
+
+void CSeqportTestApp::GetCodeIndexFromToESeq()
+{
+    ESeq_code_type code_type = GetESeqCodeType();
+    pair<int, int> from_to = 
+        CSeqportUtil::GetCodeIndexFromTo(code_type);
+    cout << "From is " << from_to.first
+         << ": To is " << from_to.second << endl;
+}
+
+void CSeqportTestApp::GetIndexComplementEChoice()
+{
+    CSeq_data::E_Choice code_type = GetEChoice();
+    cout << "Enter index: ";
+    int idx;
+    cin >> idx;
+    int c_idx = CSeqportUtil::GetIndexComplement(code_type, idx);
+    cout << "Complement for index " << idx << " is " << c_idx << endl;
+}
+
+void CSeqportTestApp::GetIndexComplementESeq()
+{
+    ESeq_code_type code_type = GetESeqCodeType();
+    cout << "Enter index: ";
+    int idx;
+    cin >> idx;
+    int c_idx = CSeqportUtil::GetIndexComplement(code_type, idx);
+    cout << "Complement for index " << idx << " is " << c_idx << endl;
+}
+
+void CSeqportTestApp::GetMapToIndexEChoice()
+{
+    cout << "From type: " << endl;
+    CSeq_data::E_Choice from_type = GetEChoice();
+    cout << "To type: " << endl;
+    CSeq_data::E_Choice to_type = GetEChoice();
+    cout << "Enter from index: ";
+    int from_idx;
+    cin >> from_idx;
+    int to_idx = CSeqportUtil::GetMapToIndex(from_type, to_type, from_idx);
+    cout << "From index maps to " << to_idx << endl;
+}
+
+void CSeqportTestApp::GetMapToIndexESeq()
+{
+    cout << "From type: " << endl;
+    ESeq_code_type from_type = GetESeqCodeType();
+    cout << "To type: " << endl;
+    ESeq_code_type to_type = GetESeqCodeType();
+    cout << "Enter from index: ";
+    int from_idx;
+    cin >> from_idx;
+    int to_idx = CSeqportUtil::GetMapToIndex(from_type, to_type, from_idx);
+    cout << "From index maps to " << to_idx << endl;
+}
+
+void CSeqportTestApp::NonSeqDataTest()
+{
+    while (true) {
+        cout << "Enter test to run: " << endl
+             << "0)  Done " << endl
+             << "1)  GetIupacaa3() " << endl
+             << "2)  GetCode(E_Choice) " << endl
+             << "3)  GetCode(ESeq_code_type) " << endl
+             << "4)  GetName(E_Choice) " << endl
+             << "5)  GetName(ESeq_code_type) " << endl
+             << "6)  GetIndex(E_Choice) " << endl
+             << "7)  GetIndex(ESeq_code_type) " << endl
+             << "8)  IsCodeAvailable(E_Choice) " << endl
+             << "9)  IsCodeAvailable(ESeq_code_type) " << endl
+             << "10) GetCodeIndexFromTo(E_Choice) " << endl
+             << "11) GetCodeIndexFromTo(ESeq_code_type) " << endl
+             << "12) GetIndexComplement(E_Choice) " << endl
+             << "13) GetIndexComplement(ESeq_code_type) " << endl
+             << "14) GetMapToIndex(E_Choice) " << endl
+             << "15) GetMapToIndex(ESeq) " << endl
+             << endl;
+        int resp;
+        cin >> resp;
+        while (true) {
+            try {
+                switch (resp) {
+                case 0:
+                    return;
+                case 1:   
+                    GetIupacaa3();
+                    break;
+                case 2:
+                    GetCodeEChoice();
+                    break;
+                case 3:
+                    GetCodeESeq();
+                    break;
+                case 4:
+                    GetNameEChoice();
+                    break;
+                case 5:
+                    GetNameESeq();
+                    break;
+                case 6:
+                    GetIndexEChoice();
+                    break;
+                case 7:
+                    GetIndexESeq();
+                    break;
+                case 8:
+                    IsCodeAvailableEChoice();
+                    break;
+                case 9:
+                    IsCodeAvailableESeq();
+                    break;
+                case 10:
+                    GetCodeIndexFromToEChoice();
+                    break;
+                case 11:
+                    GetCodeIndexFromToESeq();
+                    break;
+                case 12:
+                    GetIndexComplementEChoice();
+                    break;
+                case 13:
+                    GetIndexComplementESeq();
+                    break;
+                case 14:
+                    GetMapToIndexEChoice();
+                    break;
+                case 15:
+                    GetMapToIndexESeq();
+                    break;
+                }
+            } catch (runtime_error e) {
+                string msg(e.what());
+                if (msg == "Done") {
+                    break;
+                }
+                cout << msg << endl;
+            } 
+            catch (CSeqportUtil::CBadSymbol) {}
+            catch (CSeqportUtil::CBadIndex) {}
+            catch (CSeqportUtil::CBadType) {}
+        }
+    }    
+}
+
+
+void CSeqportTestApp::SeqDataTest()
 {
     //Declare local variables
-    string strInSeq;
-    SIZE_TYPE nTimes=0;
-    TSeqPos uSeqLen=0, uCnt=0, uOverhang=0;
+    unsigned int nTimes=0, uOverhang=0;
+    TSeqPos uSeqLen = 0, uCnt = 0;
     int nInSeqType, nOutSeqType;
     CSeq_data::E_Choice to_code;
     bool bAmbig;
-    
-  
+
     //Create in CSeq_data 
     CRef<CSeq_data> in_seq(new CSeq_data); 
     
     //Enter in sequence type
     nInSeqType = -1;
     while(nInSeqType<0) {
-        cout << "Enter in sequence type " << endl;
+        cout << "Enter input sequence type " << endl;
         cout <<
             "(0=ncbi2na, 1=ncbi4na, 2=iupacna, 3=ncbieaa,"
             " 4=ncbistdaa, 5=iupacaa): ";
@@ -353,7 +587,7 @@ void CSeqportTestApp::ManualTest()
     //Enter out sequence type
     nOutSeqType = -1;
     while(nOutSeqType<0) {
-        cout << "Enter out sequence type " << endl;
+        cout << "Enter output sequence type " << endl;
         cout <<
             "(0=ncbi2na, 1=ncbi4na, 2=iupacna, 3=ncbieaa,"
             " 4=ncbistdaa, 5=iupacaa): ";
@@ -408,12 +642,12 @@ void CSeqportTestApp::ManualTest()
             uOverhang = uSeqLen % str.size();
         }
         in_seq->Reset();
-        SIZE_TYPE nSize = str.size();
+        int nSize = str.size();
         const char* s = str.c_str();
         switch(nInSeqType) {
         case 2:
             in_seq->SetIupacna().Set().resize(uSeqLen);
-            for(SIZE_TYPE i=0; i<nTimes; i++){               
+            for(unsigned int i=0; i<nTimes; i++){               
                 in_seq->SetIupacna().Set().replace
                     (i*nSize,nSize,s);
                 string tst = in_seq->SetIupacna().Set();
@@ -425,7 +659,7 @@ void CSeqportTestApp::ManualTest()
             break;
         case 3:
             in_seq->SetNcbieaa().Set().resize(uSeqLen);
-            for(SIZE_TYPE i=0; i<nTimes; i++) {
+            for(unsigned int i=0; i<nTimes; i++) {
                 in_seq->SetNcbieaa().Set().replace
                     (i*nSize,nSize,s);
             }
@@ -436,7 +670,7 @@ void CSeqportTestApp::ManualTest()
             break;
         case 5:
             in_seq->SetIupacaa().Set().resize(uSeqLen);
-            for(SIZE_TYPE i=0; i<nTimes; i++) {
+            for(unsigned int i=0; i<nTimes; i++) {
                 in_seq->SetIupacaa().Set().replace
                     (i*nSize,nSize,s);
             }            
@@ -514,21 +748,21 @@ void CSeqportTestApp::ManualTest()
         
         switch(nInSeqType){
         case 0:
-            for(SIZE_TYPE i=0; i<nTimes; i++) {
+            for(unsigned int i=0; i<nTimes; i++) {
                 iterate (vector<char>, j, v) {
                     in_seq->SetNcbi2na().Set().push_back(*j);
                 }
             }
             break;
         case 1:
-            for(SIZE_TYPE i=0; i<nTimes; i++) {
+            for(unsigned int i=0; i<nTimes; i++) {
                 iterate (vector<char>, j, v) {
                     in_seq->SetNcbi4na().Set().push_back(*j);
                 }
             }
             break;
         case 4:
-            for(SIZE_TYPE i=0; i<nTimes; i++) {
+            for(unsigned int i=0; i<nTimes; i++) {
                 iterate (vector<char>, j, v) {
                     in_seq->SetNcbistdaa().Set().push_back(*j);
                 }
@@ -537,802 +771,749 @@ void CSeqportTestApp::ManualTest()
         }
     }
   
-    Test(*in_seq, to_code, bAmbig);
-}
-
- 
-void CSeqportTestApp::Test(const CSeq_data&    in_seq,
-                           CSeq_data::E_Choice to_code,
-                           bool                bAmbig)
-{
-    string strInSeq;
-    TSeqPos uSeqLen=0;
-    TSeqPos uBeginIdx, uLength, uIdx1, uIdx2;
-    clock_t s_time, e_time;
-    double d_time;
-    int nResponse = 1;
-  
-    //Create out_seq
-    CRef<CSeq_data> out_seq(new CSeq_data); 
-             
     //Enter Begin Index (relative to biological sequence)
-    uBeginIdx = 0;
+    TSeqPos uBeginIdx = 0, uLength = 0;
     cout << "Enter begin index to Convert: ";
     cin >> std::dec >> uBeginIdx;
     
     //Enter Length of sequence to Convert
-    uLength = 0;
     cout << "Enter length of sequence to Convert: ";
     cin >> uLength;
-  
-    // Test CSeqportUtil::GetIupacaa3
+    
+    //Create out_seq
+    CRef<CSeq_data> out_seq(new CSeq_data);
+    
+    int nResponse;
+    
     while (true) {
-        cout << "Test GetIupacaa3() (1=Yes, 0=No): ";
-        cin >> nResponse;
-        if (!nResponse) {
-            break;
-        }
-        int ncbistdaa;
-        cout << "Enter Ncbistdaa code: ";
-        cin >> ncbistdaa;
-        string iupacaa3;
-        iupacaa3 = CSeqportUtil::GetIupacaa3(ncbistdaa);
-        cout << "Iupacaa3 is : " << iupacaa3 << endl;
-    }
-
-    //Test CSeqportUtil.GetCode()
-    while (true) {
-        cout << "Test GetCode (1=Yes, 0=No): ";
-        cin >> nResponse;
-        if (!nResponse) {
-            break;
-        }
-        
-        cout << "Enter code type (0=Iupacna, 1=Iupacaa, 2=Ncibeaa, 3=Ncbistdaa): ";
-        int ctype;
-        cin >> ctype;
-        CSeq_data::E_Choice code_type;
-        switch (ctype) {
+        cout << "Enter test to run:" << endl
+             << "0)  Quit" << endl
+             << "1)  GetAmbigsTest" << endl
+             << "2)  TranslateTest" << endl
+             << "3)  ConvertTest" << endl
+             << "4)  AppendTest" << endl
+             << "5)  InPlaceReverseComplementTest" << endl
+             << "6)  InCopyReverseComplementTest" << endl
+             << "7)  InPlaceReverseTest" << endl
+             << "8)  InCopyReverseTest" << endl
+             << "9)  InPlaceComplementTest" << endl
+             << "10) InCopyComplementTest" << endl
+             << "11) FastValidateTest" << endl
+             << "12) ValidateTest" << endl
+             << "13) GetCopyTest" << endl
+             << "14) KeepTest" << endl
+             << "15) PackTest" << endl; 
+        cin >> nResponse;   
+         
+        switch (nResponse) {
         case 0:
-            code_type = CSeq_data::e_Iupacna;
-            break;
+            return;
         case 1:
-            code_type = CSeq_data::e_Iupacaa;
+            GetAmbigsTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
             break;
         case 2:
-            code_type = CSeq_data::e_Ncbieaa;
+            TranslateTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
             break;
         case 3:
-            code_type = CSeq_data::e_Ncbistdaa;
+            ConvertTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 4:
+            AppendTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 5:
+            InPlaceReverseComplementTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 6:
+            InCopyReverseComplementTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 7:
+            InPlaceReverseTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 8:
+            InCopyReverseTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 9:
+            InPlaceComplementTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 10:
+            InCopyComplementTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 11:
+            FastValidateTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 12:
+            ValidateTest
+                (*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 13:
+            GetCopyTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 14:
+            KeepTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+            break;
+        case 15:
+            PackTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
             break;
         default:
-            code_type = CSeq_data::e_not_set;
-        }
-        if (code_type == CSeq_data::e_not_set) {
-            continue;
-        }
-        
-        int idx;
-        cout << "Enter index: ";
-        cin >> idx;
-        string code;
-        code = CSeqportUtil::GetCode(code_type, idx);
-        cout << "Code is : " << code << endl;
-    }
-
-    //Test CSeqportUtil.GetIndex()
-    while (true) {
-        cout << "Test GetIndex (1=Yes, 0=No): ";
-        cin >> nResponse;
-        if (!nResponse) {
             break;
         }
-        
-        cout << "Enter code type (0=Iupacna, 1=Iupacaa, 2=Ncibeaa, 3=Ncbistdaa): ";
-        int ctype;
-        cin >> ctype;
-        CSeq_data::E_Choice code_type;
-        switch (ctype) {
-        case 0:
-            code_type = CSeq_data::e_Iupacna;
-            break;
-        case 1:
-            code_type = CSeq_data::e_Iupacaa;
-            break;
-        case 2:
-            code_type = CSeq_data::e_Ncbieaa;
-            break;
-        case 3:
-            code_type = CSeq_data::e_Ncbistdaa;
-            break;
-        default:
-            code_type = CSeq_data::e_not_set;
-        }
-        if (code_type == CSeq_data::e_not_set) {
-            continue;
-        }
-        
-        string code;
-        cout << "Enter code: ";
-        cin >> code;
-        int idx = CSeqportUtil::GetIndex(code_type, code);
-        cout << "Index is : " << idx << endl;
-    }
-
-  
-    //Do ambigutity checking
-    cout << "Get Ambigs (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if (nResponse) {
-        try {
-            vector<TSeqPos> out_indices;
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-        
-            TSeqPos uLen = CSeqportUtil::GetAmbigs
-                (in_seq,
-                 out_seq,
-                 &out_indices,
-                 to_code,
-                 uIdx1,
-                 uIdx2);
-        
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Results for GetAmbigs()" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " GetAmbigs() Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1
-                 << ", " << uIdx2 << ")" << endl;
-            cout << "Num ambigs = " << out_indices.size() << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            if(out_seq->Which() == CSeq_data::e_Ncbi4na) {
-                if (out_indices.size() <= 24) {
-                    iterate (vector<TSeqPos>, i_idx, out_indices) {
-                        cout << (*i_idx) << " ";
-                    }
-                    cout << endl;
-                    const vector<char>& out_seq_data
-                        = out_seq->GetNcbi4na().Get();
-                    iterate (vector<char>, i_out, out_seq_data) {
-                        cout << std::hex
-                             << (unsigned short)(unsigned char) *i_out << " ";
-                    }
-                    cout << endl;
-                }
-            }
-            else if(out_seq->Which() == CSeq_data::e_Iupacna) {
-                if(out_indices.size() <= 24) {
-                    iterate (vector<TSeqPos>, i_idx, out_indices) {
-                        cout << (*i_idx) << " ";
-                    }
-                    cout << endl;
-                    string out_seq_data = out_seq->GetIupacna().Get();
-                    cout << out_seq_data << endl;
-                }
-            
-            }
-            out_indices.clear();
-            out_seq->Reset();	  
-        }
-        STD_CATCH("");
-    }
-  
-
-    //Do translation
-    cout << "Translate (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if (nResponse) {
-        try{
-            uIdx1 = 0;
-            uIdx2 = 0;
-    
-            bool bCheck_first = false;
-            cout << "Check first codon (1-Yes, 0-No)? ";
-            cin >> nResponse;
-            bCheck_first = (nResponse == 1);
-          
-            cout << "Is the start codon possibly missing? (1-Yes, 0-No)? ";
-            cin >> nResponse;
-            bool bPartial_start = (nResponse == 1);
-    
-            cout << "Strand (0-Unknown, 1-plus, 2-minus, 3-both,"
-                " 4-both_rev, 5-other)? ";
-            cin >> nResponse;
-            ENa_strand strand;
-            switch(nResponse){
-            case 0:
-                strand = eNa_strand_unknown;
-                break;
-            case 1:
-                strand = eNa_strand_plus;
-                break;
-            case 2:
-                strand = eNa_strand_minus;
-                break;
-            case 3:
-                strand = eNa_strand_both;
-                break;
-            case 4:
-                strand = eNa_strand_both_rev;
-                break;
-            default:
-                strand = eNa_strand_other;
-                break;
-            }
-          
-            cout << "Stop translation at first stop codon (1-Yes, 0-No)? ";
-            cin >> nResponse;
-            bool stop = (nResponse == 1);
-            
-            cout << "Remove trainling Xs (1-Yes, 0-No)? ";
-            cin >> nResponse;
-            bool bRemove_trailing_x = (nResponse == 1);
-            
-            //Enter genetic code and start codon string
-            CGenetic_code gencode;
-            CGenetic_code::C_E* ce;
-            nResponse = 1;
-            CRef<CGenetic_code::C_E> rce;
-            while (nResponse > 0) {
-                cout<< "Enter (0-done, 1-Id, 2-Name, 3-Ncbieaa, 4-Sncbieaa): ";
-                cin >> nResponse;
-                switch(nResponse){
-                case 0:
-                    break;
-                case 1:
-                    {
-                        cout << "Ener Id: ";
-                        int nId; cin >> nId;
-                        ce = new CGenetic_code::C_E;
-                        ce->SetId() = nId;
-                        rce.Reset(ce);
-                        gencode.Set().push_back(rce);
-                        break;
-                    }
-                case 2:
-                    {
-                        cout << "Enter Name: ";
-                        string name; cin >> name;
-                        ce = new CGenetic_code::C_E;
-                        ce->SetName() = name;
-                        rce.Reset(ce);
-                        gencode.Set().push_back(rce);
-                        break;
-                    }
-                case 3:
-                    {
-                        cout << "Enter Ncbieaa string: " << endl;
-                        string ncbieaa; cin >> ncbieaa;
-                        ce = new CGenetic_code::C_E;
-                        ce->SetNcbieaa() = ncbieaa;
-                        rce.Reset(ce);
-                        gencode.Set().push_back(rce);
-                        break;
-                    }
-                case 4:
-                    {
-                        cout << "Enter Sncbieaa string: " << endl;
-                        string sncbieaa; cin >> sncbieaa;
-                        ce = new CGenetic_code::C_E;
-                        ce->SetSncbieaa() = sncbieaa;
-                        rce.Reset(ce);
-                        gencode.Set().push_back(rce);
-                        break;
-                    }
-                default:
-                    cout << "Please enter a choice betwee 0 and 4." << endl;
-                }
-            }
-            CRef<CGenetic_code> genetic_code(&gencode);
-    
-            CGencode::TCodeBreaks code_breaks;
-            nResponse =1;
-            while(nResponse >= 1) {
-                cout << "Enter a code break index (-1 to quit): ";
-                cin >> nResponse;
-                if(nResponse >= 0) {
-                    cout << "Enter an aa: ";
-                    char aa;
-                    cin >> aa;
-                    code_breaks.push_back
-                        (make_pair(static_cast<unsigned int>(nResponse), aa));
-                }
-            }       
-          
-            s_time = clock();
-
-            CGencode::Translate
-                (in_seq,
-                 out_seq,
-                 *genetic_code,
-                 code_breaks,
-                 uBeginIdx, 
-                 uLength,
-                 bCheck_first,
-                 bPartial_start,
-                 strand,
-                 stop,
-                 bRemove_trailing_x); 
-    
-    
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-            cout << endl << "Translate Results" << endl;
-            cout << "uLength = " << uLength  << " Seconds = " << d_time
-                 << endl;
-      
-            //Print the out sequence
-            cout << "(uBeginIdx, uLength) = (" << uBeginIdx
-                 << ", " << uLength << ")" << endl;
-            cout << "out_seq is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            out_seq->Reset();
-            code_breaks.clear();
-        }
-        STD_CATCH("");
-    }
-    
-    //Do conversion
-    cout << "Convert (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if(nResponse) {
-        try{ 
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength; 
-            s_time = clock();
-            TSeqPos uLen = CSeqportUtil::Convert
-                (in_seq, out_seq, to_code, uIdx1, uIdx2, bAmbig);
-
-            e_time = clock();
-            d_time = (double) (e_time - s_time) / (double) CLOCKS_PER_SEC;
-            cout << endl << "Conversion Results" << endl;
-            cout << "uSeqLen = " << uSeqLen  << " Seconds = " << d_time
-                 << endl;
-            cout << "Return length = " << uLen << endl;
-            
-            //Write input and ouput sequences if uSeqLen <= 50
-            //Print uBeginIdx and uLength
-            cout << "(uBeginIdx, uLength) = (" << uBeginIdx
-                 << ", " << uLength << ")" << endl;
-            
-            //Print the in sequence
-            cout << "Input sequence is: " << endl;
-            DisplaySeq(in_seq, MAX_DISPLAY);
-          
-            //Print the out sequence
-            cout << "Output sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-                 
-            //Reset output sequence
-            out_seq->Reset();
-          
-        } 
-        STD_CATCH("");
-    }
-    
-  
-    //Do Append
-    cout << "Append (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            cout << "(uBeginIdx1, uLength1) = (" << uBeginIdx << "," << uLength << ")" << endl;
-            cout << "Enter uBeginIdx2: ";
-            cin >> uIdx1;
-            cout << "Enter uLength2: ";
-            cin >> uIdx2;
-            s_time = clock();
-            CRef<CSeq_data> in_seq1(new CSeq_data);
-            CRef<CSeq_data> in_seq2(new CSeq_data);
-            TSeqPos uIdxa=0, uIdxb=0;
-            CSeqportUtil::GetCopy(in_seq, in_seq1, uIdxa, uIdxb);
-            CSeqportUtil::GetCopy(in_seq, in_seq2, uIdxa, uIdxb);
-            TSeqPos uLen = CSeqportUtil::Append(out_seq.GetPointer(),
-                                                *in_seq1.GetPointer(),
-                                                uBeginIdx, uLength,
-                                                *in_seq2.GetPointer(),
-                                                uIdx1, uIdx2);
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Append Results" << endl;
-            cout << "uSeqLen = " << uSeqLen 
-                 << " Append Seconds = " << d_time << endl;
-            cout << "(uBeginIdx1, uLength1) = (" << uBeginIdx
-                 << ", " << uLength << ")" << endl;
-            cout << "(uBeginIdx2, uLength2) = (" << uIdx1
-                 << ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the Append out_seq
-            cout << "Append output sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-    //Do in-place reverse-complement
-    cout << "In-place reverse-complement (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uIdx2 = 0;
-            CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            TSeqPos uLen
-                = CSeqportUtil::ReverseComplement(out_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
-        
-            cout << endl << "In-place reverse complement results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " RevComp Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1
-                 << ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the In-place reverse-complement sequence
-            cout << "In-place reverse-complement sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-    //Do reverse-complement in a copy
-    cout << "Reverse-complement in a copy (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            TSeqPos uLen = CSeqportUtil::ReverseComplement
-                (in_seq, out_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Reverse-complement Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " Rev_Comp Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1
-                 << ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the reverse-complement sequence
-            cout << "Reverse-complement sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-  
-    //Do in-place reverse
-    cout << "In-place reverse (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uIdx2 = 0;
-            CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            TSeqPos uLen = CSeqportUtil::Reverse(out_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "In-place Reverse Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " Reverse Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1
-                 << ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the In-place reverse sequence
-            cout << "In-place reverse sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-    //Do reverse in a copy
-    cout << "Reverse in a copy (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            TSeqPos uLen = CSeqportUtil::Reverse
-                (in_seq, out_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = (double) (e_time - s_time) / (double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Reverse Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " Reverse Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1 <<
-                ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the reverse sequence
-            cout << "Reverse sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-
-    //Do in-place complement
-    cout << "In-place complement (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uIdx2 = 0;
-            CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            TSeqPos uLen = CSeqportUtil::Complement(out_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "In-place Complement Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " Complement Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1 <<
-                ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the In-place complement sequence
-            cout << "In-place complement sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-    //Do complement in a copy
-    cout << "Complement in a copy (1 = Yes, 0 = No)?";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            TSeqPos uLen = CSeqportUtil::Complement
-                (in_seq, out_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Complement Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " Complement Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1 <<
-                ", " << uIdx2 << ")" << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the complement sequence
-            cout << "Complement sequence is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            //Reset out_seq to free memory
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-      
-  
-    //Do fast validation of input sequence
-    cout << "FastValidate (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            bool isValid;
-        
-            isValid = CSeqportUtil::FastValidate(in_seq, uIdx1, uIdx2);
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Fast Validation Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " FastValidate Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1
-                 << ", " << uIdx2 << ")" <<
-                endl;
-            if(isValid)
-                cout << "in_seq is VALID" << endl;
-            else
-                cout << "in_seq is NOT VALID" << endl;
-        }
-        STD_CATCH("");
-    }
-    
-  
-  
-    //Do validation
-    cout << "Validate (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-            vector<TSeqPos> badIdx;
-            
-            CSeqportUtil::Validate(in_seq, &badIdx, uIdx1, uIdx2);
-        
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-        
-            cout << endl << "Validation Results" << endl;
-            cout << "uSeqLen = " << uSeqLen
-                 << " Validate Seconds = " << d_time << endl;
-            cout << "(uBeginIdx, uLength) = (" << uIdx1 <<
-                ", " << uIdx2 << ")" <<
-                endl;
-            if(badIdx.size() <= 50 && badIdx.size() > 0)
-                {
-                    cout << "Bad indices are:" << endl;
-                    vector<TSeqPos>::iterator itor;
-                    for(itor = badIdx.begin(); itor != badIdx.end(); ++itor)
-                        cout << *itor << " ";
-                    cout << endl;
-                }
-            else
-                {
-                    cout << "The number of bad indices are: " << badIdx.size()
-                         << endl;
-                }
-            badIdx.clear();
-        }
-        STD_CATCH("");
-    }
-    
-  
-    //Get copy 
-    cout << "Copy (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = uBeginIdx;
-            uIdx2 = uLength;
-            s_time = clock();
-      
-            TSeqPos uLen = CSeqportUtil::GetCopy
-                (in_seq, out_seq, uIdx1, uIdx2);
-      
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-            cout << endl << "Copy Results" << endl;
-            cout << "uSeqLen = " << uSeqLen  << " Seconds = " << d_time
-                 << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the out sequence
-            cout << "(uBeginIdx, uLength) = (" << uIdx1 <<
-                ", " << uIdx2 << ")" << endl;
-            cout << "out_seq is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-  
-    //Get copy 
-    cout << "Keep (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = 0;
-            uIdx2 = 0;
-            CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
-            s_time = clock();
-      
-            TSeqPos uLen
-                = CSeqportUtil::Keep(out_seq.GetPointer(), uBeginIdx, uLength);
-      
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-            cout << endl << "Keep Results" << endl;
-            cout << "uLength = " << uLength  << " Seconds = " << d_time
-                 << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the out sequence
-            cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
-                ", " << uLength << ")" << endl;
-            cout << "out_seq is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }
-    
-  
-    //Pack
-    cout << "Pack (1 = Yes, 0 = No)? ";
-    cin >> nResponse;
-    if(nResponse) {
-        try{
-            uIdx1 = 0;
-            uIdx2 = 0;
-            CSeqportUtil::GetCopy(in_seq, out_seq, uIdx1, uIdx2);
-            s_time = clock();
-      
-            TSeqPos uLen = CSeqportUtil::Pack(out_seq.GetPointer(),
-                                              uBeginIdx, uLength);
-      
-            e_time = clock();
-            d_time = ((double)e_time -(double)s_time)/(double)CLOCKS_PER_SEC;
-            cout << endl << "Pack Results" << endl;
-            cout << "uLength = " << uLength  << " Seconds = " << d_time
-                 << endl;
-            cout << "Return length = " << uLen << endl;
-      
-            //Print the out sequence
-            cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
-                ", " << uLength << ")" << endl;
-            switch(out_seq->Which()){
-            case CSeq_data::e_Iupacna:
-                cout << "out_seq is Iupacna" << endl;
-                break;
-            case CSeq_data::e_Ncbi4na:
-                cout << "out_seq is Ncbi4na" << endl;
-                break;
-            case CSeq_data::e_Ncbi2na:
-                cout << "out_seq is Ncbi2na" << endl;
-                break;
-            case CSeq_data::e_Ncbieaa:
-                cout << "out_seq is Ncbieaa" << endl;
-                break;
-            case CSeq_data::e_Ncbistdaa:
-                cout << "out_seq is Ncbistdaa" << endl;
-                break;
-            case CSeq_data::e_Iupacaa:
-                cout << "out_seq is Iupacaa" << endl;
-                break;
-            default:
-                cout << "out_seq type is not supported." << endl;
-                break;
-            }
-            cout << "out_seq is: " << endl;
-            DisplaySeq(*out_seq, MAX_DISPLAY);
-            
-            out_seq->Reset();
-        }
-        STD_CATCH("");
-    }  
-
+    }        
 }
 
+ 
+void CSeqportTestApp::GetAmbigsTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+    
+    try {
+        vector<TSeqPos> out_indices;
+    
+        TSeqPos uLen = CSeqportUtil::GetAmbigs
+            (in_seq,
+             out_seq,
+             &out_indices,
+             to_code,
+             uBeginIdx,
+             uLength);
+    
+    
+        cout << endl << "Results for GetAmbigs()" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        cout << "Num ambigs = " << out_indices.size() << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        if(out_seq->Which() == CSeq_data::e_Ncbi4na) {
+            if (out_indices.size() <= 24) {
+                iterate (vector<TSeqPos>, i_idx, out_indices) {
+                    cout << (*i_idx) << " ";
+                }
+                cout << endl;
+                const vector<char>& out_seq_data
+                    = out_seq->GetNcbi4na().Get();
+                iterate (vector<char>, i_out, out_seq_data) {
+                    cout << std::hex
+                         << (unsigned short)(unsigned char) *i_out << " ";
+                }
+                cout << endl;
+            }
+        }
+        else if(out_seq->Which() == CSeq_data::e_Iupacna) {
+            if(out_indices.size() <= 24) {
+                iterate (vector<TSeqPos>, i_idx, out_indices) {
+                    cout << (*i_idx) << " ";
+                }
+                cout << endl;
+                string out_seq_data = out_seq->GetIupacna().Get();
+                cout << out_seq_data << endl;
+            }
+        
+        }
+        out_indices.clear();
+        out_seq->Reset();	  
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::TranslateTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    int nResponse;
+
+    try{
+        bool bCheck_first = false;
+        cout << "Check first codon (1-Yes, 0-No)? ";
+        cin >> nResponse;
+        bCheck_first = (nResponse == 1);
+      
+        cout << "Is the start codon possibly missing? (1-Yes, 0-No)? ";
+        cin >> nResponse;
+        bool bPartial_start = (nResponse == 1);
+
+        cout << "Strand (0-Unknown, 1-plus, 2-minus, 3-both,"
+            " 4-both_rev, 5-other)? ";
+        cin >> nResponse;
+        ENa_strand strand;
+        switch(nResponse){
+        case 0:
+            strand = eNa_strand_unknown;
+            break;
+        case 1:
+            strand = eNa_strand_plus;
+            break;
+        case 2:
+            strand = eNa_strand_minus;
+            break;
+        case 3:
+            strand = eNa_strand_both;
+            break;
+        case 4:
+            strand = eNa_strand_both_rev;
+            break;
+        default:
+            strand = eNa_strand_other;
+            break;
+        }
+      
+        cout << "Stop translation at first stop codon (1-Yes, 0-No)? ";
+        cin >> nResponse;
+        bool stop = (nResponse == 1);
+        
+        cout << "Remove trainling Xs (1-Yes, 0-No)? ";
+        cin >> nResponse;
+        bool bRemove_trailing_x = (nResponse == 1);
+        
+        //Enter genetic code and start codon string
+        CGenetic_code gencode;
+        CGenetic_code::C_E* ce;
+        nResponse = 1;
+        CRef<CGenetic_code::C_E> rce;
+        while (nResponse > 0) {
+            cout<< "Enter (0-done, 1-Id, 2-Name, 3-Ncbieaa, 4-Sncbieaa): ";
+            cin >> nResponse;
+            switch(nResponse){
+            case 0:
+                break;
+            case 1:
+                {
+                    cout << "Ener Id: ";
+                    int nId; cin >> nId;
+                    ce = new CGenetic_code::C_E;
+                    ce->SetId() = nId;
+                    rce.Reset(ce);
+                    gencode.Set().push_back(rce);
+                    break;
+                }
+            case 2:
+                {
+                    cout << "Enter Name: ";
+                    string name; cin >> name;
+                    ce = new CGenetic_code::C_E;
+                    ce->SetName() = name;
+                    rce.Reset(ce);
+                    gencode.Set().push_back(rce);
+                    break;
+                }
+            case 3:
+                {
+                    cout << "Enter Ncbieaa string: " << endl;
+                    string ncbieaa; cin >> ncbieaa;
+                    ce = new CGenetic_code::C_E;
+                    ce->SetNcbieaa() = ncbieaa;
+                    rce.Reset(ce);
+                    gencode.Set().push_back(rce);
+                    break;
+                }
+            case 4:
+                {
+                    cout << "Enter Sncbieaa string: " << endl;
+                    string sncbieaa; cin >> sncbieaa;
+                    ce = new CGenetic_code::C_E;
+                    ce->SetSncbieaa() = sncbieaa;
+                    rce.Reset(ce);
+                    gencode.Set().push_back(rce);
+                    break;
+                }
+            default:
+                cout << "Please enter a choice betwee 0 and 4." << endl;
+            }
+        }
+        CRef<CGenetic_code> genetic_code(&gencode);
+
+        CGencode::TCodeBreaks code_breaks;
+        nResponse =1;
+        while(nResponse >= 1) {
+            cout << "Enter a code break index (-1 to quit): ";
+            cin >> nResponse;
+            if(nResponse >= 0) {
+                cout << "Enter an aa: ";
+                char aa;
+                cin >> aa;
+                code_breaks.push_back
+                    (make_pair(static_cast<TSeqPos>(nResponse), aa));
+            }
+        }       
+      
+
+        CGencode::Translate
+            (in_seq,
+             out_seq,
+             *genetic_code,
+             code_breaks,
+             uBeginIdx, 
+             uLength,
+             bCheck_first,
+             bPartial_start,
+             strand,
+             stop,
+             bRemove_trailing_x); 
+
+
+        cout << endl << "Translate Results" << endl;
+        cout << "uLength = " << uLength  << endl;
+  
+        //Print the out sequence
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        cout << "out_seq is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        out_seq->Reset();
+        code_breaks.clear();
+    }
+    STD_CATCH("");
+}
+
+
+void CSeqportTestApp::ConvertTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+    
+    try{ 
+        TSeqPos uLen = CSeqportUtil::Convert
+            (in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
+
+        cout << endl << "Conversion Results" << endl;
+        cout << "uSeqLen = " << uSeqLen  << endl;
+        cout << "Return length = " << uLen << endl;
+        
+        //Write input and ouput sequences if uSeqLen <= 50
+        //Print uBeginIdx and uLength
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        
+        //Print the in sequence
+        cout << "Input sequence is: " << endl;
+        DisplaySeq(in_seq, MAX_DISPLAY);
+      
+        //Print the out sequence
+        cout << "Output sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+             
+        //Reset output sequence
+        out_seq->Reset();
+      
+    } 
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::AppendTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+    
+    try{
+        TSeqPos uBeginIdx2, uLength2;
+        cout << "(uBeginIdx1, uLength1) = (" 
+             << uBeginIdx << "," << uLength << ")" << endl;
+        cout << "Enter uBeginIdx2: ";
+        cin >> uBeginIdx2;
+        cout << "Enter uLength2: ";
+        cin >> uLength2;
+        CRef<CSeq_data> in_seq1(new CSeq_data);
+        CRef<CSeq_data> in_seq2(new CSeq_data);
+        CSeqportUtil::GetCopy(in_seq, in_seq1, uBeginIdx, uLength);
+        CSeqportUtil::GetCopy(in_seq, in_seq2, 0, 0);
+        TSeqPos uLen = CSeqportUtil::Append(out_seq,
+                                      *in_seq1.GetPointer(),
+                                      uBeginIdx, uLength,
+                                      *in_seq2.GetPointer(), 
+                                      uBeginIdx2, uLength2);
+    
+        cout << endl << "Append Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx1, uLength1) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        cout << "(uBeginIdx2, uLength2) = (" << uBeginIdx2
+             << ", " << uLength2 << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the Append out_seq
+        cout << "Append output sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::InPlaceReverseComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        CSeqportUtil::GetCopy(in_seq, out_seq, 0, 0);
+        TSeqPos uLen
+            = CSeqportUtil::ReverseComplement(out_seq, uBeginIdx, uLength);
+        cout << endl << "In-place reverse complement results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the In-place reverse-complement sequence
+        cout << "In-place reverse-complement sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::InCopyReverseComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        TSeqPos uLen = CSeqportUtil::ReverseComplement
+            (in_seq, out_seq, uBeginIdx, uLength);
+    
+        cout << endl << "Reverse-complement Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the reverse-complement sequence
+        cout << "Reverse-complement sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::InPlaceReverseTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        CSeqportUtil::GetCopy(in_seq, out_seq, 0, 0);
+        TSeqPos uLen = 
+            CSeqportUtil::Reverse(out_seq, uBeginIdx, uLength);
+    
+        cout << endl << "In-place Reverse Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the In-place reverse sequence
+        cout << "In-place reverse sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::InCopyReverseTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        TSeqPos uLen = CSeqportUtil::Reverse
+            (in_seq, out_seq, uBeginIdx, uLength);
+    
+        cout << endl << "Reverse Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the reverse sequence
+        cout << "Reverse sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::InPlaceComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        CSeqportUtil::GetCopy(in_seq, out_seq, 0, 0);
+        TSeqPos uLen = CSeqportUtil::Complement
+            (out_seq, uBeginIdx, uLength);
+    
+        cout << endl << "In-place Complement Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the In-place complement sequence
+        cout << "In-place complement sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+ 
+void CSeqportTestApp::InCopyComplementTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        TSeqPos uLen = CSeqportUtil::Complement
+            (in_seq, out_seq, uBeginIdx, uLength);
+    
+        cout << endl << "Complement Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the complement sequence
+        cout << "Complement sequence is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        //Reset out_seq to free memory
+        out_seq->Reset();
+    }
+    STD_CATCH("");      
+}
+
+void CSeqportTestApp::FastValidateTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        bool isValid;
+    
+        isValid = 
+            CSeqportUtil::FastValidate(in_seq, uBeginIdx, uLength);
+    
+        cout << endl << "Fast Validation Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
+             << ", " << uLength << ")" <<
+            endl;
+        if(isValid)
+            cout << "in_seq is VALID" << endl;
+        else
+            cout << "in_seq is NOT VALID" << endl;
+    }
+    STD_CATCH("");    
+}
+
+void CSeqportTestApp::ValidateTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{
+        vector<TSeqPos> badIdx;
+        
+        CSeqportUtil::Validate(in_seq, &badIdx, uBeginIdx, uLength);
+    
+    
+        cout << endl << "Validation Results" << endl;
+        cout << "uSeqLen = " << uSeqLen << endl;
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        if(badIdx.size() <= 50 && badIdx.size() > 0)
+            {
+                cout << "Bad indices are:" << endl;
+                vector<TSeqPos>::iterator itor;
+                for(itor = badIdx.begin(); itor != badIdx.end(); ++itor)
+                    cout << *itor << " ";
+                cout << endl;
+            }
+        else
+            {
+                cout << "The number of bad indices are: " << badIdx.size()
+                     << endl;
+            }
+        badIdx.clear();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::GetCopyTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+    TSeqPos uSeqLen=0;
+
+    try{      
+        TSeqPos uLen = CSeqportUtil::GetCopy
+            (in_seq, out_seq, uBeginIdx, uLength);
+  
+        cout << endl << "Copy Results" << endl;
+        cout << "uSeqLen = " << uSeqLen  << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the out sequence
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        cout << "out_seq is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::KeepTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+
+    try{
+        CSeqportUtil::GetCopy(in_seq, out_seq, 0, 0);
+  
+        TSeqPos uLen
+            = CSeqportUtil::Keep(out_seq, uBeginIdx, uLength);
+  
+        cout << endl << "Keep Results" << endl;
+        cout << "uLength = " << uLength  << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the out sequence
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        cout << "out_seq is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
+
+void CSeqportTestApp::PackTest(const CSeq_data&     in_seq,
+              CSeq_data*           out_seq,
+              CSeq_data::E_Choice  to_code,
+              TSeqPos              uBeginIdx,
+              TSeqPos              uLength,
+              bool                 bAmbig)
+{
+
+    try{
+        CSeqportUtil::GetCopy(in_seq, out_seq, 0, 0);
+  
+        TSeqPos uLen = CSeqportUtil::Pack(out_seq,
+                                    uBeginIdx, uLength);
+  
+        cout << endl << "Pack Results" << endl;
+        cout << "uLength = " << uLength  << endl;
+        cout << "Return length = " << uLen << endl;
+  
+        //Print the out sequence
+        cout << "(uBeginIdx, uLength) = (" << uBeginIdx <<
+            ", " << uLength << ")" << endl;
+        switch(out_seq->Which()){
+        case CSeq_data::e_Iupacna:
+            cout << "out_seq is Iupacna" << endl;
+            break;
+        case CSeq_data::e_Ncbi4na:
+            cout << "out_seq is Ncbi4na" << endl;
+            break;
+        case CSeq_data::e_Ncbi2na:
+            cout << "out_seq is Ncbi2na" << endl;
+            break;
+        case CSeq_data::e_Ncbieaa:
+            cout << "out_seq is Ncbieaa" << endl;
+            break;
+        case CSeq_data::e_Ncbistdaa:
+            cout << "out_seq is Ncbistdaa" << endl;
+            break;
+        case CSeq_data::e_Iupacaa:
+            cout << "out_seq is Iupacaa" << endl;
+            break;
+        default:
+            cout << "out_seq type is not supported." << endl;
+            break;
+        }
+        cout << "out_seq is: " << endl;
+        DisplaySeq(*out_seq, MAX_DISPLAY);
+        
+        out_seq->Reset();
+    }
+    STD_CATCH("");
+}
 
 void CSeqportTestApp::Exit() {
     return;
@@ -1406,3 +1587,28 @@ int main(int argc, const char* argv[])
     CSeqportTestApp theApp;
     return theApp.AppMain(argc, argv, 0, eDS_Default, 0, "seqport_test");
 }
+
+ /*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.6  2002/05/14 15:17:15  clausen
+ * Reorganized code and added tests for new CSeqportUtil methods
+ *
+ * Revision 1.5  2002/05/03 21:28:15  ucko
+ * Introduce T(Signed)SeqPos.
+ *
+ * Revision 1.4  2002/01/10 20:34:15  clausen
+ * Added tests for GetIupacaa3, GetCode, and GetIndex
+ *
+ * Revision 1.3  2001/12/07 18:52:05  grichenk
+ * Updated "#include"-s and forward declarations to work with the
+ * new datatool version.
+ *
+ * Revision 1.2  2001/11/13 12:14:29  clausen
+ * Changed call to CGencode::Translate to reflect new type for code breaks
+ *
+ * Revision 1.1  2001/08/24 00:44:05  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
