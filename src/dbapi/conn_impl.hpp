@@ -147,13 +147,7 @@ private:
     unsigned int m_modeMask;
     bool m_forceSingle;
     class CToMultiExHandler *m_multiExH;
-
-    // New part begin
-    class CStatement *m_stmt;
-    class CCallableStatement *m_cstmt;
-    class CCursor *m_cursor;
-    class CBulkInsert *m_bulkInsert;
-    // New part end
+    bool m_msgToEx;
 
     EOwnership m_ownership;
 
@@ -164,6 +158,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.17  2004/11/08 14:52:50  kholodov
+* Added: additional TRACE messages
+*
 * Revision 1.16  2004/07/28 18:36:13  kholodov
 * Added: setting ownership for connection objects
 *

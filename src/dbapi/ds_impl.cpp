@@ -71,19 +71,28 @@ void CDataSource::SetLogStream(CNcbiOstream* out)
             m_context->PopCntxMsgHandler(m_multiExH);
             m_context->PopDefConnMsgHandler(m_multiExH);
             delete m_multiExH;
+            _TRACE("SetLogStream(): CDataSource " << (void*)this
+                << ": message handler " << (void*)m_multiExH 
+                << " removed from context " << (void*)m_context);
             m_multiExH = 0;
         }
             
         CDB_UserHandler *newH = new CDB_UserHandler_Stream(out);
         CDB_UserHandler *h = CDB_UserHandler::SetDefault(newH);
         delete h;
-    }
+        _TRACE("SetLogStream(): CDataSource " << (void*)this
+                << ": new default message handler " << (void*)newH 
+                << " installed");
+   }
     else {
         if( m_multiExH == 0 ) {
             m_multiExH = new CToMultiExHandler;
 
             m_context->PushCntxMsgHandler(m_multiExH);
             m_context->PushDefConnMsgHandler(m_multiExH);
+            _TRACE("SetLogStream(): CDataSource " << (void*)this
+                << ": message handler " << (void*)m_multiExH 
+                << " installed on context " << (void*)m_context);
         }
     }
 }
@@ -156,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/11/08 14:52:50  kholodov
+ * Added: additional TRACE messages
+ *
  * Revision 1.16  2004/11/01 22:58:01  kholodov
  * Modified: CDBMultiEx object is replace instead of whole handler
  *

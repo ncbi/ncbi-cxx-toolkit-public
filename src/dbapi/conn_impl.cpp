@@ -52,8 +52,7 @@ BEGIN_NCBI_SCOPE
 CConnection::CConnection(CDataSource* ds, EOwnership ownership)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
       m_modeMask(0), m_forceSingle(false), m_multiExH(0),
-      m_stmt(0), m_cstmt(0), m_cursor(0), m_bulkInsert(0), 
-      m_ownership(ownership)
+      m_msgToEx(false), m_ownership(ownership)
 {
     _TRACE("Default connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -62,7 +61,7 @@ CConnection::CConnection(CDataSource* ds, EOwnership ownership)
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false),
       m_modeMask(0), m_forceSingle(false), m_multiExH(0),
-      m_stmt(0), m_cstmt(0), m_cursor(0), m_bulkInsert(0)
+      m_msgToEx(false)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -176,32 +175,16 @@ CDB_Connection* CConnection::CloneCDB_Conn()
     SetDbName(m_database, temp);
     return temp;
 }
-
-void CConnection::Close()
-{
-    FreeResources();
-}
-
-void CConnection::FreeResources() 
-{
-    delete m_stmt;
-    //m_stmt = 0;
-    delete m_cstmt;
-    //m_cstmt = 0;
-    delete m_cursor;
-    // m_cursor = 0;
-    delete m_bulkInsert;
-    //m_bulkInsert = 0;
-    delete m_connection;
-    m_connection = 0;
-}
-
 CConnection* CConnection::Clone()
 {
     CConnection *conn = new CConnection(CloneCDB_Conn(), m_ds);
     //conn->AddListener(m_ds);
     //m_ds->AddListener(conn);
     conn->SetDbName(GetDatabase());
+
+    if( m_msgToEx )
+        conn->MsgToEx(true);
+
     ++m_connCounter;
     return conn;
 }
@@ -212,13 +195,52 @@ IConnection* CConnection::CloneConnection(EOwnership ownership)
 
     conn->m_modeMask = this->m_modeMask;
     conn->m_forceSingle = this->m_forceSingle;
-    conn->m_connection = CloneCDB_Conn();
     conn->m_database = this->m_database;
+    conn->m_connection = CloneCDB_Conn();
+    if( m_msgToEx )
+        conn->MsgToEx(true);
 
     conn->AddListener(m_ds);
     m_ds->AddListener(conn);
 
     return conn;
+}
+
+CConnection* CConnection::GetAuxConn()
+{
+    if( m_connCounter < 0 )
+        return 0;
+
+    CConnection *conn = this;
+    if( m_connUsed && m_forceSingle ) {
+        throw CDbapiException("GetAuxConn(): Extra connections not permitted");
+    }
+    if( m_connUsed ) {
+        conn = Clone();
+        _TRACE("GetAuxConn(): Server: " << GetCDB_Connection()->ServerName()
+               << ", open aux connection, total: " << m_connCounter);
+    }
+    else {
+        m_connUsed = true;
+
+        _TRACE("GetAuxconn(): server: " << GetCDB_Connection()->ServerName()
+               << ", no aux connections necessary, using default...");
+    }
+
+    return conn;
+
+}
+
+
+void CConnection::Close()
+{
+    FreeResources();
+}
+
+void CConnection::FreeResources() 
+{
+    delete m_connection;
+    m_connection = 0;
 }
 
 // New part
@@ -237,7 +259,6 @@ IStatement* CConnection::GetStatement()
     CStatement *stmt = new CStatement(this);
     AddListener(stmt);
     stmt->AddListener(this);
-    
     return stmt;
 }
 
@@ -268,8 +289,8 @@ ICursor* CConnection::GetCursor(const string& name,
                                 int nofArgs,
                                 int batchSize)
 {
-    if( m_connUsed ) 
-        throw CDbapiException("CConnection::GetCursor(): Connection taken, cannot use this method");
+//    if( m_connUsed ) 
+//        throw CDbapiException("CConnection::GetCursor(): Connection taken, cannot use this method");
 /*
     if( m_cursor != 0 ) {
         delete m_cursor;
@@ -288,8 +309,8 @@ ICursor* CConnection::GetCursor(const string& name,
 IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
                                         unsigned int nof_cols)
 {
-    if( m_connUsed ) 
-        throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
+//    if( m_connUsed ) 
+//        throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
 /*
     if( m_bulkInsert != 0 ) {
         delete m_bulkInsert;
@@ -309,8 +330,8 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
 
 IStatement* CConnection::CreateStatement()
 {
-    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateStatement(): Get...() methods used");
+//    if( m_getUsed ) 
+//        throw CDbapiException("CConnection::CreateStatement(): Get...() methods used");
     
     CStatement *stmt = new CStatement(GetAuxConn());
     AddListener(stmt);
@@ -322,8 +343,8 @@ ICallableStatement*
 CConnection::PrepareCall(const string& proc,
                          int nofArgs)
 {
-    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateCallableStatement(): Get...() methods used");
+//    if( m_getUsed ) 
+//        throw CDbapiException("CConnection::CreateCallableStatement(): Get...() methods used");
     
     CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetAuxConn());
     AddListener(cstmt);
@@ -336,8 +357,8 @@ ICursor* CConnection::CreateCursor(const string& name,
                                    int nofArgs,
                                    int batchSize)
 {
-    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateCursor(): Get...() methods used");
+ //   if( m_getUsed ) 
+ //       throw CDbapiException("CConnection::CreateCursor(): Get...() methods used");
     
     CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetAuxConn());
     AddListener(cur);
@@ -348,8 +369,8 @@ ICursor* CConnection::CreateCursor(const string& name,
 IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
                                            unsigned int nof_cols)
 {
-    if( m_stmt != 0 || m_cstmt != 0 || m_cursor != 0 || m_bulkInsert != 0 ) 
-        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
+//    if( m_getUsed ) 
+//        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
     
     CBulkInsert *bcp = new CBulkInsert(table_name, nof_cols, GetAuxConn());
     AddListener(bcp);
@@ -415,31 +436,6 @@ void CConnection::Action(const CDbapiEvent& e)
     }
 }
 
-CConnection* CConnection::GetAuxConn()
-{
-    if( m_connCounter < 0 )
-        return 0;
-
-    CConnection *conn = this;
-    if( m_connUsed && m_forceSingle ) {
-        throw CDbapiException("GetAuxConn(): Extra connections not permitted");
-    }
-    if( m_connUsed ) {
-        conn = Clone();
-        _TRACE("GetAuxConn(): Server: " << GetCDB_Connection()->ServerName()
-               << ", open aux connection, total: " << m_connCounter);
-    }
-    else {
-        m_connUsed = true;
-
-        _TRACE("GetAuxconn(): server: " << GetCDB_Connection()->ServerName()
-               << ", no aux connections necessary, using default...");
-    }
-
-    return conn;
-
-}
-
 void CConnection::MsgToEx(bool v)
 {
     if( !v ) {
@@ -448,12 +444,14 @@ void CConnection::MsgToEx(bool v)
         _TRACE("MsqToEx(): connection " << (void*)this
             << ": message handler " << (void*)GetHandler() 
             << " removed from CDB_Connection " << (void*)GetCDB_Connection());
+        m_msgToEx = false;
     }
     else {
         GetCDB_Connection()->PushMsgHandler(GetHandler());
         _TRACE("MsqToEx(): connection " << (void*)this
             << ": message handler " << (void*)GetHandler()
             << " installed on CDB_Connection " << (void*)GetCDB_Connection());
+        m_msgToEx = true;
     }
 }
 
@@ -502,6 +500,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.35  2004/11/08 14:52:50  kholodov
+* Added: additional TRACE messages
+*
 * Revision 1.34  2004/11/03 20:02:10  kholodov
 * Modified: amount of objects created with Cet..() methods is now unrestricted
 *
