@@ -16,7 +16,7 @@ export DYLD_BIND_AT_LAUNCH
 . ${script_dir}/common.sh
 
 
-PLUGINS='algo_align algo_basic ncbi_init net_blast algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator algo_external algo_linkout'
+PLUGINS='algo_align algo_basic ncbi_init algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator algo_external algo_linkout'
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core gui_utils xgbplugin'
 OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds'
