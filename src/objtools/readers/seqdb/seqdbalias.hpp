@@ -112,44 +112,179 @@ public:
     /// node in the dbalias node tree.  This design effectively treats the
     /// user-input database list as if it were an alias file containing
     /// only the DBLIST specification.
+    ///
+    /// @param atlas
+    ///   The memory management layer.
+    /// @param name_list
+    ///   The memory management layer.
+    /// @param prot_nucl
+    ///   The memory management layer.
     CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                     const string   & name_list,
                     char             prot_nucl);
     
-    // Add our volumes and our subnode's volumes to the end of "vols".
+    /// Get the list of volume names
+    ///
+    /// The alias node tree is iterated to produce a list of all
+    /// volume names.  This list will be sorted and unique.
+    ///
+    /// @param vols
+    ///   The returned set of volume names
     void GetVolumeNames(vector<string> & vols) const;
     
-    // Compute title by recursive appending of subnodes values until
-    // value specification or volume is reached.
+    /// Get the title
+    ///
+    /// This iterates this node and possibly subnodes of it to build
+    /// and return a title string.  Alias files may override this
+    /// value (stopping traversal at that depth).
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   A string describing the database
     string GetTitle(const CSeqDBVolSet & volset) const;
     
-    // Compute sequence count by recursive appending of subnodes
-    // values until value specification or volume is reached.
+    /// Get the number of sequences available
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the number of sequences available here.  Alias files may
+    /// override this value (stopping traversal at that depth).  It is
+    /// normally used to provide information on how many OIDs exist
+    /// after filtering has been applied.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The number of included sequences
     Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
-    // Compute sequence count by recursive appending of subnodes
-    // values; this version disables alias file overrides.
+    /// Get the size of the OID range
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the number of sequences in all volumes as encountered in
+    /// traversal.  Alias files cannot override this value.  Filtering
+    /// does not affect this value.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The number of OIDs found during traversal
     Uint4 GetNumOIDs(const CSeqDBVolSet & volset) const;
     
-    // Compute total length by recursive appending of subnodes
-    // values until value specification or volume is reached.
+    /// Get the total length of the set of databases
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the total length of all sequences in all volumes included in
+    /// the database.  This may count volumes several times (depending
+    /// on alias tree structure).  Alias files can override this value
+    /// (stopping traversal at that depth).  It is normally used to
+    /// describe the amount of sequence data remaining after filtering
+    /// has been applied.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The total length of all included sequences
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
     
-    // Compute total length by recursive appending of subnodes
-    // values; this version disables alias file overrides.
+    /// Get the sum of the volume lengths
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the total length of all sequences in all volumes as
+    /// encountered in traversal.  This may count volumes several
+    /// times (depending on alias tree structure).  Alias files cannot
+    /// override this value.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The sum of all volumes lengths as traversed
     Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const;
     
-    // Get the membership bit if there is one.
+    /// Get the membership bit
+    ///
+    /// This iterates this node and possibly subnodes of it to find
+    /// the membership bit, if there is one.  If more than one alias
+    /// node provides a membership bit, only one will be used.  This
+    /// value can only be found in alias files (volumes do not have a
+    /// single internal membership bit).
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The membership bit, or zero if none was found.
     Uint4 GetMembBit(const CSeqDBVolSet & volset) const;
     
+    /// Apply a visitor to each node of the alias node tree
+    ///
+    /// This iterates this node and possibly subnodes of it.  If the
+    /// alias file provides a value, it will be applied to walker with
+    /// the AddString() method.  If the alias file does not provide
+    /// the value, the walker object will be applied to each subnode
+    /// (by calling WalkNodes), and then to each volume of the tree by
+    /// calling the Accumulate() method on the walker object.  Each
+    /// type of summary data has its own properties, so there is a
+    /// CSeqDB_AliasWalker derived class for each type of summary data
+    /// that needs this kind of traversal.  This technique is referred
+    /// to as the "visitor" design pattern.
+    ///
+    /// @param walker
+    ///   The visitor object to recursively apply to the tree.
+    /// @param volset
+    ///   The set of database volumes
     void WalkNodes(CSeqDB_AliasWalker * walker,
                    const CSeqDBVolSet & volset) const;
     
+    /// Set filtering options for all volumes
+    ///
+    /// This method applies all of this alias node's filtering options
+    /// to all of its associated volumes (and subnodes, for GI lists).
+    /// It then iterates over subnodes, recursively calling SetMasks()
+    /// to apply filtering options throughout the alias node tree.
+    /// The virtual OID lists are not built as a result of this
+    /// process, but the data necessary for virtual OID construction
+    /// is copied to the volume objects.
+    ///
+    /// @param volset
+    ///   The database volume set
     void SetMasks(CSeqDBVolSet & volset);
     
 private:
-    // To be called only from this class.  Note that the recursion
-    // prevention list is passed by value.
+    
+    // Note: there is a better design for the set<string>: it should
+    // be a "vector<string>&".
+    
+    /// Private Constructor
+    ///
+    /// This constructor is used to build the alias nodes other than
+    /// the topmost node.  It is private, because such nodes are only
+    /// constructed via internal mechanisms of this class.  One
+    /// potential issue for alias node hierarchies is that it is easy
+    /// to (accidentally) construct mutually recursive alias
+    /// configurations.  To prevent an infinite recursion in this
+    /// case, this constructor takes a set of strings, which indicate
+    /// all the nodes that have already been constructed.  It is
+    /// passed by value (copied) because the same node can be used,
+    /// legally and safely, in more than one branch of the same alias
+    /// node tree.  If the node to build is already in this set, the
+    /// constructor will throw an exception.  As a special case, if a
+    /// name in a DBLIST line is the same as the node it is in, it is
+    /// assumed to be a volume name (even though an alias file exists
+    /// with that name), so this will not trigger the cycle detection
+    /// exception.
+    ///
+    /// @param atlas
+    ///   The memory management layer
+    /// @param dbpath
+    ///   The working directory for relative paths in this node
+    /// @param dbname
+    ///   The name of this node
+    /// @param prot_nucl
+    ///   Indicates whether protein or nucletide sequences will be used
+    /// @param recurse
+    ///   Node history for cycle detection
+    /// @param locked
+    ///   The lock holder object for this thread
     CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                     const string   & dbpath,
                     const string   & dbname,
@@ -157,27 +292,115 @@ private:
                     set<string>      recurse,
                     CSeqDBLockHold & locked);
     
-    // Actual construction of the node
-    // Reads file as a list of values.
+    /// Read the alias file
+    ///
+    /// This function read the alias file from the atlas, parsing the
+    /// lines and storing the KEY/VALUE pairs in this node.  It
+    /// ignores KEY values that are not supported in SeqDB, although
+    /// currently SeqDB should support all of the defined KEYs.
+    ///
+    /// @param fn
+    ///   The name of the alias file
+    /// @param locked
+    ///   The lock holder object for this thread
     void x_ReadValues(const string & fn, CSeqDBLockHold & locked);
     
-    // Reads one line, if it is a value pair it is added to the list.
+    /// Read one line of the alias file
+    ///
+    /// This method parses the specified character string, storing the
+    /// results in the KEY/VALUE map in this node.  The input string
+    /// is specified as a begin/end pair of pointers.  If the string
+    /// starts with "#", the function has no effect.  Otherwise, if
+    /// there are tabs in the input string, they are silently
+    /// converted to spaces, and the part of the string before the
+    /// first space is considered to be the key.  The rest of the line
+    /// (with initial and trailing spaces removed) is the value.
+    ///
+    /// @param atlas
+    ///   The memory management layer
+    /// @param dbpath
+    ///   The working directory for relative paths in this node
+    /// @param dbname
+    ///   The name of this node
+    /// @param prot_nucl
+    ///   Indicates whether protein or nucletide sequences will be used
+    /// @param recurse
+    ///   Node history for cycle detection
+    /// @param locked
+    ///   The lock holder object for this thread
     void x_ReadLine(const char * bp, const char * ep);
     
-    // Expand all DB members as aliases if they exist.
+    /// Expand a node of the alias node tree recursively
+    ///
+    /// This method expands a node of the alias node tree, recursively
+    /// building the tree from the specified node downward.  (This
+    /// method and the private version of the constructor are mutually
+    /// recursive.)  The cyclic tree check is done, and paths of these
+    /// components are resolved.  The alias file is parsed, and for
+    /// each member of the DBLIST set, a subnode is constructed or a
+    /// volume name is stored (if the element is the same as this
+    /// node's name).
+    ///
+    /// @param this_name
+    ///   The name of this node
+    /// @param prot_nucl
+    ///   Indicates whether this is a protein or nucleotide database
+    /// @param recurse
+    ///   Set of all ancestor nodes for this node.
+    /// @param locked
+    ///   The lock holder object for this thread
     void x_ExpandAliases(const string   & this_name,
-                         char             ending,
+                         char             prot_nucl,
                          set<string>    & recurse,
                          CSeqDBLockHold & locked);
     
-    string x_MkPath(const string & dir, const string & name, char prot_nucl) const
+    /// Build a resolved path from components
+    ///
+    /// This takes a directory, base name, and indication of protein
+    /// or nucleotide to build an alias file name.  It combines the
+    /// filename and path using the standard delimiter for this OS.
+    /// 
+    /// @param dir
+    ///   The directory name
+    /// @param name
+    ///   A filename, possibly including directory components
+    /// @prot_nucl
+    ///   Indicates whether this is a protein or nucleotide database
+    /// @return
+    ///   The combined path
+    static string x_MkPath(const string & dir, const string & name, char prot_nucl)
     {
         return SeqDB_CombinePath(dir, name) + "." + prot_nucl + "al";
     }
     
-    // Add our volumes and our subnode's volumes to the end of "vols".
+    /// Build a list of volume names used by the alias node tree
+    /// 
+    /// This adds the volume names used here to the specified set.
+    /// The same method is called on all subnodes, so all volumes from
+    /// this point of the tree down will be added by this call.
+    ///
+    /// @param vols
+    ///   The set of strings to receive the volume names
     void x_GetVolumeNames(set<string> & vols) const;
     
+    /// Name resolution
+    ///
+    /// This takes the names in dbname_list, finds the path for each
+    /// name, and recreates a space delimited version.  This is only
+    /// done during topmost node construction; names supplied by the
+    /// end user get this treatment, lower level nodes still need
+    /// absolute or relative paths to specify the database locations.
+    ///
+    /// After each name is resolved, the largest prefix is found and
+    /// moved to the dbname_path variable (and removed from each
+    /// individual name).
+    /// 
+    /// @param dbname_list
+    ///   List of names, seperated by spaces
+    /// @param dbname_path
+    ///   Common prefix of all these names
+    /// @prot_nucl
+    ///   Indicates whether this is a protein or nucleotide database
     void x_ResolveNames(string & dbname_list,
                         string & dbname_path,
                         char     prot_nucl);
@@ -228,17 +451,29 @@ private:
     ///   The OID after the last OID in the range.
     void x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
     
-    // --- Data ---
+    /// Type of set used for KEY/VALUE pairs within each node
+    typedef map<string, string> TVarList;
     
-    typedef map<string, string>             TVarList;
-    typedef vector<string>                  TVolNames;
+    /// Type used to store a set of volume names for each node
+    typedef vector<string> TVolNames;
+    
+    /// Type used to store the set of subnodes for this node
     typedef vector< CRef<CSeqDBAliasNode> > TSubNodeList;
     
+    /// The memory management layer for this SeqDB instance
     CSeqDBAtlas & m_Atlas;
-    string        m_DBPath;
-    TVarList      m_Values;
-    TVolNames     m_VolNames;
-    TSubNodeList  m_SubNodes;
+    
+    /// The common prefix for the DB paths.
+    string m_DBPath;
+    
+    /// List of KEY/VALUE pairs from this alias file
+    TVarList m_Values;
+    
+    /// Set of volume names associated with this node
+    TVolNames m_VolNames;
+    
+    /// List of subnodes contained by this node
+    TSubNodeList m_SubNodes;
 };
 
 

@@ -127,18 +127,9 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     x_ExpandAliases(dbname, prot_nucl, recurse, locked);
 }
 
-// This takes the names in dbname_list, finds the path for each name,
-// and recreates a space delimited version.  This is only done during
-// topmost node construction; names supplied by the end user get this
-// treatment, lower level nodes still need absolute or relative paths
-// to specify the database locations.
-// 
-// After each name is resolved, the largest prefix is found and moved
-// to the m_DBPath variable.
-// 
 // [I'm not sure if this is really worth while; it seemed like it
 // would be and it wasn't too bad to write.  It could probably be
-// omitted in the cliff notes version. -kmb]
+// omitted in the cliff notes version.]
 
 void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
                                      string & dbname_path,
@@ -377,8 +368,9 @@ void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols) const
     x_GetVolumeNames(volset);
     
     vols.clear();
-    for(set<string>::iterator i = volset.begin(); i != volset.end(); i++) {
-        vols.push_back(*i);
+    ITERATE(set<string>, iter, volset) {
+        vols.push_back(*iter);
+
     }
     
     // Sort to insure deterministic order.
@@ -387,14 +379,10 @@ void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols) const
 
 void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols) const
 {
-    Uint4 i = 0;
+    vols.insert(m_VolNames.begin(), m_VolNames.end());
     
-    for(i = 0; i < m_VolNames.size(); i++) {
-        vols.insert(m_VolNames[i]);
-    }
-    
-    for(i = 0; i < m_SubNodes.size(); i++) {
-        m_SubNodes[i]->x_GetVolumeNames(vols);
+    ITERATE(TSubNodeList, iter, m_SubNodes) {
+        (*iter)->x_GetVolumeNames(vols);
     }
 }
 
@@ -739,17 +727,12 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
         return;
     }
     
-    Uint4 i;
-    
-    for(i = 0; i < m_SubNodes.size(); i++) {
-        m_SubNodes[i]->WalkNodes( walker, volset );
+    ITERATE(TSubNodeList, iter, m_SubNodes) {
+        (*iter)->WalkNodes( walker, volset );
     }
     
-    // For each volume name, try to find the corresponding volume and
-    // call Accumulate.
-    
-    for(i = 0; i < m_VolNames.size(); i++) {
-        if (const CSeqDBVol * vptr = volset.GetVol(m_VolNames[i])) {
+    ITERATE(TVolNames, iter, m_VolNames) {
+        if (const CSeqDBVol * vptr = volset.GetVol(*iter)) {
             walker->Accumulate( *vptr );
         }
     }
