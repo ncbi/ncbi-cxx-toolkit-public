@@ -37,8 +37,10 @@
 #include <util/range.hpp>
 
 #include <list>
+#include <map>
 #include <objects/seqloc/Seq_id.hpp>
-
+#include <objects/seqalign/Seq_align.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 #include <objtools/format/items/item_base.hpp>
 
 
@@ -46,7 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -57,31 +59,23 @@ class IFormatter;
 class CPrimaryItem : public CFlatItem
 {
 public:
-    CPrimaryItem(CFFContext& ctx);
+    CPrimaryItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
-    typedef CRange<TSignedSeqPos>   TRange;
-
-    struct SPiece {
-        TRange             m_Span;
-        CConstRef<CSeq_id> m_PrimaryID;
-        TRange             m_PrimarySpan;
-        bool               m_Complemented;
-
-        // for usual tabular format (even incorporated in GBSet!)
-        string& Format(string &s) const;
-    };
-    typedef list<SPiece> TPieces;
-
-    // for usual tabular format (even incorporated in GBSet!)
-    const char*    GetHeader(void) const;
-    const TPieces& GetPieces(void) const { return m_Pieces; }
+    const string& GetString(void) const { return m_Str; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    // types
+    typedef CConstRef<CDense_seg>            TDenseRef;
+    typedef list< CRef< CSeq_align > >       TAlnList;
+    typedef map<CAlnMap::TRange,  TDenseRef> TDense_seg_Map;
 
-    bool    m_IsRefSeq;
-    TPieces m_Pieces;
+    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GetStrForPrimary(CBioseqContext& ctx);
+    void x_CollectSegments(TDense_seg_Map&, const TAlnList& aln_list);
+    void x_CollectSegments(TDense_seg_Map&, const CSeq_align& aln);
+
+    string m_Str;
 };
 
 
@@ -93,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:38:48  shomrat
+* New implementation of Primary item
+*
 * Revision 1.2  2004/02/12 20:21:38  shomrat
 * added include directive
 *
