@@ -232,7 +232,7 @@ public:
 
     // constructor
     CFFContext(CScope& scope, TFormat format, TMode mode, TStyle style,
-        TFilter filter, TFlags flags);
+        TView view, TFlatFileFlags flags);
 
     // destructor
     ~CFFContext(void);
@@ -286,10 +286,12 @@ public:
     }
     bool DoContigStyle(void);
 
-    TFilter GetFilterFlags(void) const;
-    void SetFilterFlags(TFilter filter_flags);
-    bool ViewNuc(void) const  { return (m_FilterFlags & fSkipNucleotides) == 0; }
-    bool ViewProt(void) const { return (m_FilterFlags & fSkipProteins) == 0; }
+    //TFilter GetFilterFlags(void) const;
+    //void SetFilterFlags(TFilter filter_flags);
+    TView GetView(void) const;
+    void SetView(TView view);
+    bool ViewNuc(void) const  { return (m_View & fViewNucleotides) != 0; }
+    bool ViewProt(void) const { return (m_View & fViewProteins) != 0; }
 
     const CSeq_entry_Handle& GetTSE(void) const;
     void SetTSE(const CSeq_entry_Handle& tse);
@@ -434,7 +436,7 @@ private:
     class CFlags : public CObject
     {
     public:
-        CFlags(TMode mode, TFlags flags);
+        CFlags(TMode mode, TFlatFileFlags flags);
         
         // mode dependant flags
         bool SuppressLocalId     (void) const { return m_SuppressLocalId;       }
@@ -558,7 +560,7 @@ private:
     TFormat          m_Format;
     TMode            m_Mode;
     TStyle           m_Style;
-    TFilter          m_FilterFlags;
+    TView            m_View;
     CFlags           m_Flags;
 
     CSeq_entry_Handle        m_TSE;
@@ -631,16 +633,16 @@ bool CFFContext::DoContigStyle(void)
 
 
 inline
-TFilter CFFContext::GetFilterFlags(void) const
+TView CFFContext::GetView(void) const
 {
-    return m_FilterFlags;
+    return m_View;
 }
 
 
 inline
-void CFFContext::SetFilterFlags(TFilter filter_flags)
+void CFFContext::SetView(TView view)
 {
-    m_FilterFlags = filter_flags;
+    m_View = view;
 }
 
 
@@ -1442,6 +1444,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/31 17:14:00  shomrat
+* name changes
+*
 * Revision 1.12  2004/03/25 20:28:55  shomrat
 * Use handle objects
 *

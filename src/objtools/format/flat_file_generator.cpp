@@ -63,9 +63,9 @@ CFlatFileGenerator::CFlatFileGenerator
  TFormat format,
  TMode   mode,
  TStyle  style,
- TFilter filter,
- TFlags  flags) :
-    m_Ctx(new CFFContext(scope, format, mode, style, filter, flags))
+ TView   view,
+ TFlatFileFlags  flags) :
+    m_Ctx(new CFFContext(scope, format, mode, style, view, flags))
 {
     if ( !m_Ctx ) {
        NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
@@ -220,6 +220,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/31 17:18:24  shomrat
+* name changes
+*
 * Revision 1.6  2004/03/25 20:38:17  shomrat
 * Use handles
 *

@@ -65,8 +65,8 @@ public:
                        TFormat      format = eFormat_GenBank,
                        TMode        mode   = eMode_GBench,
                        TStyle       style  = eStyle_Normal,
-                       TFilter      filter = fSkipProteins,
-                       TFlags       flags  = 0);
+                       TView        view   = fViewNucleotides,
+                       TFlatFileFlags       flags  = 0);
     ~CFlatFileGenerator(void);
 
     // Supply an annotation selector to be used in feature gathering.
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/31 17:13:38  shomrat
+* name changes
+*
 * Revision 1.6  2004/03/25 20:30:53  shomrat
 * Use Handles
 *

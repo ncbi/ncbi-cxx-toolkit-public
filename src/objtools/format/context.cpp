@@ -68,9 +68,9 @@ CFFContext::CFFContext
  TFormat format,
  TMode mode,
  TStyle style,
- TFilter filter,
- TFlags flags) :
-    m_Format(format), m_Mode(mode), m_Style(style), m_FilterFlags(filter),
+ TView view,
+ TFlatFileFlags flags) :
+    m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
     m_Flags(mode, flags),
     m_Scope(&scope), m_SeqSub(0),
     m_Master(0), m_Bioseq(0)
@@ -547,7 +547,7 @@ bool CBioseqContext::x_IsDeltaLitOnly(void) const
 /////////////////////////////////////////////////////////////////////////////
 //
 // Flags
-CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
+CFFContext::CFlags::CFlags(TMode mode, TFlatFileFlags flags) :
     m_HideImpFeats((flags & fHideImportedFeatures) != 0),
     m_HideSnpFeats((flags & fHideSNPFeatures) != 0),
     m_HideExonFeats((flags & fHideExonFeatures) != 0),
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/31 17:15:09  shomrat
+* name changes
+*
 * Revision 1.12  2004/03/26 17:23:38  shomrat
 * fixed initialization of m_IsWGS
 *
