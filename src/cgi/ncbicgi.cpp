@@ -80,7 +80,7 @@ CCgiCookie::CCgiCookie(const string& name,   const string& value,
                        const string& domain, const string& path)
 {
     if ( name.empty() ) {
-        NCBI_THROW2(CCgiParseException, eCookie,
+        NCBI_THROW2(CCgiCookieException, eValue,
                     "Empty cookie name", 0);
     }
     x_CheckField(name, " ;,=");
@@ -172,7 +172,7 @@ void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
     if ( banned_symbols ) {
         string::size_type pos = str.find_first_of(banned_symbols);
         if (pos != NPOS) {
-            NCBI_THROW2(CCgiParseException, eFormat,
+            NCBI_THROW2(CCgiCookieException, eValue,
                         "Banned symbol '"
                         + NStr::PrintableString(string(1, str[pos]))
                         + "' in the cookie name: "
@@ -183,7 +183,7 @@ void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
 
     for (const char* s = str.c_str();  *s;  s++) {
         if ( !isprint(*s) ) {
-            NCBI_THROW2(CCgiParseException, eFormat,
+            NCBI_THROW2(CCgiCookieException, eValue,
                         "Unprintable symbol '"
                         + NStr::PrintableString(string(1, *s))
                         + "' in the cookie name: "
@@ -317,7 +317,7 @@ void CCgiCookies::Add(const string& str)
         Add(str.substr(pos_beg, pos_mid-pos_beg),
             str.substr(pos_mid+1, pos_end-pos_mid));
     }
-    NCBI_THROW2(CCgiParseException, eCookie,
+    NCBI_THROW2(CCgiCookieException, eString,
                 "Invalid cookie string: `" + str + "'", pos);
 }
 
@@ -671,20 +671,18 @@ static void s_ParseMultipartEntries(const string& boundary,
             // potential corner case: no actual data
             return;
         }
-        NCBI_THROW2(CCgiParseException, eEntry,
-                    s_Me + ": the part does not start with boundary line: "
-                    + boundary,
-                    0);
+        NCBI_THROW(CCgiRequestException, eEntry,
+                   s_Me + ": the part does not start with boundary line: "
+                   + boundary);
     }
 
     {{
         SIZE_TYPE tail_size = boundary_size + eol_size + 2;
         SIZE_TYPE tail_start = str.find(s_Eol + boundary + "--");
         if (tail_start == NPOS) {
-            NCBI_THROW2(CCgiParseException, eEntry,
-                        s_Me + ": the part does not contain trailing boundary "
-                        + boundary + "--",
-                        0);
+            NCBI_THROW(CCgiRequestException, eEntry,
+                       s_Me + ": the part does not contain trailing boundary "
+                       + boundary + "--");
         }
         end_pos = tail_start + tail_size;
     }}
@@ -766,9 +764,9 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
         string start = "boundary=";
         SIZE_TYPE pos = content_type.find(start);
         if (pos == NPOS) {
-            NCBI_THROW2(CCgiParseException, eEntry,
-                        "CCgiRequest::ParsePostQuery(\"" +
-                        content_type + "\"): no boundary field", 0);
+            NCBI_THROW(CCgiRequestException, eEntry,
+                       "CCgiRequest::ParsePostQuery(\"" +
+                       content_type + "\"): no boundary field");
         }
         s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
                                 str, entries);
@@ -845,8 +843,13 @@ void CCgiRequest::x_Init
         x_GetPropertyByName(GetPropertyName((ECgiProp) prop));
     }
 
-    // Compose cookies
-    m_Cookies.Add(GetProperty(eCgi_HttpCookie));
+    // Parse HTTP cookies
+    try {
+        m_Cookies.Add(GetProperty(eCgi_HttpCookie));
+    } catch (CCgiCookieException& e) {
+        NCBI_RETHROW(e, CCgiRequestException, eCookie,
+                     "Error in parsing HTTP request cookies");
+    }
 
     // Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
     {{
@@ -1034,9 +1037,8 @@ size_t CCgiRequest::GetContentLength(void) const
     try {
         content_length = (size_t) NStr::StringToUInt(str);
     } catch (CStringException& e) {
-        NCBI_THROW2(CCgiParseException, eFormat,
-                    "Malformed Content-Length value in HTTP request: " + str,
-                    e.GetPos());
+        NCBI_RETHROW(e, CCgiRequestException, eFormat,
+                     "Malformed Content-Length value in HTTP request: " + str);
     }
 
     return content_length;
@@ -1258,6 +1260,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.78  2004/09/07 19:14:09  vakatov
+* Better structurize (and use) CGI exceptions to distinguish between user-
+* and server- errors
+*
 * Revision 1.77  2004/08/04 16:15:37  vakatov
 * Consistently throw CCgiParseException in those (and only those) cases where
 * the HTTP request itself is malformatted.

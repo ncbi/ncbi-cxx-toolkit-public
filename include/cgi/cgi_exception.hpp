@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Andrei Gourianov
+* Authors:  Andrei Gourianov, Denis Vakatov
 *
 */
 
@@ -62,6 +62,104 @@ class CCgiException : EXCEPTION_VIRTUAL_BASE public CException
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CCgiCookieException --
+///
+///   Exceptions used by CCgiCookie and CCgiCookies classes
+
+class CCgiCookieException : public CParseTemplException<CCgiException>
+{
+public:
+    enum EErrCode {
+        eValue,     //< Bad cookie value
+        eString     //< Bad cookie string (Set-Cookie:) format
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eValue:    return "Bad cookie value";
+        case eString:   return "Bad cookie string format";
+        default:        return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT2
+    (CCgiCookieException, CParseTemplException<CCgiException>,
+     std::string::size_type);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiRequestException --
+///
+///
+///   Exceptions to be used by CGI framework itself (see CCgiParseException)
+///   or the CGI application's request processing code in the cases when there
+///   is a problem is in the HTTP request itself  (its header and/or body).
+///   The problem can be in the syntax as well as in the content.
+
+class CCgiRequestException : public CCgiException
+{
+public:
+    /// Bad (malformed or missing) HTTP request components
+    enum EErrCode {
+        eCookie,     //< Cookie
+        eRead,       //< Error in reading raw content of HTTP request
+        eIndex,      //< ISINDEX
+        eEntry,      //< Entry value
+        eAttribute,  //< Entry attribute
+        eFormat,     //< Format or encoding
+        eData        //< Syntaxically correct but contains odd data (from the
+                     //< point of view of particular CGI application)
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eCookie:    return "Malformed HTTP Cookie";
+        case eRead:      return "Error in receiving HTTP request";
+        case eIndex:     return "Error in parsing ISINDEX-type CGI arguments";
+        case eEntry:     return "Error in parsing CGI arguments";
+        case eAttribute: return "Bad part attribute in multipart HTTP request";
+        case eFormat:    return "Misformatted data in HTTP request";
+        case eData:      return "Unexpected or inconsistent HTTP request";
+        default:         return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CCgiRequestException, CCgiException);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiParseException --
+///
+///   Exceptions used by CGI framework when the error has occured while
+///   parsing the contents (header and/or body) of the HTTP request
+
+class CCgiParseException : public CParseTemplException<CCgiRequestException>
+{
+public:
+    /// @sa CCgiRequestException
+    enum EErrCode {
+        eIndex      = CCgiRequestException::eIndex,
+        eEntry      = CCgiRequestException::eEntry,
+        eAttribute  = CCgiRequestException::eAttribute,
+        eRead       = CCgiRequestException::eRead,
+        eFormat     = CCgiRequestException::eFormat
+        // WARNING:  no enums not listed in "CCgiRequestException::EErrCode"
+        //           can be here -- unless you re-implement GetErrCodeString()
+    };
+
+    NCBI_EXCEPTION_DEFAULT2
+    (CCgiParseException, CParseTemplException<CCgiRequestException>,
+     std::string::size_type);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CCgiErrnoException --
 ///
 ///   Exceptions used by CGI framework when the error is more system-related
@@ -77,52 +175,13 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eErrno:   return "eErrno";
-        case eModTime: return "eModTime";
+        case eErrno:   return "System error";
+        case eModTime: return "File system error";
         default:       return CException::GetErrCodeString();
         }
     }
     NCBI_EXCEPTION_DEFAULT
-    (CCgiErrnoException,
-     CErrnoTemplException<CCgiException>);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CCgiParseException --
-///
-///   Exceptions used by CGI framework when the error has occured while
-///   parsing the contents (header and/or body) of the HTTP request
-
-class CCgiParseException : public CParseTemplException<CCgiException>
-{
-public:
-    /// Bad (malformed or missing) HTTP request components
-    enum EErrCode {
-        eCookie,     //< Cookie
-        eRead,       //< Error in reading raw content of HTTP request
-        eIndex,      //< ISINDEX
-        eEntry,      //< Entry value
-        eAttribute,  //< Entry attribute
-        eFormat      //< Format or encoding
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eCookie:    return "eCookie";
-        case eRead:      return "eRead";
-        case eIndex:     return "eIndex";
-        case eEntry:     return "eEntry";
-        case eAttribute: return "eAttribute";
-        case eFormat:    return "eFormat";
-        default:         return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT2
-    (CCgiParseException,
-     CParseTemplException<CCgiException>, std::string::size_type);
+    (CCgiErrnoException, CErrnoTemplException<CCgiException>);
 };
 
 
@@ -135,6 +194,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/07 19:14:09  vakatov
+ * Better structurize (and use) CGI exceptions to distinguish between user-
+ * and server- errors
+ *
  * Revision 1.3  2004/08/04 15:52:57  vakatov
  * CCgiParseException::EErrCode += eRead.
  * Also, commented and Doxynen'ized.

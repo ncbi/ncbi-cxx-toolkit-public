@@ -170,9 +170,6 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 
 void CCgiApplication::Init(void)
 {
-    // Disable background reporting by default
-    CException::EnableBackgroundReporting(false);
-
     // Convert multi-line diagnostic messages into one-line ones by default
     SetDiagPostFlag(eDPF_PreMergeLines);
     SetDiagPostFlag(eDPF_MergeLines);
@@ -284,7 +281,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
     // Discriminate between different types of error
     const char* status_str = "500 Server Error";
-    if ( dynamic_cast<CCgiParseException*> (&e) ) {
+    if ( dynamic_cast<CCgiRequestException*> (&e) ) {
         status_str = "400 Malformed HTTP Request";
     }
 
@@ -745,6 +742,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.56  2004/09/07 19:14:09  vakatov
+* Better structurize (and use) CGI exceptions to distinguish between user-
+* and server- errors
+*
 * Revision 1.55  2004/08/11 15:21:31  vakatov
 * CCgiApplication::OnException() -- also print the status and description to
 * the HTTP body;  change MIME to plain/text.
