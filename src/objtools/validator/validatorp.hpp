@@ -248,6 +248,7 @@ enum EErrType {
     eErr_SEQ_FEAT_MissingMRNAproduct,
     eErr_SEQ_FEAT_AbuttingIntervals,
     eErr_SEQ_FEAT_CollidingGeneNames,
+    eErr_SEQ_FEAT_CollidingLocusTags,
     eErr_SEQ_FEAT_MultiIntervalGene,
     eErr_SEQ_FEAT_FeatContentDup,
     eErr_SEQ_FEAT_BadProductSeqId,
@@ -628,6 +629,8 @@ public:
     size_t GetTpaWithoutHistory(void) const { return m_TpaWithoutHistory; }
 
 private:
+    typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
+
     static const size_t scm_AdjacentNsThreshold; // = 80
     
     void ValidateSeqLen(const CBioseq& seq);
@@ -642,7 +645,9 @@ private:
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateSeqFeatContext(const CBioseq& seq);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
-    void ValidateCollidingGeneNames(const CBioseq& seq);
+    void ValidateCollidingGenes(const CBioseq& seq);
+    void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
+        EErrType err, EDiagSev sev);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
@@ -918,6 +923,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/02/25 15:52:51  shomrat
+* Added CollidingLocusTags error
+*
 * Revision 1.55  2004/01/16 20:08:14  shomrat
 * Added LocusTagProblem error
 *

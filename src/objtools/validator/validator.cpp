@@ -464,6 +464,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_MissingMRNAproduct",
     "SEQ_FEAT_AbuttingIntervals",
     "SEQ_FEAT_CollidingGeneNames",
+    "SEQ_FEAT_CollidingLocusTags",
     "SEQ_FEAT_MultiIntervalGene",
     "SEQ_FEAT_FeatContentDup",
     "SEQ_FEAT_BadProductSeqId",
@@ -1004,6 +1005,9 @@ record. This is an error in the genomic product set.",
 interval may be desirable in this case.",
 //  SEQ_FEAT_CollidingGeneNames
 "Two gene features should not have the same name.",
+//  SEQ_FEAT_CollidingLocusTags
+"Two gene features should not have the same locus_tag, which is supposed \
+to be a unique identifer.",
 //  SEQ_FEAT_MultiIntervalGene
 "A gene feature on a single Bioseq should have a single interval \
 spanning everything considered to be under that gene.",
@@ -1142,6 +1146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/02/25 15:52:15  shomrat
+* Added CollidingLocusTags error
+*
 * Revision 1.38  2004/01/16 20:08:35  shomrat
 * Added LocusTagProblem error
 *
