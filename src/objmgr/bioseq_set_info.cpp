@@ -45,6 +45,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -407,6 +409,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/24 18:57:35  vasilche
+ * Added include <algorithm> for find().
+ *
  * Revision 1.2  2004/03/24 18:30:29  vasilche
  * Fixed edit API.
  * Every *_Info object has its own shallow copy of original object.
