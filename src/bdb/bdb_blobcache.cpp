@@ -65,20 +65,31 @@ public:
 
     CBDB_BLOB_CacheIReader(CBDB_BLobStream* blob_stream)
     : m_BlobStream(blob_stream),
-      m_OverflowFile(0)
+      m_OverflowFile(0),
+      m_Buffer(0)
     {}
 
     CBDB_BLOB_CacheIReader(CNcbiIfstream* overflow_file)
     : m_BlobStream(0),
-      m_OverflowFile(overflow_file)
+      m_OverflowFile(overflow_file),
+      m_Buffer(0)
     {}
+
+    CBDB_BLOB_CacheIReader(unsigned char* buf, size_t buf_size)
+    : m_BlobStream(0),
+      m_OverflowFile(0),
+      m_Buffer(buf),
+      m_BufferPtr(buf),
+      m_BufferSize(buf_size)
+    {
+    }
 
     virtual ~CBDB_BLOB_CacheIReader()
     {
         delete m_BlobStream;
         delete m_OverflowFile;
+        delete m_Buffer;
     }
-
 
 
     virtual ERW_Result Read(void*   buf, 
@@ -87,6 +98,19 @@ public:
     {
         if (count == 0)
             return eRW_Success;
+
+        // Check if BLOB is memory based...
+        if (m_Buffer) {
+            if (m_BufferSize == 0) {
+                *bytes_read = 0;
+                return eRW_Eof;
+            }
+            *bytes_read = min(count, m_BufferSize);
+            ::memcpy(buf, m_BufferPtr, *bytes_read);
+            m_BufferPtr += *bytes_read;
+            m_BufferSize -= *bytes_read;
+            return eRW_Success;
+        }
 
         // Check if BLOB is file based...
         if (m_OverflowFile) {
@@ -132,6 +156,9 @@ private:
 private:
     CBDB_BLobStream* m_BlobStream;
     CNcbiIfstream*   m_OverflowFile;
+    unsigned char*   m_Buffer;
+    unsigned char*   m_BufferPtr;
+    size_t           m_BufferSize;
 
 };
 
@@ -584,9 +611,22 @@ IReader* CBDB_BLOB_Cache::GetReadStream(const string& key,
     if (ret != eBDB_Ok) {
         return 0;
     }
+
+    size_t bsize = m_BlobDB.LobSize();
+
+    unsigned char* buf = new unsigned char[bsize+1];
+
+    ret = m_BlobDB.GetData(buf, bsize);
+    if (ret != eBDB_Ok) {
+        return 0;
+    }
+
+    return new CBDB_BLOB_CacheIReader(buf, bsize);
+
+/*
     CBDB_BLobStream* bstream = m_BlobDB.CreateStream();
     return new CBDB_BLOB_CacheIReader(bstream);
-
+*/
 }
 
 IWriter* CBDB_BLOB_Cache::GetWriteStream(const string&    key, 
@@ -779,6 +819,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/10/17 14:11:41  kuznets
+ * Implemented cached read from berkeley db BLOBs
+ *
  * Revision 1.11  2003/10/16 19:29:18  kuznets
  * Added Int cache (AKA id resolution cache)
  *
