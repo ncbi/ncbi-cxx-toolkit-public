@@ -39,6 +39,10 @@
 BEGIN_NCBI_SCOPE
 
 
+static void
+s_RegisterCreatedFilter(CRef<CFilter>& filter, CSerialObject* parent);
+
+
 //-----------------------------------------------------------------------------
 CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
     ( const CProjectItemsTree& tree,
@@ -146,13 +150,8 @@ CMsvcMasterProjectGenerator::SaveProject(const string& base_name)
     }}
 
     {{
-        //Filters
-        list<string> root_ids;
-        m_Tree.GetRoots(&root_ids);
-        ITERATE(list<string>, p, root_ids) {
-            const string& root_id = *p;
-            ProcessProjectBranch(root_id, &xmlprj.SetFiles());
-        }
+        CProjectTreeFolders folders(m_Tree);
+        ProcessTreeFolder(folders.m_RootParent, &xmlprj.SetFiles());
     }}
 
     {{
@@ -169,26 +168,33 @@ CMsvcMasterProjectGenerator::SaveProject(const string& base_name)
 }
 
 
-void 
-CMsvcMasterProjectGenerator::ProcessProjectBranch(const string&  project_id,
-                                                  CSerialObject* parent)
+void CMsvcMasterProjectGenerator::ProcessTreeFolder
+                                        (const SProjectTreeFolder&  folder,
+                                         CSerialObject*             parent)
 {
-    if ( IsAlreadyProcessed(project_id) )
-        return;
+    if ( folder.IsRoot() ) {
 
-    CRef<CFilter> project_filter = FindOrCreateFilter(project_id, parent);
-    if ( !project_filter )
-        return;
+        ITERATE(SProjectTreeFolder::TSiblings, p, folder.m_Siblings) {
+            
+            ProcessTreeFolder(*(p->second), parent);
+        }
+    } else {
 
-    list<string> sibling_ids;
-    m_Tree.GetSiblings(project_id, &sibling_ids);
-    ITERATE(list<string>, p, sibling_ids) {
-        //continue recursive lookup
-        const string& sibling_id = *p;
-        ProcessProjectBranch(sibling_id, &(*project_filter));
+        CRef<CFilter> filter(new CFilter());
+        filter->SetAttlist().SetName(folder.m_Name);
+        filter->SetAttlist().SetFilter("");
+        s_RegisterCreatedFilter(filter, parent);
+
+        ITERATE(SProjectTreeFolder::TProjects, p, folder.m_Projects) {
+
+            const string& project_id = *p;
+            AddProjectToFilter(filter, project_id);
+        }
+        ITERATE(SProjectTreeFolder::TSiblings, p, folder.m_Siblings) {
+            
+            ProcessTreeFolder(*(p->second), filter);
+        }
     }
-
-    AddProjectToFilter(project_filter, project_id);
 }
 
 
@@ -215,49 +221,6 @@ s_RegisterCreatedFilter(CRef<CFilter>& filter, CSerialObject* parent)
             return;
         }
     }}
-}
-
-
-CRef<CFilter>
-CMsvcMasterProjectGenerator::FindOrCreateFilter(const string&  project_id,
-                                                CSerialObject* parent)
-{
-    CProjectItemsTree::TProjects::const_iterator p = 
-        m_Tree.m_Projects.find(project_id);
-
-    if (p != m_Tree.m_Projects.end()) {
-        //Find filter for the project or create a new one
-        const CProjItem& project = p->second;
-        
-        TFiltersCache::iterator n = 
-            m_FiltersCache.find(project.m_SourcesBaseDir);
-        if (n != m_FiltersCache.end())
-            return n->second;
-        
-        CRef<CFilter> filter(new CFilter());
-        filter->SetAttlist().SetName(GetFolder(project.m_SourcesBaseDir));
-        filter->SetAttlist().SetFilter("");
-
-        m_FiltersCache[project.m_SourcesBaseDir] = filter;
-        s_RegisterCreatedFilter(filter, parent);
-        return filter;
-    } else {
-        //will return uninitilized CRef
-        LOG_POST("||||||||| No project with id : " + project_id);
-        return CRef<CFilter>();
-    }
-}
-
-
-bool 
-CMsvcMasterProjectGenerator::IsAlreadyProcessed(const string& project_id)
-{
-    set<string>::const_iterator p = m_ProcessedIds.find(project_id);
-    if (p == m_ProcessedIds.end()) {
-        m_ProcessedIds.insert(project_id);
-        return false;
-    }
-    return true;
 }
 
 
@@ -304,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/30 20:45:50  gorelenk
+ * Changed procedure of folders generation.
+ *
  * Revision 1.4  2004/01/28 17:55:48  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
