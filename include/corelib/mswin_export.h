@@ -121,6 +121,7 @@
 #  define NCBI_ENTREZ2_EXPORTS
 #  define NCBI_FEATDEF_EXPORTS
 #  define NCBI_GBSEQ_EXPORTS
+#  define NCBI_INSDSEQ_EXPORTS
 #  define NCBI_MIM_EXPORTS
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
@@ -681,6 +682,15 @@
 #  define NCBI_GBSEQ_EXPORT         __declspec(dllexport)
 #else
 #  define NCBI_GBSEQ_EXPORT         __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_insdseq
+ */
+#ifdef NCBI_INSDSEQ_EXPORTS
+#  define NCBI_INSDSEQ_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_INSDSEQ_EXPORT         __declspec(dllimport)
 #endif
 
 /*
@@ -1411,6 +1421,7 @@
 #  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
+#  define NCBI_INSDSEQ_EXPORT
 #  define NCBI_LDS_EXPORT
 #  define NCBI_MEDLARS_EXPORT
 #  define NCBI_MEDLINE_EXPORT
@@ -1488,6 +1499,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.69  2004/04/13 20:10:40  ucko
+ * New (shared) ASN.1 spec: insdseq
+ *
  * Revision 1.68  2004/03/25 14:19:42  dicuccio
  * Added export specifier for TRACE data loader library
  *

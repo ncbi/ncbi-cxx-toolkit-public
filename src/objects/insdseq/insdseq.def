@@ -1,0 +1,10 @@
+[-]
+_export = NCBI_INSDSEQ_EXPORT
+
+[INSDInterval]
+from._type  = TSeqPos
+to._type    = TSeqPos
+point._type = TSeqPos
+
+[INSDSeq]
+length._type = TSeqPos
