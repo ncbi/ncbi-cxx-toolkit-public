@@ -65,6 +65,8 @@ class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
 class COriginItem;
+class CStartSectionItem;
+class CEndSectionItem;
 
 
 class IFormatter : public CObject
@@ -73,8 +75,8 @@ public:
     
     // control methods
     virtual void Start       (IFlatTextOStream& text_os) = 0;
-    virtual void StartSection(IFlatTextOStream& text_os) = 0;
-    virtual void EndSection  (IFlatTextOStream& text_os) = 0;
+    virtual void StartSection(const CStartSectionItem& ssec, IFlatTextOStream& text_os) = 0;
+    virtual void EndSection  (const CEndSectionItem& esec, IFlatTextOStream& text_os) = 0;
     virtual void End         (IFlatTextOStream& text_os) = 0;
 
     // format methods
@@ -113,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/22 15:43:27  shomrat
+* End/Start section changed
+*
 * Revision 1.5  2004/02/19 17:58:23  shomrat
 * Added method to format Origin item
 *
