@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/08 23:13:19  lavr
+ * C/C++ -> C only
+ *
  * Revision 6.4  2001/01/08 22:42:42  lavr
  * Further development of the test-suite
  *
@@ -52,6 +55,7 @@
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_service_connector.h>
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -60,6 +64,7 @@ int main(int argc, const char* argv[])
 {
     const char buffer[] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     CONNECTOR connector;
+    SConnNetInfo *info;
     STimeout  timeout;
     char buf[1024];
     CONN conn;
@@ -67,7 +72,7 @@ int main(int argc, const char* argv[])
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    SConnNetInfo *info = ConnNetInfo_Create("io_bounce");
+    info = ConnNetInfo_Create("io_bounce");
     strcpy(info->host, "ray");
     info->debug_printout = 1;
     info->stateless = 1;
