@@ -77,7 +77,7 @@ const list<string>& CKeywordsItem::GetKeywords(void) const
 /***************************************************************************/
 
 
-enum EFlags {
+enum ETechFlags {
     eEST = 1<<0,
     eSTS = 1<<1,
     eGSS = 1<<2
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/31 17:14:42  shomrat
+* EFlags -> ETechFlags
+*
 * Revision 1.3  2004/03/25 20:44:42  shomrat
 * remove redundant include directive
 *
