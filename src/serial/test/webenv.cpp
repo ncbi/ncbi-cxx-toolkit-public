@@ -18,7 +18,7 @@ BEGIN_STRUCT_INFO2("Db-Env", Db_Env)
     ADD_CLASS_MEMBER(name);
     ADD_ASN_MEMBER(arguments, SetOf)->SetOptional();
     ADD_ASN_MEMBER(filters, SetOf)->SetOptional();
-    ADD_ASN_MEMBER(clipboard, Sequence)->SetOptional();
+//    ADD_ASN_MEMBER(clipboard, Sequence)->SetOptional();
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO(Argument)

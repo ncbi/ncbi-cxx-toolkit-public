@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/09/07 20:57:44  vasilche
+* Forgot to add some files.
+*
 * Revision 1.26  1999/09/01 17:38:02  vasilche
 * Fixed vector<char> implementation.
 * Added explicit naming of class info.
@@ -130,6 +133,7 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/asntypes.hpp>
+#include <serial/classinfo.hpp>
 
 struct valnode;
 
@@ -146,10 +150,10 @@ class CMemberInfo;
 #define REF(Name) NAME2(Name,_REF)
 
 #define CLASS_TYPE(Name) Name
-#define CLASS_REF(Name) CTypeRef(Name::GetTypeInfo)
+#define CLASS_REF(Name) Name::GetTypeInfo
 
 #define STD_TYPE(Name) Name
-#define STD_REF(Name) CTypeRef(CStdTypeInfo<Name>::GetTypeInfo)
+#define STD_REF(Name) CStdTypeInfo<Name>::GetTypeInfo
 
 #define POINTER_TYPE(Type,Args) TYPE(Type)Args*
 #define POINTER_REF(Type,Args) \
@@ -157,37 +161,37 @@ class CMemberInfo;
 
 #define STL_SET_TYPE(Type,Args) set<TYPE(Type)Args>
 #define STL_SET_REF(Type,Args) \
-    CTypeRef(new CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args))
+    new CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args)
 
 #define STL_MULTIMAP_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
     multimap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
 #define STL_MULTIMAP_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
-    CTypeRef(new CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs))
+    new CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
 
 #define STL_MAP_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
     map<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
 #define STL_MAP_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
-    CTypeRef(new CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs))
+    new CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
 
 #define STL_LIST_TYPE(Type,Args) list<TYPE(Type)Args>
 #define STL_LIST_REF(Type,Args) \
-    CTypeRef(CStlClassInfoList<TYPE(Type)Args>::GetTypeInfo)
+    new CStlClassInfoList<TYPE(Type)Args>(REF(Type)Args)
 
 #define STL_VECTOR_TYPE(Type,Args) vector<TYPE(Type)Args>
 #define STL_VECTOR_REF(Type,Args) \
-    CTypeRef(CStlClassInfoVector<TYPE(Type)Args>::GetTypeInfo)
+    new CStlClassInfoVector<TYPE(Type)Args>(REF(Type)Args)
 
 #define STL_CHAR_VECTOR_TYPE(Type) vector<Type>
 #define STL_CHAR_VECTOR_REF(Type) \
-    CTypeRef(CStlClassInfoCharVector<Type>::GetTypeInfo)
+    CStlClassInfoCharVector<Type>::GetTypeInfo
 
 #define STL_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
 #define STL_AUTO_PTR_REF(Type,Args) \
-    CTypeRef(CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo)
+    CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo
 
 #define STL_CHOICE_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
 #define STL_CHOICE_AUTO_PTR_REF(Type,Args) \
-    CTypeRef(CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo)
+    CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo
 
 template<typename T>
 struct Check
@@ -207,7 +211,9 @@ CMemberInfo* Member(const T* member)
 #define BASE_OBJECT(Class) const Class* const kObject = 0
 #define MEMBER_PTR(Name) &kObject->Name
 #define CLASS_PTR(Class) static_cast<const Class*>(kObject)
-#define M(Name,Type,Args) Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
+
+#define M(Name,Type,Args) \
+    Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
 #define STD_M(Name) Member(MEMBER_PTR(Name))
 
 #define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
@@ -256,7 +262,7 @@ template<typename T>
 inline
 CTypeRef GetStdTypeRef(const T* )
 {
-    return CTypeRef(CStdTypeInfo<T>::GetTypeInfo);
+    return CStdTypeInfo<T>::GetTypeInfo;
 }
 
 // STL
@@ -264,60 +270,60 @@ template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const list<Data>* )
 {
-    return CTypeRef(CStlClassInfoList<Data>::GetTypeInfo);
+    return CStlClassInfoList<Data>::GetTypeInfo;
 }
 
 inline
 CTypeRef GetStlTypeRef(const vector<char>* )
 {
-    return CTypeRef(CStlClassInfoCharVector<char>::GetTypeInfo);
+    return CStlClassInfoCharVector<char>::GetTypeInfo;
 }
 
 inline
 CTypeRef GetStlTypeRef(const vector<unsigned char>* )
 {
-    return CTypeRef(CStlClassInfoCharVector<unsigned char>::GetTypeInfo);
+    return CStlClassInfoCharVector<unsigned char>::GetTypeInfo;
 }
 
 inline
 CTypeRef GetStlTypeRef(const vector<signed char>* )
 {
-    return CTypeRef(CStlClassInfoCharVector<signed char>::GetTypeInfo);
+    return CStlClassInfoCharVector<signed char>::GetTypeInfo;
 }
 
 template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const vector<Data>* )
 {
-    return CTypeRef(CStlClassInfoVector<Data>::GetTypeInfo);
+    return CStlClassInfoVector<Data>::GetTypeInfo;
 }
 
 template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const set<Data>* )
 {
-    return CTypeRef(CStlClassInfoSet<Data>::GetTypeInfo);
+    return CStlClassInfoSet<Data>::GetTypeInfo;
 }
 
 template<typename Key, typename Value>
 inline
 CTypeRef GetStlTypeRef(const map<Key, Value>* )
 {
-    return CTypeRef(CStlClassInfoMap<Key, Value>::GetTypeInfo);
+    return CStlClassInfoMap<Key, Value>::GetTypeInfo;
 }
 
 template<typename Key, typename Value>
 inline
 CTypeRef GetStlTypeRef(const multimap<Key, Value>* )
 {
-    return CTypeRef(CStlClassInfoMultiMap<Key, Value>::GetTypeInfo);
+    return CStlClassInfoMultiMap<Key, Value>::GetTypeInfo;
 }
 
 // ASN
 inline
 CTypeRef GetOctetStringTypeRef(const void* const* )
 {
-    return CTypeRef(COctetStringTypeInfo::GetTypeInfo);
+    return COctetStringTypeInfo::GetTypeInfo;
 }
 
 template<typename T>
@@ -364,11 +370,11 @@ CTypeRef GetOldAsnTypeRef(T* (*newProc)(void), T* (*freeProc)(T*),
                           T* (*readProc)(asnio*, asntype*),
                           unsigned char (*writeProc)(T*, asnio*, asntype*))
 {
-    return CTypeRef(COldAsnTypeInfo::GetTypeInfo(
+    return COldAsnTypeInfo::GetTypeInfo(
         reinterpret_cast<COldAsnTypeInfo::TNewProc>(newProc),
         reinterpret_cast<COldAsnTypeInfo::TFreeProc>(freeProc),
         reinterpret_cast<COldAsnTypeInfo::TReadProc>(readProc),
-        reinterpret_cast<COldAsnTypeInfo::TWriteProc>(writeProc)));
+        reinterpret_cast<COldAsnTypeInfo::TWriteProc>(writeProc));
 }
 
 //
@@ -508,7 +514,7 @@ template<class Class>
 inline
 CTypeRef GetTypeRef(const Class* )
 {
-    return CTypeRef(Class::GetTypeInfo);
+    return Class::GetTypeInfo;
 }
 
 
@@ -615,7 +621,7 @@ struct ASN_STRUCT_NAME(name); \
 ASN_TYPE_INFO_GETTER_DECL(name) \
 BEGIN_NCBI_SCOPE \
 inline CTypeRef GetTypeRef(const ASN_STRUCT_NAME(name)* ) \
-{ return CTypeRef(ASN_TYPE_INFO_GETTER_NAME(name)); } \
+{ return ASN_TYPE_INFO_GETTER_NAME(name); } \
 END_NCBI_SCOPE
 
 #define ASN_CHOICE_REF(name) \
