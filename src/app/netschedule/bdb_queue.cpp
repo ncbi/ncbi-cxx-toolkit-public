@@ -1058,7 +1058,7 @@ void CQueueDataBase::CQueue::NotifyListeners()
         port = ql->port;
 
         EIO_Status status = 
-            udp_socket.Send(msg, msg_len, host, port);
+            udp_socket.Send(msg, msg_len, CSocketAPI::ntoa(host), port);
         // check if we have no more jobs left
         if ((i % 10 == 0) &&
             !m_LQueue.status_tracker.AnyPending()) {
@@ -1074,6 +1074,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/09 15:22:07  kuznets
+ * Use another datagram Send
+ *
  * Revision 1.9  2005/03/04 12:06:41  kuznets
  * Implenyed UDP callback to clients
  *
