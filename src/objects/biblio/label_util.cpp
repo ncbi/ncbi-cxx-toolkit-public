@@ -109,7 +109,7 @@ void GetLabelContent(string*            label,
         else {
           *label += " (";
         }
-        *label += *date + ")";
+        *label += *date + ") ";
     }
 
     if (title && !titleunique) {
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/08/18 13:36:35  shomrat
+ * Fixed GetLabelContent to match C version
+ *
  * Revision 1.2  2004/05/19 17:18:17  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
