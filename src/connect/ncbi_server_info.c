@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2000/06/05 20:21:20  lavr
+ * Eliminated gcc warning: "subscript has type `char'" in calls to
+ * classification macros (<ctype.h>) by explicit casting to unsigned chars
+ *
  * Revision 6.12  2000/05/31 23:12:22  lavr
  * First try to assemble things together to get working service mapper
  *
@@ -250,15 +254,15 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
     const char *s;
     int n;
 
-    if (!str || (*str && !isspace(*str)))
+    if (!str || (*str && !isspace((unsigned char)(*str))))
         return 0;
-    while (*str && isspace(*str))
+    while (*str && isspace((unsigned char)(*str)))
         str++;
     if (!(s = s_Read_HostPort(str, default_host, &host, &port)))
         return 0;
     default_port = (s == str);
     str = s;
-    while (*str && isspace(*str))
+    while (*str && isspace((unsigned char)(*str)))
         str++;
     /* read server-specific info according to the detected type */
     if ((info = s_GetAttrByType(type)->vtable.Read(&str)) != 0) {
@@ -266,7 +270,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
         if (!default_port)
             info->port = port;
         /* continue reading server info: optional parts: ... */
-        while (*str && isspace(*str))
+        while (*str && isspace((unsigned char)(*str)))
             str++;
         while (*str) {
             if (*(str + 1) == '=') {
@@ -311,9 +315,9 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                     str += n;
                 }
             }
-            if (*str && !isspace(*str))
+            if (*str && !isspace((unsigned char)(*str)))
                 break;
-            while (*str && isspace(*str))
+            while (*str && isspace((unsigned char)(*str)))
                 str++;
         }
         if (*str) {
@@ -367,9 +371,9 @@ static SSERV_Info* s_Ncbid_Read(const char** str)
     if (!(args = strdup(*str)))
         return 0;
     for (c = args; *c; c++)
-        if (isspace(*c)) {
+        if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
-            while (*c && isspace(*c))
+            while (*c && isspace((unsigned char)(*c)))
                 c++;
             break;
         }
@@ -496,9 +500,9 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type, const char** str)
     if (!(path = strdup(*str)))
         return 0;
     for (c = path; *c; c++)
-        if (isspace(*c)) {
+        if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
-            while (*c && isspace(*c))
+            while (*c && isspace((unsigned char)(*c)))
                 c++;
             break;
         }
