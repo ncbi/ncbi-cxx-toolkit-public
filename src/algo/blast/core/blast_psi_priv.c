@@ -826,9 +826,7 @@ _PSICalculateNormalizedSequenceWeights(
                 seq_weights->row_sigma[seq_idx] / 
                 (aligned_blocks->pos_extnt[position].right -
                  aligned_blocks->pos_extnt[position].left + 1);
-//#ifndef PSI_IGNORE_GAPS_IN_COLUMNS
             weight_sum += seq_weights->norm_seq_weights[seq_idx];
-//#endif
         }
 
         for (asi = 0; asi < num_aligned_seqs; asi++) {
@@ -1558,6 +1556,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/25 20:31:11  camacho
+ * Remove C++ comments
+ *
  * Revision 1.13  2004/06/25 20:16:50  camacho
  * 1. Minor fixes to sequence weights calculation
  * 2. Add comments
