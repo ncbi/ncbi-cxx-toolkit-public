@@ -18234,10 +18234,10 @@ if test "$with_oechem" != "no"; then
        if test -d "$OECHEM_PATH/lib${bit64_sfx}"; then
           OECHEM_LIBPATH="-L$OECHEM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OECHEM_PATH/lib${bit64_sfx}"
        fi
-       OECHEM_LIBS="$OECHEM_LIBPATH -loechem -loesystem -loeplatform -lz $NETWORK_LIBS"
+       OECHEM_LIBS="$OECHEM_LIBPATH -loechem -loesystem -loeplatform -loedepict -loeiupac -lz $NETWORK_LIBS"
     else
        OECHEM_INCLUDE=""
-       OECHEM_LIBS="-loechem -loesystem -loeplatform -lz $NETWORK_LIBS"
+       OECHEM_LIBS="-loechem -loesystem -loeplatform -loedepict -loeiupac -lz $NETWORK_LIBS"
        in_path=
     fi
     echo "$as_me:$LINENO: checking for liboechem$in_path" >&5
