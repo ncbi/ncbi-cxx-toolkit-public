@@ -35,8 +35,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2001/09/26 16:55:10  lavr
+ * Revision log updated; in-line documentation corrected
+ *
  * Revision 6.22  2001/09/24 20:22:59  lavr
- * +SERV_Reset()
+ * Added function: SERV_Reset()
  *
  * Revision 6.21  2001/09/10 21:18:35  lavr
  * SERV_GetNextInfoEx(): Description of IP address subst in host environment
@@ -48,8 +51,8 @@
  * Comment added for SERV_OpenSimple() to note about absence of preferred host
  *
  * Revision 6.18  2001/06/25 15:32:06  lavr
- * Added function: SERV_GetNextInfoEx
- * SERV_Open and SERV_GetNextInfo made macros for faster access
+ * Added function: SERV_GetNextInfoEx()
+ * Both SERV_Open() and SERV_GetNextInfo() made macros for faster access
  *
  * Revision 6.17  2001/06/11 22:14:44  lavr
  * Include files adjusted
@@ -58,46 +61,46 @@
  * Include files adjusted
  *
  * Revision 6.15  2001/04/26 14:18:20  lavr
- * SERV_MapperName moved to a private header
+ * SERV_MapperName() moved to a private header
  *
  * Revision 6.14  2001/04/24 21:15:35  lavr
- * Added functions: SERV_MapperName(), SERV_Penalize().
+ * Added functions: SERV_MapperName(), SERV_Penalize()
  *
  * Revision 6.13  2001/03/02 20:05:56  lavr
- * SERV_LOCALHOST addad; SERV_OpenSimple() made more documented
+ * SERV_LOCALHOST added; SERV_OpenSimple() made more documented
  *
  * Revision 6.12  2001/02/09 17:32:52  lavr
  * Modified: fSERV_StatelessOnly overrides info->stateless
  *
  * Revision 6.11  2001/01/08 22:48:00  lavr
- * Double return 0 in GetNextInfo removed:
+ * Double return 0 in GetNextInfo() removed:
  * 0 now indicates an error unconditionally
  *
  * Revision 6.10  2000/12/29 17:40:30  lavr
- * Pretty printed; Double 0 return added to SERV_GetNextInfo
+ * Pretty printed; Double 0 return added to SERV_GetNextInfo()
  *
  * Revision 6.9  2000/12/06 22:17:02  lavr
  * Binary host addresses are now explicitly stated to be in network byte
  * order, whereas binary port addresses now use native (host) representation
  *
  * Revision 6.8  2000/10/20 17:03:49  lavr
- * Added 'const' to SConnNetInfo in 'SERV_OpenEx'
+ * Added 'const' to SConnNetInfo in SERV_OpenEx()
  *
  * Revision 6.7  2000/10/05 22:40:06  lavr
- * Additional parameter 'info' in a call to 'Open' for service mapper
+ * Additional parameter 'info' in a call to SERV_Open()
  *
  * Revision 6.6  2000/10/05 21:26:30  lavr
  * Log message edited
  *
  * Revision 6.5  2000/10/05 21:10:11  lavr
- * Parameters to 'Open' and 'OpenEx' changed
+ * Parameters to SERV_Open() and SERV_OpenEx() changed
  *
  * Revision 6.4  2000/05/31 23:12:17  lavr
  * First try to assemble things together to get working service mapper
  *
  * Revision 6.3  2000/05/22 16:53:07  lavr
- * Rename service_info -> server_info everywhere (including
- * file names) as the latter name is more relevant
+ * Rename service_info -> server_info everywhere
+ * (including file names) as the latter name is more relevant
  *
  * Revision 6.2  2000/05/12 18:29:22  lavr
  * First working revision
@@ -130,11 +133,11 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * NB: 'nbo' in comments denotes parameters coming in network byte order.
  */
 
-/* Open iterator and consult either local database (if present),
+/* Allocate iterator and consult either local database (if present),
  * or network database, using all default communication parameters
  * found in registry and environment variables (implicit parameter
- * 'info', found in two subsequent variations of this call, is filled out
- * by ConnNetInfo_Create(service) and then used automatically).
+ * 'info' found in two subsequent variations of this call is filled out
+ * internally by ConnNetInfo_Create(service) and then automatically used).
  * NOTE that no preferred host (0) is set in the resultant iterator.
  */
 SERV_ITER SERV_OpenSimple
@@ -152,7 +155,7 @@ SERV_ITER SERV_OpenEx
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  const SConnNetInfo* net_info,      /* connection information                */
- const SSERV_Info    *const skip[], /* array of servers NOT to select        */
+ const SSERV_Info*   const skip[], /* array of servers NOT to select        */
  size_t              n_skip         /* number of servers in preceding array  */
  );
 
@@ -160,23 +163,23 @@ SERV_ITER SERV_OpenEx
         SERV_OpenEx(service, types, preferred_host, net_info, 0, 0)
 
 
-/* Get the next server meta-address, optionally accompanied by a host
+/* Get the next server meta-address, optionally accompanied by host
  * environment, specified in LBSMD configuration file on that host.
  * Return 0 if no more servers were found for the service requested.
  * Only when completing successfully, i.e. returning non-NULL info,
  * this function can also provide the host environment as follows:
  * when 'env' parameter is passed as a non-NULL pointer, then a copy of
- * the host environment is allocated, and pointer to it is stored in '*env'.
- * If the environment starts with '@', then following (up to an end or
- * '\n', whatever comes first) is the IP:port substitution provided
- * by the mapper for the host:port combination, the info refers to.
+ * the host environment is allocated, and pointer to it is stored in *env.
+ * If the environment starts with '@', then the following (up to the end or
+ * up to '\n' whatever comes first) is the IP:port substitution provided
+ * by the mapper for the host:port combination, which the info refers to.
  * Ordinary environment pairs (if any), in the form "name=value" come after
- * '\n' following the substitution, and separated from each other by '\n'.
+ * '\n' following the substitution, and separated from each other by '\n's.
  * NULL value stored if no environment is available for the host, which
- * is referred by returned server info. Otherwise, *env remains untouched.
+ * is referred to by returned server info. Otherwise, *env remains untouched.
  * NOTE that the application program should NOT destroy returned server info:
  * it will be freed automatically upon iterator destruction. On the other hand,
- * environment has to be explicitly free()'d, when no longer needed.
+ * environment has to be explicitly free()'d when no longer needed.
  */
 const SSERV_Info* SERV_GetNextInfoEx
 (SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
@@ -186,7 +189,7 @@ const SSERV_Info* SERV_GetNextInfoEx
 #define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
 
 
-/* Penalize server returned last from SERV_GetNextInfo.
+/* Penalize server returned last from SERV_GetNextInfo[Ex]().
  * Return 0 if failed, 1 if successful.
  */
 int/*bool*/ SERV_Penalize
@@ -196,14 +199,15 @@ int/*bool*/ SERV_Penalize
 
 
 /* Reset iterator to the state as if it'd just been opened.
+ * Caution: All previously obtained with this iterator pointers to
+ * server descriptors (SSERV_Info*) become invalid.
  */
 void SERV_Reset
 (SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
  );
 
 
-/* Deallocate iterator.
- * Must be called to finish lookup process.
+/* Deallocate iterator. Must be called to finish lookup process.
  */
 void SERV_Close
 (SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
