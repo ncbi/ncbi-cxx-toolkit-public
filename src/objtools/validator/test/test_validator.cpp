@@ -155,9 +155,8 @@ int CTest_validatorApplication::Run(void)
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
-        obj_mgr->RegisterDataLoader
-            (*new CGBDataLoader("ID", new CId1Reader, 2),
-            CObjectManager::eDefault);
+        obj_mgr->RegisterDataLoader(*new CGBDataLoader("ID",),
+				    CObjectManager::eDefault);
     }
 
     // Set validator options
@@ -221,6 +220,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2003/02/03 17:06:48  shomrat
+ * Changed parameters to CGBDataLoader
+ *
  * Revision 1.5  2003/01/28 16:01:22  shomrat
  * Bug fixes
  *
