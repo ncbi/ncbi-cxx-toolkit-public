@@ -122,7 +122,7 @@ public:
     // (De)compress file with name "src" and put result to file "dst".
     // Return TRUE on success, FALSE on error.
     virtual bool CompressFile  (const string& src, const string& dst);
-    virtual bool DecompressFile(const string& src, const string& dst);
+     virtual bool DecompressFile(const string& src, const string& dst);
 
 protected:
     bz_stream  m_Stream;         // Compressor stream
@@ -167,7 +167,7 @@ public:
     );
     ~CBZip2CompressionFile(void);
 
-    // Opens a compressed file for reading or writing.
+    // Open a compressed file for reading or writing.
     // Return TRUE if file was opened succesfully or FALSE otherwise.
     virtual bool Open(const string& file_name, EMode mode);
 
@@ -232,8 +232,7 @@ class NCBI_XUTIL_EXPORT CBZip2Decompressor : public CBZip2Compression,
 {
 public:
     // 'ctors
-    CBZip2Decompressor(ELevel level         = eLevel_Default,
-                       int verbosity        = 0,          // [0..4]
+    CBZip2Decompressor(int verbosity        = 0,          // [0..4]
                        int small_decompress = 0);         // [0,1]
     virtual ~CBZip2Decompressor(void);
 
@@ -254,78 +253,40 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Stream classes (for detail see "stream.hpp")
+// Compression/decompression stream processors (for details see "stream.hpp")
 //
 
-class NCBI_XUTIL_EXPORT CBZip2CompressIStream : public CCompressIStream
+class NCBI_XUTIL_EXPORT CBZip2StreamCompressor
+    : public CCompressionStreamProcessor
 {
 public:
-    CBZip2CompressIStream(
-        istream&             in_stream,
-        CCompression::ELevel level        = CCompression::eLevel_Default,
-        streamsize           in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize           out_buf_size = kCompressionDefaultOutBufSize,
-        int                  verbosity    = 0,
-        int                  work_factor  = 0)
+    CBZip2StreamCompressor(
+        CCompression::ELevel level       = CCompression::eLevel_Default,
+        streamsize           in_bufsize  = kCompressionDefaultBufSize,
+        streamsize           out_bufsize = kCompressionDefaultBufSize,
+        int                  verbosity   = 0,
+        int                  work_factor = 0)
 
-        : CCompressIStream(
+        : CCompressionStreamProcessor(
               new CBZip2Compressor(level, verbosity, work_factor),
-              &in_stream, in_buf_size, out_buf_size, eDelete)
-   {}
-};
-
-
-class NCBI_XUTIL_EXPORT CBZip2CompressOStream : public CCompressOStream
-{
-public:
-    CBZip2CompressOStream(
-        ostream&             out_stream,
-        CCompression::ELevel level        = CCompression::eLevel_Default,
-        streamsize           in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize           out_buf_size = kCompressionDefaultOutBufSize,
-        int                  verbosity    = 0,
-        int                  work_factor  = 0)
-
-        : CCompressOStream(
-              new CBZip2Compressor(level, verbosity, work_factor),
-              &out_stream, in_buf_size, out_buf_size, eDelete)
+              eDelete, in_bufsize, out_bufsize)
     {}
 };
 
 
-class NCBI_XUTIL_EXPORT CBZip2DecompressIStream : public CDecompressIStream
+class NCBI_XUTIL_EXPORT CBZip2StreamDecompressor
+    : public CCompressionStreamProcessor
 {
 public:
-    CBZip2DecompressIStream(
-        istream&             in_stream,
-        streamsize           in_buf_size      = kCompressionDefaultInBufSize,
-        streamsize           out_buf_size     = kCompressionDefaultOutBufSize,
-        int                  verbosity        = 0,
-        int                  small_decompress = 0)
+    CBZip2StreamDecompressor(
+        streamsize  in_bufsize       = kCompressionDefaultBufSize,
+        streamsize  out_bufsize      = kCompressionDefaultBufSize,
+        int         verbosity        = 0,
+        int         small_decompress = 0)
 
-        : CDecompressIStream(
-              new CBZip2Decompressor(CCompression::eLevel_Default,
-                      verbosity, small_decompress),
-              &in_stream, in_buf_size, out_buf_size, eDelete)
-    {}
-};
-
-
-class NCBI_XUTIL_EXPORT CBZip2DecompressOStream : public CDecompressOStream
-{
-public:
-    CBZip2DecompressOStream(
-        ostream&             out_stream,
-        streamsize           in_buf_size      = kCompressionDefaultInBufSize,
-        streamsize           out_buf_size     = kCompressionDefaultOutBufSize,
-        int                  verbosity        = 0,
-        int                  small_decompress = 0)
-
-        : CDecompressOStream(
-              new CBZip2Decompressor(CCompression::eLevel_Default,
-                      verbosity, small_decompress),
-              &out_stream, in_buf_size, out_buf_size, eDelete
-          )
+        : CCompressionStreamProcessor(
+             new CBZip2Decompressor(verbosity, small_decompress),
+             eDelete, in_bufsize, out_bufsize)
     {}
 };
 
@@ -339,6 +300,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/17 15:48:42  ivanov
+ * Removed all standalone compression/decompression I/O classes.
+ * Added CBZip2Stream[De]compressor classes. Now all bzip2-based I/O stream
+ * classes can be constructed using unified CCompression[I/O]Stream
+ * (see stream.hpp) and CBZip2Stream[De]compressor classes.
+ *
  * Revision 1.2  2003/06/03 20:09:54  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
