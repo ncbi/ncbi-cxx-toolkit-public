@@ -196,7 +196,7 @@ descriptor types, <i>THistory</i> and <i>TAttribute</i>, are objects that are "v
 recursively, but the associated visit functions are not actually implemented (see
 <a href="traverse_hpp.html"> traverseBS.hpp</a>). <p>
 
-An alternative to this approach would have been to use an NCBI <i>type iterator</i> 
+An alternative to this approach would have been to use an NCBI <i>type</i>  iterator
 inside the standard iterator that only visits those
 data members of an object satisfying a specified type. For example we
 could implement the Visit function on a <i>CBiostruc::TDescr</i> as follows:
@@ -215,10 +215,22 @@ void Visit (const CBiostruc::TDescr& descList) {
 }
 </pre>
 <font color = black>
-The type iterators come in two flavors <i>CStdTypeIterators</i> and <i>CObjectTypeIterators</i>.
-The standard type iterators operate on STL containers such as lists, vectors, queues, and maps etc,
-visiting each item in the container. The object type iterators operate on objects, and iterate 
-over the data members of the object's class.
+The type iterators come in two flavors <i>CStdTypeIterators</i> and <i>CObjectTypeIterators</i>,
+with corresponding <i>const</i> implementations. This example uses a <i> const</i> standard
+type iterator to visit all <i>string </i> data members in a <i>CBiostruc_descr</i> object. Alternatively,
+if we had wanted to visit only the <i> CBiostruc_history </i> descriptors, the inner loop could
+be written as:
+<font color = "#000080">
+<pre>
+        for ( CTypeConstIterator< CBiostruc_history > i = ConstBegin(**i1); i; ++i ) {
+ 	         visit(*i);
+        }
+</pre>
+<font color = black>
+<p>
+
+In both cases, the type iterators use type information about the object's class to walk through it's
+list of data members, stopping at only those that satisfy the specified type. 
 
 <p>
 </body>
