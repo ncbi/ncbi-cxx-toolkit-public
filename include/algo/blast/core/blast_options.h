@@ -596,6 +596,20 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options,
  */
 Int2 LookupTableOptionsNew(Uint1 program, LookupTableOptions* *options);
 
+/** Auxiliary function that calculates default database scanning stride.
+ * @param word_size Length of the exact match required to trigger 
+ *                  extensions [in]
+ * @param var_words If true, and word_size is divisible by 4, partial bytes 
+ *                  need not be checked to test the length of the 
+ *                  exact match [in]
+ * @param lut_type  What kind of lookup table is used (based on 4-mers, 8-mers 
+ *                  or 12-mers) [in]
+ * @return          The stride necessary to find all exact matches of a given
+ *                  word size.
+ */
+Int4 GetDefaultStride(Int4 word_size, Boolean var_words, Int4 lut_type);
+
+
 /** Allocate memory for lookup table options and fill with default values.
  * @param options The options [in] [out]
  * @param program Program number (blastn, blastp, etc.) [in]
@@ -727,6 +741,7 @@ Int2 BLAST_InitDefaultOptions(Uint1 blast_program,
    BlastEffectiveLengthsOptions** eff_len_options,
    PSIBlastOptions** protein_options,
    BlastDatabaseOptions** db_options);
+
 
 
 #ifdef __cplusplus

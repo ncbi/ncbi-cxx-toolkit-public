@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.67  2003/10/22 16:44:33  dondosha
+ * Added function to calculate default stride value for AG method
+ *
  * Revision 1.66  2003/10/21 22:15:34  camacho
  * Rearranging of C options structures, fix seed extension method
  *
@@ -883,6 +886,24 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
    return 0;
 }
 
+Int4 GetDefaultStride(Int4 word_size, Boolean var_words, Int4 lut_type)
+{
+   Int4 lut_width;
+   Int4 extra = 1;
+
+   if (lut_type == MB_LOOKUP_TABLE)
+      lut_width = 12;
+   else if (word_size >= 8)
+      lut_width = 8;
+   else
+      lut_width = 4;
+
+   if (var_words && ((word_size % 4) == 0) )
+      extra = 4;
+
+   return word_size - lut_width + extra;
+}
+
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program_number, Boolean is_megablast, Int4 threshold,
@@ -912,16 +933,9 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (program_number == blast_type_blastn) {
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;
-      } else if (variable_wordsize) {
-         if (is_megablast)
-            options->scan_step = options->word_size - 12 + COMPRESSION_RATIO;
-         else
-            options->scan_step = options->word_size - 8 + COMPRESSION_RATIO;
       } else {
-         if (is_megablast)
-            options->scan_step = options->word_size - 12 + 1;
-         else
-            options->scan_step = options->word_size - 8 + 1;
+         options->scan_step = GetDefaultStride(word_size, variable_wordsize,
+                                               options->lut_type);
       }
    }
    return 0;
