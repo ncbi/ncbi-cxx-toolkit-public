@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2001/09/28 20:52:16  lavr
+ * Update VT method revised as now called on a per-line basis
+ *
  * Revision 6.29  2001/09/24 20:30:01  lavr
  * Reset() VT method added and utilized
  *
@@ -148,10 +151,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    static void s_Reset(SERV_ITER iter);
-    static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env);
-    static int/*bool*/ s_Update(SERV_ITER iter, const char* text);
-    static void s_Close(SERV_ITER iter);
+    static void s_Reset(SERV_ITER);
+    static SSERV_Info* s_GetNextInfo(SERV_ITER, char**);
+    static int/*bool*/ s_Update(SERV_ITER, TNCBI_Time, const char*);
+    static void s_Close(SERV_ITER);
 
     static const SSERV_VTable s_op = {
         s_Reset, s_GetNextInfo, s_Update, 0, s_Close, "DISPD"
@@ -165,8 +168,9 @@ static int s_RandomSeed = 0;
 
 
 typedef struct {
-    SSERV_Info* info;
-    double      status;
+    SSERV_Info*   info;
+    unsigned long key;
+    double        status;
 } SDISPD_Node;
 
 
@@ -204,16 +208,19 @@ static void s_FreeData(SDISPD_Data* data)
 }
 
 
-static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
+static int/*bool*/ s_AddServerInfo(SDISPD_Data* data,
+                                   SSERV_Info* info, unsigned long key)
 {
     size_t i;
 
     /* First check that the new server info is updating existing one */
     for (i = 0; i < data->n_node; i++) {
-        if (SERV_EqualInfo(data->s_node[i].info, info)) {
+        if (SERV_EqualInfo(data->s_node[i].info, info) &&
+            (!data->s_node[i].key || data->s_node[i].key == key)) {
             /* Replace older version */
             free(data->s_node[i].info);
             data->s_node[i].info = info;
+            data->s_node[i].key  = key;
             return 1;
         }
     }
@@ -234,7 +241,8 @@ static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
         data->n_max_node = n;
     }
 
-    data->s_node[data->n_node++].info = info;
+    data->s_node[data->n_node  ].info = info;
+    data->s_node[data->n_node++].key  = key;
     return 1;
 }
 
@@ -251,7 +259,7 @@ static int/*bool*/ s_ParseHeader(const char* header, void *data,
     SERV_ITER iter = (SERV_ITER) data;
 
     if (header)
-        s_Update(iter, header);
+        SERV_Update(iter, header);
     return 1/*header parsed okay*/;
 }
 
@@ -321,55 +329,51 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 }
 
 
-static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
+static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 {
+    static const char server_keyed_info[] = "Server-Keyed-Info-";
     static const char server_info[] = "Server-Info-";
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
-    char* buf = (char*) malloc(strlen(text) + 1);
-    TNCBI_Time t = (TNCBI_Time) time(0);
-    char *b, *c;
+    int keyed = 0;
 
-    if (!buf)
-        return 0/*failure*/;
-    strcpy(buf, text);
-    for (b = buf; (c = strchr(b, '\n')) != 0; b = c + 1) {
+    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0 ||
+        (keyed = (strncasecmp(text, server_keyed_info,
+                              sizeof(server_keyed_info) - 1) == 0)) != 0) {
+        const char* p = text + (keyed ? sizeof(server_keyed_info) - 1
+                                : sizeof(server_info) - 1);
+        unsigned long key;
         SSERV_Info* info;
         unsigned int d1;
-        char* p;
         int d2;
 
-        *c = 0;
-        if (strncasecmp(b, server_info,
-                        sizeof(server_info) - 1) == 0) {
-            b += sizeof(server_info) - 1;
-            if ((p = strchr(b, '\r')) != 0)
-                *p = 0;
-            if (sscanf(b, "%u: %n", &d1, &d2) < 1)
-                continue;
-            if (!(info = SERV_ReadInfo(b + d2)))
-                continue;
-            info->time += t;        /* Expiration time now */
-            if (!s_AddServerInfo(data, info))
-                continue;
-        } else if (strncasecmp(b, HTTP_DISP_FAILURES,
-                               sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
-            b += sizeof(HTTP_DISP_FAILURES) - 1;
-#if defined(_DEBUG) && !defined(NDEBUG)
-            while (*b && isspace((unsigned char)(*b)))
-                b++;
-            if (!(p = strchr(b, '\r')))
-                p = c;
-            else
-                *p = 0;
-            assert(b <= p);
-            if (data->net_info->debug_printout)
-                CORE_LOGF(eLOG_Warning, ("[DISPATCHER] %s", b));
-#endif
+        if (keyed) {
+            if (sscanf(p, "%u: %lx %n", &d1, &key, &d2) < 2 || !key)
+                return 0/*not updated*/;
+        } else {
+            key = 0;
+            if (sscanf(p, "%u: %n", &d1, &d2) < 1)
+                return 0/*not updated*/;
         }
+        assert(!keyed || key);
+        if ((info = SERV_ReadInfo(p + d2)) != 0) {
+            info->time += now; /* expiration time now */
+            if (s_AddServerInfo(data, info, key))
+                return 1/*updated*/;
+            free(info);
+        }
+    } else if (strncasecmp(text, HTTP_DISP_FAILURES,
+                           sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
+#if defined(_DEBUG) && !defined(NDEBUG)
+        const char* p = text + sizeof(HTTP_DISP_FAILURES) - 1;
+        while (*p && isspace((unsigned char)(*p)))
+            p++;
+        if (data->net_info->debug_printout)
+            CORE_LOGF(eLOG_Warning, ("[DISPATCHER] %s", p));
+#endif
+        return 1/*updated*/;
     }
-    free(buf);
 
-    return 1/*success*/;
+    return 0/*not updated*/;
 }
 
 
