@@ -147,7 +147,7 @@ static void s_FixSeqData(CBioseq* seq)
         TSeqPos length = 0;
         NON_CONST_ITERATE (CDelta_ext::Tdata, it,
                            inst.SetExt().SetDelta().Set()) {
-            if ((*it)->IsLiteral()) {
+            if ((*it)->IsLiteral()  &&  (*it)->GetLiteral().IsSetSeq_data()) {
                 CSeq_literal& lit  = (*it)->SetLiteral();
                 CSeq_data&    data = lit.SetSeq_data();
                 if (data.IsIupacna()) {
@@ -187,7 +187,8 @@ void s_AddData(CSeq_inst& inst, const string& residues)
     CRef<CSeq_data> data;
     if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
         CDelta_ext::Tdata& delta_data = inst.SetExt().SetDelta().Set();
-        if (delta_data.empty()  ||  !delta_data.back()->IsLiteral()) {
+        if (delta_data.empty()  ||  !delta_data.back()->IsLiteral()
+            ||  !delta_data.back()->GetLiteral().IsSetSeq_data()) {
             CRef<CDelta_seq> delta_seq(new CDelta_seq);
             delta_data.push_back(delta_seq);
             data = &delta_seq->SetLiteral().SetSeq_data();
@@ -348,7 +349,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     CRef<CBioseq>          seq(0); // current Bioseq
     string                 line;
     TSeqPos                pos = 0, lc_start = 0;
-    bool                   was_lc = false;
+    bool                   was_lc = false, in_gap = false;
     CRef<CSeq_id>          best_id;
     CRef<CSeq_loc>         lowercase(0);
     int                    defcounter = 1;
@@ -416,6 +417,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 lowercase->SetNull();
                 lcv->push_back(lowercase);
             }
+            in_gap = false;
         } else if (line[0] == '#'  ||  line[0] == '!') {
             continue; // comment
         } else if ( !seq ) {
@@ -436,6 +438,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             for (SIZE_TYPE i = 0;  i < line_size;  ++i) {
                 char c = line_data[i];
                 if (isalpha(c)) {
+                    in_gap = false;
                     if (lowercase) {
                         bool is_lc = islower(c) ? true : false;
                         if (is_lc && !was_lc) {
@@ -450,6 +453,10 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                     res_data[res_count++] = toupper(c);
                 } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
                     CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
+                    if (in_gap) {
+                        ++d.back()->SetLiteral().SetLength();
+                        continue; // count long gaps
+                    }
                     if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
                         CRef<CDelta_seq> ds(new CDelta_seq);
                         inst.SetRepr(CSeq_inst::eRepr_delta);
@@ -466,16 +473,24 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                         }
                         s_AddData(inst, residues);
                     }
-                    {{
-                        CRef<CDelta_seq> gap(new CDelta_seq);
-                        gap->SetLoc().SetNull();
-                        d.push_back(gap);
-                    }}
+                    in_gap    = true;
                     res_count = 0;
+                    CRef<CDelta_seq> gap(new CDelta_seq);
+                    if (line.find_first_not_of(" \t\r\n", i + 1) == NPOS) {
+                        // consider a single - at the end of a line as
+                        // a gap of unknown length, as we sometimes format
+                        // them that way
+                        gap->SetLoc().SetNull();
+                    } else {
+                        gap->SetLiteral().SetLength(1);
+                    }
+                    d.push_back(gap);
                 } else if (c == '-'  ||  c == '*') {
+                    in_gap = false;
                     // valid, at least for proteins
                     res_data[res_count++] = c;
                 } else if (c == ';') {
+                    i = line_size;
                     continue; // skip rest of line
                 } else if ( !isspace(c) ) {
                     ERR_POST(Warning << "ReadFasta: Ignoring invalid residue "
@@ -488,9 +503,11 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 s_GuessMol(inst.SetMol(), residues, flags, in);
             }
             
-            // Add the accumulated data...
-            residues.resize(res_count);
-            s_AddData(inst, residues);
+            if (res_count) {
+                // Add the accumulated data...
+                residues.resize(res_count);
+                s_AddData(inst, residues);
+            }
         }
     }
 
@@ -559,6 +576,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/02/23 19:25:30  ucko
+* ReadFasta: deal properly with runs of hyphens in ParseGaps mode;
+* really support inline comments set off by semicolons.
+*
 * Revision 1.14  2005/02/07 19:03:05  ucko
 * Improve handling of non-IUPAC residues.
 *
