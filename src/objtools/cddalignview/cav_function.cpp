@@ -277,20 +277,8 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 int CAV_DisplayMultiple(
-    const void *asnDataBlock,
-    unsigned int options,
-    unsigned int paragraphWidth,
-    double conservationThreshhold,
-    const char *title,
-    int nFeatures,
-    const AlignmentFeature *features)
-{
-    return CAV_DisplayMultiple(asnDataBlock, options, paragraphWidth,
-        conservationThreshhold, title, nFeatures, features, NULL, NULL);
-}
-
-int CAV_DisplayMultiple(
-    const void *asnDataBlock,
+    const SeqEntryList& sequences,
+    const SeqAnnotList& alignments,
     unsigned int options,
     unsigned int paragraphWidth,
     double conservationThreshhold,
@@ -332,37 +320,17 @@ int CAV_DisplayMultiple(
         return CAV_ERROR_BAD_PARAMS;
     }
 
-    // load input data into an input stream
-    if (!asnDataBlock) {
-        ERR_POST(Critical << "NULL asnDataBlock parameter");
-        return CAV_ERROR_BAD_ASN;
-    }
-    CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock), kMax_Int);
-
-    // load asn data block
-    const SeqEntryList *seqs;
-    const SeqAnnotList *alns;
-    int retval = LoadASNFromIstream(asnIstrstream, &seqs, &alns);
-    if (retval != CAV_SUCCESS) {
-        ERR_POST(Critical << "Couldn't get sequence and alignment ASN data");
-        return retval;
-    }
-    auto_ptr<const SeqEntryList> sequencesASN(seqs);
-    auto_ptr<const SeqAnnotList> alignmentsASN(alns);
-
-    // process asn data, then free it
-    auto_ptr<SequenceSet> sequenceSet(new SequenceSet(*(sequencesASN.get())));
+    // process asn data
+    auto_ptr<SequenceSet> sequenceSet(new SequenceSet(sequences));
     if (!sequenceSet.get() || sequenceSet->Status() != CAV_SUCCESS) {
         ERR_POST(Critical << "Error processing sequence data");
         return sequenceSet->Status();
     }
-    auto_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), *(alignmentsASN.get())));
+    auto_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), alignments));
     if (!alignmentSet.get() || alignmentSet->Status() != CAV_SUCCESS) {
         ERR_POST(Critical << "Error processing alignment data");
         return alignmentSet->Status();
     }
-    sequencesASN.reset();
-    alignmentsASN.reset();
 
     // create the alignment display structure
     auto_ptr<AlignmentDisplay> display(new AlignmentDisplay(sequenceSet.get(), alignmentSet.get()));
@@ -387,6 +355,7 @@ int CAV_DisplayMultiple(
         from = (options & CAV_LEFTTAILS) ? 0 : display->GetFirstAlignedLoc(),
         to = (options & CAV_RIGHTTAILS) ? display->GetWidth()-1 : display->GetLastAlignedLoc();
     if (options & CAV_SHOW_IDENTITY) conservationThreshhold = AlignmentDisplay::SHOW_IDENTITY;
+    int retval;
     if (options & CAV_TEXT || options & CAV_HTML) {
         if (options & CAV_CONDENSED)
             retval = display->DumpCondensed(*outStream, options,
@@ -407,9 +376,105 @@ int CAV_DisplayMultiple(
     return CAV_SUCCESS;
 }
 
+int CAV_DisplayMultiple(
+    const void *asnDataBlock,
+    unsigned int options,
+    unsigned int paragraphWidth,
+    double conservationThreshhold,
+    const char *title,
+    int nFeatures,
+    const AlignmentFeature *alnFeatures,
+    CNcbiOstream *outputStream,
+    CNcbiOstream *diagnosticStream)
+{
+    // load input data into an input stream
+    if (!asnDataBlock) {
+        ERR_POST(Critical << "NULL asnDataBlock parameter");
+        return CAV_ERROR_BAD_ASN;
+    }
+    CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock), kMax_Int);
+
+    // load asn data block
+    const SeqEntryList *seqs;
+    const SeqAnnotList *alns;
+    int retval = LoadASNFromIstream(asnIstrstream, &seqs, &alns);
+    if (retval != CAV_SUCCESS) {
+        ERR_POST(Critical << "Couldn't get sequence and alignment ASN data");
+        return retval;
+    }
+
+    // make sure these get freed
+    auto_ptr<const SeqEntryList> sequences(seqs);
+    auto_ptr<const SeqAnnotList> alignments(alns);
+
+    return CAV_DisplayMultiple(*seqs, *alns, options, paragraphWidth, conservationThreshhold,
+        title, nFeatures, alnFeatures, outputStream, diagnosticStream);
+}
+
+int CAV_DisplayMultiple(
+    const void *asnDataBlock,
+    unsigned int options,
+    unsigned int paragraphWidth,
+    double conservationThreshhold,
+    const char *title,
+    int nFeatures,
+    const AlignmentFeature *features)
+{
+    return CAV_DisplayMultiple(asnDataBlock, options, paragraphWidth,
+        conservationThreshhold, title, nFeatures, features, NULL, NULL);
+}
+
+int CAV_DisplayMultiple(
+    const ncbi::objects::CNcbi_mime_asn1& mime,
+    unsigned int options,
+    unsigned int paragraphWidth,
+    double conservationThreshhold,
+    const char *title,
+    int nFeatures,
+    const AlignmentFeature *features,
+    ncbi::CNcbiOstream *outputStream,
+    ncbi::CNcbiOstream *diagnosticStream)
+{
+    const SeqEntryList *sequences = NULL;
+    SeqEntryList localSeqList;
+    const SeqAnnotList *alignments = NULL;
+
+    if (mime.IsStrucseqs()) {
+        sequences = &(mime.GetStrucseqs().GetSequences());
+        alignments = &(mime.GetStrucseqs().GetSeqalign());
+    } else if (mime.IsAlignstruc()) {
+        sequences = &(mime.GetAlignstruc().GetSequences());
+        alignments = &(mime.GetAlignstruc().GetSeqalign());
+    } else if (mime.IsAlignseq()) {
+        sequences = &(mime.GetAlignseq().GetSequences());
+        alignments = &(mime.GetAlignseq().GetSeqalign());
+    } else if (mime.IsGeneral()) {
+        if (mime.GetGeneral().GetSeq_align_data().IsBundle()) {
+            sequences = &(mime.GetGeneral().GetSeq_align_data().GetBundle().GetSequences());
+            alignments = &(mime.GetGeneral().GetSeq_align_data().GetBundle().GetSeqaligns());
+        } else if (mime.GetGeneral().GetSeq_align_data().IsCdd()) {
+            localSeqList.resize(1);
+            localSeqList.front().Reset(const_cast<CSeq_entry*>(&(mime.GetGeneral().GetSeq_align_data().GetCdd().GetSequences())));
+            sequences = &localSeqList;
+            alignments = &(mime.GetGeneral().GetSeq_align_data().GetCdd().GetSeqannot());
+        }
+    }
+
+    if (!sequences || !alignments) {
+        ERR_POST(Error << "Ncbi-mime-asn1 object is not of recognized type");
+        return CAV_ERROR_BAD_ASN;
+    }
+
+    return CAV_DisplayMultiple(*sequences, *alignments, options, paragraphWidth, conservationThreshhold,
+        title, nFeatures, features, outputStream, diagnosticStream);
+}
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/03/02 18:04:50  thiessen
+* add variant taking mime C++ object
+*
 * Revision 1.5  2004/10/04 22:45:58  thiessen
 * deal with new general mime type
 *

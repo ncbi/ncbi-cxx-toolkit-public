@@ -37,6 +37,8 @@
 #ifdef __cplusplus
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+
 extern "C" {
 #endif
 
@@ -121,6 +123,19 @@ extern int CAV_DisplayMultiple(
     ncbi::CNcbiOstream *diagnosticStream    // diagnostic messages/errors; cerr if NULL
 );
 
+// and one that takes a mime object rather than an in-memory asn blob
+extern int CAV_DisplayMultiple(
+    const ncbi::objects::CNcbi_mime_asn1& mime,
+    unsigned int options,
+    unsigned int paragraphWidth,
+    double conservationThreshhold,
+    const char *title,
+    int nFeatures,
+    const AlignmentFeature *features,
+    ncbi::CNcbiOstream *outputStream,       // regular program output (alignments); cout if NULL
+    ncbi::CNcbiOstream *diagnosticStream    // diagnostic messages/errors; cerr if NULL
+);
+
 #endif
 
 #endif /* CDDALIGNVIEW__H */
@@ -128,6 +143,9 @@ extern int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/03/02 18:04:59  thiessen
+* add variant taking mime C++ object
+*
 * Revision 1.2  2004/07/26 19:15:21  thiessen
 * add option to not color HTML paragraphs
 *
