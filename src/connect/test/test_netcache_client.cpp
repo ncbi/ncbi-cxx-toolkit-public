@@ -90,7 +90,7 @@ bool s_CheckExists(const string&  host,
     info.blob_size = buf_size;
     info.connection_time = 0;
 
-    CNetCacheClient nc_client;
+    CNetCacheClient nc_client("test");
     CStopWatch sw(true);
 
     unsigned char dataBuf[1024] = {0,};
@@ -134,7 +134,7 @@ string s_PutBlob(const string&           host,
     info.blob_size = size;
 
     CStopWatch sw(true);
-    CNetCacheClient nc_client(host, port);
+    CNetCacheClient nc_client(host, port, "test");
     STimeout to = {90, 0};
     nc_client.SetCommunicationTimeout(to);
 
@@ -338,7 +338,7 @@ void CTestNetCacheClient::Init(void)
 static
 void s_RemoveBLOB_Test(const string& host, unsigned short port)
 {
-    CNetCacheClient nc(host, port);
+    CNetCacheClient nc(host, port, "test");
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, 1);
@@ -354,7 +354,7 @@ void s_RemoveBLOB_Test(const string& host, unsigned short port)
 static
 void s_ReadUpdateCharTest(const string& host, unsigned short port)
 {
-    CNetCacheClient nc(host, port);
+    CNetCacheClient nc(host, port, "test");
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, 100);
@@ -375,7 +375,7 @@ void s_ReadUpdateCharTest(const string& host, unsigned short port)
 static
 void s_TestAlive(const string& host, unsigned short port)
 {
-    CNetCacheClient ncc (host, port);
+    CNetCacheClient ncc (host, port, "test");
     bool b = ncc.IsAlive();
     assert(b);
     b = ncc.IsAlive();
@@ -401,7 +401,7 @@ int CTestNetCacheClient::Run(void)
         CSocket sock(host, port);
 //        STimeout to = {0,0};
 //        sock.SetTimeout(eIO_ReadWrite, &to);
-        CNetCacheClient nc_client(&sock);
+        CNetCacheClient nc_client(&sock, "test");
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
@@ -411,7 +411,7 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CSocket sock(host, port);
-        CNetCacheClient nc_client(&sock);
+        CNetCacheClient nc_client(&sock, "test");
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
@@ -428,7 +428,7 @@ int CTestNetCacheClient::Run(void)
     }}
 
     {{
-        CNetCacheClient nc_client;
+        CNetCacheClient nc_client("test");
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
@@ -444,11 +444,11 @@ int CTestNetCacheClient::Run(void)
     // update existing BLOB
     {{
         {
-        CNetCacheClient nc_client(host, port);
+        CNetCacheClient nc_client(host, port, "test");
         nc_client.PutData(key, test_data2, sizeof(test_data2)+1);
         }
         {
-        CNetCacheClient nc_client(host, port);
+        CNetCacheClient nc_client(host, port, "test");
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
         CNetCacheClient::EReadResult rres = 
@@ -464,7 +464,7 @@ int CTestNetCacheClient::Run(void)
     // timeout test
     {{
         CSocket sock(host, port);
-        CNetCacheClient nc_client(&sock);
+        CNetCacheClient nc_client(&sock, "test");
 
         key = nc_client.PutData(test_data, sizeof(test_data), 60);
         assert(!key.empty());
@@ -475,7 +475,7 @@ int CTestNetCacheClient::Run(void)
     exists = s_CheckExists(host, port, key);
     assert(exists);
 
-    CNetCacheClient nc_client(host, port);
+    CNetCacheClient nc_client(host, port, "test");
     nc_client.Remove(key);
 
     exists = s_CheckExists(host, port, key);
@@ -565,6 +565,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/01/05 17:44:41  kuznets
+ * Use name test to connect to server
+ *
  * Revision 1.22  2005/01/05 17:36:02  kuznets
  * More careful testing of IsAlive
  *
