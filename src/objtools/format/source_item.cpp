@@ -45,6 +45,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/source_item.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -59,7 +60,7 @@ BEGIN_SCOPE(objects)
 CSourceItem::CSourceItem(CBioseqContext& ctx) :
     CFlatItem(&ctx),
     m_Taxname(&scm_Unknown), m_Common(&kEmptyStr),
-    m_Organelle(&kEmptyStr), m_Lineage(&scm_Unclassified),
+    m_Organelle(&kEmptyStr), m_Lineage(scm_Unclassified),
     m_SourceLine(&kEmptyStr), m_Mod(&scm_EmptyList),
     m_UsingAnamorph(false)
 {
@@ -283,7 +284,8 @@ void CSourceItem::x_SetSource
         if ( org.CanGetOrgname() ) {
             const COrgName& org_name = org.GetOrgname();
             if ( org_name.CanGetLineage() ) {
-                m_Lineage = &(org_name.GetLineage());
+                m_Lineage = org_name.GetLineage();
+                AddPeriod(m_Lineage);
             }
         }
     }}
@@ -298,6 +300,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/08/19 16:33:46  shomrat
+* m_Lineage no longer a pointer
+*
 * Revision 1.8  2004/08/12 15:50:15  shomrat
 * use new organelle prefix
 *
