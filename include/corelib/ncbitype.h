@@ -29,10 +29,20 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   NCBI C/C++ fixed-size types and their limits
+*
+*   NCBI C/C++ fixed-size types:
+*      Char, Uchar
+*      Int1, Uint1
+*      Int2, Uint2
+*      Int4, Uint4
+*      Int8, Uint8
+*      Ncbi_BigScalar
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/03 17:41:49  vakatov
+* All type limits moved to "ncbi_limits.h"
+*
 * Revision 1.5  1999/04/14 19:49:22  vakatov
 * Fixed suffixes of the 8-byte int constants
 * Introduced limits for native signed and unsigned integer types
@@ -57,15 +67,14 @@
 * ==========================================================================
 */
 
-/* Import platform-specific definitions
- * (for all UNIX and MS-Win platforms they are automatically generated
- * by "autoconf" scripts)
- */
+
 #include <ncbiconf.h>
+
 
 
 /* Char, Uchar, Int[1,2,4], Uint[1,2,4]
  */
+
 #if (SIZEOF_CHAR != 1)
 #  error "Unsupported size of char(must be 1 byte)"
 #endif
@@ -89,21 +98,13 @@ typedef unsigned int   Uint4;
 
 /* Int8, Uint8
  */
+
 #if   (SIZEOF_LONG == 8)
 #  define INT8_TYPE long
-#define NCBI_MIN_I8  0x8000000000000000L
-#define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFL
-#define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFUL
 #elif (SIZEOF_LONG_LONG == 8)
 #  define INT8_TYPE long long
-#define NCBI_MIN_I8  0x8000000000000000LL
-#define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFLL
-#define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFULL
 #elif (SIZEOF___INT64 == 8)
 #  define INT8_TYPE __int64
-#define NCBI_MIN_I8  0x8000000000000000i64
-#define NCBI_MAX_I8  0x7FFFFFFFFFFFFFFFi64
-#define NCBI_MAX_UI8 0xFFFFFFFFFFFFFFFFui64
 #else
 #  error "This platform does not support 8-byte integer"
 #endif
@@ -114,6 +115,7 @@ typedef unsigned INT8_TYPE Uint8;
 
 /* BigScalar
  */
+
 #define BIG_TYPE INT8_TYPE
 #define BIG_SIZE 8
 #if (SIZEOF_LONG_DOUBLE > BIG_SIZE)
@@ -138,64 +140,9 @@ typedef unsigned INT8_TYPE Uint8;
 typedef BIG_TYPE Ncbi_BigScalar;
 
 
-/* Integer limits
- */
-#ifdef __cplusplus
-const Int1  kMin_I1  = -128;
-const Int1  kMax_I1  =  127;
-const Uint1 kMax_UI1 =  255;
-const Int2  kMin_I2  = -32768;
-const Int2  kMax_I2  =  32767;
-const Uint2 kMax_UI2 =  65535;
-const Int4  kMin_I4  = -2147483647-1;
-const Int4  kMax_I4  =  2147483647;
-const Uint4 kMax_UI4 =  4294967295U;
-const Int8  kMin_I8  =  NCBI_MIN_I8;
-const Int8  kMax_I8  =  NCBI_MAX_I8;
-const Uint8 kMax_UI8 =  NCBI_MAX_UI8;
-#  undef NCBI_MIN_I8
-#  undef NCBI_MAX_I8
-#  undef NCBI_MAX_UI8
-
-const signed   char   kMin_Char   = kMin_I1;
-const signed   char   kMax_Char   = kMax_I1;
-const unsigned char   kMax_UChar  = kMax_UI1;
-const signed   short  kMin_Short  = kMin_I2;
-const signed   short  kMax_Short  = kMax_I2;
-const unsigned short  kMax_UShort = kMax_UI2;
-const signed   int    kMin_Int    = kMin_I4;
-const signed   int    kMax_Int    = kMax_I4;
-const unsigned int    kMax_UInt   = kMax_UI4;
-
-#else
-
-#  define kMin_I1  -128
-#  define kMax_I1   127
-#  define kMax_UI1  255
-#  define kMin_I2  -32768
-#  define kMax_I2   32767
-#  define kMax_UI2  65535
-#  define kMin_I4  -2147483648
-#  define kMax_I4   2147483647
-#  define kMax_UI4  4294967295
-#  define kMin_I8   NCBI_MIN_I8
-#  define kMax_I8   NCBI_MAX_I8
-#  define kMax_UI8  NCBI_MAX_UI8
-
-#  define kMin_Char   kMin_I1;
-#  define kMax_Char   kMax_I1;
-#  define kMax_UChar  kMax_UI1;
-#  define kMin_Short  kMin_I2;
-#  define kMax_Short  kMax_I2;
-#  define kMax_UShort kMax_UI2;
-#  define kMin_Int    kMin_I4;
-#  define kMax_Int    kMax_I4;
-#  define kMax_UInt   kMax_UI4;
-#endif
-
-
 /* Undef auxiliaries
  */
+
 #undef BIG_SIZE
 #undef BIG_TYPE
 #undef INT8_TYPE
