@@ -71,8 +71,8 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/list", line (541|542|543|544): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/ostream", line 331: Warning: The else-branch should return a value/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line (165|207): .*::rdbuf hides/ ||
-      m ~ /^".*\/include\/CC\/Cstd\/\.\/string", line (1622|1627|1640|1645): .*non-const reference/ ||
-      m ~ /^".*\/include\/CC\/Cstd\/\.\/vector", line (147|156|161|268|273|310|318|399|463|472|483|513|1146): .*non-const reference/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/string", line (1622|1627|1629|1640|1645|1647): .*non-const reference/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/vector", line (147|156|161|268|273|310|318|399|463|472|483|513|1020|1025|1046|1052|1058|1064|1077|1146|1154|1220|1274|1284): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector.cc", line 113: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: FX.+ hides the function FX/ ||
