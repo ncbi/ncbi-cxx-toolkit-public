@@ -176,6 +176,8 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastScoringParameters, BlastScoringParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
                            BlastEffectiveLengthsOptionsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsParameters,
+                           BlastEffectiveLengthsParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
@@ -196,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/12/20 21:50:17  camacho
+* + RAII BlastEffectiveLengthsParameters
+*
 * Revision 1.48  2004/12/20 16:11:24  camacho
 * + RAII wrapper for BlastScoringParameters
 *

@@ -229,6 +229,17 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*d
 }
 
 void
+CBlastEffectiveLengthsParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+{
+	ddc.SetFrame("CBlastEffectiveLengthsParameters");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("real_db_length", (unsigned long)m_Ptr->real_db_length); // Int8
+    ddc.Log("real_num_seqs", m_Ptr->real_num_seqs);
+}
+
+void
 CBlastScoreBlk::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     ddc.SetFrame("CBlastScoreBlk");
@@ -563,6 +574,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.60  2004/12/20 21:50:27  camacho
+ * + RAII BlastEffectiveLengthsParameters
+ *
  * Revision 1.59  2004/12/20 21:47:36  camacho
  * Implement CBlastExtensionParameters::DebugDump
  *
