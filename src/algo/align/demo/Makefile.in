@@ -1,9 +1,9 @@
 # $Id$
 
-# Meta-makefile("ALGO demo" project)
+# Meta-makefile("ALGOALIGN demo" project)
 #################################
 
-SUB_PROJ = nwa
+SUB_PROJ = nwa splign
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
