@@ -90,10 +90,20 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
 {
     int ret = m_Env->open(m_Env, db_home, flags, 0664);
     if (ret == DB_RUNRECOVERY) {
-        int recover_flag = flags | DB_RECOVER | DB_CREATE;
+        if (flags & DB_JOINENV) {
+            flags &= ~DB_JOINENV;
+        }
+        int recover_flag;
+        
+        if (flags & DB_INIT_TXN) { // recovery needs transaction
+            recover_flag = flags | DB_RECOVER | DB_CREATE;
+        } else {
+            recover_flag = flags | DB_CREATE | DB_RECOVER_FATAL;
+        }
+
         ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
 
-        if (ret == DB_RUNRECOVERY) {
+        if ((ret == DB_RUNRECOVERY) && (flags & DB_INIT_TXN)) {
             recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
             ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
         }
@@ -360,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/08/16 18:24:06  kuznets
+ * code cleanup
+ *
  * Revision 1.25  2004/08/13 15:56:35  kuznets
  * +eRunRecoveryFatal
  *
