@@ -85,6 +85,7 @@
  */
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_BLAST_EXPORTS
+#  define NCBI_BLASTDB_EXPORTS
 #  define NCBI_ID1_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
@@ -104,6 +105,7 @@
 #ifdef NCBI_SEQEXT_EXPORTS
 #  define NCBI_FLAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
+#  define NCBI_XALNUTIL_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
@@ -249,6 +251,15 @@
 #  define NCBI_BLAST_EXPORT         __declspec(dllexport)
 #else
 #  define NCBI_BLAST_EXPORT         __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_blastdb
+ */
+#ifdef NCBI_BLASTDB_EXPORTS
+#  define NCBI_BLASTDB_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_BLASTDB_EXPORT         __declspec(dllimport)
 #endif
 
 /*
@@ -411,6 +422,12 @@
 #  define NCBI_XALNMGR_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XALNMGR_EXPORT       __declspec(dllimport)
+#endif
+
+#ifdef NCBI_XALNUTIL_EXPORTS
+#  define NCBI_XALNUTIL_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XALNUTIL_EXPORT       __declspec(dllimport)
 #endif
 
 /*
@@ -730,6 +747,12 @@
 #  define NCBI_XLOADER_LDS_EXPORT    __declspec(dllimport)
 #endif
 
+#ifdef NCBI_XLOADER_BLASTDB_EXPORTS
+#  define NCBI_XLOADER_BLASTDB_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_BLASTDB_EXPORT    __declspec(dllimport)
+#endif
+
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
@@ -741,6 +764,7 @@
 #  define NCBI_BDB_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BLAST_EXPORT
+#  define NCBI_BLASTDB_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -792,8 +816,10 @@
 #  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
+#  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLAST_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
+#  define NCBI_XLOADER_BLASTDB_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
@@ -810,6 +836,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.32  2003/08/06 16:09:21  jianye
+ * Add specifiers for new libraries: blastdb, xalnutil, xloader_blastdb.
+ *
  * Revision 1.31  2003/08/04 15:44:12  dicuccio
  * Added export specifier for libxblast.  Modified layout of algorithm export
  * specifiers
