@@ -17103,6 +17103,8 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBGEODB 1
 _ACEOF
 
+   else
+      with_geo=no
    fi
 fi
 

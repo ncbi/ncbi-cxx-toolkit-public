@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.239 2003/11/26 16:00:48 ucko Exp $
+#  $Id: configure.ac,v 1.240 2003/11/26 16:03:15 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2935,6 +2935,8 @@ else
    if test "$ncbi_cv_lib_geodb" = yes; then
       AC_DEFINE(HAVE_LIBGEODB, 1,
                 [Define to 1 if NCBI GEO DB library is available.])
+   else
+      with_geo=no
    fi
 fi
 
