@@ -311,11 +311,26 @@ public:
           void    SetFilename(const string& f)
         { x_ForceUnique(); m_Data->m_Filename = f; }
 
-    operator const string&() const { return GetValue(); }
-    operator       string&()       { return SetValue(); }
+    operator const string&() const     { return GetValue(); }
+    operator       string&()           { return SetValue(); }
     // commonly-requested string:: operations...
-    bool empty() const             { return GetValue().empty(); }
-    const char* c_str() const      { return GetValue().c_str(); }
+    SIZE_TYPE size() const             { return GetValue().size(); }
+    bool empty() const                 { return GetValue().empty(); }
+    const char* c_str() const          { return GetValue().c_str(); }
+    int compare(const string& s) const { return GetValue().compare(s); }
+    int compare(const char* s) const   { return GetValue().compare(s); }
+    string substr(SIZE_TYPE i = 0, SIZE_TYPE n = NPOS) const
+        { return GetValue().substr(i, n); }
+    SIZE_TYPE find(const char* s, SIZE_TYPE pos = 0) const
+        { return GetValue().find(s, pos); }
+    SIZE_TYPE find(const string& s, SIZE_TYPE pos = 0) const
+        { return GetValue().find(s, pos); }
+    SIZE_TYPE find(char c, SIZE_TYPE pos = 0) const
+        { return GetValue().find(c, pos); }
+    SIZE_TYPE find_first_of(const string& s, SIZE_TYPE pos = 0) const
+        { return GetValue().find_first_of(s, pos); }
+    SIZE_TYPE find_first_of(const char* s, SIZE_TYPE pos = 0) const
+        { return GetValue().find_first_of(s, pos); }
 
 private:
     void x_ForceUnique()
@@ -375,10 +390,6 @@ typedef multimap<string, CCgiEntry> TCgiEntries;
 typedef TCgiEntries::iterator       TCgiEntriesI;
 typedef TCgiEntries::const_iterator TCgiEntriesCI;
 typedef list<string>                TCgiIndexes;
-// Temporary synonyms
-typedef TCgiEntries   TCgiEntriesEx;
-typedef TCgiEntriesI  TCgiEntriesExI;
-typedef TCgiEntriesCI TCgiEntriesExCI;
 
 // Forward class declarations
 class CNcbiArguments;
@@ -461,14 +472,6 @@ public:
     //        only one of these entry will be returned.
     // To get all matches, use GetEntries() and "multimap::" member functions.
     const CCgiEntry& GetEntry(const string& name, bool* is_found = 0) const;
-
-    // Temporary synonyms
-    const TCgiEntries& GetEntriesEx(void) const
-        { return GetEntries(); }
-    TCgiEntries& GetEntriesEx(void)
-        { return GetEntries(); }
-    const CCgiEntry& GetEntryEx(const string& name, bool* is_found = 0) const
-        { return GetEntry(name, is_found); }
     
 
     // Get a set of indexes(decoded) received from the client.
@@ -681,6 +684,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.56  2002/07/17 17:04:07  ucko
+* Drop no longer necessary ...Ex names; add more wrappers to CCgiEntry.
+*
 * Revision 1.55  2002/07/10 18:39:12  ucko
 * Tweaked CCgiEntry to allow for more efficient copying on systems
 * without efficient string copying.
