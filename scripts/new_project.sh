@@ -25,6 +25,7 @@ ARGUMENTS:
                   app[/basic] to build a simple application
                   app/cgi     to build a CGI or FastCGI application
                   app/objects to build an application using ASN.1 objects
+                  app/objmgr  to build an application using the object manager
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = $def_builddir)
 
@@ -249,7 +250,7 @@ fi
 for input in $old_dir/*; do
   base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g"`
   case $base in
-    *~ | Makefile.*) continue ;; # skip
+    *~ | CVS | Makefile.*) continue ;; # skip
   esac
 
   output=$new_dir/$base
