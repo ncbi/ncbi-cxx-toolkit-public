@@ -64,26 +64,6 @@ const string IFlatQVal::kComma     = ", ";
 const string IFlatQVal::kEOL       = "\n";
 
 
-// in Ncbistdaa order
-static const char* kAANames[] = {
-    "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
-    "Lys", "Leu", "Met", "Asn", "Pro", "Glu", "Arg", "Ser", "Thr", "Val",
-    "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM"
-};
-
-
-inline
-static const char* s_AAName(unsigned char aa, bool is_ascii)
-{
-    if (is_ascii) {
-        aa = CSeqportUtil::GetMapToIndex
-            (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
-    }
-    return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
-}
-
-
-inline
 static bool s_IsNote(IFlatQVal::TFlags flags)
 {
     return (flags & IFlatQVal::fIsNote);
@@ -102,7 +82,7 @@ static bool s_StringIsJustQuotes(const string& str)
 }
 
 
-static string s_GetGOText(const CUser_field& field)
+static string s_GetGOText(const CUser_field& field, bool is_ftable)
 {
     string text_string, evidence, go_id;
     int pmid = 0;
@@ -138,21 +118,31 @@ static string s_GetGOText(const CUser_field& field)
 
     
     CNcbiOstrstream text;
-
+    
     text << text_string;
-    if ( !go_id.empty() ) {
-        text << " [goid " << go_id << "]";
-    }
-    if ( !evidence.empty() ) {
-        text << " [evidence " << evidence << "]";
-    }
-
-    if ( pmid != 0 ) {
-        text << " [pmid " << pmid << "]";
+    if ( is_ftable ) {
+        text << "|" << go_id << "|";
+        if ( pmid != 0 ) {
+            text <<  pmid;
+        }
+        if ( !evidence.empty() ) {
+            text << "|" << evidence;
+        }
+    } else { 
+        if ( !go_id.empty() ) {
+            text << " [goid " << go_id << "]";
+            if ( !evidence.empty() ) {
+                text << " [evidence " << evidence << "]";
+            }
+            if ( pmid != 0 ) {
+                text << " [pmid " << pmid << "]";
+            }
+        }
     }
 
     return NStr::TruncateSpaces(CNcbiOstrstreamToString(text));
 }
+
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -219,13 +209,13 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
         string aa  = "OTHER";
         switch ((*it)->GetAa().Which()) {
         case CCode_break::C_Aa::e_Ncbieaa:
-            aa = s_AAName((*it)->GetAa().GetNcbieaa(), true);
+            aa = GetAAName((*it)->GetAa().GetNcbieaa(), true);
             break;
         case CCode_break::C_Aa::e_Ncbi8aa:
-            aa = s_AAName((*it)->GetAa().GetNcbi8aa(), false);
+            aa = GetAAName((*it)->GetAa().GetNcbi8aa(), false);
             break;
         case CCode_break::C_Aa::e_Ncbistdaa:
-            aa = s_AAName((*it)->GetAa().GetNcbistdaa(), false);
+            aa = GetAAName((*it)->GetAa().GetNcbistdaa(), false);
             break;
         default:
             return;
@@ -238,7 +228,7 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
 
 CFlatCodonQVal::CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_ascii)
     : m_Codon(CGen_code_table::IndexToCodon(codon)),
-      m_AA(s_AAName(aa, is_ascii)), m_Checked(true)
+      m_AA(GetAAName(aa, is_ascii)), m_Checked(true)
 {
 }
 
@@ -577,9 +567,9 @@ void CFlatGoQVal::Format
         static const string sfx = ";";
         m_Prefix = &kEOL;
         m_Suffix = &sfx;
-        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value));
+        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value, ctx.IsFormatFTable()));
     } else {
-        x_AddFQ(q, name, s_GetGOText(*m_Value));
+        x_AddFQ(q, name, s_GetGOText(*m_Value, ctx.IsFormatFTable()));
     }
 }
 
@@ -634,6 +624,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/07 14:28:44  shomrat
+* Fixed GO quals formatting for FTable format
+*
 * Revision 1.10  2004/03/30 20:32:53  shomrat
 * Fixed go and modelev qual formatting
 *
