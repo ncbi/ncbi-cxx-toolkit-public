@@ -48,6 +48,7 @@ class CBlastGapAlignTest;
 class CBlastDbTest;
 class CBlastTraceBackTest; 
 class CScoreBlkTest; 
+class CRPSTest; 
 
 /** @addtogroup AlgoBlast
  *
@@ -1616,6 +1617,7 @@ public:
     friend class ::CBlastGapAlignTest;  // unit test class
     friend class ::CBlastTraceBackTest;  // unit test class
     friend class ::CScoreBlkTest;        // unit test class
+    friend class ::CRPSTest;        // unit test class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -2361,6 +2363,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/04/07 15:11:33  papadopo
+* add RPS unit test as friend class
+*
 * Revision 1.55  2004/03/30 15:47:37  madden
 * Add CScoreBlkTest as friend class
 *
