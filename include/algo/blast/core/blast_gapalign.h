@@ -67,7 +67,9 @@ typedef enum {
 
 /** Auxiliary structure for dynamic programming gapped extension */
 typedef struct BlastGapDP {
-  Int4 CC, DD, FF;      /**< Values for gap opening and extensions. */
+  Int4 best;
+  Int4 best_gap;
+  Int4 best_decline;
 } BlastGapDP;
 
 /** Structure supporting the gapped alignment */
