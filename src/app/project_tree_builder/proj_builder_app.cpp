@@ -473,7 +473,6 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 
         m_MsvcRegSettings->m_MetaMakefile = 
             GetConfig().GetString("msvc7", "MetaMakefile", "");
- 
     }
     return *m_MsvcRegSettings;
 }
@@ -611,7 +610,16 @@ const CBuildType& CProjBulderApp::GetBuildType(void)
         m_BuildType = auto_ptr<CBuildType>(new CBuildType(dll_build));
     }    
     return *m_BuildType;
+}
 
+
+const CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
+{
+    if ( !m_DllsInfo.get() ) {
+        m_DllsInfo = 
+            auto_ptr<CMsvcDllsInfo>(new CMsvcDllsInfo(GetConfig()));
+    }    
+    return *m_DllsInfo;
 }
 
 
@@ -661,6 +669,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/03/08 23:37:01  gorelenk
+ * Implemented CProjBulderApp::GetDllsInfo.
+ *
  * Revision 1.30  2004/03/05 18:08:26  gorelenk
  * Excluded filtering of projects by .msvc makefiles.
  *
