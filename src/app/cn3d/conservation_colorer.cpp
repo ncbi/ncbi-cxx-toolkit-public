@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/02/15 00:03:54  thiessen
+* print out total information content
+*
 * Revision 1.6  2001/02/13 20:33:49  thiessen
 * add information content coloring
 *
@@ -136,7 +139,8 @@ ConservationColorer::ConservationColorer(void) : nColumns(0)
         for (a=1; a<23; a++) // from 'A' to 'Y'
             StandardProbabilities[ncbistdaa2char[a]] = (float) stdrfp->prob[a];
 //        for (a=1; a<23; a++)
-//            TESTMSG("std prob '" << ncbistdaa2char[a] << "' = " << StandardProbabilities[ncbistdaa2char[a]]);
+//            TESTMSG("std prob '" << ncbistdaa2char[a] << "' = "
+//                << setprecision(10) << StandardProbabilities[ncbistdaa2char[a]]);
         goto cleanup;
 
 on_error:
@@ -177,6 +181,7 @@ void ConservationColorer::CalculateConservationColors(void)
 
     typedef std::vector < float > FloatVector;
     FloatVector informationContents(nColumns, 0.0f);
+    float totalInformationContent = 0.0f;
 
     int nRows = blocks.begin()->first->NSequences();
     typedef std::map < char, int > CharMap;
@@ -247,7 +252,7 @@ void ConservationColorer::CalculateConservationColors(void)
             pe = profile.end();
             float& information = informationContents[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
-                static float ln2 = (float) log(2), threshhold = 0.0001f;
+                static const float ln2 = (float) log(2), threshhold = 0.0001f;
                 float expFreq = StandardProbabilities[p->first];
                 if (expFreq > threshhold) {
                     float obsFreq = 1.0f * p->second / nRows,
@@ -256,6 +261,7 @@ void ConservationColorer::CalculateConservationColors(void)
                         information += obsFreq * ((float) log(freqRatio)) / ln2;
                 }
             }
+            totalInformationContent += information;
 //            TESTMSG("info prof col " << profileColumn << " = " << information);
 
             // fit for each residue in this column
@@ -276,6 +282,8 @@ void ConservationColorer::CalculateConservationColors(void)
             }
         }
     }
+
+    TESTMSG("Total information content: " << totalInformationContent << " bits");
 
     // now assign colors
     varietyColors.resize(nColumns);
