@@ -1,7 +1,7 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:    WorkShop 5.0, 5.1, 5.2, 5.3
+#   Compiler:    WorkShop 5.0, 5.1, 5.2, 5.3, 5.4
 #   OS:          Solaris 2.6 (or higher)
 #   Processors:  Sparc,  Intel
 #
@@ -28,7 +28,7 @@ if test ! -x "$CXX" ; then
 fi
 
 
-## 5.0, 5.1, or 5.2?
+## 5.0, 5.1, 5.2, 5.3, or 5.4?
 CC_version=`CC -V 2>&1`
 case "$CC_version" in
  "CC: WorkShop Compilers 5"* )
@@ -43,6 +43,9 @@ case "$CC_version" in
  "CC: Sun WorkShop 6"* )
     # must appear after previous cases to avoid masking them
     NCBI_COMPILER="WorkShop51"
+    ;;
+ "CC: Forte Developer 7 C++ 5.4"* )
+    NCBI_COMPILER="WorkShop54"
     ;;
  * )
     echo "ERROR:  unknown version of WorkShop C++ compiler:"
