@@ -3223,12 +3223,13 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
     size_t x_read = 0;
 
     while (x_read < size) {
+        size_t i;
         char   w[1024];
         size_t x_size = BUF_Size(sock->r_buf);
         char*  x_buf = size - x_read < sizeof(w) ? w : buf + x_read;
-        EIO_Status status = SOCK_Read(sock, x_buf, x_size,
-                                      &x_size, eIO_ReadPlain);
-        size_t i;
+        if (x_size == 0 || x_size > sizeof(w))
+            x_size = sizeof(w);
+        status = SOCK_Read(sock, x_buf, x_size, &x_size, eIO_ReadPlain);
         for (i = 0; i < x_size  &&  x_read < size; i++) {
             char c = x_buf[i];
             if (c == '\0'  ||  c == '\n') {
@@ -4346,6 +4347,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.161  2004/11/15 15:39:35  lavr
+ * Fix SOCK_ReadLine()
+ *
  * Revision 6.160  2004/11/09 21:27:01  lavr
  * SOCK_ReadLine(): cleaned-up a little
  *
