@@ -45,7 +45,8 @@ class CID1Client;
 class NCBI_XLOADER_TRACE_EXPORT CTraceChromatogramLoader : public CDataLoader
 {
 public:
-    static CTraceChromatogramLoader* RegisterInObjectManager(
+    typedef SRegisterLoaderInfo<CTraceChromatogramLoader> TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
@@ -89,6 +90,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/26 14:13:31  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.2  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

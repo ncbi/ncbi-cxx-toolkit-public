@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/07/26 14:13:32  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.22  2004/07/21 15:51:25  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
@@ -149,7 +153,8 @@ using namespace objects;
 class CTestDataLoader : public CDataLoader
 {
 public:
-    static CTestDataLoader* RegisterInObjectManager(
+    typedef SRegisterLoaderInfo<CTestDataLoader> TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string& loader_name,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
@@ -166,19 +171,24 @@ private:
 };
 
 
-CTestDataLoader* CTestDataLoader::RegisterInObjectManager(
+CTestDataLoader::TRegisterLoaderInfo CTestDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& loader_name,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    if ( om.FindDataLoader(loader_name) ) {
-        return 0;
+    TRegisterLoaderInfo info;
+    CDataLoader* loader = om.FindDataLoader(loader_name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CTestDataLoader* loader = new CTestDataLoader(loader_name);
-    return CDataLoader::RegisterInObjectManager(om, loader_name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CTestDataLoader(loader_name);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, loader_name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -217,10 +227,10 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
         {
             CTestDataLoader *pLoader1 =
                 CTestDataLoader::RegisterInObjectManager(
-                *pOm, name1, CObjectManager::eNonDefault);
+                *pOm, name1, CObjectManager::eNonDefault).GetLoader();
             CTestDataLoader *pLoader2 =
                 CTestDataLoader::RegisterInObjectManager(
-                *pOm, name2, CObjectManager::eDefault);
+                *pOm, name2, CObjectManager::eDefault).GetLoader();
 
             // scope in CRef container
             CRef< CScope> pScope1(new CScope(*pOm));
@@ -280,7 +290,8 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
                 NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
             }
             CTestDataLoader *pLoader1 =
-                CTestDataLoader::RegisterInObjectManager(*pOm, name1);
+                CTestDataLoader::RegisterInObjectManager(*pOm, name1)
+                .GetLoader();
             pScope1->AddDefaults(); // nothing added
             pScope1->AddDataLoader( name1); // ok
             // must fail - dataloader1 is in use

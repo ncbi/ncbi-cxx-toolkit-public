@@ -141,14 +141,15 @@ public:
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
-    static CGBDataLoader* RegisterInObjectManager(
+    typedef SRegisterLoaderInfo<CGBDataLoader> TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CReader* driver = 0,
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(CReader* driver = 0);
 
-    static CGBDataLoader* RegisterInObjectManager(
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         TReader_PluginManager *plugin_manager,
         EOwnership            take_plugin_manager,
@@ -269,6 +270,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.51  2004/07/26 14:13:31  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.50  2004/07/21 15:51:23  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -116,11 +116,13 @@ public:
 protected:
     // register the loader only if the name is not yet
     // registered in the object manager
-    static bool RegisterInObjectManager(CObjectManager& om,
-                                        const string& name,
-                                        CDataLoader& loader,
-                                        CObjectManager::EIsDefault is_default,
-                                        CObjectManager::TPriority priority);
+    static CObjectManager::TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager&            om,
+        const string&              name,
+        CDataLoader&               loader,
+        CObjectManager::EIsDefault is_default,
+        CObjectManager::TPriority  priority);
+
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
     
@@ -143,6 +145,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.27  2004/07/21 15:51:23  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

@@ -51,20 +51,21 @@ class CLDS_Database;
 class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
-    static CLDS_DataLoader* RegisterInObjectManager(
+    typedef SRegisterLoaderInfo<CLDS_DataLoader> TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(void);
 
-    static CLDS_DataLoader* RegisterInObjectManager(
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CLDS_Database& lds_db,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(CLDS_Database& lds_db);
 
-    static CLDS_DataLoader* RegisterInObjectManager(
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string& db_path,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
@@ -108,6 +109,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/07/26 14:13:31  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.10  2004/07/21 15:51:23  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

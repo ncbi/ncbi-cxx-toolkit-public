@@ -59,7 +59,8 @@ public:
         eUnknown = 2        ///< protein is attempted first, then nucleotide
     };
 
-    static CBlastDbDataLoader* RegisterInObjectManager(
+    typedef SRegisterLoaderInfo<CBlastDbDataLoader> TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string& dbname = "nr",
         const EDbType dbtype = eUnknown,
@@ -94,6 +95,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.4  2004/07/26 14:13:31  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.3  2004/07/21 15:51:23  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -38,6 +38,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.24  2004/07/21 15:51:23  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
@@ -134,7 +138,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <objmgr/data_loader_factory.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <set>
 #include <map>
@@ -158,6 +162,29 @@ class CScope_Impl;
 
 
 class CSeq_id_Mapper;
+
+// Structure returned by RegisterInObjectManager() method
+template<class TLoader>
+struct SRegisterLoaderInfo
+{
+    TLoader* GetLoader(void) const { return m_Loader; }
+    bool     IsCreated(void) const { return m_Created; }
+
+    void Set(CDataLoader* loader, bool created)
+        {
+            // Check loader type
+            m_Loader = dynamic_cast<TLoader*>(loader);
+            if (loader  &&  !m_Loader) {
+                NCBI_THROW(CLoaderException, eOtherError,
+                    "Loader name already registered for another loader type");
+            }
+            m_Created = created;
+        }
+
+private:
+    TLoader* m_Loader;  // pointer to the loader (created or existing)
+    bool     m_Created; // true only if the loader was just created
+};
 
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
@@ -187,6 +214,14 @@ public:
     // Try to find data loader by name
     CDataLoader* FindDataLoader(const string& loader_name) const;
 
+    // Get names of all registered loaders.
+    typedef vector<string> TRegisteredNames;
+    void GetRegisteredNames(TRegisteredNames& names);
+    // Update loader's options
+    void SetLoaderOptions(const string& loader_name,
+                          EIsDefault    is_default,
+                          TPriority     priority = kPriority_NotSet);
+
     // Revoke previously registered data loader.
     // Return FALSE if the loader is still in use (by some scope).
     // Throw an exception if the loader is not registered with this ObjMgr.
@@ -200,27 +235,23 @@ public:
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
 protected:
 // functions for data loaders
     // Register existing data loader.
     // NOTE:  data loader must be created in the heap (ie using operator new).
-    void RegisterDataLoader(CDataLoader& loader,
-                            EIsDefault   is_default = eNonDefault,
-                            TPriority priority = kPriority_NotSet);
+    TRegisterLoaderInfo RegisterDataLoader
+        (CDataLoader& loader,
+         EIsDefault   is_default = eNonDefault,
+         TPriority    priority = kPriority_NotSet);
 
     // Register data loader factory.
     // NOTE:  client has no control on when data loader is created or deleted.
     void RegisterDataLoader(CDataLoaderFactory& factory,
                             EIsDefault          is_default = eNonDefault,
                             TPriority priority = kPriority_NotSet);
-    // RegisterDataLoader(*new CSimpleDataLoaderFactory<TDataLoader>(name), ...
 
-    void RegisterDataLoader(TFACTORY_AUTOCREATE factory,
-                            const string& loader_name,
-                            EIsDefault   is_default = eNonDefault,
-                            TPriority priority = kPriority_NotSet);
-
-// functions for scopes
+    // functions for scopes
     void RegisterScope(CScope_Impl& scope);
     void RevokeScope  (CScope_Impl& scope);
 

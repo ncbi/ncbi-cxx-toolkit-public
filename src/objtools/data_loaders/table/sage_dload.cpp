@@ -62,7 +62,7 @@ bool CSageDataLoader::SIdHandleByContent::operator()(const CSeq_id_Handle& h1,
 }
 
 
-CSageDataLoader* CSageDataLoader::RegisterInObjectManager(
+CSageDataLoader::TRegisterLoaderInfo CSageDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& input_file,
     const string& temp_file,
@@ -70,19 +70,24 @@ CSageDataLoader* CSageDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(input_file,
                                         temp_file,
                                         delete_file);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CSageDataLoader* loader = new CSageDataLoader(name,
-                                                  input_file,
-                                                  temp_file,
-                                                  delete_file);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CSageDataLoader(name,
+                                 input_file,
+                                 temp_file,
+                                 delete_file);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -333,6 +338,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/26 14:13:32  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.6  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

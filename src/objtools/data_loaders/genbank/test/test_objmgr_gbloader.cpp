@@ -77,7 +77,8 @@ int CTestApplication::Run()
 
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
-    CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm));
+    CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm)
+        .GetLoader());
 
     for ( int gi = 18565540;  gi < 18565650; gi++ ) {
         CSeq_id id;
@@ -172,6 +173,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/07/26 14:13:32  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.7  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

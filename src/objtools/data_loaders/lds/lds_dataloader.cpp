@@ -47,8 +47,6 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader,  "omdataloader", 1, 1, 0);
-
 BEGIN_SCOPE(objects)
 
 
@@ -161,19 +159,24 @@ private:
 
 
 
-CLDS_DataLoader* CLDS_DataLoader::RegisterInObjectManager(
+CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager& om,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs();
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CLDS_DataLoader* loader = new CLDS_DataLoader(name);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CLDS_DataLoader(name);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -183,20 +186,25 @@ string CLDS_DataLoader::GetLoaderNameFromArgs(void)
 }
 
 
-CLDS_DataLoader* CLDS_DataLoader::RegisterInObjectManager(
+CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager& om,
     CLDS_Database& lds_db,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(lds_db);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CLDS_DataLoader* loader = new CLDS_DataLoader(name, lds_db);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CLDS_DataLoader(name, lds_db);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -210,20 +218,25 @@ string CLDS_DataLoader::GetLoaderNameFromArgs(CLDS_Database& lds_db)
 }
 
 
-CLDS_DataLoader* CLDS_DataLoader::RegisterInObjectManager(
+CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& db_path,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(db_path);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CLDS_DataLoader* loader = new CLDS_DataLoader(name, db_path);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CLDS_DataLoader(name, db_path);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -349,12 +362,11 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
-class CLDS_DataLoaderCF : 
-  public CSimpleClassFactoryImpl<objects::CDataLoader, objects::CLDS_DataLoader>
+class CLDS_DataLoaderCF :
+  public CSimpleDataLoaderFactory<objects::CLDS_DataLoader>
 {
 public:
-    typedef CSimpleClassFactoryImpl<objects::CDataLoader, 
-                                    objects::CLDS_DataLoader>    TParent;
+    typedef CSimpleDataLoaderFactory<objects::CLDS_DataLoader> TParent;
 
     CLDS_DataLoaderCF() : TParent("CLDS_DataLoader")
     {}
@@ -380,6 +392,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/07/26 14:13:32  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.16  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

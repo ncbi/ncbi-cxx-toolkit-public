@@ -43,19 +43,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CTraceChromatogramLoader* CTraceChromatogramLoader::RegisterInObjectManager(
+CTraceChromatogramLoader::TRegisterLoaderInfo
+CTraceChromatogramLoader::RegisterInObjectManager(
     CObjectManager& om,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs();
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CTraceChromatogramLoader* loader = new CTraceChromatogramLoader(name);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CTraceChromatogramLoader(name);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -141,6 +147,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/26 14:13:32  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.3  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

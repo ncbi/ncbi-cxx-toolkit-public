@@ -35,28 +35,49 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/plugin_manager.hpp>
+#include <objmgr/object_manager.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "omdataloader", 1, 0, 0);
+
 BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class NCBI_XOBJMGR_EXPORT CDataLoaderFactory : public CObject
+class NCBI_XOBJMGR_EXPORT CDataLoaderFactory
+    : public IClassFactory<CDataLoader>
 {
 public:
-    CDataLoaderFactory(const string& name)
-        : m_LoaderName(name) {}
+    typedef IClassFactory<CDataLoader>     TParent;
+    typedef TParent::SDriverInfo           TDriverInfo;
+    typedef TParent::TDriverList           TDriverList;
+
+    CDataLoaderFactory(const string& driver_name, int patch_level = -1);
     virtual ~CDataLoaderFactory() {}
 
-    virtual CDataLoader* Create(void) = 0;
+    void GetDriverVersions(TDriverList& info_list) const;
 
-    const string& GetName(void) {return m_LoaderName;}
+    CDataLoader* 
+    CreateInstance(const string& driver = kEmptyStr,
+                   CVersionInfo version = NCBI_INTERFACE_VERSION(CDataLoader),
+                   const TPluginManagerParamTree* params = 0) const;
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const = 0;
 
 private:
-    string m_LoaderName;
+    CObjectManager* x_GetObjectManager(
+        const TPluginManagerParamTree* params) const;
+
+    CVersionInfo  m_DriverVersionInfo;
+    string        m_DriverName;
 };
 
 
@@ -65,30 +86,70 @@ class NCBI_XOBJMGR_EXPORT CSimpleDataLoaderFactory : public CDataLoaderFactory
 {
 public:
     CSimpleDataLoaderFactory(const string& name)
-        : CDataLoaderFactory(name) {
+        : CDataLoaderFactory(name)
+    {
         return;
     }
     virtual ~CSimpleDataLoaderFactory() {
         return;
     }
 
-    virtual CDataLoader* Create(void) {
-        return new TDataLoader(GetName());
-    } 
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* /*params*/) const
+    {
+        return TDataLoader::RegisterInObjectManager(om).GetLoader();
+    }
 };
 
-/////////////////////////////////////////////////////////////////////////////
-typedef CObject* (*TFACTORY_AUTOCREATE)();
 
-#define DECLARE_AUTOCREATE(class_name) \
-    static class_name* AutoCreate##class_name() \
-    { return new class_name;}
+inline
+CDataLoaderFactory::CDataLoaderFactory(const string& driver_name,
+                                       int           patch_level) 
+    : m_DriverVersionInfo(
+        ncbi::CInterfaceVersion<CDataLoader>::eMajor, 
+        ncbi::CInterfaceVersion<CDataLoader>::eMinor, 
+        patch_level >= 0 ?
+        patch_level : ncbi::CInterfaceVersion<CDataLoader>::ePatchLevel),
+        m_DriverName(driver_name)
+{
+    _ASSERT(!m_DriverName.empty());
+}
 
-#define CLASS_AUTOCREATE(class_name) \
-    (reinterpret_cast<TFACTORY_AUTOCREATE>(&(class_name::AutoCreate##class_name)))
 
-#define CREATE_AUTOCREATE(class_name, factory) \
-    (dynamic_cast<class_name*>((*factory)()))
+inline
+void CDataLoaderFactory::GetDriverVersions(TDriverList& info_list) const
+{
+    info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
+}
+
+
+inline CDataLoader* CDataLoaderFactory::CreateInstance(
+    const string&                  driver,
+    CVersionInfo                   version,
+    const TPluginManagerParamTree* params) const
+{
+    CDataLoader* loader = 0;
+    if (driver.empty() || driver == m_DriverName) {
+        if (version.Match(NCBI_INTERFACE_VERSION(CDataLoader))
+                            != CVersionInfo::eNonCompatible) {
+            CObjectManager* om = x_GetObjectManager(params);
+            _ASSERT(om);
+            loader = CreateAndRegister(*om, params);
+        }
+    }
+    return loader;
+}
+
+
+inline
+CObjectManager* CDataLoaderFactory::x_GetObjectManager(
+    const TPluginManagerParamTree* params) const
+{
+    // Temporary implementation
+    return &*CObjectManager::GetInstance();
+}
 
 
 END_SCOPE(objects)
@@ -97,6 +158,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.3  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *

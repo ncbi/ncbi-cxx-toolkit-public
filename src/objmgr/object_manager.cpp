@@ -101,12 +101,25 @@ CObjectManager::~CObjectManager(void)
 // configuration functions
 
 
-void CObjectManager::RegisterDataLoader(CDataLoader& loader,
-                                        EIsDefault   is_default,
-                                        CPriorityNode::TPriority priority)
+CObjectManager::TRegisterLoaderInfo
+CObjectManager::RegisterDataLoader(CDataLoader&             loader,
+                                   EIsDefault               is_default,
+                                   CPriorityNode::TPriority priority)
 {
     TWriteLockGuard guard(m_OM_Lock);
-    x_RegisterLoader(loader, priority, is_default);
+    TRegisterLoaderInfo info;
+    try {
+        x_RegisterLoader(loader, priority, is_default);
+    }
+    catch (CObjMgrException& e) {
+        ERR_POST(Warning <<
+            "CObjectManager::RegisterDataLoader: " << e.GetMsg());
+        CDataLoader* old_loader = FindDataLoader(loader.GetName());
+        info.Set(old_loader, false);
+        return info;
+    }
+    info.Set(&loader, true);
+    return info;
 }
 
 
@@ -114,6 +127,7 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
                                         EIsDefault is_default,
                                         CPriorityNode::TPriority priority)
 {
+/*
     string loader_name = factory.GetName();
     _ASSERT(!loader_name.empty());
     // if already registered
@@ -131,28 +145,7 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
     CDataLoader* loader = factory.Create();
     // register
     x_RegisterLoader(*loader, priority, is_default);
-}
-
-
-void CObjectManager::RegisterDataLoader(TFACTORY_AUTOCREATE factory,
-                                        const string& loader_name,
-                                        EIsDefault is_default,
-                                        CPriorityNode::TPriority priority)
-{
-    _ASSERT(!loader_name.empty());
-    // if already registered
-    TWriteLockGuard guard(m_OM_Lock);
-    if ( x_GetLoaderByName(loader_name) ) {
-        ERR_POST(Warning <<
-            "CObjectManager::RegisterDataLoader: " <<
-            "data loader " << loader_name << " already registered");
-        return;
-    }
-    // create one
-    CDataLoader* loader = CREATE_AUTOCREATE(CDataLoader,factory);
-    loader->SetName(loader_name);
-    // register
-    x_RegisterLoader(*loader, priority, is_default);
+*/
 }
 
 
@@ -215,6 +208,42 @@ CDataLoader* CObjectManager::FindDataLoader(const string& loader_name) const
 {
     TReadLockGuard guard(m_OM_Lock);
     return x_GetLoaderByName(loader_name);
+}
+
+
+void CObjectManager::GetRegisteredNames(TRegisteredNames& names)
+{
+    ITERATE(TMapNameToLoader, it, m_mapNameToLoader) {
+        names.push_back(it->first);
+    }
+}
+
+
+// Update loader's options
+void CObjectManager::SetLoaderOptions(const string& loader_name,
+                                      EIsDefault    is_default,
+                                      TPriority     priority)
+{
+    TWriteLockGuard guard(m_OM_Lock);
+    CDataLoader* loader = x_GetLoaderByName(loader_name);
+    if ( !loader ) {
+        NCBI_THROW(CObjMgrException, eRegisterError,
+            "Data loader " + loader_name + " not registered");
+    }
+    TMapToSource::iterator data_source = m_mapToSource.find(loader);
+    _ASSERT(data_source != m_mapToSource.end());
+    TSetDefaultSource::iterator def_it =
+        m_setDefaultSource.find(data_source->second);
+    if (is_default == eDefault  &&  def_it == m_setDefaultSource.end()) {
+        m_setDefaultSource.insert(data_source->second);
+    }
+    else if (is_default == eNonDefault && def_it != m_setDefaultSource.end()) {
+        m_setDefaultSource.erase(def_it);
+    }
+    if (priority != kPriority_NotSet  &&
+        data_source->second->GetDefaultPriority() != priority) {
+        data_source->second->SetDefaultPriority(priority);
+    }
 }
 
 
@@ -459,6 +488,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.37  2004/07/21 15:51:25  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

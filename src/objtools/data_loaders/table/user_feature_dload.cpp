@@ -64,7 +64,8 @@ bool CUsrFeatDataLoader::SIdHandleByContent::operator()
 }
 
 
-CUsrFeatDataLoader* CUsrFeatDataLoader::RegisterInObjectManager(
+CUsrFeatDataLoader::TRegisterLoaderInfo
+CUsrFeatDataLoader::RegisterInObjectManager(
     objects::CObjectManager& om,
     const string& input_file,
     const string& temp_file,
@@ -75,25 +76,30 @@ CUsrFeatDataLoader* CUsrFeatDataLoader::RegisterInObjectManager(
     objects::CObjectManager::EIsDefault is_default,
     objects::CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(input_file,
                                         temp_file,
                                         delete_file,
                                         offset,
                                         type,
                                         given_id);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CUsrFeatDataLoader* loader = new CUsrFeatDataLoader(name,
-                                                        input_file,
-                                                        temp_file,
-                                                        delete_file,
-                                                        offset,
-                                                        type,
-                                                        given_id);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CUsrFeatDataLoader(name,
+                                    input_file,
+                                    temp_file,
+                                    delete_file,
+                                    offset,
+                                    type,
+                                    given_id);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -383,6 +389,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/26 14:13:32  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.4  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

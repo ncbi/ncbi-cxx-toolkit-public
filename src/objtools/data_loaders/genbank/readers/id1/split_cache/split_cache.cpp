@@ -347,7 +347,7 @@ void CSplitCacheApp::SetupCache(void)
     {{ // create loader
         m_Reader = new CCachedId1Reader(1, &*m_Cache, &*m_IdCache);
         m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
-            *m_ObjMgr, m_Reader));
+            *m_ObjMgr, m_Reader).GetLoader());
     }}
 
     {{ // Create scope
@@ -774,6 +774,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/07/26 14:13:32  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.23  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

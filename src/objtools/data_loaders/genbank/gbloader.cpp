@@ -131,20 +131,25 @@ CReader* s_CreateReader(string env)
 }
 */
 
-CGBDataLoader* CGBDataLoader::RegisterInObjectManager(
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     CReader*        driver,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(driver);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CGBDataLoader* loader = new CGBDataLoader(name, driver);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CGBDataLoader(name, driver);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -154,26 +159,30 @@ string CGBDataLoader::GetLoaderNameFromArgs(CReader* /*driver*/)
 }
 
 
-CGBDataLoader* CGBDataLoader::RegisterInObjectManager(
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager&        om,
     TReader_PluginManager* plugin_manager,
     EOwnership             take_plugin_manager,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(
         plugin_manager,
         take_plugin_manager);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CGBDataLoader* loader = new CGBDataLoader(
-        name,
-        plugin_manager,
-        take_plugin_manager);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CGBDataLoader(name,
+                               plugin_manager,
+                               take_plugin_manager);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -1214,6 +1223,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2004/07/26 14:13:32  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.108  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

@@ -54,7 +54,9 @@ public:
         eBeginIsOne = 1
     } EOffset;
 
-    static CUsrFeatDataLoader* RegisterInObjectManager(
+    typedef objects::SRegisterLoaderInfo<CUsrFeatDataLoader>
+        TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         objects::CObjectManager& om,
         const string& input_file,
         const string& temp_file,
@@ -148,6 +150,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/26 14:13:31  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.3  2004/07/21 17:45:45  grichenk
  * Added RegisterInObjectManager() and GetLoaderNameFromArgs()
  *

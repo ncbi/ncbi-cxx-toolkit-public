@@ -44,7 +44,8 @@ BEGIN_NCBI_SCOPE
 class NCBI_XLOADER_TABLE_EXPORT CSageDataLoader : public objects::CDataLoader
 {
 public:
-    static CSageDataLoader* RegisterInObjectManager(
+    typedef objects::SRegisterLoaderInfo<CSageDataLoader> TRegisterLoaderInfo;
+    static TRegisterLoaderInfo RegisterInObjectManager(
         objects::CObjectManager& om,
         const string& input_file,
         const string& temp_file,
@@ -118,6 +119,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/26 14:13:31  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.5  2004/07/21 15:51:23  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

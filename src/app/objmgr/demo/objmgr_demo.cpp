@@ -385,14 +385,15 @@ int CDemoApp::Run(void)
         }
 
         gb_loader.Reset(CGBDataLoader::RegisterInObjectManager(*pOm,
-            id1_reader.release()));
+            id1_reader.release()).GetLoader());
     }
 #endif
     if ( !gb_loader ) {
         // Create genbank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader
         // must be included in scopes during the CScope::AddDefaults() call
-        gb_loader.Reset(CGBDataLoader::RegisterInObjectManager(*pOm));
+        gb_loader.Reset(CGBDataLoader::RegisterInObjectManager
+            (*pOm).GetLoader());
     }
 
     // Create a new scope.
@@ -823,6 +824,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.75  2004/07/21 15:51:24  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

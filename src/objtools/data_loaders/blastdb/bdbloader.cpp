@@ -50,22 +50,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CBlastDbDataLoader* CBlastDbDataLoader::RegisterInObjectManager(
+CBlastDbDataLoader::TRegisterLoaderInfo CBlastDbDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& dbname,
     const EDbType dbtype,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
+    TRegisterLoaderInfo info;
     string name = GetLoaderNameFromArgs(dbname, dbtype);
-    if ( om.FindDataLoader(name) ) {
-        return 0;
+    CDataLoader* loader = om.FindDataLoader(name);
+    if ( loader ) {
+        info.Set(loader, false);
+        return info;
     }
-    CBlastDbDataLoader* loader =
-        new CBlastDbDataLoader(name, dbname, dbtype);
-    return CDataLoader::RegisterInObjectManager(om, name, *loader,
-                                                is_default, priority) ?
-        loader : 0;
+    loader = new CBlastDbDataLoader(name, dbname, dbtype);
+    CObjectManager::TRegisterLoaderInfo base_info =
+        CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                             is_default, priority);
+    info.Set(base_info.GetLoader(), base_info.IsCreated());
+    return info;
 }
 
 
@@ -206,6 +210,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.7  2004/07/26 14:13:32  grichenk
+ * RegisterInObjectManager() return structure instead of pointer.
+ * Added CObjectManager methods to manipuilate loaders.
+ *
  * Revision 1.6  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -44,23 +44,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-bool CDataLoader::RegisterInObjectManager(CObjectManager& om,
-                                          const string& name,
-                                          CDataLoader& loader,
-                                          CObjectManager::EIsDefault is_default,
-                                          CObjectManager::TPriority priority)
+CObjectManager::TRegisterLoaderInfo
+CDataLoader::RegisterInObjectManager(CObjectManager&            om,
+                                     const string&              name,
+                                     CDataLoader&               loader,
+                                     CObjectManager::EIsDefault is_default,
+                                     CObjectManager::TPriority  priority)
 {
     // name should be already checked by real loader class
-    try {
-        om.RegisterDataLoader(loader, is_default, priority);
-    }
-    catch (CObjMgrException& e) {
-        ERR_POST(Warning <<
-            "CDataLoader::RegisterInObjectManager: " <<
-            e.GetMsg());
-        return false;
-    }
-    return true;
+    return om.RegisterDataLoader(loader, is_default, priority);
 }
 
 
@@ -145,6 +137,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
 * Revision 1.15  2004/07/21 15:51:25  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
