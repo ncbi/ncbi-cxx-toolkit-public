@@ -359,7 +359,7 @@ Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options);
  * @param strand_option which strand to search [in]
 */
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
-        CharPtr program, CharPtr filter_string, Uint1 strand_option);
+        const char *program, const char *filter_string, Uint1 strand_option);
 
 
 /** Deallocate memory for BlastInitialWordOptions. */
@@ -489,7 +489,7 @@ Int2 BlastScoringOptionsNew(const Char *program,
 */
 Int2 
 BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Char *program, 
-   Boolean greedy_extension, Int4 penalty, Int4 reward, CharPtr matrix, 
+   Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend);
 
 

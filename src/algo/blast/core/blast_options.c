@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.16  2003/05/13 15:11:34  dondosha
+ * Changed some char * arguments to const char *
+ *
  * Revision 1.15  2003/05/07 17:44:31  dondosha
  * Assign ungapped xdropoff default correctly for protein programs
  *
@@ -212,7 +215,7 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
 }
 
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
-        CharPtr program, CharPtr filter_string, Uint1 strand_option)
+        const char *program, const char *filter_string, Uint1 strand_option)
 {
    if (options == NULL)
       return 1;
@@ -601,7 +604,7 @@ BlastScoringOptionsNew(const Char *program, BlastScoringOptionsPtr *options)
 
 Int2 
 BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Char *program, 
-   Boolean greedy_extension, Int4 penalty, Int4 reward, CharPtr matrix, 
+   Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend)
 {
    if (!options)
