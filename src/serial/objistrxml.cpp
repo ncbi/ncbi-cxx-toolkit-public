@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.46  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -482,8 +485,11 @@ CLightString CObjectIStreamXml::ReadName(char c)
             +NStr::UIntToString(c));
 
     // find end of tag name
-    size_t i = 1;
+    size_t i = 1, iColon = 0;
     while ( IsNameChar(c = m_Input.PeekChar(i)) ) {
+        if (c == ':') {
+            iColon = i+1;
+        }
         ++i;
     }
 
@@ -498,11 +504,31 @@ CLightString CObjectIStreamXml::ReadName(char c)
     else {
         m_Input.SkipChars(i);
     }
-    m_LastTag = CLightString(ptr, i);
+    m_LastTag = CLightString(ptr+iColon, i-iColon);
+    if (iColon > 1) {
+        string ns_prefix( CLightString(ptr, iColon-1));
+        if (ns_prefix == "xmlns") {
+            string value;
+            ReadAttributeValue(value, true);
+            if (m_LastTag == m_CurrNsPrefix) {
+                if (FetchFrameFromTop(1).HasTypeInfo()) {
+                    TTypeInfo type = FetchFrameFromTop(1).GetTypeInfo();
+                    type->SetNamespacePrefix(m_CurrNsPrefix);
+                    type->SetNamespaceName(value);
+                }
+            }
+            m_NsPrefixToName[m_LastTag] = value;
+            m_NsNameToPrefix[value] = m_LastTag;
+            char ch = SkipWS();
+            return (ch == '>') ? CLightString() : ReadName(ch);
+        } else if (!m_Attlist) {
+            m_CurrNsPrefix = ns_prefix;
+        }
+    }
 #if defined(NCBI_SERIAL_IO_TRACE)
     cout << ", Read= " << m_LastTag;
 #endif
-    return CLightString(ptr, i);
+    return CLightString(ptr+iColon, i-iColon);
 }
 
 CLightString CObjectIStreamXml::RejectedName(void)
@@ -617,6 +643,21 @@ string CObjectIStreamXml::ReadFileHeader(void)
     return NcbiEmptyString;
 }
 
+void CObjectIStreamXml::x_EndTypeNamespace(void)
+{
+    if (x_IsStdXml()) {
+        if (TopFrame().HasTypeInfo()) {
+            TTypeInfo type = TopFrame().GetTypeInfo();
+            if (type->HasNamespaceName()) {
+                string nsName = type->GetNamespaceName();
+                string nsPrefix = m_NsNameToPrefix[nsName];
+                m_NsNameToPrefix.erase(nsName);
+                m_NsPrefixToName.erase(nsPrefix);
+            }
+        }
+    }
+}
+
 int CObjectIStreamXml::ReadEscapedChar(char endingChar)
 {
     char c = m_Input.PeekChar();
@@ -708,7 +749,7 @@ CLightString CObjectIStreamXml::ReadAttributeName(void)
     return ReadName(SkipWS());
 }
 
-void CObjectIStreamXml::ReadAttributeValue(string& value)
+void CObjectIStreamXml::ReadAttributeValue(string& value, bool skipClosing)
 {
     if ( SkipWS() != '=' )
         ThrowError(fFormatError, "'=' expected");
@@ -723,7 +764,7 @@ void CObjectIStreamXml::ReadAttributeValue(string& value)
             break;
         value += char(c);
     }
-    if (!m_Attlist) {
+    if (!m_Attlist || skipClosing) {
         m_Input.SkipChar();
     }
 }
@@ -1438,6 +1479,7 @@ void CObjectIStreamXml::EndClass(void)
     } else {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
+    x_EndTypeNamespace();
 }
 
 void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
@@ -1519,16 +1561,20 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                         }
                         return first;
                     }
-// if class spec defines no attributes, but there are some - just skip them
+// if class spec defines no attributes, but there are some - skip them
                     if (HasAttlist()) {
+                        m_Attlist = true;
                         for (;;) {
                             char ch = SkipWS();
                             if (ch == '>') {
+                                m_Attlist = false;
                                 break;
                             }
                             tagName = ReadName(ch);
-                            string value;
-                            ReadAttributeValue(value);
+                            if (tagName.GetLength()) {
+                                string value;
+                                ReadAttributeValue(value, true);
+                            }
                         }
                     }
                 }
@@ -1629,6 +1675,7 @@ void CObjectIStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 void CObjectIStreamXml::EndChoice(void)
 {
     CloseTagIfNamed(TopFrame().GetTypeInfo());
+    x_EndTypeNamespace();
 }
 
 TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
@@ -1644,6 +1691,22 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
                     m_TagState = eTagInsideOpening;
                 }
                 return first;
+            }
+// if spec defines no attributes, but there are some - skip them
+            if (HasAttlist()) {
+                m_Attlist = true;
+                for (;;) {
+                    char ch = SkipWS();
+                    if (ch == '>') {
+                        m_Attlist = false;
+                        break;
+                    }
+                    tagName = ReadName(ch);
+                    if (tagName.GetLength()) {
+                        string value;
+                        ReadAttributeValue(value, true);
+                    }
+                }
             }
         }
         m_Attlist = false;

@@ -32,7 +32,7 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#define ClassRandomContentsBegin() \
+#define ClassRandomContentsBegin(classType) \
 { \
     vector<bool> read(classType->GetMembers().LastIndex() + 1); \
     BEGIN_OBJECT_FRAME(eFrameClassMember); \
@@ -63,21 +63,21 @@
     } \
 }
 
-#define ReadClassRandomContentsBegin() \
-    ClassRandomContentsBegin()
-#define ReadClassRandomContentsMember() \
+#define ReadClassRandomContentsBegin(classType) \
+    ClassRandomContentsBegin(classType)
+#define ReadClassRandomContentsMember(classPtr) \
     ClassRandomContentsMember(Read, (*this, classPtr))
 #define ReadClassRandomContentsEnd() \
     ClassRandomContentsEnd(Read, (*this, classPtr))
 
-#define SkipClassRandomContentsBegin() \
-    ClassRandomContentsBegin()
+#define SkipClassRandomContentsBegin(classType) \
+    ClassRandomContentsBegin(classType)
 #define SkipClassRandomContentsMember() \
     ClassRandomContentsMember(Skip, (*this))
 #define SkipClassRandomContentsEnd() \
     ClassRandomContentsEnd(Skip, (*this))
 
-#define ClassSequentialContentsBegin() \
+#define ClassSequentialContentsBegin(classType) \
 { \
     CClassTypeInfo::CIterator pos(classType); \
     BEGIN_OBJECT_FRAME(eFrameClassMember); \
@@ -104,15 +104,15 @@
     } \
 }
 
-#define ReadClassSequentialContentsBegin() \
-    ClassSequentialContentsBegin()
-#define ReadClassSequentialContentsMember() \
+#define ReadClassSequentialContentsBegin(classType) \
+    ClassSequentialContentsBegin(classType)
+#define ReadClassSequentialContentsMember(classPtr) \
     ClassSequentialContentsMember(Read, (*this, classPtr))
-#define ReadClassSequentialContentsEnd() \
+#define ReadClassSequentialContentsEnd(classPtr) \
     ClassSequentialContentsEnd(Read, (*this, classPtr))
 
-#define SkipClassSequentialContentsBegin() \
-    ClassSequentialContentsBegin()
+#define SkipClassSequentialContentsBegin(classType) \
+    ClassSequentialContentsBegin(classType)
 #define SkipClassSequentialContentsMember() \
     ClassSequentialContentsMember(Skip, (*this))
 #define SkipClassSequentialContentsEnd() \
@@ -124,6 +124,9 @@
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.3  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

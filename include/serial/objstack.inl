@@ -48,6 +48,14 @@ CObjectStackFrame::EFrameType CObjectStackFrame::GetFrameType(void) const
 }
 
 inline
+bool CObjectStackFrame::HasTypeInfo(void) const
+{
+    return (m_FrameType != eFrameOther &&
+            m_FrameType != eFrameChoiceVariant &&
+            m_TypeInfo  != 0);
+}
+
+inline
 TTypeInfo CObjectStackFrame::GetTypeInfo(void) const
 {
     _ASSERT(m_FrameType != eFrameOther &&
@@ -214,6 +222,9 @@ const CObjectStack::TFrame& CObjectStack::FetchFrameFromBottom(size_t index) con
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.15  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

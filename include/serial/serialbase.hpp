@@ -91,6 +91,8 @@ public:
 class NCBI_XSERIAL_EXPORT CSerialObject : public CObject
 {
 public:
+    CSerialObject(void);
+    virtual ~CSerialObject(void);
     virtual const CTypeInfo* GetThisTypeInfo(void) const = 0;
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
@@ -104,6 +106,15 @@ public:
 
     static const char* ms_UnassignedStr;
     static const char  ms_UnassignedByte;
+
+    bool HasNamespaceName(void) const;
+    const string& GetNamespaceName(void) const;
+    void SetNamespaceName(const string& ns_name);
+
+    bool HasNamespacePrefix(void) const;
+    const string& GetNamespacePrefix(void) const;
+    void SetNamespacePrefix(const string& ns_prefix);
+
 private:
     static bool  x_GetVerifyData(void);
     static ESerialVerifyData ms_VerifyDataDefault;
@@ -256,6 +267,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.20  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

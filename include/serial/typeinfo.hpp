@@ -65,6 +65,28 @@ class CCopyObjectHook;
 
 class CTypeInfoFunctions;
 
+
+class NCBI_XSERIAL_EXPORT CSerialInfoItem
+{
+public:
+    CSerialInfoItem(void);
+    CSerialInfoItem(const CSerialInfoItem& other);
+    virtual ~CSerialInfoItem(void);
+
+    bool HasNamespaceName(void) const;
+    const string& GetNamespaceName(void) const;
+    void SetNamespaceName(const string& ns_name);
+
+    bool HasNamespacePrefix(void) const;
+    const string& GetNamespacePrefix(void) const;
+    void SetNamespacePrefix(const string& ns_prefix);
+
+private:
+    string m_NsName;
+    string m_NsPrefix;
+    bool   m_NsPrefixSet;
+};
+
 // CTypeInfo class contains all information about C++ types (both basic and
 // classes): members and layout in memory.
 class NCBI_XSERIAL_EXPORT CTypeInfo
@@ -83,6 +105,16 @@ public:
 
     // name of this type
     const string& GetName(void) const;
+
+    // namespace name
+    bool HasNamespaceName(void) const;
+    const string& GetNamespaceName(void) const;
+    void SetNamespaceName(const string& ns_name) const;
+
+    // namespace prefix
+    bool HasNamespacePrefix(void) const;
+    const string& GetNamespacePrefix(void) const;
+    void SetNamespacePrefix(const string& ns_prefix) const;
 
     // name of module
     virtual const string& GetModuleName(void) const;
@@ -166,6 +198,7 @@ private:
     size_t m_Size;
     string m_Name;
     string m_ModuleName;
+    mutable CSerialInfoItem* m_InfoItem;
 
 protected:
     void SetCreateFunction(TTypeCreate func);
@@ -186,6 +219,8 @@ private:
     CHookData<CCopyObjectHook, TTypeCopyFunction> m_CopyHookData;
 
     friend class CTypeInfoFunctions;
+
+    void x_CreateInfoItemIfNeeded(void) const;
 };
 
 
@@ -202,6 +237,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.40  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

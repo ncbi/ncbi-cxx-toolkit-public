@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.13  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -84,6 +87,14 @@
 
 BEGIN_NCBI_SCOPE
 
+
+CSerialObject::CSerialObject(void)
+{
+}
+
+CSerialObject::~CSerialObject()
+{
+}
 
 void CSerialObject::Assign(const CSerialObject& source)
 {
@@ -203,6 +214,36 @@ void CSerialObject::ThrowUnassigned(TMemberIndex index) const
         }
         NCBI_THROW(CUnassignedMember,eGet,CNcbiOstrstreamToString(s));
     }
+}
+
+bool CSerialObject::HasNamespaceName(void) const
+{
+    return GetThisTypeInfo()->HasNamespaceName();
+}
+
+const string& CSerialObject::GetNamespaceName(void) const
+{
+    return GetThisTypeInfo()->GetNamespaceName();
+}
+
+void CSerialObject::SetNamespaceName(const string& ns_name)
+{
+    GetThisTypeInfo()->SetNamespaceName(ns_name);
+}
+
+bool CSerialObject::HasNamespacePrefix(void) const
+{
+    return GetThisTypeInfo()->HasNamespacePrefix();
+}
+
+const string& CSerialObject::GetNamespacePrefix(void) const
+{
+    return GetThisTypeInfo()->GetNamespacePrefix();
+}
+
+void CSerialObject::SetNamespacePrefix(const string& ns_prefix)
+{
+    GetThisTypeInfo()->SetNamespacePrefix(ns_prefix);
 }
 
 

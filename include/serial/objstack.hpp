@@ -74,6 +74,7 @@ public:
     void Reset(void);
     
     EFrameType GetFrameType(void) const;
+    bool HasTypeInfo(void) const;
     TTypeInfo GetTypeInfo(void) const;
     bool HasMemberId(void) const;
     const CMemberId& GetMemberId(void) const;
@@ -203,6 +204,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.20  2003/05/16 18:02:53  gouriano
 * revised exception error messages
 *

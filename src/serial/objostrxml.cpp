@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.60  2003/08/13 18:23:54  gouriano
 * corrected XML schema namespace name
 *
@@ -398,24 +401,7 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
     m_Output.PutString("\"?>");
     m_Output.PutEol();
 
-    if (m_UseSchemaRef) {
-        m_Output.PutString("<");
-        m_Output.PutString(type->GetName());
-        m_Output.PutEol();
-        m_Output.PutString("    xmlns=\"");
-        m_Output.PutString(GetDefaultSchemaNamespace() + "\"");
-        m_Output.PutEol();
-        m_Output.PutString("    xmlns:xs=\"http://www.w3.org/2001/XMLSchema-instance\"");
-        m_Output.PutEol();
-        m_Output.PutString("    xs:schemaLocation=\"");
-        m_Output.PutString(GetDefaultSchemaNamespace() + " ");
-        m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
-        m_Output.PutString(".xsd\"");
-        m_Output.PutEol();
-        m_Output.PutString(">");
-
-        m_LastTagAction = eSchemaTag;
-    } else {
+    if (!m_UseSchemaRef) {
         m_Output.PutString("<!DOCTYPE ");
         m_Output.PutString(type->GetName());
     
@@ -436,8 +422,98 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
         m_Output.PutString(".dtd\">");
         m_Output.PutEol();
+    }
+    m_LastTagAction = eTagClose;
+}
 
-        m_LastTagAction = eTagClose;
+void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
+{
+    OpenTagEndBack();
+
+    m_Output.PutEol();
+    m_Output.PutString("    xmlns");
+    if (!m_CurrNsPrefix.empty()) {
+       m_Output.PutChar(':');
+       m_Output.PutString(m_CurrNsPrefix);
+    }
+    m_Output.PutString("=\"");
+
+    string ns_name( m_NsPrefixToName[m_CurrNsPrefix]);
+    if (ns_name.empty()) {
+        ns_name = GetDefaultSchemaNamespace();
+    }
+    m_Output.PutString(ns_name + "\"");
+    m_Output.PutEol();
+
+    string xs_name("http://www.w3.org/2001/XMLSchema-instance");
+    string xs_prefix("xs");
+    if (m_NsNameToPrefix.find(xs_name) == m_NsNameToPrefix.end()) {
+        for (char a='a';
+            m_NsPrefixToName.find(xs_prefix) != m_NsPrefixToName.end(); ++a) {
+            xs_prefix += a;
+        }
+        m_NsPrefixToName[xs_prefix] = xs_name;
+        m_NsNameToPrefix[xs_name] = xs_prefix;
+        m_Output.PutString("    xmlns:");
+        m_Output.PutString(xs_prefix + "=\"");
+        m_Output.PutString(xs_name + "\"");
+        m_Output.PutEol();
+        m_Output.PutString("    ");
+        m_Output.PutString(xs_prefix);
+        m_Output.PutString(":schemaLocation=\"");
+        m_Output.PutString(ns_name + " ");
+        m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
+        m_Output.PutString(".xsd\"");
+        m_Output.PutEol();
+    }
+    OpenTagEnd();
+}
+
+bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
+{
+    bool needNs = false;
+    if (m_UseSchemaRef) {
+        if (type->HasNamespaceName()) {
+            string nsName = type->GetNamespaceName();
+            string nsPrefix;
+            if (m_NsNameToPrefix.find(nsName) == m_NsNameToPrefix.end()) {
+                nsPrefix = type->GetNamespacePrefix();
+                for (char a='a';
+                    m_NsPrefixToName.find(nsPrefix) != m_NsPrefixToName.end(); ++a) {
+                    nsPrefix += a;
+                }
+                m_CurrNsPrefix = nsPrefix;
+                m_NsNameToPrefix[nsName] = nsPrefix;
+                m_NsPrefixToName[nsPrefix] = nsName;
+                m_NsPrefixes.push(nsPrefix);
+                needNs = true;
+            } else {
+                m_CurrNsPrefix = m_NsNameToPrefix[nsName];
+            }
+        }
+    }
+    return needNs;
+}
+
+void CObjectOStreamXml::x_EndTypeNamespace(void)
+{
+    if (m_UseSchemaRef) {
+        if (TopFrame().HasTypeInfo()) {
+            TTypeInfo type = TopFrame().GetTypeInfo();
+            if (type->HasNamespaceName()) {
+                string nsName = type->GetNamespaceName();
+                string nsPrefix = m_NsNameToPrefix[nsName];
+                m_NsNameToPrefix.erase(nsName);
+                m_NsPrefixToName.erase(nsPrefix);
+                m_NsPrefixes.pop();
+                m_CurrNsPrefix = m_NsPrefixes.empty() ?
+                    kEmptyStr : m_NsPrefixes.top();
+            }
+        }
+        if (GetStackDepth() <= 2) {
+            m_NsNameToPrefix.clear();
+            m_NsPrefixToName.clear();
+        }
     }
 }
 
@@ -726,6 +802,15 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
     m_EndTag = true;
 }
 
+void CObjectOStreamXml::WriteTag(const string& name)
+{
+    if (!m_CurrNsPrefix.empty()) {
+        m_Output.PutString(m_CurrNsPrefix);
+        m_Output.PutChar(':');
+    }
+    m_Output.PutString(name);
+}
+
 void CObjectOStreamXml::OpenTagStart(void)
 {
     if (m_Attlist) {
@@ -814,7 +899,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
             _ASSERT(frame.GetTypeInfo());
             const string& name = frame.GetTypeInfo()->GetName();
             if ( !name.empty() ) {
-                m_Output.PutString(name);
+                WriteTag(name);
 #if defined(NCBI_SERIAL_IO_TRACE)
     TraceTag(name);
 #endif
@@ -830,7 +915,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
                 PrintTagName(level + 1);
                 m_Output.PutChar('_');
             }
-            m_Output.PutString(frame.GetMemberId().GetName());
+            WriteTag(frame.GetMemberId().GetName());
 #if defined(NCBI_SERIAL_IO_TRACE)
     TraceTag(frame.GetMemberId().GetName());
 #endif
@@ -1072,12 +1157,10 @@ ETypeFamily CObjectOStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
     CheckStdXml(classInfo);
-    if (m_LastTagAction == eSchemaTag) {
-        m_Output.IncIndentLevel();
-        m_LastTagAction = eTagClose;
-        m_EndTag = false;
-    } else {
-        OpenTagIfNamed(classInfo);
+    bool needNs = x_ProcessTypeNamespace(classInfo);
+    OpenTagIfNamed(classInfo);
+    if (needNs) {
+        x_WriteClassNamespace(classInfo);
     }
 }
 
@@ -1087,6 +1170,7 @@ void CObjectOStreamXml::EndClass(void)
         EolIfEmptyTag();
     }
     CloseTagIfNamed(TopFrame().GetTypeInfo());
+    x_EndTypeNamespace();
 }
 
 void CObjectOStreamXml::BeginClassMember(const CMemberId& id)
@@ -1142,7 +1226,9 @@ void CObjectOStreamXml::EndClassMember(void)
     }
 }
 
+
 #ifdef VIRTUAL_MID_LEVEL_IO
+
 void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
                                    TConstObjectPtr classPtr)
 {
@@ -1198,12 +1284,17 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
 void CObjectOStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 {
     CheckStdXml(choiceType);
+    bool needNs = x_ProcessTypeNamespace(choiceType);
     OpenTagIfNamed(choiceType);
+    if (needNs) {
+        x_WriteClassNamespace(choiceType);
+    }
 }
 
 void CObjectOStreamXml::EndChoice(void)
 {
     CloseTagIfNamed(TopFrame().GetTypeInfo());
+    x_EndTypeNamespace();
 }
 
 void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,

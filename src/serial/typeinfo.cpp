@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.38  2003/07/29 18:47:48  vasilche
 * Fixed thread safeness of object stream hooks.
 *
@@ -228,7 +231,9 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
+      m_InfoItem(0)
+
 {
     return;
 }
@@ -241,7 +246,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
+      m_InfoItem(0)
 {
     return;
 }
@@ -254,7 +260,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
+      m_InfoItem(0)
 {
     return;
 }
@@ -262,9 +269,50 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
 
 CTypeInfo::~CTypeInfo(void)
 {
+    if (m_InfoItem) {
+        delete m_InfoItem;
+    }
     return;
 }
 
+bool CTypeInfo::HasNamespaceName(void) const
+{
+    return m_InfoItem ? m_InfoItem->HasNamespaceName() : false;
+}
+
+const string& CTypeInfo::GetNamespaceName(void) const
+{
+    return m_InfoItem ? m_InfoItem->GetNamespaceName() : kEmptyStr;
+}
+
+void CTypeInfo::SetNamespaceName(const string& ns_name) const
+{
+    x_CreateInfoItemIfNeeded();
+    m_InfoItem->SetNamespaceName(ns_name);
+}
+
+bool CTypeInfo::HasNamespacePrefix(void) const
+{
+    return m_InfoItem ? m_InfoItem->HasNamespacePrefix() : false;
+}
+
+const string& CTypeInfo::GetNamespacePrefix(void) const
+{
+    return m_InfoItem ? m_InfoItem->GetNamespacePrefix() : kEmptyStr;
+}
+
+void CTypeInfo::SetNamespacePrefix(const string& ns_prefix) const
+{
+    x_CreateInfoItemIfNeeded();
+    m_InfoItem->SetNamespacePrefix(ns_prefix);
+}
+
+void CTypeInfo::x_CreateInfoItemIfNeeded(void) const
+{
+    if (!m_InfoItem) {
+        m_InfoItem = new CSerialInfoItem;
+    }
+}
 
 const string& CTypeInfo::GetModuleName(void) const
 {
@@ -487,6 +535,54 @@ void CTypeInfoFunctions::CopyWithHook(CObjectStreamCopier& stream,
         hook->CopyObject(stream, objectType);
     else
         objectType->DefaultCopyData(stream);
+}
+
+
+CSerialInfoItem::CSerialInfoItem(void)
+{
+    m_NsPrefixSet = false;
+}
+
+CSerialInfoItem::CSerialInfoItem(const CSerialInfoItem& other)
+{
+    m_NsName      = other.m_NsName;
+    m_NsPrefix    = other.m_NsPrefix;
+    m_NsPrefixSet = other.m_NsPrefixSet;
+}
+
+CSerialInfoItem::~CSerialInfoItem(void)
+{
+}
+
+bool CSerialInfoItem::HasNamespaceName(void) const
+{
+    return !m_NsName.empty();
+}
+
+const string& CSerialInfoItem::GetNamespaceName(void) const
+{
+    return m_NsName;
+}
+
+void CSerialInfoItem::SetNamespaceName(const string& ns_name)
+{
+    m_NsName = ns_name;
+}
+
+bool CSerialInfoItem::HasNamespacePrefix(void) const
+{
+    return m_NsPrefixSet;
+}
+
+const string& CSerialInfoItem::GetNamespacePrefix(void) const
+{
+    return m_NsPrefix;
+}
+
+void CSerialInfoItem::SetNamespacePrefix(const string& ns_prefix)
+{
+    m_NsPrefix = ns_prefix;
+    m_NsPrefixSet = !m_NsPrefix.empty();
 }
 
 END_NCBI_SCOPE

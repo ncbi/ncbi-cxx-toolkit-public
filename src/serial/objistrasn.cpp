@@ -982,7 +982,7 @@ void CObjectIStreamAsn::ReadClassRandom(const CClassTypeInfo* classType,
 {
     StartBlock();
     
-    ReadClassRandomContentsBegin();
+    ReadClassRandomContentsBegin(classType);
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
@@ -990,7 +990,7 @@ void CObjectIStreamAsn::ReadClassRandom(const CClassTypeInfo* classType,
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
-        ReadClassRandomContentsMember();
+        ReadClassRandomContentsMember(classPtr);
     }
 
     ReadClassRandomContentsEnd();
@@ -1003,7 +1003,7 @@ void CObjectIStreamAsn::ReadClassSequential(const CClassTypeInfo* classType,
 {
     StartBlock();
     
-    ReadClassSequentialContentsBegin();
+    ReadClassSequentialContentsBegin(classType);
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
@@ -1011,10 +1011,10 @@ void CObjectIStreamAsn::ReadClassSequential(const CClassTypeInfo* classType,
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
-        ReadClassSequentialContentsMember();
+        ReadClassSequentialContentsMember(classPtr);
     }
 
-    ReadClassSequentialContentsEnd();
+    ReadClassSequentialContentsEnd(classPtr);
     
     EndBlock();
 }
@@ -1023,7 +1023,7 @@ void CObjectIStreamAsn::SkipClassRandom(const CClassTypeInfo* classType)
 {
     StartBlock();
     
-    SkipClassRandomContentsBegin();
+    SkipClassRandomContentsBegin(classType);
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
@@ -1043,7 +1043,7 @@ void CObjectIStreamAsn::SkipClassSequential(const CClassTypeInfo* classType)
 {
     StartBlock();
     
-    SkipClassSequentialContentsBegin();
+    SkipClassSequentialContentsBegin(classType);
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
@@ -1272,6 +1272,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.85  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

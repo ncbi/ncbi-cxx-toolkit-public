@@ -750,12 +750,12 @@ void CObjectIStream::ReadClassRandom(const CClassTypeInfo* classType,
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
 
-    ReadClassRandomContentsBegin();
+    ReadClassRandomContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
 
-        ReadClassRandomContentsMember();
+        ReadClassRandomContentsMember(classPtr);
         
         EndClassMember();
     }
@@ -773,7 +773,7 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     
-    ReadClassSequentialContentsBegin();
+    ReadClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
@@ -787,12 +787,12 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
         }
         prevIndex = index;
 
-        ReadClassSequentialContentsMember();
+        ReadClassSequentialContentsMember(classPtr);
 
         EndClassMember();
     }
 
-    ReadClassSequentialContentsEnd();
+    ReadClassSequentialContentsEnd(classPtr);
     
     EndClass();
     END_OBJECT_FRAME();
@@ -803,7 +803,7 @@ void CObjectIStream::SkipClassRandom(const CClassTypeInfo* classType)
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     
-    SkipClassRandomContentsBegin();
+    SkipClassRandomContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
@@ -824,7 +824,7 @@ void CObjectIStream::SkipClassSequential(const CClassTypeInfo* classType)
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     
-    SkipClassSequentialContentsBegin();
+    SkipClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
@@ -1201,6 +1201,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.111  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.110  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

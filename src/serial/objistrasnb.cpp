@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.64  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.
@@ -1032,7 +1035,7 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
     ExpectSysTag(eUniversal, true, eSet);
     ExpectIndefiniteLength();
 
-    ReadClassRandomContentsBegin();
+    ReadClassRandomContentsBegin(classType);
 
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
@@ -1041,7 +1044,7 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
         if ( index == kInvalidMember )
             UnexpectedMember(tag);
 
-        ReadClassRandomContentsMember();
+        ReadClassRandomContentsMember(classPtr);
 
         ExpectEndOfContent();
     }
@@ -1057,7 +1060,7 @@ void CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classTyp
     ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 
-    ReadClassSequentialContentsBegin();
+    ReadClassSequentialContentsBegin(classType);
 
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
@@ -1066,12 +1069,12 @@ void CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classTyp
         if ( index == kInvalidMember )
             UnexpectedMember(tag);
 
-        ReadClassSequentialContentsMember();
+        ReadClassSequentialContentsMember(classPtr);
 
         ExpectEndOfContent();
     }
 
-    ReadClassSequentialContentsEnd();
+    ReadClassSequentialContentsEnd(classPtr);
 
     ExpectEndOfContent();
 }
@@ -1081,7 +1084,7 @@ void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
     ExpectSysTag(eUniversal, true, eSet);
     ExpectIndefiniteLength();
 
-    SkipClassRandomContentsBegin();
+    SkipClassRandomContentsBegin(classType);
 
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
@@ -1105,7 +1108,7 @@ void CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classTyp
     ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 
-    SkipClassSequentialContentsBegin();
+    SkipClassSequentialContentsBegin(classType);
 
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);

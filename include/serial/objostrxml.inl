@@ -59,7 +59,7 @@ inline
 void CObjectOStreamXml::OpenTag(const string& name)
 {
     OpenTagStart();
-    m_Output.PutString(name);
+    WriteTag(name);
 #if defined(NCBI_SERIAL_IO_TRACE)
     TraceTag(name);
 #endif
@@ -73,7 +73,7 @@ void CObjectOStreamXml::CloseTag(const string& name)
         m_LastTagAction = eTagClose;
     } else {
         CloseTagStart();
-        m_Output.PutString(name);
+        WriteTag(name);
 #if defined(NCBI_SERIAL_IO_TRACE)
     TraceTag(name);
 #endif
@@ -193,6 +193,9 @@ string CObjectOStreamXml::GetDefaultSchemaNamespace(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.10  2003/07/02 13:01:00  gouriano
 * added ability to read/write XML files with reference to schema
 *

@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
+#include <stack>
 
 
 /** @addtogroup ObjStreamSupport
@@ -235,6 +236,7 @@ private:
     void CloseTagStart(void);
     void CloseTagEnd(void);
 
+    void WriteTag(const string& name);
     void OpenTag(const string& name);
     void EolIfEmptyTag(void);
     void CloseTag(const string& name);
@@ -249,12 +251,15 @@ private:
     string GetModuleName(TTypeInfo type);
     bool x_IsStdXml(void) {return m_StdXml || m_EnforcedStdXml;}
 
+    void x_WriteClassNamespace(TTypeInfo type);
+    bool x_ProcessTypeNamespace(TTypeInfo type);
+    void x_EndTypeNamespace(void);
+
     enum ETagAction {
         eTagOpen,
         eTagClose,
         eTagSelfClosed,
-        eAttlistTag,
-        eSchemaTag
+        eAttlistTag
     };
     ETagAction m_LastTagAction;
     bool m_EndTag;
@@ -273,6 +278,10 @@ private:
     EEncoding m_Encoding;
     bool m_UseSchemaRef;
     static string sm_DefaultSchemaNamespace;
+    string m_CurrNsPrefix;
+    map<string,string> m_NsNameToPrefix;
+    map<string,string> m_NsPrefixToName;
+    stack<string> m_NsPrefixes;
 };
 
 
@@ -289,6 +298,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.34  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

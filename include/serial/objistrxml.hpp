@@ -205,7 +205,7 @@ private:
     CLightString ReadName(char c);
     CLightString RejectedName(void);
     CLightString ReadAttributeName(void);
-    void ReadAttributeValue(string& value);
+    void ReadAttributeValue(string& value, bool skipClosing=false);
 
     void SkipAttributeValue(char c);
     void SkipQDecl(void);
@@ -215,6 +215,7 @@ private:
 
     void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
     bool x_IsStdXml(void) {return m_StdXml || m_EnforcedStdXml;}
+    void x_EndTypeNamespace(void);
 
     enum ETagState {
         eTagOutside,
@@ -230,6 +231,9 @@ private:
     bool m_EnforcedStdXml;
     string m_LastPrimitive;
     EEncoding m_Encoding;
+    string m_CurrNsPrefix;
+    map<string,string> m_NsPrefixToName;
+    map<string,string> m_NsNameToPrefix;
 };
 
 
@@ -246,6 +250,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/08/25 15:58:32  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
 * Revision 1.28  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *
