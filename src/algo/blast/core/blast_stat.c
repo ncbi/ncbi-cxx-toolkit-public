@@ -3186,33 +3186,33 @@ BLAST_SmallGapSumE(
     return sum_e;
 }
 
-/*
-    Calculates the e-value of a collection multiple distinct
-    alignments with asymmetric gaps between the alignments. The gaps
-    in one (protein) sequence are typically small (like in
-    BLAST_SmallGapSumE) gap an the gaps in the other (translated DNA)
-    sequence are possibly large (up to 4000 bp.)  This routine is used
-    for linking HSPs representing exons in the DNA sequence that are
-    separated by introns.
-*/
+/** Calculates the e-value of a collection multiple distinct
+ * alignments with asymmetric gaps between the alignments. The gaps
+ * in one (protein) sequence are typically small (like in
+ * BLAST_SmallGapSumE) gap an the gaps in the other (translated DNA)
+ * sequence are possibly large (up to 4000 bp.)  This routine is used
+ * for linking HSPs representing exons in the DNA sequence that are
+ * separated by introns.
+ * @param kbp Statistical parameters [in]
+ * @param p_gap Maximum size of gaps between alignments, in one sequence [in]
+ * @param n_gap Maximum size of gaps between alignments, in the other 
+ *              sequence [in]
+ * @param num The number of distinct alignments in this collection [in]
+ * @param score_prime The sum of the scores of these alignments each weighted 
+ *                    by an appropriate value of Lambda [in]
+ * @param query_length The effective len of the query seq [in]
+ * @param subject_length The effective len of the database seq [in]
+ * @param weight_divisor A divisor used to weight the e-value when multiple 
+ *                       collections of alignments are being considered by 
+ *                       the calling routine [in]
+ * @return Resulting e-value of a combined set.
+ */
 double
-BLAST_UnevenGapSumE(
-    const Blast_KarlinBlk * kbp,      /* statistical parameters */
-    Int4 p_gap,                 /* maximum size of gaps between alignments,
-                                 * in one sequence */
-    Int4 n_gap,                 /* maximum size of gaps between alignments,
-                                 * in the other sequence */
-    Int2 num,                   /* the number of distinct alignments in this
-                                 * collection */
-    double score_prime,         /* the sum of the scores of these alignments
-                                 * each weighted by an appropriate value of
-                                 * Lambda */
-    Int4 query_length,          /* the effective len of the query seq */
-    Int4 subject_length,        /* the effective len of the database seq */
-    double weight_divisor)      /* a divisor used to weight the e-value
-                                 * when multiple collections of alignments
-                                 * are being considered by the calling
-                                 * routine */
+BLAST_UnevenGapSumE(const Blast_KarlinBlk * kbp,
+                    Int4 p_gap, Int4 n_gap,                
+                    Int2 num, double score_prime,        
+                    Int4 query_length, Int4 subject_length,        
+                    double weight_divisor)
 {
     double search_space;   /* The effective size of the search space */
     double sum_p;          /* The p-value of this set of alignments */
@@ -3593,6 +3593,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.91  2004/08/13 17:44:27  dondosha
+ * Doxygenized comments for BLAST_UnevenGapSumE
+ *
  * Revision 1.90  2004/08/03 21:06:15  dondosha
  * Removed unused variable
  *
