@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/06 17:43:06  ivanov
+* ssize_t changed to long
+*
 * Revision 1.19  2002/05/06 17:03:49  ivanov
 * Sorry. Rollback to R1.17
 *
@@ -163,7 +166,7 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
     CSegmentInfo seg = *(m_Data[seg_idx]);
     if ( seg_idx >=  m_FirstUnresolvedPos) {
         // Resolve map segments
-        ssize_t iStillUnresolved = -1;
+        long iStillUnresolved = -1;
         TSeqPos shift = 0;
         for (size_t i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
             if (m_Data[i]->m_Position+shift > pos  ||
