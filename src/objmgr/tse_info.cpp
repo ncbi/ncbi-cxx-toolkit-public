@@ -368,7 +368,7 @@ void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
                                 const CSeq_id_Handle& id)
 {
-    if ( x_ContainsMatchingSeqid(id) ) {
+    if ( ContainsBioseqMatch(id) ) {
         return;
     }
     TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
@@ -412,31 +412,27 @@ void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
 }
 
 
-bool CTSE_Info::x_ContainsMatchingSeqid(const CSeq_id_Handle& id) const
+bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 {
-    // Filter out TSEs which contain the sequence
-    if ( ContainsSeqid(id) ) {
-        return true;
-    }
-
-    CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
-    if ( mapper->HaveMatchingHandles(id) ) {
-        TSeq_id_HandleSet hset;
-        mapper->GetMatchingHandles(id, hset);
-        ITERATE ( TSeq_id_HandleSet, match_it, hset ) {
-            if ( ContainsSeqid(*match_it) ) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return m_Bioseqs.find(id) != m_Bioseqs.end();
 }
 
 
-bool CTSE_Info::ContainsSeqid(const CSeq_id_Handle& id) const
+bool CTSE_Info::ContainsBioseqMatch(const CSeq_id_Handle& id) const
 {
-    return m_Bioseqs.find(id) != m_Bioseqs.end();
+    if ( id.GetMapper().HaveMatchingHandles(id) ) {
+        TSeq_id_HandleSet hset;
+        id.GetMapper().GetMatchingHandles(id, hset);
+        ITERATE ( TSeq_id_HandleSet, match_it, hset ) {
+            if ( ContainsBioseq(*match_it) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+    else {
+        return ContainsBioseq(id);
+    }
 }
 
 
@@ -446,6 +442,27 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
     TBioseqs::const_iterator it = m_Bioseqs.find(id);
     if ( it != m_Bioseqs.end() ) {
         ret = it->second;
+    }
+    return ret;
+}
+
+
+CConstRef<CBioseq_Info>
+CTSE_Info::FindBioseqMatch(const CSeq_id_Handle& id) const
+{
+    CConstRef<CBioseq_Info> ret;
+    if ( id.GetMapper().HaveMatchingHandles(id) ) {
+        TSeq_id_HandleSet hset;
+        id.GetMapper().GetMatchingHandles(id, hset);
+        ITERATE ( TSeq_id_HandleSet, match_it, hset ) {
+            ret = FindBioseq(*match_it);
+            if ( ret ) {
+                break;
+            }
+        }
+    }
+    else {
+        ret = FindBioseq(id);
     }
     return ret;
 }

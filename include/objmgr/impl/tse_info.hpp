@@ -195,8 +195,10 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
-    bool ContainsSeqid(const CSeq_id_Handle& id) const;
+    bool ContainsBioseq(const CSeq_id_Handle& id) const;
+    bool ContainsBioseqMatch(const CSeq_id_Handle& id) const;
     CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& key) const;
+    CConstRef<CBioseq_Info> FindBioseqMatch(const CSeq_id_Handle& key) const;
 
     void UpdateAnnotIndex(void) const;
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
@@ -301,8 +303,6 @@ private:
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
     void x_IndexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
     void x_UnindexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
-
-    bool x_ContainsMatchingSeqid(const CSeq_id_Handle& id) const;
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
