@@ -2516,6 +2516,121 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-user-gi-list]";
         
+        if (s == "-file-gi-list2") {
+            string seqchar = (seqtype == CSeqDB::eProtein) ? "p" : "n";
+            
+            string fn1("/net/fridge/vol/export/blast/db/blast/Bos_taurus." +
+                       seqchar + ".gil");
+            string fn2("/net/fridge/vol/export/blast/db/blast/Eukaryota." +
+                       seqchar + ".gil");
+            string fn3("/net/fridge/vol/export/blast/db/blast/hivcg.gil");
+            
+            CTimedTask t1a("bt build list");
+            CRef<CSeqDBFileGiList> gi_list1x(new CSeqDBFileGiList(fn1));
+            CRef<CSeqDBGiList> gi_list1(& (*gi_list1x));
+            t1a.Mark();
+            
+            CTimedTask t1b("euk build list");
+            CRef<CSeqDBFileGiList> gi_list2x(new CSeqDBFileGiList(fn2));
+            CRef<CSeqDBGiList> gi_list2(& (*gi_list2x));
+            t1b.Mark();
+            
+            CTimedTask t1c("hiv build list");
+            CRef<CSeqDBFileGiList> gi_list3x(new CSeqDBFileGiList(fn3));
+            CRef<CSeqDBGiList> gi_list3(& (*gi_list3x));
+            t1c.Mark();
+            
+            {
+                string nm = "bt";
+                
+                CTimedTask t2a(nm + " build seqdb");
+                CSeqDB db(dbname, seqtype, 0, 0, use_mm, gi_list1);
+                t2a.Mark();
+                
+                CTimedTask t3a(nm + " find oid");
+                int cnt(0);
+                for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+                    cnt ++;
+                }
+                t3a.Mark();
+                cout << "Found " << cnt << " OIDs in gi list " << fn1 << endl;
+            }
+            
+            {
+                string nm = "euk";
+                
+                CTimedTask t2a(nm + " build seqdb");
+                CSeqDB db(dbname, seqtype, 0, 0, use_mm, gi_list2);
+                t2a.Mark();
+                
+                CTimedTask t3a(nm + " find oid");
+                int cnt(0);
+                for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+                    cnt ++;
+                }
+                t3a.Mark();
+                cout << "Found " << cnt << " OIDs in gi list " << fn2 << endl;
+            }
+            
+            {
+                string nm = "hiv";
+                
+                CTimedTask t2a(nm + " build seqdb");
+                CSeqDB db(dbname, seqtype, 0, 0, use_mm, gi_list3);
+                t2a.Mark();
+                
+                CTimedTask t3a(nm + " find oid");
+                int cnt(0);
+                for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+                    cnt ++;
+                }
+                t3a.Mark();
+                cout << "Found " << cnt << " OIDs in gi list " << fn3 << endl;
+            }
+            
+//             gi_list1x->Report();
+//             gi_list2x->Report();
+//             gi_list3x->Report();
+            
+            return 0;
+        } else desc += " [-file-gi-list2]";
+        
+        if (s == "-file-gi-list") {
+            CStopWatch sw;
+            double e1, e2, e3, e4, e5;
+            e1 = sw.Elapsed();
+            
+            string fn("/net/fridge/vol/export/blast/db/blast/Bos_taurus.p.gil");
+            
+            {
+                cout << "build1..." << endl;
+                CRef<CSeqDBGiList> file_gi_list(new CSeqDBFileGiList(fn));
+                
+                e2 = sw.Elapsed();
+                
+                cout << "build2..." << endl;
+                CSeqDB db(dbname, seqtype, 0, 0, use_mm, file_gi_list);
+                
+                e3 = sw.Elapsed();
+                
+                cout << "get oid..." << endl;
+                int oid = 0;
+                db.CheckOrFindOID(oid);
+                cout << "First oid = " << oid << endl;
+                
+                e4 = sw.Elapsed();
+                cout << "destruct..." << endl;
+            }
+            e5 = sw.Elapsed();
+            
+            cout << "Time for task (build gi list):  " << (e2-e1) << endl;
+            cout << "Time for task (build seqdb):    " << (e3-e2) << endl;
+            cout << "Time for task (find first oid): " << (e4-e3) << endl;
+            cout << "Time for task (destruct):       " << (e5-e4) << endl;
+            
+            return 0;
+        } else desc += " [-file-gi-list]";
+        
         if (s == "-summary") {
             CSeqDB phil(dbname, seqtype);
             cout << "dbpath: " << dbpath            << endl;
