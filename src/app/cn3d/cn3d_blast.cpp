@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/06/17 19:31:54  thiessen
+* set db_length in blast options
+*
 * Revision 1.12  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -193,6 +196,13 @@ static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleFo
     return matrix;
 }
 
+static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
+{
+    BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
+    bob->db_length = 1000000;   // approx. # aligned columns in CDD database
+    return bob;
+}
+
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM)
 {
@@ -202,7 +212,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
     }
 
     // set up BLAST stuff
-    BLAST_OptionsBlkPtr options = BLASTOptionNew("blastp", true);
+    BLAST_OptionsBlkPtr options = CreateBlastOptionsBlk();
     if (!options) {
         ERR_POST(Error << "BLASTOptionNew() failed");
         return;
@@ -376,7 +386,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     }
 
     // set up BLAST stuff
-    BLAST_OptionsBlkPtr options = BLASTOptionNew("blastp", true);
+    BLAST_OptionsBlkPtr options = CreateBlastOptionsBlk();
     if (!options) {
         ERR_POST(Error << "BLASTOptionNew() failed");
         return;
