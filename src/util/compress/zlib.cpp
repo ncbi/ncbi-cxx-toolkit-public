@@ -51,6 +51,8 @@ CZipCompression::CZipCompression(ELevel level,  int window_bits,
     : CCompression(level), m_WindowBits(window_bits), m_MemLevel(mem_level),
       m_Strategy(strategy)
 {
+    // Initialize the compressor stream structure
+    memset(&m_Stream, 0, sizeof(m_Stream));
     return;
 }
 
@@ -69,11 +71,12 @@ bool CZipCompression::CompressBuffer(
     // Check parameters
     if ( !src_buf || !src_len ) {
         *dst_len = 0;
-        SetLastError(Z_OK);
+        SetError(Z_OK);
         return true;
     }
     if ( !dst_buf || !dst_len ) {
-        SetLastError(Z_STREAM_ERROR);
+        SetError(Z_STREAM_ERROR, "bad argument");
+        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
     // Destination buffer size
@@ -81,10 +84,13 @@ bool CZipCompression::CompressBuffer(
     // Compress buffer
     int errcode = compress2((unsigned char*)dst_buf, &out_len,
                             (unsigned char*)src_buf, src_len, GetLevel());
-    SetLastError(errcode);
     *dst_len = out_len;
-
-    return errcode == Z_OK;
+    SetError(errcode, zError(errcode));
+    if ( errcode != Z_OK) {
+        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        return false;
+    }
+    return true;
 }
 
 
@@ -157,11 +163,12 @@ bool CZipCompression::DecompressBuffer(
     // Check parameters
     if ( !src_buf || !src_len ) {
         *dst_len = 0;
-        SetLastError(Z_OK);
+        SetError(Z_OK);
         return true;
     }
     if ( !dst_buf || !dst_len ) {
-        SetLastError(Z_STREAM_ERROR);
+        SetError(Z_STREAM_ERROR, "bad argument");
+        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
 
@@ -179,13 +186,15 @@ bool CZipCompression::DecompressBuffer(
     stream.avail_in = src_len;
     // Check for source > 64K on 16-bit machine:
     if ( stream.avail_in != src_len ) {
-        SetLastError(Z_BUF_ERROR);
+        SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
+        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
     stream.next_out = (unsigned char*)dst_buf;
     stream.avail_out = dst_size;
     if ( stream.avail_out != dst_size ) {
-        SetLastError(Z_BUF_ERROR);
+        SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
+        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
 
@@ -212,9 +221,12 @@ bool CZipCompression::DecompressBuffer(
             inflateEnd(&stream);
         }
     }
-    SetLastError(errcode);
-
-    return errcode == Z_OK;
+    SetError(errcode, zError(errcode));
+    if ( errcode != Z_OK ) {
+        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        return false;
+    }
+    return true;
 }
 
 
@@ -225,9 +237,17 @@ bool CZipCompression::CompressFile(const string& src_file,
     CZipCompressionFile cf(dst_file,
                            CCompressionFile::eMode_Write, GetLevel(),
                            m_WindowBits, m_MemLevel, m_Strategy);
-    bool result = CCompression::x_CompressFile(src_file, cf, buf_size) &&
-                  cf.Close();
-    return result;
+    if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+        return cf.Close();
+    }
+    // Save error info
+    int    errcode = cf.GetErrorCode();
+    string errmsg  = cf.GetErrorDescription();
+    // Close file
+    cf.Close();
+    // Restore previous error info
+    SetError(errcode, errmsg.c_str());
+    return false;
 }
 
 
@@ -238,9 +258,31 @@ bool CZipCompression::DecompressFile(const string& src_file,
     CZipCompressionFile cf(src_file,
                            CCompressionFile::eMode_Read, GetLevel(),
                            m_WindowBits, m_MemLevel, m_Strategy);
-    bool result = CCompression::x_DecompressFile(cf, dst_file, buf_size) &&
-                  cf.Close();
-    return result;
+    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+        return cf.Close();
+    }
+    // Restore previous error info
+    int    errcode = cf.GetErrorCode();
+    string errmsg  = cf.GetErrorDescription();
+    // Restore previous error info
+    cf.Close();
+    // Restore previous error info
+    SetError(errcode, errmsg.c_str());
+    return false;
+}
+
+
+string CZipCompression::FormatErrorMessage(string where,
+                                           bool use_stream_data) const
+{
+    string str = "[" + where + "]  " + GetErrorDescription();
+    if ( use_stream_data ) {
+        str += ";  error code = " +
+               NStr::IntToString(GetErrorCode()) +
+               ", number of processed bytes = " +
+               NStr::UIntToString(m_Stream.total_in);
+    }
+    return str + ".";
 }
 
 
@@ -259,7 +301,7 @@ CZipCompressionFile::CZipCompressionFile(
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
-                   "CZipCompressionFile: Cannot open file '" + file_name +
+                   "[CZipCompressionFile]  Cannot open file '" + file_name +
                    "' for " + smode + ".");
     }
     return;
@@ -309,13 +351,17 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode)
     m_Mode = mode;
 
     if ( !m_File ) {
-        if (errno == 0) {
-            SetLastError(Z_MEM_ERROR);
-        }
+        int err = errno;
         Close();
+        if ( err == 0 ) {
+            SetError(Z_MEM_ERROR, zError(Z_MEM_ERROR));
+        } else {
+            SetError(Z_MEM_ERROR, strerror(errno));
+        }
+        ERR_POST(FormatErrorMessage("CZipCompressionFile::Open", false));
         return false;
     }; 
-    SetLastError(Z_OK);
+    SetError(Z_OK);
     return true;
 } 
 
@@ -324,10 +370,13 @@ int CZipCompressionFile::Read(void* buf, int len)
 {
     int nread = gzread(m_File, buf, len);
     if ( nread == -1 ) {
-        SetLastError(Z_ERRNO);
+        int err_code;
+        const char* err_msg = gzerror(m_File, &err_code);
+        SetError(err_code, err_msg);
+        ERR_POST(FormatErrorMessage("CZipCompressionFile::Read", false));
         return -1;
     }
-    SetLastError(Z_OK);
+    SetError(Z_OK);
     return nread;
 }
 
@@ -340,10 +389,13 @@ int CZipCompressionFile::Write(const void* buf, int len)
     }
     int nwrite = gzwrite(m_File, const_cast<void* const>(buf), len); 
     if ( nwrite <= 0 ) {
-        SetLastError(Z_ERRNO);
+        int err_code;
+        const char* err_msg = gzerror(m_File, &err_code);
+        SetError(err_code, err_msg);
+        ERR_POST(FormatErrorMessage("CZipCompressionFile::Write", false));
         return -1;
     }
-    SetLastError(Z_OK);
+    SetError(Z_OK);
     return nwrite;
  
 }
@@ -351,15 +403,18 @@ int CZipCompressionFile::Write(const void* buf, int len)
 
 bool CZipCompressionFile::Close(void)
 {
-    int errcode = Z_OK; 
     if ( m_File ) {
-        errcode = gzclose(m_File); 
+        int errcode = gzclose(m_File); 
         m_File = 0;
+        if ( errcode != Z_OK) {
+            int err_code;
+            const char* err_msg = gzerror(m_File, &err_code);
+            SetError(errcode, err_msg);
+            ERR_POST(FormatErrorMessage("CZipCompressionFile::Close", false));
+            return false;
+        }
     }
-    SetLastError(errcode);
-    if ( errcode != Z_OK ) {
-        return false;
-    }; 
+    SetError(Z_OK);
     return true;
 }
 
@@ -391,12 +446,12 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     // Create a compressor stream
     int errcode = deflateInit2(&m_Stream, GetLevel(), Z_DEFLATED, m_WindowBits,
                                m_MemLevel, m_Strategy); 
- 
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
 
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CZipCompressor::Init"));
     return eStatus_Error;
 }
 
@@ -413,13 +468,14 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
     m_Stream.avail_out = out_size;
 
     int errcode = deflate(&m_Stream, Z_NO_FLUSH);
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
     *in_avail  = m_Stream.avail_in;
     *out_avail = out_size - m_Stream.avail_out;
 
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CZipCompressor::Process"));
     return eStatus_Error;
 }
 
@@ -437,7 +493,7 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
     m_Stream.avail_out = out_size;
 
     int errcode = deflate(&m_Stream, Z_SYNC_FLUSH);
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
     *out_avail = out_size - m_Stream.avail_out;
 
     if ( errcode == Z_OK  ||  errcode == Z_BUF_ERROR ) {
@@ -446,6 +502,7 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
         }
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CZipCompressor::Flush"));
     return eStatus_Error;
 }
 
@@ -463,15 +520,16 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
     m_Stream.avail_out = out_size;
 
     int errcode = deflate(&m_Stream, Z_FINISH);
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
     *out_avail = out_size - m_Stream.avail_out;
 
-    if ( errcode == Z_STREAM_END ) {
-        return eStatus_Success;
-    } else 
-    if ( errcode == Z_OK ) {
+    switch (errcode) {
+    case Z_OK:
         return eStatus_Overflow;
+    case Z_STREAM_END:
+        return eStatus_EndOfData;
     }
+    ERR_POST(FormatErrorMessage("CZipCompressor::Finish"));
     return eStatus_Error;
 }
 
@@ -479,12 +537,13 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
 CCompressionProcessor::EStatus CZipCompressor::End(void)
 {
     int errcode = deflateEnd(&m_Stream);
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
     SetBusy(false);
 
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CZipCompressor::End"));
     return eStatus_Error;
 }
 
@@ -515,11 +574,12 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     // Create a compressor stream
     int errcode = inflateInit2(&m_Stream, m_WindowBits);
 
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
 
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CZipDecompressor::Init"));
     return eStatus_Error;
 }
 
@@ -539,14 +599,18 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     m_Stream.avail_out = out_size;
 
     int errcode = inflate(&m_Stream, Z_SYNC_FLUSH);
-    SetLastError(errcode);
+    SetError(errcode, zError(errcode));
 
     *in_avail  = m_Stream.avail_in;
     *out_avail = out_size - m_Stream.avail_out;
 
-    if ( errcode == Z_OK  ||  errcode == Z_STREAM_END ) {
+    switch (errcode) {
+    case Z_OK:
         return eStatus_Success;
+    case Z_STREAM_END:
+        return eStatus_EndOfData;
     }
+    ERR_POST(FormatErrorMessage("CZipDecompressor::Process"));
     return eStatus_Error;
 }
 
@@ -572,6 +636,7 @@ CCompressionProcessor::EStatus CZipDecompressor::End(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CZipDecompressor::End"));
     return eStatus_Error;
 }
 
@@ -582,6 +647,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/15 15:46:31  ivanov
+ * Improved error diagnostics. Save status codes and it's description after
+ * each compression operation, and ERR_POST it if error occured.
+ *
  * Revision 1.5  2003/07/10 16:30:30  ivanov
  * Implemented CompressFile/DecompressFile functions.
  * Added ability to skip a gzip file headers into DecompressBuffer().

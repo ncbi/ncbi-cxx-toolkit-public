@@ -46,6 +46,8 @@ CBZip2Compression::CBZip2Compression(ELevel level, int verbosity,
     : CCompression(level), m_Verbosity(verbosity), m_WorkFactor(work_factor),
       m_SmallDecompress(small_decompress)
 {
+    // Initialize the compressor stream structure
+    memset(&m_Stream, 0, sizeof(m_Stream));
     return;
 }
 
@@ -75,11 +77,12 @@ bool CBZip2Compression::CompressBuffer(
     // Check parameters
     if ( !src_buf || !src_len ) {
         *dst_len = 0;
-        SetLastError(BZ_OK);
+        SetError(BZ_OK);
         return true;
     }
     if ( !dst_buf || !dst_len ) {
-        SetLastError(BZ_PARAM_ERROR);
+        SetError(BZ_PARAM_ERROR, "bad argument");
+        ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
     // Destination buffer size
@@ -88,9 +91,12 @@ bool CBZip2Compression::CompressBuffer(
     int errcode = BZ2_bzBuffToBuffCompress((char*)dst_buf, dst_len,
                                            (char*)src_buf, src_len,
                                            GetLevel(), 0, 0 );
-    SetLastError(errcode);
-
-    return errcode == BZ_OK;
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
+    if ( errcode != BZ_OK) {
+        ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        return false;
+    }
+    return true;
 }
 
 
@@ -102,11 +108,11 @@ bool CBZip2Compression::DecompressBuffer(
     // Check parameters
     if ( !src_buf || !src_len ) {
         *dst_len = 0;
-        SetLastError(BZ_OK);
+        SetError(BZ_OK);
         return true;
     }
     if ( !dst_buf || !dst_len ) {
-        SetLastError(BZ_PARAM_ERROR);
+        SetError(BZ_PARAM_ERROR, "bad argument");
         return false;
     }
     // Destination buffer size
@@ -114,9 +120,12 @@ bool CBZip2Compression::DecompressBuffer(
     // Decompress buffer
     int errcode = BZ2_bzBuffToBuffDecompress((char*)dst_buf, dst_len,
                                              (char*)src_buf, src_len, 0, 0 );
-    SetLastError(errcode);
-
-    return errcode == BZ_OK;
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
+    if ( errcode != BZ_OK ) {
+        ERR_POST(FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
+        return false;
+    }
+    return true;
 }
 
 
@@ -127,9 +136,17 @@ bool CBZip2Compression::CompressFile(const string& src_file,
     CBZip2CompressionFile cf(dst_file,
                              CCompressionFile::eMode_Write, GetLevel(),
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
-    bool result = CCompression::x_CompressFile(src_file, cf, buf_size) &&
-                  cf.Close();
-    return result;
+    if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
+        return cf.Close();
+    }
+    // Save error info
+    int    errcode = cf.GetErrorCode();
+    string errmsg  = cf.GetErrorDescription();
+    // Close file
+    cf.Close();
+    // Restore previous error info
+    SetError(errcode, errmsg.c_str());
+    return false;
 }
 
 
@@ -140,9 +157,56 @@ bool CBZip2Compression::DecompressFile(const string& src_file,
     CBZip2CompressionFile cf(src_file,
                              CCompressionFile::eMode_Read, GetLevel(),
                              m_Verbosity, m_WorkFactor, m_SmallDecompress);
-    bool result = CCompression::x_DecompressFile(cf, dst_file, buf_size) &&
-                  cf.Close();
-    return result;
+    if ( CCompression::x_DecompressFile(cf, dst_file, buf_size) ) {
+        return cf.Close();
+    }
+    // Save error info
+    int    errcode = cf.GetErrorCode();
+    string errmsg  = cf.GetErrorDescription();
+    // Close file
+    cf.Close();
+    // Restore previous error info
+    SetError(errcode, errmsg.c_str());
+    return false;
+}
+
+
+// Please, see a ftp://sources.redhat.com/pub/bzip2/docs/manual_3.html#SEC17
+// for detailed error descriptions.
+const char* CBZip2Compression::GetBZip2ErrorDescription(int errcode)
+{
+    const int kErrorCount = 9;
+    static const char* kErrorDesc[kErrorCount] = {
+        "SEQUENCE_ERROR",
+        "PARAM_ERROR",
+        "MEM_ERROR",
+        "DATA_ERROR",
+        "DATA_ERROR_MAGIC",
+        "IO_ERROR",
+        "UNEXPECTED_EOF",
+        "OUTBUFF_FULL",
+        "CONFIG_ERROR"
+    };
+    // errcode must be negative
+    if ( errcode >= 0  ||  errcode < -kErrorCount) {
+        return 0;
+    }
+    return kErrorDesc[-errcode - 1];
+}
+
+
+string CBZip2Compression::FormatErrorMessage(string where,
+                                             bool   use_stream_data) const
+{
+    string str = "[" + where + "]  " + GetErrorDescription();
+    if ( use_stream_data ) {
+        str += ";  error code = " +
+            NStr::IntToString(GetErrorCode()) +
+            ", number of processed bytes = " +
+            NStr::UInt8ToString(((Uint8)m_Stream.total_in_hi32 << 32) +
+                                (Uint8)m_Stream.total_in_lo32);
+    }
+    return str + ".";
 }
 
 
@@ -162,7 +226,7 @@ CBZip2CompressionFile::CBZip2CompressionFile(
     if ( !Open(file_name, mode) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
-                   "CBZip2CompressionFile: Cannot open file '" + file_name +
+                   "[CBZip2CompressionFile]  Cannot open file '" + file_name +
                    "' for " + smode + ".");
     }
     return;
@@ -188,7 +252,7 @@ CBZip2CompressionFile::~CBZip2CompressionFile(void)
 bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
 {
     int errcode;
-    
+   
     if ( mode == eMode_Read ) {
         m_FileStream = fopen(file_name.c_str(), "rb");
         m_File = BZ2_bzReadOpen (&errcode, m_FileStream, m_SmallDecompress,
@@ -199,13 +263,15 @@ bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
         m_File = BZ2_bzWriteOpen(&errcode, m_FileStream, GetLevel(),
                                  m_Verbosity, m_WorkFactor);
     }
-    SetLastError(errcode);
     m_Mode = mode;
 
     if ( errcode != BZ_OK ) {
         Close();
+        SetError(errcode, GetBZip2ErrorDescription(errcode));
+        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Open", false));
         return false;
-    }; 
+    };
+    SetError(BZ_OK);
     return true;
 } 
 
@@ -217,9 +283,10 @@ int CBZip2CompressionFile::Read(void* buf, int len)
     }
     int errcode;
     int nread = BZ2_bzRead(&errcode, m_File, buf, len);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
+        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Read", false));
         return -1;
     }; 
     if ( errcode == BZ_STREAM_END ) {
@@ -233,9 +300,10 @@ int CBZip2CompressionFile::Write(const void* buf, int len)
 {
     int errcode;
     BZ2_bzWrite(&errcode, m_File, const_cast<void*>(buf), len);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
+        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Write", false));
         return -1;
     }; 
     return len;
@@ -255,8 +323,8 @@ bool CBZip2CompressionFile::Close(void)
             BZ2_bzWriteClose(&errcode, m_File, 0, 0, 0);
         }
         m_File = 0;
-   }
-    SetLastError(errcode);
+    }
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( m_FileStream ) {
         fclose(m_FileStream);
@@ -264,6 +332,7 @@ bool CBZip2CompressionFile::Close(void)
     }
 
     if ( errcode != BZ_OK ) {
+        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Close", false));
         return false;
     }; 
     return true;
@@ -297,11 +366,12 @@ CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
     // Create a compressor stream
     int errcode = BZ2_bzCompressInit(&m_Stream, GetLevel(), m_Verbosity,
                                      m_WorkFactor);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Compressor::Init"));
     return eStatus_Error;
 }
 
@@ -318,13 +388,14 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
     m_Stream.avail_out = out_size;
 
     int errcode = BZ2_bzCompress(&m_Stream, BZ_RUN);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
     *in_avail  = m_Stream.avail_in;
     *out_avail = out_size - m_Stream.avail_out;
 
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Compressor::Process"));
     return eStatus_Error;
 }
 
@@ -342,7 +413,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     m_Stream.avail_out = out_size;
 
     int errcode = BZ2_bzCompress(&m_Stream, BZ_FLUSH);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
     *out_avail = out_size - m_Stream.avail_out;
 
     if ( errcode == BZ_RUN_OK ) {
@@ -351,6 +422,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     if ( errcode == BZ_FLUSH_OK ) {
         return eStatus_Overflow;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Compressor::Flush"));
     return eStatus_Error;
 }
 
@@ -368,15 +440,16 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     m_Stream.avail_out = out_size;
 
     int errcode = BZ2_bzCompress(&m_Stream, BZ_FINISH);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
     *out_avail = out_size - m_Stream.avail_out;
 
-    if ( errcode == BZ_STREAM_END ) {
-        return eStatus_Success;
-    } else 
-    if ( errcode == BZ_FINISH_OK ) {
+    switch (errcode) {
+    case BZ_FINISH_OK:
         return eStatus_Overflow;
+    case BZ_STREAM_END:
+        return eStatus_EndOfData;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Compressor::Finish"));
     return eStatus_Error;
 }
 
@@ -384,12 +457,13 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
 CCompressionProcessor::EStatus CBZip2Compressor::End(void)
 {
     int errcode = BZ2_bzCompressEnd(&m_Stream);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
     SetBusy(false);
 
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Compressor::End"));
     return eStatus_Error;
 }
 
@@ -420,11 +494,12 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
     // Create a compressor stream
     int errcode = BZ2_bzDecompressInit(&m_Stream, m_Verbosity,
                                        m_SmallDecompress);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Decompressor::Init"));
     return eStatus_Error;
 }
 
@@ -444,14 +519,18 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
     m_Stream.avail_out = out_size;
 
     int errcode = BZ2_bzDecompress(&m_Stream);
-    SetLastError(errcode);
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     *in_avail  = m_Stream.avail_in;
     *out_avail = out_size - m_Stream.avail_out;
 
-    if ( errcode == BZ_OK  ||  errcode == BZ_STREAM_END ) {
+    switch (errcode) {
+    case BZ_OK:
         return eStatus_Success;
+    case BZ_STREAM_END:
+        return eStatus_EndOfData;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Decompressor::Process"));
     return eStatus_Error;
 }
 
@@ -477,6 +556,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
+    ERR_POST(FormatErrorMessage("CBZip2Decompressor::End"));
     return eStatus_Error;
 }
 
@@ -487,6 +567,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/15 15:46:31  ivanov
+ * Improved error diagnostics. Save status codes and it's description after
+ * each compression operation, and ERR_POST it if error occured.
+ *
  * Revision 1.4  2003/07/10 16:26:23  ivanov
  * Implemented CompressFile/DecompressFile functions.
  *
