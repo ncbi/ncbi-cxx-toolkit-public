@@ -42,8 +42,8 @@ void CAppNWA::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Global alignment application.\n"
-                              "Build 1.00.14 - 04/14/03");
+                              "Global alignment demo application.\n"
+                              "Build 1.00.15 - 05/02/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -53,8 +53,9 @@ void CAppNWA::Init()
                       "mRna vs. Dna alignment "
                       "(consider also specifying -esf zzxx)" );
 
-    argdescr->AddFlag("guides", "Use guides during mRna2Dna alignment" );
-
+    argdescr->AddOptionalKey("guides", "guides",
+                             "Use HSPs to guide mRna2Dna alignment",
+                             CArgDescriptions::eInteger);
     argdescr->AddKey
         ("seq1", "seq1",
          "the first input sequence in fasta file",
@@ -147,6 +148,9 @@ void CAppNWA::Init()
     paa_esf->Allow("zxxx")->Allow("zxxz")->Allow("zxzx")->Allow("zxzz");
     paa_esf->Allow("zzxx")->Allow("zzxz")->Allow("zzzx")->Allow("zzzz");
     argdescr->SetConstraint("esf", paa_esf);
+
+    CArgAllow* paa0 = new CArgAllow_Integers(5,1000);
+    argdescr->SetConstraint("guides", paa0);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -269,7 +273,7 @@ void CAppNWA::x_RunOnPair() const
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
 
         if(bGuides) {
-            aligner_mrna2dna->MakeGuides();
+            aligner_mrna2dna->MakeGuides(args["guides"].AsInteger());
         }
     }
 
@@ -396,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/05/06 20:27:30  kapustin
+ * Specify guide size in command line argument
+ *
  * Revision 1.17  2003/04/14 19:00:55  kapustin
  * Add guide creation facility.  x_Run() -> x_Align()
  *
