@@ -607,7 +607,8 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_SmallDateTime : public CDB_Object
 {
 public:
-    CDB_SmallDateTime() : m_NCBITime(CTime::eCurrent) {
+    CDB_SmallDateTime(CTime::EInitMode mode= CTime::eEmpty)
+	  : m_NCBITime(mode) {
         m_Status = 0x1;
     }
     CDB_SmallDateTime(const CTime& t) {
@@ -677,7 +678,8 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_DateTime : public CDB_Object
 {
 public:
-    CDB_DateTime() : m_NCBITime(CTime::eCurrent) {
+    CDB_DateTime(CTime::EInitMode mode= CTime::eEmpty)
+	  : m_NCBITime(mode) {
         m_Status = 0x1;
     }
     CDB_DateTime(const CTime& t) {
@@ -871,6 +873,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/01/30 16:06:04  soussov
+ * Changes the default from eCurrent to eEmpty for DateTime types
+ *
  * Revision 1.12  2002/12/26 19:29:12  dicuccio
  * Added Win32 export specifier for base DBAPI library
  *
