@@ -33,6 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2001/08/31 16:00:58  vakatov
+ * [MSWIN] "setsockopt()" -- Start using SO_REUSEADDR on MS-Win.
+ * [MAC]   "setsockopt()" -- Do not use it on MAC whatsoever (as it is not
+ *         implemented in the M.I.T. socket emulation lib).
+ *
  * Revision 6.35  2001/08/29 17:32:56  juran
  * Define POSIX macros missing from Universal Interfaces 3.4
  * in terms of the 'proper' constants.
@@ -625,16 +630,22 @@ extern EIO_Status LSOCK_Create(unsigned short port,
         return eIO_Unknown;
     }
 
-#ifdef NCBI_OS_UNIX
+    /* Let more than one "bind()" use the same address.
+     *
+     * It was confirmed(?) that at least under Solaris 2.5 this precaution:
+     * 1) makes the address to be released immediately after the process
+     *    termination;
+     * 2) still issue EADDINUSE error on the attempt to bind() to the
+     *    same address being in-use by a living process(if SOCK_STREAM).
+     */
+#if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
+    /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
     {{
-        /* Let more than one "bind()" to use the same address.
-         * It was affirmed(?) that at least under Solaris 2.5 this precaution:
-         * 1) makes the address to be released immediately after the process
-         *    termination
-         * 2) still issue EADDINUSE error on the attempt to bind() to the
-         *    same address being in-use by a living process(if SOCK_STREAM)
-         */
+#  if defined(NCBI_OS_MSWIN)
+        BOOL reuse_addr = TRUE;
+#  else
         int reuse_addr = 1;
+#  endif
         if (setsockopt(x_lsock, SOL_SOCKET, SO_REUSEADDR, 
                        (const char*) &reuse_addr, sizeof(reuse_addr)) != 0) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
@@ -922,6 +933,8 @@ static EIO_Status s_Close(SOCK sock)
     }
 
     /* Set the close()'s linger period be equal to the close timeout */
+#if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
+    /* setsockopt() is not implemented for MAC (in MIT socket emulation lib) */
     if ( sock->c_timeout ) {
         struct linger lgr;
         lgr.l_onoff  = 1;
@@ -929,9 +942,10 @@ static EIO_Status s_Close(SOCK sock)
         if (setsockopt(sock->sock, SOL_SOCKET, SO_LINGER, 
                        (char*) &lgr, sizeof(lgr)) != 0) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Warning,
-                           "[SOCK::s_Close]  Failed setsockopt()");
+                           "[SOCK::s_Close]  Failed setsockopt(SO_LINGER)");
         }
     }
+#endif
 
     /* Shutdown in both directions */
     if (SOCK_Shutdown(sock, eIO_Write) != eIO_Success) {
