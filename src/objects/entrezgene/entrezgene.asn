@@ -1,4 +1,4 @@
---$Revision: 1.7 $ 
+--$Revision: 1.8 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -100,7 +100,8 @@ Gene-commentary ::= SEQUENCE {
     accession VisibleString OPTIONAL ,    -- accession for the gi in the seqloc
     refs SEQUENCE OF Pub OPTIONAL ,       -- refs for this 
     source SEQUENCE OF Other-source OPTIONAL ,    -- links and refs 
-    seqs SEQUENCE OF Seq-loc OPTIONAL ,           -- referenced sequences 
+    genomic-coords SEQUENCE OF Seq-loc OPTIONAL , -- referenced sequences in genomic coords
+    seqs SEQUENCE OF Seq-loc OPTIONAL ,           -- referenced sequences in non-genomic coords
     products SEQUENCE OF Gene-commentary OPTIONAL ,
     comment SEQUENCE OF Gene-commentary OPTIONAL } 
  
