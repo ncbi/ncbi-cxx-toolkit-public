@@ -1802,7 +1802,7 @@ extern EIO_Status SOCK_CreateOnTop(const void*   handle,
         addrlen != sizeof(addr) || addr.sin_family != AF_UNIX)
         return eIO_Closed;
 
-    if (!(*sock = calloc(1, sizeof(**sock))))
+    if (!(*sock = (SOCK) calloc(1, sizeof(**sock))))
         return eIO_Unknown;
 
     /* success */
@@ -3031,6 +3031,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.95  2003/04/25 15:21:26  lavr
+ * Explicit cast of calloc()'s result
+ *
  * Revision 6.94  2003/04/14 15:14:20  lavr
  * Define SOCK_socklen_t for Mac's recvfrom() specially
  *
