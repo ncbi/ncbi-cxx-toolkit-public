@@ -128,13 +128,27 @@ private:
     typedef vector<CRef<CAlnMixMatch> >                   TMatches;
     typedef vector<CAlnMixSegment*>                       TSegments;
     typedef vector<CRef<CAlnMixSegment> >                 TSegmentsContainer;
-    typedef map<TSeqPos, CAlnMixMatch*>                   TTruncateSeqPosMap;
-    typedef map<int, TTruncateSeqPosMap>                  TTruncateDSIndexMap;
+
+    enum ESecondRowFits {
+        eSecondRowFitsOk,
+        eForceSeparateRow,
+        eInconsistentStrand,
+        eInconsistentFrame,
+        eFirstRowOverlapBelow,
+        eFirstRowOverlapAbove,
+        eInconsistentOverlap,
+        eSecondRowOverlap,
+        eSecondRowInconsistency,
+        eIgnoreMatch
+    };
+    typedef int TSecondRowFits;
+
+    TSecondRowFits x_SecondRowFits(CAlnMixMatch * match) const;
+
 
     void x_Reset               (void);
     void x_InitBlosum62Map     (void);
     void x_Merge               (void);
-    bool x_SecondRowFits       (const CAlnMixMatch * match) const;
     void x_CreateRowsVector    (void);
     void x_CreateSegmentsVector(void);
     void x_CreateDenseg        (void);
@@ -175,8 +189,6 @@ private:
     bool                        m_IndependentDSs;
     TBioseqHandleMap            m_BioseqHandles;
     TSeqIdMap                   m_SeqIds;
-    TTruncateDSIndexMap         m_TruncateMap;
-    TTruncateDSIndexMap         m_DeleteMap;
     bool                        m_ContainsAA;
     bool                        m_ContainsNA;
 };
@@ -324,6 +336,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/05/25 16:00:20  todorov
+* remade truncation of overlaps
+*
 * Revision 1.37  2004/03/30 23:27:32  todorov
 * Switch from CAlnMix::x_RankSeqId() to CSeq_id::BestRank()
 *

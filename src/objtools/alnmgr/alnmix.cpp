@@ -496,6 +496,7 @@ void CAlnMix::x_Merge()
     CAlnMixMatch * match;
     CAlnMixSeq::TMatchList::iterator match_list_iter1, match_list_iter2;
     CAlnMixSeq::TMatchList::iterator match_list_i;
+    TSecondRowFits second_row_fits;
 
     refseq = *(m_Seqs.begin());
     TMatches::iterator match_i = m_Matches.begin();
@@ -622,7 +623,7 @@ void CAlnMix::x_Merge()
             }
 
 
-            // this match is used erase from seq1 list
+            // this match is used, erase from seq1 list
             if ( !first_refseq ) {
                 if ( !refseq->m_MatchList.empty() ) {
                     refseq->m_MatchList.erase(match_list_iter1);
@@ -652,72 +653,6 @@ void CAlnMix::x_Merge()
                 }
             }
             
-            if (m_MergeFlags & fTruncateOverlaps) {
-                CAlnMix::TTruncateDSIndexMap::iterator ds_i;
-
-                // check if this seg is marked for deletion
-                ds_i = m_DeleteMap.find(match->m_DSIndex);
-                if (ds_i != m_DeleteMap.end()) {
-                    CAlnMix::TTruncateSeqPosMap::iterator pos_i =
-                        ds_i->second.find(start1);
-                    if (pos_i != ds_i->second.end()) {
-#if _DEBUG
-                        CAlnMixMatch * deleted_match = pos_i->second;
-                        if (deleted_match->m_AlnSeq1 !=
-                            match->m_AlnSeq1) {
-                            NCBI_THROW(CAlnException, eMergeFailure,
-                                       "CAlnMix::x_Merge(): "
-                                       "Deleted refseq not consistent");
-                        }
-                        if (deleted_match->m_Len >= match->m_Len) {
-                            NCBI_THROW(CAlnException, eMergeFailure,
-                                       "CAlnMix::x_Merge(): "
-                                       "deleted_match->m_Len >= match->m_Len");
-                        }                            
-#endif
-                        // skip this match
-                        continue;
-                    }
-                }
-                
-                // check if this seg is marked for truncation
-                ds_i = m_TruncateMap.find(match->m_DSIndex);
-                if (ds_i != m_TruncateMap.end()) {
-                    CAlnMix::TTruncateSeqPosMap::iterator pos_i =
-                        ds_i->second.find(start1);
-                    if (pos_i != ds_i->second.end()) {
-                        CAlnMixMatch * truncated_match = pos_i->second;
-#if _DEBUG
-                        if (truncated_match->m_AlnSeq1 !=
-                            match->m_AlnSeq1) {
-                            NCBI_THROW(CAlnException, eMergeFailure,
-                                       "CAlnMix::x_Merge(): "
-                                       "Truncated refseq not consistent");
-                        }
-                        if (truncated_match->m_Len >= match->m_Len) {
-                            NCBI_THROW(CAlnException, eMergeFailure,
-                                       "CAlnMix::x_Merge(): "
-                                       "truncated_match->m_Len >= match->m_Len");
-                        }                            
-#endif
-                        // this match needs to be truncated
-                        TSeqPos left_diff = 
-                            (truncated_match->m_Start1 - match->m_Start1) / width1;
-                        TSeqPos right_diff =
-                            match->m_Len - truncated_match->m_Len - left_diff;
-                        match->m_Len = curr_len =
-                            len = truncated_match->m_Len;
-                        match->m_Start1 = start1 = 
-                            truncated_match->m_Start1;
-                        if (seq2) {
-                            match->m_Start2 = start2 += 
-                                (match->m_StrandsDiffer ? right_diff : left_diff) *
-                                width2;
-                        }
-                    }
-                }
-            }
-
             CAlnMixSeq::TStarts& starts = seq1->m_Starts;
             if (seq2) {
                 // mark it, it is linked to the refseq
@@ -763,6 +698,30 @@ void CAlnMix::x_Merge()
                     lo_start_i = hi_start_i = starts.begin();
                 // DONE!
             } else {
+                // some starts exist already
+
+                if (seq2) {
+                    // check if the second row fits
+                    // this will truncate the match if 
+                    // there's an inconsistent overlap
+                    // and truncation was requested
+                    second_row_fits = x_SecondRowFits(match);
+                    {{
+                        // reset the ones below,
+                        // since match may have been modified
+                        seq1 = match->m_AlnSeq1;
+                        start1 = match->m_Start1;
+                        match_list_iter1 = match->m_MatchIter1;
+                        seq2 = match->m_AlnSeq2;
+                        start2 = match->m_Start2;
+                        match_list_iter2 = match->m_MatchIter2;
+                        curr_len = len = match->m_Len;
+                    }}
+                    if (second_row_fits == eIgnoreMatch) {
+                        continue;
+                    }
+                }
+
                 // look ahead
                 if ((lo_start_i = start_i = starts.lower_bound(start1))
                     == starts.end()  ||
@@ -770,66 +729,6 @@ void CAlnMix::x_Merge()
                     // the start position does not exist
                     if (lo_start_i != starts.begin()) {
                         --lo_start_i;
-                    }
-                }
-
-                if (m_MergeFlags & fTruncateOverlaps  &&
-                    !(start1 == lo_start_i->first  &&
-                      len == lo_start_i->second->m_Len  &&
-                      match->m_DSIndex == lo_start_i->second->m_DSIndex)) {
-
-                    TSignedSeqPos left_diff = 0;
-                    if (start1 >= lo_start_i->first) {
-                        left_diff = lo_start_i->first + 
-                            lo_start_i->second->m_Len * width1 -
-                            start1;
-                        if (left_diff < 0) {
-                            left_diff = 0;
-                        }
-                    }
-
-                    TSignedSeqPos right_diff
-                        = (start_i == starts.end() ? 0 :
-                           len * width1 - (start_i->first - start1));
-                    if (right_diff < 0) {
-                        right_diff = 0;
-                    }
-                    TSeqPos diff = left_diff + right_diff;
-                    
-                    if (diff) {
-                        if (len > diff) {
-                            // Truncation
-                            // x----)  x---.. becomes  x----x---x---..
-                            //   x-------)
-                            m_TruncateMap[match->m_DSIndex][start1] 
-                                = match;
-                            match->m_Start1 = start1 += left_diff * width1;
-                            if (seq2) {
-                                if (match->m_StrandsDiffer) {
-                                    match->m_Start2 = start2 += right_diff * width2;
-                                } else {
-                                    match->m_Start2 = start2 += left_diff * width2;
-                                }
-                            }
-                            match->m_Len = len -= diff;
-                            
-                            // create the new truncated seg
-                            seg = new CAlnMixSegment;
-                            seg->m_Len = len;
-                            seg->m_DSIndex = match->m_DSIndex;
-                            starts[start1] = seg;
-                            // point to the newly created start
-                            seg->m_StartIts[seq1] = hi_start_i = ++lo_start_i;
-                            // DONE!
-                            
-                        } else {
-                            // Ignoring
-                            // x----x---.. becomes  x----x---..
-                            //   x-------)
-                            m_DeleteMap[match->m_DSIndex][start1] 
-                                = match;
-                            break;
-                        }
                     }
                 }
 
@@ -979,9 +878,14 @@ void CAlnMix::x_Merge()
                     seq2->m_Frame = start2 % 3;
                 }
 
-                // save the orig seq2, since we may be modifying match below
-                CAlnMixSeq * orig_seq2 = seq2;
-                while (!x_SecondRowFits(match)) {
+                // create a copy of the match,
+                // which we could work with temporarily
+                // without modifying the original
+                CAlnMixMatch tmp_match = *match;
+                match = &tmp_match; // point to the new tmp_match
+
+                while (second_row_fits != eSecondRowFitsOk  &&
+                       second_row_fits != eIgnoreMatch) {
                     if (!seq2->m_ExtraRow) {
                         // create an extra row
                         CRef<CAlnMixSeq> row (new CAlnMixSeq);
@@ -999,6 +903,30 @@ void CAlnMix::x_Merge()
                         break;
                     }
                     seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow;
+
+                    second_row_fits = x_SecondRowFits(match);
+                    {{
+                        // reset the ones below,
+                        // since match may have been modified
+                        seq1 = match->m_AlnSeq1;
+                        start1 = match->m_Start1;
+                        match_list_iter1 = match->m_MatchIter1;
+                        seq2 = match->m_AlnSeq2;
+                        start2 = match->m_Start2;
+                        match_list_iter2 = match->m_MatchIter2;
+                        curr_len = len = match->m_Len;
+                    }}
+                }
+                if (second_row_fits == eIgnoreMatch) {
+                    continue;
+                }
+
+                if (m_MergeFlags & fTruncateOverlaps) {
+                    // we need to reset these shtorcuts
+                    // in case the match was truncated
+                    start1 = match->m_Start1;
+                    start2 = match->m_Start2;
+                    len = match->m_Len;
                 }
 
                 // set the strand if first time
@@ -1019,13 +947,15 @@ void CAlnMix::x_Merge()
                 while(start < start2 + len * width2) {
                     if (start2_i != starts2.end() &&
                         start2_i->first == start) {
-                        // this seg already exists
+                        // this position already exists
+
                         if (start2_i->second != start_i->second) {
                             // merge the two segments
 
-                            // the following will delay deletion of the seg
+                            // store the seg in a CRef to delay its deletion
                             // until after the iteration on it is finished
                             CRef<CAlnMixSegment> tmp_seg = start2_i->second;
+
                             ITERATE (CAlnMixSegment::TStartIterators,
                                      it, 
                                      tmp_seg->m_StartIts) {
@@ -1037,12 +967,18 @@ void CAlnMix::x_Merge()
                             }
                         }
                     } else {
+                        // this position does not exist, create it
                         seq2->m_Starts[start] = start_i->second;
-                        if (start2_i != starts.begin()) {
-                            start2_i--;
-                        }
+
+                        // start2_i != starts.begin() because we just 
+                        // made an insertion, so decrement is ok
+                        start2_i--;
+                        
+                        // point this segment's row start iterator
                         start_i->second->m_StartIts[seq2] = start2_i;
                     }
+
+                    // increment values
                     start += start_i->second->m_Len * width2;
                     if (start2_i != starts2.end()) {
                         start2_i++;
@@ -1057,9 +993,6 @@ void CAlnMix::x_Merge()
                         }
                     }
                 }
-                // done with this match -- restore the original seq2; 
-                // (to be reused in case of multiple mixes)
-                match->m_AlnSeq2 = orig_seq2;
             }
         }
     }
@@ -1068,32 +1001,32 @@ void CAlnMix::x_Merge()
     x_CreateDenseg();
 }
 
-bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
+CAlnMix::TSecondRowFits
+CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
 {
     CAlnMixSeq::TStarts&          starts1 = match->m_AlnSeq1->m_Starts;
     CAlnMixSeq::TStarts&          starts2 = match->m_AlnSeq2->m_Starts;
     CAlnMixSeq                  * seq1    = match->m_AlnSeq1,
                                 * seq2    = match->m_AlnSeq2;
-    const TSeqPos&                start1  = match->m_Start1;
-    const TSeqPos&                start2  = match->m_Start2;
-    const TSeqPos&                len     = match->m_Len;
+    TSeqPos&                      start1  = match->m_Start1;
+    TSeqPos&                      start2  = match->m_Start2;
+    TSeqPos&                      len     = match->m_Len;
     const int&                    width1  = seq1->m_Width;
     const int&                    width2  = seq2->m_Width;
-    TSeqPos                       start1_plus_len = start1 + len * width1;
-    TSeqPos                       start2_plus_len = start2 + len * width2;
     CAlnMixSeq::TStarts::iterator start_i;
+    TSignedSeqPos                 delta, delta1, delta2;
 
     // subject sequences go on separate rows if requested
     if (m_MergeFlags & fQuerySeqMergeOnly) {
         if (seq2->m_DSIndex) {
             if (seq2->m_DSIndex == match->m_DSIndex) {
-                return true;
+                return eSecondRowFitsOk;
             } else {
-                return false;
+                return eForceSeparateRow;
             }
         } else {
             seq2->m_DSIndex = match->m_DSIndex;
-            return true;
+            return eSecondRowFitsOk;
         }
     }
 
@@ -1104,12 +1037,12 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             (seq1->m_PositiveStrand ?
              !match->m_StrandsDiffer :
              match->m_StrandsDiffer)) {
-            return false;
+            return eInconsistentStrand;
         }
 
         // check frame
         if (seq2->m_Width == 3  &&  seq2->m_Frame != start2 % 3) {
-            return false;
+            return eInconsistentFrame;
         }
 
         start_i = starts2.lower_bound(start2);
@@ -1118,46 +1051,108 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
         if (start_i != starts2.begin()) {
             start_i--;
             
-            // no overlap, check for consistency
+            // check for inconsistency on the first row
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator start_it_i =
                     start_i->second->m_StartIts.find(seq1);
                 if (start_it_i != start_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
-                        if (start_it_i->second->first < start1_plus_len) {
-                            return false;
+                        delta = start1 + len * width1 - start_it_i->second->first;
+                        if (delta > 0) {
+                            // target above
+                            // x----- x-)-)
+                            // (----x (---x
+                            // target below
+                            if (m_MergeFlags & fTruncateOverlaps) {
+                                delta /= width1;
+                                if ((len -= delta) > 0) {
+                                    start2 += delta * width2;
+                                } else {
+                                    return eIgnoreMatch;
+                                }
+                            } else {
+                                return eFirstRowOverlapAbove;
+                            }
                         }
                     } else {
-                        if (start_it_i->second->first + 
-                            start_i->second->m_Len * width1 > start1) {
-                            return false;
+                        delta = start_it_i->second->first
+                            + start_i->second->m_Len * width1
+                            - start1;
+                        if (delta > 0) {
+                            // below target
+                            // x---- x-)--)
+                            // x---) x----)
+                            // below target
+                            if (m_MergeFlags & fTruncateOverlaps) {
+                                delta /= width1;
+                                if ((len -= delta) > 0) {
+                                    start1 += delta * width1;
+                                    start2 += delta * width2;
+                                } else {
+                                    return eIgnoreMatch;
+                                }
+                            } else {
+                                return eFirstRowOverlapBelow;
+                            }
                         }
                     }
                 }
             }
 
-            // check for overlap
-            if (start_i->first + start_i->second->m_Len * width2 > start2) {
-                return false;
+            // check for overlap with the segment below on second row
+            if ((delta = start_i->first + start_i->second->m_Len * width2
+                 - start2) > 0) {
+                //       target
+                // ----- ------
+                // x---- x-)--)
+                // below target
+                if (m_MergeFlags & fTruncateOverlaps) {
+                    delta /= width2;
+                    if ((len -= delta) > 0) {
+                        start2 += delta * width2;
+                        if ( !match->m_StrandsDiffer ) {
+                            start1 += delta * width1;
+                        }
+                    } else {
+                        return eIgnoreMatch;
+                    }
+                } else {
+                    return eSecondRowOverlap;
+                }
             }
             if (start_i != starts2.end()) {
                 start_i++;
             }
         }
 
-        // check the overlap for consistency
+        // check the overlapping area for consistency
         while (start_i != starts2.end()  &&  
-               start_i->first < start2_plus_len) {
+               start_i->first < start2 + len * width2) {
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator start_it_i =
                     start_i->second->m_StartIts.find(seq1);
                 if (start_it_i != start_i->second->m_StartIts.end()) {
-                    if (start_it_i->second->first != start1 + 
-                        (match->m_StrandsDiffer ?
-                         start2_plus_len - 
-                         (start_i->first + start_i->second->m_Len * width2) :
-                         start_i->first - start2)) {
-                        return false;
+                    if (match->m_StrandsDiffer) {
+                        // x---..- x---..--)
+                        // (---..- (--x..--x
+                        delta1 = (start1 - start_it_i->second->first) / width1 +
+                            len - start_i->second->m_Len;
+                    } else {
+                        // x--..- x---...-)
+                        // x--..- x---...-)
+                        delta1 = (start_it_i->second->first - start1) / width1;
+                    }
+                    delta2 = (start_i->first - start2) / width2;
+                    if (delta1 != delta2) {
+                        if (m_MergeFlags & fTruncateOverlaps) {
+                            delta = (delta1 < delta2 ? delta1 : delta2);
+                            if (match->m_StrandsDiffer) {
+                                start1 += (len - delta) * width1;
+                            }
+                            len = delta;
+                        } else {
+                            return eInconsistentOverlap;
+                        }
                     }
                 }
             }
@@ -1171,13 +1166,37 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                     start_i->second->m_StartIts.find(seq1);
                 if (start_it_i != start_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
-                        if (start_it_i->second->first + 
-                            start_i->second->m_Len * width1 > start1) {
-                            return false;
+                        delta = start_it_i->second->first + 
+                            start_i->second->m_Len * width1 - start1;
+                        if (delta > 0) {
+                            // below target
+                            // x---- x-)--)
+                            // (---x (----x
+                            // above target
+                            if (m_MergeFlags & fTruncateOverlaps) {
+                                if ((len -= delta / width1) > 0) {
+                                    start1 += delta;
+                                } else {
+                                    return eIgnoreMatch;
+                                }
+                            } else {
+                                return eFirstRowOverlapBelow;
+                            }
                         }
                     } else {
-                        if (start_it_i->second->first < start1_plus_len) {
-                            return false;
+                        delta = start1 + len * width1 - start_it_i->second->first;
+                        if (delta > 0) {
+                            // target above
+                            // x--x-) ----)
+                            // x----) x---)
+                            // target above
+                            if (m_MergeFlags & fTruncateOverlaps) {
+                                if ((len -= delta / width1) <= 0) {
+                                    return eIgnoreMatch;
+                                }
+                            } else {
+                                return eFirstRowOverlapAbove;
+                            }
                         }
                     }
                 }
@@ -1187,15 +1206,16 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
         // check for inconsistent matches
         if ((start_i = starts1.find(start1)) == starts1.end() ||
             start_i->first != start1) {
-            NCBI_THROW(CAlnException, eMergeFailure,
-                       "CAlnMix::x_SecondRowFits(): "
-                       "Internal error: starts1 do not match");
+            // commenting out for now, since moved the function call ahead            
+//             NCBI_THROW(CAlnException, eMergeFailure,
+//                        "CAlnMix::x_SecondRowFits(): "
+//                        "Internal error: starts1 do not match");
         } else {
             CAlnMixSegment::TStartIterators::iterator it;
             TSeqPos tmp_start =
-                match->m_StrandsDiffer ? start2_plus_len : start2;
+                match->m_StrandsDiffer ? start2 + len * width2 : start2;
             while (start_i != starts1.end()  &&
-                   start_i->first < start1_plus_len) {
+                   start_i->first < start1 + len * width1) {
 
                 CAlnMixSegment::TStartIterators& its = 
                     start_i->second->m_StartIts;
@@ -1207,7 +1227,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                 if ((it = its.find(seq2)) != its.end()) {
                     if (it->second->first != tmp_start) {
                         // found an inconsistent prev match
-                        return false;
+                        return eSecondRowInconsistency;
                     }
                 }
 
@@ -1219,7 +1239,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             }
         }
     }
-    return true;
+    return eSecondRowFitsOk;
 }
 
 void CAlnMix::x_CreateRowsVector()
@@ -1958,6 +1978,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.94  2004/05/25 16:00:10  todorov
+* remade truncation of overlaps
+*
 * Revision 1.93  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
