@@ -271,16 +271,14 @@ inline
 bool CSeq_loc_CI::IsWhole(void) const
 {
     x_CheckNotValid("IsWhole()");
-    return m_CurLoc->m_Range.IsWholeFrom()  &&
-        m_CurLoc->m_Range.IsWholeTo();
+    return m_CurLoc->m_Range.IsWhole();
 }
 
 inline
 bool CSeq_loc_CI::IsEmpty(void) const
 {
     x_CheckNotValid("IsEmpty()");
-    return m_CurLoc->m_Range.IsEmptyFrom()  &&
-        m_CurLoc->m_Range.IsEmptyTo();
+    return m_CurLoc->m_Range.Empty();
 }
 
 inline
@@ -299,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/01/22 20:13:57  vasilche
+ * Use more effective COpenRange<> methods.
+ *
  * Revision 1.18  2002/12/30 19:37:02  vasilche
  * Rewrote CSeq_loc::GetTotalRange() to avoid using CSeq_loc_CI -
  * it's too expensive.
