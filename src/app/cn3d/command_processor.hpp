@@ -80,10 +80,10 @@ class StructureWindow;
 class CommandProcessor
 {
 private:
-    const StructureWindow *structureWindow;
+    StructureWindow *structureWindow;
 
 public:
-    CommandProcessor(const StructureWindow *sw) : structureWindow(sw) { }
+    CommandProcessor(StructureWindow *sw) : structureWindow(sw) { }
     ~CommandProcessor(void) { }
 
     // main command interface: pass in a command, and get an immediate reply
@@ -91,6 +91,7 @@ public:
 
     // command functions
     DECLARE_COMMAND_FUNCTION(Highlight);
+    DECLARE_COMMAND_FUNCTION(LoadFile);
 };
 
 END_SCOPE(Cn3D)
@@ -100,6 +101,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/10 13:47:22  thiessen
+* add LoadFile command
+*
 * Revision 1.2  2003/03/20 20:33:51  thiessen
 * implement Highlight command
 *

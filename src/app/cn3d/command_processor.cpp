@@ -28,6 +28,20 @@
 * File Description:
 *       module to process external commands (e.g. from file messenger)
 *
+*   Commands:
+*
+*       Highlight:
+*           data is any number of the following, one per line separated by '\n':
+*               gi [#] [ranges]
+*               pdb [pdb_id] [ranges]
+*               acc [accession] [ranges]
+*           where pdb_id is 4 or 6-letters, e.g. 1abc or 1def_a
+*           where ranges is sequence of zero-numbered numerical positions or ranges,
+*               e.g. "1-100, 102, 105-192"
+*
+*       LoadFile:
+*           data is the name of the file to load
+*
 * ===========================================================================
 */
 
@@ -87,6 +101,7 @@ void CommandProcessor::ProcessCommand(DECLARE_PARAMS)
 
     // process known commands
     PROCESS_IF_COMMAND_IS(Highlight);
+    PROCESS_IF_COMMAND_IS(LoadFile);
 
     // will only get here if command isn't recognized
     ADD_REPLY_ERROR("Unrecognized command");
@@ -195,11 +210,35 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
     }
 }
 
+IMPLEMENT_COMMAND_FUNCTION(LoadFile)
+{
+    if (dataIn.size() == 0) {
+        ADD_REPLY_ERROR("no file name given");
+        return;
+    }
+
+    // default response
+    *status = MessageResponder::REPLY_OKAY;
+    dataOut->erase();
+
+    // give sequence and structure windows a chance to save data
+    if (structureWindow->glCanvas->structureSet) {
+        GlobalMessenger()->SequenceWindowsSave(true);
+        structureWindow->SaveDialog(true, false);   // can't cancel
+    }
+
+    if (!structureWindow->LoadFile((wxString(dataIn.c_str())).Strip(wxString::both).c_str()))
+        ADD_REPLY_ERROR(string("Error loading file '") + dataIn + "'");
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/07/10 13:47:22  thiessen
+* add LoadFile command
+*
 * Revision 1.3  2003/03/20 20:45:45  thiessen
 * fix wxString overload ambiguity
 *

@@ -78,7 +78,7 @@ public:
     void SendCommand(const std::string& toApp, const std::string& command, const std::string& data);
 
     // public methods
-    void LoadFile(const char *filename);
+    bool LoadFile(const char *filename);
     bool SaveDialog(bool prompt, bool canCancel);
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
@@ -254,6 +254,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/10 13:47:22  thiessen
+* add LoadFile command
+*
 * Revision 1.2  2003/03/14 19:22:59  thiessen
 * add CommandProcessor to handle file-message commands; fixes for GCC 2.9
 *

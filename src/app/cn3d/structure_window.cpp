@@ -1199,7 +1199,7 @@ void StructureWindow::SetColoringMenuFlag(int which)
     menuBar->Check(MID_ELEMENT, (which == MID_ELEMENT));
 }
 
-void StructureWindow::LoadFile(const char *filename)
+bool StructureWindow::LoadFile(const char *filename)
 {
     SetCursor(*wxHOURGLASS_CURSOR);
     glCanvas->SetCurrent();
@@ -1228,7 +1228,7 @@ void StructureWindow::LoadFile(const char *filename)
         ERRORMSG("Cannot open file '" << filename << "' for reading");
         SetCursor(wxNullCursor);
         delete inStream;
-        return;
+        return false;
     }
     currentFile = wxFileNameFromPath(filename);
 
@@ -1291,7 +1291,7 @@ void StructureWindow::LoadFile(const char *filename)
     if (!readOK) {
         ERRORMSG("File not found, not readable, or is not a recognized data type");
         SetCursor(wxNullCursor);
-        return;
+        return false;
     }
 
     SetWorkingTitle(glCanvas->structureSet);
@@ -1327,6 +1327,8 @@ void StructureWindow::LoadFile(const char *filename)
         glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
     SetCursor(wxNullCursor);
+
+    return true;
 }
 
 void StructureWindow::OnOpen(wxCommandEvent& event)
@@ -1411,6 +1413,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/07/10 13:47:22  thiessen
+* add LoadFile command
+*
 * Revision 1.10  2003/05/07 14:02:47  thiessen
 * add accelerators
 *
