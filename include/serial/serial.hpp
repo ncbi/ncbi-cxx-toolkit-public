@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/09/24 19:01:17  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.29  1999/09/14 18:54:05  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -330,6 +333,7 @@ CTypeRef GetStlTypeRef(const multimap<Key, Value>* )
     return CStlClassInfoMultiMap<Key, Value>::GetTypeInfo;
 }
 
+#if HAVE_NCBI_C
 // ASN
 inline
 CTypeRef GetOctetStringTypeRef(const void* const* )
@@ -387,6 +391,7 @@ CTypeRef GetOldAsnTypeRef(T* (*newProc)(void), T* (*freeProc)(T*),
         reinterpret_cast<COldAsnTypeInfo::TReadProc>(readProc),
         reinterpret_cast<COldAsnTypeInfo::TWriteProc>(writeProc));
 }
+#endif
 
 //
 inline
@@ -566,6 +571,7 @@ CMemberInfo* StlMemberInfo(const T* member)
 	return MemberInfo(member, GetStlTypeRef(member));
 }
 
+#if HAVE_NCBI_C
 template<typename T>
 inline
 CMemberInfo* SetMemberInfo(const T* const* member)
@@ -617,6 +623,7 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member,
     return MemberInfo(member, GetOldAsnTypeRef(newProc, freeProc,
                                                readProc, writeProc));
 }
+#endif
 
 // type info declaration
 #define ASN_TYPE_INFO_GETTER_NAME(name) NAME2(GetTypeInfo_struct_, name)
