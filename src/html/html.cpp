@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  1999/05/17 20:09:58  vasilche
+* Removed generation of implicit table cells.
+*
 * Revision 1.37  1999/04/16 17:45:35  vakatov
 * [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
 *
@@ -845,6 +848,8 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
         if ( !sx_IsRow(rowNode) )
             rowNode->Print(out);
         else {
+            rowNode->Print(out);
+/* we should not add implicit <TD></TD>
             rowNode->PrintBegin(out);
             rowNode->PrintChildren(out);
             // determine additional cells to print
@@ -853,6 +858,7 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
             for ( TIndex i = 0; i < addCells; ++i )
                 out << "<TD></TD>";
             rowNode->PrintEnd(out);
+*/
             ++row;
         }
     }
