@@ -8,7 +8,7 @@
 <body>
 
 <h1>
-Input/Output utility classes</h1>
+<a NAME="top"></a>Input/Output utility classes</h1>
 
 <h2>
 I/O classes</h2>
@@ -66,35 +66,52 @@ CFileSourceCollector</li>
 </ul>
 </ul>
 
+<hr WIDTH="100%">
 <h3>
 <a NAME="CIStreamBuffer"></a>class CIStreamBuffer</h3>
 Class for additional buffering of standard C++ input streams (sometimes
-standard C++&nbsp;iostreams performance quite bad).
+standard C++ iostreams performance quite bad).
 <br>Uses <a href="#CByteSource">CByteSource</a> as data source.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="COStreamBuffer"></a>class COStreamBuffer</h3>
 Class for additional buffering of standard C++ output streams (sometimes
-standard C++&nbsp;iostreams performance quite bad).
+standard C++ iostreams performance quite bad).
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CByteSource"></a>class CByteSource</h3>
-Abtract class for abstract source of byte data (file, stream, memory etc.).
+Abtract class for abstract source of byte data (file, stream, memory etc).
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CStreamByteSource"></a>class CStreamByteSource</h3>
-<a href="#CByteSource">CByteSource</a> subclass for reading from C++&nbsp;istream.
+<a href="#CByteSource">CByteSource</a> subclass for reading from C++ istream.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CFStreamByteSource"></a>class CFStreamByteSource</h3>
-<a href="#CByteSource">CByteSource</a> subclass for reading from C++&nbsp;ifstream.
+<a href="#CByteSource">CByteSource</a> subclass for reading from C++ ifstream.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CFileByteSource"></a>class CFileByteSource</h3>
 <a href="#CByteSource">CByteSource</a> subclass for reading from named
 file.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CMemoryByteSource"></a>class CMemoryByteSource</h3>
 <a href="#CByteSource">CByteSource</a> subclass for reading from memory
 buffer.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CByteSourceReader"></a>class CByteSourceReader</h3>
 Abtract class for reading data from <a href="#CByteSource">CByteSource</a>.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CSubSourceCollector"></a>class CSubSourceCollector</h3>
 Abtract class for obtaining piece of <a href="#CByteSource">CByteSource</a>

@@ -8,7 +8,7 @@
 <body>
 
 <h1>
-Util library</h1>
+<a NAME="top"></a>Util library</h1>
 
 <h2>
 Containers</h2>
@@ -317,7 +317,27 @@ class it doesn't take ownership over string contents. So, char array containing
 string value should exist for whole life of holding CLightString object.
 This char array should be deleted (if needed) after CLightString object
 destruction by some other mechanism.
-<br>
+<br>Note that for efficiency sort order of CLightString differs from standard.
+It compares first by string length, then by string contents, so here is
+an example of sorted data:
+<blockquote>
+<pre>"a"
+"z"
+"aa"
+"az"
+"zz"
+"aaa"</pre>
+</blockquote>
+which, if sorted by standard comparison will look like:
+<blockquote>
+<pre>"a"
+"aa"
+"aaa"
+"az"
+"z"
+"zz"</pre>
+</blockquote>
+
 <hr WIDTH="100%">
 <h3>
 <a NAME="CChecksum"></a>class CChecksum</h3>
