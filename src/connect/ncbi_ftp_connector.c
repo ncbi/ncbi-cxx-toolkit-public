@@ -77,7 +77,7 @@ static EIO_Status s_ReadReply(SOCK sock, int* code,
             return status;
         if (n == sizeof(buf))
             return eIO_Unknown/*line too long*/;
-        if (first  ||  isdigit(*buf)) {
+        if (first  ||  isdigit((unsigned char) *buf)) {
             if (sscanf(buf, "%d%n", &c, &m) < 1)
                 return eIO_Unknown;
         } else
@@ -162,14 +162,14 @@ static EIO_Status s_FTPLogin(SFTPConnector* xxx, const STimeout* timeout)
     EIO_Status status;
     int code;
 
-    assert(xxx->cntl != 0);
+    assert(xxx->cntl  &&  xxx->user  &&  xxx->pass);
     status = SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
     if (status != eIO_Success)
         return status;
     status = s_FTPReply(xxx, &code, 0, 0);
     if (status != eIO_Success)
         return status;
-    if (code != 220)
+    if (code != 220  ||  !*xxx->user)
         return eIO_Unknown;
     status = s_FTPCommand(xxx, "USER", xxx->user);
     if (status != eIO_Success)
@@ -179,7 +179,7 @@ static EIO_Status s_FTPLogin(SFTPConnector* xxx, const STimeout* timeout)
         return status;
     if (code == 230)
         return eIO_Success;
-    if (code != 331)
+    if (code != 331  ||  !*xxx->pass)
         return eIO_Unknown;
     status = s_FTPCommand(xxx, "PASS", xxx->pass);
     if (status != eIO_Success)
@@ -196,7 +196,7 @@ static EIO_Status s_FTPLogin(SFTPConnector* xxx, const STimeout* timeout)
 
 static EIO_Status s_FTPChdir(SFTPConnector* xxx, const char* cmd)
 {
-    if (cmd  ||  (xxx->path  &&  *xxx->path)) {
+    if (cmd  ||  xxx->path) {
         int code;
         EIO_Status status = s_FTPCommand(xxx,
                                          cmd ? cmd : "CWD",
@@ -638,8 +638,8 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
     xxx->wbuf    = 0;
     xxx->host    = strdup(host);
     xxx->port    = port ? port : 21;
-    xxx->user    = strdup(user  &&  *user ? user : "ftp");
-    xxx->pass    = strdup(pass  &&  *pass ? pass : "none");
+    xxx->user    = strdup(user ? user : "ftp");
+    xxx->pass    = strdup(pass ? pass : "none");
     xxx->path    = path  &&  *path ? strdup(path) : 0;
     xxx->name    = 0;
     xxx->log     = log;
@@ -657,6 +657,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/12/08 21:03:26  lavr
+ * Fixes for default ctor parameters
+ *
  * Revision 1.2  2004/12/07 14:21:55  lavr
  * Init wbuf in ctor
  *
