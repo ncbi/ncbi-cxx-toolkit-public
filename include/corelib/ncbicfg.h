@@ -28,10 +28,12 @@
  *
  * Author:  Aaron Ucko
  *
- * File Description:
- *   Access to miscellaneous global configuration settings
  *
  */
+
+/// @file ncbicfg.h
+/// Defines access to miscellaneous global configuration settings.
+
 
 #include <ncbiconf.h>
 
@@ -39,8 +41,13 @@
 extern "C" {
 #endif
 
+/// Get default run path.
 const char* NCBI_GetDefaultRunpath(void);
+
+/// Get run path.
 const char* NCBI_GetRunpath(void);
+
+/// Set run path.
 void        NCBI_SetRunpath(const char* runpath);
 
 #ifdef __cplusplus
@@ -51,6 +58,9 @@ void        NCBI_SetRunpath(const char* runpath);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/11 12:47:09  siyan
+ * Documentation changes.
+ *
  * Revision 1.2  2002/04/11 20:39:16  ivanov
  * CVS log moved to end of the file
  *

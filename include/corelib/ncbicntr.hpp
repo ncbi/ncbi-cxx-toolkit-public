@@ -28,12 +28,14 @@
 *
 * Author:  Aaron Ucko
 *
-* File Description:
-*   Efficient atomic counters (for CObject reference counts)
-*   Note that the special value 0x3FFFFFFF is used to indicate
-*   locked counters on some platforms.
 *
 */
+
+/// @file ncbictr.hpp
+/// Efficient atomic counters (for CObject reference counts)
+/// Note that the special value 0x3FFFFFFF is used to indicate
+/// locked counters on some platforms.
+
 
 #include <corelib/ncbistd.hpp>
 
@@ -67,6 +69,14 @@ extern "C" {
 #  define NCBI_COUNTER_ASM_OK
 #endif
 
+/// Define platform specific counter-related macros/values.
+///
+/// TNCBIAtomicValue "type" is defined based on facilities available for a
+/// compiler/platform. TNCBIAtomicValue is used in the CAtomicCounter class
+/// for defining the internal represntation of the counter.
+///
+/// Where possible NCBI_COUNTER_ADD is defined in terms of compiler/platform
+/// specific features.
 #ifdef NCBI_NO_THREADS
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
@@ -131,17 +141,30 @@ extern "C" {
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CAtomicCounter --
+///
+/// Define a basic atomic counter.
+///
+/// Provide basic counter operations for an atomic counter represented
+/// internally by TNCBIAtomicValue. 
+
 class NCBI_XNCBI_EXPORT CAtomicCounter
 {
 public:
-    typedef TNCBIAtomicValue TValue;
+    typedef TNCBIAtomicValue TValue;  ///< Alias TValue for TNCBIAtomicValue
 
+    /// Get atomic counter value.
     TValue Get(void) const THROWS_NONE;
+
+    /// Set atomic counter value.
     void   Set(TValue new_value) THROWS_NONE;
 
-    // atomically adds delta, returning new value
+    /// Atomically add value (=delta), and return new counter value.
     TValue Add(int delta) THROWS_NONE;
-
+    
+    /// Define NCBI_COUNTER_ADD if one has not been defined.
 #if defined(NCBI_COUNTER_USE_ASM)
     static TValue x_Add(volatile TValue* value, int delta) THROWS_NONE;
 #  if !defined(NCBI_COUNTER_ADD)
@@ -150,7 +173,7 @@ public:
 #endif
 
 private:
-    volatile TValue m_Value;
+    volatile TValue m_Value;  ///< Internal counter value
 
     // CObject's constructor needs to read m_Value directly when checking
     // for the magic number left by operator new.
@@ -158,21 +181,34 @@ private:
 };
 
 
-// Mutable version of atomic counter
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMutableAtomicCounter --
+///
+/// Define a mutable atomic counter.
+///
+/// Provide mutable counter operations for an atomic counter represented
+/// internally by CAtomicCounter. 
+
 class NCBI_XNCBI_EXPORT CMutableAtomicCounter
 {
 public:
-    typedef CAtomicCounter::TValue TValue;
+    typedef CAtomicCounter::TValue TValue; ///< Alias TValue simplifies syntax
 
+    /// Get atomic counter value.
     TValue Get(void) const THROWS_NONE
         { return m_Counter.Get(); }
+
+    /// Set atomic counter value.
     void   Set(TValue new_value) const THROWS_NONE
         { m_Counter.Set(new_value); }
+
+    /// Atomically add value (=delta), and return new counter value.
     TValue Add(int delta) const THROWS_NONE
         { return m_Counter.Add(delta); }
 
 private:
-    mutable CAtomicCounter m_Counter;
+    mutable CAtomicCounter m_Counter;      ///< Mutable atomic counter value
 };
 
 
@@ -306,6 +342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/07/11 12:47:09  siyan
+* Documentation changes.
+*
 * Revision 1.16  2003/06/03 18:24:28  rsmith
 * wrap includes of sched.h (explicit and implicit) in extern "c" blocks, since Apples headers do not do it themselves.
 *

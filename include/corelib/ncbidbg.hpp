@@ -28,14 +28,16 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *   NCBI C++ auxiliary debug macros
  *
- * NOTE: These macros are NOT for use in test applications!!!
- *       Test applications must use normal assert() and must
- *       include <test/test_assert.h> as a last header file.
- *     [ test apps in 'connect' branch include "test/test_assert.h" instead ]
  */
+
+ /// @file ncbidbg.hpp
+ /// NCBI C++ auxiliary debug macros
+ ///
+ /// NOTE:These macros are NOT for use in test applications!!!
+ ///      Test applications must use normal assert() and must
+ ///      include <test/test_assert.h> as a last header file.
+ ///      [test apps in 'connect' branch include "test/test_assert.h" instead]
 
 
 #include <corelib/ncbidiag.hpp>
@@ -49,7 +51,7 @@
 
 BEGIN_NCBI_SCOPE
 
-
+/// Define macros to support debugging.
 #if defined(_DEBUG)
 
 #  define _TRACE(message) \
@@ -79,16 +81,20 @@ BEGIN_NCBI_SCOPE
 #endif  /* else!_DEBUG */
 
 
-
-// Set the action to be performed when expression under
-// "xncbi_Validate(expr, ...)" evaluates to FALSE
+/// Which action to perform.
+///
+/// Specify action to be performed when expression under
+/// "xncbi_Validate(expr, ...)" evaluates to FALSE.
 enum EValidateAction {
-    eValidate_Default = 0,  // default action
-    eValidate_Abort,    // abort() if not valid
-    eValidate_Throw     // throw an exception if not valid
+    eValidate_Default = 0,  ///< Default action
+    eValidate_Abort,        ///< abort() if not valid
+    eValidate_Throw         ///< Throw an exception if not valid
 };
 
-extern void            xncbi_SetValidateAction(EValidateAction action);
+/// Set the action to be performed.
+extern void xncbi_SetValidateAction(EValidateAction action);
+
+/// Get the action to be performed.
 extern EValidateAction xncbi_GetValidateAction(void);
 
 
@@ -101,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.31  2003/07/11 12:47:09  siyan
+ * Documentation changes.
+ *
  * Revision 1.30  2003/03/31 14:29:23  siyan
  * Added doxygen support
  *
