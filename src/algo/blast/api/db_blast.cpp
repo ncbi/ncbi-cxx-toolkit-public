@@ -48,6 +48,7 @@
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
 #include <algo/blast/api/blast_mtlock.hpp>
+#include <algo/blast/api/seqinfosrc_seqdb.hpp>
 
 // Core BLAST engine includes
 #include <algo/blast/core/blast_def.h>
@@ -223,6 +224,7 @@ void CDbBlast::x_InitFields()
     m_ipResults = NULL;
     m_ipDiagnostics = NULL;
     m_ibLocalResults = false;
+    m_ibTracebackOnly = false;
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
@@ -299,7 +301,7 @@ CDbBlast::x_InitHSPStream()
            and subjects are switched in an RPS search. In all other cases,
            it is the real number of queries. */
         if (program == eRPSBlast || program == eRPSTblastn)
-            num_results = BLASTSeqSrcGetNumSeqs(m_pSeqSrc);
+            num_results = m_pRpsInfo->profile_header->num_profiles;
         else
             num_results = m_tQueries.size();
 
@@ -338,10 +340,13 @@ void CDbBlast::SetupSearch()
     }
 
     x_ResetResultDs();
-    // Initialize a new HSP stream, if necessary
-    x_InitHSPStream();
-    // Initialize a new diagnostics structure
-    m_ipDiagnostics = Blast_DiagnosticsInit();
+
+    if (!m_ibTracebackOnly) {
+        // Initialize a new HSP stream, if necessary
+        x_InitHSPStream();
+        // Initialize a new diagnostics structure
+        m_ipDiagnostics = Blast_DiagnosticsInit();
+    }
 
     if ( !m_ibQuerySetUpDone ) {
         double scale_factor;
@@ -364,14 +369,15 @@ void CDbBlast::SetupSearch()
         Blast_Message* blast_message = NULL;
         BlastMaskInformation maskInfo;
 
-        status = BLAST_MainSetUp(x_eProgram, 
-                                 GetOptions().GetQueryOpts(),
-                                 GetOptions().GetScoringOpts(),
-                                 GetOptions().GetHitSaveOpts(),
-                                 m_iclsQueries, m_iclsQueryInfo,
-                                 scale_factor,
-                                 &m_ipLookupSegments, &maskInfo,
-                                 &m_ipScoreBlock, &blast_message);
+        status = 
+            BLAST_MainSetUp(x_eProgram, 
+                            GetOptions().GetQueryOpts(),
+                            GetOptions().GetScoringOpts(),
+                            GetOptions().GetHitSaveOpts(),
+                            m_iclsQueries, m_iclsQueryInfo,
+                            scale_factor,
+                            (m_ibTracebackOnly ? NULL : &m_ipLookupSegments),
+                            &maskInfo, &m_ipScoreBlock, &blast_message);
 
         m_ipFilteredRegions = maskInfo.filter_slp;
         maskInfo.filter_slp = NULL;
@@ -394,9 +400,11 @@ void CDbBlast::SetupSearch()
             BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
-        LookupTableWrapInit(m_iclsQueries, GetOptions().GetLutOpts(), 
-            m_ipLookupSegments, m_ipScoreBlock, &m_ipLookupTable, m_pRpsInfo);
-        
+        if (!m_ibTracebackOnly) {
+            LookupTableWrapInit(m_iclsQueries, GetOptions().GetLutOpts(), 
+                                m_ipLookupSegments, m_ipScoreBlock, 
+                                &m_ipLookupTable, m_pRpsInfo);
+        }
         m_ibQuerySetUpDone = true;
     }
 }
@@ -444,7 +452,7 @@ void CDbBlast::PartialRun()
         RunRPSSearch();
     } else {
         RunPreliminarySearch();
-        RunTraceback();
+        x_RunTracebackEngine();
     }
 }
 
@@ -572,7 +580,16 @@ void CDbBlast::RunPreliminarySearch()
 
 }
 
-void CDbBlast::RunTraceback()
+TSeqAlignVector 
+CDbBlast::RunTraceback()
+{
+    m_ibTracebackOnly = true;
+    SetupSearch();
+    x_RunTracebackEngine();
+    return x_Results2SeqAlign();
+}
+
+void CDbBlast::x_RunTracebackEngine()
 {
     Int2 status = 0;
     BlastScoringParameters* score_params = NULL; ///< Scoring parameters 
@@ -637,10 +654,15 @@ CDbBlast::x_Results2SeqAlign()
 
     bool gappedMode = GetOptions().GetGappedMode();
     bool outOfFrameMode = GetOptions().GetOutOfFrameMode();
+    string db_name(BLASTSeqSrcGetName(m_pSeqSrc));
+    bool db_is_prot = (BLASTSeqSrcGetIsProt(m_pSeqSrc) ? true : false);
+
+    // Create a source for retrieving sequence ids and lengths
+    CSeqDbSeqInfoSrc seqinfo_src(db_name, db_is_prot);
 
     retval = BLAST_Results2CSeqAlign(m_ipResults, 
                  GetOptions().GetProgram(),
-                 m_tQueries, m_pSeqSrc, 
+                 m_tQueries, &seqinfo_src, 
                  gappedMode, outOfFrameMode);
 
     return retval;
@@ -655,6 +677,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2004/10/06 14:54:57  dondosha
+ * Use IBlastSeqInfoSrc interface in x_Results2CSeqAlign; added RunTraceback method to perform a traceback only search, given the precomputed preliminary results, and return Seq-align; removed unused SetSeqSrc method
+ *
  * Revision 1.42  2004/09/21 13:50:59  dondosha
  * Conversion of filtering locations from protein to nucleotide scale is now needed for RPS tblastn
  *
