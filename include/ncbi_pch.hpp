@@ -74,11 +74,14 @@
 
 // Third Party Libraries specific includes
 #ifdef NCBI_WXWIN_USE_PCH
-#include <wx/wx.h>
+  #include <wx/wxprec.h>
 #endif
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/01 13:16:59  gorelenk
+ * Changed PCH for wxWindows to wxprec.h
+ *
  * Revision 1.6  2004/05/26 19:32:35  gorelenk
  * Commented accidentaly restored include of ncbi_safe_static.hpp
  *
