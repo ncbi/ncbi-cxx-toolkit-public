@@ -60,9 +60,9 @@ LOCAL_CPPFLAGS = -I.
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (LIBRARY) TARGET HERE                  ### 
 
-LIB    = $proj_name
-LIBOBJ = $proj_name
-# LOBJ =
+LIB = $proj_name
+SRC = $proj_name
+# OBJ =
 
 # CPPFLAGS = \$(ORIG_CPPFLAGS) \$(NCBI_C_INCLUDE)
 # CFLAGS   = \$(ORIG_CFLAGS)
@@ -115,7 +115,8 @@ LOCAL_CPPFLAGS = -I.
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
 APP = $proj_name
-OBJ = $proj_name
+SRC = $proj_name
+# OBJ =
 
 # PRE_LIBS = \$(NCBI_C_LIBPATH) .....
 LIB        = xncbi

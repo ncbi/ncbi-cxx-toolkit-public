@@ -616,8 +616,8 @@ source files include headers from the NCBI C Toolkit.<pre>
 File Makefile.xmylib.lib:
 
 LIB      = xmylib
-LIBOBJ   = xmy_src1 xmy_src2
-LOBJ     = some_obj1
+SRC      = xmy_src1 xmy_src2
+OBJ      = some_obj1
 REQUIRES = xrequirement
 CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
 CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
@@ -688,7 +688,8 @@ with a shared libxncbi.
 File Makefile.my_exe.app:
 
 APP      = my_exe
-OBJ      = my_main my_src1 my_src2
+SRC      = my_main my_src1 my_src2
+OBJ      = some_obj
 LIB      = xmylib$(STATIC) xncbi
 REQUIRES = xrequirement
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_SSSDB_INCLUDE)
@@ -706,7 +707,8 @@ LIBS     = $(NCBI_SSSDB_LIBS) $(SYBASE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)</pre>
     (<a href="#ref_Note1">*</a>)
   <li> Using <b>$(CXX)</b> as a linker, build an executable
     <i><b>my_exe</b></i> from the object files
-    <b><i>my_main.o, my_src1.o, my_src2.o</i></b>, NCBI C++ Toolkit libraries
+    <b><i>my_main.o, my_src1.o, my_src2.o</i></b>, the precompiled
+    object file <b><i>some_obj.o</i></b>, NCBI C++ Toolkit libraries
     <a href="#ref_MakeProjLib"><i><b>libxmylib.a</b></i></a> and
     <i><b>libxncbi.*</b></i>, and NCBI SSS DB, SYBASE, and system
     network libraries (<a href="#ref_Note1">*</a>)

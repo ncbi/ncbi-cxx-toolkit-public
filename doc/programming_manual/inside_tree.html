@@ -372,11 +372,11 @@ the <i>purge</i> directives also remove the copied executable.
 definitions:
 <ul>
 <li>
-<i>$(LIBOBJ) </i>- the names of all source files to compile and include
+<i>$(SRC) </i>- the names of all source files to compile and include
 in the library</li>
 
 <li>
-<i>$(LOBJ) </i>- the names of any pre-compiled object files to include
+<i>$(OBJ) </i>- the names of any pre-compiled object files to include
 in the library</li>
 
 <li>
@@ -405,8 +405,12 @@ Makefile.myProj.app</a></h3>
 definitions:
 <ul>
 <li>
-<i>$(OBJ) </i>- the names of the object modules to build and link to the
+<i>$(SRC) </i>- the names of the object modules to build and link to the
 application</li>
+
+<li>
+<i>$(OBJ) </i>- the names of any pre-compiled object files to include
+in the linking</li>
 
 <li>
 <i>$(LIB)</i> - specific libraries in the NCBI C++ Toolkit to include in
