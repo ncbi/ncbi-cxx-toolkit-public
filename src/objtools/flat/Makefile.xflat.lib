@@ -2,6 +2,7 @@
 
 # Build library "xflat"
 ###############################
+ASN_DEP = seq gbseq general pub
 
 LIB = xflat
 SRC = flat_context flat_feature flat_head flat_items flat_loc flat_quals \

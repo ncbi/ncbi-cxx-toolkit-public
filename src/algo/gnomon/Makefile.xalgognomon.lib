@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = seq
+
 SRC = cluster gnomon models parse states
 LIB = xalgognomon
 

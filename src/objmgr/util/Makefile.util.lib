@@ -3,5 +3,7 @@
 # Build library "xobjutil"
 ###############################
 
+ASN_DEP = seq
+
 SRC = weight sequence feature seqtitle obj_sniff
 LIB = xobjutil

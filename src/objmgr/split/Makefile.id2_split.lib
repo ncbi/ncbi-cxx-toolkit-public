@@ -7,6 +7,7 @@
 #################################
 
 REQUIRES = objects dbapi
+ASN_DEP  = seq
 
 SRC = 	blob_splitter blob_splitter_params split_blob \
 	blob_splitter_impl blob_splitter_parser blob_splitter_maker \

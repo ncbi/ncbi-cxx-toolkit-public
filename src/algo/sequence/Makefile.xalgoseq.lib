@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = seq
+
 SRC = cpg nuc_prop orf prot_prop regexp_loc seq_match restriction antigenic \
 	   coiled_coil signal_seq polya make_cdr_prods find_pattern
 LIB = xalgoseq

@@ -2,6 +2,7 @@
 
 # Build library "xalnmgr"
 #################################
+ASN_DEP = seq
 
 LIB = xalnmgr
 SRC = alnmap alnvec alnmix

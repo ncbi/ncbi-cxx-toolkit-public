@@ -1,4 +1,6 @@
 # $Id$
 
+ASN_DEP = general
+
 LIB = xobjmanip
 SRC = sage_manip

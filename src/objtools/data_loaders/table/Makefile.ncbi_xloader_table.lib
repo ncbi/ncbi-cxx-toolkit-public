@@ -3,6 +3,8 @@
 # Build library "ncbi_xloader_table"
 ###############################
 
+ASN_DEP = seq
+
 LIB = ncbi_xloader_table
 SRC = sage_dload sqlite_table user_feature_dload
 

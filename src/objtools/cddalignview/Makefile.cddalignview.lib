@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = seq
+
 SRC = \
 	cav_alignset \
 	cav_alndisplay \

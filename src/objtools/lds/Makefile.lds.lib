@@ -2,6 +2,7 @@
 
 # Build library "lds"
 ###############################
+ASN_DEP = seq
 
 LIB = lds
 SRC = lds lds_reader lds_query
