@@ -644,14 +644,18 @@ void CSeqDBAtlas::ShowLayout(bool locked, Uint8 index)
     
     // MSVC fails to grok "ostream << [Uint8]". (Okalee-dokalee...)
     
+#if _DEBUG
     cout << "\n\nShowing layout (index " << NStr::UInt8ToString(index)
          << "), current alloc = " << m_CurAlloc << endl;
+#endif
     
     for(unsigned i = 0; i < m_Regions.size(); i++) {
         m_Regions[i]->Show();
     }
     
+#if _DEBUG
     cout << "\n\n" << endl;
+#endif
 }
 
 // This does not attempt to garbage collect, but it will influence
@@ -736,9 +740,11 @@ void CSeqDBAtlas::IncrementRefCnt(CSeqDBMemLease & lease)
 
 void CSeqDBAtlas::CRegionMap::Show()
 {
+#if VERBOSE
     cout << " [" << static_cast<const void*>(m_Data) << "]-["
          << static_cast<const void*>(m_Data + m_End - m_Begin) << "]: "
          << m_Fname << ", ref=" << m_Ref;
+#endif
 }
 
 CSeqDBAtlas::CRegionMap::CRegionMap(const string * fname, Uint4 fid, Uint8 begin, Uint8 end, Uint4 ident)
