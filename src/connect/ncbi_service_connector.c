@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2002/03/30 03:34:32  lavr
+ * BUGFIX: Memory leak from SERV_ITER in usused connector
+ *
  * Revision 6.34  2002/03/22 22:18:28  lavr
  * Remove uuu->conn (contained in uuu->meta.list); honor timeout on open
  *
@@ -790,6 +793,7 @@ static void s_Destroy(CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
 
+    s_CloseDispatcher(uuu);
     ConnNetInfo_Destroy(uuu->net_info);
     if (uuu->name)
         free((void*) uuu->name);
