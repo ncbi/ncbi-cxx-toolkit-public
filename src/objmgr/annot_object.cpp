@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/24 14:57:12  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
 * Revision 1.6  2002/05/03 21:28:08  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -94,7 +97,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                 while (it_id != (*it)->GetIds().end()) {
                     // Create CHandleRange from an align element
                     CSeq_loc* loc = new CSeq_loc;
-                    SerialAssign<CSeq_id>(loc->SetInt().SetId(), **it_id);
+                    loc->SetInt().SetId().Assign(**it_id);
                     loc->GetInt().SetFrom(*it_start);
                     loc->GetInt().SetTo(*it_start + len);
                     if ( (*it)->IsSetStrands() ) {
@@ -128,7 +131,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                     if ( *it_start < 0 )
                         continue;
                     CSeq_loc* loc = new CSeq_loc;
-                    SerialAssign<CSeq_id>(loc->SetInt().SetId(), **it_id);
+                    loc->SetInt().SetId().Assign(**it_id);
                     loc->GetInt().SetFrom(*it_start);
                     loc->GetInt().SetTo(*it_start + *it_len);
                     if ( denseg.IsSetStrands() ) {
@@ -173,7 +176,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                 for (int seq = 0; seq < packed.GetDim(); seq++, ++it_pres) {
                     if ( *it_pres ) {
                         CSeq_loc* loc = new CSeq_loc;
-                        SerialAssign<CSeq_id>(loc->SetInt().SetId(), **it_id);
+                        loc->SetInt().SetId().Assign(**it_id);
                         loc->GetInt().SetFrom(*it_start);
                         loc->GetInt().SetTo(*it_start + *it_len);
                         if ( packed.IsSetStrands() ) {

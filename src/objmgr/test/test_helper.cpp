@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/05/24 14:57:14  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
 * Revision 1.11  2002/05/21 18:39:31  grichenk
 * CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
 *
@@ -919,7 +922,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     // Test CSeq_feat iterator for the specified range
     // Copy location seq-id
-    SerialAssign<CSeq_id>(loc.SetInt().SetId(), id);
+    loc.SetInt().SetId().Assign(id);
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
@@ -968,7 +971,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     // Test CSeq_align iterator for the specified range
     // Copy location seq-id
-    SerialAssign<CSeq_id>(loc.SetInt().SetId(), id);
+    loc.SetInt().SetId().Assign(id);
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;

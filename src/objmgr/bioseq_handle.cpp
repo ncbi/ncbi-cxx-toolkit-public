@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/24 14:57:12  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
 * Revision 1.15  2002/05/21 18:39:30  grichenk
 * CBioseq_Handle::GetResolvedSeqMap() -> CreateResolvedSeqMap()
 *
@@ -243,8 +246,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
     iterate (CHandleRange::TRanges, rit, mode_rlist.GetRanges()) {
         CRef<CSeq_loc> seg_loc(new CSeq_loc);
         CRef<CSeq_id> id(new CSeq_id);
-        SerialAssign<CSeq_id>(*id,
-            x_GetDataSource().GetIdMapper().GetSeq_id(m_Value));
+        id->Assign(x_GetDataSource().GetIdMapper().GetSeq_id(m_Value));
         seg_loc->SetInt().SetId(*id);
         seg_loc->SetInt().SetFrom(rit->first.GetFrom());
         seg_loc->SetInt().SetTo(rit->first.GetTo());

@@ -514,16 +514,14 @@ void CSeq_id_Textseq_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
     if ( tid.IsSetAccession() ) {
         TVersions& ver = m_ByAccession[tid.GetAccession()];
         iterate(TVersions, vit, ver) {
-            _ASSERT(!SerialEquals<CTextseq_id>(
-                x_Get(x_GetSeq_id(*vit)), tid));
+            _ASSERT(!x_Get(x_GetSeq_id(*vit)).Equals(tid));
         }
         ver.push_back(handle);
     }
     if ( tid.IsSetName() ) {
         TVersions& ver = m_ByName[tid.GetName()];
         iterate(TVersions, vit, ver) {
-            _ASSERT(!SerialEquals<CTextseq_id>(
-                x_Get(x_GetSeq_id(*vit)), tid));
+            _ASSERT(!x_Get(x_GetSeq_id(*vit)).Equals(tid));
         }
         ver.push_back(handle);
     }
@@ -1122,7 +1120,7 @@ TSeq_id_Info CSeq_id_Giim_Tree::FindEqual(const CSeq_id& id) const
     iterate(TGiimList, dbr_it, id_it->second) {
         const CGiimport_id& gid2 = x_GetSeq_id(*dbr_it).GetGiim();
         // Both Db and Release must be equal
-        if ( !SerialEquals<CGiimport_id>(gid, gid2) ) {
+        if ( !gid.Equals(gid2) ) {
             return TSeq_id_Info
                 (&x_GetSeq_id(*dbr_it), x_GetKey(*dbr_it));
         }
@@ -1165,8 +1163,7 @@ void CSeq_id_Giim_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
     _ASSERT( id.IsGiim() );
     TGiimList& giims = m_IdMap[id.GetGiim().GetId()];
     iterate(TGiimList, git, giims) {
-        _ASSERT(!SerialEquals<CGiimport_id>(id.GetGiim(),
-            x_GetSeq_id(*git).GetGiim()));
+        _ASSERT(!id.GetGiim().Equals(x_GetSeq_id(*git).GetGiim()));
     }
     giims.push_back(handle);
     x_AddToKeyMap(handle);
@@ -1392,7 +1389,7 @@ TSeq_id_Info CSeq_id_PDB_Tree::FindEqual(const CSeq_id& id) const
     if (mol_it == m_MolMap.end())
         return TSeq_id_Info(0, 0);
     iterate(TSubMolList, it, mol_it->second) {
-        if (SerialEquals<CPDB_seq_id>(pid, x_GetSeq_id(*it).GetPdb())) {
+        if (pid.Equals(x_GetSeq_id(*it).GetPdb())) {
             return TSeq_id_Info(&x_GetSeq_id(*it), x_GetKey(*it));
         }
     }
@@ -1417,7 +1414,7 @@ void CSeq_id_PDB_Tree::FindMatch(const CSeq_id& id,
         }
         if ( pid.IsSetRel() ) {
             if ( !pid2.IsSetRel()  ||
-                !SerialEquals<CDate>(pid.GetRel(), pid2.GetRel()) )
+                !pid.GetRel().Equals(pid2.GetRel()) )
                 continue;
         }
         id_list.push_back(TSeq_id_Info(&x_GetSeq_id(*it), x_GetKey(*it)));
@@ -1452,8 +1449,8 @@ void CSeq_id_PDB_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
     }
     TSubMolList& sub = m_MolMap[skey];
     iterate(TSubMolList, sub_it, sub) {
-        _ASSERT(!SerialEquals<CPDB_seq_id>(
-            x_GetSeq_id(handle).GetPdb(), x_GetSeq_id(*sub_it).GetPdb()));
+        _ASSERT(!x_GetSeq_id(handle).GetPdb().Equals(
+            x_GetSeq_id(*sub_it).GetPdb()));
     }
     sub.push_back(handle);
     x_AddToKeyMap(handle);
@@ -1469,7 +1466,7 @@ void CSeq_id_PDB_Tree::x_DropHandle(const CSeq_id_Handle& handle)
     _ASSERT(mol_it == m_MolMap.end());
     non_const_iterate(TSubMolList, it, mol_it->second) {
         if (*it == handle) {
-            _ASSERT(SerialEquals<CPDB_seq_id>(pid, x_GetSeq_id(*it).GetPdb()));
+            _ASSERT(pid.Equals(x_GetSeq_id(*it).GetPdb()));
             mol_it->second.erase(it);
             break;
         }
@@ -1567,7 +1564,7 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
         return CSeq_id_Handle();
     CSeq_id_Handle new_handle(*this, GetNextKey());
     CRef<CSeq_id> id_ref = new CSeq_id;
-    SerialAssign<CSeq_id>(*id_ref, id);
+    id_ref->Assign(id);
     _ASSERT(id_ref);
     m_KeyMap[new_handle.m_Value] = id_ref;
     map_it->second->AddSeq_idMapping(new_handle);
@@ -1725,6 +1722,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/24 14:57:13  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
 * Revision 1.15  2002/05/09 14:18:55  grichenk
 * Fixed "unused variable" warnings
 *

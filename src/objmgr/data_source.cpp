@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/05/24 14:57:12  grichenk
+* SerialAssign<>() -> CSerialObject::Assign()
+*
 * Revision 1.45  2002/05/21 18:57:25  grichenk
 * Fixed annotations dropping
 *
@@ -342,7 +345,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
         CSeq_loc loc;
         CConstRef<CSeq_id> id = handle.GetSeqId();
         _VERIFY(id);
-        SerialAssign<CSeq_id>(loc.SetWhole(), *id);
+        loc.SetWhole().Assign(*id);
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
@@ -373,11 +376,11 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     CBioseq::TId& id_list = seq_core->SetId();
     iterate ( CBioseq::TId, it, seq->GetId() ) {
         CSeq_id* id = new CSeq_id;
-        SerialAssign<CSeq_id>(*id, **it);
+        id->Assign(**it);
         id_list.push_back(id);
     }
     if ( seq->IsSetDescr() )
-        SerialAssign<CSeq_descr>(seq_core->SetDescr(), seq->GetDescr());
+        seq_core->SetDescr().Assign(seq->GetDescr());
     const CSeq_inst& inst = seq->GetInst();
     CSeq_inst& inst_core = seq_core->SetInst();
     inst_core.SetRepr(inst.GetRepr());
@@ -386,7 +389,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
         inst_core.SetLength(inst.GetLength());
     if ( inst.IsSetFuzz() ) {
         CInt_fuzz* fuzz = new CInt_fuzz();
-        SerialAssign<CInt_fuzz>(*fuzz, inst.GetFuzz());
+        fuzz->Assign(inst.GetFuzz());
         inst_core.SetFuzz(*fuzz);
     }
     if ( inst.IsSetTopology() )
@@ -397,7 +400,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
         CSeq_ext* ext = new CSeq_ext();
         if (inst.GetExt().Which() != CSeq_ext::e_Delta) {
             // Copy the entire seq-ext
-            SerialAssign<CSeq_ext>(*ext, inst.GetExt());
+            ext->Assign(inst.GetExt());
         }
         else {
             // Do not copy seq-data
@@ -407,12 +410,12 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
                     dseq->SetLiteral().SetLength(
                         (*it)->GetLiteral().GetLength());
                     if ( (*it)->GetLiteral().IsSetFuzz() ) {
-                        SerialAssign<CInt_fuzz>(dseq->SetLiteral().SetFuzz(),
+                        dseq->SetLiteral().SetFuzz().Assign(
                             (*it)->GetLiteral().GetFuzz());
                     }
                 }
                 else {
-                    SerialAssign<CDelta_seq>(*dseq, **it);
+                    dseq->Assign(**it);
                 }
             }
         }
@@ -420,7 +423,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     }
     if ( inst.IsSetHist() ) {
         CSeq_hist* hist = new CSeq_hist();
-        SerialAssign<CSeq_hist>(*hist, inst.GetHist());
+        hist->Assign(inst.GetHist());
         inst_core.SetHist(*hist);
     }
 
@@ -442,7 +445,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
         // Send request to the loader
         CSeq_loc loc;
         CConstRef<CSeq_id> id = handle.GetSeqId();
-        SerialAssign<CSeq_id>(loc.SetWhole(), *id);
+        loc.SetWhole().Assign(*id);
         CHandleRangeMap hrm(GetIdMapper());
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq); //### or eCore???
@@ -477,7 +480,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         CSeq_loc loc;
         CConstRef<CSeq_id> id = handle.GetSeqId();
         //### Whole, or Interval, or Point?
-        SerialAssign<CSeq_id>(loc.SetWhole(), *id);
+        loc.SetWhole().Assign(*id);
         CHandleRangeMap hrm(GetIdMapper());
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eSequence);
@@ -751,7 +754,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
         else {
             // Split the gap, insert the new segment between the two gaps
             CRef<CDelta_seq> gap_dup = new CDelta_seq;
-            SerialAssign<CDelta_seq>(*gap_dup, **gap);
+            gap_dup->Assign(**gap);
             if ((*gap)->GetLiteral().GetLength() > 0) {
                 // Adjust gap lengths
                 _ASSERT((*gap)->GetLiteral().GetLength() >= length);
@@ -1674,7 +1677,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     if ( m_Loader ) {
         // Send request to the loader
         CSeq_loc loc;
-        SerialAssign<CSeq_id>(loc.SetWhole(), id);
+        loc.SetWhole().Assign(id);
         CHandleRangeMap hrm(GetIdMapper());
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
