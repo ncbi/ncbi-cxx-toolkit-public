@@ -1495,7 +1495,7 @@ void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForR
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
     const BlockMultipleAlignment::UngappedAlignedBlockList *blocks, int slaveRow)
 {
-    if (!multiple || slaveRow < 1 || slaveRow >= multiple->NRows()) {
+    if (!multiple || slaveRow < 0 || slaveRow >= multiple->NRows()) {
         ERRORMSG("CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
         return NULL;
     }
@@ -1797,6 +1797,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/06/12 14:21:11  thiessen
+* when saving single-row alignment, make master-master alignment in asn
+*
 * Revision 1.49  2003/02/06 16:39:52  thiessen
 * add block row fit coloring
 *

@@ -92,18 +92,22 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     newAsnAlignmentData->back().Reset(seqAnnot);
 
     CSeq_annot::C_Data::TAlign& seqAligns = seqAnnot->SetData().SetAlign();
-    seqAligns.resize(multiple->NRows() - 1);
+    seqAligns.resize((multiple->NRows() == 1) ? 1 : multiple->NRows() - 1);
     CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
 
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
 
-    // create Seq-aligns
-    int newRow;
-    for (int row=1; row<multiple->NRows(); row++, sa++) {
-        newRow = rowOrder[row];
-        CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), newRow);
-        sa->Reset(seqAlign);
-    }
+    // create Seq-aligns; if there's only one row (the master), then cheat and create an alignment
+    // of the master with itself, because asn data doesn't take well to single-row "alignment"
+    if (multiple->NRows() > 1) {
+        int newRow;
+        for (int row=1; row<multiple->NRows(); row++, sa++) {
+          newRow = rowOrder[row];
+          CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), newRow);
+          sa->Reset(seqAlign);
+        }
+    } else
+        sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), 0));
 
     auto_ptr<AlignmentSet> newAlignmentSet;
     try {
@@ -269,6 +273,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/06/12 14:21:11  thiessen
+* when saving single-row alignment, make master-master alignment in asn
+*
 * Revision 1.27  2003/04/14 20:25:27  thiessen
 * diagnose sequence not present in sequences list
 *
