@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/01/03 16:51:34  gouriano
+* Added parsing of conditional sections
+*
 * Revision 1.10  2004/02/25 19:45:48  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -118,7 +121,9 @@ static const TToken K_BIGINT = 125;
 static const TToken K_UTF8String = 126;
 
 
-static const TToken T_ENTITY   =  11;
+static const TToken T_ENTITY          =  11;
+static const TToken T_CONDITIONAL_BEGIN =  12;
+static const TToken T_CONDITIONAL_END   =  13;
 
 static const TToken K_ELEMENT  = 201;
 static const TToken K_ATTLIST  = 202;
@@ -142,6 +147,8 @@ static const TToken K_REQUIRED = 217;
 static const TToken K_IMPLIED  = 218;
 static const TToken K_FIXED    = 219;
 
+static const TToken K_INCLUDE  = 220;
+static const TToken K_IGNORE   = 221;
 
 
 END_NCBI_SCOPE

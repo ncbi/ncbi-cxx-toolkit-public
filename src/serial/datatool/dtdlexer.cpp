@@ -59,6 +59,11 @@ TToken DTDLexer::LookupToken(void)
             SkipChars(2);
             if (isalpha(Char())) {
                 return LookupIdentifier();
+            } else if (Char() == '[') {
+// Conditional section
+// http://www.w3.org/TR/2004/REC-xml-20040204/#sec-condition-sect
+                SkipChar();
+                return T_CONDITIONAL_BEGIN;
             } else {
                 LexerError("name must start with a letter (alpha)");
 //                _ASSERT(0);
@@ -84,6 +89,12 @@ TToken DTDLexer::LookupToken(void)
         if (!EndPrevToken()) {
             tok = LookupString();
             return tok;
+        }
+        break;
+    case ']':
+        if (Char(1) == ']' && Char(2) == '>') {
+            SkipChars(3);
+            return T_CONDITIONAL_END;
         }
         break;
     default:
@@ -167,7 +178,6 @@ TToken DTDLexer::LookupIdentifier(void)
 // something (not comment) started
 // find where it ends
     for (char c = Char(); c != 0; c = Char()) {
-
 // complete specification is here:
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-common-syn
         if (isalnum(c) || strchr("#._-:", c)) {
@@ -206,12 +216,14 @@ TToken DTDLexer::LookupKeyword(void)
         CHECK("PUBLIC", K_PUBLIC, 6);
         CHECK("IDREFS", K_IDREFS, 6);
         CHECK("#FIXED", K_FIXED,  6);
+        CHECK("IGNORE", K_IGNORE, 6);
         break;
     case 7:
         CHECK("ELEMENT", K_ELEMENT, 7);
         CHECK("ATTLIST", K_ATTLIST, 7);
         CHECK("#PCDATA", K_PCDATA,  7);
         CHECK("NMTOKEN", K_NMTOKEN, 7);
+        CHECK("INCLUDE", K_INCLUDE, 7);
         break;
     case 8:
         CHECK("NMTOKENS", K_NMTOKENS, 8);
@@ -267,6 +279,9 @@ TToken DTDLexer::LookupString(void)
     StartToken();
     m_CharsToSkip = 1;
     for (char c = Char(); c != c0; c = Char()) {
+        if (c == '\n') {
+            NextLine();
+        }
         AddChar();
     }
     return T_STRING;
@@ -289,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/01/03 16:51:15  gouriano
+ * Added parsing of conditional sections
+ *
  * Revision 1.7  2004/05/17 21:03:14  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

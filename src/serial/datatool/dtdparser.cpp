@@ -73,7 +73,9 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
     while( Next() != T_EOF ) {
         CDirEntry entry(fileName);
         m_StackPath.push(entry.GetDir());
+        m_StackLexerName.push_back(fileName);
         modules->AddModule(Module(entry.GetBase()));
+        m_StackLexerName.pop_back();
         m_StackPath.pop();
     }
 //    CopyComments(modules->LastComments());
@@ -117,6 +119,8 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 
 void DTDParser::BuildDocumentTree(void)
 {
+    bool conditional_ignore = false;
+    int conditional_level = 0;
     for (;;) {
         try {
             switch ( Next() ) {
@@ -145,9 +149,64 @@ void DTDParser::BuildDocumentTree(void)
                     // end of doc
                     return;
                 }
+            case K_INCLUDE:
+                Consume();
+                break;
+            case K_IGNORE:
+                Consume();
+                conditional_ignore = true;
+                break;
+            case T_CONDITIONAL_BEGIN:
+                ++conditional_level;
+                break;
+            case T_CONDITIONAL_END:
+                if (conditional_level == 0) {
+                    ParseError("Incorrect format: unexpected end of conditional section",
+                               "keyword");
+                }
+                --conditional_level;
+                break;
+            case T_SYMBOL:
+                if(NextToken().GetSymbol() != '[') {
+                    ParseError("Incorrect format","[");
+                }
+                Consume();
+                if (conditional_ignore) {
+                    SkipConditionalSection();
+                    --conditional_level;
+                    conditional_ignore = false;
+                }
+                break;
             default:
                 ParseError("Invalid keyword", "keyword");
                 return;
+            }
+        }
+        catch (CException& e) {
+            NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
+        }
+        catch (exception& e) {
+            ERR_POST(e.what());
+            throw;
+        }
+    }
+}
+
+void DTDParser::SkipConditionalSection(void)
+{
+    for (;;) {
+        try {
+            switch ( Next() ) {
+            case T_EOF:
+                return;
+            case T_CONDITIONAL_BEGIN:
+                SkipConditionalSection();
+                break;
+            case T_CONDITIONAL_END:
+                return;
+            default:
+                Consume();
+                break;
             }
         }
         catch (CException& e) {
@@ -439,9 +498,11 @@ void DTDParser::PushEntityLexer(const string& name)
         }
 //        _ASSERT(((CNcbiIfstream*)in)->is_open());
         m_StackPath.push(file.GetDir());
+        m_StackLexerName.push_back(fullname);
     } else {
         in = new CNcbiIstrstream(m_MapEntity[name].GetData().c_str());
         m_StackPath.push("");
+        m_StackLexerName.push_back(name);
     }
     DTDEntityLexer *lexer = new DTDEntityLexer(*in);
     m_StackLexer.push(lexer);
@@ -455,6 +516,7 @@ bool DTDParser::PopEntityLexer(void)
         m_StackLexer.pop();
         SetLexer(m_StackLexer.top());
         m_StackPath.pop();
+        m_StackLexerName.pop_back();
         return true;
     }
     return false;
@@ -1018,6 +1080,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.21  2005/01/03 16:51:15  gouriano
+ * Added parsing of conditional sections
+ *
  * Revision 1.20  2004/08/17 14:10:41  gouriano
  * Corrected data tree generation for embedded elements
  *

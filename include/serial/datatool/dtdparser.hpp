@@ -70,6 +70,7 @@ protected:
     AutoPtr<CDataTypeModule> Module(const string& name);
 
     void BuildDocumentTree(void);
+    void SkipConditionalSection(void);
 
     void BeginElementContent(void);
     void ParseElementContent(const string& name, bool embedded);
@@ -118,6 +119,7 @@ protected:
     map<string,DTDEntity>  m_MapEntity;
     stack<AbstractLexer*>  m_StackLexer;
     stack<string>          m_StackPath;
+    list<string>           m_StackLexerName;
 };
 
 END_NCBI_SCOPE
@@ -128,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2005/01/03 16:51:34  gouriano
+ * Added parsing of conditional sections
+ *
  * Revision 1.6  2002/12/17 16:25:08  gouriano
  * replaced _ASSERTs by throwing an exception
  *

@@ -210,8 +210,8 @@ public:
     DTDEntityLexer(CNcbiIstream& in, bool autoDelete=true);
     virtual ~DTDEntityLexer(void);
 protected:
-    bool m_AutoDelete;
     CNcbiIstream* m_Str;
+    bool m_AutoDelete;
 };
 
 
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2005/01/03 16:51:34  gouriano
+ * Added parsing of conditional sections
+ *
  * Revision 1.1  2002/11/14 21:06:08  gouriano
  * auxiliary classes to use by DTD parser
  *
