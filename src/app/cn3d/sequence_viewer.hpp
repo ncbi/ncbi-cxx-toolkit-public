@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/20 22:22:03  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.6  2000/09/14 14:55:26  thiessen
 * add row reordering; misc fixes
 *
@@ -58,6 +61,8 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include "cn3d/alignment_manager.hpp"
+
 
 class ViewableAlignment; // base class for alignments to attach to SequenceViewerWidget
 
@@ -65,10 +70,8 @@ class ViewableAlignment; // base class for alignments to attach to SequenceViewe
 BEGIN_SCOPE(Cn3D)
 
 class Sequence;
-class BlockMultipleAlignment;
-class SequenceViewerWindow;
-class SequenceDisplay;
 class Messenger;
+class SequenceDisplay;
 
 class SequenceViewer
 {
@@ -95,6 +98,10 @@ private:
     Messenger *messenger;
     SequenceViewerWindow *viewerWindow;
     SequenceDisplay *display;
+
+public:
+
+    void SetUnalignedJustification(BlockMultipleAlignment::eUnalignedJustification justification);
 };
 
 END_SCOPE(Cn3D)

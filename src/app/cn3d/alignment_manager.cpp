@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/20 22:22:26  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.10  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -70,11 +73,16 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/style_manager.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/conservation_colorer.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
+
+///// AlignmentManager methods /////
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet,
     Messenger *mesg) :
@@ -190,10 +198,14 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
 }
 
 
+///// BlockMultipleAlignment methods /////
+
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList, Messenger *mesg) :
     sequences(sequenceList), currentJustification(eRight),
-    prevRow(-1), prevBlock(NULL), messenger(mesg)
+    prevRow(-1), prevBlock(NULL), messenger(mesg), conservationColorer(NULL)
 {
+    // create conservation colorer
+    conservationColorer = new ConservationColorer();
 }
 
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
@@ -204,7 +216,7 @@ BlockMultipleAlignment::~BlockMultipleAlignment(void)
     for (i=blocks.begin(); i!=ie; i++) if (*i) delete *i;
 }
 
-bool BlockMultipleAlignment::AddAlignedBlockAtEnd(Block *newBlock)
+bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock)
 {
     if (!newBlock || !newBlock->isAligned) {
         ERR_POST("MultipleAlignment::AddAlignedBlockAtEnd() - add aligned blocks only");
@@ -232,6 +244,7 @@ bool BlockMultipleAlignment::AddAlignedBlockAtEnd(Block *newBlock)
     }
 
     blocks.push_back(newBlock);
+    conservationColorer->AddBlock(newBlock);
     return true;
 }
 
@@ -316,6 +329,9 @@ bool BlockMultipleAlignment::AddUnalignedBlocksAndIndex(void)
         }
     }
 
+    // do conservation coloring
+    conservationColorer->CalculateConservationColors();
+
     TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
     return true;
 }
@@ -336,10 +352,14 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(int alignmentColumn, int row,
     else
         *character = tolower(*character);
 
-    if (sequence->molecule && seqIndex >= 0)
+    if (sequence->molecule && seqIndex >= 0) {
         *color = sequence->molecule->GetResidueColor(seqIndex);
-    else
-        color->Set(0,0,0);
+    } else {
+        if (isAligned)
+            *color = *GetAlignmentColor(row, seqIndex);
+        else
+            color->Set(.4, .4, .4);  // dark gray
+    }
 
     if (seqIndex >= 0)
         *isHighlighted = messenger->IsHighlighted(sequence, seqIndex);
@@ -371,31 +391,6 @@ bool BlockMultipleAlignment::GetSequenceAndIndexAt(int alignmentColumn, int row,
     *index = blockInfo.block->GetIndexAt(blockInfo.blockColumn, row, justification);
 
     return true;
-}
-
-int UnalignedBlock::GetIndexAt(int blockColumn, int row,
-        BlockMultipleAlignment::eUnalignedJustification justification) const
-{
-    const Block::Range *range = GetRangeOfRow(row);
-    int seqIndex;
-
-    switch (justification) {
-        case BlockMultipleAlignment::eLeft:
-            seqIndex = range->from + blockColumn;
-            break;
-        case BlockMultipleAlignment::eRight:
-            seqIndex = range->to - width + blockColumn + 1;
-            break;
-        case BlockMultipleAlignment::eCenter:
-            seqIndex = -1;
-            break;
-        case BlockMultipleAlignment::eSplit:
-            seqIndex = -1;
-            break;
-    }
-    if (seqIndex < range->from || seqIndex > range->to) seqIndex = -1;
-
-    return seqIndex;
 }
 
 int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
@@ -431,10 +426,58 @@ bool BlockMultipleAlignment::IsAligned(const Sequence *sequence, int seqIndex) c
         return false;
 }
 
+const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) const
+{
+    static const Vector noColor(0,0,0); // black
+
+    const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
+    if (!block || !block->isAligned) {
+        ERR_POST(Warning << "BlockMultipleAlignment::GetAlignmentColor() called on unaligned residue");
+        return &noColor;
+    }
+
+    const Sequence *sequence = sequences->at(row);
+    StyleSettings::eColorScheme colorScheme;
+    if (sequence->molecule) {
+        const StructureObject *object;
+        if (!sequence->molecule->GetParentOfType(&object)) return &noColor;
+        // assume residueID is seqIndex + 1
+        colorScheme = sequence->parentSet->styleManager->
+            GetStyleForResidue(object, sequence->molecule->id, seqIndex + 1).proteinBackbone.colorScheme;
+    } else {
+        colorScheme = sequence->parentSet->styleManager->GetGlobalStyle().proteinBackbone.colorScheme;
+    }
+
+    const Vector *alignedColor;
+
+    switch (colorScheme) {
+        case StyleSettings::eAligned:
+            alignedColor = &ConservationColorer::FullIdentityColor;
+            break;
+        case StyleSettings::eIdentity:
+            alignedColor = conservationColorer->
+                GetIdentityColor(block, seqIndex - block->GetRangeOfRow(row)->from);
+            break;
+        case StyleSettings::eVariety:
+            alignedColor = conservationColorer->
+                GetVarietyColor(block, seqIndex - block->GetRangeOfRow(row)->from);
+            break;
+        case StyleSettings::eWeightedVariety:
+            alignedColor = conservationColorer->
+                GetWeightedVarietyColor(block, seqIndex - block->GetRangeOfRow(row)->from);
+            break;
+        default:
+            alignedColor = &noColor;
+    }
+
+    return alignedColor;
+}
+
 const Vector * BlockMultipleAlignment::GetAlignmentColor(const Sequence *sequence, int seqIndex) const
 {
-    static const Vector red(1,0,0);
-    return &red;
+    int row = GetRowForSequence(sequence);
+    if (row < 0) return NULL;
+    return GetAlignmentColor(row, seqIndex);
 }
 
 const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
@@ -509,6 +552,55 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to) const
         
     messenger->AddHighlights(sequence, fromIndex, toIndex);
 }
+
+
+///// UngappedAlignedBlock methods /////
+
+char UngappedAlignedBlock::GetCharacterAt(int blockColumn, int row) const
+{
+    return sequences->at(row)->sequenceString[GetIndexAt(blockColumn, row)];
+}
+
+
+///// UnalignedBlock methods /////
+
+int UnalignedBlock::GetIndexAt(int blockColumn, int row,
+        BlockMultipleAlignment::eUnalignedJustification justification) const
+{
+    const Block::Range *range = GetRangeOfRow(row);
+    int seqIndex, rangeWidth, extraSpace;
+
+    switch (justification) {
+        case BlockMultipleAlignment::eLeft:
+            seqIndex = range->from + blockColumn;
+            break;
+        case BlockMultipleAlignment::eRight:
+            seqIndex = range->to - width + blockColumn + 1;
+            break;
+        case BlockMultipleAlignment::eCenter:
+            rangeWidth = (range->to - range->from + 1);
+            extraSpace = (width - rangeWidth) / 2;
+            if (blockColumn < extraSpace || blockColumn >= extraSpace + rangeWidth)
+                seqIndex = -1;
+            else
+                seqIndex = range->from + blockColumn - extraSpace;
+            break;
+        case BlockMultipleAlignment::eSplit:
+            rangeWidth = (range->to - range->from + 1);
+            extraSpace = width - rangeWidth;
+            if (blockColumn < rangeWidth / 2)
+                seqIndex = range->from + blockColumn;
+            else if (blockColumn >= extraSpace + rangeWidth / 2)
+                seqIndex = range->to - width + blockColumn + 1;
+            else
+                seqIndex = -1;
+            break;
+    }
+    if (seqIndex < range->from || seqIndex > range->to) seqIndex = -1;
+
+    return seqIndex;
+}
+
 
 END_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/20 22:22:28  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.8  2000/09/14 14:55:35  thiessen
 * add row reordering; misc fixes
 *
@@ -172,8 +175,6 @@ void SequenceViewerWidget::SetMouseMode(eMouseMode mode)
 
 void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
 {
-    ERR_POST(Info << "painting SequenceViewerWidget");
-
     wxPaintDC dc(this);
 
     int vsX, vsY, 
@@ -196,6 +197,10 @@ void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
     wxRegionIterator upd(GetUpdateRegion());
 
     for (; upd; upd++) {
+
+        if (upd.GetW() == GetClientSize().GetWidth() &&
+            upd.GetH() == GetClientSize().GetHeight())
+            ERR_POST(Info << "repainting whole SequenceViewerWidget");
 
         // draw background
         dc.SetPen(*(wxThePenList->
@@ -454,6 +459,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
     if (event.Leaving()) {
         cellX = prevMOX;
         cellY = prevMOY;
+        MOX = MOY = -1;
     }
 
     // do MouseOver if not in the same cell (or outside area) as last time

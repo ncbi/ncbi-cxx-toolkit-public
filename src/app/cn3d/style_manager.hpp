@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/09/20 22:22:03  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.14  2000/09/11 22:57:56  thiessen
 * working highlighting
 *
@@ -122,8 +125,13 @@ public:
         eObject,
         eMolecule,
         eSecondaryStructure,
-        eAlignment,
-        eUserSelect
+        eUserSelect,
+
+        // different alignment conservation coloring (currently only used for proteinBackbone)
+        eAligned,
+        eIdentity,
+        eVariety,
+        eWeightedVariety
     };
 
     typedef struct {
@@ -158,7 +166,7 @@ public:
     // methods to set to predetermined states
     void SetToSecondaryStructure(void);
     void SetToWireframe(void);
-    void SetToAlignment(void);
+    void SetToAlignment(StyleSettings::eColorScheme protBBType);
 
     StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
 };
@@ -213,19 +221,21 @@ public:
     bool CheckStyleSettings(const StructureSet *set);
 
 private:
-
     StyleSettings globalStyle;
-    // StyleSettings accessors
-    const StyleSettings& GetStyleForResidue(const StructureObject *object,
-        int moleculeID, int residueID) const;
 
     bool GetObjectStyle(const StructureObject *object, const Object3D& object3D,
         const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const;
 
 public:
+    // StyleSettings accessors
+    const StyleSettings& GetGlobalStyle(void) const { return globalStyle; }
+    const StyleSettings& GetStyleForResidue(const StructureObject *object,
+        int moleculeID, int residueID) const;
+
     void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
     void SetToWireframe(void) { globalStyle.SetToWireframe(); }
-    void SetToAlignment(void) { globalStyle.SetToAlignment(); }
+    void SetToAlignment(StyleSettings::eColorScheme protBBType)
+        { globalStyle.SetToAlignment(protBBType); }
 };
 
 // the following are convenience containers to tell the Draw functions how

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/20 22:22:30  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.15  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -188,11 +191,12 @@ void StyleSettings::SetToWireframe(void)
     backgroundColor.Set(0,0,0);
 }
 
-void StyleSettings::SetToAlignment(void)
+void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
 {
     proteinBackbone.type = nucleotideBackbone.type = eTrace;
     proteinBackbone.style = nucleotideBackbone.style = eTubes;
-    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eAlignment;
+    proteinBackbone.colorScheme = protBBType;
+    nucleotideBackbone.colorScheme = eObject;
 
     proteinSidechains.isOn = nucleotideSidechains.isOn = true;
     proteinSidechains.style = nucleotideSidechains.style = eWire;
@@ -398,11 +402,17 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->radius = 0.0;
 
     // determine color
-    switch (backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme) {
+    static Vector unalignedColor(175.0/255, 175.0/255, 175.0/255);
+    StyleSettings::eColorScheme 
+        colorStyle = backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme;
+    switch (colorStyle) {
         case StyleSettings::eElement:
             atomStyle->color = element->color;
             break;
-        case StyleSettings::eAlignment:
+        case StyleSettings::eAligned:
+        case StyleSettings::eIdentity:
+        case StyleSettings::eVariety:
+        case StyleSettings::eWeightedVariety:
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
                     IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
@@ -413,7 +423,12 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 else
                     atomStyle->color.Set(1,0,0);
                 break;
-            } // if not aligned, then use eObject coloring
+            }
+            if (colorStyle != StyleSettings::eAligned) {
+                atomStyle->color = unalignedColor;
+                break;
+            }
+            // if eAligned and not aligned, then use eObject coloring
         case StyleSettings::eMolecule:
             // should actually be a color cycle...
         case StyleSettings::eObject:
@@ -750,10 +765,10 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
     return true;
 }
 
-// eventually this will know about annotations...
 const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *object,
     int moleculeID, int residueID) const
 { 
+    // eventually this will know about annotations...
     return globalStyle;
 }
 

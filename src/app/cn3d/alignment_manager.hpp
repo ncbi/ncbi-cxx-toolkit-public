@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/20 22:22:02  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.8  2000/09/15 19:24:33  thiessen
 * allow repeated structures w/o different local id
 *
@@ -76,11 +79,13 @@ class AlignmentSet;
 class MasterSlaveAlignment;
 class SequenceViewer;
 class Messenger;
+class ConservationColorer;
 
 
 ///// The next few classes make up the implementation of a multiple alignment /////
 
 class Block; // defined below
+class UngappedAlignedBlock;
 
 class BlockMultipleAlignment
 {
@@ -93,7 +98,7 @@ public:
     const SequenceList *sequences;
 
     // add a new aligned block - will be "owned" and deallocated by BlockMultipleAlignment
-    bool AddAlignedBlockAtEnd(Block *newBlock);
+    bool AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock);
 
     // should be called after all aligned blocks have been added; fills out
     // unaligned blocks inbetween aligned blocks (and at ends). Also sets length,
@@ -109,6 +114,7 @@ public:
     // get a color for an aligned residue that's dependent on the entire alignment
     // (e.g., for coloring by sequence conservation)
     const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
+    const Vector * GetAlignmentColor(int row, int seqIndex) const;
 
     // will be used to control padding of unaligned blocks
     enum eUnalignedJustification {
@@ -122,6 +128,8 @@ public:
     int GetFirstAlignedBlockPosition(void) const;
     
 private:
+    ConservationColorer *conservationColorer;
+
     Messenger *messenger;
 
     typedef std::list < Block * > BlockList;
@@ -211,9 +219,13 @@ class UngappedAlignedBlock : public Block
 {
 public:
     UngappedAlignedBlock(const SequenceList *sequenceList) : Block(sequenceList, true) { }
+
     int GetIndexAt(int blockColumn, int row,
-        BlockMultipleAlignment::eUnalignedJustification justification) const
-            { return (GetRangeOfRow(row)->from + blockColumn); }
+        BlockMultipleAlignment::eUnalignedJustification justification =
+            BlockMultipleAlignment::eCenter) const  // justification ignored for aligned block
+        { return (GetRangeOfRow(row)->from + blockColumn); }
+
+    char GetCharacterAt(int blockColumn, int row) const;
 };
 
 // an unaligned block; max width of block must be >=1, but range over any given

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/09/20 22:22:29  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.30  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -281,7 +284,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
-        styleManager->SetToAlignment();
+        styleManager->SetToAlignment(StyleSettings::eAligned);
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -303,7 +306,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
-        styleManager->SetToAlignment();
+        styleManager->SetToAlignment(StyleSettings::eAligned);
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);

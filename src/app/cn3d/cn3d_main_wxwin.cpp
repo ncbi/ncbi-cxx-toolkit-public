@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/20 22:22:27  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.9  2000/09/14 14:55:34  thiessen
 * add row reordering; misc fixes
 *
@@ -286,6 +289,11 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
     menu = new wxMenu;
     menu->Append(MID_SECSTRUC, "&Secondary Structure");
     menu->Append(MID_ALIGN, "&Alignment");
+    wxMenu *subMenu = new wxMenu;
+    subMenu->Append(MID_IDENT, "&Identity");
+    subMenu->Append(MID_VARIETY, "&Variety");
+    subMenu->Append(MID_WGHT_VAR, "&Weighted Variety");
+    menu->Append(MID_CONS, "&Conservation", subMenu);
     menu->Append(MID_WIREFRAME, "&Wireframe");
     menuBar->Append(menu, "&Style");
 
@@ -366,7 +374,16 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 glCanvas->structureSet->styleManager->SetToSecondaryStructure();
                 break;
             case MID_ALIGN:
-                glCanvas->structureSet->styleManager->SetToAlignment();
+                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eAligned);
+                break;
+            case MID_IDENT:
+                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eIdentity);
+                break;
+            case MID_VARIETY:
+                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eVariety);
+                break;
+            case MID_WGHT_VAR:
+                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eWeightedVariety);
                 break;
             case MID_WIREFRAME:
                 glCanvas->structureSet->styleManager->SetToWireframe();

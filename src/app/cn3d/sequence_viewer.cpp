@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/20 22:22:27  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.11  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -73,7 +76,6 @@
 
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/sequence_viewer_widget.hpp"
-#include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/vector_math.hpp"
@@ -99,6 +101,20 @@ public:
     void NewAlignment(ViewableAlignment *newAlignment);
 
     void OnMouseMode(wxCommandEvent& event);
+    void OnJustification(wxCommandEvent& event);
+
+    // menu identifiers
+    enum {
+        // mouse mode
+        MID_SELECT,
+        MID_MOVE_ROW,
+
+        // unaligned justification
+        MID_LEFT,
+        MID_RIGHT,
+        MID_CENTER,
+        MID_SPLIT
+    };
 
     DECLARE_EVENT_TABLE()
 
@@ -113,13 +129,9 @@ public:
     void Refresh(void) { viewerWidget->Refresh(false); }
 };
 
-enum {
-    MID_SELECT,
-    MID_MOVE_ROW
-};
-
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
-    EVT_MENU_RANGE(MID_SELECT,   MID_MOVE_ROW,      SequenceViewerWindow::OnMouseMode)
+    EVT_MENU_RANGE(MID_SELECT,      MID_MOVE_ROW,       SequenceViewerWindow::OnMouseMode)
+    EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          SequenceViewerWindow::OnJustification)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
@@ -139,6 +151,13 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->Append(MID_SELECT, "&Select");
     menu->Append(MID_MOVE_ROW, "Move &Row");
     menuBar->Append(menu, "&Mouse Mode");
+
+    menu = new wxMenu;
+    menu->Append(MID_LEFT, "&Left");
+    menu->Append(MID_RIGHT, "&Right");
+    menu->Append(MID_CENTER, "&Center");
+    menu->Append(MID_SPLIT, "&Split");
+    menuBar->Append(menu, "Unaligned &Justification");
 
     SetMenuBar(menuBar);
 }
@@ -163,6 +182,25 @@ void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
         case MID_MOVE_ROW:
             viewerWidget->SetMouseMode(SequenceViewerWidget::eDragVertical); break;
     }
+}
+
+void SequenceViewerWindow::OnJustification(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_LEFT:
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eLeft);
+            break;
+        case MID_RIGHT:
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eRight);
+            break;
+        case MID_CENTER:
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eCenter);
+            break;
+        case MID_SPLIT:
+            viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
+            break;
+    }
+    viewer->messenger->PostRedrawSequenceViewers();
 }
 
 
@@ -318,6 +356,8 @@ class SequenceViewerWindow;
 
 class SequenceDisplay : public ViewableAlignment
 {
+    friend class SequenceViewer;
+
 public:
     SequenceDisplay(SequenceViewerWindow * const *parentViewer, Messenger *messenger);
     ~SequenceDisplay(void);
@@ -386,6 +426,7 @@ void SequenceDisplay::AddRowFromAlignment(int row, const BlockMultipleAlignment 
         ERR_POST(Error << "SequenceDisplay::AddRowFromAlignment() failed");
         return;
     }
+    alignment = fromAlignment;  // to make sure all alignment rows are from same alignment
 
     AddRow(new DisplayRowFromAlignment(row, fromAlignment));
 }
@@ -587,6 +628,13 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
     }
 
     NewAlignment(display);
+}
+
+void SequenceViewer::SetUnalignedJustification(BlockMultipleAlignment::eUnalignedJustification justification)
+{
+    if (display && display->alignment)
+        (const_cast<BlockMultipleAlignment*>(display->alignment))->
+            SetUnalignedJustification(justification);
 }
 
 END_SCOPE(Cn3D)

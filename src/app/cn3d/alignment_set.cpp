@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/20 22:22:26  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.5  2000/09/15 19:24:22  thiessen
 * allow repeated structures w/o different local id
 *
@@ -171,7 +174,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
     }
 
     // then make an alignment from each Seq-align; for any sequence that has structure, make
-    // sure that that sequence only appears once in the alignment
+    // sure that that Sequence object only appears once in the alignment
     MasterSlaveAlignment::UsedSequenceList usedStructuredSequences;
     SeqAlignList::const_iterator s, se = seqaligns.end();
     for (s=seqaligns.begin(); s!=se; s++) {

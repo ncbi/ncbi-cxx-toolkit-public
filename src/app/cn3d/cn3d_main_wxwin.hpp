@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/20 22:22:02  thiessen
+* working conservation coloring; split and center unaligned justification
+*
 * Revision 1.7  2000/09/12 01:46:07  thiessen
 * fix minor but obscure bug
 *
@@ -153,6 +156,11 @@ public:
         // Style menu
             MID_SECSTRUC,
             MID_ALIGN,
+                // conservation sub-menu
+                MID_CONS,
+                    MID_IDENT,
+                    MID_VARIETY,
+                    MID_WGHT_VAR,
             MID_WIREFRAME,
         // Quality menu
             MID_QLOW,
