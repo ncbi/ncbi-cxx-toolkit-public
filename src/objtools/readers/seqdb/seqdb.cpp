@@ -337,7 +337,7 @@ CSeqDB::GetNextOIDChunk(Uint4         & begin,
     }
     
     begin  = ibegin;
-    end    = ibegin;
+    end    = iend;
     
     if (state) {
         *state = istate;
