@@ -214,8 +214,31 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info);
 
 
 /* Set user header (discard previously set header, if any).
+ * Reset the old header (if any) if "header" == NULL.
  */
 extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info, const char* header);
+
+
+/* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
+ * header was set, or if "hdr" == NULL).
+ */
+extern void ConnNetInfo_AppendUserHeader(SConnNetInfo* info, const char* hdr);
+
+
+/* Override user header (same as ConnNetInfo_AppendUserHeader() if
+ * no header was previously set).
+ * Tags replaced (case-insensitively), and tags with empty values effectively
+ * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
+ * any appearence of "My-Tag: [<value>]" from the user header. Unmatched
+ * tags simply added to the existing user header (as with "Append" above).
+ */
+extern void ConnNetInfo_OverrideUserHeader(SConnNetInfo* inf, const char* hdr);
+
+
+/* Delete entries from current user header, if their tags match of those
+ * tags passed in "hdr" (regardless of the value, if any, of the latter).
+ */
+extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* inf, const char* hdr);
 
 
 /* Parse URL into "*info", using (service-specific, if any) defaults.
@@ -505,6 +528,11 @@ extern size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/10/11 19:41:40  lavr
+ * +ConnNetInfo_AppendUserHeader()
+ * +ConnNetInfo_OverrideUserHeader()
+ * +ConnNetInfo_DeleteUserHeader()
+ *
  * Revision 6.22  2002/09/19 18:00:21  lavr
  * Header file guard macro changed; log moved to the end
  *

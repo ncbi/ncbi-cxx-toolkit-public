@@ -357,6 +357,142 @@ extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
 }
 
 
+extern void ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
+                                         const char*   user_header)
+{
+    size_t oldlen, newlen;
+    char* new_header;
+
+    if (!info->http_user_header || !(oldlen = strlen(info->http_user_header))){
+        ConnNetInfo_SetUserHeader(info, user_header);
+        return;
+    }
+
+    if (!user_header || !(newlen = strlen(user_header)))
+        return;
+
+    new_header = realloc((void*) info->http_user_header, oldlen + newlen + 1);
+    if (!new_header)
+        return;
+
+    memcpy(&new_header[oldlen], user_header, newlen + 1);
+    info->http_user_header = new_header;
+}
+
+
+static void s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
+                                         const char*   user_header,
+                                         int/*bool*/   do_delete)
+{
+    char*  new_header;
+    size_t newlinelen;
+    size_t newhdrlen;
+    char*  newline;
+    size_t hdrlen;
+    char*  hdr;
+    
+    if (!(hdr = (char*) info->http_user_header) || !(hdrlen = strlen(hdr))) {
+        if (!do_delete)
+            ConnNetInfo_SetUserHeader(info, user_header);
+        return;
+    }
+
+    if (!user_header || !(newhdrlen = strlen(user_header)))
+        return;
+
+    if (!(new_header = malloc(newhdrlen + 1)))
+        return;
+    memcpy(new_header, user_header, newhdrlen + 1);
+
+    for (newline = new_header; *newline; newline += newlinelen) {
+        char*  eol = strchr(newline, '\n');
+        char*  eot = strchr(newline,  ':');
+        int/*bool*/ replaced = 0;
+        size_t newtaglen;
+        size_t linelen;
+        char*  line;
+        size_t len;
+
+        newlinelen = (size_t)
+            (eol ? eol - newline + 1 : new_header + newhdrlen - newline);
+        if (!eot || eot > newline + newlinelen ||
+            !(newtaglen = (size_t)(eot - newline)))
+            continue;
+
+        if (!do_delete) {
+            char* newtagval = newline + newtaglen + 1;
+            while (newtagval < newline + newlinelen) {
+                if (isspace((unsigned char)(*newtagval)))
+                    newtagval++;
+                else
+                    break;
+            }
+            len = newtagval < newline + newlinelen ? newlinelen : 0;
+        } else
+            len = 0;
+
+        for (line = hdr; *line; line += linelen) {
+            size_t taglen;
+
+            eol = strchr(line, '\n');
+            eot = strchr(line,  ':');
+
+            linelen = (size_t)(eol ? eol - line + 1 : hdr + hdrlen - line);
+            if (!eot || eot > line + linelen)
+                continue;
+
+            taglen = (size_t)(eot - line);
+            if (newtaglen != taglen || strncasecmp(newline, line, taglen) != 0)
+                continue;
+
+            if (len != linelen) {
+                if (len > linelen) {
+                    char*  temp   = realloc(hdr, hdrlen + len - linelen + 1);
+                    size_t offset = (size_t)(line - hdr);
+                    if (!temp)
+                        continue;
+                    hdr  = temp;
+                    line = temp + offset;
+                }
+                memmove(line + len, line + linelen,
+                        hdrlen - (size_t)(line - hdr) - linelen + 1);
+                hdrlen -= linelen;
+                hdrlen += len;
+            }
+
+            if (len)
+                memcpy(line, newline, len);
+            linelen = len;
+            replaced = 1;
+        }
+
+        if (replaced || !len) {
+            memmove(newline, newline + newlinelen,
+                    newhdrlen - (size_t)(newline-new_header) - newlinelen + 1);
+            newhdrlen -= newlinelen;
+            newlinelen = 0;
+        }
+    }
+
+    info->http_user_header = hdr;
+    if (!do_delete)
+        ConnNetInfo_AppendUserHeader(info, new_header);
+    free(new_header);
+}
+
+
+extern void ConnNetInfo_OverrideUserHeader(SConnNetInfo* info, const char* hdr)
+{
+    s_OverrideOrDeleteUserHeader(info, hdr, 0/*false: do not delete only*/);
+}
+
+
+extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info, const char* hdr)
+{
+    s_OverrideOrDeleteUserHeader(info, hdr, 1/*true: do delete only*/);
+}
+
+
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
@@ -1183,6 +1319,11 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2002/10/11 19:42:06  lavr
+ * +ConnNetInfo_AppendUserHeader()
+ * +ConnNetInfo_OverrideUserHeader()
+ * +ConnNetInfo_DeleteUserHeader()
+ *
  * Revision 6.37  2002/09/24 18:08:34  lavr
  * Avoid compiler warning in positioning on first but one array element
  *
