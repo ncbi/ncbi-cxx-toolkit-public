@@ -41,6 +41,21 @@
 BEGIN_NCBI_SCOPE
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  Constants
+//
+
+static const char* s_ArgLogFile = "-logfile";
+static const char* s_ArgCfgFile = "-conffile";
+
+
+static void s_DiagToStdlog_Cleanup(void* data)
+{  // SetupDiag(eDS_ToStdlog)
+    CNcbiOfstream* os_log = static_cast<CNcbiOfstream*>(data);
+    delete os_log;
+}
+
+
 ///////////////////////////////////////////////////////
 // CNcbiApplication
 //
@@ -186,6 +201,54 @@ int CNcbiApplication::AppMain
     }
 #endif
 
+    // Check command line for presence special arguments "-logfile", "-conffile"
+    bool is_diag_setup = false;
+    if (argc > 1  &&  argv) {
+        const char** v = new const char*[argc];
+        v[0] = argv[0];
+        int real_arg_index = 0;
+        for (int i = 1;  i < argc;  i++) {
+            if ( !argv[i] ) {
+                continue;
+            }
+            // Log file
+            if ( NStr::strcmp(argv[i], s_ArgLogFile) == 0 ) {
+                if ( !argv[i++] ) {
+                    continue;
+                }
+                const char* log = argv[i];
+                auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log));
+                if ( !os->good() ) {
+                    _TRACE("CNcbiApplication() -- cannot open log file: " << log);
+                    continue;
+                }
+                _TRACE("CNcbiApplication() -- opened log file: " << log);
+                // (re)direct the global diagnostics to the log.file
+                CNcbiOfstream* os_log = os.release();
+                SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup, (void*) os_log);
+                diag = eDS_ToStdlog;
+                is_diag_setup = true;
+
+            // Configuration file
+            } else if ( NStr::strcmp(argv[i], s_ArgCfgFile) == 0 ) {
+                if ( !argv[i++] ) {
+                    continue;
+                }
+                conf = argv[i];
+
+            // Save real argument
+            } else {
+                v[real_arg_index++] = argv[i];
+            }
+        }
+        if (real_arg_index + 1 == argc ) {
+            delete[] v;
+        } else {
+            argc = real_arg_index + 1;
+            argv = v;
+        }
+    }
+
     // Reset command-line args and application name
     m_Arguments->Reset(argc, argv, name);
 
@@ -205,7 +268,7 @@ int CNcbiApplication::AppMain
 
     // Setup for diagnostics
     try {
-        if ( !SetupDiag(diag) ) {
+        if ( !is_diag_setup  &&  !SetupDiag(diag) ) {
             ERR_POST("CNcbiApplication::SetupDiag() returned FALSE");
         }
     } catch (exception& e) {
@@ -218,8 +281,6 @@ int CNcbiApplication::AppMain
         if ( conf ) {
             string x_conf(conf);
             LoadConfig(*m_Config, &x_conf);
-        } else {
-            LoadConfig(*m_Config, 0);
         }
     } catch (exception& e) {
         ERR_POST("CNcbiApplication::LoadConfig() failed: " << e.what());
@@ -295,13 +356,6 @@ int CNcbiApplication::AppMain
 
     // Exit
     return exit_code;
-}
-
-
-static void s_DiagToStdlog_Cleanup(void* data)
-{  // SetupDiag(eDS_ToStdlog)
-    CNcbiOfstream* os_log = static_cast<CNcbiOfstream*>(data);
-    delete os_log;
 }
 
 
@@ -504,6 +558,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2002/06/19 16:57:56  ivanov
+ * Added new default command line parameters "-logfile <file>" and
+ * "-conffile <file>" into CNcbiApplication::AppMain()
+ *
  * Revision 1.37  2002/04/11 21:08:00  ivanov
  * CVS log moved to end of the file
  *
