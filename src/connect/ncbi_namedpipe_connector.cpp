@@ -62,7 +62,7 @@ typedef struct {
 extern "C" {
 
 static const char* s_VT_GetType
-(CONNECTOR connector)
+(CONNECTOR /*connector*/)
 {
     return "NAMEDPIPE";
 }
@@ -119,9 +119,9 @@ static EIO_Status s_VT_Status
 
 
 static EIO_Status s_VT_Wait
-(CONNECTOR       connector,
- EIO_Event       event,
- const STimeout* timeout)
+(CONNECTOR       /*connector*/,
+ EIO_Event       /*event*/,
+ const STimeout* /*timeout*/)
 {
     return eIO_Success;
 }
@@ -169,7 +169,7 @@ static EIO_Status s_VT_Read
 
 static EIO_Status s_VT_Close
 (CONNECTOR       connector,
- const STimeout* timeout)
+ const STimeout* /*timeout*/)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     EIO_Status status = eIO_Success;
@@ -261,6 +261,9 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2003/08/20 16:51:05  ivanov
+ * Get read of some warnings -- unused function parameters
+ *
  * Revision 1.1  2003/08/18 19:18:23  ivanov
  * Initial revision
  *
