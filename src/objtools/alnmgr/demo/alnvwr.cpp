@@ -158,6 +158,7 @@ void CAlnMgrTestApp::LoadDenseg(void)
             (CObjectIStream::Open(eSerial_AsnText, is));
 
         asn_type = in->ReadFileHeader();
+        in.Close();
         is.seekg(0);
     }}
 
@@ -566,6 +567,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/12/10 23:58:07  todorov
+* Added CObjectIStream::Close before IStream::seekg
+*
 * Revision 1.12  2003/12/09 16:13:34  todorov
 * code cleanup
 *
