@@ -17469,6 +17469,9 @@ if test "$with_bdb" != "no" ; then
           $as_unset BERKELEYDB_LIBS || test "${BERKELEYDB_LIBS+set}" != set || { BERKELEYDB_LIBS=; export BERKELEYDB_LIBS; }
           ;;
    esac
+   if test -d "$BERKELEYDB_PATH"; then
+      BERKELEYDB_PATH=`cd $BERKELEYDB_PATH  &&  $smart_pwd`
+   fi
    : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    if test -z "${BERKELEYDB_LIBPATH}"; then
       for d in "${compiler_vpfx}${release_debug}${bit64_sfx}" \
@@ -20269,6 +20272,9 @@ if test "$with_fastcgi" != "no" ; then
       */*      ) FASTCGI_PATH=$with_fastcgi              ;;
       *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
    esac
+   if test -d "$FASTCGI_PATH"; then
+      FASTCGI_PATH=`cd $FASTCGI_PATH  &&  $smart_pwd`
+   fi
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"
@@ -21650,6 +21656,9 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite}
+if test -d "$SQLITE_PATH"; then
+   SQLITE_PATH=`cd $SQLITE_PATH  &&  $smart_pwd`
+fi
 if test "$with_sqlite" != "no"; then
     case "$with_sqlite" in
        yes | "" ) ;;

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.359 2005/03/31 18:01:28 ucko Exp $
+#  $Id: configure.ac,v 1.360 2005/03/31 21:43:21 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2817,6 +2817,9 @@ if test "$with_bdb" != "no" ; then
           AS_UNSET(BERKELEYDB_LIBS)
           ;;
    esac
+   if test -d "$BERKELEYDB_PATH"; then
+      BERKELEYDB_PATH=`cd $BERKELEYDB_PATH  &&  $smart_pwd`
+   fi
    : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    if test -z "${BERKELEYDB_LIBPATH}"; then
       for d in "${compiler_vpfx}${release_debug}${bit64_sfx}" \
@@ -3341,6 +3344,9 @@ if test "$with_fastcgi" != "no" ; then
       */*      ) FASTCGI_PATH=$with_fastcgi              ;;
       *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
    esac
+   if test -d "$FASTCGI_PATH"; then
+      FASTCGI_PATH=`cd $FASTCGI_PATH  &&  $smart_pwd`
+   fi
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"
@@ -3867,6 +3873,9 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite}
+if test -d "$SQLITE_PATH"; then
+   SQLITE_PATH=`cd $SQLITE_PATH  &&  $smart_pwd`
+fi
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
  AC_LANG_PROGRAM([#include <sqlite.h>],
     [char *errs; sqlite* db = sqlite_open("foo.db", 0, &errs);]))
