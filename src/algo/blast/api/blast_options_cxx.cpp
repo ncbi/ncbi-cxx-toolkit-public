@@ -400,6 +400,21 @@ CBlastOptionsLocal::GetProgramType() const
     }
 }
 
+static void 
+BlastMessageToException(Blast_Message** blmsg_ptr, const string& default_msg)
+{
+    if (!blmsg_ptr || *blmsg_ptr == NULL)
+        return;
+
+    Blast_Message* blmsg = *blmsg_ptr;
+    string msg = blmsg ? blmsg->message : default_msg;
+
+    *blmsg_ptr = Blast_MessageFree(blmsg);
+
+    if (msg != NcbiEmptyString)
+        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
+}
+
 bool
 CBlastOptionsLocal::Validate() const
 {
@@ -408,30 +423,26 @@ CBlastOptionsLocal::Validate() const
     EBlastProgramType program = GetProgramType();
 
     if (BlastScoringOptionsValidate(program, m_ScoringOpts, &blmsg)) {
-        msg = blmsg ? blmsg->message : "Scoring options validation failed";
+        BlastMessageToException(&blmsg, "Scoring options validation failed");
     }
 
     if (LookupTableOptionsValidate(program, m_LutOpts, &blmsg)) {
-        msg = blmsg ? blmsg->message : "Lookup table options validation failed";
+        BlastMessageToException(&blmsg, "Lookup table options validation failed");
     }
 
     if (BlastInitialWordOptionsValidate(program, m_InitWordOpts, m_LutOpts, 
                                         &blmsg)) {
-        msg = blmsg ? blmsg->message : "Word finder options validation failed";
+        BlastMessageToException(&blmsg, "Word finder options validation failed");
     }
 
     if (BlastHitSavingOptionsValidate(program, m_HitSaveOpts, &blmsg)) {
-        msg = blmsg ? blmsg->message : "Hit saving options validation failed";
+        BlastMessageToException(&blmsg, "Hit saving options validation failed");
     }
 
     if (BlastExtensionOptionsValidate(program, m_ExtnOpts, &blmsg)) {
-        msg = blmsg ? blmsg->message : "Extension options validation failed";
+        BlastMessageToException(&blmsg, "Extension options validation failed");
     }
 
-    Blast_MessageFree(blmsg);
-
-    if (msg != NcbiEmptyString)
-        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
     return true;
 }
 
@@ -618,6 +629,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/08/13 17:56:45  dondosha
+* Memory leak fix in Validate method: throw exception after first failure
+*
 * Revision 1.47  2004/08/03 20:22:08  dondosha
 * Added initial word options validation
 *
