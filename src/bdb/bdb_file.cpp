@@ -664,6 +664,72 @@ void CBDB_File::SetCmp(DB* db)
 }
 
 
+CBDB_File::TUnifiedFieldIndex 
+CBDB_File::GetFieldIdx(const string& name) const
+{
+    int fidx = 0;
+    if (m_KeyBuf.get()) {
+        fidx = m_KeyBuf->GetFieldIndex(name);
+        if (fidx >= 0) {    //  field name found
+            ++fidx;
+            return -fidx;
+        }
+    }
+
+    if (m_DataBuf.get()) {
+        fidx = m_DataBuf->GetFieldIndex(name);
+        if (fidx >= 0) {    //  field name found
+            if (fidx >= 0) {    //  field name found
+                return ++fidx;
+            }
+        }
+    }
+    return 0;
+}
+
+const CBDB_Field& CBDB_File::GetField(TUnifiedFieldIndex idx) const
+{
+    _ASSERT(idx != 0);
+
+    const CBDB_BufferManager* buffer;
+
+    if (idx < 0) { // key buffer
+        idx = -idx;
+        --idx;
+        buffer = m_KeyBuf.get();
+    } else {  // data buffer
+        --idx;
+        buffer = m_DataBuf.get();
+    }
+
+    _ASSERT(buffer);
+
+    const CBDB_Field& fld = buffer->GetField(idx);
+    return fld;
+}
+
+
+CBDB_Field& CBDB_File::GetField(TUnifiedFieldIndex idx)
+{
+    _ASSERT(idx != 0);
+
+    CBDB_BufferManager* buffer;
+
+    if (idx < 0) {     // key buffer
+        idx = -idx;
+        --idx;
+        buffer = m_KeyBuf.get();
+    } else {          // data buffer
+        --idx;
+        buffer = m_DataBuf.get();
+    }
+
+    _ASSERT(buffer);
+
+    CBDB_Field& fld = buffer->GetField(idx);
+    return fld;
+}
+
 
 EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
 {
@@ -785,6 +851,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/02/13 15:01:02  kuznets
+ * + methods working with TUnifiedFieldIndex
+ *
  * Revision 1.32  2004/02/11 17:56:20  kuznets
  * Assign legacy strings checking flag when attaching to a file
  *
