@@ -47,7 +47,8 @@ BEGIN_NCBI_SCOPE
 
 //
 // FileMessageResponder is a mix-in class - an interface-only class that defines callback methods that
-// will be used to pass messages to an application object of this type
+// will be used to pass messages to an application object of this type. For both commands and replies,
+// if the 'data' string is not empty (size()>0), then it will be a series of '\n'-terminated lines.
 //
 class MessageResponder
 {
@@ -163,6 +164,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/19 14:44:36  thiessen
+* fix char/traits problem
+*
 * Revision 1.2  2003/03/13 18:55:04  thiessen
 * add messenger destroy function
 *

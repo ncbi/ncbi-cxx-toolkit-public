@@ -226,12 +226,12 @@ static bool ReadSingleLine(CNcbiIfstream& inStream, string *str)
     CT_CHAR_TYPE ch;
     do {
         ch = inStream.get();
-        if (CT_EQ_INT_TYPE(CT_TO_INT_TYPE(ch), CT_EOF))
+        if (inStream.bad() || inStream.fail() || CT_EQ_INT_TYPE(CT_TO_INT_TYPE(ch), CT_EOF))
             return false;
-        else if (ch == '\n')
+        else if (CT_EQ_INT_TYPE(CT_TO_INT_TYPE(ch), CT_TO_INT_TYPE('\n')))
             break;
         else
-            *str += ch;
+            *str += CT_TO_CHAR_TYPE(ch);
     } while (1);
     return true;
 }
@@ -275,7 +275,10 @@ void FileMessenger::ReceiveCommands(void)
     do {
 
         // get To: (ignore if not this app)
-        if (!ReadSingleLine(*inStream, &line) || line.size() == 0) return;
+        if (!ReadSingleLine(*inStream, &line) || line.size() == 0) {
+            return;
+        }
+
         GET_ITEM("To: ")
         if (item != manager->applicationName) {
             SKIP_THROUGH_END_OF_COMMAND;
@@ -326,8 +329,8 @@ void FileMessenger::ReceiveCommands(void)
         do {
             GET_EXPECTED_LINE
             if (line == COMMAND_END) break;
-            if (command.data.size() > 0) command.data += '\n';
             command.data += line;
+            command.data += '\n';
         } while (1);
 
         // process new commands/replies
@@ -371,9 +374,13 @@ void FileMessenger::SendPendingCommands(void)
             << "To: " << c->to << '\n'
             << "From: " << manager->applicationName << '\n'
             << "ID: " << c->id << '\n'
-            << (isReply ? "Reply: " : "Command: ") << c->command << '\n'
-            << c->data << '\n'
-            << COMMAND_END << '\n';
+            << (isReply ? "Reply: " : "Command: ") << c->command << '\n';
+        if (c->data.size() > 0) {
+            *outStream << c->data;
+            if (c->data[c->data.size() - 1] != '\n')    // append \n if data doesn't end with one
+                *outStream << '\n';
+        }
+        *outStream << COMMAND_END << '\n';
         TRACEMSG("sent " << (isReply ? "reply " : "command ") << c->id << " to " << c->to);
     }
     pendingCommands.clear();
@@ -433,6 +440,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/19 14:44:36  thiessen
+* fix char/traits problem
+*
 * Revision 1.3  2003/03/14 19:22:59  thiessen
 * add CommandProcessor to handle file-message commands; fixes for GCC 2.9
 *
