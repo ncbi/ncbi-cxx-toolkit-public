@@ -33,8 +33,7 @@
 #ifndef ALGO_BLAST_API___BLAST_SEQ__HPP
 #define ALGO_BLAST_API___BLAST_SEQ__HPP
 
-#include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_types.hpp>
 // NewBlast includes
 #include <algo/blast/core/blast_options.h>
 
@@ -53,6 +52,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/19 22:11:49  dondosha
+* Major types definitions moved to blast_types.h
+*
 * Revision 1.7  2003/08/19 20:22:05  dondosha
 * EProgram definition moved from CBlastOption clase to blast scope
 *

@@ -39,6 +39,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objtools/alnmgr/util/showalign.hpp>
 
+#include <algo/blast/api/blast_types.hpp>
 // NewBlast includes
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
@@ -53,31 +54,6 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-
-
-/// Enumeration analogous to blast_type_* defines from blast_def.h
-enum EProgram {
-    eBlastn = 0,        //< Nucl-Nucl (also includes megablast)
-    eBlastp,            //< Protein-Protein
-    eBlastx,            //< Translated nucl-Protein
-    eTblastn,           //< Protein-Translated nucl
-    eTblastx,           //< Translated nucl-Translated nucl
-    eBlastUndef = 255   //< Undefined program
-};
-
-struct SSeqLoc {
-    CConstRef<objects::CSeq_loc>     seqloc;
-    mutable CRef<objects::CScope>    scope;
-
-    SSeqLoc()
-        : seqloc(), scope() {}
-    SSeqLoc(CConstRef<objects::CSeq_loc> sl, CRef<objects::CScope> s)
-        : seqloc(sl), scope(s) {}
-};
-typedef vector<SSeqLoc>   TSeqLocVector;
-typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
-typedef list<objects::CDisplaySeqalign::SeqlocInfo> TSeqLocInfo; 
-typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 
 /** Converts a CSeq_loc into a BlastMask structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
@@ -101,13 +77,13 @@ void BlastMaskProteinToDNA(BlastMask** mask, TSeqLocVector &slp);
  */
 
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
-class C##struct_name##Ptr : public CDebugDumpable \
+class C##struct_name## : public CDebugDumpable \
 { \
 public: \
-    C##struct_name##Ptr() : m_Ptr(NULL) {} \
-    C##struct_name##Ptr(struct_name* p) : m_Ptr(p) {} \
+    C##struct_name##() : m_Ptr(NULL) {} \
+    C##struct_name##(struct_name* p) : m_Ptr(p) {} \
     void Reset(struct_name* p) { if (m_Ptr) { free_func(m_Ptr); } m_Ptr = p; } \
-    ~C##struct_name##Ptr() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
+    ~C##struct_name##() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
     operator struct_name *() { return m_Ptr; } \
     operator struct_name *() const { return m_Ptr; } \
     struct_name* operator->() { return m_Ptr; } \
@@ -159,6 +135,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/08/19 22:11:49  dondosha
+* Major types definitions moved to blast_types.h
+*
 * Revision 1.17  2003/08/19 20:22:05  dondosha
 * EProgram definition moved from CBlastOption clase to blast scope
 *
