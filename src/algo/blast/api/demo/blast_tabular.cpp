@@ -91,6 +91,9 @@ CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
             blaster->GetOptions().GetHitSaveOpts(), m_ipQueryInfo, 
             blaster->GetScoreBlk(), &m_ipScoreParams, &m_ipExtParams, 
             &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
+        /* Set X-dropoff for traceback before tabular output to final 
+           X-dropoff. */
+        m_ipGapAlign->gap_x_dropoff = m_ipExtParams->gap_x_dropoff_final;
     } else {
         m_ipScoreParams = NULL;
         m_ipExtParams = NULL;
@@ -274,6 +277,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/02/15 23:27:45  dondosha
+* Set X-dropoff in the GapAlignStruct to final X-dropoff for traceback before tabular formatting
+*
 * Revision 1.11  2004/12/21 17:18:56  dondosha
 * eSkipTbck option has been removed
 *
