@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/11/24 17:52:38  vakatov
+* + TestException_Aux() -- tests for CErrnoException:: and CErrnoException::
+* + TestCgi_Request()   -- tests for CCgiRequest::ParseEntries()
+*
 * Revision 1.10  1998/11/20 22:34:39  vakatov
 * Reset diag. stream to get rid of a mem.leak
 *
@@ -168,13 +172,29 @@ static void TestException_Soft(void)
 }
 
 
+static void TestException_Aux(void)
+{
+    try {
+        _VERIFY( !strtod("1e-999999", 0) );
+        throw CErrnoException("Failed strtod(\"1e-999999\", 0)");
+    }
+    catch (CErrnoException& e) {
+        NcbiCerr << "TEST CErrnoException ---> " << e.what() << NcbiEndl;
+    }
+    try {
+        throw CParseException("Failed parsing(at pos. 123)", 123);
+    }
+    STD_CATCH ("TEST CParseException ---> ");
+}
+
+
 static void TestException_Hard(void)
 {
 #if defined(NCBI_OS_MSWIN)
     try { // Memory Access Violation
         int* i_ptr = 0;
         int i_val = *i_ptr;
-    } catch (CNcbiMemException& e) {
+    } catch (CMemException& e) {
         NcbiCerr << e.what() << NcbiEndl;
     }
 
@@ -186,7 +206,7 @@ static void TestException_Hard(void)
         TBadFunc bad_func = 0;
         memcpy((void*)&bad_func, i_arr_ptr, sizeof(i_arr_ptr));
         bad_func();
-    } catch (CNcbiOSException& e) {
+    } catch (COSException& e) {
         NcbiCerr << e.what() << NcbiEndl;
     }
 
@@ -202,9 +222,10 @@ static void TestException_Hard(void)
 static void TestException(void)
 {
     SetDiagStream(&NcbiCout);
-    CNcbiOSException::Initialize();
+    COSException::Initialize();
 
     TestException_Soft();
+    TestException_Aux();
     TestException_Hard();
 }
 
@@ -257,9 +278,42 @@ static void TestCgi_Cookies(void)
     NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
 }
 
+
+static bool TestEntries(TCgiEntries& entries, const string& str)
+{
+    NcbiCout << "\n Entries: `" << str.c_str() << "'\n";
+    SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
+
+    for (TCgiEntries::iterator iter = entries.begin();
+         iter != entries.end();  ++iter) {
+        NcbiCout << "  (\"" << iter->first.c_str() << "\", \""
+                  << iter->second.c_str() << "\")" << NcbiEndl;
+    }
+
+    if ( err_pos ) {
+        NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
+        return false;
+    }
+
+    return true;
+}
+
 static void TestCgi_Request(void)
 {
+    TCgiEntries entries;
 
+    _ASSERT(  TestEntries(entries, "aa=bb&cc=dd") );
+    _ASSERT(  TestEntries(entries, "e%20e=f%26f&g%2Ag=h+h%2e") );
+    entries.clear();
+    _ASSERT( !TestEntries(entries, " xx=yy") );
+    _ASSERT(  TestEntries(entries, "xx=&yy=zz") );
+    _ASSERT(  TestEntries(entries, "rr=") );
+    _ASSERT( !TestEntries(entries, "xx&") );
+    entries.clear();
+    _ASSERT( !TestEntries(entries, "&zz=qq") );
+    _ASSERT( !TestEntries(entries, "tt=qq=pp") );
+    _ASSERT(  TestEntries(entries, "ggg=ppp&") );
+    _ASSERT( !TestEntries(entries, "a=d&eee") );
 }
 
 static void TestCgi(void)
