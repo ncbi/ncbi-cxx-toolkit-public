@@ -5,7 +5,7 @@
 # Meta-makefile ("XHTML" test)
 #################################
 
-APP_PROJ = htmltest
+APP_PROJ = htmltest test_html
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
