@@ -555,6 +555,7 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* CppContext ENUM_METHOD_NAME(EnumName)
     enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue)
 
 #define END_ENUM_INFO } return enumInfo; }
+#define END_ENUM_IN_INFO } return enumInfo; }
 
 // member types
 template<typename T>
