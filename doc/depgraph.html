@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>NCBI C++ Library Dependency Graph</title>
+  </head>
+
+  <body>
+    <h1>NCBI C++ Library Dependency Graph</h1>
+    This graph was obtained by building the full toolkit and then
+    running the following commands: <pre>
+.../bin/depgraph .../lib/lib* > depgraph.out
+.../bin/depgraph2dot -simplify -in depgraph.out -out depgraph.dot
+dot -Tgif -o depgraph.gif depgraph.dot
+</pre>
+where <tt>dot</tt> comes from AT&T's
+<a href="http://www.research.att.com/sw/tools/graphviz/">Graphviz</a>
+package.
+<br><br>
+<img src="depgraph.gif">
