@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2000/09/28 19:38:00  butanaev
+ * stdin and stdout now referenced as '-' Example: ./test_ncbiargs -if - -of -
+ *
  * Revision 1.6  2000/09/22 21:25:59  butanaev
  * Fixed bug in handling default arg values.
  *
@@ -273,7 +276,7 @@ inline void CArg_InputFile::Open(void) const
     return;
 
   string fileName = AsString();
-  if(fileName == "stdin")
+  if(fileName == "-")
   {
     m_InputFile = &cin;
     m_DeleteFlag = false;
@@ -349,7 +352,7 @@ inline void CArg_OutputFile::Open(void) const
     return;
 
   string fileName = AsString();
-  if(fileName == "stdout")
+  if(fileName == "-")
   {
     m_OutputFile = &cout;
     m_DeleteFlag = false;
