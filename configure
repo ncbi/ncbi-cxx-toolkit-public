@@ -11685,7 +11685,7 @@ fi
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
-         OPENGL_LIBS="$X_LIBS -LGLU -lGL $X_ALL_LIBS"
+         OPENGL_LIBS="$X_LIBS -lGLU -lGL $X_ALL_LIBS"
          ;;
    esac
    echo "$as_me:$LINENO: checking for OpenGL" >&5
