@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJMGR_EXPORT CAnnot_CI : CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CAnnot_CI : public CAnnotTypes_CI
 {
 public:
     CAnnot_CI(void);
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/10/09 12:29:52  dicuccio
+* Added missing 'public' in inheritance
+*
 * Revision 1.23  2003/09/11 17:45:06  grichenk
 * Added adaptive-depth option to annot-iterators.
 *
