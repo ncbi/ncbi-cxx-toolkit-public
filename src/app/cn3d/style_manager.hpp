@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/08/10 14:27:23  thiessen
+* fix typo
+*
 * Revision 1.32  2001/08/09 19:07:20  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -235,25 +238,38 @@ public:
 
     // to set to predetermined renderings
     enum ePredefinedRenderingStyle {
-        eWormDisplay,
-        eTubeDisplay,
-        eWireframeDisplay
+        eWormShortcut,
+        eTubeShortcut,
+        eWireframeShortcut,
+        eBallAndStickShortcut,
+        eSpacefillShortcut,
+        eToggleSidechainsShortcut
     };
     void SetRenderingStyle(ePredefinedRenderingStyle style);
 
     // to set to predetermined colors
     enum ePredefinedColorScheme {
-        eBySecondaryStructure,
-        eByAligned,
-        eByInformationContent
+        eSecondaryStructureShortcut,
+        eAlignedShortcut,
+        eIdentityShortcut,
+        eVarietyShortcut,
+        eWeightedVarietyShortcut,
+        eInformationContentShortcut,
+        eFitShortcut,
+        eObjectShortcut,
+        eDomainShortcut,
+        eMoleculeShortcut,
+        eHydrophobicityShortcut,
+        eTemperatureShortcut,
+        eElementShortcut
     };
     void SetColorScheme(ePredefinedColorScheme scheme);
 
     // default and copy constructors
     StyleSettings(void)
     {
-        SetRenderingStyle(eWormDisplay);
-        SetColorScheme(eBySecondaryStructure);
+        SetRenderingStyle(eWormShortcut);
+        SetColorScheme(eSecondaryStructureShortcut);
     }
     StyleSettings(const StyleSettings& orig) { *this = orig; }
 
