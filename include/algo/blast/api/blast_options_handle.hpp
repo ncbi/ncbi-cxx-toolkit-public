@@ -57,14 +57,16 @@ class CBlastOptionsHandle;
 * Example:
 * @code
 * ...
-* CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(eBlastn);
+* CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
 * CBl2Seq blaster(query, subject, opts);
 * TSeqAlignVector results = blaster.Run();
 * ...
-* blaster.SetOptionsHandle(CBlastOptionsFactory::Create(eMegablast));
+* opts.Reset(CBlastOptionsFactory::Create(eMegablast));
+* blaster.SetOptionsHandle() = *opts;
 * results = blaster.Run();
 * ...
-* blaster.SetOptionsHandle(CBlastOptionsFactory::Create(eDiscMegablast));
+* opts.Reset(CBlastOptionsFactory::Create(eDiscMegablast));
+* blaster.SetOptionsHandle() = *opts;
 * results = blaster.Run();
 * ...
 * @endcode
@@ -184,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/25 17:18:44  camacho
+ * Update documentation
+ *
  * Revision 1.11  2004/03/19 18:56:04  camacho
  * Move to doxygen AlgoBlast group
  *
