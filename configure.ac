@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.158 2002/12/30 17:26:12 ucko Exp $
+#  $Id: configure.ac,v 1.159 2003/01/14 18:21:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -530,7 +530,7 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:GCC )
-   STRIP=":"
+   STRIP="@:"
    ;;
 
  linux*:GCC )
@@ -566,7 +566,7 @@ case "$host_os:$compiler" in
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
-   STRIP=":"
+   STRIP="@:"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
@@ -599,7 +599,7 @@ case "$host_os:$compiler" in
    LDFLAGS="/DEBUG"
    AR="lib.exe"
    RANLIB=":"
-   STRIP=":"
+   STRIP="@:"
    CONF_obj_ext=".obj"
    CONF_lib_ext=".lib"
    CONF_dll_ext=".dll"
@@ -966,10 +966,10 @@ case "$compiler" in
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
         has_dll_loadable=""
         if $CXX -v 2>&1 | grep -q Apple; then
-           LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
+           LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$CXX $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
         else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -o"
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
         fi
         ;;
@@ -1059,7 +1059,7 @@ fi
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
-AC_CHECK_PROG(STRIP, strip, strip, :)
+AC_CHECK_PROG(STRIP, strip, strip, @:)
 case "$host_os" in
    irix* )
      # lorder and tsort exist but don't work.
@@ -1120,7 +1120,7 @@ if test "$with_profiling" = "yes" ; then
    CFLAGS="$CFLAGS $PFFLAGS"
    CXXFLAGS="$CXXFLAGS $PFFLAGS"
    LDFLAGS="$LDFLAGS $PFFLAGS"
-   STRIP=: # Stripping may lose profiling info
+   STRIP="@:" # Stripping may lose profiling info
 else
    prof_sfx=
 fi
@@ -1270,7 +1270,7 @@ if test "$compiler" != "MSVC" ; then
          CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
       if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
-      STRIP=":"
+      STRIP="@:"
    fi
 
    NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-O[0-9]*//g'`
