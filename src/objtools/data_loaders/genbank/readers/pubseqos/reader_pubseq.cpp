@@ -289,6 +289,22 @@ void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
             int sat = satGot.Value();
             int sat_key = satKeyGot.Value();
 
+            if ( GetDebugLevel() >= 5 ) {
+                NcbiCout << "CPubseqReader::ResolveSeq_id"
+                    "(" << asnIn.Value() << ")"
+                    " gi=" << gi <<
+                    " sat=" << sat <<
+                    " satkey=" << sat_key <<
+                    " extfeat=";
+                if ( extFeatGot.IsNULL() ) {
+                    NcbiCout << "NULL";
+                }
+                else {
+                    NcbiCout << extFeatGot.Value();
+                }
+                NcbiCout << NcbiEndl;
+            }
+
             if ( TrySNPSplit() && sat != eSat_ANNOT ) {
                 {{
                     // main blob
