@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2002/05/06 19:12:57  lavr
+ * -ConnNetInfo_Print(); +ConnNetInfo_Log()
+ * Addition: *_StripToPattern() now can strip until EOF (or error)
+ *
  * Revision 6.33  2002/04/26 16:31:41  lavr
  * Add more space between functions to separate them better
  *
@@ -162,58 +166,57 @@ static const char* s_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
                               const char* def_value)
 {
-  char        key[250];
-  char*       sec;
-  const char* val;
+    char        key[250];
+    char*       sec;
+    const char* val;
 
-  if (!value  ||  !param  ||  value_size <= 0)
-      return 0;
-  *value = '\0';
+    if (!param  ||  !value  ||  value_size <= 0)
+        return 0;
+    *value = '\0';
 
-  if (service  &&  *service) {
-      /* Service-specific inquiry */
-      if (strlen(service) + 1 + sizeof(DEF_CONN_REG_SECTION) +
-          strlen(param) + 1 > sizeof(key))
-          return 0;
-      /* First, environment search for 'service_CONN_param' */
-      sprintf(key, "%s_" DEF_CONN_REG_SECTION "_%s", service, param);
-      strupr(key);
-      if ((val = getenv(key)) != 0) {
-          strncpy(value, val, value_size);
-          value[value_size - 1] = '\0';
-          return value;
-      }
-      /* Next, search for 'CONN_param' in '[service]' registry section */
-      sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
-      sec = key + strlen(key) + 1;
-      strupr(key);
-      strcpy(sec, service);
-      strupr(sec);
-      CORE_REG_GET(sec, key, value, value_size, 0);
-      if ( *value ) {
-          return value;
-      }
-  } else {
-      /* Common case. Form 'CONN_param' */
-      if (sizeof(DEF_CONN_REG_SECTION) + strlen(param) + 1 > sizeof(key))
-          return 0;
-      sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
-      strupr(key);
-  }
+    if (service  &&  *service) {
+        /* Service-specific inquiry */
+        if (strlen(service) + 1 + sizeof(DEF_CONN_REG_SECTION) +
+            strlen(param) + 1 > sizeof(key))
+            return 0;
+        /* First, environment search for 'service_CONN_param' */
+        sprintf(key, "%s_" DEF_CONN_REG_SECTION "_%s", service, param);
+        strupr(key);
+        if ((val = getenv(key)) != 0) {
+            strncpy(value, val, value_size);
+            value[value_size - 1] = '\0';
+            return value;
+        }
+        /* Next, search for 'CONN_param' in '[service]' registry section */
+        sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
+        sec = key + strlen(key) + 1;
+        strupr(key);
+        strcpy(sec, service);
+        strupr(sec);
+        CORE_REG_GET(sec, key, value, value_size, 0);
+        if (*value)
+            return value;
+    } else {
+        /* Common case. Form 'CONN_param' */
+        if (sizeof(DEF_CONN_REG_SECTION) + strlen(param) + 1 > sizeof(key))
+            return 0;
+        sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
+        strupr(key);
+    }
 
-  /* Environment search for 'CONN_param' */
-  if ((val = getenv(key)) != 0) {
-      strncpy(value, val, value_size);
-      value[value_size - 1] = '\0';
-      return value;
-  }
+    /* Environment search for 'CONN_param' */
+    if ((val = getenv(key)) != 0) {
+        strncpy(value, val, value_size);
+        value[value_size - 1] = '\0';
+        return value;
+    }
 
-  /* Last resort: Search for 'param' in default registry section */
-  strcpy(key, param);
-  strupr(key);
-  CORE_REG_GET(DEF_CONN_REG_SECTION, key, value, value_size, def_value);
+    /* Last resort: Search for 'param' in default registry section */
+    strcpy(key, param);
+    strupr(key);
+    CORE_REG_GET(DEF_CONN_REG_SECTION, key, value, value_size, def_value);
 
-  return value;
+    return value;
 }
 
 
@@ -227,7 +230,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 #define REG_VALUE(name, value, def_value) \
     s_GetValue(service, name, value, sizeof(value), def_value)
 
-    SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo) +
+    SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(*info) +
                                                 (service  &&  *service
                                                  ? strlen(service) + 1 : 0));
     /* aux. storage for the string-to-int conversions, etc. */
@@ -235,6 +238,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     int    val;
     double dbl;
     char*  s;
+
+    if (!info)
+        return 0/*failure*/;
 
     /* client host */
     SOCK_gethostname(info->client_host, sizeof(info->client_host));
@@ -290,9 +296,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         val = atoi(str);
         info->http_proxy_port = (unsigned short)
             (val > 0 ? val : DEF_CONN_HTTP_PROXY_PORT);
-    } else {
+    } else
         info->http_proxy_port = DEF_CONN_HTTP_PROXY_PORT;
-    }
 
     /* non-transparent CERN-like firewall proxy server? */
     REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
@@ -337,7 +342,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->http_user_header = 0;
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
-    /* remember the service name for which this structure has been created */
+    /* store service name for which this structure has been created */
     if (service  &&  *service) {
         s = (char*) info + sizeof(*info);
         strcpy(s, service);
@@ -353,9 +358,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
 extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 {
-    if (info->http_proxy_adjusted  ||  !*info->http_proxy_host) {
+    if (info->http_proxy_adjusted  ||  !*info->http_proxy_host)
         return 0/*false*/;
-    }
 
     if (strlen(info->host) + strlen(info->path) + 16 > sizeof(info->path)) {
         CORE_LOG(eLOG_Error,
@@ -470,7 +474,7 @@ extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
-    if ( !info )
+    if (!info)
         return 0;
 
     x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo) +
@@ -492,64 +496,80 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 }
 
 
-static void s_PrintString(FILE* fp, const char* name, const char* str) {
-    fprintf(fp, "%-16.16s: \"%s\"\n", name, str ? str : "<NULL>");
+static void s_SaveString(char* s, const char* name, const char* str) {
+    sprintf(s + strlen(s), "%-16.16s: %s%s%s\n", name,
+            str ? "\"" : "", str ? str : "NULL", str ? "\"" : "");
 }
-static void s_PrintULong(FILE* fp, const char* name, unsigned long lll) {
-    fprintf(fp, "%-16.16s: %lu\n", name, lll);
+static void s_SaveULong(char* s, const char* name, unsigned long lll) {
+    sprintf(s + strlen(s), "%-16.16s: %lu\n", name, lll);
 }
-static void s_PrintBool(FILE* fp, const char* name, int/*bool*/ bbb) {
-    fprintf(fp, "%-16.16s: %s\n", name, bbb ? "TRUE" : "FALSE");
+static void s_SaveBool(char* s, const char* name, int/*bool*/ bbb) {
+    sprintf(s + strlen(s), "%-16.16s: %s\n", name, bbb ? "TRUE" : "FALSE");
 }
 
-extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
+extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
 {
-    if ( !fp )
+    char* s;
+
+    if (!lg)
         return;
 
-    fprintf(fp, "\n----- [BEGIN] ConnNetInfo_Print -----\n");
-
-    if ( info ) {
-        s_PrintString(fp, "service",        (info->service ?
-                                             info->service : "<none>"));
-        s_PrintString(fp, "client_host",     info->client_host);
-        s_PrintString(fp, "host",            info->host);
-        s_PrintULong (fp, "port",            info->port);
-        s_PrintString(fp, "path",            info->path);
-        s_PrintString(fp, "args",            info->args);
-        s_PrintString(fp, "req_method",
-                      info->req_method == eReqMethod_Any
-                      ? DEF_CONN_REQ_METHOD :
-                      (info->req_method == eReqMethod_Get
-                       ? "GET" :
-                       (info->req_method == eReqMethod_Post
-                        ? "POST" : "Unknown")));
-        if (info->timeout) {
-            s_PrintULong (fp, "timeout(sec)", info->timeout->sec);
-            s_PrintULong (fp, "timeout(usec)",info->timeout->usec);
-        } else
-            s_PrintString(fp, "timeout",     "infinite");
-        s_PrintULong (fp, "max_try",         info->max_try);
-        s_PrintString(fp, "http_proxy_host", info->http_proxy_host);
-        s_PrintULong (fp, "http_proxy_port", info->http_proxy_port);
-        s_PrintString(fp, "proxy_host",      info->proxy_host);
-        s_PrintString(fp, "debug_printout", 
-                      info->debug_printout == eDebugPrintout_None
-                      ? "NONE" :
-                      (info->debug_printout == eDebugPrintout_Some
-                       ? "SOME" :
-                       (info->debug_printout == eDebugPrintout_Data
-                        ? "DATA" : "Unknown")));
-        s_PrintBool  (fp, "stateless",       info->stateless);   
-        s_PrintBool  (fp, "firewall",        info->firewall);
-        s_PrintBool  (fp, "lb_disable",      info->lb_disable);
-        s_PrintString(fp, "user_header",     info->http_user_header);
-        s_PrintBool  (fp, "proxy_adjusted",  info->http_proxy_adjusted);
-    } else {
-        fprintf(fp, "<NULL>\n");
+    if (!info) {
+        LOG_Write(lg, eLOG_Trace, 0, 0, 0, "ConnNetInfo_Log: NULL info");
+        return;
     }
 
-    fprintf(fp, "----- [END] ConnNetInfo_Print -----\n\n");
+    if (!(s = (char*) malloc(sizeof(*info) + 4096 +
+                             (info->service ? strlen(info->service) : 0) +
+                             (info->http_user_header
+                              ? strlen(info->http_user_header) : 0)))) {
+        LOG_WRITE(lg, eLOG_Error, "ConnNetInfo_Log: Cannot alloc temp buffer");
+        return;
+    }
+
+    strcpy(s, "ConnNetInfo_Log\n"
+           "#################### [BEGIN] SConnNetInfo:\n");
+    s_SaveString    (s, "service",         info->service);
+    s_SaveString    (s, "client_host",     info->client_host);
+    s_SaveString    (s, "host",            info->host);
+    s_SaveULong     (s, "port",            info->port);
+    s_SaveString    (s, "path",            info->path);
+    s_SaveString    (s, "args",            info->args);
+    s_SaveString    (s, "req_method",     (info->req_method == eReqMethod_Any
+                                           ? DEF_CONN_REQ_METHOD
+                                           : (info->req_method
+                                              == eReqMethod_Get
+                                              ? "GET"
+                                              : (info->req_method
+                                                 == eReqMethod_Post
+                                                 ? "POST" : "Unknown"))));
+    if (info->timeout) {
+        s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
+        s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
+    } else
+        s_SaveString(s, "timeout",         "infinite");
+    s_SaveULong     (s, "max_try",         info->max_try);
+    s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
+    s_SaveULong     (s, "http_proxy_port", info->http_proxy_port);
+    s_SaveString    (s, "proxy_host",      info->proxy_host);
+    s_SaveString    (s, "debug_printout", (info->debug_printout
+                                           == eDebugPrintout_None
+                                           ? "NONE"
+                                           : (info->debug_printout
+                                              == eDebugPrintout_Some
+                                              ? "SOME"
+                                              : (info->debug_printout
+                                                 == eDebugPrintout_Data
+                                                 ? "DATA" : "Unknown"))));
+    s_SaveBool      (s, "stateless",       info->stateless);
+    s_SaveBool      (s, "firewall",        info->firewall);
+    s_SaveBool      (s, "lb_disable",      info->lb_disable);
+    s_SaveString    (s, "user_header",     info->http_user_header);
+    s_SaveBool      (s, "proxy_adjusted",  info->http_proxy_adjusted);
+    strcat(s, "#################### [END] SConnNetInfo\n");
+
+    LOG_Write(lg, eLOG_Trace, 0, 0, 0, s);
+    free(s);
 }
 
 
@@ -601,16 +621,16 @@ extern SOCK URL_Connect
         break;
     case eReqMethod_Get:
         X_REQ_R = "GET ";
-        if (content_length) {
-            CORE_LOG(eLOG_Warning,
-                     "[URL_Connect]  Content length ignored with GET");
-            content_length = 0;
-        }
         break;
     default:
         CORE_LOG(eLOG_Error, "[URL_Connect]  Unrecognized request method");
         assert(0);
         return 0/*error*/;
+    }
+    if (strcasecmp(X_REQ_R, "GET ") == 0  &&  content_length) {
+        CORE_LOG(eLOG_Warning,
+                 "[URL_Connect]  Content length ignored with GET");
+        content_length = 0;
     }
 
     /* connect to HTTPD */
@@ -620,7 +640,6 @@ extern SOCK URL_Connect
                    port, st==eIO_Success? strerror(errno) : IO_StatusStr(st)));
         return 0/*error*/;
     }
-    
     SOCK_SetDataLogging(sock, data_logging);
 
     /* setup i/o timeout for the connection */
@@ -629,7 +648,7 @@ extern SOCK URL_Connect
         SOCK_Close(sock);
         return 0;
     }
-    
+
     /* URL-encode "args", if any specified */
     if (args  &&  *args) {
         size_t src_size = strlen(args);
@@ -721,17 +740,27 @@ static EIO_Status s_StripToPattern
     /* check args */
     if ( n_discarded )
         *n_discarded = 0;
-    if (!source  ||  !pattern  ||  !pattern_size)
+    if (!source  ||  (!!pattern ^ !!pattern_size))
         return eIO_InvalidArg;
 
     /* allocate a temporary read buffer */
     buffer_size = 2 * pattern_size;
     if (buffer_size < 4096)
         buffer_size = 4096;
-    buffer = (char*) malloc(buffer_size);
+    if (!(buffer = (char*) malloc(buffer_size)))
+        return eIO_Unknown;
 
-    /* peek/read;  search for the pattern;  maybe, store the discarded data */
-    for (;;) {
+    if ( !pattern ) {
+        /* read/discard until EOF */
+        do {
+            status= read_func(source, buffer, buffer_size, &n_read, eIO_Plain);
+            if ( buf )
+                BUF_Write(buf, buffer, n_read);
+            if ( n_discarded )
+                *n_discarded += n_read;
+        } while (status == eIO_Success);
+    } else for (;;) {
+        /* peek/read; search for the pattern; store the discarded data */
         /* peek */
         size_t n_peeked, n_stored, x_discarded;
         assert(n_read < pattern_size);
