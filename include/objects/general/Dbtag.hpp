@@ -129,7 +129,9 @@ public:
         eDbtagType_EMBL,
         eDbtagType_DDBJ,
         eDbtagType_REBASE,
-        eDbtagType_CloneID
+        eDbtagType_CloneID,
+        eDbtagType_CCDS,
+        eDbtagType_ECOCYC
     };
 
     // constructor
@@ -195,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/31 19:00:42  shomrat
+ * Added CCDS and ECOCYC as approved RefSeq databases
+ *
  * Revision 1.13  2005/02/10 20:19:38  shomrat
  * IMGT/GENE-DB now legal not just for RefSeq
  *

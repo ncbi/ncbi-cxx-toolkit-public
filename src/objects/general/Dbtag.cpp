@@ -122,8 +122,10 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 };
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
+    TDbxrefPair("CCDS", CDbtag::eDbtagType_CCDS),
     TDbxrefPair("CloneID", CDbtag::eDbtagType_CloneID),
     TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
+    TDbxrefPair("ECOCYC", CDbtag::eDbtagType_ECOCYC),
     TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
     TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE)
@@ -415,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2005/03/31 19:01:05  shomrat
+ * Added CCDS and ECOCYC as approved RefSeq databases
+ *
  * Revision 6.21  2005/02/10 20:19:56  shomrat
  * IMGT/GENE-DB now legal not just for RefSeq
  *
