@@ -291,7 +291,7 @@ typedef struct BlastMBLookupTable {
    Int4 mask;           /**< hashsize - 1 */
    Int2 compressed_wordsize;/**< Number of bytes in intersection between 
                                consecutive words */
-   Int2 word_length;      /**< The length of the initial word without the 
+   Int4 word_length;      /**< The length of the initial word without the 
                              extra part */
    Boolean discontiguous; /**< Are discontiguous words used? */
    Uint1 template_length; /**< Length of the discontiguous word template */

@@ -956,7 +956,7 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program_number, Boolean is_megablast, Int4 threshold,
-   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
+   Int4 word_size, Boolean ag_blast, Boolean variable_wordsize,
    Boolean use_pssm)
 {
    if (!options)
@@ -1012,7 +1012,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
  * @return TRUE if options combination valid.
  */
 static Boolean 
-s_DiscWordOptionsValidate(Int2 word_size, Uint1 template_length,
+s_DiscWordOptionsValidate(Int4 word_size, Uint1 template_length,
                         Uint1 template_type)
 {
    if (template_length == 0)
@@ -1674,6 +1674,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.149  2004/12/28 13:37:01  madden
+ * word size changed from Int2 to Int4
+ *
  * Revision 1.148  2004/12/21 17:10:58  dondosha
  * Removed eSkipTbck option
  *

@@ -65,7 +65,7 @@ BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
     an MBTemplateType enum
 */
 static DiscTemplateType 
-s_GetDiscTemplateType(Int2 weight, Uint1 length, 
+s_GetDiscTemplateType(Int4 weight, Uint1 length, 
                                      DiscWordType type)
 {
    if (weight == 11) {
@@ -125,7 +125,7 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 {
    BlastSeqLoc* loc;
    Int4 mask;
-   Int2 word_length, extra_length;
+   Int4 word_length, extra_length;
    DiscTemplateType template_type;
    const Uint1 kNucMask = 0xfc;
    const Boolean kTwoTemplates = 
@@ -381,7 +381,7 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 {
    BlastSeqLoc* loc;
    const Uint1 kNucMask = 0xfc;
-   Int2 word_length;
+   Int4 word_length;
    Int4 mask;
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;

@@ -174,7 +174,7 @@ typedef struct LookupTableOptions {
    Int4 threshold; /**< Score threshold for putting words in a lookup table */
    Int4 lut_type; /**< What kind of lookup table to construct? E.g. blastn 
                      allows for traditional and megablast style lookup table */
-   Int2 word_size; /**< Determines the size of the lookup table */
+   Int4 word_size; /**< Determines the size of the lookup table */
    Int4 alphabet_size; /**< Size of the alphabet */
    Uint1 mb_template_length; /**< Length of the discontiguous words */
    Uint1 mb_template_type; /**< Type of a discontiguous word template */
@@ -865,7 +865,7 @@ NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program, Boolean is_megablast, Int4 threshold,
-   Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
+   Int4 word_size, Boolean ag_blast, Boolean variable_wordsize,
    Boolean use_pssm);
 
 
