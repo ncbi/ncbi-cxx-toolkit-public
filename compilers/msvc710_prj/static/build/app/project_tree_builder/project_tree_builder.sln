@@ -11,31 +11,31 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_INDEX_", "UtilityProjects\
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "datatool", "..\..\serial\datatool\datatool.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xncbi.lib", "..\..\corelib\xncbi.lib.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}"
 	ProjectSection(ProjectDependencies) = postProject
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3}
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "project_tree_builder", "project_tree_builder.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xser.lib", "..\..\serial\xser.lib.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA1}"
 	ProjectSection(ProjectDependencies) = postProject
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3}
-		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xutil.lib", "..\..\util\xutil.lib.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "datatool.exe", "..\..\serial\datatool\datatool.exe.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA1} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA1}
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2}
 		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xncbi", "..\..\corelib\xncbi.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "project_tree_builder.exe", "project_tree_builder.exe.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}"
 	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xser", "..\..\serial\xser.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xutil", "..\..\util\xutil.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA4}"
-	ProjectSection(ProjectDependencies) = postProject
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA1} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA1}
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA2}
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA0}
+		{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3} = {8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAAA3}
 	EndProjectSection
 EndProject
 Global
