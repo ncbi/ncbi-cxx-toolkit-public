@@ -239,11 +239,11 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     const char*      in_buf    = pbase();
     const streamsize count     = pptr() - pbase();
     unsigned long    in_avail  = count;
-    unsigned long    out_avail = 0;
 
     // Loop until no data is left
     while ( in_avail ) {
         // Process next data piece
+        unsigned long out_avail = 0;
         m_LastStatus = m_Compressor->Process(in_buf + count - in_avail,
                                              in_avail,
                                              m_OutBuf, m_OutBufSize,
@@ -265,13 +265,15 @@ bool CCompressionStreambuf::ProcessStreamWrite()
 
 bool CCompressionStreambuf::ProcessStreamRead()
 {
-    unsigned long in_len, in_avail, out_size, out_avail = 0;
+    unsigned long in_len, in_avail, out_size, out_avail;
     streamsize    n_read;
 
     // Put data into the compressor until there is something
     // in the output buffer
     do {
-        out_size = m_OutBuf + m_OutBufSize - egptr();
+        in_avail  = 0;
+        out_avail = 0;
+        out_size  = m_OutBuf + m_OutBufSize - egptr();
 
         // Refill the output buffer if necessary
         if ( m_LastStatus != CP::eStatus_Overflow ) {
@@ -294,6 +296,9 @@ bool CCompressionStreambuf::ProcessStreamRead()
             if ( m_LastStatus != CP::eStatus_Success ) {
                 return false;
             }
+        } else {
+            // Get unprocessed data size
+            in_len = m_InEnd - m_InBegin;
         }
 
         // Try to flush the compressor if it has not produced a data
@@ -314,7 +319,6 @@ bool CCompressionStreambuf::ProcessStreamRead()
 
     return true;
 }
-
 
 
 streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
@@ -397,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/04 21:11:11  ivanov
+ * Get rid of non-initialized variables in the ProcessStream[Read|Write]
+ *
  * Revision 1.4  2003/06/03 20:09:16  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
