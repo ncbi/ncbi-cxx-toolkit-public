@@ -65,6 +65,49 @@ for i in 0 1 2 3 4 5 6 7 8 9; do
                 fuzz-from lim lt,
                 fuzz-to lim gt
               }
+            },
+            {
+              data region "$gi: $to-$from",
+              location int {
+                from $from,
+                to $to,
+                strand minus,
+                id gi $gi
+              }
+            },
+            {
+              data region "$gi:+$to-$from",
+              partial TRUE,
+              location int {
+                from $from,
+                to $to,
+                strand minus,
+                id gi $gi,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data region "$gi: $to-$from+",
+              partial TRUE,
+              location int {
+                from $from,
+                to $to,
+                strand minus,
+                id gi $gi,
+                fuzz-from lim lt
+              }
+            },
+            {
+              data region "$gi:+$to-$from+",
+              partial TRUE,
+              location int {
+                from $from,
+                to $to,
+                strand minus,
+                id gi $gi,
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
             }
           }
         }
