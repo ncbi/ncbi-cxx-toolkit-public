@@ -105,7 +105,8 @@ typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 // fReadFasta_OneSeq is set
 // see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
 NCBI_SEQ_EXPORT
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0);
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
+                           CSeq_loc* lowercase = 0);
 
 
 
@@ -163,6 +164,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2003/05/23 20:28:11  ucko
+ * Give ReadFasta an optional argument for reporting lowercase
+ * characters' location.
+ *
  * Revision 1.14  2003/05/16 13:31:20  kuznets
  * Fixed comments, added _dllexport.
  *
