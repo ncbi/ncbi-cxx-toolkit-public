@@ -45,10 +45,12 @@
 
 #include <InternetConfig.h>			//MacOS internet config interfaces
 #include <TextUtils.h>				// p2cstr
+
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SocketsInternal.h>
-#include <errno.h>
+
+#include "SocketsInternal.h"
 #include "netdb.h"
 
 

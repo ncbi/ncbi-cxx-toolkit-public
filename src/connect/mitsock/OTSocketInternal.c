@@ -45,8 +45,9 @@
  */
  
 #include <errno.h>
-#include <neterrno.h>
 #include <string.h>				// memcpu
+
+#include <neterrno.h>
 #include "SocketsInternal.h"
 
 
