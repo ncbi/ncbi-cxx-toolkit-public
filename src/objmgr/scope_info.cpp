@@ -167,25 +167,15 @@ SSeq_id_ScopeInfo::~SSeq_id_ScopeInfo(void)
 {
 }
 
-SSeq_id_ScopeInfo::SSeq_id_ScopeInfo(const SSeq_id_ScopeInfo& info)
-: m_Bioseq_Info(info.m_Bioseq_Info), m_AnnotRef_Info(info.m_AnnotRef_Info)
-{
-}
-
-
-const SSeq_id_ScopeInfo& SSeq_id_ScopeInfo::operator=(const SSeq_id_ScopeInfo& info)
-{
-    m_Bioseq_Info = info.m_Bioseq_Info;
-    m_AnnotRef_Info = info.m_AnnotRef_Info;
-    return *this;
-}
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/06/19 19:48:16  vasilche
+* Removed unnecessary copy constructor of SSeq_id_ScopeInfo.
+*
 * Revision 1.3  2003/06/19 19:31:23  vasilche
 * Added missing CBioseq_ScopeInfo destructor.
 *
