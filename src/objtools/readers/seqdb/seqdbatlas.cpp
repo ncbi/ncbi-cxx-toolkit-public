@@ -625,11 +625,14 @@ void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
 
 void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
 {
-    CFastMutexGuard guard;
-    
     if (! locked) {
-        guard.Guard(m_Lock);
+        m_Lock.Lock();
     }
+
+//     CFastMutexGuard guard;
+//     if (! locked) {
+//         guard.Guard(m_Lock);
+//     }
     
     // MSVC fails to grok "ostream << [Uint8]". (Okalee-dokalee...)
     
@@ -645,6 +648,10 @@ void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
 #if _DEBUG
     cout << "\n\n" << endl;
 #endif
+    
+    if (! locked) {
+        m_Lock.Unlock();
+    }
 }
 
 // This does not attempt to garbage collect, but it will influence

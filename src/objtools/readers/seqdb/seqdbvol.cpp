@@ -644,7 +644,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     
     const char * seq_buffer = 0;
     
-    Int4 length = x_GetSequence(oid, & seq_buffer, false, locked);
+    Int4 length = x_GetSequence(oid, & seq_buffer, false, locked, false);
     
     if (length < 1) {
         return null_result;
@@ -797,11 +797,11 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
     
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
         if (alloc_type == ESeqDBAllocType(0)) {
-            base_length = x_GetSequence(oid, (const char**) buffer, true, locked);
+            base_length = x_GetSequence(oid, (const char**) buffer, true, locked, false);
         } else {
             const char * buf2(0);
             
-            base_length = x_GetSequence(oid, & buf2, false, locked);
+            base_length = x_GetSequence(oid, & buf2, false, locked, false);
             
             char * obj = x_AllocType(base_length, alloc_type, locked);
             
@@ -820,7 +820,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
             
             const char * seq_buffer = 0;
             
-            base_length = x_GetSequence(oid, & seq_buffer, false, locked);
+            base_length = x_GetSequence(oid, & seq_buffer, false, locked, false);
             
             if (base_length < 1) {
                 NCBI_THROW(CSeqDBException, eFileErr,
@@ -865,7 +865,8 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
 Int4 CSeqDBVol::x_GetSequence(Int4             oid,
                               const char    ** buffer,
                               bool             keep,
-                              CSeqDBLockHold & locked) const
+                              CSeqDBLockHold & locked,
+                              bool             can_release) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -891,6 +892,17 @@ Int4 CSeqDBVol::x_GetSequence(Int4             oid,
         // last byte (0 to 3).
         
         *buffer = m_Seq.GetRegion(start_offset, end_offset, keep, locked);
+        
+        // If we are returning a hold on the sequence (keep), and the
+        // caller does not need the lock after this (can_release) we
+        // can let go of the lock (because the hold will prevent GC of
+        // the underlying data).  This will allow the following data
+        // access to occur outside of the locked duration - lowering
+        // contention in the nucleotide case.
+        
+        if (keep && can_release) {
+            m_Atlas.Unlock(locked);
+        }
         
         Int4 whole_bytes = end_offset - start_offset - 1;
         

@@ -37,6 +37,7 @@
 /// sections of memory containing data read from files.
 
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbifile.hpp>
 #include <util/random_gen.hpp>
 #include <vector>
@@ -46,6 +47,44 @@
 BEGIN_NCBI_SCOPE
 
 class CSeqDBAtlas;
+
+class CSeqDBSpinLock {
+public:
+    CSeqDBSpinLock()
+      : m_L(0)
+    {
+    }
+    
+    ~CSeqDBSpinLock()
+    {
+    }
+    
+    void Lock()
+    {
+        bool done = false;
+        
+        while(! done) {
+            while(m_L)
+                ;
+            
+            void * NewL = (void *) 1;
+            void * OldL = SwapPointers(& m_L, NewL);
+            
+            if (OldL == (void*) 0) {
+                done = true;
+            }
+        }
+    }
+    
+    void Unlock()
+    {
+        // If we hold the lock, atomicity shouldn't be an issue here.
+	m_L = (void*)0;
+    }
+    
+private:
+    void * volatile m_L;
+};
 
 class CSeqDBLockHold {
 public:
@@ -453,7 +492,10 @@ private:
     // and lookup of those, and another that dictates semantics,
     // i.e. garbage collection, etc.
     
-    CFastMutex m_Lock;
+    CSeqDBSpinLock m_Lock;
+    //CFastMutex m_Lock;
+    
+
     bool       m_UseMmap;
     Uint4      m_CurAlloc;
     

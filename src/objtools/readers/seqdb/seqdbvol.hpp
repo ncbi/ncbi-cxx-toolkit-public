@@ -81,9 +81,11 @@ public:
                             bool insert_ctrlA,
                             CSeqDBLockHold & locked) const;
     
+    // Will get (and release) the lock as needed.
+    
     Int4 GetSequence(Int4 oid, const char ** buffer, CSeqDBLockHold & locked) const
     {
-        return x_GetSequence(oid, buffer, true, locked);
+        return x_GetSequence(oid, buffer, true, locked, true);
     }
     
     Int4 GetAmbigSeq(Int4              oid,
@@ -133,10 +135,17 @@ private:
                        ESeqDBAllocType   alloc_type,
                        CSeqDBLockHold  & locked) const;
     
+    // can_release: Specify 'true' here if this function is permitted
+    // to release the atlas lock.  The nucleotide length computation
+    // has a memory access which will often trigger a soft page fault.
+    // This allows the code to release the lock prior to the memory
+    // access, which results in a noticeable performance benefit.
+    
     Int4 x_GetSequence(Int4             oid,
                        const char    ** buffer,
                        bool             keep,
-                       CSeqDBLockHold & locked) const;
+                       CSeqDBLockHold & locked,
+                       bool             can_release) const;
     
     CSeqDBAtlas        & m_Atlas;
     string               m_VolName;
