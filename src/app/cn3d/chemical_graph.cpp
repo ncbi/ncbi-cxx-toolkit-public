@@ -397,15 +397,15 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
             continueDraw = m->second->DrawAllWithTerminiLabels(a->first);
 
             if (continueDraw) {
-                // find objects for this molecule;
-                // only use 3d-objects from first coordset, since they will only be
-                // present in a model with a single set of coordinates, anyway
-                CoordSet::Object3DMap::const_iterator
-                    objList = object->coordSets.front()->objectMap.find(m->second->id);
-                if (objList != object->coordSets.front()->objectMap.end()) {
-                    CoordSet::Object3DList::const_iterator o, oe=objList->second.end();
-                    for (o=objList->second.begin(); o!=oe; o++) {
-                        if (!(continueDraw = (*o)->Draw(a->first))) break;
+                // find 3D objects for this molecule/CoordSet
+                const CoordSet *coordSet;
+                if (a->first->GetParentOfType(&coordSet)) {
+                    CoordSet::Object3DMap::const_iterator objList = coordSet->objectMap.find(m->second->id);
+                    if (objList != coordSet->objectMap.end()) {
+                        CoordSet::Object3DList::const_iterator o, oe=objList->second.end();
+                        for (o=objList->second.begin(); o!=oe; o++) {
+                            if (!(continueDraw = (*o)->Draw(a->first))) break;
+                        }
                     }
                 }
             }
@@ -524,6 +524,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/06/21 21:04:41  thiessen
+* draw per-model 3D objects
+*
 * Revision 1.35  2003/03/06 19:23:18  thiessen
 * minor tweaks
 *
