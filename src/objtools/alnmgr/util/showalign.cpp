@@ -140,6 +140,8 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocI
   m_QueryNumber = 0;
   m_BlastType = NcbiEmptyString;
   m_MidLineStyle = eBar;
+  m_ConfigFile = NULL;
+  m_Reg = NULL;
 
   SNCBIFullScoreMatrix blosumMatrix;
   NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
@@ -178,8 +180,10 @@ CDisplaySeqalign::~CDisplaySeqalign(){
     delete [] m_Matrix[i];
   }
   delete [] m_Matrix;
-  if(m_AlignOption & eHtml){
+  if (m_ConfigFile) {
     delete m_ConfigFile;
+  } 
+  if (m_Reg) {
     delete m_Reg;
   }
 
@@ -1963,6 +1967,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.29  2004/01/21 18:32:46  jianye
+*initialize m_ConfigFile
+*
 *Revision 1.28  2004/01/13 17:58:02  jianye
 *Added geo linkout
 *
