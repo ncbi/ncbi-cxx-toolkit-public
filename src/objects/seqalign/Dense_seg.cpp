@@ -36,6 +36,7 @@
 
 // standard includes
 #include <algorithm>
+#include <objects/seqalign/seqalign_exception.hpp>
 
 // generated includes
 #include <objects/seqalign/Dense_seg.hpp>
@@ -87,6 +88,34 @@ void CDense_seg::Reverse(void)
     }
 }
 
+//-----------------------------------------------------------------------------
+// PRE : numbers of the rows to swap
+// POST: alignment rearranged with row1 where row2 used to be & vice versa
+void CDense_seg::SwapRows(TDim row1, TDim row2)
+{
+    if (row1 >= GetDim()  ||  row1 < 0  ||
+        row2 >= GetDim()  ||  row2 < 0) {
+        NCBI_THROW(CSeqalignException, eOutOfRange,
+                   "Row numbers supplied to CDense_seg::SwapRows must be "
+                   "in the range [0, dim)");
+    }
+
+    //swap ids
+    swap(SetIds()[row1], SetIds()[row2]);
+
+    int idxStop = GetNumseg()*GetDim();
+    
+    //swap starts
+    for(int i = 0; i < idxStop; i += GetDim()) {
+        swap(SetStarts()[i+row1], SetStarts()[i+row2]);
+    }
+
+    //swap strands
+    for(int i = 0; i < idxStop; i += GetDim()) {
+        swap(SetStrands()[i+row1], SetStrands()[i+row2]);
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -96,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/26 20:28:38  johnson
+* added 'SwapRows' method
+*
 * Revision 1.1  2003/08/13 18:12:03  johnson
 * added 'Reverse' method
 *

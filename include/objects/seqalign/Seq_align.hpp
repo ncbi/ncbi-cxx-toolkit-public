@@ -60,6 +60,11 @@ public:
     /// NOTE: currently *only* works for dense-seg
     void Reverse(void);
 
+    /// Swap the position of two rows in the alignment
+    /// NOTE: currently *only* works for dense-seg
+    void SwapRows(TDim row1, TDim row2);
+
+
     // Create a Dense-seg from a Std-seg
     // Used by AlnMgr to handle nucl2prot alignments
     CRef<CSeq_align> CreateDensegFromStdseg(void) const;
@@ -94,6 +99,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/26 20:28:38  johnson
+* added 'SwapRows' method
+*
 * Revision 1.2  2003/08/19 21:10:39  todorov
 * +CreateDensegFromStdseg
 *

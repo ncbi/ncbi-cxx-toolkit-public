@@ -43,7 +43,8 @@ class NCBI_SEQALIGN_EXPORT CSeqalignException :
 public:
     enum EErrCode {
         eUnsupported,
-        eInvalidInputAlignment
+        eInvalidInputAlignment,
+        eOutOfRange
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -51,6 +52,7 @@ public:
         switch (GetErrCode()) {
         case eUnsupported:           return "eUnsupported";
         case eInvalidInputAlignment: return "eInvalidInputAlignment";
+        case eOutOfRange:            return "eOutOfRange";
         default:                     return CException::GetErrCodeString();
         }
     }
@@ -66,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/26 20:28:38  johnson
+* added 'SwapRows' method
+*
 * Revision 1.2  2003/08/19 21:09:39  todorov
 * +eInvalidInputAlignment
 *

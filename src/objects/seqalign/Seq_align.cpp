@@ -72,6 +72,21 @@ void CSeq_align::Reverse(void)
     }
 }
 
+///---------------------------------------------------------------------------
+/// PRE : currently only implemented for dense-seg segments; two row numbers
+/// POST: same alignment, position of the two rows has been swapped
+void CSeq_align::SwapRows(TDim row1, TDim row2)
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        SetSegs().SetDenseg().SwapRows(row1, row2);
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::SwapRows currently only handles dense-seg "
+                   "alignments");
+    }
+}
 
 ///----------------------------------------------------------------------------
 /// PRE : the Seq-align has StdSeg segs
@@ -297,6 +312,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/26 20:28:38  johnson
+* added 'SwapRows' method
+*
 * Revision 1.2  2003/08/19 21:11:13  todorov
 * +CreateDensegFromStdseg
 *

@@ -69,6 +69,9 @@ public:
     /// Reverse the segments' orientation
     void Reverse(void);
 
+    /// Swap two rows (changing *order*, not content)
+    void SwapRows(TDim row1, TDim row2);
+
 private:
     // Prohibit copy constructor and assignment operator
     CDense_seg(const CDense_seg& value);
@@ -142,6 +145,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/26 20:28:38  johnson
+* added 'SwapRows' method
+*
 * Revision 1.2  2003/08/14 19:52:53  todorov
 * Added m_Widths to support nuc2prot aligns
 *
