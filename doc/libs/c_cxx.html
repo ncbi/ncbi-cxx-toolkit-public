@@ -100,6 +100,14 @@ The full set of tools, which maintain identity of both <tt>CONNECT</tt> library 
 <a href="../lxr/source/scripts/internal/c_toolkit"><b><i>scripts/internal/c_toolkit</i></b></a>.
 
 <p>
+However, the internal representations of <tt>ASN.1</tt>-based objects
+differ between the two toolkits.  If you need to convert an object
+from one representation to the other, you can use the template class
+<a href="../lxr/ident?i=CAsnConverter&d=C"><b>CAsnConverter&lt;&gt;</b></a>,
+defined in
+<a href="../lxr/source/include/ctools/asn_converter.hpp">&lt;ctools/asn_converter.hpp&gt;</a>.
+
+<p>
 <hr>
 
 
