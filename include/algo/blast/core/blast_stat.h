@@ -34,8 +34,8 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
-* Revision 1.13  2003/07/31 18:48:43  dondosha
-* Use Int4 instead of BLAST_Score
+* Revision 1.14  2003/07/31 18:58:56  dondosha
+* Do not use BLAST_Score typedef
 *
 * Revision 1.12  2003/07/31 14:31:37  camacho
 * Replaced Char for char
@@ -365,6 +365,9 @@ typedef struct BLAST_KarlinBlk {
 
 ********************************************************************/
 
+/* BLAST_Score must be a signed datatype */
+typedef Int4    BLAST_Score,* BLAST_ScorePtr;
+
 /*
 SCORE_MIN is (-2**31 + 1)/2 because it has been observed more than once that
 a compiler did not properly calculate the quantity (-2**31)/2.  The list
@@ -395,8 +398,8 @@ typedef struct BLAST_ScoreFreq {
 #define BLAST_MATRIX_SIZE 32
 
 typedef struct BLASTMatrixStructure {
-    Int4 *matrix[BLAST_MATRIX_SIZE];
-    Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
+    BLAST_ScorePtr matrix[BLAST_MATRIX_SIZE];
+    BLAST_Score long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
 } BLASTMatrixStructure;
 
 typedef struct BLAST_ScoreBlk {
@@ -406,11 +409,11 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int2 		alphabet_size;  /* size of alphabet. */
 	Int2 		alphabet_start;  /* numerical value of 1st letter. */
 	BLASTMatrixStructure* matrix_struct;	/* Holds info about matrix. */
-	Int4 **matrix;  /* Substitution matrix */
-	Int4 **posMatrix;  /* Sub matrix for position depend BLAST. */
+	BLAST_ScorePtr* matrix;  /* Substitution matrix */
+	BLAST_ScorePtr* posMatrix;  /* Sub matrix for position depend BLAST. */
     double karlinK; /* Karlin-Altschul parameter associated with posMatrix */
 	Int2		mat_dim1, mat_dim2;	/* dimensions of matrix. */
-	Int4 *	maxscore; /* Max. score for each letter */
+	BLAST_ScorePtr	maxscore; /* Max. score for each letter */
 	BLAST_Score	loscore, hiscore; /* Min. & max. substitution scores */
 	BLAST_Score	penalty, reward; /* penalty and reward for blastn. */
 	Boolean		read_in_matrix; /* If TRUE, matrix is read in, otherwise
@@ -486,13 +489,13 @@ Int2 BlastScoreBlkFill (BLAST_ScoreBlk* sbp, char* string, Int4 length, Int2 con
  * @param matrix_path Full path to the matrix in the directory structure [in]
 */
 Int2 BlastScoreBlkMatFill (BLAST_ScoreBlk* sbp, char* matrix);
-Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty, Int4 reward);
+BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score penalty, BLAST_Score reward);
  
 Int2 BlastScoreBlkMatRead (BLAST_ScoreBlk* sbp, FILE *fp);
  
 Int2 BlastScoreBlkMaxScoreSet (BLAST_ScoreBlk* sbp);
-Int4 *BlastPSIMaxScoreGet(Int4 **posMatrix, 
-                          Int4 start, Int4 length);
+BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr* posMatrix, 
+                                   Int4 start, Int4 length);
 
 BLAST_ResComp* BlastResCompNew (BLAST_ScoreBlk* sbp);
 
@@ -551,27 +554,27 @@ double BlastKarlinLambdaNR (BLAST_ScoreFreq* sfp);
 
 double BlastKarlinLtoH (BLAST_ScoreFreq* sfp, double  lambda);
 
-Int4 BlastKarlinEtoS (double  E, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
+BLAST_Score BlastKarlinEtoS (double  E, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-Int4 BlastKarlinEtoS_simple (double  E, BLAST_KarlinBlk* kbp, double searchsp); 
+BLAST_Score BlastKarlinEtoS_simple (double  E, BLAST_KarlinBlk* kbp, double searchsp); 
 
 double BlastKarlinPtoE (double p);
 
 double BlastKarlinEtoP (double x);
 
-double BlastKarlinStoP (Int4 S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
+double BlastKarlinStoP (BLAST_Score S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-double BlastKarlinStoP_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
+double BlastKarlinStoP_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-double BlastKarlinStoE (Int4 S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
+double BlastKarlinStoE (BLAST_Score S, BLAST_KarlinBlk* kbp, double  qlen, double  dblen);
 
-double BlastKarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
+double BlastKarlinStoE_simple (BLAST_Score S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-Int2 BlastCutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
+Int2 BlastCutoffs (BLAST_ScorePtr S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
 
 
-Int2 BlastCutoffs_simple (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
-double BlastKarlinStoLen (BLAST_KarlinBlk* kbp, Int4 S);
+Int2 BlastCutoffs_simple (BLAST_ScorePtr S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
+double BlastKarlinStoLen (BLAST_KarlinBlk* kbp, BLAST_Score S);
 
 /* SumP function. Called by BlastSmallGapSumE and BlastLargeGapSumE. */
 double BlastSumP (Int4 r, double s);
@@ -601,7 +604,7 @@ Int2 BlastResFreqResComp (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, BLAST_ResComp
 
 Int2 BlastResFreqClr (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp);
 
-BLAST_ScoreFreq* BlastScoreFreqNew (Int4 score_min, Int4 score_max);
+BLAST_ScoreFreq* BlastScoreFreqNew (BLAST_Score score_min, BLAST_Score score_max);
 
 BLAST_ScoreFreq* BlastScoreFreqDestruct (BLAST_ScoreFreq* sfp);
 
