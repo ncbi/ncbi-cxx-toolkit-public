@@ -1277,7 +1277,7 @@ int *parseBlockThresholds(Char *stringToParse, Int4 numBlocks, Boolean localAlig
     isNumeric = TRUE;
     argLength = strlen(stringToParse);
     for(c = 0; c < argLength; c++)
-      if(!isdigit(stringToParse[c])) {
+      if((!isdigit(stringToParse[c])) && (((0 < c) || ('-' != stringToParse[0])))) {
 	isNumeric = FALSE;
 	break;
       }
@@ -1466,7 +1466,7 @@ static Args myargs [] = {
       "0", NULL, NULL, FALSE, 'Y', ARG_INT, 0.0, 0, NULL},
     { "Produce HTML output",  /* 16 */
       "F", NULL, NULL, FALSE, 'T', ARG_BOOLEAN, 0.0, 0, NULL},
-    { "Score threshold for each block, could be file or single number",  /* 17 */
+    { "Score threshold for each block, could be file or single number, no space after -f",  /* 17 */
       "11", NULL, NULL, FALSE, 'f', ARG_STRING, 0.0, 0, NULL},
     { "Score thresholds for multiple blocks",  /* 18 */
       "11", NULL, NULL, FALSE, 't', ARG_INT, 0.0, 0, NULL},

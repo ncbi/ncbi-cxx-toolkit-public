@@ -32,7 +32,7 @@ Contents: Code to test block-based alignments for proteins */
 /*
  * $Id$
  *
- * This file is slightly modified from Alejandro's blockalign.c as of 3/27/03
+ * This file is slightly modified from Alejandro's blockalign.c as of 4/30/03
  */
 
 #include <ncbi.h>
@@ -214,7 +214,7 @@ void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks,
     }
     thisAlign = thisAlign->next;
     alignCounter++;
-  }
+  } 
   if (percentile < 1.0) {
     index = MIN(Nlm_Nint((alignCounter-1) * percentile), alignCounter -1);
     for(blockCounter = 0; blockCounter < (numBlocks -1); blockCounter++) {
@@ -229,19 +229,19 @@ void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks,
     }
   }
 
-  for(blockCounter = 0; blockCounter < (numBlocks -1); blockCounter++)
+  for(blockCounter = 0; blockCounter < (numBlocks -1); blockCounter++) 
     MemFree(gapLengths[blockCounter]);
   MemFree(gapLengths);
-
+    
 }
 
 static Int4 readBlockData(CharPtr asnFileName, FILE *diagfp,
-                       Uint1Ptr query, Int4 length,
-                       CharPtr matrixName, Int4 **blockStarts,
-                       Int4 **blockEnds, Uint1Ptr *masterSequence,
+                       Uint1Ptr query, Int4 length, 
+                       CharPtr matrixName, Int4 **blockStarts, 
+                       Int4 **blockEnds, Uint1Ptr *masterSequence, 
                        Int4 *masterLength, Nlm_FloatHi ***thisPosFreqs,
 			  BLAST_Score ***thisScoreMat, Int4 **allowedGaps,
-                       SeqIdPtr *sequence_id, Nlm_FloatHi percentile,
+                       SeqIdPtr *sequence_id, Nlm_FloatHi percentile, 
 			  Int4 gapAddition, Nlm_FloatHi scaleMult)
 {
   CddPtr blockAlignPtr; /*blocked alignment structure*/
@@ -269,26 +269,26 @@ static Int4 readBlockData(CharPtr asnFileName, FILE *diagfp,
   ddp = listOfSeqAligns->segs;
   if (NULL != blockAlignPtr->trunc_master) {
        (*sequence_id) = blockAlignPtr->trunc_master->id;
-  }
-  else
+  } 
+  else 
     (*sequence_id) = ddp->id;
   blockCounter = 0;
-
+  
   /* get masterSequence which is a Uint1Ptr out of
      blockAlignPtr->trunc_master which is a BioseqPtr; */
 
   (*masterSequence) = BlastGetSequenceFromBioseq(
                       blockAlignPtr->trunc_master, masterLength);
   for (c= 0; c < (*masterLength); c++)
-     (*masterSequence)[c] = ResToInt((Char) (*masterSequence)[c]);
+     (*masterSequence)[c] = ResToInt((Char) (*masterSequence)[c]); 
   structPosFreqs = blockAlignPtr->posfreq;
   structScoreMat = blockAlignPtr->scoremat;
 
   /*check if masterLength == number of columns*/
 
-  if ((structPosFreqs->nrows != PROTEIN_ALPHABET) ||
+  if ((structPosFreqs->nrows != PROTEIN_ALPHABET) || 
       (structPosFreqs->ncolumns != (*masterLength))) {
-    CddSevError("posfreq matrix size mismatch in test blocks");
+    CddSevError("posfreq matrix size mismatch in test blocks");  
   }
 
   firstPositions = (Boolean *) MemNew((*masterLength) * sizeof(Boolean));
@@ -329,7 +329,7 @@ static Int4 readBlockData(CharPtr asnFileName, FILE *diagfp,
     }
   findAllowedGaps(listOfSeqAligns,blockCounter,*allowedGaps, percentile, gapAddition);
 
-  for(i = 0; i < (blockCounter-1); i++)
+  for(i = 0; i < (blockCounter-1); i++) 
     fprintf(diagfp, "Alllowed gap length after block %d is %d\n",i+1,(*allowedGaps)[i]);
 
   (*thisScoreMat) = (BLAST_Score **) MemNew(((*masterLength) +1) * sizeof(BLAST_Score *));
@@ -353,17 +353,17 @@ static Int4 readBlockData(CharPtr asnFileName, FILE *diagfp,
 
      charOrder[0] =  1;  /*A*/
    charOrder[1] =  16; /*R*/
-   charOrder[2] =  13; /*N*/
-   charOrder[3] =  4;  /*D*/
+   charOrder[2] =  13; /*N*/  
+   charOrder[3] =  4;  /*D*/ 
    charOrder[4] =  3;  /*C*/
    charOrder[5] =  15; /*Q*/
-   charOrder[6] =  5; /*E*/
+   charOrder[6] =  5; /*E*/ 
    charOrder[7] =  7;  /*G*/
    charOrder[8] =  8;  /*H*/
    charOrder[9] =  9;  /*I*/
    charOrder[10] = 11; /*L*/
    charOrder[11] = 10; /*K*/
-   charOrder[12] = 12; /*M*/
+   charOrder[12] = 12; /*M*/  
    charOrder[13] =  6; /*F*/
    charOrder[14] = 14; /*P*/
    charOrder[15] = 17; /*S*/
@@ -468,7 +468,7 @@ void insertPiece(alignPiece *newPiece, Int4 blockIndex)
 }
 
 /*find all high scoring single-block gapless alignments*/
-void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
+void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength, 
 		     Int4 startQueryPosition, Int4 endQueryPosition,
 		     Int4 numBlocks,
                      Int4 *blockStarts, Int4 *blockEnds, Int4 masterLength,
@@ -483,8 +483,8 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 					    ending position+1 we can use*/
    Int4 incrementedQueryPos; /*index for moving down quey diagonal*/
    Int4 score; /*total score*/
-   Int4 *requiredStartMAX, *requiredStartMIN; /*where do block alignments have to
-                                        start w. r. t. query to fit
+   Int4 *requiredStartMAX, *requiredStartMIN; /*where do block alignments have to 
+                                        start w. r. t. query to fit 
 					in*/
    Int4 currentLength; /*current length of blocks*/
    alignPiece *newPiece;
@@ -1293,7 +1293,7 @@ int *parseBlockThresholds(Char *stringToParse, Int4 numBlocks, Boolean localAlig
     isNumeric = TRUE;
     argLength = strlen(stringToParse);
     for(c = 0; c < argLength; c++)
-      if(!isdigit(stringToParse[c])) {
+      if((!isdigit(stringToParse[c])) && (((0 < c) || ('-' != stringToParse[0])))) {
 	isNumeric = FALSE;
 	break;
       }
@@ -1482,7 +1482,7 @@ static Args myargs [] = {
       "0", NULL, NULL, FALSE, 'Y', ARG_INT, 0.0, 0, NULL},
     { "Produce HTML output",  /* 16 */
       "F", NULL, NULL, FALSE, 'T', ARG_BOOLEAN, 0.0, 0, NULL},
-    { "Score threshold for each block, could be file or single number",  /* 17 */
+    { "Score threshold for each block, could be file or single number, no space after -f",  /* 17 */
       "11", NULL, NULL, FALSE, 'f', ARG_STRING, 0.0, 0, NULL},
     { "Score thresholds for multiple blocks",  /* 18 */
       "11", NULL, NULL, FALSE, 't', ARG_INT, 0.0, 0, NULL},
