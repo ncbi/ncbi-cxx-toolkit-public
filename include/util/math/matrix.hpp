@@ -124,7 +124,9 @@ protected:
 ///
 /// stream input.
 ///
-/// One line per row, with entries separated by a single space
+/// One line per row, with entries readable by successive calls
+/// to operator>>.  For doubles, this just means they're separated
+/// by whitespace.
 template <class T>
 inline CNcbiIstream&
 operator>> (CNcbiIstream& is, CNcbiMatrix<T>& M);
@@ -911,27 +913,36 @@ inline CNcbiIstream& operator>>(CNcbiIstream& is, CNcbiMatrix<T>& M)
 {
     CNcbiMatrix<T> A;
     string line;
+    vector<T> row;
+    T entry;
     int linenum = 0;
     while(getline(is, line)) {
         linenum++;
         if (line.empty() || line[0] == '#') {
             continue;
         }
-        vector<string> fields;
-        NStr::Tokenize(line, " \t", fields, NStr::eMergeDelims);
-        if (A.GetCols() == 0) {
-            A.Resize(A.GetCols(), fields.size());
+        CNcbiIstrstream iss(line.c_str(), line.size());
+        row.clear();
+        while(1) {
+            iss >> entry;
+            if (!iss) {
+                break;
+            }
+            row.push_back(entry);
         }
-        if (fields.size() != A.GetCols()) {
+        if (A.GetCols() == 0) {
+            A.Resize(A.GetCols(), row.size());
+        }
+        if (row.size() != A.GetCols()) {
             NCBI_THROW(CException, eUnknown,
                        "error at line " +
                        NStr::IntToString(linenum) + ": expected " +
                        NStr::IntToString(A.GetCols()) + " columns; got" +
-                       NStr::IntToString(fields.size()));
+                       NStr::IntToString(row.size()));
         }
         A.Resize(A.GetRows() + 1, A.GetCols());
         for (int i = 0;  i < A.GetCols();  ++i) {
-            A(A.GetRows() - 1, i) = NStr::StringToDouble(fields[i]);
+            A(A.GetRows() - 1, i) = row[i];
         }
     }
     M.Swap(A);
@@ -945,6 +956,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/10 21:17:54  jcherry
+ * Made operator>> work for a matrix of any contained type that defines
+ * operator>> (not just doubles)
+ *
  * Revision 1.3  2004/02/10 14:29:51  jcherry
  * Removed wayward use of protected data in operator>>
  *
