@@ -54,7 +54,7 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/blast_input.hpp>
 #include <algo/blast/api/seqsrc_readdb.h>
 #include <algo/blast/api/blast_seqalign.hpp>
-#include <algo/blast/api/blast_format.hpp>
+#include <blast_format.hpp>
 
 #ifndef NCBI_C_TOOLKIT
 #define NCBI_C_TOOLKIT
@@ -194,9 +194,9 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("html", "html", "Produce HTML output?",
                             CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("gencode", "gencode", "Query genetic code",
-                            CArgDescriptions::eInteger, "0");
+                            CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("dbgencode", "dbgencode", "Database genetic code",
-                            CArgDescriptions::eInteger, "0");
+                            CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("maxintron", "maxintron", 
                             "Longest allowed intron length for linking HSPs",
                             CArgDescriptions::eInteger, "0");
@@ -326,27 +326,13 @@ void CBlastApplication::SetOptions(const CArgs& args)
     BLAST_FillEffectiveLengthsOptions(m_Options->GetEffLenOpts(), numseqs, totlen, 
                                       (Int8)args["searchsp"].AsDouble());
     
-    
-    if (translated_db) {
-        if (args["dbgencode"].AsInteger())
-            m_Options->SetDbGeneticCode(args["dbgencode"].AsInteger());
+    int gen_code;
 
-        CSeq_data gc_ncbieaa(
-                CGen_code_table::GetNcbieaa(args["dbgencode"].AsInteger()),
-                CSeq_data::e_Ncbieaa);
-        CSeq_data gc_ncbistdaa;
-
-        TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
-                CSeq_data::e_Ncbistdaa);
-
-        _ASSERT(gc_ncbistdaa.IsNcbistdaa());
-        _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
-
-        Uint1* gen_code_string = (Uint1*) malloc(sizeof(Uint1)*nconv);
-        for (unsigned int i = 0; i < nconv; i++)
-            gen_code_string[i] = 
-                gc_ncbistdaa.GetNcbistdaa().Get()[i];
-
+    if (translated_db &&
+        ((gen_code = args["dbgencode"].AsInteger()) != BLAST_GENETIC_CODE))
+    {
+        m_Options->SetDbGeneticCode(gen_code);
+        Uint1* gen_code_string = BLASTFindGeneticCode(gen_code);
         m_Options->SetDbGeneticCodeStr(gen_code_string);
     }
 }
