@@ -369,7 +369,7 @@ static void s_TEST_Dir(void)
     _VERIFY( CDir("dir_1").Rename("dir_2") );
 
     // Remove the directory
-    _VERIFY( !CDirEntry("dir_2").Remove() );
+    _VERIFY( !CDirEntry("dir_2").Remove(CDirEntry::eOnlyEmpty) );
     _VERIFY( CFile(REL "dir_2" SEP "file_1").Remove() );
     _VERIFY( CDir("dir_2").Remove(CDir::eOnlyEmpty) );
 
@@ -475,6 +475,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/01/24 22:18:52  ivanov
+ * Changed tests for CDirEntry::Remove() and CDir::Remove()
+ *
  * Revision 1.8  2002/01/22 19:29:09  ivanov
  * Added test for ConcatPathEx()
  *
