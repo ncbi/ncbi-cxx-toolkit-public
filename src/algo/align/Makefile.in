@@ -3,8 +3,7 @@
 # Meta-makefile (algo/align)
 #################################
 
-LIB_PROJ = xalgoalign
-SUB_PROJ = splign demo
+SUB_PROJ = nw splign
 
 REQUIRES = objects
 
