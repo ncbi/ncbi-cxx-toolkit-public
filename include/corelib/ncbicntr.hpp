@@ -120,6 +120,13 @@
 #  endif
 #endif
 
+
+/** @addtogroup Counters
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class NCBI_XNCBI_EXPORT CAtomicCounter
@@ -165,6 +172,9 @@ public:
 private:
     mutable CAtomicCounter m_Counter;
 };
+
+
+/* @} */
 
 
 //////////////////////////////////////////////////////////////////////
@@ -294,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/03/31 14:07:04  siyan
+* Added doxygen support
+*
 * Revision 1.12  2003/03/06 19:38:48  ucko
 * Make CObject a friend, so that InitCounter can read m_Value directly
 * rather than going through Get(), which would end up spinning forever
