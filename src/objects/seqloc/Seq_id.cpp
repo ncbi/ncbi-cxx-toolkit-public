@@ -461,6 +461,9 @@ static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 {
     SIZE_TYPE digit_pos = acc.find_first_of("0123456789");
+    if (digit_pos == NPOS) {
+        return eAcc_unknown;
+    }
     SIZE_TYPE main_size = acc.find('.');
     if (main_size == NPOS) {
         main_size = acc.size();
@@ -1340,6 +1343,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.56  2003/06/24 16:33:48  ucko
+ * CSeq_id::IdentifyAccession: always return unknown for accessions that
+ * contain no digits, even if they happen to look like prefixes.
+ *
  * Revision 6.55  2003/05/09 14:22:56  ucko
  * CSeq_id::x_Init: treat missing (chain) names as spaces (reported by
  * Michel Dumontier) and get rid of some unnecessary calls to c_str().
