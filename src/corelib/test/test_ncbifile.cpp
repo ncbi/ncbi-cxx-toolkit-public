@@ -372,7 +372,7 @@ static void s_TEST_File(void)
     cout << "File modification time : " << ftime.AsString() << endl;
     cout << "File last access time  : " << atime.AsString() << endl;
     assert( ftime == ftime_new );
-    assert( atime == ctime );
+    assert( atime >= ctime );
 
     // Remove the file
     assert( f.Remove() );
@@ -690,6 +690,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/12/01 12:17:35  ivanov
+ * Fixed comparison operator for assert( atime >= ctime )
+ *
  * Revision 1.30  2003/11/28 16:23:42  ivanov
  * Added tests for CDirEntry::SetTime()
  *
