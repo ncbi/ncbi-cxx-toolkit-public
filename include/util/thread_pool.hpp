@@ -43,6 +43,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/11 15:12:52  ucko
+* Added GetSize and GetMaxSize methods to CBlockingQueue and rewrote
+* Is{Empty,Full} in terms of them.
+*
 * Revision 1.4  2002/01/25 15:46:06  ucko
 * Add more methods needed by new threaded-server code.
 * Minor cleanups.
@@ -91,11 +95,13 @@ public:
     CBlockingQueue(unsigned int max_size = kMax_UInt)
         : m_MaxSize(max_size), m_GetSem(0,1), m_PutSem(1,1) {}
 
-    void     Put(const TRequest& data); // Throws exception if full
-    void     WaitForRoom(void) const;
-    TRequest Get(void);                 // Blocks politely if queue is empty
-    bool     IsEmpty(void) const;
-    bool     IsFull(void) const;
+    void         Put(const TRequest& data); // Throws exception if full
+    void         WaitForRoom(void) const;
+    TRequest     Get(void);                 // Blocks politely if empty
+    unsigned int GetSize(void) const;
+    unsigned int GetMaxSize(void) const { return m_MaxSize; }
+    bool         IsEmpty(void) const    { return GetSize() == 0; }
+    bool         IsFull(void) const     { return GetSize() == GetMaxSize(); }
 
 private:
     volatile queue<TRequest> m_Queue;
@@ -282,19 +288,12 @@ TRequest CBlockingQueue<TRequest>::Get(void)
 
 
 template <typename TRequest>
-bool CBlockingQueue<TRequest>::IsEmpty(void) const
+unsigned int CBlockingQueue<TRequest>::GetSize(void) const
 {
     CMutexGuard guard(m_Mutex);
-    return const_cast<const queue<TRequest>&>(m_Queue).empty();
+    return const_cast<const queue<TRequest>&>(m_Queue).size();
 }
 
-
-template <typename TRequest>
-bool CBlockingQueue<TRequest>::IsFull(void) const
-{
-    CMutexGuard guard(m_Mutex);
-    return const_cast<const queue<TRequest>&>(m_Queue).size() == m_MaxSize;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //   CThreadInPool<>::
