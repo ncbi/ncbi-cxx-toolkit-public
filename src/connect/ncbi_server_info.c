@@ -278,7 +278,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                 }
                 break;
             case 'Q':
-                if (!info->host || quorum)
+                if (type == fSERV_Firewall || !info->host || quorum)
                     break;
                 if (sscanf(str,"=%3s%n",s,&n) >= 1 && strcasecmp(s, "YES")==0){
                     info->quorum = (unsigned short)(-1);
@@ -833,6 +833,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2002/11/01 20:15:36  lavr
+ * Do not allow FIREWALL server specs to have Q flag
+ *
  * Revision 6.44  2002/10/28 20:15:06  lavr
  * -<connect/ncbi_server_info.h> ("ncbi_server_infop.h" should suffice)
  *
