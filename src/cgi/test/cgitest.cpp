@@ -31,6 +31,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/03/19 00:36:20  vakatov
+* TestCgiResponse() -- three tests (and more extended ones) in the place
+* of one
+*
 * Revision 1.11  2001/12/06 00:31:51  vakatov
 * CCgiRequest::ParseEntries() -- allow leading '&' in the query string (temp.)
 *
@@ -539,20 +543,31 @@ static void TestCgiResponse(const CNcbiArguments& args)
     
     response.SetOutput(&NcbiCout);
 
-    if (args.Size() > 2)
+    if (args.Size() > 2) {
         response.Cookies().Add( CCgiCookies(args[2]) );
-
+    }
     response.Cookies().Remove(response.Cookies().Find("to-Remove"));
+    NcbiCout << "Cookies: " << response.Cookies() << NcbiEndl;
 
-    NcbiCout << "Cookies: " << response.Cookies();
-
-    NcbiCout << "Now generated HTTP response:" << NcbiEndl;
-
+    NcbiCout << "Generated simple HTTP response:" << NcbiEndl;
     response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
-    //    sleep(2);
     response.out() << "Data2" << NcbiEndl << NcbiFlush;
+    NcbiCout << "End of simple HTTP response" << NcbiEndl << NcbiEndl;
 
-    NcbiCout << "End of HTTP response" << NcbiEndl;
+    response.SetHeaderValue("Some-Header-Name", "Some Header Value");
+    response.SetHeaderValue("status", "399 Something is BAAAAD!!!!!");
+    response.SetStatus(301, "Moved");
+
+    NcbiCout << "Generated HTTP response:" << NcbiEndl;
+    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    response.out() << "Data2" << NcbiEndl << NcbiFlush;
+    NcbiCout << "End of HTTP response" << NcbiEndl << NcbiEndl;
+
+    response.SetRawCgi(true);
+    NcbiCout << "Generated HTTP \"raw CGI\" response:" << NcbiEndl;
+    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    response.out() << "Data2" << NcbiEndl << NcbiFlush;
+    NcbiCout << "End of HTTP \"raw CGI\" response" << NcbiEndl << NcbiEndl;
 }
 
 
