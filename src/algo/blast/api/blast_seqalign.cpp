@@ -55,6 +55,7 @@
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 
@@ -720,6 +721,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/19 13:46:13  dicuccio
+* Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.
+*
 * Revision 1.14  2003/08/18 22:17:36  camacho
 * Renaming of SSeqLoc members
 *

@@ -34,6 +34,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_option.hpp>
@@ -53,6 +54,7 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p)
@@ -605,6 +607,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2003/08/19 13:46:13  dicuccio
+ * Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.
+ *
  * Revision 1.20  2003/08/18 22:17:36  camacho
  * Renaming of SSeqLoc members
  *

@@ -43,7 +43,9 @@
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
+
 
 TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 

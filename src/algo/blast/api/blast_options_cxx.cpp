@@ -41,6 +41,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
@@ -503,6 +504,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/19 13:46:13  dicuccio
+* Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.
+*
 * Revision 1.11  2003/08/18 20:58:57  camacho
 * Added blast namespace, removed *__.hpp includes
 *

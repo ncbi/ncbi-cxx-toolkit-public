@@ -41,19 +41,6 @@ BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 
-#ifdef NCBI_OS_MSWIN
-
-ostream&
-operator<<(ostream& os, __int64 val)
-{
-    os << NStr::Int8ToString(val);
-    return os;
-}
-
-#endif
-
-
-
 void
 CQuerySetUpOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth)
     const
