@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.193 2003/06/02 14:25:23 ucko Exp $
+#  $Id: configure.ac,v 1.194 2003/06/05 19:08:19 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1934,6 +1934,7 @@ C_LIBS="$MATH_LIBS $C_LIBS"
 
 ### Save original compiler/linker flags
 orig_CPPFLAGS="$CPPFLAGS"
+orig_LDFLAGS="$LDFLAGS"
 orig_LIBS="$LIBS"
 
 
@@ -2385,12 +2386,13 @@ if test "$with_opengl" != "no"; then
          LIBS="$orig_LIBS"
          CPPFLAGS="$orig_CPPFLAGS"
          AC_PATH_XTRA
+	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
          AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
-            [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+            [$X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
-            [$X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+            [$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
-            [$X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+            [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
          # Kludge for in-house 64-bit Solaris installations; I don't know why I
          # have to specify /sparcv9 expliclitly.
@@ -2402,6 +2404,7 @@ if test "$with_opengl" != "no"; then
             X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
             X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
          fi
+	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
          OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
          ;;
@@ -2424,12 +2427,21 @@ fi
 if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OPENGL_INCLUDE=
    OPENGL_LIBS=
+   OSMESA_LIBS=
    with_opengl="no"
-   WithoutPackages="$WithoutPackages OpenGL"
+   WithoutPackages="$WithoutPackages OpenGL MESA"
 else
    WithPackages="$WithPackages OpenGL"
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
+   AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
+      [WithPackages="$WithPackages MESA";
+       OSMESA_LIBS="$X_LIBS -lOSMesa -lGL $X_ALL_LIBS"
+       AC_DEFINE(HAVE_LIBOSMESA, 1, [Define to 1 if you have libOSMesa.])],
+      [WithoutPackages="$WithoutPackages MESA"; OSMESA_LIBS=],
+      $OPENGL_LIBS)
 fi
+
+LDFLAGS=$orig_LDFLAGS
 
 
 ## FLTK
@@ -3478,6 +3490,7 @@ AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)
 AC_SUBST(OPENGL_LIBS)
+AC_SUBST(OSMESA_LIBS)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)

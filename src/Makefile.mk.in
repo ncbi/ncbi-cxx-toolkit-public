@@ -255,6 +255,7 @@ NCBI_C_ncbi = @NCBI_C_ncbi@
 # include these as appropriate.)
 OPENGL_INCLUDE = @OPENGL_INCLUDE@
 OPENGL_LIBS    = @OPENGL_LIBS@
+OSMESA_LIBS    = @OSMESA_LIBS@
 
 # wxWindows:  headers and libs
 WXWIN_INCLUDE = @WXWIN_INCLUDE@

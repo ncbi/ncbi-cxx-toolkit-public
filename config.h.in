@@ -103,6 +103,9 @@
    the standard libraries. */
 #undef HAVE_LIBKSTAT
 
+/* Define to 1 if you have libOSMesa. */
+#undef HAVE_LIBOSMESA
+
 /* Define to 1 if libpng is available. */
 #undef HAVE_LIBPNG
 
