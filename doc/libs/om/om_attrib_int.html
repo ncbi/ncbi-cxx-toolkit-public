@@ -1,226 +1,27 @@
-<!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<div align="Center">
-<h1>Object Manager.</h1>
-</div>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<h2>Internal classes - attributes and operations</h2>
-<ul>
-  <li><a href="#Indexing">Indexing.</a></li>
-  <li><a href="#Seq_id_Handle">Seq_id_Handle and Seq_id_Mapper.</a></li>
-</ul>
-<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-
-<h3><a name="Indexing"></a>Indexing</h3>
-<p>
-In order to facilitate the data search, Object Manager's objects
-create and maintain a number of  internal indices.
-</p>
-
-
-
-<h4>Data source</h4>
-<p>
-Data source
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CDataSource">CDataSource</a>)
-manages a set of Seq_entries, possibly several of which may
-be Top level  ones. It contains the following indices:
-</p>
-
-
-<ul>
-  <li>a map of known to this Data source Seq_entries and corresponding Top-level
-    seq.entry info - here several seq entries may be mapped to a single
-    top-level seq entry info (
-	<span class="ncbi_ccode">map&lt;CRef&lt;CSeq_entry&gt;,CRef&lt;CTSE_Info&gt;&gt; m_Entries</span>
-	),</li>
-
-  <li>a map of Seq_ids to the set of top level Seq_entries which contain bio
-    sequence with this Seq_id (
-	<span class="ncbi_ccode">map&lt;CSeq_id_Handle,set&lt;CRef&lt;CTSE_Info&gt;&gt; m_TSE_seq</span>
-	),</li>
-
-  <li>a map of Seq_ids to the set of top level Seq_entries which reference
-    bio sequence with this Seq_id in annotations or sequence data (
-	<span class="ncbi_ccode">map&lt;CSeq_id_Handle,set&lt;CRef&lt;CTSE_Info&gt;&gt; m_TSE_ref</span>
-    ),</li>
-
-  <li>a map of CBioseq's pointer to corresponding SeqMap (
-    <span class="ncbi_ccode">map&lt;const CBioseq*,CRef&lt;CSeqMap&gt;&gt; m_SeqMaps</span>
-	)</li>
-</ul>
-
-
-
-
-<h4>Top-level seq entry info (TSE info)</h4>
-<p>
-TSE_info
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CTSE_Info">CTSE_Info</a>)
-object contains information about a specific Seq_entry within
-a given Data source. It contains:
-</p>
-
-<ul>
-  <li>a map of Seq_ids to corresponding Bioseq_info data objects (
-    <span class="ncbi_ccode">map&lt;CSeq_id_Handle,CRef&lt;CBioseq_Info&gt;&gt; m_BioseqMap</span>
-	),</li>
-
-  <li>a map of Seq_ids to a data structure which describes position (in terms
-    of ranges) of annotation  objects on  the sequence (
-	<span class="ncbi_ccode">map&lt;CSeq_id_Handle,CRangeMultimap&lt;CRef&lt;CAnnotObject&gt;,CRange&lt;int&gt;::position_type&gt;&gt; m_AnnotMap</span>
-	).</li>
-</ul>
-
-
-
-
-<h4>Bioseq info</h4>
-<p>
-Bioseq_info
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBioseq_Info"> CBioseq_Info</a>)
-contains a set of Seq_ids (Seq_id_Handles) which identify a
-given Seq_entry (
-<span class="ncbi_ccode">set&lt;CSeq_id_Handle&gt; m_Synonyms</span>).
-</p>
-
-
-
-<h4>Handle range map</h4>
-<p>
-This object
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHandleRangeMap">CHandleRangeMap</a>)
-contains a map of Bioseq handle to Handle range (
-<span class="ncbi_ccode">map&lt;CBioseq_Handle,CHandleRange&gt; m_LocMap</span>
-).
-</p>
-
-
-
-<h4>Handle range</h4>
-<p>
-The object
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CHandleRange"> CHandleRange</a>)
-contains a list of locations for a particular bio sequence (
-<span class="ncbi_ccode">list&lt;pair&lt;CRange&lt;int&gt;,ENa_strand&gt;&gt; m_Ranges</span>
-).
-</p>
-
-
-
-
-
-
-
-<h3><a name="Seq_id_Handle"></a>Seq_id_Handle and Seq_id_Mapper</h3>
-<p>
-Seq_id_Handle
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_id_Handle">CSeq_id_Handle</a>)
-is an internal object, which is used as an alias (or  substitute)
-to  Seq_id. Seq_id_Mapper
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_id_Mapper">CSeq_id_Mapper</a>)
-maps one to another, back and forth.  The map is created and
-maintained by the Object Manager. Different Object  Managers have different
-maps.   Such map is populated by Data sources when they load and index
-data.
-</p>
-<p>
-CSeq_id_Handle is designed for more efficient indexing and
-searching.  Each  Seq_id is mapped to a unique handle. Such handles
-are  not aware of bio sequences  or other ways of Seq_id usage.
-</p>
-
-
-
-<h4>CSeq_id_Handle  object methods:</h4>
-<pre class="ncbi_code">
-    // copy (assignment) operator
-    CSeq_id_Handle&amp; operator= (const CSeq_id_Handle&amp; handle);
-    // comparison
-    bool operator== (const CSeq_id_Handle&amp; handle) const;
-    bool operator&lt;  (const CSeq_id_Handle&amp; handle) const;
-    // Check if the handle is a valid or an empty one
-    operator bool(void) const;
-    // Reset the handle (remove seq-id reference)
-    void Reset(void);
-</pre>
-
-<p>
-Handles have comparison operators, which makes it possible
-to  use  them  with  STL maps, lists or sets. A newly created handle is
-not  assigned to any Seq_id. Whether a handle has been initialized or
-not can be checked   with operator  bool(): an assigned handle will return
-true, while an unassigned  one will return false.
-</p>
-
-
-
-<h4>CSeq_id_Mapper  object methods:</h4>
-<pre class="ncbi_code">
-    // Get seq-id handle. Create new handle if not found and
-    // do_not_create is false. Get only the exactly equal seq-id handle.
-    CSeq_id_Handle GetHandle(const CSeq_id&amp; id, bool do_not_create=false);
-    // Get the list of matching handles, do not create new handles
-    void GetMatchingHandles(const CSeq_id&amp; id, TSeq_id_HandleSet&amp; h_set);
-    // Get the list of string-matching handles, do not create new handles
-    void GetMatchingHandlesStr(string sid, TSeq_id_HandleSet&amp; h_set);
-    // Get seq-id for the given handle
-    static const CSeq_id&amp; GetSeq_id(const CSeq_id_Handle&amp; handle);
-    // References to each handle must be tracked to re-use their values
-    void AddHandleReference(const CSeq_id_Handle&amp; handle);
-    void ReleaseHandleReference(const CSeq_id_Handle&amp; handle);
-</pre>
-
-<p>
-<span class="ncbi_func">GetMatchingHandles</span>
-method populates the "h_set" container with handles for
-all   seq-ids     matching to the "id". E.g. if "id" contains accession "A"
- without   version     information, the set may be populated with all of
-"A",  "A.1",   "A.2" etc.    Special rules may be applied to some seq-id types
-(e.g. GenBank,   EMBL and    DDBJ ids share the same accession space and
-are searched together).   No new   handles are created for the "id".
-</p>
-
-<p>
-<span class="ncbi_func">GetMatchingHandlesStr</span>
-method populates the "h_set" with handles for all seq-ids,
-containing "sid" string in their key fields (accession, name, integer
-id corresponding  to the string value etc.).
-</p>
-
-<p>
-Internally each handle maps to an integer value (key), mapped
-to  a  Seq_id.    Keys may be re-used when there is no client using a particular
-seq-id handle.    The keys are locked and released by groups, the total
-number  of groups is   defined by kKeyUsageTableSize constant. When all
-keys  in a  group are released,   the whole group of keys may be used to
-map other   seq-ids.  This may result   in obtaining different handles (keys)
-for the   same id or  getting the same   handle for different seq-ids. To
-avoid such   misbehavior  AddHandleReference()    and ReleaseHandleReference()
-methods   of CSeq_id_Mapper  are called by CSeq_id_Handle constructor and destructor.
-</p>
-
-<!--#include virtual="../../ssi/navlinks.shtml" -->
-<!--#include virtual="../../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

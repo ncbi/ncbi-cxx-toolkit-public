@@ -1,245 +1,27 @@
-<!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-
-<div align="Center">
-<h1>Object Manager</h1>
-</div>
-
-
-<h2>Common problems</h2>
-<hr>
-
-<ol>
-  <li><a href="#seqid">
-  How to construct Seq_id by accession?
-  </a></li>
-  <li><a href="#seqmap">
-  How to use CSeqMap?
-  </a></li>
-  <li><a href="#seqvector">
-  What is the format of data CSeqVector returns?
-  </a></li>
-  <li><a href="#cdreg">
-  What to pay attention to when processing CdRegions?
-  </a></li>
-  <li><a href="#largeseq">
-  Sequence gi=18565551.
-  </a></li>
-  <li><a href="#fileentry">
-  How to load sequence data from a file?
-  </a></li>
-  <li><a href="#other">
-  Other suggestions.
-  </a></li>
-</ol>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-<hr>
-<a name="seqid"></a>
-<h4>How to construct Seq_id by accession?</h4>
-<p>
-Currently, one has to specify an exact version number, otherwise
-GetBioseqHandle fails. A user might not know a version number for an accession
-s/he wants to retrieve, so, if version is not provided, the last version of the
-accession should be fetched.
-</p>
-
-
-
-<hr>
-<a name="seqmap"></a>
-<h4>How to use CSeqMap?</h4>
-<p>
-There are two methods in CBioseq_Handle, which return CSeqMap object:
-<pre class="ncbi_code">
-    const CSeqMap&amp; GetSeqMap(void) const;
-    const CSeqMap&amp; GetResolvedSeqMap(void) const;
-</pre>
-What is the difference? The point is that a sequence can refer to other sequences,
-which in turn to others etc. etc. <span class="ncbi_term">Object Manager</span> does not resolve this
-references until a client needs it. So, the contents of SeqMap object returned by
-<span class="ncbi_func">GetSeqMap</span> depends on a history of previous calls. From the other side,
-<span class="ncbi_func">GetResolvedSeqMap</span> returns completely resolved map, that is map, which
-does not contain references to references, nor references to gaps - only either data,
-or references to data, or gaps.
-<br>
-Please note, the last element of CSeqMap is always of type <span class="ncbi_var">eSeqEnd</span>.
-Its length is zero. It does not mean much - just "the end of the map".
-</p>
-
-
-
-<hr>
-<a name="seqvector"></a>
-<h4>What is the format of data CSeqVector returns?</h4>
-<p>
-CSeqVector object has a <span class="ncbi_func">SetCoding</span> method, which defines the format
-of the data it should return. In case this function was never called
-CSeqVector does not perform any conversion, returning the data
-in the original format (in which it receives it from the database).
-<br>
-More information about various sequence data formats can be found
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML#Seq-data: Encoding the Sequence Data Itself">here</a>.
-<br>
-When there is a gap in the sequence, CSeqVector always returns symbol N,
-regardless of coding.
-</p>
-
-
-<hr>
-<a name="cdreg"></a>
-<h4>What to pay attention to when processing CdRegions?</h4>
-<p>
-When looking for CdRegions on a sequence, you get a set of Seq_loc objects,
-which describe their position on the sequence. Please note, these positions may,
-and do overlap. Based on a set of Seq_locs, it is possible to "construct"
-a Bioseq - it has a special constructor for this. Still, in case of
-overlapping intervals, such sequence would contain some data regions repeated twice,
-or even several times.
-<br>
-When calculating total number of residues on a sequence, one should skip gaps -
-CSeqVector returns symbol N in this case.
-</p>
-
-
-
-<hr>
-<a name="largeseq"></a>
-<h4>Sequence gi=18565551</h4>
-<p>
-This is a huge (8 megabases) segmented sequence with CDS features defined on the sequence
-itself and its parts, which are also huge. When trying to get all of them, you can
-run out of your computer resources. We are looking for some
-solution to this problem. Probably, in some cases the <span class="ncbi_term">Object Manager</span>
-does not need to retrieve all features for all bioseq segments, but we
-are not sure how to filter them out.
-</p>
-
-
-
-
-
-
-
-<hr>
-<a name="fileentry"></a>
-<h4>How to load sequence data from a file?</h4>
-<p>
-It is possible to load into <span class="ncbi_term">Object Manager</span>  &nbsp;"manually" created sequence entry -
-using <span class="ncbi_func">AddTopLevelSeqEntry</span> method of CScope object.
-Such an entry can be loaded, for example, from a file in ASN format (file.asn):
-<pre class="ncbi_code">
-    #include &lt;serial/serial.hpp&gt;
-    #include &lt;serial/objistr.hpp&gt;
-    #include &lt;serial/objostr.hpp&gt;
-    ...
-    // Use CRef&lt;&gt; to store the object. Use "new" to allocate it.
-    // This will allow the Object Manager to work with the object
-    // even if you delete the reference.
-    CRef<CSeq_entry> entry = new CSeq_entry;
-    // Open serial input stream (ASN.1 text file version)
-    CObjectIStream&amp; is = *CObjectIStream::Open("file.asn", eSerial_AsnText);
-    // ASN.1 binary file version
-    // CObjectIStream&amp; is = *CObjectIStream::Open("file.asn", eSerial_AsnBinary);
-    // ASN.1 text stream version
-    // CObjectIStream&amp; is = *CObjectIStream::Open(eSerial_AsnText, any_stream);
-    is &gt;&gt; *entry;
-    is.Close();
-</pre>
-To store sequence entry in an ASN file, use the following code:
-<pre class="ncbi_code">
-    // Open serial output stream (dump ASN.1 text to stdout)
-    CObjectOStream&amp; os = *CObjectOStream::Open(eSerial_AsnText, NcbiCout);
-    os &lt;&lt; *entry;
-    os.Close();
-</pre>
-</p>
-
-
-<hr>
-<a name="other"></a>
-<h4>Other suggestions</h4>
-<ol>
-  <li>
-    CBioseq needs an additional function - one that has been called
-    <span class="ncbi_func">GetBestId</span> in the old toolkit (the best id is actually 'GI').
-	If there is no GI there are priorities defined in the old toolkit.
-    The construction <span class="ncbi_ccode">GetId().begin()</span>, one has to use instead,
-	is not quite proper.
-  </li>
-  <li>
-    CSeqMap can specify that a segment was a reference to another sequence. Still,
-	there is no way to learn to <em>what</em> sequence it refers to.
-<blockquote>
-Done. See <span class="ncbi_func">CSeqMap::CSegmentInfo::GetRefSeqid</span> method.
-</blockquote>
-  </li>
-  <li>
-    Implement some sort of "Seq_loc algebra" - to be able to create unions, intersections,
-	complements etc. of Seq_loc objects.
-  </li>
-  <li>
-    Implement some sort of "Seq_loc iterator, or cursor" - to be able
-	to traverse a set of Seq_locs in some organized way.
-	CSeq_loc_CI class was added to the xutil library.
-
-<blockquote>
-CSeq_loc_CI object has been added to the <span class="ncbi_lib">seqloc</span> library.
-The object is defined in in the <span class="ncbi_file">Seq_loc.hpp</span>.
-
-The iterator goes through all intervals of a Seq-loc
-keeping the correct order of the intervals. Points
-are shown as intervals of length 1 (it is also possible
-to use IsPoint() method). Locations of <em>whole</em> type
-are shown with special values <span class="ncbi_func">CRange&lt;int&gt;::GetWholeFrom()</span>
-and <span class="ncbi_func">CRange&lt;int&gt;::GetWholeTo()</span>. Another way to find a
-whole location is to use <span class="ncbi_func">CSeq_loc_CI::IsWhole()</span>.
-<br>
-A brief example of using the iterator (assuming we
-have a CSeq_loc object "loc"):
-
-<pre class="ncbi_code">
-    for (CSeq_loc_CI loc_it(loc); loc_it; loc_it++) {
-        // Check seq-id
-        if ( loc_it.GetSeq_id().IsGi()  &&  loc_it.GetSeq_id().GetGi() == 2) {
-            int from = loc_it.GetRange().GetFrom();
-            int to = loc_it.GetRange().GetTo();
-            ...
-        }
-    }
-</pre>
-</blockquote>
-
-  </li>
-  <li>
-  Method <span class="ncbi_func">CSeq_loc::GetTotalRange</span> returns incorrect data in case of Seq_loc
-  being a mix.
-<blockquote>
-Fixed.
-</blockquote>
-  </li>
-</ol>
-
-<!--#include virtual="../../ssi/navlinks.shtml" -->
-<!--#include virtual="../../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,57 +1,27 @@
-<!--#set var="TITLE" value="MAC OS X Installation and configuration" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<a name="ref_MacProjTree"></a><h2>Building with GCC 3.1 on Mac OS X version 10.1</h2>
-
-<p>We have build NCBI C++ Toolkit using the prerelease <span class="ncbi_compiler">GCC 3.1</span> compiler from the April 2002 Preview of Apple Developers Tools.</p>
 
 
-<p>There are a few extra steps one have to follow before building the Toolkit on <span class="ncbi_os">Mac OS X</span> version 10.1. The future (10.2) version does not require these steps.</p>
-<ul>
-    <li>Download dlCompat library patch from (<span class="ncbi_url">http://prdownloads.sourceforge.net/gnu-darwin</span>). Copy the <span class="ncbi_file">dlfcn.h</span> include file into <span class="ncbi_dir">/usr/include</span> directory. Copy <span class="ncbi_file">libdl.dylib</span> and <span class="ncbi_file">libdl.a</span> libraries into<span class="ncbi_dir">/usr/lib</span> directory.
-    <li>Select <span class="ncbi_compiler">GCC 3.1</span> as a primary compiler (run "<span class="ncbi_cmd">gcc_select 3</span>").
-    <li>Apply patch for C++ exceptions handling bug (Apple Radar bug <a href="http://web.mit.edu/darwin/src/modules/Csu/notes">#2466821</a>). Replace <span class="ncbi_file">crt1.o</span> in <span class="ncbi_dir">/usr/lib</span> with the latest version. The source code of <span class="ncbi_proj">crt1</span> (the Csu project) is avaliable from the Apple CVS. Please visit <a href="http://developer.apple.com/darwin/tools/cvs/read-only.html">Apple Developer's page</a> for information on how to obtaing Darwin source code from CVS. The <span class="ncbi_util">indr</span> utility is required for Csu build and is avaliable as a part of <span class="ncbi_proj">cctools</span> project in Darwin CVS repository.
-</ul>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<p>After these steps the procedure of configuring and building NCBI C++ Toolkit is the same as destribed in "Building NCBI C++ Toolkit: Running the configure script".</p>
-
-<br>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Vlad Lebedev</a></address>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
 <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
-
-<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
-<!--
-<tr>
-<td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a> (Part of MSVC++ support)</address>
-</td>
-</tr>
--->
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

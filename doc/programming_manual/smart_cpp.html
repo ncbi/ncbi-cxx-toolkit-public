@@ -1,74 +1,27 @@
-<!--#set var="TITLE" value="smart.cpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-
-<font size="-1">
-<pre><font color = "red">// File name: smart.cpp
-// Description: Memory management using auto_ptr versus CRef
-<font color = "green">
-#include &lt;corelib/ncbiapp.hpp&gt;
-#include &lt;corelib/ncbiobj.hpp&gt;
-<font color = "blue">
-USING_NCBI_SCOPE;
-<font color = "black">
-class CTestApp : public CNcbiApplication {
-public:
-    virtual int Run(void);
-};
-
-<font color = "red">/////////////////////////////////////////////////////////////////
-//
-// 1. Install an auto_ptr to an int and make a copy - then try to
-//    reference the value from the original auto_ptr.
-//
-// 2. Do the same thing using CRefs instead of auto_ptrs.
-//
-//////////////////////////////////////////////////////////////////
-<font color = "black">
-int CTestApp::Run()
-{
-<a name="orig"></a>    auto_ptr&lt;int&gt; orig_ap;
-    orig_ap.reset(new int(5));
-    {
-        auto_ptr&lt;int&gt; copy_ap = orig_ap;
-
-        if ( !orig_ap.get() ) {
-            cout << "orig_ap no longer exists - copy_ap = " << *copy_ap << endl;
-        } else {
-            cout << "orig_ap = " << *orig_ap << ", copy_ap = "
-                 << *copy_ap << endl;
-        }
-    }
-    if ( orig_ap.get() ) {
-        cout << "orig_ap = " << *orig_ap << endl;
-    }
-
-    CRef&lt; CObjectFor&lt;int&gt; &gt; orig(new  CObjectFor&lt;int&gt;);
-    *orig = 5;
-    {
-        CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
-
-        if ( !orig ) {
-            cout << "orig no longer exists - copy = " << (int&) *copy << endl;
-        } else {
-            cout << "orig = " << (int&) *orig << ", copy = "
-                 << (int&) *copy << endl;
-        }
-    }
-    if ( orig ) {
-        cout << "orig = " << (int&) *orig << endl;
-    }
-    return 0;
-}
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-int main(int argc, const char* argv[])
-{
-    CTestApp theTestApp;
-    return theTestApp.AppMain(argc, argv);
-}
-</pre>
-</font>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
+
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,130 +1,27 @@
-<!--#set var="TITLE" value="CGI Diagnostic Handling" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>CGI Diagnostic Handling</h1>
-<p>
-By default, CGI applications support three query parameters affecting
-<a href="diag.html">diagnostic output</a>:
-<a href="#ref_destination">diag-destination</a>,
-<a href="#ref_threshold">diag-threshold</a>, and
-<a href="#ref_format">diag-format</a>.  It is possible to modify this
-behavior by overriding the virtual function
-<a href="../lxr/ident?i=ConfigureDiagnostics"><span class="ncbi_func">CCgiApplication::ConfigureDiagnostics</span></a>.
-(In particular, production applications may wish to disable these
-parameters by defining <span class="ncbi_func">ConfigureDiagnostics</span> to be a no-op.)
-<p><br>
-
-<a name="ref_destination"></a><h2>diag-destination</h2>
-<p>
-The parameter <span class="ncbi_var">diag-destination</span> controls where diagnostics
-appear.  By default, there are two possible values:
-</p>
-<table border="1">
- <tr> <th>value</th> <th>effects</th> </tr>
- <tr> <td>stderr</td>
-      <td>Send diagnostics to the standard error stream (default behavior)</td>
- </tr>
- <tr> <td>asbody</td>
-      <td>Send diagnostics to the client in place of normal output</td> </tr>
-</table>
-
-<p>
-However, an application can make other options available by calling
-<a href="../lxr/ident?i=RegisterDiagFactory"><span class="ncbi_func">RegisterDiagFactory</span></a>
-from its <span class="ncbi_func">Init</span> routine.  In particular, calling
-<blockquote>
-<pre class="ncbi_code">
-#include &lt;connect/email_diag_handler.hpp&gt;
-...
-RegisterDiagFactory("email", new CEmailDiagFactory);
-</pre></blockquote>
-and linking against <span class="ncbi_lib">xconnect</span> and <span class="ncbi_lib">connect</span>enables
-destinations of the form <span class="ncbi_value">email:user@host</span>, which will
-cause the application to e-mail diagnostics to the specified address
-when done.
-<p>
-Similarly, calling
-<blockquote>
-<pre class="ncbi_code">
-#include &lt;html/commentdiag.hpp&gt;
-...
-RegisterDiagFactory("comments", new CCommentDiagFactory);
-</pre></blockquote>
-and linking against <span class="ncbi_lib">xhtml</span> will enable the destination
-<span class="ncbi_term">comments</span>.  With this destination, diagnostics will take the
-form of comments in the generated HTML, provided that the application
-has also used <a href="../lxr/ident?i=SetDiagNode"><span class="ncbi_func">SetDiagNode</span></a>
-to indicate where they should go.  (Applications may call that
-function repeatedly; each invocation will affect all diagnostics until
-the next invocation.  Also, <span class="ncbi_func">SetDiagNode</span> is effectively a no-op
-for destinations other than <span class="ncbi_term">comments</span>, so applications may call
-it unconditionally.)
-<p>
-Those destinations are not available by default because they introduce
-additional dependencies; however, either may become a standard
-possibility in future versions of the toolkit.
-<p><br>
-
-<a name="ref_threshold"></a><h2>diag-threshold</h2>
-The parameter <span class="ncbi_var">diag-threshold</span> sets the minimum
-<a href="diag.html#severity">severity level</a> of displayed
-diagnostics; its value can be either <span class="ncbi_value">fatal</span>, <span class="ncbi_value">critical</span>,
-<span class="ncbi_value">error</span>, <span class="ncbi_value">warning</span>, <span class="ncbi_value">info</span>, or <span class="ncbi_value">trace</span>.  For the
-most part, setting this parameter is simply akin to calling
-<a href="../lxr/ident?i=SetDiagPostLevel"><span class="ncbi_func">SetDiagPostLevel</span></a>.
-However, setting <span class="ncbi_var">diag-threshold</span> to <span class="ncbi_value">trace</span> is <em>not</em>
-equivalent to calling <span class="ncbi_ccode">SetDiagPostLevel(eDiag_Trace)</span>; the
-former reports all diagnostics, whereas the latter reports only traces.
-<p><br>
-
-<a name="ref_format"></a><h2>diag-format</h2>
-Finally, the parameter <span class="ncbi_var">diag-format</span> controls diagnostics'
-default appearance; setting it is akin to calling
-<a href="../lxr/ident?i=SetDiagPostFlag"><span class="ncbi_func">{Set,Unset}DiagPostFlag</span></a>.
-Its value is a list of flags, delimited by spaces (which appear as "+"
-signs in URLs); possible flags are <span class="ncbi_value">file</span>, <span class="ncbi_value">path</span>,
-<span class="ncbi_value">line</span>, <span class="ncbi_value">prefix</span>, <span class="ncbi_value">severity</span>, <span class="ncbi_value">code</span>,
-<span class="ncbi_value">subcode</span>, <span class="ncbi_value">time</span>, <span class="ncbi_value">omitinfosev</span>, <span class="ncbi_value">all</span>,
-<span class="ncbi_value">trace</span>, <span class="ncbi_value">log</span>, and <span class="ncbi_value">default</span>.  Every flag but
-<span class="ncbi_value">default</span> corresponds to a value in
-<a href="../lxr/ident?i=EDiagPostFlag"><span class="ncbi_type">EDiagPostFlag</span></a>, and
-can be turned off by preceding its name with an exclamation point
-("!").  <span class="ncbi_value">default</span> corresponds to the four flags which are on by
-default: <span class="ncbi_value">line</span>, <span class="ncbi_value">prefix</span>, <span class="ncbi_value">code</span>, and <span class="ncbi_value">subcode</span>,
-and may not be subtracted.
-
-<br><br>
-<a href="htmlcgi.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<!--a href="asn.html"> <i> next</i> </a-->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<!--#include virtual="../ssi/navlinks.shtml" -->
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
+
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
 <tr>
- <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Aaron Ucko</a></address></td>
- <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

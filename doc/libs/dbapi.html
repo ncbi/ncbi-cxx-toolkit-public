@@ -1,167 +1,27 @@
-<!--#set var="TITLE" value="NCBI DBAPI Driver Reference" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
 
 <h1>
-NCBI DBAPI Documentation</h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<ul>
-<li>
-<b><a href="#ref_Overview">Overview</a></b> (<i>pending</i><!--NCBI_MARK-->: DBAPI motivation,
-layers and architecture)</li>
 
-<li>
-<b><a href="#ref_User">User-Layer API</a></b> (a user-oriented wrapper
-for the generic handling of queries and result sets from a relational database
-management system (RDBMS)</li>
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<li>
-<b><a href="#ref_Driver">Driver API</a></b> (low-level access to the various
-RDBMSs)</li>
-</ul>
-
-<hr><a NAME="ref_Overview"></a>
-<h3>
-DBAPI Overview</h3>
-<a NAME="ref_User"></a>
-<hr><a NAME="ref_User"></a>
-<h3>
-<a href="dbapi_user.html">DBAPI User-Layer</a> Reference</h3>
-
-<ul>
-<li>
-<a href="dbapi_user.html#ref_ObjHierarchy">Object Hierarchy</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_Includes">Includes</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_Objects">Objects</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_ObjLifeCycle">Object Life Cycle</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_CVariant">CVariant Type</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_ChooseDriver">Choosing the Driver</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_SrcCnxns">Data Source and Connections</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_MainLoop">Main Loop</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_IOParams">Input and Output Parameters</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_StoredProcs">Stored Procedures</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_Cursors">Cursors</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_Blobs">Updating BLOBs using cursors</a></li>
-
-<li>
-<a href="dbapi_user.html#ref_BulkInsert">Using bulk insert</a></li>
-</ul>
-
-<hr><a NAME="ref_Driver"></a>
-<h3>
-<a href="dbapi_driver.html">DBAPI Driver</a> Reference</h3>
-
-<ul>
-<li>
-<a href="dbapi_driver.html#ref_DriverOverview">Overview</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_DriverArch">The driver architecture</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_SampleProgram">Sample program</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_Topics">Topics</a></li>
-
-<ul>
-<li>
-<a href="dbapi_driver.html#ref_Errors">Error handling</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_Context">Driver context and connections</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_TextImage">Text and Image Data Handling</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_Results">Results loop</a></li>
-</ul>
-
-<li>
-<a href="dbapi_driver.html#ref_Drivers">Supported DBAPI drivers</a></li>
-
-<ul>
-<li>
-<a href="dbapi_driver.html#ref_DriversCTLIB">Sybase CTLIB</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_DriversDBLIB">Sybase DBLIB</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_DriversMSDBLIB">Microsoft DBLIB</a></li>
-
-<li>
-<a href="dbapi_driver.html#ref_DriversFTDS7">FreeTDS 0.54 (TDS ver. 7.0)</a></li>
-</ul>
-<li>
-<a href="dbapi_driver.html#ref_DriversFTDS8">FreeTDS 0.60 (TDS ver. 8.0)</a></li>
-</ul>
-</ul>
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<table border=0 width="100%" cellspacing=0>
 <tr>
-<td ALIGN=LEFT>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Vladimir Soussov</a></address>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
-
-<td><!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
-
-<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Michael Kholodov</a></address>
-</td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Chris Lanczycki</a></address>
-</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

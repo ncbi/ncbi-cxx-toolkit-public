@@ -1,256 +1,26 @@
-<!--#set var="TITLE" value="NCBI C++ Toolkit developers and major contributors" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>NCBI C++ Toolkit developers and major contributors</h1>
-(<em>NOTE</em>: this page is always a <em>draft</em> and virtually <em>never</em> up-to-date.)
-<br><br>
-
-<table BORDER WIDTH="100%" NOSAVE>
-<tr NOSAVE>
-<th NOSAVE colspan=2 align=center>Full-time developers</th>
-</tr>
-
-<tr>
-<td>Denis Vakatov
-<br>(since Oct 1998)
-</td>
-
-<td>Fathered the Toolkit.
-<br>Coordinate all works on the portable (core, non-internal)
-projects of the Toolkit, actively participate in the design (and sometimes
-implementation details) of all core APIs.
-<br>CONFIGURE -- orig.author and eventual supporter.
-<br>CORELIB -- orig.author of many modules and active supporter/developer.
-<br>CGI -- orig.author of "CGI Request" and "CGI Application".
-<br>DBAPI -- a massive code and API revision on incorporating DBAPI into
-the Toolkit (with the orig.author, V.Soussov);  participate in the core
-(exception, diagnostic, driver manager) code support and development.
-<br>CONNECT -- orig.author of the core, abstract connection(CONN) and portable
-socket(SOCK) APIs, and FW-daemon.
-<br>GUI -- helped setup the project structure, namespace and common definitions.
-<br>DOC -- "Reference Manual", "FAQ", mailing lists; snapshots, announcements.</td>
-</tr>
-
-<tr>
-<td>Eugene Vasilchenko
-<br>(Nov 1998 - Feb 2001)
-<br>(Aug 2002 - current)</td>
-
-<td>CORELIB -- "CObject, CRef&lt;&gt;", multi-threading
-<br>CGI -- orig.author of "CGI Response", "Fast-CGI module"
-<br>HTML -- orig.author
-<br>SERIAL -- orig.author
-<br>DATATOOL -- orig.author
-<br>OBJMGR -- taking over the client-side "loader" code; revising some "user" APIs
-</td>
-</tr>
-
-<tr>
-<td>Anton Lavrentiev
-<br>(since Mar 2000)</td>
-
-<td>CONNECT -- <i>[principal developer]</i> author of "NCBI Services": network client API, load balancer,
-<br>service mapper, dispatcher and launcher; daemons' installation, configuration and monitoring.
-<br>CTOOLS -- <i>[principal developer]</i> connectivity with the NCBI C Toolkit.
-<br>MSVC++ project mutli-configuration <i>[principal developer]</i>. Help with the internal wxWindows installations on MS-Win and Solaris.
-<br>DOC -- documentation on all of the above
-<br>Tune-up of online docs and source browsers.</td>
-</tr>
-
-<tr>
-<td>Aleksey Grichenko
-<br>(since Jan 2001)</td>
-
-<td>CORELIB -- orig.author of the thread library
-<br>SERIAL -- support and further development
-<br>DATATOOL -- support and further development
-<br>OBJMGR -- <i>[principal developer]</i>
-client-side API and implementation
-<br>Incorporation of MT-safety and "safe-static" features to all of the above
-</td>
-</tr>
-
-<tr>
-<td>Aaron Ucko
-<br>(since Aug 2001)</td>
-
-<td>ID1_FETCH -- <i>[principal developer]</i>
-developed from a test/demo application to a real client.
-<br>CONFIGURE -- <i>[principal developer]</i>; active support and development of the UNIX building framework
-<br>CORELIB -- generalized error handlers, implemented E-mail and CGI/HTML ones
-<br>UTIL,CONNECT -- blocking-queue; multi-threaded network server API
-<br>OBJECTS -- adding new functionality, QA'ing other people's additions
-<br>ALNMGR  -- participated in the design
-<br>PubMed (internal) -- <i>[principal developer]</i>
-developing C++ bio-sequence indexer framework
-<br>Toolkit builds on UNIXes (internal) -- support of the building and installation framework
-</td>
-</tr>
-
-<tr>
-<td>Andrei Gourianov
-<br>(since Nov 2001)</td>
-
-<td>
-CORELIB -- major revamp of the exception API -- structure, standartize.
-<br>OBJMGR -- client-side API, implementation, and docs.
-<br>DATATOOL -- adding DTD/XML support for the code generator
-</td>
-</tr>
-
-<tr>
-<td>Vladimir Ivanov
-<br>(since Apr 2001)</td>
-
-<td>HTML -- further support and development
-<br>CORELIB, UTIL -- porting of some very platform-dependent extensions
-<br>Tune-up of online docs and source browsers.
-<br>Internal wxWindows installations on MS-Win and Solaris.
-</td>
-</td>
-</tr>
-
-<tr>
-<td>Diane Zimmerman
-<br>(2000 only)</td>
-
-<td>DOC -- "Programming Manual"</td>
-</tr>
-
-<tr>
-<td>Chris Lanczycki
-<br>(summer 2002 only)</td>
-
-<td>DOC -- major reorganization of the docs structure and appearance</td>
-</tr>
 
 
-<tr>
-<th NOSAVE colspan=2 align=center>Major contributors</th>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<td>&nbsp;</td>
-</tr>
-
-<tr>
-<td>Michael Kimelman</td>
-
-<td>OBJMGR (in progress) -- server-side API and implementation,
-client-side loader (both generic and its implementation for ID)
-</td>
-</tr>
-
-<tr>
-<td>Anton Butanaev</td>
-
-<td>OBJMGR -- helped to implement ID1 loader
-<br>DBAPI (in progress) -- driver for MySQL</td>
-</tr>
-
-<tr>
-<td>Michael Kholodov</td>
-
-<td>DBAPI -- author of the "user-level" database API based
-on Vladimir Soussov's portable "driver-level" API.
-<br>SERIAL, DATATOOL -- provided eventual support of (in the beginning of
-2001)</td>
-</tr>
-
-<tr>
-<td>Vladimir Soussov</td>
-
-<td>DBAPI -- <i>[principal developer]</i>
-author of the portable DB driver API and its
-implemementations for CTLIB(Sybase for UNIX and MS-Win),
-DBLIB (Sybase and Microsoft), FreeTDS and ODBC</td>
-</tr>
-
-<tr>
-<td>Victor Sapojnikov</td>
-
-<td>DBAPI -- participated in the implementation of the Microsoft DBLIB
-driver on MS Windows;
-<br>(in progress)  multiplatform "network bridge" driver</td>
-</tr>
-
-<tr>
-<td>
-Jonathan Kans
-</td>
-
-<td>OBJECTS -- helped port seq. validator (from C Toolkit).
-<br>Provide MAC platform support.</td>
-</tr>
-
-<tr>
-<td>Vladimir Lebedev
-</td>
-
-<td>GUI_SEQ -- the first FLTK/OpenGL based GUI widgets for bio-seq
-visualization
-<br>Provide MAC platform support.
-</td>
-</tr>
-
-<tr>
-<td>Kamen Todorov
-</td>
-
-<td>ALNMGR -- library to deal with bio-sequence alignments</td>
-</tr>
-
-<tr>
-<td>Mike DiCuccio
-</td>
-
-<td>GBENCH -- (in progress) extendable C++ FLTK/OpenGL based
-GUI tool for the retrieval, visualization, analysis, editing, and
-submitting of biological sequences</td>
-</tr>
-
-<tr>
-<td>Cliff Clausen</td>
-
-<td>OBJECTS -- ported various bio-sequence related code and utilities (from
-C Toolkit)</td>
-</tr>
-
-<tr>
-<td>Vsevolod Sandomirskiy</td>
-
-<td>CORELIB, CGI -- draft-authored some application- and context- classes</td>
-</tr>
-
-</table>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<table border=0 width="100%" cellspacing=0>
 <tr>
-<td>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
-
-<td><!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
-
-<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 

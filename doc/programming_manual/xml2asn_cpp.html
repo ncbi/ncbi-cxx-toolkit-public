@@ -1,56 +1,27 @@
-<!--#set var="TITLE" value="asntrans.cpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-<font size="-1">
-<pre><font color = "red">// File name: xml2asn.cpp
-// Description: Reads an XML Biostruc file into memory
-//      and saves it in ASN.1 text and binary formats.
-<font color = "green">
-#include &lt;corelib/ncbistd.hpp&gt;
-#include &lt;corelib/ncbiapp.hpp&gt;
-#include &lt;serial/serial.hpp&gt;
-#include &lt;serial/objistr.hpp&gt;
-#include &lt;serial/objostr.hpp&gt;
-#include &lt;objects/mmdb1/Biostruc.hpp&gt;
 
-<font color = "blue">USING_NCBI_SCOPE;
-<font color = "black">
-class CTestAsn : public CNcbiApplication {
-public:
-    virtual int Run ();
-};
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<font color = "blue">using namespace objects;</font>
 
-int CTestAsn::Run() {
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-    auto_ptr&lt;CObjectIStream>
-      xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-    auto_ptr&lt;CObjectOStream>
-      txt_out(CObjectOStream::Open("1001.asntxt", eSerial_AsnText));
-
-    auto_ptr&lt;CObjectOStream>
-      bin_out(CObjectOStream::Open("1001.asnbin", eSerial_AsnBinary));
-
-    CBiostruc bs;
-    *xml_in >> bs;
-    *txt_out << bs;
-    *bin_out << bs;
-    return 0;
-}
-
-int main(int argc, const char* argv[])
-{
-    CNcbiOfstream diag("asntrans.log");
-    SetDiagStream(&diag);
-
-    CTestAsn theTestApp;
-    return theTestApp.AppMain(argc, argv);
-}
-</pre>
-</font>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,192 +1,27 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ Toolkit:  Source Code Browser" -->
-<!--#set var="HEADING" value="NCBI C++ Toolkit Source Browser" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<!--  Page Contents -->
 
-<a name="ref_SBBrowse"></a>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<div align="left">
-
-<table cellspacing=10 style="border-collapse: collapse" bordercolor="#111111" cellpadding="0">
-<tr>
-    <td><a href="#ref_SBAbout">Overview and Hints</a></td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td><a href="#ref_LXR">LXR</a></td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td><a href="doxyhtml/index.html">Doxygen</a></td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td><a href="#ref_docxx">Doc++</a></td>
-</tr>
-</table>
-
-</div>
-
-<hr>
-
-
-<a name="ref_LXR"></a>
-<h3>LXR Browser <font size=-2>[<a href="#ref_SBAboutLXR">Usage Hints</a>]</font></h3>
-<table>
-<form method=get action="lxr/source">
-<tr>
-<td><input type="SUBMIT" value=" Navigate Source "></td>
-</tr>
-</form>
-
-<form method=get action="lxr/ident">
-<tr>
-<td><input type="SUBMIT" value="  Identifier Search "></td>
-<td><input name="i" value="" size="45">
-  <select name="d">
-    <option value=""     >All
-    <option value="smart">Any first entry
-    <option value="C"    >Class
-    <option value="S"    >Struct type
-    <option value="E"    >Enum type
-    <option value="U"    >Union type
-    <option value="T"    >Type
-    <option value="f"    >Function prototype
-    <option value="F"    >Function
-    <option value="c"    >Class (forwarded)
-    <option value="M"    >Macro
-    <option value="V"    >Variable
-  </select>
-</td>
-</tr>
-</form>
-
-<form method=get action="lxr/find">
-<tr>
-<td><input type="SUBMIT" value=" Filename Search "></td>
-<td><input name="string" value="" size="45"></td>
-</tr>
-</form>
-
-<form method=get action="lxr/search">
-<tr>
-<td><input type="SUBMIT" value="  Freetext Search "></td>
-<td><input name="string" value="" size="45"></td>
-</tr>
-</form>
-
-</table>
-
-<hr>
-
-<a name="ref_doxygen"></a>
-<h3>Doxygen Browser</h3>
-<ul>
-    <li><a href="doxyhtml/index.html">Main Page</a> 
-</ul>
-
-<hr>
-
-
-<a name="ref_docxx"></a>
-<h3>DOC++ Browser <font size=-2>[<a href="#ref_SBAboutDoc++">Usage Hints</a>]</font></h3>
-<ul>
-    <li><a href="docxx/index.html">Entity Index</a> <font size=-1>(alphabetical list)</font></li>
-    <li><a href="docxx/HIER.html"> Class Relationships</a> <font size=-1>(alphabetical ordering)</font></li>
-</ul>
-
-<hr>
-
-<a name="ref_SBAbout"></a>
-<h2>About the Source Browsers <font size=-2>[<a href="#ref_LXR">LXR Browser</a> | <a href="#ref_docxx">DOC++ Browser</a>]</font></h2>
-
-The NCBI C++ Toolkit source code is highly browseable and can be searched in a
-variety of useful ways.  To that end we provide two source browsers, one based
-on the <a href="#ref_SBAboutLXR">LXR Engine</a> and the other uses the <a href="#ref_SBAboutDoc++">DOC++</a> software.
-These are complementary approaches, the former allowing the Toolkit source to
-be searched and navigated according to its file hierarchy and the latter presenting
-an alphabetical list of all classes, macros, variables, typedefs, etc. named in the Toolkit
-and a summary of the parent-child relationships among the classes.
-
-<p></p>
-<a name="ref_SBAboutLXR"></a>
-<h4>LXR</h4>
-The <a href="lxr/blurb.html">LXR Engine</a>
-enables search-driven browsing together with a more conventional
-<a href="lxr/source/">navigation</a>
-of the Toolkit's source.  In <a href="lxr/source/">"source"</a> mode, LXR provides navigation
-of the source tree through a web-based front end.  The LXR search modes <a href="lxr/ident/">"ident"</a>,
-<a href="lxr/find/">"find"</a> and <a href="/lxr/search/">"search"</a> will generate a list
-to identify all occurrences in the Toolkit where an identifier, file name, or specified free text,
-respectively, are found.
-
-<p></p>
-An <span class="ncbi_term">identifier</span> in an LXR search is the name of a class,
-function, variable, macro, typedef, or other named entity within the Toolkit source.
-This search can be especially handy when attempting to determine, for example,
-which header has been left out when a symbol reference cannot be found.
-
-<p></p>
-Some hints for using LXR:
-
-<ul>
-    <li> For freetext LXR searches, patterns, wild cards, and regular expression syntax are allowed.
-        See the <a href="lxr/search_help.html">search help page</a> for details.
-        </li>
-    <li> The identifier ("ident") and file ("find") LXR search modes attempt an <em>exact</em> and
-        <em>case-sensitive</em> match to your query.
-        </li>
-    <li> LXR indexes files from a root of <span class="ncbi_dir">$NCBI/c++</span>, matches will be found not only
-        in <span class="ncbi_dir">src</span> and <span class="ncbi_dir">include</span>, but any resident build tree and the <span class="ncbi_dir">compilers</span>
-        and <span class="ncbi_dir">scripts</span> directories as well.
-        </li>
-    <li> <span class="ncbi_note">NB</span>:  The documentation itself is not searched by LXR.
-        </li>
-</ul>
-
-<p></p><br>
-<a name="ref_SBAboutDoc++"></a>
-<h4>DOC++</h4>
-A second web-based browser, <a href="http://docpp.sourceforge.net/">DOC++</a>, presents a
-complementary view onto the Toolkit's <a href="docxx/HIER.html">class relationships</a>, complete
-with cross references and links to parent and child classes.  An alphabetical listing
-of all Toolkit classes is also presented by DOC++ (although that listing does not
-separately list any child classes).  In-page inheritance relationships are
-displayed graphically with a Java Applet on each class' page.  The DOC++ class descriptions
-also provide links that invoke the LXR search capabilities so that one may easily
-trace the usage of any class throughout the Toolkit (and avoid the typos
-that frustrate LXR).
-
-<p></p>
-DOC++'s <a href="docxx/index.html">index list</a>, also alphabetical, not only
-gives all of the Toolkit classes, but itemizes most any other entity used
-within the Toolkit.  Here is the complete list, in the order presented by DOC++:
-
-<ul>
-    <li> Classes</li>
-    <li> Functions</li>
-    <li> Variables</li>
-    <li> Macros</li>
-    <li> Enums, Unions, Structs</li>
-    <li> Typedefs</li>
-</ul>
-
-(Unfortunately links directly to each entity type are not currently available in
-the main listing.)  Each entry is linked to LXR so you can quickly find all of its occurrences
-in the Toolkit.
-
-<p></p>
-Specific hints to locate and browse serializable objects have been detailed
-<a href="programming_manual/objects.html#locate">elsewhere</a>.
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<script>
-<!--
-print_author('cpp-core', 'Chris Lanczycki', '$Date$', 'ncbi.nlm.nih.gov');
-// -->
-</script>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

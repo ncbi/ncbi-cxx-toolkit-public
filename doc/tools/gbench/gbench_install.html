@@ -1,115 +1,27 @@
-<!--#set var="TITLE" value="GBENCH -- Genome Workbench application (NCBI C++)" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-
-<h1>NCBI Genome Workbench installation</h1>
-
-<ul>
-  <li> <a href="#ref_Intro">Introduction</a>
-  <li> <a href="#ref_WinInst">Windows Installation</a>
-  <li> <a href="#ref_UnixInst">Unix Installation</a>
-</ul>
-
-<a name="ref_Intro"></a>
-<h2>Introduction</h2>
-
-Genome Workbench is a complex multi component product includes several executable, 
-configuration files and plugin modules. It requires a formal installation 
-process which creates gbench directory structure and places files in it.
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<a name="ref_WinInst"></a>
-<h2>Windows Installation</h2>
-
-On Windows NCBI Genome Workbench includes a special installation project (MSVC).
-It is located in <span class="ncbi_dir">compilers\msvc_prj\gbench\gbench_install</span>.
-If you run build this project it will create a full Gbench installation
-inside of the target directory 
-(<span class="ncbi_dir">DebugDLL</span> or <span class="ncbi_dir">ReleaseDLL</span>)
-When it is there you can take all the subdirectories and simply copy it 
-at the place of your choice. Genome Workbench remains fully functional when moved from 
-one directory to another.
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
-<h2>Unix Installation</h2>
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-NCBI Toolkit includes special installation script (<span class="ncbi_script">gbench_install.sh</span>) 
-for Unix.
-<br><br>
-
-<table border="1" cellspacing="0">
-<tr valign="baseline">
-  <th align="right">Location:</th>
-  <td><span class="ncbi_dir">c++/scripts/gbench_install.sh</span></td>
-</tr>
-<tr valign="baseline">
-  <th align="right">Synopsis:</th>
-  <td>Genome workbench installation. Creates Genome Workbench directory structure and copies
-all files from the NCBI Toolkit build. 
-  </td>
-</tr>
-</table>
-
-
-<h3>Main arguments</h3>
-
-<table border="1" cellspacing="0">
+<table border=0 width="100%" cellspacing=0>
 <tr>
-  <th>Argument</th>
-  <th>Effect</th>
-  <th>Comments</th>
-</tr>
-
-<tr>
-  <td><span class="ncbi_app_a">--copy</span></td>
-  <td>Copies files instead of making symbolic links.</td>
-  <td>By default installation script creates links on files located in the build directory.</td>
-</tr>
-
-<tr>
-  <td><span class="ncbi_app_a">sourcedir</span></td>
-  <td>path to pre-built NCBI Toolkit</td>
-  <td>&nbsp;</td>
-</tr>
-
-<tr>
-  <td><span class="ncbi_app_a">targetdir</span></td>
-  <td>Genome Workbench target installation directory</td>
-  <td>&nbsp;</td>
-</tr>
-
-</table>
-
-<br>
-
-If you need to move installtion you can recursively copy all the installation directory 
-to the new place and run <span class="ncbi_script">move-gbench.sh</span> script from 
-the Genome Workbench bin directory. This script will correct 
-<span class="ncbi_env">NCBI_GBENCH_INSTALL_DIR</span> variable in <span class="ncbi_script">run-gbench.sh</span>.
-
-
-<br>
-
-<!--#include virtual="../../ssi/navlinks.shtml" -->
-
-
-<!-- Begin footer content -->
-
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<tr>
-<td ALIGN=LEFT>
-<address>
-<a NAME="copyright"></a><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anatoliy
-Kuznetsov</a>&nbsp;</address>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
-
-<td>
-
-<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
-
-<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 
-<!--#include virtual="../../ssi/footer.shtml" -->
-
+<!--#include virtual="./ssi/footer.shtml" -->

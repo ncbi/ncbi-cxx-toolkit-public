@@ -1,177 +1,27 @@
-<!--#set var="TITLE" value="Working in a separate directory " -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<hr>
-<!--EOW-->
 
-<h1>Working in a separate directory</h1>
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<ul>
-  <li> <a href="#overview"> Overview </a>
-  <li> <a href="#makefiles"> The Project's Makefile </a>
-  <li> <a href="#testing"> Testing your setup </a>
-</ul>
-
-<a name="overview"></a>
-<h3> Overview </h3>
-
-There are two topics relevant to writing an application using the NCBI C++ Toolkit:
-
-<ol>
-  <li> Where to place the source and header files for the project
-  <li> How to create a makefile which can link to the correct C++ libraries
-</ol>
-
-What you put in your makefile will depend on where you define your working directory. In
-this discussion, we assume you will be working <em> outside </em> the NCBI C++ tree,
-say in a directory called <span class="ncbi_dir">NewProj</span>. This is where you will write both your source
-and header files.  The first step then, is to create the new working directory and use the
-<a href="../new_proj.html#ref_OutsideCreate" class="ncbi_script">new_project.sh</a> script to install
-a makefile there:<p>
-
-<blockquote>
-<pre class="ncbi_cmd">
-mkdir NewProj
-$NCBI/c++/scripts/new_project.sh NewProj app $NCBI/c++/GCC-Debug/build
-   Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
-</pre></blockquote>
-
-The syntax of the script command is:
-<blockquote>
-<pre class="ncbi_cmd">
-new_project.sh &lt;project_name> &lt;app | lib> [builddir]
-</pre>
-</blockquote>
-
-where:
-<dl>
-  <dt> - <span class="ncbi_script_a">project_name</span> is the name of the directory you will be working in
-  <dt> - <span class="ncbi_script_a">app (lib)</span> is used to indicate whether you will be building an application or a library
-  <dt> - <span class="ncbi_script_a">builddir</span> (optional) specifies what version of the pre-built NCBI C++ Toolkit
-          libraries to link to
-</dl>
-Several build environments have been pre-configured and are available for developing on various
-platforms using different compilers, in either <em>debug</em> or <em>release</em> mode. These
-environments include custom-made configuration files, makefile templates, and links to the
-appropriate pre-built C++ Toolkit libraries. To see a list of the available environments for
-the platform you are working on, use: <span class="ncbi_cmd">ls -d $NCBI/c++/*/build</span>. For example, on <span class="ncbi_os">Solaris</span>,
-the following build directories are currently available:
-<center><p>
-<table border=1 width="600" cellspacing=0>
-  <caption></caption>
-<tr> <th> Directory </th> <th> Compiler </th> <th> Version </th> </tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/Debug/build </span> </td> <td> Sun Workshop</td><td> Debug </td></tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/Debug64/build </span> </td> <td> Sun Workshop</td><td> Debug (64 bit) </td></tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/DebugMT/build </span> </td> <td> Sun Workshop</td><td> Debug (Multi-thread safe)</td></tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/Release/build </span></td> <td> Sun Workshop</td><td> Release </td></tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/ReleaseMT/build </span></td> <td> Sun Workshop</td><td> Release (Multi-thread safe)</td></tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/GCC-Debug/build     </span></td> <td> GCC </td><td> Debug </td></tr>
-<tr> <td><span class="ncbi_dir"> /netopt/ncbi_tools/c++/GCC-Release/build   </span></td> <td> GCC </td><td> Release </td></tr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
-</center><p>
 
-In the example above, we specified the GNU compiler debug environment:
-<span class="ncbi_dir">$NCBI/c++/GCC-Debug/build</span>. For a list of currently supported compilers, see the
-Reference Manual's <a href="../config.html#ref_Compilers">Installation and configuration</a>
-page.  Running the <span class="ncbi_script">new_project.sh</span> script will generate a ready-to-use makefile in the
-directory you just created.  For a more detailed description of this and other scripts to
-assist you in the set-up of your working environment, see the Reference Manual page <a
-href="../new_proj.html">Starting a new C++ project</a>.
-<p><br>
-
-<a name="makefiles"></a>
-<h3> The Project's Makefile </h3>
-
-The file you just created with the above script will be called <span class="ncbi_file">Makefile.NewProj_app</span>. In
-addition to other things, you will see definitions for:
-
-<dl>
-  <dt> - <span class="ncbi_make_var"> $(builddir) </span> - a path to the build directory specified in the last argument to the above script
-  <dt> - <span class="ncbi_make_var"> $(srcdir) </span> - the path to your current working directory (".")
-  <dt> - <span class="ncbi_make_var"> $(APP) </span> - the application name
-  <dt> - <span class="ncbi_make_var"> $(OBJ) </span> - the names of the object modules to build and link to the application
-  <dt> - <span class="ncbi_make_var"> $(LIB)</span> - specific libraries to link to in the NCBI C++ Toolkit
-  <dt> - <span class="ncbi_make_var"> $(LIBS) </span> - all other libraries to link to (outside the C++ Toolkit)
-</dl>
-
-<span class="ncbi_dir">$(builddir)/lib</span> specifies the library path (-L), which in this case points to the
-GNU debug versions of the NCBI C++ Toolkit libraries. $(LIB)
-lists the individual libraries in this path that you will be linking to. Minimally, this should
-include <span class="ncbi_proj">xncbi</span> - the library which implements the foundational classes for the C++
-tools. Additional library names (e.g. <span class="ncbi_proj">xhtml, xcgi, </span> etc.) can be added here. <p>
-
-Since the shell script assumes you will be building a single executable with the same name
-as your working directory, the application is defined simply as <span class="ncbi_app">NewProj</span>. Additional
-targets to build can be added in the area indicated towards the end of the file. The list
-of objects (OBJ) should include the names (without extensions) of all source files for the
-application (APP). Again, the script makes the simplest assumption, i.e. that there is a
-single source file named <span class="ncbi_file">NewProj.cpp</span>. Additional source names can be added here.
-<p><br>
-
-
-<a name="testing"></a>
-<h3>Testing your setup </h3>
-For a very simple application, this makefile is ready to be run. Try it out now, by creating
-the file <span class="ncbi_file">NewProj.cpp</span>:
-<blockquote>
-<pre class="ncbi_code">
-// File name: NewProj.cpp
-
-#include &lt;iostream&gt;
-
-using namespace std;
-
-int main() {
-    cout << "Hello again, world" << endl;
-}
-</pre>
-</blockquote>
-
-and running:
-
-<blockquote>
-<pre class="ncbi_code">
-make -f Makefile.NewProj_app
-</pre>
-</blockquote>
- 
-<p>Of course, it wasn't necessary to set up the directories and makefiles to accomplish this much,
-as this example does not use any of the C++ classes or resources defined in the NCBI C++
-Toolkit. But having accomplished this, you are now prepared to write an actual application,
-such as described in <a href="applic.html">Writing a simple application project</a>
-<p>
-
-Most real applications will at a minimum, require that you <span class="ncbi_ccode">#include <a href="../lxr/source/include/corelib/ncbistd.hpp">ncbistd.hpp</a></span> in your header file. In addition to defining some basic NCBI C++ Toolkit
-objects and templates, this header file in turn includes other header files that define the C
-Toolkit data types, NCBI namespaces, debugging macros, and exception classes. A  set of <a
-href="../new_mod.html">template</a> files are also provided for
-your use in developing new applications. <p>
-
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="sub_tree.html"> <i> next </i> </a>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-
-     <table border=0 width="100%" cellspacing=0>
-        <tr>
-          <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-          <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
-          <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
-     </table>
-
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

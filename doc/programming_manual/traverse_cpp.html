@@ -1,251 +1,27 @@
-<!--#set var="TITLE" value="traverseBS.cpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-<font size="-1">
-<pre><font color = "red">// File name: traverseBS.cpp
-// Description: Reads an ASN.1 Biostruc text file into memory
-//      and visits its components
-<font color = "green">
-#include &lt;serial/serial.hpp&gt;
-#include &lt;serial/iterator.hpp&gt;
-#include &lt;serial/objistr.hpp&gt;
-#include &lt;serial/serial.hpp&gt;
-#include &lt;objects/general/Dbtag.hpp&gt;
-#include &lt;objects/general/Object_id.hpp&gt;
-#include &lt;objects/seq/Numbering.hpp>
-#include &lt;objects/seq/Pubdesc.hpp>
-#include &lt;objects/seq/Heterogen.hpp>
-#include &lt;objects/mmdb1/Biostruc.hpp&gt;
-#include &lt;objects/mmdb1/Biostruc_id.hpp&gt;
-#include &lt;objects/mmdb1/Biostruc_history.hpp&gt;
-#include &lt;objects/mmdb1/Mmdb_id.hpp&gt;
-#include &lt;objects/mmdb1/Biostruc_descr.hpp&gt;
-#include &lt;objects/mmdb1/Biomol_descr.hpp&gt;
-#include &lt;objects/mmdb1/Molecule_graph.hpp&gt;
-#include &lt;objects/mmdb1/Inter_residue_bond.hpp&gt;
-#include &lt;objects/mmdb1/Residue_graph.hpp&gt;
-#include &lt;objects/mmdb3/Biostruc_feature_set.hpp&gt;
-#include &lt;objects/mmdb2/Biostruc_model.hpp&gt;
-#include &lt;objects/pub/Pub.hpp&gt;
-#include &lt;corelib/ncbistre.hpp>
-#include "<a href="traverse_hpp.html">traverseBS.hpp</a>"
-<font color = "blue">
-USING_NCBI_SCOPE;
 
-using namespace objects;
-<font color = "black">
-int CTestAsn::Run()
-{
-<font color = "red">    // initialize ASN input stream <font color = "black">
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-    auto_ptr&lt;CObjectIStream>
-      inObject(CObjectIStream::Open("1001.val", eSerial_AsnBinary));
 
-<font color = "red">    // initialize, read into, and traverse CBiostruc object <font color = "black">
-    CBiostruc bs;
-    *inObject >> bs;
-    Visit (bs);
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-    return 0;
-}
-<font color = "red">
-/*****************************************************************
-*
-*  The overloaded free "visit" functions are used to explore the
-*  Biostruc and all its component members - most of which are also
-*  class objects. Each class has a public interface that provides
-*  access to its private data via "get" functions.
-*
-******************************************************************/
-<font color = "black"><a name="visitBS"></a>
-void Visit (const CBiostruc& bs) {
-    cout << "Biostruc:\n" << endl;
-    Visit (bs.GetId());
-    Visit (bs.GetDescr());
-    Visit (bs.GetChemical_graph());
-    Visit (bs.GetFeatures());
-    Visit (bs.GetModel());
-}
-<font color = "red">
-/************************************************************************
-*
-*  TId is a type defined in the CBiostruc class as a list of CBiostruc_id,
-*  where each id has a choice state and a value. Depending on the choice
-*  state, a different get() function is used.
-*
-*************************************************************************/
-<font color = "black">
-void Visit (const CBiostruc::TId& idList)
-{
-    cout << "\n Visiting Ids of Biostruc:\n";
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-    for (CBiostruc::TId::const_iterator i = idList.begin();
-         i != idList.end(); ++i) {
-
-<font color = "red">        // dereference the iterator to get to the id object <font color = "black">
-        const CBiostruc_id& thisId = **i;
-        CBiostruc_id::E_Choice choice = thisId.Which();
-        cout << "choice = " << choice;
-
-<font color = "red">        // select id's get member function depending on choice <font color = "black">
-        switch (choice) {
-        case CBiostruc_id::e_Mmdb_id:
-            cout << " mmdbId: " << thisId.GetMmdb_id().Get() << endl;
-            break;
-        case CBiostruc_id::e_Local_id:
-            cout << " Local Id: " << thisId.GetLocal_id().GetId() << endl;
-            break;
-        case CBiostruc_id::e_Other_database:
-            cout << " Other DB Id: "
-             << thisId.GetOther_database().GetDb() << endl;
-            break;
-        default:
-            cout << "Choice not set or unrecognized" << endl;
-        }
-    }
-}
-<font color = "red">
-/*************************************************************************
-*
-*  TDescr is also a type defined in the Biostruc class as a list of
-*  CBiostruc_descr, where each descriptor has a choice state and a value.
-*
-*************************************************************************/
-<font color = "black"><a name="visitDscr"></a>
-void Visit (const CBiostruc::TDescr& descList)
-{
-    cout << "\n Visiting Descriptors of Biostruc:\n";
-
-    for (CBiostruc::TDescr::const_iterator i = descList.begin();
-         i != descList.end(); ++i) {
-
-<font color = "red">        // dereference the iterator to get the descriptor <font color = "black">
-        const CBiostruc_descr& thisDescr = **i;
-        CBiostruc_descr::E_Choice choice = thisDescr.Which();
-        cout << "choice = " << choice;
-
-<font color = "red">        // select the get function depending on choice <font color = "black">
-        switch (choice) {
-        case CBiostruc_descr::e_Name:
-            cout << " Name: " << thisDescr.GetName() << endl;
-            break;
-        case CBiostruc_descr::e_Pdb_comment:
-            cout << " Pdb comment: " << thisDescr.GetPdb_comment() << endl;
-            break;
-        case CBiostruc_descr::e_Other_comment:
-            cout << " Other comment: " << thisDescr.GetOther_comment() << endl;
-            break;
-        case CBiostruc_descr::e_History:
-            cout << " History: " << endl;
-            Visit (thisDescr.GetHistory());
-            break;
-        case CBiostruc_descr::e_Attribution:
-            cout << " Attribute: " << endl;
-            Visit (thisDescr.GetAttribution());
-            break;
-        default:
-            cout << "Choice not set or unrecognized" << endl;
-        }
-    }
-    VisitWithIterator (descList);
-}
-<font color = "red">
-/****************************************************************************
-*
-* An alternate way to visit the descriptor nodes using a <a href="iterators.html#stdType">CStdTypeIterator</a>
-*
-****************************************************************************/
-<font color = "black">
-void VisitWithIterator (const CBiostruc::TDescr& descList) {
-    cout << "\n Revisiting descriptor list with string iterator...:\n";
-
-    for (CBiostruc::TDescr::const_iterator i1 = descList.begin();
-        i1 != descList.end(); ++i1) {
-
-        const CBiostruc_descr& thisDescr = **i1;
-
-        for (CStdTypeConstIterator&lt;NCBI_NS_STD::string>
-             i = ConstBegin(thisDescr); i; ++i) {
-            cout << "next descriptor" << *i << endl;
-        }
-    }
-}
-<font color = "red">
-/****************************************************************************
-*
-*  Chemical graphs contain lists of descriptors, molecule_graphs, bonds, and
-*  residue graphs. Here we just visit some of the descriptors.
-*
-****************************************************************************/
-<font color = "black">
-void Visit (const CBiostruc::TChemical_graph& G)
-{
-    cout << "\n\n Visiting Chemical Graph of Biostruc\n";
-
-    const CBiostruc_graph::TDescr& descList = G.GetDescr();
-    for (CBiostruc_graph::TDescr::const_iterator i = descList.begin();
-         i != descList.end(); ++i) {
-
-<font color = "red">        // dereference the iterator to get the descriptor <font color = "black">
-        const CBiomol_descr& thisDescr = **i;
-        CBiomol_descr::E_Choice choice = thisDescr.Which();
-        cout << "choice = " << choice;
-
-<font color = "red">        // select the get function depending on choice <font color = "black">
-        switch (choice) {
-        case CBiomol_descr::e_Name:
-            cout << " Name: " << thisDescr.GetName() << endl;
-            break;
-        case CBiomol_descr::e_Pdb_class:
-            cout << " Pdb class: " << thisDescr.GetPdb_class() << endl;
-            break;
-        case CBiomol_descr::e_Pdb_source:
-            cout << " Pdb Source: " << thisDescr.GetPdb_source() << endl;
-            break;
-        case CBiomol_descr::e_Pdb_comment:
-            cout << " Pdb comment: " << thisDescr.GetPdb_comment() << endl;
-            break;
-        case CBiomol_descr::e_Other_comment:
-            cout << " Other comment: " << thisDescr.GetOther_comment() << endl;
-            break;
-        case CBiomol_descr::e_Organism: <font color = "red">    // skipped <font color = "black">
-        case CBiomol_descr::e_Attribution:
-            break;
-        case CBiomol_descr::e_Assembly_type:
-            cout << " Assembly Type: " << thisDescr.GetAssembly_type() << endl;
-            break;
-        case CBiomol_descr::e_Molecule_type:
-            cout << " Molecule Type: " << thisDescr.GetMolecule_type() << endl;
-            break;
-        default:
-            cout << "Choice not set or unrecognized" << endl;
-        }
-    }
-}
-
-void Visit (const CBiostruc::TFeatures&)
-{
-    cout << "\n\n Visiting Features of Biostruc\n";
-}
-
-void Visit (const CBiostruc::TModel&)
-{
-    cout << "\n\n Visiting Models of Biostruc\n";
-
-}
-
-int main(int argc, const char* argv[])
-{
-<font color = "red">    // initialize diagnostic stream <font color = "black">
-    CNcbiOfstream diag("traverseBS.log");
-    SetDiagStream(&diag);
-
-    CTestAsn theTestApp;
-    return theTestApp.AppMain(argc, argv);
-}
-</pre>
-</font>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

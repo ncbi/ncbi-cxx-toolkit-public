@@ -1,108 +1,27 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ Toolkit:  Network Service Clients" -->
-<!--#set var="HEADING" value="NCBI C++ Toolkit Network Service Clients" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<hr>
-<!--EOW-->
 
-<h3>Introduction and Use</h3>
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-The C++ Toolkit now contains
-<a href="../tools/datatool/datatool.html"><span class="ncbi_app">datatool</span></a>-generated
-classes for certain ASN.1-based network services: at the time of this writing,
-<span class="ncbi_term">Entrez2</span>, <span class="ncbi_term">ID1</span>,
-and <span class="ncbi_term">MedArch</span>.  (There is also an independently
-written class for the <span class="ncbi_term">Taxon1</span> service,
-<a href="lxr/ident?i=CTaxon1&d=C"><span class="ncbi_class">CTaxon1</span></a>,
-which this page does not discuss further.)  All of these classes, declared in
-headers named <span class="ncbi_file">objects/.../client(_).hpp</span>, inherit
-certain useful properties from the base template
-<a href="lxr/ident?i=CRPCClient&d=C"><span class="ncbi_class">CRPCClient&lt;&gt;</span></a>:
-<ul>
-<li> They normally defer connection until the first actual query, and
-     disconnect automatically when destroyed, but let users request either
-     action explicitly.
-<li> They are designed to be thread-safe (but, at least for now, maintain only
-     a single connection per instance, so forming pools may be appropriate).
-</ul>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-The usual interface to these classes is through a family of methods named
-<span class="ncbi_func">AskXxx</span>, each of which takes a request of an
-appropriate type and an optional pointer to an object that will receive the
-full reply and returns the corresponding reply choice.  For example,
-<span class="ncbi_func">CEntrez2Client::AskEval_boolean</span> takes a request
-of type <span class="ncbi_type">const&nbsp;CEntrez2_eval_boolean&amp;</span>
-and an optional pointer of type <span class="ncbi_type">CEntrez2_reply*</span>,
-and returns a reply of type
-<span class="ncbi_type">CRef&lt;CEntrez2_boolean_reply&gt;</span>.  All of
-these methods automatically detect server-reported errors or unexpected reply
-choices, and throw appropriate exceptions when they occur.  There are also
-lower-level methods simply named <span class="ncbi_func">Ask</span>, which may
-come in handy if you do not know what kind of query you will need to make.
-<p>
-In addition to these standard methods, there are certain class-specific
-methods: <span class="ncbi_class">CEntrez2Client</span> adds
-<span class="ncbi_func">GetDefaultRequest</span> and
-<span class="ncbi_func">SetDefaultRequest</span> for dealing with those fields
-of <span class="ncbi_type">Entrez2-request</span> besides
-<span class="ncbi_var">request</span> itself, and
-<span class="ncbi_class">CID1Client</span> adds 
-<span class="ncbi_func">{Get,Set}AllowDeadEntries</span> (off by default)
-to control how to handle the result choice
-<span class="ncbi_var">gotdeadseqentry</span>.
-
-<h3>Implementation Details</h3>
-
-In order to get
-<a href="../tools/datatool/datatool.html"><span class="ncbi_app">datatool</span></a>
-
-to generate classes for a service, you must define a
-<span class="ncbi_reg">[client]</span> section in the corresponding
-<span class="ncbi_file">modulename.def</span> file, containing the following
-entries:
-<dl>
-<dt><span class="ncbi_reg_var">class</span> (REQUIRED):</dt>
-<dd>C++ class name to use.</dd>
-
-<dt><span class="ncbi_reg_var">service</span>:</dt>
-<dd>Service to connect to; if you do not define this, you will need to override
-    <span class="ncbi_func">x_Connect</span> in the user class.</dd>
-
-<dt><span class="ncbi_reg_var">serialformat</span>:</dt>
-<dd>Serialization format: normally <span class="ncbi_value">AsnBinary</span>,
-    but <span class="ncbi_value">AsnText</span> and
-    <span class="ncbi_value">Xml</span> are also legal.</dd>
-
-<dt><span class="ncbi_reg_var">request</span> (REQUIRED):</dt>
-<dd>ASN.1 type for requests; may include a module name, a field name (as with
-<span class="ncbi_term">Entrez2</span>), or both.</dd>
-
-<dt><span class="ncbi_reg_var">reply</span> (REQUIRED):</dt>
-<dd>ASN.1 type for replies, as above.</dd>
-
-<dt><span class="ncbi_reg_var">reply.choice_name</span>:</dt>
-<dd>Reply choice appropriate for requests of type
-<span class="ncbi_var">choice_name</span>; defaults to
-<span class="ncbi_var">choice_name</span> as well, and determines the return
-type of <span class="ncbi_func">AskChoice_name</span>.  May be set to
-<span class="ncbi_value">special</span> to suppress automatic method generation
-and let the user class handle the whole thing.</dd>
-</dl>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

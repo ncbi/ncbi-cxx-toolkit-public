@@ -1,68 +1,15 @@
-<!--#set var="TITLE" value="wxWindows setup changes" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h2>wxWindows setup changes (foe wxWindows version 2.3.3)</h2>
-
-We made the following changes in the master setup file <span class="ncbi_file">include\wx\msw\setup.h</span> of wxWindows library:
-<ul>
-    <li><span class="ncbi_ccode">#define wxUSE_SOCKETS 0</span> to exclude (not to double) the network stuff, which is normally supported
-    in the standard core library, therefore class <span class="ncbi_class">wxSocket</span> disabled.</li>
-    <li><span class="ncbi_ccode">#define wxUSE_THREADS 0</span> as the multi-thread support is weak in the wxWindows library.</li>
-    <li><span class="ncbi_ccode">#define wxUSE_IOSTREAMH 0</span> to eliminate conflicts with the rest of the C++ Toolkit,
-    which uses new <span class="ncbi_lib">&lt;iostream&gt;</span> library.</li>
-    <li><span class="ncbi_ccode">#define wxUSE_GLCANVAS 1</span> to enable GUI applications to use OpenGL library.</li>
-    <li><span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 0</span> fallback to default.</li><br>
-    Lately we used to have <span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 1</span> to use standard C++ I/O streams wherever appropriate
-        instead of home-made I/O streams supplied with wxWindows
-    distribution, but this configuration appeared to be broken (esp. with wxWindows 2.2.7), and wxWindows
-    developers admitted this: clash in namespaces (namespace std:: was open in one of wxWindows header files) has generated
-    lots of errors. The problem is to be fixed in upcoming version 3.
-</ul>
-
-If you use old version of wxWindows (2.2.7, 2.2.9, ...) also change:
-
-<ul>
-    <li><span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 0</span> fallback to default.</li><br>
-    Lately we used to have <span class="ncbi_ccode">#define wxUSE_STD_IOSTREAM 1</span> to use standard C++ I/O streams
-     wherever appropriate instead of home-made I/O streams supplied with wxWindows
-    distribution, but this configuration appeared to be broken (esp. with wxWindows 2.2.7), and wxWindows
-    developers admitted this: clash in namespaces (namespace std:: was open in one of wxWindows header files) has generated
-    lots of errors. The problem is to be fixed in upcoming version 3.
-</ul>
 
 
-Also we advise to turn off some debug features:
-
-<ul>
-    <li><span class="ncbi_ccode">#define wxUSE_DEBUG_CONTEXT 0</span>
-        to disable debug code inside wxWindows.</li>
-    <li><span class="ncbi_ccode">#define wxUSE_MEMORY_TRACING 0</span>
-        to disable debugging versions of wxObject::new and wxObject::delete.</li>
-    <li><span class="ncbi_ccode">#define wxUSE_GLOBAL_MEMORY_OPERATORS 0</span>
-        </li>
-    <li><span class="ncbi_ccode">#define wxUSE_DEBUG_NEW_ALWAYS 0</span>
-        </li>
-</ul>
-
-
-After don't forget to copy the file <span class="ncbi_file">include\wx\msw\setup.h</span> to <span class="ncbi_file">include\wx\setup.h</span>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
@@ -70,10 +17,10 @@ After don't forget to copy the file <span class="ncbi_file">include\wx\msw\setup
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
 <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
-<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 

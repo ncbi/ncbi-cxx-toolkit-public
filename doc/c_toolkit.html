@@ -1,89 +1,27 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ Toolkit:  C Toolkit Resources" -->
-<!--#set var="HEADING" value="C Toolkit Resources for C++ Toolkit Users" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-For certain tasks it becomes necessary to use, or at least refer to,
-material from the NCBI C Toolkit.  This page simply collects
-a variety of links relevant to making use of the C Toolkit in
-the C++ Toolkit environment.
-<p>
-
-<ul>
-    <li>
-        <a href="libs/c_cxx.html">Working with the NCBI C Toolkit</a><p></li>
-<!--#if expr="$SERVER_PORT=6224" -->
-    <!--#set var="C_LXR" value="/ieb/ToolBox/C_DOC/lxr" -->
-<!--#else  -->
-    <!--#set var="C_LXR" value="/IEB/ToolBox/C_DOC/lxr" -->
-<!--#endif  -->
-    <li>
-        <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/INDEX.HTML">C Toolkit Documentation</a> </li>
-    <li>
-        <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SB/hbr.html">C Toolkit Queryable Source Browser</a></li>
-</ul>
-
-<hr>
-
-<a name="ref_LXR"></a>
-<h3>LXR Browser</h3>
-<table>
-<form method=get action="<!--#echo var="C_LXR" -->/source">
-<tr>
-<td><input type="SUBMIT" value=" Navigate Source "></td>
-</tr>
-</form>
-
-<form method=get action="<!--#echo var="C_LXR" -->/ident">
-<tr>
-<td><input type="SUBMIT" value="  Identifier Search "></td>
-<td><input name="i" value="" size="45"></td>
-</tr>
-</form>
-
-<form method=get action="<!--#echo var="C_LXR" -->/find">
-<tr>
-<td><input type="SUBMIT" value=" Filename Search "></td>
-<td><input name="string" value="" size="45"></td>
-</tr>
-</form>
-
-<form method=get action="<!--#echo var="C_LXR" -->/search">
-<tr>
-<td><input type="SUBMIT" value="  Freetext Search "></td>
-<td><input name="string" value="" size="45"></td>
-</tr>
-</form>
-
-</table>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<script>
-<!--
-print_author('cpp-core', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
-print_author('cpp-core', 'Chris Lanczycki');
-// -->
-</script>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

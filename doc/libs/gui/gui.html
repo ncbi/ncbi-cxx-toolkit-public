@@ -1,77 +1,27 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ GUI Development" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h2>NCBI C++ GUI Development</h1>
-
-<p>
-We have decided to use <a href="http://www.fltk.org/documentation.php">FLTK</a>
-and <a href="http://www.opengl.org/">OpenGL</a> for our GUI needs.
-
-<p>
-Presently, we use FLTK Release 1.1. Internal developers can use pre-built FLTK
-from <span class="ncbi_dir">$NCBI/fltk/</span> on <span class="ncbi_platform">UNIX</span> platforms, and from <span class="ncbi_dir">\\DISSY\public\fltk\</span>
-on MS-Windows. Its full source archive is available internally at
-<span class="ncbi_file">$NCBI/fltk/share/src/fltk-1.1.0-source.tar.bz2</span>.
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<p><br>
-<p>GUI part of the NCBI C++ Toolkit defines its own namespace: "gui". GUI namespace will also include NCBI namespace. In your code use <span class="ncbi_macro">BEGIN_GUI_SCOPE</span> and <span class="ncbi_macro">END_GUI_SCOPE</span> when working on GUI projects</p>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<p><br>
-<p>GUI part of the NCBI C++ Toolkit introduces the following type definitions.</p>
 
-<table border="1" cellspacing="0" cellpadding="5">
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<table border=0 width="100%" cellspacing=0>
 <tr>
-  <th>Type</th><th>Description</th></tr>
-
-<tr>
-  <td valign="top"><span class="ncbi_type">TColor</span></td>
-  <td>used to deal with colors in GUI. Sequence View stores the color that is either an index into a color palette of 256 colors (like FL_YELLOW) or a 24-bit RGB color. The color palette is not the <span class="ncbi_platform">X</span> or <span class="ncbi_platform">WIN32</span> color map, but instead is an FLTK internal table with fixed contents. Currently defined as Fl_Color. Take a look into <span class="ncbi_file">FL/Enumerations.H</span> in the FLTK for complete list of definitions. Take a look into FLTK documentation on how to define new colors.</td>
-</tr>
-<tr>
-  <td valign="top"><span class="ncbi_type">TKey</span></td>
-  <td valign="top">used to store the values for keyboard keys like FL_Left, 'c', 'A', FL_Page_Up. Currently defined as integer. Take a look into <span class="ncbi_file">FL/Enumerations.H</span> in the FLTK for complete list of definitions.</td>
-</tr>
-<tr>
-  <td valign="top"><span class="ncbi_type">TKeyState</span></td>
-  <td valign="top">used to store the values for keyboard keys modifiers like Control, Alt or Shift (FL_CTRL, FL_ALT, FL_SHIFT). Currently defined as integer. Take a look into <span class="ncbi_file">FL/Enumerations.H</span> in the FLTK for complete list of definitions.</td>
-</tr>
-<tr>
-  <td valign="top"><span class="ncbi_type">TLineNo</span></td>
-  <td valign="top"> used to store line numbers in the Sequence View. Currently defined as integer.</td>
-</tr>
-<tr>
-  <td valign="top"><span class="ncbi_type">TCharNo</span> </td>
-  <td valign="top">used to store character positions in the Sequence View. Currently defined as integer.</td>
-</tr>
-<tr>
-  <td valign="top"><span class="ncbi_type">TDimension</span></td>
-  <td>used to store various measurements in the Sequence View. Currently defined as integer.</td>
-</tr>
-<tr>
-  <td valign="top"><span class="ncbi_type">TPosition</span></td>
-  <td>used to store X or Y coordinates in the Sequence View. Currently defined as integer.</td>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
-<p><br>
 
-<!--#include virtual="../../ssi/navlinks.shtml" -->
-<!--#include virtual="../../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,223 +1,27 @@
-<!--#set var="TITLE" value="Choice objects in the NCBI C++ Toolkit" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>Choice objects in the NCBI C++ Toolkit</h1>
-
-<ul>
-<li>
-<a href="#intro">Introduction</a></li>
-
-<li>
-<a href="#cppchoice">C++ choice objects&nbsp;</a><!--li> <a href="#typeinfo"> Type information for choice objects </a--></li>
-</ul>
-<p><br>
-
-<a NAME="intro"></a>
-<h3>Introduction</h3>
-The <a href="../tools/datatool/datatool.html" class="ncbi_app">datatool</a> program
-processes the ASN.1 specification files (<span class="ncbi_file">*.asn</span>) in the <a href="../lxr/source/src/objects/" class="ncbi_dir">src/objects/</a> directories
-to generate the associated C++ class definitions. The corresponding program
-implemented in the C Toolkit, <span class="ncbi_app">asntool</span>, used the ASN.1 specifications
-to generate C enums, structs, and functions. In contrast, <span class="ncbi_app">datatool</span>
-must generate C++ enums, classes and methods. In addition, for each defined
-object type, <span class="ncbi_app">datatool</span> must also generate the associated <a href="typeinfo.html">type
-information</a> method or function.
-<p>There is a significant difference in how these two tools implement ASN.1
-<span class="ncbi_term">choice</span>
-elements. As an example, consider the following ASN.1 specification:
-
-<blockquote><pre class="ncbi_code">
-Object-id ::= CHOICE {
-    id INTEGER,
-    str VisibleString
-}</pre></blockquote>
-
-The ASN.1 <span class="ncbi_term">choice</span> element specifies that the corresponding object
-may be any one of the listed types. In this case, the possible types
-are an integer and a string. The approach used in
-<span class="ncbi_app">asntool</span> was to
-implement all choice objects as <span class="ncbi_type">ValNode</span>s, which were in turn defined
-as:
-
-<blockquote><pre class="ncbi_code">
-typedef struct valnode {
-    unsigned choice;
-    DataVal data;
-    struct valnode *next;
-} ValNode;
-</pre></blockquote>
-
-The <span class="ncbi_type">DataVal</span> field is a <span class="ncbi_keyword">union,</span> which may directly store numerical
-values, or alternatively, hold a <span class="ncbi_type">void</span> pointer to a character string
-or C <span class="ncbi_keyword">struct</span>. Thus, to process a <span class="ncbi_term">choice</span> element in the C Toolkit,
-one could first retrieve the <span class="ncbi_term">choice</span> field to determine how the data
-should be interpreted, and subsequently, retrieve the data via the
-<span class="ncbi_type">DataVal</span>
-field. In particular, no explicit implementation of individual choice objects
-was used, and it was left to functions which manipulate these elements
-to enforce logical consistency and error checking for legitimate values.
-A C <span class="ncbi_keyword">struct</span> which included a <span class="ncbi_term">choice</span> element as one of its
-fields merely had to declare that element as type <i>ValNode</i><!--NCBI_MARK-->. This
-design was further complicated by the use of a <span class="ncbi_type">void</span> pointer to store
-non-primitive types such as
-<span class="ncbi_keyword">struct</span>s or character strings.
-<p>In contrast, the C++ <span class="ncbi_app">datatool</span> implementation of <span class="ncbi_term">choice</span>
-elements defines a class with built-in, automatic error checking for each
-<span class="ncbi_term">choice</span>
-object. The usage of <a href="cref.html#cref">smart pointers,</a> in combination
-with the <a href="cref.html#cobject" class="ncbi_class">CObject</a> class hierarchy
-(and the associated <a href="typeinfo.html">type information </a>methods)
-solves many of the problems associated with working with <span class="ncbi_type">void</span> pointers.
-<p><br>
-
-<a NAME="cppchoice"></a>
-<h3>C++ choice objects</h3>
-The classes generated by <span class="ncbi_app">datatool</span> for <span class="ncbi_term">choice</span> elements all
-have the following general structure:
-
-<blockquote><pre class="ncbi_code">
-class C[AsnChoiceName] : public CObject
-{
-
-public:
-    ...                                 // constructors and destructors
-
-    DECLARE_INTERNAL_TYPE_INFO();       // declare GetTypeInfo() method
-    enum E_Choice {                     // enumerate the class names
-       e_not_set,                       // for the choice variants
-       e_Xxx,
-       ...
-    };
-
-    typedef CXxx TXxx;                  // typedef each variant class
-    ...
-
-    virtual void Reset(void);           // reset selection to none
-    E_Choice Which(void) const;         // return m_choice
-    void Select(E_Choice index,         // change the current selection
-                EResetVariant reset);
-
-    static string SelectionName(E_Choice index);
-
-    bool IsXxx(void) const;             // true if m_choice == eXxx
-    CXxx&amp; GetXxx(void);
-    const CXxx&amp; GetXxx(void) const;
-    CXxx&amp; SetXxx(void);
-    void SetXxx(const CRef&lt;CXxx>&amp; ref);
-    ...
-
-private:
-
-    E_Choice m_choice;                  // choice state
-    union {
-       TXxx m_Xxx;
-       ...
-    };
-    CObject *m_object;                  // variant's data
-    ...
-};
-</pre></blockquote>
-
-For the above ASN.1 specification, <span class="ncbi_app">datatool</span> generates a class named
-<span class="ncbi_class">CObject_id</span>,
-which is derived from <a href="cref.html#cobject" class="ncbi_class">CObject</a>. For
-each choice variant in the specification, an enumerated value (in <span class="ncbi_type">E_Choice</span>),
-and an internal <span class="ncbi_keyword">typedef</span> are defined, and a declaration in the <span class="ncbi_keyword">union</span> data member is made. For this example then, we would have:
-
-<blockquote><pre class="ncbi_code">
-enum E_Choice {
-   e_not_set,
-   e_Id,
-   e_Str
-};
-...
-
-typedef int TId;
-typedef string TStr;
-...
-
-union {
-   TId m_Id;
-   string *m_string;
-};
-</pre></blockquote>
-
-In this case both of the choice variants are C++ built-in types. More generally
-however, the choice variant types may refer to any type of object. For
-convenience, we refer to their C++ type names here as "CXxx",
-<p>Two private data members store information about the currently selected
-choice variant:
-<span class="ncbi_var">m_choice</span> holds the <span class="ncbi_keyword">enum</span> value, and <span class="ncbi_var">m_Xxx</span>
-holds (or points to a <span class="ncbi_class">CObject</span> containing) the variant's data. The
-choice object's member functions provide access to these two data members.
-<span class="ncbi_func">Which()</span> returns the currently selected variant's <span class="ncbi_ccode">E_Choice enum</span>
-value. Each choice variant has its own <span class="ncbi_func">Get()</span> and <span class="ncbi_func">Set()</span> methods.
-Each <span class="ncbi_func">GetXxx()</span> method throws an exception if the variant type for
-that method does not correspond to the current selection type. Thus, it
-is not possible to unknowingly retrieve the incorrect type of choice variant.
-<p><span class="ncbi_ccode">Select(e_Xxx)</span> uses a <span class="ncbi_ccode">switch(e_Xxx)</span> statement to initialize
-<span class="ncbi_var">m_Xxx</span>
-appropriately, sets <span class="ncbi_var">m_choice</span> to <span class="ncbi_var">e_Xxx</span>, and returns. Two <span class="ncbi_func">SetXxx()</span>
-methods are defined, and both use this <span class="ncbi_func">Select()</span> method. <span class="ncbi_func">SetXxx()</span>
-with no arguments calls <span class="ncbi_ccode">Select(e_Xxx)</span> and returns <span class="ncbi_var">m_Xxx</span> (as
-initialized by <span class="ncbi_func">Select()</span>).&nbsp; <span class="ncbi_func">SetXxx(TXxx&amp; value)</span>
-also calls <span class="ncbi_ccode">Select(e_Xxx)</span> but resets <span class="ncbi_var">m_Xxx</span> to <span class="ncbi_var">value</span> before returning.
-<p>Some example choice objects in the C++ Toolkit are:
-<ul>
-<li>
-<a href="../docxx/CDate.html">CDate</a></li>
-
-<li>
-<a href="../docxx/CInt_fuzz.html">CInt_fuzz</a></li>
-
-<li>
-<a href="../docxx/CObject_id.html">CObject_id</a></li>
-
-<li>
-<a href="../docxx/CPerson_id.html">CPerson_id</a></li>
-
-<li>
-<a href="../docxx/CAnnotdesc.html">CAnnotdesc</a></li>
-
-<li>
-<a href="../docxx/CSeq_annot.html">CSeq_annot</a></li>
-</ul>
-
-<p>
-<a href="asn.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
-<a href="../index.html"><i>up&nbsp;</i></a>&nbsp;&nbsp;
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<!--#include virtual="../ssi/navlinks.shtml" -->
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<table border=0 width="100%" cellspacing=0>
 <tr>
-<td>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
-
-<td><!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
-
-<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

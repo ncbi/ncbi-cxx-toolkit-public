@@ -1,133 +1,27 @@
-<!--#set var="TITLE" value="NCBI Firewall Daemon (FWDaemon)" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>NCBI Firewall Daemon (<span class="ncbi_app">FWDaemon</span>)</h1>
-
-So-called "NCBI Firewall Daemon" (FD) is essentially a network
-multiplexer listening at an advertised network address.
-
-<p>
-FD works in a close cooperation with the <a href="DISPD.html">NCBI network
-dispatcher</a>, which informs FD on how to connect to the "real" NCBI server, and then instructs
-the network client to connect to FD (instead of the "real" NCBI server).
-Thus, FD serves as a middleman that just pumps the network traffic
-from the network client to the NCBI server and back.
-
-<p>
-FD allows network client to establish a persistent TCP/IP connection
-to any of publicly advertised NCBI services, provided that the client
-is allowed to make outgoing network connection to any of the following
-FD addresses (on front-end NCBI machines):
-<blockquote><pre class="ncbi_code">
-130.14.29.112, ports 5860..5870
-</pre>
-</blockquote>
-
-<span class="ncbi_note">NOTE</span>: One FD can simultaneously serve many client/server pairs.
-
-<p><br>
-<h2>Using FD to connect from behind a "regular" firewall</h2>
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-If your network client is behind a regular firewall, then just
-ask your system administrator to open the above addresses (only!) for outgoing
-connections, then set your client to "firewall" mode... and that's it, now
-your network client can use NCBI network services in a usual way
-(as if there were no firewall at all).
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
-<p><br>
-<h2>Using FD to connect from behind a "non-transparent" firewall</h2>
-
-<span class="ncbi_note">NOTE</span>:  If your firewall is "non-transparent" (it is extremely rare case),
-then your system administrator must "map" the corresponding ports on
-your firewall server to the advertised FD addresses (shown above).
-In this case, you will have to specify the address of your firewall server
-in the client configuration (<a href="../../libs/conn.html#ref_ProxyHost">CONN_PROXY_HOST</a>).
-
-<p>
-The mapping on your non-transparent firewall server should look like this:
-<blockquote><pre class="ncbi_code">
-CONN_PROXY_HOST:5860..5870    --&gt;    130.14.29.112:5860..5870
-</pre>
-</blockquote>
-<p>
-Please not that there is a port range that might not be presently
-used by any clients and servers, but is reserved for future extensions.
-Nevertheless, we recommend that you have this range configured on firewalls
-already now to allow the applications to function seamlessly in the future.
-
-
-<p><br>
-<h2>Troubleshooting</h2>
-
-You can test if the FD ports are accessible from your host by just running,
-for example:
-
-<blockquote><pre class="ncbi_cmd">
-telnet 130.14.29.112 5861
-</pre>
-</blockquote>
-
-and entering a line of arbitrary text in the TELNET session.
-If everything is fine, your TELNET session will look as follows
-(the line "test" is your input here):
-
-<blockquote><pre class="ncbi_cmd">
-&gt; telnet 130.14.29.112 5861
-Trying 130.14.29.112...
-Connected to 130.14.29.112.
-Escape character is '^]'.
-test
-NCBI Firewall Daemon:  Invalid ticket. Connection closed.
-See <a href="http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html">http://www.ncbi.nlm.nih.gov/cpp/network/firewall.html</a>.
-Connection closed by foreign host.
-</pre>
-</blockquote>
-
-
-<p>
-There is also an auxiliary UNIX shell script
-<a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.sh" class="ncbi_script">fwd_check.sh</a>
-to check the <span class="ncbi_term">accessibility</span> of all of the above FD addresses.
-
-<p>
-The following dynamic <a href="http://www.ncbi.nlm.nih.gov/cpp/network/fwd_check.cgi">Web page</a>
-checks whether the FD is <em>running</em> on all hosts mentioned above.
-
-
-<!--#include virtual="../../ssi/navlinks.shtml" -->
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
 <tr>
 <td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
 <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
-<td align=right><span class="ncbi_cvs_date">$Date$</span></td>
-</tr>
-<tr>
-<td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
-</td>
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
 </tr>
 </table>
 
-<!--#include virtual="../../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

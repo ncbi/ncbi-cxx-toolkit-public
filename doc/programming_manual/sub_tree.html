@@ -1,103 +1,27 @@
-<!--#set var="TITLE" value="Working Independently On A Subtree" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>Working Independently In a C++ Subtree</h1>
-
-An alternative to developing a new project from scratch is to work within a subtree of the
-main NCBI C++ source tree so as to utilize the header, source, and make files defined for that
-subtree. One way to do this would be to check out the entire source tree and then do all
-your work within the selected subtree(s) only. A better solution is to create a new
-working directory and check out only the relevant subtrees into that directory. This is
-somewhat complicated by the distributed organization of the C++ CVS tree: header files are
-(recursively) contained in an <span class="ncbi_dir">include</span>  subtree, while source files are
-(recursively) contained in a <span class="ncbi_dir">src</span> subtree.  Thus, multiple checkouts may be
-required to set things up properly, and the customized makefiles (<span class="ncbi_file">Makefile.*.app</span>) will
-need to be modified. The shell script <a href="../new_proj.html#ref_OutsideImport" class="ncbi_script">import_project.sh</a> will do all of this
-for you. The syntax is:
-
-<pre class="ncbi_cmd"> 
-   import_project.sh  subtree_name  [builddir]
-</pre>
-where:
-<dl>
-  <dt> - <span class="ncbi_var">subtree</span> is the path to a selected directory inside <span class="ncbi_dir">internal/c++/src/</span>
-  <dt> - <span class="ncbi_var">builddir</span> (optional) specifies what version of the pre-built NCBI C++ Toolkit libraries to link to
-</dl>
-
-As a result of executing this shell script, you will have a new directory created with the
-pathname <span class="ncbi_dir">./internal/c++/</span> whose structure contains "slices" of the original CVS
-tree. Specifically, you will find:
-
-<dl class="ncbi_dir">
-<dt> ./internal/c++/include/subtree_name
-<dt> ./internal/c++/src/subtree_name
-</dl>
-
-The <span class="ncbi_dir">src</span> and <span class="ncbi_dir">include</span> directories will contain all of the requested subtree's source and
-header files along with any hierarchically defined subdirectories. In addition, the script
-will create new makefiles with the suffix <i>*_app</i><!--NCBI_MARK-->. These makefiles are generated from the
-orginal <a href="../new_proj.html#ref_MakeProjApp"> customized make files</a>
-(<span class="ncbi_file">Makefile.*.app</span>) located in the original <span class="ncbi_dir">src</span> subtrees.
-The customized makefiles were designed to work only in conjunction with the build
-directories in the larger NCBI C++ tree; the newly created makefiles can be used directly in
-your new working directories.<p>
-
-The NCBI C++ Toolkit project directories, along with the libraries they implement and the
-logical modules they entail, are summarized in the Reference Manual page
-<a href="../libs.html">NCBI C++ libraries</a>.
-Currently, there are eight project directories in the <a href="../src_tree.gif">NCBI C++
-source tree</a>, including:
-
-<ul>
- <li> <span class="ncbi_lib">corelib</span> - libraries for the Toolkit foundations
- <li> <span class="ncbi_lib">connect</span> - libraries providing client/server connections
- <li> <span class="ncbi_lib">cgi</span> - libraries for developing CGI applications
- <li> <span class="ncbi_lib">html</span> - libraries for developing HTML pages
- <li> <span class="ncbi_lib">serial</span> - libraries for handling ASN, XML and files of other specified formats
- <li> <span class="ncbi_app">hello</span> - a simple example project that incorporates all but the serial libraries
-</ul>
-
-Two other project directories, <span class="ncbi_dir"> internal </span> and <span class="ncbi_dir"> objects</span>, are not intended for
-general use, and the mechanisms in the <a
-href="../new_proj.html#ref_OutsideImport"><span class="ncbi_script">import_project.sh</span></a> script for generating
-makefiles are not guaranteed to work for these.  The <span class="ncbi_dir"> objects </span> subdirectories are used
-as the original repositories for ASN.1 specifications, and subsequently, for writing the object
-definitions and implementations created by the <span class="ncbi_app"> datatool </span> program. These definitions are
-available for use in your application as described in the section <a href="asn.html">Processing ASN.1 Data</a>. The <span class="ncbi_dir"> internal </span> subdirectory is used for in-house
-development, and is the recommended work area for new projects.<p>
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<p>
-<a href="outside_tree.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="inside_tree.html"> <i> next </i> </a>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<!--#include virtual="../ssi/navlinks.shtml" -->
 
-     <table border=0 width="100%" cellspacing=0>
-        <tr>
-          <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-          <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
-          <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
-     </table>
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<!--#include virtual="../ssi/footer.shtml" -->
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
+
+<!--#include virtual="./ssi/footer.shtml" -->

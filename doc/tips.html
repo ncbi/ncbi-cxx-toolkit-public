@@ -1,180 +1,27 @@
-<!--#set var="TITLE" value="Introduction to some of C++ and STL features and techniques" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>Introduction to some of C++ and STL features and techniques</h1>
-
-<br>
-<h2>C++ Implementation Guide</h2>
-
-<h3>Use of STL(Standard Template Library)</h3>
-<p>
-Use the <a href="#ref_STL">Standard Template Library(STL)</a>, which
-is part of ANSI/ISO C++.
-It'll  make programming easier, as well as make it easier for others to
-learn and maintain your code. </p>
-
-<h3>Use of C++ exceptions</h3>
-<p>
-Exceptions are useful.
-However, since exceptions unwind the stack, you must be careful to destroy
-all resources (such as memory on the heap and file handles) in every
-intermediate step in the stack unwinding.
-That means you must always catch exceptions, even those you don't handle,
-and delete everything you are using locally.
-In most cases it's very convenient and safe to use the
-<a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr" class="ncbi_class">auto_ptr</a>
-template to ensure the freeing of temporary allocated dynamic
-memory for the case of exception. </p>
-
-<h3>Design</h3>
-<p>
-Use abstract base classes.
-This increases the reusability of code.
-Whether a base class should be abstract or not depends on the
-potential for reuse.</p>
-<p>
-Don't expose complex member variables, rather expose member functions that
-manipulate the member variables.
-This increases reusability and flexibility.
-For example, this frees you from having the string in-process -- it
-could be in another process or even on another machine. </p>
-<p>
-Don't use multiple inheritance (i.e. <span class="ncbi_ccode">class A: public B, public C {}</span>)
-unless creating interface instead of implementation.
-Otherwise, you'll run into all sorts of problems with conflicting members,
-especially if someone else owns a base class.
-The best time to use multiple inheritance is when a subclass multiply
-inherits from abstract base classes with only pure virtual functions. </p>
-<p>
-Some people prefer the
-<a href="http://www.rational.com/uml/index.jtmpl">Unified Modelling Language</a>
-to describe the relationships between objects.</p>
-
-<br>
-
-<h2>C++ Tips and Tricks</h2>
-
-<p>
-Writing something like <span class="ncbi_ccode">map&lt;int, int, less&lt;int&gt;&gt;</span> will give you
-weird errors; instead write <span class="ncbi_ccode">map&lt;int, int, less&lt;int&gt; &gt;</span>.
-This is because <span class="ncbi_ccode">&gt;&gt;</span> is reserved word. </p>
-<p>
-Do use pass-by-reference.
-It'll cut down on the number of pointer related errors. </p>
-<p>
-Use <span class="ncbi_keyword">const</span> (or <span class="ncbi_keyword">enum</span>) instead of <span class="ncbi_keyword">#define</span> when you can.
-This is much easier to debug. </p>
-
-<p>
-Header files should contain what they contain in C along with classes, const's,
-and in-line functions (in-line functions are functions defined within the braces
-of the class or declared <span class="ncbi_keyword">inline</span>. In-line functions must be in header
-files as compilers need to see the source in order to inline properly.</p>
-
-<p><a href="http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html">g++
-might not build shared libraries properly on Solaris without
--mimpure-text.</a></p>
-<p>
-See the
-<a href="http://www.cerfnet.com/~mpcline/C++-FAQs-Lite/">C++ FAQ</a> </p>
-
-<br>
-
-<a name="ref_STL"></a>
-<h2> Standard template library (STL) </h2>
-
-<p>
-The STL is a library included in ANSI/ISO C++ for stream, string, and
-container(linked lists, etc.) manipulation.
 
 
-<a name="STL_tips"></a>
-<p><br>
-<h3>STL tips and tricks</h3>
-<p>
-<span class="ncbi_func">end()</span> does not return an iterator to the last element of a container,
-rather it returns a iterator just beyond the last element of the container.
-This is so you can do constructs like
-<pre class="ncbi_code">
-for (iterator = container.begin();
-iterator != container.end();  iterator++)
-</pre>
-If you want to access the end element, use "<span class="ncbi_ccode">--container.end()</span>".
-<p>
-Iterator misuse causes the same problems as pointer misuse.
-There are versions of the STL that flag incorrect use of iterators.
-<p>
-Iterators are guaranteed to remain valid after insertion and deletion
-from list containers, but not vector containers.
-Check to see if the container you are using preserves iterators.
-<p>
-If you create a container of pointers to objects, the objects are not
-destroyed when the container is destroyed, only the pointers are.
-Other that maintaining the objects yourself, there are several strategies
-detailed in the <a href="books.html">literature</a>.
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<p>
-If you pass a container to a function, don't add a local object to the container.
-The local variable will be destroyed when you leave the function.
-<p>
-When using Solaris make, the macro <span class="ncbi_make_var">.KEEP_STATE</span> can be used to track hidden
-dependencies, but this doesn't work well with <span class="ncbi_compiler">Sunpro C++ 5.0</span> and STL. The reason
-is because the STL headers include files with names of the form <span class="ncbi_file">*.cc</span>. When make
-sees these files, it tries to compile them using the implicit makefile rules.One
-workaround is to redefine the implicit rules to ignore <span class="ncbi_file">*.cc</span>: <br>
-
-<pre class="ncbi_code">
-.SUFFIXES:
-.SUFFIXES:  .o .c .h .hpp .cpp
-.cpp.o:
-$(CCC) $(CFLAGS) -c $&lt;
-and run make with "make -r"
-</pre>
-
-<p>
-In SunPro environment, use <span class="ncbi_cmd">"CC -xar ..."</span> rather than <span class="ncbi_cmd">"ar ..."</span>
-to compose a library that defines template-based functions and
-classes for external use.
-
-<p>
-When declaring a map, use the form <span class="ncbi_ccode">map&lt;string, string, less&lt;string&gt;
-&gt;</span>. The third argument isn't necessary on most compilers, but SunPro 4.2
-is a bit old and needs it because it doesn't do default values for templates.
-
-<p>
-SunPro 4.2 doesn't understand <span class="ncbi_ccode">&quot;using namespace std;&quot;</span>, and it
-was decided to prohibit the explicit use <span class="ncbi_ccode">&quot;using namespace XXX;&quot;</span>
-in NCBI C++ code.
-For the use of standard C++ template classes(including STL) and/or
-NCBI namespaces
-<a href="style.html#ref_Scope">click here</a>.
-<p>The <span class="ncbi_class">basic_string</span> class has a few
-<a href="http://www.loria.fr/serveurs/CCH/documentation/docSGI/STL_doc/string_discussion.html">pitfalls</a>.
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
-  <tr>
-    <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
-    <td align=right>($Date$)</td>
-  </tr>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

@@ -1,118 +1,27 @@
-<!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-
-<div align="Center">
-<h1>Object Manager</h1>
-</div>
-
-
-<h2>Use cases</h2>
-<p>
-Biological sequence data and its associated information are described in
-NCBI data model using
-<a href="http://asn1.elibel.tm.fr/">Abstract Syntax Notation One</a>
-(ASN.1). There is a
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/datatool/datatool.html">tool</a>
-which, based on this specifications, generates corresponding data objects.
-Object Manager manipulates these objects, so they are referenced in this
-document without further explanations.
-</p>
-
-<p>
-The most general container object of bio sequence data, as defined in NCBI
-data model, is
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQSET.HTML">Seq_entry</a>.
-In general, Seq_Entry is defined recursively as a tree of Seq_entries
-(one entry refers to another one etc), where each node contains either
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Bioseq</a>
-or list of other Seq_entries plus some additional data like sequence description,
-sequence annotations etc. Naturally, in any such tree there is only one
-top-level  Seq_entry.
-</p>
-
-<p>
-Client must be able to define a scope of visibility and reference resolution.
-Such scope is defined by the sources of data &#8211; the system uses only &#8220;allowed&#8221;
-sources to look for data. Such scopes may, for instance, contain several
-variants of the same bio sequence (Seq_entry). Since sequences refer to each
-other, the scopes practically always intersect. In this case changing some
-data in one scope should be somehow reflected in all other scopes, which
-&#8220;look&#8221; at the same data - there is a need in some sort of communication between
-scopes.
-</p>
-
-<p>
-A scope may contain multiple top-level Seq_entries and multiple sources
-of data.
-</p>
-
-<p>
-Once a scope is created, a client should be able to
-</p>
-<ul>
-  <li>Add externally created top-level Seq_entry to it;</li>
-  <li>Add data loader to it. Data loader is a link between out-of-process
-    source of bio sequence data and the scope; it loads data when and if necessary;</li>
-  <li>Add another Seq_entry (non top-level one) to the list of already added.
-    One should specify parent entry to which new entry is to be added.</li>
-  <li>Add or change sequence data in a Seq_entry;</li>
-  <li>Add an annotation or a description to a Seq_entry;</li>
-</ul>
-
-<p>
-Once the scope is populated with data, a client should be able to
-</p>
-
-<ul>
-  <li>Find Seq_entry (or Bioseq) with a given
-    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq_id</a>,
-    load entry if necessary;</li>
-  <li>Find top-level Seq_entry for a sequence with a given Seq_id;</li>
-  <li>Retrieve Bioseq partial data, that is without sequence data itself
-    (which may be huge), with a given Seq_id;</li>
-  <li>Retrive general information about the sequence &#8211; location and type
-    of data only, without data itself &#8211; by Seq_id;</li>
-  <li>Construct the sequence title  &#8211; by Seq_id;</li>
-  <li>Obtain sequence data - actual sequence data (by Seq_id) in a specified
-     encoding;</li>
-  <li>Enumerate sequence descriptions and sequence annotation data, namely:
-     features, graph data, alignment data. The annotation iterators should be
-     restricted by Seq_loc &#8211; sequence location. That is, one should be able to
-     retrieve data which refers only to a given location of a given sequence.</li>
-</ul>
-
-<p>
-Multithreading.<br>
-There are two scenarios one may think of:
-</p>
-
-<ul>
-  <li>Several threads work with the same scope simultaneously. The
-    scope is given to them from the outside, so this external controller is responsible
-    for waiting for thread termination and deleting the scope.</li>
-  <li>Different threads create their own scopes to work with the same data
-    source. That is, the data source is shared resource.</li>
-</ul>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
-<!--#include virtual="../../ssi/navlinks.shtml" -->
-<!--#include virtual="../../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
+
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,83 +1,27 @@
-<!--#set var="TITLE" value="ctypeiter.cpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-
-<font size="-1">
-<pre><font color = "red">// File name: ctypeiter.cpp
-// Description: Demonstrate using a CTypeIterator
-// Notes: build with xncbi and xser libraries
-<font color = "green">
-#include "<a href="ctypeiter_hpp.html">ctypeiter.hpp</a>"
-#include &lt;serial/serial.hpp&gt;
-#include &lt;serial/objistr.hpp&gt;
-#include &lt;serial/objostr.hpp&gt;
-#include &lt;serial/iterator.hpp&gt;
-#include &lt;serial/serialimpl.hpp&gt;
-
-<font color = "red">//  type information for class CPerson
-<font color = "blue">BEGIN_CLASS_INFO(CPerson)<font color = "black">
-{
-    ADD_STD_MEMBER(m_Name);
-    ADD_STD_MEMBER(m_Addr);
-    ADD_MEMBER(m_NextDoor, POINTER, (CLASS, (CPerson)))->SetOptional();
-}
-<font color = "blue">END_CLASS_INFO
-
-<font color = "red">//  type information for class CDistrict
-<font color = "blue">BEGIN_CLASS_INFO(CDistrict)<font color = "black">
-{
-    ADD_STD_MEMBER(m_Number);
-    ADD_MEMBER(m_Blocks, STL_list, (CLASS, (CPerson)));
-}
-<font color = "blue">END_CLASS_INFO
-
-<font color = "red">// main and other functions <font color = "blue">
-
-USING_NCBI_SCOPE;<font color = "black">
-
-static void FullerBrushMan (const CPerson& p) {
-    cout << "knock-knock! is " << p.m_Name << " home?" << endl;
-}
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-int main(int argc, char** argv)
-{
-<font color = "red">    // Instantiate a few CPerson objects </font>
-    CPerson neighborhood("Moe", "1 Main St",
-                         new CPerson("Larry", "2 Main St",
-                                     new CPerson("Curly", "3 Main St", 0)));
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-    CPerson another ("Harpo", "2 River Rd",
-                     new CPerson("Chico", "4 River Rd",
-                                 new CPerson("Groucho", "6 River Rd", 0)));
 
- <font color = "red">   // Create a CDistrict and install some CPerson objects </font>
-    CDistrict district1(1);
-    district1.AddBlock(neighborhood);
-    district1.AddBlock(another);
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<font color = "red">    // Send the FullerBrushMan to all CPersons in district1 </font>
-    for (CTypeConstIterator&lt;CPerson> house = ConstBegin(district1);
-         house; ++house ) {
-        FullerBrushMan(*house);
-    }
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-<font color = "red">    // Iterate over all strings for the CPersons in district1 </font>
-    list&lt;CPerson> blocks = district1.GetBlocks();
-
-    for (list&lt;CPerson>::iterator b = blocks.begin();
-     b != blocks.end(); ++b) {
-
-        for (CStdTypeIterator&lt;string> i = Begin(*b); i; ++i) {
-            cout << *i << ' ';
-    }
-    cout << endl;
-    }
-    return 0;
-}
-
-</pre>
-</font>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

@@ -1,152 +1,27 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ Toolkit:  Downloads & CVS Retrieval" -->
-<!--#set var="HEADING" value="Retrieve the Source Code" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<hr>
-<!--EOW-->
-
-<!--  Page Contents -->
-
-<ul>
-  <li><h4><a href="cvs.html">CVS Retrieval (in-house users only)</a> </h4> </li>
-  <li><h4><a href="#ref_FTP">FTP Retrieval</a></h4> </li>
-    <ul>
-      <li><a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/">FTP Download Now</a></li>
-       <li><a href="#ref_FTPArchives">Available FTP Archives</a></li>
-       <li><a href="#ref_FTPUnpack">Unpacking Instructions</a></li>
-         <ul>
-           <li> <a href="#ref_UnpackUnix"> Unix </a></li>
-           <li> <a href="#ref_UnpackWin"> Windows </a></li>
-           <li> <a href="#ref_UnpackMac"> Mac </a></li>
-         </ul>
-      </li>
-    </ul><br>
-  <li><h4><a href="#ref_TreeStruct">Source Tree Structure Summary</a></h4> </li>
-</ul>
-<p></p>
-
-<hr>
-<p></p>
-
-<a name="ref_FTP"></a>
-<h3> FTP Retrieval </h3>
-<ul>
-    <li>
-    <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/"><em>FTP Download Now</em></a></li><p></p>
-
-    <a name="ref_FTPArchives"></a>
-    <li>
-        <em>Available FTP Archives</em>:  Select the archive for your system.  When the dialog box appears, choose the
-        destination in your filesystem for the downloaded archive. <br> <font size=-1>
-        <span class="ncbi_note">Note:</span>  With some browsers, you may
-        need to right-click-and-hold with your mouse and use the <span class="ncbi_menu">'Save Link As...', 'Copy to Folder...'</span>, or similar options from the drop-down
-        menu to properly save the archive.</font> <br>
-        <ul>
-          <li> <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_unix.tar.gz">
-               <span class="ncbi_file">ncbi_cxx_unix.tar.gz</span> </a> -- GZIP'ed tarball for UNIX'es </li>
-          <li> <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_win.exe">
-               <span class="ncbi_file">ncbi_cxx_win.exe</span> </a> -- self-extracting archive for MS-Windows/MSVC++</li>
-          <li> <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_win.zip">
-               <span class="ncbi_file">ncbi_cxx_win.zip</span> </a> -- ZIP archive for MS-Windows/MSVC++</li>
-          <li> <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_mac.sit.bin">
-               <span class="ncbi_file">ncbi_cxx_mac.sit.bin</span> </a> -- Stuff-It archive for MAC/Metrowerks CodeWarrior</li>
-        </ul>
-    </li>
-    <p>
-
-    <a name="ref_FTPUnpack"></a>
-    <a name="ref_Unpack"></a>
-    <li>
-        <em> Unpack the Source Archive </em>
-        <a name="ref_UnpackUnix"></a>
-        <h4> Unix Systems </h4>
-
-        The Unix distributions have been archived using the standard <span class="ncbi_util">tar</span> command and
-        compressed using <span class="ncbi_util">gzip</span>. When unpacked, all files will be under the directory <span class="ncbi_dir">ncbi_cxx</span>,
-        which will be created in the current directory.<br><br>
-
-        <font size=-1>(<span class="ncbi_note"> Caution:</span> If <span class="ncbi_dir">ncbi_cxx</span> already exists, <span class="ncbi_util">tar</span> extraction will overwrite
-        existing files.)</font>
-        <br><br>
-
-        To unpack the the archive:
-<pre class="ncbi_cmd">
-     gunzip -c ncbi_cxx_*.tar.gz | tar xvf -</pre>
-        <p>
- 
-        <a name="ref_UnpackWin"></a>
-        <h4> Windows Systems </h4>
-
-        The Microsoft Windows versions of the source distribution have been prepared as self-extracting executables.
-        By default a sub-folder <span class="ncbi_dir">ncbi_cxx</span> will be created in the current folder to contain the extracted source.
-        If  <span class="ncbi_dir">ncbi_cxx</span> already exists in the folder where the executable is launched, user confirmation is
-        required before files are overwritten.
-
-        <p></p>
-        To actually perform the extraction, do one of the following:
-        <ol type="i">
-            <li> Double-click on the archive's icon to create <span class="ncbi_dir"> ncbi_cxx</span> in the current folder.</li>
-            <li> Right-click on the archive's icon, and select <span class="ncbi_menu">'Extract to...'</span> to unpack the archive to a user-specified location in the filesystem.</li>
-        </ol>
-
-        <a name="ref_UnpackMac"></a>
-        <h4> Macintosh Systems </h4>
-
-        The Macintosh version of the source distribution has been prepared as a 'Stuff-It' archive, and
-        is usable from within Metrowerks CodeWarrior.
-        The sources will be deployed to a directory <span class="ncbi_dir">ncbi_cxx</span> created in the current folder.
-
-        <p></p>
-        Further Mac-specific details are forthcoming.
-    </li>
-
-</ul>
-<p></p>
-
-<hr>
-<p></p>
-<a name="ref_TreeStruct"></a>
-<h3>Source Tree Structure Summary</h3>
-
-To summarize the <a href="get_started.html#ref_Source">Getting Started</a> page, the <a href="src_tree.gif"><span class="ncbi_term">source tree</span></a> is organized as follows:
-
-<ul>
-    <li>  The top-level has configuration files and the directories <span class="ncbi_dir">include/, src/, scripts/, compilers/</span> and <span class="ncbi_dir">doc/</span></li>
-    <li>  The <span class="ncbi_dir">src</span> and <span class="ncbi_dir">include</span> directories contain "projects" as subdirectories.
-    Projects may contain sub-projects in a hierarchical fashion.</li>
-    <li>  <span class="ncbi_dir">src/</span> additionally contains <span class="ncbi_term">makefile</span> and <span class="ncbi_term">meta-makefile</span> templates.
-    <li>  Projects contain "<a href="new_mod.html">modules</a>" and various customized
-        <a href="get_started.html#ref_MakefileTemplates">makefiles and meta-makefiles</a> to control their compilation.</li>
-</ul>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<script>
-<!--
-print_author('cpp-core', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
-print_author('cpp-core', 'Eugene Vasilchenko');
-print_author('cpp-core', 'Anton Lavrentiev');
-print_author('cpp-core', 'Diane Zimmerman');
-print_author('cpp-core', 'Lewis Geer');
-print_author('cpp-core', 'Chris Lanczycki');
-// -->
-</script>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

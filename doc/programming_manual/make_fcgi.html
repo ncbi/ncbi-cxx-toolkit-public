@@ -1,23 +1,27 @@
-<!--#set var="TITLE" value="Makefile.fastcgi.app" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-<pre class="ncbi_code">
-# $Id$
-# Author:  Diane Zimmerman
 
-# Build test Fast-CGI application "FASTCGI"
-# NOTES:  - it will be automagically built as a plain CGI application if
-#           Fast-CGI libraries are missing on your machine.
-#         - also, it auto-detects if it is run as a FastCGI or a plain
-#           CGI, and behave appropriately.
-#################################
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-APP = fastcgi
-OBJ = cgiapp
-LIB = xfcgi xncbi
-LIBS = $(FASTCGI_LIBS) $(ORIG_LIBS)
-</pre>
 
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
+
+<!--#include virtual="./ssi/footer.shtml" -->

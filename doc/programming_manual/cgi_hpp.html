@@ -1,93 +1,27 @@
-<!--#set var="TITLE" value="cgi.hpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-<font size="-1">
-<pre><font color = "red">// File name: justcgi.hpp
-// Description: Demonstrate the basic CGI classes and functions
-<font color = "green">
-#ifndef CGI_HPP
-#define CGI_HPP
 
-#include &lt;cgi/cgiapp.hpp>
-#include &lt;cgi/ncbires.hpp>
-<font color = "blue">
-USING_NCBI_SCOPE;
-</font></font></font>
-<font color="blue">class</font> CCgiApp : public CCgiApplication
-{
-public:
-    virtual CNcbiResource* LoadResource(void);
-    virtual int ProcessRequest(CCgiContext& context);
-};
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<font color="blue">class</font> CCgiResource : public CNcbiResource
-{
-public:
 
-    CCgiResource(CNcbiRegistry& config)
-      : CNcbiResource(config) {}
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-    virtual ~CCgiResource() {};
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-    // defines the command to be executed when no other command matches
-    virtual CNcbiCommand* GetDefaultCommand( void ) const;
-
-};
-
-<font color="blue">class</font> CCgiCommand : public CNcbiCommand
-{
-public:
-
-    CCgiCommand( CNcbiResource& resource ) : CNcbiCommand(resource) {};
-    virtual ~CCgiCommand( void ) {};
-
-    virtual void Execute( CCgiContext& ctx );
-    virtual string GetLink(CCgiContext&) const { return NcbiEmptyString; }
-
-protected:
-
-    CCgiResource& GetCgiResource() const
-        {
-	  return dynamic_cast&lt;CCgiResource&>( GetResource() );
-	}
-
-    virtual string GetEntry() const { return string("cmd"); }
-};
-
-<font color="blue">class</font> CCgiBasicCommand : public CCgiCommand
-{
-public:
-
-    CCgiBasicCommand(CNcbiResource& resource) : CCgiCommand(resource) {};
-    virtual ~CCgiBasicCommand(void) {};
-
-    virtual CNcbiCommand* Clone( void ) const;
-    virtual string GetName( void ) const { return string("init"); };
-
-protected:
-
-    virtual string GetEntry() const { return string("cmd1"); }
-};
-
-<font color="blue">class</font> CCgiReplyCommand : public CCgiBasicCommand
-{
-public:
-
-    CCgiReplyCommand( CNcbiResource& resource) : CCgiBasicCommand(resource) {};
-    virtual ~CCgiReplyCommand(void) {};
-
-    virtual CNcbiCommand* Clone( void ) const;
-    virtual string GetName( void ) const { return string("reply"); };
-
-protected:
-
-    virtual string GetEntry() const { return string("cmd2"); }
-};
-<font color="green">
-#endif /* CGI_HPP */
-</pre>
-</font>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

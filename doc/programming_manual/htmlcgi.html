@@ -1,211 +1,27 @@
-<!--#set var="TITLE" value="An example web-based CGI application" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<h1>An example web-based CGI application</h1>
-
-<ul>
-  <li> <a href="#intro"> Introduction </a>
-  <li> <a href="#descrip"> Program description </a>
-  <li> <a href="#design">  Program design: Distributing the work </a>
-</ul>
-<p><br>
-
-<a name="intro"></a> <h3>Introduction </h3>
-The previous two chapters described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> and
-<a href="webpgs.html"> HTML</a> classes, with an emphasis on their independence from one
-another. In practice however, a real application must employ both types of objects, with
-a good deal of inter-dependency. <p>
-
-As described in the description of the CGI classes, the <a href="cgi.html#cncbires">
-<span class="ncbi_class">CNcbiResource</span></a> class can be used to implement an application whose functionality varies
-with the query string. Specifically, the resource class contains a list of <span class="ncbi_class">CNcbiCommand</span>
-objects, each of which has a defined <span class="ncbi_func">GetName()</span> and <span class="ncbi_func">GetEntry() </span> method. The only command
-selected for execution on a given query is the one whose <span class="ncbi_func">GetName()</span> and <span class="ncbi_func">GetEntry()</span> values
-match the leading <span class="ncbi_value">key=value</span> pair in the query string.<p>
-
-The <a href="../tools/hello/hello.html"> <span class="ncbi_app">hello</span></a> demo program provides an example of using
-these CGI mechanisms as they were intended for complex applications requiring this kind of
-flexibility. The <span class="ncbi_class">CHelloResource</span> class has different commands which will be executed depending
-on whether the query string invoked an <span class="ncbi_term">init</span> or a <span class="ncbi_term">reply</span> command.  For many applications
-however, this selection mechanism adds unnecessary complexity to the interface, as the application
-always performs the same function, albeit on different input. In these cases, there is no need to
-use a <span class="ncbi_class">CNcbiResource</span> object, or <span class="ncbi_class">CNcbiCommand</span> objects, as the necessary functionality
-can be encoded directly in the application's <span class="ncbi_func">ProcessRequest()</span> method.
-The example program described in this section uses this simpler approach.<p>
-<p><br>
-
-<a name="descrip"></a> <h3> Program description </h3>
-
-The <a href="../bin/car/car.cgi"><span class="ncbi_cgi">car.cgi</span></a> program presents an HTML
-form for ordering a custom color car with selected features. The form includes a group of checkboxes
-(listing individual features) and a set of radio buttons listing possible colors. Initially, no
-features are selected, and the default color is black. Following the form, a summary stating the
-currently selected features and color, along with a price quote, is displayed. When the <span class="ncbi_menu">submit</span>
-button is clicked, the form generates a new query string (which includes the selected features
-and color), and the program is restarted. <p>
-
-The program uses a <a href="../docxx/CHTMLPage.html"><span class="ncbi_class">CHTMLPage</span></a> object with a template
-file (<a href="CAR/car.html"><span class="ncbi_file">car.html</span></a>) to create the display. The template file contains
-three &lt;@tag@&gt; locations, which the program uses to map <span class="ncbi_class">CNCBINode</span>s to the page, using
-the <span class="ncbi_func">AddTagMap()</span> method.  Here is an outline of the execution sequence:
-
-<ol>
-<li> Create an instance of class <span class="ncbi_class">CCar</span> named <span class="ncbi_var">car</span>.<p>
-
-<li> Load <span class="ncbi_var">car</span> with the color and features specified in the query string. <p>
-
-<li> Create a <span class="ncbi_class">CHTMLPage</span> named <span class="ncbi_var">page</span>.<p>
-
-<li> Generate a <span class="ncbi_class">CHTML_form</span> object using the features and color currently selected
-for <span class="ncbi_var">car</span>, and map that HTML form to the &lt;@FORM@&gt; tag in <span class="ncbi_var">page</span>.<p>
-
-<li> Generate the summary statement and save it in a <span class="ncbi_class">CHTMLText</span> node mapped
-to the &lt;@SUMMARY@&gt; tag.<p>
-
-<li> Generate a price quote and save it in a <span class="ncbi_class">CHTMLText</span> node mapped to the &lt;@PRICE@&gt; tag,<p>
-
-<li> Output <span class="ncbi_var">page</span> and exit.
-</ol>
-<p>
-
-The <span class="ncbi_class">CCar</span> created in step 1 initially has the default color (black) and no features. Any
-features or colors specified in the query string with which the program was invoked are added to
-<span class="ncbi_var">car</span> in step 2, prior to generating the HTML display elements. In step 4, the form element is
-created using the set of possible features and the set of possible colors. These sets of attributes
-are stored as static data members in an external utility class, <span class="ncbi_class">CCarAttr</span>. Each feature
-corresponds to a <span class="ncbi_class">CHTML_checkbox</span> element in the form, and each color corresponds to a
-<span class="ncbi_class">CHTML_radio</span> button.  The selected color, along with all currently selected features, will be
-displayed as selected in the form.<p>
-
-The summary statement uses a <span class="ncbi_class">CHTML_ol</span> list element to itemize the selected features in
-<span class="ncbi_var">car</span>.  The price is calculated as <span class="ncbi_var">CCar::m_BasePrice</span> plus an additional $1000 per
-feature. The <span class="ncbi_menu">submit</span> button generates a fresh page with the new query string, as the
-<span class="ncbi_keyword">action</span> attribute of the form is the URL of <span class="ncbi_cgi">car.cgi</span>.
-<p><br>
-
-<a name="design"></a><h3> Program design: Distributing the work</h3>
-<p>
-The program uses three classes: <span class="ncbi_class">CCar</span>, <span class="ncbi_class">CCarAttr</span>, and <span class="ncbi_class">CCarCgi</span>. The <span class="ncbi_class">CCar</span> class
-knows nothing about HTML nodes or CGI objects - its only functions are to store the currently
-selected color and features, and compute the resulting price:
-<blockquote>
-<pre class="ncbi_code">
-class CCar
-{
-public:
-    CCar(unsigned base_price = 12000) { m_BasePrice = base_price; }
-
-    // Mutating member functions
-    void AddFeature(const string& feature_name);
-    void SetColor(const string& color_name);
-
-    // Access member functions
-    bool HasFeature(const string& feature_name) const;
-    string GetColor(void) const;
-    string GetPrice(void) const;
-    const set&lt;string>& GetFeatures() const;
-
-private:
-    set&lt;string> m_Features;
-    string      m_Color;
-    unsigned    m_BasePrice;
-};
-</pre></blockquote>
-
-Instead, the <span class="ncbi_class">CCar</span> class provides an interface to all of its data members, thus allowing the
-application to get/set features of the car as needed. The static utility class, <span class="ncbi_class">CCarAttr</span>,
-simply provides the sets of possible features and colors, which will be used by the application
-in generating the HTML form for submission:
-
-<blockquote>
-<pre class="ncbi_code">
-class CCarAttr {
-public:
-    CCarAttr(void);
-    static const set&lt;string>& GetFeatures(void) { return sm_Features; }
-    static const set&lt;string>& GetColors  (void) { return sm_Colors; }
-private:
-    static set&lt;string> sm_Features;
-    static set&lt;string> sm_Colors;
-};
-</pre></blockquote>
-
-Both of these classes are defined in a header file which is <span class="ncbi_ccode">#include</span>'d in the <span class="ncbi_file">*.cpp</span>
-files. Finally, the application class does most of the actual work, and this class must know
-about <span class="ncbi_class">CCar</span>, <span class="ncbi_class">CCarAttr</span>, <span class="ncbi_lib">HTML</span>, and <span class="ncbi_lib">CGI</span> objects. The <span class="ncbi_class">CCarCgi</span> class has the following
-interface:
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<blockquote>
-<pre class="ncbi_code">
-class CCarCgi : public CCgiApplication
-{
-public:
-    virtual int ProcessRequest(CCgiContext& ctx);
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-private:
-    CCar* CreateCarByRequest(const CCgiContext& ctx);
 
-    void PopulatePage(CHTMLPage& page, const CCar& car);
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-    static CNCBINode* ComposeSummary(const CCar& car);
-    static CNCBINode* ComposeForm   (const CCar& car);
-    static CNCBINode* ComposePrice  (const CCar& car);
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-    static const char sm_ColorTag[];
-    static const char sm_FeatureTag[];
-};
-</pre></blockquote>
-
-The source code is distributed over three files:
-<ol>
- <li> <a href="CARdemo/car.hpp"><span class="ncbi_file">car.hpp</span></a>
- <li> <a href="CARdemo/car.cpp"><span class="ncbi_file">car.cpp</span></a>
- <li> <a href="CARdemo/car_cgi.cpp"><span class="ncbi_file">car_cgi.cpp</span></a>
-</ol>
-The <span class="ncbi_class">CCar</span> and <span class="ncbi_class">CCarAttr</span> classes are defined in <span class="ncbi_file">car.hpp</span>, and
-implemented in <span class="ncbi_file">car.cpp</span>. Both the class definition and implementation for the
-CGI application class are in <span class="ncbi_file">car_cgi.cpp</span>. With this design, only the application
-class will be affected by changes made to either the HTML or CGI class objects.
-
-The additional files needed to compile and run the program are:
-<ol>
- <li> <a href="CARdemo/car.html"><span class="ncbi_file">car.html</span></a>
- <li> <a href="CARdemo/Makefile.car_app"><span class="ncbi_file">Makefile.car_app</span></a>
-</ol>
-
-<p>
-
-<a href="webpgs.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="cgi_diag.html"> <i> next</i> </a>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-
-     <table border=0 width="100%" cellspacing=0>
-        <tr>
-          <td><address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-          <!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
-          <td align=right><span class="ncbi_cvs_date">$Date$</span></td>
-     </table>
-
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

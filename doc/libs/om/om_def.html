@@ -1,168 +1,27 @@
-<!--#set var="TITLE" value="NCBI C++ Object Manager library" -->
-<!--#set var="DOCROOT" value="../.." -->
-<!--#include virtual="../../ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
-
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
 
-<div align="Center">
-<h1>Object Manager</h1>
-</div>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
 
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<h2>Classes - definition</h2>
-<p>
-Here we define Object Manager's key classes and their behavior:
-</p>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-<ul>
-  <li><a href="#Object_manager">Object manager</a></li>
-  <li><a href="#Scope">Scope</a></li>
-  <li><a href="#Data_loader">Data loader</a></li>
-  <li><a href="#Data_source">Data source</a></li>
-  <li><a href="#Bioseq_handle">Bioseq handle</a></li>
-  <li><a href="#Bioseq_core">Bioseq core</a></li>
-  <li><a href="#Seq_map">Seq map</a></li>
-  <li><a href="#Seq_vector">Seq vector</a></li>
-  <li><a href="#Description_iterator">Description iterator</a></li>
-  <li><a href="#Annotation_iterator">Annotation iterator</a></li>
-</ul>
-<hr>
-
-
-
-<h3><a name="Object_manager"></a>Object manager</h3>
-<p>
-Object manager manages data objects, provides them to Scopes when
-needed. It knows all existing Data sources and Data loaders. When a Scope
-needs  one, it receives a data object from the Object Manager. This enables
-sharing  and  reusing of all relevant data between different Scopes. Another
-function  of  the Object Manager is letting Scopes know each other, letting
-Scopes to communicate.  This is a barely visible entity.
-</p>
-
-
-
-<h3><a name="Scope"></a>Scope</h3>
-<p>
-Scope is a top-level object available to a client. Its purpose is
-to  define  a scope of visibility and reference resolution and provide access
-to the  bio sequence data.
-</p>
-
-
-
-<h3><a name="Data_loader"></a>Data loader</h3>
-<p>
-Data loader is a link between in-process data storage and remote,
-out-of process data source. Its purpose is to communicate with a remote
-data source, receive data from there, understand what is already received
-and what is  missing, and pass data to the local storage (Data source).
-Data loader maintains   its own index of what data is loaded already and
-references that data in  the Data source.
-</p>
-
-
-<h3><a name="Data_source"></a>Data source</h3>
-<p>
-Data source stores bio sequence data locally. Scope communicates with
-this  object to obtain any sequence data. Data source creates and maintains
-internal  indices to facilitate information search. Data source may contain
-data of several  top-level
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQSET.HTML">Seq_entries</a>.
-In case client pushes an externally constructed Seq_entry object
-in  the  Scope, such object is stored in a separate Data source. In this case
-Data  source has only one top-level Seq_entry. From the other side, when
-Data source  is linked to a Data loader, it will contain all top-level Seq_entries
-retrieved  by that loader.
-</p>
-
-
-
-<h3><a name="Bioseq_handle"></a>Bioseq handle</h3>
-<p>
-Bioseq handle is a kind of
-<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Bioseq</a>
-proxy. Its purpose is to facilitate access to Bioseq data. When client
-wants to access particular biological sequence, it requests a Bioseq handle
-from the Scope.
-</p>
-
-
-
-<h3><a name="Bioseq_core"></a>Bioseq core</h3>
-Bioseq core is partially populated Bioseq, or, better say, Bioseq
-as  it  is loaded at the moment.
-
-
-<h3><a name="Seq_map"></a>Seq map</h3>
-<p>
-Seq map contains a general information about the sequence &#8211; location
-and   type of data only.
-</p>
-
-
-<h3><a name="Seq_vector"></a>Seq vector</h3>
-<p>
-Seq vector contains sequence data only.
-</p>
-
-
-<h3><a name="Description_iterator"></a>Description iterator</h3>
-<p>
-Description iterator traverses bio sequence descriptions
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/BIOSEQ.HTML">Seq_descr</a>)
-in the Seq_entry. It starts with the description(s) of requested
-sequence    (Bioseq) and then retrieves all sequence descriptions iterating
-through  the  tree nodes up to the top-level Seq_entry. Starting Bioseq is
-defined  by sequence  id
-(<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQLOC.HTML">Seq_id</a>).
-Descriptions do not contain information about what Bioseq they
-describe, so the only way to figure it out is by description location
-on the tree.
-</p>
-
-
-
-<h3><a name="Annotation_iterator"></a>Annotation iterator</h3>
-<p>
-Annotation iterators are utility classes for traversing sequence annotation
-data. Each annotation contains a reference to one or more regions on one
-or more sequences (Bioseq). From one point of view this is good, because
-we can always say which sequences are related to the given annotation. From
-the other point of view, this creates a lot of problems, since an annotation
-referencing the sequence may be stored in another sequence/Seq_entry/tree.
-The annotation iterators attempt to find all objects related to the given
-location in all Data sources from the current Scope. Data sources create
-indexes for all annotations by their locations.
-</p>
-<p>
-There are three specialized annotation iterator classes:
-</p>
-
-<ul>
-  <li>Feature  iterator &#8211; traverses sequence features
-    (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQFEAT.HTML">Seq_feat</a>);</li>
-  <li>Graph data iterator  &#8211; traverses sequence graphs
-    (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQRES.HTML">Seq_graph</a>);</li>
-  <li>Alignment iterator  &#8211; traverses sequence alignments descriptions
-    (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/SEQALIGN.HTML">Seq_align</a>).</li>
-</ul>
-
-<!--#include virtual="../../ssi/navlinks.shtml" -->
-<!--#include virtual="../../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

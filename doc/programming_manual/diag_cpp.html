@@ -1,85 +1,27 @@
-<!--#set var="TITLE" value="diag.cpp.cpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-<font size="-1">
-<pre><font color = "red">// File name: diag.cpp
-// Description: Examples of using the CNcbiDiag Class
 
-<font color="gray">
-/* Uses diag.ini:
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-[DEBUG]
-DIAG_TRACE=yes
 
-*/
-<font color = "green">
-#include &lt;corelib/ncbiapp.hpp&gt;
-#include &lt;corelib/ncbiobj.hpp&gt;
-<font color = "blue">
-USING_NCBI_SCOPE;
-<font color = "black">
-static void myHandler(const SDiagMessage& mess) {
-    cout << "Installed Handler " << mess << endl;
-}
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-class CTestApp : public CNcbiApplication {
-public:
-    virtual int Run ();
-};
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-int CTestApp::Run()
-{
-<font color = "red">   // Test the ERR_POST macro </font>
-    long lll = 345;
-    ERR_POST("My ERR_POST message, print long: " << lll);
-
-    double ddd = 123.345;
-    ERR_POST(Warning << "...print double: " << ddd);
-
-<font color = "red">   //  See if _TRACE is enabled (from *ini file) </font>
-    _TRACE("Testing the _TRACE macro");
-
-<font color = "red">   // Disable diagnostic tracing and retest _TRACE </font>
-    SetDiagTrace(eDT_Disable, eDT_Default);
-    _TRACE("Testing the _TRACE macro AGAIN");
-
-<font color = "red">   // Reset the global severity level to Info <font color = "black">
-    SetDiagPostLevel(eDiag_Info);
-
-<font color = "red">   // Instantiate some CNcbiDiag objects with file and line
-   // information and post flags set to display all fields <font color = "black">
-    CNcbiDiag diagInfo      ("diag.cpp", 41, eDiag_Info, eDPF_All);
-    CNcbiDiag diagWarning   ("diag.cpp", 42, eDiag_Warning, eDPF_All);
-    CNcbiDiag diagError     ("diag.cpp", 43, eDiag_Error, eDPF_All);
-    CNcbiDiag diagTrace     ("diag.cpp", 44, eDiag_Trace, eDPF_All);
-    CNcbiDiag diagCritical  ("diag.cpp", 45, eDiag_Critical, eDPF_All);
-
-    string Msg = "This is a test message";
-
-<font color = "red">   // Insert a message into the buffers and flush all but one <font color = "black">
-    diagInfo << Msg << Endm;
-    diagWarning << Msg;
-    diagError << Msg << Endm;
-
-<font color = "red">   // Install a new handler for all subsequent messages <font color = "black">
-    SetDiagHandler (myHandler, 0, 0);
-
-    diagTrace << Msg;   <font color=red>    // not posted since trace is disabled </font>
-    diagCritical << Msg;
-
-<font color = "red">   // Allow the class destructors to force flushing of remaining messages <font color = "black">
-    return 0;
-}
-
-int main(int argc, const char* argv[])
-{
-    CTestApp theTestApp;
-    return theTestApp.AppMain(argc, argv);
-}
-
-</pre>
-</font>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->

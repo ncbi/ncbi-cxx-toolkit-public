@@ -1,112 +1,27 @@
-<!--#set var="TITLE" value="applic.cpp" -->
-<!--#set var="DOCROOT" value=".." -->
-<!--#include virtual="../ssi/header.shtml" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
 
-<font size="-1">
-<pre><font color="#FF0000">// File name:   applic.cpp
-// Description: Using the CNcbiApplication class with CNcbiDiag, CArgs 
-//              and CArgDescription classes
 
-</font><font color="#008000">#include &lt;corelib/ncbistd.hpp>
-#include &lt;corelib/ncbiutil.hpp>
-#include &lt;corelib/ncbiargs.hpp>
-#include &lt;corelib/ncbiapp.hpp>
-#include &lt;corelib/ncbienv.hpp>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-</font><font color="#0000FF">USING_NCBI_SCOPE;
 
-</font><font color="#000000">class CTestApp : public CNcbiApplication {
-public:
-    virtual int Run();
-};</font></pre>
+<!--#include virtual="./ssi/navlinks.shtml" -->
 
-<pre>
-<font color="#000000">int CTestApp::Run() {
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
+</td>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
+</table>
 
-    auto_ptr&lt;CArgs> args;
-
-</font><font color="#FF0000">    // create a CArgDescriptions object to constrain the input arguments;
-    // Argument descriptions are added using:
-
-    // void AddKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType, TFlags);
-    // void AddOptionalKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType,
-    //                     string&amp; default, TFlags);
-    // void AddFlag(string&amp; name, string&amp; comment);
-
-</font><font color="#000000">    {
-       CArgDescriptions argDesc;
-
-</font><font color="#FF0000">       // Required arguments:
-</font><font color="#000000">       argDesc.AddKey("n","integer","integer between 1 and 10",argDesc.eInteger);
-       argDesc.AddKey("f","float","float between 0.0 and 1.0",argDesc.eDouble);
-       argDesc.AddKey("i","inputFile","data file in",CArgDescriptions::eInputFile);
-
-</font><font color="#FF0000">       // optional arguments:
-</font><font color="#000000">       argDesc.AddOptionalKey("l","logFile","log errors to &lt;logFile>",
-                              argDesc.eOutputFile);
-
-</font><font color="#FF0000">       // optional flags
-</font><font color="#000000">       argDesc.AddFlag("it", "input text");
-       argDesc.AddFlag("ib", "input binary");
-
-       try {
-           args.reset(argDesc.CreateArgs(GetArguments()));
-       }
-       catch (exception&amp; e) {
-           string a;
-           argDesc.SetUsageContext(GetArguments()[0],
-                                   "CArgDescriptions demo program");
-
-           cerr &lt;&lt; e.what() &lt;&lt; endl;
-           cerr &lt;&lt; argDesc.PrintUsage(a);
-           return (-1);
-       }
-    }
-
-    int   intIn   = (*args)["n"].AsInteger();
-    float floatIn = (*args)["f"].AsDouble();
-    string inFile = (*args)["i"].AsString();
-    
-</font><font color="#FF0000">    // process optional args
-</font><font color="#000000">    if ( args->Exest("l") ) {
-        SetDiagStream(&amp;(*args)["l"].AsOutputFile());
-    }
-
-    bool textIn = args->Exist("it");
-    bool binIn = (*args)["ib"].AsBoolean();
-
-    if (! (textIn ^ binIn) ) {
-       ERR_POST(Error &lt;&lt; "input type must be specified using -it or -ib");
-    }
-
-    string InputType;
-    if ( textIn ) {
-      InputType = "text";
-    } else if ( binIn ) { 
-      InputType = "binary";
-    }
-
-    ERR_POST(Info &lt;&lt; "intIn = " &lt;&lt; intIn &lt;&lt; " floatIn = " &lt;&lt; floatIn
-             &lt;&lt; " inFile = " &lt;&lt; inFile &lt;&lt; " input type = " &lt;&lt; InputType);
-    
-    return 0;
-}</font></pre>
-
-<pre>
-<font color="#000000">int main(int argc, const char* argv[]) 
-{
-      CNcbiOfstream diag("moreApp.log");
-      SetDiagStream(&amp;diag);
-
-</font><font color="#FF0000">      // Set the global severity level to Info 
-</font><font color="#000000">      SetDiagPostLevel(eDiag_Info);
-
-      CTestApp theTestApp;
-      return theTestApp.AppMain(argc, argv);
-}</font>
-
-</pre>
-</font>
-
-<!--#include virtual="../ssi/navlinks.shtml" -->
-<!--#include virtual="../ssi/footer.shtml" -->
+<!--#include virtual="./ssi/footer.shtml" -->
