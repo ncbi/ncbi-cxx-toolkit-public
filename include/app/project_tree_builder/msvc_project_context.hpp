@@ -103,7 +103,7 @@ public:
     }
 
 
-    const CMsvcProjectMakefile& GetMsvcProjectMakefile(void) const;
+    const CMsvcCombinedProjectMakefile& GetMsvcProjectMakefile(void) const;
 
     
     static bool IsRequiresOk(const CProjItem& prj);
@@ -151,7 +151,8 @@ private:
 
     void CreateLibsList(list<string>* libs_list) const;
 
-    auto_ptr<CMsvcProjectMakefile> m_MsvcProjectMakefile;
+    auto_ptr<CMsvcProjectMakefile>         m_MsvcProjectMakefile;
+    auto_ptr<CMsvcCombinedProjectMakefile> m_MsvcCombinedProjectMakefile;
 
     string       m_SourcesBaseDir;
     list<string> m_Requires;
@@ -511,6 +512,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/06/07 13:53:07  gorelenk
+ * Changed signature of member-function GetMsvcProjectMakefile
+ * of class CMsvcPrjProjectContext.
+ *
  * Revision 1.15  2004/03/22 14:44:35  gorelenk
  * Changed declaration of member-function Defines
  * of class CMsvcPrjProjectContext.
