@@ -55,14 +55,14 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  EParamType::
+//  EAllowLog::
 //
-//  Parameter type
+//  Allow transaction log (general, to avoid using bools)
 //
-// enum EParamType {
-//   eIn,
-//   eOut
-// };  
+enum EAllowLog {
+   eDisableLog,
+   eEnableLog
+};  
 
 
 
@@ -116,9 +116,12 @@ public:
   
     // Streams for handling BLOBs.
     // NOTE: buf_size is the size of internal buffer, default 1024
-    // blob_size is the size of the BLOB to be written
     virtual istream& GetBlobIStream(size_t buf_size = 1024) = 0;
+    // blob_size is the size of the BLOB to be written
+    // log_it enables transaction log for BLOB insert by default.
+    // Make sure you have enough log segment space, or disable it
     virtual ostream& GetBlobOStream(size_t blob_size, 
+                                    EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
     // Close resultset
@@ -231,8 +234,12 @@ public:
     virtual IResultSet* Open() = 0;
 
     // Get output stream for BLOB updates, requires BLOB column number
+    // NOTE: blob_size is the size of the BLOB to be written
+    // log_it enables transaction log for BLOB insert by default.
+    // Make sure you have enough log segment space, or disable it
     virtual ostream& GetBlobOStream(unsigned int col,
                                     size_t blob_size, 
+                                    EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
     // Update statement for cursor
@@ -317,6 +324,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/08/26 15:37:58  kholodov
+ * Added EAllowLog general purpose enum.
+ * Modified GetBlobOStream() methods to allow disabling transaction log while updating BLOBs
+ *
  * Revision 1.7  2002/07/08 15:57:53  kholodov
  * Added: GetBlobOStream() for BLOB updates to ICursor interface
  *
