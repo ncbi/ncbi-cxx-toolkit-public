@@ -85,10 +85,14 @@ else
     sparc-sun-solaris2\.[67]  |  i*86-pc-solaris2\.[67] )
       compiler_ver="`$CXX -V 2>&1`"
       case "$compiler_ver" in
-        *WorkShop*Compilers*5\.*)
+        *WorkShop*Compilers*5\.0)
           compiler="WorkShop5"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.0" ;;
+        *Sun*WorkShop*6*5\.1)
+          compiler="WorkShop6"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.1" ;;
       esac ;;
 
     mips-sgi-irix6\.* )
@@ -116,7 +120,7 @@ AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
 
 #### Additional check for pre-defined compilers
 case "$compiler" in
-  WorkShop5 | MIPSpro73 | MSVC )
+  WorkShop* | MIPSpro73 | MSVC )
     if test -z "$NCBI_COMPILER" ; then
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
@@ -172,7 +176,7 @@ case "$host:$compiler" in
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
- *:WorkShop5 )
+ *:WorkShop* )
    with_bincopy=${with_bincopy:="no"}
    if test -n "$WS64_CFLAGS" ; then
       if test "$host" != "sparc-sun-solaris2.7" ; then
@@ -194,7 +198,7 @@ case "$host:$compiler" in
       LDFLAGS="-s $LDFLAGS"
    fi
    RANLIB=":"
-   CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.WorkShop5.sh"
+   CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
    ;;
 
@@ -252,7 +256,7 @@ case "$compiler" in
    CFLAGS_DLL="-fPIC"
    CXXFLAGS_DLL="-fPIC"
    ;;
- WorkShop5 | MIPSpro73 )
+ WorkShop* | MIPSpro73 )
    CFLAGS_DLL="-KPIC"
    CXXFLAGS_DLL="-KPIC"
    ;;
@@ -261,7 +265,7 @@ esac
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host:$compiler" in
-    *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop5 | *:MIPSpro73 )
+    *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop* | *:MIPSpro73 )
       LIB_OR_DLL="dll"
       FORCE_STATIC_LIB=
       ;;
@@ -279,7 +283,7 @@ case "$compiler" in
  GCC | MIPSpro73 )
    LINK_DLL="$CXX -shared -o"
    ;;
- WorkShop5 )
+ WorkShop* )
    LINK_DLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
    ;;
  * )
@@ -297,7 +301,7 @@ if test "$with_mt" = "yes" ; then
     GCC )
       CPPFLAGS="$CPPFLAGS -D_REENTRANT"
       ;;
-    WorkShop5 )
+    WorkShop* )
       CFLAGS="-mt $CFLAGS"
       CXXFLAGS="-mt $CXXFLAGS"
       ;;
@@ -967,7 +971,7 @@ AC_CHECK_SIZEOF(long double)
 
 ### Cleanup
 case "$compiler" in
- WorkShop5 )
+ WorkShop* )
    test -d SunWS_cache  &&  rm -r SunWS_cache
    ;;
  MIPSpro73 )
