@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2001/06/25 15:35:54  lavr
+ * Added function: SERV_GetNextInfoEx
+ *
  * Revision 6.23  2001/06/20 17:27:49  kans
  * include <time.h> for Mac compiler
  *
@@ -122,13 +125,6 @@ SERV_ITER SERV_OpenSimple(const char* service)
     SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, info);
     ConnNetInfo_Destroy(info);
     return iter;
-}
-
-
-SERV_ITER SERV_Open(const char* service, TSERV_Type type,
-                    unsigned int preferred_host, const SConnNetInfo* info)
-{
-    return SERV_OpenEx(service, type, preferred_host, info, 0, 0);
 }
 
 
@@ -238,7 +234,7 @@ static void s_SkipSkip(SERV_ITER iter)
 }
 
 
-const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
+const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, char** env)
 {
     SSERV_Info* info = 0;
 
@@ -248,7 +244,7 @@ const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
     s_SkipSkip(iter);
     /* Next, obtain a fresh entry from the actual mapper */
     if (iter->op && iter->op->GetNextInfo &&
-        (info = (*iter->op->GetNextInfo)(iter)) != 0 &&
+        (info = (*iter->op->GetNextInfo)(iter, env)) != 0 &&
         !s_AddSkipInfo(iter, info)) {
         free(info);
         info = 0;
