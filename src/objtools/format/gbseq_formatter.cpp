@@ -258,7 +258,7 @@ void CGBSeqFormatter::FormatDefline
 {
     _ASSERT(m_GBSeq);
     m_GBSeq->SetDefinition(defline.GetDefline());
-    if ( NStr::EndsWith(m_GBSeq->GetDefinition(), ".") ) {
+    if ( NStr::EndsWith(m_GBSeq->GetDefinition(), '.') ) {
         m_GBSeq->SetDefinition().resize(m_GBSeq->GetDefinition().length() - 1);
     }
 }
@@ -371,7 +371,7 @@ void CGBSeqFormatter::FormatReference
         gbref->SetConsortium(ref.GetConsortium());
     }
     if ( !ref.GetTitle().empty() ) {
-        if ( NStr::EndsWith(ref.GetTitle(), ".") ) {
+        if ( NStr::EndsWith(ref.GetTitle(), '.') ) {
             string title = ref.GetTitle();
             title.resize(title.length() - 1);
             gbref->SetTitle(title);
@@ -601,6 +601,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/10/05 15:44:23  shomrat
+* Use more efficient NStr::EndsWith function
+*
 * Revision 1.4  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
