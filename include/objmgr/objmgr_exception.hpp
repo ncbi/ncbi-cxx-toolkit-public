@@ -143,7 +143,8 @@ public:
         eBadSequenceType,
         eBadLocation,
         eNotUnique,
-        eUnknownLength
+        eUnknownLength,
+        eBadResidue
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);
@@ -156,6 +157,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/11/22 21:40:01  grichenk
+* Doxygenized comments, replaced exception with CObjmgrUtilException.
+*
 * Revision 1.9  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.

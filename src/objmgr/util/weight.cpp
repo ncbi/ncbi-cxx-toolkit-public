@@ -87,8 +87,8 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
     for (CSeqVector_CI vit(v);  vit.GetPos() < size;  ++vit) {
         CSeqVector::TResidue res = *vit;
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
-            THROW1_TRACE(CBadResidueException,
-                         "GetProteinWeight: bad residue");
+            NCBI_THROW(CObjmgrUtilException, eBadResidue,
+                "GetProteinWeight: bad residue");
         }
         c  += kNumC [res];
         h  += kNumH [res];
@@ -185,7 +185,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
     ITERATE(set<CConstRef<CSeq_loc> >, it, locations) {
         try {
             weights[*it] = GetProteinWeight(handle, *it);
-        } catch (CBadResidueException) {
+        } catch (CObjmgrUtilException) {
             // Silently elide
         }
     }
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2004/11/22 21:40:01  grichenk
+* Doxygenized comments, replaced exception with CObjmgrUtilException.
+*
 * Revision 1.32  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *

@@ -45,26 +45,29 @@ class CSeq_loc;
 class CSeqVector;
 
 
-class CBadResidueException : public runtime_error
-{
-public:
-    CBadResidueException(const string& s) : runtime_error(s) { }
-};
+/** @addtogroup ObjUtilWeight
+ *
+ * @{
+ */
 
-// Handles the standard 20 amino acids and Sec; treats Asx as Asp and
-// Glx as Glu; throws CBadResidueException on anything else.
+
+/// Handles the standard 20 amino acids and Sec; treats Asx as Asp and
+/// Glx as Glu; throws CObjmgrUtilException on anything else.
 NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CBioseq_Handle& handle,
                         const CSeq_loc* location = 0);
 
 typedef map<CConstRef<CSeq_loc>, double> TWeights;
 
-// Automatically picks reasonable ranges: in decreasing priority order,
-// - Annotated cleavage products (mature peptides)
-// - What's left after removing the first signal peptide found
-// - The entire sequence (skipping a leading methionine if present)
+/// Automatically picks reasonable ranges: in decreasing priority order,
+/// - Annotated cleavage products (mature peptides)
+/// - What's left after removing the first signal peptide found
+/// - The entire sequence (skipping a leading methionine if present)
 NCBI_XOBJUTIL_EXPORT
 void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights);
+
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -72,6 +75,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2004/11/22 21:40:01  grichenk
+* Doxygenized comments, replaced exception with CObjmgrUtilException.
+*
 * Revision 1.10  2004/08/19 13:06:18  dicuccio
 * Dropped export specifiers on inlined exceptions
 *

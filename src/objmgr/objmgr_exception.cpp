@@ -129,6 +129,7 @@ const char* CObjmgrUtilException::GetErrCodeString(void) const
     case eBadLocation:      return "eBadLocation";
     case eNotUnique:        return "eNotUnique";
     case eUnknownLength:    return "eUnknownLength";
+    case eBadResidue:       return "eBadResidue";
     default:                return CException::GetErrCodeString();
     }
 }

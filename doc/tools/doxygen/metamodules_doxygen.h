@@ -517,15 +517,19 @@
  */
 
 /** @defgroup ObjUtilSequence Sequence utilities
- *  @ingroup OBJECTMANAGER
+ *  @ingroup OBJUTIL
  */
 
 /** @defgroup ObjUtilSeqLoc Seq-loc utilities
- *  @ingroup OBJECTMANAGER
+ *  @ingroup OBJUTIL
  */
 
 /** @defgroup ObjUtilFeature Feature utilities
- *  @ingroup OBJECTMANAGER
+ *  @ingroup OBJUTIL
+ */
+
+/** @defgroup ObjUtilWeight Sequence weight
+ *  @ingroup OBJUTIL
  */
 
 
