@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/01/26 23:50:32  vakatov
+ * s_NCBI_Recv() -- added check for ENOTCONN to catch EOF (mostly for Mac)
+ *
  * Revision 6.15  2001/01/25 17:10:41  lavr
  * The following policy applied: on either read or write,
  * n_read and n_written returned to indicate actual number of passed
@@ -193,6 +196,7 @@ typedef SOCKET TSOCK_Handle;
 #  define SOCK_EPIPE          WSAESHUTDOWN
 #  define SOCK_EAGAIN         WSAEINPROGRESS
 #  define SOCK_EINPROGRESS    WSAEINPROGRESS
+#  define SOCK_ENOTCONN       WSAENOTCONN
 #  define SOCK_NFDS(s)        0
 #  define SOCK_CLOSE(s)       closesocket(s)
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
@@ -211,6 +215,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_EPIPE          EPIPE
 #  define SOCK_EAGAIN         EAGAIN
 #  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_ENOTCONN       ENOTCONN
 #  define SOCK_NFDS(s)        (s + 1)
 #  define SOCK_CLOSE(s)       close(s)
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
@@ -240,6 +245,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_EPIPE          EPIPE
 #  define SOCK_EAGAIN         EAGAIN
 #  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_ENOTCONN       ENOTCONN
 #  define SOCK_NFDS(s)        (s + 1)
 #  define SOCK_CLOSE(s)       close(s)
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
@@ -879,7 +885,8 @@ static int s_NCBI_Recv(SOCK          sock,
     n_readsock = recv(sock->sock, x_buffer, size, 0);
 
     /* catch EOF */
-    if (n_readsock == 0) {
+    if (n_readsock == 0  ||
+        (n_readsock < 0  &&  SOCK_ERRNO == SOCK_ENOTCONN)) {
         sock->r_status = eIO_Closed;
         sock->is_eof   = 1/*true*/;
         return (int) (n_readbuf ? n_readbuf : 0);
