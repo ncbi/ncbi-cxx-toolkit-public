@@ -75,3 +75,12 @@ AdditionalLibraryDirectories=
 
 
 
+[ResourceCompiler]
+AdditionalIncludeDirectories=
+AdditionalOptions=
+Culture=
+PreprocessorDefinitions=
+
+
+
+
