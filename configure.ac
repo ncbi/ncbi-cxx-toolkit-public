@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.121 2002/08/19 18:46:32 ucko Exp $
+#  $Id: configure.ac,v 1.122 2002/08/23 20:54:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2545,9 +2545,9 @@ else
 fi
 
 if test "$with_exe" = "no" ; then
-   APP_NOBUILD="APP_PROJ="
+   APP_OR_NULL=null
 else
-   APP_NOBUILD=
+   APP_OR_NULL=app
 fi
 
 IF_REBUILDING_LIBS="#"
@@ -2789,7 +2789,7 @@ AC_SUBST(NCBI_C_ncbi)
 
 AC_SUBST(BINCOPY)
 AC_SUBST(APP_NOCOPY)
-AC_SUBST(APP_NOBUILD)
+AC_SUBST(APP_OR_NULL)
 AC_SUBST(IF_REBUILDING_LIBS)
 AC_SUBST(IF_REBUILDING_CONDITIONALLY)
 AC_SUBST(CC_FILTER)

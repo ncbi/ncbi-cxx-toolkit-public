@@ -58,6 +58,7 @@ for f in $files ; do
       s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g;
       s%^ *BINCOPY *=.*%BINCOPY = @:%;
       s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
+      s%^ *APP_OR_NULL *=.*%APP_OR_NULL = app%;
       '"$extra_sed"'
    ' "$fff" > "$fff.tmp"
    if test $? -ne 0 ; then
