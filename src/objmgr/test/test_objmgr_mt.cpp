@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/25 21:05:31  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.5  2002/02/07 21:27:36  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -101,6 +104,11 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr1/scope.hpp>
+#include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr1/desc_ci.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
+#include <objects/objmgr1/align_ci.hpp>
 
 #include <objects/seq/seqport_util.hpp>
 
@@ -238,8 +246,12 @@ void* CTestThread::Main(void)
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
         0, 0, 0, 0, 0);
 
-    m_Scope->DropTopLevelSeqEntry(*entry1);
-    m_Scope->DropTopLevelSeqEntry(*entry2);
+    {
+        set< CRef<const CSeq_id> > setId;
+        m_Scope->FindSeqid(setId, "seq11.3");
+    }
+    //m_Scope->DropTopLevelSeqEntry(*entry1);
+    //m_Scope->DropTopLevelSeqEntry(*entry2);
 
     // Test local scope
     CScope scope(*m_ObjMgr);
@@ -278,7 +290,7 @@ void* CTestThread::Main(void)
         1, 3, 2, 1, 1);
     id.SetGi(21+m_Idx*1000);
     ProcessBioseq(scope, id,
-        22, 62,
+        62, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
         1, 1, 1, 0, 0);
@@ -308,14 +320,14 @@ void* CTestThread::Main(void)
         int_ref->SetTo(20);
         int_list.push_back(int_ref);
 
-        CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
+        CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed1"));
         CRef<CSeq_entry> constr_entry(new CSeq_entry);
         constr_entry->SetSeq(*constr_seq);
         scope.AddTopLevelSeqEntry(*constr_entry);
-        id.SetLocal().SetStr("constructed");
+        id.SetLocal().SetStr("constructed1");
         ProcessBioseq(scope, id,
             27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-        scope.DropTopLevelSeqEntry(*constr_entry);
+        //scope.DropTopLevelSeqEntry(*constr_entry);
     }}
     {{
         CSeq_loc constr_loc;
@@ -334,21 +346,22 @@ void* CTestThread::Main(void)
         int_ref->SetTo(20);
         int_list.push_back(int_ref);
 
-        CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed"));
+        CRef<CBioseq> constr_seq(new CBioseq(constr_loc, "constructed2"));
         CRef<CSeq_entry> constr_entry(new CSeq_entry);
         constr_entry->SetSeq(*constr_seq);
         scope.AddTopLevelSeqEntry(*constr_entry);
-        id.SetLocal().SetStr("constructed");
+        id.SetLocal().SetStr("constructed2");
         ProcessBioseq(scope, id,
             27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-        scope.DropTopLevelSeqEntry(*constr_entry);
+        //scope.DropTopLevelSeqEntry(*constr_entry);
     }}
 
     // Drop entry 1 and re-process entry 2
-    scope.DropTopLevelSeqEntry(*entry1);
+    //scope.DropTopLevelSeqEntry(*entry1);
     CRef<CScope> scope2 = new CScope(*m_ObjMgr); // to drop entry2 later
+    scope2->AddTopLevelSeqEntry(*entry2);
     id.SetGi(21+m_Idx*1000);
-    ProcessBioseq(scope, id,
+    ProcessBioseq(*scope2, id,
         62, 62,
         "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
         "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
@@ -357,13 +370,22 @@ void* CTestThread::Main(void)
     // Testing one seq-entry in multiple scopes
     CRef<CSeq_entry> entry1a = CreateTestEntry1a(m_Idx);
     scope2->AddTopLevelSeqEntry(*entry1a);
-    scope2->AddTopLevelSeqEntry(*entry2);
     id.SetGi(21+m_Idx*1000);
     ProcessBioseq(*scope2, id,
         62, 62,
         "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
         "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
         1, 1, 1, 0, 0);
+    // Test scope history
+    CRef<CSeq_entry> entry1b = CreateTestEntry1(m_Idx);
+    scope2->AddTopLevelSeqEntry(*entry1b);
+    id.SetLocal().SetStr("seq"+NStr::IntToString(11+m_Idx*1000));
+    // gi|11 from entry1a must be selected
+    ProcessBioseq(*scope2, id,
+        40, 40,
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+        0, 4, 2, 1, 0);
 
     return 0;
 }

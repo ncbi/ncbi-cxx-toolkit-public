@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.14  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -146,7 +149,7 @@ CSeq_entry* CDataSource::GetTopEntry(void)
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
 {
-//### Check versions if any, select the best one.
+    CMutexGuard guard(s_DataSource_Mutex);
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
     if ( tse_set == m_TSE_seq.end() )
         return 0;
@@ -172,25 +175,6 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
     CBioseq_Handle h(idh);
     CRef<CTSE_Info> tse = info.m_TSE;
     CMutexGuard guard(s_DataSource_Mutex);
-/*
-    if ( m_Loader ) {
-        // Send request to the loader
-        CSeq_loc loc;
-        SerialAssign<CSeq_id>(loc.SetWhole(), id);
-        CHandleRangeMap hrm(GetIdMapper());
-        hrm.AddLocation(loc);
-        m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore);
-    }
-    CSeq_id_Handle idh = GetIdMapper().GetHandle(id, false);
-    // Do not even try to find the bioseq handle if there is no id handle
-    if ( !idh )
-        return CBioseq_Handle();
-    CBioseq_Handle h(idh);
-    CMutexGuard guard(s_DataSource_Mutex);
-    CRef<CTSE_Info> tse = x_FindBestTSE(idh);
-    if ( !tse )
-        return CBioseq_Handle();
-*/
     TBioseqMap::iterator found = tse->m_BioseqMap.find(idh);
     _ASSERT(found != tse->m_BioseqMap.end());
     h.x_ResolveTo(scope, *this,
@@ -206,6 +190,7 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
     _ASSERT(&setResult != &setSource);
     // for each handle
     TSeq_id_HandleSet::iterator itHandle;
+    CMutexGuard guard(s_DataSource_Mutex);
     for( itHandle = setSource.begin(); itHandle != setSource.end(); ) {
         // if it is in my map
         if (m_TSE_seq.find(*itHandle) != m_TSE_seq.end()) {
@@ -396,7 +381,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         // Seq-ext: check the extension type, prepare the data
         CSeqMap& seqmap = x_GetSeqMap(rhandle);
         // Omit the last element - it is always eSeqEnd
-        CSeqMap::CSegmentInfo& seg = seqmap.x_Resolve(point, scope);
+        CSeqMap::CSegmentInfo seg = seqmap.x_Resolve(point, scope);
         switch (seg.m_SegType) {
         case CSeqMap::eSeqData:
             {
@@ -465,6 +450,7 @@ void CDataSource::AddTSE(CSeq_entry& se)
 CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 {
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
+    CMutexGuard guard(s_DataSource_Mutex);
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
@@ -768,10 +754,6 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
         }
     }
     seqmap->Add(CSeqMap::eSeqEnd, pos, 0);
-    for (int i = 0; i < seqmap->size(); i++) {
-        // Lock seq-id handles
-        const CSeqMap::CSegmentInfo& info = (*seqmap)[i];
-    }
     m_SeqMaps[&seq] = seqmap;
 }
 
@@ -896,7 +878,7 @@ void CDataSource::x_DataToSeqMap(const CSeq_data& data,
     //### Search for gaps in the data
     CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
         CSeqMap::eSeqData, pos, len, false);
-    seg->m_RefData.Reset(&data);
+    //###seg->m_RefData.Reset(&data);
     seg->m_RefPos = pos;
     seg->m_RefLen = len;
     seqmap.Add(*seg);
@@ -966,6 +948,7 @@ The resulting set will contain 0 or 1 TSE with the sequence, all live TSEs
 without the sequence but with references to the id and all dead TSEs
 (with references and without the sequence), referenced by the history.
 */
+    CMutexGuard guard(s_DataSource_Mutex);
     x_ResolveLocationHandles(loc);
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
@@ -1028,7 +1011,6 @@ without the sequence but with references to the id and all dead TSEs
 
 void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc) const
 {
-    CMutexGuard guard(s_DataSource_Mutex);
     CHandleRangeMap tmp(GetIdMapper());
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
         CTSE_Info* tse_info = x_FindBestTSE(it->first);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.1  2002/02/21 19:21:04  grichenk
 * Initial revision
 *
@@ -95,7 +98,7 @@ CSeqMatch_Info::operator bool (void)
 }
 
 
-CSeqMatch_Info::operator! (void)
+bool CSeqMatch_Info::operator! (void)
 {
     return !m_Handle;
 }

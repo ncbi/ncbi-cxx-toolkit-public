@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.6  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -112,44 +115,52 @@ CSeqMap::CSegmentInfo& CSeqMap::x_FindSegment(int pos)
 }
 
 
-CSeqMap::CSegmentInfo& CSeqMap::x_Resolve(int pos, CScope& scope)
+CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
 {
-    CSegmentInfo& seg = x_FindSegment(pos);
-    if (seg.m_Resolved)
-        return seg;
-    // Resolve map segments
-    int shift = 0;
     int seg_idx = 0;
-    for (int i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
-        if (m_Data[i]->m_position+shift > pos  ||
-            m_Data[i]->m_SegType == CSeqMap::eSeqEnd)
-            break;
-        seg_idx = i;
-        m_Data[i]->m_Resolved = true;
-        m_Data[i]->m_position += shift;
-        if (m_Data[i]->m_SegType != CSeqMap::eSeqRef)
-            continue; // not a reference - nothing to resolve
-        if (m_Data[i]->m_RefLen != 0)
-            continue; // resolved reference, known length
-        CConstRef<CSeq_id> id(
-            &CSeq_id_Mapper::GetSeq_id(m_Data[i]->m_RefSeq));
-        CBioseq_Handle::TBioseqCore seq =
-            scope.GetBioseqHandle(*id).GetBioseqCore();
-        if ( seq->GetInst().IsSetLength() ) {
-            m_Data[i]->m_RefLen = seq->GetInst().GetLength();
-            shift += m_Data[i]->m_RefLen;
-        }
-        if ( seq->GetInst().IsSetSeq_data() )
-            m_Data[i]->m_RefData = &seq->GetInst().GetSeq_data();
-    }
-    // Update positions of segments following the seg_idx-th segment
-    m_FirstUnresolvedPos = seg_idx + 1;
-    if (shift > 0) {
-        for (int i = seg_idx+1; i < m_Data.size(); i++) {
+    CBioseq_Handle::TBioseqCore seq;
+    CSegmentInfo seg = x_FindSegment(pos);
+    if ( !seg.m_Resolved ) {
+        // Resolve map segments
+        int shift = 0;
+        for (int i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
+            if (m_Data[i]->m_position+shift > pos  ||
+                m_Data[i]->m_SegType == CSeqMap::eSeqEnd)
+                break;
+            seg_idx = i;
+            m_Data[i]->m_Resolved = true;
             m_Data[i]->m_position += shift;
+            if (m_Data[i]->m_SegType != CSeqMap::eSeqRef)
+                continue; // not a reference - nothing to resolve
+            if (m_Data[i]->m_RefLen != 0)
+                continue; // resolved reference, known length
+            CConstRef<CSeq_id> id(
+                &CSeq_id_Mapper::GetSeq_id(m_Data[i]->m_RefSeq));
+            seq = scope.GetBioseqHandle(*id).GetBioseqCore();
+            if ( seq->GetInst().IsSetLength() ) {
+                m_Data[i]->m_RefLen = seq->GetInst().GetLength();
+                shift += m_Data[i]->m_RefLen;
+            }
         }
+        // Update positions of segments following the seg_idx-th segment
+        m_FirstUnresolvedPos = seg_idx + 1;
+        if (shift > 0) {
+            for (int i = seg_idx+1; i < m_Data.size(); i++) {
+                m_Data[i]->m_position += shift;
+            }
+        }
+        seg = *m_Data[seg_idx];
     }
-    return *m_Data[seg_idx];
+    if ( !seq  &&  seg.m_RefSeq ) {
+        CConstRef<CSeq_id> id(
+            &CSeq_id_Mapper::GetSeq_id(seg.m_RefSeq));
+        CBioseq_Handle h = scope.GetBioseqHandle(*id);
+        if ( h )
+            seq = h.GetBioseqCore();
+    }
+    if ( bool(seq) && seq->GetInst().IsSetSeq_data() )
+        seg.m_RefData = &seq->GetInst().GetSeq_data();
+    return seg;
 }
 
 void CSeqMap::x_CalculateSegmentLengths(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/02/25 21:05:31  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.13  2002/02/21 19:27:09  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -764,11 +767,10 @@ int CTestApp::Run(void)
     m_ObjMgr = new CObjectManager;
     {
         CScope Scope(*m_ObjMgr);
-        CRef<CSeq_entry> entry;
-        entry = CreateTestEntry1(0);
-        Scope.AddTopLevelSeqEntry(*entry);
-        entry = CreateTestEntry2(0);
-        Scope.AddTopLevelSeqEntry(*entry);
+        CRef<CSeq_entry> entry1 = CreateTestEntry1(0);
+        Scope.AddTopLevelSeqEntry(*entry1);
+        CRef<CSeq_entry> entry2 = CreateTestEntry2(0);
+        Scope.AddTopLevelSeqEntry(*entry2);
 
         // Test global scope
         id.SetLocal().SetStr("seq11");

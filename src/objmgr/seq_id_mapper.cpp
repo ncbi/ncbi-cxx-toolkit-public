@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.6  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -1493,7 +1496,6 @@ const size_t kKeyUsageTableSegmentSize =
 
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
-    CFastMutexGuard guard(m_IdMapMutex);
     while (m_IdMap.size() > 0) {
         // Prevent premature tree destruction
         CRef<CSeq_id_Which_Tree> keep_tree = m_IdMap.begin()->second;

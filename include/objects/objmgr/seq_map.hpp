@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/25 21:05:26  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.6  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -163,7 +166,7 @@ private:
     CSegmentInfo& x_FindSegment(int pos);
     // Try to resolve segment lengths up to the "pos". Return index of the
     // segment containing "pos".
-    CSegmentInfo& x_Resolve(int pos, CScope& scope);
+    CSegmentInfo x_Resolve(int pos, CScope& scope);
     void x_CalculateSegmentLengths(void);
 
     vector< CRef<CSegmentInfo> > m_Data;
@@ -261,10 +264,10 @@ bool CSeqMap::CSegmentInfo::operator< (const CSegmentInfo& seg) const
         return true;
     if (m_RefSeq > seg.m_RefSeq)
         return false;
-    if (m_RefData < seg.m_RefData)
-        return true;
-    if (m_RefData > seg.m_RefData)
-        return false;
+    //###if (m_RefData < seg.m_RefData)
+    //###    return true;
+    //###if (m_RefData > seg.m_RefData)
+    //###    return false;
     if (m_RefPos < seg.m_RefPos)
         return true;
     if (m_RefPos > seg.m_RefPos)

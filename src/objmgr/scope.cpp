@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/02/25 21:05:29  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.11  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -113,21 +116,18 @@ CScope::~CScope(void)
 
 void CScope::AddDefaults(void)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
     m_pObjMgr->AcquireDefaultDataSources(m_setDataSrc);
 }
 
 
 void CScope::AddDataLoader (const string& loader_name)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
     m_pObjMgr->AddDataLoader(m_setDataSrc, loader_name);
 }
 
 
 void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
 {
-    CMutexGuard guard(sm_Scope_Mutex);
     m_pObjMgr->AddTopLevelSeqEntry(m_setDataSrc, top_entry);
 }
 
@@ -155,44 +155,12 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
-//### Get the best possible handle
     CMutexGuard guard(sm_Scope_Mutex);
     CSeqMatch_Info match = x_BestResolve(id);
     if (!match)
         return CBioseq_Handle();
     x_AddToHistory(*match.m_TSE);
     return match.m_DataSource->GetBioseqHandle(*this, id);
-/*
-    CBioseq_Handle found;
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        CBioseq_Handle handle = (*it)->GetBioseqHandle(*this, id);
-        if ( handle ) {
-            if (m_FindMode == eFirst) {
-                return handle;
-            }
-            if ( found ) {
-                // Report an error and return the first handle found
-                switch (m_FindMode) {
-                case eDup_Fatal:
-                    ERR_POST(Fatal <<
-                        "GetBioseqHandle() -- ambiguous Seq-id");
-                    break;
-                case eDup_Warning:
-                    ERR_POST(Warning <<
-                        "GetBioseqHandle() -- ambiguous Seq-id");
-                    break;
-                default: // e_Find_DupThrow
-                    throw runtime_error
-                        ("GetBioseqHandle() -- ambiguous Seq-id");
-                }
-                break;
-            }
-            // Remember the first handle found
-            found = handle;
-        }
-    }
-    return found;
-*/
 }
 
 

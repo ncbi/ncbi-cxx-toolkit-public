@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/25 21:05:27  grichenk
+* Removed seq-data references caching. Increased MT-safety. Fixed typos.
+*
 * Revision 1.1  2002/02/21 19:21:02  grichenk
 * Initial revision
 *
@@ -70,7 +73,7 @@ public:
     // Return true if "info" is better than "this"
     bool operator< (const CSeqMatch_Info& info) const;
     operator bool (void);
-    operator! (void);
+    bool operator! (void);
 
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
     CRef<CTSE_Info>   m_TSE;        // TSE, containing the best match
