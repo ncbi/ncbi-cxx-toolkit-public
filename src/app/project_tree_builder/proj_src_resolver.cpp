@@ -48,7 +48,7 @@ static void s_GetMakefileIncludes(const string& applib_mfilepath,
     string strline;
     while ( getline(ifs, strline) ) {
         const string include_token("include ");
-        NStr::TruncateSpaces(strline);
+        strline = NStr::TruncateSpaces(strline);
         if ( NStr::StartsWith(strline, include_token) ) {
             string include = strline.substr(include_token.length());
             
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/05 16:44:31  shomrat
+ * rollback last change
+ *
  * Revision 1.5  2004/10/05 16:15:52  shomrat
  * Use in place NStr::TruncateSpaces
  *
