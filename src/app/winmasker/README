@@ -1,0 +1,9 @@
+ABSTRACT
+
+    windowmasker is a program that identifies and masks out highly 
+    repetitive DNA sequences and DNA sequences with low complexity 
+    in a genome using only the sequence of the genome itself.
+
+SYNOPSIS
+
+    windowmasker 
