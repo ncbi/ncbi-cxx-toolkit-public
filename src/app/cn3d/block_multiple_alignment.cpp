@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/10/02 23:26:47  thiessen
+* fix bug in highlight columns in master range
+*
 * Revision 1.29  2001/09/27 15:37:57  thiessen
 * decouple sequence import and BLAST
 *
@@ -1490,28 +1493,25 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
 {
     const Sequence *master = GetMaster();
 
-    // check to make sure whole range is aligned
+    // must do one column at a time, rather than range, in case there are inserts wrt the master
     for (int i=from; i<=to; i++) {
+
+        // sanity check
         if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
             ERR_POST(Error << "BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange() - "
                 " range error or unaligned at " << i);
             return false;
         }
-    }
 
-    // get start and end blocks and offsets
-    const Block
-        *fromBlock = GetBlock(0, from),
-        *toBlock = GetBlock(0, to);
-    int
-        fromBlockOffset = from - fromBlock->GetRangeOfRow(0)->from,
-        toBlockOffset = to - toBlock->GetRangeOfRow(0)->from;
+        // get block and offset
+        const Block *block = GetBlock(0, i);
+        int blockOffset = i - block->GetRangeOfRow(0)->from;
 
-    // highlight aligned range of each row
-    for (int row=0; row<NRows(); row++) {
-        GlobalMessenger()->AddHighlights(GetSequenceOfRow(row),
-            fromBlock->GetRangeOfRow(row)->from + fromBlockOffset,
-            toBlock->GetRangeOfRow(row)->from + toBlockOffset);
+        // highlight aligned residue in each row
+        for (int row=0; row<NRows(); row++) {
+            int slaveIndex = block->GetRangeOfRow(row)->from + blockOffset;
+            GlobalMessenger()->AddHighlights(GetSequenceOfRow(row), slaveIndex, slaveIndex);
+        }
     }
 
     return true;
