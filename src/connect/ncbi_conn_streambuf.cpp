@@ -243,7 +243,7 @@ int CConn_Streambuf::sync(void)
 streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                    streamsize    /*buf_size*/)
 {
-    THROW1_TRACE(CConn_Exception, "CConn_Streambuf::setbuf() not allowed");
+    NCBI_THROW(CConnException, eConn, "CConn_Streambuf::setbuf() not allowed");
     return this; /*NOTREACHED*/
 }
 
@@ -256,7 +256,7 @@ void CConn_Streambuf::x_CheckThrow(EIO_Status status, const string& msg)
         if (m_Dying)
             ERR_POST(message);
         else
-            THROW1_TRACE(CConn_Exception, message);
+            NCBI_THROW(CConnException, eConn, message);
     }
 }
 
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2002/12/19 17:24:08  lavr
+ * Take advantage of new CConnException
+ *
  * Revision 6.21  2002/10/28 15:46:20  lavr
  * Use "ncbi_ansi_ext.h" privately
  *
