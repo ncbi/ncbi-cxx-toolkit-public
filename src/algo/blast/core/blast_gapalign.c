@@ -399,8 +399,8 @@ static GreedyAlignMemPtr BLAST_GreedyAlignsfree(GreedyAlignMemPtr gamp)
    sfree(gamp->max_row_free);
    if (gamp->space)
       MBSpaceFree(gamp->space);
-   gamp = (GreedyAlignMemPtr) sfree(gamp);
-   return gamp;
+   sfree(gamp);
+   return NULL;
 }
 
 /** Allocate memory for the greedy gapped alignment algorithm
@@ -640,9 +640,9 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   if (gap_align->dyn_prog)
      dyn_prog = gap_align->dyn_prog;
   else
-     dyn_prog = (BlastGapDPPtr)Nlm_malloc(j);
+     dyn_prog = (BlastGapDPPtr)malloc(j);
 
-  state = (Uint1Ptr PNTR) Nlm_malloc(sizeof(Uint1Ptr)*(M+1));
+  state = (Uint1Ptr PNTR) malloc(sizeof(Uint1Ptr)*(M+1));
   dyn_prog[0].CC = 0;
   dyn_prog[0].FF = -m - decline_penalty;
   c = dyn_prog[0].DD = -m;
@@ -766,7 +766,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
     state_struct->used += (MAX(i, j) - tt_start + 1);
   }
   i = *pei; j = *pej;
-  tmp = (Uint1Ptr) Nlm_malloc(i+j);
+  tmp = (Uint1Ptr) malloc(i+j);
   for (s=0, c = 0; i> 0 || j > 0; c++) {
       t = state[i][j];
       k  = t %5;
@@ -863,7 +863,7 @@ static Int4 SEMI_G_ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 
   j = (N + 2) * sizeof(BlastGapDP);
 
-  dyn_prog = (BlastGapDPPtr)Nlm_malloc(j);
+  dyn_prog = (BlastGapDPPtr)malloc(j);
 
   dyn_prog[0].CC = 0; c = dyn_prog[0].DD = -m;
   dyn_prog[0].FF = -m;
@@ -1842,7 +1842,7 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
   if (gap_align->dyn_prog)
      dyn_prog = gap_align->dyn_prog;
   else
-     dyn_prog = (BlastGapDPPtr)Nlm_malloc(j);
+     dyn_prog = (BlastGapDPPtr)malloc(j);
   if (!dyn_prog) {
 #if ERR_POST_EX_DEFINED
      ErrPostEx(SEV_ERROR, 0, 0, 
