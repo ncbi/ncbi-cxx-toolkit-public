@@ -1267,8 +1267,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, list<
 
 //Output sequence and mask sequences if any
 const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int start, int len, int frame, bool colorMismatch, list<alnSeqlocInfo*> loc_list, CNcbiOstream& out) const {
-  int actualSize = sequence.size();
-  assert(actualSize > start);
+  _ASSERT((int)sequence.size() > start);
   list<CRange<int> > actualSeqloc;
   string actualSeq = sequence.substr(start, len);
   
@@ -2207,6 +2206,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.52  2004/12/21 19:32:16  jianye
+*assert to _ASSERT
+*
 *Revision 1.51  2004/11/29 21:24:59  camacho
 *use anonymous exceptions to avoid msvc warnings
 *
