@@ -307,6 +307,9 @@ typedef CMSHit * TMSHitList;
 // the maximum charge state that can be considered
 #define MSMAXCHARGE 4
 
+// the precursor charge state at which to begin considering 2+ product ions
+const int kConsiderMult = 3;
+
 // function object for cull iterate
 typedef bool (*TMZIbool) (const CMZI&, const CMZI&, int tol);
 
@@ -614,7 +617,7 @@ inline void CMSPeak::ClearUsedAll(void)
 // returns the cull array index
 inline int CMSPeak::GetWhich(int Charge)
 {
-    if(Charge < 3) return MSCULLED1;
+    if(Charge <  kConsiderMult) return MSCULLED1;
     else return MSCULLED2;
 }
 
@@ -706,6 +709,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.13  2004/04/06 19:53:20  lewisg
+  allow adjustment of precursor charges that allow multiply charged product ions
+
   Revision 1.12  2004/03/30 19:36:59  lewisg
   multiple mod code
 

@@ -134,7 +134,7 @@ int CSearch::CompareLadders(CLadder& BLadder,
 			    CLadder& Y2Ladder, CMSPeak *Peaks,
 			    bool OrLadders,  TMassPeak *MassPeak)
 {
-    if(MassPeak && MassPeak->Charge > 2 ) {
+    if(MassPeak && MassPeak->Charge >= kConsiderMult) {
 	Peaks->CompareSorted(BLadder, MSCULLED2, 0); 
 	Peaks->CompareSorted(YLadder, MSCULLED2, 0); 
 	Peaks->CompareSorted(B2Ladder, MSCULLED2, 0); 
@@ -157,7 +157,7 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 			    CLadder& Y2Ladder, CMSPeak *Peaks,
 			    TMassPeak *MassPeak)
 {
-    if(MassPeak && MassPeak->Charge > 2 ) {
+    if(MassPeak && MassPeak->Charge >=  kConsiderMult ) {
 	if(Peaks->CompareTop(BLadder)) return true; 
 	if(Peaks->CompareTop(YLadder)) return true; 
 	if(Peaks->CompareTop(B2Ladder)) return true; 
@@ -911,11 +911,6 @@ double CSearch::CalcNormalTopHit(double Mean, double TopHitProb)
 	if(retval == before) break;  // convergence
 	before = retval;
     }
-#if 0
-    if(isnan(retval)) {
-	before = 1;
-    }
-#endif
     return retval;
 }
 
@@ -969,24 +964,19 @@ double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
     // see 12/13/02 notebook, pg. 127
 	
     retval = 4.0 * t * h * v / m;
-    if(Charge > 2) {
+    if(Charge >= kConsiderMult) {
 	retval *= (m - 3*o + r)/(r - o);
     }    
 #if 0
     // variation that counts +1 and +2 separately
     // see 8/19/03 notebook, pg. 71
     retval = 4.0 * t * h / m;
-    if(Charge > 2) {
+    if(Charge >= kConsiderMult) {
 	//		retval *= (m - 3*o + r)/(r - o);
 	retval *= (3 * v2 + v1);
     }
     else retval *= (v2 + v1);
 #endif
-#ifdef DEBUG_PEAKS
-    _TRACE("o:" << o << " r:" << r << " h:" << h << " m:" << m << " v:" << v << " t:" << t);
-    _TRACE("charge:" << Peaks->GetCharge() <<  "  Calculated average:" << retval);
-#endif
-	
     return retval;
 }
 
@@ -999,6 +989,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.18  2004/04/06 19:53:20  lewisg
+allow adjustment of precursor charges that allow multiply charged product ions
+
 Revision 1.17  2004/04/05 20:49:16  lewisg
 fix missed mass bug and reorganize code
 

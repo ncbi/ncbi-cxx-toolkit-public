@@ -85,7 +85,7 @@ void CMSHit::RecordMatches(CLadder& BLadder, CLadder& YLadder,
     int Which = Peaks->GetWhich(Charge);
 
     // scan thru each ladder
-    if(Charge > 2) {
+    if(Charge >= kConsiderMult) {
 	RecordMatchesScan(BLadder, iHitInfo, Peaks, Which);
 	RecordMatchesScan(YLadder, iHitInfo, Peaks, Which);
 	RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which);
@@ -735,7 +735,7 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
 	if(Deleted.count(iMZI) != 0) continue;
 	HitCount = 0;
-	if(Charge < 3 || Temp[iMZI].MZ > Precursor) {
+	if(Charge <  kConsiderMult || Temp[iMZI].MZ > Precursor) {
 	    // if charge 1 region, allow fewer peaks
 	    Window = SingleWindow; //27;
 	    HitsAllowed = SingleNum;
