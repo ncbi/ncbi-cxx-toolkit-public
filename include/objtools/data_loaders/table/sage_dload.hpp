@@ -87,7 +87,8 @@ private:
     };
 
     // the list of IDs we support
-    typedef map<objects::CSeq_id_Handle, string, SIdHandleByContent> TIdMap;
+    typedef multimap<objects::CSeq_id_Handle, string,
+                     SIdHandleByContent> TIdMap;
     TIdMap m_Ids;
 
     // the map of items we've already loaded
@@ -103,6 +104,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/13 20:59:59  dicuccio
+ * Use multimap instead of map for accession strings - corrects errors with
+ * identical accessions presented with different qualifiers
+ *
  * Revision 1.2  2003/10/02 17:50:00  dicuccio
  * Moved table reader into the data loader project, as it depends on SQLite
  *
