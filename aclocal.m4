@@ -125,6 +125,13 @@ AC_DEFUN(NCBI_CHECK_LIBS,
  LIBS=$saved_LIBS
 ])
 
+
+# Arguments:
+# 1. (3.) Properly-cased library name
+# 2. (4.) Test code.
+# 3. (5.) Extra libraries to put in XXX_LIBS.
+# 4. (6.) Extra libraries to require users to put in LIBS.
+
 AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB,
 [NCBI_CHECK_THIRD_PARTY_LIB_(m4_tolower($1), m4_toupper($1), $@)])
 
@@ -148,7 +155,7 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
     fi
     AC_CACHE_CHECK([for lib$3$in_path], ncbi_cv_lib_$1,
        CPPFLAGS="[$]$2_INCLUDE $orig_CPPFLAGS"
-       LIBS="[$]$2_LIBS $orig_LIBS"
+       LIBS="[$]$2_LIBS $6 $orig_LIBS"
        [AC_LINK_IFELSE($4, [ncbi_cv_lib_$1=yes], [ncbi_cv_lib_$1=no])])
     if test "$ncbi_cv_lib_$1" = "no"; then
        with_$1="no"
