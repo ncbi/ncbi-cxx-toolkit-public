@@ -58,15 +58,19 @@ list<string>& CFlatEMBLFormatter::Wrap(list<string>& l, const string& tag,
 }
 
 
+// moved to file scope to avoid becoming a common symbol (unsuitable
+// for inclusion in shared libraries) on Darwin
+static list<string> s_XX;
+
 inline
 void CFlatEMBLFormatter::x_AddXX(void)
 {
-    static list<string> l;
-    if (l.empty()) {
+    static list<string> s_XX;
+    if (s_XX.empty()) {
         string tmp;
-        l.push_back(Pad("XX", tmp, ePara));
+        s_XX.push_back(Pad("XX", tmp, ePara));
     }
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(s_XX);
 }
 
 
@@ -365,6 +369,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/03/31 16:25:14  ucko
+* Kludge: move the static "XX" paragraph to file scope, as it otherwise
+* becomes a common symbol on Darwin, preventing inclusion in shared libs.
+*
 * Revision 1.4  2003/03/29 04:14:23  ucko
 * Move private inline methods from .hpp to .cpp.
 *
