@@ -1,4 +1,4 @@
--- $Id: docsum.asn,v 1.43 2004/08/09 20:42:18 kholodov Exp $
+-- $Id: docsum.asn,v 1.44 2004/08/16 14:15:14 kholodov Exp $
 
 NSE DEFINITIONS ::=
 BEGIN
@@ -398,7 +398,8 @@ NSE-SeqLoc ::= SEQUENCE {
 		gb-small (6),			-- Genbank genomic < 30kb in length
 		hgs-finish (10),		-- genome sequence, finished
 		hgs-draft (11),			-- genome sequence, draft
-		bes (12) 			-- BAC-end sequence
+		bes (12), 			-- BAC-end sequence
+		wgs (13)
 	} OPTIONAL,
         orient ENUMERATED {
                 forward (1),                    -- if MapLink.orientation = 0
@@ -481,6 +482,9 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
 END
 
 -- $Log: docsum.asn,v $
+-- Revision 1.44  2004/08/16 14:15:14  kholodov
+-- Added: wgs source-db code
+--
 -- Revision 1.43  2004/08/09 20:42:18  kholodov
 -- Added: assembly field
 --
