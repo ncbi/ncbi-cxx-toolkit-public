@@ -751,48 +751,48 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
     const TSeqPos&                len     = match->m_Len;
     CAlnMixSeq::TStarts::iterator start_i;
         
-    if (starts2.size()) {
+    if ( !starts2.empty() ) {
 
         start_i = starts2.lower_bound(start2);
-        if (start_i != starts2.end()) {
 
-            // check below
-            if (start_i->first > start2) {
-                if (start_i != starts2.begin()) {
-                    start_i--;
-                    // there should not be an overlap
-                    if (start_i->first + start_i->second->m_Len > start2) {
-                        return false;
-                    }
-                    // no overlap, check for consistency
-                    if (match->m_StrandsDiffer) {
-                        if (start_i->second->m_StartIts[seq1]->first <
-                            start1 + len) {
-                            return false;
-                        }
-                    } else {
-                        if (start_i->second->m_StartIts[seq1]->first + 
-                            start_i->second->m_Len > start1) {
-                            return false;
-                        }
-                    }
-                    start_i++;
-                }
-            }
-        
-            // check the overlap for consistency
-            while (start_i != starts2.end()  &&  
-                   start_i->first < start2 + len) {
-                if (start_i->second->m_StartIts[seq1]->first != start1 + 
-                    (match->m_StrandsDiffer ?
-                     start2 + len - start_i->first :
-                     start_i->first - start2)) {
+        // check below
+        if (start_i != starts2.begin()) {
+            start_i--;
+            
+            // no overlap, check for consistency
+            if (match->m_StrandsDiffer) {
+                if (start_i->second->m_StartIts[seq1]->first <
+                    start1 + len) {
                     return false;
                 }
-                start_i++;
+            } else {
+                if (start_i->second->m_StartIts[seq1]->first + 
+                    start_i->second->m_Len > start1) {
+                    return false;
+                }
             }
 
-            // check above for consistency
+            // check for overlap
+            if (start_i->first + start_i->second->m_Len > start2) {
+                return false;
+            }
+            start_i++;
+        }
+
+        // check the overlap for consistency
+        while (start_i != starts2.end()  &&  
+               start_i->first < start2 + len) {
+            if (start_i->second->m_StartIts[seq1]->first != start1 + 
+                (match->m_StrandsDiffer ?
+                 start2 + len - start_i->first :
+                 start_i->first - start2)) {
+                return false;
+            }
+            start_i++;
+        }
+
+        // check above for consistency
+        if (start_i != starts2.end()) {
             if (match->m_StrandsDiffer) {
                 if (start_i->second->m_StartIts[seq1]->first + 
                     start_i->second->m_Len > start1) {
@@ -902,6 +902,16 @@ void CAlnMix::x_CreateSegmentsVector()
 
             int index = 0;
             while (row->m_StartIt != start_its_i->second) {
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+                if (row->m_PositiveStrand  &&
+                    row->m_StartIt->first > start_its_i->second->first  ||
+                    !row->m_PositiveStrand  &&
+                    row->m_StartIt->first < start_its_i->second->first) {
+                    NCBI_THROW(CAlnException, eMergeFailure,
+                               "CAlnMix::x_CreateSegmentsVector(): "
+                               "Internal error: Integrity broken");
+                }
+#endif
                 // index the segment
                 CAlnMixSegment * seg = row->m_StartIt->second;
                 seg->m_Index1 = index++;
@@ -1103,6 +1113,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/01/02 15:30:17  todorov
+* Fixed the order of checks in x_SecondRowFits
+*
 * Revision 1.12  2002/12/30 20:55:47  todorov
 * Added range fitting validation to x_SecondRowFits
 *
