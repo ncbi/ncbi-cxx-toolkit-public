@@ -514,7 +514,7 @@ CMemStore::~CMemStore()
 {
     while ( m_Last ) {
         m_Current = m_Last->prev;
-        delete m_Last->body;
+        delete [] m_Last->body;
         delete m_Last;
         m_Last = m_Current;
     }
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/01/24 16:14:28  soussov
+ * makes purify happy
+ *
  * Revision 1.2  2001/11/06 17:59:53  lavr
  * Formatted uniformly as the rest of the library
  *
