@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/13 20:54:05  vasilche
+* Fixed minor bugs.
+*
 * Revision 1.17  1999/07/13 20:18:07  vasilche
 * Changed types naming.
 *
@@ -424,7 +427,7 @@ const CTypeInfo* Method(void) \
     typedef Class CClass; \
     static Info* info = 0; \
     if ( info == 0 ) { \
-        info = new Info(Args);
+        info = new Info Args;
 
 #define END_TYPE_INFO \
     } \
@@ -432,17 +435,17 @@ const CTypeInfo* Method(void) \
 }
  
 #define BEGIN_CLASS_INFO(Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, )
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_STRUCT_INFO(Class) \
 BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
-                CStructInfo<CClass>, #Class)
+                CStructInfo<CClass>, (#Class))
 #define END_STRUCT_INFO END_TYPE_INFO
 
 #define BEGIN_CHOICE_INFO(Class) \
 BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
-                CChoiceValNodeInfo, )
+                CChoiceValNodeInfo, ())
 #define END_CHOICE_INFO END_TYPE_INFO
 
 // adding members

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/13 20:54:05  vasilche
+* Fixed minor bugs.
+*
 * Revision 1.3  1999/07/13 20:18:22  vasilche
 * Changed types naming.
 *
@@ -59,7 +62,7 @@ void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
                                              TConstObjectPtr key,
                                              TConstObjectPtr value) const
 {
-    CObjectOStream::Block block(out, 2);
+    CObjectOStream::Block block(out, size_t(2));
     block.Next();
     {
         CObjectOStream::Member m(out, CMemberId(1));

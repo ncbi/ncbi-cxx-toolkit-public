@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/13 20:54:05  vasilche
+* Fixed minor bugs.
+*
 * Revision 1.9  1999/07/13 20:18:15  vasilche
 * Changed types naming.
 *
@@ -123,7 +126,7 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
-#ifndef BSNew
+#ifndef WINDOWS
 static inline
 bsunit* BSUnitNew(size_t size)
 {
@@ -546,9 +549,8 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
 {
     bytestore* bs1 = Get(obj1);
     bytestore* bs2 = Get(obj2);
-    if ( bs1 == 0 || bs2 == 0 ) {
-        THROW1_TRACE(runtime_error, "null bytestore pointer");
-    }
+    if ( bs1 == 0 || bs2 == 0 )
+		return bs1 == bs2;
 
     if ( bs1->totlen != bs2->totlen )
         return false;
