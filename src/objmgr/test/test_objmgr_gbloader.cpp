@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/26 15:40:31  kimelman
+* get rid of catch clause
+*
 * Revision 1.7  2002/03/26 00:15:52  vakatov
 * minor beautification
 *
@@ -108,23 +111,15 @@ int CTestApplication::Run()
         CSeq_id x;
         x.SetGi(i);
         CObjectOStreamAsn oos(NcbiCout);
-        try {
-            CBioseq_Handle h = scope.GetBioseqHandle(x);
-            if ( !h ) {
-                LOG_POST("Gi (" << i << "):: not found in ID");
-            } else {
-                iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
-                    //oos << **it;
-                    //NcbiCout << NcbiEndl;
-                    ;
-                }
-            }
-        }
-        catch (exception& e) {
-            LOG_POST("TROUBLE(" << i << "):: " << e.what());
-            ecount++;
-            if (ecount > 20)
-                break;
+        CBioseq_Handle h = scope.GetBioseqHandle(x);
+        if ( !h ) {
+            LOG_POST("Gi (" << i << "):: not found in ID");
+        } else {
+           iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
+               //oos << **it;
+               //NcbiCout << NcbiEndl;
+               ;
+           }
         }
         NcbiCout << NcbiEndl;
         i++;
