@@ -105,19 +105,27 @@ bool CException::sm_BkgrEnabled=true;
 CException::CException(const char* file, int line,
     const CException* prev_exception,
     EErrCode err_code, const string& message) throw()
-    :   m_File(file),
-        m_Line(line),
-        m_ErrCode(err_code),
-        m_Msg(message),
+    :   m_ErrCode(err_code),
         m_InReporter(false)
 {
-    m_Predecessor = prev_exception ? prev_exception->x_Clone() : 0;
+    m_Predecessor = 0;
+    x_Init(file,line,message,prev_exception);
 }
 
 
 CException::CException(const CException& other) throw()
 {
+    m_Predecessor = 0;
     x_Assign(other);
+}
+
+CException::CException(void) throw()
+{
+// this only is called in case of multiple inheritance
+    m_ErrCode = CException::eInvalid;
+    m_Predecessor = 0;
+    m_InReporter = false;
+    m_Line = -1;
 }
 
 
@@ -137,9 +145,7 @@ void CException::AddBacklog(const char* file,int line,
     if (prev) {
         delete prev;
     }
-    m_File = file;
-    m_Line = line;
-    m_Msg = message;
+    x_Init(file,line,message,0);
 }
 
 
@@ -159,7 +165,8 @@ void CException::Report(const char* file, int line,
     if (reporter ) {
         reporter->Report(file, line, title, *this);
     }
-    // unconditionally ...
+    // unconditionally ... 
+    // that is, there will be two reports
     CExceptionReporter::ReportDefault(file, line, title, *this);
 }
 
@@ -258,13 +265,22 @@ const CException* CException::x_Clone(void) const
 }
 
 
+void CException::x_Init(const string& file,int line,const string& message,
+                        const CException* prev_exception)
+{
+    m_File = file;
+    m_Line = line;
+    m_Msg  = message;
+    if (!m_Predecessor && prev_exception) {
+        m_Predecessor = prev_exception->x_Clone();
+    }
+}
+
+
 void CException::x_Assign(const CException& src)
 {
-    m_File    = src.m_File;
-    m_Line    = src.m_Line;
-    m_Msg     = src.m_Msg;
-    m_Predecessor =
-        src.m_Predecessor ? src.m_Predecessor->x_Clone() : 0;
+    m_InReporter = false;
+    x_Init(src.m_File, src.m_Line, src.m_Msg, src.m_Predecessor);
     x_AssignErrCode(src);
 }
 
@@ -399,14 +415,17 @@ CErrnoException::CErrnoException(const char* file,int line,
         message + ": " + ::strerror(errno)),
     m_Errno(errno)
 {
+// the call to x_Init is required in case of multiple inheritance
+    x_Init(file,line,message + ": " + ::strerror(errno), prev_exception);
     x_InitErrCode((CException::EErrCode) err_code);
 }
 
 CErrnoException::CErrnoException(const CErrnoException& other) throw()
     : CException(other)
 {
-    x_AssignErrCode(other);
     m_Errno = other.m_Errno;
+// the call to x_Assign is required in case of multiple inheritance
+    x_Assign(other);
 }
 
 // for backward compatibility
@@ -415,6 +434,11 @@ CErrnoException::CErrnoException(const string& message) throw()
         (CException::EErrCode) CException::eInvalid,
         message + ": " + ::strerror(errno)),
     m_Errno(errno)
+{
+}
+
+CErrnoException::CErrnoException(void) throw()
+    :   m_Errno(errno)
 {
 }
 
@@ -476,14 +500,17 @@ CParseException::CParseException(const char* file,int line,
         s_ComposeParse(message,pos)),
     m_Pos(pos)
 {
+// the call to x_Init is required in case of multiple inheritance
+    x_Init(file,line,s_ComposeParse(message,pos),prev_exception);
     x_InitErrCode((CException::EErrCode) err_code);
 }
 
 CParseException::CParseException(const CParseException& other) throw()
     : CException(other)
 {
-    x_AssignErrCode(other);
     m_Pos = other.m_Pos;
+// the call to x_Assign is required in case of multiple inheritance
+    x_Assign(other);
 }
 
 // for backward compatibility
@@ -493,6 +520,11 @@ CParseException::CParseException(const string& message,
         (CException::EErrCode) CException::eInvalid,
         s_ComposeParse(message,pos)),
     m_Pos(pos)
+{
+}
+
+CParseException::CParseException(void) throw()
+    : m_Pos(string::npos)
 {
 }
 
@@ -541,8 +573,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.25  2002/07/16 16:26:38  gouriano
- * added backward-compatibility constructors to CErrnoException and CParseException
+ * Revision 1.26  2002/07/29 19:29:42  gouriano
+ * changes to allow multiple inheritance in CException classes
  *
  * Revision 1.24  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents

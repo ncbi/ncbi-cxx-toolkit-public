@@ -344,12 +344,18 @@ public:
     virtual ~CException(void) throw();
 
 protected:
+    // Required in case of multiple inheritance
+    CException(void) throw();
+
     // Report to the system debugger
     void x_ReportToDebugger(void) const;
 
     // Clone the exception
     virtual const CException* x_Clone(void) const;
 
+    // Init exception data
+    void x_Init(const string& file,int line,const string& message,
+                const CException* prev_exception);
     // Copy exception data
     void x_Assign(const CException& src);
 
@@ -370,8 +376,7 @@ private:
     mutable bool m_InReporter;
     static bool sm_BkgrEnabled;
 
-    // Prohibit default constructor and assignment
-    CException(void);
+    // Prohibit assignment
     CException& operator= (const CException&) throw();
 };
 
@@ -385,18 +390,9 @@ const TTo* UppermostCast(const TFrom& from)
     return typeid(from) == typeid(TTo) ? dynamic_cast<const TTo*>(&from) : 0;
 }
 
+// helper macro - to be used in NCBI_EXCEPTION_DEFAULT below
 
-// Macro to help declare new exception class
-// This can be used ONLY if the derived class
-// does not have any additional (non-standard) data members
-#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
-public: \
-    exception_class(const char* file,int line, \
-        const CException* prev_exception, \
-        EErrCode err_code,const string& message) throw() \
-        : base_class(file, line, prev_exception, \
-            (base_class::EErrCode) CException::eInvalid, \
-            (message)) \
+#define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
     { \
         x_InitErrCode((CException::EErrCode) err_code); \
     } \
@@ -414,6 +410,7 @@ public: \
             (exception_class::EErrCode) CException::eInvalid; \
     } \
 protected: \
+    exception_class(void) throw() {} \
     virtual const CException* x_Clone(void) const \
     { \
         return new exception_class(*this); \
@@ -423,6 +420,30 @@ private: \
     static void xx_unused_##exception_class(void)
 
 
+// Macro to help declare new exception class
+// This can be used ONLY if the derived class
+// does not have any additional (non-standard) data members
+
+#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
+public: \
+    exception_class(const char* file,int line, \
+        const CException* prev_exception, \
+        EErrCode err_code,const string& message) throw() \
+        : base_class(file, line, prev_exception, \
+            (base_class::EErrCode) CException::eInvalid, (message)) \
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
+
+
+// GCC compiler v.2.95 has a bug:
+// one should not use virtual base class in exception declarations -
+// a program crashes when deleting such an exception
+// (this is fixed in newer versions of the compiler)
+
+#if defined(NCBI_COMPILER_GCC)
+#  if NCBI_COMPILER_VERSION <= 299
+#    define EXCEPTION_BUG_WORKAROUND
+#  endif
+#endif
 
 
 
@@ -482,7 +503,11 @@ private:
 // CCoreException - corelib exceptions
 
 
+#if defined(EXCEPTION_BUG_WORKAROUND)
 class CCoreException : public CException
+#else
+class CCoreException : virtual public CException
+#endif
 {
 public:
     enum EErrCode {
@@ -509,7 +534,11 @@ public:
 //
 
 
+#if defined(EXCEPTION_BUG_WORKAROUND)
 class CErrnoException : public CException
+#else
+class CErrnoException : virtual public CException
+#endif
 {
 public:
 
@@ -540,6 +569,7 @@ public:
     int GetErrno(void) const throw() { return m_Errno; }
 
 protected:
+    CErrnoException(void) throw();
     virtual const CException* x_Clone(void) const;
 
 private:
@@ -548,7 +578,11 @@ private:
 
 
 
+#if defined(EXCEPTION_BUG_WORKAROUND)
 class CParseException : public CException
+#else
+class CParseException : virtual public CException
+#endif
 {
 public:
 
@@ -583,6 +617,7 @@ public:
     string::size_type GetPos(void) const throw() { return m_Pos; }
 
 protected:
+    CParseException(void) throw();
     virtual const CException* x_Clone(void) const;
 
 private:
@@ -590,7 +625,7 @@ private:
 };
 
 
-// To throw exceptions with one more parameter (e.g. CParseException)
+// To throw exceptions with one additional parameter (e.g. CParseException)
 
 #define NCBI_THROW2(exception_class, err_code, message, extra) \
     throw exception_class(__FILE__, __LINE__, \
@@ -601,6 +636,21 @@ private:
         &(prev_exception), exception_class::err_code, (message), (extra))
 
 
+// To define exceptions with one additional parameter
+// (e.g. derived from CParseException)
+
+#define NCBI_EXCEPTION_DEFAULT2(exception_class, base_class, \
+                                extra_type, extra_param) \
+public: \
+    exception_class(const char* file,int line, \
+        const CException* prev_exception, \
+        EErrCode err_code,const string& message, \
+        extra_type extra_param) throw() \
+        : base_class(file, line, prev_exception, \
+            (base_class::EErrCode) CException::eInvalid, \
+            (message), extra_param) \
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
+
 
 END_NCBI_SCOPE
 
@@ -608,8 +658,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.34  2002/07/16 16:27:36  gouriano
- * added backward-compatibility constructors to CErrnoException and CParseException
+ * Revision 1.35  2002/07/29 19:30:43  gouriano
+ * changes to allow multiple inheritance in CException classes
  *
  * Revision 1.33  2002/07/15 18:17:51  gouriano
  * renamed CNcbiException and its descendents
