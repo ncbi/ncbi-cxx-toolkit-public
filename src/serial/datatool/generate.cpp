@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/09/30 19:16:10  gouriano
+* changed location of "*.files" and "combining" files to CPP dir
+*
 * Revision 1.39  2001/12/07 18:56:51  grichenk
 * Paths in "#include"-s made system-independent
 *
@@ -338,7 +341,8 @@ void CCodeGenerator::GenerateCode(void)
     }
 
     if ( !m_FileListFileName.empty() ) {
-        CNcbiOfstream fileList(m_FileListFileName.c_str());
+        string fileName(Path(m_CPPDir,m_FileListFileName));
+        CNcbiOfstream fileList(fileName.c_str());
         if ( !fileList ) {
             ERR_POST(Fatal <<
                      "cannot create file list file: " << m_FileListFileName);
@@ -365,7 +369,7 @@ void CCodeGenerator::GenerateCode(void)
         for ( int i = 0; i < 2; ++i ) {
             const char* suffix = i? "_.cpp": ".cpp";
             string fileName = m_CombiningFileName + "__" + suffix;
-            
+            fileName = Path(m_CPPDir,fileName);
             CDelayedOfstream out(fileName);
             if ( !out )
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
