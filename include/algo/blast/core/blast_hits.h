@@ -55,6 +55,7 @@ typedef struct BlastSeg {
 typedef struct BlastHSP {
    Int4 score;         /**< This HSP's raw score */
    Int4 num_ident;         /**< Number of identical base pairs in this HSP */
+   double bit_score;     /**< Bit score, calculated from score */
    double evalue;        /**< This HSP's e-value */
    BlastSeg query;            /**< Query sequence info. */
    BlastSeg subject;          /**< Subject sequence info. */
@@ -279,6 +280,14 @@ Int2 Blast_HSPListGetEvalues(Uint1 program, BlastQueryInfo* query_info,
  * @param sbp Scoring block with statistical parameters [in]
  */
 void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
+
+/** Calculate bit scores from raw scores in an HSP list.
+ * @param hsp_list List of HSPs [in] [out]
+ * @param gapped_calculation Is this a gapped search? [in]
+ * @param sbp Scoring block with statistical parameters [in]
+ */
+Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list, 
+                               Boolean gapped_calculation, BlastScoreBlk* sbp);
 
 /** Discard the HSPs above the e-value threshold from the HSP list 
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
