@@ -1,4 +1,4 @@
---$Revision: 1.14 $
+--$Revision: 1.15 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -103,8 +103,8 @@ GIBB-method ::= ENUMERATED {        -- sequencing methods
     concept-trans (1) ,    -- conceptual translation
     seq-pept (2) ,         -- peptide was sequenced
     both (3) ,             -- concept transl. w/ partial pept. seq.
-	seq-pept-homol (4) ,   -- sequenced peptide, ordered by homology
-	seq-pept-overlap (5) , -- sequenced peptide, ordered by overlap
+	seq-pept-overlap (4) , -- sequenced peptide, ordered by overlap
+	seq-pept-homol (5) ,   -- sequenced peptide, ordered by homology
 	concept-trans-a (6) ,  -- conceptual transl. supplied by author
     other (255) }
     
