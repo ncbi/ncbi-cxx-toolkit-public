@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.21  2000/12/26 22:23:45  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -124,7 +127,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <serial/exception.hpp>
 #include <string.h>
 
 BEGIN_NCBI_SCOPE
@@ -135,6 +137,22 @@ class CSubSourceCollector;
 
 #define THROWS1(arg)
 #define THROWS1_NONE
+
+// this exception is thrown when IO error occured in serialization
+class CIOException : public runtime_error
+{
+public:
+    CIOException(const string& msg) THROWS_NONE;
+    ~CIOException(void) THROWS_NONE;
+};
+
+// this exception is thrown when unexpected end of file found
+class CEofException : public CIOException
+{
+public:
+    CEofException(void) THROWS_NONE;
+    ~CEofException(void) THROWS_NONE;
+};
 
 class CIStreamBuffer
 {
@@ -151,10 +169,10 @@ public:
     void Close(void);
 
     char PeekChar(size_t offset = 0)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     char PeekCharNoEOF(size_t offset = 0);
     char GetChar(void)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     // precondition: GetChar or SkipChar was last method called
     void UngetChar(char c);
     // precondition: PeekChar(c) was called when c >= count
@@ -164,30 +182,30 @@ public:
 
     // read chars in buffer
     void GetChars(char* buffer, size_t count)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     // skip chars which may not be in buffer
     void GetChars(size_t count)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
 
     // precondition: last char extracted was either '\r' or '\n'
     // action: inctement line count and
     //         extract next complimentary '\r' or '\n' char if any
     void SkipEndOfLine(char lastChar)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     // action: skip all spaces (' ') and return next non space char
     //         without extracting it
     char SkipSpaces(void)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
 
     // find specified symbol and set position on it
     void FindChar(char c)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     // find specified symbol without skipping
     // limit - search by 'limit' symbols
     // return relative offset of symbol from current position
     //     (limit if not found)
     size_t PeekFindChar(char c, size_t limit)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
 
     const char* GetCurrentPos(void) const THROWS1_NONE;
 
@@ -197,16 +215,16 @@ public:
     
     // action: read in buffer up to end of line
     size_t ReadLine(char* buff, size_t size)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
 
     Int4 GetInt4(void)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     Uint4 GetUint4(void)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     Int8 GetInt8(void)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     Uint8 GetUint8(void)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
 
     void StartSubSource(void);
     CRef<CByteSource> EndSubSource(void);
@@ -215,9 +233,9 @@ protected:
     // action: fill buffer so *pos char is valid
     // return: new value of pos pointer if buffer content was shifted
     char* FillBuffer(char* pos, bool noEOF = false)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     char FillBufferNoEOF(char* pos)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void BadNumber(void);
 
@@ -242,7 +260,7 @@ class COStreamBuffer
 public:
     COStreamBuffer(CNcbiOstream& out, bool deleteOut = false)
         THROWS1((bad_alloc));
-    ~COStreamBuffer(void) THROWS1((CSerialIOException));
+    ~COStreamBuffer(void) THROWS1((CIOException));
 
     bool fail(void) const;
     void ResetFail(void);
@@ -263,66 +281,66 @@ public:
 
     void SetBackLimit(size_t limit);
 
-    void FlushBuffer(bool fullBuffer = true) THROWS1((CSerialIOException));
-    void Flush(void) THROWS1((CSerialIOException));
+    void FlushBuffer(bool fullBuffer = true) THROWS1((CIOException));
+    void Flush(void) THROWS1((CIOException));
 
 protected:
     // flush contents of buffer to underlying stream
     // make sure 'reserve' char area is available in buffer
     // return beginning of area
     char* DoReserve(size_t reserve = 0)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     // flush contents of buffer to underlying stream
     // make sure 'reserve' char area is available in buffer
     // skip 'reserve' chars
     // return beginning of skipped area
     char* DoSkip(size_t reserve)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     // allocates count bytes area in buffer and skip this area
     // returns beginning of this area
     char* Skip(size_t count)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     char* Reserve(size_t count)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
 public:
     void PutChar(char c)
-        THROWS1((CSerialIOException));
+        THROWS1((CIOException));
     void BackChar(char c);
 
     void PutString(const char* str, size_t length)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     void PutString(const char* str)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     void PutString(const string& str)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void PutIndent(void)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void PutEol(bool indent = true)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void PutEolAtWordEnd(size_t lineLength)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void WrapAt(size_t lineLength, bool keepWord)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void PutInt4(Int4 v)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     void PutUint4(Uint4 v)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     void PutInt8(Int8 v)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     void PutUint8(Uint8 v)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
     void Write(const char* data, size_t dataLength)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
     void Write(const CRef<CByteSourceReader>& reader)
-        THROWS1((CSerialIOException, bad_alloc));
+        THROWS1((CIOException, bad_alloc));
 
 private:
     CNcbiOstream& m_Output;
@@ -345,7 +363,7 @@ private:
     size_t m_BackLimit;
 };
 
-#include <serial/strbuffer.inl>
+#include <util/strbuffer.inl>
 
 END_NCBI_SCOPE
 

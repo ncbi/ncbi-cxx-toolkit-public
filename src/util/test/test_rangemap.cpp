@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/05 20:09:13  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.5  2001/01/05 15:49:52  vasilche
 * Fixed warning.
 *
@@ -56,7 +59,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <objects/objmgr/rangemap.hpp>
+#include <util/rangemap.hpp>
 #include <stdlib.h>
 
 BEGIN_NCBI_SCOPE

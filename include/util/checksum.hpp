@@ -29,10 +29,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   CRC32 calculation class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/05 20:08:52  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.1  2000/11/22 16:26:21  vasilche
 * Added generation/checking of checksum to user files.
 *
@@ -50,6 +53,9 @@ public:
         eNone,             // no checksum in file
         eCRC32,            // CRC32
         eDefault = eCRC32
+    };
+    enum {
+        kMinimumChecksumLength = 20
     };
 
     CChecksum(EMethod method = eDefault);
@@ -75,13 +81,11 @@ private:
     size_t m_LineCount;
     size_t m_CharCount;
     EMethod m_Method;
-    typedef unsigned TInt32;
-    TInt32 m_Checksum;
+    Uint4 m_Checksum;
 
-    static TInt32 sm_CRC32Table[256];
+    static Uint4 sm_CRC32Table[256];
     static void InitTables(void);
-    static TInt32 UpdateCRC32(TInt32 checksum,
-                              const char* str, size_t length);
+    static Uint4 UpdateCRC32(Uint4 checksum, const char* str, size_t length);
 
     bool ValidChecksumLineLong(const char* line, size_t length) const;
 };
@@ -89,7 +93,7 @@ private:
 inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
 
-#include <serial/datatool/checksum.inl>
+#include <util/checksum.inl>
 
 END_NCBI_SCOPE
 

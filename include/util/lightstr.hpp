@@ -29,10 +29,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   CLightString - class with "light" strings: char pointer + string length
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/01/05 20:08:52  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.3  2000/07/03 18:42:34  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -150,7 +153,7 @@ private:
     size_t m_Length;
 };
 
-//#include <serial/lightstr.inl>
+//#include <util/lightstr.inl>
 
 END_NCBI_SCOPE
 

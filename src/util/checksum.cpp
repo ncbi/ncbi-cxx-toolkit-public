@@ -26,10 +26,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   CRC32 calculation class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/05 20:09:05  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.1  2000/11/22 16:26:29  vasilche
 * Added generation/checking of checksum to user files.
 *
@@ -37,13 +40,13 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/datatool/checksum.hpp>
+#include <util/checksum.hpp>
 
 BEGIN_NCBI_SCOPE
 
-static const char sx_Start[] =
-    // this MUST begin with "/* O" (see ValidChecksumLine in checksum.inl)
-    "/* Original file checksum: ";
+// sx_Start MUST begin with "/* O" (see ValidChecksumLine() in checksum.inl)
+static const char sx_Start[] = "/* Original file checksum: ";
+
 static const char sx_End[] = " */";
 static const char sx_LineCount[] = "lines: ";
 static const char sx_CharCount[] = "chars: ";
@@ -110,13 +113,13 @@ void CChecksum::NextLine(void)
 //  x^32+x^26+x^23+x^22+x^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x^1+x^0
 #define CRC32_POLYNOM 0x04c11db7
 
-CChecksum::TInt32 CChecksum::sm_CRC32Table[256];
+Uint4 CChecksum::sm_CRC32Table[256];
 
 void CChecksum::InitTables(void)
 {
     if ( sm_CRC32Table[0] == 0 ) {
         for ( size_t i = 0;  i < 256;  ++i ) {
-            TInt32 byteCRC = TInt32(i) << 24;
+            Uint4 byteCRC = Uint4(i) << 24;
             for ( int j = 0;  j < 8;  ++j ) {
                 if ( byteCRC & 0x80000000L )
                     byteCRC = (byteCRC << 1) ^ CRC32_POLYNOM;
@@ -128,8 +131,7 @@ void CChecksum::InitTables(void)
     }
 }
 
-CChecksum::TInt32 CChecksum::UpdateCRC32(TInt32 checksum,
-                                         const char *str, size_t count)
+Uint4 CChecksum::UpdateCRC32(Uint4 checksum, const char *str, size_t count)
 {
     for ( size_t j = 0;  j < count;  ++j ) {
         size_t tableIndex = (int(checksum >> 24) ^ *str++) & 0xff;
@@ -137,4 +139,5 @@ CChecksum::TInt32 CChecksum::UpdateCRC32(TInt32 checksum,
     }
     return checksum;
 }
+
 END_NCBI_SCOPE

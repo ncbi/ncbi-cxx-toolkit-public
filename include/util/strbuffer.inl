@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.1  2000/12/26 22:23:45  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -59,7 +62,7 @@ const char* CIStreamBuffer::GetError(void) const
 
 inline
 char CIStreamBuffer::PeekChar(size_t offset)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = m_CurrentPos + offset;
     if ( pos >= m_DataEndPos )
@@ -69,7 +72,7 @@ char CIStreamBuffer::PeekChar(size_t offset)
 
 inline
 char CIStreamBuffer::PeekCharNoEOF(size_t offset)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = m_CurrentPos + offset;
     if ( pos >= m_DataEndPos )
@@ -79,7 +82,7 @@ char CIStreamBuffer::PeekCharNoEOF(size_t offset)
 
 inline
 char CIStreamBuffer::GetChar(void)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = m_CurrentPos;
     if ( pos >= m_DataEndPos )
@@ -208,7 +211,7 @@ void COStreamBuffer::SetBackLimit(size_t limit)
 
 inline
 char* COStreamBuffer::DoSkip(size_t reserve)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = DoReserve(reserve);
     m_CurrentPos = pos + reserve;
@@ -218,7 +221,7 @@ char* COStreamBuffer::DoSkip(size_t reserve)
 
 inline
 char* COStreamBuffer::Skip(size_t count)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = m_CurrentPos;
     char* end = pos + count;
@@ -235,7 +238,7 @@ char* COStreamBuffer::Skip(size_t count)
 
 inline
 char* COStreamBuffer::Reserve(size_t count)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = m_CurrentPos;
     char* end = pos + count;
@@ -250,7 +253,7 @@ char* COStreamBuffer::Reserve(size_t count)
 
 inline
 void COStreamBuffer::PutChar(char c)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     *Skip(1) = c;
 }
@@ -265,7 +268,7 @@ void COStreamBuffer::BackChar(char _DEBUG_ARG(c))
 
 inline
 void COStreamBuffer::PutString(const char* str, size_t length)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     if ( length < 1024 ) {
         memcpy(Skip(length), str, length);
@@ -277,21 +280,21 @@ void COStreamBuffer::PutString(const char* str, size_t length)
 
 inline
 void COStreamBuffer::PutString(const char* str)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     PutString(str, strlen(str));
 }
 
 inline
 void COStreamBuffer::PutString(const string& str)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     PutString(str.data(), str.size());
 }
 
 inline
 void COStreamBuffer::PutIndent(void)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     size_t count = m_IndentLevel;
     memset(Skip(count), ' ', count);
@@ -299,7 +302,7 @@ void COStreamBuffer::PutIndent(void)
 
 inline
 void COStreamBuffer::PutEol(bool indent)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     char* pos = Reserve(1);
     *pos = '\n';
@@ -312,7 +315,7 @@ void COStreamBuffer::PutEol(bool indent)
 
 inline
 void COStreamBuffer::WrapAt(size_t lineLength, bool keepWord)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     if ( keepWord ) {
         if ( GetCurrentLineLength() > lineLength )

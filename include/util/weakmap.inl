@@ -29,10 +29,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Inline methods for classes defined in weakmap.hpp
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/05 20:08:54  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.5  2000/12/26 22:23:46  vasilche
 * Fixed errors of compilation on Mac.
 *

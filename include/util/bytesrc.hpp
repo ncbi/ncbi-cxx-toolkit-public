@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/05 20:08:52  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.5  2000/11/01 20:35:27  vasilche
 * Removed ECanDelete enum and related constructors.
 *
@@ -55,7 +58,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -309,7 +311,7 @@ private:
     TFileOff m_Length;
 };
 
-//#include <serial/bytesrc.inl>
+//#include <util/bytesrc.inl>
 
 END_NCBI_SCOPE
 

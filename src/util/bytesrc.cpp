@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/01/05 20:09:05  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.7  2000/11/01 20:38:37  vasilche
 * Removed ECanDelete enum and related constructors.
 *
@@ -59,7 +62,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/bytesrc.hpp>
+#include <util/bytesrc.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE

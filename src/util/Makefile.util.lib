@@ -1,0 +1,5 @@
+# $Id$
+
+LIBOBJ = checksum bytesrc strbuffer
+
+LIB    = xutil

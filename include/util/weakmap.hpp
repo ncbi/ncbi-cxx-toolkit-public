@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.2  2000/10/13 16:28:34  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -145,7 +148,7 @@ private:
     TMap m_Map;
 };
 
-#include <serial/weakmap.inl>
+#include <util/weakmap.inl>
 
 END_NCBI_SCOPE
 

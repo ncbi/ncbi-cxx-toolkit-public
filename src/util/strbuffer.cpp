@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/01/05 20:09:05  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.21  2000/12/15 15:38:46  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -126,10 +129,9 @@
 */
 
 #include <corelib/ncbistre.hpp>
-#include <serial/strbuffer.hpp>
-#include <serial/bytesrc.hpp>
-#include <limits.h>
-#include <ctype.h>
+#include <corelib/ncbi_limits.hpp>
+#include <util/strbuffer.hpp>
+#include <util/bytesrc.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -201,7 +203,7 @@ CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
 
 // this method is highly optimized
 char CIStreamBuffer::SkipSpaces(void)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     // cache pointers
     char* pos = m_CurrentPos;
@@ -244,7 +246,7 @@ char CIStreamBuffer::SkipSpaces(void)
 
 // this method is highly optimized
 void CIStreamBuffer::FindChar(char c)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     // cache pointers
     char* pos = m_CurrentPos;
@@ -278,7 +280,7 @@ void CIStreamBuffer::FindChar(char c)
 
 // this method is highly optimized
 size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     _ASSERT(limit > 0);
     PeekCharNoEOF(limit - 1);
@@ -295,7 +297,7 @@ size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
 }
 
 char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
@@ -353,11 +355,11 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                     return pos;
                 }
                 m_Error = "end of file";
-                THROW0_TRACE(CSerialEofException());
+                THROW0_TRACE(CEofException());
             }
             else {
                 m_Error = "read fault";
-                THROW1_TRACE(CSerialIOException, "read fault");
+                THROW1_TRACE(CIOException, "read fault");
             }
         }
         m_DataEndPos += count;
@@ -372,7 +374,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
 }
 
 char CIStreamBuffer::FillBufferNoEOF(char* pos)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     pos = FillBuffer(pos, true);
     if ( pos >= m_DataEndPos )
@@ -382,7 +384,7 @@ char CIStreamBuffer::FillBufferNoEOF(char* pos)
 }
 
 void CIStreamBuffer::GetChars(char* buffer, size_t count)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     // cache pos
     char* pos = m_CurrentPos;
@@ -405,7 +407,7 @@ void CIStreamBuffer::GetChars(char* buffer, size_t count)
 }
 
 void CIStreamBuffer::GetChars(size_t count)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     // cache pos
     char* pos = m_CurrentPos;
@@ -425,7 +427,7 @@ void CIStreamBuffer::GetChars(size_t count)
 }
 
 void CIStreamBuffer::SkipEndOfLine(char lastChar)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     _ASSERT(lastChar == '\n' || lastChar == '\r');
     _ASSERT(m_CurrentPos > m_Buffer && m_CurrentPos[-1] == lastChar);
@@ -434,7 +436,7 @@ void CIStreamBuffer::SkipEndOfLine(char lastChar)
     try {
         nextChar = PeekChar();
     }
-    catch ( CSerialEofException& /* ignored */ ) {
+    catch ( CEofException& /* ignored */ ) {
         return;
     }
     // lastChar either '\r' or \n'
@@ -444,7 +446,7 @@ void CIStreamBuffer::SkipEndOfLine(char lastChar)
 }
 
 size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     size_t count = 0;
     try {
@@ -467,7 +469,7 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
         }
         return count;
     }
-    catch ( CSerialEofException& /*ignored*/ ) {
+    catch ( CEofException& /*ignored*/ ) {
         return count;
     }
 }
@@ -536,7 +538,7 @@ Uint4 CIStreamBuffer::GetUint4(void)
 }
 
 Int8 CIStreamBuffer::GetInt8(void)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     bool sign;
     char c = GetChar();
@@ -573,7 +575,7 @@ Int8 CIStreamBuffer::GetInt8(void)
 }
 
 Uint8 CIStreamBuffer::GetUint8(void)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     char c = GetChar();
     if ( c == '+' )
@@ -607,7 +609,7 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
 }
 
 COStreamBuffer::~COStreamBuffer(void)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     Close();
     delete[] m_Buffer;
@@ -627,7 +629,7 @@ void COStreamBuffer::Close(void)
 }
 
 void COStreamBuffer::FlushBuffer(bool fullBuffer)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     size_t used = GetUsedSpace();
     size_t count;
@@ -645,7 +647,7 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
     if ( count != 0 ) {
         if ( !m_Output.write(m_Buffer, count) ) {
             m_Error = "write fault";
-            THROW1_TRACE(CSerialIOException, "write fault");
+            THROW1_TRACE(CIOException, "write fault");
         }
         if ( leave != 0 ) {
             memmove(m_Buffer, m_Buffer + count, leave);
@@ -659,15 +661,15 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
 }
 
 void COStreamBuffer::Flush(void)
-    THROWS1((CSerialIOException))
+    THROWS1((CIOException))
 {
     FlushBuffer();
     if ( !m_Output.flush() )
-        THROW1_TRACE(CSerialIOException, "write fault");
+        THROW1_TRACE(CIOException, "write fault");
 }
 
 char* COStreamBuffer::DoReserve(size_t count)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     FlushBuffer(false);
     size_t usedSize = m_CurrentPos - m_Buffer;
@@ -696,7 +698,7 @@ char* COStreamBuffer::DoReserve(size_t count)
 }
 
 void COStreamBuffer::PutInt4(Int4 v)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
@@ -721,7 +723,7 @@ void COStreamBuffer::PutInt4(Int4 v)
 }
 
 void COStreamBuffer::PutUint4(Uint4 v)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
@@ -739,7 +741,7 @@ void COStreamBuffer::PutUint4(Uint4 v)
 }
 
 void COStreamBuffer::PutInt8(Int8 v)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
@@ -764,7 +766,7 @@ void COStreamBuffer::PutInt8(Int8 v)
 }
 
 void COStreamBuffer::PutUint8(Uint8 v)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
@@ -782,7 +784,7 @@ void COStreamBuffer::PutUint8(Uint8 v)
 }
 
 void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     Reserve(1);
     size_t linePos = m_LineLength;
@@ -830,7 +832,7 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
 }
 
 void COStreamBuffer::Write(const char* data, size_t dataLength)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     while ( dataLength > 0 ) {
         size_t available = GetFreeSpace();
@@ -850,7 +852,7 @@ void COStreamBuffer::Write(const char* data, size_t dataLength)
 }
 
 void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
-    THROWS1((CSerialIOException, bad_alloc))
+    THROWS1((CIOException, bad_alloc))
 {
     for ( ;; ) {
         size_t available = GetFreeSpace();
@@ -863,10 +865,28 @@ void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
             if ( reader->EndOfData() )
                 return;
             else
-                THROW1_TRACE(CSerialIOException, "buffer read fault");
+                THROW1_TRACE(CIOException, "buffer read fault");
         }
         m_CurrentPos += count;
     }
+}
+
+CIOException::CIOException(const string& msg) THROWS_NONE
+    : runtime_error(msg)
+{
+}
+
+CIOException::~CIOException(void) THROWS_NONE
+{
+}
+
+CEofException::CEofException(void) THROWS_NONE
+    : CIOException("end of file")
+{
+}
+
+CEofException::~CEofException(void) THROWS_NONE
+{
 }
 
 END_NCBI_SCOPE

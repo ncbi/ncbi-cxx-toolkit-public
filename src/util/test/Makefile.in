@@ -3,7 +3,7 @@
 # Meta-makefile("CACHE" project)
 #################################
 
-APP_PROJ = testrange test
+APP_PROJ = testrange
 SUB_PROJ = 
 
 srcdir = @srcdir@

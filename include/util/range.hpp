@@ -29,10 +29,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   CRange<> class represents interval
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.2  2001/01/03 17:24:52  vasilche
 * Fixed typo.
 *
@@ -44,22 +47,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-
-#if NCBI_COMPILER_GCC
-// for incomplete STL
-template<typename Num> class numeric_limits;
-#include <limits.h>
-
-template<>
-class numeric_limits<int>
-{
-public:
-    static int min() { return INT_MIN; }
-    static int max() { return INT_MAX; }
-};
-#else
-#include <limits>
-#endif
+#include <corelib/ncbi_limits.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -290,7 +278,7 @@ private:
     position_type m_From, m_To;
 };
 
-//#include <objects/objmgr/range.inl>
+//#include <util/range.inl>
 
 END_NCBI_SCOPE
 

@@ -8,4 +8,4 @@
 
 APP = testrangemap
 OBJ = testrangemap
-LIB = xncbi
+LIB = xutil xncbi

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.7  2001/01/05 16:29:02  vasilche
 * Fixed incompatibility with MIPS C++ compiler.
 *
@@ -60,7 +63,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/objmgr/range.hpp>
+#include <util/range.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -715,7 +718,7 @@ private:
     size_type m_ElementCount; // count of elements
 };
 
-//#include <objects/objmgr/rangemap.inl>
+//#include <util/rangemap.inl>
 
 END_NCBI_SCOPE
 

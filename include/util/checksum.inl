@@ -29,10 +29,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   CRC32 calculation inline methods
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/05 20:08:52  vasilche
+* Added util directory for various algorithms and utility classes.
+*
 * Revision 1.1  2000/11/22 16:26:22  vasilche
 * Added generation/checking of checksum to user files.
 *
@@ -73,9 +76,9 @@ void CChecksum::AddLine(const string& line)
 inline
 bool CChecksum::ValidChecksumLine(const char* line, size_t length) const
 {
-    return length > 20 && // minimum checksum length
+    return length > kMinimumChecksumLength &&
         line[0] == '/' && line[1] == '*' && // first four letter of checksum
-        line[2] == ' ' && line[3] == 'O' &&
+        line[2] == ' ' && line[3] == 'O' && // see sx_Start in checksum.cpp
         ValidChecksumLineLong(line, length); // complete check
 }
 
