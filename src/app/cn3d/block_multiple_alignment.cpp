@@ -288,8 +288,10 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
 
 bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock)
 {
-    blocks.push_back(newBlock);
-    return CheckAlignedBlock(newBlock);
+	bool okay = CheckAlignedBlock(newBlock);
+    if (okay)
+		blocks.push_back(newBlock);
+    return okay;
 }
 
 UnalignedBlock * BlockMultipleAlignment::
@@ -1964,6 +1966,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2005/01/28 21:31:02  thiessen
+* don't add block if validation fails
+*
 * Revision 1.64  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *
