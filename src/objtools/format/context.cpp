@@ -479,14 +479,16 @@ const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
         return *m_PrimaryId;
     }
 
-    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandle(id);
-    if ( h == m_Handle ) {
-        return *m_PrimaryId;
-    } else if ( h  &&  h.GetSeqId().NotEmpty() ) {
-        return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
-    } else {
-        return id;
+    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandleFromTSE(id, m_Handle);
+    if ( h ) {
+        if ( h == m_Handle ) {
+            return *m_PrimaryId;
+        } else if ( h.GetSeqId().NotEmpty() ) {
+            return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
+        }
     }
+
+    return id;
 }
 
 
@@ -548,11 +550,11 @@ bool CBioseqContext::x_IsDeltaLitOnly(const CBioseq& seq)
 //
 // Flags
 CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
-    m_HideImpFeat((flags & fHideImportedFeatures) != 0),
-    m_HideSnpFeat((flags & fHideSNPFeatures) != 0),
-    m_HideExonFeat((flags & fHideExonFeatures) != 0),
-    m_HideIntronFeat((flags & fHideIntronFeatures) != 0),
-    m_HideRemImpFeat((flags & fHideRemoteImpFeats) != 0),
+    m_HideImpFeats((flags & fHideImportedFeatures) != 0),
+    m_HideSnpFeats((flags & fHideSNPFeatures) != 0),
+    m_HideExonFeats((flags & fHideExonFeatures) != 0),
+    m_HideIntronFeats((flags & fHideIntronFeatures) != 0),
+    m_HideRemImpFeats((flags & fHideRemoteImpFeats) != 0),
     m_HideGeneRIFs((flags & fHideGeneRIFs) != 0),
     m_OnlyGeneRIFs((flags & fOnlyGeneRIFs) != 0),
     m_HideCDSProdFeats((flags & fHideCDSProdFeatures) != 0),
@@ -563,6 +565,7 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
     m_ShowContigAndSeq((flags & fShowContigAndSeq) != 0),
     m_CopyGeneToCDNA((flags & fCopyGeneToCDNA) != 0),
     m_CopyCDSFromCDNA((flags & fCopyCDSFromCDNA) != 0),
+    m_HideSourceFeats((flags & fHideSourceFeats) != 0),
     m_DoHtml((flags & fProduceHTML) != 0)
 {
     switch ( mode ) {
@@ -709,6 +712,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 18:03:29  shomrat
+* changed implementation of GetPreferredSynonym
+*
 * Revision 1.5  2004/02/11 22:49:04  shomrat
 * using types in flag file
 *
