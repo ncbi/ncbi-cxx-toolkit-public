@@ -44,7 +44,8 @@ struct BlastSeqSrc {
     GetInt4FnPtr      GetMaxSeqLen;   /**< Get length of longest seq in set */
     GetInt8FnPtr      GetTotLen;      /**< Get tot length of all seqs in set */
     GetSeqBlkFnPtr    GetSequence;    /**< Retrieve individual sequence */
-    GetSeqIdFnPtr     GetSeqIdStr;    /**< Retrieve sequence identifier */
+    GetSeqIdStrFnPtr  GetSeqIdStr;    /**< Retrieve sequence identifier string */
+    GetSeqIdFnPtr     GetSeqId;       /**< Retrieve sequence identifier */
     GetInt4FnPtr      GetSeqLen;      /**< Retrieve given sequence length */
     GetNextChunkFnPtr GetNextChunk;   /**< Get next chunk of seq indices */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
@@ -167,7 +168,8 @@ DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetSeqIdStrFnPtr, GetSeqIdStr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqId, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*)
