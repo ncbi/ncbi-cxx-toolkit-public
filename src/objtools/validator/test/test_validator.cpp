@@ -194,7 +194,7 @@ int CTest_validatorApplication::Run(void)
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
-    auto_ptr<CValidError> eval;
+    CRef<CValidError> eval;
     if ( args["t"] ) {          // Release file
         ProcessReleaseFile(args);
         return 0;
@@ -206,9 +206,9 @@ int CTest_validatorApplication::Run(void)
                 "Conflict: '-s' flag is specified but file is not Seq-submit");
         } 
         if ( args["s"]  ||  header == "Seq-submit" ) {   // Seq-submit
-            eval.reset(ProcessSeqSubmit());
+            eval.Reset(ProcessSeqSubmit());
         } else {                    // default: Seq-entry
-            eval.reset(ProcessSeqEntry());
+            eval.Reset(ProcessSeqEntry());
         }
     }
 
@@ -276,8 +276,8 @@ CValidError* CTest_validatorApplication::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(ReadSeqEntry());
-    
-    // Validate Seq-entry
+
+    // Validate Seq-entry 
     return new CValidError(*m_ObjMgr, *se, m_Options);
 }
 
@@ -288,7 +288,7 @@ CValidError* CTest_validatorApplication::ProcessSeqSubmit(void)
     
     // Get seq-entry to validate
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
-    
+
     // Validae Seq-entry
     return new CValidError(*m_ObjMgr, *ss, m_Options);
 }
@@ -363,8 +363,6 @@ unsigned int CTest_validatorApplication::PrintValidError
     
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &cout;
 
-    
-
     if ( errors.size() == 0 ) {
         *os << "All entries are OK!" << endl;
         os->flush();
@@ -416,6 +414,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2003/03/06 19:41:15  shomrat
+ * Changed eval from auto_ptr to CRef
+ *
  * Revision 1.12  2003/02/24 20:36:15  shomrat
  * Added several application flags, including batch processing
  *
