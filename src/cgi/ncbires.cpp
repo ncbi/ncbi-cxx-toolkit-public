@@ -24,13 +24,16 @@
 * ===========================================================================
 *
 * Author: 
-*	Vsevolod Sandomirskiy 
+*	Vsevolod Sandomirskiy  
 *
 * File Description:
 *   Basic Resource class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/01/14 20:03:49  sandomir
+* minor changes
+*
 * Revision 1.13  1999/01/12 17:06:37  sandomir
 * GetLink changed
 *
@@ -202,7 +205,7 @@ CNcbiDatabase::~CNcbiDatabase( void )
 //
 
 bool CNcbiDataObjectReport::IsRequested( const CNcbiMsgRequest& request ) const
-{
+{ 
   const string value = GetName();
   
   TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );

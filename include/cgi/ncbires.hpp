@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/01/14 20:03:48  sandomir
+* minor changes
+*
 * Revision 1.13  1999/01/12 17:06:29  sandomir
 * GetLink changed
 *
@@ -247,6 +250,9 @@ public:
   virtual void Connect( void ) {} 
   virtual void Disconnect( void ) {}
 
+  const CNcbiDatabaseInfo& GetDbInfo( void ) const
+    { return m_dbinfo; }
+
   const TFilterList& GetFilterList( void ) const
     { return m_filter; }
 
@@ -339,9 +345,14 @@ public:
 
   virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
-  virtual string GetLink( void ) const = 0;
 
-  virtual CNCBINode* CreateView( CNcbiMsgRequest& request ) const = 0;
+#if 0 // generic object makes no sense in practice
+
+  virtual string GetLink( const CNcbiDataObject& obj ) const = 0;
+
+  virtual CNCBINode* CreateView( CNcbiMsgRequest& request,
+                                 const CNcbiDataObject& obj ) const = 0;
+#endif
 
   virtual bool IsRequested( const CNcbiMsgRequest& request ) const;
 
