@@ -252,8 +252,13 @@ CCursor::callproc(const pythonpp::CTuple& args)
         throw pythonpp::CError("Invalid parameters within 'CCursor::callproc' function");
     }
 
-    m_CallableStmt.reset(GetDBConnection()->PrepareCall( m_StmtStr, num_of_arguments ));
-    GetCallableStmt().Execute();
+    try {
+        m_CallableStmt.reset(GetDBConnection()->PrepareCall( m_StmtStr, num_of_arguments ));
+        GetCallableStmt().Execute();
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
 
     return pythonpp::CNone();
 }
@@ -336,7 +341,12 @@ CCursor::SetUpParameters(const pythonpp::CDict& dict)
         } else {
             throw pythonpp::CError("Invalid SQL parameter name");
         }
-        GetStmt().SetParam( GetCVariant(value_obj), param_name );
+        try {
+            GetStmt().SetParam( GetCVariant(value_obj), param_name );
+        }
+        catch(const CDB_Exception& e) {
+            throw pythonpp::CError(e.Message());
+        }
     }
 }
 
@@ -416,9 +426,16 @@ CCursor::ExecuteCurrStatement(void)
             GetStmt().ExecuteUpdate ( GetStmtStr() );
         }
     }
+    catch(const bad_cast&) {
+        throw pythonpp::CError("std::bad_cast exception within 'CCursor::ExecuteCurrStatement'");
+    }
     catch(const CDB_Exception& e) {
         throw pythonpp::CError(e.Message());
+    }    
+    catch(const exception&) {
+        throw pythonpp::CError("std::exception exception within 'CCursor::ExecuteCurrStatement'");
     }
+
 }
 
 const pythonpp::CTuple
@@ -1071,6 +1088,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/21 15:50:18  ssikorsk
+* Fixed: build errors with GCC 2.95.
+*
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
 *

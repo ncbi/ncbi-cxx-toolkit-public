@@ -67,6 +67,24 @@ public:
         ml_flags = flags;
         ml_doc = const_cast<char*>( doc );
     }
+    SMethodDef(const SMethodDef& other)
+    {
+        ml_name = other.ml_name;
+        ml_meth = other.ml_meth;
+        ml_flags = other.ml_flags;
+        ml_doc = other.ml_doc;
+    }
+
+    SMethodDef& operator = (const SMethodDef& other)
+    {
+        if (this != &other) {
+            ml_name = other.ml_name;
+            ml_meth = other.ml_meth;
+            ml_flags = other.ml_flags;
+            ml_doc = other.ml_doc;
+        }
+        return *this;
+    }
 };
 
 extern "C" void DoNotDeallocate( void* )
@@ -273,6 +291,21 @@ public:
 
 public:
     typedef CObject (T::*TMethodVarArgsFunc)( const CTuple& args );
+    /// Workaround for GCC 2.95
+    struct SFunct
+    {
+        SFunct(const TMethodVarArgsFunc& funct)
+        : m_Funct(funct)
+        {
+        }
+
+        operator TMethodVarArgsFunc(void) const
+        {
+            return m_Funct;
+        }
+
+        TMethodVarArgsFunc m_Funct;
+    };
 
     // A helper class for generating functions ...
     template<size_t N = 0>
@@ -286,10 +319,15 @@ public:
         }
 
     public:
-        static CClass<N + 1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)
+        CClass<N + 1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)
         {
+            TMethodHndlList& hndl_list = GetMethodHndlList();
+
             // Prepare data for python ...
-            GetMethodHndlList()[ePosition] = SMethodDef(name, HandleMethodVarArgs, METH_VARARGS, doc);
+            if (hndl_list.size() < ePosition) {
+                hndl_list.resize(ePosition);
+            }
+            hndl_list[ePosition] = SMethodDef(name, HandleMethodVarArgs, METH_VARARGS, doc);
 
             // Prepare data for our handler ...
             GetMethodList().push_back(func);
@@ -299,7 +337,7 @@ public:
 
         static PyObject* HandleMethodVarArgs( PyObject* self, PyObject* args )
         {
-            TMethodVarArgsFunc func = GetMethodList()[ePosition];
+            const TMethodVarArgsFunc func = GetMethodList()[ePosition];
             T* obj = static_cast<T*>(self);
 
             try {
@@ -314,7 +352,7 @@ public:
         }
 
     private:
-        enum {ePosition = N};
+        enum EPosition {ePosition = N};
     };
 
     template <size_t N> friend class CClass;
@@ -355,7 +393,7 @@ private:
     {
         // Classic python implementation ...
         // It will do a linear search with the m_MethodHndlList table ...
-        return Py_FindMethod(&GetMethodHndlList().front(), self, name);
+        return Py_FindMethod( &GetMethodHndlList().front(), self, name );
     }
 
 private:
@@ -374,8 +412,8 @@ private:
     }
 
 private:
-    typedef vector<TMethodVarArgsFunc>  TMethodList;
-    static TMethodList                  sm_MethodList;
+    typedef vector<SFunct>  TMethodList;
+    static TMethodList      sm_MethodList;
 
     static TMethodList& GetMethodList(void)
     {
@@ -492,6 +530,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/01/21 15:50:18  ssikorsk
+* Fixed: build errors with GCC 2.95.
+*
 * Revision 1.4  2005/01/19 16:26:13  ssikorsk
 * Fixed: declared template static members
 *

@@ -91,13 +91,13 @@ public:
     /// Creates a python None object
     CObject(void)
     : m_PyObject(Py_None)
-    , m_Ownership(eOwned)
+    // , m_Ownership(eOwned)
     {
         IncRefCount(Get());
     }
     explicit CObject(PyObject* obj, EOwnership ownership = eAcquireOwnership)
     : m_PyObject(obj)
-    , m_Ownership(eAcquireOwnership ? eAcquired : eOwned)  // !!! Currently this parameter does not much value of "ownership"
+    // , m_Ownership(eAcquireOwnership ? eAcquired : eOwned)  // !!! Currently this parameter does not much value of "ownership"
     {
         _ASSERT(Get());
         if ( ownership == eAcquireOwnership ) {
@@ -106,7 +106,7 @@ public:
     }
     CObject(const CObject& obj)
     : m_PyObject(obj)
-    , m_Ownership(eOwned)
+    // , m_Ownership(eOwned)
     {
         _ASSERT(Get());
         IncRefCount(Get());
@@ -288,7 +288,7 @@ protected:
 
 private:
     PyObject*   m_PyObject;
-    EOwnershipFuture  m_Ownership;
+    // EOwnershipFuture  m_Ownership;
 };
 
 class CNone : public CObject
@@ -541,6 +541,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/21 15:50:18  ssikorsk
+* Fixed: build errors with GCC 2.95.
+*
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
 *
