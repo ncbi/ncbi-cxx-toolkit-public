@@ -193,6 +193,12 @@ inline CNcbiDiag::~CNcbiDiag(void) {
     m_Buffer.Detach(this);
 }
 
+template<class X>
+inline const CNcbiDiag& CNcbiDiag::operator<< (const X& x) const {
+    m_Buffer.Put(*this, x);
+    return *this;
+}
+
 inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
     m_Line = line;
     return *this;
@@ -444,6 +450,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/04/26 14:35:48  ucko
+ * Move CNcbiDiag::operator<< to ncbidiag.inl to make GCC 3.4 happy.
+ *
  * Revision 1.41  2004/03/18 23:03:35  vakatov
  * Cosmetics
  *

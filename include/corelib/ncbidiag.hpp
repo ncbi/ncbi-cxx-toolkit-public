@@ -240,10 +240,7 @@ public:
     ~CNcbiDiag(void);
 
     /// Put object to be formatted to diagnostic stream.
-    template<class X> const CNcbiDiag& operator<< (const X& x) const {
-        m_Buffer.Put(*this, x);
-        return *this;
-    }
+    template<class X> const CNcbiDiag& operator<< (const X& x) const;
 
     /// Insert specified error code into diagnostic stream.
     ///
@@ -919,6 +916,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.71  2004/04/26 14:35:47  ucko
+ * Move CNcbiDiag::operator<< to ncbidiag.inl to make GCC 3.4 happy.
+ *
  * Revision 1.70  2004/03/18 20:19:48  gouriano
  * make it possible to convert multi-line diagnostic message into single-line
  *
