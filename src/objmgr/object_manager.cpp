@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
 * Revision 1.9  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -441,6 +444,33 @@ CConstRef<CBioseq> CObjectManager::GetBioseq(const CSeq_id& id)
 {
     CScope* pScope = *(m_setScope.begin());
     return &((pScope->GetBioseqHandle(id)).GetBioseq());
+}
+
+
+void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CObjectManager");
+    CObject::DebugDump( ddc, depth);
+
+    if (depth == 0) {
+        DebugDumpValue(ddc,"m_setDefaultSource.size()", m_setDefaultSource.size());
+        DebugDumpValue(ddc,"m_mapNameToLoader.size()",  m_mapNameToLoader.size());
+        DebugDumpValue(ddc,"m_mapLoaderToSource.size()",m_mapLoaderToSource.size());
+        DebugDumpValue(ddc,"m_mapEntryToSource.size()", m_mapEntryToSource.size());
+        DebugDumpValue(ddc,"m_setScope.size()",         m_setScope.size());
+    } else {
+        DebugDumpRangePtr(ddc,"m_setDefaultSource",
+            m_setDefaultSource.begin(), m_setDefaultSource.end(), depth);
+        DebugDumpPairsValuePtr(ddc,"m_mapNameToLoader",
+            m_mapNameToLoader.begin(), m_mapNameToLoader.end(), depth);
+        DebugDumpPairsPtrPtr(ddc,"m_mapLoaderToSource",
+            m_mapLoaderToSource.begin(), m_mapLoaderToSource.end(), depth);
+        DebugDumpPairsPtrPtr(ddc,"m_mapEntryToSource",
+            m_mapEntryToSource.begin(), m_mapEntryToSource.end(), depth);
+        DebugDumpRangePtr(ddc,"m_setScope",
+            m_setScope.begin(), m_setScope.end(), depth);
+    }
+    ddc.Log("m_IdMapper", m_IdMapper.GetPointer(), depth);
 }
 
 

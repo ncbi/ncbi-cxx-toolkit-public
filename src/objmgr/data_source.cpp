@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
 * Revision 1.46  2002/05/24 14:57:12  grichenk
 * SerialAssign<>() -> CSerialObject::Assign()
 *
@@ -197,6 +200,7 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <serial/iterator.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1836,6 +1840,76 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
     return false;
 }
 
+void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CDataSource");
+    CObject::DebugDump( ddc, depth);
+
+    ddc.Log("m_Loader", m_Loader.GetPointer(),0);
+    ddc.Log("m_pTopEntry", m_pTopEntry.GetPointer(),0);
+    ddc.Log("m_ObjMgr", m_ObjMgr,0);
+
+    if (depth == 0) {
+        DebugDumpValue(ddc, "m_Entries.size()", m_Entries.size());
+        DebugDumpValue(ddc, "m_TSE_seq.size()", m_TSE_seq.size());
+        DebugDumpValue(ddc, "m_TSE_ref.size()", m_TSE_ref.size());
+        DebugDumpValue(ddc, "m_SeqMaps.size()", m_SeqMaps.size());
+    } else {
+        DebugDumpValue(ddc, "m_Entries.type",
+            "map<CRef<CSeq_entry>,CRef<CTSE_Info>>");
+        DebugDumpPairsCRefCRef(ddc, "m_Entries",
+            m_Entries.begin(), m_Entries.end(), depth);
+
+        { //---  m_TSE_seq
+            unsigned int depth2 = depth-1;
+            DebugDumpValue(ddc, "m_TSE_seq.type",
+                "map<CSeq_id_Handle,set<CRef<CTSE_Info>>>");
+            CDebugDumpContext ddc2(ddc,"m_TSE_seq");
+            TTSEMap::const_iterator it;
+            for ( it = m_TSE_seq.begin(); it != m_TSE_seq.end(); ++it) {
+                ostrstream os;
+                // seqid_handle -> seq_id -> asfasta
+                (GetIdMapper().GetSeq_id( it->first)).WriteAsFasta(os);
+                os << '\0';
+                string member_name = "m_TSE_seq[ " + string(os.str()) +" ]";
+                if (depth2 == 0) {
+                    member_name += ".size()";
+                    DebugDumpValue(ddc2, member_name, (it->second).size());
+                } else {
+                    DebugDumpRangeCRef(ddc2, member_name,
+                        (it->second).begin(), (it->second).end(), depth2);
+                }
+            }
+        }
+
+        { //---  m_TSE_ref
+            unsigned int depth2 = depth-1;
+            DebugDumpValue(ddc, "m_TSE_ref.type",
+                "map<CSeq_id_Handle,set<CRef<CTSE_Info>>>");
+            CDebugDumpContext ddc2(ddc,"m_TSE_ref");
+            TTSEMap::const_iterator it;
+            for ( it = m_TSE_ref.begin(); it != m_TSE_ref.end(); ++it) {
+                ostrstream os;
+                // seqid_handle -> seq_id -> asfasta
+                (GetIdMapper().GetSeq_id( it->first)).WriteAsFasta(os);
+                os << '\0';
+                string member_name = "m_TSE_ref[ " + string(os.str()) +" ]";
+                if (depth2 == 0) {
+                    member_name += ".size()";
+                    DebugDumpValue(ddc2, member_name, (it->second).size());
+                } else {
+                    DebugDumpRangeCRef(ddc2, member_name,
+                        (it->second).begin(), (it->second).end(), depth2);
+                }
+            }
+        }
+
+        DebugDumpValue(ddc, "m_SeqMaps.type",
+            "map<const CBioseq*,CRef<CSeqMap>>");
+        DebugDumpPairsPtrCRef(ddc, "m_SeqMaps",
+            m_SeqMaps.begin(), m_SeqMaps.end(), depth);
+    }
+}
 
 
 END_SCOPE(objects)

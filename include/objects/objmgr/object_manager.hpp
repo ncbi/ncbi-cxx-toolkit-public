@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/28 18:01:10  gouriano
+* DebugDump added
+*
 * Revision 1.5  2002/05/06 03:30:36  vakatov
 * OM/OM1 renaming
 *
@@ -123,6 +126,8 @@ public:
     void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
 
     virtual CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
+
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 protected:
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
 * Revision 1.22  2002/05/14 20:06:26  grichenk
 * Improved CTSE_Info locking by CDataSource and CDataLoader
 *
@@ -233,6 +236,8 @@ public:
     bool IsSynonym(const CSeq_id& id1, CSeq_id& id2) const;
 
     string GetName(void) const;
+
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
     // Process seq-entry recursively

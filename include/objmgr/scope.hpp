@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/28 18:01:11  gouriano
+* DebugDump added
+*
 * Revision 1.16  2002/05/14 20:06:23  grichenk
 * Improved CTSE_Info locking by CDataSource and CDataLoader
 *
@@ -161,6 +164,8 @@ public:
     typedef set< CConstRef<CTSE_Info> > TRequestHistory;
 
     void ResetHistory(void);
+
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
     // Get requests history (used by data sources to process requests)

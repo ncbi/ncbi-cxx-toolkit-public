@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/05/28 18:00:43  gouriano
+* DebugDump added
+*
 * Revision 1.20  2002/05/14 20:06:26  grichenk
 * Improved CTSE_Info locking by CDataSource and CDataLoader
 *
@@ -396,6 +399,26 @@ void CScope::ResetHistory(void)
     m_History.clear();
 }
 
+void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CScope");
+    CObject::DebugDump( ddc, depth);
+
+    ddc.Log("m_pObjMgr", m_pObjMgr.GetPointer(),0);
+    if (depth == 0) {
+        DebugDumpValue(ddc,"m_setDataSrc.size()", m_setDataSrc.size());
+        DebugDumpValue(ddc,"m_History.size()", m_History.size());
+    } else {
+        DebugDumpValue(ddc,"m_setDataSrc.type", "set<CDataSource*>");
+        DebugDumpRangePtr(ddc,"m_setDataSrc",
+            m_setDataSrc.begin(), m_setDataSrc.end(), depth);
+
+        DebugDumpValue(ddc,"m_History.type", "set<CConstRef<CTSE_Info>>");
+        DebugDumpRangeCRef(ddc,"m_History",
+            m_History.begin(), m_History.end(), depth);
+    }
+    DebugDumpValue(ddc,"m_FindMode", m_FindMode);
+}
 
 
 END_SCOPE(objects)
