@@ -2,8 +2,10 @@
 
 ASN_DEP = seq
 
-SRC = nw_aligner nw_spliced_aligner mm_aligner mm_aligner_threads \
-      nw_spliced_aligner16 nw_spliced_aligner32 nw_formatter
+SRC = nw_aligner nw_aligner_threads nw_spliced_aligner \
+      mm_aligner mm_aligner_threads \
+      nw_spliced_aligner16 nw_spliced_aligner32 \
+      nw_formatter
 
 LIB = xalgoalign
 
