@@ -228,7 +228,7 @@ if test -n "$stat_list" ; then
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
         echo "To: $mailto"
-        echo "Subject: [C++ STAT] [`date '+%Y-%m-%d %H:%M'`]  $subject"
+        echo "Subject: [`date '+%Y-%m-%d %H:%M'`]  $subject"
         cat $summary_res
       } | $sendmail $mailto  ||  err_list="$err_list STAT_ERR:\"$loc\""
    done
