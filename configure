@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -881,6 +881,7 @@ Optional Packages:
  --with-projects=FILE    build projects listed in FILE by default
  --with-check=           run test suite after the build
  --with-ncbi-public      ensure compatibility for all in-house platforms
+ --with-strip            strip binaries at build time
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
@@ -898,6 +899,10 @@ Optional Packages:
  --with-fltk=DIR         use FLTK installation in DIR
  --without-opengl        do not use OpenGL
  --with-opengl=DIR       use OpenGL installation in DIR
+ --without-mesa          do not use MESA off-screen OpenGL
+ --with-mesa=DIR         use MESA installation in DIR
+ --without-glut          do not use GLUT
+ --with-glut=DIR         use GLUT installation in DIR
  --without-wxwin         do not use wxWindows
  --with-wxwin=DIR        use wxWindows installation in DIR
  --without-fastcgi       do not use Fast-CGI library
@@ -1555,6 +1560,12 @@ if test "${with_ncbi_public+set}" = set; then
 
 fi;
 
+# Check whether --with-strip or --without-strip was given.
+if test "${with_strip+set}" = set; then
+  withval="$with_strip"
+
+fi;
+
 ## NCBI packages
 
 # Check whether --with-ncbi-c or --without-ncbi-c was given.
@@ -1658,6 +1669,30 @@ fi;
 # Check whether --with-opengl2 or --without-opengl2 was given.
 if test "${with_opengl2+set}" = set; then
   withval="$with_opengl2"
+
+fi;
+
+# Check whether --with-mesa or --without-mesa was given.
+if test "${with_mesa+set}" = set; then
+  withval="$with_mesa"
+
+fi;
+
+# Check whether --with-mesa2 or --without-mesa2 was given.
+if test "${with_mesa2+set}" = set; then
+  withval="$with_mesa2"
+
+fi;
+
+# Check whether --with-glut or --without-glut was given.
+if test "${with_glut+set}" = set; then
+  withval="$with_glut"
+
+fi;
+
+# Check whether --with-glut2 or --without-glut2 was given.
+if test "${with_glut2+set}" = set; then
+  withval="$with_glut2"
 
 fi;
 
@@ -1868,9 +1903,10 @@ fi;
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe \
+check static-exe strip \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl bdb odbc gif jpeg tiff png xpm \
+sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc \
+gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1908,6 +1944,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
+      | --with-mesa=* | --with-glut=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -4250,7 +4287,8 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-# Extract the first word of "strip", so it can be a program name with args.
+if test "$with_strip" = yes; then
+   # Extract the first word of "strip", so it can be a program name with args.
 set dummy strip; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -4286,6 +4324,9 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+else
+   STRIP=@:
+fi
 case "$host_os" in
    irix* )
      # lorder and tsort exist but don't work.
@@ -11543,7 +11584,7 @@ fi
 
 fi
 
-	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
+         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          echo "$as_me:$LINENO: checking for XextCreateExtension in -lXext" >&5
 echo $ECHO_N "checking for XextCreateExtension in -lXext... $ECHO_C" >&6
 if test "${ac_cv_lib_Xext_XextCreateExtension+set}" = set; then
@@ -11743,7 +11784,7 @@ fi
          fi
          if test -d "$with_opengl/lib$ogl_lib_sfx"; then
             l=$with_opengl/lib$ogl_lib_sfx
-            X_LIBS="-L$l ${CONF_f_runpath}$l $X_CFLAGS"
+            X_LIBS="-L$l ${CONF_f_runpath}$l $X_LIBS"
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
@@ -11811,7 +11852,10 @@ fi
 if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OPENGL_INCLUDE=
    OPENGL_LIBS=
+   OSMESA_INCLUDE=
    OSMESA_LIBS=
+   GLUT_INCLUDE=
+   GLUT_LIBS=
    with_opengl="no"
    WithoutPackages="$WithoutPackages OpenGL MESA"
 else
@@ -11821,7 +11865,18 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_OPENGL 1
 _ACEOF
 
-   echo "$as_me:$LINENO: checking for OSMesaCreateContext in -lOSMesa" >&5
+   : ${OSMESA_PATH=$NCBI/MesaGL}
+   orig_LDFLAGS_X=$LDFLAGS
+   if test "$with_mesa" != "no"; then
+      if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
+         with_mesa=$OSMESA_PATH
+      fi
+      if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
+         OSMESA_INCLUDE=-I$with_mesa/include
+         OSMESA_LDFLAGS="-L$with_mesa/lib ${CONF_f_runpath}$with_mesa/lib"
+      fi
+      LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
+      echo "$as_me:$LINENO: checking for OSMesaCreateContext in -lOSMesa" >&5
 echo $ECHO_N "checking for OSMesaCreateContext in -lOSMesa... $ECHO_C" >&6
 if test "${ac_cv_lib_OSMesa_OSMesaCreateContext+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -11877,7 +11932,7 @@ echo "$as_me:$LINENO: result: $ac_cv_lib_OSMesa_OSMesaCreateContext" >&5
 echo "${ECHO_T}$ac_cv_lib_OSMesa_OSMesaCreateContext" >&6
 if test $ac_cv_lib_OSMesa_OSMesaCreateContext = yes; then
   WithPackages="$WithPackages MESA";
-       OSMESA_LIBS="$X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
+          OSMESA_LIBS="$OSMESA_LDFLAGS $X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBOSMESA 1
@@ -11887,6 +11942,84 @@ else
   WithoutPackages="$WithoutPackages MESA"; OSMESA_LIBS=
 fi
 
+   fi
+   : ${GLUT_PATH=$NCBI/glut}
+   if test "$with_glut" != "no"; then
+      if test "${with_glut-yes}" = "yes" -a -d "$GLUT_PATH"; then
+         with_glut=$GLUT_PATH
+      fi
+      if test -n "$with_glut" -a "$with_glut" != "yes"; then
+         GLUT_INCLUDE=-I$with_glut/include
+         GLUT_LDFLAGS="-L$with_glut/lib ${CONF_f_runpath}$with_glut/lib"
+      fi
+      LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
+      echo "$as_me:$LINENO: checking for glutInit in -lglut" >&5
+echo $ECHO_N "checking for glutInit in -lglut... $ECHO_C" >&6
+if test "${ac_cv_lib_glut_glutInit+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lglut $OPENGL_LIBS $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char glutInit ();
+int
+main ()
+{
+glutInit ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_glut_glutInit=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_glut_glutInit=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_glut_glutInit" >&5
+echo "${ECHO_T}$ac_cv_lib_glut_glutInit" >&6
+if test $ac_cv_lib_glut_glutInit = yes; then
+  WithPackages="$WithPackages GLUT";
+          GLUT_LIBS="$GLUT_LDFLAGS $X_LIBS -lglut -lGLU -lGL $X_ALL_LIBS"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGLUT 1
+_ACEOF
+
+else
+  WithoutPackages="$WithoutPackages GLUT"; GLUT_LIBS=
+fi
+
+   fi
 fi
 
 LDFLAGS=$orig_LDFLAGS
@@ -18342,6 +18475,9 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -19149,7 +19285,10 @@ s,@NCBI_C_INCLUDE@,$NCBI_C_INCLUDE,;t t
 s,@NCBI_C_LIBPATH@,$NCBI_C_LIBPATH,;t t
 s,@OPENGL_INCLUDE@,$OPENGL_INCLUDE,;t t
 s,@OPENGL_LIBS@,$OPENGL_LIBS,;t t
+s,@OSMESA_INCLUDE@,$OSMESA_INCLUDE,;t t
 s,@OSMESA_LIBS@,$OSMESA_LIBS,;t t
+s,@GLUT_INCLUDE@,$GLUT_INCLUDE,;t t
+s,@GLUT_LIBS@,$GLUT_LIBS,;t t
 s,@FLTK_INCLUDE@,$FLTK_INCLUDE,;t t
 s,@FLTK_LIBS@,$FLTK_LIBS,;t t
 s,@FLTK_LIBS_GL@,$FLTK_LIBS_GL,;t t

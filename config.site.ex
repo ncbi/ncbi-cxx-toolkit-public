@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: config.site.ex,v 1.5 2003/07/22 15:55:10 ucko Exp $
+# $Id: config.site.ex,v 1.6 2003/08/14 17:39:00 ucko Exp $
 
 ### You can control where the C++ Toolkit's configure script looks for
 ### various packages by copying or renaming this file to "config.site"
@@ -61,6 +61,11 @@
 ### NCBI C Toolkit
 
 # NCBI_C_PATH="$NCBI"
+
+### OpenGL extensions
+
+# OSMESA_PATH="$NCBI/MesaGL"
+# GLUT_PATH="$NCBI/glut"
 
 ### FLTK 1.1.x
 

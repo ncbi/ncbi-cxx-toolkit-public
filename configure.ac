@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.208 2003/08/13 18:06:55 ucko Exp $
+#  $Id: configure.ac,v 1.209 2003/08/14 17:39:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -122,6 +122,8 @@ AC_ARG_WITH(check,
    [ --with-check=           run test suite after the build])
 AC_ARG_WITH(ncbi-public,
    [ --with-ncbi-public      ensure compatibility for all in-house platforms])
+AC_ARG_WITH(strip,
+   [ --with-strip            strip binaries at build time])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -160,6 +162,14 @@ AC_ARG_WITH(opengl,
    [ --without-opengl        do not use OpenGL])
 AC_ARG_WITH(opengl2,
    [ --with-opengl=DIR       use OpenGL installation in DIR])
+AC_ARG_WITH(mesa,
+   [ --without-mesa          do not use MESA off-screen OpenGL])
+AC_ARG_WITH(mesa2,
+   [ --with-mesa=DIR         use MESA installation in DIR])
+AC_ARG_WITH(glut,
+   [ --without-glut          do not use GLUT])
+AC_ARG_WITH(glut2,
+   [ --with-glut=DIR         use GLUT installation in DIR])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
@@ -236,9 +246,10 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe \
+check static-exe strip \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl bdb odbc gif jpeg tiff png xpm \
+sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc \
+gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -276,6 +287,7 @@ for x_arg in "$@" ; do
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-bdb=* | --with-odbc=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
+      | --with-mesa=* | --with-glut=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -1157,7 +1169,11 @@ fi
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
-AC_CHECK_PROG(STRIP, strip, strip, @:)
+if test "$with_strip" = yes; then
+   AC_CHECK_PROG(STRIP, strip, strip, @:)
+else
+   STRIP=@:
+fi
 case "$host_os" in
    irix* )
      # lorder and tsort exist but don't work.
@@ -2399,7 +2415,7 @@ if test "$with_opengl" != "no"; then
          LIBS="$orig_LIBS"
          CPPFLAGS="$orig_CPPFLAGS"
          AC_PATH_XTRA
-	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
+         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
             [$X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
          AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
@@ -2425,7 +2441,7 @@ if test "$with_opengl" != "no"; then
          fi
          if test -d "$with_opengl/lib$ogl_lib_sfx"; then
             l=$with_opengl/lib$ogl_lib_sfx
-            X_LIBS="-L$l ${CONF_f_runpath}$l $X_CFLAGS"
+            X_LIBS="-L$l ${CONF_f_runpath}$l $X_LIBS"
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
@@ -2454,18 +2470,50 @@ fi
 if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    OPENGL_INCLUDE=
    OPENGL_LIBS=
+   OSMESA_INCLUDE=
    OSMESA_LIBS=
+   GLUT_INCLUDE=
+   GLUT_LIBS=
    with_opengl="no"
    WithoutPackages="$WithoutPackages OpenGL MESA"
 else
    WithPackages="$WithPackages OpenGL"
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
-   AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
-      [WithPackages="$WithPackages MESA";
-       OSMESA_LIBS="$X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
-       AC_DEFINE(HAVE_LIBOSMESA, 1, [Define to 1 if you have libOSMesa.])],
-      [WithoutPackages="$WithoutPackages MESA"; OSMESA_LIBS=],
-      $OPENGL_LIBS)
+   : ${OSMESA_PATH=$NCBI/MesaGL}
+   orig_LDFLAGS_X=$LDFLAGS
+   if test "$with_mesa" != "no"; then
+      if test "${with_mesa-yes}" = "yes" -a -d "$OSMESA_PATH"; then
+         with_mesa=$OSMESA_PATH
+      fi
+      if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
+         OSMESA_INCLUDE=-I$with_mesa/include
+         OSMESA_LDFLAGS="-L$with_mesa/lib ${CONF_f_runpath}$with_mesa/lib"
+      fi
+      LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
+      AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
+         [WithPackages="$WithPackages MESA";
+          OSMESA_LIBS="$OSMESA_LDFLAGS $X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
+          AC_DEFINE(HAVE_LIBOSMESA, 1, [Define to 1 if you have libOSMesa.])],
+         [WithoutPackages="$WithoutPackages MESA"; OSMESA_LIBS=],
+         $OPENGL_LIBS)
+   fi
+   : ${GLUT_PATH=$NCBI/glut}
+   if test "$with_glut" != "no"; then
+      if test "${with_glut-yes}" = "yes" -a -d "$GLUT_PATH"; then
+         with_glut=$GLUT_PATH
+      fi
+      if test -n "$with_glut" -a "$with_glut" != "yes"; then
+         GLUT_INCLUDE=-I$with_glut/include
+         GLUT_LDFLAGS="-L$with_glut/lib ${CONF_f_runpath}$with_glut/lib"
+      fi
+      LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
+      AC_CHECK_LIB(glut, glutInit,
+         [WithPackages="$WithPackages GLUT";
+          GLUT_LIBS="$GLUT_LDFLAGS $X_LIBS -lglut -lGLU -lGL $X_ALL_LIBS"
+          AC_DEFINE(HAVE_LIBGLUT, 1, [Define to 1 if you have libglut.])],
+         [WithoutPackages="$WithoutPackages GLUT"; GLUT_LIBS=],
+         $OPENGL_LIBS)
+   fi
 fi
 
 LDFLAGS=$orig_LDFLAGS
@@ -3530,7 +3578,10 @@ AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)
 AC_SUBST(OPENGL_LIBS)
+AC_SUBST(OSMESA_INCLUDE)
 AC_SUBST(OSMESA_LIBS)
+AC_SUBST(GLUT_INCLUDE)
+AC_SUBST(GLUT_LIBS)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)
