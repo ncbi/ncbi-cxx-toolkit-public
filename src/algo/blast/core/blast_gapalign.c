@@ -1489,11 +1489,17 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
               hsp_list->hsp_array[i]->query.offset, init_hsp->s_off, 
               hsp_list->hsp_array[i]->subject.offset, MB_DIAG_NEAR);
            i--) {
+         /* Do not extend an HSP already contained in another HSP, unless
+            its ungapped score is higher than that HSP's gapped score,
+            which indicates wrong starting offset for previously extended HSP.
+         */
          if (MB_HSP_CONTAINED(init_hsp->q_off, 
                 hsp_list->hsp_array[i]->query.offset, 
                 hsp_list->hsp_array[i]->query.end, init_hsp->s_off, 
                 hsp_list->hsp_array[i]->subject.offset, 
-                hsp_list->hsp_array[i]->subject.end, MB_DIAG_CLOSE)) 
+                hsp_list->hsp_array[i]->subject.end, MB_DIAG_CLOSE) &&
+             (!init_hsp->ungapped_data || 
+             init_hsp->ungapped_data->score < hsp_list->hsp_array[i]->score)) 
          {
                delete_hsp = TRUE;
                break;
