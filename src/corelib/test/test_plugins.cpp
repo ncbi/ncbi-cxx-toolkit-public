@@ -261,7 +261,7 @@ void s_TestRegConvert()
     reg.Set("XXX", "s1A",  "duh");
     reg.Set("XXX", "s1B",  "777");
 
-    TPluginManagerParamTree* tr = PluginManager_ConvertRegToTree(reg);
+    TPluginManagerParamTree* tr = ParamTree_ConvertRegToTree(reg);
     TPluginManagerParamTree::TParent* ptr = tr;
 
 
@@ -338,6 +338,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/22 13:58:16  kuznets
+ * Reflecting changes in the PM API
+ *
  * Revision 1.7  2004/08/04 16:53:13  vakatov
  * Unused var warning fix
  *
