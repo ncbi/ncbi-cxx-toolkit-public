@@ -567,6 +567,9 @@ BLAST_GapAlignStructNew(const BlastScoringOptions* score_options,
          gap_align = BLAST_GapAlignStructFree(gap_align);
    }
 
+   if (!gap_align)
+      return -1;
+
    gap_align->positionBased = (sbp->posMatrix != NULL);
 
    return status;
