@@ -37,6 +37,8 @@
 #include <objects/seq/Seq_data_.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/blast_option.hpp>
 #include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_seq.hpp>
 /* From core BLAST library: for encodings definitions */
@@ -49,12 +51,12 @@ BEGIN_NCBI_SCOPE
 
 static int
 BLAST_SetUpQueryInfo(TSeqLocVector &slp,
-    Uint1 program, BlastQueryInfo** query_info_ptr)
+    CBlastOption::EProgram program, BlastQueryInfo** query_info_ptr)
 {
    Int4 length, protein_length;
-   Boolean translate = 
+   bool translate = 
       (program == blast_type_blastx || program == blast_type_tblastx);
-   Boolean is_na = (program == blast_type_blastn);
+   bool is_na = (program == blast_type_blastn);
    Int2 num_frames, frame;
    ENa_strand strand;
    BlastQueryInfo* query_info;
@@ -75,16 +77,17 @@ BLAST_SetUpQueryInfo(TSeqLocVector &slp,
    query_info->first_context = 0;
    query_info->num_queries = slp.size();
    query_info->last_context = query_info->num_queries*num_frames - 1;
-   if ((strand = sequence::GetStrand(*slp[0].first, slp[0].second)) == eNa_strand_minus) {
-      if (translate)
-         query_info->first_context = 3;
-      else
-         query_info->first_context = 1;
+
+   if ((strand = sequence::GetStrand(*slp[0].first, slp[0].second))) {
+       if (translate)
+           query_info->first_context = 3;
+       else
+           query_info->first_context = 1;
    } else if (strand == eNa_strand_plus) {
-      if (translate)
-         query_info->last_context -= 3;
-      else 
-         query_info->last_context -= 1;
+       if (translate)
+           query_info->last_context -= 3;
+       else 
+           query_info->last_context -= 1;
    }
 
    if ((context_offsets = (Int4*) 
@@ -105,7 +108,8 @@ BLAST_SetUpQueryInfo(TSeqLocVector &slp,
    /* Fill the context offsets */
    for (index = 0; index <= query_info->last_context; index += num_frames) {
       length = sequence::GetLength(*slp[index/num_frames].first, slp[index/num_frames].second);
-      strand = sequence::GetStrand(*slp[index/num_frames].first, slp[index/num_frames].second);
+      strand = sequence::GetStrand(*slp[index/num_frames].first, 
+                   slp[index/num_frames].second);
       if (translate) {
          Int2 first_frame, last_frame;
          if (strand == eNa_strand_plus) {
@@ -192,6 +196,7 @@ BLASTFillSequenceBuffer(const CSeq_loc &sl, CScope* scope,
    ENa_strand strand;
    int status = 0;
    CBioseq_Handle handle = scope->GetBioseqHandle(sl);
+   
    if (!handle) {
        ERR_POST(Error << "Could not retrieve bioseq_handle");
        return NULL;
@@ -257,8 +262,6 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
    Int2		status=0; /* return value. */
    Int4 total_length; /* Total length of all queries/frames/strands */
    Int4		index; /* Loop counter */
-   CConstRef<CSeq_loc> slp_var; /* loop variable */
-   CScope* scope;
    Uint1*	buffer,* buffer_var; /* buffer offset to be worked on. */
    bool add_sentinel_bytes = TRUE;
    Uint1* genetic_code=NULL;
@@ -287,8 +290,7 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
    
    for (index = 0; index <= query_info->last_context; index += num_frames)
    {
-       slp_var = slp[index/num_frames].first;
-       scope = slp[index/num_frames].second;
+       int i = index/num_frames;
 
        if (translate) {
            Uint1* na_buffer;
@@ -296,8 +298,8 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
            Int4 na_length;
            Uint1 strand;
            
-           na_length = sequence::GetLength(*slp_var, scope);
-           strand = sequence::GetStrand(*slp_var, scope);
+           na_length = sequence::GetLength(*slp[i].first, slp[i].second);
+           strand = sequence::GetStrand(*slp[i].first, slp[i].second);
            /* Retrieve nucleotide sequence in an auxiliary buffer; 
               then translate into the appropriate place in the 
               preallocated buffer */
@@ -314,7 +316,7 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
                frame_start = 0;
                frame_end = 5;
            }
-           BLASTFillSequenceBuffer(*slp_var, scope, encoding, TRUE, TRUE, na_buffer);
+           BLASTFillSequenceBuffer(*slp[i].first, slp[i].second, encoding, TRUE, TRUE, na_buffer);
            buffer_var = na_buffer + 1;
       
            for (frame = frame_start; frame <= frame_end; frame++) {
@@ -333,8 +335,8 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
               might not be initialized here. */
            if (query_info)
                offset = query_info->context_offsets[index];
-           BLASTFillSequenceBuffer(*slp_var, scope, encoding, add_sentinel_bytes, 
-                                    (num_frames == 2), &buffer[offset]);
+           BLASTFillSequenceBuffer(*slp[i].first, slp[i].second, encoding, 
+               add_sentinel_bytes, (num_frames == 2), &buffer[offset]);
        }
    }
 
@@ -342,7 +344,7 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
 }
 
 int
-BLAST_SetUpQuery(Uint1 program_number, 
+BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
     TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk)
 {
@@ -356,11 +358,11 @@ BLAST_SetUpQuery(Uint1 program_number,
                                       query_info)))
       return status;
 
-   if (program_number == blast_type_blastn) {
+   if (program_number == CBlastOption::eBlastn) {
       encoding = BLASTNA_ENCODING;
       num_frames = 2;
-   } else if (program_number == blast_type_blastp || 
-              program_number == blast_type_tblastn) {
+   } else if (program_number == CBlastOption::eBlastp || 
+              program_number == CBlastOption::eTblastn) {
       encoding = BLASTP_ENCODING;
       num_frames = 1;
    } else { 
