@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/25 15:59:23  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.4  2000/04/28 16:58:17  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -52,7 +55,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/tool/namespace.hpp>
+#include <serial/datatool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.22  2000/07/10 17:32:00  vasilche
 * Macro arguments made more clear.
 * All old ASN stuff moved to serialasn.hpp.
@@ -87,10 +90,10 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
 #include <typeinfo>
-#include <serial/tool/module.hpp>
-#include <serial/tool/exceptions.hpp>
-#include <serial/tool/type.hpp>
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/type.hpp>
+#include <serial/datatool/fileutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/25 15:58:47  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.3  2000/04/28 16:58:08  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -172,7 +175,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CNamespace& ns)
     return ns.PrintFullName(out);
 }
 
-//#include <serial/tool/namespace.inl>
+//#include <serial/datatool/namespace.inl>
 
 END_NCBI_SCOPE
 

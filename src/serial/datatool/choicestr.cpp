@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/08/25 15:59:20  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.21  2000/07/11 20:36:28  vasilche
 * Removed unnecessary generation of namespace references for enum members.
 * Removed obsolete methods.
@@ -147,9 +150,9 @@
 */
 
 #include <corelib/ncbiutil.hpp>
-#include <serial/tool/choicestr.hpp>
-#include <serial/tool/code.hpp>
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/choicestr.hpp>
+#include <serial/datatool/code.hpp>
+#include <serial/datatool/fileutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -261,6 +264,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         havePointers = true;
     }
 
+    string stdNamespace = 
+        code.GetNamespace().GetNamespaceRef(CNamespace::KSTDNamespace);
+    string ncbiNamespace =
+        code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
+
     if ( HaveAssignment() ) {
         code.ClassPublic() <<
             "    // copy constructor and assignment operator\n"
@@ -274,7 +282,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() <<
             "    // choice state enum\n"
             "    enum "STATE_ENUM" {\n"
-            "        "STATE_NOT_SET;
+            "        "STATE_NOT_SET" = "<<ncbiNamespace<<"kEmptyChoice";
         iterate ( TVariants, i, m_Variants ) {
             code.ClassPublic() << ",\n"
                 "        "STATE_PREFIX<<i->cName;
@@ -293,10 +301,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "void Reset(void);\n"
         "\n";
 
-    string stdNamespace = 
-        code.GetNamespace().GetNamespaceRef(CNamespace::KSTDNamespace);
-    string ncbiNamespace =
-        code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
     // generate choice methods
     code.ClassPublic() <<
         "    // choice state\n"

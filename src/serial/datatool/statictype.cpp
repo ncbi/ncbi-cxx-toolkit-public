@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/25 15:59:24  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.12  2000/07/03 18:42:57  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 *
@@ -80,10 +83,10 @@
 * ===========================================================================
 */
 
-#include <serial/tool/statictype.hpp>
-#include <serial/tool/stdstr.hpp>
-#include <serial/tool/stlstr.hpp>
-#include <serial/tool/value.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/stdstr.hpp>
+#include <serial/datatool/stlstr.hpp>
+#include <serial/datatool/value.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/08/25 15:59:20  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.35  2000/07/10 17:32:00  vasilche
 * Macro arguments made more clear.
 * All old ASN stuff moved to serialasn.hpp.
@@ -108,13 +111,13 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <memory>
-#include <serial/tool/fileutil.hpp>
-#include <serial/tool/parser.hpp>
-#include <serial/tool/lexer.hpp>
-#include <serial/tool/moduleset.hpp>
-#include <serial/tool/module.hpp>
-#include <serial/tool/type.hpp>
-#include <serial/tool/generate.hpp>
+#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/parser.hpp>
+#include <serial/datatool/lexer.hpp>
+#include <serial/datatool/moduleset.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/type.hpp>
+#include <serial/datatool/generate.hpp>
 
 BEGIN_NCBI_SCOPE
 

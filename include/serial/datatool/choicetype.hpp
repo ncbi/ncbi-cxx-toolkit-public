@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/25 15:58:45  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.4  2000/06/07 19:45:54  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -66,7 +69,7 @@
 * ===========================================================================
 */
 
-#include <serial/tool/blocktype.hpp>
+#include <serial/datatool/blocktype.hpp>
 
 BEGIN_NCBI_SCOPE
 

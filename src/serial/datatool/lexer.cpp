@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.7  2000/04/07 19:26:27  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -49,8 +52,8 @@
 * ===========================================================================
 */
 
-#include <serial/tool/lexer.hpp>
-#include <serial/tool/tokens.hpp>
+#include <serial/datatool/lexer.hpp>
+#include <serial/datatool/tokens.hpp>
 
 BEGIN_NCBI_SCOPE
 

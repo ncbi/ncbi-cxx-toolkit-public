@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/25 15:59:21  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.11  2000/05/24 20:09:28  vasilche
 * Implemented DTD generation.
 *
@@ -75,10 +78,10 @@
 * ===========================================================================
 */
 
-#include <serial/tool/enumtype.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/enumstr.hpp>
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/enumtype.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/enumstr.hpp>
+#include <serial/datatool/fileutil.hpp>
 #include <serial/enumerated.hpp>
 
 BEGIN_NCBI_SCOPE

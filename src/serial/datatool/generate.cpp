@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.32  2000/06/16 16:31:39  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -94,19 +97,19 @@
 #include <corelib/ncbistd.hpp>
 #include <algorithm>
 #include <typeinfo>
-#include <serial/tool/moduleset.hpp>
-#include <serial/tool/module.hpp>
-#include <serial/tool/type.hpp>
-#include <serial/tool/statictype.hpp>
-#include <serial/tool/reftype.hpp>
-#include <serial/tool/unitype.hpp>
-#include <serial/tool/enumtype.hpp>
-#include <serial/tool/blocktype.hpp>
-#include <serial/tool/choicetype.hpp>
-#include <serial/tool/filecode.hpp>
-#include <serial/tool/generate.hpp>
-#include <serial/tool/exceptions.hpp>
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/moduleset.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/type.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/reftype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/enumtype.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/choicetype.hpp>
+#include <serial/datatool/filecode.hpp>
+#include <serial/datatool/generate.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/fileutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

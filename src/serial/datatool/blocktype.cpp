@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/08/25 15:59:19  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.21  2000/08/15 19:45:27  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -110,10 +113,10 @@
 * ===========================================================================
 */
 
-#include <serial/tool/blocktype.hpp>
+#include <serial/datatool/blocktype.hpp>
 #include <serial/autoptrinfo.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/classstr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/classstr.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 

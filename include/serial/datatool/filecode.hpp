@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.8  2000/04/17 19:11:05  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -88,9 +91,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/tool/classctx.hpp>
-#include <serial/tool/namespace.hpp>
-#include <serial/tool/typestr.hpp>
+#include <serial/datatool/classctx.hpp>
+#include <serial/datatool/namespace.hpp>
+#include <serial/datatool/typestr.hpp>
 #include <map>
 #include <set>
 

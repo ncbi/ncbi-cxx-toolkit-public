@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/25 15:59:24  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.14  2000/07/11 20:36:29  vasilche
 * Removed unnecessary generation of namespace references for enum members.
 * Removed obsolete methods.
@@ -82,13 +85,13 @@
 * ===========================================================================
 */
 
-#include <serial/tool/reftype.hpp>
-#include <serial/tool/typestr.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/module.hpp>
-#include <serial/tool/exceptions.hpp>
-#include <serial/tool/blocktype.hpp>
-#include <serial/tool/enumtype.hpp>
+#include <serial/datatool/reftype.hpp>
+#include <serial/datatool/typestr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/enumtype.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/serialimpl.hpp>
 

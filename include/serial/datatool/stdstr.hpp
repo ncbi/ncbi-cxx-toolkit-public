@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/25 15:58:48  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.7  2000/07/11 20:36:01  vasilche
 * Removed unnecessary generation of namespace references for enum members.
 * Removed obsolete methods.
@@ -88,8 +91,8 @@
 * ===========================================================================
 */
 
-#include <serial/tool/typestr.hpp>
-#include <serial/tool/namespace.hpp>
+#include <serial/datatool/typestr.hpp>
+#include <serial/datatool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 

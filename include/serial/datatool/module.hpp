@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.3  2000/05/24 20:08:31  vasilche
 * Implemented DTD generation.
 *
@@ -79,7 +82,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <list>
 #include <map>
-#include <serial/tool/mcontainer.hpp>
+#include <serial/datatool/mcontainer.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/08/25 15:59:20  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.31  2000/04/17 19:11:08  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -79,9 +82,9 @@
 * ===========================================================================
 */
 
-#include <serial/tool/code.hpp>
-#include <serial/tool/type.hpp>
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/code.hpp>
+#include <serial/datatool/type.hpp>
+#include <serial/datatool/fileutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/25 15:59:25  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.12  2000/06/16 16:31:41  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -81,11 +84,11 @@
 
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>
-#include <serial/tool/unitype.hpp>
-#include <serial/tool/blocktype.hpp>
-#include <serial/tool/stlstr.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/reftype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/stlstr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/reftype.hpp>
 
 BEGIN_NCBI_SCOPE
 

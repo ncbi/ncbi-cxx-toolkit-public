@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/25 15:59:24  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.10  2000/07/11 20:36:29  vasilche
 * Removed unnecessary generation of namespace references for enum members.
 * Removed obsolete methods.
@@ -104,10 +107,10 @@
 * ===========================================================================
 */
 
-#include <serial/tool/stlstr.hpp>
-#include <serial/tool/classctx.hpp>
-#include <serial/tool/fileutil.hpp>
-#include <serial/tool/namespace.hpp>
+#include <serial/datatool/stlstr.hpp>
+#include <serial/datatool/classctx.hpp>
+#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.4  2000/04/07 19:26:28  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -55,8 +58,8 @@
 * ===========================================================================
 */
 
-#include <serial/tool/mcontainer.hpp>
-#include <serial/tool/namespace.hpp>
+#include <serial/datatool/mcontainer.hpp>
+#include <serial/datatool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/25 15:59:20  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.14  2000/08/15 19:45:28  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -95,11 +98,11 @@
 * ===========================================================================
 */
 
-#include <serial/tool/choicetype.hpp>
+#include <serial/datatool/choicetype.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/choice.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/choicestr.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/choicestr.hpp>
 
 BEGIN_NCBI_SCOPE
 

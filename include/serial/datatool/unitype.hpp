@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/25 15:58:48  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.3  2000/05/24 20:08:32  vasilche
 * Implemented DTD generation.
 *
@@ -58,7 +61,7 @@
 * ===========================================================================
 */
 
-#include <serial/tool/type.hpp>
+#include <serial/datatool/type.hpp>
 
 BEGIN_NCBI_SCOPE
 

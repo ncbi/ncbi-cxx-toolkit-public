@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/08/25 15:59:24  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.50  2000/07/03 20:47:28  vasilche
 * Removed unused variables/functions.
 *
@@ -121,16 +124,16 @@
 * ===========================================================================
 */
 
-#include <serial/tool/type.hpp>
+#include <serial/datatool/type.hpp>
 #include <serial/autoptrinfo.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/module.hpp>
-#include <serial/tool/classstr.hpp>
-#include <serial/tool/exceptions.hpp>
-#include <serial/tool/reftype.hpp>
-#include <serial/tool/unitype.hpp>
-#include <serial/tool/choicetype.hpp>
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/classstr.hpp>
+#include <serial/datatool/exceptions.hpp>
+#include <serial/datatool/reftype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/choicetype.hpp>
+#include <serial/datatool/fileutil.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.3  2000/06/16 16:31:13  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -74,8 +77,8 @@
 #include <corelib/ncbireg.hpp>
 #include <set>
 #include <map>
-#include <serial/tool/moduleset.hpp>
-#include <serial/tool/namespace.hpp>
+#include <serial/datatool/moduleset.hpp>
+#include <serial/datatool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
 

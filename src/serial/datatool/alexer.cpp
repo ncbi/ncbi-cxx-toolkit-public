@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/25 15:59:19  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.8  2000/04/07 19:26:22  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -49,8 +52,8 @@
 * ===========================================================================
 */
 
-#include <serial/tool/alexer.hpp>
-#include <serial/tool/atoken.hpp>
+#include <serial/datatool/alexer.hpp>
+#include <serial/datatool/atoken.hpp>
 
 BEGIN_NCBI_SCOPE
 

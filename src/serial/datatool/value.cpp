@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/25 15:59:25  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.11  2000/04/07 19:26:38  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -54,8 +57,8 @@
 */
 
 #include <corelib/ncbidiag.hpp>
-#include <serial/tool/value.hpp>
-#include <serial/tool/module.hpp>
+#include <serial/datatool/value.hpp>
+#include <serial/datatool/module.hpp>
 
 BEGIN_NCBI_SCOPE
 

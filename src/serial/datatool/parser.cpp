@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/08/25 15:59:23  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.20  2000/04/07 19:26:32  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -68,18 +71,18 @@
 * ===========================================================================
 */
 
-#include <serial/tool/parser.hpp>
-#include <serial/tool/tokens.hpp>
-#include <serial/tool/module.hpp>
-#include <serial/tool/moduleset.hpp>
-#include <serial/tool/type.hpp>
-#include <serial/tool/statictype.hpp>
-#include <serial/tool/enumtype.hpp>
-#include <serial/tool/reftype.hpp>
-#include <serial/tool/unitype.hpp>
-#include <serial/tool/blocktype.hpp>
-#include <serial/tool/choicetype.hpp>
-#include <serial/tool/value.hpp>
+#include <serial/datatool/parser.hpp>
+#include <serial/datatool/tokens.hpp>
+#include <serial/datatool/module.hpp>
+#include <serial/datatool/moduleset.hpp>
+#include <serial/datatool/type.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/enumtype.hpp>
+#include <serial/datatool/reftype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/choicetype.hpp>
+#include <serial/datatool/value.hpp>
 
 BEGIN_NCBI_SCOPE
 

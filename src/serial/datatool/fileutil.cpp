@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
 * Revision 1.11  2000/04/10 20:01:31  vakatov
 * Typo fixed
 *
@@ -78,7 +81,7 @@
 * ===========================================================================
 */
 
-#include <serial/tool/fileutil.hpp>
+#include <serial/datatool/fileutil.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <set>
