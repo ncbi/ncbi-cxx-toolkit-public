@@ -100,7 +100,8 @@ CreateMakefile_App()
 {
   makefile_name="$1"
   proj_name="$2"
-  proj_subtype="$3"
+  proj_subdir="$3"
+  proj_subtype="$4"
 
   cat > "$makefile_name" <<EOF
 #
@@ -140,7 +141,7 @@ EOF
       "### END COPIED SETTINGS"  ) break        ;;
       *)                           test $copying = true && echo "$line" ;;
     esac
-  done < $src/app/sample/${proj_subtype}/Makefile.${proj_subtype}_sample.app \
+  done < $src/app/sample/${proj_subdir}/Makefile.${proj_subtype}_sample.app \
       >> "$makefile_name"
 
   cat >> "$makefile_name" <<EOF
@@ -164,9 +165,13 @@ EOF
 
 Capitalize()
 {
-  FIRST=`echo $1 | sed -e 's/^\(.\).*/\1/' | tr '[a-z]' '[A-Z]'`
-  rest=`echo $1 | sed -e 's/^.//'`
-  echo "${FIRST}${rest}" | sed -e 's/[^a-zA-Z0-9]/_/g'
+    echo $1 | awk 'BEGIN { FS = "[^A-Za-z0-9]+" }
+        {
+          for (i = 1;  i <= NF;  ++i) {
+            printf("%s%s", toupper(substr($i, 1, 1)), tolower(substr($i, 2)));
+          }
+          print "";
+        }'
 }
 
 
@@ -193,13 +198,15 @@ test -n $src || src=${NCBI}/c++/src
 
 case "${proj_type}" in
   app/*)
-    proj_subtype=`echo ${proj_type} | sed -e 's@^app/@@'`
+    proj_subdir=`echo ${proj_type} | sed -e 's@^app/@@'`
+    proj_subtype=`echo ${proj_subdir} | tr / _`
     proj_type=app
     if test ! -d $src/app/sample/$proj_subtype; then
       Usage "Unsupported application type ${proj_subtype}"
     fi
     ;;
   app)
+    proj_subdir=basic
     proj_subtype=basic
     ;;
 esac
@@ -230,9 +237,12 @@ fi
 
 
 case "$proj_type" in
-  lib )  CreateMakefile_Lib $makefile_name $proj_name ;;
-  app )  CreateMakefile_App $makefile_name $proj_name $proj_subtype ;;
-  * )  Usage "Invalid project type:  \"$proj_type\"" ;;
+  lib )
+    CreateMakefile_Lib $makefile_name $proj_name ;;
+  app )
+    CreateMakefile_App $makefile_name $proj_name $proj_subdir $proj_subtype ;;
+  * )
+    Usage "Invalid project type:  \"$proj_type\"" ;;
 esac
 
 echo "Created a model makefile \"$makefile_name\"."
@@ -247,7 +257,7 @@ new_class_name=C`Capitalize ${proj_name}`Application
 
 old_proj_name=${proj_subtype}_sample
 
-old_dir=${src}/app/sample/${proj_subtype}
+old_dir=${src}/app/sample/${proj_subdir}
 if test -d "${proj_name}"; then
   new_dir=`pwd`/$proj_name
 else
