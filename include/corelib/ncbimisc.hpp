@@ -429,6 +429,35 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
 }
 
 
+/// Helper template to implement safe bool operator in classes
+/// To implement it you need to add a line:
+///    DECLARE_OPERATOR_BOOL(Class, Condition);
+/// to your class declaration in public section.
+/// First argument is class name, second argument is bool expression
+/// to be returned from safe bool operator.
+/// Actual operator declaration will be:
+///    operator const CBoolFor<Class>*(void) const;
+/// This kind of declaration allows to use it in boolean context,
+/// but will prevent comparison of incomparable objects via bool conversion.
+/// Returned pointer value will have the same value as 'this', so even if
+/// the class doesn't have operator==() objects will compare equal only if
+/// they are both 'null' or if your are comparing object to itself.
+template<class C>
+class CBoolFor
+{
+private: // all methods are private and hidden
+    CBoolFor(void);
+    CBoolFor(const CBoolFor<C>&);
+    CBoolFor<C>& operator=(const CBoolFor<C>&);
+    ~CBoolFor(void);
+};
+
+
+#define DECLARE_OPERATOR_BOOL(Class, Expr) \
+    operator const CBoolFor<Class>*() const { \
+    return (Expr)? reinterpret_cast<const CBoolFor<Class>*>(this): 0; }
+
+
 END_NCBI_SCOPE
 
 
@@ -438,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2005/01/12 15:21:43  vasilche
+ * Added helper template and macro for easy implementation of boolean operator via pointer.
+ *
  * Revision 1.74  2004/11/08 13:04:35  dicuccio
  * Removed definitions for lower-case iterate() and non_const_iterate()
  *
