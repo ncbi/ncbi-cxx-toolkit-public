@@ -231,7 +231,7 @@ void CSeqDBAliasNode::x_ReadValues(const string  & fn,
     CSeqDBRawFile af(mempool, use_mmap);
     af.Open(fn);
     
-    Uint4 file_length = af.GetFileLength();
+    Uint4 file_length = (Uint4) af.GetFileLength();
     
     const char * bp = af.GetRegion(0, file_length);
     const char * ep = bp + file_length;
@@ -403,7 +403,7 @@ public:
         return "MAX_SEQ_LENGTH";
     }
     
-    virtual void Accumulate(CSeqDBVol & vol)
+    virtual void Accumulate(const CSeqDBVol & vol)
     {
         Uint4 new_max = vol.GetMaxLength();
         

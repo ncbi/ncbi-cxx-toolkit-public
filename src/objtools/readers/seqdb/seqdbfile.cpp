@@ -128,10 +128,10 @@ const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end) const
     const char * retval = 0;
         
     if (m_Mapped) {
-        if (x_ValidGet(start, end, m_Mapped->GetSize())) {
+        if (x_ValidGet(start, end, (Uint4)m_Mapped->GetSize())) {
             retval = ((const char *)m_Mapped->GetPtr()) + start;
         }
-    } else if (m_Opened && x_ValidGet(start, end, m_Length)) {
+    } else if (m_Opened && x_ValidGet(start, end, (Uint4) m_Length)) {
         //  Note that a more 'realistic' approach would involve a
         //  cache of blocks or sections that have been brought in;
         //  and would either free these on a refcount basis, or
@@ -268,7 +268,7 @@ bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end) const
 {
     // Read bytes from memory, no handling or adjustments.
     if (m_Mapped) {
-        if (! x_ValidGet(start, end, m_Mapped->GetSize())) {
+        if (! x_ValidGet(start, end, (Uint4) m_Mapped->GetSize())) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Invalid file offset: possible file corruption.");
         }
@@ -277,7 +277,7 @@ bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end) const
         
         return true;
     } else if (m_Opened) {
-        if (! x_ValidGet(start, end, m_Length)) {
+        if (! x_ValidGet(start, end, (Uint4) m_Length)) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Invalid file offset: possible file corruption.");
         }

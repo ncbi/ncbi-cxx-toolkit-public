@@ -59,7 +59,7 @@ void CSeqDBOIDList::x_Setup(const string  & filename,
     m_RawFile->Open(filename);
     m_RawFile->ReadSwapped(& m_NumOIDs);
     
-    Uint4 file_length = m_RawFile->GetFileLength();
+    Uint4 file_length = (Uint4) m_RawFile->GetFileLength();
     
     m_Bits   = (unsigned char*) m_RawFile->GetRegion(sizeof(Int4), file_length);
     m_BitEnd = m_Bits + file_length - sizeof(Int4);
@@ -171,7 +171,7 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
         volmask.Open(mask_fname);
         volmask.ReadSwapped(& num_oids);
         
-        Uint4 file_length = volmask.GetFileLength();
+        Uint4 file_length = (Uint4) volmask.GetFileLength();
         
         // Cast forces signed/unsigned conversion.
         

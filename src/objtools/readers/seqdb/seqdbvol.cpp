@@ -543,8 +543,8 @@ void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
 
 CRef<CBioseq>
 CSeqDBVol::GetBioseq(Int4 oid,
-                     bool use_objmgr,
-                     bool insert_ctrlA) const
+                     bool /*use_objmgr,*/,
+                     bool /*insert_ctrlA*/) const
 {
     // 1. Declare variables.
     
