@@ -36,6 +36,7 @@
 #include <corelib/ncbimtx.hpp>
 
 //#define USE_SINGLE_ALLOC
+//#define USE_DEBUG_NEW
 
 // There was a long and bootless discussion:
 // is it possible to determine whether the object has been created
@@ -83,8 +84,14 @@
 #endif
 
 
-BEGIN_NCBI_SCOPE
+static bool s_EnvFlag(const char* env_var_name)
+{
+    const char* value = getenv(env_var_name);
+    return value  &&  (*value == 'Y'  ||  *value == 'y' || *value == '1');
+}
 
+
+BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -458,12 +465,6 @@ void CObject::DoDeleteThisObject(void)
                "CObject is corrupted");
 }
 
-static bool s_EnvFlag(const char* env_var_name)
-{
-    const char* value = getenv(env_var_name);
-    return value  &&  (*value == 'Y'  ||  *value == 'y' || *value == '1');
-}
-                        
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
 {
     CCoreException::x_InitErrCode(err_code);
@@ -494,7 +495,7 @@ void CObject::ThrowNullPointerException(void)
 
 END_NCBI_SCOPE
 
-#if 0
+#ifdef USE_DEBUG_NEW
 
 struct SAllocHeader
 {
@@ -513,17 +514,19 @@ struct SAllocFooter
     unsigned magic;
 };
 
-static const size_t kAllocSizeBefore = sizeof(SAllocHeader)+8;
-static const size_t kAllocSizeAfter = sizeof(SAllocFooter)+8;
+static const size_t kAllocSizeBefore = 32;
+static const size_t kAllocSizeAfter = 32;
 
-static const char kAllocFillBefore1 = 0xaa;
-static const char kAllocFillBefore2 = 0xbb;
-static const char kAllocFillInside = 0xcc;
-static const char kAllocFillAfter = 0xdd;
-static const char kAllocFillFree = 0xee;
+static const char kAllocFillBeforeArray = 0xba;
+static const char kAllocFillBeforeOne   = 0xbb;
+static const char kAllocFillInside      = 0xdd;
+static const char kAllocFillAfter       = 0xaa;
+static const char kAllocFillFree        = 0xee;
 
-static const unsigned kAllocMagicHeader = 0x89abcdef;
-static const unsigned kAllocMagicFooter = 0xfedcba98;
+static const unsigned kAllocMagicHeader = 0x8b9b0b0b;
+static const unsigned kAllocMagicFooter = 0x9e8e0e0e;
+static const unsigned kFreedMagicHeader = 0x8b0bdead;
+static const unsigned kFreedMagicFooter = 0x9e0edead;
 
 static std::bad_alloc bad_alloc_instance;
 
@@ -602,7 +605,13 @@ static inline size_t get_total_size(size_t size)
 }
 
 
-static inline SAllocLog& start_log(unsigned number, SAllocLog::EType type)
+static inline size_t get_all_guards_size(size_t size)
+{
+    return get_total_size(size) - (sizeof(SAllocHeader)+sizeof(SAllocFooter));
+}
+
+
+SAllocLog& start_log(unsigned number, SAllocLog::EType type)
 {
     SAllocLog& slot = alloc_log[number % kLogSize];
     slot.type = SAllocLog::eInit;
@@ -615,22 +624,22 @@ static inline SAllocLog& start_log(unsigned number, SAllocLog::EType type)
 }
 
 
-static inline
 void memchk(const void* ptr, char byte, size_t size)
 {
-    for ( const char* mem = (const char*)ptr; size && *mem == byte; ++mem, --size ) {
-    }
-    if ( size ) {
-        std::abort();
+    for ( const char* p = (const char*)ptr; size; ++p, --size ) {
+        if ( *p != byte ) {
+            std::abort();
+        }
     }
 }
 
 
-static inline
-void* alloc_mem(size_t size, bool array) throw()
+void* s_alloc_mem(size_t size, bool array) throw()
 {
+    //fprintf(stderr, "s_alloc_mem(%u, %d)\n", (unsigned)size, array);
     unsigned number = seq_number.Add(1);
-    SAllocLog& log = start_log(number, array? SAllocLog::eNewArr: SAllocLog::eNew);
+    SAllocLog& log =
+        start_log(number, array? SAllocLog::eNewArr: SAllocLog::eNew);
     log.size = size;
 
     SAllocHeader* header;
@@ -651,7 +660,7 @@ void* alloc_mem(size_t size, bool array) throw()
     header->ptr = footer->ptr = log.ptr = get_ptr(header);
 
     std::memset(get_guard_before(header),
-                array? kAllocFillBefore2: kAllocFillBefore1,
+                array? kAllocFillBeforeArray: kAllocFillBeforeOne,
                 get_guard_before_size());
     std::memset(get_guard_after(footer, size),
                 kAllocFillAfter,
@@ -663,9 +672,9 @@ void* alloc_mem(size_t size, bool array) throw()
 }
 
 
-static inline
-void free_mem(void* ptr, bool array)
+void s_free_mem(void* ptr, bool array)
 {
+    //fprintf(stderr, "s_free_mem(%p, %d)\n", ptr, array);
     unsigned number = seq_number.Add(1);
     SAllocLog& log =
         start_log(number, array ? SAllocLog::eDeleteArr: SAllocLog::eDelete);
@@ -688,17 +697,26 @@ void free_mem(void* ptr, bool array)
         }
         
         memchk(get_guard_before(header),
-               array? kAllocFillBefore2: kAllocFillBefore1,
+               array? kAllocFillBeforeArray: kAllocFillBeforeOne,
                get_guard_before_size());
         memchk(get_guard_after(footer, size),
                kAllocFillAfter,
                get_guard_after_size(size));
-        std::memset(header, kAllocFillFree, get_total_size(size));
 
-        {{
+        header->magic = kFreedMagicHeader;
+        footer->magic = kFreedMagicFooter;
+        footer->seq_number = number;
+        static bool no_clear = s_EnvFlag("DEBUG_NEW_NO_FILL_ON_DELETE");
+        if ( !no_clear ) {
+            std::memset(get_guard_before(header),
+                        kAllocFillFree,
+                        get_all_guards_size(size));
+        }
+        static bool no_free = s_EnvFlag("DEBUG_NEW_NO_FREE_ON_DELETE");
+        if ( !no_free ) {
             NCBI_NS_NCBI::CFastMutexGuard guard(s_alloc_mutex);
             std::free(header);
-        }}
+        }
     }
     log.completed = true;
 }
@@ -706,7 +724,7 @@ void free_mem(void* ptr, bool array)
 
 void* operator new(size_t size) throw(std::bad_alloc)
 {
-    void* ret = alloc_mem(size, false);
+    void* ret = s_alloc_mem(size, false);
     if ( !ret )
         throw bad_alloc_instance;
     return ret;
@@ -715,13 +733,13 @@ void* operator new(size_t size) throw(std::bad_alloc)
 
 void* operator new(size_t size, const std::nothrow_t&) throw()
 {
-    return alloc_mem(size, false);
+    return s_alloc_mem(size, false);
 }
 
 
 void* operator new[](size_t size) throw(std::bad_alloc)
 {
-    void* ret = alloc_mem(size, true);
+    void* ret = s_alloc_mem(size, true);
     if ( !ret )
         throw bad_alloc_instance;
     return ret;
@@ -730,31 +748,31 @@ void* operator new[](size_t size) throw(std::bad_alloc)
 
 void* operator new[](size_t size, const std::nothrow_t&) throw()
 {
-    return alloc_mem(size, true);
+    return s_alloc_mem(size, true);
 }
 
 
 void operator delete(void* ptr) throw()
 {
-    free_mem(ptr, false);
+    s_free_mem(ptr, false);
 }
 
 
 void  operator delete(void* ptr, const std::nothrow_t&) throw()
 {
-    free_mem(ptr, false);
+    s_free_mem(ptr, false);
 }
 
 
 void  operator delete[](void* ptr) throw()
 {
-    free_mem(ptr, true);
+    s_free_mem(ptr, true);
 }
 
 
 void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 {
-    free_mem(ptr, true);
+    s_free_mem(ptr, true);
 }
 
 #endif
@@ -764,6 +782,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/08/04 14:35:33  vasilche
+ * Renamed debug alloc functions to avoid name clash with system libraries. Changed memory filling constants.
+ *
  * Revision 1.45  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
