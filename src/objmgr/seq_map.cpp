@@ -278,7 +278,7 @@ void CSeqMap::x_SetObject(const CSegment& seg, const CObject& obj)
     // lock for object modification
     CFastMutexGuard guard(m_SeqMap_Mtx);
     // check for object
-    if ( seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
+    if ( bool(seg.m_RefObject) && seg.m_SegType == seg.m_ObjType ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object
@@ -293,7 +293,7 @@ void CSeqMap::x_SetChunk(const CSegment& seg, CTSE_Chunk_Info& chunk)
     //CFastMutexGuard guard(m_SeqMap_Mtx);
     // check for object
     if ( seg.m_ObjType == eSeqChunk ||
-         seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
+         bool(seg.m_RefObject) && seg.m_SegType == seg.m_ObjType ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object
@@ -899,6 +899,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/06/15 14:51:27  grichenk
+* Fixed CRef to bool conversion
+*
 * Revision 1.54  2004/06/15 14:06:49  vasilche
 * Added support to load split sequences.
 *
