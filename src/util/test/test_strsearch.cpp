@@ -65,45 +65,86 @@ void s_TEST_BoyerMooreMatcher(void)
     }}
 
     {{    
-    CBoyerMooreMatcher matcher("BB", false, true);
+    CBoyerMooreMatcher matcher("BB", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::eWholeWordMatch);
     int pos = matcher.Search(str, 0, len);
 
     assert(pos == 8);
     }}
 
     {{
-    CBoyerMooreMatcher matcher("123", false, true);
+    CBoyerMooreMatcher matcher("123", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::eWholeWordMatch);
+
     int pos = matcher.Search(str, 0, len);
 
     assert(pos == 0);
     }}
 
     {{
-    CBoyerMooreMatcher matcher("1234", false, true);
+    CBoyerMooreMatcher matcher("1234", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::eWholeWordMatch);
     int pos = matcher.Search(str, 0, len);
 
     assert(pos == -1);
     }}
 
     {{
-    CBoyerMooreMatcher matcher("bb", true, true);
+    CBoyerMooreMatcher matcher("bb", 
+                               NStr::eCase, 
+                               CBoyerMooreMatcher::eWholeWordMatch);
     int pos = matcher.Search(str, 0, len);
 
     assert(pos == -1);
     }}
 
     {{    
-    CBoyerMooreMatcher matcher("67", false, true);
+    CBoyerMooreMatcher matcher("67", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::eWholeWordMatch);
     int pos = matcher.Search(str, 0, len);
 
     assert(pos == -1);
     }}
 
     {{
-    CBoyerMooreMatcher matcher("67", false, false);
+    CBoyerMooreMatcher matcher("67", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::eSubstrMatch);
     int pos = matcher.Search(str, 0, len);
 
     assert(pos == 5);
+    }}
+
+    {{
+    CBoyerMooreMatcher matcher("67", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::eSuffixMatch);
+    int pos = matcher.Search(str, 0, len);
+
+    assert(pos == 5);
+    }}
+
+
+    {{
+    CBoyerMooreMatcher matcher("56", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::ePrefixMatch);
+    int pos = matcher.Search(str, 0, len);
+
+    assert(pos == 4);
+    }}
+
+    {{
+    CBoyerMooreMatcher matcher("123", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::ePrefixMatch);
+    int pos = matcher.Search(str, 0, len);
+
+    assert(pos == 0);
     }}
 
     cout << "======== String search test (Boyer-Moore) ok." << endl;
@@ -164,6 +205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/03 17:56:32  kuznets
+ * CBoyerMooreMatcher add test cases
+ *
  * Revision 1.1  2004/03/03 14:32:33  kuznets
  * Initial revision (test app for string searches)
  *
