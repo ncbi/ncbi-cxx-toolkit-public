@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.6 2004/07/15 11:10:41 ivanov Exp $
+REM $Id: all_gui.bat,v 1.7 2005/03/17 12:49:28 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -39,6 +39,7 @@ CALL %0 Debug DebugDLL Release ReleaseDLL
 GOTO EXIT
 
 :CONFIG
+TIME /T
 ECHO INFO: Configure "static\gui"
 devenv gui\ncbi_gui.sln /rebuild DebugDLL /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
@@ -58,6 +59,7 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
+TIME /T
 ECHO INFO: Building "static\gui\%CFG%"
 devenv gui\ncbi_gui.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT

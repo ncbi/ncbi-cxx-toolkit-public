@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gbench.bat,v 1.3 2005/03/14 16:42:03 ivanov Exp $
+REM $Id: all_gbench.bat,v 1.4 2005/03/17 12:52:09 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -39,6 +39,7 @@ CALL %0 DebugDLL ReleaseDLL
 GOTO EXIT
 
 :CONFIG
+TIME /T
 ECHO INFO: Configure "dll\gbench"
 devenv gbench\ncbi_gbench.sln /rebuild DebugDLL /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
@@ -54,6 +55,7 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
+TIME /T
 ECHO INFO: Building "dll\gbench\%CFG%"
 devenv gbench\ncbi_gbench.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT

@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_ncbi.bat,v 1.7 2004/06/03 15:51:17 ivanov Exp $
+REM $Id: all_ncbi.bat,v 1.8 2005/03/17 12:49:28 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -39,6 +39,7 @@ CALL %0 Debug DebugDLL Release ReleaseDLL
 GOTO EXIT
 
 :CONFIG
+TIME /T
 ECHO INFO: Configure "static\ncbi"
 devenv ncbi_cpp.sln /rebuild DebugDLL /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
@@ -58,6 +59,7 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
+TIME /T
 ECHO INFO: Building "static\ncbi\%CFG%"
 devenv ncbi_cpp.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
