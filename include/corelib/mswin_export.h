@@ -1258,6 +1258,7 @@
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
 #  define NCBI_XALGOGNOMON_EXPORT
+#  define NCBI_XALGOPHYTREE_EXPORT
 #  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
@@ -1296,6 +1297,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.59  2004/02/10 19:55:21  ucko
+ * Also add NCBI_XALGOPHYTREE_EXPORT to the empty define list....
+ *
  * Revision 1.58  2004/02/10 16:59:01  dicuccio
  * Added export specifier for libxalgophytree
  *
