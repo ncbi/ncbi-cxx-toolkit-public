@@ -618,10 +618,10 @@ class CDBL_ITDescriptor : public I_ITDescriptor
 public:
     virtual ~CDBL_ITDescriptor();
 
-//#ifndef NCBI_OS_MSWIN
+#ifndef NCBI_OS_MSWIN
 private:
     bool x_MakeObjName(DBCOLINFO* col_info);
-//#endif
+#endif
 
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
@@ -645,6 +645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/14 20:26:15  sapojnik
+ * new SampleDBAPI_Blob, etc.
+ *
  * Revision 1.6  2002/01/08 18:09:39  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *
