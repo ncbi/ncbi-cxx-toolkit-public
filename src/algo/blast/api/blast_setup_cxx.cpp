@@ -48,9 +48,6 @@
 #include <blast_util.h>
 #include <blastkar.h>
 
-// C Toolkit includes
-#include <objfeat.h>
-
 USING_SCOPE(objects);
 
 BEGIN_NCBI_SCOPE
@@ -249,6 +246,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/25 13:55:58  camacho
+* Removed unnecessary #includes
+*
 * Revision 1.3  2003/07/24 18:22:50  camacho
 * #include blastkar.h
 *

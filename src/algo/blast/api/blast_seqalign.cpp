@@ -36,8 +36,6 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 
-#include <objalign.h>
-
 #include <objects/general/Object_id.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
@@ -642,6 +640,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/25 13:55:58  camacho
+* Removed unnecessary #includes
+*
 * Revision 1.3  2003/07/23 21:28:23  camacho
 * Use new local gapinfo structures
 *
