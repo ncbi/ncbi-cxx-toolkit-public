@@ -48,8 +48,8 @@ CBioseq_Handle CSeq_entry_Handle::GetBioseq(void) const
     const CSeq_entry& entry = m_Entry_Info->GetTSE();
     const CBioseq_Info::TSynonyms& syns = info->GetSynonyms();
     ITERATE(CBioseq_Info::TSynonyms, id, syns) {
-        const CSeq_id& seq_id = *CSeq_id_Mapper::GetSeq_id(*id);
-        ret = m_Scope->GetBioseqHandleFromTSE(seq_id, entry);
+        CConstRef<CSeq_id> seq_id = CSeq_id_Mapper::GetSeq_id(*id);
+        ret = m_Scope->GetBioseqHandleFromTSE(*seq_id, entry);
         if ( ret ) {
             break;
         }
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/02/09 22:09:14  grichenk
+* Use CConstRef for id
+*
 * Revision 1.2  2004/02/09 19:18:54  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.
