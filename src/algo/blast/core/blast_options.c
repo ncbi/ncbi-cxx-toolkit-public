@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.107  2004/05/17 15:30:20  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt, removed include for blast_gapalign.h
+ *
  * Revision 1.106  2004/05/14 17:11:03  dondosha
  * Minor correction in setting X-dropoffs
  *
@@ -447,7 +450,6 @@
 static char const rcsid[] = "$Id$";
 
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_encoding.h>
 
@@ -721,7 +723,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
 		(*options)->gap_x_dropoff_final = 
                    BLAST_GAP_X_DROPOFF_FINAL_PROT;
 		(*options)->gap_trigger = BLAST_GAP_TRIGGER_PROT;
-		(*options)->algorithm_type = EXTEND_DYN_PROG;
+		(*options)->ePrelimGapExt = eDynProgExt;
 	}
 	else
 	{
@@ -741,11 +743,13 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    if (program == blast_type_blastn) {
       if (greedy) {
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
-         options->algorithm_type = EXTEND_GREEDY;
+         options->ePrelimGapExt = eGreedyWithTracebackExt;
+         options->eTbackExt = eGreedyTbck;
       }	else {
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
          options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
-         options->algorithm_type = EXTEND_DYN_PROG;
+         options->ePrelimGapExt = eDynProgExt;
+         options->eTbackExt = eDynProgTbck;
       }
    }
 
@@ -773,8 +777,8 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 
 	if (program_number != blast_type_blastn)
 	{
-		if (options->algorithm_type == EXTEND_GREEDY || 
-            	options->algorithm_type == EXTEND_GREEDY_NO_TRACEBACK)
+		if (options->ePrelimGapExt == eGreedyWithTracebackExt || 
+            	options->ePrelimGapExt == eGreedyExt)
 		{
 			Int4 code=2;
 			Int4 subcode=1;
