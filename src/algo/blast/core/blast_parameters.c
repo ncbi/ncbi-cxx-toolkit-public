@@ -613,6 +613,7 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
          searchsp = searchsp / NUM_FRAMES;
 
       /* Get cutoff_score for specified evalue. */
+      params->cutoff_score_max = 0;  
       BLAST_Cutoffs(&(params->cutoff_score_max), &evalue, kbp, searchsp, FALSE, 0);
 
       params->cutoff_score = 0;
@@ -738,6 +739,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/01/13 15:14:43  madden
+ * Set params->cutoff_score_max to zero before calling BLASTCutoffs in BlastHitSavingParametersUpdate, prevents last value from overriding new calculation
+ *
  * Revision 1.2  2005/01/10 13:22:34  madden
  * Add function s_GetBestExtensionMethod to decide on optimal extension method, also set container type based upon search type and query length
  *
