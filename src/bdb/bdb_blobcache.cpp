@@ -445,7 +445,11 @@ void CBDB_Cache::Open(const char* cache_path,
 
     m_Env = new CBDB_Env();
     try {
-        m_Env->JoinEnv(cache_path);
+        m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
+        if (!m_Env->IsTransactional()) {
+            LOG_POST(Info << 
+                     "LC: Warning: Joined non-transactional environment ");
+        }
     } 
     catch (CBDB_Exception&)
     {
@@ -768,6 +772,15 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+    {
+        CBDB_Transaction trans(*m_Env);
+        m_CacheDB->SetTransaction(&trans);
+        m_CacheAttrDB->SetTransaction(&trans);
+
+        x_DropBlob(key.c_str(), version, subkey.c_str(), 1);
+        trans.Commit();
+    }
+
     m_CacheDB->key = key;
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
@@ -948,6 +961,9 @@ void CBDB_Cache::Purge(const string&    key,
     // Search the database for obsolete cache entries
     vector<SCacheDescr> cache_entries;
 
+
+    {{
+
     CBDB_FileCursor cur(*m_CacheAttrDB);
     cur.SetCondition(CBDB_FileCursor::eEQ);
 
@@ -976,6 +992,8 @@ void CBDB_Cache::Purge(const string&    key,
         }
 
     } // while
+
+    }}
 
     CBDB_Transaction trans(*m_Env);
     m_CacheDB->SetTransaction(&trans);
@@ -1989,6 +2007,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/12/29 18:47:20  kuznets
+ * Cache opening changed to use free threaded environment.
+ *
  * Revision 1.36  2003/12/29 17:08:15  kuznets
  * CBDB_CacheIWriter - using transactions to save BDB data
  *
