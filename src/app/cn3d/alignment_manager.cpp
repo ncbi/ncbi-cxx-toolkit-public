@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/12/26 16:47:36  thiessen
+* preserve block boundaries
+*
 * Revision 1.30  2000/12/19 16:39:08  thiessen
 * tweaks to show/hide
 *
@@ -214,6 +217,17 @@ static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
     return true;
 }
 
+static bool NoBlockBoundariesBetween(int masterFrom, int masterTo,
+    const AlignmentManager::AlignmentList& alignments)
+{
+	AlignmentManager::AlignmentList::const_iterator a, ae = alignments.end();
+    for (a=alignments.begin(); a!=ae; a++) {
+        if ((*a)->blockStructure[masterTo] != (*a)->blockStructure[masterFrom])
+            return false;
+    }
+    return true;
+}
+
 BlockMultipleAlignment *
 AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments)
 {
@@ -241,13 +255,16 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
             continue;
         }
 
-        // find all next continuous all-aligned residues
+        // find all next continuous all-aligned residues, but checking for
+        // block boundaries from the original master-slave pairs, so that
+        // blocks don't get merged
         for (masterTo=masterFrom+1;
                 masterTo < alignmentSet->master->Length() &&
                 AlignedToAllSlaves(masterTo, alignments) &&
-                NoSlaveInsertionsBetween(masterFrom, masterTo, alignments);
+                NoSlaveInsertionsBetween(masterFrom, masterTo, alignments) &&
+                NoBlockBoundariesBetween(masterFrom, masterTo, alignments);
              masterTo++) ;
-        masterTo--; // after loop, masterTo = first non-all-aligned residue
+        masterTo--; // after loop, masterTo = first residue past block
 
         // create new block with ranges from master and all slaves
         newBlock = new UngappedAlignedBlock(multipleAlignment);

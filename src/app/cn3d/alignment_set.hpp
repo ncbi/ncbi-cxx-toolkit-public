@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/12/26 16:47:39  thiessen
+* preserve block boundaries
+*
 * Revision 1.8  2000/11/12 04:02:21  thiessen
 * working file save including alignment edits
 *
@@ -117,6 +120,12 @@ public:
     // residue n is unaligned.
     typedef std::vector < int > ResidueVector;
     ResidueVector masterToSlave;
+
+    // this vector contains the original block structure of the Seq-align, so that
+    // the IBM algorithm can avoid merging blocks (primarily for CDD's).
+    // blockStructure[i] = n means residue i (of the master) is from block n (0..nblocks-1),
+    // or n = -1 if residue i is unaligned
+    ResidueVector blockStructure;
 };
 
 END_SCOPE(Cn3D)

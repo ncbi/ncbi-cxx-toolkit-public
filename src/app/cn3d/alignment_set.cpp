@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/12/26 16:47:36  thiessen
+* preserve block boundaries
+*
 * Revision 1.10  2000/12/20 23:47:47  thiessen
 * load CDD's
 *
@@ -306,8 +309,9 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
     const ncbi::objects::CSeq_align& seqAlign, UsedSequenceList *usedStructuredSequences) :
     StructureBase(parent), master(masterSequence), slave(NULL)
 {
-    // resize alignment vector
+    // resize alignment and block vector
     masterToSlave.resize(master->Length(), -1);
+    blockStructure.resize(master->Length(), -1);
 
     SequenceSet::SequenceList::const_iterator
         s = parentSet->sequenceSet->sequences.begin(),
@@ -349,13 +353,13 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         slave = *s;
     }
 
-    int i, masterRes, slaveRes;
+    int i, masterRes, slaveRes, blockNum = 0;
 
     // unpack dendiag alignment
     if (seqAlign.GetSegs().IsDendiag()) {
 
         CSeq_align::C_Segs::TDendiag::const_iterator d , de = seqAlign.GetSegs().GetDendiag().end();
-        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++) {
+        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++, blockNum++) {
             const CDense_diag& block = d->GetObject();
 
             if (!block.IsSetDim() || block.GetDim() != 2 ||
@@ -393,6 +397,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
                     return;
                 }
                 masterToSlave[masterRes] = slaveRes;
+                blockStructure[masterRes] = blockNum;
             }
         }
     }
@@ -441,8 +446,11 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
                         "seqloc in denseg block > length of sequence!");
                     return;
                 }
-                for (i=0; i<*lens; i++)
+                for (i=0; i<*lens; i++) {
                     masterToSlave[masterRes + i] = slaveRes + i;
+                    blockStructure[masterRes + i] = blockNum;
+                }
+                blockNum++; // a "block" of a denseg is an aligned (non-gap) segment
             }
         }
     }
