@@ -225,7 +225,7 @@ if test "$with_dll" != "no" ; then
       CFLAGS="$CFLAGS -fPIC"
       CXXFLAGS="$CXXFLAGS -fPIC"
       ;;
-    WorkShop5 )
+    WorkShop5 | MIPSpro73 )
       CFLAGS="$CFLAGS -KPIC"
       CXXFLAGS="$CXXFLAGS -KPIC"
       ;;
@@ -237,7 +237,7 @@ if test "$with_dll" = "yes" ; then
    CONF_lib_ext="${CONF_dll_ext:=.so}"
 
    case "$compiler" in
-    GCC )
+    GCC | MIPSpro73 )
       LINKDLL="$CXX -shared -o"
       ;;
     WorkShop5 )
@@ -247,6 +247,17 @@ if test "$with_dll" = "yes" ; then
       if test -z "$LINKDLL" ; then
          AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
       fi
+      ;;
+   esac
+fi
+
+if test "$with_dll" = "yes" ; then
+   case "$host:$compiler" in
+    *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop5 | *:MIPSpro73 )
+      ;;
+    * )
+         AC_MSG_WARN(["DLLs may not be buildable by $CXX $compiler_ver on $host"])
+      ;;
    esac
 fi
 
