@@ -1,0 +1,87 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>NCBI C++ Toolkit -- F.A.Q.</title>
+</head>
+<body>
+
+<h1>
+NCBI C++ Toolkit -- F. A. Q.</h1>
+
+<hr><!-- **************************************************************** -->
+<ol>
+<li>
+<a href="#ref_CannotFindSymbol">Linker complains it <i>"cannot find symbol"</i>
+in something like:
+<i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></a></li>
+
+<li>
+<a href="#ref_HowMakeDep">MAKE complains it does not know "<i>how to make
+target: /home/qqq/c++/WorkShop6-Debug/lib/.seqset.dep</i>"</a></li>
+
+<li>
+<a href="#ref_LastResort">Still getting bizarre errors with unresolved
+symbols, unfound libraries, etc., and nothing seems to help out much</a></li>
+
+<li>
+?</li>
+
+</ol>
+
+
+<hr><!-- **************************************************************** -->
+<h4>
+<a NAME="ref_CannotFindSymbol"></a>Linker complains it <i>"cannot find
+symbol"</i> in something like:
+<i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></h4>
+Go to the relevant build dir, clean and rebuild everything using:
+<pre>&nbsp;&nbsp; cd /home/qqq/c++/WorkShop6-Debug/build/FooBar
+&nbsp;&nbsp; make purge_r all_r</pre>
+
+<hr>
+<h4>
+<a NAME="ref_HowMakeDep"></a>MAKE complains it does not know "<i>how to
+make target: /home/qqq/c++/WorkShop6-Debug/lib/.seqset.dep</i>"</h4>
+This means that the "lib<b>seqset</b>.a" library is not built. To build
+it:
+<pre>&nbsp;&nbsp; cd /home/qqq/c++/WorkShop6-Debug/build/objects/<i>seqset</i>/
+&nbsp;&nbsp; make</pre>
+
+<hr>
+<h4>
+<a NAME="ref_LastResort"></a>Still getting bizarre errors with unresolved
+symbols, unfound libraries, etc., and nothing seems to help out much</h4>
+As the last resort, try to CVS update, reconfigure, clean and rebuild everything:
+<pre>&nbsp;&nbsp; cd /home/qqq/c++/
+&nbsp;&nbsp; cvs -q upd -d
+&nbsp;&nbsp; compilers/WorkShop6.sh 32 ........
+&nbsp;&nbsp; make purge_r
+&nbsp;&nbsp; make all_r</pre>
+
+<hr>
+<h4>
+?</h4>
+.
+
+
+<!-- **************************************************************** -->
+<br>
+<p>
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+</td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT>($Date$)</td>
+</tr>
+</table>
+
+</body>
+</html>
