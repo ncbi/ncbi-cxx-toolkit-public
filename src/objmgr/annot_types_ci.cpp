@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/05/09 14:17:22  grichenk
+* Added unresolved references checking
+*
 * Revision 1.20  2002/05/06 03:28:46  vakatov
 * OM/OM1 renaming
 *
@@ -292,6 +295,9 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
     // the segments.
     CBioseq_Handle ref_seq = m_Scope->GetBioseqHandle(
             m_Scope->x_GetIdMapper().GetSeq_id(ref_idh));
+    if ( !ref_seq ) {
+        return;
+    }
     CSeqMap& ref_map = ref_seq.x_GetDataSource().x_GetSeqMap(ref_seq);
     ref_map.x_Resolve(rmax, *m_Scope);
     for (size_t i = ref_map.x_FindSegment(rmin); i < ref_map.size(); i++) {
@@ -309,7 +315,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                 // The referenced sequence must be in the same TSE as the master one
                 CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(
                         m_Scope->x_GetIdMapper().GetSeq_id(master_idh));
-                if (/*!check_seq  ||  !master_seq  ||*/
+                if (!check_seq  ||  !master_seq  ||
                     (&master_seq.GetTopLevelSeqEntry() != &check_seq.GetTopLevelSeqEntry())) {
                     continue;
                 }
