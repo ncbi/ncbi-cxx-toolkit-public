@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/09/25 19:35:39  vakatov
+* *** empty log message ***
+*
 * Revision 1.1  1998/09/24 22:10:49  vakatov
 * Initial revision
 *
@@ -43,12 +46,20 @@
 ///////////////////////////////////////////////////////
 
 
-template<class X> CError& CError::operator << (X& x)
-{
+template<class X> CError& CError::operator << (X& x) {
     m_Buffer << x;
     return *this;
 }
 
+CError& CError::f_Clear(void) {
+    VERIFY( !m_Buffer.rdbuf()->seekpos(0); );
+};
+
+CError& CError::f_Flush(void) {
+    VERIFY( f_FlushHook(m_Severity, m_Buffer.str(), m_Buffer.pcount()) );
+    m_Buffer.freeze(false);
+    f_Clear();
+}
 
 
 #endif /* def NCBIERR__HPP  &&  ndef NCBIERR__INL */

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/09/25 19:35:39  vakatov
+* *** empty log message ***
+*
 * Revision 1.1  1998/09/24 22:10:48  vakatov
 * Initial revision
 *
@@ -61,12 +64,38 @@ namespace ncbi_err {
         CError(void);
         CError(EErrSeverity sev, const char* message=0, bool flush=true);
 
-        template<class X> CError& operator << (X& x);
+        template<class X> CError& operator << (X& x);  // formatted output
+        CError& f_Clear(void);  // reset the current message
+        CError& f_Flush(void);  // flush out the current message
+        // flush curr. message;  then start new one with the specified severity
+        CError& f_Severity(EErrSeverity severity);
+
+        // return "true" if succeeded
+        typedef bool (*FFlushHook)(EErrSeverity severity, const char* message);
+        // set new hook function(can be zero) to be called on the "f_Flush()"
+        // return the previous one
+        FFlushHook f_SetFlushHook(FFlushHook hook);
+
+        // (for the error stream manipulators)
+        CError& operator << (CError& (*f)(CError&)) { return f(*this); }
 
     private:
-        ostrstream m_Buffer;
-        
-        
+        EErrSeverity  m_Severity;
+        ostrstream    m_Buffer;
+        FFlushHook    f_FlushHook;
+    };
+
+    // Set of output manipulators for CError
+    //
+    extern CError& Endm   (CError& err) { return err.f_Flush(err); }
+    extern CError& Info   (CError& err) { return err.f_Severity(eE_Info); }
+    extern CError& Warning(CError& err) { return err.f_Severity(eE_Warning); }
+    extern CError& Error  (CError& err) { return err.f_Severity(eE_Error); }
+    extern CError& Fatal  (CError& err) { return err.f_Severity(eE_Fatal); }
+
+
+    class CErrorStore {
+
     };
 
 
