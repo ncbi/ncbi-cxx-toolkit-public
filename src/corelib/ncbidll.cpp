@@ -230,8 +230,13 @@ void CDll::x_ThrowException(const string& what)
 
 
 CDllResolver::CDllResolver(const string& entry_point_name)
- : m_EntryPoinName(entry_point_name)
 {    
+    m_EntryPoinNames.push_back(entry_point_name);
+}
+
+CDllResolver::CDllResolver(const vector<string>& entry_poin_names)
+{
+    m_EntryPoinNames = entry_poin_names;
 }
 
 CDllResolver::~CDllResolver()
@@ -245,15 +250,20 @@ bool CDllResolver::TryCandidate(const string& file_name)
 {
     try {
         CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eAutoUnload);
-        void* p;
-        if (m_EntryPoinName.empty()) {
-            p = 0;
-        } else {
-            p = dll->GetVoidEntryPoint(m_EntryPoinName);
-            if (p == 0)  { // entry point not found
-                delete dll;
-                return false;
+        void* p = 0;
+        ITERATE(vector<string>, it, m_EntryPoinNames) {
+            const string& entry_point_name = *it;
+            if (entry_point_name.empty())
+                continue;
+            p = dll->GetVoidEntryPoint(entry_point_name);
+            if (p) { 
+                break;
             }
+        } // ITERATE
+
+        if (p == 0) {
+            delete dll;
+            return false;
         }
 
         m_ResolvedEntries.push_back(SResolvedEntry(dll, p));
@@ -274,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/11/10 15:05:04  kuznets
+ * Reflecting changes in hpp file
+ *
  * Revision 1.12  2003/11/06 13:00:12  kuznets
  * +CDllResolver
  *
