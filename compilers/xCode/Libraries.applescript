@@ -297,7 +297,7 @@ property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core 
 property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table" & gui2link, bundle:true}
 property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln" & gui2link, bundle:true}
 property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & gui2link, bundle:true}
-property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo gui_core gui_utils gui_widgets gui_widgets_misc" & gui2link, bundle:true}
+property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc gui_core gui_utils gui_widgets gui_widgets_misc" & gui2link, bundle:true}
 property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln" & gui2link, bundle:true}
 property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs" & gui2link, bundle:true}
 property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs" & gui2link, bundle:true}
@@ -332,6 +332,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/07/19 12:57:45  lebedev
+ * +ncbi_misc for view_phylotree
+ *
  * Revision 1.8  2004/07/16 13:25:23  lebedev
  * objects/seq: seq_id_tree seq_id_handle seq_id_mapper
  *
