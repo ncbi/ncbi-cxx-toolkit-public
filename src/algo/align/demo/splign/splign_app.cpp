@@ -31,7 +31,6 @@
 
 #include "splign_app.hpp"
 #include "splign_app_exception.hpp"
-#include "seq_loader.hpp"
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
@@ -40,7 +39,15 @@
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
 #include <algo/align/splign/splign.hpp>
+#include <algo/align/splign/splign_simple.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <algo/blast/api/bl2seq.hpp>
 
 #include <iostream>
 #include <memory>
@@ -49,30 +56,44 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
+const char kQuality_high[] = "high";
+const char kQuality_low[] = "low";
+
 void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.04");
+  string program_name ("Splign v.1.05");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
   argdescr->SetUsageContext(GetArguments().GetProgramName(), program_name);
 
-  argdescr->AddKey
+  argdescr->AddOptionalKey
     ("index", "index",
      "Batch mode index file (use -mkidx to generate).",
      CArgDescriptions::eString);
 
   argdescr->AddFlag ("mkidx", "Generate batch mode index and quit.", true);
   
-  argdescr->AddKey
+  argdescr->AddOptionalKey
     ("hits", "hits",
      "Batch mode hit file. "
      "This file defines the set of sequences to align and "
      "is also used to guide alignments.",
+     CArgDescriptions::eString);
+
+  argdescr->AddOptionalKey
+    ("query", "query",
+     "FastA file with the spliced sequence. Use in pairwise mode only.",
+     CArgDescriptions::eString);
+
+  argdescr->AddOptionalKey
+    ("subj", "subj",
+     "FastA file with the genomic sequence. Use in pairwise mode only.",
      CArgDescriptions::eString);
 
   argdescr->AddDefaultKey
@@ -82,10 +103,6 @@ void CSplignApp::Init()
   argdescr->AddOptionalKey
     ("asn", "asn", "ASN.1 output file name", CArgDescriptions::eString);
 
-  argdescr->AddDefaultKey
-    ("quality", "quality", "Genomic sequence quality.",
-     CArgDescriptions::eString, "high");
-  
   argdescr->AddDefaultKey
     ("strand", "strand", "Spliced sequence's strand.",
      CArgDescriptions::eString, "plus");
@@ -116,6 +133,10 @@ void CSplignApp::Init()
 
 #ifdef GENOME_PIPELINE
 
+  argdescr->AddDefaultKey
+    ("quality", "quality", "Genomic sequence quality.",
+     CArgDescriptions::eString, kQuality_high);
+  
   argdescr->AddDefaultKey
     ("Wm", "match", "match score",
      CArgDescriptions::eInteger,
@@ -156,14 +177,14 @@ void CSplignApp::Init()
      CArgDescriptions::eInteger,
      NStr::IntToString(CSplicedAligner16::GetDefaultWi(3)).c_str());
   
-#endif
-    
   // restrictions
 
   CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
-  constrain_errlevel->Allow("low")->Allow("high");
+  constrain_errlevel->Allow(kQuality_low)->Allow(kQuality_high);
   argdescr->SetConstraint("quality", constrain_errlevel);
-
+  
+#endif
+    
   CArgAllow_Strings* constrain_strand = new CArgAllow_Strings;
   constrain_strand->Allow("plus")->Allow("minus");
   argdescr->SetConstraint("strand", constrain_strand);
@@ -177,7 +198,7 @@ void CSplignApp::Init()
 }
 
 
-bool CSplignApp::x_GetNextPair(ifstream* ifs, vector<CHit>* hits)
+bool CSplignApp::x_GetNextPair(istream* ifs, vector<CHit>* hits)
 {
   hits->clear();
   if(!m_pending.size() && (!ifs || !*ifs) ) {
@@ -268,9 +289,104 @@ void CSplignApp::x_LogStatus(size_t model_id, const string& query,
 }
 
 
+istream* CSplignApp::x_GetPairwiseHitStream(
+                         CSeqLoaderPairwise& seq_loader) const
+{
+    vector<char> query, subj;
+    seq_loader.Load(seq_loader.GetQueryStringId(), &query, 0, kMax_UInt);
+    seq_loader.Load(seq_loader.GetSubjStringId(), &subj, 0, kMax_UInt);
+    
+    CRef<CObjectManager> objmgr(new CObjectManager);
+    CRef<CSeq_loc> seqloc_query;
+    CRef<CScope> scope_query;
+    {{
+    scope_query.Reset(new CScope(*objmgr));
+    scope_query->AddDefaults();
+    CRef<CSeq_entry> se (seq_loader.GetQuerySeqEntry());
+    scope_query->AddTopLevelSeqEntry(*se);
+    seqloc_query.Reset(new CSeq_loc);
+    seqloc_query->SetWhole().Assign(*(se->GetSeq().GetId().front()));
+    }}
+
+    CRef<CSeq_loc> seqloc_subj;
+    CRef<CScope> scope_subj;
+    {{
+    scope_subj.Reset(new CScope(*objmgr));
+    scope_subj->AddDefaults();
+    CRef<CSeq_entry> se (seq_loader.GetSubjSeqEntry());
+    scope_subj->AddTopLevelSeqEntry(*se);
+    seqloc_subj.Reset(new CSeq_loc);
+    seqloc_subj->SetWhole().Assign(*(se->GetSeq().GetId().front()));
+    }}
+
+    blast::CBl2Seq Blast(blast::SSeqLoc(seqloc_query.GetNonNullPointer(),
+                                        scope_query.GetNonNullPointer()),
+                         blast::SSeqLoc(seqloc_subj.GetNonNullPointer(),
+                                        scope_subj.GetNonNullPointer()),
+                         blast::eMegablast);
+
+    blast::TSeqAlignVector blast_output (Blast.Run());
+
+    if (!blast_output.empty() && blast_output.front().NotEmpty() &&
+        !blast_output.front()->Get().empty() &&
+        !blast_output.front()->Get().front()->
+          GetSegs().GetDisc().Get().empty()) {
+        
+        CNcbiOstrstream oss;
+
+        const CSeq_align_set::Tdata &sas =
+            blast_output.front()->Get().front()->GetSegs().GetDisc().Get();
+        ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
+            CHit hit (**sa_iter);
+            oss << hit << endl;
+        }
+        string str = CNcbiOstrstreamToString(oss);
+        CNcbiIstrstream* iss = new CNcbiIstrstream (str.c_str());
+        return iss;        
+    }
+    else {
+        return 0;
+    }
+}
+
+
 int CSplignApp::Run()
 { 
   const CArgs& args = GetArgs();    
+
+  // check that modes aren't mixed
+  bool is_query = args["query"];
+  bool is_subj = args["subj"];
+  bool is_index = args["index"];
+  bool is_hits = args["hits"];
+
+  if(is_query ^ is_subj) {
+      NCBI_THROW(CSplignAppException,
+                 eBadParameter,
+                 "Both query and subj must be specified in pairwise mode." );
+  }
+  
+  if(is_query && (is_hits || is_index)) {
+      NCBI_THROW(CSplignAppException,
+                 eBadParameter,
+                 "Do not use -hits or -index in pairwise mode "
+                 "(i.e. with -query and -subj)." );
+  }
+
+  if(!is_query && !is_hits) {
+      NCBI_THROW(CSplignAppException,
+                 eBadParameter,
+                 "Either -query or -hits must be specified (but not both)");
+  }
+
+
+  if(is_hits ^ is_index) {
+      NCBI_THROW(CSplignAppException,
+                 eBadParameter,
+                 "When in batch mode, specify both -hits and -index");
+  }
+  
+  bool mode_pairwise = is_query;
 
   // open log stream
   m_logstream.open( args["log"].AsString().c_str() );
@@ -287,32 +403,21 @@ int CSplignApp::Run()
       }
   }
 
-  // prepare input hit stream
+  // aligner setup
 
-  auto_ptr<fstream> hit_stream;
-  const string filename (args["hits"].AsString());
-  hit_stream.reset((fstream*)new ifstream (filename.c_str()));
+  string quality;
 
-  vector<CHit> hits;
-  ifstream* ifs_hits = (ifstream*) (hit_stream.get());
+#ifndef GENOME_PIPELINE
+  quality = kQuality_high;
+#else
+  quality = args["quality"].AsString();
+#endif
 
-  // setup splign and formatter objects
-
-  CSplign splign;
-
-  CRef<CSplicedAligner> aligner ( args["quality"].AsString() == "high" ?
+  CRef<CSplicedAligner> aligner (  quality == kQuality_high ?
     static_cast<CSplicedAligner*> (new CSplicedAligner16):
     static_cast<CSplicedAligner*> (new CSplicedAligner32) );
 
-  splign.SetPolyaDetection(!args["nopolya"]);
-  splign.SetMinExonIdentity(args["min_idty"].AsDouble());
-  splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
-  splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
-  splign.SetStrand(args["strand"].AsString() == "plus");
-  splign.SetEndGapDetection(!(args["noendgaps"]));
-
 #if GENOME_PIPELINE
-
   aligner->SetWm(args["Wm"].AsInteger());
   aligner->SetWms(args["Wms"].AsInteger());
   aligner->SetWg(args["Wg"].AsInteger());
@@ -323,22 +428,59 @@ int CSplignApp::Run()
       arg_name += NStr::IntToString(i);
       aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
   }
-
 #endif
 
-  splign.SetAligner(aligner);
+  // setup sequence loader
 
-  CSeqLoader* pseqloader = new CSeqLoader;
-  pseqloader->Open(args["index"].AsString());
-  CRef<CSplignSeqAccessor> seq_loader (pseqloader);
-  pseqloader = 0;
+  CRef<CSplignSeqAccessor> seq_loader;
+  if(mode_pairwise) {
+      const string query_filename (args["query"].AsString());
+      const string subj_filename  (args["subj"].AsString());
+      CSeqLoaderPairwise* pseqloader = 
+          new CSeqLoaderPairwise(query_filename, subj_filename);
+      seq_loader.Reset(pseqloader);
+  }
+  else {
+      CSeqLoader* pseqloader = new CSeqLoader;
+      pseqloader->Open(args["index"].AsString());
+      seq_loader.Reset(pseqloader);
+  }
+
+  // splign object setup
+
+  CSplign splign;
+  splign.SetPolyaDetection(!args["nopolya"]);
+  splign.SetMinExonIdentity(args["min_idty"].AsDouble());
+  splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
+  splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
+  splign.SetStrand(args["strand"].AsString() == "plus");
+  splign.SetEndGapDetection(!(args["noendgaps"]));
+
+  splign.SetAligner(aligner);
   splign.SetSeqAccessor(seq_loader);
+  splign.SetStartModelId(1);
+
+  // splign formatter object
 
   CSplignFormatter formatter (splign);
 
-  splign.SetStartModelId(1);
+  // prepare input hit stream
 
-  while(x_GetNextPair(ifs_hits, &hits) ) {
+  auto_ptr<istream> hit_stream;
+  if(mode_pairwise) {
+      CSeqLoaderPairwise* pseq_loader_pw = 
+          static_cast<CSeqLoaderPairwise*>(seq_loader.GetNonNullPointer());
+      hit_stream.reset(x_GetPairwiseHitStream(*pseq_loader_pw));
+  }
+  else {
+      const string filename (args["hits"].AsString());
+      hit_stream.reset(new ifstream (filename.c_str()));
+  }
+
+  // iterate over input hits
+
+  vector<CHit> hits;
+  while(x_GetNextPair(hit_stream.get(), &hits) ) {
 
     if(hits.size() == 0) {
       continue;
@@ -346,7 +488,6 @@ int CSplignApp::Run()
 
     const string query (hits[0].m_Query);
     const string subj (hits[0].m_Subj);
-
 
     splign.Run(&hits);
 
@@ -381,77 +522,80 @@ USING_NCBI_SCOPE;
 // make Splign index file
 void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr )
 {
-  istream * inp = inp_istr? inp_istr: &cin;
-  ostream * out = out_ostr? out_ostr: &cout;
-  inp->unsetf(IOS_BASE::skipws);
-  char c0 = '\n', c;
-  while(inp->good()) {
-    c = inp->get();
-    if(c0 == '\n' && c == '>') {
-      CT_OFF_TYPE pos = inp->tellg() - CT_POS_TYPE(1);
-      string s;
-      *inp >> s;
-      *out << s << '\t' << file_index << '\t' << pos << endl;
+    istream * inp = inp_istr? inp_istr: &cin;
+    ostream * out = out_ostr? out_ostr: &cout;
+    inp->unsetf(IOS_BASE::skipws);
+    char c0 = '\n', c;
+    while(inp->good()) {
+        c = inp->get();
+        if(c0 == '\n' && c == '>') {
+            CT_OFF_TYPE pos = inp->tellg() - CT_POS_TYPE(1);
+            string s;
+            *inp >> s;
+            *out << s << '\t' << file_index << '\t' << pos << endl;
+        }
+        c0 = c;
     }
-    c0 = c;
-  }
 }
 
 
 
 int main(int argc, const char* argv[]) 
 {
-  // pre-scan for mkidx
-  for(int i = 1; i < argc; ++i) {
-    if(0 == strcmp(argv[i], "-mkidx")) {
-      
-      if(i + 1 == argc) {
-        char err_msg [] = 
-          "ERROR: No FastA files specified to index. "
-          "Please specify one or more FastA files after -mkidx. "
-          "Your system may support wildcards to specify multiple files.";
-	cerr << err_msg << endl;
-        return 1;
-      }
-      else {
-	++i;
-      }
-      vector<string> fasta_filenames;
-      for(; i < argc; ++i) {
-	fasta_filenames.push_back(argv[i]);
-	// test
-	ifstream ifs (argv[i]);
-	if(ifs.fail()) {
-	  cerr << "ERROR: Unable to open " << argv[i] << endl;
-	  return 1;
-	}
-      }
-
-      // write the list of files
-      const size_t files_count = fasta_filenames.size();
-      cout << "# This file was generated by Splign. Edit with care." << endl;
-      cout << "$$$FI" << endl;
-      for(size_t k = 0; k < files_count; ++k) {
-	cout << fasta_filenames[k] << '\t' << k << endl;
-      }
-      cout << "$$$SI" << endl;
-      for(size_t k = 0; k < files_count; ++k) {
-	ifstream ifs (fasta_filenames[k].c_str());
-	MakeIDX(&ifs, k, &cout);
-      }
-
-      return 0;
+    // pre-scan for mkidx
+    for(int i = 1; i < argc; ++i) {
+        if(0 == strcmp(argv[i], "-mkidx")) {
+            
+            if(i + 1 == argc) {
+                char err_msg [] = 
+                    "ERROR: No FastA files specified to index. "
+                    "Please specify one or more FastA files after -mkidx. "
+                    "Your system may support wildcards "
+                    "to specify multiple files.";
+                cerr << err_msg << endl;
+                return 1;
+            }
+            else {
+                ++i;
+            }
+            vector<string> fasta_filenames;
+            for(; i < argc; ++i) {
+                fasta_filenames.push_back(argv[i]);
+                // test
+                ifstream ifs (argv[i]);
+                if(ifs.fail()) {
+                    cerr << "ERROR: Unable to open " << argv[i] << endl;
+                    return 1;
+                }
+            }
+            
+            // write the list of files
+            const size_t files_count = fasta_filenames.size();
+            cout << "# This file was generated by Splign." << endl;
+            cout << "$$$FI" << endl;
+            for(size_t k = 0; k < files_count; ++k) {
+                cout << fasta_filenames[k] << '\t' << k << endl;
+            }
+            cout << "$$$SI" << endl;
+            for(size_t k = 0; k < files_count; ++k) {
+                ifstream ifs (fasta_filenames[k].c_str());
+                MakeIDX(&ifs, k, &cout);
+            }
+            
+            return 0;
+        }
     }
-  }
-
-  return CSplignApp().AppMain(argc, argv, 0, eDS_Default, 0);
-
+    
+    return CSplignApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/05/10 16:40:12  kapustin
+ * Support a pairwise mode
+ *
  * Revision 1.21  2004/05/04 15:23:45  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *

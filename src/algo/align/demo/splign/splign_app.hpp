@@ -33,6 +33,7 @@
 * ===========================================================================
 */
 
+#include "seq_loader.hpp"
 
 #include <algo/align/splign/splign.hpp>
 
@@ -52,9 +53,10 @@ public:
 
 protected:
 
-    string x_RunOnPair(vector<CHit>* hits, int model_id,
-                       size_t range_left, size_t range_right);
-    bool   x_GetNextPair(ifstream* ifs, vector<CHit>* hits);
+    string    x_RunOnPair(vector<CHit>* hits, int model_id,
+                          size_t range_left, size_t range_right);
+    bool      x_GetNextPair(istream* ifs, vector<CHit>* hits);
+    istream*  x_GetPairwiseHitStream(CSeqLoaderPairwise& seq_loader_pw) const;
 
     // status log
     ofstream m_logstream;
@@ -85,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/10 16:40:12  kapustin
+ * Support a pairwise mode
+ *
  * Revision 1.8  2004/05/04 15:23:45  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
