@@ -742,6 +742,7 @@ void CAlnMix::x_Merge()
 
 bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
 {
+    CAlnMixSeq::TStarts&          starts1 = match->m_AlnSeq1->m_Starts;
     CAlnMixSeq::TStarts&          starts2 = match->m_AlnSeq2->m_Starts;
     CAlnMixSeq                  * seq1    = match->m_AlnSeq1,
                                 * seq2    = match->m_AlnSeq2;
@@ -758,7 +759,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             return true;
         }
 
-        // check below
+        // check for overlap below
         if (start_i->first > start2) {
             if (start_i != starts2.begin()) {
                 start_i--;
@@ -770,7 +771,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             }
         }
         
-        // check above
+        // check for overlap above
         while (start_i != starts2.end()  &&  
                start_i->first < start2 + len) {
             if (start_i->second->m_StartIts[seq1]->first != start1 + 
@@ -780,6 +781,39 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                 return false;
             }
             start_i++;
+        }
+
+        // check for inconsistent matches
+        if ((start_i = starts1.find(start1)) == starts1.end() ||
+            start_i->first != start1) {
+            NCBI_THROW(CAlnException, eMergeFailure,
+                       "CAlnMix::x_SecondRowFits(): "
+                       "Internal error: starts1 do not match");
+        } else {
+            CAlnMixSegment::TStartIterators::iterator it;
+            TSeqPos tmp_start =
+                match->m_StrandsDiffer ? start2 + len : start2;
+            while (start_i->first < start1 + len) {
+                CAlnMixSegment::TStartIterators& its = 
+                    start_i->second->m_StartIts;
+
+                if (match->m_StrandsDiffer) {
+                    tmp_start -= start_i->second->m_Len;
+                }
+
+                if ((it = its.find(seq2)) != its.end()) {
+                    if (it->second->second != tmp_start) {
+                        // found an inconsistent prev match
+                        return false;
+                    }
+                }
+
+                start_i++;
+                
+                if ( !match->m_StrandsDiffer ) {
+                    tmp_start += start_i->second->m_Len;
+                }
+            }
         }
     }
     return true;
@@ -1033,6 +1067,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2002/12/27 23:09:56  todorov
+* Additional inconsistency checks in x_SecondRowFits
+*
 * Revision 1.9  2002/12/27 17:27:13  todorov
 * Force positive strand in all cases but negative
 *
