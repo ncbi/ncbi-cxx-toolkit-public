@@ -480,7 +480,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     BlastQueryInfo *query_info,
     double scale_factor,
     BlastSeqLoc **lookup_segments, 
-    BlastMaskLoc **filter_out,
+    BlastMaskInformation* maskInfo,
     BlastScoreBlk **sbpp, 
     Blast_Message **blast_message)
 {
@@ -514,11 +514,6 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     */
     query_blk->lcase_mask = NULL;
 
-    if (filter_out)
-       *filter_out = filter_maskloc;
-    else 
-        filter_maskloc = BlastMaskLocFree(filter_maskloc);
-
     if (program_number == eBlastTypeBlastx && scoring_options->is_ooframe) {
         BLAST_InitDNAPSequence(query_blk, query_info);
     }
@@ -526,6 +521,14 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     BLAST_ComplementMaskLocations(program_number, query_info, filter_maskloc, 
                                   lookup_segments);
 
+    if (maskInfo)
+    {
+       maskInfo->filter_slp = filter_maskloc;
+       maskInfo->mask_at_hash = mask_at_hash;
+       filter_maskloc = NULL;
+    }
+    else 
+        filter_maskloc = BlastMaskLocFree(filter_maskloc);
 
     status = BlastSetup_GetScoreBlock(query_blk, query_info, scoring_options, 
                                       program_number, hit_options->phi_align, 

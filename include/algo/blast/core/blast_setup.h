@@ -56,7 +56,7 @@ extern "C" {
  * @param scale_factor Multiplier for cutoff and dropoff scores [in]
  * @param lookup_segments Start/stop locations for non-masked query 
  *                        segments [out]
- * @param filter_slp_out Filtering/masking locations. [out]
+ * @param maskInfo masking location information, mask_at_hash value. [out]
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
@@ -68,7 +68,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         BlastQueryInfo* query_info, 
         double scale_factor,
         BlastSeqLoc* *lookup_segments,
-        BlastMaskLoc* *filter_slp_out,
+        BlastMaskInformation* maskInfo,
         BlastScoreBlk* *sbpp, 
         Blast_Message* *blast_message);
 
@@ -189,6 +189,9 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.41  2004/06/28 13:38:30  madden
+* Change BLAST_MainSetUp to use BlastMaskInformation rather than BlastMaskLoc
+*
 * Revision 1.40  2004/06/16 14:53:03  dondosha
 * Moved extern "C" after the #includes
 *
