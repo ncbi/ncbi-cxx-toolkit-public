@@ -198,7 +198,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
 	 and large queries saturate it. In either case, cache
 	 is better used on other data. */
 
-      if (lookup_options->word_size == 11) {
+      if (lookup_options->word_size == 11 && lookup_options->mb_template_length > 0) {
          mb_lt->hashsize = 1 << 22;
          if( table_entries <= SMALL_QUERY_CUTOFF ||
 	     table_entries >= LARGE_QUERY_CUTOFF )
