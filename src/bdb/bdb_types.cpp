@@ -142,7 +142,7 @@ void CBDB_BufferManager::ArrangePtrsPacked()
 
     char* buf_ptr = m_Buffer.get();
     buf_ptr += m_NullSetSize;
-    m_PackedSize = 0;
+    m_PackedSize = m_NullSetSize;
 
     for (size_t i = 0;  i < m_Fields.size();  ++i) {
         CBDB_Field& df = *m_Fields[i];
@@ -166,6 +166,7 @@ unsigned int CBDB_BufferManager::Pack()
 
     char* new_ptr = m_Buffer.get();
     new_ptr += m_NullSetSize;
+    m_PackedSize = m_NullSetSize;
 
     for (size_t i = 0;  i < m_Fields.size();  ++i) {
         CBDB_Field& df = *m_Fields[i];
@@ -264,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/29 19:04:47  kuznets
+ * Fixed a bug in buffers management
+ *
  * Revision 1.2  2003/04/28 14:51:55  kuznets
  * #include directives changed to conform the NCBI policy
  *
