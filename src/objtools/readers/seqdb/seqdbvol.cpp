@@ -301,7 +301,7 @@ s_CSeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
 
 void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
 {
-    descr.clear();
+    descr.erase();
     
     string seqid_str;
     
