@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #include <connect/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -66,8 +67,8 @@ struct STransactionInfo
 {
     string    key;
     size_t    blob_size;
-    unsigned  transaction_time;
-    unsigned  connection_time;
+    double    transaction_time;
+    double    connection_time;
 };
 
 
@@ -100,18 +101,39 @@ void s_PutBlob(const string&             host,
     STransactionInfo info;
     info.blob_size = size;
 
-    CTime conn_begin(CTime::eCurrent);
+    CStopWatch sw(true);
     CNetCacheClient nc_client(host, port);
-    CTime tr_begin(CTime::eCurrent);
-    info.key = nc_client.PutData(buf, size, 60 * 3);
-    CTime end(CTime::eCurrent);
 
-    info.transaction_time = end.GetTimeT() - tr_begin.GetTimeT();
-    info.connection_time = end.GetTimeT() - conn_begin.GetTimeT();
+    info.connection_time = sw.Elapsed();
+    sw.Restart();
+    info.key = nc_client.PutData(buf, size, 60 * 5);
+    info.transaction_time = sw.Elapsed();
 
     log->push_back(info);
 }
 
+/// @internal
+static
+void s_ReportStatistics(const vector<STransactionInfo>& log)
+{
+    double sum, sum_conn, sum_tran;
+    sum = sum_conn = sum_tran = 0.0;
+    ITERATE(vector<STransactionInfo>, it, log) {
+        sum_conn += it->connection_time;
+        sum_tran += it->transaction_time;
+        sum += it->connection_time + it->transaction_time;
+    }
+    double avg, avg_conn, avg_tran;
+    avg = sum / double(log.size());
+    avg_conn = sum_conn / double(log.size());
+    avg_tran = sum_tran / double(log.size());
+
+    NcbiCout << "Sum, Conn, Trans" << endl;
+    NcbiCout << fixed << sum << ", " << sum_conn << ", " << sum_tran << NcbiEndl;
+    NcbiCout << "Avg, Conn, Trans" << endl;
+    NcbiCout << fixed << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
+
+}
 
 
 
@@ -119,22 +141,26 @@ void s_PutBlob(const string&             host,
 static
 void s_StressTest(const string&             host,
                   unsigned short            port,
-                  const void*               buf, 
                   size_t                    size, 
                   unsigned int              repeats,
                   vector<STransactionInfo>* log)
 {
-
     cout << "Stress test. BLOB size = " << size 
          << " Repeats = " << repeats
          << ". Please wait... " << endl;
+
+    AutoPtr<char, ArrayDeleter<char> > buf = new char[size];
+    memset(buf.get(), 0, size);
+
     for (unsigned i = 0; i < repeats; ++i) {
-        s_PutBlob(host, port, buf, size, log);
+        s_PutBlob(host, port, buf.get(), size, log);
 
         if (i % 1000 == 0) cout << "." << flush;
     }
     cout << endl;
 }
+
+
 
 void CTestNetCacheClient::Init(void)
 {
@@ -233,15 +259,23 @@ int CTestNetCacheClient::Run(void)
 
     vector<STransactionInfo> log;
 
-    CTime test_begin(CTime::eCurrent);
-    unsigned repeats = 20000;
-    s_StressTest(host, port, test_data, sizeof(test_data), repeats, &log);
-    CTime test_end(CTime::eCurrent);
-    unsigned elapsed = test_end.GetTimeT() - test_begin.GetTimeT();
-    cout << "Elapsed = " << elapsed << " per transaction = " 
-         << double(elapsed) / double(repeats) 
-         << endl;
+    unsigned repeats = 5000;
+    s_StressTest(host, port, 256, repeats, &log);
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl;
 
+
+    s_StressTest(host, port, 1024 * 5, repeats, &log);
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl;
+
+
+    s_StressTest(host, port, 1024 * 1024 * 5, repeats/10, &log);
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl;
+
+
+    cout << "Shutdown server" << endl;
     // Shutdown server
     {{
         CNetCacheClient nc_client(host, port);
@@ -261,6 +295,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/20 15:37:19  kuznets
+ * Added stress test for different BLOB sizes
+ *
  * Revision 1.4  2004/10/13 12:54:34  kuznets
  * +Stress test
  *
