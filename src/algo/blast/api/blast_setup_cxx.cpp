@@ -416,6 +416,28 @@ GetNumberOfFrames(EProgram p)
     return retval;
 }
 
+EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type) 
+{
+    switch (prog_type) {
+    case eBlastTypeBlastn:
+        return eBlastn;
+    case eBlastTypeBlastp:
+        return eBlastp;
+    case eBlastTypeBlastx:
+        return eBlastx;
+    case eBlastTypeTblastn:
+        return eTblastn;
+    case eBlastTypeTblastx:
+        return eTblastx;
+    case eBlastTypeRpsBlast:
+        return eRPSBlast;
+    case eBlastTypeRpsTblastn:
+        return eRPSTblastn;
+    default:
+        return eBlastProgramMax;
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -425,6 +447,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2004/07/06 15:49:30  dondosha
+* Added GetProgramFromBlastProgramType function
+*
 * Revision 1.69  2004/06/02 15:59:14  bealer
 * - Isolate objmgr dependent code.
 *

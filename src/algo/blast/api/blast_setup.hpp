@@ -163,6 +163,10 @@ FindBlastDbPath(const char* dbname, bool is_prot);
 unsigned int 
 GetNumberOfFrames(EProgram p);
 
+/// Convert program type enumeration used in the engine
+/// to the program enumeration.
+EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -170,6 +174,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/07/06 15:49:30  dondosha
+* Added GetProgramFromBlastProgramType function
+*
 * Revision 1.21  2004/05/19 14:52:01  camacho
 * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
 * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
