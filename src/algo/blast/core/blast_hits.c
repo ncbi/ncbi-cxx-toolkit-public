@@ -780,6 +780,8 @@ static void InsertBlastHSPListInHeap(BlastHitListPtr hit_list,
                  (CharPtr)&hit_list->hsplist_array[hit_list->hsplist_count-1],
                  sizeof(BlastHSPListPtr), evalue_compare_hsp_lists);
       }
+      hit_list->worst_evalue = 
+         hit_list->hsplist_array[0]->hsp_array[0]->evalue;
 }
 
 /** Insert a new HSP list into the hit list.
