@@ -142,7 +142,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         iter,
                             unsigned int  n)
 {
-    SDISPD_Data* data = (SDISPD_Data*)(((SERV_ITER) iter)->data);
+    SDISPD_Data* data = (SDISPD_Data*)((SERV_ITER) iter)->data;
     return data->disp_fail ? 0/*failed*/ : 1/*try again*/;
 }
 
@@ -152,7 +152,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     static const char service[]  = "service";
     static const char address[]  = "address";
     static const char platform[] = "platform";
-    SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
+    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    SConnNetInfo *net_info = data->net_info;
     CONNECTOR conn = 0;
     const char *arch;
     char* s;
@@ -189,6 +190,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
              " (C Toolkit)"
 #endif
              "\r\n");
+        data->disp_fail = 0;
         /* All the rest in the net_info structure is fine with us */
         conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
                                       s_Adjust, iter/*data*/, 0/*cleanup*/);
@@ -384,20 +386,17 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 {
     SDISPD_Data* data;
 
-    if (!(data = (SDISPD_Data*) malloc(sizeof(*data))))
+    if (!(data = (SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
     if (!s_RandomSeed) {
         s_RandomSeed = (int) time(0) + (int) SOCK_gethostbyname(0);
         srand(s_RandomSeed);
     }
-    data->disp_fail = 0;
     data->net_info = ConnNetInfo_Clone(net_info); /*called with non-NULL*/
     if (iter->type & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
     if (iter->type & fSERV_Firewall)
         data->net_info->firewall = 1/*true*/;
-    data->n_node = data->n_max_node = 0;
-    data->s_node = 0;
     iter->data = data;
 
     iter->op = &s_op; /* SERV_Update() - from HTTP callback - expects this */
@@ -418,6 +417,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2003/02/06 17:35:36  lavr
+ * Move reset of disp_fail to correct place in s_Resolve()
+ *
  * Revision 6.53  2003/02/04 22:02:44  lavr
  * Introduce adjustment routine and disp_fail member to avoid MAX_TRY retrying
  *
