@@ -544,6 +544,23 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(if min/max templates are not implemented)
+AC_TRY_COMPILE(
+   [#include <algorithm>
+    #ifdef min
+    #undef min
+    #endif
+    #ifdef max
+    #undef max
+    #endif
+   ],
+   [int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b); ],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_NO_MINMAX_TEMPLATE, 1)
+)
+AC_MSG_RESULT()
+
+
 AC_MSG_CHECKING(if new C++ streams dont have ios_base::)
 AC_TRY_COMPILE(
    [#include <iostream>],

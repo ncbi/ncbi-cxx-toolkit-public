@@ -49,6 +49,9 @@
 /* "auto_ptr" template class is not implemented in <memory> */
 #define HAVE_NO_AUTO_PTR 1
 
+/* "min"/"max" templates are not implemented in <algorithm> */
+#define HAVE_NO_MINMAX_TEMPLATE 1
+
 /* SYBASE libraries are available */
 /* #undef HAVE_LIBSYBASE */
 
