@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/06/15 13:00:05  thiessen
+* fix enumerated type casts fo unix compilers
+*
 * Revision 1.39  2001/06/15 02:23:00  thiessen
 * fill code for settings<->asn
 *
@@ -196,9 +199,9 @@ static bool SaveBackboneStyleToASN(
     const StyleSettings::BackboneStyle bbSettings, CCn3d_backbone_style *bbASN)
 {
     // these static_casts rely on correspondence of enumerated values!
-    bbASN->SetType(static_cast<ECn3d_backbone_type>(bbSettings.type));
-    bbASN->SetStyle(static_cast<ECn3d_drawing_style>(bbSettings.style));
-    bbASN->SetColor_scheme(static_cast<ECn3d_color_scheme>(bbSettings.colorScheme));
+    bbASN->SetType((ECn3d_backbone_type) bbSettings.type);
+    bbASN->SetStyle((ECn3d_drawing_style) bbSettings.style);
+    bbASN->SetColor_scheme((ECn3d_color_scheme) bbSettings.colorScheme);
     Vector2ASNColor(bbSettings.userColor, &(bbASN->SetUser_color()));
     return true;
 }
@@ -208,8 +211,8 @@ static bool SaveGeneralStyleToASN(
 {
     // these static_casts rely on correspondence of enumerated values!
     gASN->SetIs_on(gSettings.isOn);
-    gASN->SetStyle(static_cast<ECn3d_drawing_style>(gSettings.style));
-    gASN->SetColor_scheme(static_cast<ECn3d_color_scheme>(gSettings.colorScheme));
+    gASN->SetStyle((ECn3d_drawing_style) gSettings.style);
+    gASN->SetColor_scheme((ECn3d_color_scheme) gSettings.colorScheme);
     Vector2ASNColor(gSettings.userColor, &(gASN->SetUser_color()));
     return true;
 }
@@ -260,9 +263,9 @@ static bool LoadBackboneStyleFromASN(
     const CCn3d_backbone_style& bbASN, StyleSettings::BackboneStyle *bbSettings)
 {
     // these static_casts rely on correspondence of enumerated values!
-    bbSettings->type = static_cast<StyleSettings::eBackboneType>(bbASN.GetType());
-    bbSettings->style = static_cast<StyleSettings::eDrawingStyle>(bbASN.GetStyle());
-    bbSettings->colorScheme = static_cast<StyleSettings::eColorScheme>(bbASN.GetColor_scheme());
+    bbSettings->type = (StyleSettings::eBackboneType) bbASN.GetType();
+    bbSettings->style = (StyleSettings::eDrawingStyle) bbASN.GetStyle();
+    bbSettings->colorScheme = (StyleSettings::eColorScheme) bbASN.GetColor_scheme();
     ASNColor2Vector(bbASN.GetUser_color(), &(bbSettings->userColor));
     return true;
 }
@@ -272,8 +275,8 @@ static bool LoadGeneralStyleFromASN(
 {
     // these static_casts rely on correspondence of enumerated values!
     gSettings->isOn = gASN.GetIs_on();
-    gSettings->style = static_cast<StyleSettings::eDrawingStyle>(gASN.GetStyle());
-    gSettings->colorScheme = static_cast<StyleSettings::eColorScheme>(gASN.GetColor_scheme());
+    gSettings->style = (StyleSettings::eDrawingStyle) gASN.GetStyle();
+    gSettings->colorScheme = (StyleSettings::eColorScheme) gASN.GetColor_scheme();
     ASNColor2Vector(gASN.GetUser_color(), &(gSettings->userColor));
     return true;
 }
