@@ -20,38 +20,47 @@
  *
  *  Please cite the author in any work or product based on this material.
  * ===========================================================================
+ *
+ *  Author:  Anton Butanaev
+ *
  */
 
 #include <objects/objmgr/reader.hpp>
 #include <util/stream_utils.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-ostream & operator << (ostream &os, const CStreamable &obj)
+
+ostream& operator << (ostream &os, const CStreamable &obj)
 {
     obj.Save(os);
     return os;
 }
 
-istream & operator >> (istream &is, CStreamable &obj)
+
+istream& operator >> (istream &is, CStreamable &obj)
 {
     obj.Restore(is);
     return is;
 }
 
+
 void CIntStreamable::Save(ostream &os) const
 {
-    for(unsigned i = 0; i < sizeof(m_Value); ++i)
+    for (size_t i = 0; i < sizeof(m_Value); ++i)
         os.put(static_cast<char>((m_Value>>(8 * i)) & 0xff));
 }
+
 
 void CIntStreamable::Restore(istream &is)
 {
     m_Value=0;
-    for(unsigned i = 0; i < sizeof(m_Value); ++i)
+    for (size_t i = 0; i < sizeof(m_Value); ++i)
         m_Value += static_cast<TInt>(is.get())<<(8 * i);
 }
+
 
 void CStringStreamable::Save(ostream &os) const
 {
@@ -59,6 +68,7 @@ void CStringStreamable::Save(ostream &os) const
     os << length;
     os.write(m_Value.data(), m_Value.length());
 }
+
 
 void CStringStreamable::Restore(istream &is)
 {
@@ -70,24 +80,27 @@ void CStringStreamable::Restore(istream &is)
     }
 }
 
+
 void CBlob::Save(ostream &os) const
 {
     os << m_Class << m_Descr;
 }
+
 
 void CBlob::Restore(istream &is)
 {
     is >> m_Class >> m_Descr;
 }
 
+
 size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength)
 {
     return CStreamUtils::Readsome(is, buffer, bufferLength);
 }
 
+
 bool CIStream::Eof()
 {
-#if 1
     CT_INT_TYPE c = get();
 
     if (eof())
@@ -97,22 +110,24 @@ bool CIStream::Eof()
         putback(c);
 
     return false;
-#else
-    return eof();
-#endif
 }
 
-CIntStreamable::TInt
-CReader::GetConst(string &) const
+
+CIntStreamable::TInt CReader::GetConst(string &) const
 {
     return 0;
 }
 
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+
 /*
  * $Log$
+ * Revision 1.12  2003/03/28 03:27:24  lavr
+ * CIStream::Eof() conditional compilation removed; code reformatted
+ *
  * Revision 1.11  2003/03/26 22:12:11  lavr
  * Revert CIStream::Eof() to destructive test
  *
@@ -173,3 +188,4 @@ END_NCBI_SCOPE
  * New streamable interfaces designed, ID1 reimplemented.
  *
  */
+
