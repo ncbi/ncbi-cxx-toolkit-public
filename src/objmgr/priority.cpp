@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/priority.hpp>
 #include <objmgr/impl/scope_info.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -51,33 +52,34 @@ CPriorityTree::~CPriorityTree(void)
 }
 
 
-CPriorityTree::CPriorityTree(const CPriorityTree& tree)
-    : m_Map(tree.m_Map)
+CPriorityTree::CPriorityTree(CScope_Impl& scope, const CPriorityTree& tree)
 {
+    ITERATE ( TPriorityMap, it, tree.m_Map ) {
+        m_Map.insert(TPriorityMap::value_type(it->first,
+                                              CPriorityNode(scope,
+                                                            it->second)));
+    }
 }
 
 
-const CPriorityTree& CPriorityTree::operator=(const CPriorityTree& tree)
-{
-    m_Map = tree.m_Map;
-    return *this;
-}
-
-
-bool CPriorityTree::Insert(const CPriorityNode& node, TPriority priority)
+bool CPriorityTree::Insert(const CPriorityNode& node,
+                           TPriority priority)
 {
     m_Map.insert(TPriorityMap::value_type(priority, node));
     return true;
 }
 
 
-bool CPriorityTree::Insert(const CPriorityTree& tree, TPriority priority)
+bool CPriorityTree::Insert(const CPriorityTree& tree,
+                           TPriority priority)
 {
     return Insert(CPriorityNode(tree), priority);
 }
 
 
-bool CPriorityTree::Insert(CDataSource& ds, TPriority priority)
+bool CPriorityTree::Insert(CScope_Impl& scope,
+                           CDataSource& ds,
+                           TPriority priority)
 {
     for ( TPriorityMap::iterator it = m_Map.lower_bound(priority);
           it != m_Map.end() && it->first == priority; ++it ) {
@@ -86,7 +88,7 @@ bool CPriorityTree::Insert(CDataSource& ds, TPriority priority)
             return false;
         }
     }
-    return Insert(CPriorityNode(ds), priority);
+    return Insert(CPriorityNode(scope, ds), priority);
 }
 
 
@@ -124,8 +126,8 @@ CPriorityNode::CPriorityNode(TLeaf& leaf)
 }
 
 
-CPriorityNode::CPriorityNode(CDataSource& ds)
-    : m_Leaf(new TLeaf(ds))
+CPriorityNode::CPriorityNode(CScope_Impl& scope, CDataSource& ds)
+    : m_Leaf(scope.GetDSInfo(ds))
 {
 }
 
@@ -136,21 +138,16 @@ CPriorityNode::CPriorityNode(const CPriorityTree& tree)
 }
 
 
-CPriorityNode::CPriorityNode(const CPriorityNode& node)
-    : m_SubTree(node.m_SubTree)
+CPriorityNode::CPriorityNode(CScope_Impl& scope, const CPriorityNode& node)
 {
-    if ( node.IsLeaf() ) {
-        m_Leaf.Reset(new TLeaf(const_cast<CDataSource&>
-                               (node.GetLeaf().GetDataSource())));
+    if ( node.IsTree() ) {
+        m_SubTree = new CPriorityTree(scope, node.GetTree());
     }
-}
-
-
-CPriorityNode& CPriorityNode::operator=(const CPriorityNode& node)
-{
-    m_Leaf = node.m_Leaf;
-    m_SubTree = node.m_SubTree;
-    return *this;
+    else if ( node.IsLeaf() ) {
+        CDataSource& ds =
+            const_cast<CDataSource&>(node.GetLeaf().GetDataSource());
+        m_Leaf = scope.GetDSInfo(ds);
+    }
 }
 
 
@@ -253,6 +250,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/12/22 15:56:25  vasilche
+* Implemented deep copying of CPriorityTree.
+*
 * Revision 1.7  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

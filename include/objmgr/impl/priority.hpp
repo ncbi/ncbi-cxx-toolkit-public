@@ -46,8 +46,9 @@ BEGIN_SCOPE(objects)
 
 class CPriority_I;
 class CTSE_Info;
+class CScope_Impl;
 class CDataSource;
-struct CDataSource_ScopeInfo;
+class CDataSource_ScopeInfo;
 
 class CPriorityTree;
 class CPriorityNode;
@@ -58,12 +59,10 @@ public:
     typedef CDataSource_ScopeInfo TLeaf;
 
     CPriorityNode(void);
-    explicit CPriorityNode(CDataSource& ds);
     explicit CPriorityNode(TLeaf& leaf);
     explicit CPriorityNode(const CPriorityTree& tree);
-
-    CPriorityNode(const CPriorityNode& node);
-    CPriorityNode& operator=(const CPriorityNode& node);
+    CPriorityNode(CScope_Impl& scope, CDataSource& ds);
+    CPriorityNode(CScope_Impl& scope, const CPriorityNode& node);
 
     typedef int TPriority;
     typedef CPriority_I iterator;
@@ -91,8 +90,6 @@ public:
 
 private:
 
-    void x_CopySubTree(const CPriorityNode& node);
-
     CRef<CPriorityTree> m_SubTree;
     CRef<TLeaf>         m_Leaf;
 };
@@ -104,10 +101,8 @@ public:
     typedef CDataSource_ScopeInfo TLeaf;
 
     CPriorityTree(void);
-    CPriorityTree(const CPriorityTree& node);
+    CPriorityTree(CScope_Impl& scope, const CPriorityTree& node);
     ~CPriorityTree(void);
-
-    const CPriorityTree& operator=(const CPriorityTree& node);
 
     typedef CPriorityNode::TPriority TPriority;
     typedef CPriority_I iterator;
@@ -116,9 +111,13 @@ public:
     TPriorityMap& GetTree(void);
     const TPriorityMap& GetTree(void) const;
 
-    bool Insert(const CPriorityNode& node, TPriority priority);
-    bool Insert(const CPriorityTree& tree, TPriority priority);
-    bool Insert(CDataSource& ds, TPriority priority);
+    bool Insert(const CPriorityNode& node,
+                TPriority priority);
+    bool Insert(const CPriorityTree& tree,
+                TPriority priority);
+    bool Insert(CScope_Impl& scope,
+                CDataSource& ds,
+                TPriority priority);
 
     bool Erase(const TLeaf& leaf);
 
@@ -126,8 +125,6 @@ public:
     void Clear(void);
 
 private:
-
-    void x_CopySubTree(const CPriorityNode& node);
 
     TPriorityMap m_Map;
 };
@@ -262,6 +259,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/12/22 15:56:25  vasilche
+* Implemented deep copying of CPriorityTree.
+*
 * Revision 1.13  2004/02/19 17:16:35  vasilche
 * Removed unused include.
 *
