@@ -262,35 +262,6 @@ public:
     /// Get sequence
     CSeqVector GetSeqVector(EVectorStrand strand) const;
 
-    /// Sequence filtering: get a seq-vector for a part of the sequence.
-    /// The part shown depends on the mode selected. If the location
-    /// contains references to other sequences they are ignored (unlike
-    /// CBioseq constructor, which constructs a bioseq using all references
-    /// from a location). Strand information from "location" is ingored
-    /// when creating merged or excluded views. If "minus_strand" is true,
-    /// the result is reverse-complement.
-    enum ESequenceViewMode {
-        eViewConstructed,    ///< Do not merge or reorder intervals
-        eViewMerged,         ///< Merge overlapping intervals, sort by location
-        eViewExcluded        ///< Show intervals not included in the seq-loc
-    };
-
-    /// Create a seq-vector for a part of the bioseq
-    ///
-    /// @sa
-    ///     GetSeqMapByLocation()
-    CSeqVector GetSequenceView(const CSeq_loc& location,
-                               ESequenceViewMode mode,
-                               EVectorCoding coding = eCoding_Ncbi,
-                               ENa_strand strand = eNa_strand_plus) const;
-
-    /// Return seq-map constructed from a seq-loc
-    ///
-    /// @sa
-    ///     GetSequenceView()
-    CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
-                                           ESequenceViewMode mode) const;
-
     /// Return CSeq_loc referencing the given range and strand on the bioseq
     CRef<CSeq_loc> GetRangeSeq_loc(TSeqPos start,
                                    TSeqPos stop,
@@ -390,6 +361,38 @@ public: // non-public section
     /// @deprecated
     /// Get top level seq-entry
     const CSeq_entry& GetTopLevelSeqEntry(void) const;
+
+    /// @deprecated
+    /// Sequence filtering: get a seq-vector for a part of the sequence.
+    /// The part shown depends on the mode selected. If the location
+    /// contains references to other sequences they are ignored (unlike
+    /// CBioseq constructor, which constructs a bioseq using all references
+    /// from a location). Strand information from "location" is ingored
+    /// when creating merged or excluded views. If "minus_strand" is true,
+    /// the result is reverse-complement.
+    enum ESequenceViewMode {
+        eViewConstructed,    ///< Do not merge or reorder intervals
+        eViewMerged,         ///< Merge overlapping intervals, sort by location
+        eViewExcluded        ///< Show intervals not included in the seq-loc
+    };
+
+    /// @deprecated
+    /// Create a seq-vector for a part of the bioseq
+    ///
+    /// @sa
+    ///     GetSeqMapByLocation()
+    CSeqVector GetSequenceView(const CSeq_loc& location,
+                               ESequenceViewMode mode,
+                               EVectorCoding coding = eCoding_Ncbi,
+                               ENa_strand strand = eNa_strand_plus) const;
+
+    /// @deprecated
+    /// Return seq-map constructed from a seq-loc
+    ///
+    /// @sa
+    ///     GetSequenceView()
+    CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
+                                           ESequenceViewMode mode) const;
 
 #endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
@@ -604,6 +607,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/12/06 17:11:25  grichenk
+* Marked GetSequenceView and GetSeqMapFromSeqLoc as deprecated
+*
 * Revision 1.64  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *
