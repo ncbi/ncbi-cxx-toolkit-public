@@ -43,7 +43,6 @@ static char const rcsid[] = "$Id$";
 #include <blast_gapalign.h>
 #include <blast_setup.h>
 #include <blast_util.h>
-#include <gapxdrop.h>
 
 static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query, 
    BLAST_SequenceBlkPtr subject, BlastGapAlignStructPtr gap_align,
