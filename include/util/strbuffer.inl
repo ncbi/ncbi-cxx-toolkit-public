@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/08/15 20:53:09  juran
+* Heed warnings.
+*
 * Revision 1.3  2001/03/14 17:59:24  vakatov
 * COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
 * to avoid clash with MS-Win system headers' #define
@@ -334,19 +337,19 @@ void COStreamBuffer::WrapAt(size_t lineLength, bool keepWord)
 inline
 size_t COStreamBuffer::GetUsedSpace(void) const
 {
-    return m_CurrentPos - m_Buffer;
+    return static_cast<size_t>(m_CurrentPos - m_Buffer);
 }
 
 inline
 size_t COStreamBuffer::GetAvailableSpace(void) const
 {
-    return m_BufferEnd - m_CurrentPos;
+    return static_cast<size_t>(m_BufferEnd - m_CurrentPos);
 }
 
 inline
 size_t COStreamBuffer::GetBufferSize(void) const
 {
-    return m_BufferEnd - m_Buffer;
+    return static_cast<size_t>(m_BufferEnd - m_Buffer);
 }
 
 #endif /* def STRBUFFER__HPP  &&  ndef STRBUFFER__INL */

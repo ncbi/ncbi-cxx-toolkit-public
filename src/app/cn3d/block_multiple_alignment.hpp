@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/08/15 20:52:57  juran
+* Heed warnings.
+*
 * Revision 1.20  2001/07/19 19:12:46  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -338,8 +341,8 @@ public:
     void ClearRowInfo(void) const
     {
         for (int r=0; r<NRows(); r++) {
-            rowDoubles[r] = 0.0;
-            rowStrings[r].erase();
+            rowDoubles[static_cast<size_t>(r)] = 0.0;
+            rowStrings[static_cast<size_t>(r)].erase();
         }
     }
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/08/15 20:53:07  juran
+* Heed warnings.
+*
 * Revision 1.23  2001/07/23 20:08:38  thiessen
 * add regex pattern search
 *
@@ -157,7 +160,7 @@ public:
     const Molecule *molecule;
     bool isProtein;
 
-    int Length(void) const { return sequenceString.size(); }
+    int Length(void) const { return static_cast<int>(sequenceString.size()); }
     int GetOrSetMMDBLink(void) const;
 
     ncbi::objects::CSeq_id * CreateSeqId(void) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/15 20:53:06  juran
+* Heed warnings.
+*
 * Revision 1.2  2000/12/15 21:28:49  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -50,7 +53,7 @@
 inline
 Uint1 MakeTagByte(EClass c, bool constructed, ETag tag)
 {
-    return (c << 6) | (constructed? 0x20: 0) | tag;
+    return static_cast<Uint1>((c << 6) | (constructed? 0x20: 0) | tag);
 }
     
 inline
@@ -74,7 +77,7 @@ bool ExtractConstructed(Uint1 byte)
 inline
 Uint1 ExtractClassAndConstructed(Uint1 byte)
 {
-    return byte & 0xE0;
+    return static_cast<Uint1>(byte & 0xE0);
 }
 
 #endif /* def OBJSTRASNB__HPP  &&  ndef OBJSTRASNB__INL */

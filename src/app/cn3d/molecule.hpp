@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/08/15 20:52:58  juran
+* Heed warnings.
+*
 * Revision 1.24  2001/06/21 02:01:07  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -191,7 +194,7 @@ public:
     bool IsSolvent(void) const { return (type == eSolvent); }
     bool IsHeterogen(void) const { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
 
-    int NResidues(void) const { return residues.size(); }
+    int NResidues(void) const { return static_cast<int>(residues.size()); }
     const Residue::AtomInfo * GetAtomInfo(int rID, int aID) const
     {
         ResidueMap::const_iterator info=residues.find(rID);
@@ -209,6 +212,7 @@ public:
     bool GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const;
 
     // secondary structure query methods
+    
     bool IsResidueInHelix(int residueID) const
         { return (IsProtein() && residueSecondaryStructures[residueID - 1] == eHelix); }
     bool IsResidueInStrand(int residueID) const

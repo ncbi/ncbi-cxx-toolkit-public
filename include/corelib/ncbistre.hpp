@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/08/15 20:53:00  juran
+* Heed warnings.
+*
 * Revision 1.24  2001/05/17 14:54:27  lavr
 * Typos corrected
 *
@@ -334,7 +337,7 @@ public:
 inline
 char Upcase(char c)
 {
-    return toupper(c);
+    return static_cast<char>(toupper(c));
 }
 
 inline
@@ -352,7 +355,7 @@ CUpcaseCharPtrConverter Upcase(const char* s)
 inline
 char Locase(char c)
 {
-    return tolower(c);
+    return static_cast<char>(tolower(c));
 }
 
 inline

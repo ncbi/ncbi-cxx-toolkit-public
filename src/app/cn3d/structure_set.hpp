@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/08/15 20:53:58  juran
+* Heed warnings.
+*
 * Revision 1.52  2001/08/13 22:30:52  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -400,7 +403,7 @@ public:
 
     bool IsMaster(void) const { return isMaster; }
     bool IsSlave(void) const { return !isMaster; }
-    int NDomains(void) const { return domainMap.size(); }
+    int NDomains(void) const { return static_cast<int>(domainMap.size()); }
 };
 
 END_SCOPE(Cn3D)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/15 20:53:02  juran
+* Heed warnings.
+*
 * Revision 1.2  2000/12/15 21:28:47  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -52,7 +55,7 @@ inline
 Uint1
 CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
-    return m_Input.PeekChar(index);
+    return static_cast<Uint1>(m_Input.PeekChar(index));
 }
 
 inline
@@ -66,7 +69,7 @@ inline
 Uint1 CObjectIStreamAsnBinary::FlushTag(void)
 {
     m_Input.SkipChars(m_CurrentTagLength);
-    return m_Input.GetChar();
+    return static_cast<Uint1>(m_Input.GetChar());
 }
 
 inline
@@ -127,14 +130,14 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 inline
 Uint1 CObjectIStreamAsnBinary::ReadByte(void)
 {
-    return m_Input.GetChar();
+    return static_cast<Uint1>(m_Input.GetChar());
 }
 #endif
 
 inline
 Int1 CObjectIStreamAsnBinary::ReadSByte(void)
 {
-    return ReadByte();
+    return static_cast<Int1>(ReadByte());
 }
 
 inline

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/08/15 20:53:04  juran
+* Heed warnings.
+*
 * Revision 1.6  2000/09/18 20:00:08  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -108,7 +111,7 @@ void CObjectStackFrame::SetMemberId(const CMemberId& memberid)
 inline
 size_t CObjectStack::GetStackDepth(void) const
 {
-    return m_StackPtr - m_Stack;
+    return static_cast<size_t>(m_StackPtr - m_Stack);
 }
 
 inline
