@@ -295,73 +295,140 @@ int CProjBulderApp::Run(void)
 
     }}
 
-    // Projects
-    CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
-    ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-        prj_gen.Generate(p->second);
+    if (GetBuildType().GetType() == CBuildType::eStatic) {
+        
+        // Static build
+        
+        // Projects
+        CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
+        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+            prj_gen.Generate(p->second);
+        }
+
+        //Utility projects dir
+        string utility_projects_dir = CDirEntry(m_Solution).GetDir();
+        utility_projects_dir = 
+            CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
+        utility_projects_dir = 
+            CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
+        // MasterProject
+        CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
+                                                   GetRegSettings().m_ConfigInfo,
+                                                   utility_projects_dir);
+        master_prj_gen.SaveProject();
+
+        // ConfigureProject
+        string output_dir = GetProjectTreeInfo().m_Compilers;
+        output_dir = CDirEntry::ConcatPath(output_dir, 
+                                           GetRegSettings().m_CompilersSubdir);
+        output_dir = CDirEntry::ConcatPath(output_dir, 
+                                           GetBuildType().GetTypeStr());
+        output_dir = CDirEntry::ConcatPath(output_dir, "bin");
+        output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
+        CMsvcConfigureProjectGenerator configure_generator
+                                          (output_dir,
+                                           GetRegSettings().m_ConfigInfo,
+                                           utility_projects_dir,
+                                           GetProjectTreeInfo().m_Root,
+                                           GetArgs()["subtree"].AsString(),
+                                           m_Solution);
+        configure_generator.SaveProject();
+
+        // INDEX dummy project
+        CVisualStudioProject index_xmlprj;
+        CreateUtilityProject(" INDEX, see here: ", 
+                             GetRegSettings().m_ConfigInfo, 
+                             &index_xmlprj);
+        string index_prj_path = 
+            CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
+        index_prj_path += MSVC_PROJECT_FILE_EXT;
+        SaveIfNewer(index_prj_path, index_xmlprj);
+        //
+
+        // BuildAll utility project
+        CVisualStudioProject build_all_xmlprj;
+        CreateUtilityProject("-BUILD-ALL-", 
+                             GetRegSettings().m_ConfigInfo, 
+                             &build_all_xmlprj);
+        string build_all_prj_path = 
+            CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
+        build_all_prj_path += MSVC_PROJECT_FILE_EXT;
+        SaveIfNewer(build_all_prj_path, build_all_xmlprj);
+        //
+
+        // Solution
+        CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
+        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+            sln_gen.AddProject(p->second);
+        }
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath());
+        sln_gen.AddUtilityProject (configure_generator.GetPath());
+        sln_gen.AddUtilityProject (index_prj_path);
+        sln_gen.AddBuildAllProject(build_all_prj_path);
+        sln_gen.SaveSolution(m_Solution);
     }
 
-    //Utility projects dir
-    string utility_projects_dir = CDirEntry(m_Solution).GetDir();
-    utility_projects_dir = 
-        CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
-    utility_projects_dir = 
-        CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
-    // MasterProject
-    CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
-                                               GetRegSettings().m_ConfigInfo,
-                                               utility_projects_dir);
-    master_prj_gen.SaveProject();
+    if (GetBuildType().GetType() == CBuildType::eDll) {
 
-    // ConfigureProject
-    string output_dir = GetProjectTreeInfo().m_Compilers;
-    output_dir = CDirEntry::ConcatPath(output_dir, 
-                                       GetRegSettings().m_CompilersSubdir);
-    output_dir = CDirEntry::ConcatPath(output_dir, 
-                                       GetBuildType().GetTypeStr());
-    output_dir = CDirEntry::ConcatPath(output_dir, "bin");
-    output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
-    CMsvcConfigureProjectGenerator configure_generator
-                                      (output_dir,
-                                       GetRegSettings().m_ConfigInfo,
-                                       utility_projects_dir,
-                                       GetProjectTreeInfo().m_Root,
-                                       GetArgs()["subtree"].AsString(),
-                                       m_Solution);
-    configure_generator.SaveProject();
+        //Dll build
 
-    // INDEX dummy project
-    CVisualStudioProject index_xmlprj;
-    CreateUtilityProject(" INDEX, see here: ", 
-                         GetRegSettings().m_ConfigInfo, 
-                         &index_xmlprj);
-    string index_prj_path = 
-        CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
-    index_prj_path += MSVC_PROJECT_FILE_EXT;
-    SaveIfNewer(index_prj_path, index_xmlprj);
-    //
+        list<SConfigInfo> dll_configs;
+        GetDllsInfo().GetBuildConfigs(&dll_configs);
 
-    // BuildAll utility project
-    CVisualStudioProject build_all_xmlprj;
-    CreateUtilityProject("-BUILD-ALL-", 
-                         GetRegSettings().m_ConfigInfo, 
-                         &build_all_xmlprj);
-    string build_all_prj_path = 
-        CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
-    build_all_prj_path += MSVC_PROJECT_FILE_EXT;
-    SaveIfNewer(build_all_prj_path, build_all_xmlprj);
-    //
+        CProjectItemsTree dll_projects_tree;
+        CreateDllBuildTree(projects_tree, &dll_projects_tree);
 
-    // Solution
-    CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
-    ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-        sln_gen.AddProject(p->second);
+        // Projects
+        CMsvcProjectGenerator prj_gen(dll_configs);
+        ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
+            prj_gen.Generate(p->second);
+        }
+
+        //Utility projects dir
+        string utility_projects_dir = CDirEntry(m_Solution).GetDir();
+        utility_projects_dir = 
+            CDirEntry::ConcatPath(utility_projects_dir, "UtilityProjects");
+        utility_projects_dir = 
+            CDirEntry::AddTrailingPathSeparator(utility_projects_dir);
+
+        // MasterProject
+        CMsvcMasterProjectGenerator master_prj_gen(dll_projects_tree,
+                                                   dll_configs,
+                                                   utility_projects_dir);
+        master_prj_gen.SaveProject();
+
+        // INDEX dummy project
+        CVisualStudioProject index_xmlprj;
+        CreateUtilityProject(" INDEX, see here: ", 
+                             dll_configs, 
+                             &index_xmlprj);
+        string index_prj_path = 
+            CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
+        index_prj_path += MSVC_PROJECT_FILE_EXT;
+        SaveIfNewer(index_prj_path, index_xmlprj);
+        //
+
+        // BuildAll utility project
+        CVisualStudioProject build_all_xmlprj;
+        CreateUtilityProject("-BUILD-ALL-", 
+                             dll_configs, 
+                             &build_all_xmlprj);
+        string build_all_prj_path = 
+            CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
+        build_all_prj_path += MSVC_PROJECT_FILE_EXT;
+        SaveIfNewer(build_all_prj_path, build_all_xmlprj);
+        //
+
+        // Solution
+        CMsvcSolutionGenerator sln_gen(dll_configs);
+        ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
+            sln_gen.AddProject(p->second);
+        }
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath());
+        sln_gen.AddUtilityProject (index_prj_path);
+        sln_gen.AddBuildAllProject(build_all_prj_path);
+        sln_gen.SaveSolution(m_Solution);
     }
-    sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-    sln_gen.AddUtilityProject (configure_generator.GetPath());
-    sln_gen.AddUtilityProject (index_prj_path);
-    sln_gen.AddBuildAllProject(build_all_prj_path);
-    sln_gen.SaveSolution(m_Solution);
 
     //
     LOG_POST(Info << "Finished at "+ CTime(CTime::eCurrent).AsString());
@@ -432,19 +499,7 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
     string config_str = GetConfig().GetString("msvc7", "Configurations", "");
     list<string> configs_list;
     NStr::Split(config_str, LIST_SEPARATOR, configs_list);
-    ITERATE(list<string>, p, configs_list) {
-
-        const string& config_name = *p;
-        SConfigInfo config;
-        config.m_Name  = config_name;
-        config.m_Debug = GetConfig().GetString(config_name, 
-                                               "debug",
-                                               "FALSE") != "FALSE";
-        config.m_RuntimeLibrary = GetConfig().GetString(config_name, 
-                                                        "runtimeLibraryOption",
-                                                        "0");
-        configs->push_back(config);
-    }
+    LoadConfigInfoByNames(GetConfig(), configs_list, configs);
 }
 
 
@@ -669,6 +724,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/03/10 16:50:13  gorelenk
+ * Separated static build and dll build processing inside CProjBulderApp::Run.
+ *
  * Revision 1.31  2004/03/08 23:37:01  gorelenk
  * Implemented CProjBulderApp::GetDllsInfo.
  *
