@@ -54,21 +54,10 @@
 
 BEGIN_NCBI_SCOPE
 
-#if defined (NCBI_COMPILER_MIPSPRO)  ||  (defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC))
-// Old iostream implementations lack showmanyc, but some of our
-// classes have definitions that should be visible to client code,
-// including in particular CStreamUtils::Readsome....
-class CShowmanycStreambuf : public CNcbiStreambuf
-{
-public:
-    virtual streamsize showmanyc() { return 0; }
-};
-#endif
-
 
 #ifdef NCBI_COMPILER_MIPSPRO
 
-class CMIPSPRO_ReadsomeTolerantStreambuf : public CShowmanycStreambuf
+class CMIPSPRO_ReadsomeTolerantStreambuf : public CNcbiStreambuf
 {
 public:
     // Do not use these two ugly, weird, ad-hoc methods, ever!!!
@@ -153,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2003/12/29 15:15:10  lavr
+ * Class CShowmanycStreambuf removed
+ *
  * Revision 1.16  2003/12/18 13:23:40  ucko
  * It seems MIPSpro also lacks showmanyc, so extend our
  * streambuf-with-showmanyc class to cover it as well and make it
