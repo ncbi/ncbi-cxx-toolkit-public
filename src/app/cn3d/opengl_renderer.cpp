@@ -293,6 +293,8 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 
         case eZoomH:
             cameraAngleRad *= 1.0 - 0.01 * dX;
+            if (cameraAngleRad < 0.001) cameraAngleRad = 0.001;
+            else if (cameraAngleRad > 2*PI) cameraAngleRad = 2*PI;
             NewView();
             break;
 
@@ -301,11 +303,13 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 
         case eZoomOut:
             cameraAngleRad *= 1.5;
+            if (cameraAngleRad > 2*PI) cameraAngleRad = 2*PI;
             NewView();
             break;
 
         case eZoomIn:
             cameraAngleRad /= 1.5;
+            if (cameraAngleRad < 0.001) cameraAngleRad = 0.001;
             NewView();
             break;
 
@@ -1543,6 +1547,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/05/22 19:08:17  thiessen
+* add limits to camera angle
+*
 * Revision 1.69  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *
