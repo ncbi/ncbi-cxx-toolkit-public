@@ -245,6 +245,13 @@ public:
                   size_t buf_size = 0, 
                   ENullable is_null = eNullable);
 
+    // Create new copy of m_DBT_Key.
+    // Caller is responsible for proper deletion. See also: DestroyDBT_Clone
+    DBT* CloneDBT_Key();
+
+    // Free the DBT structure created by CloneDBT_Key.
+    static void DestroyDBT_Clone(DBT* dbt);
+
 protected:
     // Unpack internal record buffers
     void Discard();
@@ -268,13 +275,6 @@ protected:
     // data structures (BLOB storage, etc.) Caller takes full
     // responsibility for filling m_DBT_Data with correct values.
     void DisableDataBufProcessing() { m_DataBufDisabled = true; }
-
-    // Create new copy of m_DBT_Key.
-    // Caller is responsible for proper deletion. See also: DestroyDBT_Clone
-    DBT* CloneDBT_Key();
-
-    // Free the DBT structure created by CloneDBT_Key.
-    static void DestroyDBT_Clone(DBT* dbt);
 
 private:
     CBDB_File(const CBDB_File&);
@@ -388,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/09/17 18:16:21  kuznets
+ * Some class functions migrated into the public scope.
+ *
  * Revision 1.18  2003/09/16 20:17:29  kuznets
  * CBDB_File: added methods to clone (and then destroy) DBT Key.
  *
