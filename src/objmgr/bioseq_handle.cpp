@@ -42,6 +42,8 @@
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/synonyms.hpp>
+#include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objmgr/impl/seq_loc_cvt.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -86,7 +88,7 @@ CDataSource& CBioseq_Handle::x_GetDataSource(void) const
 }
 
 
-const CSeq_id* CBioseq_Handle::GetSeqId(void) const
+CConstRef<CSeq_id> CBioseq_Handle::GetSeqId(void) const
 {
     return GetSeq_id_Handle().GetSeqIdOrNull();
 }
@@ -350,12 +352,58 @@ CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
 }
 
 
+CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
+{
+    const CSeqMap& seq_map = GetSeqMap();
+    // Iterate seq-map, for each segment create conversion,
+    // for each conversion try to map seq-loc to the master sequence.
+    CSeq_loc_Conversion_Set conv_set;
+    CHeapScope hscope(GetScope());
+    conv_set.SetScope(hscope);
+    CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+    master_loc_empty->SetEmpty().Assign(*GetSeqId());
+    CConstRef<CSeqMap> cr_map(&seq_map);
+    CSeqMap_CI it(cr_map, &GetScope(), 0, kMax_Int,
+        CSeqMap::fFindRef);
+    for ( ; it; ++it) {
+        _ASSERT(it.GetType() == CSeqMap::eSeqRef);
+        CSeq_loc_Conversion def_cvt(
+            GetSeq_id_Handle(),
+            *master_loc_empty,
+            it,
+            it.GetRefSeqid(),
+            &GetScope());
+        CConstRef<CSynonymsSet> syns = GetScope().GetSynonyms(it.GetRefSeqid());
+        if (syns) {
+            ITERATE ( CSynonymsSet, synit, *syns ) {
+                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(synit);
+                CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(def_cvt));
+                cvt->SetSrcId(idh);
+                conv_set.Add(*cvt);
+            }
+        }
+        else {
+            CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(def_cvt));
+            conv_set.Add(*cvt);
+        }
+    }
+    CRef<CSeq_loc> dst(new CSeq_loc);
+    if (!conv_set.Convert(loc, dst)) {
+        dst.Reset();
+    }
+    return dst;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/11/10 18:12:43  grichenk
+* Added MapLocation()
+*
 * Revision 1.46  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

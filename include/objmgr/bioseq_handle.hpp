@@ -87,7 +87,7 @@ public:
     // Get the complete bioseq (as loaded by now)
     const CBioseq& GetBioseq(void) const;
 
-    const CSeq_id* GetSeqId(void) const;
+    CConstRef<CSeq_id> GetSeqId(void) const;
 
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
@@ -177,6 +177,8 @@ public:
     void AddAnnot(CSeq_annot& annot);
     void RemoveAnnot(CSeq_annot& annot);
     void ReplaceAnnot(CSeq_annot& old_annot, CSeq_annot& new_annot);
+
+    CRef<CSeq_loc> MapLocation(const CSeq_loc& loc) const;
 
 private:
     // Get data source
@@ -286,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/11/10 18:12:43  grichenk
+* Added MapLocation()
+*
 * Revision 1.44  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
