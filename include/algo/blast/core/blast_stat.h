@@ -57,7 +57,8 @@ extern "C" {
 */
 typedef struct Blast_KarlinBlk {
 		double	Lambda; /**< Lambda value used in statistics */
-		double	K, logK; /**< K value used in statistics */
+		double	K; /**< K value used in statistics */
+		double	logK; /**< natural log of K value used in statistics */
 		double	H; /**< H value used in statistics */
 		double	paramC;	/**< for use in seed. */
 	} Blast_KarlinBlk;
@@ -79,10 +80,13 @@ typedef struct Blast_KarlinBlk {
 of Karlin-Altschul parameters for an ungapped search.
 */
 typedef struct Blast_ScoreFreq {
-    Int4	score_min, score_max; /**< lowest and highest allowed scores */
-    Int4	obs_min, obs_max; /**< lowest and highest observed (actual) scores */
-    double	score_avg; /**< average score, must be negative for local alignment. */
-    double* sprob0,* sprob; /**< arrays for frequency of given score, sprob is shifted down by score_min. */
+    Int4         score_min; /**< lowest allowed scores */
+    Int4         score_max; /**< highest allowed scores */
+    Int4         obs_min;   /**< lowest observed (actual) scores */
+    Int4         obs_max;   /**< highest observed (actual) scores */
+    double       score_avg; /**< average score, must be negative for local alignment. */
+    double*      sprob0;    /**< arrays for frequency of given score */
+    double*      sprob;     /**< arrays for frequency of given score, shifted down by score_min. */
 } Blast_ScoreFreq;
 
 #define BLAST_MATRIX_SIZE 32
@@ -104,25 +108,28 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	SBLASTMatrixStructure* matrix_struct;	/**< Holds info about matrix. */
 	Int4 **matrix;  /**< Substitution matrix */
 	Int4 **posMatrix;  /**< Sub matrix for position depend BLAST. */
-   double karlinK; /**< Karlin-Altschul parameter associated with posMatrix */
-	Int2	mat_dim1, mat_dim2;	/**< dimensions of matrix. */
-	Int4 *maxscore; /**< Max. score for each letter */
-	Int4	loscore, hiscore; /**< Min. & max. substitution scores */
-	Int4	penalty, reward; /**< penalty and reward for blastn. */
+        /* double karlinK; */ /**< Karlin-Altschul parameter associated with posMatrix */
+	Int2	mat_dim1;	/**< dimensions of matrix. */
+	Int2	mat_dim2;	/**< dimensions of matrix. */
+ /*	Int4    *maxscore; */ /**< Max. score for each letter */
+	Int4	loscore;   /**< Min.  substitution scores */
+	Int4	hiscore;   /**< Max. substitution scores */
+	Int4	penalty;   /**< penalty for mismatch in blastn. */
+	Int4	reward;    /**< reward for match in blastn. */
         double  scale_factor; /**< multiplier for all cutoff and dropoff scores */
 	Boolean		read_in_matrix; /**< If TRUE, matrix is read in, otherwise
 					produce one from penalty and reward above. */
 	Blast_ScoreFreq** sfp;	/**< score frequencies. */
 	double **posFreqs; /**<matrix of position specific frequencies*/
 	/* kbp & kbp_gap are ptrs that should be set to kbp_std, kbp_psi, etc. */
-	Blast_KarlinBlk** kbp; 	/**< Karlin-Altschul parameters. */
-	Blast_KarlinBlk** kbp_gap; /**< K-A parameters for gapped alignments. */
+	Blast_KarlinBlk** kbp; 	/**< Karlin-Altschul parameters. Actually just a placeholder. */
+	Blast_KarlinBlk** kbp_gap; /**< K-A parameters for gapped alignments.  Actually just a placeholder. */
 	/* Below are the Karlin-Altschul parameters for non-position based ('std')
 	and position based ('psi') searches. */
-	Blast_KarlinBlk **kbp_std,	
-                    **kbp_psi,	
-                    **kbp_gap_std,
-                    **kbp_gap_psi;
+	Blast_KarlinBlk **kbp_std,  /**< K-A parameters for ungapped alignments	*/
+                    **kbp_psi,	    /**< K-A parameters for position-based alignments. */
+                    **kbp_gap_std,  /**< K-A parameters for std (not position-based) alignments */
+                    **kbp_gap_psi;  /**< K-A parameters for psi alignments. */
 	Blast_KarlinBlk* 	kbp_ideal;	/**< Ideal values (for query with average database composition). */
 	Int4 number_of_contexts;	/**< Used by sfp and kbp, how large are these*/
 	char* 	name;		/**< name of matrix. */
@@ -240,13 +247,16 @@ Blast_KarlinBlk* Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
 Int2 Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
                                  Int4 context_end);
 
-/*
-        Attempts to fill KarlinBlk for given gap opening, extensions etc.
-        Will return non-zero status if that fails.
-
-        return values:  -1 if matrix_name is NULL;
-                        1 if matrix not found
-                        2 if matrix found, but open, extend etc. values not supported.
+/** Attempts to fill KarlinBlk for given gap opening, extensions etc.
+ *
+ * @param kbp object to be filled in [in|out]
+ * @param gap_open gap existence cost [in]
+ * @param gap_extend gap extension cost [in]
+ * @param decline_align cost to not align part of a sequence [in]
+ * @param matrix_name name of the matrix used [in]
+ * @return  -1 if matrix_name is NULL;
+ *          1 if matrix not found
+ *           2 if matrix found, but open, extend etc. values not supported.
 */
 Int2 Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name);
 
@@ -344,7 +354,7 @@ double BLAST_SmallGapSumE (const Blast_KarlinBlk* kbp, Int4 gap, Int2 num,  doub
  *    routine [in]
  * @return sum expect value.
  */
-double BLAST_UnevenGapSumE (const Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, Int2 num,  double xsum, Int4 query_length, Int4 subject_length, double weight_divisor);
+double BLAST_UnevenGapSumE (const Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, Int2 num,  double score_prime, Int4 query_length, Int4 subject_length, double weight_divisor);
 
 /** Calculates the e-value if a collection of distinct alignments with
  *   arbitrarily large gaps between the alignments
@@ -373,8 +383,23 @@ double BLAST_LargeGapSumE (const Blast_KarlinBlk* kbp, Int2 num,  double xsum, I
 void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
                     double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
+
+/** Calculate a new PSSM, using composition-based statistics, for use
+ *  with RPS BLAST. This function produces a PSSM for a single RPS DB
+ *  sequence (of size db_seq_length) and incorporates information from 
+ *  the RPS blast query. Each individual database sequence must call this
+ *  function to retrieve its own PSSM. The matrix is returned (and must
+ *  be freed elsewhere). posMatrix is the portion of the complete 
+ *  concatenated PSSM that is specific to this DB sequence 
+ * @param scalingFactor used to rescale Lambda [in]
+ * @param rps_query_length length of query sequence [in]
+ * @param rps_query_seq the query sequence [in]
+ * @param db_seq_length Length of the database sequence [in]
+ * @param posMatrix matrix (actual) values to be used [in]
+ * @return new pssm 
+ */
 Int4 ** RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
-                   Uint1 * rps_query_seq, Int4 db_seq_length, Int4 **posMatrix);
+                   const Uint1 * rps_query_seq, Int4 db_seq_length, Int4 **posMatrix);
 
 
 /** 
@@ -442,6 +467,7 @@ Blast_ResFreq* Blast_ResFreqDestruct(Blast_ResFreq* rfp);
 /** Calculates residues frequencies given a standard distribution.
  * @param sbp the BlastScoreBlk provides information on alphabet.
  * @param rfp the prob element on this Blast_ResFreq is used.
+ * @return zero on success
 */
 Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
 
@@ -449,6 +475,7 @@ Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
  * system.
  * @param score_min Minimum score [in]
  * @param score_max Maximum score [in]
+ * @param allocated and initialized pointer to Blast_ScoreFreq
  */
 Blast_ScoreFreq*
 Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
@@ -463,6 +490,9 @@ Blast_ScoreFreqDestruct(Blast_ScoreFreq* sfp);
 /** Fills a buffer with the 'standard' alphabet 
  * (given by STD_AMINO_ACID_FREQS[index].ch).
  *
+ * @param alphabet_size number of characters in alphabet [in]
+ * @param residues buffer to be filled in [in|out]
+ * @param residue_size size of "residues" buffer [in]
  * @return Number of residues in alphabet or negative returns upon error.
  */
 Int2
@@ -473,12 +503,14 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues,
  *   statistical significance of high-scoring segments or subalignments. 
  * @param kbp object containing Lambda, H, and K as well as scoring information [in|out]
  * @param sfp array of probabilities for all scores [in]
+ * @return zero on success, 1 on error.
  */
 Int2
 Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
 
 /**  Given a sequence of 'length' amino acid residues, compute the
  *   probability of each residue and put that in the array resProb
+ *   Excludes ambiguity characters.
  *
  * @param sequence the sequence to be computed upon [in]
  * @param length the length of the sequence [in]
