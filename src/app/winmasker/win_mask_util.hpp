@@ -26,66 +26,42 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Declaration of CheckDuplicates function.
+ *   WindowMasker helper functions (prototypes).
  *
  */
 
-#ifndef C_WIN_MASK_DUP_TABLE_HPP
-#define C_WIN_MASK_DUP_TABLE_HPP
+#ifndef C_WIN_MASK_UTIL_HPP
+#define C_WIN_MASK_UTIL_HPP
 
-#include <string>
-#include <vector>
 #include <set>
 
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/**
- **\brief Check for possibly duplicate sequences in the input.
- **
- ** input contains the list of input file names. The files should be in
- ** the fasta format. The function checks the input sequences for
- ** duplication and reports possible duplicates to the standard error.
- ** 
- **\param unput list of input file names
- **
- **/
+class CWinMaskUtil
+{
+    public:
 
-void CheckDuplicates( const vector< string > & input,
-                      const set< objects::CSeq_id_Handle > & ids,
-                      const set< objects::CSeq_id_Handle > & exclude_ids );
+        static bool consider( 
+            CRef< objects::CScope > scope,
+            const objects::CBioseq_Handle & bsh,
+            const set< objects::CSeq_id_Handle > & ids,
+            const set< objects::CSeq_id_Handle > & exclude_ids );
+};
 
 END_NCBI_SCOPE
+
+#endif
 
 /*
  * ========================================================================
  * $Log$
- * Revision 1.2  2005/03/24 16:50:21  morgulis
+ * Revision 1.1  2005/03/24 16:50:22  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *
- * Revision 1.1  2005/02/25 21:32:54  dicuccio
- * Rearranged winmasker files:
- * - move demo/winmasker to a separate app directory (src/app/winmasker)
- * - move win_mask_* to app directory
- *
- * Revision 1.3  2005/02/12 20:24:39  dicuccio
- * Dropped use of std:: (not needed)
- *
- * Revision 1.2  2005/02/12 19:58:03  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
  */
-
-#endif
-

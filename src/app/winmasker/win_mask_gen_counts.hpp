@@ -39,6 +39,12 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistre.hpp>
 
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /**
@@ -84,7 +90,9 @@ public:
                              Uint4 min_count,
                              Uint4 max_count,
                              bool check_duplicates,
-                             bool use_list );
+                             bool use_list,
+                             const set< objects::CSeq_id_Handle > & ids,
+                             const set< objects::CSeq_id_Handle > & exclude_ids );
 
     /**
      **\brief Object destructor.
@@ -115,6 +123,16 @@ private:
                   const vector< string > & input,
                   bool do_output );
 
+    /**\internal
+     **\brief Return the total length of all sequences in a
+     **       fasta file.
+     **
+     **\param fname FASTA file name
+     **\return combined length of all sequences in fname
+     **
+     **/
+    Uint8 fastalen( const string & fname ) const;
+
     string input;                   /**<\internal input file (or list of input files) */
     CNcbiOstream * out_stream;      /**<\internal output stream (standard C++ ostream) */
     Uint4 max_mem;                  /**<\internal available memory in bytes */
@@ -129,6 +147,9 @@ private:
     Uint8 total_ecodes;             /**<\internal total number of different n-mers found */
     vector< Uint4 > score_counts;   /**<\internal counts table for each suffix */
     double th[4];                   /**<\internal percentages used to determine threshold scores */
+
+    const set< objects::CSeq_id_Handle > & ids;          /**<\internal set of ids to process */
+    const set< objects::CSeq_id_Handle > & exclude_ids;  /**<\internal set of ids to skip */
 };
 
 END_NCBI_SCOPE
@@ -136,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/24 16:50:22  morgulis
+ * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
+ *
  * Revision 1.2  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

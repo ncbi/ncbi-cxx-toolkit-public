@@ -127,23 +127,23 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
                                             : 0;
         set_min_score = args["set_t_low"]   ? args["set_t_low"].AsInteger()
                                             : 0;
-
-        string ids_file_name( args["ids"].AsString() );
-        string exclude_ids_file_name( args["exclude_ids"].AsString() );
-
-        if(    !ids_file_name.empty()
-               && !exclude_ids_file_name.empty() )
-        {
-            NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
-                        "only one of -ids or -exclude_ids can be specified" );
-        }
-
-        if( !ids_file_name.empty() )
-            FillIdList( ids_file_name, ids );
-
-        if( !exclude_ids_file_name.empty() )
-            FillIdList( exclude_ids_file_name, exclude_ids );
     }
+
+    string ids_file_name( args["ids"].AsString() );
+    string exclude_ids_file_name( args["exclude_ids"].AsString() );
+
+    if(    !ids_file_name.empty()
+        && !exclude_ids_file_name.empty() )
+    {
+        NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
+                    "only one of -ids or -exclude_ids can be specified" );
+    }
+
+    if( !ids_file_name.empty() )
+        FillIdList( ids_file_name, ids );
+
+    if( !exclude_ids_file_name.empty() )
+        FillIdList( exclude_ids_file_name, exclude_ids );
 
     _TRACE( "Leaving CWinMaskConfig::CWinMaskConfig" );
 }
@@ -202,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/03/24 16:50:21  morgulis
+ * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
+ *
  * Revision 1.5  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

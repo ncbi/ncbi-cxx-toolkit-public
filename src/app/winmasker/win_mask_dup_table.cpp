@@ -49,6 +49,7 @@
 
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_dup_table.hpp"
+#include "win_mask_util.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -531,7 +532,9 @@ static const string GetIdString( const CSeq_entry & entry )
 #endif
 
 //------------------------------------------------------------------------------
-void CheckDuplicates( const vector< string > & input )
+void CheckDuplicates( const vector< string > & input,
+                      const set< objects::CSeq_id_Handle > & ids,
+                      const set< objects::CSeq_id_Handle > & exclude_ids )
 {
     typedef vector< string >::const_iterator input_iterator;
 
@@ -561,31 +564,34 @@ void CheckDuplicates( const vector< string > & input )
             for ( ;  bs_iter;  ++bs_iter) {
                 CBioseq_Handle bsh = *bs_iter;
 
-                TSeqPos data_len = bsh.GetBioseqLength();
-                if( data_len < MIN_SEQ_LENGTH )
-                    continue;
-
-                string id;
-                sequence::GetId(bsh, sequence::eGetId_Best)
-                    .GetSeqId()->GetLabel(&id);
-                data_len -= SAMPLE_SKIP;
-                tracker track( table, id );
-
-                string index;
-                CSeqVector data =
-                    bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-                for( TSeqPos i = 0;  i < data_len;  ++i )
+                if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
                 {
-                    index.erase();
-                    data.GetSeqData(i, i + SAMPLE_LENGTH, index);
-                    const dup_lookup_table::sample * sample( table[index] );
+                    TSeqPos data_len = bsh.GetBioseqLength();
+                    if( data_len < MIN_SEQ_LENGTH )
+                        continue;
 
-                    if( sample != 0 )
-                        track( index, seqnum, i, sample->begin(), sample->end() );
+                    string id;
+                    sequence::GetId(bsh, sequence::eGetId_Best)
+                        .GetSeqId()->GetLabel(&id);
+                    data_len -= SAMPLE_SKIP;
+                    tracker track( table, id );
+
+                    string index;
+                    CSeqVector data =
+                        bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                    for( TSeqPos i = 0;  i < data_len;  ++i )
+                    {
+                        index.erase();
+                        data.GetSeqData(i, i + SAMPLE_LENGTH, index);
+                        const dup_lookup_table::sample * sample( table[index] );
+
+                        if( sample != 0 )
+                            track( index, seqnum, i, sample->begin(), sample->end() );
+                    }
+
+                    table.add_seq_info( id, data );
+                    ++seqnum;
                 }
-
-                table.add_seq_info( id, data );
-                ++seqnum;
             }
         }
     }
@@ -597,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/24 16:50:21  morgulis
+ * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
+ *
  * Revision 1.3  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

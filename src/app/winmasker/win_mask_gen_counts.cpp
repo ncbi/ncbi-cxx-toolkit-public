@@ -52,6 +52,7 @@
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_dup_table.hpp"
+#include "win_mask_util.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -100,7 +101,7 @@ string mkdata( const CSeq_entry & entry )
 #endif
 
 //------------------------------------------------------------------------------
-Uint8 fastalen( const string & fname )
+Uint8 CWinMaskCountsGenerator::fastalen( const string & fname ) const
 {
     CNcbiIfstream input_stream( fname.c_str() );
     CWinMaskFastaReader reader( input_stream );
@@ -122,7 +123,10 @@ Uint8 fastalen( const string & fname )
 
         CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
         for ( ;  bs_iter;  ++bs_iter) {
-            result += bs_iter->GetBioseqLength();
+            CBioseq_Handle bsh = *bs_iter;
+
+            if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
+                result += bs_iter->GetBioseqLength();
         }
     }
 
@@ -134,16 +138,19 @@ static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 { return CSeqMaskerUtil::reverse_complement( seq, size ); }
 
 //------------------------------------------------------------------------------
-CWinMaskCountsGenerator::CWinMaskCountsGenerator( const string & arg_input,
-                                                  const string & output,
-                                                  const string & arg_th,
-                                                  Uint4 mem_avail,
-                                                  Uint1 arg_unit_size,
-                                                  Uint8 arg_genome_size,
-                                                  Uint4 arg_min_count,
-                                                  Uint4 arg_max_count,
-                                                  bool arg_check_duplicates,
-                                                  bool arg_use_list )
+CWinMaskCountsGenerator::CWinMaskCountsGenerator( 
+    const string & arg_input,
+    const string & output,
+    const string & arg_th,
+    Uint4 mem_avail,
+    Uint1 arg_unit_size,
+    Uint8 arg_genome_size,
+    Uint4 arg_min_count,
+    Uint4 arg_max_count,
+    bool arg_check_duplicates,
+    bool arg_use_list,
+    const set< CSeq_id_Handle > & arg_ids,
+    const set< CSeq_id_Handle > & arg_exclude_ids )
 :   input( arg_input ), out_stream( &NcbiCout ),
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
@@ -152,7 +159,8 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator( const string & arg_input,
     has_min_count( arg_min_count != 0 ),
     check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
     total_ecodes( 0 ), 
-    score_counts( arg_max_count == 0 ? 500 : arg_max_count, 0 )
+    score_counts( arg_max_count == 0 ? 500 : arg_max_count, 0 ),
+    ids( arg_ids ), exclude_ids( arg_exclude_ids )
 {
     if( !output.empty() )
         out_stream = new CNcbiOfstream( output.c_str() );
@@ -198,7 +206,7 @@ void CWinMaskCountsGenerator::operator()()
     // Check for duplicates, if necessary.
     if( check_duplicates )
     {
-        CheckDuplicates( file_list );
+        CheckDuplicates( file_list, ids, exclude_ids );
         cerr << "." << flush;
     }
 
@@ -377,39 +385,44 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
             CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
             for ( ;  bs_iter;  ++bs_iter) {
-                CSeqVector data =
-                    bs_iter->GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                CBioseq_Handle bsh = *bs_iter;
 
-                if( data.empty() )
-                    continue;
+                if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
+                {
+                    CSeqVector data =
+                        bs_iter->GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
-                TSeqPos length( data.size() );
-                Uint4 count( 0 );
-                Uint4 unit( 0 );
-
-                for( Uint4 i( 0 ); i < length; ++i ) {
-                    if( ambig( data[i] ) )
-                    {
-                        count = 0;
-                        unit = 0;
+                    if( data.empty() )
                         continue;
-                    }
-                    else
-                    {
-                        unit = ((unit<<2)&unit_mask) + letter( data[i] );
 
-                        if( count >= unit_size - 1 )
+                    TSeqPos length( data.size() );
+                    Uint4 count( 0 );
+                    Uint4 unit( 0 );
+
+                    for( Uint4 i( 0 ); i < length; ++i ) {
+                        if( ambig( data[i] ) )
                         {
-                            Uint4 runit( reverse_complement( unit, unit_size ) );
-
-                            if( unit <= runit && (unit&prefix_mask) == prefix )
-                                ++counts[unit&suffix_mask];
-
-                            if( runit <= unit && (runit&prefix_mask) == prefix )
-                                ++counts[runit&suffix_mask];
+                            count = 0;
+                            unit = 0;
+                            continue;
                         }
+                        else
+                        {
+                            unit = ((unit<<2)&unit_mask) + letter( data[i] );
 
-                        ++count;
+                            if( count >= unit_size - 1 )
+                            {
+                                Uint4 runit( reverse_complement( unit, unit_size ) );
+    
+                                if( unit <= runit && (unit&prefix_mask) == prefix )
+                                    ++counts[unit&suffix_mask];
+
+                                if( runit <= unit && (runit&prefix_mask) == prefix )
+                                    ++counts[runit&suffix_mask];
+                            }
+
+                            ++count;
+                        }
                     }
                 }
             }
@@ -454,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/03/24 16:50:21  morgulis
+ * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
+ *
  * Revision 1.7  2005/03/21 21:02:44  morgulis
  * Fixed one possible bug that might occur there are no valid units in the
  * whole input.

@@ -53,6 +53,7 @@
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_writer.hpp"
 #include "win_mask_gen_counts.hpp"
+#include "win_mask_util.hpp"
 
 #include <algo/winmask/seq_masker.hpp>
 #include <algo/winmask/dust_masker.hpp>
@@ -280,7 +281,9 @@ int CWinMaskApplication::Run (void)
                                     aConfig.MinScore(),
                                     aConfig.MaxScore(),
                                     aConfig.CheckDup(),
-                                    aConfig.FaList() );
+                                    aConfig.FaList(),
+                                    aConfig.Ids(),
+                                    aConfig.ExcludeIds() );
         cg();
         return 0;
     }
@@ -336,30 +339,7 @@ int CWinMaskApplication::Run (void)
                 continue;
             }
 
-            bool process( true );
-
-            vector<CSeq_id_Handle> syns = scope->GetIds(*bsh.GetSeqId());
-            if( !ids.empty() )
-            {
-                process = false;
-                ITERATE (vector<CSeq_id_Handle>, iter, syns) {
-                    if (ids.find(*iter) != ids.end()) {
-                        process = true;
-                        break;
-                    }
-                }
-            }
-
-            if( !exclude_ids.empty() ) {
-                ITERATE (vector<CSeq_id_Handle>, iter, syns) {
-                    if (exclude_ids.find(*iter) != exclude_ids.end()) {
-                        process = false;
-                        break;
-                    }
-                }
-            }
-
-            if( process )
+            if( CWinMaskUtil::consider( scope, bsh, ids, exclude_ids ) )
             {
                 TSeqPos len = bsh.GetBioseqLength();
                 total += len;
@@ -397,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/03/24 16:50:21  morgulis
+ * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
+ *
  * Revision 1.4  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.
