@@ -1,111 +1,111 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
-  <head>
-    <title>applic.cpp</title>
-  </head>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>applic.cpp</title>
+</head>
+<body bgcolor="#FFFFFF">
 
-  <body BGCOLOR="#FFFFFF">
-  <pre><font color = "red">// File name:   applic.cpp
-// Description: Using the CNcbiApplication class with CNcbiDiag, CArgs 
-//		and CArgDescription classes
-<font color = "green">
-#include &lt;corelib/ncbistd.hpp>
+<pre><font color="#FF0000">// File name:&nbsp;&nbsp; applic.cpp
+// Description: Using the CNcbiApplication class with CNcbiDiag, CArgs&nbsp;
+//&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and CArgDescription classes
+
+</font><font color="#008000">#include &lt;corelib/ncbistd.hpp>
 #include &lt;corelib/ncbiutil.hpp>
 #include &lt;corelib/ncbiargs.hpp>
 #include &lt;corelib/ncbiapp.hpp>
 #include &lt;corelib/ncbienv.hpp>
 
-<font color = "blue">USING_NCBI_SCOPE;<font color = "black">
+</font><font color="#0000FF">USING_NCBI_SCOPE;
 
-class CTestApp : public CNcbiApplication {
+</font><font color="#000000">class CTestApp : public CNcbiApplication {
 public:
-    virtual int Run ();
+&nbsp;&nbsp;&nbsp; virtual int Run ();
 };
 
 int CTestApp::Run() {
 
-    auto_ptr&lt;CArgs> args;
-<font color=red>
-    // create a CArgDescriptions object to constrain the input arguments;
-    // Argument descriptions are added using:
+&nbsp;&nbsp;&nbsp; auto_ptr&lt;CArgs> args;
 
-    //  void AddKey(string& name, string& synopsis, string& comment, EType, TFlags); 
-    //  void AddOptionalKey(string& name, string& synopsis, string& comment, EType,
-    //			    TFlags, string default);
-    //  void AddFlag(string& name, string& comment);
-</font>
-    {
-        CArgDescriptions argDesc;
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // create a CArgDescriptions object to constrain the input arguments;
+&nbsp;&nbsp;&nbsp; // Argument descriptions are added using:
 
-<font color=red>	// Required arguments:</font>
+&nbsp;&nbsp;&nbsp; //&nbsp; void AddKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType, TFlags);&nbsp;
+&nbsp;&nbsp;&nbsp; //&nbsp; void AddOptionalKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType,
+&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TFlags, string default);
+&nbsp;&nbsp;&nbsp; //&nbsp; void AddFlag(string&amp; name, string&amp; comment);
 
-        argDesc.AddKey("n", "integer", "integer between 1 and 10", argDesc.eInteger, 0);
-        argDesc.AddKey("f", "float", "float between 0.0 and 1.0", argDesc.eDouble, 0);
-	argDesc.AddKey("i", "inputFile", "data file in", argDesc.eInputFile, 
-		       argDesc.fDelayOpen);
+</font><font color="#000000">&nbsp;&nbsp;&nbsp; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDesc;
 
-<font color=red>	// optional arguments:</font>
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Required arguments:
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("n", "integer", "integer between 1 and 10", argDesc.eInteger, 0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("f", "float", "float between 0.0 and 1.0", argDesc.eDouble, 0);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("i", "inputFile", "data file in", ArgDescriptions::eInputFile);
 
-        argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
-			       argDesc.eOutputFile);
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional arguments:
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddOptionalKey("l", "logFile", "log errors to&nbsp;<logFile>",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.eOutputFile);
 
-<font color=red>	// optional flags</font>
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional flags
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddFlag("it", "input text");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddFlag("ib", "input binary");
 
-        argDesc.AddFlag("it", "input text");
-        argDesc.AddFlag("ib", "input binary");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; args.reset(argDesc.CreateArgs(GetArguments()));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; catch (exception&amp; e) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string a;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.SetUsageContext(GetArguments()[0], "CArgDescriptions demo program");
 
-	try {
-            args.reset(argDesc.CreateArgs(GetArguments()));
-	}
-	catch (exception& e) {
-	    string a;
-	    argDesc.SetUsageContext(GetArguments()[0], "CArgDescriptions demo program");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; e.what() &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; argDesc.PrintUsage(a);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return (-1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
 
-	    cerr << e.what() << endl;
-	    cerr << argDesc.PrintUsage(a);
-	    return (-1);
-	}
-    }
+&nbsp;&nbsp;&nbsp; int&nbsp;&nbsp; intIn&nbsp;&nbsp; = (*args)["n"].AsInteger();
+&nbsp;&nbsp;&nbsp; float floatIn = (*args)["f"].AsDouble();
+&nbsp;&nbsp;&nbsp; string inFile = (*args)["i"].AsString();
+&nbsp;&nbsp;&nbsp;&nbsp;
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // process optional args
+</font><font color="#000000">&nbsp;&nbsp;&nbsp; if ( args->Exist("l") ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetDiagStream(&amp;(*args)["l"].AsOutputFile());
+&nbsp;&nbsp;&nbsp; }
 
-    int   intIn   = (*args)["n"].AsInteger();
-    float floatIn = (*args)["f"].AsDouble();
-    string inFile = (*args)["i"].AsString();
-    
-<font color=red>    // process optional args</font>
+&nbsp;&nbsp;&nbsp; bool textIn = args->Exist("it");
+&nbsp;&nbsp;&nbsp; bool binIn = args->Exist("ib");
 
-    if ( args->Exist("l") ) {
-        SetDiagStream(&(*args)["l"].AsOutputFile());
-    }
+&nbsp;&nbsp;&nbsp; if (! (textIn ^ binIn) ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ERR_POST(Error &lt;&lt; "input type must be specified using -it or -ib");
+&nbsp;&nbsp;&nbsp; }
 
-    bool textIn = args->Exist("it");
-    bool binIn = args->Exist("ib");
-
-    if (! (textIn ^ binIn) ) {
-       ERR_POST(Error << "input type must be specified using -it or -ib");
-    }
-
-    string InputType;
-    if (textIn) 
-      InputType = "text";
-    else if (binIn) 
-      InputType = "binary";
-    
-    ERR_POST(Info << "intIn = " << intIn << " floatIn = " << floatIn << " inFile = "
-	     << inFile << " input type = " << InputType);
-    
-    return 0;
+&nbsp;&nbsp;&nbsp; string InputType;
+&nbsp;&nbsp;&nbsp; if (textIn)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; InputType = "text";
+&nbsp;&nbsp;&nbsp; else if (binIn)&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; InputType = "binary";
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; ERR_POST(Info &lt;&lt; "intIn = " &lt;&lt; intIn &lt;&lt; " floatIn = " &lt;&lt; floatIn &lt;&lt; " inFile = "
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; inFile &lt;&lt; " input type = " &lt;&lt; InputType);
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; return 0;
 }
 
-int main(int argc, const char* argv[]) 
+int main(int argc, const char* argv[])&nbsp;
 {
-      CNcbiOfstream diag("moreApp.log");
-      SetDiagStream(&diag);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNcbiOfstream diag("moreApp.log");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetDiagStream(&amp;diag);
 
-<font color=red>      // Set the global severity level to Info </font>
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Set the global severity level to Info&nbsp;
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetDiagPostLevel(eDiag_Info);
 
-      SetDiagPostLevel(eDiag_Info);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CTestApp theTestApp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return theTestApp.AppMain(argc, argv);
+}</font>
 
-      CTestApp theTestApp;
-      return theTestApp.AppMain(argc, argv);
-}
+</pre>
 
+</body>
+</html>
