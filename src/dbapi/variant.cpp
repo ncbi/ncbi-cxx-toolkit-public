@@ -31,6 +31,11 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/03/13 16:52:10  kholodov
+* Added: Full destructor definition in CVariantException with throw()
+* to conform with the parent's virtual destructor.
+* Modified: Moved CVariantException methods' definitions to variant.cpp file
+*
 * Revision 1.6  2002/02/15 23:24:42  vakatov
 * CVariant::CVariant() -- fixed a bug introduced during the cleanup
 *
@@ -61,6 +66,17 @@
 
 
 BEGIN_NCBI_SCOPE
+
+CVariantException::CVariantException(const string& msg)
+    : m_msg(msg) 
+{
+
+}
+    
+CVariantException::~CVariantException() throw() 
+{
+
+}
 
 const char* CVariantException::what() const throw() 
 {

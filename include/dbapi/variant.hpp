@@ -52,8 +52,9 @@ class CVariantException : public exception
 {
 
 public:
-    CVariantException(const string& msg)
-      : m_msg(msg) {}
+    CVariantException(const string& msg);
+    
+    virtual ~CVariantException() throw();
   
     virtual const char* what() const throw();
 
@@ -186,6 +187,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2002/03/13 16:52:21  kholodov
+ * Added: Full destructor definition in CVariantException with throw()
+ * to conform with the parent's virtual destructor.
+ * Modified: Moved CVariantException methods' definitions to variant.cpp file
+ *
  * Revision 1.4  2002/02/08 15:50:38  kholodov
  * Modified: integer types used are Int8, Int4, Int2, Uint1
  * Added: factories for CVariants of a particular type
