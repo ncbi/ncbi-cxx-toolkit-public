@@ -55,7 +55,7 @@ struct SProjectTreeInfo
     string m_SubTree;
 
     /// Branch of tree to be implicit exclude from build
-    string m_ImplicitExclude;
+    list<string> m_ImplicitExcludedAbsDirs;
 
     /// <include> branch of tree
     string m_Include;
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/11 15:39:53  gorelenk
+ * Added support for multiple implicit excludes from source tree.
+ *
  * Revision 1.7  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
