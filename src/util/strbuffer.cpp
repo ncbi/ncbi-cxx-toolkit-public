@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/06/20 17:36:19  grichenk
+* Updated FillBuffer() to work with GCC 3.0
+*
 * Revision 1.27  2001/06/06 15:50:01  grichenk
 * Fixed auto-wrapping of long lines
 *
@@ -356,7 +359,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
         m_BufferSize = newSize;
     }
     size_t load = m_BufferSize - dataSize;
-    if ( load > 0 ) {
+    while ( load > 0  &&  pos >= m_DataEndPos ) {
         size_t count = m_Input->Read(m_DataEndPos, load);
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
