@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.26  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -152,6 +155,22 @@ void CReferenceDataType::PrintDTDElement(CNcbiOstream& out) const
 {
     out <<
         "<!ELEMENT "<<XmlTagName()<<" ( "<<UserTypeXmlTagName()<<" )>";
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CReferenceDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
+{
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+    out << "<xs:element name=\"" << tag << "\">\n"
+        << "  <xs:complexType>\n"
+        << "    <xs:sequence>\n"
+        << "      <xs:element ref=\"" << userType << "\"/>\n"
+        << "    </xs:sequence>\n"
+        << "  </xs:complexType>\n"
+        << "</xs:element>\n";
 }
 
 void CReferenceDataType::FixTypeTree(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.33  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
@@ -298,6 +301,67 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
         "\n"
         "\n";
 }
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- ============================================ -->\n"
+        "<!-- This section mapped from module " << GetName() << "\n"
+        "================================================= -->\n";
+                                                                                                                                    
+    m_Comments.PrintDTD(out, CComments::eMultiline);
+
+    if ( !m_Exports.empty() ) {
+        out <<
+            "<!-- Elements used by other modules:\n";
+
+        ITERATE ( TExports, i, m_Exports ) {
+            if ( i != m_Exports.begin() )
+                out << ",\n";
+            out << "          " << *i;
+        }
+
+        out << " -->\n"
+            "\n"
+            "\n";
+    }
+    if ( !m_Imports.empty() ) {
+        out <<
+            "<!-- Elements referenced from other modules:\n";
+        ITERATE ( TImports, i, m_Imports ) {
+            if ( i != m_Imports.begin() )
+                out << ",\n";
+            const Import* imp = i->get();
+            ITERATE ( list<string>, t, imp->types ) {
+                if ( t != imp->types.begin() )
+                    out << ",\n";
+                out <<
+                    "          " << *t;
+            }
+            out << " FROM "<< imp->moduleName;
+        }
+        out << " -->\n"
+            "\n"
+            "\n";
+    }
+
+    out <<
+        "<!-- ============================================ -->\n";
+
+    ITERATE ( TDefinitions, i, m_Definitions ) {
+        out <<
+            "<!-- Definition of "<<i->first<<" -->\n"
+            "\n";
+        i->second->PrintXMLSchema(out);
+	out <<
+            "\n"
+            "\n";
+    }
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
+}
+
 
 static
 string DTDFileNameBase(const string& name)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.8  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -113,6 +116,7 @@ public:
 
     void PrintASN(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out) const;
+    void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTDModular(void) const;
 
     const string& GetSourceFileName(void) const;
@@ -167,6 +171,7 @@ public:
 
     void PrintASN(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out) const;
+    void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTDModular(void) const;
 
     CDataType* ExternalResolve(const string& moduleName,

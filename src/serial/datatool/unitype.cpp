@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.24  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -198,6 +201,53 @@ void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
         if ( GetParentType() == 0 )
             out << '\n';
         data->PrintDTD(out);
+    }
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CUniSequenceDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
+{
+    const CDataType* data = GetElementType();
+    const CStaticDataType* elemType = 0;
+    if (GetEnforcedStdXml()) {
+        elemType = dynamic_cast<const CStaticDataType*>(data);
+    }
+    const CReferenceDataType* ref =
+        dynamic_cast<const CReferenceDataType*>(data);
+    string tag(XmlTagName());
+    if (!ref && elemType) {
+        elemType->PrintXMLSchemaElementWithTag( out, tag);
+    } else {
+        string userType = ref ? ref->UserTypeXmlTagName() : data->XmlTagName();
+        out << "<xs:element name=\""<<tag<<"\">\n"
+            << "  <xs:complexType>\n"
+            << "    <xs:sequence>\n"
+            << "      <xs:element ref=\"" << userType
+            << "\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>\n"
+            << "    </xs:sequence>\n"
+            << "  </xs:complexType>\n"
+            << "</xs:element>";
+    }
+}
+
+void CUniSequenceDataType::PrintXMLSchemaExtra(CNcbiOstream& out) const
+{
+    const CDataType* data = GetElementType();
+    const CStaticDataType* elemType = 0;
+    if (GetEnforcedStdXml()) {
+        elemType = dynamic_cast<const CStaticDataType*>(data);
+        if (elemType) {
+            return;
+        }
+    }
+    const CReferenceDataType* ref =
+        dynamic_cast<const CReferenceDataType*>(data);
+    if ( !ref ) {
+       if ( GetParentType() == 0 )
+            out << '\n';
+        data->PrintXMLSchema(out);
     }
 }
 

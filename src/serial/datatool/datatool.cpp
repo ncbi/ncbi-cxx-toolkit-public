@@ -90,6 +90,9 @@ void CDataTool::Init(void)
     d->AddOptionalKey("fx", "dtdFile",
                       "write DTD file (\"-fx m\" writes modular DTD file)",
                       CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("fxs", "XMLSchemaFile",
+                      "write XML Schema file (\"-fxs m\" writes XML Schema file)",
+                      CArgDescriptions::eOutputFile);
 
     // data arguments
     d->AddOptionalKey("v", "valueFile",
@@ -227,6 +230,11 @@ bool CDataTool::ProcessModules(void)
             generator.GetMainModules().PrintDTD(fx.AsOutputFile());
             fx.CloseFile();
         }
+    }
+
+    if ( const CArgValue& ax = args["fxs"] ) {
+        generator.GetMainModules().PrintXMLSchema(ax.AsOutputFile());
+        ax.CloseFile();
     }
     
     LoadDefinitions(generator.GetImportModules(),
@@ -490,6 +498,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.62  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.45  2003/04/10 20:13:41  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...
@@ -313,6 +316,73 @@ void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
+{
+    string tag = XmlTagName();
+    string asnk = GetASNKeyword();
+    out << "<xs:element name=\"" << tag << "\">\n";
+    out << "  <xs:complexType>\n";
+    if(NStr::CompareCase(asnk,"CHOICE")==0)
+    {
+        out << "    <xs:choice>\n";
+    }
+    else if(NStr::CompareCase(asnk,"SEQUENCE")==0)
+    {
+        out << "    <xs:sequence>\n";
+    }
+    ITERATE ( TMembers, i, m_Members ) {
+        const CDataMember& member = **i;
+        string member_name( member.GetType()->XmlTagName());
+        if (GetEnforcedStdXml()) {
+            const CUniSequenceDataType* type =
+                dynamic_cast<const CUniSequenceDataType*>(member.GetType());
+            if (type) {
+                const CStaticDataType* elemType =
+                    dynamic_cast<const CStaticDataType*>(type->GetElementType());
+                if (elemType) {
+            		out << "      <xs:element ref=\"" << member_name << "\"";
+                        if( (*i)->Optional())
+                            out << " minOccurs=\"0\"";
+                        out << " maxOccurs=\"unbounded\"";
+                	out << "/>\n";
+                    continue;
+                }
+            }
+        }
+        out << "      <xs:element ref=\"" << member_name << "\"";
+        if( (*i)->Optional())
+            out << " minOccurs=\"0\"";
+        out << "/>\n";
+    }
+    if(NStr::CompareCase(asnk,"CHOICE")==0)
+    {
+        out << "    </xs:choice>\n";
+    }
+    else if(NStr::CompareCase(asnk,"SEQUENCE")==0)
+    {
+        out << "    </xs:sequence>\n";
+    }
+    out << "  </xs:complexType>\n";
+    out << "</xs:element>\n";
+}
+
+void CDataMemberContainerType::PrintXMLSchemaExtra(CNcbiOstream& out) const
+{
+    if ( GetParentType() == 0 ) {
+        out << 
+            "\n";
+    }
+    ITERATE ( TMembers, i, m_Members ) {
+        const CDataMember& member = **i;
+        member.PrintXMLSchema(out);
+    }                                                                                         
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
+}
+
+
 void CDataMemberContainerType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();
@@ -594,6 +664,11 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
 void CDataMember::PrintDTD(CNcbiOstream& out) const
 {
     GetType()->PrintDTD(out, m_Comments);
+}
+
+void CDataMember::PrintXMLSchema(CNcbiOstream& out) const
+{
+    GetType()->PrintXMLSchema(out,m_Comments);
 }
 
 bool CDataMember::Check(void) const

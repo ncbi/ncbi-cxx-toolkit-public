@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.24  2003/03/10 18:55:19  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -160,6 +163,32 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out) const
         "<!ELEMENT "<<XmlTagName()<<" "<<GetXMLContents()<<">";
 }
 
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CStaticDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
+{
+    string tag( XmlTagName());
+    PrintXMLSchemaElementWithTag( out, tag);
+}
+
+void CStaticDataType::PrintXMLSchemaElementWithTag(
+    CNcbiOstream& out, const string& tag) const
+{
+    string type;
+    string contents;
+    GetXMLSchemaContents(type,contents);
+    out << "<xs:element name=\"" << tag << "\"";
+    if (!type.empty()) {
+        out << " type=\"" << type << "\"";
+    }
+    if (!contents.empty()) {
+        out << ">\n" << contents << "</xs:element>\n";
+    } else {
+        out << "/>\n";
+    }
+}
+
 AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
 {
     string type = GetVar("_type");
@@ -176,6 +205,12 @@ const char* CNullDataType::GetASNKeyword(void) const
 const char* CNullDataType::GetXMLContents(void) const
 {
     return "%NULL;";
+}
+
+void CNullDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type.erase();
+    contents = "  <xs:complexType/>\n";
 }
 
 bool CNullDataType::CheckValue(const CDataValue& value) const
@@ -215,6 +250,22 @@ const char* CBoolDataType::GetASNKeyword(void) const
 const char* CBoolDataType::GetXMLContents(void) const
 {
     return "%BOOLEAN; ";
+}
+
+void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type.erase();
+    contents =
+        "  <xs:complexType>\n"
+        "    <xs:attribute name=\"value\" use=\"required\">\n"
+        "      <xs:simpleType>\n"
+        "        <xs:restriction base=\"xs:string\">\n"
+        "          <xs:enumeration value=\"true\"/>\n"
+        "          <xs:enumeration value=\"false\"/>\n"
+        "        </xs:restriction>\n"
+        "      </xs:simpleType>\n"
+        "    </xs:attribute>\n"
+        "  </xs:complexType>\n";
 }
 
 void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
@@ -278,6 +329,12 @@ const char* CRealDataType::GetXMLContents(void) const
     return "( %REAL; )";
 }
 
+void CRealDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type = "xs:decimal";
+    contents.erase();
+}
+
 bool CRealDataType::CheckValue(const CDataValue& value) const
 {
     const CBlockDataValue* block = dynamic_cast<const CBlockDataValue*>(&value);
@@ -320,6 +377,12 @@ const char* CStringDataType::GetASNKeyword(void) const
 const char* CStringDataType::GetXMLContents(void) const
 {
     return "( #PCDATA )";
+}
+
+void CStringDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type = "xs:string";
+    contents.erase();
 }
 
 bool CStringDataType::CheckValue(const CDataValue& value) const
@@ -427,6 +490,12 @@ const char* CBitStringDataType::GetXMLContents(void) const
     return "( %BITS; )";
 }
 
+void CBitStringDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type = "xs:hexBinary";
+    contents.erase();
+}
+
 const char* COctetStringDataType::GetASNKeyword(void) const
 {
     return "OCTET STRING";
@@ -440,6 +509,12 @@ const char* COctetStringDataType::GetDefaultCType(void) const
 const char* COctetStringDataType::GetXMLContents(void) const
 {
     return "( %OCTETS; )";
+}
+
+void COctetStringDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type = "xs:hexBinary";
+    contents.erase();
 }
 
 bool COctetStringDataType::CheckValue(const CDataValue& value) const
@@ -478,6 +553,12 @@ const char* CIntDataType::GetXMLContents(void) const
     return "( %INTEGER; )";
 }
 
+void CIntDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type = "xs:integer";
+    contents.erase();
+}
+
 bool CIntDataType::CheckValue(const CDataValue& value) const
 {
     CheckValueType(value, CIntDataValue, "INTEGER");
@@ -514,6 +595,12 @@ const char* CBigIntDataType::GetASNKeyword(void) const
 const char* CBigIntDataType::GetXMLContents(void) const
 {
     return "( %INTEGER; )";
+}
+
+void CBigIntDataType::GetXMLSchemaContents(string& type, string& contents) const
+{
+    type = "xs:integer";
+    contents.erase();
 }
 
 bool CBigIntDataType::CheckValue(const CDataValue& value) const

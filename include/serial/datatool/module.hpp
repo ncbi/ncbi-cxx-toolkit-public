@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.9  2003/04/29 18:29:34  gouriano
 * object data member initialization verification
 *
@@ -134,6 +137,7 @@ public:
 
     virtual void PrintASN(CNcbiOstream& out) const;
     virtual void PrintDTD(CNcbiOstream& out) const;
+    virtual void PrintXMLSchema(CNcbiOstream& out) const;
     void PrintDTDModular(CNcbiOstream& out) const;
     string GetDTDPublicName(void) const;
     string GetDTDFileNameBase(void) const;

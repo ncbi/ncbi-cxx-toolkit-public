@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.6  2000/11/14 21:41:14  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -82,6 +85,7 @@ public:
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.33  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -197,6 +200,26 @@ void CFileModules::PrintDTDModular(void) const
     }
 }
 
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
+{
+    out << "<?xml version=\"1.0\" ?>\n"
+        << "<xs:schema\n"
+        << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
+        << "  xmlns=\"http://www.ncbi.nlm.nih.gov\"\n"
+        << "  targetNamespace=\"http://www.ncbi.nlm.nih.gov\"\n"
+        << "  elementFormDefault=\"qualified\"\n"
+        << "  attributeFormDefault=\"unqualified\">\n\n";
+
+    ITERATE ( TModules, mi, m_Modules ) {
+        (*mi)->PrintXMLSchema(out);
+    }
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
+    out << "</xs:schema>\n";
+}
+
+
 const string& CFileModules::GetSourceFileName(void) const
 {
     return m_SourceFileName;
@@ -299,6 +322,16 @@ void CFileSet::PrintDTDModular(void) const
         (*i)->PrintDTDModular();
     }
 }
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CFileSet::PrintXMLSchema(CNcbiOstream& out) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintXMLSchema(out);
+    }
+}
+
 
 CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
                                      bool allowInternal) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.22  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -207,6 +210,51 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+// modified by Andrei Gourianov, gouriano@ncbi
+void CEnumDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
+{
+    string tag(XmlTagName());
+    out << "<xs:element name=\"" << tag << "\">\n";
+    out << "  <xs:complexType>\n";
+    if(IsInteger()) {
+        out << "    <xs:simpleContent>\n"
+            << "      <xs:extension base=\"xs:integer\">\n";
+    }
+    out << "        <xs:attribute name=\"value\" use=\"required\">\n";
+    out << "          <xs:simpleType>\n";
+    out << "            <xs:restriction base=\"xs:string\">\n";
+
+    bool haveComments = false;
+    ITERATE ( TValues, i, m_Values ) {
+        out << "              <xs:enumeration value=\"" << i->GetName() << "\"/>\n";
+        if ( !i->GetComments().Empty() )
+            haveComments = true;
+    }
+    if ( haveComments ) {
+        out << "<!--\n";
+        ITERATE ( TValues, i, m_Values ) {
+            if ( !i->GetComments().Empty() ) {
+                i->GetComments().Print(out, "    "+i->GetName()+" - ",
+                                       "\n        ", "\n");
+            }
+        }
+        out << "-->\n";
+    }
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
+    out << "            </xs:restriction>\n"
+        << "          </xs:simpleType>\n"
+        << "        </xs:attribute>\n";
+    if(IsInteger()) {
+        out << "      </xs:extension>\n"
+            << "    </xs:simpleContent>\n";
+    }
+    out << "  </xs:complexType>\n";
+    out << "</xs:element>\n";
+}
+
 
 bool CEnumDataType::CheckValue(const CDataValue& value) const
 {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.8  2000/12/15 15:38:35  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -99,6 +102,8 @@ class CStaticDataType : public CDataType {
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
+    void PrintXMLSchemaElement(CNcbiOstream& out) const;
+    void PrintXMLSchemaElementWithTag(CNcbiOstream& out, const string& tag) const;
 
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
@@ -107,6 +112,7 @@ public:
     virtual const char* GetDefaultCType(void) const = 0;
     virtual const char* GetASNKeyword(void) const = 0;
     virtual const char* GetXMLContents(void) const = 0;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const = 0;
 };
 
 class CNullDataType : public CStaticDataType {
@@ -120,6 +126,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 class CBoolDataType : public CStaticDataType {
@@ -133,6 +140,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 
     void PrintDTDExtra(CNcbiOstream& out) const;
 };
@@ -146,6 +154,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 class CStringDataType : public CStaticDataType {
@@ -163,6 +172,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 class CStringStoreDataType : public CStringDataType {
@@ -186,6 +196,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 class CBitStringDataType : public COctetStringDataType {
@@ -194,6 +205,7 @@ public:
     bool CheckValue(const CDataValue& value) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 class CIntDataType : public CStaticDataType {
@@ -207,6 +219,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 class CBigIntDataType : public CIntDataType {
@@ -220,6 +233,7 @@ public:
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
+    virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
 END_NCBI_SCOPE

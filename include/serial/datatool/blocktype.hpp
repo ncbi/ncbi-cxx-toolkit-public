@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.12  2002/11/19 19:47:50  gouriano
 * added support of XML attributes of choice variants
 *
@@ -107,6 +110,8 @@ public:
 
     void PrintASN(CNcbiOstream& out, int indent, bool last) const;
     void PrintDTD(CNcbiOstream& out) const;
+    void PrintXMLSchema(CNcbiOstream& out) const;
+    void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     bool Check(void) const;
 
@@ -179,6 +184,8 @@ public:
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
+    void PrintXMLSchemaElement(CNcbiOstream& out) const;
+    void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;

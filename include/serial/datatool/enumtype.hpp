@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.10  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -135,6 +138,7 @@ public:
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
+    void PrintXMLSchemaElement(CNcbiOstream& out) const;
 
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;

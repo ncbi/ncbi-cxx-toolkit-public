@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
 * Revision 1.19  2003/04/29 18:29:34  gouriano
 * object data member initialization verification
 *
@@ -215,6 +218,11 @@ public:
     void PrintDTD(CNcbiOstream& out, const CComments& extra) const;
     virtual void PrintDTDElement(CNcbiOstream& out) const = 0;
     virtual void PrintDTDExtra(CNcbiOstream& out) const;
+
+    void PrintXMLSchema(CNcbiOstream& out) const;
+    virtual void PrintXMLSchemaElement(CNcbiOstream& out) const = 0;
+    void PrintXMLSchema(CNcbiOstream& out, const CComments& extra) const;
+    virtual void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     virtual CTypeRef GetTypeInfo(void);
     virtual const CTypeInfo* GetAnyTypeInfo(void);

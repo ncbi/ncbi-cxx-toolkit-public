@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
 * Revision 1.70  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
@@ -303,6 +306,45 @@ void CDataType::PrintDTD(CNcbiOstream& out,
 }
 
 void CDataType::PrintDTDExtra(CNcbiOstream& /*out*/) const
+{
+}
+
+// XML schema generator submitted by
+// Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
+void CDataType::PrintXMLSchema(CNcbiOstream& out) const
+{
+    if (x_IsSavedName(XmlTagName())) {
+        return;
+    }
+    m_Comments.PrintDTD(out);
+    PrintXMLSchemaElement(out);
+    out << '\n';
+    PrintXMLSchemaExtra(out);
+    x_AddSavedName(XmlTagName());
+}
+                                                                                                                                                      
+void CDataType::PrintXMLSchema(CNcbiOstream& out,
+                         const CComments& extra) const
+{
+    if (x_IsSavedName(XmlTagName())) {
+        return;
+    }
+    m_Comments.PrintDTD(out);
+    bool oneLineComment = extra.OneLine();
+    if ( oneLineComment ) {
+        out << ' ';
+        extra.PrintDTD(out, CComments::eOneLine);
+        out << '\n';
+    } else {
+        extra.PrintDTD(out);
+    }
+    PrintXMLSchemaElement(out);
+    out << '\n';
+    PrintXMLSchemaExtra(out);
+    x_AddSavedName(XmlTagName());
+}
+
+void CDataType::PrintXMLSchemaExtra(CNcbiOstream& /*out*/) const
 {
 }
 
