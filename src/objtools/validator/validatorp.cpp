@@ -1598,6 +1598,13 @@ void CValidError_imp::ValidateSeqLoc
             prefix + ": Adjacent intervals in SeqLoc [" +
             loc_lbl + "]", obj);
     }
+    if (exception  &&  sfp->CanGetExcept_text()) {
+        // trans splicing exception turns off both mixed_strand and
+        // out_of_order messages
+        if (NStr::FindNoCase(sfp->GetExcept_text(), "trans-splicing") != NPOS) {
+            return;
+        }
+    }
     if (mixed_strand  ||  unmarked_strand  ||  !ordered) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
@@ -2429,6 +2436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/05/26 14:52:59  shomrat
+* trans-splice exception supress subsequent error messages
+*
 * Revision 1.51  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *
