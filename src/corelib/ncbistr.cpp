@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/15 17:36:33  vasilche
+* Fixed "double colon" bug in multithreaded version of headers.
+*
 * Revision 1.1  1998/12/15 15:43:22  vasilche
 * Added utilities to convert string <> int.
 *
@@ -41,14 +44,15 @@
 #include <ncbistd.hpp>
 #include <limits>
 #include <errno.h>
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 
 int StringToInt(const string& str)
 {
-    ::errno = 0;
+    errno = 0;
     char* error = 0;
-    long value = ::strtol(str.c_str(), &error, 0);
+    long value = strtol(str.c_str(), &error, 0);
     if ( errno || error && *error ||
          value < numeric_limits<int>::min() ||
          value > numeric_limits<int>::max() )
@@ -58,9 +62,9 @@ int StringToInt(const string& str)
 
 unsigned int StringToUInt(const string& str)
 {
-    ::errno = 0;
+    errno = 0;
     char* error = 0;
-    long long value = ::strtoll(str.c_str(), &error, 0);
+    long long value = strtoll(str.c_str(), &error, 0);
     if ( errno || error && *error ||
          value < numeric_limits<unsigned int>::min() ||
          value > numeric_limits<unsigned int>::max() )
@@ -70,9 +74,9 @@ unsigned int StringToUInt(const string& str)
 
 double StringToDouble(const string& str)
 {
-    ::errno = 0;
+    errno = 0;
     char* error = 0;
-    double value = ::strtod(str.c_str(), &error);
+    double value = strtod(str.c_str(), &error);
     if ( errno || error && *error )
         throw runtime_error("bad number");
     return value;
@@ -81,21 +85,21 @@ double StringToDouble(const string& str)
 string IntToString(int value)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), "%d", value);
+    snprintf(buffer, sizeof(buffer), "%d", value);
     return buffer;
 }
 
 string UIntToString(unsigned int value)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), "%u", value);
+    snprintf(buffer, sizeof(buffer), "%u", value);
     return buffer;
 }
 
 string DoubleToString(double value)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), "%g", value);
+    snprintf(buffer, sizeof(buffer), "%g", value);
     return buffer;
 }
 
