@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.132  2002/04/25 19:00:38  thiessen
+* remove message log from Mac build
+*
 * Revision 1.131  2002/04/25 17:48:59  thiessen
 * fix bitmap->image conversion
 *
@@ -565,6 +568,10 @@ IMPLEMENT_APP(Cn3D::Cn3DApp)
     #include "cn3d/cn3d.xpm"
 #endif
 
+#ifdef __WXMAC__
+// wxTextCtrl on Mac is just bad... don't even bother using it, causes weird errors
+#define CN3D_DONT_USE_MESSAGE_LOG
+#endif
 
 BEGIN_SCOPE(Cn3D)
 
@@ -654,10 +661,6 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 {
     std::string errMsg;
     diagMsg.Write(errMsg);
-#ifdef __WXMAC__
-    // wxTextCtrl on Mac doesn't like regular '\n' newlines... ugh
-    if (errMsg[errMsg.size() - 1] < ' ') errMsg[errMsg.size() - 1] = '\r';
-#endif
 
     // severe errors get a special error dialog
     if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace) {
@@ -665,6 +668,7 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         dlg.ShowModal();
     }
 
+#ifndef CN3D_DONT_USE_MESSAGE_LOG
     // info messages and less severe errors get added to the log
     else {
         if (logFrame) {
@@ -680,10 +684,12 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
             backLog.push_back(errMsg.c_str());
         }
     }
+#endif
 }
 
 void RaiseLogWindow(void)
 {
+#ifndef CN3D_DONT_USE_MESSAGE_LOG
     if (!logFrame) {
         logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
         logFrame->SetSizeHints(150, 100);
@@ -702,6 +708,7 @@ void RaiseLogWindow(void)
     if (logFrame->IsIconized()) logFrame->Maximize(false);
 #endif
     logFrame->Raise();
+#endif
 }
 
 
@@ -878,9 +885,7 @@ bool Cn3DApp::OnInit(void)
     // show log if set to do so
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
-#ifndef __WXMAC__
     if (showLog) RaiseLogWindow();
-#endif
 
     // get file name from command line, if present
     if (argc == 2) {
@@ -894,9 +899,6 @@ bool Cn3DApp::OnInit(void)
     // give structure window initial focus
     structureWindow->Raise();
     structureWindow->SetFocus();
-#ifdef __WXMAC__
-    if (showLog) RaiseLogWindow();
-#endif
     return true;
 }
 
@@ -1243,11 +1245,13 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Window menu
     menu = new wxMenu;
     menu->Append(MID_SHOW_SEQ_V, "Show &Sequence Viewer");
+#ifndef CN3D_DONT_USE_MESSAGE_LOG
     menu->Append(MID_SHOW_LOG, "Show Message &Log");
     menu->Append(MID_SHOW_LOG_START, "Show Log on Start&up", "", true);
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
     menu->Check(MID_SHOW_LOG_START, showLog);
+#endif
     menuBar->Append(menu, "&Window");
 
     // CDD menu
