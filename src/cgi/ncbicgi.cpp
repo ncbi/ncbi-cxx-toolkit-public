@@ -42,6 +42,10 @@
 #  define STDIN_FILENO 0
 #endif
 
+// Mac OS has unistd.h, but STDIN_FILENO is not defined
+#ifdef NCBI_OS_MAC 
+#  define STDIN_FILENO 0
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -1112,6 +1116,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.60  2002/07/18 20:18:09  lebedev
+* NCBI_OS_MAC: STDIN_FILENO define added
+*
 * Revision 1.59  2002/07/17 17:02:26  ucko
 * Reinstate more lost changes from R1.56.
 *
