@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/31 18:47:07  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.18  2001/05/24 21:38:41  thiessen
 * fix threader options initial values
 *
@@ -1287,7 +1290,7 @@ bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
         }
     }
 
-    ERR_POST(Info << "Found " << nViolations << " geometry violations");
+    TESTMSG("Found " << nViolations << " geometry violations");
     return true;
 }
 

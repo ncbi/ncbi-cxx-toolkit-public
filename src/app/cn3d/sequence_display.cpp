@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/31 18:47:08  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.19  2001/05/22 19:09:31  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -110,6 +113,8 @@
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/update_viewer_window.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/cn3d_threader.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -526,6 +531,21 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         UpdateViewerWindow *updateWindow = dynamic_cast<UpdateViewerWindow*>(*viewerWindow);
         if (updateWindow && row >= 0) {
 
+            // thread single
+            if (updateWindow->DoThreadSingle()) {
+                // get threader options
+                ThreaderOptions options;
+                ThreaderOptionsDialog optDialog(updateWindow, options);
+                if (optDialog.ShowModal() == wxCANCEL) return false;  // user cancelled
+                if (!optDialog.GetValues(&options)) {
+                    ERR_POST(Error << "Error retrieving options values from dialog");
+                    return false;
+                }
+                updateWindow->updateViewer->alignmentManager->ThreadUpdate(options, alignment);
+                updateWindow->ThreadSingleOff();
+                return false;
+            }
+
             // merge single
             if (updateWindow->DoMergeSingle()) {
                 AlignmentManager::UpdateMap single;
@@ -535,10 +555,10 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
-            // delete alignment
-            if (updateWindow->DoDeleteAlignment()) {
+            // delete single
+            if (updateWindow->DoDeleteSingle()) {
                 updateWindow->updateViewer->DeleteAlignment(alignment);
-                updateWindow->DeleteAlignmentOff();
+                updateWindow->DeleteSingleOff();
                 return false;
             }
         }

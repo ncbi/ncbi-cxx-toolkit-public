@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/05/31 18:47:10  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.32  2001/05/15 23:48:38  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -142,6 +145,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_colors.hpp"
+#include "cn3d/style_dialog.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -193,6 +197,7 @@ void StyleSettings::SetToSecondaryStructure(void)
 
     hydrogensOn = true;
 
+    spaceFillProportion = 1.0;
     ballRadius = 0.4;
     stickRadius = 0.2;
     tubeRadius = 0.3;
@@ -241,6 +246,7 @@ void StyleSettings::SetToWireframe(void)
 
     hydrogensOn = true;
 
+    spaceFillProportion = 1.0;
     ballRadius = 0.4;
     stickRadius = 0.2;
     tubeRadius = 0.3;
@@ -290,6 +296,7 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
 
     hydrogensOn = true;
 
+    spaceFillProportion = 1.0;
     ballRadius = 0.4;
     stickRadius = 0.2;
     tubeRadius = 0.3;
@@ -450,7 +457,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             atomStyle->radius = settings.ballRadius;
             break;
         case StyleSettings::eSpaceFill:
-            atomStyle->radius = element->vdWRadius;
+            atomStyle->radius = element->vdWRadius * settings.spaceFillProportion;
             break;
         default:
             ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate style for atom");
@@ -889,6 +896,12 @@ const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
     const StructureObject *object;
     if (!molecule || !molecule->GetParentOfType(&object)) return black;
     return GlobalColors()->Get(Colors::eCycle1, object->id - 1);
+}
+
+bool StyleManager::EditGlobalStyle(wxWindow *parent, const StructureSet *set)
+{
+    StyleDialog dialog(parent, globalStyle);
+    return (dialog.ShowModal() == wxOK);
 }
 
 END_SCOPE(Cn3D)

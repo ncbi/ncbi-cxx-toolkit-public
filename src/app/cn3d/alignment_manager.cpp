@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2001/05/31 18:47:05  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.59  2001/05/24 13:32:15  thiessen
 * fix merge status reporting bug
 *
@@ -225,6 +228,7 @@
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/sequence_display.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -654,7 +658,51 @@ void AlignmentManager::RealignSlaveSequences(
     }
 }
 
-void AlignmentManager::ThreadUpdates(const ThreaderOptions& options)
+void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single)
+{
+    const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
+    if (!currentAlignments) return;
+
+    // make sure the editor is on in the sequenceViewer if merge is selected
+    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
+        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
+        return;
+    }
+
+    // run the threader on the given alignment
+    UpdateViewer::AlignmentList singleList, replacedList;
+    Threader::AlignmentList newAlignments;
+    int nRowsAddedToMultiple;
+    bool foundSingle = false;   // sanity check
+
+    singleList.push_back(single);
+    if (threader->Realign(
+            options, currentAlignments->front(), &singleList,
+            &nRowsAddedToMultiple, &newAlignments)) {
+
+        // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
+        UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments()->end();
+        for (a=updateViewer->GetCurrentAlignments()->begin(); a!=ae; a++) {
+            if (*a == single) {
+                Threader::AlignmentList::const_iterator n, ne = newAlignments.end();
+                for (n=newAlignments.begin(); n!=ne; n++)
+                    replacedList.push_back(*n);
+                foundSingle = true;
+            } else
+                replacedList.push_back((*a)->Clone());
+        }
+        if (!foundSingle) ERR_POST(Error
+            << "AlignmentManager::ThreadUpdate() - threaded alignment not found in update viewer!");
+        updateViewer->ReplaceAlignments(replacedList);
+
+        // tell the sequenceViewer that rows have been merged into the multiple
+        if (nRowsAddedToMultiple > 0)
+            sequenceViewer->GetCurrentDisplay()->
+                RowsAdded(nRowsAddedToMultiple, currentAlignments->front());
+    }
+}
+
+void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
 {
     const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
     if (!currentAlignments) return;

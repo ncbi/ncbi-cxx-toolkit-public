@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/31 18:46:25  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.12  2000/10/04 17:40:44  thiessen
 * rearrange STL #includes
 *
@@ -123,7 +126,7 @@ public:
     ~AtomSet(void);
 
     // public data
-    typedef LIST_TYPE < const std::string * > EnsembleList;
+    typedef std::list < const std::string * > EnsembleList;
     EnsembleList ensembles;
 
     // public methods
@@ -132,7 +135,7 @@ public:
     bool SetActiveEnsemble(const std::string *ensemble);
     // get Atom based on Atom-pntr. If 'getAny' is true, then will return arbitrary
     // altConf; if false, will only return one from active ensemble
-    const AtomCoord* GetAtom(const AtomPntr& atom, 
+    const AtomCoord* GetAtom(const AtomPntr& atom,
         bool getAny = false, bool suppressWarning = false) const;
 
 private:
@@ -140,9 +143,9 @@ private:
     typedef std::pair < int, std::pair < int, int > > AtomPntrKey;
     AtomPntrKey MakeKey(const AtomPntr& ap) const
     {
-        return std::make_pair(ap.mID, std::make_pair(ap.rID, ap.aID)); 
+        return std::make_pair(ap.mID, std::make_pair(ap.rID, ap.aID));
     }
-    typedef LIST_TYPE < const AtomCoord * > AtomAltList;
+    typedef std::list < const AtomCoord * > AtomAltList;
     typedef std::map < AtomPntrKey, AtomAltList > AtomMap;
     AtomMap atomMap;
     const std::string *activeEnsemble;

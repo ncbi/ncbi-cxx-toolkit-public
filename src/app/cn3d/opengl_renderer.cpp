@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/05/31 18:47:08  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.37  2001/05/25 15:18:24  thiessen
 * fixes for visual id settings in wxGTK
 *
@@ -165,6 +168,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 
 USING_NCBI_SCOPE;

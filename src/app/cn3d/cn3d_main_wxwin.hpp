@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/05/31 18:46:25  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.26  2001/05/25 15:17:49  thiessen
 * fixes for visual id settings in wxGTK
 *
@@ -143,6 +146,9 @@
 #ifndef CN3D_MAIN__HPP
 #define CN3D_MAIN__HPP
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
+#include <corelib/ncbistd.hpp>
+
 #if defined(__WXMSW__)
 #include <wx/msw/winundef.h>
 #endif
@@ -219,6 +225,7 @@ public:
         // Structure Alignments menu
             MID_REFIT_ALL,
         // Style menu
+            MID_EDIT_STYLE,
             MID_SECSTRUC,
             MID_ALIGN,
                 // conservation sub-menu

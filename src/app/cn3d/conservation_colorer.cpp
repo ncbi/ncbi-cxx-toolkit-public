@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/31 18:47:08  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.12  2001/05/25 01:38:16  thiessen
 * minor fixes for compiling on SGI
 *
@@ -78,6 +81,7 @@
 #include "cn3d/conservation_colorer.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/structure_base.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 

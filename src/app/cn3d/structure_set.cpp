@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/05/31 18:47:09  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.60  2001/05/17 18:32:47  thiessen
 * fix sequence/molecule/master match bug
 *
@@ -255,6 +258,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -905,7 +909,7 @@ void StructureSet::SelectedAtom(unsigned int name)
     int atomID;
 
     if (name == OpenGLRenderer::NO_NAME || !GetAtomFromName(name, &residue, &atomID)) {
-        ERR_POST(Info << "nothing selected");
+        TESTMSG("nothing selected");
         return;
     }
 

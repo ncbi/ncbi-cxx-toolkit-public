@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/31 18:46:25  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.16  2001/05/15 23:49:19  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -125,7 +128,7 @@ public:
     // public data
     typedef std::map < int, const Molecule * > MoleculeMap;
     MoleculeMap molecules;
-    typedef LIST_TYPE < const Bond * > BondList;
+    typedef std::list < const Bond * > BondList;
     BondList interMoleculeBonds;    // includes inter-molecular disulfides
 
     // public methods
@@ -147,10 +150,10 @@ public:
     bool CheckForDisulfide(const Molecule *molecule,
         const ncbi::objects::CAtom_pntr& atomPtr1,
         const ncbi::objects::CAtom_pntr& atomPtr2,
-        LIST_TYPE < const Bond * > *bondList, Bond *bond, StructureBase *parent);
+        std::list < const Bond * > *bondList, Bond *bond, StructureBase *parent);
 
 private:
-    typedef LIST_TYPE < std::pair < AtomSet *, const std::string * > > AtomSetList;
+    typedef std::list < std::pair < AtomSet *, const std::string * > > AtomSetList;
     AtomSetList atomSetList;
     unsigned int displayListOtherStart;
 

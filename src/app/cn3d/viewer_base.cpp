@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/31 18:47:11  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.9  2001/05/02 13:46:29  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -69,6 +72,7 @@
 #include "cn3d/viewer_window_base.hpp"
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 

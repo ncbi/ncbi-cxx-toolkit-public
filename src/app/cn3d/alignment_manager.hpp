@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/05/31 18:46:25  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.34  2001/05/02 13:46:14  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -208,7 +211,8 @@ public:
     // update/threader functions
     void ShowUpdateWindow(void) const;
     void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
-    void ThreadUpdates(const ThreaderOptions& options);
+    void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
+    void ThreadAllUpdates(const ThreaderOptions& options);
 
     // merge functions
     typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;

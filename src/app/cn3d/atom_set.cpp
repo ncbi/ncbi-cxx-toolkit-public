@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/31 18:47:06  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.11  2001/05/24 19:06:19  thiessen
 * fix to compile on SGI
 *
@@ -80,6 +83,7 @@
 
 #include "cn3d/atom_set.hpp"
 #include "cn3d/vector_math.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -98,12 +102,12 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 
     // sanity check
     if (coords.GetAtoms().GetMolecule_ids().size()!=nAtoms ||
-        coords.GetAtoms().GetResidue_ids().size()!=nAtoms || 
+        coords.GetAtoms().GetResidue_ids().size()!=nAtoms ||
         coords.GetAtoms().GetAtom_ids().size()!=nAtoms ||
-        coords.GetSites().GetX().size()!=nAtoms || 
-        coords.GetSites().GetY().size()!=nAtoms || 
+        coords.GetSites().GetX().size()!=nAtoms ||
+        coords.GetSites().GetY().size()!=nAtoms ||
         coords.GetSites().GetZ().size()!=nAtoms ||
-        (haveTemp && 
+        (haveTemp &&
             ((coords.GetTemperature_factors().IsIsotropic() &&
               coords.GetTemperature_factors().GetIsotropic().GetB().size()!=nAtoms) ||
              (coords.GetTemperature_factors().IsAnisotropic() &&
@@ -118,11 +122,11 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
         ERR_POST(Fatal << "AtomSet: confused by list length mismatch");
 
     // atom-pntr iterators
-    CAtom_pntrs::TMolecule_ids::const_iterator 
+    CAtom_pntrs::TMolecule_ids::const_iterator
         i_mID = coords.GetAtoms().GetMolecule_ids().begin();
-    CAtom_pntrs::TResidue_ids::const_iterator 
+    CAtom_pntrs::TResidue_ids::const_iterator
         i_rID = coords.GetAtoms().GetResidue_ids().begin();
-    CAtom_pntrs::TAtom_ids::const_iterator 
+    CAtom_pntrs::TAtom_ids::const_iterator
         i_aID = coords.GetAtoms().GetAtom_ids().begin();
 
     // atom site iterators
@@ -137,7 +141,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     if (haveOccup) {
         occupScale = static_cast<double>(coords.GetOccupancies().GetScale_factor());
         i_occup = coords.GetOccupancies().GetO().begin();
-    }    
+    }
 
     // altConfID iterator
     CAlternate_conformation_ids::Tdata::const_iterator i_alt;
@@ -209,8 +213,8 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
         }
         atomMap[key].push_back(atom);
 
-        if (i==0) TESTMSG("first atom: x " << atom->site.x << 
-                ", y " << atom->site.y << 
+        if (i==0) TESTMSG("first atom: x " << atom->site.x <<
+                ", y " << atom->site.y <<
                 ", z " << atom->site.z <<
                 ", occup " << atom->occupancy <<
                 ", altConfId '" << atom->altConfID << "'" <<
@@ -219,7 +223,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 
     // get alternate conformer ensembles; store as string of altID characters
     if (haveAlt && coords.IsSetConf_ensembles()) {
-        CAtomic_coordinates::TConf_ensembles::const_iterator i_ensemble, 
+        CAtomic_coordinates::TConf_ensembles::const_iterator i_ensemble,
             e_ensemble = coords.GetConf_ensembles().end();
         for (i_ensemble=coords.GetConf_ensembles().begin();
              i_ensemble!=e_ensemble; i_ensemble++) {
@@ -265,13 +269,13 @@ bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
     return true;
 }
 
-const AtomCoord* AtomSet::GetAtom(const AtomPntr& ap, 
+const AtomCoord* AtomSet::GetAtom(const AtomPntr& ap,
     bool getAny, bool suppressWarning) const
 {
     AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(ap));
     if (atomConfs == atomMap.end()) {
         if (!suppressWarning)
-            ERR_POST(Warning << "can't find atom(s) from pointer (" << ap.mID << ',' 
+            ERR_POST(Warning << "can't find atom(s) from pointer (" << ap.mID << ','
                              << ap.rID << ',' << ap.aID << ')');
         return NULL;
     }
@@ -293,7 +297,7 @@ const AtomCoord* AtomSet::GetAtom(const AtomPntr& ap,
     return NULL;
 }
 
-AtomCoord::AtomCoord(StructureBase *parent) : 
+AtomCoord::AtomCoord(StructureBase *parent) :
 	StructureBase(parent),
     averageTemperature(NO_TEMPERATURE),
     occupancy(NO_OCCUPANCY),

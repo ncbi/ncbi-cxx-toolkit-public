@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/31 18:47:06  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.19  2001/05/23 17:45:00  thiessen
 * fix merge bug where unaligned block needs to be added
 *
@@ -103,6 +106,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/31 18:46:27  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.16  2001/05/15 23:49:20  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -152,7 +155,7 @@ public:
         bool isPresentInAllCoordSets;
     } AtomInfo;
 
-    typedef LIST_TYPE < const Bond * > BondList;
+    typedef std::list < const Bond * > BondList;
     BondList bonds;
 
     // public methods

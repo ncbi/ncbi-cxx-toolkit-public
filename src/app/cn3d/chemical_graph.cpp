@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/31 18:47:07  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.24  2001/05/18 22:58:52  thiessen
 * fix display list bug with disulfides
 *
@@ -125,6 +128,7 @@
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
 #include "cn3d/object_3d.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -526,7 +530,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
 bool ChemicalGraph::CheckForDisulfide(const Molecule *molecule,
     const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2,
-    LIST_TYPE < const Bond * > *bondList, Bond *bond, StructureBase *parent)
+    std::list < const Bond * > *bondList, Bond *bond, StructureBase *parent)
 {
     if (atomPtr1.GetMolecule_id().Get() == atomPtr2.GetMolecule_id().Get() &&
         atomPtr1.GetResidue_id().Get() == atomPtr2.GetResidue_id().Get()) return false;

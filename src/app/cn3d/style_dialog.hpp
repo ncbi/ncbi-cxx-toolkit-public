@@ -26,48 +26,50 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Miscellaneous utility functions
+*      dialog for setting styles
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2001/05/31 18:46:26  thiessen
+* Revision 1.1  2001/05/31 18:46:28  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.1  2001/05/15 14:57:48  thiessen
-* add cn3d_tools; bring up log window when threading starts
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_TOOLS__HPP
-#define CN3D_TOOLS__HPP
+#ifndef CN3D_STYLE_DIALOG__HPP
+#define CN3D_STYLE_DIALOG__HPP
 
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbidiag.hpp>
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
+#include <corelib/ncbistd.hpp>
 
-#include <string>
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
-class wxFrame;
+#include <wx/wx.h>
 
 
 BEGIN_SCOPE(Cn3D)
 
-// strings for various directories (implemented in cn3d_main_wxwin.cpp)
-const std::string& GetWorkingDir(void); // current working directory
-const std::string& GetUserDir(void);    // directory of latest user-selected file
-const std::string& GetProgramDir(void); // directory where Cn3D executable lives
-const std::string& GetDataDir(void);    // 'data' directory with external data files
+class StyleSettings;
 
-// bring the log window forward (implemented in cn3d_main_wxwin.cpp)
-extern void RaiseLogWindow(void);
+class StyleDialog : public wxDialog
+{
+public:
+    StyleDialog(wxWindow* parent, const StyleSettings& initialSettings);
 
-// top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)
-extern wxFrame * GlobalTopWindow(void);
+    // set the StyleSettings from values in the panel; returns true if all values are valid
+    bool GetValues(StyleSettings *settings);
 
-// diagnostic output (mainly for debugging)
-#define TESTMSG(stream) ERR_POST(Info << stream)
-//#define TESTMSG(stream)
+private:
+
+    void OnCloseWindow(wxCommandEvent& event);
+    void OnButton(wxCommandEvent& event);
+    void OnChange(wxCommandEvent& event);
+
+    DECLARE_EVENT_TABLE()
+};
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_TOOLS__HPP
+#endif // CN3D_STYLE_DIALOG__HPP

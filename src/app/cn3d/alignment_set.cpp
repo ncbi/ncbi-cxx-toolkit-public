@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/31 18:47:06  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.18  2001/05/14 16:04:31  thiessen
 * fix minor row reordering bug
 *
@@ -100,6 +103,7 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -107,8 +111,8 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-typedef LIST_TYPE < const CSeq_align * > SeqAlignList;
-typedef list< CRef< CSeq_id > > SeqIdList;
+typedef std::list < const CSeq_align * > SeqAlignList;
+typedef std::list < CRef < CSeq_id > > SeqIdList;
 
 static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
 {

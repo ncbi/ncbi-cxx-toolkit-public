@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/31 18:46:28  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.9  2001/05/23 17:43:29  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -95,25 +98,32 @@ private:
 
     // menu identifiers - additional items beyond base class items
     enum {
-        MID_THREAD_ALL = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_THREAD_ONE = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_THREAD_ALL,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
-        MID_DELETE_ALN
+        MID_DELETE_ONE,
+        MID_DELETE_ALL
     };
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnRunThreader(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
-    void OnDeleteAlignment(wxCommandEvent& event);
+    void OnDelete(wxCommandEvent& event);
 
+    void ThreadSingleOff(void)
+    {
+        menuBar->Check(MID_THREAD_ONE, false);
+        SetCursor(wxNullCursor);
+    }
     void MergeSingleOff(void)
     {
         menuBar->Check(MID_MERGE_ONE, false);
         SetCursor(wxNullCursor);
     }
-    void DeleteAlignmentOff(void)
+    void DeleteSingleOff(void)
     {
-        menuBar->Check(MID_DELETE_ALN, false);
+        menuBar->Check(MID_DELETE_ONE, false);
         SetCursor(wxNullCursor);
     }
 
@@ -125,13 +135,14 @@ private:
     DECLARE_EVENT_TABLE()
 
 public:
+    bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
-    bool DoDeleteAlignment(void) const { return menuBar->IsChecked(MID_DELETE_ALN); }
+    bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
     void CancelDerivedSpecialModes(void)
     {
-        if (DoMergeSingle()) MergeSingleOff();
-        if (DoDeleteAlignment()) DeleteAlignmentOff();
+        if (DoThreadSingle()) ThreadSingleOff();
+        if (DoDeleteSingle()) DeleteSingleOff();
     }
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/31 18:47:09  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.23  2001/05/31 14:32:33  thiessen
 * tweak font handling
 *
@@ -113,6 +116,7 @@
 
 #include "cn3d/sequence_viewer_widget.hpp"
 #include "cn3d/viewable_alignment.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -281,7 +285,7 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(
         // set size of virtual area
         alignment->GetSize(&areaWidth, &areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return false;
-        ERR_POST(Info << "area height " << areaHeight);
+        TESTMSG(Info << "area height " << areaHeight);
 
         // "+1" to make sure last real column and row are always visible, even
         // if visible area isn't exact multiple of cell size
@@ -339,7 +343,7 @@ void SequenceViewerWidget_SequenceArea::SetRubberbandColor(const wxColor& rubber
 
 void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 {
-//    ERR_POST(Info << "entered SequenceViewerWidget_SequenceArea::OnPaint()");
+//    TESTMSG("entered SequenceViewerWidget_SequenceArea::OnPaint()");
     wxMemoryDC memDC;
     bitmap->SetWidth(GetSize().GetWidth());
     bitmap->SetHeight(GetSize().GetHeight());
@@ -410,7 +414,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         if (lastCellY >= areaHeight) lastCellY = areaHeight - 1;
 
         // draw cells
-//        ERR_POST(Info << "drawing cells " << firstCellX << ',' << firstCellY
+//        TESTMSG("drawing cells " << firstCellX << ',' << firstCellY
 //            << " to " << lastCellX << ',' << lastCellY);
         for (y=firstCellY; y<=lastCellY; y++) {
             for (x=firstCellX; x<=lastCellX; x++) {
@@ -690,7 +694,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             prevToY = fromY = cellY;
             dragging = true;
 
-            ERR_POST(Info << "drawing initial rubberband");
+            TESTMSG("drawing initial rubberband");
             wxClientDC dc(this);
             dc.BeginDrawing();
             currentRubberbandType =
@@ -883,7 +887,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
 
 //        if (upd.GetW() == GetClientSize().GetWidth() &&
 //            upd.GetH() == GetClientSize().GetHeight())
-//            ERR_POST(Info << "repainting whole SequenceViewerWidget_TitleArea");
+//            TESTMSG("repainting whole SequenceViewerWidget_TitleArea");
 
         // draw background
         dc.SetPen(*(wxThePenList->
@@ -1078,7 +1082,7 @@ void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
 
 void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 {
-//    ERR_POST(Info << "called SequenceViewerWidget::Refresh()");
+//    TESTMSG("called SequenceViewerWidget::Refresh()");
     sequenceArea->Refresh(eraseBackground, rect);
     titleArea->Refresh(eraseBackground, rect);
 }

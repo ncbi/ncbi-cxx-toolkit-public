@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/31 18:46:26  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.9  2000/11/30 15:49:08  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -91,7 +94,7 @@ public:
     AtomSet *atomSet;
 
     // map of moleculeID -> objects
-    typedef LIST_TYPE < const Object3D * > Object3DList;
+    typedef std::list < const Object3D * > Object3DList;
     typedef std::map < int, Object3DList > Object3DMap;
     Object3DMap objectMap;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/31 18:46:27  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.19  2001/05/02 16:35:18  thiessen
 * launch entrez web page on sequence identifier
 *
@@ -119,7 +122,7 @@ public:
     SequenceSet(StructureBase *parent, ncbi::objects::CSeq_entry& seqEntry);
     SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
 
-    typedef LIST_TYPE < const Sequence * > SequenceList;
+    typedef std::list < const Sequence * > SequenceList;
     SequenceList sequences;
 
     // there is one and only one sequence in this set that will be the master

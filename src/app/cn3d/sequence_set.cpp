@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/05/31 18:47:09  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.28  2001/05/31 14:32:03  thiessen
 * better netscape launch for unix
 *
@@ -153,6 +156,7 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -453,7 +457,7 @@ static void LaunchWebPage(const char *url)
     if (!MSWin_OpenDocument(url)) {
         ERR_POST(Error << "Unable to launch browser");
     }
-    
+
 #elif defined(__WXGTK__)
     CNcbiOstrstream oss;
     oss << "( netscape -raise -remote 'openURL(" << url << ")' || netscape '" << url 

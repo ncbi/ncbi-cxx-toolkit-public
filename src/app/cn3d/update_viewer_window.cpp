@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/31 18:47:10  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.16  2001/05/24 21:38:41  thiessen
 * fix threader options initial values
 *
@@ -107,10 +110,10 @@ BEGIN_SCOPE(Cn3D)
 
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
-    EVT_CLOSE     (                                    UpdateViewerWindow::OnCloseWindow)
-    EVT_MENU      (MID_THREAD_ALL,                      UpdateViewerWindow::OnRunThreader)
+    EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
+    EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
-    EVT_MENU      (MID_DELETE_ALN,                      UpdateViewerWindow::OnDeleteAlignment)
+    EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -118,6 +121,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     updateViewer(thisUpdateViewer)
 {
     wxMenu *menu = new wxMenu;
+    menu->Append(MID_THREAD_ONE, "Thread &Single", "", true);
     menu->Append(MID_THREAD_ALL, "Thread &All");
     menuBar->Append(menu, "&Threader");
 
@@ -127,13 +131,19 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_MERGE_ONE, "&Merge Single", "", true);
     menu->Append(MID_MERGE_ALL, "Merge &All");
     menu->AppendSeparator();
-    menu->Append(MID_DELETE_ALN, "&Delete Single", "", true);
+    menu->Append(MID_DELETE_ONE, "&Delete Single", "", true);
+    menu->Append(MID_DELETE_ALL, "Delete A&ll");
     menuBar->Append(menu, "&Alignments");
 
     // editor always on
     EnableBaseEditorMenuItems(true);
     menuBar->Check(MID_ENABLE_EDIT, true);
     menuBar->Enable(MID_ENABLE_EDIT, false);
+
+    // set default mouse mode
+    viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal);
+    menuBar->Check(MID_DRAG_HORIZ, true);
+    menuBar->Check(MID_SELECT_RECT, false);
 }
 
 UpdateViewerWindow::~UpdateViewerWindow(void)
@@ -159,27 +169,41 @@ void UpdateViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
 
 void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
 {
-    ThreaderOptions options;
+    switch (event.GetId()) {
+        case MID_THREAD_ONE:
+            if (DoMergeSingle()) MergeSingleOff();
+            if (DoDeleteSingle()) DeleteSingleOff();
+            CancelBaseSpecialModes();
+            if (DoThreadSingle())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                ThreadSingleOff();
+            break;
+        case MID_THREAD_ALL: {
+            ThreaderOptions options;
+            ThreaderOptionsDialog optDialog(this, options);
+            if (optDialog.ShowModal() == wxCANCEL) return;  // user cancelled
 
-    ThreaderOptionsDialog optDialog(this, options);
-    if (optDialog.ShowModal() == wxCANCEL) return;  // user cancelled
+            if (!optDialog.GetValues(&options)) {
+                ERR_POST(Error << "Error retrieving options values from dialog");
+                return;
+            }
 
-    if (!optDialog.GetValues(&options)) {
-        ERR_POST(Error << "Error retrieving options values from dialog");
-        return;
+            RaiseLogWindow();
+            SetCursor(*wxHOURGLASS_CURSOR);
+            updateViewer->alignmentManager->ThreadAllUpdates(options);
+            SetCursor(wxNullCursor);
+            break;
+        }
     }
-
-    RaiseLogWindow();
-    SetCursor(*wxHOURGLASS_CURSOR);
-    updateViewer->alignmentManager->ThreadUpdates(options);
-    SetCursor(wxNullCursor);
 }
 
 void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_MERGE_ONE:
-            if (DoDeleteAlignment()) DeleteAlignmentOff();
+            if (DoThreadSingle()) ThreadSingleOff();
+            if (DoDeleteSingle()) DeleteSingleOff();
             CancelBaseSpecialModes();
             if (DoMergeSingle())
                 SetCursor(*wxCROSS_CURSOR);
@@ -198,14 +222,24 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
     }
 }
 
-void UpdateViewerWindow::OnDeleteAlignment(wxCommandEvent& event)
+void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
 {
-    if (DoMergeSingle()) MergeSingleOff();
-    CancelBaseSpecialModes();
-    if (DoDeleteAlignment())
-        SetCursor(*wxCROSS_CURSOR);
-    else
-       DeleteAlignmentOff();
+    switch (event.GetId()) {
+        case MID_DELETE_ONE:
+            if (DoThreadSingle()) ThreadSingleOff();
+            if (DoMergeSingle()) MergeSingleOff();
+            CancelBaseSpecialModes();
+            if (DoDeleteSingle())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+            DeleteSingleOff();
+            break;
+        case MID_DELETE_ALL: {
+            ViewerBase::AlignmentList empty;
+            updateViewer->ReplaceAlignments(empty);
+            break;
+        }
+    }
 }
 
 bool UpdateViewerWindow::SaveDialog(bool canCancel)

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/05/31 18:47:07  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.48  2001/05/31 14:32:32  thiessen
 * tweak font handling
 *
@@ -265,7 +268,7 @@ USING_SCOPE(objects);
 // from C-toolkit ncbienv.h - for setting registry parameter; used here to avoid having to
 // bring in lots of C-toolkit headers
 extern "C" {
-    extern int Nlm_SetAppParam(const char* file, const char* section, const char* type, const char* value);
+    extern int Nlm_TransientSetAppParam(const char* file, const char* section, const char* type, const char* value);
 }
 
 
@@ -393,7 +396,7 @@ bool Cn3DApp::OnInit(void)
 
     // set data dir, and register the path in C toolkit registry (mainly for BLAST code)
     dataDir = programDir + "data" + wxFILE_SEP_PATH;
-    Nlm_SetAppParam("ncbi", "ncbi", "data", dataDir.c_str());
+    Nlm_TransientSetAppParam("ncbi", "ncbi", "data", dataDir.c_str());
 
     TESTMSG("working dir: " << workingDir.c_str());
     TESTMSG("program dir: " << programDir.c_str());
@@ -439,7 +442,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE( MID_TRANSLATE,  MID_RESET,          Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE( MID_SHOW_HIDE,  MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
     EVT_MENU(       MID_REFIT_ALL,                      Cn3DMainFrame::OnAlignStructures)
-    EVT_MENU_RANGE( MID_SECSTRUC,   MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE( MID_EDIT_STYLE, MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE( MID_QLOW,       MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
     EVT_MENU_RANGE( MID_SHOW_LOG,   MID_SHOW_SEQ_V,     Cn3DMainFrame::OnShowWindow)
 END_EVENT_TABLE()
@@ -488,6 +491,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     // Style menu
     menu = new wxMenu;
+    menu->Append(MID_EDIT_STYLE, "&Edit Style");
+    menu->AppendSeparator();
     menu->Append(MID_SECSTRUC, "&Secondary Structure");
     menu->Append(MID_WIREFRAME, "&Wireframe");
     menu->Append(MID_ALIGN, "&Alignment");
@@ -535,7 +540,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     GlobalMessenger()->AddStructureWindow(this);
     Show(true);
-    
+
     // set up font used by OpenGL
     glCanvas->SetCurrent();
 #if defined(__WXMSW__)
@@ -680,6 +685,10 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
     if (glCanvas->structureSet) {
         glCanvas->SetCurrent();
         switch (event.GetId()) {
+            case MID_EDIT_STYLE:
+                if (!glCanvas->structureSet->styleManager->EditGlobalStyle(this, glCanvas->structureSet))
+                    return;
+                break;
             case MID_SECSTRUC:
                 glCanvas->structureSet->styleManager->SetToSecondaryStructure();
                 break;

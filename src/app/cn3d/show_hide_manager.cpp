@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/31 18:47:09  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.10  2001/05/17 18:34:26  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -71,6 +74,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/opengl_renderer.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 #include <corelib/ncbistre.hpp>
 #include <vector>

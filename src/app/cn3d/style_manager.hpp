@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/31 18:46:28  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.23  2001/03/29 15:49:32  thiessen
 * use disulfide color only for virtual disulfides
 *
@@ -111,6 +114,7 @@
 
 #include "cn3d/vector_math.hpp"
 
+class wxWindow;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -190,7 +194,7 @@ public:
 
     Vector virtualDisulfideColor, backgroundColor;
 
-    double ballRadius, stickRadius, tubeRadius, tubeWormRadius,
+    double spaceFillProportion, ballRadius, stickRadius, tubeRadius, tubeWormRadius,
         helixRadius, strandWidth, strandThickness;
 
     // methods to set to predetermined states
@@ -248,6 +252,9 @@ public:
     bool GetStrandStyle(const StructureObject *object,
         const Strand3D& strand, StrandStyle *strandStyle) const;
 
+    // bring up dialog to edit global style; returns true if style changed
+    bool EditGlobalStyle(wxWindow *parent, const StructureSet *set);
+
     // check style option consistency
     bool CheckStyleSettings(const StructureSet *set);
 
@@ -264,6 +271,7 @@ public:
         int moleculeID, int residueID) const;
     const Vector& GetObjectColor(const Molecule *molecule) const;
 
+    // predefined styles
     void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
     void SetToWireframe(void) { globalStyle.SetToWireframe(); }
     void SetToAlignment(StyleSettings::eColorScheme protBBType)

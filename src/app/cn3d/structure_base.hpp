@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/31 18:46:27  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.21  2001/05/17 18:34:01  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -100,15 +103,9 @@
 #define CN3D_STRUCTUREBASE__HPP
 
 #include <corelib/ncbistl.hpp>
-
-// container type used for various lists
-#include <list>
-#define LIST_TYPE std::list    // can't use deque (at least on PC) as it's a memory hog
-
 #include <corelib/ncbidiag.hpp>
 
-#define TESTMSG(stream) ERR_POST(Info << stream)
-//#define TESTMSG(stream)
+#include <list>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -146,7 +143,7 @@ private:
     StructureBase(void);
     // keep track of StructureBase-derived children, so that top-down operations
     // like drawing or deconstructing can trickle down automatically
-    typedef LIST_TYPE < StructureBase * > _ChildList;
+    typedef std::list < StructureBase * > _ChildList;
     _ChildList _children;
     void _AddChild(StructureBase *child);
 

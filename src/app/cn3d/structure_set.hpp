@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/05/31 18:46:27  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.44  2001/05/02 13:46:15  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -217,7 +220,7 @@ public:
     bool isAlphaOnly;   // assume if one Object is alpha-only, then they all are
     int nDomains;       // total number of domains over all objects
 
-    typedef LIST_TYPE < const StructureObject * > ObjectList;
+    typedef std::list < const StructureObject * > ObjectList;
     ObjectList objects;
 
     // sequence and alignment information
@@ -236,7 +239,7 @@ public:
     // for assigning display lists and frames
     unsigned int lastDisplayList;
 
-    typedef LIST_TYPE < unsigned int > DisplayLists;
+    typedef std::list < unsigned int > DisplayLists;
     typedef std::vector < DisplayLists > FrameMap;
     FrameMap frameMap;
 
@@ -330,7 +333,7 @@ public:
     // an object has one ChemicalGraph that can be applied to one or more
     // CoordSets to generate the object's model(s)
     const ChemicalGraph *graph;
-    typedef LIST_TYPE < const CoordSet * > CoordSetList;
+    typedef std::list < const CoordSet * > CoordSetList;
     CoordSetList coordSets;
 
     // map of internal domainID -> Molecule and MMDB-assigned id

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/05/31 18:46:26  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
 * Revision 1.22  2001/05/15 23:49:20  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -154,7 +157,7 @@ public:
 
     typedef std::map < int, const Residue * > ResidueMap;
     ResidueMap residues;
-    typedef LIST_TYPE < const Bond * > BondList;
+    typedef std::list < const Bond * > BondList;
     BondList interResidueBonds; // includes virtual and disulfide bonds
 
     // ints are residue IDs; tracks intramolecular disulfides (mainly for fast lookup by threader)
@@ -174,7 +177,7 @@ public:
     // corresponding sequence (if present)
     const Sequence *sequence;
 
-    typedef LIST_TYPE < unsigned int > DisplayListList;
+    typedef std::list < unsigned int > DisplayListList;
     DisplayListList displayLists;
 
     // public methods
