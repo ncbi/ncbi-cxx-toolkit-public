@@ -193,6 +193,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
                     strand = loc.GetInt().GetStrand();
                     m_HaveStrands = true;
                 }
+                break;
             default:
                 NCBI_THROW(CAnnotException, eBadLocation,
                            "Unsupported location type in std-seg");
@@ -675,6 +676,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/01 20:11:17  rsmith
+* add missing break to switch on seq-id types.
+*
 * Revision 1.1  2004/03/30 15:40:35  grichenk
 * Initial revision
 *
