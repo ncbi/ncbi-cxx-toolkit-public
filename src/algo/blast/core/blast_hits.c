@@ -1263,7 +1263,6 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    Boolean purge, delete_hsp;
    Int2 status = 0;
    GetSeqArg seq_arg;
-   Boolean gapped_calculation = score_params->options->gapped_calculation;
 
    if (!hsp_list)
       return status;
