@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2000/10/20 17:13:30  lavr
+ * Service descriptor parse bug fixed
+ * Unknown type now returns empty text string (instead of abort) in 'SERV_TypeStr'
+ *
  * Revision 6.14  2000/10/05 21:31:23  lavr
  * Standalone connection marked "stateful" by default
  *
@@ -124,9 +128,7 @@ const char* SERV_TypeStr(ESERV_Type type)
 
     if (attr)
         return attr->tag;
-
-    assert(0);
-    return "UNKNOWN";
+    return "";
 }
 
 
@@ -164,14 +166,14 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
     int n;
 
     if (!default_host) {
-        char addrbuf[MAX_IP_ADDRESS_LEN + 1];
-        size_t addrlen;
+        char abuf[MAX_IP_ADDRESS_LEN + 1];
+        size_t alen;
 
-        if (!s || (addrlen = (size_t)(s - str)) > sizeof(addrbuf) - 1)
+        if (!s || (alen = (size_t)(s - str)) > sizeof(abuf) - 1)
             return 0;
-        strncpy(addrbuf, str, addrlen);
-        addrbuf[addrlen] = '\0';
-        if (strchr(addrbuf, ' ') || (h = inet_addr(str)) == (unsigned int)(-1))
+        strncpy(abuf, str, alen);
+        abuf[alen] = '\0';
+        if (strchr(abuf, ' ') || (h = inet_addr(abuf)) == (unsigned int)(-1))
             return 0;
     } else if (s && s != str) {
         return 0;
@@ -239,7 +241,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         if (k_FlagTag[info->flag])
             s += sprintf(s, "%s ", k_FlagTag[info->flag]);
         sprintf(s, "T=%lu R=%.2f S=%s", (unsigned long)info->time, info->rate,
-                info->stat ? "yes" : "no");
+                info->sful ? "yes" : "no");
     }
     return str;
 }
@@ -297,10 +299,10 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                 case 'S':
                     if (sscanf(str, "=%3s%n", ans, &n) >= 1) {
                         if (strcasecmp(ans, "YES") == 0) {
-                            info->stat = 1 /*true */;
+                            info->sful = 1 /*true */;
                             str += n;
                         } else if (strcasecmp(ans, "NO") == 0) {
-                            info->stat = 0 /* false */;
+                            info->sful = 0 /* false */;
                             str += n;
                         }
                     }
@@ -411,7 +413,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->type         = fSERV_Ncbid;
         info->host         = host;
         info->port         = port;
-        info->stat         = 0;
+        info->sful         = 0;
         info->flag         = fSERV_Regular;
         info->time         = 0;
         info->rate         = 0;
@@ -466,7 +468,7 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->type = fSERV_Standalone;
         info->host = host;
         info->port = port;
-        info->stat = 1;
+        info->sful = 1;
         info->flag = fSERV_Regular;
         info->time = 0;
         info->rate = 0;
@@ -571,7 +573,7 @@ SSERV_Info* SERV_CreateHttpInfo
         info->type        = type;
         info->host        = host;
         info->port        = port;
-        info->stat        = 0;
+        info->sful        = 0;
         info->flag        = fSERV_Regular;
         info->time        = 0;
         info->rate        = 0;
