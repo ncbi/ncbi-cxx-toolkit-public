@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/11/19 18:26:00  vasilche
+* Fixed conflict with SetImplicit() in generated choice variant classes.
+*
 * Revision 1.24  1999/10/05 14:08:33  vasilche
 * Fixed class name under GCC and MSVC.
 *
@@ -322,12 +325,20 @@ void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
-    if ( Implicit() && m_MembersInfo.size() == 1 ) {
+    if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo& info = *m_MembersInfo[0];
-        TConstObjectPtr member = info.GetMember(object);
-        info.GetTypeInfo()->WriteData(out, member);
+        const CMemberInfo* info;
+        if ( m_MembersInfo.size() == 2 ) {
+            _ASSERT(m_Members.GetMemberId(0).GetName().empty());
+            info = m_MembersInfo[1];
+        }
+        else {
+            _ASSERT(m_MembersInfo.size() == 1);
+            info = m_MembersInfo[0];
+        }
+        TConstObjectPtr member = info->GetMember(object);
+        info->GetTypeInfo()->WriteData(out, member);
         return;
     }
     CObjectOStream::Block block(out, RandomOrder());
@@ -347,12 +358,20 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    if ( Implicit() && m_MembersInfo.size() == 1 ) {
+    if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo& info = *m_MembersInfo[0];
-        TObjectPtr member = info.GetMember(object);
-        info.GetTypeInfo()->ReadData(in, member);
+        const CMemberInfo* info;
+        if ( m_MembersInfo.size() == 2 ) {
+            _ASSERT(m_Members.GetMemberId(0).GetName().empty());
+            info = m_MembersInfo[1];
+        }
+        else {
+            _ASSERT(m_MembersInfo.size() == 1);
+            info = m_MembersInfo[0];
+        }
+        TObjectPtr member = info->GetMember(object);
+        info->GetTypeInfo()->ReadData(in, member);
         return;
     }
     CObjectIStream::Block block(in, RandomOrder());
