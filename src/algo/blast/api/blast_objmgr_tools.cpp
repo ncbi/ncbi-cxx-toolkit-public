@@ -570,6 +570,9 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         vector<TSeqPos> replaced_positions;   // positions replaced by X's
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
+        if (buflen == 0) {
+            break;
+        }
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
         *buf_var++ = GetSentinelByte(encoding);
@@ -598,6 +601,9 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         sv.SetCoding(CSeq_data::e_Ncbi4na);
         buflen = CalculateSeqBufferLength(sv.size(), NCBI4NA_ENCODING,
                                           strand, sentinel);
+        if (buflen == 0) {
+            break;
+        }
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
         if (sentinel == eSentinels)
@@ -647,6 +653,9 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
                                           eNa_strand_plus, eNoSentinels);
+        if (buflen == 0) {
+            break;
+        }
         sv.SetCoding(CSeq_data::e_Ncbi4na);
         buf = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
@@ -943,6 +952,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/01/21 17:38:57  camacho
+* Handle zero-length sequences
+*
 * Revision 1.32  2005/01/10 18:35:07  dondosha
 * BlastMaskLocDNAToProtein and BlastMaskLocProteinToDNA moved to core with changed signatures
 *

@@ -110,6 +110,10 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
 {
     TSeqPos retval = 0;
 
+    if (sequence_length == 0) {
+        return retval;
+    }
+
     switch (encoding) {
     // Strand and sentinels are irrelevant in this encoding.
     // Strand is always plus and sentinels cannot be represented
@@ -407,6 +411,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2005/01/21 17:38:57  camacho
+ * Handle zero-length sequences
+ *
  * Revision 1.78  2004/12/29 17:15:42  camacho
  * Use NStr utility functions
  *
