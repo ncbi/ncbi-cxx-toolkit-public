@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/01/21 16:18:06  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.3  1999/01/15 17:47:56  vasilche
 * Changed CButtonList options: m_Name -> m_SubmitName, m_Select ->
 * m_SelectName. Added m_Selected.
@@ -67,22 +70,22 @@ void CIDs::Decode(const string& str)
         SIZE_TYPE nextPos = str.find('+', pos);
         while ( nextPos != NPOS ) {
             _TRACE( " next id: \"" << str.substr(pos, nextPos - pos) << "\"" );
-            AddID(id += StringToInt(str.substr(pos, nextPos - pos)));
+            AddID(id += NStr::StringToInt(str.substr(pos, nextPos - pos)));
             pos = nextPos + 1;
             nextPos = str.find('+', pos);
         }
         _TRACE( " next id: \"" << str.substr(pos) << "\"" );
-        AddID(id += StringToInt(str.substr(pos)));
+        AddID(id += NStr::StringToInt(str.substr(pos)));
     }
     else {
         SIZE_TYPE pos = 0;
         SIZE_TYPE nextPos = str.find(',', pos);
         while ( nextPos != NPOS ) {
-            AddID(StringToInt(str.substr(pos, nextPos - pos)));
+            AddID(NStr::StringToInt(str.substr(pos, nextPos - pos)));
             pos = nextPos + 1;
             nextPos = str.find(',', pos);
         }
-        AddID(StringToInt(str.substr(pos)));
+        AddID(NStr::StringToInt(str.substr(pos)));
     }
 }
 
@@ -92,7 +95,7 @@ string CIDs::Encode(void) const
     int idPrev = 0;
     for ( const_iterator i = begin(); i != end(); ++i ) {
         int id = i->first;
-        out += IntToString(id - idPrev, true);
+        out += NStr::IntToString(id - idPrev, true);
         idPrev = id;
     }
     return out;

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/01/21 16:18:04  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.14  1999/01/11 22:05:45  vasilche
 * Fixed CHTML_font size.
 * Added CHTML_image input element.
@@ -72,22 +75,39 @@ BEGIN_NCBI_SCOPE
 
 const char   NcbiEmptyCStr[] = "";
 const string NcbiEmptyString;
+// tools
 
-// conversion functions
-extern int StringToInt(const string& str);
-extern unsigned int StringToUInt(const string& str);
-extern double StringToDouble(const string& str);
-extern string IntToString(int value);
-extern string IntToString(int value, bool sign);
-extern string UIntToString(unsigned int value);
-extern string DoubleToString(double value);
+struct NStr {
 
+    // conversion functions
+    static int StringToInt(const string& str);
+    static unsigned int StringToUInt(const string& str);
+    static double StringToDouble(const string& str);
+    static string IntToString(int value);
+    static string IntToString(int value, bool sign);
+    static string UIntToString(unsigned int value);
+    static string DoubleToString(double value);
+    
+    static bool StartsWith(const string& str, const string& start)
+        {
+            return str.size() >= start.size() &&
+                str.compare(0, start.size(), start) == 0;
+        }
+    
+    static bool EndsWith(const string& str, const string& end)
+        {
+            int pos = str.size() - end.size();
+            return pos >= 0  && str.compare( pos, end.size(), end) == 0;
+        }
+
+}; // struct NStr
+       
 // predicates
 
 // case-insensitive string comparison
 struct PNocase
 {
-  bool operator() ( const string&, const string& ) const;
+    bool operator() ( const string&, const string& ) const;
 };
 
 // algorithms

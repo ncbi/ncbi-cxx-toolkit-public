@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/01/21 16:18:06  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.2  1999/01/20 21:41:36  vasilche
 * Fixed bug with lost current page.
 *
@@ -56,18 +59,6 @@ const string CPager::KParam_NextPagesX = KParam_NextPages + KParam_x;
 
 string CPagerView::sm_DefaultImagesDir = "/images/";
 
-static inline bool StartsWith(const string& str, const string& start)
-{
-  return str.size() >= start.size() &&
-      str.compare(0, start.size(), start) == 0;
-}
-
-static inline bool EndsWith(const string& str, const string& end)
-{
-  int pos = str.size() - end.size();
-  return pos >= 0  && str.compare( pos, end.size(), end) == 0;
-}
-
 CPager::CPager(CCgiRequest& request, int pageBlockSize)
     : m_PageBlockSize(max(1, pageBlockSize)), m_PageSize(GetPageSize(request)),
       m_PageChanged(false)
@@ -92,12 +83,12 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize)
         // look for params like: "page 2.x=..."
         for ( TCgiEntriesCI i = entries.begin(); i != entries.end(); ++i ) {
             const string& param = i->first;
-            if ( StartsWith(param, KParam_Page) && EndsWith(param, KParam_x) ) {
+            if ( NStr::StartsWith(param, KParam_Page) && NStr::EndsWith(param, KParam_x) ) {
                 // "page xxx"
                 string page = param.substr(KParam_Page.size(),
                         param.size() - KParam_Page.size() - KParam_x.size());
                 try {
-                    m_DisplayPage = StringToInt(page) - 1;
+                    m_DisplayPage = NStr::StringToInt(page) - 1;
                     m_PageChanged = true;
                     break;
                 } catch (exception e) {
@@ -111,7 +102,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize)
             TCgiEntriesCI page = entries.find(KParam_DisplayPage);
             if ( page != entries.end() ) {
                 try {
-                    m_DisplayPage = StringToInt(page->second);
+                    m_DisplayPage = NStr::StringToInt(page->second);
                 } catch (exception e) {
                     _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
                             << e.what() );
@@ -140,7 +131,7 @@ int CPager::GetDisplayPage(CCgiRequest& request)
 
     if ( entry != entries.end() ) {
         try {
-            int displayPage = StringToInt(entry->second);
+            int displayPage = NStr::StringToInt(entry->second);
             if ( displayPage >= 0 )
                 return displayPage;
 
@@ -162,7 +153,7 @@ int CPager::GetPageSize(CCgiRequest& request)
     entry = entries.find(KParam_PageSize);
     if ( entry != entries.end() ) {
         try {
-            int pageSize = StringToInt(entry->second);
+            int pageSize = NStr::StringToInt(entry->second);
             if ( pageSize > 0 )
                 return pageSize;
             _TRACE( "Nonpositive page size in CQSearchCommand::GetDisplayRange: " << pageSize );
@@ -195,16 +186,16 @@ CNCBINode* CPager::GetPageInfo(void) const
 {
     int lastPage = max(0, (m_ItemCount + m_PageSize - 1) / m_PageSize - 1);
     return new CHTMLText(
-        IntToString(m_DisplayPage + 1) +
-        " page of " + IntToString(lastPage + 1));
+        NStr::IntToString(m_DisplayPage + 1) +
+        " page of " + NStr::IntToString(lastPage + 1));
 }
 
 CNCBINode* CPager::GetItemInfo(void) const
 {
     return new CHTMLText(
-        IntToString(m_DisplayPage*m_PageSize + 1) + "-" +
-        IntToString(min((m_DisplayPage + 1)*m_PageSize, m_ItemCount)) +
-        " items of " + IntToString(m_ItemCount));
+        NStr::IntToString(m_DisplayPage*m_PageSize + 1) + "-" +
+        NStr::IntToString(min((m_DisplayPage + 1)*m_PageSize, m_ItemCount)) +
+        " items of " + NStr::IntToString(m_ItemCount));
 }
 
 CNCBINode* CPager::GetPagerView(void) const
@@ -222,7 +213,7 @@ CPagerView::CPagerView(const CPager& pager)
 void CPagerView::AddImageString(CNCBINode* node, int number,
                                 const string& prefix, const string& suffix)
 {
-    string s = IntToString(number + 1);
+    string s = NStr::IntToString(number + 1);
     string name = CPager::KParam_Page + s;
 
     for ( int i = 0; i < s.size(); ++i ) {
@@ -234,7 +225,7 @@ void CPagerView::AddImageString(CNCBINode* node, int number,
 void CPagerView::AddInactiveImageString(CNCBINode* node, int number,
                                   const string& prefix, const string& suffix)
 {
-    string s = IntToString(number + 1);
+    string s = NStr::IntToString(number + 1);
 
     for ( int i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_img(

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/01/21 16:18:04  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.2  1998/12/23 21:20:58  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -80,12 +83,12 @@ inline void CNCBINode::SetName(const string& name)
 
 inline void CNCBINode::SetAttribute(const string& name, int value)
 {
-    SetAttribute(name, IntToString(value));
+    SetAttribute(name, NStr::IntToString(value));
 }
 
 inline void CNCBINode::SetAttribute(const char* name, int value)
 {
-    SetAttribute(name, IntToString(value));
+    SetAttribute(name, NStr::IntToString(value));
 }
 
 inline void CNCBINode::SetOptionalAttribute(const string& name, const string& value)

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/01/21 16:18:03  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.14  1999/01/14 20:03:48  sandomir
 * minor changes
 *
@@ -203,6 +206,11 @@ public:
 protected:
 
   virtual string GetEntry() const = 0;
+
+  CNcbiResource& GetResource() const
+        { return m_resource; }
+
+private:
 
   CNcbiResource& m_resource;
 };

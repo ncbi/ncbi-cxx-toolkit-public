@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/01/21 16:18:05  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.23  1999/01/14 21:25:20  vasilche
 * Changed CPageList to work via form image input elements.
 *
@@ -457,7 +460,7 @@ int CHTML_table::sx_GetSpan(const CNCBINode* node,
 
     int span;
     try {
-        span = StringToInt(node->GetAttribute(attributeName));
+        span = NStr::StringToInt(node->GetAttribute(attributeName));
     }
     catch ( runtime_error err ) {
         if ( info )
@@ -1002,7 +1005,7 @@ CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
 void CHTML_font::SetRelativeSize(int size)
 {
     if ( size != 0 )
-        SetAttribute(KHTMLAttributeName_size, IntToString(size, true));
+        SetAttribute(KHTMLAttributeName_size, NStr::IntToString(size, true));
 }
 
 END_NCBI_SCOPE

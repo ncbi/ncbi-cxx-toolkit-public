@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/01/21 16:18:04  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.34  1999/01/12 17:10:16  sandomir
 * test restored
 *
@@ -424,15 +427,15 @@ static void TestUtilities(void)
         const string& str = s_Strings[i];
         NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
         try {
-            int value = StringToInt(str);
-            NcbiCout << "int value: " << value << ", toString: '" << IntToString(value) << "'" << NcbiEndl;
+            int value = NStr::StringToInt(str);
+            NcbiCout << "int value: " << value << ", toString: '" << NStr::IntToString(value) << "'" << NcbiEndl;
         }
         catch ( runtime_error& error ) {
             NcbiCout << "Error: " << error.what() << NcbiEndl;
         }
         try {
-            unsigned int value = StringToInt(str);
-            NcbiCout << "unsigned int value: " << value << ", toString: '" << IntToString(value) << "'" << NcbiEndl;
+            unsigned int value = NStr::StringToInt(str);
+            NcbiCout << "unsigned int value: " << value << ", toString: '" << NStr::IntToString(value) << "'" << NcbiEndl;
         }
         catch ( runtime_error& error ) {
             NcbiCout << "Error: " << error.what() << NcbiEndl;

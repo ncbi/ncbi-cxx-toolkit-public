@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/21 16:18:06  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.1  1999/01/20 17:39:46  vasilche
 * Selection as separate class CSelection.
 *
@@ -59,7 +62,7 @@ CSelection::CSelection(CCgiRequest& request,
     // load checkboxes
     for ( TCgiEntriesCI i = values.lower_bound(checkboxName),
               end = values.upper_bound(checkboxName); i != end; ++i ) {
-        AddID(StringToInt(i->second));
+        AddID(NStr::StringToInt(i->second));
     }
 }
 

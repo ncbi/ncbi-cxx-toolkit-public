@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/01/21 16:18:05  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.20  1999/01/20 18:12:44  vasilche
 * Added possibility to change label of buttons.
 *
@@ -209,7 +212,7 @@ CPageList::CPageList(void)
 void CPageList::x_AddImageString(CNCBINode* node, const string& name, int number,
                                  const string& imageStart, const string& imageEnd)
 {
-    string s = IntToString(number);
+    string s = NStr::IntToString(number);
     
     for ( int i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_image(name, imageStart + s[i] + imageEnd, 0));
@@ -221,7 +224,7 @@ void CPageList::x_AddInactiveImageString(CNCBINode* node, const string& name,
                                          const string& imageStart,
                                          const string& imageEnd)
 {
-    string s = IntToString(number);
+    string s = NStr::IntToString(number);
     
     for ( int i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_img(imageStart + s[i] + imageEnd));
@@ -279,7 +282,7 @@ void CPagerBox::CreateSubNodes(void)
     tableTop->InsertAt(0, 1, m_PageList);
     tableBot->InsertAt(0, 0, m_LeftButton);
     tableBot->InsertAt(0, 1, m_RightButton);
-    tableBot->InsertAt(0, 2, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
+    tableBot->InsertAt(0, 2, new CHTMLText(NStr::IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
 }
 
 CNCBINode* CPagerBox::CloneSelf(void) const
@@ -307,7 +310,7 @@ void CSmallPagerBox::CreateSubNodes()
         AppendChild(Table);
         
         Table->InsertAt(0, 0, new CPageList);
-        Table->InsertAt(0, 1, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
+        Table->InsertAt(0, 1, new CHTMLText(NStr::IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
     }
     catch (...) {
         delete Table;

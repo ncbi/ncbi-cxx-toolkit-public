@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/01/21 16:18:04  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
 * Revision 1.6  1999/01/11 22:05:50  vasilche
 * Fixed CHTML_font size.
 * Added CHTML_image input element.
@@ -65,7 +68,7 @@ BEGIN_NCBI_SCOPE
 #define snprintf _snprintf
 #endif
 
-int StringToInt(const string& str)
+int NStr::StringToInt(const string& str)
 {
     errno = 0;
     char* error = 0;
@@ -77,7 +80,7 @@ int StringToInt(const string& str)
     return value;
 }
 
-unsigned int StringToUInt(const string& str)
+unsigned int NStr::StringToUInt(const string& str)
 {
     errno = 0;
     char* error = 0;
@@ -89,7 +92,7 @@ unsigned int StringToUInt(const string& str)
     return value;
 }
 
-double StringToDouble(const string& str)
+double NStr::StringToDouble(const string& str)
 {
     errno = 0;
     char* error = 0;
@@ -99,28 +102,28 @@ double StringToDouble(const string& str)
     return value;
 }
 
-string IntToString(int value)
+string NStr::IntToString(int value)
 {
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%d", value);
     return buffer;
 }
 
-string IntToString(int value, bool sign)
+string NStr::IntToString(int value, bool sign)
 {
     char buffer[64];
     snprintf(buffer, sizeof(buffer), sign? "%+d": "%d", value);
     return buffer;
 }
 
-string UIntToString(unsigned int value)
+string NStr::UIntToString(unsigned int value)
 {
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%u", value);
     return buffer;
 }
 
-string DoubleToString(double value)
+string NStr::DoubleToString(double value)
 {
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%g", value);
