@@ -1,4 +1,4 @@
---$Revision: 1.6 $
+--$Revision: 1.7 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -21,8 +21,8 @@ IMPORTS Person-id, Date FROM NCBI-General;
     -- Citation Types
 
 Cit-art ::= SEQUENCE {                  -- article in journal or book
-    title Title ,                       -- title of paper
-    authors Auth-list,                  -- authors
+    title Title OPTIONAL ,              -- title of paper (ANSI requires)
+    authors Auth-list OPTIONAL          -- authors (ANSI requires)
     from CHOICE {                       -- journal or book
         journal Cit-jour ,
         book Cit-book ,
