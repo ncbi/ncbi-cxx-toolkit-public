@@ -28,26 +28,6 @@
 * File Description:
 *      holds 3d-objects - helix cylinders and strand bricks
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2001/12/12 14:04:14  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.5  2001/02/08 23:01:50  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.4  2000/08/17 14:24:06  thiessen
-* added working StyleManager
-*
-* Revision 1.3  2000/08/16 14:18:45  thiessen
-* map 3-d objects to molecules
-*
-* Revision 1.2  2000/08/13 02:43:01  thiessen
-* added helix and strand objects
-*
-* Revision 1.1  2000/08/11 18:24:57  thiessen
-* add 3-d objects code
-*
 * ===========================================================================
 */
 
@@ -60,6 +40,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -74,7 +55,7 @@ Object3D::Object3D(StructureBase *parent, const CResidue_pntrs& residues) :
     moleculeID(VALUE_NOT_SET), fromResidueID(VALUE_NOT_SET), toResidueID(VALUE_NOT_SET)
 {
     if (!residues.IsInterval() || residues.GetInterval().size() != 1) {
-        ERR_POST(Error << "Object3D::Object3D() - can't handle this type of Residue-pntrs (yet)!");
+        ERRORMSG("Object3D::Object3D() - can't handle this type of Residue-pntrs (yet)!");
         return;
     }
 
@@ -104,7 +85,7 @@ Helix3D::Helix3D(StructureBase *parent, const CCylinder& cylinder, const CResidu
 bool Helix3D::Draw(const AtomSet *data) const
 {
     if (!parentSet->renderer) {
-        ERR_POST(Error << "Helix3D::Draw() - no renderer");
+        ERRORMSG("Helix3D::Draw() - no renderer");
         return false;
     }
 
@@ -147,7 +128,7 @@ Strand3D::Strand3D(StructureBase *parent, const CBrick& brick, const CResidue_pn
 bool Strand3D::Draw(const AtomSet *data) const
 {
     if (!parentSet->renderer) {
-        ERR_POST(Error << "Strand3D::Draw() - no renderer");
+        ERRORMSG("Strand3D::Draw() - no renderer");
         return false;
     }
 
@@ -169,3 +150,29 @@ bool Strand3D::Draw(const AtomSet *data) const
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.7  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.6  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.5  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+* Revision 1.4  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
+* Revision 1.3  2000/08/16 14:18:45  thiessen
+* map 3-d objects to molecules
+*
+* Revision 1.2  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
+* Revision 1.1  2000/08/11 18:24:57  thiessen
+* add 3-d objects code
+*
+*/

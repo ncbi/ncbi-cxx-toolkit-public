@@ -28,8 +28,144 @@
 * File Description:
 *      Classes to manipulate alignments
 *
+* ===========================================================================
+*/
+
+#ifndef CN3D_ALIGNMENT_MANAGER__HPP
+#define CN3D_ALIGNMENT_MANAGER__HPP
+
+#include <corelib/ncbistl.hpp>
+#include <objects/cdd/Cdd.hpp>
+#include <objects/cdd/Update_align.hpp>
+
+#include <list>
+#include <vector>
+#include <map>
+
+#include "cn3d/vector_math.hpp"
+#include "cn3d/show_hide_callback.hpp"
+#include "cn3d/style_manager.hpp"
+
+
+BEGIN_SCOPE(Cn3D)
+
+class Sequence;
+class SequenceSet;
+class AlignmentSet;
+class MasterSlaveAlignment;
+class SequenceViewer;
+class Messenger;
+class BlockMultipleAlignment;
+class Threader;
+class ThreaderOptions;
+class UpdateViewer;
+class BLASTer;
+class StructureSet;
+class MoleculeIdentifier;
+class BlockAligner;
+
+class AlignmentManager : public ShowHideCallbackObject
+{
+public:
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
+    typedef std::list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const UpdateAlignList& updates);
+    ~AlignmentManager(void);
+
+    Threader *threader; // made public so viewers have access to it
+    BLASTer *blaster;
+    BlockAligner *blockAligner;
+
+    void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
+    void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
+
+    // creates the current multiple alignment from the given pairwise alignments (which are
+    // assumed to be members of the AlignmentSet).
+    typedef std::list < const MasterSlaveAlignment * > PairwiseAlignmentList;
+    BlockMultipleAlignment *
+        CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments);
+
+    // change the underlying pairwise alignments to match the given multiple and row order
+    void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
+        const std::vector < int >& rowOrder);
+
+    // recomputes structure alignments for all slave structures in the current
+    // sequence alignment
+    void RealignAllSlaveStructures(void) const;
+
+    // stuff relating to show/hide of alignment rows (slaves)
+    void GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const;
+    void GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const;
+    void ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled);
+    void NewMultipleWithRows(const std::vector < bool >& visibilities);
+
+    // find out if a residue is aligned - only works for non-repeated sequences!
+    bool IsAligned(const Sequence *sequence, int seqIndex) const;
+
+    // find out if a Sequence is part of the current alignment
+    bool IsInAlignment(const Sequence *sequence) const;
+
+    // get a color for an aligned residue that's dependent on the entire alignment
+    // (e.g., for coloring by sequence conservation)
+    const Vector * GetAlignmentColor(const Sequence *sequence,
+        int seqIndex, StyleSettings::eColorScheme colorScheme) const;
+
+    void ShowUpdateWindow(void) const;
+
+    // sequence alignment algorithm functions
+    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
+    void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
+    void ThreadAllUpdates(const ThreaderOptions& options);
+    void BlockAlignAllUpdates(void );
+    void BlockAlignUpdate(BlockMultipleAlignment *single);
+
+    // merge functions
+    typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;
+    void MergeUpdates(const UpdateMap& updates, bool mergeToNeighbor);
+
+    // calculates row scores using the threader
+    void CalculateRowScoresWithThreader(double weightPSSM);
+
+    // get the working alignment
+    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
+
+    // get a list of chain sequences when we're viewing a single structure
+    bool GetStructureProteins(std::vector < const Sequence * > *chains) const;
+
+    // get a list of (slave) sequences present in the updates
+    void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
+
+    // remove sequence from both multiple alignment and updates
+    void PurgeSequence(const MoleculeIdentifier *identifier);
+
+    // show sequence/alignment viewer
+    void ShowSequenceViewer(void);
+
+private:
+    void Init(void);
+
+    const SequenceSet *sequenceSet;
+    const AlignmentSet *alignmentSet;
+
+    mutable std::vector < bool > slavesVisible;
+
+    // viewer for the current alignment - will own the current alignment (if any)
+    SequenceViewer *sequenceViewer;
+
+    // viewer for updates (grab-bag of pairwise alignments)
+    UpdateViewer *updateViewer;
+};
+
+END_SCOPE(Cn3D)
+
+#endif // CN3D_ALIGNMENT_MANAGER__HPP
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.45  2003/01/29 01:41:05  thiessen
 * add merge neighbor instead of merge near highlight
 *
@@ -165,134 +301,4 @@
 * Revision 1.1  2000/08/29 04:34:14  thiessen
 * working alignment manager, IBM
 *
-* ===========================================================================
 */
-
-#ifndef CN3D_ALIGNMENT_MANAGER__HPP
-#define CN3D_ALIGNMENT_MANAGER__HPP
-
-#include <corelib/ncbistl.hpp>
-#include <objects/cdd/Cdd.hpp>
-#include <objects/cdd/Update_align.hpp>
-
-#include <list>
-#include <vector>
-#include <map>
-
-#include "cn3d/vector_math.hpp"
-#include "cn3d/show_hide_callback.hpp"
-#include "cn3d/style_manager.hpp"
-
-
-BEGIN_SCOPE(Cn3D)
-
-class Sequence;
-class SequenceSet;
-class AlignmentSet;
-class MasterSlaveAlignment;
-class SequenceViewer;
-class Messenger;
-class BlockMultipleAlignment;
-class Threader;
-class ThreaderOptions;
-class UpdateViewer;
-class BLASTer;
-class StructureSet;
-class MoleculeIdentifier;
-class BlockAligner;
-
-class AlignmentManager : public ShowHideCallbackObject
-{
-public:
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
-    typedef std::list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const UpdateAlignList& updates);
-    ~AlignmentManager(void);
-
-    Threader *threader; // made public so viewers have access to it
-    BLASTer *blaster;
-    BlockAligner *blockAligner;
-
-    void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
-    void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
-
-    // creates the current multiple alignment from the given pairwise alignments (which are
-    // assumed to be members of the AlignmentSet).
-    typedef std::list < const MasterSlaveAlignment * > PairwiseAlignmentList;
-    BlockMultipleAlignment *
-        CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments);
-
-    // change the underlying pairwise alignments to match the given multiple and row order
-    void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
-        const std::vector < int >& rowOrder);
-
-    // recomputes structure alignments for all slave structures in the current
-    // sequence alignment
-    void RealignAllSlaveStructures(void) const;
-
-    // stuff relating to show/hide of alignment rows (slaves)
-    void GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const;
-    void GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const;
-    void ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled);
-    void NewMultipleWithRows(const std::vector < bool >& visibilities);
-
-    // find out if a residue is aligned - only works for non-repeated sequences!
-    bool IsAligned(const Sequence *sequence, int seqIndex) const;
-
-    // find out if a Sequence is part of the current alignment
-    bool IsInAlignment(const Sequence *sequence) const;
-
-    // get a color for an aligned residue that's dependent on the entire alignment
-    // (e.g., for coloring by sequence conservation)
-    const Vector * GetAlignmentColor(const Sequence *sequence,
-        int seqIndex, StyleSettings::eColorScheme colorScheme) const;
-
-    void ShowUpdateWindow(void) const;
-
-    // sequence alignment algorithm functions
-    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
-    void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
-    void ThreadAllUpdates(const ThreaderOptions& options);
-    void BlockAlignAllUpdates(void );
-    void BlockAlignUpdate(BlockMultipleAlignment *single);
-
-    // merge functions
-    typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;
-    void MergeUpdates(const UpdateMap& updates, bool mergeToNeighbor);
-
-    // calculates row scores using the threader
-    void CalculateRowScoresWithThreader(double weightPSSM);
-
-    // get the working alignment
-    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
-
-    // get a list of chain sequences when we're viewing a single structure
-    bool GetStructureProteins(std::vector < const Sequence * > *chains) const;
-
-    // get a list of (slave) sequences present in the updates
-    void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
-
-    // remove sequence from both multiple alignment and updates
-    void PurgeSequence(const MoleculeIdentifier *identifier);
-
-    // show sequence/alignment viewer
-    void ShowSequenceViewer(void);
-
-private:
-    void Init(void);
-
-    const SequenceSet *sequenceSet;
-    const AlignmentSet *alignmentSet;
-
-    mutable std::vector < bool > slavesVisible;
-
-    // viewer for the current alignment - will own the current alignment (if any)
-    SequenceViewer *sequenceViewer;
-
-    // viewer for updates (grab-bag of pairwise alignments)
-    UpdateViewer *updateViewer;
-};
-
-END_SCOPE(Cn3D)
-
-#endif // CN3D_ALIGNMENT_MANAGER__HPP

@@ -28,29 +28,6 @@
 * File Description:
 *      Interface to Alejandro's block alignment algorithm
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/09/30 17:13:02  thiessen
-* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
-*
-* Revision 1.6  2002/09/23 19:12:32  thiessen
-* add option to allow long gaps between frozen blocks
-*
-* Revision 1.5  2002/09/16 21:24:58  thiessen
-* add block freezing to block aligner
-*
-* Revision 1.4  2002/08/13 20:46:36  thiessen
-* add global block aligner
-*
-* Revision 1.3  2002/08/01 01:59:26  thiessen
-* fix type syntax error
-*
-* Revision 1.2  2002/08/01 01:55:16  thiessen
-* add block aligner options dialog
-*
-* Revision 1.1  2002/07/26 15:28:45  thiessen
-* add Alejandro's block alignment algorithm
-*
 * ===========================================================================
 */
 
@@ -107,3 +84,32 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_BA_INTERFACE__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.7  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
+* Revision 1.6  2002/09/23 19:12:32  thiessen
+* add option to allow long gaps between frozen blocks
+*
+* Revision 1.5  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
+* Revision 1.4  2002/08/13 20:46:36  thiessen
+* add global block aligner
+*
+* Revision 1.3  2002/08/01 01:59:26  thiessen
+* fix type syntax error
+*
+* Revision 1.2  2002/08/01 01:55:16  thiessen
+* add block aligner options dialog
+*
+* Revision 1.1  2002/07/26 15:28:45  thiessen
+* add Alejandro's block alignment algorithm
+*
+*/

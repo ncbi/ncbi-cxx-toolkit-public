@@ -29,29 +29,6 @@
 *      Class to hold, and factory to generate, general
 *      (instance-independent) identifier for any molecule
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/02/22 14:24:00  thiessen
-* sort sequences in reject dialog ; general identifier comparison
-*
-* Revision 1.6  2002/01/24 20:08:16  thiessen
-* fix local id problem
-*
-* Revision 1.5  2001/12/12 14:04:14  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.4  2001/11/27 16:26:08  thiessen
-* major update to data management system
-*
-* Revision 1.3  2001/08/08 02:25:27  thiessen
-* add <memory>
-*
-* Revision 1.2  2001/07/04 19:39:17  thiessen
-* finish user annotation system
-*
-* Revision 1.1  2001/06/21 02:02:34  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
 * ===========================================================================
 */
 
@@ -78,13 +55,13 @@ BEGIN_SCOPE(Cn3D)
 
 // there is one (global) list of molecule identifiers
 
-typedef std::list < MoleculeIdentifier > MoleculeIdentifierList;
+typedef list < MoleculeIdentifier > MoleculeIdentifierList;
 static MoleculeIdentifierList knownIdentifiers;
 
 const int MoleculeIdentifier::VALUE_NOT_SET = -1;
 
 const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *molecule,
-    std::string _pdbID, int _pdbChain, int _gi, std::string _accession)
+    string _pdbID, int _pdbChain, int _gi, string _accession)
 {
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return NULL;
@@ -114,7 +91,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     if (object->mmdbID != StructureObject::NO_MMDB_ID) {
         if (identifier->mmdbID != VALUE_NOT_SET &&
             identifier->mmdbID != object->mmdbID && identifier->moleculeID != molecule->id) {
-            ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - mmdb/molecule ID mismatch");
+            ERRORMSG("MoleculeIdentifier::GetIdentifier() - mmdb/molecule ID mismatch");
         } else {
             identifier->mmdbID = object->mmdbID;
             identifier->moleculeID = molecule->id;
@@ -123,7 +100,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     if (_pdbID.size() > 0) {
         if (identifier->pdbID.size() > 0) {
             if (identifier->pdbID != _pdbID || identifier->pdbChain != _pdbChain)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - pdbID/chain mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - pdbID/chain mismatch");
         } else {
             identifier->pdbID = _pdbID;
             identifier->pdbChain = _pdbChain;
@@ -132,7 +109,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     if (_gi != VALUE_NOT_SET) {
         if (identifier->gi != VALUE_NOT_SET) {
             if (identifier->gi != _gi)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - gi mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
         } else {
             identifier->gi = _gi;
         }
@@ -140,7 +117,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     if (_accession.size() > 0) {
         if (identifier->accession.size() > 0) {
             if (identifier->accession != _accession)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - accession mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - accession mismatch");
         } else {
             identifier->accession = _accession;
         }
@@ -149,15 +126,15 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     if (identifier->nResidues == 0)
         identifier->nResidues = molecule->NResidues();
     else if (identifier->nResidues != molecule->NResidues())
-        ERR_POST(Error << "Length mismatch in molecule identifier " << identifier->ToString());
+        ERRORMSG("Length mismatch in molecule identifier " << identifier->ToString());
 
     if (molecule->IsProtein() || molecule->IsNucleotide())
-        TESTMSG("biopolymer molecule: identifier " << identifier << " (" << identifier->ToString() << ')');
+        TRACEMSG("biopolymer molecule: identifier " << identifier << " (" << identifier->ToString() << ')');
     return identifier;
 }
 
 const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *sequence,
-    std::string _pdbID, int _pdbChain, int _mmdbID, int _gi, std::string _accession)
+    string _pdbID, int _pdbChain, int _mmdbID, int _gi, string _accession)
 {
     // see if there's already an identifier that matches this sequence
     MoleculeIdentifier *identifier = NULL;
@@ -182,7 +159,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     if (_mmdbID != VALUE_NOT_SET) {
         if (identifier->mmdbID != VALUE_NOT_SET) {
             if (identifier->mmdbID != _mmdbID)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - mmdbID mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - mmdbID mismatch");
         } else {
             identifier->mmdbID = _mmdbID;
         }
@@ -190,7 +167,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     if (_pdbID.size() > 0) {
         if (identifier->pdbID.size() > 0) {
             if (identifier->pdbID != _pdbID || identifier->pdbChain != _pdbChain)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - pdbID/chain mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - pdbID/chain mismatch");
         } else {
             identifier->pdbID = _pdbID;
             identifier->pdbChain = _pdbChain;
@@ -199,7 +176,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     if (_gi != VALUE_NOT_SET) {
         if (identifier->gi != VALUE_NOT_SET) {
             if (identifier->gi != _gi)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - gi mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
         } else {
             identifier->gi = _gi;
         }
@@ -207,7 +184,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     if (_accession.size() > 0) {
         if (identifier->accession.size() > 0) {
             if (identifier->accession != _accession)
-                ERR_POST(Error << "MoleculeIdentifier::GetIdentifier() - accession mismatch");
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - accession mismatch");
         } else {
             identifier->accession = _accession;
         }
@@ -216,13 +193,13 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     if (identifier->nResidues == 0)
         identifier->nResidues = sequence->Length();
     else if (identifier->nResidues != sequence->Length())
-        ERR_POST(Error << "Length mismatch in sequence identifier " << identifier->ToString());
+        ERRORMSG("Length mismatch in sequence identifier " << identifier->ToString());
 
 //    TESTMSG("sequence: identifier " << identifier << " (" << identifier->ToString() << ')');
     return identifier;
 }
 
-std::string MoleculeIdentifier::ToString(void) const
+string MoleculeIdentifier::ToString(void) const
 {
     CNcbiOstrstream oss;
     if (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET) {
@@ -240,7 +217,7 @@ std::string MoleculeIdentifier::ToString(void) const
         oss << '?';
     oss << '\0';
     auto_ptr<char> chars(oss.str());    // frees memory upon function return
-    return std::string(oss.str());
+    return string(oss.str());
 }
 
 const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int moleculeID)
@@ -289,7 +266,7 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
     if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession())
         return (sid.GetSwissprot().GetAccession() == accession);
 
-    ERR_POST(Error << "MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
+    ERRORMSG("MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
     return false;
 }
 
@@ -324,8 +301,37 @@ bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const M
             return (a->accession < b->accession);
     }
 
-    ERR_POST(Error << "MoleculeIdentifier::CompareIdentifiers() - confused by identifier type");
+    ERRORMSG("MoleculeIdentifier::CompareIdentifiers() - confused by identifier type");
     return false;
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.7  2002/02/22 14:24:00  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
+* Revision 1.6  2002/01/24 20:08:16  thiessen
+* fix local id problem
+*
+* Revision 1.5  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.4  2001/11/27 16:26:08  thiessen
+* major update to data management system
+*
+* Revision 1.3  2001/08/08 02:25:27  thiessen
+* add <memory>
+*
+* Revision 1.2  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
+* Revision 1.1  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+*/

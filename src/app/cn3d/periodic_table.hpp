@@ -28,20 +28,6 @@
 * File Description:
 *      Classes to information about atomic elements
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2000/10/04 17:40:46  thiessen
-* rearrange STL #includes
-*
-* Revision 1.3  2000/08/24 18:43:15  thiessen
-* tweaks for transparent sphere display
-*
-* Revision 1.2  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.1  2000/07/12 23:30:47  thiessen
-* now draws basic CPK model
-*
 * ===========================================================================
 */
 
@@ -107,3 +93,23 @@ inline bool IsMetal(int atomicNumber)
 END_SCOPE(Cn3D)
 
 #endif // CN3D_PERIODICTABLE__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.4  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
+* Revision 1.3  2000/08/24 18:43:15  thiessen
+* tweaks for transparent sphere display
+*
+* Revision 1.2  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.1  2000/07/12 23:30:47  thiessen
+* now draws basic CPK model
+*
+*/

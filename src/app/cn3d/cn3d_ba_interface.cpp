@@ -28,74 +28,6 @@
 * File Description:
 *      Interface to Alejandro's block alignment algorithm
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.23  2003/01/23 20:03:05  thiessen
-* add BLAST Neighbor algorithm
-*
-* Revision 1.22  2003/01/22 14:47:30  thiessen
-* cache PSSM in BlockMultipleAlignment
-*
-* Revision 1.21  2002/12/20 02:51:46  thiessen
-* fix Prinf to self problems
-*
-* Revision 1.20  2002/12/09 16:25:04  thiessen
-* allow negative score threshholds
-*
-* Revision 1.19  2002/11/06 00:18:10  thiessen
-* fixes for new CRef/const rules in objects
-*
-* Revision 1.18  2002/09/30 17:13:02  thiessen
-* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
-*
-* Revision 1.17  2002/09/23 19:12:32  thiessen
-* add option to allow long gaps between frozen blocks
-*
-* Revision 1.16  2002/09/21 12:36:28  thiessen
-* add frozen block position validation; add select-other-by-distance
-*
-* Revision 1.15  2002/09/20 17:48:39  thiessen
-* fancier trace statements
-*
-* Revision 1.14  2002/09/19 14:09:41  thiessen
-* position options dialog higher up
-*
-* Revision 1.13  2002/09/19 12:51:08  thiessen
-* fix block aligner / update bug; add distance select for other molecules only
-*
-* Revision 1.12  2002/09/16 21:24:58  thiessen
-* add block freezing to block aligner
-*
-* Revision 1.11  2002/08/15 22:13:13  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.10  2002/08/14 00:02:08  thiessen
-* combined block/global aligner from Alejandro
-*
-* Revision 1.8  2002/08/09 18:24:08  thiessen
-* improve/add magic formula to avoid Windows symbol clashes
-*
-* Revision 1.7  2002/08/04 21:41:05  thiessen
-* fix GetObject problem
-*
-* Revision 1.6  2002/08/01 12:51:36  thiessen
-* add E-value display to block aligner
-*
-* Revision 1.5  2002/08/01 01:55:16  thiessen
-* add block aligner options dialog
-*
-* Revision 1.4  2002/07/29 19:22:46  thiessen
-* another blockalign bug fix; set better parameters to block aligner
-*
-* Revision 1.3  2002/07/29 13:25:42  thiessen
-* add range restriction to block aligner
-*
-* Revision 1.2  2002/07/27 12:29:51  thiessen
-* fix block aligner crash
-*
-* Revision 1.1  2002/07/26 15:28:45  thiessen
-* add Alejandro's block alignment algorithm
-*
 * ===========================================================================
 */
 
@@ -216,7 +148,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
     if (!sa.IsSetDim() || sa.GetDim() != 2 ||
         !((sa.GetSegs().IsDisc() && sa.GetSegs().GetDisc().Get().size() > 0) || sa.GetSegs().IsDenseg()))
     {
-        ERR_POST(Error << "Confused by block aligner's result format");
+        ERRORMSG("Confused by block aligner's result format");
         return NULL;
     }
 
@@ -227,7 +159,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
     bma.reset(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
 
     // get list of segs (can be a single or a set)
-    std::list < CRef < CSeq_align > > segs;
+    list < CRef < CSeq_align > > segs;
     if (sa.GetSegs().IsDisc())
         segs = sa.GetSegs().GetDisc().Get();
     else
@@ -245,7 +177,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
             !query->identifier->MatchesSeqId(*((*s)->GetSegs().GetDenseg().GetIds().front())) ||
             !master->identifier->MatchesSeqId(*((*s)->GetSegs().GetDenseg().GetIds().back())))
         {
-            ERR_POST(Error << "Confused by seg format in block aligner's result");
+            ERRORMSG("Confused by seg format in block aligner's result");
             return NULL;
         }
 
@@ -271,7 +203,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
 
     // finalize the alignment
     if (!bma->AddUnalignedBlocks() || !bma->UpdateBlockMapAndColors(false)) {
-        ERR_POST(Error << "Error finalizing alignment!");
+        ERRORMSG("Error finalizing alignment!");
         return NULL;
     }
 
@@ -360,7 +292,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     // show options dialog each time block aligner is run
     if (!SetOptions(NULL)) return false;
     if (currentOptions.mergeAfterEachSequence && !canMerge) {
-        ERR_POST(Error << "Can only merge when editing is enabled in the sequence window");
+        ERRORMSG("Can only merge when editing is enabled in the sequence window");
         return false;
     }
 
@@ -426,7 +358,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     AlignmentList::const_iterator s, se = toRealign.end();
     for (s=toRealign.begin(); s!=se; s++) {
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
-            ERR_POST(Error << "master sequence mismatch");
+            ERRORMSG("master sequence mismatch");
 
         // slave sequence info
         const Sequence *query = (*s)->GetSequenceOfRow(1);
@@ -457,7 +389,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             // if frozen block positions aren't valid as-is, try relaxing gap length restrictions
             // between adjacent frozen blocks and see if that fixes it
             if (!validFrozenBlocks && currentOptions.allowLongGaps) {
-                TESTMSG("trying to relax gap length restrictions between frozen blocks...");
+                TRACEMSG("trying to relax gap length restrictions between frozen blocks...");
                 for (i=0; i<numBlocks-1; i++)
                     if (frozenBlocks[i] >= 0 && frozenBlocks[i+1] >= 0)
                         currentAllowedGaps[i] = 1000000;
@@ -469,7 +401,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
         // actually do the block alignment
         if (validFrozenBlocks) {
-            TESTMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
+            INFOMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
                 << query->identifier->ToString());
             allocateAlignPieceMemory(numBlocks);
             findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
@@ -494,10 +426,10 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 #endif
 
             CSeq_align best;
-            std::string err;
+            string err;
             if (!ConvertAsnFromCToCPP(results, (AsnWriteFunc) SeqAlignAsnWrite, &best, &err) ||
                 (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
-                ERR_POST(Error << "conversion of results to C++ object failed: " << err);
+                ERRORMSG("conversion of results to C++ object failed: " << err);
             } else {
 
                 if (currentOptions.mergeAfterEachSequence) {
@@ -506,7 +438,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                         if (nRowsAddedToMultiple)
                             (*nRowsAddedToMultiple)++;
                         else
-                            ERR_POST(Error << "BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
+                            ERRORMSG("BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
                                 "called with merge on, but NULL nRowsAddedToMultiple pointer");
                         // recalculate PSSM
                         matrix = multiple->GetPSSM();
@@ -525,12 +457,12 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
         // no alignment block aligner failed - add old alignment to list so it doesn't get lost
         else {
-            std::string error;
+            string error;
             if (!validFrozenBlocks)
                 error = "invalid frozen block positions";
             else
                 error = "block aligner found no significant alignment";
-            ERR_POST(Warning << error << " - current alignment unchanged");
+            WARNINGMSG(error << " - current alignment unchanged");
             newAlignment = (*s)->Clone();
             newAlignment->SetRowDouble(0, -1.0);
             newAlignment->SetRowDouble(1, -1.0);
@@ -565,7 +497,7 @@ bool BlockAligner::SetOptions(wxWindow* parent)
     BlockAlignerOptionsDialog dialog(parent, currentOptions);
     bool ok = (dialog.ShowModal() == wxOK);
     if (ok && !dialog.GetValues(&currentOptions))
-        ERR_POST(Error << "Error getting options from dialog!");
+        ERRORMSG("Error getting options from dialog!");
     return ok;
 }
 
@@ -785,3 +717,77 @@ void BlockAlignerOptionsDialog::OnButton(wxCommandEvent& event)
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.24  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.23  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
+* Revision 1.22  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
+* Revision 1.21  2002/12/20 02:51:46  thiessen
+* fix Prinf to self problems
+*
+* Revision 1.20  2002/12/09 16:25:04  thiessen
+* allow negative score threshholds
+*
+* Revision 1.19  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
+* Revision 1.18  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
+* Revision 1.17  2002/09/23 19:12:32  thiessen
+* add option to allow long gaps between frozen blocks
+*
+* Revision 1.16  2002/09/21 12:36:28  thiessen
+* add frozen block position validation; add select-other-by-distance
+*
+* Revision 1.15  2002/09/20 17:48:39  thiessen
+* fancier trace statements
+*
+* Revision 1.14  2002/09/19 14:09:41  thiessen
+* position options dialog higher up
+*
+* Revision 1.13  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
+* Revision 1.12  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
+* Revision 1.11  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.10  2002/08/14 00:02:08  thiessen
+* combined block/global aligner from Alejandro
+*
+* Revision 1.8  2002/08/09 18:24:08  thiessen
+* improve/add magic formula to avoid Windows symbol clashes
+*
+* Revision 1.7  2002/08/04 21:41:05  thiessen
+* fix GetObject problem
+*
+* Revision 1.6  2002/08/01 12:51:36  thiessen
+* add E-value display to block aligner
+*
+* Revision 1.5  2002/08/01 01:55:16  thiessen
+* add block aligner options dialog
+*
+* Revision 1.4  2002/07/29 19:22:46  thiessen
+* another blockalign bug fix; set better parameters to block aligner
+*
+* Revision 1.3  2002/07/29 13:25:42  thiessen
+* add range restriction to block aligner
+*
+* Revision 1.2  2002/07/27 12:29:51  thiessen
+* fix block aligner crash
+*
+* Revision 1.1  2002/07/26 15:28:45  thiessen
+* add Alejandro's block alignment algorithm
+*
+*/

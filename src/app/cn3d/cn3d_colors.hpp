@@ -28,44 +28,6 @@
 * File Description:
 *      Holds various color values and cycles
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2002/11/18 20:49:11  thiessen
-* move unaligned/no-coord colors into Colors class
-*
-* Revision 1.11  2001/09/04 14:40:26  thiessen
-* add rainbow and charge coloring
-*
-* Revision 1.10  2001/08/24 00:40:57  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.9  2001/08/21 01:10:13  thiessen
-* add labeling
-*
-* Revision 1.8  2001/08/09 19:07:19  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.7  2001/07/12 17:34:22  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-* Revision 1.6  2001/05/11 02:10:04  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.5  2001/05/09 17:14:52  thiessen
-* add automatic block removal upon demotion
-*
-* Revision 1.4  2001/04/05 22:54:50  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.3  2001/03/22 00:32:35  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.2  2000/12/01 19:34:43  thiessen
-* better domain assignment
-*
-* Revision 1.1  2000/11/30 15:49:07  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
 * ===========================================================================
 */
 
@@ -163,3 +125,47 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_COLORS__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.13  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.12  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
+* Revision 1.11  2001/09/04 14:40:26  thiessen
+* add rainbow and charge coloring
+*
+* Revision 1.10  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.9  2001/08/21 01:10:13  thiessen
+* add labeling
+*
+* Revision 1.8  2001/08/09 19:07:19  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.7  2001/07/12 17:34:22  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+* Revision 1.6  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.5  2001/05/09 17:14:52  thiessen
+* add automatic block removal upon demotion
+*
+* Revision 1.4  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.3  2001/03/22 00:32:35  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.2  2000/12/01 19:34:43  thiessen
+* better domain assignment
+*
+* Revision 1.1  2000/11/30 15:49:07  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+*/

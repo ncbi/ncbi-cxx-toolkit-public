@@ -28,45 +28,15 @@
 * File Description:
 *      Base class for structure data
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2000/11/30 15:49:40  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.9  2000/11/11 21:15:55  thiessen
-* create Seq-annot from BlockMultipleAlignment
-*
-* Revision 1.8  2000/08/18 23:07:09  thiessen
-* minor efficiency tweaks
-*
-* Revision 1.7  2000/08/11 12:58:31  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.6  2000/08/07 00:21:18  thiessen
-* add display list mechanism
-*
-* Revision 1.5  2000/08/04 22:49:04  thiessen
-* add backbone atom classification and selection feedback mechanism
-*
-* Revision 1.4  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.3  2000/07/16 23:19:11  thiessen
-* redo of drawing system
-*
-* Revision 1.2  2000/07/11 13:45:31  thiessen
-* add modules to parse chemical graph; many improvements
-*
-* Revision 1.1  2000/07/01 15:47:18  thiessen
-* major improvements to StructureBase functionality
-*
 * ===========================================================================
 */
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -78,7 +48,7 @@ StructureBase::StructureBase(StructureBase *parent)
     if (parent) {
         parent->_AddChild(this);
         if (!(parentSet = parent->parentSet))
-            ERR_POST(Error << "NULL parent->parentSet");
+            ERRORMSG("NULL parent->parentSet");
     } else {
         parentSet = NULL;
     }
@@ -118,8 +88,46 @@ void StructureBase::_RemoveChild(const StructureBase *child)
             return;
         }
     }
-    ERR_POST(Warning << "attempted to remove non-existent child");
+    WARNINGMSG("attempted to remove non-existent child");
 }
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.11  2003/02/03 19:20:06  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.10  2000/11/30 15:49:40  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.9  2000/11/11 21:15:55  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
+* Revision 1.8  2000/08/18 23:07:09  thiessen
+* minor efficiency tweaks
+*
+* Revision 1.7  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.6  2000/08/07 00:21:18  thiessen
+* add display list mechanism
+*
+* Revision 1.5  2000/08/04 22:49:04  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
+* Revision 1.4  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.3  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
+* Revision 1.2  2000/07/11 13:45:31  thiessen
+* add modules to parse chemical graph; many improvements
+*
+* Revision 1.1  2000/07/01 15:47:18  thiessen
+* major improvements to StructureBase functionality
+*
+*/

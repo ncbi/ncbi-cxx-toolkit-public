@@ -28,90 +28,12 @@
 * File Description:
 *      Classes to color alignment blocks by sequence conservation
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.26  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.25  2003/01/30 14:00:23  thiessen
-* add Block Z Fit coloring
-*
-* Revision 1.24  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.23  2002/07/23 16:40:39  thiessen
-* remove static decl
-*
-* Revision 1.22  2002/07/23 15:46:50  thiessen
-* print out more BLAST info; tweak save file name
-*
-* Revision 1.21  2002/04/27 16:32:12  thiessen
-* fix small leaks/bugs found by BoundsChecker
-*
-* Revision 1.20  2002/03/01 15:47:10  thiessen
-* fix bug in fit coloring for non-standard residues
-*
-* Revision 1.19  2002/02/13 19:45:29  thiessen
-* Fit coloring by info content contribution
-*
-* Revision 1.18  2001/09/27 15:37:58  thiessen
-* decouple sequence import and BLAST
-*
-* Revision 1.17  2001/08/24 00:41:35  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.16  2001/08/13 22:30:59  thiessen
-* add structure window mouse drag/zoom; add highlight option to render settings
-*
-* Revision 1.15  2001/06/04 14:58:00  thiessen
-* add proximity sort; highlight sequence on browser launch
-*
-* Revision 1.14  2001/06/02 17:22:45  thiessen
-* fixes for GCC
-*
-* Revision 1.13  2001/05/31 18:47:08  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.12  2001/05/25 01:38:16  thiessen
-* minor fixes for compiling on SGI
-*
-* Revision 1.11  2001/05/22 22:37:13  thiessen
-* check data registry path
-*
-* Revision 1.10  2001/05/22 19:09:30  thiessen
-* many minor fixes to compile/run on Solaris/GTK
-*
-* Revision 1.9  2001/03/22 00:33:16  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.8  2001/02/22 00:30:06  thiessen
-* make directories global ; allow only one Sequence per StructureObject
-*
-* Revision 1.7  2001/02/15 00:03:54  thiessen
-* print out total information content
-*
-* Revision 1.6  2001/02/13 20:33:49  thiessen
-* add information content coloring
-*
-* Revision 1.5  2000/11/30 15:49:38  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.4  2000/10/16 20:03:07  thiessen
-* working block creation
-*
-* Revision 1.3  2000/10/16 14:25:48  thiessen
-* working alignment fit coloring
-*
-* Revision 1.2  2000/10/04 17:41:30  thiessen
-* change highlight color (cell background) handling
-*
-* Revision 1.1  2000/09/20 22:24:48  thiessen
-* working conservation coloring; split and center unaligned justification
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
+#include <corelib/ncbi_limits.h>
+
 #include <blastkar.h>           // for BLAST standard probability routines
 #include <objseq.h>
 #include <math.h>
@@ -158,7 +80,7 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
 };
 
-std::map < char, std::map < char, int > > Blosum62Map;
+map < char, map < char, int > > Blosum62Map;
 
 inline char ScreenResidueCharacter(char original)
 {
@@ -193,13 +115,13 @@ int GetBLOSUM62Score(char a, char b)
 static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
 {
     if (!pssm || masterIndex < 0 || masterIndex >= pssm->rows) {
-        ERR_POST(Error << "GetPSSMScore() - invalid parameters");
+        ERRORMSG("GetPSSMScore() - invalid parameters");
         return 0;
     }
     return pssm->matrix[masterIndex][LookupBLASTResidueNumberFromCharacter(ch)];
 }
 
-static std::map < char, float > StandardProbabilities;
+static map < char, float > StandardProbabilities;
 
 ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
     nColumns(0), colorsCurrent(false), alignment(parent)
@@ -227,9 +149,9 @@ ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
         // test C-toolkit data directory registry - which BlastScoreBlkMatFill() uses
         Nlm_Char dataPath[255];
         if (Nlm_FindPath("ncbi", "ncbi", "data", dataPath, 255))
-            TESTMSG("FindPath() returned '" << dataPath << "'");
+            TRACEMSG("FindPath() returned '" << dataPath << "'");
         else
-            ERR_POST(Warning << "FindPath() failed!");
+            WARNINGMSG("FindPath() failed!");
 
         if (BlastScoreBlkMatFill(sbp, BLOSUM62) != 0) goto on_error;
         stdrfp = BlastResFreqNew(sbp);
@@ -243,7 +165,7 @@ ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
         goto cleanup;
 
 on_error:
-        ERR_POST(Error << "ConservationColorer::ConservationColorer() - "
+        ERRORMSG("ConservationColorer::ConservationColorer() - "
             "error initializing standard residue probabilities");
 
 cleanup:
@@ -256,7 +178,7 @@ void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
 {
     // sanity check
     if (!block->IsFrom(alignment)) {
-        ERR_POST(Error << "ConservationColorer::AddBlock : block is not from the associated alignment");
+        ERRORMSG("ConservationColorer::AddBlock : block is not from the associated alignment");
         return;
     }
 
@@ -269,13 +191,13 @@ void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
     colorsCurrent = false;
 }
 
-typedef std::map < char, int > ColumnProfile;
+typedef map < char, int > ColumnProfile;
 
 void ConservationColorer::CalculateConservationColors(void)
 {
     if (colorsCurrent) return;
 
-    TESTMSG("calculating conservation colors");
+    TRACEMSG("calculating conservation colors");
 
     if (blocks.size() == 0) return;
 
@@ -283,21 +205,21 @@ void ConservationColorer::CalculateConservationColors(void)
     ColumnProfile::iterator p, pe, p2;
     int row, profileColumn;
 
-    typedef std::vector < int > IntVector;
+    typedef vector < int > IntVector;
     IntVector varieties(nColumns, 0), weightedVarieties(nColumns, 0);
     identities.resize(nColumns);
     int minVariety, maxVariety, minWeightedVariety, maxWeightedVariety;
 
-    typedef std::vector < float > FloatVector;
+    typedef vector < float > FloatVector;
     FloatVector informationContents(nColumns, 0.0f);
     float totalInformationContent = 0.0f;
 
     int nRows = alignment->NRows();
-    typedef std::map < char, int > CharIntMap;
-    std::vector < CharIntMap > fitScores(nColumns);
+    typedef map < char, int > CharIntMap;
+    vector < CharIntMap > fitScores(nColumns);
     int minFit, maxFit;
 
-    typedef std::map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
+    typedef map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
     BlockRowScores blockFitScores, blockZFitScores;
     float minBlockFit, maxBlockFit, minBlockZFit=kMin_Float, maxBlockZFit;
 
@@ -430,7 +352,7 @@ void ConservationColorer::CalculateConservationColors(void)
         }
     }
 
-    TESTMSG("Total information content: " << totalInformationContent << " bits");
+    INFOMSG("Total information content: " << totalInformationContent << " bits");
 //    TESTMSG("minFit: " << minFit << "  maxFit: " << maxFit);
 
     // now assign colors
@@ -538,3 +460,89 @@ void ConservationColorer::FreeColors(void)
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.27  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.26  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
+* Revision 1.25  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
+* Revision 1.24  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.23  2002/07/23 16:40:39  thiessen
+* remove static decl
+*
+* Revision 1.22  2002/07/23 15:46:50  thiessen
+* print out more BLAST info; tweak save file name
+*
+* Revision 1.21  2002/04/27 16:32:12  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
+* Revision 1.20  2002/03/01 15:47:10  thiessen
+* fix bug in fit coloring for non-standard residues
+*
+* Revision 1.19  2002/02/13 19:45:29  thiessen
+* Fit coloring by info content contribution
+*
+* Revision 1.18  2001/09/27 15:37:58  thiessen
+* decouple sequence import and BLAST
+*
+* Revision 1.17  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.16  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
+* Revision 1.15  2001/06/04 14:58:00  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
+* Revision 1.14  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
+* Revision 1.13  2001/05/31 18:47:08  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.12  2001/05/25 01:38:16  thiessen
+* minor fixes for compiling on SGI
+*
+* Revision 1.11  2001/05/22 22:37:13  thiessen
+* check data registry path
+*
+* Revision 1.10  2001/05/22 19:09:30  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
+* Revision 1.9  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.8  2001/02/22 00:30:06  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
+* Revision 1.7  2001/02/15 00:03:54  thiessen
+* print out total information content
+*
+* Revision 1.6  2001/02/13 20:33:49  thiessen
+* add information content coloring
+*
+* Revision 1.5  2000/11/30 15:49:38  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.4  2000/10/16 20:03:07  thiessen
+* working block creation
+*
+* Revision 1.3  2000/10/16 14:25:48  thiessen
+* working alignment fit coloring
+*
+* Revision 1.2  2000/10/04 17:41:30  thiessen
+* change highlight color (cell background) handling
+*
+* Revision 1.1  2000/09/20 22:24:48  thiessen
+* working conservation coloring; split and center unaligned justification
+*
+*/

@@ -28,26 +28,6 @@
 * File Description:
 *       dialog for editing CDD references
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2002/08/15 22:13:12  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.5  2002/04/09 23:59:09  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.4  2002/04/09 14:38:23  thiessen
-* add cdd splash screen
-*
-* Revision 1.3  2001/12/06 23:13:44  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.2  2001/11/27 16:26:07  thiessen
-* major update to data management system
-*
-* Revision 1.1  2001/10/09 18:57:04  thiessen
-* add CDD references editing dialog
-*
 * ===========================================================================
 */
 
@@ -98,7 +78,7 @@ BEGIN_SCOPE(Cn3D)
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -113,7 +93,7 @@ CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
         sSet(structureSet), dialogHandle(handle)
 {
     if (!structureSet || !(descrSet = structureSet->GetCDDDescrSet())) {
-        ERR_POST(Error << "CDDRefDialog::CDDRefDialog() - error getting descr set data");
+        ERRORMSG("CDDRefDialog::CDDRefDialog() - error getting descr set data");
         Destroy();
         return;
     }
@@ -144,7 +124,7 @@ CDDRefDialog::~CDDRefDialog(void)
 {
     // so owner knows that this dialog has been destroyed
     if (dialogHandle && *dialogHandle) *dialogHandle = NULL;
-    TESTMSG("CDD references dialog destroyed");
+    TRACEMSG("CDD references dialog destroyed");
 }
 
 // same as hitting done
@@ -292,3 +272,29 @@ wxSizer *SetupReferencesDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     return item0;
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.7  2003/02/03 19:20:01  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.6  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.5  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.4  2002/04/09 14:38:23  thiessen
+* add cdd splash screen
+*
+* Revision 1.3  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.2  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
+* Revision 1.1  2001/10/09 18:57:04  thiessen
+* add CDD references editing dialog
+*
+*/

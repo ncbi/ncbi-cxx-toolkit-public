@@ -28,8 +28,143 @@
 * File Description:
 *      Classes to hold chemical bonds
 *
+* ===========================================================================
+*/
+
+#include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/mmdb1/Residue_id.hpp>
+#include <objects/mmdb1/Atom_id.hpp>
+
+#include "cn3d/bond.hpp"
+#include "cn3d/atom_set.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/coord_set.hpp"
+#include "cn3d/opengl_renderer.hpp"
+#include "cn3d/chemical_graph.hpp"
+#include "cn3d/periodic_table.hpp"
+#include "cn3d/style_manager.hpp"
+#include "cn3d/molecule.hpp"
+#include "cn3d/show_hide_manager.hpp"
+#include "cn3d/cn3d_tools.hpp"
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+BEGIN_SCOPE(Cn3D)
+
+Bond::Bond(StructureBase *parent) : StructureBase(parent), order(eUnknown),
+    previousVirtual(NULL), nextVirtual(NULL)
+{
+}
+
+const Bond* MakeBond(StructureBase *parent,
+    int mID1, int rID1, int aID1,
+    int mID2, int rID2, int aID2,
+    int bondOrder)
+{
+    // get StructureObject* parent
+    const StructureObject *object;
+    if (!parent->GetParentOfType(&object) || object->coordSets.size() == 0) {
+        ERRORMSG("Bond() : parent doesn't have any CoordSets");
+        return NULL;
+    }
+
+    AtomPntr ap1(mID1, rID1, aID1), ap2(mID2, rID2, aID2);
+
+    // check for presence of both atoms
+    StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
+    for (c=object->coordSets.begin(); c!=ce; c++) {
+        if (!((*c)->atomSet->GetAtom(ap1, true, true)) ||
+            !((*c)->atomSet->GetAtom(ap2, true, true)))
+            break;
+    }
+    if (c != ce) return NULL;
+
+    Bond *bond = new Bond(parent);
+    bond->atom1 = ap1;
+    bond->atom2 = ap2;
+    bond->order = static_cast<Bond::eBondOrder>(bondOrder);
+    return bond;
+}
+
+const Bond* MakeBond(StructureBase *parent,
+    const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2, int bondOrder)
+{
+    return MakeBond(parent,
+        atomPtr1.GetMolecule_id().Get(),
+        atomPtr1.GetResidue_id().Get(),
+        atomPtr1.GetAtom_id().Get(),
+        atomPtr2.GetMolecule_id().Get(),
+        atomPtr2.GetResidue_id().Get(),
+        atomPtr2.GetAtom_id().Get(),
+        bondOrder
+    );
+}
+
+bool Bond::Draw(const AtomSet *atomSet) const
+{
+    if (!parentSet->renderer) {
+        ERRORMSG("Bond::Draw() - no renderer");
+        return false;
+    }
+
+    // get AtomCoord* for appropriate altConf
+    if (!atomSet) {
+        ERRORMSG("Bond::Draw(data) - NULL AtomSet*");
+        return false;
+    }
+    bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
+    const AtomCoord *a1 = atomSet->GetAtom(atom1, overlayEnsembles);
+    if (!a1) return true;
+    const AtomCoord *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
+    if (!a2) return true;
+
+    // get Style
+    BondStyle bondStyle;
+    if (!parentSet->styleManager->GetBondStyle(this, atom1, a1, atom2, a2,
+            (a1->site - a2->site).length(), &bondStyle))
+        return false;
+
+    // don't show bond if either atom isn't visible
+    if (bondStyle.end1.style == StyleManager::eNotDisplayed &&
+        bondStyle.end2.style == StyleManager::eNotDisplayed)
+        return true;
+
+    // get prev, next alphas if drawing worm virtual bond
+    const Vector *site0 = NULL, *site3 = NULL;
+    if (bondStyle.end1.style == StyleManager::eLineWormBond ||
+        bondStyle.end1.style == StyleManager::eThickWormBond ||
+        bondStyle.end2.style == StyleManager::eLineWormBond ||
+        bondStyle.end2.style == StyleManager::eThickWormBond) {
+
+        if (previousVirtual) {
+            const AtomCoord *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles);
+            if (a0) site0 = &(a0->site);
+        }
+        if (!site0) site0 = &(a1->site);
+
+        if (nextVirtual) {
+            const AtomCoord *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles);
+            if (a3) site3 = &(a3->site);
+        }
+        if (!site3) site3 = &(a2->site);
+    }
+
+    // draw the bond
+    parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle, site0, site3);
+
+    return true;
+}
+
+END_SCOPE(Cn3D)
+
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/03 19:20:01  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.17  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -81,132 +216,4 @@
 * Revision 1.1  2000/07/11 13:45:28  thiessen
 * add modules to parse chemical graph; many improvements
 *
-* ===========================================================================
 */
-
-#include <objects/mmdb1/Molecule_id.hpp>
-#include <objects/mmdb1/Residue_id.hpp>
-#include <objects/mmdb1/Atom_id.hpp>
-
-#include "cn3d/bond.hpp"
-#include "cn3d/atom_set.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/coord_set.hpp"
-#include "cn3d/opengl_renderer.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/periodic_table.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/show_hide_manager.hpp"
-
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
-BEGIN_SCOPE(Cn3D)
-
-Bond::Bond(StructureBase *parent) : StructureBase(parent), order(eUnknown),
-    previousVirtual(NULL), nextVirtual(NULL)
-{
-}
-
-const Bond* MakeBond(StructureBase *parent,
-    int mID1, int rID1, int aID1,
-    int mID2, int rID2, int aID2,
-    int bondOrder)
-{
-    // get StructureObject* parent
-    const StructureObject *object;
-    if (!parent->GetParentOfType(&object) || object->coordSets.size() == 0) {
-        ERR_POST("Bond() : parent doesn't have any CoordSets");
-        return NULL;
-    }
-
-    AtomPntr ap1(mID1, rID1, aID1), ap2(mID2, rID2, aID2);
-
-    // check for presence of both atoms
-    StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
-    for (c=object->coordSets.begin(); c!=ce; c++) {
-        if (!((*c)->atomSet->GetAtom(ap1, true, true)) ||
-            !((*c)->atomSet->GetAtom(ap2, true, true)))
-            break;
-    }
-    if (c != ce) return NULL;
-
-    Bond *bond = new Bond(parent);
-    bond->atom1 = ap1;
-    bond->atom2 = ap2;
-    bond->order = static_cast<Bond::eBondOrder>(bondOrder);
-    return bond;
-}
-
-const Bond* MakeBond(StructureBase *parent,
-    const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2, int bondOrder)
-{
-    return MakeBond(parent,
-        atomPtr1.GetMolecule_id().Get(),
-        atomPtr1.GetResidue_id().Get(),
-        atomPtr1.GetAtom_id().Get(),
-        atomPtr2.GetMolecule_id().Get(),
-        atomPtr2.GetResidue_id().Get(),
-        atomPtr2.GetAtom_id().Get(),
-        bondOrder
-    );
-}
-
-bool Bond::Draw(const AtomSet *atomSet) const
-{
-    if (!parentSet->renderer) {
-        ERR_POST(Error << "Bond::Draw() - no renderer");
-        return false;
-    }
-
-    // get AtomCoord* for appropriate altConf
-    if (!atomSet) {
-        ERR_POST(Error << "Bond::Draw(data) - NULL AtomSet*");
-        return false;
-    }
-    bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
-    const AtomCoord *a1 = atomSet->GetAtom(atom1, overlayEnsembles);
-    if (!a1) return true;
-    const AtomCoord *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
-    if (!a2) return true;
-
-    // get Style
-    BondStyle bondStyle;
-    if (!parentSet->styleManager->GetBondStyle(this, atom1, a1, atom2, a2,
-            (a1->site - a2->site).length(), &bondStyle))
-        return false;
-
-    // don't show bond if either atom isn't visible
-    if (bondStyle.end1.style == StyleManager::eNotDisplayed &&
-        bondStyle.end2.style == StyleManager::eNotDisplayed)
-        return true;
-
-    // get prev, next alphas if drawing worm virtual bond
-    const Vector *site0 = NULL, *site3 = NULL;
-    if (bondStyle.end1.style == StyleManager::eLineWormBond ||
-        bondStyle.end1.style == StyleManager::eThickWormBond ||
-        bondStyle.end2.style == StyleManager::eLineWormBond ||
-        bondStyle.end2.style == StyleManager::eThickWormBond) {
-
-        if (previousVirtual) {
-            const AtomCoord *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles);
-            if (a0) site0 = &(a0->site);
-        }
-        if (!site0) site0 = &(a1->site);
-
-        if (nextVirtual) {
-            const AtomCoord *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles);
-            if (a3) site3 = &(a3->site);
-        }
-        if (!site3) site3 = &(a2->site);
-    }
-
-    // draw the bond
-    parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle, site0, site3);
-
-    return true;
-}
-
-END_SCOPE(Cn3D)
-

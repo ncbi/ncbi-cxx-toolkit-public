@@ -28,11 +28,6 @@
 * File Description:
 *      save structure window to PNG file
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2001/10/23 13:53:38  thiessen
-* add PNG export
-*
 * ===========================================================================
 */
 
@@ -52,3 +47,14 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas);
 END_SCOPE(Cn3D)
 
 #endif // CN3D_PNG__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.1  2001/10/23 13:53:38  thiessen
+* add PNG export
+*
+*/

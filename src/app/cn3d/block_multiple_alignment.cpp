@@ -28,153 +28,10 @@
 * File Description:
 *      Classes to hold alignment data
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.47  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.46  2003/01/30 14:00:23  thiessen
-* add Block Z Fit coloring
-*
-* Revision 1.45  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.44  2003/01/23 20:03:05  thiessen
-* add BLAST Neighbor algorithm
-*
-* Revision 1.43  2003/01/22 14:47:30  thiessen
-* cache PSSM in BlockMultipleAlignment
-*
-* Revision 1.42  2002/12/13 15:33:37  thiessen
-* tweak to HighlightAlignedColumnsOfMasterRange
-*
-* Revision 1.41  2002/12/12 23:07:18  thiessen
-* improved handling of alignment annotation errors
-*
-* Revision 1.40  2002/11/18 20:49:11  thiessen
-* move unaligned/no-coord colors into Colors class
-*
-* Revision 1.39  2002/10/23 01:29:25  thiessen
-* fix block cache bug
-*
-* Revision 1.38  2002/08/28 20:30:33  thiessen
-* fix proximity sort bug
-*
-* Revision 1.37  2002/07/26 15:28:44  thiessen
-* add Alejandro's block alignment algorithm
-*
-* Revision 1.36  2002/03/28 14:06:02  thiessen
-* preliminary BLAST/PSSM ; new CD startup style
-*
-* Revision 1.35  2002/02/21 22:01:49  thiessen
-* remember alignment range on demotion
-*
-* Revision 1.34  2002/02/19 14:59:38  thiessen
-* add CDD reject and purge sequence
-*
-* Revision 1.33  2002/02/05 18:53:24  thiessen
-* scroll to residue in sequence windows when selected in structure window
-*
-* Revision 1.32  2001/12/06 23:13:44  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.31  2001/11/27 16:26:06  thiessen
-* major update to data management system
-*
-* Revision 1.30  2001/10/02 23:26:47  thiessen
-* fix bug in highlight columns in master range
-*
-* Revision 1.29  2001/09/27 15:37:57  thiessen
-* decouple sequence import and BLAST
-*
-* Revision 1.28  2001/09/04 14:40:19  thiessen
-* add rainbow and charge coloring
-*
-* Revision 1.27  2001/08/24 00:41:35  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.26  2001/08/09 19:07:13  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.25  2001/07/19 19:14:38  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.24  2001/07/10 16:39:54  thiessen
-* change selection control keys; add CDD name/notes dialogs
-*
-* Revision 1.23  2001/06/21 02:02:33  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.22  2001/06/02 17:22:45  thiessen
-* fixes for GCC
-*
-* Revision 1.21  2001/06/01 13:35:58  thiessen
-* add aligned block number to status line
-*
-* Revision 1.20  2001/05/31 18:47:06  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.19  2001/05/23 17:45:00  thiessen
-* fix merge bug where unaligned block needs to be added
-*
-* Revision 1.18  2001/05/11 02:10:41  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.17  2001/05/09 17:15:06  thiessen
-* add automatic block removal upon demotion
-*
-* Revision 1.16  2001/05/02 13:46:27  thiessen
-* major revision of stuff relating to saving of updates; allow stored null-alignments
-*
-* Revision 1.15  2001/04/19 14:24:05  thiessen
-* fix row selection bug when alignments are of different size
-*
-* Revision 1.14  2001/04/19 12:58:32  thiessen
-* allow merge and delete of individual updates
-*
-* Revision 1.13  2001/04/05 22:55:34  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.12  2001/04/04 00:27:14  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.11  2001/03/30 03:07:33  thiessen
-* add threader score calculation & sorting
-*
-* Revision 1.10  2001/03/22 19:11:09  thiessen
-* don't allow drag of gaps
-*
-* Revision 1.9  2001/03/22 00:33:16  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.8  2001/03/09 15:49:03  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.7  2001/03/06 20:20:50  thiessen
-* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
-*
-* Revision 1.6  2001/03/01 20:15:50  thiessen
-* major rearrangement of sequence viewer code into base and derived classes
-*
-* Revision 1.5  2001/02/13 20:33:49  thiessen
-* add information content coloring
-*
-* Revision 1.4  2001/02/13 01:03:56  thiessen
-* backward-compatible domain ID's in output; add ability to delete rows
-*
-* Revision 1.3  2001/02/02 20:17:33  thiessen
-* can read in CDD with multi-structure but no struct. alignments
-*
-* Revision 1.2  2001/01/26 19:29:59  thiessen
-* limit undo stack size ; fix memory leak
-*
-* Revision 1.1  2000/11/30 15:49:35  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
 * ===========================================================================
 */
 
-#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <objects/seqalign/Dense_diag.hpp>
 
@@ -390,11 +247,11 @@ void BlockMultipleAlignment::FreeColors(void)
 bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
 {
     if (!block || !block->IsAligned()) {
-        ERR_POST("MultipleAlignment::CheckAlignedBlock() - checks aligned blocks only");
+        ERRORMSG("MultipleAlignment::CheckAlignedBlock() - checks aligned blocks only");
         return false;
     }
     if (block->NSequences() != sequences->size()) {
-        ERR_POST("MultipleAlignment::CheckAlignedBlock() - block size mismatch");
+        ERRORMSG("MultipleAlignment::CheckAlignedBlock() - block size mismatch");
         return false;
     }
 
@@ -414,7 +271,7 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
             (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
             range->to >= (*sequence)->Length()) {                   // check bounds of end
-            ERR_POST(Error << "MultipleAlignment::CheckAlignedBlock() - range error");
+            ERRORMSG("MultipleAlignment::CheckAlignedBlock() - range error");
             return false;
         }
     }
@@ -433,7 +290,7 @@ UnalignedBlock * BlockMultipleAlignment::
 {
     if ((leftBlock && !leftBlock->IsAligned()) ||
         (rightBlock && !rightBlock->IsAligned())) {
-        ERR_POST(Error << "CreateNewUnalignedBlockBetween() - passed an unaligned block");
+        ERRORMSG("CreateNewUnalignedBlockBetween() - passed an unaligned block");
         return NULL;
     }
 
@@ -459,7 +316,7 @@ UnalignedBlock * BlockMultipleAlignment::
 
         length = to - from + 1;
         if (length < 0) { // just to make sure...
-            ERR_POST(Error << "CreateNewUnalignedBlockBetween() - unaligned length < 0");
+            ERRORMSG("CreateNewUnalignedBlockBetween() - unaligned length < 0");
             return NULL;
         }
         if (length > newBlock->width) newBlock->width = length;
@@ -692,7 +549,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
     // be repeated any number of times in the alignment; assumes repeated structures
     // will each have a unique Sequence object
     if (!sequence || !sequence->molecule) {
-        ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - Sequence must have associated structure");
+        ERRORMSG("BlockMultipleAlignment::GetRowForSequence() - Sequence must have associated structure");
         return -1;
     }
 
@@ -700,7 +557,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
         int row;
         for (row=0; row<NRows(); row++) if ((*sequences)[row] == sequence) break;
         if (row == NRows()) {
-//            ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
+//            ERRORMSG("BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
             return -1;
         }
         cachePrevRow = row;
@@ -713,7 +570,7 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(
 {
      const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
      if (!block || !block->IsAligned()) {
-        ERR_POST(Warning << "BlockMultipleAlignment::GetAlignmentColor() called on unaligned residue");
+        WARNINGMSG("BlockMultipleAlignment::GetAlignmentColor() called on unaligned residue");
         return NULL;
     }
 
@@ -774,7 +631,7 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 {
     // make sure we're in range for this sequence
     if (row < 0 || seqIndex < 0 || row >= NRows() || seqIndex >= (*sequences)[row]->Length()) {
-        ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - coordinate out of range");
+        ERRORMSG("BlockMultipleAlignment::GetBlock() - coordinate out of range");
         return NULL;
     }
 
@@ -912,7 +769,7 @@ void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, const Block *ins
             return;
         }
     }
-    ERR_POST(Warning << "BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
+    WARNINGMSG("BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
 }
 
 void BlockMultipleAlignment::InsertBlockAfter(const Block *insertAt, Block *newBlock)
@@ -925,7 +782,7 @@ void BlockMultipleAlignment::InsertBlockAfter(const Block *insertAt, Block *newB
             return;
         }
     }
-    ERR_POST(Warning << "BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
+    WARNINGMSG("BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
 }
 
 void BlockMultipleAlignment::RemoveBlock(Block *block)
@@ -939,7 +796,7 @@ void BlockMultipleAlignment::RemoveBlock(Block *block)
             return;
         }
     }
-    ERR_POST(Warning << "BlockMultipleAlignment::RemoveBlock() - couldn't find block");
+    WARNINGMSG("BlockMultipleAlignment::RemoveBlock() - couldn't find block");
 }
 
 bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
@@ -948,7 +805,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
     GetAlignedBlockPosition(columnFrom, &blockColumn, &blockWidth);
     if (blockColumn < 0 || blockWidth <= 0) return false;
 
-    TESTMSG("trying to move block boundary from " << columnFrom << " to " << columnTo);
+    TRACEMSG("trying to move block boundary from " << columnFrom << " to " << columnTo);
 
     const BlockInfo& info = blockMap[columnFrom];
     int row, requestedShift = columnTo - columnFrom, actualShift = 0;
@@ -957,7 +814,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
     // shrink block from left
     if (blockColumn == 0 && requestedShift > 0 && requestedShift < info.block->width) {
         actualShift = requestedShift;
-        TESTMSG("shrinking block from left");
+        TRACEMSG("shrinking block from left");
         for (row=0; row<NRows(); row++) {
             range = info.block->GetRangeOfRow(row);
             info.block->SetRangeOfRow(row, range->from + requestedShift, range->to);
@@ -973,7 +830,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         } else {
             Block *newUnalignedBlock = CreateNewUnalignedBlockBetween(prevBlock, info.block);
             if (newUnalignedBlock) InsertBlockBefore(newUnalignedBlock, info.block);
-            TESTMSG("added new unaligned block");
+            TRACEMSG("added new unaligned block");
         }
     }
 
@@ -981,7 +838,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
     else if (blockColumn == info.block->width - 1 &&
                 requestedShift < 0 && requestedShift > -info.block->width) {
         actualShift = requestedShift;
-        TESTMSG("shrinking block from right");
+        TRACEMSG("shrinking block from right");
         for (row=0; row<NRows(); row++) {
             range = info.block->GetRangeOfRow(row);
             info.block->SetRangeOfRow(row, range->from, range->to + requestedShift);
@@ -997,7 +854,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         } else {
             Block *newUnalignedBlock = CreateNewUnalignedBlockBetween(info.block, nextBlock);
             if (newUnalignedBlock) InsertBlockAfter(info.block, newUnalignedBlock);
-            TESTMSG("added new unaligned block");
+            TRACEMSG("added new unaligned block");
         }
     }
 
@@ -1013,7 +870,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
                 if (nRes < actualShift) actualShift = nRes;
             }
             if (actualShift) {
-                TESTMSG("growing block to right");
+                TRACEMSG("growing block to right");
                 for (row=0; row<NRows(); row++) {
                     range = info.block->GetRangeOfRow(row);
                     info.block->SetRangeOfRow(row, range->from, range->to + actualShift);
@@ -1024,7 +881,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
                 nextBlock->width -= actualShift;
                 if (nextBlock->width == 0) {
                     RemoveBlock(nextBlock);
-                    TESTMSG("removed empty block");
+                    TRACEMSG("removed empty block");
                 }
             }
         }
@@ -1042,7 +899,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
                 if (nRes < -actualShift) actualShift = -nRes;
             }
             if (actualShift) {
-                TESTMSG("growing block to left");
+                TRACEMSG("growing block to left");
                 for (row=0; row<NRows(); row++) {
                     range = info.block->GetRangeOfRow(row);
                     info.block->SetRangeOfRow(row, range->from + actualShift, range->to);
@@ -1053,7 +910,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
                 prevBlock->width += actualShift;
                 if (prevBlock->width == 0) {
                     RemoveBlock(prevBlock);
-                    TESTMSG("removed empty block");
+                    TRACEMSG("removed empty block");
                 }
             }
         }
@@ -1123,7 +980,7 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     }
     if (actualShift == 0) return false;
 
-    TESTMSG("shifting row " << row << " by " << actualShift);
+    TRACEMSG("shifting row " << row << " by " << actualShift);
 
     ABlock->SetRangeOfRow(row, range->from - actualShift, range->to - actualShift);
 
@@ -1133,15 +990,15 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
         for (int i=0; i<NRows(); i++) {
             prevRange = prevUABlock->GetRangeOfRow(i);
             width = prevRange->to - prevRange->from + 1;
-            if (width < 0) ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - negative width on left");
+            if (width < 0) ERRORMSG("BlockMultipleAlignment::ShiftRow() - negative width on left");
             if (width > prevUABlock->width) prevUABlock->width = width;
         }
         if (prevUABlock->width == 0) {
-            TESTMSG("removing zero-width unaligned block on left");
+            TRACEMSG("removing zero-width unaligned block on left");
             RemoveBlock(prevUABlock);
         }
     } else {
-        TESTMSG("creating unaligned block on left");
+        TRACEMSG("creating unaligned block on left");
         prevUABlock = CreateNewUnalignedBlockBetween(GetBlockBefore(ABlock), ABlock);
         InsertBlockBefore(prevUABlock, ABlock);
     }
@@ -1152,21 +1009,21 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
         for (int i=0; i<NRows(); i++) {
             nextRange = nextUABlock->GetRangeOfRow(i);
             width = nextRange->to - nextRange->from + 1;
-            if (width < 0) ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - negative width on right");
+            if (width < 0) ERRORMSG("BlockMultipleAlignment::ShiftRow() - negative width on right");
             if (width > nextUABlock->width) nextUABlock->width = width;
         }
         if (nextUABlock->width == 0) {
-            TESTMSG("removing zero-width unaligned block on right");
+            TRACEMSG("removing zero-width unaligned block on right");
             RemoveBlock(nextUABlock);
         }
     } else {
-        TESTMSG("creating unaligned block on right");
+        TRACEMSG("creating unaligned block on right");
         nextUABlock = CreateNewUnalignedBlockBetween(ABlock, GetBlockAfter(ABlock));
         InsertBlockAfter(ABlock, nextUABlock);
     }
 
     if (!CheckAlignedBlock(ABlock))
-        ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - shift failed to create valid aligned block");
+        ERRORMSG("BlockMultipleAlignment::ShiftRow() - shift failed to create valid aligned block");
 
     UpdateBlockMapAndColors();
     return true;
@@ -1178,7 +1035,7 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
     if (!info.block->IsAligned() || info.block->width < 2 || info.blockColumn == 0)
         return false;
 
-    TESTMSG("splitting block");
+    TRACEMSG("splitting block");
     UngappedAlignedBlock *newAlignedBlock = new UngappedAlignedBlock(this);
     newAlignedBlock->width = info.block->width - info.blockColumn;
     info.block->width = info.blockColumn;
@@ -1194,7 +1051,7 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
 
     InsertBlockAfter(info.block, newAlignedBlock);
     if (!CheckAlignedBlock(info.block) || !CheckAlignedBlock(newAlignedBlock))
-        ERR_POST(Error << "BlockMultipleAlignment::SplitBlock() - split failed to create valid blocks");
+        ERRORMSG("BlockMultipleAlignment::SplitBlock() - split failed to create valid blocks");
 
     UpdateBlockMapAndColors();
     return true;
@@ -1210,7 +1067,7 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
     for (i=fromAlignmentIndex; i<=toAlignmentIndex; i++)
         if (!blockMap[i].block->IsAligned()) return false;
 
-    TESTMSG("merging block(s)");
+    TRACEMSG("merging block(s)");
     for (i=0; i<NRows(); i++)
         expandedBlock->SetRangeOfRow(i,
             expandedBlock->GetRangeOfRow(i)->from, lastBlock->GetRangeOfRow(i)->to);
@@ -1227,7 +1084,7 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
     }
 
     if (!CheckAlignedBlock(expandedBlock))
-        ERR_POST(Error << "BlockMultipleAlignment::MergeBlocks() - merge failed to create valid block");
+        ERRORMSG("BlockMultipleAlignment::MergeBlocks() - merge failed to create valid block");
 
     UpdateBlockMapAndColors();
     return true;
@@ -1242,7 +1099,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
     int row, seqIndexFrom, seqIndexTo,
         newBlockWidth = toAlignmentIndex - fromAlignmentIndex + 1,
         origWidth = prevUABlock->width;
-    std::vector < int > seqIndexesFrom(NRows()), seqIndexesTo(NRows());
+    vector < int > seqIndexesFrom(NRows()), seqIndexesTo(NRows());
     const Sequence *seq;
 	bool ignored;
     for (row=0; row<NRows(); row++) {
@@ -1254,7 +1111,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
         seqIndexesTo[row] = seqIndexTo;
     }
 
-    TESTMSG("creating new aligned and unaligned blocks");
+    TRACEMSG("creating new aligned and unaligned blocks");
 
     UnalignedBlock *nextUABlock = new UnalignedBlock(this);
     UngappedAlignedBlock *ABlock = new UngappedAlignedBlock(this);
@@ -1269,7 +1126,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
         nextUABlock->SetRangeOfRow(row, seqIndexesTo[row] + 1, prevRange->to);
         rangeWidth = prevRange->to - seqIndexesTo[row];
         if (rangeWidth < 0)
-            ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - negative nextRange width");
+            ERRORMSG("BlockMultipleAlignment::CreateBlock() - negative nextRange width");
         else if (rangeWidth > 0) {
             if (rangeWidth > nextUABlock->width) nextUABlock->width = rangeWidth;
             deleteNextUABlock = false;
@@ -1278,7 +1135,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
         prevUABlock->SetRangeOfRow(row, prevRange->from, seqIndexesFrom[row] - 1);
         rangeWidth = seqIndexesFrom[row] - prevRange->from;
         if (rangeWidth < 0)
-            ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - negative prevRange width");
+            ERRORMSG("BlockMultipleAlignment::CreateBlock() - negative prevRange width");
         else if (rangeWidth > 0) {
             if (rangeWidth > prevUABlock->width) prevUABlock->width = rangeWidth;
             deletePrevUABlock = false;
@@ -1289,21 +1146,21 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
 
     ABlock->width = newBlockWidth;
     if (prevUABlock->width + ABlock->width + nextUABlock->width != origWidth)
-        ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - bad block widths sum");
+        ERRORMSG("BlockMultipleAlignment::CreateBlock() - bad block widths sum");
 
     InsertBlockAfter(prevUABlock, ABlock);
     InsertBlockAfter(ABlock, nextUABlock);
     if (deletePrevUABlock) {
-        TESTMSG("deleting zero-width unaligned block on left");
+        TRACEMSG("deleting zero-width unaligned block on left");
         RemoveBlock(prevUABlock);
     }
     if (deleteNextUABlock) {
-        TESTMSG("deleting zero-width unaligned block on right");
+        TRACEMSG("deleting zero-width unaligned block on right");
         RemoveBlock(nextUABlock);
     }
 
     if (!CheckAlignedBlock(ABlock))
-        ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - failed to create valid block");
+        ERRORMSG("BlockMultipleAlignment::CreateBlock() - failed to create valid block");
 
     UpdateBlockMapAndColors();
     return true;
@@ -1314,7 +1171,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     Block *block = blockMap[alignmentIndex].block;
     if (!block || !block->IsAligned()) return false;
 
-    TESTMSG("deleting block");
+    TRACEMSG("deleting block");
     Block
         *prevBlock = GetBlockBefore(block),
         *nextBlock = GetBlockAfter(block);
@@ -1331,7 +1188,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
             if (width > maxWidth) maxWidth = width;
         }
         prevBlock->width = maxWidth;
-        TESTMSG("removing extra unaligned block");
+        TRACEMSG("removing extra unaligned block");
         RemoveBlock(nextBlock);
     }
 
@@ -1359,7 +1216,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
 
     // no adjacent unaligned blocks
     else {
-        TESTMSG("creating new unaligned block");
+        TRACEMSG("creating new unaligned block");
         Block *newBlock = CreateNewUnalignedBlockBetween(prevBlock, nextBlock);
         if (prevBlock)
             InsertBlockAfter(prevBlock, newBlock);
@@ -1388,7 +1245,7 @@ bool BlockMultipleAlignment::DeleteAllBlocks(void)
 bool BlockMultipleAlignment::DeleteRow(int row)
 {
     if (row < 0 || row >= NRows()) {
-        ERR_POST(Error << "BlockMultipleAlignment::DeleteRow() - row out of range");
+        ERRORMSG("BlockMultipleAlignment::DeleteRow() - row out of range");
         return false;
     }
 
@@ -1404,7 +1261,7 @@ bool BlockMultipleAlignment::DeleteRow(int row)
         if ((*b)->width == 0) {
             br = b;
             b++;
-            TESTMSG("deleting block resized to zero width");
+            TRACEMSG("deleting block resized to zero width");
             RemoveBlock(*br);
         } else
             b++;
@@ -1429,25 +1286,25 @@ BlockMultipleAlignment::GetUngappedAlignedBlocks(void) const
 }
 
 bool BlockMultipleAlignment::ExtractRows(
-    const std::vector < int >& slavesToRemove, AlignmentList *pairwiseAlignments)
+    const vector < int >& slavesToRemove, AlignmentList *pairwiseAlignments)
 {
     if (slavesToRemove.size() == 0) return false;
 
     // make a bool list of rows to remove, also checking to make sure slave list items are in range
     int i;
-    std::vector < bool > removeRows(NRows(), false);
+    vector < bool > removeRows(NRows(), false);
     for (i=0; i<slavesToRemove.size(); i++) {
         if (slavesToRemove[i] > 0 && slavesToRemove[i] < NRows()) {
             removeRows[slavesToRemove[i]] = true;
         } else {
-            ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - can't extract row "
+            ERRORMSG("BlockMultipleAlignment::ExtractRows() - can't extract row "
                 << slavesToRemove[i]);
             return false;
         }
     }
 
     if (pairwiseAlignments) {
-        TESTMSG("creating new pairwise alignments");
+        TRACEMSG("creating new pairwise alignments");
         SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
 
         auto_ptr<UngappedAlignedBlockList> uaBlocks(GetUngappedAlignedBlocks());
@@ -1478,7 +1335,7 @@ bool BlockMultipleAlignment::ExtractRows(
             }
             if (!newAlignment->AddUnalignedBlocks() ||
                 !newAlignment->UpdateBlockMapAndColors()) {
-                ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
+                ERRORMSG("BlockMultipleAlignment::ExtractRows() - error creating new alignment");
                 return false;
             }
 
@@ -1486,7 +1343,7 @@ bool BlockMultipleAlignment::ExtractRows(
             if (uaBlocks->size() > 0) {
                 int excess = 0;
                 if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
-                    ERR_POST(Warning << "Can't get footprint excess residues from registry");
+                    WARNINGMSG("Can't get footprint excess residues from registry");
                 newAlignment->alignSlaveFrom =
                     uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from - excess;
                 if (newAlignment->alignSlaveFrom < 0)
@@ -1495,7 +1352,7 @@ bool BlockMultipleAlignment::ExtractRows(
                     uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to + excess;
                 if (newAlignment->alignSlaveTo >= (*newSeqs)[1]->Length())
                     newAlignment->alignSlaveTo = (*newSeqs)[1]->Length() - 1;
-                TESTMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
+                TRACEMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
                     << newAlignment->alignSlaveFrom << " to " << newAlignment->alignSlaveTo);
             }
 
@@ -1505,18 +1362,18 @@ bool BlockMultipleAlignment::ExtractRows(
     }
 
     // remove sequences
-    TESTMSG("deleting sequences");
+    TRACEMSG("deleting sequences");
     VectorRemoveElements(*(const_cast<SequenceList*>(sequences)), removeRows, slavesToRemove.size());
 
     // delete row from all blocks, removing any zero-width blocks
-    TESTMSG("deleting alignment rows from blocks");
+    TRACEMSG("deleting alignment rows from blocks");
     BlockList::const_iterator b = blocks.begin(), br, be = blocks.end();
     while (b != be) {
         (*b)->DeleteRows(removeRows, slavesToRemove.size());
         if ((*b)->width == 0) {
             br = b;
             b++;
-            TESTMSG("deleting block resized to zero width");
+            TRACEMSG("deleting block resized to zero width");
             RemoveBlock(*br);
         } else
             b++;
@@ -1538,7 +1395,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     const Block::Range *newRange, *thisRange;
     BlockList::const_iterator nb, nbe = newAlignment->blocks.end();
     BlockList::iterator b, be = blocks.end();
-    typedef std::map < UngappedAlignedBlock *, const UngappedAlignedBlock * > AlignedBlockMap;
+    typedef map < UngappedAlignedBlock *, const UngappedAlignedBlock * > AlignedBlockMap;
     AlignedBlockMap correspondingNewBlocks;
 
     for (b=blocks.begin(); b!=be; b++) {
@@ -1607,7 +1464,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
 
     // update this alignment, but leave row scores/status alone
     if (!AddUnalignedBlocks() || !UpdateBlockMapAndColors(false)) {
-        ERR_POST(Error << "BlockMultipleAlignment::MergeAlignment() - internal update after merge failed");
+        ERRORMSG("BlockMultipleAlignment::MergeAlignment() - internal update after merge failed");
         return false;
     }
     return true;
@@ -1616,7 +1473,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
 void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForRow& violations)
 {
     if (violations.size() != NRows()) {
-        ERR_POST(Error << "BlockMultipleAlignment::ShowGeometryViolations() - wrong size list");
+        ERRORMSG("BlockMultipleAlignment::ShowGeometryViolations() - wrong size list");
         return;
     }
 
@@ -1636,7 +1493,7 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
     const BlockMultipleAlignment::UngappedAlignedBlockList *blocks, int slaveRow)
 {
     if (!multiple || slaveRow < 1 || slaveRow >= multiple->NRows()) {
-        ERR_POST(Error << "CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
+        ERRORMSG("CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
         return NULL;
     }
 
@@ -1683,7 +1540,7 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
 bool BlockMultipleAlignment::MarkBlock(int column)
 {
     if (column >= 0 && column < blockMap.size() && blockMap[column].block->IsAligned()) {
-        TESTMSG("marked block for realignment");
+        TRACEMSG("marked block for realignment");
         markBlocks[blockMap[column].block] = true;
         return true;
     }
@@ -1707,7 +1564,7 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
 
         // sanity check
         if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
-            ERR_POST(Warning << "Can't highlight alignment at master residue " << (i+1));
+            WARNINGMSG("Can't highlight alignment at master residue " << (i+1));
             anyError = true;
             // highlight unaligned residues, but master only
             if (i >= 0 && i < master->Length())
@@ -1740,7 +1597,7 @@ int BlockMultipleAlignment::NAlignedBlocks(void) const
 int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification)
 {
     if (row < 0 || row >= NRows() || seqIndex < 0 || seqIndex >= GetSequenceOfRow(row)->Length()) {
-        ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - coordinate out of range");
+        ERRORMSG("BlockMultipleAlignment::GetAlignmentIndex() - coordinate out of range");
         return -1;
     }
 
@@ -1769,14 +1626,14 @@ int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJ
                     if (seqIndex == block->GetIndexAt(blockColumn, row, justification))
                         return alignmentIndex + blockColumn;
                 }
-                ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - can't find index in block");
+                ERRORMSG("BlockMultipleAlignment::GetAlignmentIndex() - can't find index in block");
                 return -1;
             }
         }
     }
 
     // should never get here...
-    ERR_POST(Error << "BlockMultipleAlignment::GetAlignmentIndex() - confused");
+    ERRORMSG("BlockMultipleAlignment::GetAlignmentIndex() - confused");
     return -1;
 }
 
@@ -1850,7 +1707,7 @@ void UngappedAlignedBlock::DeleteRow(int row)
     ranges.erase(r);
 }
 
-void UngappedAlignedBlock::DeleteRows(std::vector < bool >& removeRows, int nToRemove)
+void UngappedAlignedBlock::DeleteRows(vector < bool >& removeRows, int nToRemove)
 {
     VectorRemoveElements(ranges, removeRows, nToRemove);
 }
@@ -1913,7 +1770,7 @@ void UnalignedBlock::DeleteRow(int row)
     Resize();
 }
 
-void UnalignedBlock::DeleteRows(std::vector < bool >& removeRows, int nToRemove)
+void UnalignedBlock::DeleteRows(vector < bool >& removeRows, int nToRemove)
 {
     VectorRemoveElements(ranges, removeRows, nToRemove);
     Resize();
@@ -1933,3 +1790,152 @@ Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.48  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.47  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
+* Revision 1.46  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
+* Revision 1.45  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.44  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
+* Revision 1.43  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
+* Revision 1.42  2002/12/13 15:33:37  thiessen
+* tweak to HighlightAlignedColumnsOfMasterRange
+*
+* Revision 1.41  2002/12/12 23:07:18  thiessen
+* improved handling of alignment annotation errors
+*
+* Revision 1.40  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
+* Revision 1.39  2002/10/23 01:29:25  thiessen
+* fix block cache bug
+*
+* Revision 1.38  2002/08/28 20:30:33  thiessen
+* fix proximity sort bug
+*
+* Revision 1.37  2002/07/26 15:28:44  thiessen
+* add Alejandro's block alignment algorithm
+*
+* Revision 1.36  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
+* Revision 1.35  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
+* Revision 1.34  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
+* Revision 1.33  2002/02/05 18:53:24  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
+* Revision 1.32  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.31  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
+* Revision 1.30  2001/10/02 23:26:47  thiessen
+* fix bug in highlight columns in master range
+*
+* Revision 1.29  2001/09/27 15:37:57  thiessen
+* decouple sequence import and BLAST
+*
+* Revision 1.28  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
+* Revision 1.27  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.26  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.25  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
+* Revision 1.24  2001/07/10 16:39:54  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
+* Revision 1.23  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.22  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
+* Revision 1.21  2001/06/01 13:35:58  thiessen
+* add aligned block number to status line
+*
+* Revision 1.20  2001/05/31 18:47:06  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.19  2001/05/23 17:45:00  thiessen
+* fix merge bug where unaligned block needs to be added
+*
+* Revision 1.18  2001/05/11 02:10:41  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.17  2001/05/09 17:15:06  thiessen
+* add automatic block removal upon demotion
+*
+* Revision 1.16  2001/05/02 13:46:27  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
+* Revision 1.15  2001/04/19 14:24:05  thiessen
+* fix row selection bug when alignments are of different size
+*
+* Revision 1.14  2001/04/19 12:58:32  thiessen
+* allow merge and delete of individual updates
+*
+* Revision 1.13  2001/04/05 22:55:34  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.12  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.11  2001/03/30 03:07:33  thiessen
+* add threader score calculation & sorting
+*
+* Revision 1.10  2001/03/22 19:11:09  thiessen
+* don't allow drag of gaps
+*
+* Revision 1.9  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.8  2001/03/09 15:49:03  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.7  2001/03/06 20:20:50  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
+* Revision 1.6  2001/03/01 20:15:50  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
+* Revision 1.5  2001/02/13 20:33:49  thiessen
+* add information content coloring
+*
+* Revision 1.4  2001/02/13 01:03:56  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
+* Revision 1.3  2001/02/02 20:17:33  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
+* Revision 1.2  2001/01/26 19:29:59  thiessen
+* limit undo stack size ; fix memory leak
+*
+* Revision 1.1  2000/11/30 15:49:35  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+*/

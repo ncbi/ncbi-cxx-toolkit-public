@@ -28,42 +28,11 @@
 * File Description:
 *      Class definition for the Show/Hide dialog
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2002/04/26 12:56:20  thiessen
-* remove wxFLOAT_ON_PARENT, doesn't work on Mac
-*
-* Revision 1.9  2001/10/08 14:18:33  thiessen
-* fix show/hide dialog under wxGTK
-*
-* Revision 1.8  2001/09/06 13:10:10  thiessen
-* tweak show hide dialog layout
-*
-* Revision 1.7  2001/08/06 20:22:01  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.6  2001/07/19 19:14:38  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.5  2001/05/17 18:34:26  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.4  2001/05/15 23:48:38  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.3  2001/03/09 15:49:05  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.2  2000/12/15 15:51:47  thiessen
-* show/hide system installed
-*
-* Revision 1.1  2000/11/17 19:48:14  thiessen
-* working show/hide alignment row
-*
 * ===========================================================================
 */
 
 #include "cn3d/show_hide_dialog.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -84,7 +53,7 @@ END_EVENT_TABLE()
 
 ShowHideDialog::ShowHideDialog(
     const wxString items[],
-    std::vector < bool > *itemsOn,
+    vector < bool > *itemsOn,
     ShowHideCallbackObject *callback,
     bool useExtendedListStyle,
     wxWindow* parent,
@@ -211,7 +180,7 @@ void ShowHideDialog::OnButton(wxCommandEvent& event)
 
     // only do this if selection has changed since last time
     if (callbackObject && doCallback) {
-        ERR_POST(Info << "calling ShowHideCallbackFunction()");
+        TRACEMSG("calling ShowHideCallbackFunction()");
         // do the callback with the current selection state
         callbackObject->ShowHideCallbackFunction(*itemsEnabled);
         if (applyB) applyB->Enable(false);
@@ -232,3 +201,41 @@ void ShowHideDialog::OnCloseWindow(wxCloseEvent& event)
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.11  2003/02/03 19:20:06  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.10  2002/04/26 12:56:20  thiessen
+* remove wxFLOAT_ON_PARENT, doesn't work on Mac
+*
+* Revision 1.9  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
+* Revision 1.8  2001/09/06 13:10:10  thiessen
+* tweak show hide dialog layout
+*
+* Revision 1.7  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.6  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
+* Revision 1.5  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.4  2001/05/15 23:48:38  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.3  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.2  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
+* Revision 1.1  2000/11/17 19:48:14  thiessen
+* working show/hide alignment row
+*
+*/

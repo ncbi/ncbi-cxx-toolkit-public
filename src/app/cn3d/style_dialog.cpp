@@ -28,77 +28,6 @@
 * File Description:
 *      dialog for setting styles
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.23  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.22  2002/11/21 16:59:39  thiessen
-* error on invalid style parameter
-*
-* Revision 1.21  2002/08/15 22:13:17  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.20  2002/05/22 17:17:09  thiessen
-* progress on BLAST interface ; change custom spin ctrl implementation
-*
-* Revision 1.19  2002/05/17 19:09:24  thiessen
-* undo spin button event workaround for wxmac
-*
-* Revision 1.18  2002/05/16 18:46:07  thiessen
-* Mac fixes
-*
-* Revision 1.17  2002/04/27 16:32:14  thiessen
-* fix small leaks/bugs found by BoundsChecker
-*
-* Revision 1.16  2002/04/12 01:54:43  thiessen
-* tweaks to style stuff
-*
-* Revision 1.15  2001/12/06 23:13:46  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.14  2001/11/27 16:26:10  thiessen
-* major update to data management system
-*
-* Revision 1.13  2001/11/15 18:12:46  thiessen
-* add text+forefround color to user color buttons
-*
-* Revision 1.12  2001/09/24 14:37:52  thiessen
-* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
-*
-* Revision 1.11  2001/09/24 13:29:54  thiessen
-* fix wxPanel issues
-*
-* Revision 1.10  2001/09/20 19:31:30  thiessen
-* fixes for SGI and wxWin 2.3.2
-*
-* Revision 1.9  2001/09/04 14:40:19  thiessen
-* add rainbow and charge coloring
-*
-* Revision 1.8  2001/08/21 01:10:46  thiessen
-* add labeling
-*
-* Revision 1.7  2001/08/09 19:07:14  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.6  2001/08/06 20:22:01  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.5  2001/07/04 19:39:17  thiessen
-* finish user annotation system
-*
-* Revision 1.4  2001/06/14 00:34:01  thiessen
-* asn additions
-*
-* Revision 1.3  2001/06/08 14:47:06  thiessen
-* fully functional (modal) render settings panel
-*
-* Revision 1.2  2001/06/07 19:05:38  thiessen
-* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
-*
-* Revision 1.1  2001/05/31 18:47:10  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
 * ===========================================================================
 */
 
@@ -435,11 +364,11 @@ bool StyleDialog::GetValues(StyleSettings *settings)
         (checkbox = wxDynamicCast(FindWindow(ID_K_ION), wxCheckBox)) != NULL &&
         GetChecked(checkbox, &(settings->ionLabelsOn))
     );
-    if (!okay) ERR_POST(Error << "StyleDialog::GetValues() - control/parameter mismatch: invalid style?");
+    if (!okay) ERRORMSG("StyleDialog::GetValues() - control/parameter mismatch: invalid style?");
     return okay;
 }
 
-static bool SetChoiceToString(wxChoice *choice, const std::string& name)
+static bool SetChoiceToString(wxChoice *choice, const string& name)
 {
     int field = choice->FindString(name.c_str());
     if (field < 0) return false;
@@ -466,7 +395,7 @@ static bool SetButtonColor(wxButton *button, const Vector& color)
 bool StyleDialog::SetBackboneStyle(const StyleSettings::BackboneStyle& bbStyle,
     int showID, int renderID, int colorID, int userID)
 {
-    std::string name;
+    string name;
     wxChoice *choice;
     wxButton *button;
     return (
@@ -494,7 +423,7 @@ static bool SetChecked(wxCheckBox *checkbox, bool isChecked)
 bool StyleDialog::SetGeneralStyle(const StyleSettings::GeneralStyle& gStyle,
     int showID, int renderID, int colorID, int userID)
 {
-    std::string name;
+    string name;
     wxCheckBox *checkbox;
     wxChoice *choice;
     wxButton *button;
@@ -522,7 +451,7 @@ static bool SetInteger(wxSpinCtrl *spinctrl, int value)
 bool StyleDialog::SetLabelStyle(const StyleSettings::LabelStyle& lStyle,
     int spacingID, int typeID, int numberingID, int terminiID, int whiteID)
 {
-    std::string name;
+    string name;
     wxSpinCtrl *spinctrl;
     wxCheckBox *checkbox;
     wxChoice *choice;
@@ -588,7 +517,7 @@ bool StyleDialog::SetControls(const StyleSettings& settings)
         (checkbox = wxDynamicCast(FindWindow(ID_K_ION), wxCheckBox)) != NULL &&
         SetChecked(checkbox, settings.ionLabelsOn)
     );
-    if (!okay) ERR_POST(Error << "StyleDialog::SetControls() - control/parameter mismatch: invalid style?");
+    if (!okay) ERRORMSG("StyleDialog::SetControls() - control/parameter mismatch: invalid style?");
     return okay;
 }
 
@@ -667,7 +596,7 @@ bool StyleDialog::HandleColorButton(int bID)
 
     wxButton *button = wxDynamicCast(FindWindow(bID), wxButton);
     if (!button) {
-        ERR_POST(Error << "StyleDialog::HandleColorButton() - can't find button of given ID");
+        ERRORMSG("StyleDialog::HandleColorButton() - can't find button of given ID");
         return false;
     }
 
@@ -682,12 +611,12 @@ bool StyleDialog::HandleColorButton(int bID)
 
 void StyleDialog::OnChange(wxCommandEvent& event)
 {
-    TESTMSG("control changed");
+    TRACEMSG("control changed");
     StyleSettings tmpSettings;
     if (!GetValues(&tmpSettings) ||
         !structureSet->styleManager->CheckStyleSettings(&tmpSettings) ||
         !SetControls(tmpSettings)) {
-        ERR_POST(Error << "StyleDialog::OnChange() - error adjusting settings/controls");
+        ERRORMSG("StyleDialog::OnChange() - error adjusting settings/controls");
         return;
     }
     changedSinceApply = changedEver = true;
@@ -1374,3 +1303,80 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
     return item0;
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.24  2003/02/03 19:20:07  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.23  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.22  2002/11/21 16:59:39  thiessen
+* error on invalid style parameter
+*
+* Revision 1.21  2002/08/15 22:13:17  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.20  2002/05/22 17:17:09  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
+* Revision 1.19  2002/05/17 19:09:24  thiessen
+* undo spin button event workaround for wxmac
+*
+* Revision 1.18  2002/05/16 18:46:07  thiessen
+* Mac fixes
+*
+* Revision 1.17  2002/04/27 16:32:14  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
+* Revision 1.16  2002/04/12 01:54:43  thiessen
+* tweaks to style stuff
+*
+* Revision 1.15  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.14  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
+* Revision 1.13  2001/11/15 18:12:46  thiessen
+* add text+forefround color to user color buttons
+*
+* Revision 1.12  2001/09/24 14:37:52  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
+* Revision 1.11  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
+* Revision 1.10  2001/09/20 19:31:30  thiessen
+* fixes for SGI and wxWin 2.3.2
+*
+* Revision 1.9  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
+* Revision 1.8  2001/08/21 01:10:46  thiessen
+* add labeling
+*
+* Revision 1.7  2001/08/09 19:07:14  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.6  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.5  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
+* Revision 1.4  2001/06/14 00:34:01  thiessen
+* asn additions
+*
+* Revision 1.3  2001/06/08 14:47:06  thiessen
+* fully functional (modal) render settings panel
+*
+* Revision 1.2  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
+* Revision 1.1  2001/05/31 18:47:10  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+*/

@@ -28,209 +28,6 @@
 * File Description:
 *      Classes to hold the OpenGL rendering engine
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.67  2003/01/09 13:46:54  thiessen
-* highlight atom labels
-*
-* Revision 1.66  2002/12/19 15:58:26  thiessen
-* fix quadric problem on Mac
-*
-* Revision 1.65  2002/10/11 17:21:39  thiessen
-* initial Mac OSX build
-*
-* Revision 1.64  2002/10/08 12:35:42  thiessen
-* use delete[] for arrays
-*
-* Revision 1.63  2002/09/14 18:14:31  thiessen
-* fix trigonometry error
-*
-* Revision 1.62  2002/09/14 17:03:07  thiessen
-* center initial view on aligned residues
-*
-* Revision 1.61  2002/08/15 22:13:15  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.60  2002/03/04 15:52:14  thiessen
-* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
-*
-* Revision 1.59  2002/02/01 13:55:54  thiessen
-* fix view restore bug when new file loaded
-*
-* Revision 1.58  2002/01/11 15:48:58  thiessen
-* update for Mac CW7
-*
-* Revision 1.57  2001/12/15 03:15:59  thiessen
-* adjustments for slightly changed object loader Set...() API
-*
-* Revision 1.56  2001/12/12 14:04:14  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.55  2001/11/30 14:02:05  thiessen
-* progress on sequence imports to single structures
-*
-* Revision 1.54  2001/10/23 20:10:23  thiessen
-* fix scaling of fonts in high-res PNG output
-*
-* Revision 1.53  2001/10/23 13:53:38  thiessen
-* add PNG export
-*
-* Revision 1.52  2001/10/17 17:46:22  thiessen
-* save camera setup and rotation center in files
-*
-* Revision 1.51  2001/09/06 18:15:44  thiessen
-* fix OpenGL window initialization/OnSize to work on Mac
-*
-* Revision 1.50  2001/08/24 18:53:42  thiessen
-* add filename to sequence viewer window titles
-*
-* Revision 1.49  2001/08/24 13:29:28  thiessen
-* header and GTK font tweaks
-*
-* Revision 1.48  2001/08/24 00:41:35  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.47  2001/08/21 01:10:45  thiessen
-* add labeling
-*
-* Revision 1.46  2001/08/15 20:52:15  juran
-* On the Mac, include OpenGL headers that can actually be located.
-*
-* Revision 1.45  2001/08/13 22:30:59  thiessen
-* add structure window mouse drag/zoom; add highlight option to render settings
-*
-* Revision 1.44  2001/08/09 19:07:13  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.43  2001/08/08 02:26:18  thiessen
-* fixes for gnu ; make DrawHelix more logical
-*
-* Revision 1.42  2001/08/06 20:22:00  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.41  2001/07/10 21:50:45  thiessen
-* fix ambient/specular coloring
-*
-* Revision 1.40  2001/07/10 21:27:52  thiessen
-* add some specular reflection
-*
-* Revision 1.39  2001/06/29 18:13:57  thiessen
-* initial (incomplete) user annotation system
-*
-* Revision 1.38  2001/05/31 18:47:08  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.37  2001/05/25 15:18:24  thiessen
-* fixes for visual id settings in wxGTK
-*
-* Revision 1.36  2001/05/25 01:38:16  thiessen
-* minor fixes for compiling on SGI
-*
-* Revision 1.35  2001/05/22 19:09:31  thiessen
-* many minor fixes to compile/run on Solaris/GTK
-*
-* Revision 1.34  2001/05/17 18:34:25  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.33  2001/05/15 23:48:37  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.32  2001/01/30 20:51:19  thiessen
-* minor fixes
-*
-* Revision 1.31  2000/12/19 16:39:09  thiessen
-* tweaks to show/hide
-*
-* Revision 1.30  2000/12/15 15:51:47  thiessen
-* show/hide system installed
-*
-* Revision 1.29  2000/11/30 15:49:39  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.28  2000/11/02 16:56:02  thiessen
-* working editor undo; dynamic slave transforms
-*
-* Revision 1.27  2000/09/11 01:46:15  thiessen
-* working messenger for sequence<->structure window communication
-*
-* Revision 1.26  2000/09/08 20:16:55  thiessen
-* working dynamic alignment views
-*
-* Revision 1.25  2000/08/27 18:52:21  thiessen
-* extract sequence information
-*
-* Revision 1.24  2000/08/25 14:22:00  thiessen
-* minor tweaks
-*
-* Revision 1.23  2000/08/24 23:40:19  thiessen
-* add 'atomic ion' labels
-*
-* Revision 1.22  2000/08/24 18:43:52  thiessen
-* tweaks for transparent sphere display
-*
-* Revision 1.21  2000/08/21 17:22:38  thiessen
-* add primitive highlighting for testing
-*
-* Revision 1.20  2000/08/19 02:59:04  thiessen
-* fix transparent sphere bug
-*
-* Revision 1.19  2000/08/18 23:07:08  thiessen
-* minor efficiency tweaks
-*
-* Revision 1.18  2000/08/18 18:57:39  thiessen
-* added transparent spheres
-*
-* Revision 1.17  2000/08/17 14:24:06  thiessen
-* added working StyleManager
-*
-* Revision 1.16  2000/08/16 14:18:46  thiessen
-* map 3-d objects to molecules
-*
-* Revision 1.15  2000/08/13 02:43:01  thiessen
-* added helix and strand objects
-*
-* Revision 1.14  2000/08/11 12:58:31  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.13  2000/08/07 14:13:15  thiessen
-* added animation frames
-*
-* Revision 1.12  2000/08/07 00:21:17  thiessen
-* add display list mechanism
-*
-* Revision 1.11  2000/08/04 22:49:03  thiessen
-* add backbone atom classification and selection feedback mechanism
-*
-* Revision 1.10  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.9  2000/07/27 13:30:51  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.8  2000/07/18 16:50:11  thiessen
-* more friendly rotation center setting
-*
-* Revision 1.7  2000/07/18 02:41:33  thiessen
-* fix bug in virtual bonds and altConfs
-*
-* Revision 1.6  2000/07/18 00:06:00  thiessen
-* allow arbitrary rotation center
-*
-* Revision 1.5  2000/07/17 22:37:18  thiessen
-* fix vector_math typo; correctly set initial view
-*
-* Revision 1.4  2000/07/17 04:20:49  thiessen
-* now does correct structure alignment transformation
-*
-* Revision 1.3  2000/07/16 23:19:11  thiessen
-* redo of drawing system
-*
-* Revision 1.2  2000/07/12 23:27:49  thiessen
-* now draws basic CPK model
-*
-* Revision 1.1  2000/07/12 14:11:30  thiessen
-* added initial OpenGL rendering engine
-*
 * ===========================================================================
 */
 
@@ -304,7 +101,7 @@ static const GLint Shininess = 40;
 // to cache registry values
 static int atomSlices, atomStacks, bondSides, wormSides, wormSegments, helixSides;
 static bool highlightsOn;
-static std::string projectionType;
+static string projectionType;
 
 
 // matrix conversion utility functions
@@ -335,7 +132,7 @@ OpenGLRenderer::OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas) :
 {
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
-        ERR_POST(Fatal << "Cn3D requires that sizeof(GLuint) >= sizeof(unsigned int)");
+        FATALMSG("Cn3D requires that sizeof(GLuint) >= sizeof(unsigned int)");
 }
 
 void OpenGLRenderer::Init(void) const
@@ -540,7 +337,7 @@ void OpenGLRenderer::CenterView(const Vector& viewCenter, double radius)
     cameraAngleRad = 2.0 * atan(radius / (cameraLocation - centerWRTcamera).length());
 
     NewView();
-    TESTMSG("looking at " << lookAt << " angle " << RadToDegrees(cameraAngleRad));
+    TRACEMSG("looking at " << lookAt << " angle " << RadToDegrees(cameraAngleRad));
 
     // do this so that this view is used upon restore
     SaveToASNViewSettings(NULL);
@@ -565,7 +362,7 @@ void OpenGLRenderer::PopMatrix(void)
 void OpenGLRenderer::StartDisplayList(unsigned int list)
 {
     if (list >= FONT_BASE) {
-        ERR_POST(Error << "OpenGLRenderer::StartDisplayList() - too many display lists;\n"
+        ERRORMSG("OpenGLRenderer::StartDisplayList() - too many display lists;\n"
             << "increase OpenGLRenderer::FONT_BASE");
         return;
     }
@@ -738,7 +535,7 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
                     if (top) *name = static_cast<unsigned int>(selectBuf[p]);
                     break;
                 default:
-                    ERR_POST(Warning << "GL select: Got more than 1 name!");
+                    WARNINGMSG("GL select: Got more than 1 name!");
             }
             p++;
         }
@@ -766,7 +563,7 @@ void OpenGLRenderer::Construct(void)
     // (re)initialize global qobj (do it here, since on Mac, drawing into memory buffer requires new qobj)
     if (qobj) gluDeleteQuadric(qobj);
     qobj = gluNewQuadric();
-    if (!qobj) ERR_POST(Fatal << "unable to allocate a GLUQuadricObj");
+    if (!qobj) ERRORMSG("unable to allocate a GLUQuadricObj");
     gluQuadricDrawStyle(qobj, (GLenum) GLU_FILL);
     gluQuadricNormals(qobj, (GLenum) GLU_SMOOTH);
     gluQuadricOrientation(qobj, (GLenum) GLU_OUTSIDE);
@@ -786,7 +583,7 @@ void OpenGLRenderer::Construct(void)
             !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, &helixSides) ||
             !RegistryGetBoolean(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, &highlightsOn) ||
             !RegistryGetString(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, &projectionType))
-            ERR_POST(Error << "OpenGLRenderer::Construct() - error getting quality setting from registry");
+            ERRORMSG("OpenGLRenderer::Construct() - error getting quality setting from registry");
 
         // do the drawing
         structureSet->DrawAll();
@@ -809,7 +606,7 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
         pt = GL_NONE;
         return;
     }
-    if (alpha <= 0.0) ERR_POST(Warning << "SetColor request alpha <= 0.0");
+    if (alpha <= 0.0) WARNINGMSG("SetColor request alpha <= 0.0");
 
     if (red != pr || green != pg || blue != pb || type != pt || alpha != pa) {
         if (type != pt) {
@@ -821,7 +618,7 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
                 glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Color_Off);
                 glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off); // no specular for ambient coloring
             } else {
-                ERR_POST(Error << "don't know how to handle material type " << type);
+                ERRORMSG("don't know how to handle material type " << type);
             }
             pt = (GLenum) type;
         }
@@ -946,7 +743,7 @@ void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name
     const Vector& site, double radius, double alpha)
 {
     if (currentDisplayList == NO_LIST) {
-        ERR_POST(Warning << "OpenGLRenderer::AddTransparentSphere() - not called during display list creation");
+        WARNINGMSG("OpenGLRenderer::AddTransparentSphere() - not called during display list creation");
         return;
     }
 
@@ -1062,7 +859,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         *pNx, *pNy, *pNz, *pCx, *pCy, *pCz, *tmp;
 
     if (!p0 || !p3) {
-        ERR_POST(Error << "DrawHalfWorm: got NULL 0th and/or 3rd coords for worm");
+        ERRORMSG("DrawHalfWorm: got NULL 0th and/or 3rd coords for worm");
         return;
     }
 
@@ -1085,7 +882,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         b = 0;                  /* bias       (should be 0) */
 
     if (wormSides % 2) {
-        ERR_POST(Warning << "worm sides must be an even number");
+        WARNINGMSG("worm sides must be an even number");
         wormSides++;
     }
     GLdouble *fblock = NULL;
@@ -1577,13 +1374,13 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     displayListEmpty[currentDisplayList] = false;
 }
 
-void OpenGLRenderer::DrawLabel(const std::string& text, const Vector& center, const Vector& color)
+void OpenGLRenderer::DrawLabel(const string& text, const Vector& center, const Vector& color)
 {
     int width, height, textCenterX = 0, textCenterY = 0;
 
     if (text.empty()) return;
     if (!glCanvas->MeasureText(text, &width, &height, &textCenterX, &textCenterY))
-        ERR_POST(Warning << "MeasureText() failed");
+        WARNINGMSG("MeasureText() failed");
 
     SetColor(GL_AMBIENT, color[0], color[1], color[2]);
     glListBase(FONT_BASE);
@@ -1626,10 +1423,10 @@ bool OpenGLRenderer::SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations
 
     if (annotations) {
         // store copy in given annotations
-        std::string err;
+        string err;
         CRef < CCn3d_view_settings > copy(CopyASNObject(*initialViewFromASN, &err));
         if (copy.Empty()) {
-            ERR_POST(Error << "OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
+            ERRORMSG("OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
             return false;
         }
         annotations->SetView(*copy);
@@ -1644,10 +1441,10 @@ bool OpenGLRenderer::LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_ann
     if (!annotations.IsSetView()) return true;
 
     // save a copy of the view settings
-    std::string err;
+    string err;
     initialViewFromASN.Reset(CopyASNObject(annotations.GetView(), &err));
     if (err.size() > 0 || initialViewFromASN.Empty()) {
-        ERR_POST(Error << "OpenGLRenderer::LoadFromASNViewSettings() - failed to copy settings:\n" << err);
+        ERRORMSG("OpenGLRenderer::LoadFromASNViewSettings() - failed to copy settings:\n" << err);
         return false;
     }
     return true;
@@ -1712,7 +1509,7 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
     HDC hdc = wglGetCurrentDC();
     HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(GetGLFont().GetHFONT()));
     if (!wglUseFontBitmaps(hdc, firstChar, nChars, fontBase)) {
-        ERR_POST(Error << "OpenGLRenderer::SetGLFont() - wglUseFontBitmaps() failed");
+        ERRORMSG("OpenGLRenderer::SetGLFont() - wglUseFontBitmaps() failed");
         okay = false;
     }
     SelectObject(hdc, currentFont);
@@ -1727,11 +1524,11 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
                 (GLint) fontRefData->m_macFontNum,
                 fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
                 firstChar, nChars, fontBase) != GL_TRUE) {
-            ERR_POST(Error << "OpenGLRenderer::SetGLFont() - aglUseFont() failed");
+            ERRORMSG("OpenGLRenderer::SetGLFont() - aglUseFont() failed");
             okay = false;
         }
     } else {
-        ERR_POST(Error << "OpenGLRenderer::SetGLFont() - RealFont() returned false");
+        ERRORMSG("OpenGLRenderer::SetGLFont() - RealFont() returned false");
         okay = false;
     }
 #endif
@@ -1740,3 +1537,212 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.68  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.67  2003/01/09 13:46:54  thiessen
+* highlight atom labels
+*
+* Revision 1.66  2002/12/19 15:58:26  thiessen
+* fix quadric problem on Mac
+*
+* Revision 1.65  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
+* Revision 1.64  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
+* Revision 1.63  2002/09/14 18:14:31  thiessen
+* fix trigonometry error
+*
+* Revision 1.62  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
+* Revision 1.61  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.60  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
+* Revision 1.59  2002/02/01 13:55:54  thiessen
+* fix view restore bug when new file loaded
+*
+* Revision 1.58  2002/01/11 15:48:58  thiessen
+* update for Mac CW7
+*
+* Revision 1.57  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
+* Revision 1.56  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.55  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
+* Revision 1.54  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
+* Revision 1.53  2001/10/23 13:53:38  thiessen
+* add PNG export
+*
+* Revision 1.52  2001/10/17 17:46:22  thiessen
+* save camera setup and rotation center in files
+*
+* Revision 1.51  2001/09/06 18:15:44  thiessen
+* fix OpenGL window initialization/OnSize to work on Mac
+*
+* Revision 1.50  2001/08/24 18:53:42  thiessen
+* add filename to sequence viewer window titles
+*
+* Revision 1.49  2001/08/24 13:29:28  thiessen
+* header and GTK font tweaks
+*
+* Revision 1.48  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.47  2001/08/21 01:10:45  thiessen
+* add labeling
+*
+* Revision 1.46  2001/08/15 20:52:15  juran
+* On the Mac, include OpenGL headers that can actually be located.
+*
+* Revision 1.45  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
+* Revision 1.44  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.43  2001/08/08 02:26:18  thiessen
+* fixes for gnu ; make DrawHelix more logical
+*
+* Revision 1.42  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.41  2001/07/10 21:50:45  thiessen
+* fix ambient/specular coloring
+*
+* Revision 1.40  2001/07/10 21:27:52  thiessen
+* add some specular reflection
+*
+* Revision 1.39  2001/06/29 18:13:57  thiessen
+* initial (incomplete) user annotation system
+*
+* Revision 1.38  2001/05/31 18:47:08  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.37  2001/05/25 15:18:24  thiessen
+* fixes for visual id settings in wxGTK
+*
+* Revision 1.36  2001/05/25 01:38:16  thiessen
+* minor fixes for compiling on SGI
+*
+* Revision 1.35  2001/05/22 19:09:31  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
+* Revision 1.34  2001/05/17 18:34:25  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.33  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.32  2001/01/30 20:51:19  thiessen
+* minor fixes
+*
+* Revision 1.31  2000/12/19 16:39:09  thiessen
+* tweaks to show/hide
+*
+* Revision 1.30  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
+* Revision 1.29  2000/11/30 15:49:39  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.28  2000/11/02 16:56:02  thiessen
+* working editor undo; dynamic slave transforms
+*
+* Revision 1.27  2000/09/11 01:46:15  thiessen
+* working messenger for sequence<->structure window communication
+*
+* Revision 1.26  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
+* Revision 1.25  2000/08/27 18:52:21  thiessen
+* extract sequence information
+*
+* Revision 1.24  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
+* Revision 1.23  2000/08/24 23:40:19  thiessen
+* add 'atomic ion' labels
+*
+* Revision 1.22  2000/08/24 18:43:52  thiessen
+* tweaks for transparent sphere display
+*
+* Revision 1.21  2000/08/21 17:22:38  thiessen
+* add primitive highlighting for testing
+*
+* Revision 1.20  2000/08/19 02:59:04  thiessen
+* fix transparent sphere bug
+*
+* Revision 1.19  2000/08/18 23:07:08  thiessen
+* minor efficiency tweaks
+*
+* Revision 1.18  2000/08/18 18:57:39  thiessen
+* added transparent spheres
+*
+* Revision 1.17  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
+* Revision 1.16  2000/08/16 14:18:46  thiessen
+* map 3-d objects to molecules
+*
+* Revision 1.15  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
+* Revision 1.14  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.13  2000/08/07 14:13:15  thiessen
+* added animation frames
+*
+* Revision 1.12  2000/08/07 00:21:17  thiessen
+* add display list mechanism
+*
+* Revision 1.11  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
+* Revision 1.10  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.9  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.8  2000/07/18 16:50:11  thiessen
+* more friendly rotation center setting
+*
+* Revision 1.7  2000/07/18 02:41:33  thiessen
+* fix bug in virtual bonds and altConfs
+*
+* Revision 1.6  2000/07/18 00:06:00  thiessen
+* allow arbitrary rotation center
+*
+* Revision 1.5  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
+* Revision 1.4  2000/07/17 04:20:49  thiessen
+* now does correct structure alignment transformation
+*
+* Revision 1.3  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
+* Revision 1.2  2000/07/12 23:27:49  thiessen
+* now draws basic CPK model
+*
+* Revision 1.1  2000/07/12 14:11:30  thiessen
+* added initial OpenGL rendering engine
+*
+*/

@@ -28,41 +28,6 @@
 * File Description:
 *      Classes to hold sets of coordinates for atoms and features
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2001/05/31 18:54:21  thiessen
-* TESTMSG moved
-*
-* Revision 1.10  2001/02/08 23:01:50  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.9  2000/08/27 18:52:21  thiessen
-* extract sequence information
-*
-* Revision 1.8  2000/08/16 14:18:44  thiessen
-* map 3-d objects to molecules
-*
-* Revision 1.7  2000/08/11 12:58:31  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.6  2000/08/07 00:21:17  thiessen
-* add display list mechanism
-*
-* Revision 1.5  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.4  2000/07/27 13:30:51  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.3  2000/07/16 23:19:10  thiessen
-* redo of drawing system
-*
-* Revision 1.2  2000/07/12 23:27:49  thiessen
-* now draws basic CPK model
-*
-* Revision 1.1  2000/07/11 13:45:29  thiessen
-* add modules to parse chemical graph; many improvements
-*
 * ===========================================================================
 */
 
@@ -101,7 +66,7 @@ CoordSet::CoordSet(StructureBase *parent,
                 if (!atomSet)
                     atomSet = new AtomSet(this, coords.GetAtomic());
                 else
-                    ERR_POST(Fatal << "confused by multiple atomic coords");
+                    ERRORMSG("confused by multiple atomic coords");
             }
 
             // coordinates of 3d-objects
@@ -109,7 +74,7 @@ CoordSet::CoordSet(StructureBase *parent,
                 j->GetObject().GetDescr().front().GetObject().IsOther_comment() &&
                 coords.GetSurface().GetContents().IsResidues()) {
 
-                const std::string& descr =
+                const string& descr =
                     j->GetObject().GetDescr().front().GetObject().GetOther_comment();
 
                 // helix cylinder
@@ -120,7 +85,7 @@ CoordSet::CoordSet(StructureBase *parent,
                     if (helix->moleculeID == Object3D::VALUE_NOT_SET) {
                         this->_RemoveChild(helix);
                         delete helix;
-                        TESTMSG("bad helix");
+                        WARNINGMSG("bad helix");
                     } else
                         objectMap[helix->moleculeID].push_back(helix);
 
@@ -132,7 +97,7 @@ CoordSet::CoordSet(StructureBase *parent,
                     if (strand->moleculeID == Object3D::VALUE_NOT_SET) {
                         this->_RemoveChild(strand);
                         delete strand;
-                        TESTMSG("bad strand");
+                        WARNINGMSG("bad strand");
                     } else
                         objectMap[strand->moleculeID].push_back(strand);
                 }
@@ -143,3 +108,44 @@ CoordSet::CoordSet(StructureBase *parent,
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.12  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.11  2001/05/31 18:54:21  thiessen
+* TESTMSG moved
+*
+* Revision 1.10  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+* Revision 1.9  2000/08/27 18:52:21  thiessen
+* extract sequence information
+*
+* Revision 1.8  2000/08/16 14:18:44  thiessen
+* map 3-d objects to molecules
+*
+* Revision 1.7  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.6  2000/08/07 00:21:17  thiessen
+* add display list mechanism
+*
+* Revision 1.5  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.4  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.3  2000/07/16 23:19:10  thiessen
+* redo of drawing system
+*
+* Revision 1.2  2000/07/12 23:27:49  thiessen
+* now draws basic CPK model
+*
+* Revision 1.1  2000/07/11 13:45:29  thiessen
+* add modules to parse chemical graph; many improvements
+*
+*/

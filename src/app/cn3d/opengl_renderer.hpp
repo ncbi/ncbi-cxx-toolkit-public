@@ -28,119 +28,6 @@
 * File Description:
 *      Classes to hold the OpenGL rendering engine
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.37  2002/09/14 17:03:07  thiessen
-* center initial view on aligned residues
-*
-* Revision 1.36  2001/11/30 14:02:05  thiessen
-* progress on sequence imports to single structures
-*
-* Revision 1.35  2001/10/23 13:53:38  thiessen
-* add PNG export
-*
-* Revision 1.34  2001/10/17 17:46:27  thiessen
-* save camera setup and rotation center in files
-*
-* Revision 1.33  2001/09/06 18:17:01  thiessen
-* fix OpenGL window initialization/OnSize to work on Mac
-*
-* Revision 1.32  2001/08/24 00:40:57  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.31  2001/08/13 22:30:52  thiessen
-* add structure window mouse drag/zoom; add highlight option to render settings
-*
-* Revision 1.30  2001/08/09 19:07:19  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.29  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.28  2001/06/15 14:52:30  thiessen
-* fix minor syntax errors
-*
-* Revision 1.27  2001/05/22 19:09:09  thiessen
-* many minor fixes to compile/run on Solaris/GTK
-*
-* Revision 1.26  2001/05/17 18:34:00  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.25  2001/05/16 00:07:23  thiessen
-* one more minor fix
-*
-* Revision 1.24  2001/05/15 23:49:20  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.23  2000/12/15 15:52:08  thiessen
-* show/hide system installed
-*
-* Revision 1.22  2000/11/02 16:48:22  thiessen
-* working editor undo; dynamic slave transforms
-*
-* Revision 1.21  2000/10/04 17:40:46  thiessen
-* rearrange STL #includes
-*
-* Revision 1.20  2000/08/30 19:49:03  thiessen
-* working sequence window
-*
-* Revision 1.19  2000/08/25 14:21:32  thiessen
-* minor tweaks
-*
-* Revision 1.18  2000/08/24 23:39:54  thiessen
-* add 'atomic ion' labels
-*
-* Revision 1.17  2000/08/21 17:22:45  thiessen
-* add primitive highlighting for testing
-*
-* Revision 1.16  2000/08/19 02:58:23  thiessen
-* fix transparent sphere bug
-*
-* Revision 1.15  2000/08/18 23:07:03  thiessen
-* minor efficiency tweaks
-*
-* Revision 1.14  2000/08/18 18:57:43  thiessen
-* added transparent spheres
-*
-* Revision 1.13  2000/08/17 14:22:00  thiessen
-* added working StyleManager
-*
-* Revision 1.12  2000/08/13 02:42:13  thiessen
-* added helix and strand objects
-*
-* Revision 1.11  2000/08/11 12:59:13  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.10  2000/08/07 14:12:48  thiessen
-* added animation frames
-*
-* Revision 1.9  2000/08/07 00:20:18  thiessen
-* add display list mechanism
-*
-* Revision 1.8  2000/08/04 22:49:10  thiessen
-* add backbone atom classification and selection feedback mechanism
-*
-* Revision 1.7  2000/08/03 15:12:29  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.6  2000/07/18 00:05:45  thiessen
-* allow arbitrary rotation center
-*
-* Revision 1.5  2000/07/17 22:36:46  thiessen
-* fix vector_math typo; correctly set initial view
-*
-* Revision 1.4  2000/07/17 04:21:09  thiessen
-* now does correct structure alignment transformation
-*
-* Revision 1.3  2000/07/16 23:18:34  thiessen
-* redo of drawing system
-*
-* Revision 1.2  2000/07/12 23:28:27  thiessen
-* now draws basic CPK model
-*
-* Revision 1.1  2000/07/12 14:10:45  thiessen
-* added initial OpenGL rendering engine
-*
 * ===========================================================================
 */
 
@@ -329,3 +216,122 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_OPENGL_RENDERER__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.38  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.37  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
+* Revision 1.36  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
+* Revision 1.35  2001/10/23 13:53:38  thiessen
+* add PNG export
+*
+* Revision 1.34  2001/10/17 17:46:27  thiessen
+* save camera setup and rotation center in files
+*
+* Revision 1.33  2001/09/06 18:17:01  thiessen
+* fix OpenGL window initialization/OnSize to work on Mac
+*
+* Revision 1.32  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.31  2001/08/13 22:30:52  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
+* Revision 1.30  2001/08/09 19:07:19  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.29  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.28  2001/06/15 14:52:30  thiessen
+* fix minor syntax errors
+*
+* Revision 1.27  2001/05/22 19:09:09  thiessen
+* many minor fixes to compile/run on Solaris/GTK
+*
+* Revision 1.26  2001/05/17 18:34:00  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.25  2001/05/16 00:07:23  thiessen
+* one more minor fix
+*
+* Revision 1.24  2001/05/15 23:49:20  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.23  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
+* Revision 1.22  2000/11/02 16:48:22  thiessen
+* working editor undo; dynamic slave transforms
+*
+* Revision 1.21  2000/10/04 17:40:46  thiessen
+* rearrange STL #includes
+*
+* Revision 1.20  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
+* Revision 1.19  2000/08/25 14:21:32  thiessen
+* minor tweaks
+*
+* Revision 1.18  2000/08/24 23:39:54  thiessen
+* add 'atomic ion' labels
+*
+* Revision 1.17  2000/08/21 17:22:45  thiessen
+* add primitive highlighting for testing
+*
+* Revision 1.16  2000/08/19 02:58:23  thiessen
+* fix transparent sphere bug
+*
+* Revision 1.15  2000/08/18 23:07:03  thiessen
+* minor efficiency tweaks
+*
+* Revision 1.14  2000/08/18 18:57:43  thiessen
+* added transparent spheres
+*
+* Revision 1.13  2000/08/17 14:22:00  thiessen
+* added working StyleManager
+*
+* Revision 1.12  2000/08/13 02:42:13  thiessen
+* added helix and strand objects
+*
+* Revision 1.11  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.10  2000/08/07 14:12:48  thiessen
+* added animation frames
+*
+* Revision 1.9  2000/08/07 00:20:18  thiessen
+* add display list mechanism
+*
+* Revision 1.8  2000/08/04 22:49:10  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
+* Revision 1.7  2000/08/03 15:12:29  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.6  2000/07/18 00:05:45  thiessen
+* allow arbitrary rotation center
+*
+* Revision 1.5  2000/07/17 22:36:46  thiessen
+* fix vector_math typo; correctly set initial view
+*
+* Revision 1.4  2000/07/17 04:21:09  thiessen
+* now does correct structure alignment transformation
+*
+* Revision 1.3  2000/07/16 23:18:34  thiessen
+* redo of drawing system
+*
+* Revision 1.2  2000/07/12 23:28:27  thiessen
+* now draws basic CPK model
+*
+* Revision 1.1  2000/07/12 14:10:45  thiessen
+* added initial OpenGL rendering engine
+*
+*/

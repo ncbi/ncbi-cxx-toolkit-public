@@ -28,65 +28,6 @@
 * File Description:
 *      manager object to track show/hide status of objects at various levels
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.19  2002/11/10 20:32:04  thiessen
-* show/hide optimizations, esp. show domains with highlights
-*
-* Revision 1.18  2002/10/28 21:36:01  thiessen
-* add show domains with highlights
-*
-* Revision 1.17  2002/06/21 14:40:15  thiessen
-* fix show/hide of nucleotides
-*
-* Revision 1.16  2001/10/08 14:18:33  thiessen
-* fix show/hide dialog under wxGTK
-*
-* Revision 1.15  2001/08/10 15:01:57  thiessen
-* fill out shortcuts; add update show/hide menu
-*
-* Revision 1.14  2001/07/12 17:35:15  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-* Revision 1.13  2001/06/21 02:02:34  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.12  2001/06/02 17:22:46  thiessen
-* fixes for GCC
-*
-* Revision 1.11  2001/05/31 18:47:09  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.10  2001/05/17 18:34:26  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.9  2001/03/09 15:49:05  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.8  2001/03/01 20:15:51  thiessen
-* major rearrangement of sequence viewer code into base and derived classes
-*
-* Revision 1.7  2001/01/25 20:21:18  thiessen
-* fix ostrstream memory leaks
-*
-* Revision 1.6  2000/12/29 19:23:39  thiessen
-* save row order
-*
-* Revision 1.5  2000/12/19 16:39:09  thiessen
-* tweaks to show/hide
-*
-* Revision 1.4  2000/12/15 15:51:47  thiessen
-* show/hide system installed
-*
-* Revision 1.3  2000/12/01 19:35:57  thiessen
-* better domain assignment; basic show/hide mechanism
-*
-* Revision 1.2  2000/08/17 18:33:12  thiessen
-* minor fixes to StyleManager
-*
-* Revision 1.1  2000/08/03 15:13:59  thiessen
-* add skeleton of style and show/hide managers
-*
 * ===========================================================================
 */
 
@@ -113,15 +54,15 @@ BEGIN_SCOPE(Cn3D)
 // ShowHideInfo is a generic container class to help organize the list of things that can be
 // shown/hidden; stuff derived from it allows various types of objects to be shown/hidden
 
-std::string indent("     ");
+string indent("     ");
 
 class ShowHideInfo
 {
 protected:
-    std::string label;
+    string label;
 public:
-    std::vector < int > parentIndexes;
-    void GetLabel(std::string *str) const { *str = label; }
+    vector < int > parentIndexes;
+    void GetLabel(string *str) const { *str = label; }
     virtual bool IsVisible(const ShowHideManager *shm) const = 0;
     virtual void Show(ShowHideManager *shm, bool isShown) const = 0;
 };
@@ -227,7 +168,7 @@ void ShowHideManager::Show(const StructureBase *entity, bool isShown)
     const Molecule *molecule = dynamic_cast<const Molecule *>(entity);
     const Residue *residue = dynamic_cast<const Residue *>(entity);
     if (!entity || !(object || molecule || residue)) {
-        ERR_POST(Error << "ShowHideManager::Show() - must be a StructureObject, Molecule, or Residue");
+        ERRORMSG("ShowHideManager::Show() - must be a StructureObject, Molecule, or Residue");
         return;
     }
 
@@ -317,7 +258,7 @@ bool ShowHideManager::IsHidden(const StructureBase *entity) const
                 e != entitiesHidden.end());
     }
 
-    ERR_POST(Error << "ShowHideManager::IsHidden() - must be a StructureObject, Molecule, or Residue");
+    ERRORMSG("ShowHideManager::IsHidden() - must be a StructureObject, Molecule, or Residue");
     return false;
 }
 
@@ -361,7 +302,7 @@ void ShowHideManager::ConstructShowHideArray(const StructureSet *structureSet)
 }
 
 void ShowHideManager::GetShowHideInfo(
-    std::vector < std::string > *names, std::vector < bool > *visibilities) const
+    vector < string > *names, vector < bool > *visibilities) const
 {
     names->resize(structureInfo.size());
     visibilities->resize(structureInfo.size());
@@ -371,20 +312,20 @@ void ShowHideManager::GetShowHideInfo(
     }
 }
 
-void ShowHideManager::ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled)
+void ShowHideManager::ShowHideCallbackFunction(const vector < bool >& itemsEnabled)
 {
     if (itemsEnabled.size() != structureInfo.size()) {
-        ERR_POST(Error << "ShowHideManager::ShowHideCallbackFunction() - wrong size list");
+        ERRORMSG("ShowHideManager::ShowHideCallbackFunction() - wrong size list");
         return;
     }
 
     for (int i=0; i<itemsEnabled.size(); i++)
         structureInfo[i]->Show(this, itemsEnabled[i]);
-    TESTMSG("entities hidden: " << entitiesHidden.size());
+    TRACEMSG("entities hidden: " << entitiesHidden.size());
 }
 
 bool ShowHideManager::SelectionChangedCallback(
-    const std::vector < bool >& original, std::vector < bool >& itemsEnabled)
+    const vector < bool >& original, vector < bool >& itemsEnabled)
 {
     // count number of changes
     int i, nChanges = 0, itemChanged, nEnabled = 0, itemEnabled;
@@ -454,7 +395,7 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
                 continue;
             }
 
-            std::map < int, bool > domains;
+            map < int, bool > domains;
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
             // first pass determines which domains have any aligned residues
@@ -558,7 +499,7 @@ void ShowHideManager::ShowDomainsWithHighlights(const StructureSet *set)
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
             // find domains in this molecule that have highlights
-            std::map < int , bool > domains;
+            map < int , bool > domains;
             int domain;
             for (r=m->second->residues.begin(); r!=re; r++) {
                 if (GlobalMessenger()->IsHighlighted(m->second, r->first)) {
@@ -579,3 +520,68 @@ void ShowHideManager::ShowDomainsWithHighlights(const StructureSet *set)
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.20  2003/02/03 19:20:06  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.19  2002/11/10 20:32:04  thiessen
+* show/hide optimizations, esp. show domains with highlights
+*
+* Revision 1.18  2002/10/28 21:36:01  thiessen
+* add show domains with highlights
+*
+* Revision 1.17  2002/06/21 14:40:15  thiessen
+* fix show/hide of nucleotides
+*
+* Revision 1.16  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
+* Revision 1.15  2001/08/10 15:01:57  thiessen
+* fill out shortcuts; add update show/hide menu
+*
+* Revision 1.14  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+* Revision 1.13  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.12  2001/06/02 17:22:46  thiessen
+* fixes for GCC
+*
+* Revision 1.11  2001/05/31 18:47:09  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.10  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.9  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.8  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
+* Revision 1.7  2001/01/25 20:21:18  thiessen
+* fix ostrstream memory leaks
+*
+* Revision 1.6  2000/12/29 19:23:39  thiessen
+* save row order
+*
+* Revision 1.5  2000/12/19 16:39:09  thiessen
+* tweaks to show/hide
+*
+* Revision 1.4  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
+* Revision 1.3  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
+* Revision 1.2  2000/08/17 18:33:12  thiessen
+* minor fixes to StyleManager
+*
+* Revision 1.1  2000/08/03 15:13:59  thiessen
+* add skeleton of style and show/hide managers
+*
+*/

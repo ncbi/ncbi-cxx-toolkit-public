@@ -28,29 +28,6 @@
 * File Description:
 *       dialog for CDD splash screen
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/12/19 19:15:27  thiessen
-* cosmetic fixes
-*
-* Revision 1.6  2002/12/19 18:52:41  thiessen
-* add structure summary
-*
-* Revision 1.5  2002/12/07 01:38:36  thiessen
-* fix header problem
-*
-* Revision 1.4  2002/09/18 14:12:00  thiessen
-* add annotations summary to overview
-*
-* Revision 1.3  2002/08/15 22:13:13  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.2  2002/04/09 23:59:09  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.1  2002/04/09 14:38:24  thiessen
-* add cdd splash screen
-*
 * ===========================================================================
 */
 
@@ -114,7 +91,7 @@ BEGIN_SCOPE(Cn3D)
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -144,11 +121,11 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAnnot, ID_B_ANNOT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bRef, ID_B_REF, wxButton)
 
-    const std::string& cddName = structureSet->GetCDDName();
+    const string& cddName = structureSet->GetCDDName();
     if (cddName.size() > 0)
         tName->SetLabel(cddName.c_str());
 
-    const std::string& cddDescr = structureSet->GetCDDDescription();
+    const string& cddDescr = structureSet->GetCDDDescription();
     if (cddDescr.size() > 0) {
         int i, j;
         for (i=j=0; i<cddDescr.size(); i++, j++) {
@@ -167,7 +144,7 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
         *tDescr << "Annotation summary:\n\n";
         CAlign_annot_set::Tdata::const_iterator a, ae = annots->Get().end();
         for (a=annots->Get().begin(); a!=ae; a++) {
-            *tDescr << ((*a)->IsSetDescription() ? (*a)->GetDescription() : std::string("")).c_str()
+            *tDescr << ((*a)->IsSetDescription() ? (*a)->GetDescription() : string("")).c_str()
                 << "; evidence:\n";
             if ((*a)->IsSetEvidence()) {
                 CAlign_annot::TEvidence::const_iterator e, ee = (*a)->GetEvidence().end();
@@ -210,9 +187,9 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
             *tDescr << "\nPDB " << (*o)->pdbID.c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
 
             // make lists of biopolymer chains and heterogens
-            typedef std::list < std::string > ChainList;
+            typedef list < string > ChainList;
             ChainList chainList;
-            typedef std::map < std::string , int > HetList;
+            typedef map < string , int > HetList;
             HetList hetList;
             ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
             for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
@@ -233,7 +210,7 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
                     chainList.push_back(descr.c_str());
                 } else if (m->second->IsHeterogen()) {
                     // get name from local graph name of first (should be only) residue
-                    const std::string& name = m->second->residues.find(1)->second->nameGraph;
+                    const string& name = m->second->residues.find(1)->second->nameGraph;
                     HetList::iterator n = hetList.find(name);
                     if (n == hetList.end())
                         hetList[name] = 1;
@@ -366,3 +343,32 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     return item0;
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.7  2002/12/19 19:15:27  thiessen
+* cosmetic fixes
+*
+* Revision 1.6  2002/12/19 18:52:41  thiessen
+* add structure summary
+*
+* Revision 1.5  2002/12/07 01:38:36  thiessen
+* fix header problem
+*
+* Revision 1.4  2002/09/18 14:12:00  thiessen
+* add annotations summary to overview
+*
+* Revision 1.3  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.2  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.1  2002/04/09 14:38:24  thiessen
+* add cdd splash screen
+*
+*/

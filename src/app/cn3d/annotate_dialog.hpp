@@ -28,20 +28,6 @@
 * File Description:
 *      dialog for user annotations
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2002/08/15 22:13:12  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.3  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.2  2001/07/04 19:38:55  thiessen
-* finish user annotation system
-*
-* Revision 1.1  2001/06/29 18:12:52  thiessen
-* initial (incomplete) user annotation system
-*
 * ===========================================================================
 */
 
@@ -122,3 +108,23 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_ANNOTATE_DIALOG__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.4  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.3  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.2  2001/07/04 19:38:55  thiessen
+* finish user annotation system
+*
+* Revision 1.1  2001/06/29 18:12:52  thiessen
+* initial (incomplete) user annotation system
+*
+*/

@@ -28,64 +28,10 @@
 * File Description:
 *      class to manage different root ASN data types
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.17  2003/01/27 15:52:22  thiessen
-* merge after highlighted row; show rejects; trim rejects from new reject list
-*
-* Revision 1.16  2002/11/22 19:48:14  thiessen
-* one more fix for const changes in objects API
-*
-* Revision 1.15  2002/11/19 21:19:44  thiessen
-* more const changes for objects; fix user vs default style bug
-*
-* Revision 1.14  2002/11/18 19:48:40  grichenk
-* Removed "const" from datatool-generated setters
-*
-* Revision 1.13  2002/11/06 00:18:10  thiessen
-* fixes for new CRef/const rules in objects
-*
-* Revision 1.12  2002/10/27 22:23:51  thiessen
-* save structure alignments from vastalign.cgi imports
-*
-* Revision 1.11  2002/07/03 13:39:39  thiessen
-* fix for redundant sequence removal
-*
-* Revision 1.10  2002/06/05 17:50:08  thiessen
-* title tweaks
-*
-* Revision 1.9  2002/03/19 18:47:58  thiessen
-* small bug fixes; remember PSSM weight
-*
-* Revision 1.8  2002/02/27 16:29:41  thiessen
-* add model type flag to general mime type
-*
-* Revision 1.7  2002/02/19 14:59:39  thiessen
-* add CDD reject and purge sequence
-*
-* Revision 1.6  2002/02/12 17:19:21  thiessen
-* first working structure import
-*
-* Revision 1.5  2002/01/19 02:34:40  thiessen
-* fixes for changes in asn serialization API
-*
-* Revision 1.4  2001/12/15 03:15:59  thiessen
-* adjustments for slightly changed object loader Set...() API
-*
-* Revision 1.3  2001/12/06 23:13:45  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.2  2001/11/30 14:02:05  thiessen
-* progress on sequence imports to single structures
-*
-* Revision 1.1  2001/11/27 16:26:08  thiessen
-* major update to data management system
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbidiag.hpp>
 
 #include <objects/ncbimime/Entrez_general.hpp>
 #include <objects/ncbimime/Biostruc_align.hpp>
@@ -228,7 +174,7 @@ void ASNDataManager::Load(void)
         }
 
         else
-            ERR_POST(Error << "Unrecognized mime type!");
+            ERRORMSG("Unrecognized mime type!");
     }
 
     // CDD
@@ -256,19 +202,19 @@ void ASNDataManager::Load(void)
             (mimeData->IsGeneral() &&
                 !sequenceAlignments && !structureAlignments &&
                 biostrucList && biostrucList->size() == 1)));
-    TESTMSG("is single structure: " << (isSingleStructure ? "yes" : "no"));
+    TRACEMSG("is single structure: " << (isSingleStructure ? "yes" : "no"));
 
     // pre-screen sequence alignments to make sure they're all a type we can deal with
     if (sequenceAlignments) {
-        std::list < CRef < CSeq_align > > validAlignments;
+        list < CRef < CSeq_align > > validAlignments;
         SeqAnnotList::const_iterator n, ne = sequenceAlignments->end();
         for (n=sequenceAlignments->begin(); n!=ne; n++) {
 
             if (!n->GetObject().GetData().IsAlign()) {
-                ERR_POST(Error << "Warning - confused by seqannot data format");
+                ERRORMSG("Warning - confused by seqannot data format");
                 continue;
             }
-            if (n != sequenceAlignments->begin()) TESTMSG("multiple Seq-annots");
+            if (n != sequenceAlignments->begin()) TRACEMSG("multiple Seq-annots");
 
             CSeq_annot::C_Data::TAlign::const_iterator
                 a, ae = n->GetObject().GetData().GetAlign().end();
@@ -279,7 +225,7 @@ void ASNDataManager::Load(void)
                     a->GetObject().GetType() != CSeq_align::eType_diags) ||
                     !a->GetObject().IsSetDim() || a->GetObject().GetDim() != 2 ||
                     (!a->GetObject().GetSegs().IsDendiag() && !a->GetObject().GetSegs().IsDenseg())) {
-                    ERR_POST(Error << "Warning - confused by alignment type");
+                    ERRORMSG("Warning - confused by alignment type");
                     continue;
                 }
                 validAlignments.push_back(*a);
@@ -288,7 +234,7 @@ void ASNDataManager::Load(void)
 
         sequenceAlignments->clear();
         if (validAlignments.size() == 0) {
-            ERR_POST(Error << "Warning - no valid Seq-aligns present");
+            ERRORMSG("Warning - no valid Seq-aligns present");
             sequenceAlignments = NULL;
         } else {
             sequenceAlignments->push_back(CRef < CSeq_annot > (new CSeq_annot()));
@@ -442,7 +388,7 @@ void ASNDataManager::SetStructureAlignments(ncbi::objects::CBiostruc_annot_set *
         else
             GetInternalCDDData()->ResetFeatures();
     } else
-        ERR_POST(Error << "ASNDataManager::SetStructureAlignments() - can't add to this data type");
+        ERRORMSG("ASNDataManager::SetStructureAlignments() - can't add to this data type");
     structureAlignments = strucAligns;
 }
 
@@ -467,7 +413,7 @@ bool ASNDataManager::AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc)
 bool ASNDataManager::ConvertMimeToGeneral(void)
 {
     if (mimeData.Empty() || mimeData->IsGeneral()) {
-        ERR_POST(Error << "ASNDataManager::ConvertMimeToGeneral() - can't convert to general mime type");
+        ERRORMSG("ASNDataManager::ConvertMimeToGeneral() - can't convert to general mime type");
         return false;
     }
 
@@ -528,7 +474,7 @@ void ASNDataManager::ReplaceUpdates(UpdateAlignList& newUpdates)
         cddUpdates = &(cddData->SetPending());
         *cddUpdates = newUpdates;
     } else if (newUpdates.size() > 0)
-        ERR_POST(Error << "ASNDataManager::ReplaceUpdates() - can't put updates in this data type");
+        ERRORMSG("ASNDataManager::ReplaceUpdates() - can't put updates in this data type");
 
     SetDataChanged(StructureSet::eUpdateData);
 }
@@ -539,13 +485,13 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     if (!alignmentSet) return; // don't do this for single structures
 
     if (!seqEntryList) {
-        ERR_POST(Error << "ASNDataManager::RemoveUnusedSequences() - can't find sequence list");
+        ERRORMSG("ASNDataManager::RemoveUnusedSequences() - can't find sequence list");
         return;
     }
 
     // update the asn sequences, keeping only those used in the multiple alignment and updates
     seqEntryList->clear();
-    std::map < const MoleculeIdentifier *, bool > usedSeqs;
+    map < const MoleculeIdentifier *, bool > usedSeqs;
     int nStructuredSlaves = 0;
 
 // macro to add the sequence to the list if not already present
@@ -576,13 +522,13 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     // warn user if # structured slaves != # structure alignments
 //    if (structureAlignments && nStructuredSlaves !=
 //            structureAlignments->GetFeatures().front().GetObject().GetFeatures().size())
-//        ERR_POST(Error << "Warning: Structure alignment list does not contain one alignment per "
+//        ERRORMSG("Warning: Structure alignment list does not contain one alignment per "
 //            "structured sequence!\nYou should recompute structure alignments before saving "
 //            "in order to sync the lists.");
 }
 
 bool ASNDataManager::WriteDataToFile(const char *filename, bool isBinary,
-    std::string *err, ncbi::EFixNonPrint fixNonPrint) const
+    string *err, ncbi::EFixNonPrint fixNonPrint) const
 {
     if (mimeData.NotEmpty())
         return WriteASNToFile(filename, mimeData.GetObject(), isBinary, err, fixNonPrint);
@@ -620,9 +566,9 @@ bool ASNDataManager::IsCDDInMime(void) const
     return (GetInternalCDDData() != NULL && mimeData.NotEmpty());
 }
 
-const std::string& ASNDataManager::GetCDDName(void) const
+const string& ASNDataManager::GetCDDName(void) const
 {
-    static const std::string empty = "";
+    static const string empty = "";
     const CCdd *cdd = GetInternalCDDData();
     if (cdd)
         return cdd->GetName();
@@ -630,7 +576,7 @@ const std::string& ASNDataManager::GetCDDName(void) const
         return empty;
 }
 
-bool ASNDataManager::SetCDDName(const std::string& name)
+bool ASNDataManager::SetCDDName(const string& name)
 {
     CCdd *cdd = GetInternalCDDData();
     if (!cdd || name.size() == 0) return false;
@@ -639,9 +585,9 @@ bool ASNDataManager::SetCDDName(const std::string& name)
     return true;
 }
 
-const std::string& ASNDataManager::GetCDDDescription(void) const
+const string& ASNDataManager::GetCDDDescription(void) const
 {
-    static const std::string empty = "";
+    static const string empty = "";
     const CCdd *cdd = GetInternalCDDData();
     if (!cdd) return empty;
 
@@ -655,7 +601,7 @@ const std::string& ASNDataManager::GetCDDDescription(void) const
     return empty;
 }
 
-bool ASNDataManager::SetCDDDescription(const std::string& descr)
+bool ASNDataManager::SetCDDDescription(const string& descr)
 {
     CCdd *cdd = GetInternalCDDData();
     if (!cdd || descr.size() == 0) return false;
@@ -723,7 +669,7 @@ bool ASNDataManager::SetCDDNotes(const TextLines& lines)
                 if (lines.size() == 0) {
                     cdd->SetDescription().Set().erase(d);   // if empty, remove scrapbook item
                     SetDataChanged(StructureSet::eCDDData);
-                    TESTMSG("removed scrapbook");
+                    TRACEMSG("removed scrapbook");
                 } else
                     scrapbook = &((*d)->SetScrapbook());
                 break;
@@ -803,3 +749,62 @@ const StructureSet::RejectList * ASNDataManager::GetRejects(void) const
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.18  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.17  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
+* Revision 1.16  2002/11/22 19:48:14  thiessen
+* one more fix for const changes in objects API
+*
+* Revision 1.15  2002/11/19 21:19:44  thiessen
+* more const changes for objects; fix user vs default style bug
+*
+* Revision 1.14  2002/11/18 19:48:40  grichenk
+* Removed "const" from datatool-generated setters
+*
+* Revision 1.13  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
+* Revision 1.12  2002/10/27 22:23:51  thiessen
+* save structure alignments from vastalign.cgi imports
+*
+* Revision 1.11  2002/07/03 13:39:39  thiessen
+* fix for redundant sequence removal
+*
+* Revision 1.10  2002/06/05 17:50:08  thiessen
+* title tweaks
+*
+* Revision 1.9  2002/03/19 18:47:58  thiessen
+* small bug fixes; remember PSSM weight
+*
+* Revision 1.8  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
+* Revision 1.7  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
+* Revision 1.6  2002/02/12 17:19:21  thiessen
+* first working structure import
+*
+* Revision 1.5  2002/01/19 02:34:40  thiessen
+* fixes for changes in asn serialization API
+*
+* Revision 1.4  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
+* Revision 1.3  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.2  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
+* Revision 1.1  2001/11/27 16:26:08  thiessen
+* major update to data management system
+*
+*/

@@ -28,17 +28,6 @@
 * File Description:
 *       dialog for CDD splash screen
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/08/15 22:13:13  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.2  2002/04/09 23:59:09  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.1  2002/04/09 14:38:24  thiessen
-* add cdd splash screen
-*
 * ===========================================================================
 */
 
@@ -84,3 +73,20 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CDD_SPLASH_DIALOG__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.3  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.2  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.1  2002/04/09 14:38:24  thiessen
+* add cdd splash screen
+*
+*/

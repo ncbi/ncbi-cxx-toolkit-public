@@ -28,20 +28,6 @@
 * File Description:
 *      Vector and Matrix classes to simplify 3-d geometry calculations
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2001/02/09 20:17:32  thiessen
-* ignore atoms w/o alpha when doing structure realignment
-*
-* Revision 1.3  2000/11/13 18:06:53  thiessen
-* working structure re-superpositioning
-*
-* Revision 1.2  2000/07/17 22:37:18  thiessen
-* fix vector_math typo; correctly set initial view
-*
-* Revision 1.1  2000/06/27 20:09:41  thiessen
-* initial checkin
-*
 * ===========================================================================
 */
 
@@ -315,3 +301,23 @@ void RigidBodyFit(
 } // end RigidBodyFit()
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2003/02/03 19:20:08  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.4  2001/02/09 20:17:32  thiessen
+* ignore atoms w/o alpha when doing structure realignment
+*
+* Revision 1.3  2000/11/13 18:06:53  thiessen
+* working structure re-superpositioning
+*
+* Revision 1.2  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
+* Revision 1.1  2000/06/27 20:09:41  thiessen
+* initial checkin
+*
+*/

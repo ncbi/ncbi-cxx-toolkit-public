@@ -28,8 +28,87 @@
 * File Description:
 *      Classes to hold sets of sequences
 *
+* ===========================================================================
+*/
+
+#ifndef CN3D_SEQUENCE_SET__HPP
+#define CN3D_SEQUENCE_SET__HPP
+
+#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <corelib/ncbistl.hpp>
+
+#include <string>
+#include <list>
+
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
+#include <objloc.h>
+
+#include "cn3d/structure_base.hpp"
+
+
+BEGIN_SCOPE(Cn3D)
+
+class Sequence;
+class Molecule;
+class MasterSlaveAlignment;
+class MoleculeIdentifier;
+
+class SequenceSet : public StructureBase
+{
+public:
+    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
+    SequenceSet(StructureBase *parent, SeqEntryList& seqEntries);
+
+    typedef std::list < const Sequence * > SequenceList;
+    SequenceList sequences;
+
+    bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
+};
+
+class Sequence : public StructureBase
+{
+public:
+    Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq);
+
+    // keep a reference to the original asn Bioseq
+    ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
+
+    std::string sequenceString, description;
+    const MoleculeIdentifier *identifier;
+
+    // corresponding biopolymer chain (if any)
+    const Molecule *molecule;
+    bool isProtein;
+
+    int Length(void) const { return static_cast<int>(sequenceString.size()); }
+    int GetOrSetMMDBLink(void) const;
+
+    // Seq-id stuff (C++ and C)
+    ncbi::objects::CSeq_id * CreateSeqId(void) const;
+    void FillOutSeqId(ncbi::objects::CSeq_id *sid) const;
+    void AddCSeqId(SeqIdPtr *id, bool addAllTypes) const;
+
+    // launch web browser with entrez page for this sequence
+    void LaunchWebBrowserWithInfo(void) const;
+
+    // highlight residues matching the given pattern; returns true if the pattern is valid,
+    // regardless of whether a match is found, or returns false on error
+    bool HighlightPattern(const std::string& pattern) const;
+};
+
+END_SCOPE(Cn3D)
+
+#endif // CN3D_SEQUENCE_SET__HPP
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/02/03 19:20:05  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.28  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -114,77 +193,4 @@
 * Revision 1.1  2000/08/27 18:50:56  thiessen
 * extract sequence information
 *
-* ===========================================================================
 */
-
-#ifndef CN3D_SEQUENCE_SET__HPP
-#define CN3D_SEQUENCE_SET__HPP
-
-#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
-#include <corelib/ncbistl.hpp>
-
-#include <string>
-#include <list>
-
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-
-#include <objloc.h>
-
-#include "cn3d/structure_base.hpp"
-
-
-BEGIN_SCOPE(Cn3D)
-
-class Sequence;
-class Molecule;
-class MasterSlaveAlignment;
-class MoleculeIdentifier;
-
-class SequenceSet : public StructureBase
-{
-public:
-    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
-    SequenceSet(StructureBase *parent, SeqEntryList& seqEntries);
-
-    typedef std::list < const Sequence * > SequenceList;
-    SequenceList sequences;
-
-    bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
-};
-
-class Sequence : public StructureBase
-{
-public:
-    Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq);
-
-    // keep a reference to the original asn Bioseq
-    ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
-
-    std::string sequenceString, description;
-    const MoleculeIdentifier *identifier;
-
-    // corresponding biopolymer chain (if any)
-    const Molecule *molecule;
-    bool isProtein;
-
-    int Length(void) const { return static_cast<int>(sequenceString.size()); }
-    int GetOrSetMMDBLink(void) const;
-
-    // Seq-id stuff (C++ and C)
-    ncbi::objects::CSeq_id * CreateSeqId(void) const;
-    void FillOutSeqId(ncbi::objects::CSeq_id *sid) const;
-    void AddCSeqId(SeqIdPtr *id, bool addAllTypes) const;
-
-    // launch web browser with entrez page for this sequence
-    void LaunchWebBrowserWithInfo(void) const;
-
-    // highlight residues matching the given pattern; returns true if the pattern is valid,
-    // regardless of whether a match is found, or returns false on error
-    bool HighlightPattern(const std::string& pattern) const;
-};
-
-END_SCOPE(Cn3D)
-
-#endif // CN3D_SEQUENCE_SET__HPP

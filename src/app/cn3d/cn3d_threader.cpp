@@ -28,110 +28,6 @@
 * File Description:
 *       class to isolate and run the threader
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.34  2003/01/23 20:03:05  thiessen
-* add BLAST Neighbor algorithm
-*
-* Revision 1.33  2002/10/08 12:35:42  thiessen
-* use delete[] for arrays
-*
-* Revision 1.32  2002/08/15 22:13:14  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.31  2002/07/26 15:28:47  thiessen
-* add Alejandro's block alignment algorithm
-*
-* Revision 1.30  2002/07/12 13:24:10  thiessen
-* fixes for PSSM creation to agree with cddumper/RPSBLAST
-*
-* Revision 1.29  2002/05/26 21:58:46  thiessen
-* add CddDegapSeqAlign to PSSM generator
-*
-* Revision 1.28  2002/03/28 14:06:02  thiessen
-* preliminary BLAST/PSSM ; new CD startup style
-*
-* Revision 1.27  2002/03/19 18:47:57  thiessen
-* small bug fixes; remember PSSM weight
-*
-* Revision 1.26  2002/02/21 22:01:49  thiessen
-* remember alignment range on demotion
-*
-* Revision 1.25  2002/02/21 12:26:29  thiessen
-* fix row delete bug ; remember threader options
-*
-* Revision 1.24  2001/10/08 00:00:09  thiessen
-* estimate threader N random starts; edit CDD name
-*
-* Revision 1.23  2001/09/27 15:37:58  thiessen
-* decouple sequence import and BLAST
-*
-* Revision 1.22  2001/06/21 02:02:33  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.21  2001/06/02 17:22:45  thiessen
-* fixes for GCC
-*
-* Revision 1.20  2001/06/01 21:48:26  thiessen
-* add terminal cutoff to threading
-*
-* Revision 1.19  2001/05/31 18:47:07  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.18  2001/05/24 21:38:41  thiessen
-* fix threader options initial values
-*
-* Revision 1.17  2001/05/15 23:48:36  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.16  2001/05/15 14:57:55  thiessen
-* add cn3d_tools; bring up log window when threading starts
-*
-* Revision 1.15  2001/05/11 13:45:06  thiessen
-* set up data directory
-*
-* Revision 1.14  2001/05/11 02:10:42  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.13  2001/04/13 18:50:54  thiessen
-* fix for when threader returns fewer than requested results
-*
-* Revision 1.12  2001/04/12 18:54:39  thiessen
-* fix memory leak for PSSM-only threading
-*
-* Revision 1.11  2001/04/12 18:10:00  thiessen
-* add block freezing
-*
-* Revision 1.10  2001/04/05 22:55:35  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.9  2001/04/04 00:27:14  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.8  2001/03/30 14:43:41  thiessen
-* show threader scores in status line; misc UI tweaks
-*
-* Revision 1.7  2001/03/30 03:07:34  thiessen
-* add threader score calculation & sorting
-*
-* Revision 1.6  2001/03/29 15:35:55  thiessen
-* remove GetAtom warnings
-*
-* Revision 1.5  2001/03/28 23:02:16  thiessen
-* first working full threading
-*
-* Revision 1.4  2001/03/23 23:31:56  thiessen
-* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
-*
-* Revision 1.3  2001/03/22 00:33:16  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.2  2001/02/13 01:03:56  thiessen
-* backward-compatible domain ID's in output; add ability to delete rows
-*
-* Revision 1.1  2001/02/08 23:01:49  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
 * ===========================================================================
 */
 
@@ -189,7 +85,7 @@ ThreaderOptions globalThreaderOptions;
 // gives threader residue number for a character (-1 if non-standard aa)
 static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
 {
-    typedef std::map < char, int > Char2Int;
+    typedef map < char, int > Char2Int;
     static Char2Int charMap;
 
     if (charMap.size() == 0) {
@@ -203,7 +99,7 @@ static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
 
 const double Threader::SCALING_FACTOR = 1000000;
 
-const std::string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
+const string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
 Threader::Threader(void)
 {
@@ -261,7 +157,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
         NULL,
         karlinBlock
     );
-    TESTMSG("created Seq_Mtf (PSSM)");
+    TRACEMSG("created Seq_Mtf (PSSM)");
 
     SeqAlignSetFree(seqAlign);
 	return seqMtf;
@@ -389,7 +285,7 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
                 qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
             }
             if (qrySeq->sac.mn[0] < 0) qrySeq->sac.mn[0] = 0;
-            TESTMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
+            INFOMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
         }
         if (qrySeq->sac.mx[multipleABlocks->size() - 1] == -1) {
             if (pairwise->alignSlaveTo >= 0) {
@@ -401,7 +297,7 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
             if (qrySeq->sac.mx[multipleABlocks->size() - 1] >= qrySeq->n ||
                 qrySeq->sac.mx[multipleABlocks->size() - 1] < 0)
                 qrySeq->sac.mx[multipleABlocks->size() - 1] = qrySeq->n - 1;
-            TESTMSG("new C-terminal block constrained to query loc <= "
+            INFOMSG("new C-terminal block constrained to query loc <= "
                 << qrySeq->sac.mx[multipleABlocks->size() - 1] + 1);
         }
     }
@@ -456,7 +352,7 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     StrCat(Path, FileName);
     auto_ptr<CNcbiIfstream> InFile(new CNcbiIfstream(Path));
     if (!(*InFile)) {
-        ERR_POST(Error << "Threader::CreateRcxPtl() - can't open " << Path << " for reading");
+        ERRORMSG("Threader::CreateRcxPtl() - can't open " << Path << " for reading");
         return NULL;
     }
 
@@ -501,7 +397,7 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     return(pmf);
 
 error:
-    ERR_POST(Error << "Threader::CreateRcxPtl() - error parsing " << FileName);
+    ERRORMSG("Threader::CreateRcxPtl() - error parsing " << FileName);
     FreeRcxPtl(pmf);
     return NULL;
 }
@@ -724,7 +620,7 @@ static void GetContacts(const Threader::VirtualCoordinateList& coords,
     // loop i through whole chain, just to report all missing coords
     for (i=0; i<coords.size(); i++) {
         if (coords[i].type == Threader::MISSING_COORDINATE) {
-            ERR_POST(Warning << "Threader::CreateFldMtf() - unable to determine virtual coordinate for "
+            WARNINGMSG("Threader::CreateFldMtf() - unable to determine virtual coordinate for "
                 << ((i%2 == 0) ? "sidechain " : "peptide ") << (i/2));
             continue;
         }
@@ -862,7 +758,7 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     // fill out min. loop lengths
     GetMinimumLoopLengths(mol, atomSet, fldMtf);
 
-    TESTMSG("created Fld_Mtf for " << mol->identifier->pdbID << " chain '" << (char) mol->identifier->pdbChain << "'");
+    TRACEMSG("created Fld_Mtf for " << mol->identifier->pdbID << " chain '" << (char) mol->identifier->pdbChain << "'");
     contacts[mol] = fldMtf;
     return fldMtf;
 }
@@ -871,7 +767,7 @@ static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl,
     const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences, AlignmentManager *alnMgr)
 {
     if (corDef->sll.n != thdTbl->nsc || nResult >= thdTbl->n) {
-        ERR_POST(Error << "CreateAlignmentFromThdTbl() - inconsistent Thd_Tbl");
+        ERRORMSG("CreateAlignmentFromThdTbl() - inconsistent Thd_Tbl");
         return NULL;
     }
 
@@ -888,7 +784,7 @@ static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl,
             thdTbl->al[block][nResult] + thdTbl->co[block][nResult]);
         aBlock->width = thdTbl->no[block][nResult] + 1 + thdTbl->co[block][nResult];
         if (!newAlignment->AddAlignedBlockAtEnd(aBlock)) {
-            ERR_POST(Error << "CreateAlignmentFromThdTbl() - error adding block");
+            ERRORMSG("CreateAlignmentFromThdTbl() - error adding block");
             delete newAlignment;
             return NULL;
         }
@@ -896,7 +792,7 @@ static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl,
 
     // finish alignment
     if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors()) {
-        ERR_POST(Error << "CreateAlignmentFromThdTbl() - error finishing alignment");
+        ERRORMSG("CreateAlignmentFromThdTbl() - error finishing alignment");
         delete newAlignment;
         return NULL;
     }
@@ -908,11 +804,11 @@ static bool FreezeIsolatedBlocks(Cor_Def *corDef, const Cor_Def *masterCorDef, c
 {
     if (!corDef || !masterCorDef || !qrySeq ||
         corDef->sll.n != masterCorDef->sll.n || corDef->sll.n != qrySeq->sac.n) {
-        ERR_POST(Error << "FreezeIsolatedBlocks() - bad parameters");
+        ERRORMSG("FreezeIsolatedBlocks() - bad parameters");
         return false;
     }
 
-    TESTMSG("freezing blocks...");
+    TRACEMSG("freezing blocks...");
     for (int i=0; i<corDef->sll.n; i++) {
 
         // default: blocks allowed to grow
@@ -969,7 +865,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
     // create contact lists
     if (options.weightPSSM < 1.0 && (!masterMultiple->GetMaster()->molecule ||
             masterMultiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
-        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        ERRORMSG("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
         goto cleanup;
     }
     if (!(fldMtf = CreateFldMtf(masterMultiple->GetMaster()))) goto cleanup;
@@ -1001,7 +897,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
     for (p=originalAlignments->begin(); p!=pe; ) {
 
         if ((*p)->NRows() != 2 || (*p)->GetMaster() != masterMultiple->GetMaster()) {
-            ERR_POST(Error << "Threader::Realign() - bad pairwise alignment");
+            ERRORMSG("Threader::Realign() - bad pairwise alignment");
             continue;
         }
 
@@ -1030,13 +926,13 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
         thdTbl = NewThdTbl(options.nResultAlignments, corDef->sll.n);
 
         // actually run the threader (finally!)
-        TESTMSG("threading " << (*p)->GetSequenceOfRow(1)->identifier->ToString());
+        INFOMSG("threading " << (*p)->GetSequenceOfRow(1)->identifier->ToString());
         success = atd(fldMtf, corDef, qrySeq, rcxPtl, gibScd, thdTbl, seqMtf,
             trajectory, zscs, SCALING_FACTOR, options.weightPSSM);
 
         BlockMultipleAlignment *newAlignment;
         if (success) {
-            TESTMSG("threading succeeded");
+            TRACEMSG("threading succeeded");
 #ifdef DEBUG_THREADER
             pFile = fopen("Thd_Tbl.debug.txt", "w");
             PrintThdTbl(thdTbl, pFile);
@@ -1082,7 +978,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
 
         // threading failed - add old alignment to list so it doesn't get lost
         else {
-            TESTMSG("threading failed!");
+            TRACEMSG("threading failed!");
             newAlignment = (*p)->Clone();
             newAlignment->SetRowDouble(0, -1.0);
             newAlignment->SetRowDouble(1, -1.0);
@@ -1117,7 +1013,7 @@ cleanup:
 }
 
 static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBlockList *aBlocks,
-    int row, const std::vector < int >& residueNumbers, const Seq_Mtf *seqMtf)
+    int row, const vector < int >& residueNumbers, const Seq_Mtf *seqMtf)
 {
     double score = 0.0;
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks->end();
@@ -1137,7 +1033,7 @@ static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBl
 }
 
 static double CalculateContactScore(const BlockMultipleAlignment *multiple,
-    int row, const std::vector < int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
+    int row, const vector < int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
 {
     double score = 0.0;
     int i, seqIndex1, seqIndex2, resNum1, resNum2, dist;
@@ -1186,14 +1082,14 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     Rcx_Ptl *rcxPtl = NULL;
     Fld_Mtf *fldMtf = NULL;
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> aBlocks;
-    std::vector < int > residueNumbers;
+    vector < int > residueNumbers;
     bool retval = false;
     int row;
 
     // create contact lists
     if (weightPSSM < 1.0 && (!multiple->GetMaster()->molecule ||
             multiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
-        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        ERRORMSG("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
         goto cleanup;
     }
     if (weightPSSM < 1.0 && !(fldMtf = CreateFldMtf(multiple->GetMaster()))) goto cleanup;
@@ -1246,7 +1142,7 @@ int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
 
     // create contact lists
     if (!multiple->GetMaster()->molecule || multiple->GetMaster()->molecule->parentSet->isAlphaOnly) {
-        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        ERRORMSG("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
         return false;
     }
     if (!(fldMtf = CreateFldMtf(multiple->GetMaster()))) return false;
@@ -1272,7 +1168,7 @@ int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
 
             // violation found
             if (nextRange->from - thisRange->to - 1 < fldMtf->mll[nextMaster->from][thisMaster->to]) {
-                (*violations)[row].push_back(std::make_pair(thisRange->to, nextRange->from));
+                (*violations)[row].push_back(make_pair(thisRange->to, nextRange->from));
                 nViolations++;
             }
         }
@@ -1316,3 +1212,113 @@ int Threader::EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.35  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.34  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
+* Revision 1.33  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
+* Revision 1.32  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.31  2002/07/26 15:28:47  thiessen
+* add Alejandro's block alignment algorithm
+*
+* Revision 1.30  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
+* Revision 1.29  2002/05/26 21:58:46  thiessen
+* add CddDegapSeqAlign to PSSM generator
+*
+* Revision 1.28  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
+* Revision 1.27  2002/03/19 18:47:57  thiessen
+* small bug fixes; remember PSSM weight
+*
+* Revision 1.26  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
+* Revision 1.25  2002/02/21 12:26:29  thiessen
+* fix row delete bug ; remember threader options
+*
+* Revision 1.24  2001/10/08 00:00:09  thiessen
+* estimate threader N random starts; edit CDD name
+*
+* Revision 1.23  2001/09/27 15:37:58  thiessen
+* decouple sequence import and BLAST
+*
+* Revision 1.22  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.21  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
+* Revision 1.20  2001/06/01 21:48:26  thiessen
+* add terminal cutoff to threading
+*
+* Revision 1.19  2001/05/31 18:47:07  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.18  2001/05/24 21:38:41  thiessen
+* fix threader options initial values
+*
+* Revision 1.17  2001/05/15 23:48:36  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.16  2001/05/15 14:57:55  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
+* Revision 1.15  2001/05/11 13:45:06  thiessen
+* set up data directory
+*
+* Revision 1.14  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.13  2001/04/13 18:50:54  thiessen
+* fix for when threader returns fewer than requested results
+*
+* Revision 1.12  2001/04/12 18:54:39  thiessen
+* fix memory leak for PSSM-only threading
+*
+* Revision 1.11  2001/04/12 18:10:00  thiessen
+* add block freezing
+*
+* Revision 1.10  2001/04/05 22:55:35  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.9  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.8  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
+* Revision 1.7  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
+* Revision 1.6  2001/03/29 15:35:55  thiessen
+* remove GetAtom warnings
+*
+* Revision 1.5  2001/03/28 23:02:16  thiessen
+* first working full threading
+*
+* Revision 1.4  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
+* Revision 1.3  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.2  2001/02/13 01:03:56  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
+* Revision 1.1  2001/02/08 23:01:49  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+*/

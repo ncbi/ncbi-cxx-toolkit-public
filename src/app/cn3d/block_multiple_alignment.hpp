@@ -28,113 +28,6 @@
 * File Description:
 *      Classes to hold alignment data
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.35  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.34  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.33  2003/01/23 20:03:05  thiessen
-* add BLAST Neighbor algorithm
-*
-* Revision 1.32  2003/01/22 14:47:30  thiessen
-* cache PSSM in BlockMultipleAlignment
-*
-* Revision 1.31  2002/10/23 01:29:25  thiessen
-* fix block cache bug
-*
-* Revision 1.30  2002/07/26 15:28:44  thiessen
-* add Alejandro's block alignment algorithm
-*
-* Revision 1.29  2002/06/13 13:32:38  thiessen
-* add self-hit calculation
-*
-* Revision 1.28  2002/05/17 19:10:27  thiessen
-* preliminary range restriction for BLAST/PSSM
-*
-* Revision 1.27  2002/03/28 14:06:02  thiessen
-* preliminary BLAST/PSSM ; new CD startup style
-*
-* Revision 1.26  2002/02/21 22:01:49  thiessen
-* remember alignment range on demotion
-*
-* Revision 1.25  2002/02/19 14:59:38  thiessen
-* add CDD reject and purge sequence
-*
-* Revision 1.24  2002/02/05 18:53:24  thiessen
-* scroll to residue in sequence windows when selected in structure window
-*
-* Revision 1.23  2001/09/27 15:36:47  thiessen
-* decouple sequence import and BLAST
-*
-* Revision 1.22  2001/08/29 20:03:27  juran
-* Heed warnings via static_cast.
-*
-* Revision 1.21  2001/08/15 20:52:57  juran
-* Heed warnings.
-*
-* Revision 1.20  2001/07/19 19:12:46  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.19  2001/07/10 16:39:32  thiessen
-* change selection control keys; add CDD name/notes dialogs
-*
-* Revision 1.18  2001/06/21 02:01:06  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.17  2001/06/02 17:22:58  thiessen
-* fixes for GCC
-*
-* Revision 1.16  2001/06/01 13:35:39  thiessen
-* add aligned block number to status line
-*
-* Revision 1.15  2001/05/17 18:34:00  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.14  2001/05/11 02:10:04  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.13  2001/05/09 17:14:51  thiessen
-* add automatic block removal upon demotion
-*
-* Revision 1.12  2001/05/02 13:46:15  thiessen
-* major revision of stuff relating to saving of updates; allow stored null-alignments
-*
-* Revision 1.11  2001/04/05 22:54:50  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.10  2001/04/04 00:27:21  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.9  2001/03/30 03:07:08  thiessen
-* add threader score calculation & sorting
-*
-* Revision 1.8  2001/03/22 00:32:35  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.7  2001/03/09 15:48:42  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.6  2001/03/06 20:20:43  thiessen
-* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
-*
-* Revision 1.5  2001/02/13 01:03:03  thiessen
-* backward-compatible domain ID's in output; add ability to delete rows
-*
-* Revision 1.4  2001/02/02 20:17:42  thiessen
-* can read in CDD with multi-structure but no struct. alignments
-*
-* Revision 1.3  2001/01/26 19:30:37  thiessen
-* limit undo stack size ; fix memory leak
-*
-* Revision 1.2  2000/12/15 15:52:08  thiessen
-* show/hide system installed
-*
-* Revision 1.1  2000/11/30 15:49:06  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
 * ===========================================================================
 */
 
@@ -524,3 +417,116 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_BLOCK_MULTIPLE_ALIGNMENT__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.36  2003/02/03 19:20:01  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.35  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
+* Revision 1.34  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.33  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
+* Revision 1.32  2003/01/22 14:47:30  thiessen
+* cache PSSM in BlockMultipleAlignment
+*
+* Revision 1.31  2002/10/23 01:29:25  thiessen
+* fix block cache bug
+*
+* Revision 1.30  2002/07/26 15:28:44  thiessen
+* add Alejandro's block alignment algorithm
+*
+* Revision 1.29  2002/06/13 13:32:38  thiessen
+* add self-hit calculation
+*
+* Revision 1.28  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
+* Revision 1.27  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
+* Revision 1.26  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
+* Revision 1.25  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
+* Revision 1.24  2002/02/05 18:53:24  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
+* Revision 1.23  2001/09/27 15:36:47  thiessen
+* decouple sequence import and BLAST
+*
+* Revision 1.22  2001/08/29 20:03:27  juran
+* Heed warnings via static_cast.
+*
+* Revision 1.21  2001/08/15 20:52:57  juran
+* Heed warnings.
+*
+* Revision 1.20  2001/07/19 19:12:46  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
+* Revision 1.19  2001/07/10 16:39:32  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
+* Revision 1.18  2001/06/21 02:01:06  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.17  2001/06/02 17:22:58  thiessen
+* fixes for GCC
+*
+* Revision 1.16  2001/06/01 13:35:39  thiessen
+* add aligned block number to status line
+*
+* Revision 1.15  2001/05/17 18:34:00  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.14  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.13  2001/05/09 17:14:51  thiessen
+* add automatic block removal upon demotion
+*
+* Revision 1.12  2001/05/02 13:46:15  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
+* Revision 1.11  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.10  2001/04/04 00:27:21  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.9  2001/03/30 03:07:08  thiessen
+* add threader score calculation & sorting
+*
+* Revision 1.8  2001/03/22 00:32:35  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.7  2001/03/09 15:48:42  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.6  2001/03/06 20:20:43  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
+* Revision 1.5  2001/02/13 01:03:03  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
+* Revision 1.4  2001/02/02 20:17:42  thiessen
+* can read in CDD with multi-structure but no struct. alignments
+*
+* Revision 1.3  2001/01/26 19:30:37  thiessen
+* limit undo stack size ; fix memory leak
+*
+* Revision 1.2  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
+* Revision 1.1  2000/11/30 15:49:06  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+*/

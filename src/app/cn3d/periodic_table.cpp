@@ -28,14 +28,6 @@
 * File Description:
 *      Classes to information about atomic elements
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.1  2000/07/12 23:27:50  thiessen
-* now draws basic CPK model
-*
 * ===========================================================================
 */
 
@@ -185,3 +177,17 @@ PeriodicTableClass::~PeriodicTableClass(void)
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.3  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.2  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.1  2000/07/12 23:27:50  thiessen
+* now draws basic CPK model
+*
+*/

@@ -28,53 +28,6 @@
 * File Description:
 *      Classes to hold sets of atomic data
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.15  2001/12/12 14:04:12  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.14  2001/08/09 19:07:13  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.13  2001/06/02 17:22:45  thiessen
-* fixes for GCC
-*
-* Revision 1.12  2001/05/31 18:47:06  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.11  2001/05/24 19:06:19  thiessen
-* fix to compile on SGI
-*
-* Revision 1.10  2000/08/25 14:22:00  thiessen
-* minor tweaks
-*
-* Revision 1.9  2000/08/03 15:12:22  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.8  2000/07/27 13:30:51  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.7  2000/07/18 02:41:32  thiessen
-* fix bug in virtual bonds and altConfs
-*
-* Revision 1.6  2000/07/16 23:19:10  thiessen
-* redo of drawing system
-*
-* Revision 1.5  2000/07/12 23:27:48  thiessen
-* now draws basic CPK model
-*
-* Revision 1.4  2000/07/11 13:45:28  thiessen
-* add modules to parse chemical graph; many improvements
-*
-* Revision 1.3  2000/07/01 15:43:50  thiessen
-* major improvements to StructureBase functionality
-*
-* Revision 1.2  2000/06/29 19:17:47  thiessen
-* improved atom map
-*
-* Revision 1.1  2000/06/29 14:35:05  thiessen
-* new atom_set files
-*
 * ===========================================================================
 */
 
@@ -106,7 +59,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     StructureBase(parent), activeEnsemble(NULL)
 {
     int nAtoms = coords.GetNumber_of_points();
-    TESTMSG("model has " << nAtoms << " atomic coords");
+    TRACEMSG("model has " << nAtoms << " atomic coords");
 
     bool haveTemp = coords.IsSetTemperature_factors(),
          haveOccup = coords.IsSetOccupancies(),
@@ -131,7 +84,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
                coords.GetTemperature_factors().GetAnisotropic().GetB_33().size()!=nAtoms)))) ||
         (haveOccup && coords.GetOccupancies().GetO().size()!=nAtoms) ||
         (haveAlt && coords.GetAlternate_conf_ids().Get().size()!=nAtoms))
-        ERR_POST(Fatal << "AtomSet: confused by list length mismatch");
+        ERRORMSG("AtomSet: confused by list length mismatch");
 
     // atom-pntr iterators
     CAtom_pntrs::TMolecule_ids::const_iterator
@@ -231,12 +184,12 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
             AtomAltList::const_iterator i_atom, e=atomMap[key].end();
             for (i_atom=atomMap[key].begin(); i_atom!=e; i_atom++) {
                 if ((*i_atom)->altConfID == atom->altConfID)
-                    ERR_POST(Fatal << "confused by multiple atoms of same pntr+altConfID");
+                    ERRORMSG("confused by multiple atoms of same pntr+altConfID");
             }
         }
         atomMap[key].push_back(atom);
 
-        if (i==0) TESTMSG("first atom: x " << atom->site.x <<
+        if (i==0) TRACEMSG("first atom: x " << atom->site.x <<
                 ", y " << atom->site.y <<
                 ", z " << atom->site.z <<
                 ", occup " << atom->occupancy <<
@@ -259,7 +212,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
                 (*ensembleStr) += (i_altIDs->GetObject().Get())[0];
             }
             ensembles.push_back(ensembleStr);
-            TESTMSG("alt conf ensemble '" << (*ensembleStr) << "'");
+            TRACEMSG("alt conf ensemble '" << (*ensembleStr) << "'");
         }
     }
 }
@@ -268,14 +221,14 @@ AtomSet::~AtomSet(void)
 {
     EnsembleList::iterator i, e=ensembles.end();
     for (i=ensembles.begin(); i!=e; i++)
-        delete const_cast<std::string *>(*i);
+        delete const_cast<string *>(*i);
 }
 
 const double AtomCoord::NO_TEMPERATURE = -1.0;
 const double AtomCoord::NO_OCCUPANCY = -1.0;
 const char AtomCoord::NO_ALTCONFID = '-';
 
-bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
+bool AtomSet::SetActiveEnsemble(const string *ensemble)
 {
     // if not NULL, make sure it's one of this AtomSet's ensembles
     if (ensemble) {
@@ -284,7 +237,7 @@ bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
             if (*e == ensemble) break;
         }
         if (e == ee) {
-            ERR_POST("AtomSet::SetActiveEnsemble received invalid ensemble");
+            ERRORMSG("AtomSet::SetActiveEnsemble received invalid ensemble");
             return false;
         }
     }
@@ -298,7 +251,7 @@ const AtomCoord* AtomSet::GetAtom(const AtomPntr& ap,
     AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(ap));
     if (atomConfs == atomMap.end()) {
         if (!suppressWarning)
-            ERR_POST(Warning << "can't find atom(s) from pointer (" << ap.mID << ','
+            WARNINGMSG("can't find atom(s) from pointer (" << ap.mID << ','
                              << ap.rID << ',' << ap.aID << ')');
         return NULL;
     }
@@ -330,3 +283,56 @@ AtomCoord::AtomCoord(StructureBase *parent) :
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.16  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.15  2001/12/12 14:04:12  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.14  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.13  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
+* Revision 1.12  2001/05/31 18:47:06  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.11  2001/05/24 19:06:19  thiessen
+* fix to compile on SGI
+*
+* Revision 1.10  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
+* Revision 1.9  2000/08/03 15:12:22  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.8  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.7  2000/07/18 02:41:32  thiessen
+* fix bug in virtual bonds and altConfs
+*
+* Revision 1.6  2000/07/16 23:19:10  thiessen
+* redo of drawing system
+*
+* Revision 1.5  2000/07/12 23:27:48  thiessen
+* now draws basic CPK model
+*
+* Revision 1.4  2000/07/11 13:45:28  thiessen
+* add modules to parse chemical graph; many improvements
+*
+* Revision 1.3  2000/07/01 15:43:50  thiessen
+* major improvements to StructureBase functionality
+*
+* Revision 1.2  2000/06/29 19:17:47  thiessen
+* improved atom map
+*
+* Revision 1.1  2000/06/29 14:35:05  thiessen
+* new atom_set files
+*
+*/

@@ -28,50 +28,6 @@
 * File Description:
 *      Classes to hold sets of alignments
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.14  2002/11/06 00:18:10  thiessen
-* fixes for new CRef/const rules in objects
-*
-* Revision 1.13  2001/11/27 16:26:06  thiessen
-* major update to data management system
-*
-* Revision 1.12  2001/05/02 13:46:14  thiessen
-* major revision of stuff relating to saving of updates; allow stored null-alignments
-*
-* Revision 1.11  2001/04/17 20:15:23  thiessen
-* load 'pending' Cdd alignments into update window
-*
-* Revision 1.10  2000/12/29 19:23:49  thiessen
-* save row order
-*
-* Revision 1.9  2000/12/26 16:47:39  thiessen
-* preserve block boundaries
-*
-* Revision 1.8  2000/11/12 04:02:21  thiessen
-* working file save including alignment edits
-*
-* Revision 1.7  2000/11/11 21:12:07  thiessen
-* create Seq-annot from BlockMultipleAlignment
-*
-* Revision 1.6  2000/11/02 16:48:22  thiessen
-* working editor undo; dynamic slave transforms
-*
-* Revision 1.5  2000/10/04 17:40:44  thiessen
-* rearrange STL #includes
-*
-* Revision 1.4  2000/09/15 19:24:33  thiessen
-* allow repeated structures w/o different local id
-*
-* Revision 1.3  2000/08/30 19:49:03  thiessen
-* working sequence window
-*
-* Revision 1.2  2000/08/29 04:34:15  thiessen
-* working alignment manager, IBM
-*
-* Revision 1.1  2000/08/28 18:52:16  thiessen
-* start unpacking alignments
-*
 * ===========================================================================
 */
 
@@ -145,3 +101,53 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_ALIGNMENT_SET__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.15  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.14  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
+* Revision 1.13  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
+* Revision 1.12  2001/05/02 13:46:14  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
+* Revision 1.11  2001/04/17 20:15:23  thiessen
+* load 'pending' Cdd alignments into update window
+*
+* Revision 1.10  2000/12/29 19:23:49  thiessen
+* save row order
+*
+* Revision 1.9  2000/12/26 16:47:39  thiessen
+* preserve block boundaries
+*
+* Revision 1.8  2000/11/12 04:02:21  thiessen
+* working file save including alignment edits
+*
+* Revision 1.7  2000/11/11 21:12:07  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
+* Revision 1.6  2000/11/02 16:48:22  thiessen
+* working editor undo; dynamic slave transforms
+*
+* Revision 1.5  2000/10/04 17:40:44  thiessen
+* rearrange STL #includes
+*
+* Revision 1.4  2000/09/15 19:24:33  thiessen
+* allow repeated structures w/o different local id
+*
+* Revision 1.3  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
+* Revision 1.2  2000/08/29 04:34:15  thiessen
+* working alignment manager, IBM
+*
+* Revision 1.1  2000/08/28 18:52:16  thiessen
+* start unpacking alignments
+*
+*/

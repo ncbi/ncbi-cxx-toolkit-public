@@ -28,83 +28,6 @@
 * File Description:
 *      implementation of GUI part of main sequence/alignment viewer
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.25  2002/12/06 17:07:15  thiessen
-* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
-*
-* Revision 1.24  2002/12/02 13:37:09  thiessen
-* add seqrow format export
-*
-* Revision 1.23  2002/10/07 18:51:53  thiessen
-* add abbreviated taxonomy tree
-*
-* Revision 1.22  2002/09/09 22:51:19  thiessen
-* add basic taxonomy tree viewer
-*
-* Revision 1.21  2002/09/09 13:38:23  thiessen
-* separate save and save-as
-*
-* Revision 1.20  2002/09/05 18:38:58  thiessen
-* add sort by highlights
-*
-* Revision 1.19  2002/09/03 13:15:58  thiessen
-* add A2M export
-*
-* Revision 1.18  2002/06/13 14:54:07  thiessen
-* add sort by self-hit
-*
-* Revision 1.17  2002/06/13 13:32:39  thiessen
-* add self-hit calculation
-*
-* Revision 1.16  2002/06/05 14:28:40  thiessen
-* reorganize handling of window titles
-*
-* Revision 1.15  2002/05/17 19:10:27  thiessen
-* preliminary range restriction for BLAST/PSSM
-*
-* Revision 1.14  2002/04/22 14:27:29  thiessen
-* add alignment export
-*
-* Revision 1.13  2001/12/06 23:13:46  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.12  2001/06/04 14:33:55  thiessen
-* add proximity sort; highlight sequence on browser launch
-*
-* Revision 1.11  2001/06/01 14:04:54  thiessen
-* add float PDB sort
-*
-* Revision 1.10  2001/05/23 17:43:28  thiessen
-* change dialog implementation to wxDesigner; interface changes
-*
-* Revision 1.9  2001/05/11 02:10:04  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.8  2001/05/09 17:14:52  thiessen
-* add automatic block removal upon demotion
-*
-* Revision 1.7  2001/04/05 22:54:51  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.6  2001/03/30 14:43:11  thiessen
-* show threader scores in status line; misc UI tweaks
-*
-* Revision 1.5  2001/03/30 03:07:09  thiessen
-* add threader score calculation & sorting
-*
-* Revision 1.4  2001/03/19 15:47:38  thiessen
-* add row sorting by identifier
-*
-* Revision 1.3  2001/03/13 01:24:16  thiessen
-* working undo system for >1 alignment (e.g., update window)
-*
-* Revision 1.2  2001/03/09 15:48:43  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.1  2001/03/01 20:15:29  thiessen
-* major rearrangement of sequence viewer code into base and derived classes
-*
 * ===========================================================================
 */
 
@@ -241,3 +164,86 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_SEQUENCE_VIEWER_WINDOW__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.26  2003/02/03 19:20:06  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.25  2002/12/06 17:07:15  thiessen
+* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
+*
+* Revision 1.24  2002/12/02 13:37:09  thiessen
+* add seqrow format export
+*
+* Revision 1.23  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
+* Revision 1.22  2002/09/09 22:51:19  thiessen
+* add basic taxonomy tree viewer
+*
+* Revision 1.21  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
+* Revision 1.20  2002/09/05 18:38:58  thiessen
+* add sort by highlights
+*
+* Revision 1.19  2002/09/03 13:15:58  thiessen
+* add A2M export
+*
+* Revision 1.18  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
+* Revision 1.17  2002/06/13 13:32:39  thiessen
+* add self-hit calculation
+*
+* Revision 1.16  2002/06/05 14:28:40  thiessen
+* reorganize handling of window titles
+*
+* Revision 1.15  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
+* Revision 1.14  2002/04/22 14:27:29  thiessen
+* add alignment export
+*
+* Revision 1.13  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.12  2001/06/04 14:33:55  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
+* Revision 1.11  2001/06/01 14:04:54  thiessen
+* add float PDB sort
+*
+* Revision 1.10  2001/05/23 17:43:28  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
+* Revision 1.9  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.8  2001/05/09 17:14:52  thiessen
+* add automatic block removal upon demotion
+*
+* Revision 1.7  2001/04/05 22:54:51  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.6  2001/03/30 14:43:11  thiessen
+* show threader scores in status line; misc UI tweaks
+*
+* Revision 1.5  2001/03/30 03:07:09  thiessen
+* add threader score calculation & sorting
+*
+* Revision 1.4  2001/03/19 15:47:38  thiessen
+* add row sorting by identifier
+*
+* Revision 1.3  2001/03/13 01:24:16  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
+* Revision 1.2  2001/03/09 15:48:43  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.1  2001/03/01 20:15:29  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
+*/

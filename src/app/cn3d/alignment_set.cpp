@@ -28,8 +28,250 @@
 * File Description:
 *      Classes to hold sets of alignments
 *
+* ===========================================================================
+*/
+
+#include <corelib/ncbistl.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+
+#include <map>
+#include <memory>
+
+#include "cn3d/alignment_set.hpp"
+#include "cn3d/sequence_set.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+
+BEGIN_SCOPE(Cn3D)
+
+typedef list < const CSeq_align * > SeqAlignList;
+
+AlignmentSet::AlignmentSet(StructureBase *parent, const Sequence *masterSequence,
+    const SeqAnnotList& seqAnnots) :
+    StructureBase(parent), master(masterSequence), newAsnAlignmentData(NULL)
+{
+    if (!master || !parentSet->sequenceSet) {
+        ERRORMSG("AlignmentSet::AlignmentSet() - need sequenceSet and master before parsing alignments");
+        return;
+    }
+
+    // assume the data manager has collapsed all valid seqaligns into a single seqannot
+    CSeq_annot::C_Data::TAlign::const_iterator
+        a, ae = seqAnnots.front()->GetData().GetAlign().end();
+    for (a=seqAnnots.front()->GetData().GetAlign().begin(); a!=ae; a++)
+        alignments.push_back(new MasterSlaveAlignment(this, master, **a));
+    TRACEMSG("number of alignments: " << alignments.size());
+}
+
+AlignmentSet::~AlignmentSet(void)
+{
+    if (newAsnAlignmentData) delete newAsnAlignmentData;
+}
+
+AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
+    const BlockMultipleAlignment *multiple, const vector < int >& rowOrder)
+{
+    // sanity check on the row order map
+    map < int, int > rowCheck;
+    for (int i=0; i<rowOrder.size(); i++) rowCheck[rowOrder[i]] = i;
+    if (rowOrder.size() != multiple->NRows() || rowCheck.size() != multiple->NRows() || rowOrder[0] != 0) {
+        ERRORMSG("AlignmentSet::CreateFromMultiple() - bad row order vector");
+        return NULL;
+    }
+
+    // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
+    auto_ptr<SeqAnnotList> newAsnAlignmentData(new SeqAnnotList(1));
+    CSeq_annot *seqAnnot = new CSeq_annot();
+    newAsnAlignmentData->back().Reset(seqAnnot);
+
+    CSeq_annot::C_Data::TAlign& seqAligns = seqAnnot->SetData().SetAlign();
+    seqAligns.resize(multiple->NRows() - 1);
+    CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
+
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
+
+    // create Seq-aligns
+    int newRow;
+    for (int row=1; row<multiple->NRows(); row++, sa++) {
+        newRow = rowOrder[row];
+        CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), newRow);
+        sa->Reset(seqAlign);
+    }
+
+    auto_ptr<AlignmentSet> newAlignmentSet;
+    try {
+        newAlignmentSet.reset(new AlignmentSet(parent, multiple->GetMaster(), *newAsnAlignmentData));
+    } catch (exception& e) {
+        ERRORMSG(
+            "AlignmentSet::CreateFromMultiple() - failed to create AlignmentSet from new asn object; "
+            << "exception: " << e.what());
+        return NULL;
+    }
+
+    newAlignmentSet->newAsnAlignmentData = newAsnAlignmentData.release();
+    return newAlignmentSet.release();
+}
+
+
+///// MasterSlaveAlignment methods /////
+
+MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
+    const ncbi::objects::CSeq_align& seqAlign) :
+    StructureBase(parent), master(masterSequence), slave(NULL)
+{
+    // resize alignment and block vector
+    masterToSlave.resize(master->Length(), -1);
+    blockStructure.resize(master->Length(), -1);
+
+    // find slave sequence for this alignment, and order (master or slave first)
+    const CSeq_id& frontSeqId = seqAlign.GetSegs().IsDendiag() ?
+        seqAlign.GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+        seqAlign.GetSegs().GetDenseg().GetIds().front().GetObject();
+    const CSeq_id& backSeqId = seqAlign.GetSegs().IsDendiag() ?
+        seqAlign.GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
+        seqAlign.GetSegs().GetDenseg().GetIds().back().GetObject();
+
+    bool masterFirst = true;
+    SequenceSet::SequenceList::const_iterator
+        s, se = master->parentSet->sequenceSet->sequences.end();
+    for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
+        if (master->identifier->MatchesSeqId(frontSeqId) &&
+            (*s)->identifier->MatchesSeqId(backSeqId)) {
+            break;
+        } else if ((*s)->identifier->MatchesSeqId(frontSeqId) &&
+                   master->identifier->MatchesSeqId(backSeqId)) {
+            masterFirst = false;
+            break;
+        }
+    }
+    if (s == se) {
+        ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - couldn't find matching sequences");
+        return;
+    } else {
+        slave = *s;
+    }
+
+    int i, masterRes, slaveRes, blockNum = 0;
+
+    // unpack dendiag alignment
+    if (seqAlign.GetSegs().IsDendiag()) {
+
+        CSeq_align::C_Segs::TDendiag::const_iterator d , de = seqAlign.GetSegs().GetDendiag().end();
+        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++, blockNum++) {
+            const CDense_diag& block = d->GetObject();
+
+            if (!block.IsSetDim() || block.GetDim() != 2 ||
+                block.GetIds().size() != 2 ||
+                block.GetStarts().size() != 2) {
+                ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                    "incorrect dendiag block dimensions");
+                return;
+            }
+
+            // make sure identities of master and slave sequences match in each block
+            if ((masterFirst &&
+                    (!master->identifier->MatchesSeqId(block.GetIds().front().GetObject()) ||
+                     !slave->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
+                (!masterFirst &&
+                    (!master->identifier->MatchesSeqId(block.GetIds().back().GetObject()) ||
+                     !slave->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
+                ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - "
+                    "mismatched Seq-id in dendiag block");
+                return;
+            }
+
+            // finally, actually unpack the data into the alignment vector
+            for (i=0; i<block.GetLen(); i++) {
+                if (masterFirst) {
+                    masterRes = block.GetStarts().front() + i;
+                    slaveRes = block.GetStarts().back() + i;
+                } else {
+                    masterRes = block.GetStarts().back() + i;
+                    slaveRes = block.GetStarts().front() + i;
+                }
+                if (masterRes >= master->Length() || slaveRes >= slave->Length()) {
+                    ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - "
+                        "seqloc in dendiag block > length of sequence!");
+                    return;
+                }
+                masterToSlave[masterRes] = slaveRes;
+                blockStructure[masterRes] = blockNum;
+            }
+        }
+    }
+
+    // unpack denseg alignment
+    else if (seqAlign.GetSegs().IsDenseg()) {
+
+        const CDense_seg& block = seqAlign.GetSegs().GetDenseg();
+
+        if (!block.IsSetDim() && block.GetDim() != 2 ||
+            block.GetIds().size() != 2 ||
+            block.GetStarts().size() != 2 * block.GetNumseg() ||
+            block.GetLens().size() != block.GetNumseg()) {
+            ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                "incorrect denseg block dimension");
+            return;
+        }
+
+        // make sure identities of master and slave sequences match in each block
+        if ((masterFirst &&
+                (!master->identifier->MatchesSeqId(block.GetIds().front().GetObject()) ||
+                 !slave->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
+            (!masterFirst &&
+                (!master->identifier->MatchesSeqId(block.GetIds().back().GetObject()) ||
+                 !slave->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
+            ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                "mismatched Seq-id in denseg block");
+            return;
+        }
+
+        // finally, actually unpack the data into the alignment vector
+        CDense_seg::TStarts::const_iterator starts = block.GetStarts().begin();
+        CDense_seg::TLens::const_iterator lens, le = block.GetLens().end();
+        for (lens=block.GetLens().begin(); lens!=le; lens++) {
+            if (masterFirst) {
+                masterRes = *(starts++);
+                slaveRes = *(starts++);
+            } else {
+                slaveRes = *(starts++);
+                masterRes = *(starts++);
+            }
+            if (masterRes != -1 && slaveRes != -1) { // skip gaps
+                if ((masterRes + *lens - 1) >= master->Length() ||
+                    (slaveRes + *lens - 1) >= slave->Length()) {
+                    ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
+                        "seqloc in denseg block > length of sequence!");
+                    return;
+                }
+                for (i=0; i<*lens; i++) {
+                    masterToSlave[masterRes + i] = slaveRes + i;
+                    blockStructure[masterRes + i] = blockNum;
+                }
+                blockNum++; // a "block" of a denseg is an aligned (non-gap) segment
+            }
+        }
+    }
+
+    //TESTMSG("got alignment for slave gi " << slave->identifier->gi);
+}
+
+END_SCOPE(Cn3D)
+
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.24  2002/07/01 15:30:20  thiessen
 * fix for container type switch in Dense-seg
 *
@@ -102,241 +344,4 @@
 * Revision 1.1  2000/08/28 18:52:41  thiessen
 * start unpacking alignments
 *
-* ===========================================================================
 */
-
-#include <corelib/ncbistl.hpp>
-#include <objects/seqalign/Dense_diag.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-
-#include <map>
-#include <memory>
-
-#include "cn3d/alignment_set.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
-
-BEGIN_SCOPE(Cn3D)
-
-typedef std::list < const CSeq_align * > SeqAlignList;
-
-AlignmentSet::AlignmentSet(StructureBase *parent, const Sequence *masterSequence,
-    const SeqAnnotList& seqAnnots) :
-    StructureBase(parent), master(masterSequence), newAsnAlignmentData(NULL)
-{
-    if (!master || !parentSet->sequenceSet) {
-        ERR_POST(Error <<
-            "AlignmentSet::AlignmentSet() - need sequenceSet and master before parsing alignments");
-        return;
-    }
-
-    // assume the data manager has collapsed all valid seqaligns into a single seqannot
-    CSeq_annot::C_Data::TAlign::const_iterator
-        a, ae = seqAnnots.front()->GetData().GetAlign().end();
-    for (a=seqAnnots.front()->GetData().GetAlign().begin(); a!=ae; a++)
-        alignments.push_back(new MasterSlaveAlignment(this, master, **a));
-    TESTMSG("number of alignments: " << alignments.size());
-}
-
-AlignmentSet::~AlignmentSet(void)
-{
-    if (newAsnAlignmentData) delete newAsnAlignmentData;
-}
-
-AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
-    const BlockMultipleAlignment *multiple, const std::vector < int >& rowOrder)
-{
-    // sanity check on the row order map
-    std::map < int, int > rowCheck;
-    for (int i=0; i<rowOrder.size(); i++) rowCheck[rowOrder[i]] = i;
-    if (rowOrder.size() != multiple->NRows() || rowCheck.size() != multiple->NRows() || rowOrder[0] != 0) {
-        ERR_POST(Error << "AlignmentSet::CreateFromMultiple() - bad row order vector");
-        return NULL;
-    }
-
-    // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
-    auto_ptr<SeqAnnotList> newAsnAlignmentData(new SeqAnnotList(1));
-    CSeq_annot *seqAnnot = new CSeq_annot();
-    newAsnAlignmentData->back().Reset(seqAnnot);
-
-    CSeq_annot::C_Data::TAlign& seqAligns = seqAnnot->SetData().SetAlign();
-    seqAligns.resize(multiple->NRows() - 1);
-    CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
-
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
-
-    // create Seq-aligns
-    int newRow;
-    for (int row=1; row<multiple->NRows(); row++, sa++) {
-        newRow = rowOrder[row];
-        CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks.get(), newRow);
-        sa->Reset(seqAlign);
-    }
-
-    auto_ptr<AlignmentSet> newAlignmentSet;
-    try {
-        newAlignmentSet.reset(new AlignmentSet(parent, multiple->GetMaster(), *newAsnAlignmentData));
-    } catch (exception& e) {
-        ERR_POST(Error
-            << "AlignmentSet::CreateFromMultiple() - failed to create AlignmentSet from new asn object; "
-            << "exception: " << e.what());
-        return NULL;
-    }
-
-    newAlignmentSet->newAsnAlignmentData = newAsnAlignmentData.release();
-    return newAlignmentSet.release();
-}
-
-
-///// MasterSlaveAlignment methods /////
-
-MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
-    const ncbi::objects::CSeq_align& seqAlign) :
-    StructureBase(parent), master(masterSequence), slave(NULL)
-{
-    // resize alignment and block vector
-    masterToSlave.resize(master->Length(), -1);
-    blockStructure.resize(master->Length(), -1);
-
-    // find slave sequence for this alignment, and order (master or slave first)
-    const CSeq_id& frontSeqId = seqAlign.GetSegs().IsDendiag() ?
-        seqAlign.GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
-        seqAlign.GetSegs().GetDenseg().GetIds().front().GetObject();
-    const CSeq_id& backSeqId = seqAlign.GetSegs().IsDendiag() ?
-        seqAlign.GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
-        seqAlign.GetSegs().GetDenseg().GetIds().back().GetObject();
-
-    bool masterFirst = true;
-    SequenceSet::SequenceList::const_iterator
-        s, se = master->parentSet->sequenceSet->sequences.end();
-    for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
-        if (master->identifier->MatchesSeqId(frontSeqId) &&
-            (*s)->identifier->MatchesSeqId(backSeqId)) {
-            break;
-        } else if ((*s)->identifier->MatchesSeqId(frontSeqId) &&
-                   master->identifier->MatchesSeqId(backSeqId)) {
-            masterFirst = false;
-            break;
-        }
-    }
-    if (s == se) {
-        ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - couldn't find matching sequences");
-        return;
-    } else {
-        slave = *s;
-    }
-
-    int i, masterRes, slaveRes, blockNum = 0;
-
-    // unpack dendiag alignment
-    if (seqAlign.GetSegs().IsDendiag()) {
-
-        CSeq_align::C_Segs::TDendiag::const_iterator d , de = seqAlign.GetSegs().GetDendiag().end();
-        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++, blockNum++) {
-            const CDense_diag& block = d->GetObject();
-
-            if (!block.IsSetDim() || block.GetDim() != 2 ||
-                block.GetIds().size() != 2 ||
-                block.GetStarts().size() != 2) {
-                ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                    "incorrect dendiag block dimensions");
-                return;
-            }
-
-            // make sure identities of master and slave sequences match in each block
-            if ((masterFirst &&
-                    (!master->identifier->MatchesSeqId(block.GetIds().front().GetObject()) ||
-                     !slave->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
-                (!masterFirst &&
-                    (!master->identifier->MatchesSeqId(block.GetIds().back().GetObject()) ||
-                     !slave->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
-                ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - "
-                    "mismatched Seq-id in dendiag block");
-                return;
-            }
-
-            // finally, actually unpack the data into the alignment vector
-            for (i=0; i<block.GetLen(); i++) {
-                if (masterFirst) {
-                    masterRes = block.GetStarts().front() + i;
-                    slaveRes = block.GetStarts().back() + i;
-                } else {
-                    masterRes = block.GetStarts().back() + i;
-                    slaveRes = block.GetStarts().front() + i;
-                }
-                if (masterRes >= master->Length() || slaveRes >= slave->Length()) {
-                    ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - "
-                        "seqloc in dendiag block > length of sequence!");
-                    return;
-                }
-                masterToSlave[masterRes] = slaveRes;
-                blockStructure[masterRes] = blockNum;
-            }
-        }
-    }
-
-    // unpack denseg alignment
-    else if (seqAlign.GetSegs().IsDenseg()) {
-
-        const CDense_seg& block = seqAlign.GetSegs().GetDenseg();
-
-        if (!block.IsSetDim() && block.GetDim() != 2 ||
-            block.GetIds().size() != 2 ||
-            block.GetStarts().size() != 2 * block.GetNumseg() ||
-            block.GetLens().size() != block.GetNumseg()) {
-            ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                "incorrect denseg block dimension");
-            return;
-        }
-
-        // make sure identities of master and slave sequences match in each block
-        if ((masterFirst &&
-                (!master->identifier->MatchesSeqId(block.GetIds().front().GetObject()) ||
-                 !slave->identifier->MatchesSeqId(block.GetIds().back().GetObject()))) ||
-            (!masterFirst &&
-                (!master->identifier->MatchesSeqId(block.GetIds().back().GetObject()) ||
-                 !slave->identifier->MatchesSeqId(block.GetIds().front().GetObject())))) {
-            ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                "mismatched Seq-id in denseg block");
-            return;
-        }
-
-        // finally, actually unpack the data into the alignment vector
-        CDense_seg::TStarts::const_iterator starts = block.GetStarts().begin();
-        CDense_seg::TLens::const_iterator lens, le = block.GetLens().end();
-        for (lens=block.GetLens().begin(); lens!=le; lens++) {
-            if (masterFirst) {
-                masterRes = *(starts++);
-                slaveRes = *(starts++);
-            } else {
-                slaveRes = *(starts++);
-                masterRes = *(starts++);
-            }
-            if (masterRes != -1 && slaveRes != -1) { // skip gaps
-                if ((masterRes + *lens - 1) >= master->Length() ||
-                    (slaveRes + *lens - 1) >= slave->Length()) {
-                    ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
-                        "seqloc in denseg block > length of sequence!");
-                    return;
-                }
-                for (i=0; i<*lens; i++) {
-                    masterToSlave[masterRes + i] = slaveRes + i;
-                    blockStructure[masterRes + i] = blockNum;
-                }
-                blockNum++; // a "block" of a denseg is an aligned (non-gap) segment
-            }
-        }
-    }
-
-    //TESTMSG("got alignment for slave gi " << slave->identifier->gi);
-}
-
-END_SCOPE(Cn3D)
-

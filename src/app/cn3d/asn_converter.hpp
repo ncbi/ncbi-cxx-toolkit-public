@@ -28,32 +28,6 @@
 * File Description:
 *      templates for converting ASN data of any type from/to a file
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2002/10/08 12:35:42  thiessen
-* use delete[] for arrays
-*
-* Revision 1.7  2002/06/12 18:45:41  thiessen
-* more linux/gcc fixes
-*
-* Revision 1.6  2002/06/11 16:27:16  thiessen
-* use ncbi::auto_ptr
-*
-* Revision 1.5  2002/06/11 13:18:47  thiessen
-* fixes for gcc 3
-*
-* Revision 1.4  2002/01/24 18:12:33  thiessen
-* fix another leak
-*
-* Revision 1.3  2002/01/23 21:08:37  thiessen
-* fix memory leak
-*
-* Revision 1.2  2001/09/19 22:55:43  thiessen
-* add preliminary net import and BLAST
-*
-* Revision 1.1  2001/09/18 03:09:38  thiessen
-* add preliminary sequence import pipeline
-*
 * ===========================================================================
 */
 
@@ -190,3 +164,35 @@ END_SCOPE(Cn3D)
 
 #endif // CN3D_ASN_CONVERTER__HPP
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.9  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.8  2002/10/08 12:35:42  thiessen
+* use delete[] for arrays
+*
+* Revision 1.7  2002/06/12 18:45:41  thiessen
+* more linux/gcc fixes
+*
+* Revision 1.6  2002/06/11 16:27:16  thiessen
+* use ncbi::auto_ptr
+*
+* Revision 1.5  2002/06/11 13:18:47  thiessen
+* fixes for gcc 3
+*
+* Revision 1.4  2002/01/24 18:12:33  thiessen
+* fix another leak
+*
+* Revision 1.3  2002/01/23 21:08:37  thiessen
+* fix memory leak
+*
+* Revision 1.2  2001/09/19 22:55:43  thiessen
+* add preliminary net import and BLAST
+*
+* Revision 1.1  2001/09/18 03:09:38  thiessen
+* add preliminary sequence import pipeline
+*
+*/

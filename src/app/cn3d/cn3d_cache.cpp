@@ -28,35 +28,6 @@
 * File Description:
 *      implements a basic cache for structures
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2002/09/30 17:13:02  thiessen
-* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
-*
-* Revision 1.8  2002/09/11 01:39:35  thiessen
-* fix cache file touch
-*
-* Revision 1.7  2002/08/15 22:13:13  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.6  2002/03/07 15:45:45  thiessen
-* compile fix ; extra file load messages
-*
-* Revision 1.5  2002/02/27 16:29:40  thiessen
-* add model type flag to general mime type
-*
-* Revision 1.4  2002/01/11 15:48:49  thiessen
-* update for Mac CW7
-*
-* Revision 1.3  2001/11/09 15:19:16  thiessen
-* wxFindFirst file fixed on wxMac; call glViewport() from OnSize()
-*
-* Revision 1.2  2001/11/01 19:01:40  thiessen
-* use meta key instead of ctrl on Mac
-*
-* Revision 1.1  2001/10/30 02:54:11  thiessen
-* add Biostruc cache
-*
 * ===========================================================================
 */
 
@@ -88,31 +59,31 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static std::string GetCacheFilePath(int mmdbID, EModel_type modelType)
+static string GetCacheFilePath(int mmdbID, EModel_type modelType)
 {
-    std::string cachePath;
+    string cachePath;
     if (RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cachePath)) {
         wxString cacheFile;
         cacheFile.Printf("%s%c%i.%i", cachePath.c_str(), wxFILE_SEP_PATH, mmdbID, modelType);
         cachePath = cacheFile.c_str();
     } else
-        ERR_POST(Error << "Can't get cache folder from registry");
+        ERRORMSG("Can't get cache folder from registry");
     return cachePath;
 }
 
 static bool CreateCacheFolder(void)
 {
-    std::string cacheFolder;
+    string cacheFolder;
     if (!RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cacheFolder)) return false;
     if (wxDirExists(cacheFolder.c_str())) return true;
     bool okay = wxMkdir(cacheFolder.c_str());
-    TESTMSG((okay ? "created" : "failed to create") << " folder " << cacheFolder);
+    TRACEMSG((okay ? "created" : "failed to create") << " folder " << cacheFolder);
     return okay;
 }
 
-static void ExtractBioseqs(std::list < CRef < CSeq_entry > >& seqEntries, BioseqRefList *sequences)
+static void ExtractBioseqs(list < CRef < CSeq_entry > >& seqEntries, BioseqRefList *sequences)
 {
-    std::list < CRef < CSeq_entry > >::iterator e, ee = seqEntries.end();
+    list < CRef < CSeq_entry > >::iterator e, ee = seqEntries.end();
     for (e=seqEntries.begin(); e!=ee; e++) {
         if ((*e)->IsSeq())
             sequences->push_back(CRef<CBioseq>(&((*e)->SetSeq())));
@@ -125,7 +96,7 @@ bool ExtractBiostrucAndBioseqs(CNcbi_mime_asn1& mime,
     CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
     if (!mime.IsStrucseq()) {
-        ERR_POST(Error << "ExtractBiostrucAndBioseqs() - expecting strucseq mime");
+        ERRORMSG("ExtractBiostrucAndBioseqs() - expecting strucseq mime");
         return false;
     }
 
@@ -145,23 +116,23 @@ static bool GetStructureFromCacheFolder(int mmdbID, EModel_type modelType,
     CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
     // try to load from cache
-    TESTMSG("looking for " << mmdbID << " (model type " << (int) modelType << ") in cache:");
-    std::string err, cacheFile = GetCacheFilePath(mmdbID, modelType);
+    INFOMSG("looking for " << mmdbID << " (model type " << (int) modelType << ") in cache:");
+    string err, cacheFile = GetCacheFilePath(mmdbID, modelType);
     CNcbi_mime_asn1 mime;
     SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
     bool gotFile = ReadASNFromFile(cacheFile.c_str(), &mime, true, &err);
     SetDiagPostLevel(eDiag_Info);
     if (!gotFile || !ExtractBiostrucAndBioseqs(mime, biostruc, sequences)) {
-        ERR_POST(Warning << "failed to load " << mmdbID
+        WARNINGMSG("failed to load " << mmdbID
             << " (model type " << (int) modelType << ") from cache: " << err);
         return false;
     }
 
     // if successful, 'touch' the file to mark it as recently used
-    TESTMSG("loaded " << cacheFile);
+    INFOMSG("loaded " << cacheFile);
     wxFileName fn(cacheFile.c_str());
     if (!fn.Touch())
-        ERR_POST(Warning << "error touching " << cacheFile);
+        WARNINGMSG("error touching " << cacheFile);
 
     return true;
 }
@@ -184,13 +155,13 @@ static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
     }
 
     // load from network
-    TESTMSG("Trying to load structure data from " << host.c_str() << path.c_str() << '?' << args.c_str());
-    std::string err;
+    INFOMSG("Trying to load structure data from " << host.c_str() << path.c_str() << '?' << args.c_str());
+    string err;
     CNcbi_mime_asn1 mime;
     gotStructure = (GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), &mime, &err) &&
         ExtractBiostrucAndBioseqs(mime, biostruc, sequences));
     if (!gotStructure)
-        ERR_POST(Warning << "Failed to read structure from network\nreason: " << err);
+        WARNINGMSG("Failed to read structure from network\nreason: " << err);
 
     if (gotStructure) {
         bool cacheEnabled;
@@ -198,14 +169,14 @@ static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
             // add to cache
             if (CreateCacheFolder() &&
                 WriteASNToFile(GetCacheFilePath(mmdbID, modelType).c_str(), mime, true, &err)) {
-                TESTMSG("stored " << mmdbID << " (model type " << (int) modelType << ") in cache");
+                INFOMSG("stored " << mmdbID << " (model type " << (int) modelType << ") in cache");
                 // trim cache to appropriate size if we've added a new file
                 int size;
                 if (RegistryGetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, &size))
                     TruncateCache(size);
             } else {
-                ERR_POST(Warning << "Failed to write structure to cache folder");
-                if (err.size() > 0) ERR_POST(Warning << "reason: " << err);
+                WARNINGMSG("Failed to write structure to cache folder");
+                if (err.size() > 0) WARNINGMSG("reason: " << err);
             }
         }
     }
@@ -232,13 +203,13 @@ bool LoadStructureViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
 
 void TruncateCache(int maxSize)
 {
-    std::string cacheFolder;
+    string cacheFolder;
     if (!RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cacheFolder) ||
         !wxDirExists(cacheFolder.c_str())) {
-        ERR_POST(Warning << "can't find cache folder");
+        WARNINGMSG("can't find cache folder");
         return;
     }
-    TESTMSG("truncating cache to " << maxSize << " MB");
+    INFOMSG("truncating cache to " << maxSize << " MB");
 
     wxString cacheFolderFiles;
     cacheFolderFiles.Printf("%s%c*", cacheFolder.c_str(), wxFILE_SEP_PATH);
@@ -248,7 +219,7 @@ void TruncateCache(int maxSize)
         wxString f;
         while ((f=wxFindFirstFile(cacheFolderFiles, wxFILE)).size() > 0) {
             if (!wxRemoveFile(f))
-                ERR_POST(Warning << "can't remove file " << f);
+                WARNINGMSG("can't remove file " << f);
         }
         return;
     }
@@ -261,7 +232,7 @@ void TruncateCache(int maxSize)
         // if totalSize > 0, then we've already scanned the folder and know it's too big,
         // so delete oldest file
         if (totalSize > 0 && !wxRemoveFile(oldestFileName))
-            ERR_POST(Warning << "can't remove file " << oldestFileName);
+            WARNINGMSG("can't remove file " << oldestFileName);
 
         // loop through files, finding oldest and calculating total size
         totalSize = 0;
@@ -278,12 +249,47 @@ void TruncateCache(int maxSize)
                 totalSize += wx_file.Length();
                 wx_file.Close();
             } else
-                ERR_POST(Warning << "wxFile failed to open " << file);
+                WARNINGMSG("wxFile failed to open " << file);
         }
-        TESTMSG("total size: " << totalSize << " oldest file: " << oldestFileName.c_str());
+        INFOMSG("total size: " << totalSize << " oldest file: " << oldestFileName.c_str());
 
     } while (totalSize > maxSize * 1024 * 1024);
 }
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.10  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.9  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
+* Revision 1.8  2002/09/11 01:39:35  thiessen
+* fix cache file touch
+*
+* Revision 1.7  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.6  2002/03/07 15:45:45  thiessen
+* compile fix ; extra file load messages
+*
+* Revision 1.5  2002/02/27 16:29:40  thiessen
+* add model type flag to general mime type
+*
+* Revision 1.4  2002/01/11 15:48:49  thiessen
+* update for Mac CW7
+*
+* Revision 1.3  2001/11/09 15:19:16  thiessen
+* wxFindFirst file fixed on wxMac; call glViewport() from OnSize()
+*
+* Revision 1.2  2001/11/01 19:01:40  thiessen
+* use meta key instead of ctrl on Mac
+*
+* Revision 1.1  2001/10/30 02:54:11  thiessen
+* add Biostruc cache
+*
+*/

@@ -28,29 +28,13 @@
 * File Description:
 *      progress meter window
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2002/08/15 22:13:15  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.4  2001/10/25 17:17:23  thiessen
-* use wxYield + modal for wxMac, too
-*
-* Revision 1.3  2001/10/25 00:06:29  thiessen
-* fix concurrent rendering problem in wxMSW PNG output
-*
-* Revision 1.2  2001/10/24 17:07:30  thiessen
-* add PNG output for wxGTK
-*
-* Revision 1.1  2001/10/23 13:53:40  thiessen
-* add PNG export
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/progress_meter.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -61,7 +45,7 @@ BEGIN_SCOPE(Cn3D)
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -124,7 +108,7 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
 void ProgressMeter::OnCloseWindow(wxCloseEvent& event)
 {
 #if defined(__WXGTK__) || defined(__WXMAC__)
-    ERR_POST(Info << "can veto: " << event.CanVeto());
+    TRACEMSG("can veto: " << event.CanVeto());
     if (event.CanVeto()) {
         event.Veto();
     } else {
@@ -154,3 +138,26 @@ void ProgressMeter::SetValue(int value, bool doYield)
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.6  2003/02/03 19:20:05  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.5  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.4  2001/10/25 17:17:23  thiessen
+* use wxYield + modal for wxMac, too
+*
+* Revision 1.3  2001/10/25 00:06:29  thiessen
+* fix concurrent rendering problem in wxMSW PNG output
+*
+* Revision 1.2  2001/10/24 17:07:30  thiessen
+* add PNG output for wxGTK
+*
+* Revision 1.1  2001/10/23 13:53:40  thiessen
+* add PNG export
+*
+*/

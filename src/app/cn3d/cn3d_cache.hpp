@@ -28,17 +28,6 @@
 * File Description:
 *      implements a basic cache for Biostrucs
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/09/30 17:13:02  thiessen
-* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
-*
-* Revision 1.2  2002/02/27 16:29:41  thiessen
-* add model type flag to general mime type
-*
-* Revision 1.1  2001/10/30 02:54:12  thiessen
-* add Biostruc cache
-*
 * ===========================================================================
 */
 
@@ -84,3 +73,20 @@ void TruncateCache(int maxSize);
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CACHE__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.3  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
+* Revision 1.2  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
+* Revision 1.1  2001/10/30 02:54:12  thiessen
+* add Biostruc cache
+*
+*/

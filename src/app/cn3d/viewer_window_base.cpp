@@ -28,8 +28,368 @@
 * File Description:
 *      base GUI functionality for viewers
 *
+* ===========================================================================
+*/
+
+#include <corelib/ncbistd.hpp>
+
+#include <memory>
+
+#include "cn3d/viewer_window_base.hpp"
+#include "cn3d/viewer_base.hpp"
+#include "cn3d/sequence_display.hpp"
+#include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_threader.hpp"
+#include "cn3d/alignment_manager.hpp"
+#include "cn3d/cn3d_tools.hpp"
+
+// the application icon (under Windows it is in resources)
+#if defined(__WXGTK__) || defined(__WXMAC__)
+    #include "cn3d/cn3d.xpm"
+#endif
+
+USING_NCBI_SCOPE;
+
+
+BEGIN_SCOPE(Cn3D)
+
+ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos, const wxSize& size) :
+    wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, "", pos, size,
+        wxDEFAULT_FRAME_STYLE
+#if defined(__WXMSW__)
+            | wxFRAME_TOOL_WINDOW
+            | wxFRAME_NO_TASKBAR
+            | wxFRAME_FLOAT_ON_PARENT
+#endif
+        ),
+    viewerWidget(NULL), viewer(parentViewer)
+{
+    if (!parentViewer) ERRORMSG("ViewerWindowBase::ViewerWindowBase() - got NULL pointer");
+
+    SetSizeHints(200, 150);
+    SetIcon(wxICON(cn3d));
+
+    // status bar with two fields - first is for id/loc, second is for general status line
+    CreateStatusBar(2);
+    int widths[2] = { 175, -1 };
+    SetStatusWidths(2, widths);
+
+    viewerWidget = new SequenceViewerWidget(this);
+    SetupFontFromRegistry();
+
+    menuBar = new wxMenuBar;
+    viewMenu = new wxMenu;
+    viewMenu->Append(MID_SHOW_TITLES, "Show &Titles");
+    //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
+    viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations");
+    viewMenu->Append(MID_FIND_PATTERN, "Find &Pattern");
+    menuBar->Append(viewMenu, "&View");
+
+    editMenu = new wxMenu;
+    editMenu->Append(MID_ENABLE_EDIT, "&Enable Editor", "", true);
+    editMenu->Append(MID_UNDO, "Undo\tCtrl-Z");
+#ifndef __WXMAC__
+    editMenu->Append(MID_REDO, "Redo\tShift-Ctrl-Z");
+#else
+    // mac commands apparently don't recognize shift?
+    editMenu->Append(MID_REDO, "Redo");
+#endif
+    editMenu->AppendSeparator();
+    editMenu->Append(MID_SPLIT_BLOCK, "&Split Block", "", true);
+    editMenu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", "", true);
+    editMenu->Append(MID_CREATE_BLOCK, "&Create Block", "", true);
+    editMenu->Append(MID_DELETE_BLOCK, "&Delete Block", "", true);
+    editMenu->AppendSeparator();
+    editMenu->Append(MID_SYNC_STRUCS, "Sy&nc Structure Colors");
+    editMenu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", "", true);
+    menuBar->Append(editMenu, "&Edit");
+
+    mouseModeMenu = new wxMenu;
+    mouseModeMenu->Append(MID_SELECT_RECT, "&Select Rectangle", "", true);
+    mouseModeMenu->Append(MID_SELECT_COLS, "Select &Columns", "", true);
+    mouseModeMenu->Append(MID_SELECT_ROWS, "Select &Rows", "", true);
+    mouseModeMenu->Append(MID_DRAG_HORIZ, "&Horizontal Drag", "", true);
+    menuBar->Append(mouseModeMenu, "&Mouse Mode");
+
+    // accelerators for special mouse mode keys
+    wxAcceleratorEntry entries[4];
+    entries[0].Set(wxACCEL_NORMAL, 's', MID_SELECT_RECT);
+    entries[1].Set(wxACCEL_NORMAL, 'c', MID_SELECT_COLS);
+    entries[2].Set(wxACCEL_NORMAL, 'r', MID_SELECT_ROWS);
+    entries[3].Set(wxACCEL_NORMAL, 'h', MID_DRAG_HORIZ);
+    wxAcceleratorTable accel(4, entries);
+    SetAcceleratorTable(accel);
+
+    justificationMenu = new wxMenu;
+    justificationMenu->Append(MID_LEFT, "&Left", "", true);
+    justificationMenu->Append(MID_RIGHT, "&Right", "", true);
+    justificationMenu->Append(MID_CENTER, "&Center", "", true);
+    justificationMenu->Append(MID_SPLIT, "&Split", "", true);
+    menuBar->Append(justificationMenu, "Unaligned &Justification");
+
+    // set default initial modes
+    viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle);
+    menuBar->Check(MID_SELECT_RECT, true);
+    menuBar->Check(MID_SPLIT, true);
+    currentJustification = BlockMultipleAlignment::eSplit;
+    viewerWidget->TitleAreaOn();
+    menuBar->Check(MID_SYNC_STRUCS_ON, true);
+    EnableBaseEditorMenuItems(false);
+}
+
+ViewerWindowBase::~ViewerWindowBase(void)
+{
+    if (viewer) viewer->GUIDestroyed();
+}
+
+void ViewerWindowBase::SetupFontFromRegistry(void)
+{
+    // get font info from registry, and create wxFont
+    string nativeFont;
+    RegistryGetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, &nativeFont);
+    auto_ptr<wxFont> font(wxFont::New(wxString(nativeFont.c_str())));
+    if (!font.get() || !font->Ok())
+    {
+        ERRORMSG("ViewerWindowBase::SetupFontFromRegistry() - error setting up font");
+        return;
+    }
+    viewerWidget->SetCharacterFont(font.release());
+}
+
+void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
+{
+    int i;
+    for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; i++)
+        menuBar->Enable(i, enabled);
+    menuBar->Enable(MID_DRAG_HORIZ, enabled);
+    if (!enabled) CancelBaseSpecialModesExcept(-1);
+    menuBar->Enable(MID_UNDO, false);
+    menuBar->Enable(MID_REDO, false);
+    menuBar->Enable(MID_SHOW_GEOM_VLTNS,
+        viewer->GetCurrentDisplay() && viewer->GetCurrentDisplay()->IsEditable());
+    EnableDerivedEditorMenuItems(enabled);
+}
+
+void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableSelectByColumn)
+{
+    viewerWidget->AttachAlignment(display);
+    menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
+    menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
+    menuBar->Enable(MID_SELECT_COLS, enableSelectByColumn);
+    viewer->SetUndoRedoMenuStates();
+}
+
+void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
+{
+    int vsX, vsY;   // to preserve scroll position
+    viewerWidget->GetScroll(&vsX, &vsY);
+    viewerWidget->AttachAlignment(display, vsX, vsY);
+    menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
+    menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
+    GlobalMessenger()->PostRedrawAllSequenceViewers();
+    viewer->SetUndoRedoMenuStates();
+}
+
+void ViewerWindowBase::OnTitleView(wxCommandEvent& event)
+{
+    TRACEMSG("in OnTitleView()");
+    switch (event.GetId()) {
+        case MID_SHOW_TITLES:
+            viewerWidget->TitleAreaOn(); break;
+        case MID_HIDE_TITLES:
+            viewerWidget->TitleAreaOff(); break;
+    }
+}
+
+void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
+{
+    bool turnEditorOn = menuBar->IsChecked(MID_ENABLE_EDIT);
+
+    switch (event.GetId()) {
+
+        case MID_ENABLE_EDIT:
+            if (turnEditorOn) {
+                if (!RequestEditorEnable(true)) {
+                    menuBar->Check(MID_ENABLE_EDIT, false);
+                    break;
+                }
+                TRACEMSG("turning on editor");
+                EnableBaseEditorMenuItems(true);
+                viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
+                viewer->EnableStacks();     // start up undo/redo stack system
+                Command(MID_DRAG_HORIZ);    // switch to drag mode
+            } else {
+                if (!RequestEditorEnable(false)) {   // cancelled
+                    menuBar->Check(MID_ENABLE_EDIT, true);
+                    break;
+                }
+                TRACEMSG("turning off editor");
+                EnableBaseEditorMenuItems(false);
+                viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
+                if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
+                    Command(MID_SELECT_RECT);
+            }
+            break;
+
+        case MID_UNDO:
+            TRACEMSG("undoing...");
+            viewer->Undo();
+            UpdateDisplay(viewer->GetCurrentDisplay());
+            if (AlwaysSyncStructures()) SyncStructures();
+            break;
+
+        case MID_REDO:
+            TRACEMSG("redoing...");
+            viewer->Redo();
+            UpdateDisplay(viewer->GetCurrentDisplay());
+            if (AlwaysSyncStructures()) SyncStructures();
+            break;
+
+        case MID_SPLIT_BLOCK:
+            CancelAllSpecialModesExcept(MID_SPLIT_BLOCK);
+            if (DoSplitBlock())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                SplitBlockOff();
+            break;
+
+        case MID_MERGE_BLOCKS:
+            CancelAllSpecialModesExcept(MID_MERGE_BLOCKS);
+            if (DoMergeBlocks()) {
+                SetCursor(*wxCROSS_CURSOR);
+                prevMouseMode = viewerWidget->GetMouseMode();
+                viewerWidget->SetMouseMode(GetMouseModeForCreateAndMerge());
+            } else
+                MergeBlocksOff();
+            break;
+
+        case MID_CREATE_BLOCK:
+            CancelAllSpecialModesExcept(MID_CREATE_BLOCK);
+            if (DoCreateBlock()) {
+                SetCursor(*wxCROSS_CURSOR);
+                prevMouseMode = viewerWidget->GetMouseMode();
+                viewerWidget->SetMouseMode(GetMouseModeForCreateAndMerge());
+            } else
+                CreateBlockOff();
+            break;
+
+        case MID_DELETE_BLOCK:
+            CancelAllSpecialModesExcept(MID_DELETE_BLOCK);
+            if (DoDeleteBlock())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                DeleteBlockOff();
+            break;
+
+        case MID_SYNC_STRUCS:
+            viewer->GetCurrentDisplay()->RedrawAlignedMolecules();
+            break;
+    }
+}
+
+void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
+{
+    const wxMenuItemList& items = mouseModeMenu->GetMenuItems();
+    for (int i=0; i<items.GetCount(); i++)
+        items.Item(i)->GetData()->Check(
+            (items.Item(i)->GetData()->GetId() == event.GetId()) ? true : false);
+
+    switch (event.GetId()) {
+        case MID_SELECT_RECT:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle); break;
+        case MID_SELECT_COLS:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns); break;
+        case MID_SELECT_ROWS:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRows); break;
+        case MID_DRAG_HORIZ:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal); break;
+    }
+}
+
+void ViewerWindowBase::OnJustification(wxCommandEvent& event)
+{
+    for (int i=MID_LEFT; i<=MID_SPLIT; i++)
+        menuBar->Check(i, (i == event.GetId()) ? true : false);
+
+    switch (event.GetId()) {
+        case MID_LEFT:
+            currentJustification = BlockMultipleAlignment::eLeft; break;
+        case MID_RIGHT:
+            currentJustification = BlockMultipleAlignment::eRight; break;
+        case MID_CENTER:
+            currentJustification = BlockMultipleAlignment::eCenter; break;
+        case MID_SPLIT:
+            currentJustification = BlockMultipleAlignment::eSplit; break;
+    }
+    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
+}
+
+void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
+{
+    const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
+    if (alignments.size() == 0) return;
+
+    int nViolations = 0;
+    ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
+    for (a=alignments.begin(); a!=ae; a++) {
+        Threader::GeometryViolationsForRow violations;
+        nViolations += viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
+        (*a)->ShowGeometryViolations(violations);
+    }
+    INFOMSG("Found " << nViolations << " geometry violations");
+    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
+}
+
+void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
+{
+    // remember previous pattern
+    static wxString previousPattern;
+
+    // get pattern from user
+    wxString pattern = wxGetTextFromUser("Enter a pattern using ProSite syntax:",
+        "Input pattern", previousPattern, this);
+    if (pattern.size() == 0) return;
+    // add trailing period if not present (convenience for the user)
+    if (pattern[pattern.size() - 1] != '.') pattern += '.';
+    previousPattern = pattern;
+
+    GlobalMessenger()->RemoveAllHighlights(true);
+
+    // highlight pattern from each (unique) sequence in the display
+    map < const Sequence * , bool > usedSequences;
+    const SequenceDisplay *display = viewer->GetCurrentDisplay();
+
+    for (int i=0; i<display->NRows(); i++) {
+
+        const Sequence *sequence = display->GetSequenceForRow(i);
+        if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
+        usedSequences[sequence] = true;
+
+        if (!sequence->HighlightPattern(pattern.c_str())) break;
+    }
+}
+
+void ViewerWindowBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
+{
+    const SequenceDisplay *display = viewer->GetCurrentDisplay();
+    for (int i=0; i<display->NRows(); i++) {
+        const Sequence *sequence = display->GetSequenceForRow(i);
+        if (sequence && sequence->identifier == identifier) {
+            viewerWidget->MakeCharacterVisible(-1, i);
+            break;
+        }
+    }
+}
+
+END_SCOPE(Cn3D)
+
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/02/03 19:20:09  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.44  2003/01/31 17:18:59  thiessen
 * many small additions and changes...
 *
@@ -162,358 +522,4 @@
 * Revision 1.1  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
-* ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-
-#include <memory>
-
-#include "cn3d/viewer_window_base.hpp"
-#include "cn3d/viewer_base.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/cn3d_tools.hpp"
-
-// the application icon (under Windows it is in resources)
-#if defined(__WXGTK__) || defined(__WXMAC__)
-    #include "cn3d/cn3d.xpm"
-#endif
-
-USING_NCBI_SCOPE;
-
-
-BEGIN_SCOPE(Cn3D)
-
-ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos, const wxSize& size) :
-    wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, "", pos, size,
-        wxDEFAULT_FRAME_STYLE
-#if defined(__WXMSW__)
-            | wxFRAME_TOOL_WINDOW
-            | wxFRAME_NO_TASKBAR
-            | wxFRAME_FLOAT_ON_PARENT
-#endif
-        ),
-    viewerWidget(NULL), viewer(parentViewer)
-{
-    if (!parentViewer) ERR_POST(Error << "ViewerWindowBase::ViewerWindowBase() - got NULL pointer");
-
-    SetSizeHints(200, 150);
-    SetIcon(wxICON(cn3d));
-
-    // status bar with two fields - first is for id/loc, second is for general status line
-    CreateStatusBar(2);
-    int widths[2] = { 175, -1 };
-    SetStatusWidths(2, widths);
-
-    viewerWidget = new SequenceViewerWidget(this);
-    SetupFontFromRegistry();
-
-    menuBar = new wxMenuBar;
-    viewMenu = new wxMenu;
-    viewMenu->Append(MID_SHOW_TITLES, "Show &Titles");
-    //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
-    viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations");
-    viewMenu->Append(MID_FIND_PATTERN, "Find &Pattern");
-    menuBar->Append(viewMenu, "&View");
-
-    editMenu = new wxMenu;
-    editMenu->Append(MID_ENABLE_EDIT, "&Enable Editor", "", true);
-    editMenu->Append(MID_UNDO, "Undo\tCtrl-Z");
-#ifndef __WXMAC__
-    editMenu->Append(MID_REDO, "Redo\tShift-Ctrl-Z");
-#else
-    // mac commands apparently don't recognize shift?
-    editMenu->Append(MID_REDO, "Redo");
-#endif
-    editMenu->AppendSeparator();
-    editMenu->Append(MID_SPLIT_BLOCK, "&Split Block", "", true);
-    editMenu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", "", true);
-    editMenu->Append(MID_CREATE_BLOCK, "&Create Block", "", true);
-    editMenu->Append(MID_DELETE_BLOCK, "&Delete Block", "", true);
-    editMenu->AppendSeparator();
-    editMenu->Append(MID_SYNC_STRUCS, "Sy&nc Structure Colors");
-    editMenu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", "", true);
-    menuBar->Append(editMenu, "&Edit");
-
-    mouseModeMenu = new wxMenu;
-    mouseModeMenu->Append(MID_SELECT_RECT, "&Select Rectangle", "", true);
-    mouseModeMenu->Append(MID_SELECT_COLS, "Select &Columns", "", true);
-    mouseModeMenu->Append(MID_SELECT_ROWS, "Select &Rows", "", true);
-    mouseModeMenu->Append(MID_DRAG_HORIZ, "&Horizontal Drag", "", true);
-    menuBar->Append(mouseModeMenu, "&Mouse Mode");
-
-    // accelerators for special mouse mode keys
-    wxAcceleratorEntry entries[4];
-    entries[0].Set(wxACCEL_NORMAL, 's', MID_SELECT_RECT);
-    entries[1].Set(wxACCEL_NORMAL, 'c', MID_SELECT_COLS);
-    entries[2].Set(wxACCEL_NORMAL, 'r', MID_SELECT_ROWS);
-    entries[3].Set(wxACCEL_NORMAL, 'h', MID_DRAG_HORIZ);
-    wxAcceleratorTable accel(4, entries);
-    SetAcceleratorTable(accel);
-
-    justificationMenu = new wxMenu;
-    justificationMenu->Append(MID_LEFT, "&Left", "", true);
-    justificationMenu->Append(MID_RIGHT, "&Right", "", true);
-    justificationMenu->Append(MID_CENTER, "&Center", "", true);
-    justificationMenu->Append(MID_SPLIT, "&Split", "", true);
-    menuBar->Append(justificationMenu, "Unaligned &Justification");
-
-    // set default initial modes
-    viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle);
-    menuBar->Check(MID_SELECT_RECT, true);
-    menuBar->Check(MID_SPLIT, true);
-    currentJustification = BlockMultipleAlignment::eSplit;
-    viewerWidget->TitleAreaOn();
-    menuBar->Check(MID_SYNC_STRUCS_ON, true);
-    EnableBaseEditorMenuItems(false);
-}
-
-ViewerWindowBase::~ViewerWindowBase(void)
-{
-    if (viewer) viewer->GUIDestroyed();
-}
-
-void ViewerWindowBase::SetupFontFromRegistry(void)
-{
-    // get font info from registry, and create wxFont
-    std::string nativeFont;
-    RegistryGetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, &nativeFont);
-    auto_ptr<wxFont> font(wxFont::New(wxString(nativeFont.c_str())));
-    if (!font.get() || !font->Ok())
-    {
-        ERR_POST(Error << "ViewerWindowBase::SetupFontFromRegistry() - error setting up font");
-        return;
-    }
-    viewerWidget->SetCharacterFont(font.release());
-}
-
-void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
-{
-    int i;
-    for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; i++)
-        menuBar->Enable(i, enabled);
-    menuBar->Enable(MID_DRAG_HORIZ, enabled);
-    if (!enabled) CancelBaseSpecialModesExcept(-1);
-    menuBar->Enable(MID_UNDO, false);
-    menuBar->Enable(MID_REDO, false);
-    menuBar->Enable(MID_SHOW_GEOM_VLTNS,
-        viewer->GetCurrentDisplay() && viewer->GetCurrentDisplay()->IsEditable());
-    EnableDerivedEditorMenuItems(enabled);
-}
-
-void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableSelectByColumn)
-{
-    viewerWidget->AttachAlignment(display);
-    menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
-    menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
-    menuBar->Enable(MID_SELECT_COLS, enableSelectByColumn);
-    viewer->SetUndoRedoMenuStates();
-}
-
-void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
-{
-    int vsX, vsY;   // to preserve scroll position
-    viewerWidget->GetScroll(&vsX, &vsY);
-    viewerWidget->AttachAlignment(display, vsX, vsY);
-    menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
-    menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
-    GlobalMessenger()->PostRedrawAllSequenceViewers();
-    viewer->SetUndoRedoMenuStates();
-}
-
-void ViewerWindowBase::OnTitleView(wxCommandEvent& event)
-{
-    TESTMSG("in OnTitleView()");
-    switch (event.GetId()) {
-        case MID_SHOW_TITLES:
-            viewerWidget->TitleAreaOn(); break;
-        case MID_HIDE_TITLES:
-            viewerWidget->TitleAreaOff(); break;
-    }
-}
-
-void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
-{
-    bool turnEditorOn = menuBar->IsChecked(MID_ENABLE_EDIT);
-
-    switch (event.GetId()) {
-
-        case MID_ENABLE_EDIT:
-            if (turnEditorOn) {
-                if (!RequestEditorEnable(true)) {
-                    menuBar->Check(MID_ENABLE_EDIT, false);
-                    break;
-                }
-                TESTMSG("turning on editor");
-                EnableBaseEditorMenuItems(true);
-                viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
-                viewer->EnableStacks();     // start up undo/redo stack system
-                Command(MID_DRAG_HORIZ);    // switch to drag mode
-            } else {
-                if (!RequestEditorEnable(false)) {   // cancelled
-                    menuBar->Check(MID_ENABLE_EDIT, true);
-                    break;
-                }
-                TESTMSG("turning off editor");
-                EnableBaseEditorMenuItems(false);
-                viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
-                if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
-                    Command(MID_SELECT_RECT);
-            }
-            break;
-
-        case MID_UNDO:
-            TESTMSG("undoing...");
-            viewer->Undo();
-            UpdateDisplay(viewer->GetCurrentDisplay());
-            if (AlwaysSyncStructures()) SyncStructures();
-            break;
-
-        case MID_REDO:
-            TESTMSG("redoing...");
-            viewer->Redo();
-            UpdateDisplay(viewer->GetCurrentDisplay());
-            if (AlwaysSyncStructures()) SyncStructures();
-            break;
-
-        case MID_SPLIT_BLOCK:
-            CancelAllSpecialModesExcept(MID_SPLIT_BLOCK);
-            if (DoSplitBlock())
-                SetCursor(*wxCROSS_CURSOR);
-            else
-                SplitBlockOff();
-            break;
-
-        case MID_MERGE_BLOCKS:
-            CancelAllSpecialModesExcept(MID_MERGE_BLOCKS);
-            if (DoMergeBlocks()) {
-                SetCursor(*wxCROSS_CURSOR);
-                prevMouseMode = viewerWidget->GetMouseMode();
-                viewerWidget->SetMouseMode(GetMouseModeForCreateAndMerge());
-            } else
-                MergeBlocksOff();
-            break;
-
-        case MID_CREATE_BLOCK:
-            CancelAllSpecialModesExcept(MID_CREATE_BLOCK);
-            if (DoCreateBlock()) {
-                SetCursor(*wxCROSS_CURSOR);
-                prevMouseMode = viewerWidget->GetMouseMode();
-                viewerWidget->SetMouseMode(GetMouseModeForCreateAndMerge());
-            } else
-                CreateBlockOff();
-            break;
-
-        case MID_DELETE_BLOCK:
-            CancelAllSpecialModesExcept(MID_DELETE_BLOCK);
-            if (DoDeleteBlock())
-                SetCursor(*wxCROSS_CURSOR);
-            else
-                DeleteBlockOff();
-            break;
-
-        case MID_SYNC_STRUCS:
-            viewer->GetCurrentDisplay()->RedrawAlignedMolecules();
-            break;
-    }
-}
-
-void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
-{
-    const wxMenuItemList& items = mouseModeMenu->GetMenuItems();
-    for (int i=0; i<items.GetCount(); i++)
-        items.Item(i)->GetData()->Check(
-            (items.Item(i)->GetData()->GetId() == event.GetId()) ? true : false);
-
-    switch (event.GetId()) {
-        case MID_SELECT_RECT:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle); break;
-        case MID_SELECT_COLS:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns); break;
-        case MID_SELECT_ROWS:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRows); break;
-        case MID_DRAG_HORIZ:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal); break;
-    }
-}
-
-void ViewerWindowBase::OnJustification(wxCommandEvent& event)
-{
-    for (int i=MID_LEFT; i<=MID_SPLIT; i++)
-        menuBar->Check(i, (i == event.GetId()) ? true : false);
-
-    switch (event.GetId()) {
-        case MID_LEFT:
-            currentJustification = BlockMultipleAlignment::eLeft; break;
-        case MID_RIGHT:
-            currentJustification = BlockMultipleAlignment::eRight; break;
-        case MID_CENTER:
-            currentJustification = BlockMultipleAlignment::eCenter; break;
-        case MID_SPLIT:
-            currentJustification = BlockMultipleAlignment::eSplit; break;
-    }
-    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
-}
-
-void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
-{
-    const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
-    if (alignments.size() == 0) return;
-
-    int nViolations = 0;
-    ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
-    for (a=alignments.begin(); a!=ae; a++) {
-        Threader::GeometryViolationsForRow violations;
-        nViolations += viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
-        (*a)->ShowGeometryViolations(violations);
-    }
-    TESTMSG("Found " << nViolations << " geometry violations");
-    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
-}
-
-void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
-{
-    // remember previous pattern
-    static wxString previousPattern;
-
-    // get pattern from user
-    wxString pattern = wxGetTextFromUser("Enter a pattern using ProSite syntax:",
-        "Input pattern", previousPattern, this);
-    if (pattern.size() == 0) return;
-    // add trailing period if not present (convenience for the user)
-    if (pattern[pattern.size() - 1] != '.') pattern += '.';
-    previousPattern = pattern;
-
-    GlobalMessenger()->RemoveAllHighlights(true);
-
-    // highlight pattern from each (unique) sequence in the display
-    std::map < const Sequence * , bool > usedSequences;
-    const SequenceDisplay *display = viewer->GetCurrentDisplay();
-
-    for (int i=0; i<display->NRows(); i++) {
-
-        const Sequence *sequence = display->GetSequenceForRow(i);
-        if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
-        usedSequences[sequence] = true;
-
-        if (!sequence->HighlightPattern(pattern.c_str())) break;
-    }
-}
-
-void ViewerWindowBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
-{
-    const SequenceDisplay *display = viewer->GetCurrentDisplay();
-    for (int i=0; i<display->NRows(); i++) {
-        const Sequence *sequence = display->GetSequenceForRow(i);
-        if (sequence && sequence->identifier == identifier) {
-            viewerWidget->MakeCharacterVisible(-1, i);
-            break;
-        }
-    }
-}
-
-END_SCOPE(Cn3D)
-

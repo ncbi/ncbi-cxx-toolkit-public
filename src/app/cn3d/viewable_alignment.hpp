@@ -28,11 +28,6 @@
 * File Description:
 *      base class for information to be displayed in SequenceViewerWidget
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2001/05/03 14:38:32  thiessen
-* put ViewableAlignment in its own (non-wx) header
-*
 * ===========================================================================
 */
 
@@ -108,3 +103,14 @@ public:
 };
 
 #endif // WX_VIEWABLE_ALIGNMENT__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2003/02/03 19:20:08  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.1  2001/05/03 14:38:32  thiessen
+* put ViewableAlignment in its own (non-wx) header
+*
+*/

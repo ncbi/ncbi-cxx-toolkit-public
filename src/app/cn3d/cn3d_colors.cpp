@@ -28,62 +28,13 @@
 * File Description:
 *      Holds various color values and cycles
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.16  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.15  2002/11/18 20:49:11  thiessen
-* move unaligned/no-coord colors into Colors class
-*
-* Revision 1.14  2001/09/04 15:38:03  thiessen
-* switch red/blue charge colors
-*
-* Revision 1.13  2001/09/04 14:40:19  thiessen
-* add rainbow and charge coloring
-*
-* Revision 1.12  2001/08/24 00:41:35  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.11  2001/08/10 19:45:18  thiessen
-* minor fix for Mac
-*
-* Revision 1.10  2001/08/09 23:14:13  thiessen
-* fixes for MIPSPro and Mac compilers
-*
-* Revision 1.9  2001/08/09 19:07:13  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.8  2001/07/12 17:35:15  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-* Revision 1.7  2001/05/11 02:10:41  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.6  2001/05/09 17:15:06  thiessen
-* add automatic block removal upon demotion
-*
-* Revision 1.5  2001/04/05 22:55:35  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.4  2001/03/22 00:33:16  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.3  2000/12/22 19:26:40  thiessen
-* write cdd output files
-*
-* Revision 1.2  2000/12/01 19:35:57  thiessen
-* better domain assignment; basic show/hide mechanism
-*
-* Revision 1.1  2000/11/30 15:49:37  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
 * ===========================================================================
 */
 
 #include <math.h>
 
 #include "cn3d/cn3d_colors.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -183,7 +134,7 @@ Colors::Colors(void)
 const Vector& Colors::Get(eColor which) const
 {
     if (which >= 0 && which < eNumColors) return colors[which];
-    ERR_POST(Error << "Colors::Get() - bad eColor " << (int) which);
+    ERRORMSG("Colors::Get() - bad eColor " << (int) which);
     return colors[0];
 }
 
@@ -191,14 +142,14 @@ const Vector& Colors::Get(eColorCycle which, int n) const
 {
     if (which >= 0 && which < eNumColorCycles && n >= 0)
         return cycleColors[which][n % cycleColors[which].size()];
-    ERR_POST(Error << "Colors::Get() - bad eColorCycle " << (int) which);
+    ERRORMSG("Colors::Get() - bad eColorCycle " << (int) which);
     return cycleColors[0][0];
 }
 
 Vector Colors::Get(eColorMap which, double f) const
 {
     if (which >= 0 && which < eNumColorMaps && f >= 0.0 && f <= 1.0) {
-        const std::vector < Vector >& colorMap = mapColors[which];
+        const vector < Vector >& colorMap = mapColors[which];
         if (f == 1.0) return colorMap[colorMap.size() - 1];
         double bin = 1.0 / (colorMap.size() - 1);
         int low = (int) (f / bin);
@@ -206,7 +157,7 @@ Vector Colors::Get(eColorMap which, double f) const
         const Vector &color1 = colorMap[low], &color2 = colorMap[low + 1];
         return (color1 + fraction * (color2 - color1));
     }
-    ERR_POST(Error << "Colors::Get() - bad eColorMap " << (int) which << " at " << f);
+    ERRORMSG("Colors::Get() - bad eColorMap " << (int) which << " at " << f);
     return mapColors[0][0];
 }
 
@@ -219,3 +170,59 @@ const Vector* Colors::Get(eColorMap which, int index) const
 }
 
 END_SCOPE(Cn3D)
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.17  2003/02/03 19:20:02  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.16  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.15  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
+* Revision 1.14  2001/09/04 15:38:03  thiessen
+* switch red/blue charge colors
+*
+* Revision 1.13  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
+* Revision 1.12  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.11  2001/08/10 19:45:18  thiessen
+* minor fix for Mac
+*
+* Revision 1.10  2001/08/09 23:14:13  thiessen
+* fixes for MIPSPro and Mac compilers
+*
+* Revision 1.9  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.8  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+* Revision 1.7  2001/05/11 02:10:41  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.6  2001/05/09 17:15:06  thiessen
+* add automatic block removal upon demotion
+*
+* Revision 1.5  2001/04/05 22:55:35  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.4  2001/03/22 00:33:16  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.3  2000/12/22 19:26:40  thiessen
+* write cdd output files
+*
+* Revision 1.2  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
+* Revision 1.1  2000/11/30 15:49:37  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+*/

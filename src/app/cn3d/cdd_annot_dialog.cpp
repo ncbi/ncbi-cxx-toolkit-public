@@ -28,107 +28,6 @@
 * File Description:
 *      dialogs for annotating CDD's
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.33  2002/12/18 15:02:34  thiessen
-* fixes for linux/gcc
-*
-* Revision 1.32  2002/12/12 23:07:18  thiessen
-* improved handling of alignment annotation errors
-*
-* Revision 1.31  2002/11/25 15:02:20  thiessen
-* changes for cdd annotation evidence show
-*
-* Revision 1.30  2002/11/21 18:07:25  thiessen
-* show whole objects again on evidence show
-*
-* Revision 1.29  2002/11/12 20:35:36  thiessen
-* use ShowDomainsWithHighlights for structure evidence show
-*
-* Revision 1.28  2002/11/06 00:18:10  thiessen
-* fixes for new CRef/const rules in objects
-*
-* Revision 1.27  2002/09/06 18:28:46  thiessen
-* fix show object bug
-*
-* Revision 1.26  2002/08/15 22:13:12  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.25  2002/04/09 23:59:08  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.24  2002/04/09 14:38:22  thiessen
-* add cdd splash screen
-*
-* Revision 1.23  2002/03/28 14:06:02  thiessen
-* preliminary BLAST/PSSM ; new CD startup style
-*
-* Revision 1.22  2002/02/12 21:15:59  thiessen
-* add move up/down to CDD annotations
-*
-* Revision 1.21  2002/01/19 15:25:03  thiessen
-* tweaks for DebugMT build to work
-*
-* Revision 1.20  2002/01/19 02:34:35  thiessen
-* fixes for changes in asn serialization API
-*
-* Revision 1.19  2001/12/12 14:04:13  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.18  2001/12/06 23:13:44  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.17  2001/11/30 14:02:05  thiessen
-* progress on sequence imports to single structures
-*
-* Revision 1.16  2001/11/28 14:16:13  thiessen
-* add 'show' to comment + structure name evidence
-*
-* Revision 1.15  2001/11/27 16:26:07  thiessen
-* major update to data management system
-*
-* Revision 1.14  2001/10/30 02:54:11  thiessen
-* add Biostruc cache
-*
-* Revision 1.13  2001/10/23 20:10:22  thiessen
-* fix scaling of fonts in high-res PNG output
-*
-* Revision 1.12  2001/10/16 21:49:06  thiessen
-* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
-*
-* Revision 1.11  2001/10/14 09:27:46  thiessen
-* add cdd evidence move up/down
-*
-* Revision 1.10  2001/10/01 16:04:23  thiessen
-* make CDD annotation window non-modal; add SetWindowTitle to viewers
-*
-* Revision 1.9  2001/09/26 17:09:30  thiessen
-* fix rerange bug
-*
-* Revision 1.8  2001/09/26 15:27:53  thiessen
-* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
-*
-* Revision 1.7  2001/09/24 14:37:52  thiessen
-* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
-*
-* Revision 1.6  2001/09/24 13:29:54  thiessen
-* fix wxPanel issues
-*
-* Revision 1.5  2001/09/20 19:31:30  thiessen
-* fixes for SGI and wxWin 2.3.2
-*
-* Revision 1.4  2001/08/27 00:06:23  thiessen
-* add structure evidence to CDD annotation
-*
-* Revision 1.3  2001/08/06 20:22:00  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.2  2001/07/19 19:14:38  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.1  2001/07/12 17:35:15  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
 * ===========================================================================
 */
 
@@ -224,7 +123,7 @@ BEGIN_SCOPE(Cn3D)
 
 // a "structure evidence" biostruc-annot-set has these qualities - basically, a specific
 // comment tag as the first entry in the set's description, and a 'name' descr in the feature set
-static const std::string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidence for CDD Annotation";
+static const string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidence for CDD Annotation";
 #define IS_STRUCTURE_EVIDENCE_BSANNOT(evidence) \
     ((evidence).IsBsannot() && \
      (evidence).GetBsannot().IsSetDescr() && \
@@ -241,7 +140,7 @@ static const std::string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidenc
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -249,7 +148,7 @@ static const std::string STRUCTURE_EVIDENCE_COMMENT = "Used as Structure Evidenc
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return false; \
     }
 
@@ -285,7 +184,7 @@ CDDAnnotateDialog::~CDDAnnotateDialog(void)
 {
     // so owner knows that this dialog has been destroyed
     if (dialogHandle && *dialogHandle) *dialogHandle = NULL;
-    TESTMSG("destroyed CDDAnnotateDialog");
+    TRACEMSG("destroyed CDDAnnotateDialog");
 }
 
 void CDDAnnotateDialog::OnCloseWindow(wxCloseEvent& event)
@@ -465,7 +364,7 @@ void CDDAnnotateDialog::NewAnnotation(void)
     IntervalList intervals;
     GetCurrentHighlightedIntervals(&intervals);
     if (intervals.size() == 0) {
-        ERR_POST(Error << "No aligned+highlighted master residues!");
+        ERRORMSG("No aligned+highlighted master residues!");
         return;
     }
 
@@ -503,7 +402,7 @@ void CDDAnnotateDialog::DeleteAnnotation(void)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::DeleteAnnotation() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::DeleteAnnotation() - error getting annotation pointer");
         return;
     }
 
@@ -536,7 +435,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::EditAnnotation() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::EditAnnotation() - error getting annotation pointer");
         return;
     }
 
@@ -582,7 +481,7 @@ bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& in
 
     // make sure annotation sequence matches master sequence
     if (!master->identifier->MatchesSeqId(interval.GetId())) {
-        ERR_POST(Error << "CDDAnnotateDialog::HighlightInterval() - interval Seq-id/master sequence mismatch");
+        ERRORMSG("CDDAnnotateDialog::HighlightInterval() - interval Seq-id/master sequence mismatch");
         return false;
     }
 
@@ -599,7 +498,7 @@ void CDDAnnotateDialog::HighlightAnnotation(void)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::HighlightAnnotation() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::HighlightAnnotation() - error getting annotation pointer");
         return;
     }
 
@@ -631,7 +530,7 @@ void CDDAnnotateDialog::MoveAnnotation(bool moveUp)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::MoveAnnotation() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::MoveAnnotation() - error getting annotation pointer");
         return;
     }
 
@@ -660,7 +559,7 @@ void CDDAnnotateDialog::MoveAnnotation(bool moveUp)
         aPrev = a;
     }
 
-    ERR_POST(Error << "CDDAnnotateDialog::MoveAnnotation() - error finding selected annotation");
+    ERRORMSG("CDDAnnotateDialog::MoveAnnotation() - error finding selected annotation");
 }
 
 void CDDAnnotateDialog::NewEvidence(void)
@@ -672,7 +571,7 @@ void CDDAnnotateDialog::NewEvidence(void)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::NewEvidence() - error getting annotation pointer");
         return;
     }
 
@@ -691,7 +590,7 @@ void CDDAnnotateDialog::NewEvidence(void)
             SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
             structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
         } else
-            ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting dialog data");
+            ERRORMSG("CDDAnnotateDialog::NewEvidence() - error getting dialog data");
     }
 }
 
@@ -703,7 +602,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::DeleteEvidence() - error getting annotation pointer");
         return;
     }
 
@@ -713,7 +612,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
     CFeature_evidence *selectedEvidence =
         reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
     if (!selectedEvidence) {
-        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - error getting evidence pointer");
+        ERRORMSG("CDDAnnotateDialog::DeleteEvidence() - error getting evidence pointer");
         return;
     }
 
@@ -732,7 +631,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
         }
     }
     if (e == ee) {
-        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - evidence pointer not found in annotation");
+        ERRORMSG("CDDAnnotateDialog::DeleteEvidence() - evidence pointer not found in annotation");
         return;
     }
 
@@ -748,7 +647,7 @@ void CDDAnnotateDialog::EditEvidence(void)
     CFeature_evidence *selectedEvidence =
         reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
     if (!selectedEvidence) {
-        ERR_POST(Error << "CDDAnnotateDialog::DeleteEvidence() - error getting evidence pointer");
+        ERRORMSG("CDDAnnotateDialog::DeleteEvidence() - error getting evidence pointer");
         return;
     }
 
@@ -763,7 +662,7 @@ void CDDAnnotateDialog::EditEvidence(void)
             structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
             SetupGUIControls(annots->GetSelection(), evids->GetSelection());
         } else
-            ERR_POST(Error << "CDDAnnotateDialog::EditEvidence() - error getting dialog data");
+            ERRORMSG("CDDAnnotateDialog::EditEvidence() - error getting dialog data");
     }
 }
 
@@ -781,7 +680,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
         int mmdbID = annot.GetId().front()->GetMmdb_id().Get();
 
         // map object to aligned molecule ID and interval of alignment on that chain
-        typedef std::map < const StructureObject * , ChainInfo > ObjectMap;
+        typedef map < const StructureObject * , ChainInfo > ObjectMap;
         ObjectMap annotObjects;
 
         // first find all objects with the annotation's mmdbID; fill out chain id and interval
@@ -864,7 +763,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
             throw "unrecognized annotation structure";
 
     } catch (const char *err) {
-        ERR_POST(Error << "HighlightResidues() - " << err);
+        ERRORMSG("HighlightResidues() - " << err);
     }
     return NULL;
 }
@@ -877,7 +776,7 @@ void CDDAnnotateDialog::ShowEvidence(void)
     CFeature_evidence *selectedEvidence =
         reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
     if (!selectedEvidence) {
-        ERR_POST(Error << "CDDAnnotateDialog::ShowEvidence() - error getting evidence pointer");
+        ERRORMSG("CDDAnnotateDialog::ShowEvidence() - error getting evidence pointer");
         return;
     }
 
@@ -929,7 +828,7 @@ void CDDAnnotateDialog::ShowEvidence(void)
     }
 
     else {
-        ERR_POST(Error << "CDDAnnotateDialog::ShowEvidence() - can't show that evidence type");
+        ERRORMSG("CDDAnnotateDialog::ShowEvidence() - can't show that evidence type");
     }
 }
 
@@ -943,7 +842,7 @@ void CDDAnnotateDialog::MoveEvidence(bool moveUp)
     CAlign_annot *selectedAnnot =
         reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
     if (!selectedAnnot) {
-        ERR_POST(Error << "CDDAnnotateDialog::MoveEvidence() - error getting annotation pointer");
+        ERRORMSG("CDDAnnotateDialog::MoveEvidence() - error getting annotation pointer");
         return;
     }
 
@@ -952,7 +851,7 @@ void CDDAnnotateDialog::MoveEvidence(bool moveUp)
     CFeature_evidence *selectedEvidence =
         reinterpret_cast<CFeature_evidence*>(evids->GetClientData(evids->GetSelection()));
     if (!selectedEvidence) {
-        ERR_POST(Error << "CDDAnnotateDialog::MoveEvidence() - error getting evidence pointer");
+        ERRORMSG("CDDAnnotateDialog::MoveEvidence() - error getting evidence pointer");
         return;
     }
 
@@ -1028,7 +927,7 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFea
         tSTRUCTURE->SetValue(
             initial.GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str());
     } else {
-        ERR_POST(Error << "CDDEvidenceDialog::CDDEvidenceDialog() - "
+        ERRORMSG("CDDEvidenceDialog::CDDEvidenceDialog() - "
             "don't (yet) know how to edit this evidence type");
     }
     SetupGUIControls();
@@ -1098,7 +997,7 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
             evidence->SetComment(tComment->GetValue().c_str());
             return true;
         } else {
-            ERR_POST(Error << "CDDEvidenceDialog::GetData() - comment must not be zero-length");
+            ERRORMSG("CDDEvidenceDialog::GetData() - comment must not be zero-length");
             return false;
         }
     }
@@ -1110,7 +1009,7 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
             evidence->SetReference().SetPmid().Set(pmid);
             return true;
         } else {
-            ERR_POST(Error << "CDDEvidenceDialog::GetData() - PMID must be a positive integer");
+            ERRORMSG("CDDEvidenceDialog::GetData() - PMID must be a positive integer");
             return false;
         }
     }
@@ -1139,7 +1038,7 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
         return true;
     }
 
-    ERR_POST(Error << "CDDEvidenceDialog::GetData() - unknown evidence type");
+    ERRORMSG("CDDEvidenceDialog::GetData() - unknown evidence type");
     return false;
 }
 
@@ -1321,3 +1220,110 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     return item0;
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.34  2003/02/03 19:20:01  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.33  2002/12/18 15:02:34  thiessen
+* fixes for linux/gcc
+*
+* Revision 1.32  2002/12/12 23:07:18  thiessen
+* improved handling of alignment annotation errors
+*
+* Revision 1.31  2002/11/25 15:02:20  thiessen
+* changes for cdd annotation evidence show
+*
+* Revision 1.30  2002/11/21 18:07:25  thiessen
+* show whole objects again on evidence show
+*
+* Revision 1.29  2002/11/12 20:35:36  thiessen
+* use ShowDomainsWithHighlights for structure evidence show
+*
+* Revision 1.28  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
+* Revision 1.27  2002/09/06 18:28:46  thiessen
+* fix show object bug
+*
+* Revision 1.26  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.25  2002/04/09 23:59:08  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.24  2002/04/09 14:38:22  thiessen
+* add cdd splash screen
+*
+* Revision 1.23  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
+* Revision 1.22  2002/02/12 21:15:59  thiessen
+* add move up/down to CDD annotations
+*
+* Revision 1.21  2002/01/19 15:25:03  thiessen
+* tweaks for DebugMT build to work
+*
+* Revision 1.20  2002/01/19 02:34:35  thiessen
+* fixes for changes in asn serialization API
+*
+* Revision 1.19  2001/12/12 14:04:13  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.18  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.17  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
+* Revision 1.16  2001/11/28 14:16:13  thiessen
+* add 'show' to comment + structure name evidence
+*
+* Revision 1.15  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
+* Revision 1.14  2001/10/30 02:54:11  thiessen
+* add Biostruc cache
+*
+* Revision 1.13  2001/10/23 20:10:22  thiessen
+* fix scaling of fonts in high-res PNG output
+*
+* Revision 1.12  2001/10/16 21:49:06  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
+* Revision 1.11  2001/10/14 09:27:46  thiessen
+* add cdd evidence move up/down
+*
+* Revision 1.10  2001/10/01 16:04:23  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
+* Revision 1.9  2001/09/26 17:09:30  thiessen
+* fix rerange bug
+*
+* Revision 1.8  2001/09/26 15:27:53  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
+* Revision 1.7  2001/09/24 14:37:52  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
+* Revision 1.6  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
+* Revision 1.5  2001/09/20 19:31:30  thiessen
+* fixes for SGI and wxWin 2.3.2
+*
+* Revision 1.4  2001/08/27 00:06:23  thiessen
+* add structure evidence to CDD annotation
+*
+* Revision 1.3  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.2  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
+* Revision 1.1  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+*/

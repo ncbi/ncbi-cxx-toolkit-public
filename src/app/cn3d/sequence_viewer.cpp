@@ -28,8 +28,518 @@
 * File Description:
 *      implementation of non-GUI part of main sequence/alignment viewer
 *
+* ===========================================================================
+*/
+
+#include <corelib/ncbistd.hpp>
+
+#include <memory>
+
+#include "cn3d/sequence_viewer.hpp"
+#include "cn3d/sequence_viewer_window.hpp"
+#include "cn3d/sequence_display.hpp"
+#include "cn3d/messenger.hpp"
+#include "cn3d/alignment_manager.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/sequence_set.hpp"
+
+USING_NCBI_SCOPE;
+
+
+BEGIN_SCOPE(Cn3D)
+
+SequenceViewer::SequenceViewer(AlignmentManager *alnMgr) :
+    // not sure why this cast is necessary, but MSVC requires it...
+    ViewerBase(reinterpret_cast<ViewerWindowBase**>(&sequenceWindow), alnMgr),
+    sequenceWindow(NULL)
+{
+}
+
+SequenceViewer::~SequenceViewer(void)
+{
+}
+
+void SequenceViewer::CreateSequenceWindow(void)
+{
+    if (sequenceWindow) {
+        sequenceWindow->Show(true);
+        GlobalMessenger()->PostRedrawSequenceViewer(this);
+    } else {
+        SequenceDisplay *display = GetCurrentDisplay();
+        if (display) {
+            sequenceWindow = new SequenceViewerWindow(this);
+            sequenceWindow->NewDisplay(display, true);
+            sequenceWindow->ScrollToColumn(display->GetStartingColumn());
+            sequenceWindow->Show(true);
+            // ScrollTo causes immediate redraw, so don't need a second one
+            GlobalMessenger()->UnPostRedrawSequenceViewer(this);
+        }
+    }
+}
+
+void SequenceViewer::SaveAlignment(void)
+{
+    KeepCurrent();
+
+    // go back into the original pairwise alignment data and save according to the
+    // current edited BlockMultipleAlignment and display row order
+    vector < int > rowOrder;
+    const SequenceDisplay *display = GetCurrentDisplay();
+    for (int i=0; i<display->rows.size(); i++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
+        if (alnRow) rowOrder.push_back(alnRow->row);
+    }
+    alignmentManager->SavePairwiseFromMultiple(GetCurrentAlignments().back(), rowOrder);
+}
+
+void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
+{
+    SequenceDisplay *display = new SequenceDisplay(true, viewerWindow);
+    for (int row=0; row<alignment->NRows(); row++)
+        display->AddRowFromAlignment(row, alignment);
+
+    // set starting scroll to a few residues left of the first aligned block
+    display->SetStartingColumn(alignment->GetFirstAlignedBlockPosition() - 5);
+
+    AlignmentList alignments;
+    alignments.push_back(alignment);
+    InitData(&alignments, display);
+    if (sequenceWindow)
+        sequenceWindow->UpdateDisplay(display);
+    else
+        CreateSequenceWindow();
+
+    // allow alignment export
+    sequenceWindow->EnableExport(true);
+}
+
+void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
+{
+//    int from, to, width = 50;
+
+    SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
+
+    // populate each line of the display with one sequence, with blank lines inbetween
+    SequenceList::const_iterator s, se = sequenceList->end();
+    for (s=sequenceList->begin(); s!=se; s++) {
+
+        // only do sequences from structure if this is a single-structure data file
+        if (!(*s)->parentSet->IsMultiStructure() &&
+            (*s)->parentSet->objects.front()->mmdbID != (*s)->identifier->mmdbID) continue;
+
+        if (display->NRows() > 0) display->AddRowFromString("");
+
+        // whole sequence on one row
+        display->AddRowFromSequence(*s, 0, (*s)->Length() - 1);
+    }
+
+    InitData(NULL, display);
+    if (sequenceWindow)
+        sequenceWindow->UpdateDisplay(display);
+    else
+        CreateSequenceWindow();
+
+    // forbid alignment export
+    sequenceWindow->EnableExport(false);
+}
+
+void SequenceViewer::TurnOnEditor(void)
+{
+    if (!sequenceWindow) CreateSequenceWindow();
+    sequenceWindow->TurnOnEditor();
+}
+
+static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
+    const vector < int >& rowOrder,
+    BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
+{
+    // do whole alignment for now
+    int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 70;
+    if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
+        ERRORMSG("DumpFASTA() - nonsensical display region parameters");
+        return;
+    }
+
+    // first fill out ids
+    typedef map < const MoleculeIdentifier * , list < string > > IDMap;
+    IDMap idMap;
+    int row;
+    bool anyRepeat = false;
+
+    for (row=0; row<alignment->NRows(); row++) {
+        const Sequence *seq = alignment->GetSequenceOfRow(row);
+        list < string >& titleList = idMap[seq->identifier];
+        CNcbiOstrstream oss;
+        oss << '>';
+
+        if (titleList.size() == 0) {
+
+            // create full title line for first instance of this sequence
+            bool prevID = false;
+            if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+                oss << "gi|" << seq->identifier->gi;
+                prevID = true;
+            }
+            if (seq->identifier->pdbID.size() > 0) {
+                if (prevID) oss << '|';
+                if (seq->identifier->pdbID == "query" || seq->identifier->pdbID == "consensus") {
+                    oss << "lcl|" << seq->identifier->pdbID;
+                } else {
+                    oss << "pdb|" << seq->identifier->pdbID;
+                    if (seq->identifier->pdbChain != ' ')
+                        oss << '|' << (char) seq->identifier->pdbChain << " Chain "
+                           << (char) seq->identifier->pdbChain << ',';
+                }
+                prevID = true;
+            }
+            if (seq->identifier->accession.size() > 0) {
+                if (prevID) oss << '|';
+                oss << seq->identifier->accession;
+                prevID = true;
+            }
+            if (seq->description.size() > 0)
+                oss << ' ' << seq->description;
+
+        } else {
+            // add repeat id
+            oss << "lcl|instance #" << (titleList.size() + 1) << " of " << seq->identifier->ToString();
+            anyRepeat = true;
+        }
+
+        titleList.resize(titleList.size() + 1);
+        oss << '\n' << '\0';
+        auto_ptr<char> data(oss.str());
+        titleList.back() = data.get();
+    }
+
+    static const int eAllRepeats=0, eFakeRepeatIDs=1, eNoRepeats=2;
+    int choice = eAllRepeats;
+
+    if (anyRepeat) {
+        wxArrayString choices;
+        choices.Add("Include all repeats with normal IDs");
+        choices.Add("Include all repeats, but use unique IDs");
+        choices.Add("Include no repeated sequences");
+        choice = wxGetSingleChoiceIndex("How do you want to handle repeated sequences?",
+            "Choose repeat type", choices);
+        if (choice < 0) return; // cancelled
+    }
+
+    // output each alignment row (in order of the display)
+    int paragraphStart, nParags = 0, i;
+    char ch;
+    Vector color, bgColor;
+    bool highlighted, drawBG;
+    for (row=0; row<alignment->NRows(); row++) {
+        const Sequence *seq = alignment->GetSequenceOfRow(rowOrder[row]);
+
+        // output title
+        list < string >& titleList = idMap[seq->identifier];
+        if (choice == eAllRepeats) {
+            os << titleList.front();    // use full id
+        } else if (choice == eFakeRepeatIDs) {
+            os << titleList.front();
+            titleList.pop_front();      // move to next (fake) id
+        } else if (choice == eNoRepeats) {
+            if (titleList.size() > 0) {
+                os << titleList.front();
+                titleList.clear();      // remove all ids after first instance
+            } else {
+                continue;
+            }
+        }
+
+        // split alignment up into "paragraphs", each with nColumns
+        for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
+            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+                if (alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, rowOrder[row], justification,
+                        &ch, &color, &highlighted, &drawBG, &bgColor)) {
+                    if (ch == '~')
+                        os << (isA2M ? '.' : '-');
+                    else
+                        os << (isA2M ? ch : (char) toupper(ch));
+                } else
+                    ERRORMSG("GetCharacterTraitsAt failed!");
+            }
+            os << '\n';
+        }
+    }
+}
+
+static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
+    const vector < int >& rowOrder,
+    BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
+{
+
+#define LEFT_JUSTIFY resetiosflags(IOS_BASE::right) << setiosflags(IOS_BASE::left)
+#define RIGHT_JUSTIFY resetiosflags(IOS_BASE::left) << setiosflags(IOS_BASE::right)
+
+    // do whole alignment for now
+    int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 60;
+
+    if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
+        ERRORMSG("DumpText() - nonsensical display region parameters");
+        return;
+    }
+
+    // HTML colors
+    static const string
+        bgColor("#FFFFFF"), rulerColor("#700777"), numColor("#229922");
+
+    // set up the titles and uids, figure out how much space any seqLoc string will take
+    vector < string > titles(alignment->NRows()), uids(doHTML ? alignment->NRows() : 0);
+    int alnRow, row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
+    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+        row = rowOrder[alnRow]; // translate display row -> data row
+        const Sequence *sequence = alignment->GetSequenceOfRow(row);
+
+        titles[row] = sequence->identifier->ToString();
+        if (titles[row].size() > maxTitleLength) maxTitleLength = titles[row].size();
+        decimalLength = ((int) log10((double) sequence->Length())) + 1;
+        if (decimalLength > maxSeqLocStrLength) maxSeqLocStrLength = decimalLength;
+
+        // uid for link to entrez
+        if (doHTML) {
+            if (sequence->identifier->pdbID.size() > 0) {
+                if (sequence->identifier->pdbID != "query" &&
+                    sequence->identifier->pdbID != "consensus") {
+                    uids[row] = sequence->identifier->pdbID;
+                    if (sequence->identifier->pdbChain != ' ')
+                        uids[row] += (char) sequence->identifier->pdbChain;
+                    uids[row] += "%5BACCN%5D";
+                }
+            } else if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+                CNcbiOstrstream uidoss;
+                uidoss << sequence->identifier->gi << "%5BUID%5D" << '\0';
+                uids[row] = uidoss.str();
+                delete uidoss.str();
+            } else if (sequence->identifier->accession.size() > 0) {
+                uids[row] = sequence->identifier->accession + "%5BACCN%5D";
+            }
+        }
+    }
+    leftMargin = maxTitleLength + maxSeqLocStrLength + 2;
+
+    // need to keep track of first, last seqLocs for each row in each paragraph;
+    // find seqLoc of first residue >= firstCol
+    vector < int > lastShownSeqLocs(alignment->NRows());
+    int alnLoc, i;
+    char ch;
+    Vector color, bgCol;
+    bool highlighted, drawBG;
+    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+        row = rowOrder[alnRow]; // translate display row -> data row
+        lastShownSeqLocs[row] = -1;
+        for (alnLoc=0; alnLoc<firstCol; alnLoc++) {
+            if (!alignment->GetCharacterTraitsAt(alnLoc, row, justification,
+                    &ch, &color, &highlighted, &drawBG, &bgCol))
+                ch = '~';
+            if (ch != '~') lastShownSeqLocs[row]++;
+        }
+    }
+
+    // header
+    if (doHTML)
+        os << "<HTML><TITLE>Alignment Exported From Cn3D</TITLE>\n" <<
+            "<BODY BGCOLOR=" << bgColor << ">\n";
+
+    // split alignment up into "paragraphs", each with nColumns
+    if (doHTML) os << "<TABLE>\n";
+    int paragraphStart, nParags = 0;
+    for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
+
+        // start table row
+        if (doHTML)
+            os << "<tr><td><pre>\n";
+        else
+            if (paragraphStart > 0) os << '\n';
+
+        // do ruler
+        int nMarkers = 0, width;
+        if (doHTML) os << "<font color=" << rulerColor << '>';
+        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+            if ((paragraphStart+i+1)%10 == 0) {
+                if (nMarkers == 0)
+                    width = leftMargin + i + 1;
+                else
+                    width = 10;
+                os << RIGHT_JUSTIFY << setw(width) << (paragraphStart+i+1);
+                nMarkers++;
+            }
+        }
+        if (doHTML) os << "</font>";
+        os << '\n';
+        if (doHTML) os << "<font color=" << rulerColor << '>';
+        for (i=0; i<leftMargin; i++) os << ' ';
+        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+            if ((paragraphStart+i+1)%10 == 0)
+                os << '|';
+            else if ((paragraphStart+i+1)%5 == 0)
+                os << '*';
+            else
+                os << '.';
+        }
+        if (doHTML) os << "</font>";
+        os << '\n';
+
+        int nDisplayedResidues;
+
+        // output each alignment row
+        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+            row = rowOrder[alnRow]; // translate display row -> data row
+            const Sequence *sequence = alignment->GetSequenceOfRow(row);
+
+            // actual sequence characters and colors; count how many non-gaps in each row
+            nDisplayedResidues = 0;
+            string rowChars;
+            vector < string > rowColors;
+            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+                if (!alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, row, justification,
+                        &ch, &color, &highlighted, &drawBG, &bgCol))
+                    ch = '?';
+                rowChars += ch;
+                wxString colorStr;
+                colorStr.Printf("#%02x%02x%02x",
+                    (int) (color[0]*255), (int) (color[1]*255), (int) (color[2]*255));
+                rowColors.push_back(colorStr.c_str());
+                if (ch != '~') nDisplayedResidues++;
+            }
+
+            // title
+            if (doHTML && uids[row].size() > 0) {
+                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
+                    << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
+                    << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
+                    << "onMouseOver=\"window.status='"
+                    << ((sequence->description.size() > 0) ? sequence->description : titles[row])
+                    << "';return true\">"
+                    << setw(0) << titles[row] << "</a>";
+            } else {
+                os << setw(0) << titles[row];
+            }
+            os << setw(maxTitleLength+1-titles[row].size()) << ' ';
+
+            // left start pos (output 1-numbered for humans...)
+            if (doHTML) os << "<font color=" << numColor << '>';
+            if (nDisplayedResidues > 0)
+                os << RIGHT_JUSTIFY << setw(maxSeqLocStrLength) << (lastShownSeqLocs[row]+2) << ' ';
+            else
+                os << RIGHT_JUSTIFY << setw(maxSeqLocStrLength) << ' ' << ' ';
+
+            // dump sequence, applying color changes only when necessary
+            if (doHTML) {
+                string prevColor;
+                for (i=0; i<rowChars.size(); i++) {
+                    if (rowColors[i] != prevColor) {
+                        os << "</font><font color=" << rowColors[i] << '>';
+                        prevColor = rowColors[i];
+                    }
+                    os << rowChars[i];
+                }
+                os << "</font>";
+            } else
+                os << rowChars;
+
+            // right end pos
+            if (nDisplayedResidues > 0) {
+                os << ' ';
+                if (doHTML) os << "<font color=" << numColor << '>';
+                os << LEFT_JUSTIFY << setw(0) << (lastShownSeqLocs[row]+nDisplayedResidues+1);
+                if (doHTML) os << "</font>";
+            }
+            os << '\n';
+
+            // setup to begin next parag
+            lastShownSeqLocs[row] += nDisplayedResidues;
+        }
+
+        // end table row
+        if (doHTML) os << "</pre></td></tr>\n";
+    }
+
+    if (doHTML)
+        os << "</TABLE>\n"
+            << "</BODY></HTML>\n";
+
+    // additional sanity check on seqloc markers
+    if (firstCol == 0 && lastCol == alignment->AlignmentWidth()-1) {
+        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+            row = rowOrder[alnRow]; // translate display row -> data row
+            if (lastShownSeqLocs[row] !=
+                    alignment->GetSequenceOfRow(row)->Length()-1) {
+                ERRORMSG("DumpText: full display - seqloc markers don't add up for row " << row);
+                break;
+            }
+        }
+        if (alnRow != alignment->NRows())
+            ERRORMSG("DumpText: full display - seqloc markers don't add up correctly");
+    }
+}
+
+void SequenceViewer::ExportAlignment(eExportType type)
+{
+    // get filename
+    wxString extension, wildcard;
+    if (type == asFASTA) { extension = ".fsa"; wildcard = "FASTA Files (*.fsa)|*.fsa"; }
+    else if (type == asFASTAa2m) { extension = ".a2m"; wildcard = "A2M FASTA (*.a2m)|*.a2m"; }
+    else if (type == asText) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
+    else if (type == asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
+
+    wxString outputFolder = wxString(GetUserDir().c_str(), GetUserDir().size() - 1); // remove trailing /
+    wxString baseName, outputFile;
+    wxSplitPath(GetWorkingFilename().c_str(), NULL, &baseName, NULL);
+    wxFileDialog dialog(sequenceWindow, "Choose a file for alignment export:", outputFolder,
+#ifdef __WXGTK__
+        baseName + extension,
+#else
+        baseName,
+#endif
+        wildcard, wxSAVE | wxOVERWRITE_PROMPT);
+    dialog.SetFilterIndex(0);
+    if (dialog.ShowModal() == wxID_OK)
+        outputFile = dialog.GetPath();
+
+    if (outputFile.size() > 0) {
+
+        // create output stream
+        auto_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(outputFile.c_str(), IOS_BASE::out));
+        if (!(*ofs)) {
+            ERRORMSG("Unable to open output file " << outputFile.c_str());
+            return;
+        }
+
+        // map display row order to rows in BlockMultipleAlignment
+        vector < int > rowOrder;
+        const SequenceDisplay *display = GetCurrentDisplay();
+        for (int i=0; i<display->rows.size(); i++) {
+            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
+            if (alnRow) rowOrder.push_back(alnRow->row);
+        }
+
+        // actually write the alignment
+        if (type == asFASTA || type == asFASTAa2m) {
+            INFOMSG("exporting" << (type == asFASTAa2m ? " A2M " : " ") << "FASTA to " << outputFile.c_str());
+            DumpFASTA((type == asFASTAa2m), alignmentManager->GetCurrentMultipleAlignment(),
+                rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
+        } else if (type == asText || type == asHTML) {
+            INFOMSG("exporting " << (type == asText ? "text" : "HTML") << " to " << outputFile.c_str());
+            DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
+                rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
+        }
+    }
+}
+
+END_SCOPE(Cn3D)
+
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/02/03 19:20:05  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.59  2002/12/09 16:25:04  thiessen
 * allow negative score threshholds
 *
@@ -207,508 +717,4 @@
 * Revision 1.1  2000/08/30 19:48:42  thiessen
 * working sequence window
 *
-* ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-
-#include <memory>
-
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/sequence_viewer_window.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/sequence_set.hpp"
-
-USING_NCBI_SCOPE;
-
-
-BEGIN_SCOPE(Cn3D)
-
-SequenceViewer::SequenceViewer(AlignmentManager *alnMgr) :
-    // not sure why this cast is necessary, but MSVC requires it...
-    ViewerBase(reinterpret_cast<ViewerWindowBase**>(&sequenceWindow), alnMgr),
-    sequenceWindow(NULL)
-{
-}
-
-SequenceViewer::~SequenceViewer(void)
-{
-}
-
-void SequenceViewer::CreateSequenceWindow(void)
-{
-    if (sequenceWindow) {
-        sequenceWindow->Show(true);
-        GlobalMessenger()->PostRedrawSequenceViewer(this);
-    } else {
-        SequenceDisplay *display = GetCurrentDisplay();
-        if (display) {
-            sequenceWindow = new SequenceViewerWindow(this);
-            sequenceWindow->NewDisplay(display, true);
-            sequenceWindow->ScrollToColumn(display->GetStartingColumn());
-            sequenceWindow->Show(true);
-            // ScrollTo causes immediate redraw, so don't need a second one
-            GlobalMessenger()->UnPostRedrawSequenceViewer(this);
-        }
-    }
-}
-
-void SequenceViewer::SaveAlignment(void)
-{
-    KeepCurrent();
-
-    // go back into the original pairwise alignment data and save according to the
-    // current edited BlockMultipleAlignment and display row order
-    std::vector < int > rowOrder;
-    const SequenceDisplay *display = GetCurrentDisplay();
-    for (int i=0; i<display->rows.size(); i++) {
-        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
-        if (alnRow) rowOrder.push_back(alnRow->row);
-    }
-    alignmentManager->SavePairwiseFromMultiple(GetCurrentAlignments().back(), rowOrder);
-}
-
-void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
-{
-    SequenceDisplay *display = new SequenceDisplay(true, viewerWindow);
-    for (int row=0; row<alignment->NRows(); row++)
-        display->AddRowFromAlignment(row, alignment);
-
-    // set starting scroll to a few residues left of the first aligned block
-    display->SetStartingColumn(alignment->GetFirstAlignedBlockPosition() - 5);
-
-    AlignmentList alignments;
-    alignments.push_back(alignment);
-    InitData(&alignments, display);
-    if (sequenceWindow)
-        sequenceWindow->UpdateDisplay(display);
-    else
-        CreateSequenceWindow();
-
-    // allow alignment export
-    sequenceWindow->EnableExport(true);
-}
-
-void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
-{
-//    int from, to, width = 50;
-
-    SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
-
-    // populate each line of the display with one sequence, with blank lines inbetween
-    SequenceList::const_iterator s, se = sequenceList->end();
-    for (s=sequenceList->begin(); s!=se; s++) {
-
-        // only do sequences from structure if this is a single-structure data file
-        if (!(*s)->parentSet->IsMultiStructure() &&
-            (*s)->parentSet->objects.front()->mmdbID != (*s)->identifier->mmdbID) continue;
-
-        if (display->NRows() > 0) display->AddRowFromString("");
-
-        // whole sequence on one row
-        display->AddRowFromSequence(*s, 0, (*s)->Length() - 1);
-    }
-
-    InitData(NULL, display);
-    if (sequenceWindow)
-        sequenceWindow->UpdateDisplay(display);
-    else
-        CreateSequenceWindow();
-
-    // forbid alignment export
-    sequenceWindow->EnableExport(false);
-}
-
-void SequenceViewer::TurnOnEditor(void)
-{
-    if (!sequenceWindow) CreateSequenceWindow();
-    sequenceWindow->TurnOnEditor();
-}
-
-static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
-    const std::vector < int >& rowOrder,
-    BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
-{
-    // do whole alignment for now
-    int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 70;
-    if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
-        ERR_POST(Error << "DumpFASTA() - nonsensical display region parameters");
-        return;
-    }
-
-    // first fill out ids
-    typedef std::map < const MoleculeIdentifier * , std::list < std::string > > IDMap;
-    IDMap idMap;
-    int row;
-    bool anyRepeat = false;
-
-    for (row=0; row<alignment->NRows(); row++) {
-        const Sequence *seq = alignment->GetSequenceOfRow(row);
-        std::list < std::string >& titleList = idMap[seq->identifier];
-        CNcbiOstrstream oss;
-        oss << '>';
-
-        if (titleList.size() == 0) {
-
-            // create full title line for first instance of this sequence
-            bool prevID = false;
-            if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                oss << "gi|" << seq->identifier->gi;
-                prevID = true;
-            }
-            if (seq->identifier->pdbID.size() > 0) {
-                if (prevID) oss << '|';
-                if (seq->identifier->pdbID == "query" || seq->identifier->pdbID == "consensus") {
-                    oss << "lcl|" << seq->identifier->pdbID;
-                } else {
-                    oss << "pdb|" << seq->identifier->pdbID;
-                    if (seq->identifier->pdbChain != ' ')
-                        oss << '|' << (char) seq->identifier->pdbChain << " Chain "
-                           << (char) seq->identifier->pdbChain << ',';
-                }
-                prevID = true;
-            }
-            if (seq->identifier->accession.size() > 0) {
-                if (prevID) oss << '|';
-                oss << seq->identifier->accession;
-                prevID = true;
-            }
-            if (seq->description.size() > 0)
-                oss << ' ' << seq->description;
-
-        } else {
-            // add repeat id
-            oss << "lcl|instance #" << (titleList.size() + 1) << " of " << seq->identifier->ToString();
-            anyRepeat = true;
-        }
-
-        titleList.resize(titleList.size() + 1);
-        oss << '\n' << '\0';
-        auto_ptr<char> data(oss.str());
-        titleList.back() = data.get();
-    }
-
-    static const int eAllRepeats=0, eFakeRepeatIDs=1, eNoRepeats=2;
-    int choice = eAllRepeats;
-
-    if (anyRepeat) {
-        wxArrayString choices;
-        choices.Add("Include all repeats with normal IDs");
-        choices.Add("Include all repeats, but use unique IDs");
-        choices.Add("Include no repeated sequences");
-        choice = wxGetSingleChoiceIndex("How do you want to handle repeated sequences?",
-            "Choose repeat type", choices);
-        if (choice < 0) return; // cancelled
-    }
-
-    // output each alignment row (in order of the display)
-    int paragraphStart, nParags = 0, i;
-    char ch;
-    Vector color, bgColor;
-    bool highlighted, drawBG;
-    for (row=0; row<alignment->NRows(); row++) {
-        const Sequence *seq = alignment->GetSequenceOfRow(rowOrder[row]);
-
-        // output title
-        std::list < std::string >& titleList = idMap[seq->identifier];
-        if (choice == eAllRepeats) {
-            os << titleList.front();    // use full id
-        } else if (choice == eFakeRepeatIDs) {
-            os << titleList.front();
-            titleList.pop_front();      // move to next (fake) id
-        } else if (choice == eNoRepeats) {
-            if (titleList.size() > 0) {
-                os << titleList.front();
-                titleList.clear();      // remove all ids after first instance
-            } else {
-                continue;
-            }
-        }
-
-        // split alignment up into "paragraphs", each with nColumns
-        for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
-            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
-                if (alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, rowOrder[row], justification,
-                        &ch, &color, &highlighted, &drawBG, &bgColor)) {
-                    if (ch == '~')
-                        os << (isA2M ? '.' : '-');
-                    else
-                        os << (isA2M ? ch : (char) toupper(ch));
-                } else
-                    ERR_POST(Error << "GetCharacterTraitsAt failed!");
-            }
-            os << '\n';
-        }
-    }
-}
-
-static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
-    const std::vector < int >& rowOrder,
-    BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
-{
-
-#define LEFT_JUSTIFY resetiosflags(IOS_BASE::right) << setiosflags(IOS_BASE::left)
-#define RIGHT_JUSTIFY resetiosflags(IOS_BASE::left) << setiosflags(IOS_BASE::right)
-
-    // do whole alignment for now
-    int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 60;
-
-    if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
-        ERR_POST(Error << "DumpText() - nonsensical display region parameters");
-        return;
-    }
-
-    // HTML colors
-    static const std::string
-        bgColor("#FFFFFF"), rulerColor("#700777"), numColor("#229922");
-
-    // set up the titles and uids, figure out how much space any seqLoc string will take
-    std::vector < std::string > titles(alignment->NRows()), uids(doHTML ? alignment->NRows() : 0);
-    int alnRow, row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
-    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
-        row = rowOrder[alnRow]; // translate display row -> data row
-        const Sequence *sequence = alignment->GetSequenceOfRow(row);
-
-        titles[row] = sequence->identifier->ToString();
-        if (titles[row].size() > maxTitleLength) maxTitleLength = titles[row].size();
-        decimalLength = ((int) log10((double) sequence->Length())) + 1;
-        if (decimalLength > maxSeqLocStrLength) maxSeqLocStrLength = decimalLength;
-
-        // uid for link to entrez
-        if (doHTML) {
-            if (sequence->identifier->pdbID.size() > 0) {
-                if (sequence->identifier->pdbID != "query" &&
-                    sequence->identifier->pdbID != "consensus") {
-                    uids[row] = sequence->identifier->pdbID;
-                    if (sequence->identifier->pdbChain != ' ')
-                        uids[row] += (char) sequence->identifier->pdbChain;
-                    uids[row] += "%5BACCN%5D";
-                }
-            } else if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                CNcbiOstrstream uidoss;
-                uidoss << sequence->identifier->gi << "%5BUID%5D" << '\0';
-                uids[row] = uidoss.str();
-                delete uidoss.str();
-            } else if (sequence->identifier->accession.size() > 0) {
-                uids[row] = sequence->identifier->accession + "%5BACCN%5D";
-            }
-        }
-    }
-    leftMargin = maxTitleLength + maxSeqLocStrLength + 2;
-
-    // need to keep track of first, last seqLocs for each row in each paragraph;
-    // find seqLoc of first residue >= firstCol
-    std::vector < int > lastShownSeqLocs(alignment->NRows());
-    int alnLoc, i;
-    char ch;
-    Vector color, bgCol;
-    bool highlighted, drawBG;
-    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
-        row = rowOrder[alnRow]; // translate display row -> data row
-        lastShownSeqLocs[row] = -1;
-        for (alnLoc=0; alnLoc<firstCol; alnLoc++) {
-            if (!alignment->GetCharacterTraitsAt(alnLoc, row, justification,
-                    &ch, &color, &highlighted, &drawBG, &bgCol))
-                ch = '~';
-            if (ch != '~') lastShownSeqLocs[row]++;
-        }
-    }
-
-    // header
-    if (doHTML)
-        os << "<HTML><TITLE>Alignment Exported From Cn3D</TITLE>\n" <<
-            "<BODY BGCOLOR=" << bgColor << ">\n";
-
-    // split alignment up into "paragraphs", each with nColumns
-    if (doHTML) os << "<TABLE>\n";
-    int paragraphStart, nParags = 0;
-    for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
-
-        // start table row
-        if (doHTML)
-            os << "<tr><td><pre>\n";
-        else
-            if (paragraphStart > 0) os << '\n';
-
-        // do ruler
-        int nMarkers = 0, width;
-        if (doHTML) os << "<font color=" << rulerColor << '>';
-        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
-            if ((paragraphStart+i+1)%10 == 0) {
-                if (nMarkers == 0)
-                    width = leftMargin + i + 1;
-                else
-                    width = 10;
-                os << RIGHT_JUSTIFY << setw(width) << (paragraphStart+i+1);
-                nMarkers++;
-            }
-        }
-        if (doHTML) os << "</font>";
-        os << '\n';
-        if (doHTML) os << "<font color=" << rulerColor << '>';
-        for (i=0; i<leftMargin; i++) os << ' ';
-        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
-            if ((paragraphStart+i+1)%10 == 0)
-                os << '|';
-            else if ((paragraphStart+i+1)%5 == 0)
-                os << '*';
-            else
-                os << '.';
-        }
-        if (doHTML) os << "</font>";
-        os << '\n';
-
-        int nDisplayedResidues;
-
-        // output each alignment row
-        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
-            row = rowOrder[alnRow]; // translate display row -> data row
-            const Sequence *sequence = alignment->GetSequenceOfRow(row);
-
-            // actual sequence characters and colors; count how many non-gaps in each row
-            nDisplayedResidues = 0;
-            std::string rowChars;
-            std::vector < std::string > rowColors;
-            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
-                if (!alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, row, justification,
-                        &ch, &color, &highlighted, &drawBG, &bgCol))
-                    ch = '?';
-                rowChars += ch;
-                wxString colorStr;
-                colorStr.Printf("#%02x%02x%02x",
-                    (int) (color[0]*255), (int) (color[1]*255), (int) (color[2]*255));
-                rowColors.push_back(colorStr.c_str());
-                if (ch != '~') nDisplayedResidues++;
-            }
-
-            // title
-            if (doHTML && uids[row].size() > 0) {
-                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
-                    << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
-                    << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
-                    << "onMouseOver=\"window.status='"
-                    << ((sequence->description.size() > 0) ? sequence->description : titles[row])
-                    << "';return true\">"
-                    << setw(0) << titles[row] << "</a>";
-            } else {
-                os << setw(0) << titles[row];
-            }
-            os << setw(maxTitleLength+1-titles[row].size()) << ' ';
-
-            // left start pos (output 1-numbered for humans...)
-            if (doHTML) os << "<font color=" << numColor << '>';
-            if (nDisplayedResidues > 0)
-                os << RIGHT_JUSTIFY << setw(maxSeqLocStrLength) << (lastShownSeqLocs[row]+2) << ' ';
-            else
-                os << RIGHT_JUSTIFY << setw(maxSeqLocStrLength) << ' ' << ' ';
-
-            // dump sequence, applying color changes only when necessary
-            if (doHTML) {
-                std::string prevColor;
-                for (i=0; i<rowChars.size(); i++) {
-                    if (rowColors[i] != prevColor) {
-                        os << "</font><font color=" << rowColors[i] << '>';
-                        prevColor = rowColors[i];
-                    }
-                    os << rowChars[i];
-                }
-                os << "</font>";
-            } else
-                os << rowChars;
-
-            // right end pos
-            if (nDisplayedResidues > 0) {
-                os << ' ';
-                if (doHTML) os << "<font color=" << numColor << '>';
-                os << LEFT_JUSTIFY << setw(0) << (lastShownSeqLocs[row]+nDisplayedResidues+1);
-                if (doHTML) os << "</font>";
-            }
-            os << '\n';
-
-            // setup to begin next parag
-            lastShownSeqLocs[row] += nDisplayedResidues;
-        }
-
-        // end table row
-        if (doHTML) os << "</pre></td></tr>\n";
-    }
-
-    if (doHTML)
-        os << "</TABLE>\n"
-            << "</BODY></HTML>\n";
-
-    // additional sanity check on seqloc markers
-    if (firstCol == 0 && lastCol == alignment->AlignmentWidth()-1) {
-        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
-            row = rowOrder[alnRow]; // translate display row -> data row
-            if (lastShownSeqLocs[row] !=
-                    alignment->GetSequenceOfRow(row)->Length()-1) {
-                ERR_POST(Error << "DumpText: full display - seqloc markers don't add up for row " << row);
-                break;
-            }
-        }
-        if (alnRow != alignment->NRows())
-            ERR_POST(Error << "DumpText: full display - seqloc markers don't add up correctly");
-    }
-}
-
-void SequenceViewer::ExportAlignment(eExportType type)
-{
-    // get filename
-    wxString extension, wildcard;
-    if (type == asFASTA) { extension = ".fsa"; wildcard = "FASTA Files (*.fsa)|*.fsa"; }
-    else if (type == asFASTAa2m) { extension = ".a2m"; wildcard = "A2M FASTA (*.a2m)|*.a2m"; }
-    else if (type == asText) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
-    else if (type == asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
-
-    wxString outputFolder = wxString(GetUserDir().c_str(), GetUserDir().size() - 1); // remove trailing /
-    wxString baseName, outputFile;
-    wxSplitPath(GetWorkingFilename().c_str(), NULL, &baseName, NULL);
-    wxFileDialog dialog(sequenceWindow, "Choose a file for alignment export:", outputFolder,
-#ifdef __WXGTK__
-        baseName + extension,
-#else
-        baseName,
-#endif
-        wildcard, wxSAVE | wxOVERWRITE_PROMPT);
-    dialog.SetFilterIndex(0);
-    if (dialog.ShowModal() == wxID_OK)
-        outputFile = dialog.GetPath();
-
-    if (outputFile.size() > 0) {
-
-        // create output stream
-        auto_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(outputFile.c_str(), IOS_BASE::out));
-        if (!(*ofs)) {
-            ERR_POST(Error << "Unable to open output file " << outputFile.c_str());
-            return;
-        }
-
-        // map display row order to rows in BlockMultipleAlignment
-        std::vector < int > rowOrder;
-        const SequenceDisplay *display = GetCurrentDisplay();
-        for (int i=0; i<display->rows.size(); i++) {
-            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
-            if (alnRow) rowOrder.push_back(alnRow->row);
-        }
-
-        // actually write the alignment
-        if (type == asFASTA || type == asFASTAa2m) {
-            TESTMSG("exporting" << (type == asFASTAa2m ? " A2M " : " ") << "FASTA to " << outputFile.c_str());
-            DumpFASTA((type == asFASTAa2m), alignmentManager->GetCurrentMultipleAlignment(),
-                rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
-        } else if (type == asText || type == asHTML) {
-            TESTMSG("exporting " << (type == asText ? "text" : "HTML") << " to " << outputFile.c_str());
-            DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
-                rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
-        }
-    }
-}
-
-END_SCOPE(Cn3D)
-

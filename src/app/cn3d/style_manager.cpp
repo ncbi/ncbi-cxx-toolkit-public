@@ -28,221 +28,6 @@
 * File Description:
 *      manager object to track drawing style of objects at various levels
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.71  2003/01/30 14:00:23  thiessen
-* add Block Z Fit coloring
-*
-* Revision 1.70  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.69  2002/11/18 20:49:11  thiessen
-* move unaligned/no-coord colors into Colors class
-*
-* Revision 1.68  2002/11/10 01:26:16  thiessen
-* tweak loading of style annotation residue ranges
-*
-* Revision 1.67  2002/08/15 22:13:18  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.66  2002/04/27 16:32:15  thiessen
-* fix small leaks/bugs found by BoundsChecker
-*
-* Revision 1.65  2002/04/12 01:54:43  thiessen
-* tweaks to style stuff
-*
-* Revision 1.64  2002/04/11 17:50:28  thiessen
-* fix domain coloring bug
-*
-* Revision 1.63  2002/04/11 16:39:56  thiessen
-* fix style manager bug
-*
-* Revision 1.62  2002/02/22 20:46:57  thiessen
-* more rigorous fix for same
-*
-* Revision 1.61  2002/02/22 20:17:24  thiessen
-* fix feature range problems
-*
-* Revision 1.60  2002/01/19 02:34:50  thiessen
-* fixes for changes in asn serialization API
-*
-* Revision 1.59  2001/12/12 14:04:15  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.58  2001/12/06 23:13:46  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.57  2001/11/27 16:26:10  thiessen
-* major update to data management system
-*
-* Revision 1.56  2001/10/24 17:13:46  thiessen
-* skip style annotation if structure not loaded
-*
-* Revision 1.55  2001/10/17 17:46:22  thiessen
-* save camera setup and rotation center in files
-*
-* Revision 1.54  2001/09/18 03:10:46  thiessen
-* add preliminary sequence import pipeline
-*
-* Revision 1.53  2001/09/04 14:40:19  thiessen
-* add rainbow and charge coloring
-*
-* Revision 1.52  2001/08/24 00:41:36  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.51  2001/08/21 01:10:46  thiessen
-* add labeling
-*
-* Revision 1.50  2001/08/13 22:30:59  thiessen
-* add structure window mouse drag/zoom; add highlight option to render settings
-*
-* Revision 1.49  2001/08/10 15:01:58  thiessen
-* fill out shortcuts; add update show/hide menu
-*
-* Revision 1.48  2001/08/09 19:07:14  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.47  2001/08/03 13:41:33  thiessen
-* add registry and style favorites
-*
-* Revision 1.46  2001/07/12 17:35:15  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-* Revision 1.45  2001/07/04 19:39:17  thiessen
-* finish user annotation system
-*
-* Revision 1.44  2001/06/29 18:54:46  thiessen
-* fix mysterious CRef error in MSVC MT compile mode
-*
-* Revision 1.43  2001/06/29 18:13:58  thiessen
-* initial (incomplete) user annotation system
-*
-* Revision 1.42  2001/06/21 02:02:34  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.41  2001/06/15 14:06:40  thiessen
-* save/load asn styles now complete
-*
-* Revision 1.40  2001/06/15 13:00:05  thiessen
-* fix enumerated type casts fo unix compilers
-*
-* Revision 1.39  2001/06/15 02:23:00  thiessen
-* fill code for settings<->asn
-*
-* Revision 1.38  2001/06/14 17:45:10  thiessen
-* progress in styles<->asn ; add structure limits
-*
-* Revision 1.37  2001/06/14 00:34:02  thiessen
-* asn additions
-*
-* Revision 1.36  2001/06/08 14:47:06  thiessen
-* fully functional (modal) render settings panel
-*
-* Revision 1.35  2001/06/07 19:05:38  thiessen
-* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
-*
-* Revision 1.34  2001/06/01 13:01:00  thiessen
-* fix wx-string problem again...
-*
-* Revision 1.33  2001/05/31 18:47:10  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.32  2001/05/15 23:48:38  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.31  2001/03/29 15:49:21  thiessen
-* use disulfide color only for virtual disulfides
-*
-* Revision 1.30  2001/03/29 15:32:42  thiessen
-* change disulfide, connection colors to not-yellow
-*
-* Revision 1.29  2001/03/23 23:31:56  thiessen
-* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
-*
-* Revision 1.28  2001/03/23 15:14:07  thiessen
-* load sidechains in CDD's
-*
-* Revision 1.27  2001/03/23 04:18:53  thiessen
-* parse and display disulfides
-*
-* Revision 1.26  2001/03/22 00:33:17  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.25  2001/03/09 15:49:05  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.24  2001/02/13 20:33:50  thiessen
-* add information content coloring
-*
-* Revision 1.23  2001/02/08 23:01:51  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.22  2001/01/30 20:51:20  thiessen
-* minor fixes
-*
-* Revision 1.21  2000/12/15 15:51:48  thiessen
-* show/hide system installed
-*
-* Revision 1.20  2000/12/01 19:35:57  thiessen
-* better domain assignment; basic show/hide mechanism
-*
-* Revision 1.19  2000/11/30 15:49:40  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.18  2000/10/16 14:25:48  thiessen
-* working alignment fit coloring
-*
-* Revision 1.17  2000/10/05 18:34:43  thiessen
-* first working editing operation
-*
-* Revision 1.16  2000/09/20 22:22:30  thiessen
-* working conservation coloring; split and center unaligned justification
-*
-* Revision 1.15  2000/09/15 19:24:22  thiessen
-* allow repeated structures w/o different local id
-*
-* Revision 1.14  2000/09/11 22:57:34  thiessen
-* working highlighting
-*
-* Revision 1.13  2000/09/11 14:06:30  thiessen
-* working alignment coloring
-*
-* Revision 1.12  2000/09/08 20:16:55  thiessen
-* working dynamic alignment views
-*
-* Revision 1.11  2000/08/24 23:40:19  thiessen
-* add 'atomic ion' labels
-*
-* Revision 1.10  2000/08/24 18:43:52  thiessen
-* tweaks for transparent sphere display
-*
-* Revision 1.9  2000/08/21 19:31:48  thiessen
-* add style consistency checking
-*
-* Revision 1.8  2000/08/21 17:22:38  thiessen
-* add primitive highlighting for testing
-*
-* Revision 1.7  2000/08/18 18:57:40  thiessen
-* added transparent spheres
-*
-* Revision 1.6  2000/08/17 18:33:12  thiessen
-* minor fixes to StyleManager
-*
-* Revision 1.5  2000/08/17 14:24:07  thiessen
-* added working StyleManager
-*
-* Revision 1.4  2000/08/13 02:43:02  thiessen
-* added helix and strand objects
-*
-* Revision 1.3  2000/08/11 12:58:31  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.2  2000/08/04 22:49:04  thiessen
-* add backbone atom classification and selection feedback mechanism
-*
-* Revision 1.1  2000/08/03 15:13:59  thiessen
-* add skeleton of style and show/hide managers
-*
 * ===========================================================================
 */
 
@@ -783,7 +568,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     const StyleSettings::GeneralStyle* *saveGeneralStyle) const
 {
     if (!residue || !atomStyle) {
-        ERR_POST(Error << "StyleManager::GetAtomStyle() got NULL residue or atomStyle");
+        ERRORMSG("StyleManager::GetAtomStyle() got NULL residue or atomStyle");
         return false;
     }
     atomStyle->isHighlighted = false; // queried sometimes even if atom not displayed
@@ -824,13 +609,13 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         else if (molecule->IsHeterogen())
             generalStyle = &(settings.heterogens);
         else {
-            ERR_POST(Error << "StyleManager::GetAtomStyle() - confused about style settings");
+            ERRORMSG("StyleManager::GetAtomStyle() - confused about style settings");
             return false;
         }
     }
 
     if ((!backboneStyle && !generalStyle) || (backboneStyle && generalStyle)) {
-        ERR_POST(Error << "StyleManager::GetAtomStyle() - confused about style settings");
+        ERRORMSG("StyleManager::GetAtomStyle() - confused about style settings");
         return false;
     }
     if (saveBackboneStyle) *saveBackboneStyle = backboneStyle;
@@ -904,7 +689,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             atomStyle->radius = element->vdWRadius * settings.spaceFillProportion;
             break;
         default:
-            ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate style for atom");
+            ERRORMSG("StyleManager::GetAtomStyle() - inappropriate style for atom");
             return false;
     }
 
@@ -1008,7 +793,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             break;
 
         default:
-            ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
+            ERRORMSG("StyleManager::GetAtomStyle() - inappropriate color scheme for atom");
             return false;
     }
 
@@ -1071,7 +856,7 @@ static bool SetBondStyleFromResidueStyle(StyleSettings::eDrawingStyle style,
             end->radius = settings.tubeWormRadius;
             break;
         default:
-            ERR_POST(Error << "SetBondStyleFromResidueStyle() - invalid style for bond");
+            ERRORMSG("SetBondStyleFromResidueStyle() - invalid style for bond");
             return false;
     }
     return true;
@@ -1126,7 +911,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             bondStyle->end1.radius = bondStyle->end2.radius = globalStyle.tubeRadius;
             bondStyle->end1.atomCap = bondStyle->end2.atomCap = true;
         } else {
-            ERR_POST(Error << "StyleManager::GetBondStyle() - invalid connection style");
+            ERRORMSG("StyleManager::GetBondStyle() - invalid connection style");
             return false;
         }
     }
@@ -1290,7 +1075,7 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
     } else if (generalStyle.style == StyleSettings::eWithoutArrows) {
         objectStyle->style = StyleManager::eObjectWithoutArrow;
     } else {
-        ERR_POST(Warning << "StyleManager::GetObjectStyle() - invalid 3d-object style");
+        WARNINGMSG("StyleManager::GetObjectStyle() - invalid 3d-object style");
         return false;
     }
 
@@ -1318,7 +1103,7 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
             // set by caller
             break;
         default:
-            ERR_POST(Error << "StyleManager::GetObjectStyle() - inappropriate color scheme for 3d-object");
+            ERRORMSG("StyleManager::GetObjectStyle() - inappropriate color scheme for 3d-object");
             return false;
     }
 
@@ -1426,7 +1211,7 @@ CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
     if (userStyles.size() > 0) {
 
         // create an ordered list of style id's
-        typedef std::list < int > IntList;
+        typedef list < int > IntList;
         IntList keys;
         StyleMap::const_iterator s, se = userStyles.end();
         for (s=userStyles.begin(); s!=se; s++) keys.push_back(s->first);
@@ -1455,7 +1240,7 @@ bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styl
         for (t=styleDictionary.GetStyle_table().begin(); t!=te; t++) {
             int id = (*t)->GetId().Get();
             if (userStyles.find(id) != userStyles.end()) {
-                ERR_POST(Error << "repeated style table id in style dictionary");
+                ERRORMSG("repeated style table id in style dictionary");
                 return false;
             } else
                 if (!userStyles[id].LoadSettingsFromASN((*t)->GetStyle())) return false;
@@ -1624,7 +1409,7 @@ static bool CreateObjectLocation(
                 mmdbID->Set(r->first->mmdbID);
                 loc->SetStructure_id().SetMmdb_id(*mmdbID);
             } else {
-                ERR_POST(Error << "CreateObjectLocation() - MoleculeIdentifier must (currently) have MMDB ID");
+                ERRORMSG("CreateObjectLocation() - MoleculeIdentifier must (currently) have MMDB ID");
                 return false;
             }
             residuesASN->push_back(loc);
@@ -1659,7 +1444,7 @@ static bool CreateObjectLocation(
                 first = last + 2;
             }
             if (molecule->GetResidues().size() == 0) {
-                ERR_POST(Error << "CreateObjectLocation() - no residue ranges found");
+                ERRORMSG("CreateObjectLocation() - no residue ranges found");
                 return false;
             }
         }
@@ -1691,7 +1476,7 @@ bool StyleManager::SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotation
 
         // fill out residues list
         if (!CreateObjectLocation(&(annotation->SetResidues()), a->residues)) {
-            ERR_POST(Error << "StyleManager::CreateASNUserAnnotations() - error creating object location");
+            ERRORMSG("StyleManager::CreateASNUserAnnotations() - error creating object location");
             return false;
         }
 
@@ -1711,7 +1496,7 @@ static bool ExtractObjectLocation(
         if ((*o)->GetStructure_id().IsMmdb_id()) {
             mmdbID = (*o)->GetStructure_id().GetMmdb_id().Get();
         } else {
-            ERR_POST(Error << "ExtractObjectLocation() - can't handle non-MMDB identifiers (yet)");
+            ERRORMSG("ExtractObjectLocation() - can't handle non-MMDB identifiers (yet)");
             return false;
         }
 
@@ -1723,14 +1508,14 @@ static bool ExtractObjectLocation(
             // get identifier for this molecule
             const MoleculeIdentifier *identifier = MoleculeIdentifier::FindIdentifier(mmdbID, moleculeID);
             if (!identifier) {
-                ERR_POST(Warning << "ExtractObjectLocation() - can't find identifier for molecule location");
-                ERR_POST(Warning << "structure MMDB ID " << mmdbID << " not loaded?");
+                WARNINGMSG("ExtractObjectLocation() - can't find identifier for molecule location");
+                WARNINGMSG("structure MMDB ID " << mmdbID << " not loaded?");
                 continue;
             }
 
             // set residue ranges
             int i;
-            std::vector < bool >& residueFlags = (*residueMap)[identifier];
+            vector < bool >& residueFlags = (*residueMap)[identifier];
             if (residueFlags.size() == 0)
                 residueFlags.resize(identifier->nResidues, false);
 
@@ -1742,7 +1527,7 @@ static bool ExtractObjectLocation(
                         if (i > 0 && i <= residueFlags.size()) {
                             residueFlags[i - 1] = true;     // assume index = residue id - 1
                         } else {
-                            ERR_POST(Error << "ExtractObjectLocation() - residue from/to out of range");
+                            ERRORMSG("ExtractObjectLocation() - residue from/to out of range");
                             return false;
                         }
                     }
@@ -1804,3 +1589,224 @@ bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& sty
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.72  2003/02/03 19:20:08  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.71  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
+* Revision 1.70  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.69  2002/11/18 20:49:11  thiessen
+* move unaligned/no-coord colors into Colors class
+*
+* Revision 1.68  2002/11/10 01:26:16  thiessen
+* tweak loading of style annotation residue ranges
+*
+* Revision 1.67  2002/08/15 22:13:18  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.66  2002/04/27 16:32:15  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
+* Revision 1.65  2002/04/12 01:54:43  thiessen
+* tweaks to style stuff
+*
+* Revision 1.64  2002/04/11 17:50:28  thiessen
+* fix domain coloring bug
+*
+* Revision 1.63  2002/04/11 16:39:56  thiessen
+* fix style manager bug
+*
+* Revision 1.62  2002/02/22 20:46:57  thiessen
+* more rigorous fix for same
+*
+* Revision 1.61  2002/02/22 20:17:24  thiessen
+* fix feature range problems
+*
+* Revision 1.60  2002/01/19 02:34:50  thiessen
+* fixes for changes in asn serialization API
+*
+* Revision 1.59  2001/12/12 14:04:15  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.58  2001/12/06 23:13:46  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.57  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
+* Revision 1.56  2001/10/24 17:13:46  thiessen
+* skip style annotation if structure not loaded
+*
+* Revision 1.55  2001/10/17 17:46:22  thiessen
+* save camera setup and rotation center in files
+*
+* Revision 1.54  2001/09/18 03:10:46  thiessen
+* add preliminary sequence import pipeline
+*
+* Revision 1.53  2001/09/04 14:40:19  thiessen
+* add rainbow and charge coloring
+*
+* Revision 1.52  2001/08/24 00:41:36  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.51  2001/08/21 01:10:46  thiessen
+* add labeling
+*
+* Revision 1.50  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
+* Revision 1.49  2001/08/10 15:01:58  thiessen
+* fill out shortcuts; add update show/hide menu
+*
+* Revision 1.48  2001/08/09 19:07:14  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.47  2001/08/03 13:41:33  thiessen
+* add registry and style favorites
+*
+* Revision 1.46  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+* Revision 1.45  2001/07/04 19:39:17  thiessen
+* finish user annotation system
+*
+* Revision 1.44  2001/06/29 18:54:46  thiessen
+* fix mysterious CRef error in MSVC MT compile mode
+*
+* Revision 1.43  2001/06/29 18:13:58  thiessen
+* initial (incomplete) user annotation system
+*
+* Revision 1.42  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.41  2001/06/15 14:06:40  thiessen
+* save/load asn styles now complete
+*
+* Revision 1.40  2001/06/15 13:00:05  thiessen
+* fix enumerated type casts fo unix compilers
+*
+* Revision 1.39  2001/06/15 02:23:00  thiessen
+* fill code for settings<->asn
+*
+* Revision 1.38  2001/06/14 17:45:10  thiessen
+* progress in styles<->asn ; add structure limits
+*
+* Revision 1.37  2001/06/14 00:34:02  thiessen
+* asn additions
+*
+* Revision 1.36  2001/06/08 14:47:06  thiessen
+* fully functional (modal) render settings panel
+*
+* Revision 1.35  2001/06/07 19:05:38  thiessen
+* functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
+*
+* Revision 1.34  2001/06/01 13:01:00  thiessen
+* fix wx-string problem again...
+*
+* Revision 1.33  2001/05/31 18:47:10  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.32  2001/05/15 23:48:38  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.31  2001/03/29 15:49:21  thiessen
+* use disulfide color only for virtual disulfides
+*
+* Revision 1.30  2001/03/29 15:32:42  thiessen
+* change disulfide, connection colors to not-yellow
+*
+* Revision 1.29  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
+* Revision 1.28  2001/03/23 15:14:07  thiessen
+* load sidechains in CDD's
+*
+* Revision 1.27  2001/03/23 04:18:53  thiessen
+* parse and display disulfides
+*
+* Revision 1.26  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.25  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.24  2001/02/13 20:33:50  thiessen
+* add information content coloring
+*
+* Revision 1.23  2001/02/08 23:01:51  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+* Revision 1.22  2001/01/30 20:51:20  thiessen
+* minor fixes
+*
+* Revision 1.21  2000/12/15 15:51:48  thiessen
+* show/hide system installed
+*
+* Revision 1.20  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
+* Revision 1.19  2000/11/30 15:49:40  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.18  2000/10/16 14:25:48  thiessen
+* working alignment fit coloring
+*
+* Revision 1.17  2000/10/05 18:34:43  thiessen
+* first working editing operation
+*
+* Revision 1.16  2000/09/20 22:22:30  thiessen
+* working conservation coloring; split and center unaligned justification
+*
+* Revision 1.15  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
+* Revision 1.14  2000/09/11 22:57:34  thiessen
+* working highlighting
+*
+* Revision 1.13  2000/09/11 14:06:30  thiessen
+* working alignment coloring
+*
+* Revision 1.12  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
+* Revision 1.11  2000/08/24 23:40:19  thiessen
+* add 'atomic ion' labels
+*
+* Revision 1.10  2000/08/24 18:43:52  thiessen
+* tweaks for transparent sphere display
+*
+* Revision 1.9  2000/08/21 19:31:48  thiessen
+* add style consistency checking
+*
+* Revision 1.8  2000/08/21 17:22:38  thiessen
+* add primitive highlighting for testing
+*
+* Revision 1.7  2000/08/18 18:57:40  thiessen
+* added transparent spheres
+*
+* Revision 1.6  2000/08/17 18:33:12  thiessen
+* minor fixes to StyleManager
+*
+* Revision 1.5  2000/08/17 14:24:07  thiessen
+* added working StyleManager
+*
+* Revision 1.4  2000/08/13 02:43:02  thiessen
+* added helix and strand objects
+*
+* Revision 1.3  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.2  2000/08/04 22:49:04  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
+* Revision 1.1  2000/08/03 15:13:59  thiessen
+* add skeleton of style and show/hide managers
+*
+*/

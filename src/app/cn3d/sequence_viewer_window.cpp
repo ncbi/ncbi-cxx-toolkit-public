@@ -28,149 +28,6 @@
 * File Description:
 *      implementation of GUI part of main sequence/alignment viewer
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.47  2003/01/14 14:15:07  thiessen
-* default PSSM score = 1.0 when no structure
-*
-* Revision 1.46  2002/12/19 14:15:37  thiessen
-* mac fixes to menus, add icon
-*
-* Revision 1.45  2002/12/06 17:07:15  thiessen
-* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
-*
-* Revision 1.44  2002/12/02 13:37:09  thiessen
-* add seqrow format export
-*
-* Revision 1.43  2002/10/13 22:58:08  thiessen
-* add redo ability to editor
-*
-* Revision 1.42  2002/10/07 18:51:53  thiessen
-* add abbreviated taxonomy tree
-*
-* Revision 1.41  2002/10/04 18:45:28  thiessen
-* updates to taxonomy viewer
-*
-* Revision 1.40  2002/09/09 22:51:19  thiessen
-* add basic taxonomy tree viewer
-*
-* Revision 1.39  2002/09/09 13:38:23  thiessen
-* separate save and save-as
-*
-* Revision 1.38  2002/09/06 13:06:31  thiessen
-* fix menu accelerator conflicts
-*
-* Revision 1.37  2002/09/05 18:38:57  thiessen
-* add sort by highlights
-*
-* Revision 1.36  2002/09/03 13:15:58  thiessen
-* add A2M export
-*
-* Revision 1.35  2002/08/15 22:13:17  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.34  2002/06/13 14:54:07  thiessen
-* add sort by self-hit
-*
-* Revision 1.33  2002/06/13 13:32:39  thiessen
-* add self-hit calculation
-*
-* Revision 1.32  2002/06/05 17:25:47  thiessen
-* change 'update' to 'import' in GUI
-*
-* Revision 1.31  2002/06/05 14:28:40  thiessen
-* reorganize handling of window titles
-*
-* Revision 1.30  2002/05/17 19:10:27  thiessen
-* preliminary range restriction for BLAST/PSSM
-*
-* Revision 1.29  2002/04/22 14:27:29  thiessen
-* add alignment export
-*
-* Revision 1.28  2002/03/19 18:48:00  thiessen
-* small bug fixes; remember PSSM weight
-*
-* Revision 1.27  2002/03/04 15:52:14  thiessen
-* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
-*
-* Revision 1.26  2002/02/13 14:53:30  thiessen
-* add update sort
-*
-* Revision 1.25  2001/12/06 23:13:45  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.24  2001/10/20 20:16:32  thiessen
-* don't use wxDefaultPosition for dialogs (win2000 problem)
-*
-* Revision 1.23  2001/10/08 14:18:33  thiessen
-* fix show/hide dialog under wxGTK
-*
-* Revision 1.22  2001/10/01 16:04:24  thiessen
-* make CDD annotation window non-modal; add SetWindowTitle to viewers
-*
-* Revision 1.21  2001/09/06 13:10:10  thiessen
-* tweak show hide dialog layout
-*
-* Revision 1.20  2001/08/24 18:53:43  thiessen
-* add filename to sequence viewer window titles
-*
-* Revision 1.19  2001/06/21 02:02:34  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.18  2001/06/04 14:58:00  thiessen
-* add proximity sort; highlight sequence on browser launch
-*
-* Revision 1.17  2001/06/01 14:05:13  thiessen
-* add float PDB sort
-*
-* Revision 1.16  2001/05/17 18:34:26  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.15  2001/05/15 23:48:37  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.14  2001/05/11 02:10:42  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.13  2001/05/09 17:15:07  thiessen
-* add automatic block removal upon demotion
-*
-* Revision 1.12  2001/05/08 21:15:44  thiessen
-* add PSSM weight dialog for sorting
-*
-* Revision 1.11  2001/04/04 00:27:15  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.10  2001/03/30 14:43:41  thiessen
-* show threader scores in status line; misc UI tweaks
-*
-* Revision 1.9  2001/03/30 03:07:34  thiessen
-* add threader score calculation & sorting
-*
-* Revision 1.8  2001/03/19 15:50:40  thiessen
-* add sort rows by identifier
-*
-* Revision 1.7  2001/03/17 14:06:49  thiessen
-* more workarounds for namespace/#define conflicts
-*
-* Revision 1.6  2001/03/13 01:25:06  thiessen
-* working undo system for >1 alignment (e.g., update window)
-*
-* Revision 1.5  2001/03/09 15:49:05  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.4  2001/03/06 20:20:51  thiessen
-* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
-*
-* Revision 1.3  2001/03/02 15:32:52  thiessen
-* minor fixes to save & show/hide dialogs, wx string headers
-*
-* Revision 1.2  2001/03/02 03:26:59  thiessen
-* fix dangling pointer upon app close
-*
-* Revision 1.1  2001/03/01 20:15:51  thiessen
-* major rearrangement of sequence viewer code into base and derived classes
-*
 * ===========================================================================
 */
 
@@ -394,13 +251,13 @@ bool SequenceViewerWindow::SaveDialog(bool prompt, bool canCancel)
 
 void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
 {
-    std::vector < const Sequence * > slaveSequences;
+    vector < const Sequence * > slaveSequences;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
     wxString *titleStrs = new wxString[slaveSequences.size()];
     for (int i=0; i<slaveSequences.size(); i++)
         titleStrs[i] = slaveSequences[i]->identifier->ToString().c_str();
 
-    std::vector < bool > visibilities;
+    vector < bool > visibilities;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
     wxString title = "Show/Hide Slaves of ";
@@ -414,7 +271,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
 
 bool SequenceViewerWindow::QueryShowAllRows(void)
 {
-    std::vector < bool > visibilities;
+    vector < bool > visibilities;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
     int i;
@@ -454,7 +311,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
 
     // bring up selection dialog for realigning multiple rows
     if (sequenceViewer->GetCurrentAlignments().size() == 0) {
-        ERR_POST(Error << "SequenceViewerWindow::OnRealign() - no alignment!");
+        ERRORMSG("SequenceViewerWindow::OnRealign() - no alignment!");
         return;
     }
     BlockMultipleAlignment *alignment = sequenceViewer->GetCurrentAlignments().front();
@@ -467,7 +324,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     for (i=1; i<sequences.size(); i++)  // assuming master is first sequence
         titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
 
-    std::vector < bool > selectedSlaves(sequences.size() - 1, false);
+    vector < bool > selectedSlaves(sequences.size() - 1, false);
 
     wxString title = "Realign Slaves of ";
     title.Append(alignment->GetMaster()->identifier->ToString().c_str());
@@ -478,7 +335,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     dialog.ShowModal();
 
     // make list of slave rows to be realigned
-    std::vector < int > rowOrder, realignSlaves;
+    vector < int > rowOrder, realignSlaves;
     sequenceViewer->GetCurrentDisplay()->GetRowOrder(alignment, &rowOrder);
     for (i=0; i<selectedSlaves.size(); i++)
         if (selectedSlaves[i])
@@ -605,3 +462,152 @@ void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.48  2003/02/03 19:20:06  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.47  2003/01/14 14:15:07  thiessen
+* default PSSM score = 1.0 when no structure
+*
+* Revision 1.46  2002/12/19 14:15:37  thiessen
+* mac fixes to menus, add icon
+*
+* Revision 1.45  2002/12/06 17:07:15  thiessen
+* remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
+*
+* Revision 1.44  2002/12/02 13:37:09  thiessen
+* add seqrow format export
+*
+* Revision 1.43  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
+* Revision 1.42  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
+* Revision 1.41  2002/10/04 18:45:28  thiessen
+* updates to taxonomy viewer
+*
+* Revision 1.40  2002/09/09 22:51:19  thiessen
+* add basic taxonomy tree viewer
+*
+* Revision 1.39  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
+* Revision 1.38  2002/09/06 13:06:31  thiessen
+* fix menu accelerator conflicts
+*
+* Revision 1.37  2002/09/05 18:38:57  thiessen
+* add sort by highlights
+*
+* Revision 1.36  2002/09/03 13:15:58  thiessen
+* add A2M export
+*
+* Revision 1.35  2002/08/15 22:13:17  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.34  2002/06/13 14:54:07  thiessen
+* add sort by self-hit
+*
+* Revision 1.33  2002/06/13 13:32:39  thiessen
+* add self-hit calculation
+*
+* Revision 1.32  2002/06/05 17:25:47  thiessen
+* change 'update' to 'import' in GUI
+*
+* Revision 1.31  2002/06/05 14:28:40  thiessen
+* reorganize handling of window titles
+*
+* Revision 1.30  2002/05/17 19:10:27  thiessen
+* preliminary range restriction for BLAST/PSSM
+*
+* Revision 1.29  2002/04/22 14:27:29  thiessen
+* add alignment export
+*
+* Revision 1.28  2002/03/19 18:48:00  thiessen
+* small bug fixes; remember PSSM weight
+*
+* Revision 1.27  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
+* Revision 1.26  2002/02/13 14:53:30  thiessen
+* add update sort
+*
+* Revision 1.25  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.24  2001/10/20 20:16:32  thiessen
+* don't use wxDefaultPosition for dialogs (win2000 problem)
+*
+* Revision 1.23  2001/10/08 14:18:33  thiessen
+* fix show/hide dialog under wxGTK
+*
+* Revision 1.22  2001/10/01 16:04:24  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
+* Revision 1.21  2001/09/06 13:10:10  thiessen
+* tweak show hide dialog layout
+*
+* Revision 1.20  2001/08/24 18:53:43  thiessen
+* add filename to sequence viewer window titles
+*
+* Revision 1.19  2001/06/21 02:02:34  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.18  2001/06/04 14:58:00  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
+* Revision 1.17  2001/06/01 14:05:13  thiessen
+* add float PDB sort
+*
+* Revision 1.16  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.15  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.14  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.13  2001/05/09 17:15:07  thiessen
+* add automatic block removal upon demotion
+*
+* Revision 1.12  2001/05/08 21:15:44  thiessen
+* add PSSM weight dialog for sorting
+*
+* Revision 1.11  2001/04/04 00:27:15  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.10  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
+* Revision 1.9  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
+* Revision 1.8  2001/03/19 15:50:40  thiessen
+* add sort rows by identifier
+*
+* Revision 1.7  2001/03/17 14:06:49  thiessen
+* more workarounds for namespace/#define conflicts
+*
+* Revision 1.6  2001/03/13 01:25:06  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
+* Revision 1.5  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
+* Revision 1.4  2001/03/06 20:20:51  thiessen
+* progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
+*
+* Revision 1.3  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
+* Revision 1.2  2001/03/02 03:26:59  thiessen
+* fix dangling pointer upon app close
+*
+* Revision 1.1  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
+*/

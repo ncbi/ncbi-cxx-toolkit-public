@@ -28,8 +28,646 @@
 * File Description:
 *      Classes to hold sets of sequences
 *
+* ===========================================================================
+*/
+
+#if defined(__WXMSW__)
+#include <windows.h>
+#include <shellapi.h>   // for ShellExecute, needed to launch browser
+
+#elif defined(__WXGTK__)
+#include <unistd.h>
+
+#elif defined(__WXMAC__)
+// full paths needed to void having to add -I/Developer/Headers/FlatCarbon to all modules...
+#include "/Developer/Headers/FlatCarbon/Types.h"
+#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
+#endif
+
+#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbistl.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/NCBIeaa.hpp>
+#include <objects/seq/IUPACaa.hpp>
+#include <objects/seq/NCBIstdaa.hpp>
+#include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI8na.hpp>
+#include <objects/seq/NCBI2na.hpp>
+#include <objects/seq/IUPACna.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seqblock/PDB_block.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+
+#include <regex.h>  // regex from C-toolkit
+
+#include <memory>
+
+#include "cn3d/sequence_set.hpp"
+#include "cn3d/molecule.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
+#include "cn3d/messenger.hpp"
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+
+BEGIN_SCOPE(Cn3D)
+
+static void UnpackSeqSet(CBioseq_set& bss, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+{
+    CBioseq_set::TSeq_set::iterator q, qe = bss.SetSeq_set().end();
+    for (q=bss.SetSeq_set().begin(); q!=qe; q++) {
+        if (q->GetObject().IsSeq()) {
+
+            // only store amino acid or nucleotide sequences
+            if (q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_aa &&
+                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_dna &&
+                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_rna &&
+                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
+                continue;
+
+            const Sequence *sequence = new Sequence(parent, q->GetObject().SetSeq());
+            seqlist.push_back(sequence);
+
+        } else { // Bioseq-set
+            UnpackSeqSet(q->GetObject().SetSet(), parent, seqlist);
+        }
+    }
+}
+
+static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+{
+    if (seqEntry.IsSeq()) {
+        const Sequence *sequence = new Sequence(parent, seqEntry.SetSeq());
+        seqlist.push_back(sequence);
+    } else { // Bioseq-set
+        UnpackSeqSet(seqEntry.SetSet(), parent, seqlist);
+    }
+}
+
+SequenceSet::SequenceSet(StructureBase *parent, SeqEntryList& seqEntries) :
+    StructureBase(parent)
+{
+    SeqEntryList::iterator s, se = seqEntries.end();
+    for (s=seqEntries.begin(); s!=se; s++)
+        UnpackSeqEntry(s->GetObject(), this, sequences);
+    TRACEMSG("number of sequences: " << sequences.size());
+}
+
+#define FIRSTOF2(byte) (((byte) & 0xF0) >> 4)
+#define SECONDOF2(byte) ((byte) & 0x0F)
+
+static void StringFrom4na(const vector< char >& vec, string *str, bool isDNA)
+{
+    if (SECONDOF2(vec.back()) > 0)
+        str->resize(vec.size() * 2);
+    else
+        str->resize(vec.size() * 2 - 1);
+
+    // first, extract 4-bit values
+    int i;
+    for (i=0; i<vec.size(); i++) {
+        str->at(2*i) = FIRSTOF2(vec[i]);
+        if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
+    }
+
+    // then convert 4-bit values to ascii characters
+    for (i=0; i<str->size(); i++) {
+        switch (str->at(i)) {
+            case 1: str->at(i) = 'A'; break;
+            case 2: str->at(i) = 'C'; break;
+            case 4: str->at(i) = 'G'; break;
+            case 8: isDNA ? str->at(i) = 'T' : str->at(i) = 'U'; break;
+            default:
+                str->at(i) = 'X';
+        }
+    }
+}
+
+#define FIRSTOF4(byte) (((byte) & 0xC0) >> 6)
+#define SECONDOF4(byte) (((byte) & 0x30) >> 4)
+#define THIRDOF4(byte) (((byte) & 0x0C) >> 2)
+#define FOURTHOF4(byte) ((byte) & 0x03)
+
+static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
+{
+    str->resize(vec.size() * 4);
+
+    // first, extract 4-bit values
+    int i;
+    for (i=0; i<vec.size(); i++) {
+        str->at(4*i) = FIRSTOF4(vec[i]);
+        str->at(4*i + 1) = SECONDOF4(vec[i]);
+        str->at(4*i + 2) = THIRDOF4(vec[i]);
+        str->at(4*i + 3) = FOURTHOF4(vec[i]);
+    }
+
+    // then convert 4-bit values to ascii characters
+    for (i=0; i<str->size(); i++) {
+        switch (str->at(i)) {
+            case 0: str->at(i) = 'A'; break;
+            case 1: str->at(i) = 'C'; break;
+            case 2: str->at(i) = 'G'; break;
+            case 3: isDNA ? str->at(i) = 'T' : str->at(i) = 'U'; break;
+        }
+    }
+}
+
+static void StringFromStdaa(const vector < char >& vec, string *str)
+{
+    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+
+    str->resize(vec.size());
+    for (int i=0; i<vec.size(); i++)
+        str->at(i) = stdaaMap[vec[i]];
+}
+
+Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
+    StructureBase(parent), bioseqASN(&bioseq), molecule(NULL), isProtein(false)
+{
+    int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,
+        pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
+    string pdbID, accession;
+
+    // get Seq-id info
+    CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
+    for (s=bioseq.GetId().begin(); s!=se; s++) {
+        if (s->GetObject().IsGi()) {
+            gi = s->GetObject().GetGi();
+        } else if (s->GetObject().IsPdb()) {
+            pdbID = s->GetObject().GetPdb().GetMol().Get();
+            if (s->GetObject().GetPdb().IsSetChain())
+                pdbChain = s->GetObject().GetPdb().GetChain();
+            else
+                pdbChain = ' ';
+        } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
+            accession = s->GetObject().GetLocal().GetStr();
+            // special case where local accession is actually a PDB chain + extra stuff
+            if (pdbID.size() == 0 && accession.size() >= 7 &&
+                    accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
+                pdbID = accession.substr(0, 4);
+                pdbChain = accession[5];
+                accession.erase();
+            }
+        } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
+            accession = s->GetObject().GetGenbank().GetAccession();
+        } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
+            accession = s->GetObject().GetSwissprot().GetAccession();
+        }
+    }
+    if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
+        ERRORMSG("Sequence::Sequence() - can't parse SeqId");
+        return;
+    }
+
+    if (bioseq.IsSetDescr()) {
+        string defline, taxid;
+        CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
+        for (d=bioseq.GetDescr().Get().begin(); d!=de; d++) {
+
+            // get "defline" from title or compound
+            if ((*d)->IsTitle()) {              // prefer title over compound
+                defline = (*d)->GetTitle();
+            } else if (defline.size() == 0 && (*d)->IsPdb() && (*d)->GetPdb().GetCompound().size() > 0) {
+                defline = (*d)->GetPdb().GetCompound().front();
+            }
+
+            // get taxonomy
+            if ((*d)->IsSource()) {
+                if ((*d)->GetSource().GetOrg().IsSetTaxname())
+                    taxid = (*d)->GetSource().GetOrg().GetTaxname();
+                else if ((*d)->GetSource().GetOrg().IsSetCommon())
+                    taxid = (*d)->GetSource().GetOrg().GetCommon();
+            }
+        }
+        if (taxid.size() > 0)
+            description = string("[") + taxid + ']';
+        if (defline.size() > 0) {
+            if (taxid.size() > 0) description += ' ';
+            description += defline;
+        }
+    }
+
+    // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately
+    if (bioseq.IsSetAnnot()) {
+        CBioseq::TAnnot::const_iterator a, ae = bioseq.GetAnnot().end();
+        for (a=bioseq.GetAnnot().begin(); a!=ae; a++) {
+            if (a->GetObject().GetData().IsIds()) {
+                CSeq_annot::C_Data::TIds::const_iterator i, ie = a->GetObject().GetData().GetIds().end();
+                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; i++) {
+                    if (i->GetObject().IsGeneral() &&
+                        i->GetObject().GetGeneral().GetDb() == "mmdb" &&
+                        i->GetObject().GetGeneral().GetTag().IsId()) {
+                        mmdbID = i->GetObject().GetGeneral().GetTag().GetId();
+                        break;
+                    }
+                }
+                if (i != ie) break;
+            }
+        }
+    }
+    if (mmdbID != MoleculeIdentifier::VALUE_NOT_SET)
+        TRACEMSG("sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
+            "', is from MMDB id " << mmdbID);
+
+    // get sequence string
+    if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
+
+        // protein formats
+        if (bioseq.GetInst().GetSeq_data().IsNcbieaa()) {
+            sequenceString = bioseq.GetInst().GetSeq_data().GetNcbieaa().Get();
+            isProtein = true;
+        } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
+            sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
+            isProtein = true;
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbistdaa()) {
+            StringFromStdaa(bioseq.GetInst().GetSeq_data().GetNcbistdaa().Get(), &sequenceString);
+            isProtein = true;
+        }
+
+        // nucleotide formats
+        else if (bioseq.GetInst().GetSeq_data().IsIupacna()) {
+            sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbi4na()) {
+            StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi4na().Get(), &sequenceString,
+                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbi8na()) {  // same repr. for non-X as 4na
+            StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi8na().Get(), &sequenceString,
+                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbi2na()) {
+            StringFrom2na(bioseq.GetInst().GetSeq_data().GetNcbi2na().Get(), &sequenceString,
+                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
+            if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() < sequenceString.length())
+                sequenceString.resize(bioseq.GetInst().GetLength());
+        }
+
+        else {
+            ERRORMSG("Sequence::Sequence() - sequence " << gi
+                << ": confused by sequence string format");
+            return;
+        }
+
+        // check length
+        if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() != sequenceString.length()) {
+            ERRORMSG("Sequence::Sequence() - sequence string length mismatch");
+            return;
+        }
+
+        // force uppercase
+        for (int i=0; i<sequenceString.length(); i++)
+            sequenceString[i] = toupper(sequenceString[i]);
+
+    } else {
+        ERRORMSG("Sequence::Sequence() - sequence " << gi << ": confused by sequence representation");
+        return;
+    }
+
+    // get identifier
+    identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
+}
+
+CSeq_id * Sequence::CreateSeqId(void) const
+{
+    CSeq_id *sid = new CSeq_id();
+    FillOutSeqId(sid);
+    return sid;
+}
+
+void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
+{
+    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
+        sid->SetPdb().SetMol().Set(identifier->pdbID);
+        if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
+    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
+        sid->SetGi(identifier->gi);
+    } else if (identifier->accession.size() > 0) {
+        CObject_id *oid = new CObject_id();
+        oid->SetStr(identifier->accession);
+        sid->SetLocal(*oid);
+    } else {
+        ERRORMSG("Sequence::FillOutSeqId() - can't do Seq-id on sequence "
+            << identifier->ToString());
+    }
+}
+
+void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
+{
+    if (identifier->pdbID.size() > 0) {
+        PDBSeqIdPtr pdbid = PDBSeqIdNew();
+        pdbid->mol = StrSave(identifier->pdbID.c_str());
+        pdbid->chain = (Uint1) identifier->pdbChain;
+        ValNodeAddPointer(id, SEQID_PDB, pdbid);
+        if (!addAllTypes) return;
+    }
+    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        ValNodeAddInt(id, SEQID_GI, identifier->gi);
+        if (!addAllTypes) return;
+    }
+    if (identifier->accession.size() > 0) {
+        ObjectIdPtr local = ObjectIdNew();
+        local->str = StrSave(identifier->accession.c_str());
+        ValNodeAddPointer(id, SEQID_LOCAL, local);
+        if (!addAllTypes) return;
+    }
+}
+
+int Sequence::GetOrSetMMDBLink(void) const
+{
+    if (molecule) {
+        const StructureObject *object;
+        if (!molecule->GetParentOfType(&object)) return identifier->mmdbID;
+        if (identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
+            identifier->mmdbID != object->mmdbID)
+            ERRORMSG("Sequence::GetOrSetMMDBLink() - mismatched MMDB ID: identifier says "
+                << identifier->mmdbID << ", StructureObject says " << object->mmdbID);
+        else
+            const_cast<MoleculeIdentifier*>(identifier)->mmdbID = object->mmdbID;
+    }
+    return identifier->mmdbID;
+}
+
+
+#ifdef __WXMSW__
+// code borrowed (and modified) from Nlm_MSWin_OpenDocument() in vibutils.c
+static bool MSWin_OpenDocument(const char* doc_name)
+{
+  int status = (int) ShellExecute(0, "open", doc_name, NULL, NULL, SW_SHOWNORMAL);
+  if (status <= 32) {
+    ERRORMSG("Unable to open document \"" << doc_name << "\", error = " << status);
+    return false;
+  }
+  return true;
+}
+#endif
+
+#ifdef __WXMAC__
+OSStatus MacLaunchURL(ConstStr255Param urlStr)
+{
+    OSStatus err;
+    ICInstance inst;
+    SInt32 startSel;
+    SInt32 endSel;
+
+    err = ICStart(&inst, 'Cn3D');
+    if (err == noErr) {
+#if !TARGET_CARBON
+        err = ICFindConfigFile(inst, 0, nil);
+#endif
+        if (err == noErr) {
+            startSel = 0;
+            endSel = StrLen(urlStr);
+            err = ICLaunchURL(inst, "\p", urlStr, endSel, &startSel, &endSel);
+        }
+        ICStop(inst);
+    }
+    return err;
+}
+#endif
+
+// code borrowed (and modified a lot) from Nlm_LaunchWebPage in bspview.c
+void LaunchWebPage(const char *url)
+{
+    if(!url) return;
+    INFOMSG("launching url " << url);
+
+#if defined(__WXMSW__)
+    if (!MSWin_OpenDocument(url)) {
+        ERRORMSG("Unable to launch browser");
+    }
+
+#elif defined(__WXGTK__)
+    string command;
+    RegistryGetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, &command);
+    size_t pos = 0;
+    while ((pos=command.find("<URL>", pos)) != string::npos)
+        command.replace(pos, 5, url);
+    TRACEMSG("launching browser: " << command);
+    system(command.c_str());
+
+#elif defined(__WXMAC__)
+    MacLaunchURL(url);
+#endif
+}
+
+void Sequence::LaunchWebBrowserWithInfo(void) const
+{
+    string db = isProtein ? "Protein" : "Nucleotide";
+    string opt = isProtein ? "GenPept" : "GenBank";
+    CNcbiOstrstream oss;
+    oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=" << opt
+        << "&db=" << db << "&term=";
+    if (identifier->pdbID.size() > 0) {
+        oss << identifier->pdbID.c_str();
+        if (identifier->pdbChain != ' ')
+            oss << (char) identifier->pdbChain;
+        oss << "%5BACCN%5D";
+    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        oss << identifier->gi << "%5BUID%5D";
+    } else if (identifier->accession.size() > 0) {
+        if (identifier->accession == "query" || identifier->accession == "consensus") return;
+        oss << identifier->accession.c_str() << "%5BACCN%5D";
+    }
+    oss << '\0';
+    LaunchWebPage(oss.str());
+    delete oss.str();
+}
+
+static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
+{
+    try {
+        // check allowed characters
+        static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
+        int i;
+        for (i=0; i<prosite.size(); i++)
+            if (allowed.find(toupper(prosite[i])) == string::npos) break;
+        if (i != prosite.size()) throw "invalid ProSite character";
+        if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
+
+        // translate into real regex syntax;
+        regex->erase();
+        *nGroups = 0;
+
+        bool inGroup = false;
+        for (int i=0; i<prosite.size(); i++) {
+
+            // handle grouping and termini
+            bool characterHandled = true;
+            switch (prosite[i]) {
+                case '-': case '.': case '>':
+                    if (inGroup) {
+                        *regex += ')';
+                        inGroup = false;
+                    }
+                    if (prosite[i] == '>') *regex += '$';
+                    break;
+                case '<':
+                    *regex += '^';
+                    break;
+                default:
+                    characterHandled = false;
+                    break;
+            }
+            if (characterHandled) continue;
+            if (!inGroup && (
+                    (isalpha(prosite[i]) && toupper(prosite[i]) != 'X') ||
+                    prosite[i] == '[' || prosite[i] == '{')) {
+                *regex += '(';
+                (*nGroups)++;
+                inGroup = true;
+            }
+
+            // translate syntax
+            switch (prosite[i]) {
+                case '(':
+                    *regex += '{';
+                    break;
+                case ')':
+                    *regex += '}';
+                    break;
+                case '{':
+                    *regex += "[^";
+                    break;
+                case '}':
+                    *regex += ']';
+                    break;
+                case 'X': case 'x':
+                    *regex += '.';
+                    break;
+                default:
+                    *regex += toupper(prosite[i]);
+                    break;
+            }
+        }
+    }
+
+    catch (const char *err) {
+        ERRORMSG("Prosite2Regex() - " << err);
+        return false;
+    }
+
+    return true;
+}
+
+bool Sequence::HighlightPattern(const string& prositePattern) const
+{
+    // setup regex syntax
+    reg_syntax_t newSyntax = RE_CONTEXT_INDEP_ANCHORS | RE_CONTEXT_INVALID_OPS | RE_INTERVALS |
+        RE_LIMITED_OPS | RE_NO_BK_BRACES | RE_NO_BK_PARENS | RE_NO_EMPTY_RANGES;
+    reg_syntax_t oldSyntax = re_set_syntax(newSyntax);
+
+    bool retval = true;
+    try {
+        // allocate structures
+        static re_pattern_buffer *patternBuffer = NULL;
+        static re_registers *registers = NULL;
+        if (!patternBuffer) {
+            // new pattern initialized to zero
+            patternBuffer = (re_pattern_buffer *) calloc(1, sizeof(re_pattern_buffer));
+            if (!patternBuffer) throw "can't allocate pattern buffer";
+            patternBuffer->fastmap = (char *) calloc(256, sizeof(char));
+            if (!patternBuffer->fastmap) throw "can't allocate fastmap";
+            registers = (re_registers *) calloc(1, sizeof(re_registers));
+            if (!registers) throw "can't allocate registers";
+            patternBuffer->regs_allocated = REGS_UNALLOCATED;
+        }
+
+        // update pattern buffer if not the same pattern as before
+        static string previousPrositePattern;
+        static int nGroups;
+        int i;
+        if (prositePattern != previousPrositePattern) {
+
+            // convert from ProSite syntax
+            string regexPattern;
+            if (!Prosite2Regex(prositePattern, &regexPattern, &nGroups))
+                throw "error converting ProSite to regex syntax";
+
+            // create pattern buffer
+            TRACEMSG("compiling pattern '" << regexPattern << "'");
+            const char *error = re_compile_pattern(regexPattern.c_str(), regexPattern.size(), patternBuffer);
+            if (error) throw error;
+
+            // optimize pattern buffer
+            int err = re_compile_fastmap(patternBuffer);
+            if (err) throw "re_compile_fastmap internal error";
+
+            previousPrositePattern = prositePattern;
+        }
+
+        // do the search, finding all non-overlapping matches
+        int start = 0;
+        while (start < sequenceString.size()) {
+
+            int result = re_search(patternBuffer, sequenceString.c_str(),
+                sequenceString.size(), start, sequenceString.size(), registers);
+            if (result == -1)
+                break;
+            else if (result == -2)
+                throw "re_search internal error";
+
+            // re_search gives the longest hit, but we want the shortest; so try to find the
+            // shortest hit within the hit already found by limiting the length of the string
+            // allowed to be included in the search. (This isn't very efficient! but
+            // the regex API doesn't have an option for finding the shortest hit...)
+            int stringSize = start + 1;
+            while (stringSize <= sequenceString.size()) {
+                result = re_search(patternBuffer, sequenceString.c_str(),
+                    stringSize, start, stringSize, registers);
+                if (result >= 0) break;
+                stringSize++;
+            }
+
+            // parse the match registers, highlight ranges
+//            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
+            int lastMatched = result;
+            for (i=1; i<registers->num_regs; i++) {
+                int from = registers->start[i], to = registers->end[i] - 1;
+                if (from >= 0 && to >= 0) {
+                    if (to > lastMatched) lastMatched = to;
+
+                    // highlight this ranage
+//                    TESTMSG("register " << i << ": from " << from+1 << " to " << to+1);
+                    GlobalMessenger()->AddHighlights(this, from, to);
+                }
+            }
+
+            start = lastMatched + 1;
+        }
+
+    } catch (const char *err) {
+        ERRORMSG("Sequence::HighlightPattern() - " << err);
+        retval = false;
+    }
+
+    // cleanup
+    re_set_syntax(oldSyntax);
+
+    return retval;
+}
+
+END_SCOPE(Cn3D)
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/02/03 19:20:05  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.55  2002/12/12 15:04:11  thiessen
 * fix for report launch on nucleotides
 *
@@ -196,637 +834,4 @@
 * Revision 1.1  2000/08/27 18:52:22  thiessen
 * extract sequence information
 *
-* ===========================================================================
 */
-
-#if defined(__WXMSW__)
-#include <windows.h>
-#include <shellapi.h>   // for ShellExecute, needed to launch browser
-
-#elif defined(__WXGTK__)
-#include <unistd.h>
-
-#elif defined(__WXMAC__)
-// full paths needed to void having to add -I/Developer/Headers/FlatCarbon to all modules...
-#include "/Developer/Headers/FlatCarbon/Types.h"
-#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
-#endif
-
-#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbistl.hpp>
-
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqloc/PDB_mol_id.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/NCBIeaa.hpp>
-#include <objects/seq/IUPACaa.hpp>
-#include <objects/seq/NCBIstdaa.hpp>
-#include <objects/seq/NCBI4na.hpp>
-#include <objects/seq/NCBI8na.hpp>
-#include <objects/seq/NCBI2na.hpp>
-#include <objects/seq/IUPACna.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seqblock/PDB_block.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-
-#include <regex.h>  // regex from C-toolkit
-
-#include <memory>
-
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/messenger.hpp"
-
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
-
-BEGIN_SCOPE(Cn3D)
-
-static void UnpackSeqSet(CBioseq_set& bss, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
-{
-    CBioseq_set::TSeq_set::iterator q, qe = bss.SetSeq_set().end();
-    for (q=bss.SetSeq_set().begin(); q!=qe; q++) {
-        if (q->GetObject().IsSeq()) {
-
-            // only store amino acid or nucleotide sequences
-            if (q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_aa &&
-                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_dna &&
-                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_rna &&
-                q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
-                continue;
-
-            const Sequence *sequence = new Sequence(parent, q->GetObject().SetSeq());
-            seqlist.push_back(sequence);
-
-        } else { // Bioseq-set
-            UnpackSeqSet(q->GetObject().SetSet(), parent, seqlist);
-        }
-    }
-}
-
-static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
-{
-    if (seqEntry.IsSeq()) {
-        const Sequence *sequence = new Sequence(parent, seqEntry.SetSeq());
-        seqlist.push_back(sequence);
-    } else { // Bioseq-set
-        UnpackSeqSet(seqEntry.SetSet(), parent, seqlist);
-    }
-}
-
-SequenceSet::SequenceSet(StructureBase *parent, SeqEntryList& seqEntries) :
-    StructureBase(parent)
-{
-    SeqEntryList::iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; s++)
-        UnpackSeqEntry(s->GetObject(), this, sequences);
-    TESTMSG("number of sequences: " << sequences.size());
-}
-
-#define FIRSTOF2(byte) (((byte) & 0xF0) >> 4)
-#define SECONDOF2(byte) ((byte) & 0x0F)
-
-static void StringFrom4na(const std::vector< char >& vec, std::string *str, bool isDNA)
-{
-    if (SECONDOF2(vec.back()) > 0)
-        str->resize(vec.size() * 2);
-    else
-        str->resize(vec.size() * 2 - 1);
-
-    // first, extract 4-bit values
-    int i;
-    for (i=0; i<vec.size(); i++) {
-        str->at(2*i) = FIRSTOF2(vec[i]);
-        if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
-    }
-
-    // then convert 4-bit values to ascii characters
-    for (i=0; i<str->size(); i++) {
-        switch (str->at(i)) {
-            case 1: str->at(i) = 'A'; break;
-            case 2: str->at(i) = 'C'; break;
-            case 4: str->at(i) = 'G'; break;
-            case 8: isDNA ? str->at(i) = 'T' : str->at(i) = 'U'; break;
-            default:
-                str->at(i) = 'X';
-        }
-    }
-}
-
-#define FIRSTOF4(byte) (((byte) & 0xC0) >> 6)
-#define SECONDOF4(byte) (((byte) & 0x30) >> 4)
-#define THIRDOF4(byte) (((byte) & 0x0C) >> 2)
-#define FOURTHOF4(byte) ((byte) & 0x03)
-
-static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool isDNA)
-{
-    str->resize(vec.size() * 4);
-
-    // first, extract 4-bit values
-    int i;
-    for (i=0; i<vec.size(); i++) {
-        str->at(4*i) = FIRSTOF4(vec[i]);
-        str->at(4*i + 1) = SECONDOF4(vec[i]);
-        str->at(4*i + 2) = THIRDOF4(vec[i]);
-        str->at(4*i + 3) = FOURTHOF4(vec[i]);
-    }
-
-    // then convert 4-bit values to ascii characters
-    for (i=0; i<str->size(); i++) {
-        switch (str->at(i)) {
-            case 0: str->at(i) = 'A'; break;
-            case 1: str->at(i) = 'C'; break;
-            case 2: str->at(i) = 'G'; break;
-            case 3: isDNA ? str->at(i) = 'T' : str->at(i) = 'U'; break;
-        }
-    }
-}
-
-static void StringFromStdaa(const std::vector < char >& vec, std::string *str)
-{
-    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-
-    str->resize(vec.size());
-    for (int i=0; i<vec.size(); i++)
-        str->at(i) = stdaaMap[vec[i]];
-}
-
-Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), bioseqASN(&bioseq), molecule(NULL), isProtein(false)
-{
-    int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,
-        pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
-    std::string pdbID, accession;
-
-    // get Seq-id info
-    CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
-    for (s=bioseq.GetId().begin(); s!=se; s++) {
-        if (s->GetObject().IsGi()) {
-            gi = s->GetObject().GetGi();
-        } else if (s->GetObject().IsPdb()) {
-            pdbID = s->GetObject().GetPdb().GetMol().Get();
-            if (s->GetObject().GetPdb().IsSetChain())
-                pdbChain = s->GetObject().GetPdb().GetChain();
-            else
-                pdbChain = ' ';
-        } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
-            accession = s->GetObject().GetLocal().GetStr();
-            // special case where local accession is actually a PDB chain + extra stuff
-            if (pdbID.size() == 0 && accession.size() >= 7 &&
-                    accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
-                pdbID = accession.substr(0, 4);
-                pdbChain = accession[5];
-                accession.erase();
-            }
-        } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
-            accession = s->GetObject().GetGenbank().GetAccession();
-        } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
-            accession = s->GetObject().GetSwissprot().GetAccession();
-        }
-    }
-    if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
-        ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
-        return;
-    }
-
-    if (bioseq.IsSetDescr()) {
-        std::string defline, taxid;
-        CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
-        for (d=bioseq.GetDescr().Get().begin(); d!=de; d++) {
-
-            // get "defline" from title or compound
-            if ((*d)->IsTitle()) {              // prefer title over compound
-                defline = (*d)->GetTitle();
-            } else if (defline.size() == 0 && (*d)->IsPdb() && (*d)->GetPdb().GetCompound().size() > 0) {
-                defline = (*d)->GetPdb().GetCompound().front();
-            }
-
-            // get taxonomy
-            if ((*d)->IsSource()) {
-                if ((*d)->GetSource().GetOrg().IsSetTaxname())
-                    taxid = (*d)->GetSource().GetOrg().GetTaxname();
-                else if ((*d)->GetSource().GetOrg().IsSetCommon())
-                    taxid = (*d)->GetSource().GetOrg().GetCommon();
-            }
-        }
-        if (taxid.size() > 0)
-            description = std::string("[") + taxid + ']';
-        if (defline.size() > 0) {
-            if (taxid.size() > 0) description += ' ';
-            description += defline;
-        }
-    }
-
-    // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately
-    if (bioseq.IsSetAnnot()) {
-        CBioseq::TAnnot::const_iterator a, ae = bioseq.GetAnnot().end();
-        for (a=bioseq.GetAnnot().begin(); a!=ae; a++) {
-            if (a->GetObject().GetData().IsIds()) {
-                CSeq_annot::C_Data::TIds::const_iterator i, ie = a->GetObject().GetData().GetIds().end();
-                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; i++) {
-                    if (i->GetObject().IsGeneral() &&
-                        i->GetObject().GetGeneral().GetDb() == "mmdb" &&
-                        i->GetObject().GetGeneral().GetTag().IsId()) {
-                        mmdbID = i->GetObject().GetGeneral().GetTag().GetId();
-                        break;
-                    }
-                }
-                if (i != ie) break;
-            }
-        }
-    }
-    if (mmdbID != MoleculeIdentifier::VALUE_NOT_SET)
-        TESTMSG("sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
-            "', is from MMDB id " << mmdbID);
-
-    // get sequence string
-    if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
-
-        // protein formats
-        if (bioseq.GetInst().GetSeq_data().IsNcbieaa()) {
-            sequenceString = bioseq.GetInst().GetSeq_data().GetNcbieaa().Get();
-            isProtein = true;
-        } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
-            sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
-            isProtein = true;
-        } else if (bioseq.GetInst().GetSeq_data().IsNcbistdaa()) {
-            StringFromStdaa(bioseq.GetInst().GetSeq_data().GetNcbistdaa().Get(), &sequenceString);
-            isProtein = true;
-        }
-
-        // nucleotide formats
-        else if (bioseq.GetInst().GetSeq_data().IsIupacna()) {
-            sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
-        } else if (bioseq.GetInst().GetSeq_data().IsNcbi4na()) {
-            StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi4na().Get(), &sequenceString,
-                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
-        } else if (bioseq.GetInst().GetSeq_data().IsNcbi8na()) {  // same repr. for non-X as 4na
-            StringFrom4na(bioseq.GetInst().GetSeq_data().GetNcbi8na().Get(), &sequenceString,
-                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
-        } else if (bioseq.GetInst().GetSeq_data().IsNcbi2na()) {
-            StringFrom2na(bioseq.GetInst().GetSeq_data().GetNcbi2na().Get(), &sequenceString,
-                (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna));
-            if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() < sequenceString.length())
-                sequenceString.resize(bioseq.GetInst().GetLength());
-        }
-
-        else {
-            ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
-                << ": confused by sequence string format");
-            return;
-        }
-
-        // check length
-        if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() != sequenceString.length()) {
-            ERR_POST(Critical << "Sequence::Sequence() - sequence string length mismatch");
-            return;
-        }
-
-        // force uppercase
-        for (int i=0; i<sequenceString.length(); i++)
-            sequenceString[i] = toupper(sequenceString[i]);
-
-    } else {
-        ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
-                << ": confused by sequence representation");
-        return;
-    }
-
-    // get identifier
-    identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
-}
-
-CSeq_id * Sequence::CreateSeqId(void) const
-{
-    CSeq_id *sid = new CSeq_id();
-    FillOutSeqId(sid);
-    return sid;
-}
-
-void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
-{
-    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
-        sid->SetPdb().SetMol().Set(identifier->pdbID);
-        if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
-    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
-        sid->SetGi(identifier->gi);
-    } else if (identifier->accession.size() > 0) {
-        CObject_id *oid = new CObject_id();
-        oid->SetStr(identifier->accession);
-        sid->SetLocal(*oid);
-    } else {
-        ERR_POST(Error << "Sequence::FillOutSeqId() - can't do Seq-id on sequence "
-            << identifier->ToString());
-    }
-}
-
-void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
-{
-    if (identifier->pdbID.size() > 0) {
-        PDBSeqIdPtr pdbid = PDBSeqIdNew();
-        pdbid->mol = StrSave(identifier->pdbID.c_str());
-        pdbid->chain = (Uint1) identifier->pdbChain;
-        ValNodeAddPointer(id, SEQID_PDB, pdbid);
-        if (!addAllTypes) return;
-    }
-    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        ValNodeAddInt(id, SEQID_GI, identifier->gi);
-        if (!addAllTypes) return;
-    }
-    if (identifier->accession.size() > 0) {
-        ObjectIdPtr local = ObjectIdNew();
-        local->str = StrSave(identifier->accession.c_str());
-        ValNodeAddPointer(id, SEQID_LOCAL, local);
-        if (!addAllTypes) return;
-    }
-}
-
-int Sequence::GetOrSetMMDBLink(void) const
-{
-    if (molecule) {
-        const StructureObject *object;
-        if (!molecule->GetParentOfType(&object)) return identifier->mmdbID;
-        if (identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
-            identifier->mmdbID != object->mmdbID)
-            ERR_POST(Error << "Sequence::GetOrSetMMDBLink() - mismatched MMDB ID: identifier says "
-                << identifier->mmdbID << ", StructureObject says " << object->mmdbID);
-        else
-            const_cast<MoleculeIdentifier*>(identifier)->mmdbID = object->mmdbID;
-    }
-    return identifier->mmdbID;
-}
-
-
-#ifdef __WXMSW__
-// code borrowed (and modified) from Nlm_MSWin_OpenDocument() in vibutils.c
-static bool MSWin_OpenDocument(const char* doc_name)
-{
-  int status = (int) ShellExecute(0, "open", doc_name, NULL, NULL, SW_SHOWNORMAL);
-  if (status <= 32) {
-    ERR_POST(Error << "Unable to open document \"" << doc_name << "\", error = " << status);
-    return false;
-  }
-  return true;
-}
-#endif
-
-#ifdef __WXMAC__
-OSStatus MacLaunchURL(ConstStr255Param urlStr)
-{
-    OSStatus err;
-    ICInstance inst;
-    SInt32 startSel;
-    SInt32 endSel;
-
-    err = ICStart(&inst, 'Cn3D');
-    if (err == noErr) {
-#if !TARGET_CARBON
-        err = ICFindConfigFile(inst, 0, nil);
-#endif
-        if (err == noErr) {
-            startSel = 0;
-            endSel = StrLen(urlStr);
-            err = ICLaunchURL(inst, "\p", urlStr, endSel, &startSel, &endSel);
-        }
-        ICStop(inst);
-    }
-    return err;
-}
-#endif
-
-// code borrowed (and modified a lot) from Nlm_LaunchWebPage in bspview.c
-void LaunchWebPage(const char *url)
-{
-    if(!url) return;
-    TESTMSG("launching url " << url);
-
-#if defined(__WXMSW__)
-    if (!MSWin_OpenDocument(url)) {
-        ERR_POST(Error << "Unable to launch browser");
-    }
-
-#elif defined(__WXGTK__)
-    std::string command;
-    RegistryGetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, &command);
-    size_t pos = 0;
-    while ((pos=command.find("<URL>", pos)) != std::string::npos)
-        command.replace(pos, 5, url);
-    TESTMSG("launching browser: " << command);
-    system(command.c_str());
-
-#elif defined(__WXMAC__)
-    MacLaunchURL(url);
-#endif
-}
-
-void Sequence::LaunchWebBrowserWithInfo(void) const
-{
-    std::string db = isProtein ? "Protein" : "Nucleotide";
-    std::string opt = isProtein ? "GenPept" : "GenBank";
-    CNcbiOstrstream oss;
-    oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=" << opt
-        << "&db=" << db << "&term=";
-    if (identifier->pdbID.size() > 0) {
-        oss << identifier->pdbID.c_str();
-        if (identifier->pdbChain != ' ')
-            oss << (char) identifier->pdbChain;
-        oss << "%5BACCN%5D";
-    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        oss << identifier->gi << "%5BUID%5D";
-    } else if (identifier->accession.size() > 0) {
-        if (identifier->accession == "query" || identifier->accession == "consensus") return;
-        oss << identifier->accession.c_str() << "%5BACCN%5D";
-    }
-    oss << '\0';
-    LaunchWebPage(oss.str());
-    delete oss.str();
-}
-
-static bool Prosite2Regex(const std::string& prosite, std::string *regex, int *nGroups)
-{
-    try {
-        // check allowed characters
-        static const std::string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
-        int i;
-        for (i=0; i<prosite.size(); i++)
-            if (allowed.find(toupper(prosite[i])) == std::string::npos) break;
-        if (i != prosite.size()) throw "invalid ProSite character";
-        if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
-
-        // translate into real regex syntax;
-        regex->erase();
-        *nGroups = 0;
-
-        bool inGroup = false;
-        for (int i=0; i<prosite.size(); i++) {
-
-            // handle grouping and termini
-            bool characterHandled = true;
-            switch (prosite[i]) {
-                case '-': case '.': case '>':
-                    if (inGroup) {
-                        *regex += ')';
-                        inGroup = false;
-                    }
-                    if (prosite[i] == '>') *regex += '$';
-                    break;
-                case '<':
-                    *regex += '^';
-                    break;
-                default:
-                    characterHandled = false;
-                    break;
-            }
-            if (characterHandled) continue;
-            if (!inGroup && (
-                    (isalpha(prosite[i]) && toupper(prosite[i]) != 'X') ||
-                    prosite[i] == '[' || prosite[i] == '{')) {
-                *regex += '(';
-                (*nGroups)++;
-                inGroup = true;
-            }
-
-            // translate syntax
-            switch (prosite[i]) {
-                case '(':
-                    *regex += '{';
-                    break;
-                case ')':
-                    *regex += '}';
-                    break;
-                case '{':
-                    *regex += "[^";
-                    break;
-                case '}':
-                    *regex += ']';
-                    break;
-                case 'X': case 'x':
-                    *regex += '.';
-                    break;
-                default:
-                    *regex += toupper(prosite[i]);
-                    break;
-            }
-        }
-    }
-
-    catch (const char *err) {
-        ERR_POST(Error << "Prosite2Regex() - " << err);
-        return false;
-    }
-
-    return true;
-}
-
-bool Sequence::HighlightPattern(const std::string& prositePattern) const
-{
-    // setup regex syntax
-    reg_syntax_t newSyntax = RE_CONTEXT_INDEP_ANCHORS | RE_CONTEXT_INVALID_OPS | RE_INTERVALS |
-        RE_LIMITED_OPS | RE_NO_BK_BRACES | RE_NO_BK_PARENS | RE_NO_EMPTY_RANGES;
-    reg_syntax_t oldSyntax = re_set_syntax(newSyntax);
-
-    bool retval = true;
-    try {
-        // allocate structures
-        static re_pattern_buffer *patternBuffer = NULL;
-        static re_registers *registers = NULL;
-        if (!patternBuffer) {
-            // new pattern initialized to zero
-            patternBuffer = (re_pattern_buffer *) calloc(1, sizeof(re_pattern_buffer));
-            if (!patternBuffer) throw "can't allocate pattern buffer";
-            patternBuffer->fastmap = (char *) calloc(256, sizeof(char));
-            if (!patternBuffer->fastmap) throw "can't allocate fastmap";
-            registers = (re_registers *) calloc(1, sizeof(re_registers));
-            if (!registers) throw "can't allocate registers";
-            patternBuffer->regs_allocated = REGS_UNALLOCATED;
-        }
-
-        // update pattern buffer if not the same pattern as before
-        static std::string previousPrositePattern;
-        static int nGroups;
-        int i;
-        if (prositePattern != previousPrositePattern) {
-
-            // convert from ProSite syntax
-            std::string regexPattern;
-            if (!Prosite2Regex(prositePattern, &regexPattern, &nGroups))
-                throw "error converting ProSite to regex syntax";
-
-            // create pattern buffer
-            TESTMSG("compiling pattern '" << regexPattern << "'");
-            const char *error = re_compile_pattern(regexPattern.c_str(), regexPattern.size(), patternBuffer);
-            if (error) throw error;
-
-            // optimize pattern buffer
-            int err = re_compile_fastmap(patternBuffer);
-            if (err) throw "re_compile_fastmap internal error";
-
-            previousPrositePattern = prositePattern;
-        }
-
-        // do the search, finding all non-overlapping matches
-        int start = 0;
-        while (start < sequenceString.size()) {
-
-            int result = re_search(patternBuffer, sequenceString.c_str(),
-                sequenceString.size(), start, sequenceString.size(), registers);
-            if (result == -1)
-                break;
-            else if (result == -2)
-                throw "re_search internal error";
-
-            // re_search gives the longest hit, but we want the shortest; so try to find the
-            // shortest hit within the hit already found by limiting the length of the string
-            // allowed to be included in the search. (This isn't very efficient! but
-            // the regex API doesn't have an option for finding the shortest hit...)
-            int stringSize = start + 1;
-            while (stringSize <= sequenceString.size()) {
-                result = re_search(patternBuffer, sequenceString.c_str(),
-                    stringSize, start, stringSize, registers);
-                if (result >= 0) break;
-                stringSize++;
-            }
-
-            // parse the match registers, highlight ranges
-//            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
-            int lastMatched = result;
-            for (i=1; i<registers->num_regs; i++) {
-                int from = registers->start[i], to = registers->end[i] - 1;
-                if (from >= 0 && to >= 0) {
-                    if (to > lastMatched) lastMatched = to;
-
-                    // highlight this ranage
-//                    TESTMSG("register " << i << ": from " << from+1 << " to " << to+1);
-                    GlobalMessenger()->AddHighlights(this, from, to);
-                }
-            }
-
-            start = lastMatched + 1;
-        }
-
-    } catch (const char *err) {
-        ERR_POST(Error << "Sequence::HighlightPattern() - " << err);
-        retval = false;
-    }
-
-    // cleanup
-    re_set_syntax(oldSyntax);
-
-    return retval;
-}
-
-END_SCOPE(Cn3D)

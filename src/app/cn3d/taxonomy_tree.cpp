@@ -28,35 +28,6 @@
 * File Description:
 *      taxonomy tree stuff
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2002/12/20 02:43:35  thiessen
-* fix Printf to self problems
-*
-* Revision 1.8  2002/10/10 16:58:56  thiessen
-* add const where required
-*
-* Revision 1.7  2002/10/07 18:51:53  thiessen
-* add abbreviated taxonomy tree
-*
-* Revision 1.6  2002/10/07 13:29:32  thiessen
-* add double-click -> show row to taxonomy tree
-*
-* Revision 1.5  2002/10/04 19:10:35  thiessen
-* fix root tax node name
-*
-* Revision 1.4  2002/10/04 18:45:28  thiessen
-* updates to taxonomy viewer
-*
-* Revision 1.3  2002/09/12 13:09:38  thiessen
-* fix windows/wx header problem
-*
-* Revision 1.2  2002/09/10 17:02:26  thiessen
-* show count for repeated sequences
-*
-* Revision 1.1  2002/09/09 22:51:19  thiessen
-* add basic taxonomy tree viewer
-*
 * ===========================================================================
 */
 
@@ -192,9 +163,9 @@ bool TaxonomyTree::Init(void)
     bool status = taxonomyServer.Init();
     wxEndBusyCursor();
     if (status && taxonomyServer.IsAlive())
-        TESTMSG("taxonomy server connection initialized");
+        INFOMSG("taxonomy server connection initialized");
     else
-        ERR_POST(Error << "Unable to initialize taxonomy server!");
+        ERRORMSG("Unable to initialize taxonomy server!");
     return status;
 }
 
@@ -216,19 +187,19 @@ class TaxonomyTreeNode
 {
 public:
     int taxid, parentTaxid, nDescendentLeaves;
-    std::string name;
+    string name;
     // use maps to ensure uniqueness
-    typedef std::map < int , bool > ChildTaxIDMap;
+    typedef map < int , bool > ChildTaxIDMap;
     ChildTaxIDMap childTaxids;
     // int here is to count occurrences
-    typedef std::map < const Sequence * , int > SequenceMap;
+    typedef map < const Sequence * , int > SequenceMap;
     SequenceMap sequences;
 
     TaxonomyTreeNode(void) { taxid = parentTaxid = nDescendentLeaves = 0; }
 };
 
 // map taxid -> node
-typedef std::map < int , TaxonomyTreeNode > TaxonomyTreeMap;
+typedef map < int , TaxonomyTreeNode > TaxonomyTreeMap;
 
 static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMap,
     const TaxonomyTreeNode& node, const wxTreeItemId id, bool abbreviated)
@@ -276,7 +247,7 @@ static void AddNode(TaxonomyTreeMap *taxTree, const Sequence *seq,
     node.taxid = taxid;
     node.parentTaxid = parent;
     node.name = (taxData->IsSetOrg() && taxData->GetOrg().IsSetTaxname()) ?
-        taxData->GetOrg().GetTaxname() : std::string("(error getting node name!)");
+        taxData->GetOrg().GetTaxname() : string("(error getting node name!)");
     if (seq) {
         node.sequences[seq]++;
         node.nDescendentLeaves++;
@@ -324,10 +295,10 @@ void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent,
         } while (taxid > 1);    // 1 is root tax node
     }
     taxTree[1].name = "Global Root";
-    TESTMSG("apparent # leaves in tree: " << taxTree[1].nDescendentLeaves);
+    TRACEMSG("apparent # leaves in tree: " << taxTree[1].nDescendentLeaves);
     TaxonomyTreeNode *node = &(taxTree[1]);
     while (node->childTaxids.size() == 1) node = &(taxTree[node->childTaxids.begin()->first]);
-    TESTMSG("deepest node containing all leaves: " << node->name);
+    INFOMSG("deepest node containing all leaves: " << node->name);
 
     TaxonomyWindow *window;
     TaxonomyWindow **handle = new TaxonomyWindow*;
@@ -350,7 +321,7 @@ int TaxonomyTree::GetTaxIDForSequence(const Sequence *seq)
 
     if (!Init()) return 0;
     int taxid = 0;
-    std::string err = "no gi or source info";
+    string err = "no gi or source info";
 
     // try to get "official" tax info from gi
     if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
@@ -380,7 +351,7 @@ int TaxonomyTree::GetTaxIDForSequence(const Sequence *seq)
 
     // add taxid to cache
     if (taxid == 0)
-        ERR_POST(Warning << "Unable to get taxonomy for " << seq->identifier->ToString()
+        WARNINGMSG("Unable to get taxonomy for " << seq->identifier->ToString()
             << "; reason: " << err);
 //    else
 //        TESTMSG(seq->identifier->ToString() << " is from taxid " << taxid);
@@ -400,7 +371,7 @@ const ncbi::objects::CTaxon2_data * TaxonomyTree::GetTaxInfoForTaxID(int taxid)
 
     // add to cache
     if (data.Empty())
-        ERR_POST(Warning << "Unable to get taxonomy data for taxid " << taxid
+        WARNINGMSG("Unable to get taxonomy data for taxid " << taxid
             << "; reason: " << taxonomyServer.GetLastError());
 //    else if (data->IsSetOrg() && data->GetOrg().IsSetTaxname())
 //        TESTMSG("taxid " << taxid << " is " << data->GetOrg().GetTaxname());
@@ -420,7 +391,7 @@ int TaxonomyTree::GetParentTaxID(int taxid)
 
     // add to cache
     if (parent == 0)
-        ERR_POST(Warning << "Unable to get parent for taxid " << taxid
+        WARNINGMSG("Unable to get parent for taxid " << taxid
             << "; reason: " << taxonomyServer.GetLastError());
 //    else
 //        TESTMSG("taxid " << parent << " is parent of " << taxid);
@@ -430,3 +401,38 @@ int TaxonomyTree::GetParentTaxID(int taxid)
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.10  2003/02/03 19:20:08  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.9  2002/12/20 02:43:35  thiessen
+* fix Printf to self problems
+*
+* Revision 1.8  2002/10/10 16:58:56  thiessen
+* add const where required
+*
+* Revision 1.7  2002/10/07 18:51:53  thiessen
+* add abbreviated taxonomy tree
+*
+* Revision 1.6  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
+* Revision 1.5  2002/10/04 19:10:35  thiessen
+* fix root tax node name
+*
+* Revision 1.4  2002/10/04 18:45:28  thiessen
+* updates to taxonomy viewer
+*
+* Revision 1.3  2002/09/12 13:09:38  thiessen
+* fix windows/wx header problem
+*
+* Revision 1.2  2002/09/10 17:02:26  thiessen
+* show count for repeated sequences
+*
+* Revision 1.1  2002/09/09 22:51:19  thiessen
+* add basic taxonomy tree viewer
+*
+*/

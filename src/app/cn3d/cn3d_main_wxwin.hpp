@@ -28,260 +28,6 @@
 * File Description:
 *       main windows (structure and log) and application object for Cn3D
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.74  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.73  2003/01/30 14:00:23  thiessen
-* add Block Z Fit coloring
-*
-* Revision 1.72  2003/01/28 21:07:56  thiessen
-* add block fit coloring algorithm; tweak row dragging; fix style bug
-*
-* Revision 1.71  2003/01/27 15:52:22  thiessen
-* merge after highlighted row; show rejects; trim rejects from new reject list
-*
-* Revision 1.70  2002/11/25 15:02:21  thiessen
-* changes for cdd annotation evidence show
-*
-* Revision 1.69  2002/11/22 19:54:29  thiessen
-* fixes for wxMac/OSX
-*
-* Revision 1.68  2002/11/18 15:02:40  thiessen
-* set flags on style shortcut menus
-*
-* Revision 1.67  2002/10/11 17:21:39  thiessen
-* initial Mac OSX build
-*
-* Revision 1.66  2002/09/21 12:36:29  thiessen
-* add frozen block position validation; add select-other-by-distance
-*
-* Revision 1.65  2002/09/19 12:51:08  thiessen
-* fix block aligner / update bug; add distance select for other molecules only
-*
-* Revision 1.64  2002/09/09 13:38:23  thiessen
-* separate save and save-as
-*
-* Revision 1.63  2002/08/15 22:13:14  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.62  2002/06/05 14:28:39  thiessen
-* reorganize handling of window titles
-*
-* Revision 1.61  2002/06/04 12:48:55  thiessen
-* tweaks for release ; fill out help menu
-*
-* Revision 1.60  2002/04/09 23:59:10  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.59  2002/04/09 14:38:27  thiessen
-* add cdd splash screen
-*
-* Revision 1.58  2002/02/19 14:59:39  thiessen
-* add CDD reject and purge sequence
-*
-* Revision 1.57  2002/01/18 13:55:29  thiessen
-* add help menu and viewer
-*
-* Revision 1.56  2002/01/11 15:48:55  thiessen
-* update for Mac CW7
-*
-* Revision 1.55  2002/01/03 16:18:40  thiessen
-* add distance selection
-*
-* Revision 1.54  2001/12/21 13:52:20  thiessen
-* add spin animation
-*
-* Revision 1.53  2001/12/14 14:52:45  thiessen
-* add apple event handler for open document
-*
-* Revision 1.52  2001/10/24 22:02:02  thiessen
-* fix wxGTK concurrent rendering problem
-*
-* Revision 1.51  2001/10/23 20:10:23  thiessen
-* fix scaling of fonts in high-res PNG output
-*
-* Revision 1.50  2001/10/23 13:53:37  thiessen
-* add PNG export
-*
-* Revision 1.49  2001/10/17 17:46:27  thiessen
-* save camera setup and rotation center in files
-*
-* Revision 1.48  2001/10/16 21:48:28  thiessen
-* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
-*
-* Revision 1.47  2001/10/11 14:18:20  thiessen
-* make MultiTextDialog non-modal
-*
-* Revision 1.46  2001/10/09 18:57:27  thiessen
-* add CDD references editing dialog
-*
-* Revision 1.45  2001/10/08 00:00:02  thiessen
-* estimate threader N random starts; edit CDD name
-*
-* Revision 1.44  2001/10/01 16:03:58  thiessen
-* make CDD annotation window non-modal; add SetWindowTitle to viewers
-*
-* Revision 1.43  2001/09/27 15:36:48  thiessen
-* decouple sequence import and BLAST
-*
-* Revision 1.42  2001/09/26 15:27:59  thiessen
-* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
-*
-* Revision 1.41  2001/09/24 16:43:10  thiessen
-* add wxGLApp test code
-*
-* Revision 1.40  2001/09/06 21:38:33  thiessen
-* tweak message log / diagnostic system
-*
-* Revision 1.39  2001/09/04 14:40:26  thiessen
-* add rainbow and charge coloring
-*
-* Revision 1.38  2001/08/31 22:24:14  thiessen
-* add timer for animation
-*
-* Revision 1.37  2001/08/24 00:40:57  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.36  2001/08/14 17:17:48  thiessen
-* add user font selection, store in registry
-*
-* Revision 1.35  2001/08/10 15:02:03  thiessen
-* fill out shortcuts; add update show/hide menu
-*
-* Revision 1.34  2001/08/09 19:07:19  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.33  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.32  2001/08/03 13:41:24  thiessen
-* add registry and style favorites
-*
-* Revision 1.31  2001/07/12 17:34:22  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-* Revision 1.30  2001/07/10 16:39:33  thiessen
-* change selection control keys; add CDD name/notes dialogs
-*
-* Revision 1.29  2001/06/29 18:12:53  thiessen
-* initial (incomplete) user annotation system
-*
-* Revision 1.28  2001/06/14 17:44:46  thiessen
-* progress in styles<->asn ; add structure limits
-*
-* Revision 1.27  2001/05/31 18:46:25  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.26  2001/05/25 15:17:49  thiessen
-* fixes for visual id settings in wxGTK
-*
-* Revision 1.25  2001/05/21 22:06:56  thiessen
-* fix initial glcanvas size bug
-*
-* Revision 1.24  2001/05/17 18:34:00  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.23  2001/05/15 17:33:58  thiessen
-* log window stays hidden when closed
-*
-* Revision 1.22  2001/05/11 02:10:04  thiessen
-* add better merge fail indicators; tweaks to windowing/taskbar
-*
-* Revision 1.21  2001/03/22 00:32:36  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.20  2001/03/17 14:06:52  thiessen
-* more workarounds for namespace/#define conflicts
-*
-* Revision 1.19  2001/02/22 00:29:48  thiessen
-* make directories global ; allow only one Sequence per StructureObject
-*
-* Revision 1.18  2001/02/13 20:31:45  thiessen
-* add information content coloring
-*
-* Revision 1.17  2001/02/08 23:01:13  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.16  2001/01/18 19:37:00  thiessen
-* save structure (re)alignments to asn output
-*
-* Revision 1.15  2000/12/29 19:23:49  thiessen
-* save row order
-*
-* Revision 1.14  2000/12/22 19:25:46  thiessen
-* write cdd output files
-*
-* Revision 1.13  2000/12/15 15:52:08  thiessen
-* show/hide system installed
-*
-* Revision 1.12  2000/11/30 15:49:08  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.11  2000/11/13 18:05:58  thiessen
-* working structure re-superpositioning
-*
-* Revision 1.10  2000/11/12 04:02:22  thiessen
-* working file save including alignment edits
-*
-* Revision 1.9  2000/10/16 14:25:19  thiessen
-* working alignment fit coloring
-*
-* Revision 1.8  2000/09/20 22:22:02  thiessen
-* working conservation coloring; split and center unaligned justification
-*
-* Revision 1.7  2000/09/12 01:46:07  thiessen
-* fix minor but obscure bug
-*
-* Revision 1.6  2000/09/11 14:06:02  thiessen
-* working alignment coloring
-*
-* Revision 1.5  2000/09/11 01:45:53  thiessen
-* working messenger for sequence<->structure window communication
-*
-* Revision 1.4  2000/09/03 18:45:56  thiessen
-* working generalized sequence viewer
-*
-* Revision 1.3  2000/08/30 19:49:03  thiessen
-* working sequence window
-*
-* Revision 1.2  2000/08/27 18:50:55  thiessen
-* extract sequence information
-*
-* Revision 1.1  2000/08/25 18:41:54  thiessen
-* rename main object
-*
-* Revision 1.10  2000/08/25 14:21:32  thiessen
-* minor tweaks
-*
-* Revision 1.9  2000/08/24 23:39:54  thiessen
-* add 'atomic ion' labels
-*
-* Revision 1.8  2000/08/17 18:32:37  thiessen
-* minor fixes to StyleManager
-*
-* Revision 1.7  2000/08/07 14:12:47  thiessen
-* added animation frames
-*
-* Revision 1.6  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.5  2000/07/18 16:49:43  thiessen
-* more friendly rotation center setting
-*
-* Revision 1.4  2000/07/12 23:28:27  thiessen
-* now draws basic CPK model
-*
-* Revision 1.3  2000/07/12 14:10:44  thiessen
-* added initial OpenGL rendering engine
-*
-* Revision 1.2  2000/07/12 02:00:39  thiessen
-* add basic wxWindows GUI
-*
-* Revision 1.1  2000/06/27 20:08:12  thiessen
-* initial checkin
-*
 * ===========================================================================
 */
 
@@ -546,3 +292,263 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_MAIN__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.75  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.74  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
+* Revision 1.73  2003/01/30 14:00:23  thiessen
+* add Block Z Fit coloring
+*
+* Revision 1.72  2003/01/28 21:07:56  thiessen
+* add block fit coloring algorithm; tweak row dragging; fix style bug
+*
+* Revision 1.71  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
+* Revision 1.70  2002/11/25 15:02:21  thiessen
+* changes for cdd annotation evidence show
+*
+* Revision 1.69  2002/11/22 19:54:29  thiessen
+* fixes for wxMac/OSX
+*
+* Revision 1.68  2002/11/18 15:02:40  thiessen
+* set flags on style shortcut menus
+*
+* Revision 1.67  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
+* Revision 1.66  2002/09/21 12:36:29  thiessen
+* add frozen block position validation; add select-other-by-distance
+*
+* Revision 1.65  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
+* Revision 1.64  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
+* Revision 1.63  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.62  2002/06/05 14:28:39  thiessen
+* reorganize handling of window titles
+*
+* Revision 1.61  2002/06/04 12:48:55  thiessen
+* tweaks for release ; fill out help menu
+*
+* Revision 1.60  2002/04/09 23:59:10  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.59  2002/04/09 14:38:27  thiessen
+* add cdd splash screen
+*
+* Revision 1.58  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
+* Revision 1.57  2002/01/18 13:55:29  thiessen
+* add help menu and viewer
+*
+* Revision 1.56  2002/01/11 15:48:55  thiessen
+* update for Mac CW7
+*
+* Revision 1.55  2002/01/03 16:18:40  thiessen
+* add distance selection
+*
+* Revision 1.54  2001/12/21 13:52:20  thiessen
+* add spin animation
+*
+* Revision 1.53  2001/12/14 14:52:45  thiessen
+* add apple event handler for open document
+*
+* Revision 1.52  2001/10/24 22:02:02  thiessen
+* fix wxGTK concurrent rendering problem
+*
+* Revision 1.51  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
+* Revision 1.50  2001/10/23 13:53:37  thiessen
+* add PNG export
+*
+* Revision 1.49  2001/10/17 17:46:27  thiessen
+* save camera setup and rotation center in files
+*
+* Revision 1.48  2001/10/16 21:48:28  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
+* Revision 1.47  2001/10/11 14:18:20  thiessen
+* make MultiTextDialog non-modal
+*
+* Revision 1.46  2001/10/09 18:57:27  thiessen
+* add CDD references editing dialog
+*
+* Revision 1.45  2001/10/08 00:00:02  thiessen
+* estimate threader N random starts; edit CDD name
+*
+* Revision 1.44  2001/10/01 16:03:58  thiessen
+* make CDD annotation window non-modal; add SetWindowTitle to viewers
+*
+* Revision 1.43  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
+* Revision 1.42  2001/09/26 15:27:59  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
+* Revision 1.41  2001/09/24 16:43:10  thiessen
+* add wxGLApp test code
+*
+* Revision 1.40  2001/09/06 21:38:33  thiessen
+* tweak message log / diagnostic system
+*
+* Revision 1.39  2001/09/04 14:40:26  thiessen
+* add rainbow and charge coloring
+*
+* Revision 1.38  2001/08/31 22:24:14  thiessen
+* add timer for animation
+*
+* Revision 1.37  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.36  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
+* Revision 1.35  2001/08/10 15:02:03  thiessen
+* fill out shortcuts; add update show/hide menu
+*
+* Revision 1.34  2001/08/09 19:07:19  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.33  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.32  2001/08/03 13:41:24  thiessen
+* add registry and style favorites
+*
+* Revision 1.31  2001/07/12 17:34:22  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+* Revision 1.30  2001/07/10 16:39:33  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
+* Revision 1.29  2001/06/29 18:12:53  thiessen
+* initial (incomplete) user annotation system
+*
+* Revision 1.28  2001/06/14 17:44:46  thiessen
+* progress in styles<->asn ; add structure limits
+*
+* Revision 1.27  2001/05/31 18:46:25  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.26  2001/05/25 15:17:49  thiessen
+* fixes for visual id settings in wxGTK
+*
+* Revision 1.25  2001/05/21 22:06:56  thiessen
+* fix initial glcanvas size bug
+*
+* Revision 1.24  2001/05/17 18:34:00  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.23  2001/05/15 17:33:58  thiessen
+* log window stays hidden when closed
+*
+* Revision 1.22  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
+* Revision 1.21  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.20  2001/03/17 14:06:52  thiessen
+* more workarounds for namespace/#define conflicts
+*
+* Revision 1.19  2001/02/22 00:29:48  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
+* Revision 1.18  2001/02/13 20:31:45  thiessen
+* add information content coloring
+*
+* Revision 1.17  2001/02/08 23:01:13  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+* Revision 1.16  2001/01/18 19:37:00  thiessen
+* save structure (re)alignments to asn output
+*
+* Revision 1.15  2000/12/29 19:23:49  thiessen
+* save row order
+*
+* Revision 1.14  2000/12/22 19:25:46  thiessen
+* write cdd output files
+*
+* Revision 1.13  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
+* Revision 1.12  2000/11/30 15:49:08  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.11  2000/11/13 18:05:58  thiessen
+* working structure re-superpositioning
+*
+* Revision 1.10  2000/11/12 04:02:22  thiessen
+* working file save including alignment edits
+*
+* Revision 1.9  2000/10/16 14:25:19  thiessen
+* working alignment fit coloring
+*
+* Revision 1.8  2000/09/20 22:22:02  thiessen
+* working conservation coloring; split and center unaligned justification
+*
+* Revision 1.7  2000/09/12 01:46:07  thiessen
+* fix minor but obscure bug
+*
+* Revision 1.6  2000/09/11 14:06:02  thiessen
+* working alignment coloring
+*
+* Revision 1.5  2000/09/11 01:45:53  thiessen
+* working messenger for sequence<->structure window communication
+*
+* Revision 1.4  2000/09/03 18:45:56  thiessen
+* working generalized sequence viewer
+*
+* Revision 1.3  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
+* Revision 1.2  2000/08/27 18:50:55  thiessen
+* extract sequence information
+*
+* Revision 1.1  2000/08/25 18:41:54  thiessen
+* rename main object
+*
+* Revision 1.10  2000/08/25 14:21:32  thiessen
+* minor tweaks
+*
+* Revision 1.9  2000/08/24 23:39:54  thiessen
+* add 'atomic ion' labels
+*
+* Revision 1.8  2000/08/17 18:32:37  thiessen
+* minor fixes to StyleManager
+*
+* Revision 1.7  2000/08/07 14:12:47  thiessen
+* added animation frames
+*
+* Revision 1.6  2000/07/27 13:30:10  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.5  2000/07/18 16:49:43  thiessen
+* more friendly rotation center setting
+*
+* Revision 1.4  2000/07/12 23:28:27  thiessen
+* now draws basic CPK model
+*
+* Revision 1.3  2000/07/12 14:10:44  thiessen
+* added initial OpenGL rendering engine
+*
+* Revision 1.2  2000/07/12 02:00:39  thiessen
+* add basic wxWindows GUI
+*
+* Revision 1.1  2000/06/27 20:08:12  thiessen
+* initial checkin
+*
+*/

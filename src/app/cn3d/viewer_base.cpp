@@ -28,62 +28,6 @@
 * File Description:
 *      base functionality for non-GUI part of viewers
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2002/10/25 19:00:02  thiessen
-* retrieve VAST alignment from vastalign.cgi on structure import
-*
-* Revision 1.17  2002/10/13 22:58:08  thiessen
-* add redo ability to editor
-*
-* Revision 1.16  2002/10/07 13:29:32  thiessen
-* add double-click -> show row to taxonomy tree
-*
-* Revision 1.15  2002/09/09 13:38:23  thiessen
-* separate save and save-as
-*
-* Revision 1.14  2002/08/15 22:13:18  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.13  2002/06/05 14:28:42  thiessen
-* reorganize handling of window titles
-*
-* Revision 1.12  2002/02/05 18:53:26  thiessen
-* scroll to residue in sequence windows when selected in structure window
-*
-* Revision 1.11  2001/08/14 17:18:22  thiessen
-* add user font selection, store in registry
-*
-* Revision 1.10  2001/05/31 18:47:11  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.9  2001/05/02 13:46:29  thiessen
-* major revision of stuff relating to saving of updates; allow stored null-alignments
-*
-* Revision 1.8  2001/04/05 22:55:36  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.7  2001/04/04 00:27:16  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.6  2001/03/30 14:43:41  thiessen
-* show threader scores in status line; misc UI tweaks
-*
-* Revision 1.5  2001/03/22 00:33:18  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.4  2001/03/13 01:25:06  thiessen
-* working undo system for >1 alignment (e.g., update window)
-*
-* Revision 1.3  2001/03/02 15:32:52  thiessen
-* minor fixes to save & show/hide dialogs, wx string headers
-*
-* Revision 1.2  2001/03/02 03:26:59  thiessen
-* fix dangling pointer upon app close
-*
-* Revision 1.1  2001/03/01 20:15:51  thiessen
-* major rearrangement of sequence viewer code into base and derived classes
-*
 * ===========================================================================
 */
 
@@ -110,7 +54,7 @@ const int ViewerBase::MAX_UNDO_STACK_SIZE = 50;
 ViewerBase::ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr) :
     viewerWindow(window), alignmentManager(alnMgr), currentDisplay(NULL)
 {
-    if (!window) ERR_POST(Error << "ViewerBase::ViewerBase() - got NULL handle");
+    if (!window) ERRORMSG("ViewerBase::ViewerBase() - got NULL handle");
 }
 
 ViewerBase::~ViewerBase(void)
@@ -145,7 +89,7 @@ void ViewerBase::InitData(const AlignmentList *alignments, SequenceDisplay *disp
 void ViewerBase::EnableStacks(void)
 {
     if (stacksEnabled) {
-        ERR_POST(Error << "ViewerBase::EnableStacks() - already enabled!");
+        ERRORMSG("ViewerBase::EnableStacks() - already enabled!");
         return;
     }
 
@@ -157,13 +101,13 @@ void ViewerBase::EnableStacks(void)
 void ViewerBase::Save(void)
 {
     if (!currentDisplay || !stacksEnabled) {
-        ERR_POST(Error << "ViewerBase::Save() - stacks not enabled, or no alignment/display data");
+        ERRORMSG("ViewerBase::Save() - stacks not enabled, or no alignment/display data");
         return;
     }
 
     // clear out any data in the stack above the current position (deletes "redo" list)
     if (nRedosStored > 0) {
-        TESTMSG("deleting " << nRedosStored << " redo elements from the stack");
+        TRACEMSG("deleting " << nRedosStored << " redo elements from the stack");
         for (; nRedosStored>0; nRedosStored--) {
             DELETE_ALL_AND_CLEAR(alignmentStack.back(), AlignmentList);
             alignmentStack.pop_back();
@@ -174,7 +118,7 @@ void ViewerBase::Save(void)
 
     // remove the one-up-from-bottom of the stack if it's too big (so original isn't lost)
     if (alignmentStack.size() == MAX_UNDO_STACK_SIZE) {
-        ERR_POST(Warning << "max undo stack size exceeded - deleting next-from-bottom item");
+        WARNINGMSG("max undo stack size exceeded - deleting next-from-bottom item");
         DELETE_ALL_AND_CLEAR(*(++(alignmentStack.begin())), AlignmentList);
         alignmentStack.erase(++(alignmentStack.begin()));
         delete *(++(displayStack.begin()));
@@ -200,7 +144,7 @@ void ViewerBase::Save(void)
 void ViewerBase::Undo(void)
 {
     if ((alignmentStack.size() - nRedosStored) <= 1 || !stacksEnabled) {
-        ERR_POST(Error << "ViewerBase::Undo() - stacks disabled, or no more undo data");
+        ERRORMSG("ViewerBase::Undo() - stacks disabled, or no more undo data");
         return;
     }
 
@@ -212,7 +156,7 @@ void ViewerBase::Undo(void)
 void ViewerBase::Redo(void)
 {
     if (nRedosStored == 0 || !stacksEnabled) {
-        ERR_POST(Error << "ViewerBase::Redo() - stacks disabled, or no more redo data");
+        ERRORMSG("ViewerBase::Redo() - stacks disabled, or no more redo data");
         return;
     }
 
@@ -275,7 +219,7 @@ void ViewerBase::ClearAllData(void)
 void ViewerBase::Revert(void)
 {
     if (!stacksEnabled) {
-        ERR_POST(Error << "ViewerBase::Revert() - stacks disabled!");
+        ERRORMSG("ViewerBase::Revert() - stacks disabled!");
         return;
     }
 
@@ -361,3 +305,65 @@ void ViewerBase::RemoveBlockBoundaryRows(void)
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.19  2003/02/03 19:20:08  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.18  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
+* Revision 1.17  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
+* Revision 1.16  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
+* Revision 1.15  2002/09/09 13:38:23  thiessen
+* separate save and save-as
+*
+* Revision 1.14  2002/08/15 22:13:18  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.13  2002/06/05 14:28:42  thiessen
+* reorganize handling of window titles
+*
+* Revision 1.12  2002/02/05 18:53:26  thiessen
+* scroll to residue in sequence windows when selected in structure window
+*
+* Revision 1.11  2001/08/14 17:18:22  thiessen
+* add user font selection, store in registry
+*
+* Revision 1.10  2001/05/31 18:47:11  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.9  2001/05/02 13:46:29  thiessen
+* major revision of stuff relating to saving of updates; allow stored null-alignments
+*
+* Revision 1.8  2001/04/05 22:55:36  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.7  2001/04/04 00:27:16  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.6  2001/03/30 14:43:41  thiessen
+* show threader scores in status line; misc UI tweaks
+*
+* Revision 1.5  2001/03/22 00:33:18  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.4  2001/03/13 01:25:06  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
+* Revision 1.3  2001/03/02 15:32:52  thiessen
+* minor fixes to save & show/hide dialogs, wx string headers
+*
+* Revision 1.2  2001/03/02 03:26:59  thiessen
+* fix dangling pointer upon app close
+*
+* Revision 1.1  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
+*/

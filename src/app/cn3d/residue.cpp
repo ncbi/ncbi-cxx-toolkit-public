@@ -28,95 +28,6 @@
 * File Description:
 *      Classes to hold residues
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.29  2002/11/06 00:18:10  thiessen
-* fixes for new CRef/const rules in objects
-*
-* Revision 1.28  2001/12/12 14:04:14  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.27  2001/10/16 21:49:07  thiessen
-* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
-*
-* Revision 1.26  2001/08/24 00:41:36  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.25  2001/08/21 01:10:45  thiessen
-* add labeling
-*
-* Revision 1.24  2001/08/09 19:07:13  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.23  2001/05/17 18:34:26  thiessen
-* spelling fixes; change dialogs to inherit from wxDialog
-*
-* Revision 1.22  2001/05/15 23:48:37  thiessen
-* minor adjustments to compile under Solaris/wxGTK
-*
-* Revision 1.21  2001/04/18 15:46:53  thiessen
-* show description, length, and PDB numbering in status line
-*
-* Revision 1.20  2001/03/23 23:31:56  thiessen
-* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
-*
-* Revision 1.19  2001/03/22 00:33:17  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.18  2000/12/01 19:35:57  thiessen
-* better domain assignment; basic show/hide mechanism
-*
-* Revision 1.17  2000/11/30 15:49:39  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.16  2000/09/11 22:57:32  thiessen
-* working highlighting
-*
-* Revision 1.15  2000/08/25 14:22:00  thiessen
-* minor tweaks
-*
-* Revision 1.14  2000/08/19 02:59:05  thiessen
-* fix transparent sphere bug
-*
-* Revision 1.13  2000/08/18 18:57:39  thiessen
-* added transparent spheres
-*
-* Revision 1.12  2000/08/17 14:24:06  thiessen
-* added working StyleManager
-*
-* Revision 1.11  2000/08/13 02:43:01  thiessen
-* added helix and strand objects
-*
-* Revision 1.10  2000/08/11 12:58:31  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.9  2000/08/07 00:21:18  thiessen
-* add display list mechanism
-*
-* Revision 1.8  2000/08/04 22:49:03  thiessen
-* add backbone atom classification and selection feedback mechanism
-*
-* Revision 1.7  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.6  2000/07/27 13:30:51  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.5  2000/07/17 22:37:18  thiessen
-* fix vector_math typo; correctly set initial view
-*
-* Revision 1.4  2000/07/17 11:59:16  thiessen
-* fix nucleotide virtual bonds
-*
-* Revision 1.3  2000/07/17 04:20:50  thiessen
-* now does correct structure alignment transformation
-*
-* Revision 1.2  2000/07/16 23:19:11  thiessen
-* redo of drawing system
-*
-* Revision 1.1  2000/07/11 13:45:31  thiessen
-* add modules to parse chemical graph; many improvements
-*
 * ===========================================================================
 */
 
@@ -158,7 +69,7 @@ const int Residue::NO_ALPHA_ID = -1;
 static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const CAtom& atom)
 {
     if (!atom.IsSetIupac_code()) return Residue::eUnknownAtom;
-    std::string code = atom.GetIupac_code().front();
+    string code = atom.GetIupac_code().front();
     CAtom::EElement element = atom.GetElement();
 
     if (residue->IsAminoAcid()) {
@@ -248,7 +159,7 @@ Residue::Residue(StructureBase *parent,
         dictionary = &localDictionary;
         graphID = residue.GetResidue_graph().GetLocal().Get();
     } else
-        ERR_POST(Fatal << "confused by Molecule #?, Residue #" << id << "; can't find appropriate dictionary");
+        ERRORMSG("confused by Molecule #?, Residue #" << id << "; can't find appropriate dictionary");
 
     // look up appropriate Residue_graph
     const CResidue_graph *residueGraph = NULL;
@@ -260,8 +171,7 @@ Residue::Residue(StructureBase *parent,
         }
     }
     if (!residueGraph)
-        ERR_POST(Fatal << "confused by Molecule #?, Residue #" << id
-            << "; can't find Residue-graph ID #" << graphID);
+        ERRORMSG("confused by Molecule #?, Residue #" << id << "; can't find Residue-graph ID #" << graphID);
 
     // get iupac-code if present - assume it's the first character of the first VisibleString
     if (residueGraph->IsSetIupac_code())
@@ -285,7 +195,7 @@ Residue::Residue(StructureBase *parent,
     // get StructureObject* parent
     const StructureObject *object;
     if (!GetParentOfType(&object) || object->coordSets.size() == 0) {
-        ERR_POST("Residue() : parent doesn't have any CoordSets");
+        ERRORMSG("Residue()::Residue() : parent doesn't have any CoordSets");
         return;
     }
 
@@ -337,7 +247,7 @@ Residue::Residue(StructureBase *parent,
 
         // add info to map
         if (atomInfos.find(atom.GetId().Get()) != atomInfos.end())
-            ERR_POST(Error << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
+            ERRORMSG("Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
         atomInfos[atomID] = info;
     }
 
@@ -364,13 +274,13 @@ Residue::~Residue(void)
 bool Residue::Draw(const AtomSet *atomSet) const
 {
     if (!atomSet) {
-        ERR_POST(Error << "Residue::Draw(data) - NULL AtomSet*");
+        ERRORMSG("Residue::Draw(data) - NULL AtomSet*");
         return false;
     }
 
     // verify presense of OpenGLRenderer
     if (!parentSet->renderer) {
-        ERR_POST(Warning << "Residue::Draw() - no renderer");
+        WARNINGMSG("Residue::Draw() - no renderer");
         return false;
     }
 
@@ -524,7 +434,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
         // draw label
         if (oss.pcount() > 0) {
             oss << '\0';
-            std::string labelText = oss.str();
+            string labelText = oss.str();
             delete oss.str();
 
             // apply highlight color if necessary
@@ -540,3 +450,98 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.30  2003/02/03 19:20:05  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.29  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
+* Revision 1.28  2001/12/12 14:04:14  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.27  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
+* Revision 1.26  2001/08/24 00:41:36  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.25  2001/08/21 01:10:45  thiessen
+* add labeling
+*
+* Revision 1.24  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.23  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
+* Revision 1.22  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
+* Revision 1.21  2001/04/18 15:46:53  thiessen
+* show description, length, and PDB numbering in status line
+*
+* Revision 1.20  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
+* Revision 1.19  2001/03/22 00:33:17  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.18  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
+* Revision 1.17  2000/11/30 15:49:39  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.16  2000/09/11 22:57:32  thiessen
+* working highlighting
+*
+* Revision 1.15  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
+* Revision 1.14  2000/08/19 02:59:05  thiessen
+* fix transparent sphere bug
+*
+* Revision 1.13  2000/08/18 18:57:39  thiessen
+* added transparent spheres
+*
+* Revision 1.12  2000/08/17 14:24:06  thiessen
+* added working StyleManager
+*
+* Revision 1.11  2000/08/13 02:43:01  thiessen
+* added helix and strand objects
+*
+* Revision 1.10  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.9  2000/08/07 00:21:18  thiessen
+* add display list mechanism
+*
+* Revision 1.8  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
+* Revision 1.7  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.6  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.5  2000/07/17 22:37:18  thiessen
+* fix vector_math typo; correctly set initial view
+*
+* Revision 1.4  2000/07/17 11:59:16  thiessen
+* fix nucleotide virtual bonds
+*
+* Revision 1.3  2000/07/17 04:20:50  thiessen
+* now does correct structure alignment transformation
+*
+* Revision 1.2  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
+* Revision 1.1  2000/07/11 13:45:31  thiessen
+* add modules to parse chemical graph; many improvements
+*
+*/

@@ -28,83 +28,6 @@
 * File Description:
 *      Miscellaneous utility functions
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.25  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.24  2002/12/19 15:56:16  thiessen
-* use wxCHECK_VERSION
-*
-* Revision 1.23  2002/10/18 17:15:33  thiessen
-* use wxNativeEncodingInfo to store fonts in registry
-*
-* Revision 1.22  2002/10/13 22:58:08  thiessen
-* add redo ability to editor
-*
-* Revision 1.21  2002/10/11 17:21:39  thiessen
-* initial Mac OSX build
-*
-* Revision 1.20  2002/09/13 14:21:45  thiessen
-* finish hooking up browser launch on unix
-*
-* Revision 1.19  2002/08/28 20:30:33  thiessen
-* fix proximity sort bug
-*
-* Revision 1.18  2002/07/23 15:46:49  thiessen
-* print out more BLAST info; tweak save file name
-*
-* Revision 1.17  2002/06/05 14:28:39  thiessen
-* reorganize handling of window titles
-*
-* Revision 1.16  2002/04/09 23:59:10  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.15  2002/03/04 15:52:13  thiessen
-* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
-*
-* Revision 1.14  2001/12/20 21:41:46  thiessen
-* create/use user preferences directory
-*
-* Revision 1.13  2001/11/27 16:26:07  thiessen
-* major update to data management system
-*
-* Revision 1.12  2001/10/30 02:54:12  thiessen
-* add Biostruc cache
-*
-* Revision 1.11  2001/09/06 21:38:33  thiessen
-* tweak message log / diagnostic system
-*
-* Revision 1.10  2001/08/31 22:24:14  thiessen
-* add timer for animation
-*
-* Revision 1.9  2001/08/24 18:53:13  thiessen
-* add filename to sequence viewer window titles
-*
-* Revision 1.8  2001/08/16 19:21:16  thiessen
-* add face name info to fonts
-*
-* Revision 1.7  2001/08/14 17:17:48  thiessen
-* add user font selection, store in registry
-*
-* Revision 1.6  2001/08/13 22:30:51  thiessen
-* add structure window mouse drag/zoom; add highlight option to render settings
-*
-* Revision 1.5  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.4  2001/08/03 13:41:24  thiessen
-* add registry and style favorites
-*
-* Revision 1.3  2001/07/19 19:12:46  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.2  2001/05/31 18:46:26  thiessen
-* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
-*
-* Revision 1.1  2001/05/15 14:57:48  thiessen
-* add cn3d_tools; bring up log window when threading starts
-*
 * ===========================================================================
 */
 
@@ -115,10 +38,16 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <objects/seqloc/Seq_id.hpp>
-
 #include <string>
 #include <vector>
+
+
+// diagnostic streams
+#define TRACEMSG(stream) ERR_POST(Trace << stream)
+#define INFOMSG(stream) ERR_POST(Info << stream)
+#define WARNINGMSG(stream) ERR_POST(Warning << stream)
+#define ERRORMSG(stream) ERR_POST(Error << stream)
+#define FATALMSG(stream) ERR_POST(Fatal << stream)
 
 class wxFrame;
 
@@ -165,10 +94,6 @@ extern void LaunchWebPage(const char *url);
 
 // top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)
 extern wxFrame * GlobalTopWindow(void);
-
-// diagnostic output (mainly for debugging)
-#define TESTMSG(stream) ERR_POST(Info << stream)
-//#define TESTMSG(stream)
 
 // return BLOSUM62 score for two residues
 extern int GetBLOSUM62Score(char a, char b);
@@ -271,3 +196,86 @@ do { \
 END_SCOPE(Cn3D)
 
 #endif // CN3D_TOOLS__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.26  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.25  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
+* Revision 1.24  2002/12/19 15:56:16  thiessen
+* use wxCHECK_VERSION
+*
+* Revision 1.23  2002/10/18 17:15:33  thiessen
+* use wxNativeEncodingInfo to store fonts in registry
+*
+* Revision 1.22  2002/10/13 22:58:08  thiessen
+* add redo ability to editor
+*
+* Revision 1.21  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
+* Revision 1.20  2002/09/13 14:21:45  thiessen
+* finish hooking up browser launch on unix
+*
+* Revision 1.19  2002/08/28 20:30:33  thiessen
+* fix proximity sort bug
+*
+* Revision 1.18  2002/07/23 15:46:49  thiessen
+* print out more BLAST info; tweak save file name
+*
+* Revision 1.17  2002/06/05 14:28:39  thiessen
+* reorganize handling of window titles
+*
+* Revision 1.16  2002/04/09 23:59:10  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.15  2002/03/04 15:52:13  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
+* Revision 1.14  2001/12/20 21:41:46  thiessen
+* create/use user preferences directory
+*
+* Revision 1.13  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
+* Revision 1.12  2001/10/30 02:54:12  thiessen
+* add Biostruc cache
+*
+* Revision 1.11  2001/09/06 21:38:33  thiessen
+* tweak message log / diagnostic system
+*
+* Revision 1.10  2001/08/31 22:24:14  thiessen
+* add timer for animation
+*
+* Revision 1.9  2001/08/24 18:53:13  thiessen
+* add filename to sequence viewer window titles
+*
+* Revision 1.8  2001/08/16 19:21:16  thiessen
+* add face name info to fonts
+*
+* Revision 1.7  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
+* Revision 1.6  2001/08/13 22:30:51  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
+* Revision 1.5  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.4  2001/08/03 13:41:24  thiessen
+* add registry and style favorites
+*
+* Revision 1.3  2001/07/19 19:12:46  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
+* Revision 1.2  2001/05/31 18:46:26  thiessen
+* add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
+*
+* Revision 1.1  2001/05/15 14:57:48  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
+*/

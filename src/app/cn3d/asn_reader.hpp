@@ -28,47 +28,6 @@
 * File Description:
 *      templates for reading/writing ASN data from/to a file, or copying
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.13  2002/10/25 19:00:02  thiessen
-* retrieve VAST alignment from vastalign.cgi on structure import
-*
-* Revision 1.12  2002/06/12 18:45:41  thiessen
-* more linux/gcc fixes
-*
-* Revision 1.11  2002/06/11 16:27:16  thiessen
-* use ncbi::auto_ptr
-*
-* Revision 1.10  2002/06/11 13:18:47  thiessen
-* fixes for gcc 3
-*
-* Revision 1.9  2002/05/29 23:58:06  thiessen
-* use text mode ostream for ascii asn
-*
-* Revision 1.8  2001/09/27 20:58:14  thiessen
-* add VisibleString filter option
-*
-* Revision 1.7  2001/09/24 13:16:53  thiessen
-* fix wxPanel issues
-*
-* Revision 1.6  2001/09/24 11:34:35  thiessen
-* add missing ncbi::
-*
-* Revision 1.5  2001/09/19 22:55:43  thiessen
-* add preliminary net import and BLAST
-*
-* Revision 1.4  2001/09/18 03:09:38  thiessen
-* add preliminary sequence import pipeline
-*
-* Revision 1.3  2001/07/12 17:34:22  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-* Revision 1.2  2000/12/22 19:25:46  thiessen
-* write cdd output files
-*
-* Revision 1.1  2000/12/21 23:42:24  thiessen
-* load structures from cdd's
-*
 * ===========================================================================
 */
 
@@ -209,3 +168,50 @@ static bool GetAsnDataViaHTTP(
 END_SCOPE(Cn3D)
 
 #endif // CN3D_ASN_READER__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.14  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.13  2002/10/25 19:00:02  thiessen
+* retrieve VAST alignment from vastalign.cgi on structure import
+*
+* Revision 1.12  2002/06/12 18:45:41  thiessen
+* more linux/gcc fixes
+*
+* Revision 1.11  2002/06/11 16:27:16  thiessen
+* use ncbi::auto_ptr
+*
+* Revision 1.10  2002/06/11 13:18:47  thiessen
+* fixes for gcc 3
+*
+* Revision 1.9  2002/05/29 23:58:06  thiessen
+* use text mode ostream for ascii asn
+*
+* Revision 1.8  2001/09/27 20:58:14  thiessen
+* add VisibleString filter option
+*
+* Revision 1.7  2001/09/24 13:16:53  thiessen
+* fix wxPanel issues
+*
+* Revision 1.6  2001/09/24 11:34:35  thiessen
+* add missing ncbi::
+*
+* Revision 1.5  2001/09/19 22:55:43  thiessen
+* add preliminary net import and BLAST
+*
+* Revision 1.4  2001/09/18 03:09:38  thiessen
+* add preliminary sequence import pipeline
+*
+* Revision 1.3  2001/07/12 17:34:22  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
+* Revision 1.2  2000/12/22 19:25:46  thiessen
+* write cdd output files
+*
+* Revision 1.1  2000/12/21 23:42:24  thiessen
+* load structures from cdd's
+*
+*/

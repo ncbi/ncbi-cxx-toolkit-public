@@ -28,32 +28,6 @@
 * File Description:
 *       generic multi-line text entry dialog
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2002/09/18 19:46:54  thiessen
-* don't use wxTE_RICH for this
-*
-* Revision 1.7  2002/09/18 13:19:32  thiessen
-* use wxTE_RICH style for big textctrls
-*
-* Revision 1.6  2002/08/15 22:13:14  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.5  2002/06/12 15:09:15  thiessen
-* kludge to avoid initial selected-all state
-*
-* Revision 1.4  2001/10/16 21:49:07  thiessen
-* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
-*
-* Revision 1.3  2001/10/11 14:18:57  thiessen
-* make MultiTextDialog non-modal
-*
-* Revision 1.2  2001/08/06 20:22:00  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.1  2001/07/10 16:39:54  thiessen
-* change selection control keys; add CDD name/notes dialogs
-*
 * ===========================================================================
 */
 
@@ -166,7 +140,7 @@ bool MultiTextDialog::GetLines(TextLines *lines) const
     return true;
 }
 
-bool MultiTextDialog::GetLine(std::string *singleString) const
+bool MultiTextDialog::GetLine(string *singleString) const
 {
     singleString->erase();
     for (int i=0; i<textCtrl->GetNumberOfLines(); i++) {
@@ -181,3 +155,35 @@ bool MultiTextDialog::GetLine(std::string *singleString) const
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.9  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.8  2002/09/18 19:46:54  thiessen
+* don't use wxTE_RICH for this
+*
+* Revision 1.7  2002/09/18 13:19:32  thiessen
+* use wxTE_RICH style for big textctrls
+*
+* Revision 1.6  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.5  2002/06/12 15:09:15  thiessen
+* kludge to avoid initial selected-all state
+*
+* Revision 1.4  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
+* Revision 1.3  2001/10/11 14:18:57  thiessen
+* make MultiTextDialog non-modal
+*
+* Revision 1.2  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.1  2001/07/10 16:39:54  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
+*/

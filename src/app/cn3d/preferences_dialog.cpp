@@ -28,56 +28,6 @@
 * File Description:
 *      dialogs for editing program preferences
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.16  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.15  2002/09/13 14:21:45  thiessen
-* finish hooking up browser launch on unix
-*
-* Revision 1.14  2002/09/13 13:44:34  thiessen
-* add browser launch item to prefs dialog
-*
-* Revision 1.13  2002/08/15 22:13:15  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.12  2002/06/04 12:48:56  thiessen
-* tweaks for release ; fill out help menu
-*
-* Revision 1.11  2002/05/22 17:17:09  thiessen
-* progress on BLAST interface ; change custom spin ctrl implementation
-*
-* Revision 1.10  2002/04/27 16:32:13  thiessen
-* fix small leaks/bugs found by BoundsChecker
-*
-* Revision 1.9  2002/04/09 23:59:10  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.8  2002/03/04 15:52:14  thiessen
-* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
-*
-* Revision 1.7  2001/11/01 19:05:12  thiessen
-* use wxDirSelector
-*
-* Revision 1.6  2001/10/30 02:54:12  thiessen
-* add Biostruc cache
-*
-* Revision 1.5  2001/09/24 14:37:52  thiessen
-* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
-*
-* Revision 1.4  2001/09/24 13:29:54  thiessen
-* fix wxPanel issues
-*
-* Revision 1.3  2001/09/20 19:31:30  thiessen
-* fixes for SGI and wxWin 2.3.2
-*
-* Revision 1.2  2001/08/13 22:30:59  thiessen
-* add structure window mouse drag/zoom; add highlight option to render settings
-*
-* Revision 1.1  2001/08/06 20:22:01  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
 * ===========================================================================
 */
 
@@ -153,7 +103,7 @@ static IntegerSpinCtrl
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -167,7 +117,7 @@ END_EVENT_TABLE()
     do { \
         int value; \
         if (!RegistryGetInteger((section), (name), &value) || !((iSpinCtrl)->SetInteger(value))) \
-            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+            WARNINGMSG("PreferencesDialog::PreferencesDialog() - error with " << (name)); \
     } while (0)
 
 #define SET_CHECKBOX_FROM_REGISTRY_VALUE(section, name, id) \
@@ -175,27 +125,27 @@ END_EVENT_TABLE()
         bool on; \
         wxCheckBox *box = wxDynamicCast(FindWindow(id), wxCheckBox); \
         if (!box || !RegistryGetBoolean((section), (name), &on)) \
-            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+            WARNINGMSG("PreferencesDialog::PreferencesDialog() - error with " << (name)); \
         else \
             box->SetValue(on); \
     } while (0)
 
 #define SET_RADIOBOX_FROM_REGISTRY_VALUE(section, name, id) \
     do { \
-        std::string value; \
+        string value; \
         wxRadioBox *radio = wxDynamicCast(FindWindow(id), wxRadioBox); \
         if (!radio || !RegistryGetString((section), (name), &value)) \
-            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+            WARNINGMSG("PreferencesDialog::PreferencesDialog() - error with " << (name)); \
         else \
             radio->SetStringSelection(value.c_str()); \
     } while (0)
 
 #define SET_TEXTCTRL_FROM_REGISTRY_VALUE(section, name, id) \
     do { \
-        std::string value; \
+        string value; \
         wxTextCtrl *text = wxDynamicCast(FindWindow(id), wxTextCtrl); \
         if (!text || !RegistryGetString((section), (name), &value)) \
-            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+            WARNINGMSG("PreferencesDialog::PreferencesDialog() - error with " << (name)); \
         else \
             text->SetValue(value.c_str()); \
     } while (0)
@@ -289,7 +239,7 @@ PreferencesDialog::~PreferencesDialog(void)
 
 #define SET_RADIO_REGISTRY_VALUE_IF_DIFFERENT(section, name, id, changedPtr) \
     do { \
-        std::string oldValue, newValue; \
+        string oldValue, newValue; \
         if (!RegistryGetString((section), (name), &oldValue)) throw "RegistryGetString() failed"; \
         wxRadioBox *radio = wxDynamicCast(FindWindow(id), wxRadioBox); \
         if (!radio) throw "Can't get wxRadioBox*"; \
@@ -303,7 +253,7 @@ PreferencesDialog::~PreferencesDialog(void)
 
 #define SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(section, name, textCtrl) \
     do { \
-        std::string oldValue, newValue; \
+        string oldValue, newValue; \
         if (!RegistryGetString((section), (name), &oldValue)) throw "RegistryGetString() failed"; \
         newValue = (textCtrl)->GetValue().c_str(); \
         if (newValue != oldValue) { \
@@ -354,7 +304,7 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
         if (iCacheSize->GetInteger(&size)) TruncateCache(size);
 
     } catch (const char *err) {
-        ERR_POST(Error << "Error setting registry values - " << err);
+        ERRORMSG("Error setting registry values - " << err);
         okay = false;
     }
 
@@ -767,3 +717,59 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit, bool set_sizer )
 
     return item0;
 }
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.17  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.16  2003/01/31 17:18:58  thiessen
+* many small additions and changes...
+*
+* Revision 1.15  2002/09/13 14:21:45  thiessen
+* finish hooking up browser launch on unix
+*
+* Revision 1.14  2002/09/13 13:44:34  thiessen
+* add browser launch item to prefs dialog
+*
+* Revision 1.13  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.12  2002/06/04 12:48:56  thiessen
+* tweaks for release ; fill out help menu
+*
+* Revision 1.11  2002/05/22 17:17:09  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
+* Revision 1.10  2002/04/27 16:32:13  thiessen
+* fix small leaks/bugs found by BoundsChecker
+*
+* Revision 1.9  2002/04/09 23:59:10  thiessen
+* add cdd annotations read-only option
+*
+* Revision 1.8  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
+* Revision 1.7  2001/11/01 19:05:12  thiessen
+* use wxDirSelector
+*
+* Revision 1.6  2001/10/30 02:54:12  thiessen
+* add Biostruc cache
+*
+* Revision 1.5  2001/09/24 14:37:52  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
+* Revision 1.4  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
+* Revision 1.3  2001/09/20 19:31:30  thiessen
+* fixes for SGI and wxWin 2.3.2
+*
+* Revision 1.2  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
+* Revision 1.1  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+*/

@@ -28,50 +28,6 @@
 * File Description:
 *      save structure window to PNG file
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.14  2002/10/21 15:11:29  thiessen
-* don't share lists in wxGTK build
-*
-* Revision 1.13  2002/10/18 20:33:54  thiessen
-* workaround for linux/Mesa bug
-*
-* Revision 1.12  2002/10/18 15:42:59  thiessen
-* work around png header issue for linux
-*
-* Revision 1.11  2002/10/11 17:21:39  thiessen
-* initial Mac OSX build
-*
-* Revision 1.10  2002/08/15 22:13:14  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.9  2002/04/21 12:21:21  thiessen
-* minor fixes for AIX
-*
-* Revision 1.8  2001/10/25 17:16:43  thiessen
-* add PNG output to Mac version
-*
-* Revision 1.7  2001/10/25 14:19:44  thiessen
-* move png.h to top
-*
-* Revision 1.6  2001/10/25 00:06:29  thiessen
-* fix concurrent rendering problem in wxMSW PNG output
-*
-* Revision 1.5  2001/10/24 22:02:02  thiessen
-* fix wxGTK concurrent rendering problem
-*
-* Revision 1.4  2001/10/24 17:07:30  thiessen
-* add PNG output for wxGTK
-*
-* Revision 1.3  2001/10/24 11:25:20  thiessen
-* fix wxString problem
-*
-* Revision 1.2  2001/10/23 20:10:23  thiessen
-* fix scaling of fonts in high-res PNG output
-*
-* Revision 1.1  2001/10/23 13:53:38  thiessen
-* add PNG export
-*
 * ===========================================================================
 */
 
@@ -99,7 +55,7 @@
 #if defined(__WXGTK__) && defined(__LINUX__)
 // use system headers/libs for linux builds
 #include <png.h>
-#else 
+#else
 // otherwise, use libs built into wxWindows
 #include "cn3d/png.h"
 #endif
@@ -179,7 +135,7 @@ private:
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -187,7 +143,7 @@ private:
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return errResult; \
     }
 
@@ -389,7 +345,7 @@ static bool GetOutputParameters(wxString *outputFilename, int *width, int *heigh
 // callback used by PNG library to report errors
 static void writepng_error_handler(png_structp png_ptr, png_const_charp msg)
 {
-    ERR_POST(Error << "PNG library error: " << msg);
+    ERRORMSG("PNG library error: " << msg);
 }
 
 #ifdef __WXGTK__
@@ -431,7 +387,7 @@ static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
 bool ExportPNG(Cn3DGLCanvas *glCanvas)
 {
     if (!glCanvas || !glCanvas->renderer) {
-        ERR_POST(Error << "ExportPNG() - bad glCanvas parameter");
+        ERRORMSG("ExportPNG() - bad glCanvas parameter");
         return false;
     }
 
@@ -472,7 +428,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     AGLContext ctx = NULL, currentCtx;
 
 #else
-    ERR_POST("PNG export not (yet) implemented on this platform");
+    ERRORMSG("PNG export not (yet) implemented on this platform");
     return false;
 #endif
 
@@ -482,7 +438,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         return true; // cancelled
 
     try {
-        TESTMSG("saving PNG file '" << filename.c_str() << "'");
+        INFOMSG("saving PNG file '" << filename.c_str() << "'");
 
         // need to avoid any GL calls in glCanvas while off-screen rendering is happening; so
         // temporarily prevent glCanvas from responding to window resize/exposure, etc.
@@ -490,9 +446,9 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 
         int windowViewport[4];
         glCanvas->renderer->GetViewport(windowViewport);
-        TESTMSG("window viewport: x,y: " << windowViewport[0] << ',' << windowViewport[1]
+        TRACEMSG("window viewport: x,y: " << windowViewport[0] << ',' << windowViewport[1]
             << " size: " << windowViewport[2] << ',' << windowViewport[3]);
-        TESTMSG("output size: " << outputWidth << ',' << outputHeight);
+        INFOMSG("output size: " << outputWidth << ',' << outputHeight);
 
         // decide whether the in-memory image buffer can fit the whole drawing,
         // or whether we need to split it up into separate horizontal chunks
@@ -536,25 +492,25 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         pfd.iLayerType = PFD_MAIN_PLANE;
         nPixelFormat = ChoosePixelFormat(hdc, &pfd);
         if (!nPixelFormat) {
-            ERR_POST(Error << "ChoosePixelFormat failed");
+            ERRORMSG("ChoosePixelFormat failed");
             throw GetLastError();
         }
         if (!SetPixelFormat(hdc, nPixelFormat, &pfd)) {
-            ERR_POST(Error << "SetPixelFormat failed");
+            ERRORMSG("SetPixelFormat failed");
             throw GetLastError();
         }
         hglrc = wglCreateContext(hdc);
         if (!hglrc) {
-            ERR_POST(Error << "wglCreateContext failed");
+            ERRORMSG("wglCreateContext failed");
             throw GetLastError();
         }
         // try to share display lists with regular window, to save memory and draw time
         if (!wglShareLists(current_hglrc, hglrc)) {
-            ERR_POST(Warning << "wglShareLists failed: " << GetLastError());
+            WARNINGMSG("wglShareLists failed: " << GetLastError());
             shareDisplayLists = false;
         }
         if (!wglMakeCurrent(hdc, hglrc)) {
-            ERR_POST(Error << "wglMakeCurrent failed");
+            ERRORMSG("wglMakeCurrent failed");
             throw GetLastError();
         }
 
@@ -603,7 +559,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 	// seems to be too flaky - fails on Linux/Mesa, Solaris
         glCtx = glXCreateContext(display, visinfo, currentCtx, False);
         if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
-            ERR_POST(Warning << "failed to make GLXPixmap rendering context with shared display lists");
+            WARNINGMSG("failed to make GLXPixmap rendering context with shared display lists");
             if (glCtx) glXDestroyContext(display, glCtx);
 #endif
             shareDisplayLists = false;
@@ -645,7 +601,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         	throw "aglChoosePixelFormat failed";
         // try to share display lists with current "regular" context
         if ((ctx=aglCreateContext(fmt, currentCtx)) == NULL) {
-        	ERR_POST(Warning << "aglCreateContext with shared lists failed");
+            WARNINGMSG("aglCreateContext with shared lists failed");
         	shareDisplayLists = false;
         	if ((ctx=aglCreateContext(fmt, NULL)) == NULL)
         	    throw "aglCreateContext without shared lists failed";
@@ -658,7 +614,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         	throw "aglSetCurrentContext failed";
 #endif
 
-        TESTMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
+        TRACEMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
             << ", buffer height: " << bufferHeight << ", shared: " << shareDisplayLists);
 
         // allocate a row of pixel storage
@@ -740,7 +696,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 
                 // set viewport for this chunk and redraw
                 if (nChunks > 1) {
-                    TESTMSG("drawing chunk #" << (chunk + 1));
+                    TRACEMSG("drawing chunk #" << (chunk + 1));
                     glViewport(0, -chunk*bufferHeight, outputWidth, outputHeight);
                 }
                 glCanvas->renderer->Display();
@@ -764,9 +720,9 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         success = true;
 
     } catch (const char *err) {
-        ERR_POST(Error << "Error creating PNG: " << err);
+        ERRORMSG("Error creating PNG: " << err);
     } catch (exception& e) {
-        ERR_POST(Error << "Uncaught exception while creating PNG: " << e.what());
+        ERRORMSG("Uncaught exception while creating PNG: " << e.what());
     }
 
     // general cleanup
@@ -800,7 +756,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     if (glxPixmap) glXDestroyGLXPixmap(display, glxPixmap);
     if (xPixmap) XFreePixmap(display, xPixmap);
     if (localVI && visinfo) XFree(visinfo);
-    if (gotAnXError) ERR_POST(Warning << "Got an X error destroying GLXPixmap context");
+    if (gotAnXError) WARNINGMSG("Got an X error destroying GLXPixmap context");
     XSetErrorHandler(currentXErrHandler);
 
 #elif defined(WIN_MAC)
@@ -917,3 +873,53 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 
     return item0;
 }
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.15  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.14  2002/10/21 15:11:29  thiessen
+* don't share lists in wxGTK build
+*
+* Revision 1.13  2002/10/18 20:33:54  thiessen
+* workaround for linux/Mesa bug
+*
+* Revision 1.12  2002/10/18 15:42:59  thiessen
+* work around png header issue for linux
+*
+* Revision 1.11  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
+* Revision 1.10  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.9  2002/04/21 12:21:21  thiessen
+* minor fixes for AIX
+*
+* Revision 1.8  2001/10/25 17:16:43  thiessen
+* add PNG output to Mac version
+*
+* Revision 1.7  2001/10/25 14:19:44  thiessen
+* move png.h to top
+*
+* Revision 1.6  2001/10/25 00:06:29  thiessen
+* fix concurrent rendering problem in wxMSW PNG output
+*
+* Revision 1.5  2001/10/24 22:02:02  thiessen
+* fix wxGTK concurrent rendering problem
+*
+* Revision 1.4  2001/10/24 17:07:30  thiessen
+* add PNG output for wxGTK
+*
+* Revision 1.3  2001/10/24 11:25:20  thiessen
+* fix wxString problem
+*
+* Revision 1.2  2001/10/23 20:10:23  thiessen
+* fix scaling of fonts in high-res PNG output
+*
+* Revision 1.1  2001/10/23 13:53:38  thiessen
+* add PNG export
+*
+*/

@@ -28,41 +28,6 @@
 * File Description:
 *      dialog for user annotations
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2002/10/28 21:36:01  thiessen
-* add show domains with highlights
-*
-* Revision 1.10  2002/08/15 22:13:11  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.9  2001/12/06 23:13:44  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.8  2001/11/27 16:26:06  thiessen
-* major update to data management system
-*
-* Revision 1.7  2001/09/24 14:37:52  thiessen
-* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
-*
-* Revision 1.6  2001/09/24 13:29:54  thiessen
-* fix wxPanel issues
-*
-* Revision 1.5  2001/09/20 19:31:30  thiessen
-* fixes for SGI and wxWin 2.3.2
-*
-* Revision 1.4  2001/08/06 20:22:00  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.3  2001/07/19 19:14:38  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.2  2001/07/04 19:39:16  thiessen
-* finish user annotation system
-*
-* Revision 1.1  2001/06/29 18:13:57  thiessen
-* initial (incomplete) user annotation system
-*
 * ===========================================================================
 */
 
@@ -74,6 +39,7 @@
 #include "cn3d/style_dialog.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/show_hide_manager.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +93,7 @@ BEGIN_SCOPE(Cn3D)
     type *var; \
     var = wxDynamicCast(FindWindow(id), type); \
     if (!var) { \
-        ERR_POST(Error << "Can't find window with id " << id); \
+        ERRORMSG("Can't find window with id " << id); \
         return; \
     }
 
@@ -195,7 +161,7 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
                     structureSet->showHideManager->ShowDomainsWithHighlights(structureSet);
                     highlightedResidues = annotation->residues;
                 } else
-                    ERR_POST(Error << "AnnotateDialog::OnButton() - error highlighting annotation #"
+                    ERRORMSG("AnnotateDialog::OnButton() - error highlighting annotation #"
                         << available->GetSelection());
             }
             break;
@@ -208,7 +174,7 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
                         ReprioritizeDisplayOrder(annotation, (event.GetId() == ID_B_MOVE_UP)))
                     ResetListBoxes();
                 else
-                    ERR_POST(Error << "AnnotateDialog::OnButton() - error reprioritizing annotation #"
+                    ERRORMSG("AnnotateDialog::OnButton() - error reprioritizing annotation #"
                         << displayed->GetSelection());
             }
             break;
@@ -222,7 +188,7 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
                         DisplayAnnotation(annotation, (event.GetId() == ID_B_TURN_ON)))
                     ResetListBoxes();
                 else
-                    ERR_POST(Error << "AnnotateDialog::OnButton() - error toggling annotation #"
+                    ERRORMSG("AnnotateDialog::OnButton() - error toggling annotation #"
                         << listBox->GetSelection());
             }
             break;
@@ -296,7 +262,7 @@ void AnnotateDialog::SetButtonStates(void)
     if (availableSelected) {
         annotation = ANNOT_FROM_CLIENT_DATA(available);
         if (!annotation)
-            ERR_POST(Error << "AnnotateDialog::SetButtonStates() - NULL annotation pointer");
+            ERRORMSG("AnnotateDialog::SetButtonStates() - NULL annotation pointer");
     }
     tName->SetLabel(annotation ? annotation->name.c_str() : "");
     tDescr->SetLabel(annotation ? annotation->description.c_str() : "");
@@ -348,7 +314,7 @@ void AnnotateDialog::NewAnnotation(void)
     StyleSettings *style;
     if (!styleManager->AddUserStyle(&(newAnnotation->styleID), &style) || !style ||
         !styleManager->DisplayAnnotation(newAnnotation, true)) { // turn on new annotation
-        ERR_POST(Error << "AnnotateDialog::NewAnnotation() - error setting up new annotation");
+        ERRORMSG("AnnotateDialog::NewAnnotation() - error setting up new annotation");
         return;
     }
     *style = styleManager->GetGlobalStyle();    // set initial style to same as current global style
@@ -374,7 +340,7 @@ void AnnotateDialog::NewAnnotation(void)
 
     } else { // wxCANCEL
         if (!styleManager->RemoveUserAnnotation(newAnnotation))
-            ERR_POST(Error << "AnnotateDialog::NewAnnotation() - error removing new annotation");
+            ERRORMSG("AnnotateDialog::NewAnnotation() - error removing new annotation");
     }
     ResetListBoxes();
     SetButtonStates();
@@ -387,7 +353,7 @@ void AnnotateDialog::EditAnnotation(void)
     StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
     StyleSettings *style = NULL;
     if (!annotation || (style=styleManager->GetUserStyle(annotation->styleID)) == NULL) {
-        ERR_POST(Error << "AnnotateDialog::EditAnnotation() - error getting annotation and style");
+        ERRORMSG("AnnotateDialog::EditAnnotation() - error getting annotation and style");
         return;
     }
 
@@ -417,7 +383,7 @@ void AnnotateDialog::MoveAnnotation(void)
     if (available->GetSelection() < 0) return;
     StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
     if (!annotation) {
-        ERR_POST(Error << "AnnotateDialog::MoveAnnotation() - NULL annotation pointer");
+        ERRORMSG("AnnotateDialog::MoveAnnotation() - NULL annotation pointer");
         return;
     }
 
@@ -442,7 +408,7 @@ void AnnotateDialog::DeleteAnnotation(void)
     if (available->GetSelection() < 0) return;
     StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
     if (!annotation) {
-        ERR_POST(Error << "AnnotateDialog::DeleteAnnotation() - NULL annotation pointer");
+        ERRORMSG("AnnotateDialog::DeleteAnnotation() - NULL annotation pointer");
         return;
     }
 
@@ -725,3 +691,44 @@ wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_s
     return item0;
 }
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.12  2003/02/03 19:20:00  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.11  2002/10/28 21:36:01  thiessen
+* add show domains with highlights
+*
+* Revision 1.10  2002/08/15 22:13:11  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
+* Revision 1.9  2001/12/06 23:13:44  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.8  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
+* Revision 1.7  2001/09/24 14:37:52  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
+* Revision 1.6  2001/09/24 13:29:54  thiessen
+* fix wxPanel issues
+*
+* Revision 1.5  2001/09/20 19:31:30  thiessen
+* fixes for SGI and wxWin 2.3.2
+*
+* Revision 1.4  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
+* Revision 1.3  2001/07/19 19:14:38  thiessen
+* working CDD alignment annotator ; misc tweaks
+*
+* Revision 1.2  2001/07/04 19:39:16  thiessen
+* finish user annotation system
+*
+* Revision 1.1  2001/06/29 18:13:57  thiessen
+* initial (incomplete) user annotation system
+*
+*/

@@ -28,38 +28,6 @@
 * File Description:
 *      class to manage different root ASN data types
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2003/01/27 15:52:22  thiessen
-* merge after highlighted row; show rejects; trim rejects from new reject list
-*
-* Revision 1.9  2002/11/06 00:18:10  thiessen
-* fixes for new CRef/const rules in objects
-*
-* Revision 1.8  2002/06/05 17:50:08  thiessen
-* title tweaks
-*
-* Revision 1.7  2002/02/27 16:29:41  thiessen
-* add model type flag to general mime type
-*
-* Revision 1.6  2002/02/19 14:59:39  thiessen
-* add CDD reject and purge sequence
-*
-* Revision 1.5  2002/02/12 17:19:21  thiessen
-* first working structure import
-*
-* Revision 1.4  2001/12/15 03:15:59  thiessen
-* adjustments for slightly changed object loader Set...() API
-*
-* Revision 1.3  2001/12/06 23:13:45  thiessen
-* finish import/align new sequences into single-structure data; many small tweaks
-*
-* Revision 1.2  2001/11/30 14:02:05  thiessen
-* progress on sequence imports to single structures
-*
-* Revision 1.1  2001/11/27 16:26:08  thiessen
-* major update to data management system
-*
 * ===========================================================================
 */
 
@@ -200,3 +168,41 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_DATA_MANAGER__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.11  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.10  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
+* Revision 1.9  2002/11/06 00:18:10  thiessen
+* fixes for new CRef/const rules in objects
+*
+* Revision 1.8  2002/06/05 17:50:08  thiessen
+* title tweaks
+*
+* Revision 1.7  2002/02/27 16:29:41  thiessen
+* add model type flag to general mime type
+*
+* Revision 1.6  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
+* Revision 1.5  2002/02/12 17:19:21  thiessen
+* first working structure import
+*
+* Revision 1.4  2001/12/15 03:15:59  thiessen
+* adjustments for slightly changed object loader Set...() API
+*
+* Revision 1.3  2001/12/06 23:13:45  thiessen
+* finish import/align new sequences into single-structure data; many small tweaks
+*
+* Revision 1.2  2001/11/30 14:02:05  thiessen
+* progress on sequence imports to single structures
+*
+* Revision 1.1  2001/11/27 16:26:08  thiessen
+* major update to data management system
+*
+*/

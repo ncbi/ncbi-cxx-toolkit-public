@@ -28,56 +28,6 @@
 * File Description:
 *       class to isolate and run the threader
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.16  2003/01/23 20:03:05  thiessen
-* add BLAST Neighbor algorithm
-*
-* Revision 1.15  2002/07/12 13:24:10  thiessen
-* fixes for PSSM creation to agree with cddumper/RPSBLAST
-*
-* Revision 1.14  2002/03/28 14:06:02  thiessen
-* preliminary BLAST/PSSM ; new CD startup style
-*
-* Revision 1.13  2002/02/21 12:26:30  thiessen
-* fix row delete bug ; remember threader options
-*
-* Revision 1.12  2001/10/08 00:00:02  thiessen
-* estimate threader N random starts; edit CDD name
-*
-* Revision 1.11  2001/09/27 15:36:48  thiessen
-* decouple sequence import and BLAST
-*
-* Revision 1.10  2001/06/01 21:48:02  thiessen
-* add terminal cutoff to threading
-*
-* Revision 1.9  2001/04/12 18:54:22  thiessen
-* fix memory leak for PSSM-only threading
-*
-* Revision 1.8  2001/04/12 18:09:40  thiessen
-* add block freezing
-*
-* Revision 1.7  2001/04/05 22:54:50  thiessen
-* change bg color handling ; show geometry violations
-*
-* Revision 1.6  2001/04/04 00:27:21  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.5  2001/03/30 03:07:08  thiessen
-* add threader score calculation & sorting
-*
-* Revision 1.4  2001/03/28 23:01:38  thiessen
-* first working full threading
-*
-* Revision 1.3  2001/03/22 00:32:36  thiessen
-* initial threading working (PSSM only); free color storage in undo stack
-*
-* Revision 1.2  2001/02/13 01:03:03  thiessen
-* backward-compatible domain ID's in output; add ability to delete rows
-*
-* Revision 1.1  2001/02/08 23:01:24  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
 * ===========================================================================
 */
 
@@ -189,3 +139,59 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_THREADER__HPP
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.17  2003/02/03 19:20:03  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.16  2003/01/23 20:03:05  thiessen
+* add BLAST Neighbor algorithm
+*
+* Revision 1.15  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
+* Revision 1.14  2002/03/28 14:06:02  thiessen
+* preliminary BLAST/PSSM ; new CD startup style
+*
+* Revision 1.13  2002/02/21 12:26:30  thiessen
+* fix row delete bug ; remember threader options
+*
+* Revision 1.12  2001/10/08 00:00:02  thiessen
+* estimate threader N random starts; edit CDD name
+*
+* Revision 1.11  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
+* Revision 1.10  2001/06/01 21:48:02  thiessen
+* add terminal cutoff to threading
+*
+* Revision 1.9  2001/04/12 18:54:22  thiessen
+* fix memory leak for PSSM-only threading
+*
+* Revision 1.8  2001/04/12 18:09:40  thiessen
+* add block freezing
+*
+* Revision 1.7  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
+* Revision 1.6  2001/04/04 00:27:21  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.5  2001/03/30 03:07:08  thiessen
+* add threader score calculation & sorting
+*
+* Revision 1.4  2001/03/28 23:01:38  thiessen
+* first working full threading
+*
+* Revision 1.3  2001/03/22 00:32:36  thiessen
+* initial threading working (PSSM only); free color storage in undo stack
+*
+* Revision 1.2  2001/02/13 01:03:03  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
+* Revision 1.1  2001/02/08 23:01:24  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+*/

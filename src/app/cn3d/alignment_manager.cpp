@@ -28,8 +28,861 @@
 * File Description:
 *      Classes to manipulate alignments
 *
+* ===========================================================================
+*/
+
+#include <corelib/ncbistd.hpp>
+
+#include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+
+#include <memory>
+
+#include "cn3d/alignment_manager.hpp"
+#include "cn3d/sequence_set.hpp"
+#include "cn3d/alignment_set.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/messenger.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/sequence_viewer.hpp"
+#include "cn3d/molecule.hpp"
+#include "cn3d/show_hide_manager.hpp"
+#include "cn3d/cn3d_threader.hpp"
+#include "cn3d/update_viewer.hpp"
+#include "cn3d/sequence_display.hpp"
+#include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_blast.hpp"
+#include "cn3d/style_manager.hpp"
+#include "cn3d/cn3d_ba_interface.hpp"
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+
+
+BEGIN_SCOPE(Cn3D)
+
+///// AlignmentManager methods /////
+
+void AlignmentManager::Init(void)
+{
+    sequenceViewer = new SequenceViewer(this);
+    GlobalMessenger()->AddSequenceViewer(sequenceViewer);
+
+    updateViewer = new UpdateViewer(this);
+    GlobalMessenger()->AddSequenceViewer(updateViewer);
+
+    threader = new Threader();
+    blaster = new BLASTer();
+    blockAligner = new BlockAligner();
+}
+
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
+{
+    Init();
+    NewAlignments(sSet, aSet);
+}
+
+AlignmentManager::AlignmentManager(const SequenceSet *sSet,
+    const AlignmentSet *aSet, const UpdateAlignList& updates)
+{
+    Init();
+    NewAlignments(sSet, aSet);
+
+    // create BlockMultipleAlignments from updates; add to update viewer
+    PairwiseAlignmentList pairwise(1);
+    UpdateViewer::AlignmentList updateAlignments;
+    UpdateAlignList::const_iterator u, ue = updates.end();
+    for (u=updates.begin(); u!=ue; u++) {
+        if (u->GetObject().IsSetSeqannot() && u->GetObject().GetSeqannot().GetData().IsAlign()) {
+            CSeq_annot::C_Data::TAlign::const_iterator
+                s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
+            for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
+
+                // determine master sequence
+                const Sequence *master = NULL;
+                if (aSet) {
+                    master = aSet->master;
+                } else if (updateAlignments.size() > 0) {
+                    master = updateAlignments.front()->GetMaster();
+                } else {
+                    SequenceSet::SequenceList::const_iterator q, qe = sSet->sequences.end();
+                    for (q=sSet->sequences.begin(); q!=qe; q++) {
+                        if ((*q)->identifier->MatchesSeqId(
+                                (*s)->GetSegs().IsDendiag() ?
+                                    (*s)->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
+                                    (*s)->GetSegs().GetDenseg().GetIds().front().GetObject()
+                            )) {
+                            master = *q;
+                            break;
+                        }
+                    }
+                }
+                if (!master) {
+                    ERRORMSG("AlignmentManager::AlignmentManager() - "
+                        << "can't determine master sequence for updates");
+                    return;
+                }
+
+                const MasterSlaveAlignment *alignment =
+                    new MasterSlaveAlignment(NULL, master, s->GetObject());
+                pairwise.front() = alignment;
+                BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
+                multiple->updateOrigin = *u;    // to keep track of which Update-align this came from
+                updateAlignments.push_back(multiple);
+                delete alignment;
+            }
+        }
+    }
+    updateViewer->AddAlignments(updateAlignments);
+
+    // set this set of updates as the initial state of the editor's undo stack
+    updateViewer->SetInitialState();
+}
+
+AlignmentManager::~AlignmentManager(void)
+{
+    GlobalMessenger()->RemoveSequenceViewer(sequenceViewer);
+    GlobalMessenger()->RemoveSequenceViewer(updateViewer);
+    delete sequenceViewer;
+    delete updateViewer;
+    delete threader;
+    delete blaster;
+    delete blockAligner;
+}
+
+void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)
+{
+    sequenceSet = sSet;
+    alignmentSet = aSet;
+
+    if (!alignmentSet) {
+        sequenceViewer->DisplaySequences(&(sequenceSet->sequences));
+        return;
+    }
+
+    // all slaves start out visible
+    slavesVisible.resize(alignmentSet->alignments.size());
+    for (int i=0; i<slavesVisible.size(); i++) slavesVisible[i] = true;
+
+    NewMultipleWithRows(slavesVisible);
+}
+
+void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
+    const vector < int >& rowOrder)
+{
+    // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
+    AlignmentSet *newAlignmentSet =
+        AlignmentSet::CreateFromMultiple(multiple->GetMaster()->parentSet, multiple, rowOrder);
+    if (newAlignmentSet) {
+        multiple->GetMaster()->parentSet->ReplaceAlignmentSet(newAlignmentSet);
+        alignmentSet = newAlignmentSet;
+    } else {
+        ERRORMSG("Couldn't create pairwise alignments from the current multiple!\n"
+            << "Alignment data in output file will be left unchanged.");
+    }
+}
+
+const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
+{
+    const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
+    return ((currentAlignments.size() > 0) ? currentAlignments.front() : NULL);
+}
+
+static bool AlignedToAllSlaves(int masterResidue,
+    const AlignmentManager::PairwiseAlignmentList& alignments)
+{
+    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
+    for (a=alignments.begin(); a!=ae; a++) {
+        if ((*a)->masterToSlave[masterResidue] == -1) return false;
+    }
+    return true;
+}
+
+static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
+    const AlignmentManager::PairwiseAlignmentList& alignments)
+{
+    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
+    for (a=alignments.begin(); a!=ae; a++) {
+        if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) !=
+            (masterTo - masterFrom)) return false;
+    }
+    return true;
+}
+
+static bool NoBlockBoundariesBetween(int masterFrom, int masterTo,
+    const AlignmentManager::PairwiseAlignmentList& alignments)
+{
+    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
+    for (a=alignments.begin(); a!=ae; a++) {
+        if ((*a)->blockStructure[masterTo] != (*a)->blockStructure[masterFrom])
+            return false;
+    }
+    return true;
+}
+
+BlockMultipleAlignment *
+AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments)
+{
+    PairwiseAlignmentList::const_iterator a, ae = alignments.end();
+
+    // create sequence list; fill with sequences of master + slaves
+    BlockMultipleAlignment::SequenceList
+        *sequenceList = new BlockMultipleAlignment::SequenceList(alignments.size() + 1);
+    BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
+    *(s++) = alignments.front()->master;
+    for (a=alignments.begin(); a!=ae; a++) {
+        *(s++) = (*a)->slave;
+        if ((*a)->master != sequenceList->front()) {
+            ERRORMSG("AlignmentManager::CreateMultipleFromPairwiseWithIBM() -\n"
+                << "all pairwise alignments must have the same master sequence");
+            return NULL;
+        }
+    }
+    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList, this);
+
+    // each block is a continuous region on the master, over which each master
+    // residue is aligned to a residue of each slave, and where there are no
+    // insertions relative to the master in any of the slaves
+    int masterFrom = 0, masterTo, row;
+    UngappedAlignedBlock *newBlock;
+
+    while (masterFrom < multipleAlignment->GetMaster()->Length()) {
+
+        // look for first all-aligned residue
+        if (!AlignedToAllSlaves(masterFrom, alignments)) {
+            masterFrom++;
+            continue;
+        }
+
+        // find all next continuous all-aligned residues, but checking for
+        // block boundaries from the original master-slave pairs, so that
+        // blocks don't get merged
+        for (masterTo=masterFrom+1;
+                masterTo < multipleAlignment->GetMaster()->Length() &&
+                AlignedToAllSlaves(masterTo, alignments) &&
+                NoSlaveInsertionsBetween(masterFrom, masterTo, alignments) &&
+                NoBlockBoundariesBetween(masterFrom, masterTo, alignments);
+             masterTo++) ;
+        masterTo--; // after loop, masterTo = first residue past block
+
+        // create new block with ranges from master and all slaves
+        newBlock = new UngappedAlignedBlock(multipleAlignment);
+        newBlock->SetRangeOfRow(0, masterFrom, masterTo);
+        newBlock->width = masterTo - masterFrom + 1;
+
+        //TESTMSG("masterFrom " << masterFrom+1 << ", masterTo " << masterTo+1);
+        for (a=alignments.begin(), row=1; a!=ae; a++, row++) {
+            newBlock->SetRangeOfRow(row,
+                (*a)->masterToSlave[masterFrom],
+                (*a)->masterToSlave[masterTo]);
+            //TESTMSG("slave->from " << b->from+1 << ", slave->to " << b->to+1);
+        }
+
+        // copy new block into alignment
+        multipleAlignment->AddAlignedBlockAtEnd(newBlock);
+
+        // start looking for next block
+        masterFrom = masterTo + 1;
+    }
+
+    if (!multipleAlignment->AddUnalignedBlocks() ||
+        !multipleAlignment->UpdateBlockMapAndColors()) {
+        ERRORMSG("AlignmentManager::CreateMultipleFromPairwiseWithIBM() - "
+            "error finalizing alignment");
+        return NULL;
+    }
+
+    return multipleAlignment;
+}
+
+static void GetAlignedResidueIndexes(
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& b,
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& be,
+    int row, int *seqIndexes)
+{
+    int i = 0, c;
+    const Block::Range *range;
+    for (; b!=be; b++) {
+        range = (*b)->GetRangeOfRow(row);
+        for (c=0; c<(*b)->width; c++) {
+            seqIndexes[i++] = range->from + c;
+        }
+    }
+}
+
+void AlignmentManager::RealignAllSlaveStructures(void) const
+{
+    const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
+    if (!multiple) return;
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
+    if (!blocks.get()) {
+        WARNINGMSG("Can't realign slaves with no aligned residues!");
+        return;
+    }
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    int nResidues = 0;
+    for (b=blocks->begin(); b!=be; b++) nResidues += (*b)->width;
+    if (nResidues <= 2) {
+        WARNINGMSG("Can't realign slaves with < 3 aligned residues!");
+        return;
+    }
+
+    const Sequence *masterSeq = multiple->GetSequenceOfRow(0), *slaveSeq;
+    const Molecule *masterMol, *slaveMol;
+    if (!masterSeq || !(masterMol = masterSeq->molecule)) {
+        WARNINGMSG("Can't realign slaves to non-structured master!");
+        return;
+    }
+
+    int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
+    b = blocks->begin();
+    GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes);
+
+    double *weights = new double[nResidues];
+
+    const StructureObject *slaveObj;
+
+    typedef const Vector * CVP;
+    CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
+    if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
+        WARNINGMSG("Can't get master alpha coords");
+    } else if (masterSeq->GetOrSetMMDBLink() == MoleculeIdentifier::VALUE_NOT_SET) {
+        WARNINGMSG("Don't know master MMDB ID");
+    } else {
+
+        masterMol->parentSet->InitStructureAlignments(masterSeq->identifier->mmdbID);
+
+        int nStructureAlignments = 0;
+        for (int i=1; i<multiple->NRows(); i++) {
+            slaveSeq = multiple->GetSequenceOfRow(i);
+            if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
+
+            b = blocks->begin();
+            GetAlignedResidueIndexes(b, be, i, slaveSeqIndexes);
+            if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
+
+            if (!slaveMol->GetParentOfType(&slaveObj)) continue;
+
+            // if any Vector* is NULL, make sure that weight is 0 so the pointer won't be accessed
+            for (int j=0; j<nResidues; j++) {
+                if (!masterCoords[j] || !slaveCoords[j])
+                    weights[j] = 0.0;
+                else
+                    weights[j] = 1.0; // for now, just use flat weighting
+            }
+
+            INFOMSG("realigning slave " << slaveSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID);
+            (const_cast<StructureObject*>(slaveObj))->
+                RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
+            nStructureAlignments++;
+        }
+
+        // if no structure alignments, remove the list entirely
+        if (nStructureAlignments == 0) masterMol->parentSet->RemoveStructureAlignments();
+    }
+
+    delete[] masterSeqIndexes;
+    delete[] slaveSeqIndexes;
+    delete[] masterCoords;
+    delete[] slaveCoords;
+    delete[] weights;
+    return;
+}
+
+void AlignmentManager::GetAlignmentSetSlaveSequences(vector < const Sequence * > *sequences) const
+{
+    sequences->resize(alignmentSet->alignments.size());
+
+    AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
+    int i = 0;
+    for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
+        (*sequences)[i] = (*a)->slave;
+    }
+}
+
+void AlignmentManager::GetAlignmentSetSlaveVisibilities(vector < bool > *visibilities) const
+{
+    if (slavesVisible.size() != alignmentSet->alignments.size()) // can happen if row is added/deleted
+        slavesVisible.resize(alignmentSet->alignments.size(), true);
+
+    // copy visibility list
+    *visibilities = slavesVisible;
+}
+
+void AlignmentManager::ShowHideCallbackFunction(const vector < bool >& itemsEnabled)
+{
+    if (itemsEnabled.size() != slavesVisible.size() ||
+        itemsEnabled.size() != alignmentSet->alignments.size()) {
+        ERRORMSG("AlignmentManager::ShowHideCallbackFunction() - wrong size list");
+        return;
+    }
+
+    slavesVisible = itemsEnabled;
+    NewMultipleWithRows(slavesVisible);
+
+    AlignmentSet::AlignmentList::const_iterator
+        a = alignmentSet->alignments.begin(), ae = alignmentSet->alignments.end();
+    const StructureObject *object;
+
+    if ((*a)->master->molecule) {
+        // Show() redraws whole StructureObject only if necessary
+        if ((*a)->master->molecule->GetParentOfType(&object))
+            object->parentSet->showHideManager->Show(object, true);
+        // always redraw aligned molecule, in case alignment colors change
+        GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
+    }
+    for (int i=0; a!=ae; a++, i++) {
+        if ((*a)->slave->molecule) {
+            if ((*a)->slave->molecule->GetParentOfType(&object))
+                object->parentSet->showHideManager->Show(object, slavesVisible[i]);
+            GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
+        }
+    }
+
+    // do necessary redraws + show/hides: sequences + chains in the alignment
+    sequenceViewer->Refresh();
+    GlobalMessenger()->PostRedrawAllSequenceViewers();
+    GlobalMessenger()->UnPostRedrawSequenceViewer(sequenceViewer);  // Refresh() does this already
+}
+
+void AlignmentManager::NewMultipleWithRows(const vector < bool >& visibilities)
+{
+    if (visibilities.size() != alignmentSet->alignments.size()) {
+        ERRORMSG("AlignmentManager::NewMultipleWithRows() - wrong size visibility vector");
+        return;
+    }
+
+    // make a multiple from all visible rows
+    PairwiseAlignmentList alignments;
+    AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
+    int i = 0;
+    for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
+        if (visibilities[i])
+            alignments.push_back(*a);
+    }
+
+    // sequenceViewer will own the resulting alignment
+    sequenceViewer->DisplayAlignment(CreateMultipleFromPairwiseWithIBM(alignments));
+}
+
+bool AlignmentManager::IsAligned(const Sequence *sequence, int seqIndex) const
+{
+    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
+    if (currentAlignment)
+        return currentAlignment->IsAligned(sequence, seqIndex);
+    else
+        return false;
+}
+
+bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
+{
+    if (!sequence) return false;
+    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
+    if (currentAlignment) {
+        for (int i=0; i<currentAlignment->sequences->size(); i++) {
+            if ((*(currentAlignment->sequences))[i] == sequence)
+                return true;
+        }
+    }
+    return false;
+}
+
+const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int seqIndex,
+    StyleSettings::eColorScheme colorScheme) const
+{
+    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
+    if (currentAlignment)
+        return currentAlignment->GetAlignmentColor(sequence, seqIndex, colorScheme);
+    else
+        return NULL;
+}
+
+void AlignmentManager::ShowSequenceViewer(void)
+{
+    sequenceViewer->CreateSequenceWindow();
+}
+
+void AlignmentManager::ShowUpdateWindow(void) const
+{
+    updateViewer->CreateUpdateWindow();
+}
+
+void AlignmentManager::RealignSlaveSequences(
+    BlockMultipleAlignment *multiple, const vector < int >& slavesToRealign)
+{
+    if (!multiple || sequenceViewer->GetCurrentAlignments().size() == 0 ||
+            multiple != sequenceViewer->GetCurrentAlignments().front()) {
+        ERRORMSG("AlignmentManager::RealignSlaveSequences() - wrong multiple alignment");
+        return;
+    }
+    if (slavesToRealign.size() == 0) return;
+
+    // create alignments for each master/slave pair, then update displays
+    UpdateViewer::AlignmentList alignments;
+    TRACEMSG("extracting rows");
+    if (multiple->ExtractRows(slavesToRealign, &alignments)) {
+        TRACEMSG("recreating display");
+        sequenceViewer->GetCurrentDisplay()->RowsRemoved(slavesToRealign, multiple);
+        TRACEMSG("adding to update window");
+        SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
+        updateViewer->AddAlignments(alignments);
+        SetDiagPostLevel(eDiag_Info);
+        TRACEMSG("done");
+        updateViewer->CreateUpdateWindow();
+    }
+}
+
+void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single)
+{
+    const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
+    if (currentAlignments.size() == 0) return;
+
+    // make sure the editor is on in the sequenceViewer if merge is selected
+    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
+        ERRORMSG("Can only merge updates when editing is enabled in the sequence window");
+        return;
+    }
+
+    // run the threader on the given alignment
+    UpdateViewer::AlignmentList singleList, replacedList;
+    Threader::AlignmentList newAlignments;
+    int nRowsAddedToMultiple;
+    bool foundSingle = false;   // sanity check
+
+    singleList.push_back(single);
+    if (threader->Realign(
+            options, currentAlignments.front(), &singleList,
+            &nRowsAddedToMultiple, &newAlignments)) {
+
+        // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
+        UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
+        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; a++) {
+            if (*a == single) {
+                Threader::AlignmentList::const_iterator n, ne = newAlignments.end();
+                for (n=newAlignments.begin(); n!=ne; n++)
+                    replacedList.push_back(*n);
+                foundSingle = true;
+            } else
+                replacedList.push_back((*a)->Clone());
+        }
+        if (!foundSingle) ERRORMSG(
+            "AlignmentManager::ThreadUpdate() - threaded alignment not found in update viewer!");
+        updateViewer->ReplaceAlignments(replacedList);
+
+        // tell the sequenceViewer that rows have been merged into the multiple
+        if (nRowsAddedToMultiple > 0)
+            sequenceViewer->GetCurrentDisplay()->
+                RowsAdded(nRowsAddedToMultiple, currentAlignments.front());
+    }
+}
+
+void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
+{
+    const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
+    if (currentAlignments.size() == 0) return;
+
+    // make sure the editor is on in the sequenceViewer
+    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
+        ERRORMSG("Can only merge updates when editing is enabled in the sequence window");
+        return;
+    }
+
+    // run the threader on update pairwise alignments
+    Threader::AlignmentList newAlignments;
+    int nRowsAddedToMultiple;
+    if (threader->Realign(
+            options, currentAlignments.front(), &(updateViewer->GetCurrentAlignments()),
+            &nRowsAddedToMultiple, &newAlignments)) {
+
+        // replace update alignments with new ones (or leftovers where threader/merge failed)
+        updateViewer->ReplaceAlignments(newAlignments);
+
+        // tell the sequenceViewer that rows have been merged into the multiple
+        if (nRowsAddedToMultiple > 0)
+            sequenceViewer->GetCurrentDisplay()->
+                RowsAdded(nRowsAddedToMultiple, currentAlignments.front());
+    }
+}
+
+void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesToMerge, bool mergeToNeighbor)
+{
+    if (updatesToMerge.size() == 0) return;
+    const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+    if (currentUpdates.size() == 0) return;
+
+    // transform this structure view into an alignment view, and turn on the editor.
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
+    const BlockMultipleAlignment *newMultiple = NULL;
+    if (sequenceViewer->GetCurrentAlignments().size() == 0) {
+
+        for (u=currentUpdates.begin(); u!=ue; u++) {   // find first update alignment
+            if (updatesToMerge.find(*u) != updatesToMerge.end()) {
+                newMultiple = *u;
+
+                // create new alignment, then call SavePairwiseFromMultiple to create
+                // an AlignmentSet and the initial ASN data
+                sequenceViewer->DisplayAlignment(newMultiple->Clone());
+                vector < int > rowOrder(newMultiple->NRows());
+                for (int i=0; i<newMultiple->NRows(); i++) rowOrder[i] = i;
+                SavePairwiseFromMultiple(newMultiple, rowOrder);
+
+                // editor needs to be on if >1 update is to be merged in
+                sequenceViewer->TurnOnEditor();
+
+                // set default alignment-type style
+                newMultiple->GetMaster()->parentSet->styleManager->
+                    SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+                newMultiple->GetMaster()->parentSet->styleManager->
+                    SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
+                GlobalMessenger()->PostRedrawAllStructures();
+                break;
+            }
+        }
+    }
+
+    BlockMultipleAlignment *multiple =
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
+			sequenceViewer->GetCurrentAlignments().front() : NULL;
+    if (!multiple) {
+        ERRORMSG("Must have an alignment in the sequence viewer to merge with");
+        return;
+    }
+
+    // make sure the editor is on in the sequenceViewer
+    if (!sequenceViewer->EditorIsOn()) {
+        ERRORMSG("Can only merge updates when editing is enabled in the sequence window");
+        return;
+    }
+
+    int nSuccessfulMerges = 0;
+    ViewerBase::AlignmentList updatesToKeep;
+    for (u=currentUpdates.begin(); u!=ue; u++) {
+        if (*u == newMultiple) continue;
+        bool merged = false;
+        if (updatesToMerge.find(*u) != updatesToMerge.end()) {
+            merged = multiple->MergeAlignment(*u);
+            if (merged) {
+                nSuccessfulMerges += (*u)->NRows() - 1;
+            } else {
+                for (int i=0; i<(*u)->NRows(); i++) {
+                    string status = (*u)->GetRowStatusLine(i);
+                    if (status.size() > 0)
+                        status += "; merge failed!";
+                    else
+                        status = "Merge failed!";
+                    (*u)->SetRowStatusLine(i, status);
+                }
+            }
+        }
+        if (!merged) {
+            BlockMultipleAlignment *keep = (*u)->Clone();
+            updatesToKeep.push_back(keep);
+        }
+    }
+
+    updateViewer->ReplaceAlignments(updatesToKeep);
+    if (nSuccessfulMerges > 0) {
+        int where = -1;
+
+        // if necessary, find nearest neighbor to merged sequence, and add new row after it
+        if (mergeToNeighbor && nSuccessfulMerges == 1) {
+            auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+                blocks(multiple->GetUngappedAlignedBlocks());
+            BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+            int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
+            const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
+            for (row=0; row<lastRow; row++) {
+                const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
+                rowScore = 0;
+                for (b=blocks->begin(); b!=be; b++) {
+                    for (col=0; col<(*b)->width; col++) {
+                        rowScore += GetBLOSUM62Score(
+                            mergeSeq->sequenceString[(*b)->GetRangeOfRow(lastRow)->from + col],
+                            otherSeq->sequenceString[(*b)->GetRangeOfRow(row)->from + col]);
+                    }
+                }
+                if (row == 0 || rowScore > bestScore) {
+                    where = row;
+                    bestScore = rowScore;
+                }
+            }
+            INFOMSG("Closest row is #" << (where+1) << ", "
+                << multiple->GetSequenceOfRow(where)->identifier->ToString());
+        }
+
+        sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple, where);
+    }
+
+    // add pending imported structures to asn data
+    updateViewer->SavePendingStructures();
+}
+
+void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)
+{
+    threader->CalculateScores(GetCurrentMultipleAlignment(), weightPSSM);
+}
+
+void AlignmentManager::GetUpdateSequences(list < const Sequence * > *updateSequences) const
+{
+    updateSequences->clear();
+    const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+    if (currentUpdates.size() == 0) return;
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
+    for (u=currentUpdates.begin(); u!=ue; u++)
+        updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one slave...
+}
+
+bool AlignmentManager::GetStructureProteins(vector < const Sequence * > *chains) const
+{
+    if (!chains || GetCurrentMultipleAlignment() != NULL ||
+        !sequenceViewer || !sequenceViewer->GetCurrentDisplay()) return false;
+
+    sequenceViewer->GetCurrentDisplay()->GetProteinSequences(chains);
+    return (chains->size() > 0);
+}
+
+void AlignmentManager::ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const
+{
+    if (sequenceSet)
+        sequenceSet->parentSet->ReplaceUpdates(newUpdates);
+    else
+        ERRORMSG("AlignmentManager::ReplaceUpdatesInASN() - can't get StructureSet");
+}
+
+void AlignmentManager::PurgeSequence(const MoleculeIdentifier *identifier)
+{
+    BlockMultipleAlignment *multiple =
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
+			sequenceViewer->GetCurrentAlignments().front() : NULL;
+    if (!multiple) return;
+
+    // remove matching rows from multiple alignment
+    vector < int > rowsToRemove;
+    int i;
+    for (i=1; i<multiple->NRows(); i++)
+        if (multiple->GetSequenceOfRow(i)->identifier == identifier)
+            rowsToRemove.push_back(i);
+
+    if (rowsToRemove.size() > 0) {
+
+        // turn on editor, and update multiple pointer
+        if (!sequenceViewer->EditorIsOn()) {
+            sequenceViewer->TurnOnEditor();
+            multiple = sequenceViewer->GetCurrentAlignments().front();
+        }
+
+        if (!multiple->ExtractRows(rowsToRemove, NULL)) {
+            ERRORMSG("AlignmentManager::PurgeSequence() - ExtractRows failed!");
+            return;
+        }
+
+        // remove rows from SequenceDisplay
+        SequenceDisplay *display = sequenceViewer->GetCurrentDisplay();
+        if (!display) {
+            ERRORMSG("AlignmentManager::PurgeSequence() - can't get SequenceDisplay!");
+            return;
+        }
+        display->RowsRemoved(rowsToRemove, multiple);
+    }
+
+    // remove matching alignments from Update window
+    const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+    if (currentUpdates.size() == 0) return;
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
+
+    for (u=currentUpdates.begin(); u!=ue; u++) // quick check if any match found
+        if ((*u)->GetSequenceOfRow(1)->identifier == identifier) break;
+
+    if (u != ue) {
+        ViewerBase::AlignmentList updatesToKeep;
+        for (u=currentUpdates.begin(); u!=ue; u++) {
+            if ((*u)->GetSequenceOfRow(1)->identifier != identifier) {
+                BlockMultipleAlignment *keep = (*u)->Clone();
+                updatesToKeep.push_back(keep);
+            }
+        }
+        updateViewer->ReplaceAlignments(updatesToKeep);
+    }
+}
+
+void AlignmentManager::BlockAlignAllUpdates(void)
+{
+    BlockMultipleAlignment *currentMultiple =
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
+			sequenceViewer->GetCurrentAlignments().front() : NULL;
+    if (!currentMultiple) return;
+
+    const UpdateViewer::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
+    if (currentUpdates.size() == 0)
+        return;
+
+    // run the block aligner on update pairwise alignments
+    BlockAligner::AlignmentList newAlignmentsList;
+    int nRowsAddedToMultiple;
+
+    if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(currentMultiple,
+            currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple,
+            sequenceViewer->EditorIsOn())) {
+
+        // replace update alignments with new ones (or leftovers where threader/merge failed)
+        updateViewer->ReplaceAlignments(newAlignmentsList);
+
+        // tell the sequenceViewer that rows have been merged into the multiple
+        if (nRowsAddedToMultiple > 0)
+            sequenceViewer->GetCurrentDisplay()->RowsAdded(nRowsAddedToMultiple, currentMultiple);
+    }
+}
+
+void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
+{
+    BlockMultipleAlignment *currentMultiple =
+        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
+			sequenceViewer->GetCurrentAlignments().front() : NULL;
+    if (!currentMultiple) return;
+
+    // run the threader on the given alignment
+    UpdateViewer::AlignmentList singleList, replacedList;
+    BlockAligner::AlignmentList newAlignments;
+    int nRowsAddedToMultiple;
+    bool foundSingle = false;   // sanity check
+
+    singleList.push_back(single);
+    if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
+            currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple,
+            sequenceViewer->EditorIsOn())) {
+
+        // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
+        UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
+        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; a++) {
+            if (*a == single) {
+                BlockAligner::AlignmentList::const_iterator n, ne = newAlignments.end();
+                for (n=newAlignments.begin(); n!=ne; n++)
+                    replacedList.push_back(*n);
+                foundSingle = true;
+            } else
+                replacedList.push_back((*a)->Clone());
+        }
+        if (!foundSingle) ERRORMSG(
+            "AlignmentManager::ThreadUpdate() - threaded alignment not found in update viewer!");
+        updateViewer->ReplaceAlignments(replacedList);
+
+        // tell the sequenceViewer that rows have been merged into the multiple
+        if (nRowsAddedToMultiple > 0)
+            sequenceViewer->GetCurrentDisplay()->
+                RowsAdded(nRowsAddedToMultiple, currentMultiple);
+    }
+}
+
+END_SCOPE(Cn3D)
+
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/02/03 19:19:59  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
 * Revision 1.82  2003/01/29 01:41:05  thiessen
 * add merge neighbor instead of merge near highlight
 *
@@ -276,853 +1129,4 @@
 * Revision 1.1  2000/08/29 04:34:35  thiessen
 * working alignment manager, IBM
 *
-* ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbistl.hpp>
-
-#include <objects/seqalign/Dense_diag.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-
-#include <memory>
-
-#include "cn3d/alignment_manager.hpp"
-#include "cn3d/sequence_set.hpp"
-#include "cn3d/alignment_set.hpp"
-#include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/messenger.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/sequence_viewer.hpp"
-#include "cn3d/molecule.hpp"
-#include "cn3d/show_hide_manager.hpp"
-#include "cn3d/cn3d_threader.hpp"
-#include "cn3d/update_viewer.hpp"
-#include "cn3d/sequence_display.hpp"
-#include "cn3d/cn3d_tools.hpp"
-#include "cn3d/molecule_identifier.hpp"
-#include "cn3d/cn3d_blast.hpp"
-#include "cn3d/style_manager.hpp"
-#include "cn3d/cn3d_ba_interface.hpp"
-
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
-
-BEGIN_SCOPE(Cn3D)
-
-///// AlignmentManager methods /////
-
-void AlignmentManager::Init(void)
-{
-    sequenceViewer = new SequenceViewer(this);
-    GlobalMessenger()->AddSequenceViewer(sequenceViewer);
-
-    updateViewer = new UpdateViewer(this);
-    GlobalMessenger()->AddSequenceViewer(updateViewer);
-
-    threader = new Threader();
-    blaster = new BLASTer();
-    blockAligner = new BlockAligner();
-}
-
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
-{
-    Init();
-    NewAlignments(sSet, aSet);
-}
-
-AlignmentManager::AlignmentManager(const SequenceSet *sSet,
-    const AlignmentSet *aSet, const UpdateAlignList& updates)
-{
-    Init();
-    NewAlignments(sSet, aSet);
-
-    // create BlockMultipleAlignments from updates; add to update viewer
-    PairwiseAlignmentList pairwise(1);
-    UpdateViewer::AlignmentList updateAlignments;
-    UpdateAlignList::const_iterator u, ue = updates.end();
-    for (u=updates.begin(); u!=ue; u++) {
-        if (u->GetObject().IsSetSeqannot() && u->GetObject().GetSeqannot().GetData().IsAlign()) {
-            CSeq_annot::C_Data::TAlign::const_iterator
-                s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
-            for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
-
-                // determine master sequence
-                const Sequence *master = NULL;
-                if (aSet) {
-                    master = aSet->master;
-                } else if (updateAlignments.size() > 0) {
-                    master = updateAlignments.front()->GetMaster();
-                } else {
-                    SequenceSet::SequenceList::const_iterator q, qe = sSet->sequences.end();
-                    for (q=sSet->sequences.begin(); q!=qe; q++) {
-                        if ((*q)->identifier->MatchesSeqId(
-                                (*s)->GetSegs().IsDendiag() ?
-                                    (*s)->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
-                                    (*s)->GetSegs().GetDenseg().GetIds().front().GetObject()
-                            )) {
-                            master = *q;
-                            break;
-                        }
-                    }
-                }
-                if (!master) {
-                    ERR_POST(Error << "AlignmentManager::AlignmentManager() - "
-                        << "can't determine master sequence for updates");
-                    return;
-                }
-
-                const MasterSlaveAlignment *alignment =
-                    new MasterSlaveAlignment(NULL, master, s->GetObject());
-                pairwise.front() = alignment;
-                BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
-                multiple->updateOrigin = *u;    // to keep track of which Update-align this came from
-                updateAlignments.push_back(multiple);
-                delete alignment;
-            }
-        }
-    }
-    updateViewer->AddAlignments(updateAlignments);
-
-    // set this set of updates as the initial state of the editor's undo stack
-    updateViewer->SetInitialState();
-}
-
-AlignmentManager::~AlignmentManager(void)
-{
-    GlobalMessenger()->RemoveSequenceViewer(sequenceViewer);
-    GlobalMessenger()->RemoveSequenceViewer(updateViewer);
-    delete sequenceViewer;
-    delete updateViewer;
-    delete threader;
-    delete blaster;
-    delete blockAligner;
-}
-
-void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)
-{
-    sequenceSet = sSet;
-    alignmentSet = aSet;
-
-    if (!alignmentSet) {
-        sequenceViewer->DisplaySequences(&(sequenceSet->sequences));
-        return;
-    }
-
-    // all slaves start out visible
-    slavesVisible.resize(alignmentSet->alignments.size());
-    for (int i=0; i<slavesVisible.size(); i++) slavesVisible[i] = true;
-
-    NewMultipleWithRows(slavesVisible);
-}
-
-void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
-    const std::vector < int >& rowOrder)
-{
-    // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
-    AlignmentSet *newAlignmentSet =
-        AlignmentSet::CreateFromMultiple(multiple->GetMaster()->parentSet, multiple, rowOrder);
-    if (newAlignmentSet) {
-        multiple->GetMaster()->parentSet->ReplaceAlignmentSet(newAlignmentSet);
-        alignmentSet = newAlignmentSet;
-    } else {
-        ERR_POST(Error << "Couldn't create pairwise alignments from the current multiple!\n"
-            << "Alignment data in output file will be left unchanged.");
-    }
-}
-
-const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
-{
-    const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
-    return ((currentAlignments.size() > 0) ? currentAlignments.front() : NULL);
-}
-
-static bool AlignedToAllSlaves(int masterResidue,
-    const AlignmentManager::PairwiseAlignmentList& alignments)
-{
-    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
-    for (a=alignments.begin(); a!=ae; a++) {
-        if ((*a)->masterToSlave[masterResidue] == -1) return false;
-    }
-    return true;
-}
-
-static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
-    const AlignmentManager::PairwiseAlignmentList& alignments)
-{
-    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
-    for (a=alignments.begin(); a!=ae; a++) {
-        if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) !=
-            (masterTo - masterFrom)) return false;
-    }
-    return true;
-}
-
-static bool NoBlockBoundariesBetween(int masterFrom, int masterTo,
-    const AlignmentManager::PairwiseAlignmentList& alignments)
-{
-    AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
-    for (a=alignments.begin(); a!=ae; a++) {
-        if ((*a)->blockStructure[masterTo] != (*a)->blockStructure[masterFrom])
-            return false;
-    }
-    return true;
-}
-
-BlockMultipleAlignment *
-AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList& alignments)
-{
-    PairwiseAlignmentList::const_iterator a, ae = alignments.end();
-
-    // create sequence list; fill with sequences of master + slaves
-    BlockMultipleAlignment::SequenceList
-        *sequenceList = new BlockMultipleAlignment::SequenceList(alignments.size() + 1);
-    BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
-    *(s++) = alignments.front()->master;
-    for (a=alignments.begin(); a!=ae; a++) {
-        *(s++) = (*a)->slave;
-        if ((*a)->master != sequenceList->front()) {
-            ERR_POST(Error << "AlignmentManager::CreateMultipleFromPairwiseWithIBM() -\n"
-                << "all pairwise alignments must have the same master sequence");
-            return NULL;
-        }
-    }
-    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList, this);
-
-    // each block is a continuous region on the master, over which each master
-    // residue is aligned to a residue of each slave, and where there are no
-    // insertions relative to the master in any of the slaves
-    int masterFrom = 0, masterTo, row;
-    UngappedAlignedBlock *newBlock;
-
-    while (masterFrom < multipleAlignment->GetMaster()->Length()) {
-
-        // look for first all-aligned residue
-        if (!AlignedToAllSlaves(masterFrom, alignments)) {
-            masterFrom++;
-            continue;
-        }
-
-        // find all next continuous all-aligned residues, but checking for
-        // block boundaries from the original master-slave pairs, so that
-        // blocks don't get merged
-        for (masterTo=masterFrom+1;
-                masterTo < multipleAlignment->GetMaster()->Length() &&
-                AlignedToAllSlaves(masterTo, alignments) &&
-                NoSlaveInsertionsBetween(masterFrom, masterTo, alignments) &&
-                NoBlockBoundariesBetween(masterFrom, masterTo, alignments);
-             masterTo++) ;
-        masterTo--; // after loop, masterTo = first residue past block
-
-        // create new block with ranges from master and all slaves
-        newBlock = new UngappedAlignedBlock(multipleAlignment);
-        newBlock->SetRangeOfRow(0, masterFrom, masterTo);
-        newBlock->width = masterTo - masterFrom + 1;
-
-        //TESTMSG("masterFrom " << masterFrom+1 << ", masterTo " << masterTo+1);
-        for (a=alignments.begin(), row=1; a!=ae; a++, row++) {
-            newBlock->SetRangeOfRow(row,
-                (*a)->masterToSlave[masterFrom],
-                (*a)->masterToSlave[masterTo]);
-            //TESTMSG("slave->from " << b->from+1 << ", slave->to " << b->to+1);
-        }
-
-        // copy new block into alignment
-        multipleAlignment->AddAlignedBlockAtEnd(newBlock);
-
-        // start looking for next block
-        masterFrom = masterTo + 1;
-    }
-
-    if (!multipleAlignment->AddUnalignedBlocks() ||
-        !multipleAlignment->UpdateBlockMapAndColors()) {
-        ERR_POST(Error << "AlignmentManager::CreateMultipleFromPairwiseWithIBM() - "
-            "error finalizing alignment");
-        return NULL;
-    }
-
-    return multipleAlignment;
-}
-
-static void GetAlignedResidueIndexes(
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& b,
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& be,
-    int row, int *seqIndexes)
-{
-    int i = 0, c;
-    const Block::Range *range;
-    for (; b!=be; b++) {
-        range = (*b)->GetRangeOfRow(row);
-        for (c=0; c<(*b)->width; c++) {
-            seqIndexes[i++] = range->from + c;
-        }
-    }
-}
-
-void AlignmentManager::RealignAllSlaveStructures(void) const
-{
-    const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
-    if (!multiple) return;
-    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
-    if (!blocks.get()) {
-        ERR_POST(Warning << "Can't realign slaves with no aligned residues!");
-        return;
-    }
-    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
-    int nResidues = 0;
-    for (b=blocks->begin(); b!=be; b++) nResidues += (*b)->width;
-    if (nResidues <= 2) {
-        ERR_POST(Warning << "Can't realign slaves with < 3 aligned residues!");
-        return;
-    }
-
-    const Sequence *masterSeq = multiple->GetSequenceOfRow(0), *slaveSeq;
-    const Molecule *masterMol, *slaveMol;
-    if (!masterSeq || !(masterMol = masterSeq->molecule)) {
-        ERR_POST(Warning << "Can't realign slaves to non-structured master!");
-        return;
-    }
-
-    int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
-    b = blocks->begin();
-    GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes);
-
-    double *weights = new double[nResidues];
-
-    const StructureObject *slaveObj;
-
-    typedef const Vector * CVP;
-    CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
-    if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
-        ERR_POST(Warning << "Can't get master alpha coords");
-    } else if (masterSeq->GetOrSetMMDBLink() == MoleculeIdentifier::VALUE_NOT_SET) {
-        ERR_POST(Warning << "Don't know master MMDB ID");
-    } else {
-
-        masterMol->parentSet->InitStructureAlignments(masterSeq->identifier->mmdbID);
-
-        int nStructureAlignments = 0;
-        for (int i=1; i<multiple->NRows(); i++) {
-            slaveSeq = multiple->GetSequenceOfRow(i);
-            if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
-
-            b = blocks->begin();
-            GetAlignedResidueIndexes(b, be, i, slaveSeqIndexes);
-            if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
-
-            if (!slaveMol->GetParentOfType(&slaveObj)) continue;
-
-            // if any Vector* is NULL, make sure that weight is 0 so the pointer won't be accessed
-            for (int j=0; j<nResidues; j++) {
-                if (!masterCoords[j] || !slaveCoords[j])
-                    weights[j] = 0.0;
-                else
-                    weights[j] = 1.0; // for now, just use flat weighting
-            }
-
-            TESTMSG("realigning slave " << slaveSeq->identifier->pdbID << " against master " << masterSeq->identifier->pdbID);
-            (const_cast<StructureObject*>(slaveObj))->
-                RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
-            nStructureAlignments++;
-        }
-
-        // if no structure alignments, remove the list entirely
-        if (nStructureAlignments == 0) masterMol->parentSet->RemoveStructureAlignments();
-    }
-
-    delete[] masterSeqIndexes;
-    delete[] slaveSeqIndexes;
-    delete[] masterCoords;
-    delete[] slaveCoords;
-    delete[] weights;
-    return;
-}
-
-void AlignmentManager::GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const
-{
-    sequences->resize(alignmentSet->alignments.size());
-
-    AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
-    int i = 0;
-    for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
-        (*sequences)[i] = (*a)->slave;
-    }
-}
-
-void AlignmentManager::GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const
-{
-    if (slavesVisible.size() != alignmentSet->alignments.size()) // can happen if row is added/deleted
-        slavesVisible.resize(alignmentSet->alignments.size(), true);
-
-    // copy visibility list
-    *visibilities = slavesVisible;
-}
-
-void AlignmentManager::ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled)
-{
-    if (itemsEnabled.size() != slavesVisible.size() ||
-        itemsEnabled.size() != alignmentSet->alignments.size()) {
-        ERR_POST(Error << "AlignmentManager::ShowHideCallbackFunction() - wrong size list");
-        return;
-    }
-
-    slavesVisible = itemsEnabled;
-    NewMultipleWithRows(slavesVisible);
-
-    AlignmentSet::AlignmentList::const_iterator
-        a = alignmentSet->alignments.begin(), ae = alignmentSet->alignments.end();
-    const StructureObject *object;
-
-    if ((*a)->master->molecule) {
-        // Show() redraws whole StructureObject only if necessary
-        if ((*a)->master->molecule->GetParentOfType(&object))
-            object->parentSet->showHideManager->Show(object, true);
-        // always redraw aligned molecule, in case alignment colors change
-        GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
-    }
-    for (int i=0; a!=ae; a++, i++) {
-        if ((*a)->slave->molecule) {
-            if ((*a)->slave->molecule->GetParentOfType(&object))
-                object->parentSet->showHideManager->Show(object, slavesVisible[i]);
-            GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
-        }
-    }
-
-    // do necessary redraws + show/hides: sequences + chains in the alignment
-    sequenceViewer->Refresh();
-    GlobalMessenger()->PostRedrawAllSequenceViewers();
-    GlobalMessenger()->UnPostRedrawSequenceViewer(sequenceViewer);  // Refresh() does this already
-}
-
-void AlignmentManager::NewMultipleWithRows(const std::vector < bool >& visibilities)
-{
-    if (visibilities.size() != alignmentSet->alignments.size()) {
-        ERR_POST(Error << "AlignmentManager::NewMultipleWithRows() - wrong size visibility vector");
-        return;
-    }
-
-    // make a multiple from all visible rows
-    PairwiseAlignmentList alignments;
-    AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
-    int i = 0;
-    for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
-        if (visibilities[i])
-            alignments.push_back(*a);
-    }
-
-    // sequenceViewer will own the resulting alignment
-    sequenceViewer->DisplayAlignment(CreateMultipleFromPairwiseWithIBM(alignments));
-}
-
-bool AlignmentManager::IsAligned(const Sequence *sequence, int seqIndex) const
-{
-    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
-    if (currentAlignment)
-        return currentAlignment->IsAligned(sequence, seqIndex);
-    else
-        return false;
-}
-
-bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
-{
-    if (!sequence) return false;
-    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
-    if (currentAlignment) {
-        for (int i=0; i<currentAlignment->sequences->size(); i++) {
-            if ((*(currentAlignment->sequences))[i] == sequence)
-                return true;
-        }
-    }
-    return false;
-}
-
-const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int seqIndex,
-    StyleSettings::eColorScheme colorScheme) const
-{
-    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
-    if (currentAlignment)
-        return currentAlignment->GetAlignmentColor(sequence, seqIndex, colorScheme);
-    else
-        return NULL;
-}
-
-void AlignmentManager::ShowSequenceViewer(void)
-{
-    sequenceViewer->CreateSequenceWindow();
-}
-
-void AlignmentManager::ShowUpdateWindow(void) const
-{
-    updateViewer->CreateUpdateWindow();
-}
-
-void AlignmentManager::RealignSlaveSequences(
-    BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign)
-{
-    if (!multiple || sequenceViewer->GetCurrentAlignments().size() == 0 ||
-            multiple != sequenceViewer->GetCurrentAlignments().front()) {
-        ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong multiple alignment");
-        return;
-    }
-    if (slavesToRealign.size() == 0) return;
-
-    // create alignments for each master/slave pair, then update displays
-    UpdateViewer::AlignmentList alignments;
-    TESTMSG("extracting rows");
-    if (multiple->ExtractRows(slavesToRealign, &alignments)) {
-        TESTMSG("recreating display");
-        sequenceViewer->GetCurrentDisplay()->RowsRemoved(slavesToRealign, multiple);
-        TESTMSG("adding to update window");
-        SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
-        updateViewer->AddAlignments(alignments);
-        SetDiagPostLevel(eDiag_Info);
-        TESTMSG("done");
-        updateViewer->CreateUpdateWindow();
-    }
-}
-
-void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single)
-{
-    const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
-    if (currentAlignments.size() == 0) return;
-
-    // make sure the editor is on in the sequenceViewer if merge is selected
-    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
-        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
-    // run the threader on the given alignment
-    UpdateViewer::AlignmentList singleList, replacedList;
-    Threader::AlignmentList newAlignments;
-    int nRowsAddedToMultiple;
-    bool foundSingle = false;   // sanity check
-
-    singleList.push_back(single);
-    if (threader->Realign(
-            options, currentAlignments.front(), &singleList,
-            &nRowsAddedToMultiple, &newAlignments)) {
-
-        // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
-        UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
-        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; a++) {
-            if (*a == single) {
-                Threader::AlignmentList::const_iterator n, ne = newAlignments.end();
-                for (n=newAlignments.begin(); n!=ne; n++)
-                    replacedList.push_back(*n);
-                foundSingle = true;
-            } else
-                replacedList.push_back((*a)->Clone());
-        }
-        if (!foundSingle) ERR_POST(Error
-            << "AlignmentManager::ThreadUpdate() - threaded alignment not found in update viewer!");
-        updateViewer->ReplaceAlignments(replacedList);
-
-        // tell the sequenceViewer that rows have been merged into the multiple
-        if (nRowsAddedToMultiple > 0)
-            sequenceViewer->GetCurrentDisplay()->
-                RowsAdded(nRowsAddedToMultiple, currentAlignments.front());
-    }
-}
-
-void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
-{
-    const ViewerBase::AlignmentList& currentAlignments = sequenceViewer->GetCurrentAlignments();
-    if (currentAlignments.size() == 0) return;
-
-    // make sure the editor is on in the sequenceViewer
-    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
-        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
-    // run the threader on update pairwise alignments
-    Threader::AlignmentList newAlignments;
-    int nRowsAddedToMultiple;
-    if (threader->Realign(
-            options, currentAlignments.front(), &(updateViewer->GetCurrentAlignments()),
-            &nRowsAddedToMultiple, &newAlignments)) {
-
-        // replace update alignments with new ones (or leftovers where threader/merge failed)
-        updateViewer->ReplaceAlignments(newAlignments);
-
-        // tell the sequenceViewer that rows have been merged into the multiple
-        if (nRowsAddedToMultiple > 0)
-            sequenceViewer->GetCurrentDisplay()->
-                RowsAdded(nRowsAddedToMultiple, currentAlignments.front());
-    }
-}
-
-void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesToMerge, bool mergeToNeighbor)
-{
-    if (updatesToMerge.size() == 0) return;
-    const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
-    if (currentUpdates.size() == 0) return;
-
-    // transform this structure view into an alignment view, and turn on the editor.
-    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
-    const BlockMultipleAlignment *newMultiple = NULL;
-    if (sequenceViewer->GetCurrentAlignments().size() == 0) {
-
-        for (u=currentUpdates.begin(); u!=ue; u++) {   // find first update alignment
-            if (updatesToMerge.find(*u) != updatesToMerge.end()) {
-                newMultiple = *u;
-
-                // create new alignment, then call SavePairwiseFromMultiple to create
-                // an AlignmentSet and the initial ASN data
-                sequenceViewer->DisplayAlignment(newMultiple->Clone());
-                std::vector < int > rowOrder(newMultiple->NRows());
-                for (int i=0; i<newMultiple->NRows(); i++) rowOrder[i] = i;
-                SavePairwiseFromMultiple(newMultiple, rowOrder);
-
-                // editor needs to be on if >1 update is to be merged in
-                sequenceViewer->TurnOnEditor();
-
-                // set default alignment-type style
-                newMultiple->GetMaster()->parentSet->styleManager->
-                    SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-                newMultiple->GetMaster()->parentSet->styleManager->
-                    SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
-                GlobalMessenger()->PostRedrawAllStructures();
-                break;
-            }
-        }
-    }
-
-    BlockMultipleAlignment *multiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
-			sequenceViewer->GetCurrentAlignments().front() : NULL;
-    if (!multiple) {
-        ERR_POST(Error << "Must have an alignment in the sequence viewer to merge with");
-        return;
-    }
-
-    // make sure the editor is on in the sequenceViewer
-    if (!sequenceViewer->EditorIsOn()) {
-        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
-    int nSuccessfulMerges = 0;
-    ViewerBase::AlignmentList updatesToKeep;
-    for (u=currentUpdates.begin(); u!=ue; u++) {
-        if (*u == newMultiple) continue;
-        bool merged = false;
-        if (updatesToMerge.find(*u) != updatesToMerge.end()) {
-            merged = multiple->MergeAlignment(*u);
-            if (merged) {
-                nSuccessfulMerges += (*u)->NRows() - 1;
-            } else {
-                for (int i=0; i<(*u)->NRows(); i++) {
-                    std::string status = (*u)->GetRowStatusLine(i);
-                    if (status.size() > 0)
-                        status += "; merge failed!";
-                    else
-                        status = "Merge failed!";
-                    (*u)->SetRowStatusLine(i, status);
-                }
-            }
-        }
-        if (!merged) {
-            BlockMultipleAlignment *keep = (*u)->Clone();
-            updatesToKeep.push_back(keep);
-        }
-    }
-
-    updateViewer->ReplaceAlignments(updatesToKeep);
-    if (nSuccessfulMerges > 0) {
-        int where = -1;
-
-        // if necessary, find nearest neighbor to merged sequence, and add new row after it
-        if (mergeToNeighbor && nSuccessfulMerges == 1) {
-            auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
-                blocks(multiple->GetUngappedAlignedBlocks());
-            BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
-            int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
-            const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
-            for (row=0; row<lastRow; row++) {
-                const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
-                rowScore = 0;
-                for (b=blocks->begin(); b!=be; b++) {
-                    for (col=0; col<(*b)->width; col++) {
-                        rowScore += GetBLOSUM62Score(
-                            mergeSeq->sequenceString[(*b)->GetRangeOfRow(lastRow)->from + col],
-                            otherSeq->sequenceString[(*b)->GetRangeOfRow(row)->from + col]);
-                    }
-                }
-                if (row == 0 || rowScore > bestScore) {
-                    where = row;
-                    bestScore = rowScore;
-                }
-            }
-            TESTMSG("Closest row is #" << (where+1) << ", "
-                << multiple->GetSequenceOfRow(where)->identifier->ToString());
-        }
-
-        sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple, where);
-    }
-
-    // add pending imported structures to asn data
-    updateViewer->SavePendingStructures();
-}
-
-void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)
-{
-    threader->CalculateScores(GetCurrentMultipleAlignment(), weightPSSM);
-}
-
-void AlignmentManager::GetUpdateSequences(std::list < const Sequence * > *updateSequences) const
-{
-    updateSequences->clear();
-    const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
-    if (currentUpdates.size() == 0) return;
-    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
-    for (u=currentUpdates.begin(); u!=ue; u++)
-        updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one slave...
-}
-
-bool AlignmentManager::GetStructureProteins(std::vector < const Sequence * > *chains) const
-{
-    if (!chains || GetCurrentMultipleAlignment() != NULL ||
-        !sequenceViewer || !sequenceViewer->GetCurrentDisplay()) return false;
-
-    sequenceViewer->GetCurrentDisplay()->GetProteinSequences(chains);
-    return (chains->size() > 0);
-}
-
-void AlignmentManager::ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const
-{
-    if (sequenceSet)
-        sequenceSet->parentSet->ReplaceUpdates(newUpdates);
-    else
-        ERR_POST(Error << "AlignmentManager::ReplaceUpdatesInASN() - can't get StructureSet");
-}
-
-void AlignmentManager::PurgeSequence(const MoleculeIdentifier *identifier)
-{
-    BlockMultipleAlignment *multiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
-			sequenceViewer->GetCurrentAlignments().front() : NULL;
-    if (!multiple) return;
-
-    // remove matching rows from multiple alignment
-    std::vector < int > rowsToRemove;
-    int i;
-    for (i=1; i<multiple->NRows(); i++)
-        if (multiple->GetSequenceOfRow(i)->identifier == identifier)
-            rowsToRemove.push_back(i);
-
-    if (rowsToRemove.size() > 0) {
-
-        // turn on editor, and update multiple pointer
-        if (!sequenceViewer->EditorIsOn()) {
-            sequenceViewer->TurnOnEditor();
-            multiple = sequenceViewer->GetCurrentAlignments().front();
-        }
-
-        if (!multiple->ExtractRows(rowsToRemove, NULL)) {
-            ERR_POST("AlignmentManager::PurgeSequence() - ExtractRows failed!");
-            return;
-        }
-
-        // remove rows from SequenceDisplay
-        SequenceDisplay *display = sequenceViewer->GetCurrentDisplay();
-        if (!display) {
-            ERR_POST("AlignmentManager::PurgeSequence() - can't get SequenceDisplay!");
-            return;
-        }
-        display->RowsRemoved(rowsToRemove, multiple);
-    }
-
-    // remove matching alignments from Update window
-    const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
-    if (currentUpdates.size() == 0) return;
-    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
-
-    for (u=currentUpdates.begin(); u!=ue; u++) // quick check if any match found
-        if ((*u)->GetSequenceOfRow(1)->identifier == identifier) break;
-
-    if (u != ue) {
-        ViewerBase::AlignmentList updatesToKeep;
-        for (u=currentUpdates.begin(); u!=ue; u++) {
-            if ((*u)->GetSequenceOfRow(1)->identifier != identifier) {
-                BlockMultipleAlignment *keep = (*u)->Clone();
-                updatesToKeep.push_back(keep);
-            }
-        }
-        updateViewer->ReplaceAlignments(updatesToKeep);
-    }
-}
-
-void AlignmentManager::BlockAlignAllUpdates(void)
-{
-    BlockMultipleAlignment *currentMultiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
-			sequenceViewer->GetCurrentAlignments().front() : NULL;
-    if (!currentMultiple) return;
-
-    const UpdateViewer::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
-    if (currentUpdates.size() == 0)
-        return;
-
-    // run the block aligner on update pairwise alignments
-    BlockAligner::AlignmentList newAlignmentsList;
-    int nRowsAddedToMultiple;
-
-    if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(currentMultiple,
-            currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple,
-            sequenceViewer->EditorIsOn())) {
-
-        // replace update alignments with new ones (or leftovers where threader/merge failed)
-        updateViewer->ReplaceAlignments(newAlignmentsList);
-
-        // tell the sequenceViewer that rows have been merged into the multiple
-        if (nRowsAddedToMultiple > 0)
-            sequenceViewer->GetCurrentDisplay()->RowsAdded(nRowsAddedToMultiple, currentMultiple);
-    }
-}
-
-void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
-{
-    BlockMultipleAlignment *currentMultiple =
-        (sequenceViewer->GetCurrentAlignments().size() > 0) ?
-			sequenceViewer->GetCurrentAlignments().front() : NULL;
-    if (!currentMultiple) return;
-
-    // run the threader on the given alignment
-    UpdateViewer::AlignmentList singleList, replacedList;
-    BlockAligner::AlignmentList newAlignments;
-    int nRowsAddedToMultiple;
-    bool foundSingle = false;   // sanity check
-
-    singleList.push_back(single);
-    if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
-            currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple,
-            sequenceViewer->EditorIsOn())) {
-
-        // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
-        UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
-        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; a++) {
-            if (*a == single) {
-                BlockAligner::AlignmentList::const_iterator n, ne = newAlignments.end();
-                for (n=newAlignments.begin(); n!=ne; n++)
-                    replacedList.push_back(*n);
-                foundSingle = true;
-            } else
-                replacedList.push_back((*a)->Clone());
-        }
-        if (!foundSingle) ERR_POST(Error
-            << "AlignmentManager::ThreadUpdate() - threaded alignment not found in update viewer!");
-        updateViewer->ReplaceAlignments(replacedList);
-
-        // tell the sequenceViewer that rows have been merged into the multiple
-        if (nRowsAddedToMultiple > 0)
-            sequenceViewer->GetCurrentDisplay()->
-                RowsAdded(nRowsAddedToMultiple, currentMultiple);
-    }
-}
-
-END_SCOPE(Cn3D)
-

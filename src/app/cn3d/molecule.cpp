@@ -28,119 +28,6 @@
 * File Description:
 *      Classes to hold molecules
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.37  2002/04/19 17:34:03  thiessen
-* fix for alpha-only nucleotides
-*
-* Revision 1.36  2002/02/01 13:55:31  thiessen
-* fix labeling bug when domain hidden
-*
-* Revision 1.35  2002/02/01 00:41:21  thiessen
-* tweaks
-*
-* Revision 1.34  2002/01/24 20:08:16  thiessen
-* fix local id problem
-*
-* Revision 1.33  2001/12/12 14:04:13  thiessen
-* add missing object headers after object loader change
-*
-* Revision 1.32  2001/10/16 21:49:07  thiessen
-* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
-*
-* Revision 1.31  2001/08/24 00:41:35  thiessen
-* tweak conservation colors and opengl font handling
-*
-* Revision 1.30  2001/08/21 01:10:45  thiessen
-* add labeling
-*
-* Revision 1.29  2001/08/09 19:07:13  thiessen
-* add temperature and hydrophobicity coloring
-*
-* Revision 1.28  2001/07/16 15:35:37  thiessen
-* fix unaligned chain identifier ommission
-*
-* Revision 1.27  2001/06/21 02:02:33  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-* Revision 1.26  2001/04/04 00:27:14  thiessen
-* major update - add merging, threader GUI controls
-*
-* Revision 1.25  2001/03/23 23:31:56  thiessen
-* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
-*
-* Revision 1.24  2001/03/23 04:18:52  thiessen
-* parse and display disulfides
-*
-* Revision 1.23  2001/02/09 20:17:32  thiessen
-* ignore atoms w/o alpha when doing structure realignment
-*
-* Revision 1.22  2001/02/08 23:01:50  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.21  2000/12/15 15:51:47  thiessen
-* show/hide system installed
-*
-* Revision 1.20  2000/12/01 19:35:57  thiessen
-* better domain assignment; basic show/hide mechanism
-*
-* Revision 1.19  2000/11/30 15:49:39  thiessen
-* add show/hide rows; unpack sec. struc. and domain features
-*
-* Revision 1.18  2000/11/13 18:06:53  thiessen
-* working structure re-superpositioning
-*
-* Revision 1.17  2000/11/11 21:15:54  thiessen
-* create Seq-annot from BlockMultipleAlignment
-*
-* Revision 1.16  2000/09/15 19:24:22  thiessen
-* allow repeated structures w/o different local id
-*
-* Revision 1.15  2000/09/11 22:57:32  thiessen
-* working highlighting
-*
-* Revision 1.14  2000/09/08 20:16:55  thiessen
-* working dynamic alignment views
-*
-* Revision 1.13  2000/09/03 18:46:48  thiessen
-* working generalized sequence viewer
-*
-* Revision 1.12  2000/08/28 23:47:18  thiessen
-* functional denseg and dendiag alignment parsing
-*
-* Revision 1.11  2000/08/28 18:52:42  thiessen
-* start unpacking alignments
-*
-* Revision 1.10  2000/08/27 18:52:21  thiessen
-* extract sequence information
-*
-* Revision 1.9  2000/08/17 14:24:05  thiessen
-* added working StyleManager
-*
-* Revision 1.8  2000/08/11 12:58:31  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.7  2000/08/04 22:49:03  thiessen
-* add backbone atom classification and selection feedback mechanism
-*
-* Revision 1.6  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.5  2000/07/27 13:30:51  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.4  2000/07/18 02:41:33  thiessen
-* fix bug in virtual bonds and altConfs
-*
-* Revision 1.3  2000/07/17 04:20:49  thiessen
-* now does correct structure alignment transformation
-*
-* Revision 1.2  2000/07/16 23:19:11  thiessen
-* redo of drawing system
-*
-* Revision 1.1  2000/07/11 13:45:30  thiessen
-* add modules to parse chemical graph; many improvements
-*
 * ===========================================================================
 */
 
@@ -181,7 +68,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     StructureBase(parentGraph), type(eOther), sequence(NULL), nDomains(0)
 {
     int gi = MoleculeIdentifier::VALUE_NOT_SET, pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
-    std::string pdbID, accession;
+    string pdbID, accession;
 
     // get ID, name, and type
     id = graph.GetId().Get();
@@ -219,7 +106,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
             }
         }
         if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
-            ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
+            ERRORMSG("Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
             return;
         }
     }
@@ -254,7 +141,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
         // this assumption is frequently made elsewhere, relating seqLocs (numbering from zero)
         // to residue ID's (numbering from one) - so enforce it here
         if (residue->id != nResidues)
-            ERR_POST(Fatal << "Residue ID's must be ordered consecutively starting with one");
+            ERRORMSG("Residue ID's must be ordered consecutively starting with one");
 
         // virtual bonds between successive alphas
         if (prevResidue && prevResidue->alphaID != Residue::NO_ALPHA_ID &&
@@ -383,7 +270,7 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
     const StructureObject *object;
     if (!GetParentOfType(&object)) return false;
     if (object->coordSets.size() != 1) {
-        ERR_POST("Can't align structures with multiple CoordSets");
+        ERRORMSG("Can't align structures with multiple CoordSets");
         return false;
     }
 
@@ -392,7 +279,7 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         int rID = seqIndexes[i] + 1;    // residueIDs start at 1
         ResidueMap::const_iterator r = residues.find(rID);
         if (r == residues.end()) {
-            ERR_POST(Error << "Can't find residueID " << rID
+            ERRORMSG("Can't find residueID " << rID
                 << " in " << identifier->pdbID << " chain '"
                 << (char) identifier->pdbChain << "'");
             return false;
@@ -400,7 +287,7 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
 
         int aID = (r->second->alphaID);
         if (aID == Residue::NO_ALPHA_ID) {
-            ERR_POST(Warning << "No alpha atom in residueID " << rID
+            WARNINGMSG("No alpha atom in residueID " << rID
                 << " from " << identifier->pdbID << " chain '"
                 << (char) identifier->pdbChain << "'");
             coords[i] = NULL;
@@ -410,7 +297,7 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         AtomPntr atom(id, rID, aID);
         const AtomCoord* atomCoord = object->coordSets.front()->atomSet->GetAtom(atom);
         if (!atomCoord) {
-            ERR_POST(Warning << "Can't get AtomCoord for (m"
+            WARNINGMSG("Can't get AtomCoord for (m"
                 << id << ",r" << rID << ",a" << aID << ")");
             coords[i] = NULL;
             continue;
@@ -468,7 +355,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                     }
                 }
                 if (!(alphaPos && prevPos)) {
-                    ERR_POST(Warning << "Molecule::DrawAllWithTerminiLabels() - "
+                    WARNINGMSG("Molecule::DrawAllWithTerminiLabels() - "
                         << "can't get two terminal alpha coords");
                     continue;
                 }
@@ -493,7 +380,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                 oss << '\0';
 
                 // draw label
-                std::string labelText = oss.str();
+                string labelText = oss.str();
                 delete oss.str();
                 parentSet->renderer->DrawLabel(labelText, labelPosition, labelColor);
             }
@@ -505,3 +392,122 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
 
 END_SCOPE(Cn3D)
 
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.38  2003/02/03 19:20:04  thiessen
+* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
+*
+* Revision 1.37  2002/04/19 17:34:03  thiessen
+* fix for alpha-only nucleotides
+*
+* Revision 1.36  2002/02/01 13:55:31  thiessen
+* fix labeling bug when domain hidden
+*
+* Revision 1.35  2002/02/01 00:41:21  thiessen
+* tweaks
+*
+* Revision 1.34  2002/01/24 20:08:16  thiessen
+* fix local id problem
+*
+* Revision 1.33  2001/12/12 14:04:13  thiessen
+* add missing object headers after object loader change
+*
+* Revision 1.32  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
+* Revision 1.31  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
+* Revision 1.30  2001/08/21 01:10:45  thiessen
+* add labeling
+*
+* Revision 1.29  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
+* Revision 1.28  2001/07/16 15:35:37  thiessen
+* fix unaligned chain identifier ommission
+*
+* Revision 1.27  2001/06/21 02:02:33  thiessen
+* major update to molecule identification and highlighting ; add toggle highlight (via alt)
+*
+* Revision 1.26  2001/04/04 00:27:14  thiessen
+* major update - add merging, threader GUI controls
+*
+* Revision 1.25  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
+* Revision 1.24  2001/03/23 04:18:52  thiessen
+* parse and display disulfides
+*
+* Revision 1.23  2001/02/09 20:17:32  thiessen
+* ignore atoms w/o alpha when doing structure realignment
+*
+* Revision 1.22  2001/02/08 23:01:50  thiessen
+* hook up C-toolkit stuff for threading; working PSSM calculation
+*
+* Revision 1.21  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
+* Revision 1.20  2000/12/01 19:35:57  thiessen
+* better domain assignment; basic show/hide mechanism
+*
+* Revision 1.19  2000/11/30 15:49:39  thiessen
+* add show/hide rows; unpack sec. struc. and domain features
+*
+* Revision 1.18  2000/11/13 18:06:53  thiessen
+* working structure re-superpositioning
+*
+* Revision 1.17  2000/11/11 21:15:54  thiessen
+* create Seq-annot from BlockMultipleAlignment
+*
+* Revision 1.16  2000/09/15 19:24:22  thiessen
+* allow repeated structures w/o different local id
+*
+* Revision 1.15  2000/09/11 22:57:32  thiessen
+* working highlighting
+*
+* Revision 1.14  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
+* Revision 1.13  2000/09/03 18:46:48  thiessen
+* working generalized sequence viewer
+*
+* Revision 1.12  2000/08/28 23:47:18  thiessen
+* functional denseg and dendiag alignment parsing
+*
+* Revision 1.11  2000/08/28 18:52:42  thiessen
+* start unpacking alignments
+*
+* Revision 1.10  2000/08/27 18:52:21  thiessen
+* extract sequence information
+*
+* Revision 1.9  2000/08/17 14:24:05  thiessen
+* added working StyleManager
+*
+* Revision 1.8  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
+* Revision 1.7  2000/08/04 22:49:03  thiessen
+* add backbone atom classification and selection feedback mechanism
+*
+* Revision 1.6  2000/08/03 15:12:23  thiessen
+* add skeleton of style and show/hide managers
+*
+* Revision 1.5  2000/07/27 13:30:51  thiessen
+* remove 'using namespace ...' from all headers
+*
+* Revision 1.4  2000/07/18 02:41:33  thiessen
+* fix bug in virtual bonds and altConfs
+*
+* Revision 1.3  2000/07/17 04:20:49  thiessen
+* now does correct structure alignment transformation
+*
+* Revision 1.2  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
+* Revision 1.1  2000/07/11 13:45:30  thiessen
+* add modules to parse chemical graph; many improvements
+*
+*/
