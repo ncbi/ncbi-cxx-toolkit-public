@@ -27,83 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2001/05/17 15:07:06  lavr
-* Typos corrected
-*
-* Revision 1.17  2000/12/26 22:24:10  vasilche
-* Fixed errors of compilation on Mac.
-*
-* Revision 1.16  2000/11/09 16:38:40  vasilche
-* Fixed error on WorkShop compiler: static functions are unusable from templates.
-*
-* Revision 1.15  2000/11/09 15:21:40  vasilche
-* Fixed bugs in iterators.
-* Added iterator constructors from CObjectInfo.
-* Added CLeafTypeIterator.
-*
-* Revision 1.14  2000/11/08 19:24:39  vasilche
-* Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
-*
-* Revision 1.13  2000/10/20 15:51:38  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.12  2000/10/03 17:22:42  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.11  2000/09/18 20:00:22  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.10  2000/09/01 13:16:15  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.9  2000/07/03 18:42:43  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.8  2000/06/01 19:07:02  vasilche
-* Added parsing of XML data.
-*
-* Revision 1.7  2000/05/05 17:59:06  vasilche
-* Unfortunately MSVC doesn't support explicit instantiation of template methods.
-*
-* Revision 1.6  2000/05/05 16:26:56  vasilche
-* Simplified iterator templates.
-*
-* Revision 1.5  2000/05/05 13:08:21  vasilche
-* Simplified CTypesIterator interface.
-*
-* Revision 1.4  2000/05/04 16:23:12  vasilche
-* Updated CTypesIterator and CTypesConstInterator interface.
-*
-* Revision 1.3  2000/04/10 21:01:48  vasilche
-* Fixed Erase for map/set.
-* Added iteratorbase.hpp header for basic internal classes.
-*
-* Revision 1.2  2000/03/29 18:02:40  vasilche
-* Workaround of bug in MSVC: abstract member in template.
-*
-* Revision 1.1  2000/03/29 15:55:27  vasilche
-* Added two versions of object info - CObjectInfo and CConstObjectInfo.
-* Added generic iterators by class -
-* 	CTypeIterator<class>, CTypeConstIterator<class>,
-* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
-* 	CObjectsIterator and CObjectsConstIterator.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -343,46 +266,6 @@ void CTreeLevelIterator::Erase(void)
 
 /////////////////
 
-template<class LevelIterator>
-CTreeIteratorTmpl<LevelIterator>::~CTreeIteratorTmpl(void)
-{
-    Reset();
-}
-
-template<class LevelIterator>
-void CTreeIteratorTmpl<LevelIterator>::Reset(void)
-{
-    m_CurrentObject.Reset();
-    m_VisitedObjects.reset(0);
-    _DEBUG_ARG(m_LastCall = eNone);
-    while ( !m_Stack.empty() )
-        m_Stack.pop();
-    _ASSERT(!*this);
-}
-
-template<class LevelIterator>
-void CTreeIteratorTmpl<LevelIterator>::Init(const TBeginInfo& beginInfo)
-{
-    Reset();
-    if ( !beginInfo.first || !beginInfo.second )
-        return;
-    if ( beginInfo.m_DetectLoops )
-        m_VisitedObjects.reset(new TVisitedObjects);
-    m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
-    Walk();
-}
-
-template<class LevelIterator>
-void CTreeIteratorTmpl<LevelIterator>::Next(void)
-{
-    _ASSERT(CheckValid());
-    m_CurrentObject.Reset();
-
-    _ASSERT(!m_Stack.empty());
-    if ( Step(m_Stack.top()->Get()) )
-        Walk();
-}
-
 void CTreeIterator::Erase(void)
 {
     _ASSERT(CheckValid());
@@ -393,90 +276,6 @@ void CTreeIterator::Erase(void)
     Walk();
 }
 
-template<class LevelIterator>
-void CTreeIteratorTmpl<LevelIterator>::SkipSubTree(void)
-{
-    _ASSERT(CheckValid());
-    m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
-}
-
-template<class LevelIterator>
-void CTreeIteratorTmpl<LevelIterator>::Walk(void)
-{
-    _ASSERT(!m_Stack.empty());
-    TObjectInfo current;
-    do {
-        current = m_Stack.top()->Get();
-        if ( CanSelect(current) ) {
-            m_CurrentObject = current;
-            return;
-        }
-    } while ( Step(current) );
-}
-
-template<class LevelIterator>
-bool CTreeIteratorTmpl<LevelIterator>::Step(const TObjectInfo& current)
-{
-    if ( CanEnter(current) ) {
-        AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
-        if ( nextLevel && nextLevel->Valid() ) {
-            m_Stack.push(nextLevel);
-            return true;
-        }
-    }
-    // skip all finished iterators
-    _ASSERT(!m_Stack.empty());
-    do {
-        m_Stack.top()->Next();
-        if ( m_Stack.top()->Valid() ) {
-            // next child on this level
-            return true;
-        }
-        m_Stack.pop();
-    } while ( !m_Stack.empty() );
-    return false;
-}
-
-template<class LevelIterator>
-void CTreeIteratorTmpl<LevelIterator>::ReportNonValid(void) const
-{
-    ERR_POST("Object iterator was used without checking its validity");
-}
-
-template<class LevelIterator>
-bool CTreeIteratorTmpl<LevelIterator>::CanSelect(const CConstObjectInfo& obj)
-{
-    if ( !obj )
-        return false;
-    TVisitedObjects* visitedObjects = m_VisitedObjects.get();
-    if ( visitedObjects ) {
-        if ( !visitedObjects->insert(obj.GetObjectPtr()).second ) {
-            // already visited
-            return false;
-        }
-    }
-	return true;
-}
-
-template<class LevelIterator>
-bool CTreeIteratorTmpl<LevelIterator>::CanEnter(const CConstObjectInfo& object)
-{
-    return CConstTreeLevelIterator::HaveChildren(object);
-}
-
-template<class Parent>
-bool CTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
-{
-    return CParent::CanSelect(object) &&
-        object.GetTypeInfo()->IsType(m_NeedType);
-}
-
-template<class Parent>
-bool CTypeIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
-{
-    return CParent::CanEnter(object) &&
-        object.GetTypeInfo()->MayContainType(m_NeedType);
-}
 
 template<class Parent>
 bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
@@ -514,14 +313,14 @@ bool CTypesIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
     return false;
 }
 
-template class CTreeIteratorTmpl<CTreeLevelIterator>;
-template class CTreeIteratorTmpl<CConstTreeLevelIterator>;
-template class CTypeIteratorBase<CTreeIterator>;
-template class CTypeIteratorBase<CTreeConstIterator>;
-template class CLeafTypeIteratorBase<CTreeIterator>;
-template class CLeafTypeIteratorBase<CTreeConstIterator>;
-template class CTypesIteratorBase<CTreeIterator>;
-template class CTypesIteratorBase<CTreeConstIterator>;
+template class NCBI_XSERIAL_EXPORT CTreeIteratorTmpl<CTreeLevelIterator>;
+template class NCBI_XSERIAL_EXPORT CTreeIteratorTmpl<CConstTreeLevelIterator>;
+template class NCBI_XSERIAL_EXPORT CTypeIteratorBase<CTreeIterator>;
+template class NCBI_XSERIAL_EXPORT CTypeIteratorBase<CTreeConstIterator>;
+template class NCBI_XSERIAL_EXPORT CLeafTypeIteratorBase<CTreeIterator>;
+template class NCBI_XSERIAL_EXPORT CLeafTypeIteratorBase<CTreeConstIterator>;
+template class NCBI_XSERIAL_EXPORT CTypesIteratorBase<CTreeIterator>;
+template class NCBI_XSERIAL_EXPORT CTypesIteratorBase<CTreeConstIterator>;
 
 bool CType_Base::Match(const CTypesIterator& it, TTypeInfo typeInfo)
 {
@@ -572,3 +371,84 @@ bool CCObjectClassInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 }
 
 END_NCBI_SCOPE
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.19  2002/12/23 19:00:26  dicuccio
+* Moved template function bodies into header.  Log to end.
+*
+* Revision 1.18  2001/05/17 15:07:06  lavr
+* Typos corrected
+*
+* Revision 1.17  2000/12/26 22:24:10  vasilche
+* Fixed errors of compilation on Mac.
+*
+* Revision 1.16  2000/11/09 16:38:40  vasilche
+* Fixed error on WorkShop compiler: static functions are unusable from templates.
+*
+* Revision 1.15  2000/11/09 15:21:40  vasilche
+* Fixed bugs in iterators.
+* Added iterator constructors from CObjectInfo.
+* Added CLeafTypeIterator.
+*
+* Revision 1.14  2000/11/08 19:24:39  vasilche
+* Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
+*
+* Revision 1.13  2000/10/20 15:51:38  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.12  2000/10/03 17:22:42  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.11  2000/09/18 20:00:22  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.10  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.9  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.8  2000/06/01 19:07:02  vasilche
+* Added parsing of XML data.
+*
+* Revision 1.7  2000/05/05 17:59:06  vasilche
+* Unfortunately MSVC doesn't support explicit instantiation of template methods.
+*
+* Revision 1.6  2000/05/05 16:26:56  vasilche
+* Simplified iterator templates.
+*
+* Revision 1.5  2000/05/05 13:08:21  vasilche
+* Simplified CTypesIterator interface.
+*
+* Revision 1.4  2000/05/04 16:23:12  vasilche
+* Updated CTypesIterator and CTypesConstInterator interface.
+*
+* Revision 1.3  2000/04/10 21:01:48  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
+* Revision 1.2  2000/03/29 18:02:40  vasilche
+* Workaround of bug in MSVC: abstract member in template.
+*
+* Revision 1.1  2000/03/29 15:55:27  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
+* ===========================================================================
+*/
