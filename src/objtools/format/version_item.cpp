@@ -81,7 +81,24 @@ const string& CVersionItem::GetAccession(void) const
 void CVersionItem::x_GatherInfo(CFFContext& ctx)
 {
     if ( ctx.GetPrimaryId() != 0 ) {
-        m_Accession = ctx.GetPrimaryId()->GetSeqIdString(true);
+        const CSeq_id& id = *ctx.GetPrimaryId();
+        switch ( id.Which() ) {
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Other:
+        case CSeq_id::e_Pir:
+        case CSeq_id::e_Swissprot:
+        case CSeq_id::e_Prf:
+        case CSeq_id::e_Pdb:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            m_Accession = id.GetSeqIdString(true);
+            break;
+        default:
+            m_Accession = kEmptyStr;
+        }        
     }
 
     ITERATE( CBioseq::TId, id, ctx.GetActiveBioseq().GetId() ) {
@@ -101,6 +118,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/10 21:28:06  shomrat
+* Limit Seq-id type for version
+*
 * Revision 1.2  2003/12/18 17:43:36  shomrat
 * context.hpp moved
 *
