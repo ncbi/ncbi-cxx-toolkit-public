@@ -643,7 +643,11 @@ void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
     }
 }
 
+#if _DEBUG
 void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
+#else
+void CSeqDBAtlas::ShowLayout(bool locked, TIndx)
+#endif
 {
     if (! locked) {
         m_Lock.Lock();
@@ -710,9 +714,11 @@ void CSeqDBAtlas::Free(const char * freeme, CSeqDBLockHold & locked)
 #ifdef _DEBUG
     bool found =
         x_Free(freeme);
-#endif
     
     _ASSERT(found);
+#else
+    x_Free(freeme);
+#endif
 }
 
 
@@ -934,7 +940,11 @@ const char * CRegionMap::Data(TIndx begin, TIndx end)
 {
     _ASSERT(m_Data != 0);
     _ASSERT(begin  >= m_Begin);
-    _ASSERT(end    <= m_End);
+    
+    // Avoid solaris warning.
+    if (! end <= m_End) {
+        _ASSERT(end    <= m_End);
+    }
     
     return m_Data + begin - m_Begin;
 }
