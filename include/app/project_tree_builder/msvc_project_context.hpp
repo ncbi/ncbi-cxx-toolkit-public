@@ -66,7 +66,7 @@ public:
     {
         return m_ProjectName;
     }
-    string ProjectId  (void) const
+    const CProjKey& ProjectId  (void) const
     {
         return m_ProjectId;
     }
@@ -126,6 +126,11 @@ public:
         return m_PreBuilds;
     }
 
+    const list<CProjKey>& Depends(void) const
+    {
+        return m_Depends;
+    }
+
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
@@ -133,8 +138,8 @@ private:
     CMsvcPrjProjectContext&	operator= (const CMsvcPrjProjectContext&);
 
 
-    string m_ProjectName;
-    string m_ProjectId;
+    string   m_ProjectName;
+    CProjKey m_ProjectId;
 
     string m_AdditionalLibrarianOptions;
 
@@ -162,6 +167,8 @@ private:
     list<string> m_PreBuilds;
 
     list<string> m_NcbiCLibs;
+
+    list<CProjKey> m_Depends;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -510,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/08 23:29:02  gorelenk
+ * Added member-function ProjectId to class CMsvcPrjProjectContext.
+ *
  * Revision 1.12  2004/03/05 18:10:17  gorelenk
  * Removed member-function IncludeDirsRoot()
  * from class CMsvcPrjProjectContext.
