@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/27 18:50:55  thiessen
+* extract sequence information
+*
 * Revision 1.7  2000/08/24 18:43:15  thiessen
 * tweaks for transparent sphere display
 *
@@ -75,6 +78,7 @@ BEGIN_SCOPE(Cn3D)
 typedef list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
 
 class Bond;
+class Sequence;
 
 class Molecule : public StructureBase
 {
@@ -96,13 +100,16 @@ public:
         eOther = ncbi::objects::CBiomol_descr::eMolecule_type_other
     };
     eType type;
-    int id;
+    static const int NO_GI;
+    int id, gi;
 
     typedef std::map < int, const Residue * > ResidueMap;
     ResidueMap residues;
     typedef LIST_TYPE < const Bond * > BondList;
     BondList interResidueBonds;
     BondList virtualBonds;
+
+    const Sequence *sequence;
 
     typedef LIST_TYPE < unsigned int > DisplayListList;
     DisplayListList displayLists;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/08/27 18:52:22  thiessen
+* extract sequence information
+*
 * Revision 1.21  2000/08/21 19:31:48  thiessen
 * add style consistency checking
 *
@@ -120,6 +123,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/sequence_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -130,7 +134,7 @@ BEGIN_SCOPE(Cn3D)
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
     lastDisplayList(OpenGLRenderer::NO_LIST),
-    isMultipleStructure(mime.IsAlignstruc())
+    isMultipleStructure(mime.IsAlignstruc()), sequenceSet(NULL)
 {
     StructureObject *object;
     parentSet = this;
@@ -145,10 +149,12 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     if (mime.IsStrucseq()) { 
         object = new StructureObject(this, mime.GetStrucseq().GetStructure(), true);
         objects.push_back(object);
+        sequenceSet = new SequenceSet(this, mime.GetStrucseq().GetSequences());
 
     } else if (mime.IsStrucseqs()) {
         object = new StructureObject(this, mime.GetStrucseqs().GetStructure(), true);
         objects.push_back(object);
+        sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -166,6 +172,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
                     << " with master " << objects.front()->pdbID);
             objects.push_back(object);
         }
+        sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);
@@ -176,6 +183,32 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     }
 
     VerifyFrameMap();
+
+    // crossmatch sequences with molecules - can have more than one molecule
+    // per sequence, but not vise-versa
+    if (sequenceSet) {
+		SequenceSet::SequenceList::iterator s, se = sequenceSet->sequences.end();
+        ObjectList::iterator o, oe = objects.end();
+        for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+            for (o=objects.begin(); o!=oe; o++) {
+                ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+                for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+                    if (m->second->gi != Molecule::NO_GI && m->second->gi == (*s)->gi) {
+                        // verify sequence length match
+                        if (m->second->residues.size() == (*s)->sequenceString.size()) {
+                            (const_cast<Sequence*>(*s))->molecules.push_back(m->second);
+                            (const_cast<Molecule*>(m->second))->sequence = *s;
+                            TESTMSG("matched sequence " << (*s)->gi << " with object "
+                                << (*o)->pdbID << " moleculeID " << m->second->id);
+                        } else {
+                            ERR_POST(Error << "StructureSet::StructureSet() - length mismatch between "
+                                "sequence gi " << (*s)->gi << " and matching molecule");
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 StructureSet::~StructureSet(void)
@@ -209,11 +242,7 @@ void StructureSet::VerifyFrameMap(void) const
     unsigned int nLists = 0;
     for (unsigned int f=0; f<frameMap.size(); f++) {
         DisplayLists::const_iterator d, de=frameMap[f].end();
-        TESTMSG("frame " << f << ':');
-        for (d=frameMap[f].begin(); d!=de; d++) {
-            nLists++;
-            TESTMSG("display list " << *d);
-        }
+        for (d=frameMap[f].begin(); d!=de; d++) nLists++;
     }
     if (nLists != lastDisplayList)
         ERR_POST(Fatal << "frameMap has too many display lists");

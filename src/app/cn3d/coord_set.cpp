@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/27 18:52:21  thiessen
+* extract sequence information
+*
 * Revision 1.8  2000/08/16 14:18:44  thiessen
 * map 3-d objects to molecules
 *
@@ -129,12 +132,6 @@ CoordSet::CoordSet(StructureBase *parent,
             }
         }
     }
-}
-
-bool CoordSet::Draw(const AtomSet *atomSet) const
-{
-    // don't draw CoordSets directly
-    return false;
 }
 
 END_SCOPE(Cn3D)

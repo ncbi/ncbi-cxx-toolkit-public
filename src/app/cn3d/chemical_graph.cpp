@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/27 18:52:20  thiessen
+* extract sequence information
+*
 * Revision 1.11  2000/08/21 17:22:37  thiessen
 * add primitive highlighting for testing
 *
@@ -87,8 +90,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph) :
-    StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST),
-    moleculeToRedraw(-1)
+    StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST)
 {
     static const CBiostruc_residue_graph_set* standardDictionary = NULL;
     if (!standardDictionary) {
@@ -218,7 +220,9 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     }
 }
 
-void ChemicalGraph::RedrawMolecule(int moleculeID)
+static int moleculeToRedraw = -1;
+
+void ChemicalGraph::RedrawMolecule(int moleculeID) const
 {
     moleculeToRedraw = moleculeID;
     DrawAll(NULL);
@@ -245,8 +249,8 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         for (a=atomSetList.begin(); a!=ae; a++, md++) {
 
             // start new display list
-            TESTMSG("drawing molecule #" << m->second->id << " + its objects in display list " << *md
-					<< " of " << atomSetList.size());
+            //TESTMSG("drawing molecule #" << m->second->id << " + its objects in display list " << *md
+            //        << " of " << atomSetList.size());
             parentSet->renderer->StartDisplayList(*md);
 
             // apply relative transformation if this is a slave structure
@@ -285,7 +289,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
     // then put everything else (solvents, hets, intermolecule bonds) in a single display list
     if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
-    TESTMSG("drawing hets/solvents/i-m bonds");
+    //TESTMSG("drawing hets/solvents/i-m bonds");
     
     // always redraw all these even if only a single molecule is to be redrawn -
     // that way connections can show/hide in cases where a particular residue

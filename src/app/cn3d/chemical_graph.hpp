@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/27 18:50:55  thiessen
+* extract sequence information
+*
 * Revision 1.8  2000/08/21 17:22:45  thiessen
 * add primitive highlighting for testing
 *
@@ -94,7 +97,7 @@ public:
 
     // public methods
 
-    void RedrawMolecule(int moleculeID);
+    void RedrawMolecule(int moleculeID) const;
     bool DrawAll(const AtomSet *atomSet = NULL) const;
     const Residue::AtomInfo * GetAtomInfo(const AtomPntr& atom) const
     { 
@@ -108,7 +111,6 @@ private:
     typedef LIST_TYPE < std::pair < AtomSet *, const std::string * > > AtomSetList;
     AtomSetList atomSetList;
     unsigned int displayListOtherStart;
-    int moleculeToRedraw;
 };
 
 END_SCOPE(Cn3D)

@@ -26,71 +26,56 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of coordinates for atoms and features
+*      Classes to hold sets of sequences
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  2000/08/27 18:50:55  thiessen
+* Revision 1.1  2000/08/27 18:50:56  thiessen
 * extract sequence information
-*
-* Revision 1.6  2000/08/16 14:18:20  thiessen
-* map 3-d objects to molecules
-*
-* Revision 1.5  2000/08/11 12:59:13  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.4  2000/08/03 15:12:29  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.3  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.2  2000/07/16 23:18:34  thiessen
-* redo of drawing system
-*
-* Revision 1.1  2000/07/11 13:49:28  thiessen
-* add modules to parse chemical graph; many improvements
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_COORDSET__HPP
-#define CN3D_COORDSET__HPP
+#ifndef CN3D_SEQUENCE_SET__HPP
+#define CN3D_SEQUENCE_SET__HPP
 
-#include <map>
-
-#include <objects/mmdb2/Biostruc_model.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include "cn3d/structure_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
-class AtomSet;
-class Object3D;
+typedef list< ncbi::CRef< ncbi::objects::CSeq_entry > > SeqEntryList;
 
-// a CoordSet contains one set of atomic coordinates, plus any accompanying
-// feature (helix, strand, ...) coordinates - basically the contents of
-// an ASN1 Biostruc-model
+class Sequence;
+class Molecule;
 
-class CoordSet : public StructureBase
+class SequenceSet : public StructureBase
 {
 public:
-    CoordSet(StructureBase *parent, 
-                const ncbi::objects::CBiostruc_model::TModel_coordinates& modelCoords);
+    SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
 
-    // public data
-    AtomSet *atomSet;
-    typedef LIST_TYPE < const Object3D * > Object3DList;
-    typedef std::map < int, Object3DList > Object3DMap;
-    Object3DMap objectMap;
+    typedef LIST_TYPE < const Sequence * > SequenceList;
+    SequenceList sequences;
 
-    // public methods
-    bool Draw(const AtomSet *atomSet) const { return false; } // don't draw these directly
+    bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
+};
 
-private:
+class Sequence : public StructureBase
+{
+public:
+    Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
+
+    static const int NOT_SET;
+    int gi, pdbChain;
+    std::string pdbID, sequenceString;
+
+    typedef LIST_TYPE < const Molecule * > MoleculeList;
+    MoleculeList molecules;
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_COORDSET__HPP
+#endif // CN3D_SEQUENCE_SET__HPP

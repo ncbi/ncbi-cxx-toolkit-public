@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/08/27 18:50:56  thiessen
+* extract sequence information
+*
 * Revision 1.18  2000/08/21 19:31:17  thiessen
 * add style consistency checking
 *
@@ -111,6 +114,7 @@ class OpenGLRenderer;
 class ShowHideManager;
 class StyleManager;
 class Residue;
+class SequenceSet;
 
 class StructureSet : public StructureBase
 {
@@ -124,6 +128,9 @@ public:
 
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;
+
+    // sequence information
+    SequenceSet *sequenceSet;
 
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;
@@ -180,7 +187,7 @@ public:
 
     // an object has one ChemicalGraph that can be applied to one or more 
     // CoordSets to generate the object's model(s)
-    ChemicalGraph *graph;
+    const ChemicalGraph *graph;
     typedef LIST_TYPE < const CoordSet * > CoordSetList;
     CoordSetList coordSets;
 

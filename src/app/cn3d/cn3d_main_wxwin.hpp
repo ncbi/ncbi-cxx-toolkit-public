@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/27 18:50:55  thiessen
+* extract sequence information
+*
 * Revision 1.1  2000/08/25 18:41:54  thiessen
 * rename main object
 *
@@ -133,7 +136,6 @@ public:
             MID_OPEN,
             MID_EXIT,
         // View menu
-            MID_CENTER,
             MID_TRANSLATE,
             MID_ZOOM_IN,
             MID_ZOOM_OUT,

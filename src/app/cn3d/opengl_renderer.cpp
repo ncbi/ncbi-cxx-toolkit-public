@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/08/27 18:52:21  thiessen
+* extract sequence information
+*
 * Revision 1.24  2000/08/25 14:22:00  thiessen
 * minor tweaks
 *
@@ -192,7 +195,7 @@ OpenGLRenderer::OpenGLRenderer(void) :
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
    
-    SetMediumQuality();
+    SetLowQuality();
     AttachStructureSet(NULL);
 }
 
@@ -201,10 +204,10 @@ void OpenGLRenderer::SetLowQuality(void)
 {
     atomSlices = 6;
     atomStacks = 4;
-    bondSides = 6;
-    wormSides = 6;
-    wormSegments = 4;
-    helixSides = 12;
+    bondSides = 5;
+    wormSides = 4;
+    wormSegments = 2;
+    helixSides = 10;
 }
 
 void OpenGLRenderer::SetMediumQuality(void)
@@ -422,7 +425,7 @@ void OpenGLRenderer::StartDisplayList(unsigned int list)
     }
     ClearTransparentSpheresForList(list);
     SetColor(GL_NONE); // reset color caches in SetColor
-    TESTMSG("creating display list " << list);
+    //TESTMSG("creating display list " << list);
     glNewList(list, GL_COMPILE);
     currentDisplayList = list;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/27 18:52:21  thiessen
+* extract sequence information
+*
 * Revision 1.9  2000/08/17 14:24:05  thiessen
 * added working StyleManager
 *
@@ -62,6 +65,7 @@
 
 #include <objects/mmdb1/Residue_graph.hpp>
 #include <objects/mmdb1/Molecule_id.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
@@ -72,11 +76,13 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+const int Molecule::NO_GI = -1;
+
 Molecule::Molecule(StructureBase *parent,
     const CMolecule_graph& graph,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parent), type(eOther)
+    StructureBase(parent), type(eOther), gi(NO_GI), sequence(NULL)
 {
     // get ID and type
     id = graph.GetId().Get();
@@ -85,6 +91,16 @@ Molecule::Molecule(StructureBase *parent,
         if (k->GetObject().IsMolecule_type()) {
             type = static_cast<eType>(k->GetObject().GetMolecule_type());
             break;
+        }
+    }
+
+    // get gi for protein chains (for sequence alignment stuff)
+    if (type == eProtein) {
+        if (graph.IsSetSeq_id() && graph.GetSeq_id().IsGi()) {
+            gi = graph.GetSeq_id().GetGi();
+        } else {
+            ERR_POST(Critical << "Molecule::Molecule() - protein molecule, but can't get gi");
+            return;
         }
     }
 

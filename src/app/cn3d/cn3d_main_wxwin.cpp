@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/27 18:52:20  thiessen
+* extract sequence information
+*
 * Revision 1.1  2000/08/25 18:42:13  thiessen
 * rename main object
 *
@@ -193,7 +196,7 @@ bool Cn3DApp::OnInit(void)
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
     EVT_MENU(MID_EXIT,      Cn3DMainFrame::OnExit)
-    EVT_MENU_RANGE(MID_CENTER,      MID_RESET,      Cn3DMainFrame::OnAdjustView)
+    EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,      Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
@@ -214,7 +217,6 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
 
     // View menu
     menu = new wxMenu;
-    menu->Append(MID_CENTER, "Set New &Center");
     menu->Append(MID_TRANSLATE, "&Translate");
     menu->Append(MID_ZOOM_IN, "Zoom &In");
     menu->Append(MID_ZOOM_OUT, "Zoom &Out");
@@ -272,10 +274,6 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
 {
     glCanvas->SetCurrent();
     switch (event.GetId()) {
-        case MID_CENTER:
-            if (glCanvas->structureSet)
-                glCanvas->structureSet->rotationCenter = Vector(19.791, 50.519, 58.057);
-            break;
         case MID_TRANSLATE:
             glCanvas->renderer.ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
             break;
