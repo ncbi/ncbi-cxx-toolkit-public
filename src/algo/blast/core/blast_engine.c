@@ -103,7 +103,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastInitialWordParametersPtr word_params, 
         BlastExtensionParametersPtr ext_params, 
         BlastHitSavingParametersPtr hit_params, 
-        BlastResultsPtr PNTR results_ptr, CharPtr logname)
+        BlastResultsPtr PNTR results_ptr, 
+        BlastReturnStatPtr return_stats, CharPtr logname)
 #else
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
@@ -114,7 +115,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastInitialWordParametersPtr word_params, 
         BlastExtensionParametersPtr ext_params, 
         BlastHitSavingParametersPtr hit_params, 
-        BlastResultsPtr PNTR results_ptr)
+        BlastResultsPtr PNTR results_ptr,
+        BlastReturnStatPtr return_stats)
 #endif
 {
    Int4 oid;
@@ -161,6 +163,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    Int4 nucl_length = 0;
    Uint1Ptr nucl_sequence = NULL, translation_buffer = NULL;
    Uint1Ptr translation_table = NULL, translation_table_rc = NULL;
+   Int4 num_init_hsps = 0;
+   Int4 num_hsps = 0;
+   Int4 num_good_hsps = 0;
    
    /* search prologue */
 
@@ -298,7 +303,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 	 
          max_hits = MAX(max_hits, num_hits);
          total_hits += num_hits;
-         
+         num_init_hsps += init_hitlist->total;
+
          hsp_list = NULL;
 
 	 if (score_options->gapped_calculation)
@@ -314,6 +320,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          if (!hsp_list)
             continue;
          
+         num_hsps += hsp_list->hspcnt;
+
          /* The subject ordinal id is not yet filled in this HSP list */
          hsp_list->oid = oid;
          
@@ -359,6 +367,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
       } /* End loop on frames */
       
+      num_good_hsps += full_hsp_list->hspcnt;
+
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, query, subject, results, 
          full_hsp_list, hit_params, query_info, gap_align->sbp, 
@@ -383,6 +393,10 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    MemFree(subject_offsets); subject_offsets = NULL;
 
    /* end epilogue */
+   return_stats->db_hits = total_hits;
+   return_stats->init_extends = num_init_hsps;
+   return_stats->good_init_extends = num_hsps;
+   return_stats->prelim_gap_passed = num_good_hsps;
    
    return total_hits;
 }
