@@ -12932,6 +12932,7 @@ if test "$with_pubmed" != "no" ; then
       *$bit64_sfx ) ;;
       * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
    esac
+   pmtag=${release_debug}${bit64_sfx:-32}
 
    echo "$as_me:$LINENO: checking for NCBI PubMed libraries in $NCBI_PM_PATH" >&5
 echo $ECHO_N "checking for NCBI PubMed libraries in $NCBI_PM_PATH... $ECHO_C" >&6
@@ -12942,7 +12943,7 @@ else
           ncbi_cv_lib_pm="no"
        else
           CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
-          LIBS="-L$NCBI_PM_PATH/xmldb/out/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
+          LIBS="-L$NCBI_PM_PATH/xmldb$mt_sfx/out.$pmtag/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez.$pmtag$mt_sfx/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
           cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */

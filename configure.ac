@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.231 2003/10/23 17:18:21 ucko Exp $
+#  $Id: configure.ac,v 1.232 2003/11/06 18:12:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2974,13 +2974,14 @@ if test "$with_pubmed" != "no" ; then
       *$bit64_sfx ) ;;
       * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
    esac
+   pmtag=${release_debug}${bit64_sfx:-32}
 
    AC_CACHE_CHECK([for NCBI PubMed libraries in $NCBI_PM_PATH], ncbi_cv_lib_pm,
       [if test ! -d "${NCBI_PM_PATH}" ; then
           ncbi_cv_lib_pm="no"
        else
           CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
-          LIBS="-L$NCBI_PM_PATH/xmldb/out/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
+          LIBS="-L$NCBI_PM_PATH/xmldb$mt_sfx/out.$pmtag/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez.$pmtag$mt_sfx/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
              [[#include <ncbistr.hpp>
                #include <hastring.h>]],
