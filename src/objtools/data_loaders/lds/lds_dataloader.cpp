@@ -150,14 +150,16 @@ private:
 };
 
 
-CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db)
- : CDataLoader("LDS_dataloader"),
+CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db,
+                                 const string& dl_name)
+ : CDataLoader(dl_name),
    m_LDS_db(lds_db),
    m_OwnDatabase(false)
 {}
 
-CLDS_DataLoader::CLDS_DataLoader(const string& db_path)
- : CDataLoader("LDS_dataloader"),
+CLDS_DataLoader::CLDS_DataLoader(const string& db_path,
+                                 const string& dl_name)
+ : CDataLoader(dl_name),
    m_LDS_db(*(new CLDS_Database(db_path, kEmptyStr))),
    m_OwnDatabase(true)
 {
@@ -236,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/28 14:01:20  kuznets
+ * Added constructor parameter name of the dataloader
+ *
  * Revision 1.9  2003/10/08 19:40:55  kuznets
  * kEmptyStr instead database path as default alias
  *
