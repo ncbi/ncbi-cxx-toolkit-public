@@ -359,6 +359,11 @@ const CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Info& info)
                     break;
                 }
             }
+            if ( !info.m_SeqMap ) {
+                THROW1_TRACE(runtime_error,
+                             "CDataSource::x_GetSeqMap: "
+                             "sequence doesn't have CSeqMap object");
+            }
             _ASSERT(info.m_SeqMap);
         }
     }
@@ -1499,6 +1504,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2003/07/01 18:01:08  vasilche
+* Added check for null m_SeqMap pointer.
+*
 * Revision 1.111  2003/06/24 14:35:01  vasilche
 * Fixed compilation in debug mode.
 *
