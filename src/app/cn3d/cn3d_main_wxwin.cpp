@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2001/12/21 14:13:02  thiessen
+* tweak animation timer and menu stuff
+*
 * Revision 1.113  2001/12/21 13:52:20  thiessen
 * add spin animation
 *
@@ -804,7 +807,7 @@ int Cn3DApp::OnExit(void)
     if (registryChanged) {
         auto_ptr<CNcbiOfstream> iniOut(new CNcbiOfstream(registryFile.c_str(), IOS_BASE::out));
         if (*iniOut) {
-            TESTMSG("saving program registry " << registryFile);
+//            TESTMSG("saving program registry " << registryFile);
             registry.Write(*iniOut);
         }
     }
@@ -1192,6 +1195,11 @@ void Cn3DMainFrame::OnPNG(wxCommandEvent& event)
 
 void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
 {
+    if (event.GetId() != MID_SET_DELAY) {
+        menuBar->Check(MID_PLAY, false);
+        menuBar->Check(MID_SPIN, false);
+        menuBar->Check(MID_STOP, true);
+    }
     if (!glCanvas->structureSet) return;
 
     int currentDelay;
@@ -1205,15 +1213,11 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
             animationMode = ANIM_FRAMES;
             menuBar->Check(MID_PLAY, true);
             menuBar->Check(MID_STOP, false);
-        } else {
-            menuBar->Check(MID_PLAY, false);
-            menuBar->Check(MID_STOP, true);
         }
     }
 
     // spin
     if (event.GetId() == MID_SPIN) {
-        TESTMSG("starting spin");
         timer.Start(20, false);
         animationMode = ANIM_SPIN;
         menuBar->Check(MID_SPIN, true);
@@ -1223,9 +1227,6 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
     // stop
     else if (event.GetId() == MID_STOP) {
         timer.Stop();
-        menuBar->Check(MID_PLAY, false);
-        menuBar->Check(MID_SPIN, false);
-        menuBar->Check(MID_STOP, true);
     }
 
     // set delay
@@ -1432,6 +1433,7 @@ void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
+    timer.Stop();
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
     GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
     SaveDialog(false);                              // give structure window a chance to save data
