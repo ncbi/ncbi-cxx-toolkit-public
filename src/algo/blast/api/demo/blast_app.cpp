@@ -94,7 +94,7 @@ private:
     void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
                                 BlastSeqSrc* seq_src);
     int BlastSearch(void);
-    void FormatResults(const CDbBlast* blaster, TSeqAlignVector& seqalignv);
+    void PrintSeqAlign(const TSeqAlignVector& seqalignv);
     /// NB: The object manager member field must be put in front of the scope
     /// member field, to guarantee the correct order of destruction.
     CRef<CObjectManager> m_ObjMgr;
@@ -199,9 +199,6 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("hitlist", "hitlist_size",
         "How many best matching sequences to find?",
         CArgDescriptions::eInteger, "500");
-    arg_desc->AddDefaultKey("out", "outfile", 
-        "File name for writing output",
-        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
     arg_desc->AddDefaultKey("gencode", "gencode", "Query genetic code",
                             CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("dbgencode", "dbgencode", "Database genetic code",
@@ -212,9 +209,9 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("frameshift", "frameshift",
                             "Frame shift penalty (blastx only)",
                             CArgDescriptions::eInteger, "0");
-    arg_desc->AddOptionalKey("asnout", "seqalignasn", 
+    arg_desc->AddDefaultKey("out", "outfile", 
         "File name for writing the seqalign results in ASN.1 form",
-        CArgDescriptions::eOutputFile);
+        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey("qstart", "query_start",
                             "Starting offset in query location",
@@ -448,25 +445,17 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     return;
 }
 
-void CBlastApplication::FormatResults(const CDbBlast* blaster, 
-                                      TSeqAlignVector& seqalignv)
+void CBlastApplication::PrintSeqAlign(const TSeqAlignVector& seqalignv)
 {
     if (seqalignv.size() == 0)
         return;
     
-    CArgs args = GetArgs();
-
-    if (args["asnout"]) {
-        //CBlastFormatOptions format_options(program, args["out"].AsOutputFile());
-        auto_ptr<CObjectOStream> asnout(
-            CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-        unsigned int query_index;
-        for (query_index = 0; query_index < seqalignv.size(); ++query_index)
-        {
-            if (!seqalignv[query_index]->IsSet())
-                continue;
-            *asnout << *seqalignv[query_index];
-        }
+    CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
+    for (size_t query_index = 0; query_index < seqalignv.size(); ++query_index)
+    {
+        if (!seqalignv[query_index]->IsSet())
+            continue;
+        out << MSerial_AsnText << *seqalignv[query_index];
     }
 }
 
@@ -561,35 +550,35 @@ int CBlastApplication::Run(void)
     try {
 
        if (!tabular_output) {
-	  CDbBlast blaster(query_loc, seq_src, *opts, 
-                           hsp_stream, num_threads);
-	  seqalignv = blaster.Run();
-	  FormatResults(&blaster, seqalignv);
+          CDbBlast blaster(query_loc, seq_src, *opts, 
+                               hsp_stream, num_threads);
+          seqalignv = blaster.Run();
+          PrintSeqAlign(seqalignv);
        } else {
-	  hsp_stream = Blast_HSPListCQueueInit();
-	  
-	  CDbBlast blaster(query_loc, seq_src, *opts, 
-                           hsp_stream, num_threads);
-	  blaster.SetupSearch();
+          hsp_stream = Blast_HSPListCQueueInit();
+          
+          CDbBlast blaster(query_loc, seq_src, *opts, 
+                               hsp_stream, num_threads);
+          blaster.SetupSearch();
 	  
           CSeqDbSeqInfoSrc seqinfo_src(args["db"].AsString(), db_is_aa);
 
-	  // Start the on-the-fly formatting thread
+          // Start the on-the-fly formatting thread
           CBlastTabularFormatThread* tab_thread = 
               new CBlastTabularFormatThread(&blaster,
                       (args["out"] ? args["out"].AsOutputFile() : cout),
                       &seqinfo_src);
 
-	  tab_thread->Run();
-	  
-	  blaster.RunPreliminarySearch();
-	  // Close the HSP stream for writing, allowing the formatting thread
-	  // to exit.
-	  BlastHSPStreamClose(hsp_stream);
-	  // Join the on-the-fly formatting thead
-	  void *exit_data;
-	  tab_thread->Join(&exit_data);
-	  hsp_stream = BlastHSPStreamFree(hsp_stream);
+          tab_thread->Run();
+          
+          blaster.RunPreliminarySearch();
+          // Close the HSP stream for writing, allowing the formatting thread
+          // to exit.
+          BlastHSPStreamClose(hsp_stream);
+          // Join the on-the-fly formatting thead
+          void *exit_data;
+          tab_thread->Join(&exit_data);
+          hsp_stream = BlastHSPStreamFree(hsp_stream);
        }
 
     } catch (const CBlastException& exptn) {
