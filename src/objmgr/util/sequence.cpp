@@ -2205,7 +2205,7 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
 
     // Check if the sequence is circular
     TSeqPos circular_length = kInvalidSeqPos;
-    {{
+    try {
         const CSeq_id* single_id = 0;
         loc.CheckId(single_id);
         if ( single_id ) {
@@ -2216,7 +2216,10 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
                 circular_length = h.GetBioseqLength();
             }
         }
-    }}
+    }
+    catch (CException& e) {
+        _TRACE("test for circularity failed: " << e.GetMsg());
+    }
 
     CFeat_CI feat_it(scope, loc, SAnnotSelector()
         .SetFeatType(feat_type)
@@ -4134,6 +4137,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.89  2004/09/03 16:56:38  dicuccio
+* Wrap test for circularity in a try/catch to trap errors in which a location
+* spans multiple IDs
+*
 * Revision 1.88  2004/09/01 15:33:44  grichenk
 * Check strand in GetStart and GetEnd. Circular length argument
 * made optional.
