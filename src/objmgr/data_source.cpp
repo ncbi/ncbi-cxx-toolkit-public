@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/05/13 15:28:27  grichenk
+* Fixed seqmap for virtual sequences
+*
 * Revision 1.41  2002/05/09 14:18:15  grichenk
 * More TSE conflict resolving rules for annotations
 *
@@ -441,16 +444,12 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     if (found == m_SeqMaps.end()) {
         // Create sequence map
 //        if ( !m_Loader )
-        {
-            if ( seq.GetInst().IsSetSeq_data() || seq.GetInst().IsSetExt() ) {
-                x_CreateSeqMap(seq);
-            }
-            else {
-                THROW1_TRACE(runtime_error,
-                    "CDataSource::x_GetSeqMap() -- Sequence map not found");
-            }
-        }
+        x_CreateSeqMap(seq);
         found = m_SeqMaps.find(&seq);
+        if (found == m_SeqMaps.end()) {
+            THROW1_TRACE(runtime_error,
+                "CDataSource::x_GetSeqMap() -- Sequence map not found");
+        }
     }
     //### Obsolete call: (*found->second).x_CalculateSegmentLengths();
     return *found->second;
@@ -1003,6 +1002,16 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
                 break;
             }
         }
+    }
+    else {
+        // Virtual sequence -- no data, no segments
+        _ASSERT(seq.GetInst().GetRepr() == CSeq_inst::eRepr_virtual);
+        TSeqPos len = 0;
+        if ( seq.GetInst().IsSetLength() ) {
+            len = seq.GetInst().GetLength();
+        }
+        seqmap->Add(CSeqMap::eSeqGap, 0, len); // The total sequence is gap
+        pos += len;
     }
     seqmap->Add(CSeqMap::eSeqEnd, pos, 0);
     m_SeqMaps[&seq] = seqmap;
