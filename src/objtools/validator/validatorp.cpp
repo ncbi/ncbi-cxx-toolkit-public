@@ -417,6 +417,7 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
     for (CTypeConstIterator <CSeq_descr> ei (se); ei; ++ei) {
         descr_validator.ValidateSeqDescr(*ei);
     }
+    
 }
 
 
@@ -1277,7 +1278,7 @@ bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const
 }
 
 
-const CSeq_feat* CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
+CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     if ( bsh ) {
@@ -1694,6 +1695,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/02/03 17:09:05  shomrat
+* Changed return value for GetCDSGivenProduct
+*
 * Revision 1.10  2003/01/31 19:46:46  lavr
 * Remove unused variable "e" from catch() clause
 *

@@ -358,7 +358,7 @@ public:
     void ReportProtWithoutFullRef(void);
 
     bool IsFarLocation(const CSeq_loc& loc) const;
-    const CSeq_feat* GetCDSGivenProduct(const CBioseq& seq);
+    CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
 
 private:
@@ -704,6 +704,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/02/03 17:08:48  shomrat
+* Changed return value for GetCDSGivenProduct
+*
 * Revision 1.9  2003/01/29 21:55:19  shomrat
 * Added check for et al
 *
