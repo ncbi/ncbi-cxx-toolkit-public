@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.73 2002/05/13 19:08:46 ucko Exp $
+#  $Id: configure.ac,v 1.74 2002/05/14 16:46:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -461,13 +461,14 @@ if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
     solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
     *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
-    *:Compaq                        )  MT_FLAG=${MT_FLAG:="-pthread"} ;;
+    *:Compaq | freebsd*:GCC         )  MT_FLAG=${MT_FLAG:="-pthread"} ;;
     *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
     * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
    esac
-   CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"
+   CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
    case "$host_os" in
      solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lpthread -lposix4"} ;;
+     freebsd* )  ;; # -pthread already substitutes libc_r for libc
      *        )  THREAD_LIBS=${THREAD_LIBS:="-lpthread"} ;;
    esac
    LIBS="$LIBS $THREAD_LIBS"
@@ -1150,7 +1151,7 @@ else
 fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
-AC_CHECK_HEADERS(sys/sockio.h)
+AC_CHECK_HEADERS(sys/sockio.h sys/sysinfo.h)
 
 ### Check for some reentrant library functions (only needed in MT mode)
 
@@ -1276,6 +1277,8 @@ AC_TRY_COMPILE(
              [Define to 1 if pthread_setconcurrency exists.])
 )
 AC_MSG_RESULT()
+
+AC_CHECK_FUNCS(pthread_atfork)
 
 fi
 ### ...reentrant versions of some standard library functions, MT functions

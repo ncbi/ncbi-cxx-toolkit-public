@@ -99,6 +99,9 @@
 /* Define to 1 if ORBacus CORBA package is available. */
 #undef HAVE_ORBACUS
 
+/* Define to 1 if you have the `pthread_atfork' function. */
+#undef HAVE_PTHREAD_ATFORK
+
 /* Define to 1 if pthread_setconcurrency exists. */
 #undef HAVE_PTHREAD_SETCONCURRENCY
 
@@ -152,6 +155,9 @@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/sysinfo.h> header file. */
+#undef HAVE_SYS_SYSINFO_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
