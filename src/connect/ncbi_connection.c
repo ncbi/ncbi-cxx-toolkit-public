@@ -691,7 +691,7 @@ extern EIO_Status CONN_ReadLine
         char   w[1024];
         size_t x_read = 0;
         size_t x_size = BUF_Size(conn->buf);
-        char*  x_buf  = size - len < sizeof(w) ? w : &line[len];
+        char*  x_buf  = size - len < sizeof(w) ? w : line + len;
         if (x_size == 0  ||  x_size > sizeof(w))
             x_size = sizeof(w);
         status = s_CONN_Read(conn, x_buf, size ? x_size : 0, &x_read, 0);
@@ -706,7 +706,7 @@ extern EIO_Status CONN_ReadLine
                 line[len] = c;
             len++;
         }
-        if (i < x_read  &&  !BUF_PushBack(&conn->buf, &x_buf[i], x_read - i))
+        if (i < x_read  &&  !BUF_PushBack(&conn->buf, x_buf + i, x_read - i))
             status = eIO_Unknown;
         if (done  ||  len >= size)
             break;
@@ -855,6 +855,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2004/11/15 19:33:42  lavr
+ * Speed-up CONN_ReadLine()
+ *
  * Revision 6.43  2004/11/15 17:39:26  lavr
  * Fix CONN_ReadLine() to always perform connector's read method
  *
