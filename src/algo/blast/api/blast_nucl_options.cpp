@@ -61,9 +61,11 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
     }
-    SetLookupTableDefaults();
     SetQueryOptionDefaults();
     SetInitialWordOptionsDefaults();
+    // NB: Lookup table defaults are set after initial word defaults, because
+    // scanning stride depends on the extension method
+    SetLookupTableDefaults();
     SetGappedExtensionDefaults();
     SetScoringOptionsDefaults();
     SetHitSavingOptionsDefaults();
@@ -76,10 +78,12 @@ CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
     }
-    SetMBLookupTableDefaults();
     SetQueryOptionDefaults();
     SetMBInitialWordOptionsDefaults();
-    SetGappedExtensionDefaults();
+    // NB: Lookup table defaults are set after initial word defaults, because
+    // scanning stride depends on the extension method
+    SetMBLookupTableDefaults();
+    SetMBGappedExtensionDefaults();
     SetMBScoringOptionsDefaults();
     SetHitSavingOptionsDefaults();
     SetEffectiveLengthsOptionsDefaults();
@@ -137,12 +141,10 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
 void
 CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
-    SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eMbStacks);
-    SetSeedExtensionMethod(eRight);
-    SetVariableWordSize(false);
-    SetUngappedExtension();
+    SetSeedContainerType(eDiagArray);
+    SetSeedExtensionMethod(eRightAndLeft);
+    SetVariableWordSize(true);
 }
 
 void
@@ -152,6 +154,14 @@ CBlastNucleotideOptionsHandle::SetGappedExtensionDefaults()
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(EXTEND_DYN_PROG);
+}
+
+void
+CBlastNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
+{
+    SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
+    SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
+    SetGapExtnAlgorithm(EXTEND_GREEDY);
 }
 
 
@@ -231,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 19:47:46  dondosha
+ * Added SetMBGappedExtensionDefaults method; corrected megablast defaults setting
+ *
  * Revision 1.2  2004/01/16 21:49:26  bealer
  * - Add locality flag for Blast4 API
  *
