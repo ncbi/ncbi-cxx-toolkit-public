@@ -41,6 +41,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/general/Int_fuzz.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -61,6 +62,7 @@ class CSeq_align;
 class CScope;
 class CBioseq_Handle;
 class CSeqMap;
+class CSeqMap_CI;
 
 
 class CMappingRange : public CObject
@@ -296,6 +298,16 @@ private:
     void x_Initialize(const CSeqMap& seq_map,
                       size_t         depth,
                       const CSeq_id* top_id = 0);
+    void x_Initialize(const CBioseq_Handle& bioseq,
+                      const CSeq_id* top_id = 0);
+    void x_Initialize(const CBioseq_Handle& bioseq,
+                      size_t         depth,
+                      const CSeq_id* top_id = 0);
+    void x_Initialize(CSeqMap_CI     seg_it,
+                      const CSeq_id* top_id);
+    void x_Initialize(CSeqMap_CI     seg_it,
+                      size_t         depth,
+                      const CSeq_id* top_id);
 
     void x_InitAlign(const CDense_diag& diag, size_t to_row);
     void x_InitAlign(const CDense_seg& denseg, size_t to_row);
@@ -347,7 +359,7 @@ private:
 
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
-    CRef<CScope>      m_Scope;
+    CHeapScope        m_Scope;
     // CSeq_loc_Conversion_Set m_Cvt;
     EMergeFlags       m_MergeFlag;
     EGapFlags         m_GapFlag;
@@ -509,6 +521,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/12/22 15:56:14  vasilche
+* Used CHeapScope instead of plain CRef<CScope>.
+* Reorganized x_Initialize to allow used TSE linking.
+*
 * Revision 1.22  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *
