@@ -303,37 +303,51 @@ if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_ou
 
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
 #### old object/lib/binary file with the new one -- they will always be
-#### different because of some timestamp or smth. else  (--without-bincopy)
+#### different because of some timestamp or smth. else ("--without-bincopy")
 BINCOPY="${CONFIG_SHELL-/bin/sh} $srcdir/src/if_diff.sh \"cp -p\""
 if test "$with_bincopy" = "no" ; then
    BINCOPY="cp -p"
 fi
 
 
-#### Do not include debug info to the libs and executables("--without-debug")
+#### Manage the debug-vs.-optimization flags ("--*-debug", "--*-optimization")
 changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
-      CFLAGS=`echo $CFLAGS     | sed 's/-g[0-9]*//g'`" -DNDEBUG"
-      if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
-         CFLAGS="$CFLAGS -O" ; fi
-      CXXFLAGS=`echo $CXXFLAGS | sed 's/-g[0-9]*//g'`" -DNDEBUG"
-      if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
-         CXXFLAGS="$CXXFLAGS -O" ; fi
+      with_optimization=${with_optimization:="yes"}
+      CFLAGS=`echo $CFLAGS     | sed 's/-g[0-9]*//g'`
+      CXXFLAGS=`echo $CXXFLAGS | sed 's/-g[0-9]*//g'`
       LDFLAGS=`echo $LDFLAGS   | sed 's/-g[0-9]*//g'`
-      if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
-         LDFLAGS="$LDFLAGS -O"   ; fi
    else
-      CFLAGS=`echo $CFLAGS     | sed 's/-O[0-9]*//g'`" -D_DEBUG"
+      with_optimization=${with_optimization:="no"}
       if echo "$CFLAGS"   |grep -v >/dev/null '\-g' ; then
          CFLAGS="$CFLAGS -g"     ; fi
-      CXXFLAGS=`echo $CXXFLAGS | sed 's/-O[0-9]*//g'`" -D_DEBUG"
       if echo "$CXXFLAGS" |grep -v >/dev/null '\-g' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
-      LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
+      if test "$with_optimization" = "no" ; then
+         CPPFLAGS="-D_DEBUG $CPPFLAGS"
+      fi
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-g' ;
          then LDFLAGS="$LDFLAGS -g"   ; fi
       STRIP=":"
+   fi
+
+   if test "$with_optimization" = "no" ; then
+      CFLAGS=`echo $CFLAGS     | sed 's/-O[0-9]*//g'`
+      CXXFLAGS=`echo $CXXFLAGS | sed 's/-O[0-9]*//g'`
+      LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
+   else
+      if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
+         CXXFLAGS="$CXXFLAGS -O" ; fi
+      if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
+         CFLAGS="$CFLAGS -O" ; fi
+      CPPFLAGS="-DNDEBUG $CPPFLAGS"
+      if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
+         LDFLAGS="$LDFLAGS -O"   ; fi
+   fi
+
+   if test "$with_debug" = "no"  &&  test "$with_optimization" = "no" ; then
+      CPPFLAGS="-DNDEBUG $CPPFLAGS"
    fi
 fi
 changequote([, ])dnl
@@ -744,6 +758,10 @@ builddir="$SAVE_builddir"
 exec_prefix="$SAVE_exec_prefix"
 x_configurables="$SAVE_x_configurables"
 ncbiconf="$SAVE_ncbiconf"
+CFLAGS="$SAVE_CFLAGS"
+CXXFLAGS="$SAVE_CXXFLAGS"
+CPPFLAGS="$SAVE_CPPFLAGS"
+LDFLAGS="$SAVE_LDFLAGS"
 
 echo "$x_configurables" | while read x_file ; do
    mv "$x_file" "$x_file.tmp"
@@ -763,21 +781,26 @@ cat << EOCONF
 Configuration completed.
 
 Optional configure flags:
- --without-debug    to build the release versions of libs and apps
- --without-bincopy  do not check whether the copied binaries are identical
- --with-internal    to build all projects including the internal ones
- --without-sybase   do not use SYBASE libraries
- --without-ncbi-c   do not use the NCBI C Toolkit
- --without-fastcgi  do not Fast-CGI library
- --without-sssdb    do not use NCBI SSS DB library
- --without-pubmed   do not use NCBI PubMed libraries
- --without-serial   do not build the serialization library and tests (temp)
+ --without-debug         to build non-debug versions of libs and apps
+ --without-optimization  to build the release versions of libs and apps
+ --without-bincopy       do not check whether the copied binaries are identical
+ --with-internal         to build all projects including the internal ones
+ --without-sybase        do not use SYBASE libraries
+ --without-ncbi-c        do not use the NCBI C Toolkit
+ --without-fastcgi       do not Fast-CGI library
+ --without-sssdb         do not use NCBI SSS DB library
+ --without-pubmed        do not use NCBI PubMed libraries
+ --without-serial        do not build the serialization library and tests
+ --exec-prefix           to specify a non-default build directory name
+ --with-hostspec         add full host specs(OS, CPU) to the build dir name
 
- --exec-prefix      to specify a non-default build directory name
- --with-hostspec    add full host specs(OS, CPU) to the build directory name
+CFLAGS   = $CFLAGS
+CXXFLAGS = $CXXFLAGS
+CPPFLAGS = $CPPFLAGS
+LDFLAGS  = $LDFLAGS
 
-Tools / flags / paths:  $builddir/Makefile.mk
-Preprocessor defines:   $ncbiconf
+Tools / flags / paths are in:  $builddir/Makefile.mk
+Preprocessor defines  are in:   $ncbiconf
 
 To build everything:    cd $builddir && make all_r
 EOCONF
@@ -787,4 +810,8 @@ SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
 SAVE_x_configurables="$x_configurables"
 SAVE_ncbiconf="$ncbiconf"
+SAVE_CFLAGS="$CFLAGS"
+SAVE_CXXFLAGS="$CXXFLAGS"
+SAVE_CPPFLAGS="$CPPFLAGS"
+SAVE_LDFLAGS="$LDFLAGS"
 )
