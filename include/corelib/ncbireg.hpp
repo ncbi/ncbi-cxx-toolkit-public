@@ -320,7 +320,7 @@ public:
     /// @return
     ///   Comment string. If not found, return an empty string.
     const string& GetComment(const string& section = kEmptyStr,
-                             const string& name    = kEmptyStr);
+                             const string& name    = kEmptyStr) const;
 
     /// Enumerate section names.
     ///
@@ -383,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/10/20 21:55:05  vakatov
+ * CNcbiRegistry::GetComment() -- make it "const"
+ *
  * Revision 1.31  2003/08/18 18:44:07  siyan
  * Minor comment changes.
  *

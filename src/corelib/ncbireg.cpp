@@ -729,6 +729,7 @@ bool CNcbiRegistry::SetComment(const string& comment, const string& section,
 
 const string& CNcbiRegistry::GetComment(const string& section,
                                         const string& name)
+    const
 {
     CFastMutexGuard LOCK(s_RegMutex);
 
@@ -739,11 +740,11 @@ const string& CNcbiRegistry::GetComment(const string& section,
     }
 
     // Find section
-    TRegistry::iterator find_section = m_Registry.find(x_section);
+    TRegistry::const_iterator find_section = m_Registry.find(x_section);
     if (find_section == m_Registry.end()) {
         return kEmptyStr;
     }
-    TRegSection& reg_section = find_section->second;
+    const TRegSection& reg_section = find_section->second;
 
     // If "name" is empty string, then get "section"'s comment.
     string x_name = NStr::TruncateSpaces(name);
@@ -757,7 +758,7 @@ const string& CNcbiRegistry::GetComment(const string& section,
 
     // Get "section:entry"'s comment
     _ASSERT( !reg_section.empty() );
-    TRegSection::iterator find_entry = reg_section.find(x_name);
+    TRegSection::const_iterator find_entry = reg_section.find(x_name);
     if (find_entry == reg_section.end()) {
         return kEmptyStr;
     }
@@ -872,6 +873,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/10/20 21:55:12  vakatov
+ * CNcbiRegistry::GetComment() -- make it "const"
+ *
  * Revision 1.37  2003/06/26 18:54:48  rsmith
  * fix bug where comments multiplied blank lines after them.
  *
