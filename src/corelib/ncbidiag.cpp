@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/01/12 22:16:47  lavr
+* Eliminated GCC warning: "'%D' yields only 2 digits of year"
+*
 * Revision 1.41  2001/12/07 15:27:28  ucko
 * Switch CDiagRecycler over to current form of SetDiagHandler.
 *
@@ -360,6 +363,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 {
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
+        const char timefmt[] = "%D %T ";
         time_t t = time(0);
         char datetime[32];
         struct tm* tm;
@@ -370,7 +374,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 #else
         tm = localtime(&t);
 #endif /*HAVE_LOCALTIME_R*/
-        strftime(datetime, sizeof(datetime), "%D %T ", tm);
+        strftime(datetime, sizeof(datetime), timefmt, tm);
         os << datetime;
     }
     // "<file>"
