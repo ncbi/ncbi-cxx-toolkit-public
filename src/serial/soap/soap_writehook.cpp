@@ -53,8 +53,12 @@ void CSoapWriteHook::WriteObject(CObjectOStream& out,
     for ( i = m_Content.begin(); i != m_Content.end(); ++i) {
         TTypeInfo type = (*i)->GetThisTypeInfo();
         if (!type->HasNamespaceName()) {
-            out.ThrowError(CObjectOStream::fInvalidData,
-                "SOAP content object must have a namespace name");
+            const CAnyContentObject* any =
+                dynamic_cast<const CAnyContentObject*>((*i).GetPointer());
+            if (!any || (any && any->GetNamespaceName().empty())) {
+                out.ThrowError(CObjectOStream::fInvalidData,
+                    "SOAP content object must have a namespace name");
+            }
         }
         out.WriteObject(*i, (*i)->GetThisTypeInfo());
     }
@@ -67,6 +71,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/22 15:01:20  gouriano
+* Corrected checking namespace name of AnyContentObjects
+*
 * Revision 1.3  2004/05/17 21:03:24  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
