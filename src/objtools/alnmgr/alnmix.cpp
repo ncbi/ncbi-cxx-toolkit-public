@@ -1227,6 +1227,8 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 if (len <= delta / width1) {
                                     return eIgnoreMatch;
+                                } else {
+                                    len -= delta / width1;
                                 }
                             } else {
                                 return eFirstRowOverlapAbove;
@@ -2012,6 +2014,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.98  2004/06/22 01:24:04  ucko
+* Restore subtraction accidentally dropped in last commit; should
+* resolve infinite loops.
+*
 * Revision 1.97  2004/06/21 20:35:48  todorov
 * Fixed a signed/unsigned bug when truncating the len with delta
 *
