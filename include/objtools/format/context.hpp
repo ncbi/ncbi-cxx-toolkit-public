@@ -286,6 +286,8 @@ public:
 
     TFilter GetFilterFlags(void) const;
     void SetFilterFlags(TFilter filter_flags);
+    bool ViewNuc(void) const  { return (m_FilterFlags & fSkipNucleotides) == 0; }
+    bool ViewProt(void) const { return (m_FilterFlags & fSkipProteins) == 0; }
 
     const CSeq_entry& GetTSE(void) const;
     void SetTSE(const CSeq_entry& tse);
@@ -1432,6 +1434,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/12 16:55:10  shomrat
+* + ViewNuc(), ViewProt()
+*
 * Revision 1.7  2004/03/10 21:38:01  shomrat
 * Fixed usage of m_RefseqInfo
 *
