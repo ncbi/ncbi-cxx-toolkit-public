@@ -7,15 +7,16 @@
 <P>Last Revision: 4 Jan 1999</P>
 
 <P>&nbsp;</P>
-<P>The Common Gateway Interface (CGI) is a method used by web servers to pass information from forms displayed in a web browser to a program running on the server and then allow the program to pass a web page back.  The NCBI C++ CGI Classes are used by the program running on the server to decode the CGI input from the server and to send a response.  The library also supports cookies, which is a method for storing information on the user’s machine.  While the library supports the http methods GET and POST via application/x-www-form-urlencoded, it does not presently support POST via multipart/form-data (often used for file upload) but will in the future.  For more information on CGI, see the book <U>HTML Sourcebook</U> by Ian Graham or http://hoohoo.ncsa.uiuc.edu/cgi/</P>
+<P>The Common Gateway Interface (CGI) is a method used by web servers to pass information from forms displayed in a web browser to a program running on the server and then allow the program to pass a web page back.  The NCBI C++ CGI Classes are used by the program running on the server to decode the CGI input from the server and to send a response.  The library also supports cookies, which is a method for storing information on the user's machine.  While the library supports the http methods GET and POST via application/x-www-form-urlencoded, it does not presently support POST via multipart/form-data (often used for file upload) but will in the future.  For more information on CGI, see the book <U>HTML Sourcebook</U> by Ian Graham or http://hoohoo.ncsa.uiuc.edu/cgi/</P>
 
-<P>There are 4 main classes: </P>
-<B><P>CCgiRequest</B> – what the CGI program is getting from the client.</P>
-<B><P>CCgiResponse</B> – what the CGI program is sending to the client.</P>
-<B><P>CCookie</B> – a single cookie</P>
-<B><P>CCookies</B> – a cookie container</P>
+<P>There are 5 main classes: </P>
+<P><B>CCgiRequest</B> – what the CGI program is getting from the client.</P>
+<P><B>CCgiResponse</B> – what the CGI program is sending to the client.</P>
+<P><B>CCgiEntry</B> – a single field value, optionally accompanied by a filename.</P>
+<P><B>CCookie</B> – a single cookie</P>
+<P><B>CCookies</B> – a cookie container</P>
 
-<P>Note: In the following libraries you will see references to the following typedef’s: CNcbiOstream and CNcbiIstream.  On Solaris and NT, these are identical to the standard library output stream (ostream) and input stream (istream) classes.  These typedef’s are used on older computers to switch between the old stream library and the new standard library stream classes. Further details can be found in an accompanying document (to be written).</P>
+<P>Note: In the following libraries you will see references to the following typedefs: CNcbiOstream and CNcbiIstream.  On Solaris and NT, these are identical to the standard library output stream (ostream) and input stream (istream) classes.  These typedefs are used on older computers to switch between the old stream library and the new standard library stream classes. Further details can be found in an accompanying document (to be written).</P>
 
 <P>A demo program, cgidemo.cpp, can be found in internal/c++/src/corelib/demo.</P>
 <P>&nbsp;</P>
@@ -25,10 +26,10 @@
 
 <P>CCgiRequest uses the following typedefs to simplify the code:</P>
 
-<B><P>typedef map&lt;string, string&gt;      TCgiProperties</P>
-<P>typedef multimap&lt;string, string&gt; TCgiEntries</P>
-<P>typedef TCgiEntries::iterator    TCgiEntriesI</P>
-<P>typedef list&lt;string&gt;             TCgiIndexes</P>
+<B><P>typedef map&lt;string, string&gt;         TCgiProperties</P>
+<P>typedef multimap&lt;string, CCgiEntry&gt; TCgiEntries</P>
+<P>typedef TCgiEntries::iterator       TCgiEntriesI</P>
+<P>typedef list&lt;string&gt;                TCgiIndexes</P>
 </B>
 <P>All of the basic types come from the C++ Standard library (http://www.sgi.com/Technology/STL/)</P>
 
@@ -48,7 +49,7 @@
 </FONT>
 <P>&nbsp;</P>
 <B><P>const TCgiEntries&amp; GetEntries(void) const</P>
-</B><P>Get a set of decoded form entries received from the web browser.  So if you sent a cgi query of the form ?name=value, the multimap referenced by TCgiEntries&amp; includes &quot;name&quot; as a .first member and &quot;value&quot; as a .second member.</P>
+</B><P>Get a set of decoded form entries received from the web browser.  So if you sent a cgi query of the form ?name=value, the multimap referenced by TCgiEntries&amp; includes &quot;name&quot; as a .first member and &lt;&quot;value&quot;, &quot;&quot;&gt; as a .second member.</P>
 
 <P>TCgiEntries&amp; also includes "indexes" if "indexes_as_entries" in the constructor was "true".</P>
 
@@ -113,12 +114,12 @@
 
 <P>&nbsp;</P>
 <B><P>const CCgiCookies&amp; GetCookies(void) const</P>
-</B><P>Retrieve the cookies that were sent with the request.  Cookies are text buffers that are stored in the user’s web browsers and can be set and read via http headers.  For more information on cookies see <A HREF="http://home.netscape.com/newsref/std/cookie_spec.html">http://home.netscape.com/newsref/std/cookie_spec.html</A>.  Also, see the CCookie and CCookies classes defined below.</P>
+</B><P>Retrieve the cookies that were sent with the request.  Cookies are text buffers that are stored in the user's web browsers and can be set and read via http headers.  For more information on cookies see <A HREF="http://home.netscape.com/newsref/std/cookie_spec.html">http://home.netscape.com/newsref/std/cookie_spec.html</A>.  Also, see the CCookie and CCookies classes defined below.</P>
 
 <P>&nbsp;</P>
 <B><P>static SIZE_TYPE ParseEntries(const string&amp; str, TCgiEntries&amp; entries)</P>
 </B>
-<P>This is a helper function that isn’t normally used by CGI programs.  It allows you to decode the URL-encoded string "str" into a set of entries &lt;"name", "value"&gt; and add them to the "entries" multimap.  The new entries are added without overriding the original ones, even if they have the same names.  If the "str" is in ISINDEX format then the entry "value" will be empty.  On success, return zero;  otherwise return location(1-base) of error</P>
+<P>This is a helper function that isn't normally used by CGI programs.  It allows you to decode the URL-encoded string "str" into a set of entries &lt;"name", "value"&gt; and add them to the "entries" multimap.  The new entries are added without overriding the original ones, even if they have the same names.  If the "str" is in ISINDEX format then the entry "value" will be empty.  On success, return zero;  otherwise return location(1-base) of error</P>
 
 <B><P>static SIZE_TYPE ParseIndexes(const string&amp; str, TCgiIndexes&amp; indexes)</P>
 </B>
@@ -230,7 +231,7 @@
 <P>&nbsp;</P>
 <B><I><FONT FACE="Arial"><P>CCgiCookie</P>
 </B></I></FONT>
-<P>A cookie is a name, value string pair that can be stored on the user’s web browser.  Cookies are allocated per site and have restrictions on size and number.  Cookies have attributes, such as the domain they originated from.  For more information on cookies, see <A HREF="http://home.netscape.com/newsref/std/cookie_spec.html">http://home.netscape.com/newsref/std/cookie_spec.html</A>.  CCgiCookie is used by the CCgiRequest and CCgiResponse classes.</P>
+<P>A cookie is a name, value string pair that can be stored on the user's web browser.  Cookies are allocated per site and have restrictions on size and number.  Cookies have attributes, such as the domain they originated from.  For more information on cookies, see <A HREF="http://home.netscape.com/newsref/std/cookie_spec.html">http://home.netscape.com/newsref/std/cookie_spec.html</A>.  CCgiCookie is used by the CCgiRequest and CCgiResponse classes.</P>
 
 <P>&nbsp;</P>
 <B><P>CCgiCookie(const string&amp; name, const string&amp; value)</P>
