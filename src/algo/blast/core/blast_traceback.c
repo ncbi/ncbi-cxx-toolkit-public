@@ -126,7 +126,7 @@ static void BLASTCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt,
                      mean, that current HSP should be removed. */
                   
                   if(hsp_array[index] != NULL) {
-                     hsp_array[index] = BlastHSPFree(hsp_array[index]);
+                     hsp_array[index] = Blast_HSPFree(hsp_array[index]);
                      break;
                   }
                }
@@ -216,7 +216,7 @@ static void SavePatternLengthInGapAlignStruct(Int4 length,
 */
 static Int2
 SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
-                        Uint1* gen_code_string,
+                        const Uint1* gen_code_string,
                         Uint1** translation_buffer_ptr, 
                         Int4** frame_offsets_ptr,
                         Boolean* partial_translation_ptr)
@@ -267,7 +267,7 @@ SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk,
 */
 static void 
 GetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk, BlastHSP* hsp,
-                             Boolean is_ooframe, Uint1* gen_code_string, 
+                             Boolean is_ooframe, const Uint1* gen_code_string, 
                              Uint1** translation_buffer_ptr,
                              Uint1** subject_ptr, Int4* subject_length_ptr,
                              Int4* start_shift_ptr)
@@ -334,42 +334,6 @@ GetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk, BlastHSP* hsp,
       subject = translation_buffer + CODON_LENGTH;
    }
    *subject_ptr = subject;
-}
-
-/** Modifies the HSP data after the final gapped alignment.
- * @param hsp Original HSP from the preliminary stage [in] [out]
- * @param gap_align Structure returned from final gapped alignment [in]
- * @param query_length Original query sequence length [in]
- * @param subject_length Original subject sequence length [in]
- * @param program_number Which BLAST program is this done for? [in]
- */
-static void 
-FillHSPFromGapAlign(BlastHSP* hsp, BlastGapAlignStruct* gap_align,
-                    Int4 query_length, Int4 subject_length, Uint1 program_number)
-{
-   hsp->subject.offset = gap_align->subject_start;
-   hsp->query.offset = gap_align->query_start;
-   hsp->subject.end = gap_align->subject_stop;
-   hsp->query.end = gap_align->query_stop;
-   
-   hsp->query.length = hsp->query.end - hsp->query.offset;
-   hsp->subject.length = hsp->subject.end - hsp->subject.offset;
-   hsp->score = gap_align->score;
-   
-   hsp->gap_info = gap_align->edit_block;
-   gap_align->edit_block = NULL;
-
-   if (hsp->gap_info) {
-      hsp->gap_info->frame1 = hsp->query.frame;
-      hsp->gap_info->frame2 = hsp->subject.frame;
-      hsp->gap_info->original_length1 = query_length;
-      hsp->gap_info->original_length2 = subject_length;
-      if (program_number == blast_type_blastx)
-         hsp->gap_info->translate1 = TRUE;
-      if (program_number == blast_type_tblastn ||
-          program_number == blast_type_rpstblastn)
-         hsp->gap_info->translate2 = TRUE;
-   }
 }
 
 /** Check whether an HSP is already contain within another higher scoring HSP.
@@ -585,7 +549,7 @@ HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_in
                      keep = FALSE;
                      break;
                   } else {
-                     hsp_array[index] = BlastHSPFree(hsp2);
+                     hsp_array[index] = Blast_HSPFree(hsp2);
                   }
                }
             }
@@ -620,7 +584,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    const BlastScoringOptions* score_options,
    const BlastExtensionOptions* ext_options,
    BlastHitSavingParameters* hit_params,
-   const BlastDatabaseOptions* db_options,
+   const Uint1* gen_code_string,
    const PSIBlastOptions* psi_options)
 {
    Int4 index;
@@ -648,11 +612,11 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    hsp_array = hsp_list->hsp_array;
 
    if (kTranslateSubject) {
-      if (!db_options || !db_options->gen_code_string)
+      if (!gen_code_string)
          return -1;
 
       if (k_is_ooframe) {
-         SetUpSubjectTranslation(subject_blk, db_options->gen_code_string,
+         SetUpSubjectTranslation(subject_blk, gen_code_string,
                                  NULL, NULL, &partial_translation);
          subject = subject_blk->oof_sequence + CODON_LENGTH;
          /* Mixed-frame sequence spans all 6 frames, i.e. both strands
@@ -660,7 +624,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             shifted by 3.*/
          subject_length = 2*subject_blk->length - 1;
       } else {
-         SetUpSubjectTranslation(subject_blk, db_options->gen_code_string,
+         SetUpSubjectTranslation(subject_blk, gen_code_string,
             &translation_buffer, &frame_offsets, &partial_translation);
          /* subject and subject_length will be set later, for each HSP. */
       }
@@ -713,7 +677,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                   frame_offsets[context+1] - frame_offsets[context] - 1;
             } else if (partial_translation) {
                GetPartialSubjectTranslation(subject_blk, hsp, k_is_ooframe,
-                  db_options->gen_code_string, &translation_buffer, &subject,
+                  gen_code_string, &translation_buffer, &subject,
                   &subject_length, &start_shift);
             }
          }
@@ -775,8 +739,22 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
          if (gap_align->score >= hit_params->cutoff_score) {
             Boolean keep=FALSE;
-            FillHSPFromGapAlign(hsp, gap_align, query_length_orig, 
-                                subject_blk->length, program_number);
+            Blast_HSPReset(gap_align->query_start, gap_align->query_stop,
+                           gap_align->subject_start, gap_align->subject_stop, 
+                           gap_align->score, &(gap_align->edit_block), hsp);
+
+            /* FIXME not pretty, should be wrapped as function, done earlier or part of Blast_HSPReset. */
+            if (hsp && hsp->gap_info) {
+                   hsp->gap_info->frame1 = hsp->query.frame;
+                   hsp->gap_info->frame2 = hsp->subject.frame;
+                   hsp->gap_info->original_length1 = query_length_orig;
+                   hsp->gap_info->original_length2 = subject_blk->length;
+                   if (program_number == blast_type_blastx)
+                      hsp->gap_info->translate1 = TRUE;
+                   if (program_number == blast_type_tblastn ||
+                       program_number == blast_type_rpstblastn)
+                      hsp->gap_info->translate2 = TRUE;
+            }
 
             if (kGreedyTraceback) {
                /* Low level greedy algorithm ignores ambiguities, so the score
@@ -795,16 +773,16 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                 keep = HSPCheckForDegenerateAlignments(hsp_array, hsp, index);
 
             if (!keep) {
-               hsp_array[index] = BlastHSPFree(hsp);
+               hsp_array[index] = Blast_HSPFree(hsp);
             }
          } else {
             /* Score is below threshold */
             gap_align->edit_block = GapEditBlockDelete(gap_align->edit_block);
-            hsp_array[index] = BlastHSPFree(hsp);
+            hsp_array[index] = Blast_HSPFree(hsp);
          }
       } else { 
          /* Contained within another HSP, delete. */
-         hsp_array[index] = BlastHSPFree(hsp);
+         hsp_array[index] = Blast_HSPFree(hsp);
       }
    } /* End loop on HSPs */
 
@@ -817,7 +795,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
     /* Now try to detect simular alignments */
 
     BLASTCheckHSPInclusion(hsp_array, hsp_list->hspcnt, k_is_ooframe);
-    hsp_list->hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
+    Blast_HSPListPurgeNullHSPs(hsp_list);
     
     /* Relink and rereap the HSP list, if needed. */
 
@@ -845,7 +823,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
     if (hit_options->hsp_num_max > 0 && 
         hit_options->hsp_num_max < hsp_list->hspcnt) {
        for (index=hit_options->hsp_num_max; index<hsp_list->hspcnt; ++index) {
-          hsp_array[index] = BlastHSPFree(hsp_array[index]);
+          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
        }
        hsp_list->hspcnt = hit_options->hsp_num_max;
     }
@@ -900,7 +878,7 @@ BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
       for (subject_index = hitlist_size;
            subject_index < hit_list->hsplist_count; ++subject_index) {
          hit_list->hsplist_array[subject_index] = 
-            BlastHSPListFree(hit_list->hsplist_array[subject_index]);
+            Blast_HSPListFree(hit_list->hsplist_array[subject_index]);
       }
       hit_list->hsplist_count = MIN(hit_list->hsplist_count, hitlist_size);
    }
@@ -968,7 +946,8 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
 
             BlastHSPListGetTraceback(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
-               ext_params->options, hit_params, db_options, psi_options);
+               ext_params->options, hit_params, db_options->gen_code_string, 
+               psi_options);
          }
       }
    }
@@ -1143,7 +1122,8 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
 
          BlastHSPListGetTraceback(program_number, hsp_list, &one_db_seq, 
             query, &one_db_seq_info, gap_align, sbp, score_options, 
-            ext_params->options, hit_params, db_options, psi_options);
+            ext_params->options, hit_params, db_options->gen_code_string, 
+            psi_options);
 
          if (program_number != blast_type_rpstblastn)
             RPSFreePSSM(sbp->posMatrix, one_db_seq.length);
