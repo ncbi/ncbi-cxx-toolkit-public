@@ -64,6 +64,7 @@ public:
 
     // access functions
     EDiagSev                GetSeverity (void) const;
+    const string&           GetSevAsStr (void) const;
     const string&           GetMsg      (void) const;
     const string&           GetErrCode  (void) const;
     const string&           GetVerbose  (void) const;
@@ -84,10 +85,10 @@ private:
 };
 
 
-typedef vector < CRef < CValidErrItem > > TErrs;
+typedef vector < CConstRef < CValidErrItem > > TErrs;
 
 
-class NCBI_VALIDATOR_EXPORT CValidError
+class NCBI_VALIDATOR_EXPORT CValidError : public CObject
 {
 public:
 
@@ -116,6 +117,8 @@ public:
     (CObjectManager&    objmgr,
      const CSeq_submit& ss,
      unsigned int       options = 0);
+
+    void AddValidErrItem(const CValidErrItem* item);
 
     size_t size(void) const { return m_ErrItems.size(); }
 
@@ -172,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/02/24 20:14:59  shomrat
+* Added AddValidErrItem instead of exposing the undelying container
+*
 * Revision 1.4  2003/02/07 21:00:27  shomrat
 * Added size()
 *
