@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/09/12 20:39:03  kans
+ * added member functions IsPartialLeft and IsPartialRight
+ *
  * Revision 1.2  2002/06/06 20:50:50  clausen
  * Moved IsValid to objects/util/sequence.cpp
  *
@@ -66,7 +69,11 @@ public:
     CSeq_point(void);
     // destructor
     ~CSeq_point(void);
-    
+
+    // check left (5') or right (3') end of location for e_Lim fuzz
+    bool IsPartialLeft (void);
+    bool IsPartialRight (void);
+        
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_point(const CSeq_point& value);

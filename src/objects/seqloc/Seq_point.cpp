@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/09/12 20:39:30  kans
+ * added member functions IsPartialLeft and IsPartialRight
+ *
  * Revision 6.3  2002/06/06 20:49:00  clausen
  * Moved IsValid to objects/util/sequence.cpp
  *
@@ -58,6 +61,76 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CSeq_point::~CSeq_point(void)
 {
+}
+
+bool CSeq_point::IsPartialLeft (void)
+{
+    bool minus_strand = false;
+
+    if (IsSetStrand ()) {
+        switch (GetStrand ()) {
+            case eNa_strand_minus :
+                minus_strand = true;
+                break;
+            case eNa_strand_both_rev :
+                minus_strand = true;
+                break;
+            default :
+                break;
+        }
+    }
+
+    if (minus_strand) {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CSeq_point::IsPartialRight (void)
+{
+    bool minus_strand = false;
+
+    if (IsSetStrand ()) {
+        switch (GetStrand ()) {
+            case eNa_strand_minus :
+                minus_strand = true;
+                break;
+            case eNa_strand_both_rev :
+                minus_strand = true;
+                break;
+            default :
+                break;
+        }
+    }
+
+    if (minus_strand) {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz ()) {
+            const CInt_fuzz & ifp = GetFuzz ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
