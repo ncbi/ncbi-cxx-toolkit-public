@@ -57,20 +57,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-bool IsBlankString(const string& str)
-{
-    if (!str.empty()) {
-        ITERATE (string, it, str) {
-            if (!isspace(*it)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-
 string ExpandTildes(const string& s, ETildeStyle style)
 {
     if ( style == eTilde_tilde ) {
@@ -165,11 +151,10 @@ void StripSpaces(string& str)
 
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 {
-    static const string period = ".";
-    static const string ellipsis = "...";
+    static const string kEllipsis = "...";
 
-    if ( NStr::EndsWith(str, period) ) {
-        if ( !keep_ellipsis  ||  !NStr::EndsWith(str, ellipsis) ) {
+    if ( NStr::EndsWith(str, '.') ) {
+        if ( !keep_ellipsis  ||  !NStr::EndsWith(str, kEllipsis) ) {
             str.erase(str.length() - 1);
             return true;
         }
@@ -182,11 +167,10 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 void AddPeriod(string& str)
 {
     static const string kChars = " \t~.\n";
+
     size_t pos = str.find_last_not_of(kChars);
-    if (pos != NPOS) {
-        str.erase(pos + 1);
-        str += '.';
-    }
+    str.erase(pos + 1);
+    str += '.';
 }
 
 
@@ -220,7 +204,8 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     size_t strlen = str.length();
     size_t begin = 0;
     while (begin != strlen) {
-        if (str[begin] > ' ') {
+        char ch = str[begin];
+        if (ch > ' ') {
             break;
         } else {
             ++begin;
@@ -657,6 +642,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/10/05 15:50:00  shomrat
+* Use more efficeint NStr::EndsWith
+*
 * Revision 1.14  2004/08/30 18:22:02  shomrat
 * + TrimSpaces
 *
