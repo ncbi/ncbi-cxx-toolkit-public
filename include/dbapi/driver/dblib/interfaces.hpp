@@ -67,7 +67,7 @@ const unsigned int kDBLibMaxNameLen = 128 + 4;
 //  CDBLibContext::
 //
 
-class CDBLibContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public I_DriverContext
 {
     friend class CDB_Connection;
 
@@ -140,7 +140,7 @@ private:
 //  CTL_Connection::
 //
 
-class CDBL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public I_Connection
 {
     friend class CDBLibContext;
     friend class CDB_Connection;
@@ -215,7 +215,7 @@ private:
 //  CDBL_LangCmd::
 //
 
-class CDBL_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : public I_LangCmd
 {
     friend class CDBL_Connection;
 protected:
@@ -258,7 +258,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class CDBL_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : public I_RPCCmd
 {
     friend class CDBL_Connection;
 protected:
@@ -304,7 +304,7 @@ private:
 //  CDBL_CursorCmd::
 //
 
-class CDBL_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : public I_CursorCmd
 {
     friend class CDBL_Connection;
 protected:
@@ -350,7 +350,7 @@ private:
 //  CDBL_BCPInCmd::
 //
 
-class CDBL_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : public I_BCPInCmd
 {
     friend class CDBL_Connection;
 protected:
@@ -385,7 +385,7 @@ private:
 //  CDBL_SendDataCmd::
 //
 
-class CDBL_SendDataCmd : public I_SendDataCmd {
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : public I_SendDataCmd {
     friend class CDBL_Connection;
 protected:
     CDBL_SendDataCmd(CDBL_Connection* con, DBPROCESS* cmd, size_t nof_bytes);
@@ -422,7 +422,7 @@ struct SDBL_ColDescr
 //  CDBL_RowResult::
 //
 
-class CDBL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult : public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -463,7 +463,7 @@ protected:
 //  CDBL_BlobResult::
 //
 
-class CDBL_BlobResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -506,7 +506,7 @@ protected:
 //  CDBL_CursorResult::
 //
 
-class CDBL_ParamResult : public CDBL_RowResult
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ParamResult : public CDBL_RowResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -526,7 +526,7 @@ protected:
 };
 
 
-class CDBL_ComputeResult : public CDBL_RowResult
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ComputeResult : public CDBL_RowResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -548,7 +548,7 @@ protected:
 };
 
 
-class CDBL_StatusResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : public I_Result
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;
@@ -576,7 +576,7 @@ protected:
 };
 
 
-class CDBL_CursorResult : public I_Result
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorResult : public I_Result
 {
     friend class CDBL_CursorCmd;
 protected:
@@ -610,7 +610,7 @@ protected:
 
 #define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd00
 
-class CDBL_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ITDescriptor : public I_ITDescriptor
 {
     friend class CDBL_RowResult;
     friend class CDBL_BlobResult;
@@ -646,6 +646,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/02/13 15:43:00  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_DBLIB_EXPORT for class definitions
+ *
  * Revision 1.13  2002/07/02 16:03:28  soussov
  * splitting Sybase dblib and MS dblib
  *
