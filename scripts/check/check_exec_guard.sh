@@ -38,5 +38,7 @@ done
 
 # Time out, kill the process
 kill $pid > /dev/null 2>&1
+sleep $sleep_time
+kill -9 $pid > /dev/null 2>&1
 
 exit 0
