@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/10/18 14:30:16  gouriano
+* added T_ENTITY token
+*
 * Revision 1.5  2002/10/15 13:50:45  gouriano
 * added DTD tokens
 *
@@ -99,6 +102,9 @@ static const TToken K_TRUE = 122;
 static const TToken K_OPTIONAL = 123;
 static const TToken K_DEFAULT = 124;
 static const TToken K_BIGINT = 125;
+
+
+static const TToken T_ENTITY  =  11;
 
 static const TToken K_ELEMENT = 201;
 static const TToken K_ATTLIST = 202;
