@@ -210,7 +210,7 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number);
 /** Given a context from BLAST engine core, return the query index.
  * @param context Context saved in a BlastHSP structure [in]
  * @param program Type of BLAST program [in]
- * @return Query index in a set of queries.
+ * @return Query index in a set of queries or -1 on error
  */
 NCBI_XBLAST_EXPORT
 Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
