@@ -41,6 +41,9 @@ BEGIN_SCOPE(fastme)
 
 #define MAX_FILE_NAME_LENGTH 50
 #define MAX_EVENT_NAME 24
+#ifdef INFINITY
+#  undef INFINITY
+#endif
 #define INFINITY 10000000
 #define NEGINFINITY -10000000
 #define NONE 0
@@ -97,6 +100,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 20:24:22  ucko
+ * Get rid of any previous definition of INFINITY before supplying our
+ * own, since some compilers (such as IBM VisualAge) forbid immediate
+ * redefinitions.
+ *
  * Revision 1.1  2004/02/10 15:16:01  jcherry
  * Initial version
  *
