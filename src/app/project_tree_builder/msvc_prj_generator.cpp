@@ -40,7 +40,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
     CVisualStudioProject xmlprj;
     
     {{
-        //Attributes:
+        // Attributes:
         xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
         xmlprj.SetAttlist().SetVersion     (MSVC_PROJECT_VERSION);
         xmlprj.SetAttlist().SetName        (project_context.ProjectName());
@@ -48,7 +48,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
     }}
     
     {{
-        //Platforms
+        // Platforms
          CRef<CPlatform> platform(new CPlatform(""));
          platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
          xmlprj.SetPlatforms().SetPlatform().push_back(platform);
@@ -56,13 +56,21 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
     ITERATE(list<SConfigInfo>, p , m_Configs) {
 
-        const SConfigInfo& cfg_info = *p; 
+        const SConfigInfo& cfg_info = *p;
+        // Check config availability
+        if ( !project_context.IsConfigEnabled(cfg_info) ) {
+            LOG_POST(Info << "Configuration "
+                          << cfg_info.m_Name
+                          << " disabled in project "
+                          << project_context.ProjectId());
+            continue;
+        }
 
-        //contexts:
+        // Contexts:
         
         CMsvcPrjGeneralContext general_context(cfg_info, project_context);
 
-        //MSVC Tools
+        // MSVC Tools
         CMsvcTools msvc_tool(general_context, project_context);
 
         CRef<CConfiguration> conf(new CConfiguration());
@@ -824,6 +832,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/02/24 21:03:06  gorelenk
+ * Added checking of config availability to implementation of
+ * member-function Generate of class CMsvcProjectGenerator.
+ *
  * Revision 1.19  2004/02/23 20:42:57  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *
