@@ -453,7 +453,6 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
 
     CRef<CAlnChunk>  chunk    = new CAlnChunk();
 
-        
     chunk->SetRange().SetFrom(m_AlnMap.m_DS->GetStarts()
                               [seg_from * m_AlnMap.m_DS->GetDim()
                               + m_Row]);
@@ -477,21 +476,27 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
 
     // fix if extreme end
     if (i == 0 && m_LeftDelta) {
-        if (m_AlnMap.IsPositiveStrand(m_Row)) {
-            chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
-                                      + m_LeftDelta);
-        } else {
-            chunk->SetRange().SetTo(chunk->GetRange().GetTo() - m_LeftDelta);
+        if (!chunk->IsGap()) {
+            if (m_AlnMap.IsPositiveStrand(m_Row)) {
+                chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
+                                          + m_LeftDelta);
+            } else {
+                chunk->SetRange().SetTo(chunk->GetRange().GetTo()
+                                        - m_LeftDelta);
+            }
         }            
         chunk->SetType(chunk->GetType() &
                     ~(fNoSeqOnLeft | fUnalignedOnLeft | fEndOnLeft));
     }
     if (i == m_Size - 1 && m_RightDelta) {
-        if (m_AlnMap.IsPositiveStrand(m_Row)) {
-            chunk->SetRange().SetTo(chunk->GetRange().GetTo() - m_RightDelta);
-        } else {
-            chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
-                                      + m_RightDelta);
+        if (!chunk->IsGap()) {
+            if (m_AlnMap.IsPositiveStrand(m_Row)) {
+                chunk->SetRange().SetTo(chunk->GetRange().GetTo()
+                                        - m_RightDelta);
+            } else {
+                chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
+                                          + m_RightDelta);
+            }
         }
         chunk->SetType(chunk->GetType() &
                        ~(fNoSeqOnRight | fUnalignedOnRight | fEndOnRight));
@@ -537,6 +542,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/09/19 22:16:48  todorov
+* fix the range on the extreme end only if not a gap
+*
 * Revision 1.6  2002/09/19 22:09:07  todorov
 * fixed a problem due to switching of lines during code cleanup
 *
