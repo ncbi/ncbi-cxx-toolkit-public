@@ -192,7 +192,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
             EndTag();
         break;
     }
-    m_CurrentPosition++;
+    m_CurrentPosition += 1;
 #endif
     m_Output.PutChar(byte);
 }
@@ -1136,6 +1136,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.92  2004/09/01 14:22:53  ucko
+* Tweak for our LFS-enabled version of GCC 3.3.3, which doesn't provide
+* ++ or -- for streamoff.
+*
 * Revision 1.91  2004/08/30 18:19:39  gouriano
 * Use CNcbiStreamoff instead of size_t for stream offset operations
 *
