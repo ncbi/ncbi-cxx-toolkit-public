@@ -164,7 +164,8 @@ extern "C" {
 #define BLAST_GAP_PROB_GAPPED 1.0  /**< Gap probability for gapped search */
 #define BLAST_GAP_DECAY_RATE 0.5   /**< Gap decay rate for ungapped search */
 #define BLAST_GAP_DECAY_RATE_GAPPED 0.1/**< Gap decay rate for gapped search */
-#define BLAST_GAP_SIZE 50          /**< Default gap size */ 
+#define BLAST_GAP_SIZE 40          /**< Default gap size */ 
+#define BLAST_OVERLAP_SIZE 9      /**< Default overlap size */
 
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
@@ -362,6 +363,8 @@ typedef struct BlastHitSavingOptions {
 typedef struct BlastLinkHSPParameters {
    double gap_prob;       /**< Probability of decay for linking HSPs */
    Int4 gap_size;          /**< Small gap size for linking HSPs */
+   Int4 overlap_size;     /**< Maximal overlap allowed in successive linked
+                             HSPs */
    double gap_decay_rate; /**< Decay rate for linking HSPs and calculating
                              cutoff scores. */
    Int4 cutoff_small_gap; /**< Cutoff sum score for linked HSPs with small 
