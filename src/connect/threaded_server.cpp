@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2002/01/24 18:35:56  ucko
+* Allow custom queue-overflow handling.
+* Clean up SOCKs and CONNs when done with them.
+*
 * Revision 6.1  2001/12/11 19:55:22  ucko
 * Introduce thread-pool-based servers.
 *
@@ -56,7 +60,8 @@ public:
 
 void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
                          unsigned int init_threads, unsigned int max_threads,
-                         unsigned int queue_size, int spawn_threshold)
+                         unsigned int queue_size, int spawn_threshold,
+                         FSockProcessor overflow_proc)
 {
     LSOCK             lsock;
     CStdPoolOfThreads pool(max_threads, queue_size, spawn_threshold);
@@ -68,7 +73,14 @@ void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
         SOCK sock;
         EIO_Status status = LSOCK_Accept(lsock, NULL, &sock);
         if (status == eIO_Success) {
-            pool.AcceptRequest(factory.New(sock));
+            try {
+                pool.AcceptRequest(factory.New(sock));
+            } catch (...) {
+                if (overflow_proc) {
+                    overflow_proc(sock);
+                }
+                SOCK_Close(sock);
+            }            
         } else {
             ERR_POST("accept failed: " << IO_StatusStr(status));
         }
@@ -116,10 +128,12 @@ private:
 
 void RunThreadedServer(FConnStreamProcessor proc, unsigned int port,
                        unsigned int init_threads, unsigned int max_threads,
-                       unsigned int queue_size, int spawn_threshold)
+                       unsigned int queue_size, int spawn_threshold,
+                       FSockProcessor overflow_proc)
 {
     s_RunThreadedServer(CConnStreamRequestFactory(proc), port, init_threads,
-                        max_threads, queue_size, spawn_threshold);
+                        max_threads, queue_size, spawn_threshold,
+                        overflow_proc);
 }
 
 
@@ -146,7 +160,14 @@ void CConnectionRequest::Process(void)
 {
     CONN conn;
     CONN_Create(SOCK_CreateConnectorOnTop(m_Sock, 0), &conn);
-    m_Proc(conn);
+    // Too bad C++ lacks try...finally
+    try {
+        m_Proc(conn);
+    } catch (...) {
+        CONN_Close(conn);
+        throw;
+    }
+    CONN_Close(conn);
 }
 
 
@@ -164,10 +185,12 @@ private:
 
 void RunThreadedServer(FConnectionProcessor proc, unsigned int port,
                        unsigned int init_threads, unsigned int max_threads,
-                       unsigned int queue_size, int spawn_threshold)
+                       unsigned int queue_size, int spawn_threshold,
+                       FSockProcessor overflow_proc)
 {
     s_RunThreadedServer(CConnectionRequestFactory(proc), port, init_threads,
-                        max_threads, queue_size, spawn_threshold);
+                        max_threads, queue_size, spawn_threshold,
+                        overflow_proc);
 }
 
 
@@ -182,13 +205,24 @@ public:
         : m_Sock(sock), m_Proc(proc) {}
 
 protected:
-    virtual void Process(void)
-        { m_Proc(m_Sock); }
+    virtual void Process(void);
 
 private:
     SOCK           m_Sock;
     FSockProcessor m_Proc;
 };
+
+void CSockRequest::Process(void)
+{
+    // Too bad C++ lacks try...finally
+    try {
+        m_Proc(m_Sock);
+    } catch (...) {
+        SOCK_Close(m_Sock);
+        throw;
+    }
+    SOCK_Close(m_Sock);
+}
 
 
 class CSockRequestFactory : public ISockRequestFactory
@@ -205,10 +239,12 @@ private:
 
 void RunThreadedServer(FSockProcessor proc, unsigned int port,
                        unsigned int init_threads, unsigned int max_threads,
-                       unsigned int queue_size, int spawn_threshold)
+                       unsigned int queue_size, int spawn_threshold,
+                       FSockProcessor overflow_proc)
 {
     s_RunThreadedServer(CSockRequestFactory(proc), port, init_threads,
-                        max_threads, queue_size, spawn_threshold);
+                        max_threads, queue_size, spawn_threshold,
+                        overflow_proc);
 }
 
 END_NCBI_SCOPE
