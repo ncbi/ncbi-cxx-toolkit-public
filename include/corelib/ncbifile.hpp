@@ -953,12 +953,11 @@ public:
 
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CMemoryFileSegment --
 ///
-/// Define auxiliary class for mapping a memory file segment of the file
+/// Define auxiliary class for mapping a memory file region of the file
 /// into the address space of the calling process. 
 /// 
 /// Throws an exceptions on error.
@@ -994,8 +993,8 @@ public:
     /// Get pointer to beginning of data.
     ///
     /// @return
-    ///    - Pointer to start of data, or
-    ///    - NULL if mapped to a file of zero length, or if not mapped.
+    ///   - Pointer to start of data, or
+    ///   - NULL if mapped to a file of zero length, or if not mapped.
     void* GetPtr(void) const;
 
     /// Get offset of the mapped area from beginning of file.
@@ -1020,8 +1019,8 @@ public:
     /// to match it. The "length" value will be automaticaly increased on the
     /// difference between passed and real offsets.
     /// @return
-    ///    - Pointer to start of data, or
-    ///    - NULL if mapped to a file of zero length, or if not mapped.
+    ///   - Pointer to start of data, or
+    ///   - NULL if mapped to a file of zero length, or if not mapped.
     /// @sa
     ///    GetRealOffset(), GetRealSize(), GetPtr(). 
     void* GetRealPtr(void) const;
@@ -1074,7 +1073,7 @@ public:
     ///   - FALSE, if memory advise operation not successful.
     /// @sa
     ///   EMemMapAdvise, MemMapAdviseAddr
-    bool MemMapAdvise(EMemMapAdvise advise);
+    bool MemMapAdvise(EMemMapAdvise advise) const;
 
 private:
     // Check that file is mapped, throw excepton otherwise.
@@ -1100,9 +1099,160 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CMemoryFileMap --
+///
+/// Define class for support a partial file memory mapping.
+///
+/// Note, that all mapped into memory file segments have equal protect and
+/// share attributes, because they restricted with file open mode.
+/// Note, that the mapping file must exists and have non-zero length.
+/// This class cannot increase size of mapped file. If the size of
+/// the mapped file changes, the effect of references to portions of
+/// the mapped region that correspond to added or removed portions of the
+/// file is unspecified.
+///
+/// Throws an exceptions on error.
+
+class NCBI_XNCBI_EXPORT CMemoryFileMap : public CMemoryFile_Base
+{
+public:
+    /// Constructor.
+    ///
+    /// Initialize the memory mapping on file "file_name".
+    /// @param filename
+    ///   Name of file to map to memory.
+    /// @param protect_attr
+    ///   Specify operations permitted on memory mapped file.
+    /// @param share_attr
+    ///   Specify if change to memory mapped file can be shared or not.
+    /// @sa
+    ///   EMemMapProtect, EMemMapShare
+    CMemoryFileMap(const string&  file_name,
+                   EMemMapProtect protect_attr = eMMP_Read,
+                   EMemMapShare   share_attr   = eMMS_Private);
+
+    /// Destructor.
+    ///
+    /// Calls Unmap() and cleans up memory.
+    ~CMemoryFileMap(void);
+
+    /// Map file segment if it is mapped.
+    ///
+    /// @param offset
+    ///   The file offset where mapping is to begin. If the offset is not
+    ///   a multiple of the allocation granularity, that it can be decreased 
+    ///   to match it. The "length" value will be automaticaly increased on
+    ///   the difference between passed and real offsets. The real offset can
+    ///   be obtained using GetOffset(). The parameter must be more than 0.
+    /// @param length
+    ///   Number of bytes to map. This value can be increased if "offset"
+    ///   is not a multiple of the allocation granularity.
+    ///   The real length of mapped region can be obtained using GetSize().
+    ///   The value 0 means that all file size will be mapped.
+    /// @return
+    ///   - Pointer to start of data, or
+    ///   - NULL if mapped to a file of zero length, or if not mapped.
+    /// @sa
+    ///   Unmap()
+    void* Map(off_t offset, size_t length);
+
+    /// Unmap file segment.
+    ///
+    /// @param ptr
+    ///   Pointer returned by Map().
+    /// @return
+    ///   TRUE on success; or FALSE on error.
+    /// @sa
+    ///   Map()
+    bool Unmap(void* ptr);
+
+    /// Unmap all mapped segment.
+    ///
+    /// @return
+    ///   TRUE on success; or FALSE on error.
+    ///   In case of error some segments can be not unmapped.
+    bool UnmapAll(void);
+
+    /// Get offset of the mapped segment from beginning of the file.
+    ///
+    /// @param prt
+    ///   Pointer to mapped data returned by Map().
+    /// @return
+    ///   Offset in bytes of mapped segment from beginning of the file.
+    ///   Returned value is a value of "offset" parameter passed
+    ///   to MapSegment() method for specified "ptr".
+    off_t GetOffset(void* ptr) const;
+
+    /// Get length of the mapped segment.
+    ///
+    /// @param prt
+    ///   Pointer to mapped data returned by MapSegment().
+    /// @return
+    ///   Length in bytes of the mapped area.
+    ///   Returned value is a value of "length" parameter passed
+    ///   to MapSegment() method for specified "ptr".
+    size_t GetSize(void* ptr) const;
+
+    /// Get length of the mapped file.
+    ///
+    /// @return
+    ///   Size in bytes of the mapped file.
+    Int8 GetFileSize(void) const;
+
+    /// Flush memory mapped file segment.
+    ///
+    /// Flush specified mapped segment by writing all modified copies of
+    /// memory pages to the underlying file.
+    ///
+    /// NOTE: By default data will be flushed in the destructor.
+    /// @return
+    ///   - TRUE, if all data was flushed succesfully.
+    ///   - FALSE, if an error occurs.
+    bool Flush(void* ptr) const;
+
+    /// Advise on memory map usage.
+    ///
+    /// @param advise
+    ///   One of the values in EMemMapAdvise that advises on expected
+    ///   usage pattern.
+    /// @return
+    ///   - TRUE, if memory advise operation successful. Always return
+    ///     TRUE if memory advise not implemented such as on Windows system.
+    ///   - FALSE, if memory advise operation not successful.
+    /// @sa
+    ///   EMemMapAdvise, MemMapAdviseAddr
+    bool MemMapAdvise(void* ptr, EMemMapAdvise advise) const;
+
+private:
+    // Open file mapping for file with name m_FileName.
+    void x_Open(void);
+
+    // Unmap mapped memory and close all handles.
+    void x_Close(void);
+
+    // Get segment by pointer to data.
+    CMemoryFileSegment* x_Get(void* ptr) const;
+
+protected:
+    string              m_FileName;  ///< File name. 
+    SMemoryFileHandle*  m_Handle;    ///< Memory file handle.
+    SMemoryFileAttrs*   m_Attrs;     ///< Specify operations permitted on
+                                     ///< memory mapped file and mapping mode.
+
+    typedef map<void*,CMemoryFileSegment*> TSegments;
+    TSegments           m_Segments;  ///< Map of pointers to mapped segments.
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CMemoryFile --
 ///
 /// Define class for support file memory mapping.
+///
+/// This is a simple version of the CMemoryFileMap class, supported one
+/// mapped segment only.
 ///
 /// Note, that the mapping file must exists and have non-zero length.
 /// This class cannot increase size of mapped file. If the size of
@@ -1112,7 +1262,7 @@ private:
 ///
 /// Throws an exceptions on error.
 
-class NCBI_XNCBI_EXPORT CMemoryFile : public CMemoryFile_Base
+class NCBI_XNCBI_EXPORT CMemoryFile : public CMemoryFileMap
 {
 public:
     /// Constructor.
@@ -1143,11 +1293,6 @@ public:
                 off_t          offset       = 0,
                 size_t         lendth       = 0);
 
-    /// Destructor.
-    ///
-    /// Calls Unmap() and cleans up memory.
-    ~CMemoryFile(void);
-
     /// Unmap file if mapped.
     ///
     /// @return
@@ -1169,17 +1314,12 @@ public:
     ///   Offset in bytes of mapped area from beginning of the file.
     off_t GetOffset(void) const;
 
-    /// Get length of the mapped area.
+    /// Get length of the mapped region.
     ///
     /// @return
-    ///   Length in bytes of the mapped area.
+    ///   - Length in bytes of the mapped region, or
+    ///   - 0 if not mapped or file is empty.
     size_t GetSize(void) const;
-
-    /// Get length of the mapped file.
-    ///
-    /// @return
-    ///   Size in bytes of the mapped file.
-    Int8 GetFileSize(void) const;
 
     /// Flush by writing all modified copies of memory pages to the
     /// underlying file.
@@ -1187,7 +1327,7 @@ public:
     /// NOTE: By default data will be flushed in the destructor.
     /// @return
     ///   - TRUE, if all data was flushed succesfully.
-    ///   - FALSE, if not mapped or if an error occurs.
+    ///   - FALSE, if an error occurs.
     bool Flush(void) const;
 
     /// Advise on memory map usage.
@@ -1201,25 +1341,14 @@ public:
     ///   - FALSE, if memory advise operation not successful.
     /// @sa
     ///   EMemMapAdvise, MemMapAdviseAddr
-    bool MemMapAdvise(EMemMapAdvise advise);
+    bool MemMapAdvise(EMemMapAdvise advise) const;
 
 private:
-    // Open file mapping for file with name m_FileName.
-    void x_Open(void);
-
-    // Unmap mapped memory and close all handles.
-    void x_Close(void);
-
     // Check that file is mapped, throw excepton otherwise.
     void x_Verify(void) const;
 
 private:
-    string              m_FileName;  ///< File name. 
-    Int8                m_FileSize;  ///< Size (in bytes) of mapped file;
-    SMemoryFileHandle*  m_Handle;    ///< Memory file handle.
-    SMemoryFileAttrs*   m_Attrs;     ///< Specify operations permitted on
-                                     ///< memory mapped file and mapping mode.
-    CMemoryFileSegment* m_Segment;   ///< Pointer to mapped segment.
+    void* m_Ptr;  ///< Pointer to mapped view of file.
 };
 
 
@@ -1359,54 +1488,80 @@ off_t CMemoryFileSegment::GetRealOffset(void) const
     return m_OffsetReal;
 }
 
-// CMemoryFile
+
+// CMemoryFileMap
+
 
 inline
-void* CMemoryFile::GetPtr(void) const
+off_t CMemoryFileMap::GetOffset(void* ptr) const
 {
-    if ( !m_Segment ) {
-        // Special case.
-        // Always return 0 if a file is unmapped or have zero length.
-        return 0;
-    }
-    return m_Segment->GetPtr();
+    return x_Get(ptr)->GetOffset();
 }
 
 inline
-Int8 CMemoryFile::GetFileSize(void) const
+size_t CMemoryFileMap::GetSize(void* ptr) const
+{
+    return x_Get(ptr)->GetSize();
+}
+
+inline
+Int8 CMemoryFileMap::GetFileSize(void) const
 {
     return CFile(m_FileName).GetLength();
 }
 
 inline
+bool CMemoryFileMap::Flush(void* ptr) const
+{
+    return x_Get(ptr)->Flush();
+}
+
+inline
+bool CMemoryFileMap::MemMapAdvise(void* ptr, EMemMapAdvise advise) const
+{
+    return x_Get(ptr)->MemMapAdvise(advise);
+}
+
+
+
+// CMemoryFile
+
+inline
+void* CMemoryFile::GetPtr(void) const
+{
+    return m_Ptr;
+}
+
+inline
 size_t CMemoryFile::GetSize(void) const
 {
-    if ( !m_Segment &&  m_FileSize == 0) {
+    // Special case: file is not mapped and its length is zero.
+    if ( !m_Ptr  &&  GetFileSize() == 0) {
         return 0;
     }
     x_Verify();
-    return m_Segment->GetSize();
+    return CMemoryFileMap::GetSize(m_Ptr);
 }
 
 inline
 off_t CMemoryFile::GetOffset(void) const
 {
     x_Verify();
-    return m_Segment->GetOffset();
+    return CMemoryFileMap::GetOffset(m_Ptr);
 }
 
 inline
 bool CMemoryFile::Flush(void) const
 {
     x_Verify();
-    return m_Segment->Flush();
+    return CMemoryFileMap::Flush(m_Ptr);
 }
 
 inline
-bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise)
+bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise) const
 {
     x_Verify();
-    return m_Segment->MemMapAdvise(advise);
+    return CMemoryFileMap::MemMapAdvise(m_Ptr, advise);
 }
 
 
@@ -1416,6 +1571,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/08/03 12:04:57  ivanov
+ * + CMemoryFile_Base   - base class for all memory mapping classes.
+ * + CMemoryFileSegment - auxiliary class for mapping a memory file region.
+ * + CMemoryFileMap     - class for support a partial file memory mapping.
+ * * CMemoryFile        - now is the same as CMemoryFileMap but have only
+ *                        one big mapped segment with offset 0 and length
+ *                        equal to length of file.
+ *
  * Revision 1.45  2004/07/29 18:20:40  ivanov
  * Added missed implementation for CMemoryFile::MemMapAdvise()
  *
