@@ -37,13 +37,17 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CFileObsolete::CFileObsolete(const string& path)
- : m_Path(path)
+    : m_Path(path)
 {
 }
 
+
 CFileObsolete::~CFileObsolete()
-{}
+{
+}
+
 
 bool CFileObsolete::OnRemove(const string& filename)
 {
@@ -62,9 +66,9 @@ void CFileObsolete::Remove(const string&  mask,
     }
 
     CTime current(CTime::eCurrent);
-    time_t cutoff_time = (unsigned)current.GetTimeT();
+    time_t cutoff_time = current.GetTimeT();
 
-    if (cutoff_time < age) {
+    if (cutoff_time < (time_t) age) {
         cutoff_time = 0;
     } else {
         cutoff_time -= age;
@@ -72,7 +76,7 @@ void CFileObsolete::Remove(const string&  mask,
 
     CDir::TEntries  content(dir.GetEntries(mask));
     ITERATE(CDir::TEntries, it, content) {
-        
+
         if (!(*it)->IsFile()) {
             continue;
         }
@@ -82,7 +86,7 @@ void CFileObsolete::Remove(const string&  mask,
         CTime access;
 
         bool res = 
-         (*it)->GetTime(&modification, &creation, &access);
+            (*it)->GetTime(&modification, &creation, &access);
 
         if (!res) {
             continue;
@@ -90,16 +94,16 @@ void CFileObsolete::Remove(const string&  mask,
 
         time_t check_time = 0;
 
-        switch (tmode) 
-        {
+        switch (tmode) {
         case eLastModification:
-            check_time = (unsigned) modification.GetTimeT();
+            check_time = modification.GetTimeT();
             break;
         case eLastAccess:
-            check_time = (unsigned) access.GetTimeT();
+            check_time = access.GetTimeT();
             break;
         default:
             _ASSERT(0);
+            continue;
         } // switch
 
         if (check_time < cutoff_time) {  // Remove file
@@ -107,7 +111,6 @@ void CFileObsolete::Remove(const string&  mask,
         }
 
     } // ITERATE
-
 }
 
 
@@ -117,6 +120,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/09 17:57:15  lavr
+ * Resolve signed/unsigned comparison issues
+ * Avoid file removal should Remove() get bad "tmode"
+ *
  * Revision 1.2  2003/12/05 18:50:23  kuznets
  * Fixed potential overflow on unsigned int arithmetics
  *
