@@ -381,6 +381,7 @@ on GetSourceFiles(lib)
 	-- Get everything in this path
 	set src_files to x_GetFolderContent(fullSourcePath, excfileList)
 	
+	if name of lib is "xncbi" then copy TheOUTPath & "/cfg/ncbicfg.c" to the end of src_files
 	return src_files
 end GetSourceFiles
 
@@ -459,7 +460,7 @@ on ValidatePaths()
 	end if
 	
 	if (do shell script "file " & ThePCREPath & "/include/jpeglib.h") contains "No such file or directory" then
-		return "Lib JPEG installation was not found at " & ThePCREPath
+		--return "Lib JPEG installation was not found at " & ThePCREPath
 	end if
 	
 	if (do shell script "file " & ThePCREPath & "/include/png.h") contains "No such file or directory" then
@@ -467,7 +468,7 @@ on ValidatePaths()
 	end if
 	
 	if (do shell script "file " & ThePCREPath & "/include/gif_lib.h") contains "No such file or directory" then
-		return "Lib GIF installation was not found at " & ThePCREPath
+		--return "Lib GIF installation was not found at " & ThePCREPath
 	end if
 	
 	if (do shell script "file " & TheSQLPath & "/include/sqlite.h") contains "No such file or directory" then
@@ -489,6 +490,13 @@ on ValidatePaths()
 	if (do shell script "file " & TheOUTPath) does not contain ": directory" then
 		do shell script "mkdir " & TheOUTPath
 		x_AddtoLog("The Output folder was created at: " & TheOUTPath)
+		do shell script "mkdir " & TheOUTPath & "/cfg"
+		set lib_dir to TheOUTPath & "/lib"
+		set lib_dir to x_Replace(lib_dir, "/", "\\/")
+		--set ncbicfg to "sed 's/@ncbi_runpath@/" & lib_dir & "/' <" & TheNCBIPath & "/src/corelib/ncbicfg.c.in >" & TheNCBIPath & "/src/corelib/ncbicfg.c"
+		set ncbicfg to "sed 's/@ncbi_runpath@/" & lib_dir & "/' <" & TheNCBIPath & "/src/corelib/ncbicfg.c.in >" & TheOUTPath & "/cfg/ncbicfg.c"
+		
+		do shell script ncbicfg
 		--return "The Output folder was not found at: " & TheOUTPath
 	end if
 	
@@ -536,6 +544,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/21 12:27:34  lebedev
+ * Fix to handle new plugins registration in the Toolkit
+ *
  * Revision 1.12  2004/12/21 13:23:22  lebedev
  * Option to automatically build generated project added
  *
