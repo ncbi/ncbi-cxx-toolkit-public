@@ -458,6 +458,41 @@ bool CCdd::EraseRows(std::deque<int>& KeepRows) {
 }
 
 
+bool CCdd::MoveToTop(int RowIndex) {
+//-------------------------------------------------------------------------
+// move the RowIndex-1 seq-align pair to the top of the alignment.
+// don't move RowIndex 0 (cuz that's the master).
+// moving RowIndex 1 doesn't do anything.
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_annot > >::iterator i;
+  list< CRef< CSeq_align > >::iterator j;
+  CRef< CSeq_align > SeqAlign;
+  int  RowCount;
+
+  if (RowIndex == 0) return(false);
+  if (RowIndex == 1) return(true);
+
+  if (IsSetSeqannot()) {
+    i = SetSeqannot().begin();
+    if ((*i)->GetData().IsAlign()) {
+      RowCount = 1;
+      for (j= (*i)->SetData().SetAlign().begin();
+           j!= (*i)->SetData().SetAlign().end(); j++) {
+        if (RowCount == RowIndex) {
+          SeqAlign = *j;
+          (*i)->SetData().SetAlign().erase(j);
+          (*i)->SetData().SetAlign().push_front(SeqAlign);
+          return(true);
+        }
+        RowCount++;
+        if (RowCount > RowIndex) break;
+      }
+    }
+  }
+  return(false);
+}
+
+
 bool CCdd::EraseRow(int RowIndex) {
 //-------------------------------------------------------------------------
 // Erase the RowIndex-1 seq-align.  don't erase RowIndex 0.
@@ -1255,6 +1290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/08/30 21:26:08  hurwitz
+ * added function to re-arrange rows of alignment
+ *
  * Revision 1.11  2002/08/23 14:33:05  hurwitz
  * prefer formal name over common name for taxonomy
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/08/30 21:25:26  hurwitz
+ * added function to re-arrange rows of alignment
+ *
  * Revision 1.6  2002/08/02 18:57:40  hurwitz
  * fix STL inconsistencies
  *
@@ -128,6 +131,7 @@ public:
     bool   GetMmdbId(int SeqIndex, int& id);          // get mmdb-id from sequence list
     bool   EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
     bool   EraseRow(int RowIndex);                    // erase a row from alignment
+    bool   MoveToTop(int RowIndex);                   // move row to top of alignment
     void   EraseSequences();                          // erase sequences not in alignment
     void   EraseSequence(int SeqIndex);               // erase a sequence from the set of seqs
     bool   SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
