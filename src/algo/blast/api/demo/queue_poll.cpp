@@ -35,8 +35,6 @@ static char const rcsid[] =
     "$Id$";
 
 #include <ncbi_pch.hpp>
-#include <sys/time.h>
-#include <unistd.h>
 
 // CRemoteBlast
 #include <algo/blast/api/remote_blast.hpp>
@@ -343,14 +341,6 @@ s_QueueSearch(string              & program,
     return cb4o;
 }
 
-inline double dbl_time(void)
-{
-    struct timeval tv;
-    gettimeofday(& tv, 0);
-    
-    return tv.tv_sec + double(tv.tv_usec) / 1000000.0;
-}
-
 static void
 s_ShowAlign(CNcbiOstream         & os,
             CRef<CRemoteBlast>   cb4o,
@@ -548,6 +538,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/08/02 20:09:25  bealer
+ * - Remove Unix dependencies.
+ *
  * Revision 1.8  2004/08/02 14:58:05  bealer
  * - Minor spelling glitch.
  *
