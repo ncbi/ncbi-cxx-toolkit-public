@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -48,6 +52,8 @@
 CResultSetMetaData::CResultSetMetaData(CDB_Result *rs)
   : m_totalColumns(rs->NofItems())
 {
+    SetIdent("CResultSetMetaData");
+
   // Fill out column metadata
   for(unsigned int i = 0; i < m_totalColumns; ++i ) {
   
@@ -67,9 +73,13 @@ CResultSetMetaData::~CResultSetMetaData()
 
 void CResultSetMetaData::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+
   if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
     RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
     if(dynamic_cast<CResultSet*>(e.GetSource()) != 0 ) {
+        _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
       delete this;
       //SetValid(false);
     }

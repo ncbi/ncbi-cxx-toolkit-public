@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.4  2002/04/15 19:11:42  kholodov
 * Changed GetContext() -> GetDriverContext
 *
@@ -56,7 +60,7 @@
 CDataSource::CDataSource(I_DriverContext *ctx, CNcbiOstream *out)
     : m_loginTimeout(30), m_context(ctx), m_poolUsed(false)
 {
-
+    SetIdent("CDataSource");
     SetLogStream(out);
 }
 
@@ -100,6 +104,9 @@ IConnection* CDataSource::CreateConnection()
 
 void CDataSource::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+
     if( dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
     }

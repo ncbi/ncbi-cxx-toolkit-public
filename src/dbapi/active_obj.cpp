@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/09/09 20:48:56  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.2  2002/02/05 17:16:23  kholodov
 * Put into right scope, invalidobjex retired
 *
@@ -48,7 +52,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CActiveObject::CActiveObject() : m_valid(true)
+CActiveObject::CActiveObject() 
 {
 }
 
@@ -77,16 +81,14 @@ void CActiveObject::Notify(const CDbapiEvent& e)
   }
 }
   
-void CActiveObject::CheckValid() const
+string CActiveObject::GetIdent() const
 {
-  // Disable check, not used anymore
-  //    if( !m_valid ) 
-  //throw CInvalidObjEx("CActiveObject::CheckValid(): invalid object state");
+    return m_ident;
 }
 
-void CActiveObject::SetValid(bool v)
+void CActiveObject::SetIdent(const string& name)
 {
-  m_valid = v;
+  m_ident = name;
 }
 
 END_NCBI_SCOPE

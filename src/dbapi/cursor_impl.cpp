@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.5  2002/08/26 15:35:56  kholodov
 * Added possibility to disable transaction log
 * while updating BLOBs
@@ -70,6 +74,8 @@ CCursor::CCursor(const string& name,
                  CConnection* conn)
     : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn), m_ostr(0)
 {
+    SetIdent("CCursor");
+
     m_cmd = m_conn->GetCDB_Connection()->Cursor(name.c_str(), sql.c_str(),
                                             nofArgs, batchSize);
 }
@@ -162,9 +168,13 @@ void CCursor::Close()
 
 void CCursor::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
             //SetValid(false);
         }

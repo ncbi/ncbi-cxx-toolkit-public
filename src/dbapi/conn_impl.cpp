@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.12  2002/09/09 20:48:56  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.11  2002/06/24 19:10:03  kholodov
 * Added more trace diagnostics
 *
@@ -86,12 +90,14 @@ CConnection::CConnection(CDataSource* ds)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false)
 {
     _TRACE("Default connection " << (void *)this << " created...");
+    SetIdent("CConnection");
 }
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
+    SetIdent("CConnection");
 }
 
 
@@ -214,6 +220,9 @@ ICursor* CConnection::CreateCursor(const string& name,
 
 void CConnection::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
         if( m_connCounter > 1 ) {
             --m_connCounter;
@@ -226,6 +235,7 @@ void CConnection::Action(const CDbapiEvent& e)
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
         if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
             
         }

@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.5  2002/05/16 22:11:11  kholodov
 * Improved: using minimum connections possible
 *
@@ -65,12 +69,13 @@ CCallableStatement::CCallableStatement(const string& proc,
 				       CConnection* conn)
   : CStatement(conn), m_status(0), m_nofParams(nofArgs)
 {
+    SetIdent("CCallableStatement");
   SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str(), nofArgs));
 }
 
 CCallableStatement::~CCallableStatement()
 {
-  Close();
+    //Close();
 }
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd() 
@@ -80,7 +85,6 @@ CDB_RPCCmd* CCallableStatement::GetRpcCmd()
 
 bool CCallableStatement::HasMoreResults()
 {
-  CheckValid();
 
   bool more = CStatement::HasMoreResults();
   if( more 
@@ -103,7 +107,6 @@ bool CCallableStatement::HasMoreResults()
 void CCallableStatement::SetParam(const CVariant& v, 
 				  const string& name)
 {
-  CheckValid();
 
   GetRpcCmd()->SetParam(name.empty() ? 0 : name.c_str(),
 			v.GetData(), false);
@@ -118,7 +121,7 @@ void CCallableStatement::SetOutputParam(const CVariant& v,
 		
 void CCallableStatement::Execute()
 {
-  CheckValid();
+  SetFailed(false);
   GetRpcCmd()->Send();
 }
 
@@ -130,7 +133,6 @@ void CCallableStatement::ExecuteUpdate()
 
 int CCallableStatement::GetReturnStatus()
 {
-  CheckValid();
   return m_status;
 }
 

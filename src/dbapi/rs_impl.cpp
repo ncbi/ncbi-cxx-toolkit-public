@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.13  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.12  2002/08/26 15:35:56  kholodov
 * Added possibility to disable transaction log
 * while updating BLOBs
@@ -89,12 +93,16 @@
 
 #include <corelib/ncbistr.hpp>
 
+#include <typeinfo>
+
 BEGIN_NCBI_SCOPE
 
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
       m_rs(rs), m_istr(0), m_ostr(0), m_column(-1)
 {
+    SetIdent("CResultSet");
+
     if( m_rs == 0 ) {
         _TRACE("CResultSet::ctor(): zero CDB_Result* argument");
         _ASSERT(0);
@@ -124,7 +132,6 @@ CResultSet::~CResultSet()
 
 const IResultSetMetaData* CResultSet::GetMetaData() 
 {
-    CheckValid();
     CResultSetMetaData *md = new CResultSetMetaData(m_rs);
     md->AddListener(this);
     AddListener(md);
@@ -252,12 +259,17 @@ void CResultSet::Close()
   
 void CResultSet::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this 
+           << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+ 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 
         RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
 
         if(dynamic_cast<CStatement*>(e.GetSource()) != 0
            || dynamic_cast<CCursor*>(e.GetSource()) != 0 ) {
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
             //SetValid(false);
         }

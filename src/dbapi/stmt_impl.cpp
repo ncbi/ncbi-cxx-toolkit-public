@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.3  2002/05/16 22:11:12  kholodov
 * Improved: using minimum connections possible
 *
@@ -55,8 +59,9 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CStatement::CStatement(CConnection* conn)
-    : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1)
+    : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1), m_failed(false)
 {
+    SetIdent("CStatement");
 }
 
 CStatement::~CStatement()
@@ -73,11 +78,13 @@ void CStatement::SetRs(CDB_Result *rs)
 
 bool CStatement::HasMoreResults() 
 {
-    CheckValid();
 
     bool more = GetBaseCmd()->HasMoreResults();
     if( more ) {
-        //delete m_rs;
+        if( GetBaseCmd()->HasFailed() ) {
+            SetFailed(true);
+            return false;
+        }
         m_rs = GetBaseCmd()->Result(); 
         if( m_rs == 0 )
             m_rowCount = GetBaseCmd()->RowCount();
@@ -88,7 +95,6 @@ bool CStatement::HasMoreResults()
 void CStatement::SetParam(const CVariant& v, 
                           const string& name)
 {
-    CheckValid();
 
     GetLangCmd()->SetParam(name.empty() ? 0 : name.c_str(),
                            v.GetData());
@@ -96,12 +102,13 @@ void CStatement::SetParam(const CVariant& v,
 
 void CStatement::Execute(const string& sql)
 {
-    CheckValid();
     if( m_cmd != 0 ) {
         delete m_cmd;
         m_cmd = 0;
         m_rowCount = -1;
     }
+
+    SetFailed(false);
 
     SetBaseCmd(m_conn->GetCDB_Connection()->LangCmd(sql.c_str()));
     GetBaseCmd()->Send();
@@ -111,6 +118,21 @@ void CStatement::ExecuteUpdate(const string& sql)
 {
     Execute(sql);
     while( HasMoreResults() );
+}
+
+bool CStatement::HasRows() 
+{
+    return m_rs != 0;
+}
+
+bool CStatement::Failed() 
+{
+    return m_failed;
+}
+
+int CStatement::GetRowCount() 
+{
+    return m_rowCount;
 }
 
 void CStatement::Close()
@@ -130,14 +152,12 @@ void CStatement::Close()
   
 void CStatement::Cancel()
 {
-    CheckValid();
     GetBaseCmd()->Cancel();
     m_rowCount = -1;
 }
 
 IResultSet* CStatement::GetResultSet()
 {
-    CheckValid();
     if( m_rs != 0 ) {
         CResultSet *ri = new CResultSet(m_conn, m_rs);
         ri->AddListener(this);
@@ -157,9 +177,13 @@ CDB_LangCmd* CStatement::GetLangCmd()
 
 void CStatement::Action(const CDbapiEvent& e) 
 {
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+           << "' from " << e.GetSource()->GetIdent());
+
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
             //SetValid(false);
         }

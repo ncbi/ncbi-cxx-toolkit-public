@@ -35,6 +35,10 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/09/09 20:48:56  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.3  2002/05/16 22:04:36  kholodov
 * Added: CDbapiClosedEvent()
 *
@@ -59,16 +63,18 @@ class CDbapiEvent
 {
 public:
 
-    CDbapiEvent(CActiveObject* src)
-        : m_source(src) {}
+    CDbapiEvent(CActiveObject* src, const string& name)
+        : m_source(src), m_name(name) {}
   
     virtual ~CDbapiEvent() {}
 
     CActiveObject* GetSource() const { return m_source; }
 
-
+    string GetName() const { return m_name; }
+    
 private:
     CActiveObject* m_source;
+    string m_name;
 };
 
 
@@ -76,7 +82,7 @@ class CDbapiDeletedEvent : public CDbapiEvent
 {
 public:
     CDbapiDeletedEvent(CActiveObject* src)
-        : CDbapiEvent(src) {}
+        : CDbapiEvent(src, "CDbapiDeletedEvent") {}
 
     virtual ~CDbapiDeletedEvent() {}
 };
@@ -85,7 +91,7 @@ class CDbapiClosedEvent : public CDbapiEvent
 {
 public:
     CDbapiClosedEvent(CActiveObject* src)
-        : CDbapiEvent(src) {}
+        : CDbapiEvent(src, "CDbapiClosedEvent") {}
 
     virtual ~CDbapiClosedEvent() {}
 };
@@ -112,15 +118,17 @@ public:
     void RemoveListener(IEventListener* obj);
     void Notify(const CDbapiEvent& e);
 
-    void CheckValid() const; // Disabled, not used anymore
-    void SetValid(bool v);
 
+    string GetIdent() const;
+
+protected:
+    void SetIdent(const string& name);
 
 private:
     typedef set<IEventListener*> TLList;
 
     TLList m_listenerList;
-    bool m_valid;
+    string m_ident;  // Object identificator
 
 };
 

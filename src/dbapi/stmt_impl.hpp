@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.2  2002/05/16 22:11:12  kholodov
 * Improved: using minimum connections possible
 *
@@ -67,9 +71,9 @@ public:
 
     virtual bool HasMoreResults();
 
-    virtual bool HasRows() {
-        return m_rs != 0;
-    }
+    virtual bool HasRows();
+    virtual bool Failed();
+    virtual int GetRowCount();
   
     
     virtual void Execute(const string& sql);
@@ -80,13 +84,7 @@ public:
     virtual void SetParam(const CVariant& v, 
                           const string& name);
 
-    virtual int GetRowCount() {
-        return m_rowCount;
-    }
-
     CDB_Result* GetResult() {
-        if( m_rs == 0 )
-            throw CDbapiException("CStatementImpl::GetResult(): no resultset returned");
         return m_rs;
     }
 
@@ -105,11 +103,16 @@ protected:
 
     void SetRs(CDB_Result *rs);
 
+    void SetFailed(bool f) {
+        m_failed = f;
+    }
+
 private:
     class CConnection* m_conn;
     I_BaseCmd *m_cmd;
     CDB_Result *m_rs;
     int m_rowCount;
+    bool m_failed;
 
 };
 

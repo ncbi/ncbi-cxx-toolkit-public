@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
 * Revision 1.3  2002/06/11 18:21:52  kholodov
 * Fixed: column numbers are one-based for metadata
 *
@@ -97,28 +101,24 @@ private:
 inline
 unsigned int CResultSetMetaData::GetTotalColumns() const 
 {
-  CheckValid();
   return m_totalColumns;
 }
 
 inline
 EDB_Type CResultSetMetaData::GetType(unsigned int idx) const 
 {
-  CheckValid();
   return m_colInfo[idx-1].m_type;
 }
 
 inline
 int CResultSetMetaData::GetMaxSize(unsigned int idx) const 
 {
-  CheckValid();
   return m_colInfo[idx-1].m_maxSize;
 }
 
 inline
 string CResultSetMetaData::GetName(unsigned int idx) const 
 {
-  CheckValid();
   return m_colInfo[idx-1].m_name;
 }
 //====================================================================
