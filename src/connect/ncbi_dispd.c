@@ -134,54 +134,43 @@ static int/*bool*/ s_ParseHeader(const char* header, void *data,
 
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
-    static const char service[] = "service=";
-    static const char address[] = "&address=";
-    static const char platform[] = "&platform=";
+    static const char service[]  = "service";
+    static const char address[]  = "address";
+    static const char platform[] = "platform";
     SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
-    const char *tag;
-    char node[128];
-    CONNECTOR conn;
-    size_t len;
+    CONNECTOR conn = 0;
+    const char *argval;
+    char  node[128];
     char* s;
     CONN c;
 
-    /* Form service arguments (as CGI arguments) */
-    if (sizeof(service) + (len=strlen(iter->service)) > sizeof(net_info->args))
-        return 0/*failed*/;
-    memcpy(&net_info->args[0], service, sizeof(service) - 1);
-    memcpy(&net_info->args[sizeof(service) - 1], iter->service, len);
-    len += sizeof(service) - 1;
-    if ((tag = SOCK_gethostbyaddr(0, node, sizeof(node))) != 0 && *tag) {
-        size_t tlen = strlen(tag);
-        if (len + sizeof(address) + tlen <= sizeof(net_info->args)) {
-            memcpy(&net_info->args[len], address, sizeof(address) - 1);
-            memcpy(&net_info->args[len + sizeof(address) - 1], tag, tlen);
-            len += sizeof(address) - 1 + tlen;
+    /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
+    if ((argval = CORE_GetPlatform()) != 0 && *argval)
+        ConnNetInfo_PreOverrideArg(net_info, platform, argval);
+    if ((argval = SOCK_gethostbyaddr(0, node, sizeof(node))) != 0 && *argval)
+        ConnNetInfo_PreOverrideArg(net_info, address, argval);
+    if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
+        ConnNetInfo_DeleteArg(net_info, platform);
+        if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
+            ConnNetInfo_DeleteArg(net_info, address);
+            if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service))
+                return 0/*failed*/;
         }
     }
-    if ((tag = CORE_GetPlatform()) != 0 && *tag) {
-        size_t tlen = strlen(tag);
-        if (len + sizeof(platform) + tlen <= sizeof(net_info->args)) {
-            memcpy(&net_info->args[len], platform, sizeof(platform) - 1);
-            memcpy(&net_info->args[len + sizeof(platform) - 1], tag, tlen);
-            len += sizeof(platform) - 1 + tlen;
-        }
-    }
-    net_info->args[len] = '\0';
     /* Reset request method to be GET ('cause no HTTP body will follow) */
     net_info->req_method = eReqMethod_Get;
     /* Obtain additional header information */
-    if ((s = SERV_Print(iter)) != 0)
-        ConnNetInfo_OverrideUserHeader(net_info, s);
-    ConnNetInfo_OverrideUserHeader(net_info, net_info->stateless
-                                   ? "Client-Mode: STATELESS_ONLY\r\n"
-                                   : "Client-Mode: STATEFUL_CAPABLE\r\n");
-    ConnNetInfo_OverrideUserHeader(net_info,
-                                   "Dispatch-Mode: INFORMATION_ONLY\r\n");
-    /* All the rest in the net_info structure is fine with us */
-    conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush/*flags*/,
-                                  s_ParseHeader, 0/*adjust net_info*/,
-                                  iter/*adj.data*/, 0/*adj.cleanup*/);
+    if ((!(s = SERV_Print(iter))
+         || ConnNetInfo_OverrideUserHeader(net_info, s))                     &&
+        ConnNetInfo_OverrideUserHeader(net_info, net_info->stateless
+                                       ?"Client-Mode: STATELESS_ONLY\r\n"
+                                       :"Client-Mode: STATEFUL_CAPABLE\r\n") &&
+        ConnNetInfo_OverrideUserHeader(net_info,
+                                       "Dispatch-Mode: INFORMATION_ONLY\r\n")){
+        /* All the rest in the net_info structure is fine with us */
+        conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
+                                      0/*adjust*/, iter/*data*/, 0/*cleanup*/);
+    }
     if (s) {
         ConnNetInfo_DeleteUserHeader(net_info, s);
         free(s);
@@ -193,7 +182,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         return 0/*failed*/;
     }
     CONN_Flush(c);
-    /* This will also send all the HTTP data, we'll get a callback */
+    /* This will also send all the HTTP data, and trigger header callback */
     CONN_Close(c);
     return ((SDISPD_Data*) iter->data)->n_node != 0;
 }
@@ -388,6 +377,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2002/10/21 18:32:35  lavr
+ * Append service arguments "address" and "platform" in dispatcher requests
+ *
  * Revision 6.45  2002/10/11 19:55:20  lavr
  * Append dispatcher request query with address and platform information
  * (as the old dispatcher used to do). Also, take advantage of various new

@@ -49,13 +49,14 @@ typedef struct SServiceConnectorTag {
     const char*        service;         /* Service name (final) to use       */
     TSERV_Type         types;           /* Server types, record keeping only */
     SConnNetInfo*      net_info;        /* Connection information            */
+    const char*        user_header;     /* User header currently set         */
     SERV_ITER          iter;            /* Dispatcher information            */
     SMetaConnector     meta;            /* Low level comm.conn and its VT    */
     unsigned int       host;            /* Parsed connection info...         */
     unsigned short     port;
     ticket_t           ticket;
     SSERVICE_Extra     params;
-    char               myargs[1];       /* additional parameters             */
+    char               args[1];         /* Additional CGI parameters         */
 } SServiceConnector;
 
 
@@ -88,10 +89,10 @@ static const char* s_VT_GetType(CONNECTOR connector)
 }
 
 
-static char* s_GetMyargs(void)
+static char* s_GetArgs(void)
 {
     static const char platform[] = "&platform=";
-    static const char address[] = "address=";
+    static const char address[]  = "address=";
     size_t nodelen, archlen, buflen;
     const char* arch;
     char node[128];
@@ -119,8 +120,9 @@ static char* s_GetMyargs(void)
     }
     if (archlen) {
         strcpy(&p[buflen], nodelen ? platform : platform + 1);
-        buflen += nodelen ? sizeof(platform)-1 : sizeof(platform)-2;
+        buflen += nodelen ? sizeof(platform) - 1 : sizeof(platform) - 2;
         strcpy(&p[buflen], arch);
+        buflen += archlen;
     }
     return p;
 }
@@ -128,6 +130,7 @@ static char* s_GetMyargs(void)
 
 static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
+    uuu->user_header = 0;
     if (!(uuu->iter = SERV_OpenEx(uuu->service, uuu->types,
                                   SERV_LOCALHOST, uuu->net_info, 0, 0)))
         return 0/*false*/;
@@ -137,6 +140,8 @@ static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 
 static void s_CloseDispatcher(SServiceConnector* uuu)
 {
+    if (uuu->user_header)
+        free((void*) uuu->user_header);
     SERV_Close(uuu->iter);
     uuu->iter = 0;
 }
@@ -178,7 +183,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
     while (header && *header) {
         if (strncasecmp(header, HTTP_CONNECTION_INFO,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
-            unsigned int i1, i2, i3, i4, ticket;
+            unsigned int  i1, i2, i3, i4, ticket;
             unsigned char o1, o2, o3, o4;
             char host[32];
 
@@ -215,8 +220,8 @@ static int/*bool*/ s_ParseHeader(const char* header,
 static char* s_AdjustNetParams(SConnNetInfo*  net_info,
                                EReqMethod     req_method,
                                const char*    cgi_name,
-                               const char*    first_arg,
-                               const char*    first_val,
+                               const char*    service,
+                               const char*    args,
                                const char*    cgi_args,
                                const char*    static_header,
                                EMIME_Type     mime_t,
@@ -238,27 +243,24 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
         net_info->args[sizeof(net_info->args) - 1] = 0;
     }
 
-    if (first_arg) {
-        size_t m = strlen(net_info->args);
-        int/*bool*/ amp = m ? 1 : 0;
-        size_t n = strlen(first_arg) +
-            (first_val ? 1/*=*/ + strlen(first_val) : 0) +
-            (amp ? 1/*&*/ : 0);
-        if (n < sizeof(net_info->args)) {
-            size_t p = sizeof(net_info->args) - n;
-            if (++m > p)
-                m = p;
-            memmove(&net_info->args[n], &net_info->args[0], m);
-            strcpy(net_info->args, first_arg);
-            if (first_val) {
-                strcat(net_info->args, "=");
-                strcat(net_info->args, first_val);
+    if (service) {
+        ConnNetInfo_PrependArg(net_info, args, 0);
+        if (!ConnNetInfo_PreOverrideArg(net_info, "service", service)) {
+            const char* a = args;
+            while (a && *a) {
+                ConnNetInfo_DeleteArg(net_info, a);
+                if (ConnNetInfo_PreOverrideArg(net_info, "service", service))
+                    break;
+                a += strcspn(a, "&");
+                if (*a == '&')
+                    a++;
             }
-            if (amp)
-                net_info->args[n - 1] = '&';
-            net_info->args[n + m - 1] = 0;
-        } else
-            *net_info->args = 0;
+            if (!a || !*a) {
+                if (dynamic_header)
+                    free(dynamic_header);
+                return 0/*failed*/;
+            }
+        }
     }
 
     if (mime_t == SERV_MIME_TYPE_UNDEFINED    ||
@@ -335,7 +337,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
             user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
                                             NCBID_WEBPATH,
-                                            "service", uuu->service,
+                                            uuu->service, uuu->args,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
                                             user_header, info->mime_t,
                                             info->mime_s, info->mime_e,
@@ -363,7 +365,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
                                             uuu->net_info->path,
-                                            "service", uuu->service,
+                                            uuu->service, uuu->args,
                                             uuu->net_info->args,
                                             user_header, info->mime_t,
                                             info->mime_s, info->mime_e,
@@ -379,9 +381,13 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     if (!user_header)
         return 0/*false - not adjusted*/;
 
-    ConnNetInfo_SetUserHeader(net_info, user_header);
-    assert(strcmp(net_info->http_user_header, user_header) == 0);
-    free((char*) user_header);
+    if (uuu->user_header) {
+        ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
+        free((void*) uuu->user_header);
+    }
+    uuu->user_header = user_header;
+    if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
+        return 0/*false - not adjusted*/;
 
     if (info->type == fSERV_Ncbid || (info->type & fSERV_Http) != 0) {
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
@@ -404,7 +410,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         SConnNetInfo*      net_info,
                         int/*bool*/        second_try)
 {
-    const char* user_header = 0;
+    const char* user_header = 0; /*may assign "", or be non-empty dynamic str*/
 
     if (info) {
         /* Not a firewall/relay connection here */
@@ -428,7 +434,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             }
             user_header = s_AdjustNetParams(net_info, req_method,
                                             NCBID_WEBPATH,
-                                            "service", uuu->service,
+                                            uuu->service, uuu->args,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
                                             user_header, info->mime_t,
                                             info->mime_s, info->mime_e, 0);
@@ -458,11 +464,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             if (net_info->stateless) {
                 /* This will be a pass-thru connection, socket otherwise */
                 user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
-                user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
-                                                0,
-                                                "service", uuu->service,
-                                                0,
-                                                user_header, info->mime_t,
+                user_header = s_AdjustNetParams(net_info, eReqMethod_Post, 0,
+                                                uuu->service, uuu->args,
+                                                0, user_header, info->mime_t,
                                                 info->mime_s, info->mime_e, 0);
                 if (!user_header)
                     return 0;
@@ -473,16 +477,15 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             return 0;
         }
     } else {
-        /* Firewall, connection to dispatcher, special tags */
+        /* Firewall/relay connection to dispatcher, special tags */
         user_header = net_info->stateless
             ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
             : "Client-Mode: STATEFUL_CAPABLE\r\n";
-        user_header = s_AdjustNetParams(net_info,
-                                        net_info->stateless
-                                        ? eReqMethod_Post : eReqMethod_Get,
-                                        0, second_try ? 0 : "service",
-                                        uuu->service, 0,
-                                        user_header,
+        user_header = s_AdjustNetParams(net_info, net_info->stateless
+                                        ? eReqMethod_Post : eReqMethod_Get, 0,
+                                        second_try ? 0 : uuu->service,
+                                        second_try ? 0 : uuu->args,
+                                        0, user_header,
                                         SERV_MIME_TYPE_UNDEFINED,
                                         SERV_MIME_SUBTYPE_UNDEFINED,
                                         eENCOD_None, 0);
@@ -503,12 +506,14 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             }
             user_header = iter_header;
         } else if (!*user_header)
-            user_header = 0; /* Special case of assignment of static "" */
-        ConnNetInfo_SetUserHeader(net_info, user_header);
-        assert(!user_header ||
-               strcmp(net_info->http_user_header, user_header) == 0);
-        if (user_header)
-            free((char*) user_header);
+            user_header = 0; /* special case of assignment of literal "" */
+        if (uuu->user_header) {
+            ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
+            free((void*) uuu->user_header);
+        }
+        uuu->user_header = user_header;
+        if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
+            return 0;
 
         if (!net_info->stateless && (!info || info->type == fSERV_Ncbid)) {
             /* HTTP connector is auxiliary only */
@@ -537,11 +542,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 assert(0);
             }
             if (!uuu->host)
-                return 0/*No connection info returned*/;
+                return 0/*failed, no connection info returned*/;
             if (uuu->host == (unsigned int)(-1)) {
                 assert(!info && !second_try); /*firewall mode only*/
                 /* Try to use stateless mode instead */
-                net_info->stateless = 1;
+                net_info->stateless = 1/*true*/;
                 return s_Open(uuu, timeout, 0, net_info, 1/*second try*/);
             }
             SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
@@ -603,16 +608,17 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     SMetaConnector* meta = connector->meta;
-    EIO_Status status = eIO_Unknown;
     const SSERV_Info* info;
     SConnNetInfo* net_info;
+    EIO_Status status;
     CONNECTOR conn;
 
     assert(!uuu->meta.list && !uuu->name);
-    for (;;) {
-        if (!uuu->iter && !s_OpenDispatcher(uuu))
-            break;
+    if (!uuu->iter && !s_OpenDispatcher(uuu))
+        return eIO_Unknown;
 
+    status = eIO_Unknown;
+    for (;;) {
         if (uuu->net_info->firewall)
             info = 0;
         else if (!(info = s_GetNextInfo(uuu)))
@@ -671,7 +677,6 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                 continue;
             }
         }
-
         return eIO_Success;
     }
 
@@ -732,15 +737,15 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 {
     CONNECTOR          ccc;
     SServiceConnector* xxx;
-    char*           myargs;
+    char*             args;
 
     if (!service || !*service)
         return 0;
 
-    myargs = s_GetMyargs();
-    ccc = (SConnector*)        malloc(sizeof(SConnector));
-    xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector) +
-                                      (myargs ? strlen(myargs) : 0));
+    args = s_GetArgs();
+    ccc  = (SConnector*)        malloc(sizeof(SConnector));
+    xxx  = (SServiceConnector*) malloc(sizeof(SServiceConnector) +
+                                       (args ? strlen(args) : 0));
     xxx->name     = 0;
     xxx->service  = SERV_ServiceName(service);
     xxx->net_info = net_info
@@ -757,13 +762,11 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         memset(&xxx->params, 0, sizeof(xxx->params));
     memset(&xxx->meta, 0, sizeof(xxx->meta));
 
-    if (myargs) {
-        strcpy(xxx->myargs, myargs);
-        free(myargs);
+    if (args) {
+        strcpy(xxx->args, args);
+        free(args);
     } else
-        xxx->myargs[0] = '\0';
-
-    assert(xxx->net_info->http_user_header == 0);
+        xxx->args[0] = '\0';
 
     /* initialize connector structure */
     ccc->handle  = xxx;
@@ -788,6 +791,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2002/10/21 18:32:28  lavr
+ * Append service arguments "address" and "platform" in dispatcher requests
+ *
  * Revision 6.43  2002/10/11 19:56:42  lavr
  * Add "myargs" into connector structure (for later use in requests to
  * show address and platform of the dispatcher's requestors)
