@@ -60,6 +60,8 @@ AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
 AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
+AC_ARG_WITH(runpath,
+   [ --without-runpath       do not provide runpath to the built DLLs])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(mt,
@@ -116,7 +118,8 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll mt 64 exe autodep suffix hostspec execopy bincopy \
+debug optimization dll runpath mt 64 \
+exe autodep suffix hostspec execopy bincopy \
 ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
 
 changequote(, )dnl
@@ -400,6 +403,8 @@ LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
 
 #### DLLs
+
+# Generate position-independent code (PIC)
 case "$compiler" in
  GCC )
    CFLAGS_DLL="-fPIC"
@@ -411,18 +416,27 @@ case "$compiler" in
    ;;
 esac
 
-case "$host:$compiler" in
- *:WorkShop* )
-   CONF_f_runpath="-R"
-   ;;
- *-linux*:GCC )
-   CONF_f_runpath="-Xlinker -rpath "
-   ;;
-   mips-sgi-irix6\.*:GCC | *:MIPSpro73 )
-   CONF_f_runpath="-rpath "
-   ;;
-esac
+# Provide runpath to the C++ Toolkit DLLs
+if test "$with_dll" = "no" ; then
+   with_runpath="no"
+fi
+if test "$with_runpath" != "no"; then
+   case "$host:$compiler" in
+    *:WorkShop* )
+      CONF_f_runpath="-R"
+      ;;
+    *-linux*:GCC )
+      CONF_f_runpath="-Xlinker -rpath "
+      ;;
+    mips-sgi-irix6\.*:GCC | *:MIPSpro73 )
+      CONF_f_runpath="-rpath "
+      ;;
+   esac
+else
+   CONF_f_runpath=
+fi
 
+# Whether to build DLLs or static (and whether by default, or forcibly)
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host:$compiler" in
@@ -448,6 +462,7 @@ elif test "$with_dll" = "no" ; then
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 fi
 
+# Linker command-line to build DLL
 case "$compiler" in
  GCC | MIPSpro73 )
    LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"

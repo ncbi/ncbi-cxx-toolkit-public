@@ -376,10 +376,19 @@ enforced unconditionally (even if you explicitely specified
 <i><b>--with-dll</b></i>).
 
 <p>
-Note, that in order to run executables linked against dynamic libraries,
-you will have to "register" the location of these libraries.
-You can use environment variable <i>$LD_LIBRARY_PATH</i> for this purpose,
-like this:
+Note, that in order to be able to <i>run</i> executables linked against
+dynamic libraries (DLLs), you have to specify the DLLs' location(<i>runpath</i>).
+By default, we automagically hard-code (using linker flags like <b>-R.....</b>)
+the <i>runpath</i> in the executables to point to the NCBI C++ Toolkit
+<i><b>lib/</b></i> directory.
+
+If however you do not want to hard-code <i>runpath</i> into the executables,
+then you should use the configuration option:
+<ul>
+  <li> <i><b>--without-runpath</b></i>
+</ul>
+Then, you can use environment variable <i>$LD_LIBRARY_PATH</i> to specify
+<i>runpath</i> for the executables, like this:
 <pre>
   setenv LD_LIBRARY_PATH "/home/USERNAME/c++/WorkShop6-ReleaseDLL/lib"
   /home/USERNAME/c++/WorkShop6-ReleaseDLL/bin/coretest
