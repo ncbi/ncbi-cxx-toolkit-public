@@ -68,7 +68,7 @@ CSymResolver::~CSymResolver(void)
 }
 
 
-static string s_StripDefine(const string& define)
+string CSymResolver::StripDefine(const string& define)
 {
     return string(define, 2, define.length() - 3);
 }
@@ -81,7 +81,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
 	    return;
     }
 
-    string str_define = s_StripDefine(define);
+    string str_define = StripDefine(define);
 
     CSimpleMakeFileContents::TContents::const_iterator m =
         m_Cache.find(str_define);
@@ -102,6 +102,19 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
     m_Cache[str_define] = *resolved_def;
 }
 
+
+CSymResolver& CSymResolver::operator+= (const CSymResolver& src)
+{
+    // Clear cache for resolved defines
+    m_Cache.clear();
+    
+    // Add contents of src
+    copy(src.m_Data.m_Contents.begin(), 
+         src.m_Data.m_Contents.end(), 
+         inserter(m_Data.m_Contents, m_Data.m_Contents.end()));
+
+    return *this;
+}
 
 bool CSymResolver::IsDefine(const string& param)
 {
@@ -137,12 +150,38 @@ void CSymResolver::SetFrom(const CSymResolver& resolver)
 }
 
 
+//-----------------------------------------------------------------------------
+// Filter opt defines like $(SRC_C:.core_%)           to $(SRC_C).
+// or $(OBJMGR_LIBS:dbapi_driver=dbapi_driver-static) to $(OBJMGR_LIBS)
+string FilterDefine(const string& define)
+{
+    if ( !CSymResolver::IsDefine(define) )
+        return define;
+
+    string res;
+    for(string::const_iterator p = define.begin(); p != define.end(); ++p) {
+        char ch = *p;
+        if ( !(ch == '$' || 
+               ch == '(' || 
+               ch == '_' || 
+               isalpha(ch) ) )
+            break;
+        res += ch;
+    }
+    res += ')';
+    return res;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/04 23:57:22  gorelenk
+ * Added definition of function FilterDefine.
+ *
  * Revision 1.4  2004/01/28 17:55:50  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
