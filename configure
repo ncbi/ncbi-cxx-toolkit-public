@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -17316,7 +17316,10 @@ if test "$with_bdb" = "no" ; then
    BERKELEYDB_PATH="No_BerkeleyDB"
    BERKELEYDB_INCLUDE=
    BERKELEYDB_LIBS=
-   WithoutPackages="$WithoutPackages BerkeleyDB"
+   BERKELEYDB_STATIC_LIBS=
+   BERKELEYDB_CXX_LIBS=
+   BERKELEYDB_CXX_STATIC_LIBS=
+   WithoutPackages="$WithoutPackages BerkeleyDB BerkeleyDB++"
 else
    WithPackages="$WithPackages BerkeleyDB"
 
@@ -17324,6 +17327,80 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BERKELEY_DB 1
 _ACEOF
 
+   : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+   if test -f "${BERKELEYDB_LIBPATH}/libdb_cxx-static.a"; then
+      BERKELEYDB_CXX_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb_cxx-static -ldb-static"
+   else
+      BERKELEYDB_CXX_STATIC_LIBS=${BERKELEYDB_CXX_LIBS}
+   fi
+   echo "$as_me:$LINENO: checking for native Berkeley DB C++ wrappers (optional)" >&5
+echo $ECHO_N "checking for native Berkeley DB C++ wrappers (optional)... $ECHO_C" >&6
+if test "${ncbi_cv_lib_berkeley_db_cxx+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$BERKELEYDB_CXX_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <db_cxx.h>
+int
+main ()
+{
+DbEnv env(0);  Db db(&env, 0);  db.set_app_private(NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_berkeley_db_cxx=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_berkeley_db_cxx=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db_cxx" >&5
+echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_cxx" >&6
+   if test "$ncbi_cv_lib_berkeley_db_cxx" = "yes"; then
+      WithPackages="$WithPackages BerkeleyDB++"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BERKELEY_DB_CXX 1
+_ACEOF
+
+   else
+      BERKELEYDB_CXX_LIBS=
+      BERKELEYDB_CXX_STATIC_LIBS=
+      WithoutPackages="$WithoutPackages BerkeleyDB++"
+   fi
 fi
 
 
@@ -22534,6 +22611,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -23366,8 +23445,10 @@ s,@SYBASE_DBLIBS@,$SYBASE_DBLIBS,;t t
 s,@MYSQL_INCLUDE@,$MYSQL_INCLUDE,;t t
 s,@MYSQL_LIBS@,$MYSQL_LIBS,;t t
 s,@BERKELEYDB_INCLUDE@,$BERKELEYDB_INCLUDE,;t t
-s,@BERKELEYDB_STATIC_LIBS@,$BERKELEYDB_STATIC_LIBS,;t t
 s,@BERKELEYDB_LIBS@,$BERKELEYDB_LIBS,;t t
+s,@BERKELEYDB_STATIC_LIBS@,$BERKELEYDB_STATIC_LIBS,;t t
+s,@BERKELEYDB_CXX_LIBS@,$BERKELEYDB_CXX_LIBS,;t t
+s,@BERKELEYDB_CXX_STATIC_LIBS@,$BERKELEYDB_CXX_STATIC_LIBS,;t t
 s,@ODBC_INCLUDE@,$ODBC_INCLUDE,;t t
 s,@ODBC_LIBS@,$ODBC_LIBS,;t t
 s,@PYTHON_INCLUDE@,$PYTHON_INCLUDE,;t t

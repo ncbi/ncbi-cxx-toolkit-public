@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.356 2005/03/17 16:09:30 ucko Exp $
+#  $Id: configure.ac,v 1.357 2005/03/17 19:11:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2863,11 +2863,38 @@ if test "$with_bdb" = "no" ; then
    BERKELEYDB_PATH="No_BerkeleyDB"
    BERKELEYDB_INCLUDE=
    BERKELEYDB_LIBS=
-   WithoutPackages="$WithoutPackages BerkeleyDB"
+   BERKELEYDB_STATIC_LIBS=
+   BERKELEYDB_CXX_LIBS=
+   BERKELEYDB_CXX_STATIC_LIBS=
+   WithoutPackages="$WithoutPackages BerkeleyDB BerkeleyDB++"
 else
    WithPackages="$WithPackages BerkeleyDB"
    AC_DEFINE(HAVE_BERKELEY_DB, 1,
              [Define to 1 if Berkeley DB libraries are available.])
+   : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+   if test -f "${BERKELEYDB_LIBPATH}/libdb_cxx-static.a"; then
+      BERKELEYDB_CXX_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb_cxx-static -ldb-static"
+   else
+      BERKELEYDB_CXX_STATIC_LIBS=${BERKELEYDB_CXX_LIBS}
+   fi
+   AC_CACHE_CHECK([for native Berkeley DB C++ wrappers (optional)],
+      ncbi_cv_lib_berkeley_db_cxx,
+      [CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$BERKELEYDB_CXX_LIBS $orig_LIBS"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <db_cxx.h>]],
+          [[DbEnv env(0);  Db db(&env, 0);  db.set_app_private(NULL);]])],
+          [ncbi_cv_lib_berkeley_db_cxx=yes],
+          [ncbi_cv_lib_berkeley_db_cxx=no])])
+   if test "$ncbi_cv_lib_berkeley_db_cxx" = "yes"; then
+      WithPackages="$WithPackages BerkeleyDB++"
+      AC_DEFINE(HAVE_BERKELEY_DB_CXX, 1,
+                [Define to 1 if the Berkeley `db_cxx' library is available.])
+   else
+      BERKELEYDB_CXX_LIBS=
+      BERKELEYDB_CXX_STATIC_LIBS=
+      WithoutPackages="$WithoutPackages BerkeleyDB++"
+   fi
 fi
 
 
@@ -4307,8 +4334,10 @@ AC_SUBST(SYBASE_DBLIBS)
 AC_SUBST(MYSQL_INCLUDE)
 AC_SUBST(MYSQL_LIBS)
 AC_SUBST(BERKELEYDB_INCLUDE)
-AC_SUBST(BERKELEYDB_STATIC_LIBS)
 AC_SUBST(BERKELEYDB_LIBS)
+AC_SUBST(BERKELEYDB_STATIC_LIBS)
+AC_SUBST(BERKELEYDB_CXX_LIBS)
+AC_SUBST(BERKELEYDB_CXX_STATIC_LIBS)
 AC_SUBST(ODBC_INCLUDE)
 AC_SUBST(ODBC_LIBS)
 AC_SUBST(PYTHON_INCLUDE)
