@@ -33,6 +33,7 @@ BEGIN { status=0 }
 /^ >> Assertion:/                    { status=1 }
 /^Error: /                           { status=1 }
 /:error:Error:/                      { status=1 }
+/^compiler\([^)]+\) error:/          { status=1 }
 END { exit status } # This must be the last END block.
 
 
