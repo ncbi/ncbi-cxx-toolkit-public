@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/01/07 16:15:09  vakatov
+* Explicitely specify "NCBI_NS_NCBI::" in the preprocessor macros
+*
 * Revision 1.9  1998/12/28 17:56:26  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -67,18 +70,18 @@ BEGIN_NCBI_SCOPE
 "{" << __FILE__ << ":" << __LINE__ << "} "
 
 #  define _TRACE(message)  { \
-    CNcbiDiag _diag_(eDiag_Trace); \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace); \
     _diag_ << _FILE_LINE << message; \
 }
 
 #  define _TROUBLE  { \
-    CNcbiDiag _diag_(eDiag_Fatal); \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
     _diag_ << _FILE_LINE << "Trouble!"; \
 }
 #  define _ASSERT(expr)  { \
     if ( !(expr) ) \
         { \
-              CNcbiDiag _diag_(eDiag_Fatal); \
+              NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Fatal); \
               _diag_ << _FILE_LINE << "Assertion failed: " << #expr; \
         } \
 }

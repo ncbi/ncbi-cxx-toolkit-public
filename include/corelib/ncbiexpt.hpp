@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/01/07 16:15:09  vakatov
+* Explicitely specify "NCBI_NS_NCBI::" in the preprocessor macros
+*
 * Revision 1.8  1999/01/04 22:41:41  vakatov
 * Do not use so-called "hardware-exceptions" as these are not supported
 * (on the signal level) by UNIX
@@ -90,10 +93,11 @@ BEGIN_NCBI_SCOPE
 
 // Standard handling of "exception"-derived exceptions
 #define STD_CATCH(message) \
-catch (exception& e) \
+catch (NCBI_NS_STD::exception& e) \
 { \
-      CNcbiDiag diag; \
-      diag << Error << "[" << message << "]" << "Exception: " << e.what(); \
+      NCBI_NS_NCBI::CNcbiDiag diag; \
+      diag << NCBI_NS_NCBI::Error << "[" << message << "]" \
+           << "Exception: " << e.what(); \
 }
 
 // Standard handling of "exception"-derived and all other exceptions
@@ -101,8 +105,9 @@ catch (exception& e) \
 STD_CATCH(message) \
     catch (...) \
 { \
-      CNcbiDiag diag; \
-      diag << Error << "[" << message << "]" << "Unknown exception"; \
+      NCBI_NS_NCBI::CNcbiDiag diag; \
+      diag << NCBI_NS_NCBI::Error << "[" << message << "]" \
+           << "Unknown exception"; \
 }
 
 
