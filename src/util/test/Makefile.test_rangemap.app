@@ -10,4 +10,4 @@ APP = testrangemap
 OBJ = testrangemap
 LIB = xutil xncbi
 
-CHECK_CMD =
+CHECK_CMD = testrangemap
