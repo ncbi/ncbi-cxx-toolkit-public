@@ -64,6 +64,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/05/06 19:07:25  lavr
+ * -#include <stdlib>; -ConnNetInfo_Print(); +ConnNetInfo_Log()
+ *
  * Revision 6.20  2002/02/20 19:12:03  lavr
  * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
  *
@@ -139,7 +142,6 @@
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_connection.h>
-#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -240,21 +242,22 @@ typedef struct {
 /* This function to fill out the "*info" structure using
  * registry entries named (see above) in macros REG_CONN_<NAME>:
  *
- *  -- INFO FIELD  ----- NAME --------------- REMARKS/EXAMPLES ---------
- *   client_host        <will be assigned to the local host name>
- *   host               HOST
- *   port               PORT
- *   path               PATH
- *   args               ARGS
- *   req_method         REQUEST_METHOD
- *   timeout            TIMEOUT     "<sec>.<usec>": "30.0", "0.005", "infinite"
- *   max_try            MAX_TRY  
- *   http_proxy_host    HTTP_PROXY_HOST no HTTP proxy if empty/NULL
- *   http_proxy_port    HTTP_PROXY_PORT
- *   proxy_host         PROXY_HOST
- *   debug_printout     DEBUG_PRINTOUT
- *   client_mode        CLIENT_MODE
- *   lb_disable         LB_DISABLE
+ *  -- INFO FIELD --  ----- NAME -----  ---------- REMARKS/EXAMPLES ---------
+ *  client_host       local host name   assigned automatically
+ *  service_name      SERVICE_NAME      no search/no value without service
+ *  host              HOST
+ *  port              PORT
+ *  path              PATH
+ *  args              ARGS
+ *  req_method        REQ_METHOD
+ *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
+ *  max_try           MAX_TRY  
+ *  http_proxy_host   HTTP_PROXY_HOST   no HTTP proxy if empty/NULL
+ *  http_proxy_port   HTTP_PROXY_PORT
+ *  proxy_host        PROXY_HOST
+ *  debug_printout    DEBUG_PRINTOUT
+ *  client_mode       CLIENT_MODE
+ *  lb_disable        LB_DISABLE
  *
  * A value of the field NAME is first looked for in the environment variable
  * of the form service_CONN_NAME; then in the current corelib registry,
@@ -265,59 +268,42 @@ typedef struct {
  *
  * For default values see right above, in macros DEF_CONN_<NAME>.
  */
-extern SConnNetInfo* ConnNetInfo_Create
-(const char* service
- );
+extern SConnNetInfo* ConnNetInfo_Create(const char* service);
 
 
 /* Adjust the "host:port" to "proxy_host:proxy_port", and
  * "path" to "http://host:port/path" to connect through a HTTP proxy.
  * Return FALSE if already adjusted(see the NOTE), or if cannot adjust
  * (e.g. if "host" + "path" are too long).
- * NOTE:  it does nothing if applied more then once to the same "info"(or its
- *        clone), or when "http_proxy_host" is NULL.
+ * NOTE:  it does nothing if applied more than once to the same "info"
+ *        (or its clone), or when "http_proxy_host" is NULL.
  */
-extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy
-(SConnNetInfo* info
- );
+extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info);
 
 
 /* Make an exact and independent copy of "*info".
  */
-extern SConnNetInfo* ConnNetInfo_Clone
-(const SConnNetInfo* info
- );
+extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info);
 
 
 /* Set user header (discard previously set header, if any).
  */
-extern void ConnNetInfo_SetUserHeader
-(SConnNetInfo* info,
- const char*   user_header
- );
+extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info, const char* header);
 
 
-/* Parse URL into SConnNetInfo, using (service-specific, if any) defaults
+/* Parse URL into "*info", using (service-specific, if any) defaults.
  */
-extern int/*bool*/ ConnNetInfo_ParseURL
-(SConnNetInfo* info,
- const char*   url
- );
- 
+extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url);
 
-/* Printout the "*info" to file "fp".
+
+/* Log the contents of "*info".
  */
-extern void ConnNetInfo_Print
-(const SConnNetInfo* info,
- FILE*               fp
- );
+extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG log);
 
 
-/* Destroy and deallocate info if info is not NULL.
+/* Destroy and deallocate "info" (if not NULL).
  */
-extern void ConnNetInfo_Destroy
-(SConnNetInfo* info
- );
+extern void ConnNetInfo_Destroy(SConnNetInfo* info);
 
 
 /* Hit URL "http://host:port/path?args" with:
@@ -359,6 +345,7 @@ extern SOCK URL_Connect
  * "pattern". If "buf" is not NULL then add the discarded data(including
  * the "pattern") to it. If "n_discarded" is not NULL then "*n_discarded"
  * will return # of discarded bytes.
+ * NOTE: "pattern" == NULL causes stripping to the EOF.
  */
 extern EIO_Status CONN_StripToPattern
 (CONN        conn,
