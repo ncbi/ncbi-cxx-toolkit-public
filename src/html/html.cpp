@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/03 22:48:00  lewisg
+* added HTMLEncode() and CHTML_img
+*
 * Revision 1.4  1998/12/01 19:10:38  lewisg
 * uses CCgiApplication and new page factory
 *
@@ -49,7 +52,36 @@
 #include <ncbistd.hpp>
 #include <stl.hpp>
 #include <html.hpp>
+#include <string>
 BEGIN_NCBI_SCOPE
+
+
+string & CHTMLHelper::HTMLEncode(string & input)
+{
+    string::size_type i = 0;
+    i = input.find_first_of("\"&<>", 0);
+    while(i!=string::npos) {
+	switch(input[i]) {
+	case '"':
+	    input.replace(i, (SIZE_TYPE)1, "&quot;");
+	    break;
+	case '&':
+	    input.replace(i, (SIZE_TYPE)1, "&amp;");
+	    break;
+	case '<':
+	    input.replace(i, (SIZE_TYPE)1, "&lt;");
+	    break;
+	case '>':
+	    input.replace(i, (SIZE_TYPE)1, "&gt;");
+	    break;
+	default:
+	    break;
+	}	
+	i = input.find_first_of("\"&<>", ++i);
+    }
+    return input;
+}
+
 
 
 // serialize the node to the given string
@@ -571,5 +603,18 @@ CNCBINode * CHTML_select::AppendOption(const string & option, bool selected, con
 
     return retval;
 };
+
+
+
+CHTML_img::CHTML_img(const string & src, const string & width, const string & height, const string & border)
+{
+    m_Name = "img";
+    m_Attributes["src"] = src;
+    m_Attributes["width"] = width;
+    m_Attributes["height"] = height;
+    m_Attributes["border"] = border;
+    m_EndTag = false;
+}
+
 
 END_NCBI_SCOPE

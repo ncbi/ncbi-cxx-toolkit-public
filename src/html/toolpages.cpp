@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/03 22:47:59  lewisg
+* added HTMLEncode() and CHTML_img
+*
 * Revision 1.3  1998/12/03 22:02:51  lewisg
 * *** empty log message ***
 *
@@ -93,7 +96,7 @@ CHTMLNode * CToolFastaPage::CreateView(void)
 	map <string, string>:: iterator iCgi = m_CgiApplication->m_CgiEntries.find("supplemental_input");
 
 	if(iCgi != m_CgiApplication->m_CgiEntries.end()) {
-	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", CHTMLHelper::HTMLEncode((*iCgi).second));
+	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", (*iCgi).second);
 	    Form->AppendChild(Textarea);
 	    Textarea->SetAttributes("wrap", "virtual");
 	}
@@ -191,17 +194,17 @@ CHTMLNode * CToolReportPage::CreateView(void)
     try {
 	Form = new CHTML_form( "http://ray/cgi-bin/tools/tool", "GET", "toolform");
 	Form->AppendText("Enter Fasta (and later on, Accession #):<br>");
-	//	NcbiCin >> buf; // Content type
-	//	NcbiCin >> buf;
-	input = "fasta";// buf;
+	NcbiCin >> buf; // Content type
+	NcbiCin >> buf;
+	input = buf;
 	if(input == "fasta") {
-	    	    NcbiCin.get(ch);  // skip the blank line
-	    	    input = "";
-	    	    while( NcbiCin.get(ch)) input += ch;
-	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", CHTMLHelper::HTMLEncode(input));
+	    NcbiCin.get(ch);  // skip the blank line
+	    input = "";
+	    while( NcbiCin.get(ch)) input += ch;
+	    Textarea = new CHTML_textarea("supplemental_input", "40", "10", input);
 	    Form->AppendChild(Textarea);
 	    Textarea->SetAttributes("wrap", "virtual");
-	    Form->AppendText("<br>Then click on a tool in the left column.");
+	    Form->AppendText("<br>To continue analysis, click on a tool in the left column.");
 	}
 	else { 
 	    NcbiCin.get(ch);  // skip the blank line	   

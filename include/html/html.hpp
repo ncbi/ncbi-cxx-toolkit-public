@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/03 22:49:10  lewisg
+* added HTMLEncode() and CHTML_img
+*
 * Revision 1.4  1998/12/01 19:09:05  lewisg
 * uses CCgiApplication and new page factory
 *
@@ -52,6 +55,15 @@
 //#include <ncbistd.h>
 #include <node.hpp>
 BEGIN_NCBI_SCOPE
+
+// utility functions
+
+class CHTMLHelper
+{
+public:
+    static string & HTMLEncode(string &);  // HTML encodes a string. E.g. &lt;
+};
+
 
 // base class for html node
 
@@ -212,21 +224,28 @@ public:
 // paragraph with end tag
 class CHTML_p: public CHTMLElement {
 public:
-    CHTML_p(void) { m_Name = "p"; };
+    CHTML_p(void) { m_Name = "p"; }
 };
 
 
 // paragraph without end tag
 class CHTML_pnop: public CHTMLElement {
 public:
-    CHTML_pnop(void) { m_Name = "p"; m_EndTag = false; };
+    CHTML_pnop(void) { m_Name = "p"; m_EndTag = false; }
 };
 
 
 // break
 class CHTML_br: public CHTMLElement {
 public:
-    CHTML_br(void) { m_Name = "br"; m_EndTag = false; };
+    CHTML_br(void) { m_Name = "br"; m_EndTag = false; }
+};
+
+
+class CHTML_img: public CHTMLElement {
+public:
+    CHTML_img(void) { m_Name = "img"; m_EndTag = false; }
+    CHTML_img(const string & src, const string & width, const string & height, const string & border = "0");
 };
 
 END_NCBI_SCOPE
