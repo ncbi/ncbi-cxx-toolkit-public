@@ -13,7 +13,8 @@ mode you need to:
    "fcgi_sample.fcgi" use to communicate.
 
 3. For a WEB server, the "fcgi_sample.cgi" redirector looks just like a
-   regular CGI script, and it 'll tunnels the data to the FastCGI application.
+   regular CGI script, and it 'll tunnel the HTTP request and response to
+   and from your "real", FastCGI application, "fcgi_sample.fcgi".
 
 4. Run "fcgi_sample.fcgi" as a standalone application.
  *) Sure, you can run this sample under debugger and set a breakpoint in 
