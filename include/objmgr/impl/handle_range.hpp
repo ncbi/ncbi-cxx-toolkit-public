@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/06/12 14:40:47  grichenk
+* Made some methods inline
+*
 * Revision 1.8  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -105,6 +108,84 @@ private:
     friend class CDataSource;
     friend class CHandleRangeMap;
 };
+
+
+inline
+CHandleRange::CHandleRange(const CSeq_id_Handle& handle)
+    : m_Handle(handle)
+{
+}
+
+inline
+CHandleRange::CHandleRange(const CHandleRange& hrange)
+{
+    *this = hrange;
+}
+
+inline
+CHandleRange::~CHandleRange(void)
+{
+}
+
+inline
+CHandleRange& CHandleRange::operator= (const CHandleRange& hrange)
+{
+    m_Handle = hrange.m_Handle;
+    m_Ranges.assign(hrange.m_Ranges.begin(), hrange.m_Ranges.end());
+    return *this;
+}
+
+inline
+bool operator< (CHandleRange::TRangeWithStrand r1,
+                CHandleRange::TRangeWithStrand r2)
+{
+    if (r1.first < r2.first) 
+        return true;
+    else if (r1.first == r2.first)
+        return r1.second < r2.second;
+    else
+        return false;
+}
+
+inline
+void CHandleRange::AddRange(TRange range, ENa_strand strand)
+{
+    m_Ranges.push_back(TRanges::value_type(range, strand));
+    m_Ranges.sort();
+}
+
+inline
+bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
+{
+    return
+        str1 == eNa_strand_unknown // str1 includes anything
+        ||
+        str2 == eNa_strand_unknown // str2 includes anything
+        ||
+        str1 == str2;              // accept only equal strands
+    //### Not sure about "eNa_strand_both includes eNa_strand_plus" etc.
+}
+
+inline
+bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
+{
+    if ( hloc.m_Handle != m_Handle )
+        return false;
+    //### Optimize this
+    iterate ( TRanges, it1, hloc.GetRanges() ) {
+        if ( it1->first.Empty() )
+            continue;
+        iterate ( TRanges, it2, m_Ranges ) {
+            if ( it2->first.Empty() )
+                continue;
+            if ( it2->first.GetFrom() > it1->first.GetTo() )
+                break;
+            if ( x_IntersectingStrands(it1->second, it2->second) )
+                return it1->first.IntersectingWith(it2->first);
+        }
+    }
+    return false;
+}
 
 
 END_SCOPE(objects)

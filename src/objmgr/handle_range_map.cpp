@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/06/12 14:40:47  grichenk
+* Made some methods inline
+*
 * Revision 1.4  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -62,34 +65,6 @@ BEGIN_SCOPE(objects)
 //
 //  CHandleRangeMap::
 //
-
-
-CHandleRangeMap::CHandleRangeMap(CSeq_id_Mapper& id_mapper)
-    : m_IdMapper(&id_mapper)
-{
-}
-
-
-CHandleRangeMap::CHandleRangeMap(const CHandleRangeMap& rmap)
-{
-    *this = rmap;
-}
-
-
-CHandleRangeMap::~CHandleRangeMap(void)
-{
-}
-
-
-CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
-{
-    m_IdMapper = rmap.m_IdMapper;
-    m_LocMap.clear();
-    iterate ( TLocMap, it, rmap.m_LocMap ) {
-        m_LocMap.insert(TLocMap::value_type(it->first, it->second));
-    }
-    return *this;
-}
 
 
 void CHandleRangeMap::AddLocation(const CSeq_loc& loc)

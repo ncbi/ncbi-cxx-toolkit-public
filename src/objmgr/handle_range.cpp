@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/06/12 14:40:47  grichenk
+* Made some methods inline
+*
 * Revision 1.7  2002/05/24 14:58:55  grichenk
 * Fixed Empty() for unsigned intervals
 * SerialAssign<>() -> CSerialObject::Assign()
@@ -72,50 +75,6 @@ BEGIN_SCOPE(objects)
 //
 
 
-CHandleRange::CHandleRange(const CSeq_id_Handle& handle)
-    : m_Handle(handle)
-{
-}
-
-
-CHandleRange::CHandleRange(const CHandleRange& hrange)
-{
-    *this = hrange;
-}
-
-
-CHandleRange::~CHandleRange(void)
-{
-}
-
-
-CHandleRange& CHandleRange::operator= (const CHandleRange& hrange)
-{
-    m_Handle = hrange.m_Handle;
-    m_Ranges.assign(hrange.m_Ranges.begin(), hrange.m_Ranges.end());
-    return *this;
-}
-
-
-bool operator< (CHandleRange::TRangeWithStrand r1,
-                CHandleRange::TRangeWithStrand r2)
-{
-    if (r1.first < r2.first) 
-        return true;
-    else if (r1.first == r2.first)
-        return r1.second < r2.second;
-    else
-        return false;
-}
-
-
-void CHandleRange::AddRange(TRange range, ENa_strand strand)
-{
-    m_Ranges.push_back(TRanges::value_type(range, strand));
-    m_Ranges.sort();
-}
-
-
 void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 {
     TRange mrg = range;
@@ -147,21 +106,6 @@ CHandleRange::TRange CHandleRange::GetOverlappingRange(void) const
 }
 
 
-bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
-{
-    if ( hloc.m_Handle != m_Handle )
-        return false;
-    //### Optimize this
-    iterate ( TRanges, it1, hloc.GetRanges() ) {
-        iterate ( TRanges, it2, m_Ranges ) {
-            if ( x_IntersectingStrands(it1->second, it2->second) )
-                return it1->first.IntersectingWith(it2->first);
-        }
-    }
-    return false;
-}
-
-
 void CHandleRange::x_CombineRanges(TRange& dest, const TRange& src)
 {
     if ( src.Empty() ) {
@@ -181,18 +125,6 @@ void CHandleRange::x_CombineRanges(TRange& dest, const TRange& src)
             dest.SetTo(src.GetTo());
         }
     }
-}
-
-
-bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
-{
-    return
-        str1 == eNa_strand_unknown // str1 includes anything
-        ||
-        str2 == eNa_strand_unknown // str2 includes anything
-        ||
-        str1 == str2;              // accept only equal strands
-    //### Not sure about "eNa_strand_both includes eNa_strand_plus" etc.
 }
 
 
