@@ -32,7 +32,9 @@
 *   Molecular weights for protein sequences
 */
 
+#include <map>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -51,6 +53,7 @@ public:
 
 // Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 // Glx as Glu; throws CBadResidueException on anything else.
+NCBI_XOBJUTIL_EXPORT
 double GetProteinWeight(const CBioseq_Handle& handle,
                         const CSeq_loc* location = 0)
     THROWS((CBadResidueException));
@@ -62,6 +65,7 @@ typedef map<CConstRef<CSeq_loc>, double> TWeights;
 // - Annotated cleavage products (mature peptides)
 // - What's left after removing the first signal peptide found
 // - The entire sequence (skipping a leading methionine if present)
+NCBI_XOBJUTIL_EXPORT
 void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights);
 
 END_SCOPE(objects)
@@ -70,6 +74,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/12/30 20:48:01  ostell
+* added NCBI_XOBJUTIL_EXPORT and #includes needed
+*
 * Revision 1.7  2002/12/26 12:44:39  dicuccio
 * Added Win32 export specifiers
 *
