@@ -66,9 +66,9 @@ public:
 
 private:
     // types
-    typedef CConstRef<CDense_seg>            TDenseRef;
-    typedef list< CRef< CSeq_align > >       TAlnList;
-    typedef map<CAlnMap::TRange,  TDenseRef> TDense_seg_Map;
+    typedef CConstRef<CDense_seg>                 TDenseRef;
+    typedef list< CRef< CSeq_align > >            TAlnList;
+    typedef multimap<CAlnMap::TRange,  TDenseRef> TDense_seg_Map;
 
     void x_GatherInfo(CBioseqContext& ctx);
     void x_GetStrForPrimary(CBioseqContext& ctx);
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/08/30 15:06:56  shomrat
+* use multimap for denseseg map
+*
 * Revision 1.3  2004/04/22 15:38:48  shomrat
 * New implementation of Primary item
 *
