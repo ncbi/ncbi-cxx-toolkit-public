@@ -3,6 +3,5 @@
 # Master(top-level) makefile
 #################################
 
-PROJECT = 
-SUBPROJ = corelib html history
+SUB_PROJ = corelib html history
 include @builddir@/Makefile.meta

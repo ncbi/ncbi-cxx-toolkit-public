@@ -5,6 +5,8 @@
 # Meta-makefile ("html" project)
 #################################
 
-PROJECT = Makefile.html
-SUBPROJ = test tool
+LIB_PROJ = html
+SUB_PROJ = test tool
+
+srcdir = @srcdir@
 include @builddir@/Makefile.meta

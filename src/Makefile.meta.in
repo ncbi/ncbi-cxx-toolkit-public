@@ -3,11 +3,15 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 # Meta-makefile(to be configured into "Makefile")
-# This can be used to build/install/clean [PROJECT] makefiles
-# in current directory and in the below [SUBPROJ] directories.
+# This can be used to build/install/clean [*_PROJ] makefiles
+# in current directory and in the below [SUB_PROJ] directories.
 #
-# PROJECT = Makefile.p1 Makefile.p2
-# SUBPROJ = app sub_proj1 sub_proj2
+# LIB_PROJ = pl1 pl2 ...  // Makefile.pl1.lib Makefile.pl1.lib ...
+# APP_PROJ = pa1 pl2 ...  // Makefile.pa1.app Makefile.pa1.app ...
+# USR_PROJ = pu1 pu2 ...  // Makefile.pu1 Makefile.pu1 ...
+# SUB_PROJ = app sub_proj1 sub_proj2
+#
+# srcdir = @srcdir@
 # include @builddir@/Makefile.meta
 #################################
 
@@ -17,30 +21,54 @@
 @make_shell@
 
 
-### One-level build -- [PROJECT] makefiles
+### One-level build -- [USR_PROJ] makefiles
 
-PROJ_BRA = \
-if test ! -z "$(PROJECT)" ; then \
-   x_project="$(PROJECT)" ; \
+USRP_BRA = \
+if test ! -z "$(USR_PROJ)" ; then \
+   x_project="$(USR_PROJ)" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f $$i $(MFLAGS)
-PROJ_KET = ; \
+		$(MAKE) -f "Makefile.$$i" $(MFLAGS)
+USRP_KET = ; \
+   done ; \
+fi
+
+LIBP_BRA = \
+if test ! -z "$(LIB_PROJ)" ; then \
+   x_project="$(LIB_PROJ)" ; \
+   for i in $$x_project ; do \
+		$(MAKE) -f "@builddir@/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+LIBP_KET = ; \
+   done ; \
+fi
+
+APPP_BRA = \
+if test ! -z "$(APP_PROJ)" ; then \
+   x_project="$(APP_PROJ)" ; \
+   for i in $$x_project ; do \
+		$(MAKE) -f "@builddir@/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+APPP_KET = ; \
    done ; \
 fi
 
 all:
-	@$(PROJ_BRA) all   $(PROJ_KET)
+	@$(USRP_BRA) all   $(USRP_KET)
+	@$(LIBP_BRA) all   $(LIBP_KET)
+	@$(APPP_BRA) all   $(APPP_KET)
 clean:
-	@$(PROJ_BRA) clean $(PROJ_KET)
+	@$(USRP_BRA) clean $(USRP_KET)
+	@$(LIBP_BRA) clean $(LIBP_KET)
+	@$(APPP_BRA) clean $(APPP_KET)
 purge:
-	@$(PROJ_BRA) purge $(PROJ_KET)
+	@$(USRP_BRA) purge $(USRP_KET)
+	@$(LIBP_BRA) purge $(LIBP_KET)
+	@$(APPP_BRA) purge $(APPP_KET)
 
 
 ### Recursive build -- in the [SUBPROJ] directories
 
 SUB_BRA = \
-if test ! -z "$(SUBPROJ)" ; then \
-	x_subproj="$(SUBPROJ)" ; \
+if test ! -z "$(SUB_PROJ)" ; then \
+	x_subproj="$(SUB_PROJ)" ; \
 	for i in $$x_subproj ; do \
 		( if test -d $$i ; then \
           cd $$i  &&  $(MAKE) $(MFLAGS)
