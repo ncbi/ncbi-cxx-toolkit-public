@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
+class CSeq_id;
 class CFFContext;
 class IFormatter;
 
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/18 15:26:38  shomrat
+* Added missing forward decleration
+*
 * Revision 1.1  2003/12/17 19:46:04  shomrat
 * Initial revision (adapted from flat lib)
 *
