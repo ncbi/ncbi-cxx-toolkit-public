@@ -88,7 +88,8 @@ public:
 
     virtual void GetTSEBlob(CTSE_Info& tse_info, const CBlob_id& blob_id,
                             TConn conn);
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
+    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(CTSE_Info& tse_info,
+                                                  const CBlob_id& blob_id,
                                                   TConn conn);
 
     typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;

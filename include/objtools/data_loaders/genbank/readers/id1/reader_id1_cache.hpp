@@ -170,7 +170,8 @@ protected:
                         const string& subkey,
                         const int& value);
     
-    CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
+    CRef<CSeq_annot_SNP_Info> GetSNPAnnot(CTSE_Info& tse_info,
+                                          const CBlob_id& blob_id,
                                           TConn conn);
 
     void x_ReadTSEBlob(CID1server_back& id1_reply,

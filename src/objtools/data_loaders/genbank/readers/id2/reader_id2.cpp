@@ -82,25 +82,10 @@ BEGIN_SCOPE(objects)
 #define DEFAULT_ID2_SERVICE_NAME "ID2LXA"
 #define GENBANK_ID2_CGI_NAME_ENV "GENBANK_ID2_CGI_NAME"
 
-static int s_GetDebugLevel(void)
-{
-    const char* env = getenv(GENBANK_ID2_DEBUG_ENV);
-    if ( !env || !*env ) {
-        return 0;
-    }
-    try {
-        return NStr::StringToInt(env);
-    }
-    catch ( ... ) {
-        return 0;
-    }
-}
-
-
 static int GetDebugLevel(void)
 {
-    static int ret = s_GetDebugLevel();
-    return ret;
+    static SConfigIntValue var = { "GENBANK", "ID2_DEBUG" };
+    return var.GetInt();
 }
 
 
@@ -139,6 +124,7 @@ CId2Reader::CId2Reader(TConn noConn)
         m_FirstConnection.reset(x_NewConnection());
     }
     catch ( ... ) {
+        // close all connections before exiting
         SetParallelLevel(0);
         throw;
     }

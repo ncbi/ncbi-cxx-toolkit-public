@@ -66,7 +66,8 @@ public:
     virtual void GetTSEBlob(CTSE_Info& tse_info,
                             const CBlob_id& blob_id,
                             TConn conn);
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
+    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(CTSE_Info& tse_info,
+                                                  const CBlob_id& blob_id,
                                                   TConn conn);
 
     virtual TConn GetParallelLevel(void) const;
@@ -81,7 +82,7 @@ private:
 
     CDB_RPCCmd* x_SendRequest(const CBlob_id& blob_id,
                               CDB_Connection* db_conn);
-    CDB_Result* x_ReceiveData(CDB_RPCCmd& cmd);
+    CDB_Result* x_ReceiveData(CTSE_Info& tse_info, CDB_RPCCmd& cmd);
 
     void x_ReceiveMainBlob(CTSE_Info& tse_info,
                            const CBlob_id& blob_id,

@@ -524,7 +524,7 @@ CStandaloneRequestResult::operator CInitMutexPool&(void)
 
 CStandaloneRequestResult::TConn CStandaloneRequestResult::GetConn(void)
 {
-    return -1;
+    return 0;
 }
 
 

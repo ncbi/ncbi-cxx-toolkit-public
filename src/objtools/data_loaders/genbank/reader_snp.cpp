@@ -77,21 +77,11 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 // utility function
 
-static int s_GetEnvInt(const char* env, int def_val)
+static bool CollectSNPStat(void)
 {
-    const char* val = ::getenv(env);
-    if ( val ) {
-        try {
-            return NStr::StringToInt(val);
-        }
-        catch (...) {
-        }
-    }
-    return def_val;
+    static SConfigBoolValue var = { "GENBANK", "SNP_TABLE_STAT" };
+    return var.GetBool();
 }
-
-
-static bool s_SNP_stat = s_GetEnvInt("GENBANK_SNP_TABLE_STAT", 0) > 0;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -184,7 +174,7 @@ static size_t s_TotalCount[SSNP_Info::eSNP_Type_last] = { 0 };
 
 CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 {
-    if ( s_SNP_stat ) {
+    if ( CollectSNPStat() ) {
         size_t total =
             accumulate(m_Count, m_Count+SSNP_Info::eSNP_Type_last, 0);
         NcbiCout << "CSeq_annot_SNP_Info statistic (gi = " <<
@@ -228,8 +218,9 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
     else {
 #ifdef _DEBUG
-        static int dump_feature = s_GetEnvInt("GENBANK_SNP_TABLE_DUMP", 0);
-        if ( dump_feature ) {
+        static SConfigIntValue var = { "GENBANK", "SNP_TABLE_DUMP" };
+        static int dump_feature = var.GetInt();
+        if ( dump_feature > 0 ) {
             --dump_feature;
             NcbiCerr <<
                 "CSNP_Seq_feat_hook::ReadContainerElement: complex SNP: " <<
@@ -598,6 +589,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.15  2004/09/14 19:10:02  vasilche
+ * Use SConfigIntValue and SConfigBoolValue for configurables.
+ * Avoid exceptions when dealing with confidential or withdrawn data.
+ *
  * Revision 1.14  2004/08/12 14:19:53  vasilche
  * Allow SNP Seq-entry in addition to SNP Seq-annot.
  *

@@ -32,7 +32,6 @@
 #include <objtools/data_loaders/genbank/split_parser.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
-#include <serial/pack_string.hpp>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -55,14 +54,120 @@
 #include <serial/objistr.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
+#include <serial/pack_string.hpp>
+
+#include <corelib/ncbiapp.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static const char* const STRING_PACK_ENV = "GENBANK_SNP_PACK_STRINGS";
-static const char* const SNP_SPLIT_ENV = "GENBANK_SNP_SPLIT";
-static const char* const SNP_TABLE_ENV = "GENBANK_SNP_TABLE";
+static const char* const GENBANK_SECTION = "GENBANK";
+static const char* const STRING_PACK_ENV = "SNP_PACK_STRINGS";
+static const char* const SNP_SPLIT_ENV = "SNP_SPLIT";
+static const char* const SNP_TABLE_ENV = "SNP_TABLE";
 static const char* const ENV_YES = "YES";
+
+void SConfigIntValue::x_Initialize(void) const
+{
+    if ( m_Initialized ) {
+        return;
+    }
+#ifdef _DEBUG
+    static SConfigBoolValue var = { "NCBI", "CONFIG_DUMP_VARIABLES" };
+    bool dump_variables = (this != &var) && var.GetBool();
+#endif
+    try {
+        if ( m_Section ) {
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if ( app ) {
+                const string& value =
+                    app->GetConfig().Get(m_Section, m_Variable);
+                if ( !value.empty() ) {
+                    x_SetValue(value.c_str());
+#ifdef _DEBUG
+                    if ( dump_variables ) {
+                        LOG_POST("NCBI_CONFIG: int variable "
+                                 " [" << m_Section << "]"
+                                 " " << m_Variable <<
+                                 " (default: " << m_DefaultValue << ")"
+                                 " = " << m_Value <<
+                                 " from registry \"" << value << "\"");
+                    }
+#endif
+                    return;
+                }
+            }
+        }
+        const char* value;
+        if ( m_Section ) {
+            string variable;
+            variable += m_Section;
+            variable += '_';
+            variable += m_Variable;
+            value = getenv(variable.c_str());
+        }
+        else {
+            value = getenv(m_Variable);
+        }
+        if ( value ) {
+            x_SetValue(value);
+#ifdef _DEBUG
+            if ( dump_variables ) {
+                if ( m_Section ) {
+                    LOG_POST("NCBI_CONFIG: int variable "
+                             " [" << m_Section << "]"
+                             " " << m_Variable <<
+                             " (default: " << m_DefaultValue << ")"
+                             " = " << m_Value <<
+                             " from environment "
+                             << m_Section << '_' << m_Variable <<
+                             "=\"" << value << "\"");
+                }
+                else {
+                    LOG_POST("NCBI_CONFIG: int variable "
+                             " [" << m_Section << "]"
+                             " " << m_Variable <<
+                             " (default: " << m_DefaultValue << ")"
+                             " = " << m_Value <<
+                             " from environment "
+                             << m_Variable <<
+                             "=\"" << value << "\"");
+                }
+            }
+#endif
+            return;
+        }
+    }
+    catch ( ... ) {
+        // ignored, will use default value
+    }
+    m_Value = m_DefaultValue;
+    m_Initialized = true;
+#ifdef _DEBUG
+    if ( dump_variables ) {
+        LOG_POST("NCBI_CONFIG: int variable "
+                 " [" << m_Section << "]"
+                 " " << m_Variable <<
+                 " (default: " << m_DefaultValue << ")"
+                 " = " << m_Value <<
+                 " by default");
+    }
+#endif
+}
+
+
+void SConfigIntValue::x_SetValue(const char* value) const
+{
+    if ( NStr::CompareNocase(value,"YES") == 0 ||
+         NStr::CompareNocase(value,"Y") == 0 ) {
+        m_Value = 1;
+    }
+    else {
+        m_Value = NStr::StringToInt(value);
+    }
+    m_Initialized = true;
+}
+
 
 CReader::CReader(void)
 {
@@ -80,22 +185,10 @@ int CReader::GetConst(const string& ) const
 }
 
 
-bool CReader::s_GetEnvFlag(const char* env, bool def_val)
-{
-    const char* val = ::getenv(env);
-    if ( !val ) {
-        return def_val;
-    }
-    string s(val);
-    return s == "1" || NStr::CompareNocase(s, ENV_YES) == 0;
-}
-
-
 bool CReader::TryStringPack(void)
 {
-    static bool use_string_pack =
-        CPackString::TryStringPack() && s_GetEnvFlag(STRING_PACK_ENV, true);
-    return use_string_pack;
+    static SConfigBoolValue var = { GENBANK_SECTION, STRING_PACK_ENV, true };
+    return CPackString::TryStringPack() && var.GetBool();
 }
 
 
@@ -196,9 +289,10 @@ void CReader::LoadBlobs(CReaderRequestResult& result,
 
 
 void CReader::LoadChunk(CReaderRequestResult& /*result*/,
-                        const TBlob_id& /*blob_id*/, TChunk_id /*chunk_id*/)
+                        const TBlob_id& /*blob_id*/,
+                        TChunk_id /*chunk_id*/)
 {
-    NCBI_THROW(CLoaderException, eOtherError,
+    NCBI_THROW(CLoaderException, eLoaderFailed,
                "unexpected chunk load request");
 }
 
@@ -220,15 +314,15 @@ CId1ReaderBase::~CId1ReaderBase()
 
 bool CId1ReaderBase::TrySNPSplit(void)
 {
-    static bool snp_split = s_GetEnvFlag(SNP_SPLIT_ENV, true);
-    return snp_split;
+    static SConfigBoolValue var = { GENBANK_SECTION, SNP_SPLIT_ENV, true };
+    return var.GetBool();
 }
 
 
 bool CId1ReaderBase::TrySNPTable(void)
 {
-    static bool snp_table = s_GetEnvFlag(SNP_TABLE_ENV, true);
-    return snp_table;
+    static SConfigBoolValue var = { GENBANK_SECTION, SNP_TABLE_ENV, true };
+    return var.GetBool();
 }
 
 
@@ -249,10 +343,9 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
             ids.SetLoaded();
         }
         catch ( CLoaderException& exc ) {
-            if ( exc.GetErrCode() == exc.ePrivateData ) {
-                ids.SetLoaded();
-            }
-            else if ( exc.GetErrCode() == exc.eNoData ) {
+            if ( exc.GetErrCode() == exc.ePrivateData ||
+                 exc.GetErrCode() == exc.eNoData ) {
+                // leave ids empty
                 ids.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
@@ -285,10 +378,9 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
             ids.SetLoaded();
         }
         catch ( CLoaderException& exc ) {
-            if ( exc.GetErrCode() == exc.ePrivateData ) {
-                ids.SetLoaded();
-            }
-            else if ( exc.GetErrCode() == exc.eNoData ) {
+            if ( exc.GetErrCode() == exc.ePrivateData ||
+                 exc.GetErrCode() == exc.eNoData ) {
+                // leave ids empty
                 ids.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
@@ -362,16 +454,20 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
         try {
             GetBlob(*blob, blob_id, conn);
             blob.SetLoaded();
-            result.AddTSE_Lock(blob);
-            result.UpdateLoadedSet();
+            if ( !blob->IsUnavailable() ) {
+                result.AddTSE_Lock(blob);
+                result.UpdateLoadedSet();
+            }
         }
         catch ( CLoaderException& exc ) {
             if ( exc.GetErrCode() == exc.ePrivateData ) {
+                // leave tse empty
                 blob->SetSuppressionLevel(CTSE_Info::eSuppression_private);
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoData ) {
-                blob->SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
+                // leave tse empty
+                blob->SetSuppressionLevel(CTSE_Info::eSuppression_no_data);
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
@@ -406,11 +502,9 @@ CId1ReaderBase::GetBlobVersion(CReaderRequestResult& result,
                 version = GetVersion(blob_id, conn);
             }
             catch ( CLoaderException& exc ) {
-                if ( exc.GetErrCode() == exc.ePrivateData ) {
-                    version = 0;
-                    break;
-                }
-                else if ( exc.GetErrCode() == exc.eNoData ) {
+                if ( exc.GetErrCode() == exc.ePrivateData ||
+                     exc.GetErrCode() == exc.eNoData ) {
+                    // leave version zero
                     version = 0;
                     break;
                 }
@@ -458,13 +552,7 @@ void CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
                 chunk_info.SetLoaded();
             }
             catch ( CLoaderException& exc ) {
-                if ( exc.GetErrCode() == exc.ePrivateData ) {
-                    throw;
-                }
-                else if ( exc.GetErrCode() == exc.eNoData ) {
-                    throw;
-                }
-                else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                if ( exc.GetErrCode() == exc.eNoConnection ) {
                     throw;
                 }
                 else {
@@ -563,8 +651,8 @@ void CId1ReaderBase::GetTSEChunk(CTSE_Chunk_Info& /*chunk_info*/,
                                  const CBlob_id& /*blob_id*/,
                                  TConn /*conn*/)
 {
-    NCBI_THROW(CLoaderException, eNoData,
-               "Chunks are not implemented");
+    NCBI_THROW(CLoaderException, eLoaderFailed,
+               "unexpected chunk load request");
 }
 
 
@@ -574,10 +662,13 @@ void CId1ReaderBase::GetSNPChunk(CTSE_Chunk_Info& chunk,
 {
     _ASSERT(IsSNPBlob_id(blob_id));
     _ASSERT(chunk.GetChunkId() == kSNP_ChunkId);
-    CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(blob_id, conn);
-    CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
-    CTSE_Chunk_Info::TPlace place(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
-    chunk.x_LoadAnnot(place, annot_info);
+    CRef<CSeq_annot_SNP_Info> snp_annot =
+        GetSNPAnnot(chunk.GetTSE_Info(), blob_id, conn);
+    if ( !chunk.GetTSE_Info().IsUnavailable() ) {
+        CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
+        CTSE_Chunk_Info::TPlace place(chunk.eBioseq_set, kSNP_EntryId);
+        chunk.x_LoadAnnot(place, annot_info);
+    }
 }
 
 

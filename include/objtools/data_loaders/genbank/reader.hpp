@@ -60,6 +60,37 @@ class CID2S_Chunk;
 class CReaderRequestResult;
 class CLoadLockBlob_ids;
 
+struct NCBI_XREADER_EXPORT SConfigIntValue
+{
+    const char*  m_Section;
+    const char*  m_Variable;
+    int          m_DefaultValue;
+    mutable bool m_Initialized;
+    mutable int  m_Value;
+
+    void Initialize(void) const
+        {
+            if ( !m_Initialized ) {
+                x_Initialize();
+            }
+        }
+    int GetInt(void) const
+        {
+            Initialize();
+            return m_Value;
+        }
+    bool GetBool(void) const
+        {
+            Initialize();
+            return m_Value != 0;
+        }
+private:
+    void x_Initialize(void) const;
+    void x_SetValue(const char* value) const;
+};
+typedef SConfigIntValue SConfigBoolValue;
+
+
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
 public:
@@ -107,8 +138,6 @@ public:
     // could become obsolete by fresher version 
     // -1 - never
     virtual int GetConst(const string& const_name) const;
-
-    static bool s_GetEnvFlag(const char* env, bool def_val);
 
     static bool TryStringPack(void);
 
@@ -168,7 +197,8 @@ public:
 
     virtual TBlobVersion GetVersion(const CBlob_id& blob_id, TConn conn) = 0;
 
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
+    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(CTSE_Info& tse_info,
+                                                  const CBlob_id& blob_id,
                                                   TConn conn) = 0;
     
     enum ESat {

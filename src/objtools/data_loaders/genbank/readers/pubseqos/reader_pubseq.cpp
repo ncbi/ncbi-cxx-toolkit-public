@@ -64,24 +64,10 @@ static CAtomicCounter s_pubseq_readers;
 #endif
 
 #ifdef _DEBUG
-static int s_GetDebugLevel(void)
-{
-    const char* env = getenv("GENBANK_PUBSEQOS_DEBUG");
-    if ( !env || !*env ) {
-        return 0;
-    }
-    try {
-        return NStr::StringToInt(env);
-    }
-    catch ( ... ) {
-        return 0;
-    }
-}
-
 static int GetDebugLevel(void)
 {
-    static int ret = s_GetDebugLevel();
-    return ret;
+    static SConfigIntValue var = { "GENBANK", "PUBSEQOS_DEBUG" };
+    return var.GetInt();
 }
 #else
 # define GetDebugLevel() (0)
@@ -112,6 +98,7 @@ CPubseqReader::CPubseqReader(TConn noConn,
         SetParallelLevel(noConn);
     }
     catch ( ... ) {
+        // close all connections before exiting
         SetParallelLevel(0);
         throw;
     }
@@ -152,7 +139,7 @@ void CPubseqReader::SetParallelLevel(TConn size)
 
 CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
 {
-    conn = conn % m_Pool.size();
+    _ASSERT(conn < m_Pool.size());
     CDB_Connection* ret = m_Pool[conn];
     if ( !ret ) {
         ret = x_NewConnection();
@@ -170,8 +157,7 @@ CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
 
 void CPubseqReader::Reconnect(TConn conn)
 {
-    LOG_POST("Reconnect");
-    conn = conn % m_Pool.size();
+    _ASSERT(conn < m_Pool.size());
     delete m_Pool[conn];
     m_Pool[conn] = 0;
 }
@@ -437,18 +423,25 @@ void CPubseqReader::GetTSEBlob(CTSE_Info& tse_info,
 {
     CDB_Connection* db_conn = x_GetConnection(conn);
     auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(blob_id, db_conn));
-    auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
-    x_ReceiveMainBlob(tse_info, blob_id, *result);
+    auto_ptr<CDB_Result> result(x_ReceiveData(tse_info, *cmd));
+    if ( result.get() ) {
+        x_ReceiveMainBlob(tse_info, blob_id, *result);
+    }
 }
 
 
-CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(const CBlob_id& blob_id,
+CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(CTSE_Info& tse_info,
+                                                     const CBlob_id& blob_id,
                                                      TConn conn)
 {
+    CRef<CSeq_annot_SNP_Info> ret;
     CDB_Connection* db_conn = x_GetConnection(conn);
     auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(blob_id, db_conn));
-    auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
-    return x_ReceiveSNPAnnot(*result);
+    auto_ptr<CDB_Result> result(x_ReceiveData(tse_info, *cmd));
+    if ( result.get() ) {
+        ret = x_ReceiveSNPAnnot(*result);
+    }
+    return ret;
 }
 
 
@@ -472,7 +465,7 @@ CDB_RPCCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 }
 
 
-CDB_Result* CPubseqReader::x_ReceiveData(CDB_RPCCmd& cmd)
+CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info& tse_info, CDB_RPCCmd& cmd)
 {
     // new row
     CDB_VarChar descrOut("-");
@@ -512,9 +505,13 @@ CDB_Result* CPubseqReader::x_ReceiveData(CDB_RPCCmd& cmd)
         }
     }
     if ( confidential.Value()>0 || withdrawn.Value()>0 ) {
-        NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
+        tse_info.SetSuppressionLevel(CTSE_Info::eSuppression_private);
+        return 0;
     }
-    NCBI_THROW(CLoaderException, eNoData, "no data");
+    else {
+        tse_info.SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
+        return 0;
+    }
 }
 
 

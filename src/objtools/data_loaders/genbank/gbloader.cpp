@@ -628,9 +628,8 @@ void CGBDataLoader::AllocateConn(CGBReaderRequestResult& result)
 #ifdef NCBI_NO_THREADS
     conn = 0;
 #else
-    static bool single_conn =
-        CReader::s_GetEnvFlag("GENBANK_SINGLE_CONN", false);
-    if ( single_conn ) {
+    static SConfigBoolValue var = { "GENBANK", "SINGLE_CONN" };
+    if ( var.GetBool() ) {
         conn = 0;
     }
     else {
