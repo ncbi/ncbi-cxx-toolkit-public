@@ -596,10 +596,10 @@ private:
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_Throwx(string strang) const
+    void x_Throwx(const string& msg) const
     {
-        cout << "thrown: " << strang << endl;
-        throw runtime_error(strang);
+        cout << "thrown: " << msg << endl;
+        NCBI_THROW(CBlastException, eInternal, msg);
     }
 };
 
@@ -1692,10 +1692,10 @@ private:
     CBlastOptionsLocal  * m_Local;
     CBlastOptionsRemote * m_Remote;
     
-    void x_Throwx(string strang) const
+    void x_Throwx(const string& msg ) const
     {
-        cout << "thrown: " << strang << endl;
-        throw runtime_error(strang);
+        cout << "thrown: " << msg << endl;
+        NCBI_THROW(CBlastException, eInternal, msg);
     }
 };
 
@@ -2393,6 +2393,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/01/20 16:42:16  camacho
+* Do not use runtime_error, use NCBI Exception classes
+*
 * Revision 1.42  2004/01/17 23:03:41  dondosha
 * There is no LCaseMask option any more, so [SG]EtLCaseMask methods removed
 *
