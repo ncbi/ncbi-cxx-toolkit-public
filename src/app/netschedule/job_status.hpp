@@ -78,8 +78,18 @@ public:
     /// 0 - no pending jobs
     unsigned int GetPendingJob();
 
+    /// TRUE if we have pending jobs
+    bool AnyPending() const;
+
+    /// Returned jobs come back to pending area
+    void Return2Pending();
+
+
     /// Get first job id from DONE status
     unsigned int GetFirstDone() const;
+
+    /// Get first job in the specified status
+    unsigned int GetFirst(CNetScheduleClient::EJobStatus  status) const;
 
     /// Set job status without logic control.
     /// @param status
@@ -109,6 +119,9 @@ public:
     /// Clear status storage
     void ClearAll();
 
+    /// Free unused memory buffers
+    void FreeUnusedMem();
+
 private:
 
     typedef bm::bvector<>     TBVector;
@@ -134,6 +147,9 @@ protected:
     void x_SetClearStatusNoLock(unsigned int job_id,
              CNetScheduleClient::EJobStatus          status,
              CNetScheduleClient::EJobStatus          old_status);
+
+    void Return2PendingNoLock();
+
 private:
     CNetScheduler_JobStatusTracker(const CNetScheduler_JobStatusTracker&);
     CNetScheduler_JobStatusTracker& 
@@ -192,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/04 12:06:41  kuznets
+ * Implenyed UDP callback to clients
+ *
  * Revision 1.3  2005/02/28 12:24:17  kuznets
  * New job status Returned, better error processing and queue management
  *

@@ -80,6 +80,7 @@ typedef enum {
     eCancelJob,
     eStatusJob,
     eGetJob,
+    eWaitGetJob,
     ePutJobResult,
     eReturnJob,
     eDropQueue,
@@ -104,6 +105,8 @@ struct SJS_Request
     unsigned int       jcount;
     unsigned int       job_id;
     unsigned int       job_return_code;
+    unsigned int       port;
+    unsigned int       timeout;
 
     string             err_msg;
 
@@ -111,7 +114,7 @@ struct SJS_Request
     {
         input[0] = output[0] = 0;
         job_key_str.erase(); err_msg.erase();
-        jcount = job_id = job_return_code = 0;
+        jcount = job_id = job_return_code = port = timeout = 0;
     }
 };
 
@@ -180,8 +183,10 @@ public:
     void ProcessCancel(CSocket& sock, SThreadData& tdata);
     void ProcessStatus(CSocket& sock, SThreadData& tdata);
     void ProcessGet(CSocket& sock, SThreadData& tdata);
+    void ProcessWaitGet(CSocket& sock, SThreadData& tdata);
     void ProcessPut(CSocket& sock, SThreadData& tdata);
     void ProcessDropQueue(CSocket& sock, SThreadData& tdata);
+    void ProcessReturn(CSocket& sock, SThreadData& tdata);
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
@@ -220,6 +225,8 @@ private:
 
     void x_SetSocketParams(CSocket* sock);
 
+    void x_MakeGetAnswer(const char* key_buf, 
+                         SThreadData& tdata);
 
 //    void x_CreateLog();
 private:
@@ -351,16 +358,21 @@ void CNetScheduleServer::Process(SOCK sock)
             case eGetJob:
                 ProcessGet(socket, *tdata);
                 break;
+            case eWaitGetJob:
+                ProcessWaitGet(socket, *tdata);
+                break;
             case ePutJobResult:
                 ProcessPut(socket, *tdata);
                 break;
             case eReturnJob:
+                ProcessReturn(socket, *tdata);
+                break;
             case eShutdown:
                 LOG_POST("Shutdown request...");
                 SetShutdownFlag();
                 break;
             case eVersion:
-                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.3");
+                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.4");
                 break;
             case eDropQueue:
                 ProcessDropQueue(socket, *tdata);
@@ -483,6 +495,16 @@ void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
     WriteMsg(sock, "OK:", szBuf);
 }
 
+void CNetScheduleServer::x_MakeGetAnswer(const char*   key_buf,
+                                         SThreadData&  tdata)
+{
+    tdata.answer = key_buf;
+    tdata.answer.append(" \"");
+    tdata.answer.append(tdata.req.input);
+    tdata.answer.append("\"");
+}
+
+
 void CNetScheduleServer::ProcessGet(CSocket& sock, SThreadData& tdata)
 {
     SJS_Request& req = tdata.req;
@@ -490,20 +512,50 @@ void CNetScheduleServer::ProcessGet(CSocket& sock, SThreadData& tdata)
     unsigned job_id;
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
-    queue.GetJob(client_address, &job_id, req.input);
-    if (job_id) {
-        char key_buf[1024];
-        sprintf(key_buf, NETSCHEDULE_JOBMASK, 
-                job_id, m_Host.c_str(), unsigned(GetPort()));
 
-        tdata.answer = key_buf;
-        tdata.answer.append(" \"");
-        tdata.answer.append(req.input);
-        tdata.answer.append("\"");
+    char key_buf[1024];
+    queue.GetJob(key_buf,
+                 client_address, &job_id, req.input, m_Host, GetPort());
+
+    if (job_id) {
+        x_MakeGetAnswer(key_buf, tdata);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
         WriteMsg(sock, "OK:", kEmptyStr.c_str());
     }
+
+    if (req.port) {  // unregister notification
+        sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+        queue.RegisterNotificationListener(client_address, req.port, 0);
+   }
+}
+
+void CNetScheduleServer::ProcessWaitGet(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    unsigned job_id;
+    unsigned client_address;
+    sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
+
+    //cerr << sock.GetPeerAddress() << " " << req.port << " " << req.timeout << endl;
+
+    char key_buf[1024];
+    queue.GetJob(key_buf,
+                 client_address, &job_id, req.input, m_Host, GetPort());
+    if (job_id) {
+        x_MakeGetAnswer(key_buf, tdata);
+        WriteMsg(sock, "OK:", tdata.answer.c_str());
+        return;
+    }
+    
+    // job not found, initiate waiting mode
+
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
+
+    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+    queue.RegisterNotificationListener(client_address, req.port, req.timeout);
+
 }
 
 void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
@@ -515,6 +567,17 @@ void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
     queue.PutResult(job_id, req.job_return_code, req.output);
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
+
+void CNetScheduleServer::ProcessReturn(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    queue.ReturnJob(job_id);
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
+}
+
 
 void CNetScheduleServer::ProcessDropQueue(CSocket& sock, SThreadData& tdata)
 {
@@ -566,7 +629,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 1. SUBMIT "NCID_01_1..." 
     // 2. CANCEL JSID_01_1
     // 3. STATUS JSID_01_1
-    // 4. GET Number_of_jobs
+    // 4. GET udp_port
     // 5. PUT JSID_01_1 EndStatus "NCID_01_2..."
     // 6. RETURN JSID_01_1
     // 7. SHUTDOWN
@@ -575,6 +638,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 10.STAT
     // 11.QUIT 
     // 12.DROPQ
+    // 13.WGET udp_port_number timeout
 
     const char* s = reqstr.c_str();
 
@@ -618,15 +682,17 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
     if (strncmp(s, "GET", 3) == 0) {
         req->req_type = eGetJob;
+        
         s += 3;
         NS_SKIPSPACE(s)
 
         if (*s) {
-            int jobs = atoi(s);
-            if (jobs > 0) {
-                req->jcount = jobs;
+            int port = atoi(s);
+            if (port > 0) {
+                req->port = (unsigned)port;
             }
         }
+        
         return;
     }
 
@@ -666,6 +732,37 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
         return;
     }
+
+    if (strncmp(s, "WGET", 4) == 0) {
+        req->req_type = eWaitGetJob;
+        
+        s += 4;
+        NS_SKIPSPACE(s)
+
+        NS_CHECKEND(s, "Misformed WGET request")
+
+        int port = atoi(s);
+        if (port > 0) {
+            req->port = (unsigned)port;
+        }
+
+        for (; *s && isdigit(*s); ++s) {}
+
+        NS_CHECKEND(s, "Misformed WGET request")
+
+        NS_SKIPSPACE(s)
+        
+        NS_CHECKEND(s, "Misformed WGET request")
+
+        int timeout = atoi(s);
+        if (timeout <= 0) {
+            timeout = 60;
+        }
+        req->timeout = timeout;
+        
+        return;
+    }
+
 
     if (strncmp(s, "RETURN", 6) == 0) {
         req->req_type = eReturnJob;
@@ -894,6 +991,8 @@ int CNetScheduleDApp::Run(void)
         if (args["reinit"]) {  // Drop the database directory
             CDir dir(db_path);
             dir.Remove();
+            LOG_POST(Info << "Reinintialization. " << db_path 
+                          << " removed.");
         }
 
         unsigned mem_size = (unsigned)
@@ -907,7 +1006,7 @@ int CNetScheduleDApp::Run(void)
 
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname, 3600); // default queue
+        qdb->MountQueue(qname, 3600, 7); // default queue
 
 
         // Scan and mount queues
@@ -922,9 +1021,13 @@ int CNetScheduleDApp::Run(void)
             if (NStr::CompareNocase(tmp, "queue") == 0) {
                 int timeout = 
                    reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
-                LOG_POST(Info << "Mounting queue: " << qname
-                              << " Timeout: " << timeout);
-                qdb->MountQueue(qname, timeout);
+                int notif_timeout =
+                   reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
+
+                LOG_POST(Info << "Mounting queue: "         << qname 
+                              << ". Timeout: "              << timeout 
+                              << ". Notification timeout: " << notif_timeout);
+                qdb->MountQueue(qname, timeout, notif_timeout);
             }
         }
 
@@ -1007,6 +1110,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/04 12:06:41  kuznets
+ * Implenyed UDP callback to clients
+ *
  * Revision 1.8  2005/02/28 12:24:17  kuznets
  * New job status Returned, better error processing and queue management
  *

@@ -45,6 +45,7 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
 #include <map>
+#include <vector>
 
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
@@ -112,21 +113,69 @@ struct SQueueDB : public CBDB_File
     }
 };
 
+/// Queue watcher description
+///
+/// @internal
+///
+struct SQueueListener
+{
+    unsigned int   host;         ///< host name (network BO)
+    unsigned short port;         ///< Listening UDP port
+    time_t         last_connect; ///< Last registration timestamp
+    int            timeout;      ///< Notification expiration timeout
+
+    SQueueListener(unsigned int   host_addr,
+                   unsigned short port_number,
+                   time_t         curr,
+                   int            expiration_timeout)
+    : host(host_addr),
+      port(port_number),
+      last_connect(curr),
+      timeout(expiration_timeout)
+    {}
+};
+
 /// Mutex protected Queue database with job status FSM
 ///
 /// @internal
 ///
 struct SLockedQueue
 {
-    SQueueDB                        db;
-    auto_ptr<CBDB_FileCursor>       cur;
-    CFastMutex                      lock;
-    CNetScheduler_JobStatusTracker  status_tracker;
+    SQueueDB                        db;               ///< Database
+    auto_ptr<CBDB_FileCursor>       cur;              ///< DB cursor
+    CFastMutex                      lock;             ///< db, cursor lock
+    CNetScheduler_JobStatusTracker  status_tracker;   ///< status FSA
 
     // queue parameters
-    int                             timeout;
+    int                             timeout;       ///< Result exp. timeout
+    int                             notif_timeout; ///< Notification interval
 
-    SLockedQueue() : timeout(3600) {}
+    // List of active worker node listeners waiting for pending jobs
+
+    typedef vector<SQueueListener*> TListenerList;
+
+    TListenerList                wnodes;       ///< worker node listeners
+    time_t                       last_notif;   ///< last notification time
+    CRWLock                      wn_lock;      ///< wnodes locker
+    string                       q_notif;      ///< Queue notification message
+
+    SLockedQueue(const string& queue_name) 
+        : timeout(3600), 
+          notif_timeout(7), 
+          last_notif(0), 
+          q_notif("NCBI_JSQ_")
+    {
+        _ASSERT(!queue_name.empty());
+        q_notif.append(queue_name);
+    }
+
+    ~SLockedQueue()
+    {
+        NON_CONST_ITERATE(TListenerList, it, wnodes) {
+            SQueueListener* node = *it;
+            delete node;
+        }
+    }
 };
 
 /// Queue database manager
@@ -160,6 +209,8 @@ private:
 };
 
 
+
+
 /// Top level queue database.
 /// (Thread-Safe, syncronized.)
 ///
@@ -173,7 +224,8 @@ public:
 
     void Open(const string& path, unsigned cache_ram_size);
     void MountQueue(const string& queue_name,
-                    int           timeout);
+                    int           timeout,
+                    int           notif_timeout);
     void Close();
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -202,6 +254,14 @@ public:
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input);
+        // Get job and generate key
+        void GetJob(char* key_buf, 
+                    unsigned int   worker_node,
+                    unsigned int*  job_id, 
+                    char*          input,
+                    const string&  host,
+                    unsigned       port
+                    );
         void ReturnJob(unsigned int job_id);
 
         // Get output info for compeleted job
@@ -221,10 +281,28 @@ public:
         /// Delete batch_size jobs
         /// @return
         ///    Number of deleted jobs
-        unsigned CheckDeleteBatch(unsigned batch_size);
+        unsigned CheckDeleteBatch(unsigned batch_size,
+                                  CNetScheduleClient::EJobStatus status);
 
         /// Remove all jobs
         void Truncate();
+
+        /// Free unsued memory (status storage)
+        void FreeUnusedMem() { m_LQueue.status_tracker.FreeUnusedMem(); }
+
+        /// All returned jobs come back to pending status
+        void Return2Pending() { m_LQueue.status_tracker.Return2Pending(); }
+
+        /// @param host_addr
+        ///    host address in network BO
+        ///
+        void RegisterNotificationListener(unsigned int    host_addr, 
+                                          unsigned short  port,
+                                          int             timeout);
+
+        /// UDP notification to all listeners
+        void NotifyListeners();
+
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
@@ -255,10 +333,13 @@ private:
     bm::bvector<>                   m_UsedIds; /// id access locker
     CRef<CJobQueueCleanerThread>    m_PurgeThread;
 
-    bool                            m_StopPurge;   ///< Purge stop flag
-    CFastMutex                      m_PurgeLock;
-    unsigned int                    m_PurgeLastId; ///< m_MaxId at last Purge
-    unsigned int                    m_PurgeSkipCnt;///< Number of purge skipped
+    bool                 m_StopPurge;         ///< Purge stop flag
+    CFastMutex           m_PurgeLock;
+    unsigned int         m_PurgeLastId;       ///< m_MaxId at last Purge
+    unsigned int         m_PurgeSkipCnt;      ///< Number of purge skipped
+    unsigned int         m_DeleteChkPointCnt; ///< trans. checkpnt counter
+    unsigned int         m_FreeStatusMemCnt;  ///< Free memory counter
+    time_t               m_LastR2P;           ///< Return 2 Pending timestamp
 
 };
 
@@ -269,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/04 12:06:41  kuznets
+ * Implenyed UDP callback to clients
+ *
  * Revision 1.7  2005/02/28 12:24:17  kuznets
  * New job status Returned, better error processing and queue management
  *

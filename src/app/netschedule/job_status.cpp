@@ -83,6 +83,26 @@ CNetScheduler_JobStatusTracker::CountStatus(
 }
 
 
+void CNetScheduler_JobStatusTracker::Return2Pending()
+{
+    CWriteLockGuard guard(m_Lock);
+    Return2PendingNoLock();
+}
+
+void CNetScheduler_JobStatusTracker::Return2PendingNoLock()
+{
+    TBVector& bv_ret = *m_StatusStor[(int)CNetScheduleClient::eReturned];
+    if (!bv_ret.any())
+        return;
+
+    TBVector& bv_pen = *m_StatusStor[(int)CNetScheduleClient::ePending];
+
+    bv_pen |= bv_ret;
+    bv_ret.clear();
+    bv_pen.count();
+}
+
+
 void 
 CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id, 
                         CNetScheduleClient::EJobStatus  status)
@@ -102,6 +122,16 @@ void CNetScheduler_JobStatusTracker::ClearAll()
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
         TBVector& bv = *m_StatusStor[i];
         bv.clear(true);
+    }
+}
+
+void CNetScheduler_JobStatusTracker::FreeUnusedMem()
+{
+    CWriteLockGuard guard(m_Lock);
+
+    for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
+        TBVector& bv = *m_StatusStor[i];
+        bv.optimize(0, TBVector::opt_free_0);
     }
 }
 
@@ -222,26 +252,53 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
 
 unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
 {
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    const TBVector& bv = 
+        *m_StatusStor[(int)CNetScheduleClient::ePending];
 
+    unsigned int job_id = 0;
     CWriteLockGuard guard(m_Lock);
-    unsigned int job_id = bv.get_first();
-    if (job_id) {
-        x_SetClearStatusNoLock(job_id, 
-                               CNetScheduleClient::eRunning, 
-                               CNetScheduleClient::ePending);
+
+    for (int i = 0; i < 2; ++i) {
+        if (bv.any()) {
+            job_id = bv.get_first();
+            if (job_id) {
+                x_SetClearStatusNoLock(job_id, 
+                                    CNetScheduleClient::eRunning, 
+                                    CNetScheduleClient::ePending);
+                return job_id;
+            }
+        }        
+        Return2PendingNoLock();
     }
+    
     return job_id;
+}
+
+bool CNetScheduler_JobStatusTracker::AnyPending() const
+{
+    const TBVector& bv = 
+        *m_StatusStor[(int)CNetScheduleClient::ePending];
+
+    CReadLockGuard guard(m_Lock);
+    return bv.any();
 }
 
 unsigned int CNetScheduler_JobStatusTracker::GetFirstDone() const
 {
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::eDone];
+    return GetFirst(CNetScheduleClient::eDone);
+}
+
+unsigned int 
+CNetScheduler_JobStatusTracker::GetFirst(
+                        CNetScheduleClient::EJobStatus  status) const
+{
+    const TBVector& bv = *m_StatusStor[(int)status];
 
     CReadLockGuard guard(m_Lock);
     unsigned int job_id = bv.get_first();
     return job_id;
 }
+
 
 void 
 CNetScheduler_JobStatusTracker::x_SetClearStatusNoLock(
@@ -307,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/04 12:06:41  kuznets
+ * Implenyed UDP callback to clients
+ *
  * Revision 1.6  2005/02/28 12:24:17  kuznets
  * New job status Returned, better error processing and queue management
  *
