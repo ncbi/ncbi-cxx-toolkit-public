@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 /// process over nemed pipe.  Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
- size_t        pipesize = CNamedPipe::kDefaultPipeSize
+ size_t        pipebufsize = 0 /* use default */
  );
 
 
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/22 17:00:17  ivanov
+ * Replaced CNamedPipe::kDefaultPipeSize with 0 -- default pipe buffer size.
+ *
  * Revision 1.4  2003/09/23 21:02:21  lavr
  * Rename BufferSize into PipeSize; accept string instead of char*
  *
