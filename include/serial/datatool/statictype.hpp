@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/04/02 16:55:02  gouriano
+* Added CRealDataType::CreateDefault method
+*
 * Revision 1.13  2004/02/25 19:45:48  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -161,6 +164,7 @@ class CRealDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
+    TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);

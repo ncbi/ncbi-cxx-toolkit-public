@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/04/02 16:55:32  gouriano
+* Added CRealDataType::CreateDefault method
+*
 * Revision 1.32  2004/02/25 19:45:19  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -398,6 +401,11 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
         CheckValueType(**i, CIntDataValue, "INTEGER");
     }
     return true;
+}
+
+TObjectPtr CRealDataType::CreateDefault(const CDataValue& value) const
+{
+    return new double(dynamic_cast<const CDoubleDataValue&>(value).GetValue());
 }
 
 string CRealDataType::GetDefaultString(const CDataValue& value) const
