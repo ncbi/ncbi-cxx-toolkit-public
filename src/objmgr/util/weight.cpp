@@ -121,7 +121,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
         .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa) // signal
         .IncludeFeatType(CSeqFeatData::e_Region)
         .IncludeFeatType(CSeqFeatData::e_Site);
-    for (CFeat_CI feat(handle, 0, 0, sel); feat;  ++feat) {
+    for (CFeat_CI feat(handle, sel); feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
         switch (data.Which()) {
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.31  2004/10/07 15:55:28  ucko
 * Eliminate more uses of GetBioseq(Core).
 *

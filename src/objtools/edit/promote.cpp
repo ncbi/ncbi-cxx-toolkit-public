@@ -104,7 +104,7 @@ void CPromote::PromoteFeatures(void) const
     SAnnotSelector sel(CSeq_annot::C_Data::e_Ftable);
     sel.SetResolveNone();
 
-    for (CAnnot_CI it(m_Seq, 0, 0, sel); it; ++it) {
+    for (CAnnot_CI it(m_Seq, sel); it; ++it) {
         PromoteFeatures(*it);
     }
 }
@@ -669,6 +669,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.1  2004/06/16 15:22:21  shomrat
 * Initial Revision
 *

@@ -134,9 +134,8 @@ int CTestApplication::Run()
             fcount = 0;
             {{ // Creating a block to destroy the iterator after using it
                 CFeat_CI feat_it2(scope, *loc,
-                                  CSeqFeatData::e_Cdregion,
-                                  SAnnotSelector::eOverlap_Intervals,
-                                  SAnnotSelector::eResolve_All);
+                                  SAnnotSelector(CSeqFeatData::e_Cdregion)
+                                  .SetResolveAll());
                 LOG_POST("Iterating CDS features, resolving references");
                 for ( ; feat_it2;  ++feat_it2) {
                     fcount++;
@@ -174,6 +173,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.9  2004/08/04 14:55:18  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.

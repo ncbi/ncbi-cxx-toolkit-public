@@ -91,7 +91,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     SAnnotSelector sel;
     sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     sel.SetResolveDepth(0);
-    CFeat_CI it(xcript_hand, 0, xcript_hand.GetBioseqLength() - 1, sel);
+    CFeat_CI it(xcript_hand, sel);
     bool has_cds(it);
     TSeqPos cds_from;
     TSeqPos cds_to;
@@ -424,7 +424,10 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         }
         SAnnotSelector gene_sel(CSeqFeatData::e_Gene);
         gene_sel.SetResolveAll();
-        CFeat_CI it(genomic_hand, genomic_roi_from, genomic_roi_to, gene_sel);
+        CFeat_CI it(scope,
+                    *genomic_hand.GetRangeSeq_loc(genomic_roi_from,
+                                                  genomic_roi_to),
+                    gene_sel);
         TSeqPos shortest_dist = kLargestGeneDist + 1;
         while (it) {
             const CSeq_loc& gene_loc = it->GetLocation();
@@ -465,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/11/01 19:33:08  grichenk
+ * Removed deprecated methods
+ *
  * Revision 1.6  2004/10/14 17:06:34  jcherry
  * Deal with lack of CDS
  *

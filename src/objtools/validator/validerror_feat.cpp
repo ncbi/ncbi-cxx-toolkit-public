@@ -1847,12 +1847,10 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
         // } DEBUG
 
         CFeat_CI mrna(
-            bsh, 
-            0, 0,
-            CSeqFeatData::e_Rna,
-            SAnnotSelector::eOverlap_TotalRange,
-            SAnnotSelector::eResolve_None,
-            CFeat_CI::e_Product);
+            bsh, SAnnotSelector(CSeqFeatData::e_Rna)
+            .SetOverlapTotalRange()
+            .SetResolveNone()
+            .SetByProduct());
         while ( mrna ) {
             if ( &(mrna->GetOriginalFeature()) != &feat ) {
                     PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
@@ -3041,6 +3039,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.69  2004/09/22 13:54:36  shomrat
 * do not report InvalidQualifierValue when allele on variation does not match allele on gene
 *

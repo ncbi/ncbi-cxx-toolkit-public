@@ -880,7 +880,7 @@ int CDemoApp::Run(void)
         // If both start and stop are 0 the whole bioseq is used.
         // The last parameter may be used for type filtering.
         count = 0;
-        for ( CFeat_CI it(handle, range_from, range_to, base_sel); it; ++it ) {
+        for ( CFeat_CI it(scope, *range_loc, base_sel); it; ++it ) {
             count++;
         }
         NcbiCout << "Feat count (bh range, " << sel_msg << "):\t"
@@ -1028,6 +1028,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2004/11/01 19:33:08  grichenk
+* Removed deprecated methods
+*
 * Revision 1.89  2004/10/26 20:03:33  vasilche
 * Added output of CSeq_loc_Mapper result.
 *

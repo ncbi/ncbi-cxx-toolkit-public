@@ -2648,7 +2648,7 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                 // find the ID of the protein accession we're looking for
                 CConstRef<CSeq_id> protein_id;
                 {{
-                     CFeat_CI iter(mrna_handle, 0, 0, sel);
+                     CFeat_CI iter(mrna_handle, sel);
                      for ( ;  iter;  ++iter) {
                          if (iter->IsSetProduct()) {
                              protein_id.Reset
@@ -3642,13 +3642,8 @@ const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
 const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
 {
     if ( bsh ) {
-        CFeat_CI fi(bsh, 
-                    0, 0,
-                    CSeqFeatData::e_Cdregion,
-                    SAnnotSelector::eOverlap_Intervals,
-                    SAnnotSelector::eResolve_TSE,
-                    CFeat_CI::e_Product,
-                    0);
+        CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion)
+            .SetByProduct());
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
@@ -3673,13 +3668,7 @@ const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope)
 const CSeq_feat* GetPROTForProduct(const CBioseq_Handle& bsh)
 {
     if ( bsh ) {
-        CFeat_CI fi(bsh, 
-                    0, 0,
-                    CSeqFeatData::e_Prot,
-                    SAnnotSelector::eOverlap_Intervals,
-                    SAnnotSelector::eResolve_TSE,
-                    CFeat_CI::e_Product,
-                    0);
+        CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Prot).SetByProduct());
         if ( fi ) {
             return &(fi->GetOriginalFeature());
         }
@@ -3707,7 +3696,7 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& bsh)
         as.SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
         as.SetByProduct();
 
-        CFeat_CI fi(bsh, 0, 0, as);
+        CFeat_CI fi(bsh, as);
         if ( fi ) {
             return &(fi->GetOriginalFeature());
         }
@@ -4895,6 +4884,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.101  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.100  2004/11/01 17:14:35  shomrat
 * + GetGiForAccession and GetAccessionForGi
 *

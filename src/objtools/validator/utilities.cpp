@@ -1041,7 +1041,7 @@ bool IsClassInEntry(const CSeq_entry& se, CBioseq_set::EClass clss)
 bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
 {
     CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
-    const CSeq_entry& se = bsh.GetTopLevelSeqEntry();
+    const CSeq_entry& se = *bsh.GetTopLevelEntry().GetCompleteSeq_entry();
 
     if ( bsh.IsSetInst_Repr() ) {
         CBioseq_Handle::TInst::TRepr repr = bsh.GetInst_Repr();
@@ -1142,6 +1142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.21  2004/07/29 16:12:10  shomrat
 * added four oceans to list of valid countries
 *

@@ -2005,12 +2005,9 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 
     if ( bsh ) {
         CFeat_CI fi(bsh, 
-                    0, 0,
-                    CSeqFeatData::e_Cdregion,
-                    SAnnotSelector::eOverlap_Intervals,
-                    SAnnotSelector::eResolve_TSE,
-                    CFeat_CI::e_Product,
-                    limit);
+                    SAnnotSelector(CSeqFeatData::e_Cdregion)
+                    .SetByProduct()
+                    .SetLimitTSE(limit));
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
@@ -2594,6 +2591,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.61  2004/09/22 13:52:25  shomrat
 * Added eErr_SEQ_INST_BadHTGSeq
 *

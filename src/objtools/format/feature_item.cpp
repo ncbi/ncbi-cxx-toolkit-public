@@ -1100,7 +1100,7 @@ const CProt_ref* CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
     }
 
     const CProt_ref* pref = 0;
-    CFeat_CI prot_feat(prot, 0, 0, CSeqFeatData::e_Prot);
+    CFeat_CI prot_feat(prot, SAnnotSelector(CSeqFeatData::e_Prot));
     if ( prot_feat ) {
         pref = &(prot_feat->GetData().GetProt());
         if ( prot_feat->IsSetComment() ) {
@@ -3288,6 +3288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.32  2004/10/18 18:59:13  shomrat
 * Added Bond and Gene qual classes; Fixes to note formatting
 *

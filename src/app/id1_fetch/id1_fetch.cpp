@@ -512,7 +512,7 @@ bool CId1FetchApp::LookUpGI(int gi)
         if ( !handle ) {
             ERR_POST(Fatal << "Bioseq not found: " << id.DumpAsFasta());
         }
-        reply_object.Reset(&handle.GetTopLevelSeqEntry());
+        reply_object = handle.GetTopLevelEntry().GetCompleteSeq_entry();
     }
 
     // Dump server response in the specified format
@@ -525,7 +525,7 @@ bool CId1FetchApp::LookUpGI(int gi)
         format = eSerial_Xml;
     } else if (fmt == "fasta"  &&  lt == "ids") {
         if (use_objmgr) {
-            WriteFastaIDs(handle.GetBioseq().GetId());
+            WriteFastaIDs(handle.GetBioseqCore()->GetId());
         }
     } else if (fmt == "fasta"  &&  lt == "entry") {
         CFastaOstream out(*m_OutputFile);
@@ -535,7 +535,8 @@ bool CId1FetchApp::LookUpGI(int gi)
         WriteQualityScores(handle);
     } else if (fmt == "genbank"  ||  fmt == "genpept") {
         bool gp = fmt == "genpept";
-        const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
+        const CSeq_entry& entry =
+            *handle.GetTopLevelEntry().GetCompleteSeq_entry();
 #if 1
         CFlatNCBIFormatter formatter(*new CFlatTextOStream(*m_OutputFile),
                                      *m_Scope, IFlatFormatter::eMode_Entrez);
@@ -708,8 +709,8 @@ void CId1FetchApp::WriteQualityScores(CBioseq_Handle& handle)
      */
     string id = FindBestChoice(handle.GetBioseqCore()->GetId(), CSeq_id::Score)
         ->GetSeqIdString(true);
-    
-    for (CGraph_CI it(handle, 0, 0);  it;  ++it) {
+
+    for (CGraph_CI it(handle);  it;  ++it) {
         string title = it->GetTitle();
         if (title.find("uality") == NPOS) {
             continue;
@@ -749,6 +750,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/11/01 19:33:08  grichenk
+* Removed deprecated methods
+*
 * Revision 1.51  2004/07/21 15:51:24  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

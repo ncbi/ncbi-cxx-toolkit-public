@@ -85,7 +85,8 @@ int CRelLocTester::Run(void)
 
     CBioseq_Handle handle = scope.GetBioseqHandle(id); 
     CConstRef<CSeq_loc> parent;
-    for (CFeat_CI it(handle, 0, 0, CSeqFeatData::e_Cdregion);  it;  ++it) {
+    for (CFeat_CI it(handle,
+        SAnnotSelector(CSeqFeatData::e_Cdregion));  it;  ++it) {
         parent = &it->GetLocation();
         BREAK(it);
     }
@@ -105,7 +106,7 @@ int CRelLocTester::Run(void)
         cout << "Using parent location " << label << endl;
     }}
 
-    for (CFeat_CI it(handle, 0, 0, CSeqFeatData::e_not_set);  it;  ++it) {
+    for (CFeat_CI it(handle);  it;  ++it) {
         const CSeq_loc& child = it->GetLocation();
         string label;
         child.GetLabel(&label);
@@ -142,6 +143,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.8  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

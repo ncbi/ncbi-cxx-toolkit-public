@@ -142,7 +142,8 @@ int CMemTestApp::Run(void)
                 CSeq_id id;
                 id.SetGi(gi);
                 CBioseq_Handle bh = scope.GetBioseqHandle(id);
-                const CSeq_entry& entry = bh.GetTopLevelSeqEntry();
+                const CSeq_entry& entry =
+                    *bh.GetTopLevelEntry().GetCompleteSeq_entry();
                 {
                     const CObject* obj = &entry;
                     int c = reinterpret_cast<const int*>(obj)[1];
@@ -212,6 +213,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.5  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

@@ -779,7 +779,9 @@ void CFlatGatherer::x_CollectSourceFeatures
       .SetNoMapping(false)
       .SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
 
-    for ( CFeat_CI fi(bh, range.GetFrom(), range.GetTo(), as); fi; ++fi ) {
+    for ( CFeat_CI fi(bh.GetScope(),
+                      *bh.GetRangeSeq_loc(range.GetFrom(), range.GetTo()),
+                      as); fi; ++fi ) {
         TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
         if ( stop >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
             CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx));
@@ -1136,7 +1138,7 @@ void CFlatGatherer::x_CopyCDSFromCDNA
         return;
     }
     // NB: There is only one CDS on an mRNA
-    CFeat_CI cds(cdna, 0, 0, CSeqFeatData::e_Cdregion);
+    CFeat_CI cds(cdna, SAnnotSelector(CSeqFeatData::e_Cdregion));
     if ( cds ) {
         // map mRNA location to the genomic
         CSeq_loc_Mapper mapper(feat,
@@ -1227,7 +1229,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
             prod_sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
             prod_sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
             prod_sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
-            for (CFeat_CI it(ctx.GetHandle(), 0, 0, prod_sel); it; ++it) {  
+            for (CFeat_CI it(ctx.GetHandle(), prod_sel); it; ++it) {  
                 out << new CFeatureItem(it->GetOriginalFeature(),
                                         ctx,
                                         &it->GetProduct(),
@@ -1287,7 +1289,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
        .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
        .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
        .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
-    for ( CFeat_CI it(prot, 0, 0, sel); it; ++it ) {
+    for ( CFeat_CI it(prot, sel); it; ++it ) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
 
         if ( cfg.HideCDDFeats()  &&
@@ -1367,6 +1369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.30  2004/10/18 18:51:34  shomrat
 * Use new function to get overlapping gene for mRNA
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.11  2004/09/13 18:33:34  vasilche
 * Removed obsolete code.
 *
@@ -392,7 +395,7 @@ bool CTestOM::Thread_Run(int idx)
                 count = 0;
                 if ( idx%2 == 0 ) {
                     sel.SetResolveMethod(sel.eResolve_All);
-                    for ( CFeat_CI it(handle, 0, 0, sel); it; ++it ) {
+                    for ( CFeat_CI it(handle, sel); it; ++it ) {
                         count++;
                     }
                     if ( m_verbose ) {

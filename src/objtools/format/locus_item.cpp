@@ -324,7 +324,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     if ( src_desc ) {
         bsrc = &(src_desc->GetSource());
     } else {
-        CFeat_CI feat(bsh, 0, 0, CSeqFeatData::e_Biosrc);
+        CFeat_CI feat(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc));
         if ( feat ) {
             bsrc = &(feat->GetData().GetBiosrc());
         } else if ( ctx.IsProt() ) {
@@ -568,6 +568,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.12  2004/10/05 15:46:36  shomrat
 * Fixes to division part
 *

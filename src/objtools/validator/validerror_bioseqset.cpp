@@ -140,11 +140,8 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
     if ( m_Imp.IsGPS() ) {
         CFeat_CI mrna(
             m_Scope->GetBioseqHandle(seq), 
-            0, 0,
-            CSeqFeatData::e_Rna,
-            SAnnotSelector::eOverlap_Intervals,
-            SAnnotSelector::eResolve_TSE,
-            CFeat_CI::e_Product);
+            SAnnotSelector(CSeqFeatData::e_Rna)
+            .SetByProduct());
         return (bool)mrna;
     }
     return true;
@@ -370,7 +367,7 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
     const CBioseq& seq = (*se_list_it)->GetSeq();
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-    CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Rna);
+    CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Rna));
     for (; fi; ++fi) {
         if ( fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ) {
             if ( fi->IsSetProduct() ) {
@@ -421,6 +418,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.14  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.7  2004/08/12 22:28:41  vasilche
 * More details about inconsistency between threads.
 *
@@ -321,7 +324,7 @@ bool CTestOM::Thread_Run(int idx)
                     SetValue(m_mapGiToFeat0, sih, feats);
                 }
                 else {
-                    for ( CFeat_CI it(handle, 0, 0, sel); it;  ++it ) {
+                    for ( CFeat_CI it(handle, sel); it;  ++it ) {
                         feats.push_back(ConstRef(&it->GetOriginalFeature()));
                     }
                     // verify result

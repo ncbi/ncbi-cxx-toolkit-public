@@ -113,7 +113,7 @@ CTestProtProd_Cdd::RunTest(const CSerialObject& obj,
     ref->Set().push_back(result);
 
     CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
-    CAnnot_CI it(hand, 0, hand.GetBioseqLength() - 1);
+    CAnnot_CI it(hand);
     int hits = 0;
     bool has_partial = false;
     while (it) {
@@ -221,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/11/01 19:33:08  grichenk
+ * Removed deprecated methods
+ *
  * Revision 1.1  2004/10/06 19:57:15  jcherry
  * Initial version
  *

@@ -870,7 +870,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         LOG_POST("No seq-id found");
         return;
     }
-    handle.GetTopLevelSeqEntry();
+    handle.GetTopLevelEntry();
 #if 0 // build order issues
     CHECK_WRAP();
     sequence::GetTitle(handle);
@@ -979,7 +979,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Iterate seq-map except the last element
     len = 0;
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
-                                .SetLimitTSE(&handle.GetTopLevelSeqEntry())
+                                .SetLimitTSE(handle.GetTopLevelEntry())
                                 .SetResolveCount(kInvalidSeqPos)
                                 .SetFlags(CSeqMap::fFindAny));
     vector<CSeqMap::const_iterator> itrs;
@@ -1130,7 +1130,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         _ASSERT(seq_str_compl.empty());
     }
 
-    CConstRef<CBioseq> bioseq(&(handle.GetBioseq()));
+    CConstRef<CBioseq> bioseq = handle.GetCompleteBioseq();
 
     int count = 0;
     CHECK_WRAP();
@@ -1171,7 +1171,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(id);
     count = 0;
-    set<const CSeq_annot*> annot_set;
+    set<CSeq_annot_Handle> annot_set;
     if ( sm_DumpFeatures ) {
         NcbiCout << "-------------------- CFeat_CI over "<<
             id.AsFastaString()<<" --------------------" << NcbiEndl;
@@ -1179,7 +1179,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     if ( !tse_feat_test ) {
         for ( CFeat_CI feat_it(scope, loc); feat_it;  ++feat_it) {
             count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
+            annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
                 auto_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
@@ -1195,7 +1195,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         for ( CFeat_CI feat_it(scope, loc, SAnnotSelector().SetByProduct());
               feat_it;  ++feat_it) {
             count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
+            annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
                 auto_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
@@ -1209,12 +1209,12 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             NcbiCout << "-------------------- "
                 "LimitTSE --------------------" << NcbiEndl;
         }
-        for ( CFeat_CI feat_it(handle, 0, 0,
+        for ( CFeat_CI feat_it(handle,
                                SAnnotSelector()
-                               .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
+                               .SetLimitTSE(handle.GetTopLevelEntry()));
               feat_it;  ++feat_it) {
             count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
+            annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
                 auto_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
@@ -1227,13 +1227,13 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                 "product CFeat_CI --------------------" << NcbiEndl;
         }
         // Get products
-        for ( CFeat_CI feat_it(handle, 0, 0,
+        for ( CFeat_CI feat_it(handle,
                                SAnnotSelector()
-                               .SetLimitTSE(&handle.GetTopLevelSeqEntry())
+                               .SetLimitTSE(handle.GetTopLevelEntry())
                                .SetByProduct());
               feat_it;  ++feat_it) {
             count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
+            annot_set.insert(feat_it.GetAnnot());
             if ( sm_DumpFeatures ) {
                 auto_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
@@ -1254,7 +1254,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_feat iterator for the specified range
     // Copy location seq-id
     count = 0;
-    set<const CSeq_annot*> annot_set;
+    set<CSeq_annot_Handle> annot_set;
     CSeq_loc loc;
     loc.SetInt().SetId().Assign(id);
     loc.SetInt().SetFrom(0);
@@ -1263,17 +1263,17 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         for ( CFeat_CI feat_it(scope, loc);
               feat_it;  ++feat_it) {
             count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
+            annot_set.insert(feat_it.GetAnnot());
             //### _ASSERT(feat_it->
         }
     }
     else {
-        for ( CFeat_CI feat_it(handle, 0, 10,
+        for ( CFeat_CI feat_it(scope, *handle.GetRangeSeq_loc(0, 10),
                                SAnnotSelector()
-                               .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
+                               .SetLimitTSE(handle.GetTopLevelEntry()));
               feat_it;  ++feat_it) {
             count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
+            annot_set.insert(feat_it.GetAnnot());
             //### _ASSERT(feat_it->
         }
     }
@@ -1284,24 +1284,24 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_WRAP();
     // Test CSeq_align iterator
     count = 0;
-    set<const CSeq_annot*> annot_set;
+    set<CSeq_annot_Handle> annot_set;
     CSeq_loc loc;
     loc.SetWhole(id);
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
              align_it;  ++align_it) {
             count++;
-            annot_set.insert(&align_it.GetSeq_annot());
+            annot_set.insert(align_it.GetAnnot());
             //### _ASSERT(align_it->
         }
     }
     else {
-        for (CAlign_CI align_it(handle, 0, 0,
+        for (CAlign_CI align_it(handle,
                                 SAnnotSelector()
-                                .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
+                                .SetLimitTSE(handle.GetTopLevelEntry()));
              align_it;  ++align_it) {
             count++;
-            annot_set.insert(&align_it.GetSeq_annot());
+            annot_set.insert(align_it.GetAnnot());
             //### _ASSERT(align_it->
         }
     }
@@ -1313,7 +1313,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_align iterator for the specified range
     // Copy location seq-id
     count = 0;
-    set<const CSeq_annot*> annot_set;
+    set<CSeq_annot_Handle> annot_set;
     CSeq_loc loc;
     loc.SetInt().SetId().Assign(id);
     loc.SetInt().SetFrom(10);
@@ -1322,17 +1322,17 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CAlign_CI align_it(scope, loc);
              align_it;  ++align_it) {
             count++;
-            annot_set.insert(&align_it.GetSeq_annot());
+            annot_set.insert(align_it.GetAnnot());
             //### _ASSERT(align_it->
         }
     }
     else {
-        for (CAlign_CI align_it(handle, 10, 20,
+        for (CAlign_CI align_it(scope, *handle.GetRangeSeq_loc(10, 20),
                                 SAnnotSelector()
-                                .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
+                                .SetLimitTSE(handle.GetTopLevelEntry()));
              align_it;  ++align_it) {
             count++;
-            annot_set.insert(&align_it.GetSeq_annot());
+            annot_set.insert(align_it.GetAnnot());
             //### _ASSERT(align_it->
         }
     }
@@ -1342,14 +1342,16 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     if ( sm_TestRemoveEntry ) {
         CHECK_WRAP();
         CRef<CSeq_entry> tse
-            (const_cast<CSeq_entry*>(&handle.GetTopLevelSeqEntry()));
+            (const_cast<CSeq_entry*>(
+            handle.GetTopLevelEntry().GetCompleteSeq_entry().GetPointer()));
         
         CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
-                                   handle.GetBioseq().GetParentEntry()));
+            handle.GetParentEntry().GetCompleteSeq_entry().GetPointer()));
         CSeq_entry* parent = entry->GetParentEntry();
         scope.RemoveEntry(*entry);
         handle = scope.GetBioseqHandle(id);
-        _ASSERT(!handle  ||  handle.GetBioseq().GetParentEntry() != entry);
+        _ASSERT(!handle  ||
+            handle.GetParentEntry().GetCompleteSeq_entry() != entry);
         if ( parent ) {
             // Non-TSE
             scope.AttachEntry(*parent, *entry);
@@ -1411,6 +1413,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.59  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *

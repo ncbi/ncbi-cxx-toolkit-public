@@ -246,7 +246,8 @@ int CSampleObjmgrApplication::Run(void)
     // whole Bioseq is used.
     sel.SetLimitTSE(bioseq_handle.GetTopLevelEntry());
     unsigned ranged_tse_feat_count = 0;
-    for (CFeat_CI feat_it(bioseq_handle, 0, 999, sel); feat_it; ++feat_it) {
+    for (CFeat_CI feat_it(scope,
+        *bioseq_handle.GetRangeSeq_loc(0, 999), sel); feat_it; ++feat_it) {
         ranged_tse_feat_count++;
     }
     NcbiCout << "   [0..999, TSE]     Any:    "
@@ -287,6 +288,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2004/11/01 19:33:08  grichenk
+ * Removed deprecated methods
+ *
  * Revision 1.20  2004/10/19 19:24:38  grichenk
  * Fixed limit by TSE.
  *

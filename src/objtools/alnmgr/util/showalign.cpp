@@ -1439,7 +1439,10 @@ void CDisplaySeqalign::getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& sc
   if(!(id.Empty())){
     const CBioseq_Handle& handle = scope.GetBioseqHandle(*id);
     //cds feature
-    for  (CFeat_CI feat (handle, m_AV->GetSeqStart(row), m_AV->GetSeqStop(row), choice); feat;  ++feat) {
+    for  (CFeat_CI feat(scope,
+                        *handle.GetRangeSeq_loc(m_AV->GetSeqStart(row),
+                        m_AV->GetSeqStop(row)),
+                        choice); feat;  ++feat) {
       
       const CSeq_loc& loc = feat->GetLocation();
       string featLable = NcbiEmptyString;
@@ -2201,6 +2204,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.48  2004/11/01 19:33:09  grichenk
+*Removed deprecated methods
+*
 *Revision 1.47  2004/09/27 21:12:33  jianye
 *modify coordinates to get subseq
 *

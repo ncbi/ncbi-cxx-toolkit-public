@@ -173,7 +173,7 @@ void IFlatFormatter::Format(const CSeq_loc& loc, bool adjust_coords,
     }
     ctx->m_Location.Reset(&loc);
     ctx->m_AdjustCoords = adjust_coords;
-    Format(h.GetBioseq(), out, ctx);
+    Format(*h.GetCompleteBioseq(), out, ctx);
 }
 
 
@@ -300,18 +300,14 @@ void IFlatFormatter::x_FormatFeatures(CFlatContext& ctx,
             }
         }
     } else if (ctx.IsProt()) { // broaden condition?
-        for (CFeat_CI it(scope, ctx.GetLocation(), CSeqFeatData::e_not_set,
-                         SAnnotSelector::eOverlap_Intervals,
-                         SAnnotSelector::eResolve_All, CFeat_CI::e_Product);
-             it;  ++it) {
+        for (CFeat_CI it(scope, ctx.GetLocation(),
+            SAnnotSelector().SetByProduct()); it; ++it) {
             l.push_back(TFFRef(new CFlattishFeature
                                (*it, ctx, &it->GetProduct(), true)));
         }
     }
-    for (CFeat_CI it(scope, ctx.GetLocation(), CSeqFeatData::e_not_set,
-                     SAnnotSelector::eOverlap_Intervals,
-                     SAnnotSelector::eResolve_All);
-         it;  ++it) {
+    for (CFeat_CI it(scope, ctx.GetLocation(),
+        SAnnotSelector().SetResolveAll()); it; ++it) {
         switch (it->GetData().Which()) {
         case CSeqFeatData::e_Pub:  // done as REFERENCEs
             break;
@@ -348,6 +344,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.9  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

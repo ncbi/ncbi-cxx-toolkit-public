@@ -110,7 +110,7 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
     } 
     
     // if no descriptor was found, try a source feature
-    CFeat_CI fsrc_it(ctx.GetHandle(), 0, 0, CSeqFeatData::e_Biosrc);
+    CFeat_CI fsrc_it(ctx.GetHandle(), SAnnotSelector(CSeqFeatData::e_Biosrc));
     if ( fsrc_it ) {
         const CSeq_feat& src_feat = fsrc_it->GetOriginalFeature();
         x_SetSource(src_feat.GetData().GetBiosrc(), src_feat);
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.9  2004/08/19 16:33:46  shomrat
 * m_Lineage no longer a pointer
 *

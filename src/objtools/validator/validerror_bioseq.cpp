@@ -750,7 +750,7 @@ void CValidError_bioseq::ValidatemRNABioseqContext(const CBioseq_Handle& seq)
             }
         }
         if ( genomicgrp != 0 ) {
-            CFeat_CI mrna_gene(seq, 0, 0, CSeqFeatData::e_Gene);
+            CFeat_CI mrna_gene(seq, SAnnotSelector(CSeqFeatData::e_Gene));
             if ( mrna_gene ) {
                 const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
                 if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
@@ -1069,8 +1069,8 @@ bool CValidError_bioseq::IsSameSeqAnnotDesc
 (const CFeat_CI& fi1,
  const CFeat_CI& fi2)
 {
-    const CSeq_annot& annot1 = fi1->GetSeq_annot();
-    const CSeq_annot& annot2 = fi2->GetSeq_annot();
+    const CSeq_annot& annot1 = *fi1->GetAnnot().GetCompleteSeq_annot();
+    const CSeq_annot& annot2 = *fi2->GetAnnot().GetCompleteSeq_annot();
 
     if ( !(annot1.IsSetDesc())  ||  !(annot2.IsSetDesc()) ) {
         return true;
@@ -2039,7 +2039,7 @@ void CValidError_bioseq::CheckSoureDescriptor(const CBioseq_Handle& bsh)
 
     if (m_Imp.IsTransgenic(di->GetSource())  &&
         CSeq_inst::IsNa(bsh.GetInst_Mol())) {
-        if (!CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc)) {
+        if (!CFeat_CI(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc))) {
             PostErr(eDiag_Warning, eErr_SEQ_DESCR_TransgenicProblem,
                 "Transgenic source descriptor requires presence of source feature",
                 *(bsh.GetBioseqCore()));
@@ -2067,7 +2067,7 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
 
     // Check for CPubdesc on the biodseq
     if ( !CSeqdesc_CI( bsh, CSeqdesc::e_Pub)  &&
-         !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Pub) ) {
+         !CFeat_CI(bsh, SAnnotSelector(CSeqFeatData::e_Pub)) ) {
         m_Imp.AddBioseqWithNoPub(seq);
     }
 }
@@ -2077,7 +2077,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     
-    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
+    for ( CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); fi; ++fi ) {
         const CSeq_loc& loc = fi->GetOriginalFeature().GetLocation();
         if ( !IsOneBioseq(loc) ) {  // skip segmented 
             continue;
@@ -2205,7 +2205,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     bool is_virtual = (bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual);
     TSeqPos len = bsh.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
 
-    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
+    for ( CFeat_CI fi(bsh); fi; ++fi ) {
         const CSeq_feat& feat = fi->GetOriginalFeature();
         
         CSeqFeatData::E_Choice ftype = feat.GetData().Which();
@@ -2341,7 +2341,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         CBioseq_Handle parent = s_GetParent(bsh);
         if ( parent ) {
             TSeqPos parent_len = parent.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
-            for ( CFeat_CI it(parent, 0, 0, CSeqFeatData::e_Prot); it; ++it ) {
+            for ( CFeat_CI it(parent, SAnnotSelector(CSeqFeatData::e_Prot)); it; ++it ) {
                 CSeq_loc::TRange range = it->GetLocation().GetTotalRange();
                 
                 if ( range.IsWhole()  ||
@@ -2380,7 +2380,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
     as.IncludedFeatType(CSeqFeatData::e_Cdregion);
     as.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
 
-    for (CFeat_CI it(seq, 0, 0, as); it; ++it) {
+    for (CFeat_CI it(seq, as); it; ++it) {
         const CSeq_feat& feat = it->GetOriginalFeature();
         if (!feat.IsSetProduct()) {
             continue;
@@ -2438,7 +2438,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
 void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
 {
     // nothing to validate if there aren't any genes
-    if (!CFeat_CI(seq, 0, 0, CSeqFeatData::e_Gene)) {
+    if (!CFeat_CI(seq, SAnnotSelector(CSeqFeatData::e_Gene))) {
         return;
     }
 
@@ -2451,7 +2451,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
     as.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
 
     CConstRef<CSeq_feat> gene;
-    for (CFeat_CI it(seq, 0, 0, as); it; ++it) {
+    for (CFeat_CI it(seq, as); it; ++it) {
         const CSeq_feat& feat = it->GetOriginalFeature();
         const CGene_ref* gref = feat.GetGeneXref();
         if (gref == NULL  ||  gref->IsSuppressed()) {
@@ -2499,7 +2499,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
 
     bool saw_cds = false;
     ENa_strand cds_strand = eNa_strand_unknown;
-    for ( CFeat_CI it(seq, 0, 0, sel); it; ++it ) {
+    for ( CFeat_CI it(seq, sel); it; ++it ) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
         bool validate_group = false;
         if ( saw_cds ) {
@@ -2639,7 +2639,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
         }
     }
 
-    CFeat_CI curr(bsh, 0, 0, CSeqFeatData::e_not_set);
+    CFeat_CI curr(bsh);
     if ( !curr ) {
         return;
     }
@@ -2905,7 +2905,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     if ( !seq.IsAa()  &&
                         !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
                         !(m_Imp.GetAncestor(seq, CBioseq_set::eClass_parts) != 0) ) {
-                        if ( !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc) ) {
+                        if ( !CFeat_CI(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc)) ) {
                             PostErr(eDiag_Error,
                                 eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
                                 "BioSource descriptor has focus, "
@@ -3142,7 +3142,7 @@ bool CValidError_bioseq::x_IsMicroRNA(const CBioseq& seq) const
 {
     SAnnotSelector selector(CSeqFeatData::e_Rna);
     selector.SetFeatSubtype(CSeqFeatData::eSubtype_otherRNA);
-    CFeat_CI fi(m_Scope->GetBioseqHandle(seq), 0, 0, selector);
+    CFeat_CI fi(m_Scope->GetBioseqHandle(seq), selector);
 
     for ( ; fi; ++fi ) {
         const CRNA_ref& rna_ref = fi->GetData().GetRna();
@@ -3280,7 +3280,7 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
     // Loop through genes and insert into multimap sorted by
     // gene label / locus_tag -- case insensitive
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
+    for ( CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); fi; ++fi ) {
         const CSeq_feat& feat = fi->GetOriginalFeature();
         // record label
         string label;
@@ -3422,7 +3422,7 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
     const CSeq_inst& inst = seq.GetInst();  
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-    CGraph_CI grp(bsh, 0, 0);
+    CGraph_CI grp(bsh);
     if ( !grp ) {
         return;
     }
@@ -3467,7 +3467,7 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
     }
 
     if ( validate_values ) {
-        for ( CGraph_CI g(bsh, 0, 0); g; ++g ) {
+        for ( CGraph_CI g(bsh); g; ++g ) {
             ValidateGraphValues(g->GetOriginalGraph(), seq);
         }
     }
@@ -3661,7 +3661,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
     SIZE_TYPE   num_delta_seq = 0;
     TSeqPos offset = 0;
 
-    CGraph_CI grp(m_Scope->GetBioseqHandle(seq), 0, 0);
+    CGraph_CI grp(m_Scope->GetBioseqHandle(seq));
     while ( curr != end  &&  grp ) {
         ++next;
         const CSeq_loc& loc = grp->GetLoc();
@@ -3736,7 +3736,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
     }
 
     SIZE_TYPE num_graphs = 0;
-    for ( CGraph_CI i(m_Scope->GetBioseqHandle(seq), 0, 0); i; ++i ) {
+    for ( CGraph_CI i(m_Scope->GetBioseqHandle(seq)); i; ++i ) {
         ++num_graphs;
     }
 
@@ -3797,7 +3797,7 @@ SIZE_TYPE CValidError_bioseq::GetSeqLen(const CBioseq& seq)
 
 bool CValidError_bioseq::GraphsOnBioseq(const CBioseq& seq) const
 {
-    return CGraph_CI(m_Scope->GetBioseqHandle(seq), 0, 0);
+    return CGraph_CI(m_Scope->GetBioseqHandle(seq));
 }
 
 
@@ -3901,6 +3901,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.89  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.88  2004/09/22 13:53:10  shomrat
 * Added eErr_SEQ_INST_BadHTGSeq
 *

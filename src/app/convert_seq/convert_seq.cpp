@@ -182,7 +182,7 @@ CConstRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
     if (infmt == "ID") {
         CSeq_id        id(args["in"].AsString());
         CBioseq_Handle h = m_Scope->GetBioseqHandle(id);
-        return CConstRef<CSeq_entry>(&h.GetTopLevelSeqEntry());
+        return h.GetTopLevelEntry().GetCompleteSeq_entry();
     } else if (infmt == "fasta") {
         return ReadFasta(args["in"].AsInputFile());
     } else if (infmt == "gff") {
@@ -297,6 +297,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/11/01 19:33:08  grichenk
+* Removed deprecated methods
+*
 * Revision 1.7  2004/07/21 15:51:24  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

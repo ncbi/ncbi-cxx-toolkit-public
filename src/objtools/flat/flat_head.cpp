@@ -362,10 +362,7 @@ void CFlatHead::x_AddDBSource(void)
         set<CBioseq_Handle> sources;
         CScope&             scope = m_Context->GetHandle().GetScope();
         for (CFeat_CI it(scope, m_Context->GetLocation(),
-                         CSeqFeatData::e_not_set,
-                         SAnnotSelector::eOverlap_Intervals,
-                         SAnnotSelector::eResolve_TSE, CFeat_CI::e_Product);
-             it;  ++it) {
+            SAnnotSelector().SetByProduct()); it; ++it) {
             for (CTypeConstIterator<CSeq_id> id2(it->GetLocation());
                  id2;  ++id2) {
                 sources.insert(scope.GetBioseqHandle(*id2));
@@ -704,6 +701,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.8  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -69,7 +69,7 @@ bool s_FindGraph(const CSeq_graph& graph, CBioseq_Handle& bsh)
         return false;
     }
 
-    for ( CGraph_CI it(bsh, 0, 0); it; ++it ) {
+    for ( CGraph_CI it(bsh); it; ++it ) {
         if ( &graph == &(it->GetOriginalGraph()) ) {
             return true;
         }
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/11/01 19:33:10  grichenk
+* Removed deprecated methods
+*
 * Revision 1.6  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

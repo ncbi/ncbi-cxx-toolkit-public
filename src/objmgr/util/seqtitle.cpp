@@ -222,7 +222,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()) {
         unsigned int         genes = 0, cdregions = 0, prots = 0;
         CConstRef<CSeq_feat> gene(0),   cdregion(0);
-        for (CFeat_CI it(hnd, 0, 0, CSeqFeatData::e_not_set);
+        for (CFeat_CI it(hnd);
              it;  ++it) {
             switch (it->GetData().Which()) {
             case CSeqFeatData::e_Gene:
@@ -252,7 +252,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
     } else if (title.empty()  &&  is_nr  &&  source.NotEmpty()
                &&  source->GetOrg().IsSetTaxname()) {
-        for (CTypeConstIterator<CSeq_feat> it(hnd.GetTopLevelSeqEntry());
+        for (CTypeConstIterator<CSeq_feat> it(
+            *hnd.GetTopLevelEntry().GetCompleteSeq_entry());
              it;  ++it) {
             if (it->GetData().IsGene()) {
                 title = source->GetOrg().GetTaxname() + ' ';
@@ -866,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.45  2004/11/01 19:33:09  grichenk
+* Removed deprecated methods
+*
 * Revision 1.44  2004/10/27 21:32:00  ucko
 * s_TitleFromBioSource: list strain before other qualifiers per C Toolkit.
 *
