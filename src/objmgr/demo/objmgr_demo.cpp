@@ -107,6 +107,9 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("id", "SeqEntryID",
                              "Seq-id of the Seq-Entry to fetch",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("asn_id", "SeqEntryID",
+                             "ASN.1 of Seq-id of the Seq-Entry to fetch",
+                             CArgDescriptions::eString);
     arg_desc->AddOptionalKey("file", "SeqEntryFile",
                              "file with Seq-Entry to load (text ASN.1)",
                              CArgDescriptions::eInputFile);
@@ -667,6 +670,17 @@ int CDemoApp::Run(void)
         id.Reset(new CSeq_id(args["id"].AsString()));
         gi = -1;
     }
+    else if ( args["asn_id"] ) {
+        id.Reset(new CSeq_id);
+        string text = args["asn_id"].AsString();
+        if ( text.find("::=") == NPOS ) {
+            text = "Seq-id ::= " + text;
+        }
+        CNcbiIstrstream ss(text.c_str());
+        AutoPtr<CObjectIStream> os(CObjectIStream::Open(eSerial_AsnText, ss));
+        *os >> *id;
+        gi = -1;
+    }
     else {
         ERR_POST(Fatal << "Either -gi or -id argument is required");
     }
@@ -1128,6 +1142,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/12/02 23:20:22  vasilche
+* Allow to specify any Seq-id via ASN.1 text.
+*
 * Revision 1.46  2003/11/26 17:56:01  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.
