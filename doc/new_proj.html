@@ -36,7 +36,7 @@
       <li> <a href="#ref_MakeProjTarget">
         Standard build targets(<b>all, clean, purge</b>) in makefiles</a>
       <li> <a href="#ref_Packages">
-        Current optional packages and projects</a>
+        List of optional packages, features and projects</a>
     </ul>
   </ul>
   <li> <a href="#ref_Outside">
@@ -627,7 +627,7 @@ CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
 
 <ul>
-  <li> Skip building this library if xrequirement
+  <li> Skip building this library if <tt>xrequirement</tt>
        (<a href="#ref_Packages">an optional package or project</a>)
        is disabled or unavailable
   <li> Compile <i><b>xmy_src1.cpp</b></i> using the C++ compiler
@@ -851,18 +851,25 @@ href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 <p>
 <br>
 <a name="ref_Packages"></a>
-<h2>Current optional packages and projects</h2>
+<h2>List of optional packages, features and projects</h2>
 Here are the keywords you can list in REQUIRES in a customized
-application or library makefile, along with the corresponding
+<a href="#ref_MakeProjApp">application</a> or
+<a href="#ref_MakeProjLib">library</a> makefile, along with the corresponding
 <a href="config.html#ref_ProhibitPackage">configure options</a>:
 
-<br>
+<p>
 
 <table border=1 cellspacing=0>
  <tr>
   <th>Keyword</th>
-  <th>Optional package</th>
+  <th align=left>Optional...</th>
   <th>Configure option(s)</th>
+ </tr>
+
+ <tr>
+  <th> </th>
+  <th>...package</th>
+  <th></th>
  </tr>
 
  <tr>
@@ -910,13 +917,13 @@ application or library makefile, along with the corresponding
 
  <tr>
   <td><b>SP</b></td>
-  <td>NCBI SP libraries</td>
+  <td>SP libraries</td>
   <td><i>--without-sp</i></td>
  <tr>
 
  <tr>
   <td><b>PubMed</b></td>
-  <td>NCBI PubMed library</td>
+  <td>NCBI PubMed libraries</td>
   <td><i>--without-pubmed</i></td>
  <tr>
 
@@ -925,15 +932,23 @@ application or library makefile, along with the corresponding
   <td>ORBacus CORBA</td>
   <td><i>--without-orbacus, --with-orbacus=DIR</i></td>
  </tr>
-</table>
 
-<br>
-
-<table border=1 cellspacing=0>
  <tr>
-  <th>Keyword</th>
-  <th>Optional project(s)</th>
-  <th>Configure option(s)</th>
+  <th> </th>
+  <th>...feature</th>
+  <th> </th>
+ </tr>
+
+ <tr>
+  <td><b>MT</b></td>
+  <td>multithreading is available</td>
+  <td><i>--with-mt</i></td>
+ </tr>
+
+ <tr>
+  <th> </th>
+  <th>...project(s)</th>
+  <th> </th>
  </tr>
 
  <tr>
@@ -984,6 +999,7 @@ application or library makefile, along with the corresponding
   <td><i>--without-local-lbsm</i></td>
  </tr>
 </table>
+
 
 <p>
 <br>
