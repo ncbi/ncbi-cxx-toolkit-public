@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/04/24 21:33:58  lavr
+ * Added members of mapper V-table: penalize(method) and name(data).
+ * Service iterator has got new field 'last' to keep the latest given info.
+ *
  * Revision 6.7  2001/03/06 23:57:49  lavr
  * Minor beautifications
  *
@@ -71,7 +75,9 @@ extern "C" {
 typedef struct {
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter);
     int/*bool*/ (*Update)(SERV_ITER iter, const char* text);
+    int/*bool*/ (*Penalize)(SERV_ITER iter, double penalty);
     void        (*Close)(SERV_ITER iter);
+    const char* name;
 } SSERV_VTable;
 
 
@@ -84,6 +90,7 @@ struct SSERV_IterTag {
     SSERV_Info** skip;           /* servers to skip                        */
     size_t       n_skip;         /* number of servers in the array         */
     size_t       n_max_skip;     /* number of allocated slots in the array */
+    SSERV_Info*  last;           /* last server info taken out             */
 
     const SSERV_VTable* op;      /* table of virtual functions             */
 
