@@ -26,9 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anton    Butanayev <butanaev@ncbi.nlm.nih.gov>
- *           Denis    Vakatov   <vakatov@ncbi.nlm.nih.gov>
- *           Vladimir Ivanov    <ivanov@ncbi.nlm.nih.gov>*
+ * Authors:  Anton Butanayev, Denis Vakatov, Vladimir Ivanov
  *
  * DayOfWeek():  Used code has been posted on comp.lang.c on March 10th, 1993
  *               by Tomohiko Sakamoto (sakamoto@sm.sony.co.jp).
@@ -39,11 +37,16 @@
 /// Defines CTime, the standard Date/Time class which also can be used
 /// to span time (to represent elapsed time).
 ///
-///	NOTE: Do not use Local time with time span and dates < "1/1/1900"
-/// (use GMT time only!!!)	
+/// NOTE: 
+///   - Do not use Local time and time_t and its dependent functions with
+///     dates outside range January 1, 1970 to January 18, 2038.
+///     Also avoid to use GMT -> Local time conversion functions.
 ///
-/// NCBI_MAC_OS Note: Mac OS 9 does not correctly support daylight savings
-/// flag. CTime implementation does not support Daylight on this platform.
+///   - Do not use DataBase conversion functions with dates
+///     less than January 1, 1900.
+///
+///   - Mac OS 9 does not correctly support daylight savings flag.
+///     CTime implementation does not support Daylight on this platform.
 
 
 #include <corelib/ncbistd.hpp>
@@ -155,6 +158,11 @@ public:
         eGmt          ///< Use GMT (Greenwich Mean Time)
     };
 
+    /// Current timezone. Used in AsString() method.
+    enum {
+	    eCurrentTimeZone= -1
+    };
+
     /// Which format use to get name of month or week of day.
     enum ENameFormat {
         eFull,        ///< Use full name.
@@ -256,7 +264,7 @@ public:
     ///   What time zone precision to use.
     CTime(int year, int month, int day,
           int hour = 0, int minute = 0, int second = 0, long nanosecond = 0,
-          ETimeZone tz  = eLocal,
+          ETimeZone tz = eLocal,
           ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Constructor.
@@ -465,9 +473,18 @@ public:
     /// Use GetFormat() to obtain format, if "fmt" is not defined (=kEmptyStr).
     /// @param fmt
     ///   Format specifier used to convert time to string.
+    /// @param out_tz
+    ///   Output timezone. This is a difference in seconds between GMT time
+    ///   and local time for some place (for example, for EST5 timezone
+    ///   its value is 18000). This parameter works only with local time.
+    ///   If the time object have GMT time that it is ignored.
+    ///   Before transformation to string the time will be converted to output
+    ///   timezone. Timezone can be printed as string 'GMT[+|-]HHMM' using
+    ///   format symbol 'z'. By default current timezone is used.
     /// @sa
-    ///   GetFormat()
-    string AsString(const string& fmt = kEmptyStr) const;
+    ///   GetFormat(), SetFormat()
+    string AsString(const string& fmt = kEmptyStr,
+                    long out_tz       = eCurrentTimeZone) const;
 
     /// Return time as string using the format returned by GetFormat().
     operator string(void) const;
@@ -1213,6 +1230,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/03/24 15:52:50  ivanov
+ * Added new format symbol support 'z' (local time in format GMT{+|-}HHMM).
+ * Added second parameter to AsString() method that specify an output
+ * timezone.
+ *
  * Revision 1.31  2004/03/10 19:56:38  gorelenk
  * Added NCBI_XNCBI_EXPORT prefix for functions AddYear, AddMonth, AddDay,
  * AddHour, AddMinute, AddSecond, AddNanoSecond and operators:

@@ -58,7 +58,7 @@ static MyTZDLS MyReadLocation()
     // (Sign-extend the GMT correction)
     if ((tz & 0x00800000) != 0) {
         tz |= 0xFF000000;
-	}
+    }
     bool dls = (loc.u.dlsDelta != 0);
     MyTZDLS tzdls = {tz, dls};
     return tzdls;
@@ -129,7 +129,7 @@ static const char* kWeekdayFull [7] = {
 static const char* kDefaultFormat = "M/D/Y h:m:s";
 
 // Set of the checked format symbols (w,W not included)
-static const char* kFormatSymbols = "YyMbBDhmsSZwW";
+static const char* kFormatSymbols = "yYMbBDhmsSzZwW";
 
 // Error messages
 static const string kMsgInvalidTime = "CTime:  invalid";
@@ -154,7 +154,7 @@ static unsigned s_Date2Number(const CTime& date)
     ya = y - 100 * c;
     
     return ((146097 * c) >> 2) + ((1461 * ya) >> 2) +
-	       (153 * m + 2) / 5 +  d + 1721119;
+            (153 * m + 2) / 5 +  d + 1721119;
 }
 
 
@@ -254,12 +254,15 @@ void CTime::x_Init(const string& str, const string& fmt)
     
     const char* fff;
     const char* sss = str.c_str();
+    bool  adjust_needed = false;
+    long  adjust_tz     = 0;
 
     int weekday = -1;
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
         // Non-format symbols
         if (strchr(kFormatSymbols, *fff) == 0) {
+
             if (*fff == *sss) {
                 sss++;
                 continue;  // skip matching non-format symbols
@@ -302,14 +305,63 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
-        // Timezone
+        // Timezone (GMT time) 
         if (*fff == 'Z') {
             if (strncmp(sss, "GMT", 3) == 0) {
                 m_Tz = eGmt;
                 sss += 3;
             } else {
                 m_Tz = eLocal;
+                if (fff[1] == ' ') fff++;
             }
+            continue;
+        }
+
+        // Timezone (local time in format GMT+HHMM)
+        if (*fff == 'z') {
+            m_Tz = eLocal;
+            if (strncmp(sss, "GMT", 3) == 0) {
+                sss += 3;
+            }
+            while ( isspace(*sss) ) {
+                sss++; 
+            }
+            int sign = (*sss == '+') ? 1 : ((*sss == '-') ? -1 : 0);
+            if ( sign ) {
+                sss++;
+            } else {
+                sign = 1;
+            }
+            long x_hour = 0;
+            long x_min  = 0;
+
+            char value_str[3];
+            char* s = value_str;
+            for (size_t len = 2; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+                *s++ = *sss++; 
+            }
+            *s = '\0';
+            try {
+                x_hour = NStr::StringToLong(value_str);
+            }
+            catch (CStringException) {
+                x_hour = 0;
+            }
+            try {
+                if ( *sss != '\0' ) {
+                    s = value_str;
+                    for (size_t len = 2; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+                        *s++ = *sss++; 
+                    }
+                    *s = '\0';
+                    x_min = NStr::StringToLong(value_str, 10, NStr::eCheck_Skip);
+                }
+            }
+            catch (CStringException) {
+                x_min = 0;
+            }
+            adjust_needed = true;
+            adjust_tz = sign * (x_hour * 60 + x_min) * 60;
             continue;
         }
 
@@ -370,6 +422,10 @@ void CTime::x_Init(const string& str, const string& fmt)
 
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
+    }
+    // Adjust time for current timezone
+    if ( adjust_needed  &&  adjust_tz != -TimeZone() ) {
+        AddSecond(-TimeZone() - adjust_tz);
     }
 }
 
@@ -654,7 +710,7 @@ static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
 }
 
 
-string CTime::AsString(const string& fmt) const
+string CTime::AsString(const string& fmt, long out_tz) const
 {
     if ( fmt.empty() ) {
         return AsString(GetFormat());
@@ -669,29 +725,56 @@ string CTime::AsString(const string& fmt) const
     if ( IsEmpty() ) {
         return kEmptyStr;
     }
-  
+
+    const CTime* t = this;
+    CTime* t_out = 0;
+    // Adjust time for output timezone
+    if (out_tz != eCurrentTimeZone  &&  out_tz != TimeZone()) {
+        t_out = new CTime(*this);
+        t_out->AddSecond(TimeZone() - out_tz);
+        t = t_out;
+    }
+    
     string str;
     ITERATE(string, it, fmt) {
         switch ( *it ) {
-        case 'Y':  s_AddZeroPadInt(str, Year(), 4);       break;
-        case 'y':  s_AddZeroPadInt(str, Year() % 100);    break;
-        case 'M':  s_AddZeroPadInt(str, Month());         break;
-        case 'b':  str += kMonthAbbr[Month()-1];          break;
-        case 'B':  str += kMonthFull[Month()-1];          break;
-        case 'D':  s_AddZeroPadInt(str, Day());           break;
-        case 'h':  s_AddZeroPadInt(str, Hour());          break;
-        case 'm':  s_AddZeroPadInt(str, Minute());        break;
-        case 's':  s_AddZeroPadInt(str, Second());        break;
-        case 'S':  s_AddZeroPadInt(str, NanoSecond(), 9); break;
-        case 'Z':  if (IsGmtTime()) str += "GMT";         break;
-        case 'w':  str += kWeekdayAbbr[DayOfWeek()];      break;
-        case 'W':  str += kWeekdayFull[DayOfWeek()];      break;
-        default :
-            str += *it;  break;
+        case 'y': s_AddZeroPadInt(str, t->Year() % 100);    break;
+        case 'Y': s_AddZeroPadInt(str, t->Year(), 4);       break;
+        case 'M': s_AddZeroPadInt(str, t->Month());         break;
+        case 'b': str += kMonthAbbr[t->Month()-1];          break;
+        case 'B': str += kMonthFull[t->Month()-1];          break;
+        case 'D': s_AddZeroPadInt(str, t->Day());           break;
+        case 'h': s_AddZeroPadInt(str, t->Hour());          break;
+        case 'm': s_AddZeroPadInt(str, t->Minute());        break;
+        case 's': s_AddZeroPadInt(str, t->Second());        break;
+        case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
+        case 'z': {
+                      str += "GMT";
+                      if (IsGmtTime()) {
+                          break;
+                      }
+                      long tz = (out_tz == eCurrentTimeZone) ? TimeZone() : 
+                                                               out_tz;
+                      str += (tz > 0) ? '-' : '+';
+                      tz = abs(tz);
+                      int tzh = tz / 3600;
+                      s_AddZeroPadInt(str, tzh);
+                      s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
+                      break;
+                  }
+        case 'Z': if (IsGmtTime()) str += "GMT";            break;
+        case 'w': str += kWeekdayAbbr[t->DayOfWeek()];      break;
+        case 'W': str += kWeekdayFull[t->DayOfWeek()];      break;
+        default : str += *it;                               break;
         }
+    }
+    // Free used memory
+    if ( t_out ) {
+        delete t_out;
     }
     return str;
 }
+
 
 #if defined (NCBI_OS_MAC)
 // Mac OS 9 does not correctly support daylight savings flag.
@@ -704,8 +787,8 @@ time_t CTime::GetTimeT(void) const
     t.tm_mday  = Day();
     t.tm_mon   = Month()-1;
     t.tm_year  = Year()-1900;
-    t.tm_isdst = -1;	
-	return mktime(&t);
+    t.tm_isdst = -1;
+    return mktime(&t);
 }
 #else
 time_t CTime::GetTimeT(void) const
@@ -903,7 +986,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
 {
     if ( !months ) {
         return *this;
-	}
+    }
     CTime *pt = 0;
     bool aflag = false; 
     if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
@@ -931,7 +1014,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
 {
     if ( !days ) {
         return *this;
-	}
+    }
     CTime *pt = 0;
     bool aflag = false; 
     if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
@@ -960,7 +1043,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 {
     if ( !hours ) {
         return *this;
-	}
+    }
     CTime *pt = 0;
     bool aflag = false; 
     if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
@@ -987,7 +1070,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 {
     if ( !minutes ) {
         return *this;
-	}
+    }
     CTime *pt = 0;
     bool aflag = false; 
     if ((adl == eAdjustDaylight) && x_NeedAdjustTime()) {
@@ -1041,7 +1124,7 @@ bool CTime::IsValid(void) const
     if ( IsEmpty() ) 
         return true;
 
-    if (Year() < 1755) // first Gregorian date
+    if (Year() < 1583) // first Gregorian date February 24, 1582
         return false;
     if (Month()  < 1  ||  Month()  > 12)
         return false;
@@ -1240,13 +1323,13 @@ CTime& CTime::x_AdjustTime(const CTime& from, bool shift_time)
         return *this; 
 
     switch ( GetTimeZonePrecision() ) {
-	case eMinute:
-	    if (Minute() != from.Minute())
-		    return x_AdjustTimeImmediately(from, shift_time);
-	case eHour:
-	    if (Hour() != from.Hour())
-		    return x_AdjustTimeImmediately(from, shift_time);
-	case eDay:
+    case eMinute:
+        if (Minute() != from.Minute())
+            return x_AdjustTimeImmediately(from, shift_time);
+    case eHour:
+        if (Hour() != from.Hour())
+            return x_AdjustTimeImmediately(from, shift_time);
+    case eDay:
         if (Day() != from.Day())
             return x_AdjustTimeImmediately(from, shift_time);
     case eMonth:
@@ -1281,22 +1364,22 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
         // Correction need's if time already in identical timezone
         if (!diff  ||  diff == m_AdjustTimeDiff) {
             return *this;
-		}
+        }
     } 
     // Recursive procedure call. Inside below 
     // x_AddHour(*, eAdjustDaylight, false)
     else  {
         // Correction need't if difference not found
-	    if (diff == m_AdjustTimeDiff) {
+        if (diff == m_AdjustTimeDiff) {
             return *this;
-	    }
+        }
     }
     // Make correction with temporary time shift
     time_t t = GetTimeT();
     CTime tn(t + diff + 3600 * kShift * sign);
     if (from.GetTimeZoneFormat() == eLocal) {
         tn.ToLocalTime();
-	}
+    }
     tn.SetTimeZonePrecision(GetTimeZonePrecision());
 
     // Release adjust time mutex
@@ -1346,7 +1429,7 @@ double CStopWatch::GetTimeMark()
     // For Unixes, we use gettimeofday()
 
     struct timeval time;
-    if (gettimeofday (&time, 0)) {
+    if ( gettimeofday (&time, 0) ) {
         return 0.0;
     }
     return double(time.tv_sec) + double(time.tv_usec) / 1e6;
@@ -1459,6 +1542,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/03/24 15:52:08  ivanov
+ * Added new format symbol support 'z' (local time in format GMT{+|-}HHMM).
+ * Added second parameter to AsString() method that specify an output
+ * timezone.
+ *
  * Revision 1.44  2003/11/25 19:55:49  ivanov
  * Added setters for various components of time -- Set*().
  * Added YearWeekNumber(), MonthWeekNumber().
