@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2002/03/07 19:16:04  thiessen
+* don't auto-show sequence windows
+*
 * Revision 1.70  2002/02/19 14:59:38  thiessen
 * add CDD reject and purge sequence
 *
@@ -706,6 +709,11 @@ const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int
         return currentAlignment->GetAlignmentColor(sequence, seqIndex);
     else
         return NULL;
+}
+
+void AlignmentManager::ShowSequenceViewer(void)
+{
+    sequenceViewer->CreateSequenceWindow();
 }
 
 void AlignmentManager::ShowUpdateWindow(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/03/07 19:16:04  thiessen
+* don't auto-show sequence windows
+*
 * Revision 1.39  2002/02/19 14:59:38  thiessen
 * add CDD reject and purge sequence
 *
@@ -249,6 +252,9 @@ public:
 
     // remove sequence from both multiple alignment and updates
     void PurgeSequence(const MoleculeIdentifier *identifier);
+
+    // show sequence/alignment viewer
+    void ShowSequenceViewer(void);
 
 private:
     void Init(void);

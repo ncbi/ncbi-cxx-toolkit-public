@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/03/07 19:16:04  thiessen
+* don't auto-show sequence windows
+*
 * Revision 1.23  2001/12/06 23:13:45  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -79,6 +82,7 @@ class SequenceViewer : public ViewerBase
 {
     friend class SequenceViewerWindow;
     friend class SequenceDisplay;
+    friend class AlignmentManager;
 
 public:
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.128  2002/03/07 19:16:04  thiessen
+* don't auto-show sequence windows
+*
 * Revision 1.127  2002/03/07 15:45:50  thiessen
 * compile fix ; extra file load messages
 *
@@ -1584,7 +1587,7 @@ void Cn3DMainFrame::OnShowWindow(wxCommandEvent& event)
             RaiseLogWindow();
             break;
         case MID_SHOW_SEQ_V:
-            GlobalMessenger()->PostRedrawAllSequenceViewers();
+            if (glCanvas->structureSet) glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
             break;
         case MID_SHOW_LOG_START:
             RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START,

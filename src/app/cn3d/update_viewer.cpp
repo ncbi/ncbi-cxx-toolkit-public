@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/03/07 19:16:04  thiessen
+* don't auto-show sequence windows
+*
 * Revision 1.30  2002/03/04 15:52:15  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -213,7 +216,7 @@ void UpdateViewer::CreateUpdateWindow(void)
     } else {
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
-            if (!updateWindow) updateWindow = new UpdateViewerWindow(this);
+            updateWindow = new UpdateViewerWindow(this);
             if (displayStack.size() > 2) updateWindow->EnableUndo(true);
             updateWindow->NewDisplay(display, false);
             updateWindow->ScrollToColumn(display->GetStartingColumn());
@@ -226,10 +229,7 @@ void UpdateViewer::CreateUpdateWindow(void)
 
 void UpdateViewer::Refresh(void)
 {
-    if (updateWindow) {
-        updateWindow->Show(true);
-        updateWindow->Refresh();
-    }
+    if (updateWindow) updateWindow->Refresh();
 }
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)

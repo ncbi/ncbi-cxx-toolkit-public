@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2002/03/07 19:16:04  thiessen
+* don't auto-show sequence windows
+*
 * Revision 1.47  2002/03/04 15:52:14  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -204,24 +207,25 @@ SequenceViewer::~SequenceViewer(void)
 
 void SequenceViewer::CreateSequenceWindow(void)
 {
-    SequenceDisplay *display = GetCurrentDisplay();
-    if (display) {
-        if (!sequenceWindow) sequenceWindow = new SequenceViewerWindow(this);
-        sequenceWindow->NewDisplay(display, true);
-        sequenceWindow->ScrollToColumn(display->GetStartingColumn());
+    if (sequenceWindow) {
         sequenceWindow->Show(true);
-        // ScrollTo causes immediate redraw, so don't need a second one
-        GlobalMessenger()->UnPostRedrawSequenceViewer(this);
+        GlobalMessenger()->PostRedrawSequenceViewer(this);
+    } else {
+        SequenceDisplay *display = GetCurrentDisplay();
+        if (display) {
+            sequenceWindow = new SequenceViewerWindow(this);
+            sequenceWindow->NewDisplay(display, true);
+            sequenceWindow->ScrollToColumn(display->GetStartingColumn());
+            sequenceWindow->Show(true);
+            // ScrollTo causes immediate redraw, so don't need a second one
+            GlobalMessenger()->UnPostRedrawSequenceViewer(this);
+        }
     }
 }
 
 void SequenceViewer::Refresh(void)
 {
-    if (sequenceWindow) {
-        sequenceWindow->Show(true);
-        sequenceWindow->Refresh();
-    } else
-        CreateSequenceWindow();
+    if (sequenceWindow) sequenceWindow->Refresh();
 }
 
 void SequenceViewer::SaveDialog(void)
