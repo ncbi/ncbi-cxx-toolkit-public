@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/05/06 16:23:42  gouriano
+* write unassigned mandatory member when assignment verification is off
+*
 * Revision 1.27  2003/04/29 18:30:36  gouriano
 * object data member initialization verification
 *
@@ -777,11 +780,13 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
     if ( memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetNo ) {
-        if (!memberInfo->Optional() && out.GetVerifyData()) {
+        if (memberInfo->Optional()) {
+            return;
+        }
+        if (out.GetVerifyData()) {
             out.ThrowError(CObjectOStream::fUnassigned,
                 string("Unassigned member: ")+memberInfo->GetId().GetName());
         }
-        return;
     }
 #ifdef _DEBUG
     if (memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetMaybe &&
