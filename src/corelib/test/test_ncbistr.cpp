@@ -881,47 +881,45 @@ int CTestApplication::Run(void)
 
 
     //------------------------------------------------------------------------
-    // NStr::StringToUInt[8]_DataSize()
+    // NStr::StringToUInt8_DataSize()
     //------------------------------------------------------------------------
 
-    NcbiCout << NcbiEndl << "NStr::StringToUInt_DataSize() tests...";
+    NcbiCout << NcbiEndl << "NStr::StringToUInt8_DataSize() tests...";
 
     {{
         const char* k_1 = "10KB";
         const char* k_2 = "10K";
-        unsigned v;
-        v = NStr::StringToUInt_DataSize(k_1);
+        Uint8 v;
+        v = NStr::StringToUInt8_DataSize(k_1);
         assert(v == 10 * 1024);
-        v = NStr::StringToUInt_DataSize(k_2);
+        v = NStr::StringToUInt8_DataSize(k_2);
         assert(v == 10 * 1024);
     }}
 
     {{
         const char* m_1 = "10MB";
         const char* m_2 = "10M";
-        unsigned v;
-        v = NStr::StringToUInt_DataSize(m_1);
+        Uint8 v;
+        v = NStr::StringToUInt8_DataSize(m_1);
         assert(v == 10 * 1024 * 1024);
-        v = NStr::StringToUInt_DataSize(m_2);
+        v = NStr::StringToUInt8_DataSize(m_2);
         assert(v == 10 * 1024 * 1024);
     }}
 
     {{
         const char* g_1 = "1GB";
         const char* g_2 = "1G";
-        unsigned v;
-        v = NStr::StringToUInt_DataSize(g_1);
+        Uint8 v;
+        v = NStr::StringToUInt8_DataSize(g_1);
         assert(v == 1 * 1024 * 1024 * 1024);
-        v = NStr::StringToUInt_DataSize(g_2);
+        v = NStr::StringToUInt8_DataSize(g_2);
         assert(v == 1 * 1024 * 1024 * 1024);
     }}
 
     {{
         bool err_catch = false;
         try {
-            const char* g = "1GBx";
-            unsigned v;
-            v = NStr::StringToUInt_DataSize(g);
+            Uint8 v = NStr::StringToUInt8_DataSize("1GBx");
         }
         catch (exception&)
         {
@@ -933,9 +931,7 @@ int CTestApplication::Run(void)
     {{
         bool err_catch = false;
         try {
-            const char* g = "10000GB";
-            unsigned v;
-            v = NStr::StringToUInt_DataSize(g);
+            Uint8 v = NStr::StringToUInt8_DataSize("10000000000000GB");
         }
         catch (exception&)
         {
@@ -990,6 +986,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.35  2004/10/15 12:02:46  ivanov
+ * Renamed NStr::StringToUInt_DataSize -> NStr::StringToUInt8_DataSize.
+ *
  * Revision 6.34  2004/10/13 13:11:54  ivanov
  * NStr::StringToUInt_DataSize - added overflow test.
  * Some cosmetics.
