@@ -158,6 +158,8 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "Invalid aliased type: " + ref_name);
     }
 
+    string parentNamespaceRef =
+        code.GetNamespace().GetNamespaceRef(code.GetParentClassNamespace());
     // generate type info
     code.ClassPublic() <<
         "    " << className << "(void);\n" <<
@@ -199,7 +201,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "    explicit " << constr_decl << ";\n";
         code.MethodStart(true) <<
             methodPrefix << constr_decl << "\n" <<
-            "    : " << code.GetParentClassName() << "(data)\n" <<
+            "    : " << parentNamespaceRef << code.GetParentClassName() << "(data)\n" <<
             "{\n" <<
             "}\n" <<
             "\n";
@@ -403,6 +405,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/11/13 20:52:04  grichenk
+* Fixed namespaces in generated files.
+*
 * Revision 1.2  2003/10/31 21:33:05  ucko
 * GetResetCode: tweak generated code so that it doesn't simply end up
 * resetting a temporary copy of the data.

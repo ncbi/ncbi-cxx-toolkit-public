@@ -502,8 +502,8 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define BEGIN_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
 const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 { \
-    static CAliasTypeInfo* volatile s_info = 0; \
-    CAliasTypeInfo* info = s_info; \
+    static NCBI_NS_NCBI::CAliasTypeInfo* volatile s_info = 0; \
+    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info; \
     if ( !info ) { \
         NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
         info = s_info; \
@@ -511,9 +511,9 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
             DECLARE_BASE_OBJECT(ClassName); \
-            typedef TTypeInfo (*TGetter)(void); \
+            typedef NCBI_NS_NCBI::TTypeInfo (*TGetter)(void); \
             TGetter getter = SerialRef Code; \
-            info = new CAliasTypeInfo(AliasName, getter()); \
+            info = new NCBI_NS_NCBI::CAliasTypeInfo(AliasName, getter()); \
             NCBI_NS_NCBI::RegisterTypeInfoObject(info);
 #define BEGIN_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
     BEGIN_ALIAS_INFO_METHOD(AliasName, ClassName, \
