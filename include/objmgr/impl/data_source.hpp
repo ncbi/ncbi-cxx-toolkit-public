@@ -138,7 +138,7 @@ public:
 
     /// Register new TSE (Top Level Seq-entry)
     TTSE_Lock AddTSE(CSeq_entry& se,
-                     CTSE_Info::TBlobState = CTSE_Info::fState_none);
+                     CTSE_Info::TBlobState = CBioseq_Handle::fState_none);
     TTSE_Lock AddTSE(CSeq_entry& se,
                      bool dead);
     TTSE_Lock AddTSE(CRef<CTSE_Info> tse);

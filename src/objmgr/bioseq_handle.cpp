@@ -79,6 +79,14 @@ CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
 }
 
 
+CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
+                               const CBioseq_ScopeInfo& binfo)
+    : m_Seq_id(id),
+      m_ScopeInfo(&binfo)
+{
+}
+
+
 void CBioseq_Handle::Reset(void)
 {
     // order is significant
@@ -116,6 +124,19 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
         return m_TSE < h.m_TSE;
     }
     return m_ScopeInfo < h.m_ScopeInfo;
+}
+
+
+CBioseq_Handle::TBioseqStateFlags CBioseq_Handle::GetState(void) const
+{
+    TBioseqStateFlags state = x_GetScopeInfo().GetBlobState();
+    if ( m_TSE ) {
+        state |= m_TSE.x_GetTSE_Info().GetBlobState();
+    }
+    if (state == 0) {
+        return bool(*this) ? 0 : fState_not_found;
+    }
+    return state;
 }
 
 
@@ -748,6 +769,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2005/01/26 16:25:21  grichenk
+* Added state flags to CBioseq_Handle.
+*
 * Revision 1.81  2005/01/13 21:43:18  grichenk
 * GetRangeSeq_loc returns whole seq-loc if both start and stop are 0.
 *

@@ -172,8 +172,8 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
 CDataSource::TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
                                            bool dead)
 {
-    return AddTSE(tse,
-                  dead? CTSE_Info::fState_dead: CTSE_Info::fState_none);
+    return AddTSE(tse, dead ?
+        CBioseq_Handle::fState_dead : CBioseq_Handle::fState_none);
 }
 
 

@@ -708,6 +708,10 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
                 continue; // retry
             }
         }
+        if (blobs->GetState() != 0) {
+            NCBI_THROW2(CBlobStateException, eBlobStateError,
+                "blob state error", blobs->GetState());
+        }
         bool done = true;
         ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
             const CBlob_Info& info = it->second;
@@ -720,6 +724,10 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
                 if ( !blob.IsLoaded() ) {
                     done = false;
                 }
+            }
+            if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
+                NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error", blob.GetBlobState());
             }
         }
         result.SaveLocksTo(locks);

@@ -147,6 +147,61 @@ public:
 };
 
 
+/// Blob state exceptions, used by GenBank loader.
+class NCBI_XOBJMGR_EXPORT CBlobStateException : public CObjMgrException
+{
+public:
+    enum EErrCode {
+        eBlobStateError,
+        eLoaderError,
+        eOtherError
+    };
+    typedef int TBlobState;
+
+    virtual const char* GetErrCodeString(void) const;
+    CBlobStateException(const CDiagCompileInfo& info,
+                        const CException* prev_exception,
+                        EErrCode err_code,
+                        const string& message,
+                        TBlobState state)
+        : CObjMgrException(info, prev_exception,
+                           (CObjMgrException::EErrCode) CException::eInvalid,
+                           message),
+          m_BlobState(state)
+    {
+        x_Init(info, message, prev_exception);
+        x_InitErrCode((CException::EErrCode) err_code);
+    }
+    CBlobStateException(const CBlobStateException& other)
+        : CObjMgrException(other),
+          m_BlobState(other.m_BlobState)
+    {
+        x_Assign(other);
+    }
+    virtual ~CBlobStateException(void) throw() {}
+    virtual const char* GetType(void) const { return "CBlobStateException"; }
+    typedef int TErrCode;
+    TErrCode GetErrCode(void) const
+    {
+        return typeid(*this) == typeid(CBlobStateException) ?
+            (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid;
+    }
+    TBlobState GetBlobState(void)
+    {
+        return m_BlobState;
+    }
+
+protected:
+    CBlobStateException(void) {}
+    virtual const CException* x_Clone(void) const
+    {
+        return new CBlobStateException(*this);
+    }
+private:
+    TBlobState m_BlobState;
+};
+
+
 /// Exceptions for objmgr/util library.
 class NCBI_XOBJMGR_EXPORT CObjmgrUtilException : public CObjMgrException
 {
@@ -172,6 +227,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/01/26 16:25:21  grichenk
+* Added state flags to CBioseq_Handle.
+*
 * Revision 1.12  2004/12/22 15:56:11  vasilche
 * Added CLoaderException::eNotImplemented.
 *

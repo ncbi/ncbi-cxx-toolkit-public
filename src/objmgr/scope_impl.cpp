@@ -779,6 +779,9 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
         if ( info && info->HasBioseq() ) {
             ret = GetBioseqHandle(id, *info);
         }
+        else {
+            ret = CBioseq_Handle(id, *info);
+        }
     }
     return ret;
 }
@@ -968,6 +971,12 @@ SSeqMatch_Scope CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
             }
             ret = new_ret;
         }
+        else if (new_ret.m_BlobState != 0) {
+            // Remember first blob state
+            if (!ret  &&  ret.m_BlobState == 0) {
+                ret = new_ret;
+            }
+        }
     }
     return ret;
 }
@@ -978,7 +987,14 @@ SSeqMatch_Scope CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                                               int get_flag)
 {
     _ASSERT(&ds_info.GetScopeImpl() == this);
-    return ds_info.BestResolve(idh, get_flag);
+    try {
+        return ds_info.BestResolve(idh, get_flag);
+    }
+    catch (CBlobStateException& e) {
+        SSeqMatch_Scope ret;
+        ret.m_BlobState = e.GetBlobState();
+        return ret;
+    }
 }
 
 
@@ -1011,6 +1027,7 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info,
         // Map unresoved ids only if loading was requested
         if (get_flag == CScope::eGetBioseq_All) {
             id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(*this));
+            id_info.second.m_Bioseq_Info->m_BlobState = match.m_BlobState;
         }
     }
     else {

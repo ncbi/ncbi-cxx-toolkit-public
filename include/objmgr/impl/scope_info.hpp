@@ -316,6 +316,7 @@ public:
     typedef CObjectFor<TTSE_MatchSet>                   TTSE_MatchSetObject;
     typedef CInitMutex<TTSE_MatchSetObject>             TAnnotRefInfo;
     typedef vector<CSeq_id_Handle>                      TIds;
+    typedef int                                         TBlobStateFlags;
 
     CBioseq_ScopeInfo(CScope_Impl& scope); // no sequence
     CBioseq_ScopeInfo(const SSeqMatch_Scope& match);
@@ -331,6 +332,11 @@ public:
     const TIds& GetIds(void) const;
 
     string IdString(void) const;
+
+    TBlobStateFlags GetBlobState(void) const
+    {
+        return m_BlobState;
+    }
 
 protected: // protected object manager interface
     friend class CScope_Impl;
@@ -358,6 +364,8 @@ private: // members
 
     // cache and lock TSEs with external annotations on this Bioseq
     CInitMutex<TTSE_MatchSetObject> m_BioseqAnnotRef_Info;
+
+    TBlobStateFlags                m_BlobState;
 
 private: // to prevent copying
     CBioseq_ScopeInfo(const CBioseq_ScopeInfo& info);
@@ -453,6 +461,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/26 16:25:21  grichenk
+* Added state flags to CBioseq_Handle.
+*
 * Revision 1.15  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

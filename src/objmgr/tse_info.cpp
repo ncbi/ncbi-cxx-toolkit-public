@@ -187,7 +187,7 @@ void CTSE_Info::x_Initialize(void)
 {
     m_DataSource = 0;
     m_BlobVersion = -1;
-    m_BlobState = fState_none;
+    m_BlobState = CBioseq_Handle::fState_none;
     m_UsedMemory = 0;
     m_LoadState = eNotLoaded;
     m_CacheState = eNotInCache;

@@ -122,6 +122,17 @@ const char* CLoaderException::GetErrCodeString(void) const
 }
 
 
+const char* CBlobStateException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eBlobStateError:  return "eBlobStateError";
+    case eLoaderError:      return "eLoaderError";
+    case eOtherError:       return "eOtherError";
+    default:                return CException::GetErrCodeString();
+    }
+}
+
+
 const char* CObjmgrUtilException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {

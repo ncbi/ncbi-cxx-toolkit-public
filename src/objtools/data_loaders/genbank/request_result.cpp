@@ -105,7 +105,8 @@ void CLoadInfoSeq_ids::SetLoadedGi(int gi)
 /////////////////////////////////////////////////////////////////////////////
 
 CLoadInfoBlob_ids::CLoadInfoBlob_ids(const TSeq_id& id)
-    : m_Seq_id(id)
+    : m_Seq_id(id),
+      m_State(0)
 {
 }
 
@@ -310,6 +311,13 @@ CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& src,
         src.AddTSE_Lock(*this);
     }
 }
+
+
+CLoadLockBlob::TBlobState CLoadLockBlob::GetBlobState(void) const
+{
+    return bool(*this) ? (**this).GetBlobState() : 0;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CReaderRequestResult

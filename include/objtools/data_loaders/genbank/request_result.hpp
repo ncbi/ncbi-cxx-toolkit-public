@@ -123,10 +123,21 @@ public:
             return m_Seq_ids.empty();
         }
 
+    typedef int TState;
+    TState GetState(void) const
+        {
+            return m_State;
+        }
+    void SetState(TState state)
+        {
+            m_State = state;
+        }
+
 public:
     TSeq_ids    m_Seq_ids;
     bool        m_GiLoaded;
     int         m_Gi;
+    TState      m_State;
 };
 
 
@@ -183,9 +194,20 @@ public:
 
     TBlob_Info& AddBlob_id(const TBlob_id& id, const TBlob_Info& info);
 
+    typedef int TState;
+    TState GetState(void) const
+        {
+            return m_State;
+        }
+    void SetState(TState state)
+        {
+            m_State = state;
+        }
+
 public:
     TSeq_id     m_Seq_id;
     TBlob_ids   m_Blob_ids;
+    TState      m_State;
 
     // lock/refresh support
     double      m_RefreshTime;
@@ -396,6 +418,9 @@ class NCBI_XREADER_EXPORT CLoadLockBlob : public CTSE_LoadLock
 {
 public:
     CLoadLockBlob(CReaderRequestResult& src, const CBlob_id& blob_id);
+
+    typedef int TBlobState;
+    TBlobState GetBlobState(void) const;
 };
 
 /*

@@ -104,6 +104,35 @@ public:
     /// Get handle of id used to obtain this bioseq handle
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
+    enum EBioseqStateFlags {
+        fState_none          = 0,
+        fState_suppress_temp = 1 << 0,
+        fState_suppress_perm = 1 << 1,
+        fState_suppress      = fState_suppress_temp |
+                                fState_suppress_perm,
+        fState_dead          = 1 << 2,
+        fState_confidential  = 1 << 3,
+        fState_withdrawn     = 1 << 4,
+        fState_no_data       = 1 << 5, 
+        fState_conflict      = 1 << 6,
+        fState_conn_failed   = 1 << 7,
+        fState_not_found     = 1 << 8,
+        fState_other_error   = 1 << 9
+    };
+    typedef int TBioseqStateFlags;
+
+    TBioseqStateFlags GetState(void) const;
+    bool State_SuppressedTemp(void) const;
+    bool State_SuppressedPerm(void) const;
+    bool State_Suppressed(void) const;
+    bool State_Confidential(void) const;
+    bool State_Dead(void) const;
+    bool State_Withdrawn(void) const;
+    bool State_NoData(void) const;
+    bool State_Conflict(void) const;
+    bool State_ConnectionFailed(void) const;
+    bool State_NotFound(void) const;
+
     /// Check if this id can be used to obtain this bioseq handle
     bool IsSynonym(const CSeq_id& id) const;
 
@@ -358,6 +387,10 @@ protected:
                    const CBioseq_ScopeInfo& binfo,
                    const CTSE_Handle& tse);
 
+    // Create empty bioseq handle from empty info with error status
+    CBioseq_Handle(const CSeq_id_Handle&    id,
+                   const CBioseq_ScopeInfo& binfo);
+
     CScope_Impl& x_GetScopeImpl(void) const;
     const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
 
@@ -526,6 +559,76 @@ CBioseq_Handle::CBioseq_Handle(void)
 
 
 inline
+bool CBioseq_Handle::State_SuppressedTemp(void) const
+{
+    return (GetState() & fState_suppress_temp) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_SuppressedPerm(void) const
+{
+    return (GetState() & fState_suppress_perm) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_Suppressed(void) const
+{
+    return (GetState() & fState_suppress) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_Confidential(void) const
+{
+    return (GetState() & fState_confidential) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_Dead(void) const
+{
+    return (GetState() & fState_dead) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_Withdrawn(void) const
+{
+    return (GetState() & fState_withdrawn) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_NoData(void) const
+{
+    return (GetState() & fState_no_data) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_Conflict(void) const
+{
+    return (GetState() & fState_conflict) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_ConnectionFailed(void) const
+{
+    return (GetState() & fState_conn_failed) != 0;
+}
+
+
+inline
+bool CBioseq_Handle::State_NotFound(void) const
+{
+    return (GetState() & fState_not_found) != 0;
+}
+
+
+inline
 const CTSE_Handle& CBioseq_Handle::GetTSE_Handle(void) const
 {
     return m_TSE;
@@ -576,6 +679,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/01/26 16:25:21  grichenk
+* Added state flags to CBioseq_Handle.
+*
 * Revision 1.71  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

@@ -37,6 +37,7 @@
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/annot_name.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <util/rangemap.hpp>
@@ -127,27 +128,33 @@ class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
     typedef CSeq_entry_Info TParent;
 public:
+/*
     enum EBlobState {
         fState_none          = 0,
         fState_suppress_temp = 1 << 0,
         fState_suppress_perm = 1 << 1,
         fState_suppress      = fState_suppress_temp | fState_suppress_perm,
         fState_dead          = 1 << 2,
-        fState_private       = 1 << 3,
+        fState_confidential  = 1 << 3,
         fState_withdrawn     = 1 << 4,
-        fState_no_data       = 1 << 5 
+        fState_no_data       = 1 << 5,
+        fState_conflict      = 1 << 6,
+        fState_conn_failed   = 1 << 7,
+        fState_other_error   = 1 << 8
     };
-    typedef CConstRef<CObject>              TBlobId;
-    typedef int                             TBlobState;
-    typedef int                             TBlobVersion;
-    typedef pair<TBlobState, TBlobVersion>  TBlobOrder;
+*/
+    typedef CConstRef<CObject>                TBlobId;
+    typedef CBioseq_Handle::TBioseqStateFlags TBlobState;
+    typedef int                               TBlobVersion;
+    typedef pair<TBlobState, TBlobVersion>    TBlobOrder;
 
     // 'ctors
     // Argument tse will be parentized.
     explicit CTSE_Info(void);
     explicit CTSE_Info(const TBlobId& blob_id,
                        TBlobVersion blob_version = -1);
-    explicit CTSE_Info(CSeq_entry& tse, TBlobState state = fState_none);
+    explicit CTSE_Info(CSeq_entry& tse,
+                       TBlobState state = CBioseq_Handle::fState_none);
     explicit CTSE_Info(CSeq_entry& tse,
                        TBlobState blob_state,
                        const TBlobId& blob_id,
@@ -172,7 +179,7 @@ public:
     void SetBlobVersion(TBlobVersion version);
 
     TBlobState GetBlobState(void) const;
-    void ResetBlobState(TBlobState state = fState_none);
+    void ResetBlobState(TBlobState state = CBioseq_Handle::fState_none);
     void SetBlobState(TBlobState state);
     bool IsDead(void) const;
     bool IsUnavailable(void) const;
@@ -469,21 +476,22 @@ void CTSE_Info::SetBlobState(TBlobState state)
 inline
 bool CTSE_Info::IsDead(void) const
 {
-    return (m_BlobState & fState_dead) != 0;
+    return (m_BlobState & CBioseq_Handle::fState_dead) != 0;
 }
 
 
 inline
 bool CTSE_Info::IsUnavailable(void) const
 {
-    return (m_BlobState & fState_no_data) != 0;
+    return (m_BlobState & CBioseq_Handle::fState_no_data) != 0;
 }
 
 
 inline
 CTSE_Info::TBlobState CTSE_Info::GetBlobStateOrder(void) const
 {
-    return m_BlobState & (fState_dead | fState_no_data);
+    return m_BlobState & (CBioseq_Handle::fState_dead |
+                          CBioseq_Handle::fState_no_data);
 }
 
 

@@ -978,7 +978,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     }
 
     if ( (errors & fError_no_data) ) {
-        blob->SetBlobState(CTSE_Info::fState_no_data);
+        blob->SetBlobState(CBioseq_Handle::fState_no_data);
         blob.SetLoaded();
         return;
     }

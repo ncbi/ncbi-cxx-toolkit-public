@@ -106,7 +106,12 @@ class CPriorityNode;
 
 struct SSeqMatch_Scope : public SSeqMatch_TSE
 {
+    SSeqMatch_Scope(void)
+        : m_BlobState(0) {}
+
+    typedef int TBlobStateFlags;
     CTSE_ScopeUserLock   m_TSE_Lock;
+    TBlobStateFlags     m_BlobState;
 };
 
 

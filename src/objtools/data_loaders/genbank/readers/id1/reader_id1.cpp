@@ -472,6 +472,7 @@ void CId1Reader::ResolveSeq_id(CReaderRequestResult& result,
     // copy info from gi to original seq-id
     ITERATE ( CLoadInfoBlob_ids, it, *gi_ids ) {
         ids.AddBlob_id(it->first, it->second);
+        ids->SetState(gi_ids->GetState());
     }
 }
 
@@ -514,6 +515,7 @@ void CId1Reader::ResolveSeq_id(CReaderRequestResult& result,
     // copy info from gi to original seq-id
     ITERATE ( CLoadInfoSeq_ids, it, *gi_ids ) {
         ids.AddSeq_id(*it);
+        ids->SetState(gi_ids->GetState());
     }
 }
 
@@ -529,6 +531,8 @@ int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
     return id1_reply.IsGotgi()? id1_reply.GetGotgi(): 0;
 }
 
+
+const int kSat_BlobError = -1;
 
 void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
 {
@@ -546,16 +550,58 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
     x_ResolveId(id1_reply, id1_request, conn);
 
     if ( !id1_reply.IsGotblobinfo() ) {
+        CBlob_id blob_id;
+        blob_id.SetSat(kSat_BlobError);
+        blob_id.SetSatKey(gi);
+        ids.AddBlob_id(blob_id, 0);
+        CTSE_Info::TBlobState state = CBioseq_Handle::fState_other_error|
+                                      CBioseq_Handle::fState_no_data;
+        if ( id1_reply.IsError() ) {
+            switch ( id1_reply.GetError() ) {
+            case 1:
+                state = CBioseq_Handle::fState_withdrawn|
+                        CBioseq_Handle::fState_no_data;
+                break;
+            case 2:
+                state = CBioseq_Handle::fState_confidential|
+                        CBioseq_Handle::fState_no_data;
+                break;
+            case 10:
+                state = CBioseq_Handle::fState_no_data;
+                break;
+            }
+        }
+        ids->SetState(state);
         return;
     }
 
     const CID1blob_info& info = id1_reply.GetGotblobinfo();
-    if ( info.GetWithdrawn() > 0 || info.GetConfidential() > 0 ) {
-        //LOG_POST(Warning<<"CId1Reader: gi "<<gi<<" is private");
+    if (info.GetWithdrawn() > 0) {
+        CBlob_id blob_id;
+        blob_id.SetSat(kSat_BlobError);
+        blob_id.SetSatKey(gi);
+        ids.AddBlob_id(blob_id, 0);
+        ids->SetState(CBioseq_Handle::fState_withdrawn|
+                      CBioseq_Handle::fState_no_data);
+        return;
+    }
+    if (info.GetConfidential() > 0) {
+        CBlob_id blob_id;
+        blob_id.SetSat(kSat_BlobError);
+        blob_id.SetSatKey(gi);
+        ids.AddBlob_id(blob_id, 0);
+        ids->SetState(CBioseq_Handle::fState_confidential|
+                      CBioseq_Handle::fState_no_data);
         return;
     }
     if ( info.GetSat() < 0 || info.GetSat_key() < 0 ) {
         LOG_POST(Warning<<"CId1Reader: gi "<<gi<<" negative sat/satkey");
+        CBlob_id blob_id;
+        blob_id.SetSat(kSat_BlobError);
+        blob_id.SetSatKey(gi);
+        ids.AddBlob_id(blob_id, 0);
+        ids->SetState(CBioseq_Handle::fState_other_error|
+                      CBioseq_Handle::fState_no_data);
         return;
     }
     if ( TrySNPSplit() ) {
@@ -756,7 +802,7 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
         seq_entry.Reset(&id1_reply.SetGotseqentry());
         break;
     case CID1server_back::e_Gotdeadseqentry:
-        tse_info.SetBlobState(CTSE_Info::fState_dead);
+        tse_info.SetBlobState(CBioseq_Handle::fState_dead);
         seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
         break;
     case CID1server_back::e_Gotsewithinfo:
@@ -764,26 +810,28 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
         const CID1blob_info& info =
             id1_reply.GetGotsewithinfo().GetBlob_info();
         if ( info.GetBlob_state() < 0 ) {
-            tse_info.SetBlobState(CTSE_Info::fState_dead);
+            tse_info.SetBlobState(CBioseq_Handle::fState_dead);
         }
         if ( id1_reply.GetGotsewithinfo().IsSetBlob() ) {
             seq_entry.Reset(&id1_reply.SetGotsewithinfo().SetBlob());
         }
         else {
             // no Seq-entry in reply, probably private data
-            tse_info.SetBlobState(CTSE_Info::fState_no_data);
+            tse_info.SetBlobState(CBioseq_Handle::fState_no_data);
         }
         if ( info.GetSuppress() ) {
             tse_info.SetBlobState(
                 (info.GetSuppress() & 4)
-                ? CTSE_Info::fState_suppress_temp
-                : CTSE_Info::fState_suppress_perm);
+                ? CBioseq_Handle::fState_suppress_temp
+                : CBioseq_Handle::fState_suppress_perm);
         }
         if ( info.GetWithdrawn() ) {
-            tse_info.SetBlobState(CTSE_Info::fState_withdrawn);
+            tse_info.SetBlobState(CBioseq_Handle::fState_withdrawn|
+                                  CBioseq_Handle::fState_no_data);
         }
         if ( info.GetConfidential() ) {
-            tse_info.SetBlobState(CTSE_Info::fState_private);
+            tse_info.SetBlobState(CBioseq_Handle::fState_confidential|
+                                  CBioseq_Handle::fState_no_data);
         }
         break;
     }}
@@ -792,15 +840,15 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
         int error = id1_reply.GetError();
         switch ( error ) {
         case 1:
-            tse_info.SetBlobState(CTSE_Info::fState_withdrawn|
-                                  CTSE_Info::fState_no_data);
+            tse_info.SetBlobState(CBioseq_Handle::fState_withdrawn|
+                                  CBioseq_Handle::fState_no_data);
             break;
         case 2:
-            tse_info.SetBlobState(CTSE_Info::fState_private|
-                                  CTSE_Info::fState_no_data);
+            tse_info.SetBlobState(CBioseq_Handle::fState_confidential|
+                                  CBioseq_Handle::fState_no_data);
             break;
         case 10:
-            tse_info.SetBlobState(CTSE_Info::fState_no_data);
+            tse_info.SetBlobState(CBioseq_Handle::fState_no_data);
             break;
         default:
             ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<error);

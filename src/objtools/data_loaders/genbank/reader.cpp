@@ -242,12 +242,19 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
             ids.SetLoaded();
         }
         catch ( CLoaderException& exc ) {
-            if ( exc.GetErrCode() == exc.ePrivateData ||
-                 exc.GetErrCode() == exc.eNoData ) {
+            if (exc.GetErrCode() == exc.ePrivateData) {
                 // leave ids empty
+                ids->SetState(CBioseq_Handle::fState_confidential|
+                              CBioseq_Handle::fState_no_data);
+                ids.SetLoaded();
+            }
+            else if (exc.GetErrCode() == exc.eNoData) {
+                // leave ids empty
+                ids->SetState(CBioseq_Handle::fState_no_data);
                 ids.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                ids->SetState(CBioseq_Handle::fState_conn_failed);
                 throw;
             }
             else {
@@ -277,12 +284,20 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
             ids.SetLoaded();
         }
         catch ( CLoaderException& exc ) {
-            if ( exc.GetErrCode() == exc.ePrivateData ||
-                 exc.GetErrCode() == exc.eNoData ) {
+            if ( exc.GetErrCode() == exc.ePrivateData ) {
                 // leave ids empty
+                ids->SetState(CBioseq_Handle::fState_confidential|
+                              CBioseq_Handle::fState_no_data);
+                ids.SetLoaded();
+            }
+            else if ( exc.GetErrCode() == exc.eNoData ) {
+                // leave ids empty
+                ids->SetState(CBioseq_Handle::fState_no_data);
                 ids.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                ids->SetState(CBioseq_Handle::fState_conn_failed|
+                              CBioseq_Handle::fState_no_data);
                 throw;
             }
             else {
@@ -364,16 +379,18 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
         catch ( CLoaderException& exc ) {
             if ( exc.GetErrCode() == exc.ePrivateData ) {
                 // leave tse empty
-                blob->SetBlobState(CTSE_Info::fState_private|
-                                   CTSE_Info::fState_no_data);
+                blob->SetBlobState(CBioseq_Handle::fState_confidential|
+                                   CBioseq_Handle::fState_no_data);
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoData ) {
                 // leave tse empty
-                blob->SetBlobState(CTSE_Info::fState_no_data);
+                blob->SetBlobState(CBioseq_Handle::fState_no_data);
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                blob->SetBlobState(CBioseq_Handle::fState_conn_failed|
+                                   CBioseq_Handle::fState_no_data);
                 throw;
             }
             else {

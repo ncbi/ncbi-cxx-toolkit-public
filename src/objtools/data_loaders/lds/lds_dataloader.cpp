@@ -364,7 +364,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
         if (seq_entry) {
             CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
             CRef<CTSE_Info> tse_info(new CTSE_Info(*seq_entry,
-                                                   CTSE_Info::fState_none,
+                                                   CBioseq_Handle::fState_none,
                                                    blob_id));
             locks.insert(data_source->AddTSE(tse_info));
             m_LoadedObjects.insert(object_id);
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/01/26 16:25:21  grichenk
+ * Added state flags to CBioseq_Handle.
+ *
  * Revision 1.25  2005/01/13 17:52:16  kuznets
  * Tweak dataloader to read seq entries out of large binary ASN bioseq-sets
  *

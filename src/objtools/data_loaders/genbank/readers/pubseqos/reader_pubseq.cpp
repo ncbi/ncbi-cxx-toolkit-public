@@ -526,7 +526,8 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
                     result->GetItem(&v);
                     _TRACE("confidential: "<<v.Value());
                     if ( v.Value() ) {
-                        tse_info->SetBlobState(CTSE_Info::fState_private);
+                        tse_info->SetBlobState(
+                            CBioseq_Handle::fState_confidential);
                     }
                 }
                 else if ( name == "suppress" ) {
@@ -536,8 +537,8 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
                     if ( v.Value() ) {
                         tse_info->SetBlobState(
                             (v.Value() & 4)
-                            ? CTSE_Info::fState_suppress_temp
-                            : CTSE_Info::fState_suppress_perm);
+                            ? CBioseq_Handle::fState_suppress_temp
+                            : CBioseq_Handle::fState_suppress_perm);
                     }
                 }
                 else if ( name == "override" ) {
@@ -545,7 +546,8 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
                     result->GetItem(&v);
                     _TRACE("withdrawn: "<<v.Value());
                     if ( v.Value() ) {
-                        tse_info->SetBlobState(CTSE_Info::fState_withdrawn);
+                        tse_info->SetBlobState(
+                            CBioseq_Handle::fState_withdrawn);
                     }
                 }
                 else if ( name == "last_touched_m" ) {
@@ -559,7 +561,7 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
                     result->GetItem(&v);
                     _TRACE("state: "<<v.Value());
                     if ( v.Value() == kState_dead ) {
-                        tse_info->SetBlobState(CTSE_Info::fState_dead);
+                        tse_info->SetBlobState(CBioseq_Handle::fState_dead);
                     }
                 }
                 else if ( name == "asn1" ) {
@@ -597,7 +599,7 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
         }
     }
     // no data
-    tse_info->SetBlobState(CTSE_Info::fState_no_data);
+    tse_info->SetBlobState(CBioseq_Handle::fState_no_data);
     return 0;
 }
 
