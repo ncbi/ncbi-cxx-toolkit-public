@@ -287,7 +287,7 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                     if (ai & CSeq_id::fAcc_nuc) {
                         mol = CSeq_inst::eMol_na;
                     } else if (ai & CSeq_id::fAcc_prot) {
-                        mol = CSeq_inst::eMol_na;
+                        mol = CSeq_inst::eMol_aa;
                     }
                 }
                 pos = end + 1;
@@ -343,7 +343,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             CSeq_inst::EMol mol = s_ParseFastaDefline(seq->SetId(), title,
                                                       line, flags);
             if (mol == CSeq_inst::eMol_not_set
-                &&  (!flags & fReadFasta_NoSeqData)) {
+                &&  !(flags & fReadFasta_NoSeqData)) {
                 if (flags & fReadFasta_AssumeNuc) {
                     _ASSERT(!(flags & fReadFasta_AssumeProt));
                     mol = CSeq_inst::eMol_na;
@@ -398,9 +398,17 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             {{
                 CSeq_data& data = s_LastData(inst);
                 if (inst.GetMol() == CSeq_inst::eMol_aa) {
-                    data.SetIupacaa().Set() += residues;
+                    if (data.IsIupacaa()) {
+                        data.SetIupacaa().Set() += residues;
+                    } else {
+                        data.SetIupacaa().Set(residues);
+                    }
                 } else {
-                    data.SetIupacna().Set() += residues;
+                    if (data.IsIupacna()) {
+                        data.SetIupacna().Set() += residues;
+                    } else {
+                        data.SetIupacna().Set(residues);
+                    }
                 }
             }}
         }
@@ -422,6 +430,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.21  2003/05/09 21:46:27  ucko
+ * ReadFasta: fix initial data assignment to avoid ten leading "A"s;
+ * also, fix some typos (including one that identified everything as NA)
+ *
  * Revision 6.20  2003/05/09 16:08:35  ucko
  * Rename fReadFasta_Redund to fReadFasta_AllSeqIds.
  *
