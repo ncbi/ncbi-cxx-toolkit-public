@@ -130,8 +130,6 @@ void CGFFFormatter::FormatFeature
     CFFContext& ctx = const_cast<CFFContext&>(f.GetContext());
     CScope* scope = &ctx.GetScope();
 
-    const CSeq_inst& inst = ctx.GetActiveBioseq().GetInst();
-
     // CSeq_loc         tentative_stop;
 
     if ((m_GFFFlags & fGTFCompat)  &&  !ctx.IsProt()
@@ -452,6 +450,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/11 16:59:11  shomrat
+* removed unused variable
+*
 * Revision 1.1  2004/01/14 16:07:29  shomrat
 * Initial Revision
 *
