@@ -94,8 +94,7 @@ private:
     
     void x_AddVolume(const string & nm, char pn, bool use_mm)
     {
-        m_Volumes.push_back();
-        m_Volumes.back() = new CSeqDBVol(nm, pn, use_mm);
+        m_Volumes.push_back(CRef<CSeqDBVol>(new CSeqDBVol(nm, pn, use_mm)));
         
         Uint4 start = m_VolEnd.size() ? m_VolEnd.back() : 0;
         
