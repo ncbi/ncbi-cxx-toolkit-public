@@ -1191,39 +1191,44 @@ void CValidError_bioseq::ValidateNs(const CBioseq& seq)
 {
     try {
         const CSeq_inst& inst = seq.GetInst();
-        if ( (inst.GetRepr() != CSeq_inst::eRepr_raw)  ||
-            (inst.IsSetLength() && inst.GetLength() <= 5) ) {
-            return;
-        }
-        
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-        if ( !bsh ) {
-            return;
-        }
-        
-        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        
-        EDiagSev sev;
-        string sequence;
+        CSeq_inst::TRepr repr = 
+            inst.CanGetRepr() ? inst.GetRepr() : CSeq_inst::eRepr_not_set;
+        CSeq_inst::TLength len = inst.CanGetLength() ? inst.GetLength() : 0;
 
-        if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
-            // if 10 or more Ns flag as error, otherwise just warning
-            vec.GetSeqData(0, 10, sequence);
-            sev = NStr::CompareNocase(sequence, "NNNNNNNNNN") ? 
-                eDiag_Warning : eDiag_Error;
-            PostErr(sev, eErr_SEQ_INST_TerminalNs, 
-                "N at beginning of sequence", seq);
-        }
-        
-        if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
-            // if 10 or more Ns flag as error, otherwise just warning
-            vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
-            sev = NStr::CompareNocase(sequence, "NNNNNNNNNN") ? 
-                eDiag_Warning : eDiag_Error;
-            PostErr(sev, eErr_SEQ_INST_TerminalNs, 
-                "N at end of sequence", seq);
+        if ( (repr == CSeq_inst::eRepr_raw  ||  
+             (repr == CSeq_inst::eRepr_delta  &&  x_IsDeltaLitOnly(inst))) &&
+             len > 10 ) {
+            
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+            if ( !bsh ) {
+                return;
+            }
+            
+            CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            
+            EDiagSev sev;
+            string sequence;
+            
+            if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
+                // if 10 or more Ns flag as error, otherwise just warning
+                vec.GetSeqData(0, 10, sequence);
+                sev = (NStr::CompareNocase(sequence, "NNNNNNNNNN") == 0) ? 
+                    eDiag_Error : eDiag_Warning;
+                PostErr(sev, eErr_SEQ_INST_TerminalNs, 
+                    "N at beginning of sequence", seq);
+            }
+            
+            if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
+                // if 10 or more Ns flag as error, otherwise just warning
+                vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
+                sev = (NStr::CompareNocase(sequence, "NNNNNNNNNN") == 0) ? 
+                    eDiag_Error : eDiag_Warning;
+                PostErr(sev, eErr_SEQ_INST_TerminalNs, 
+                    "N at end of sequence", seq);
+            }
         }
     } catch ( exception& ) {
+        // just ignore, and continue with the validation process.
     }
 }
 
@@ -2131,9 +2136,9 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                 severity = eDiag_Warning;
                             }
                         }
-                        if (m_Imp.IsGPS()  ||  m_Imp.IsNT()  ||  m_Imp.IsNC() ) {
-                            severity = eDiag_Warning;
-                        }
+                    }
+                    if (m_Imp.IsGPS()  ||  m_Imp.IsNT()  ||  m_Imp.IsNC() ) {
+                        severity = eDiag_Warning;
                     }
 
                     if ( (prev->IsSetDbxref()  &&
@@ -3230,6 +3235,19 @@ size_t CValidError_bioseq::x_CountAdjacentNs(const CSeq_literal& lit)
 }
 
 
+bool CValidError_bioseq::x_IsDeltaLitOnly(const CSeq_inst& inst) const
+{
+    if ( inst.CanGetExt()  &&  inst.GetExt().IsDelta() ) {
+        ITERATE(CDelta_ext::Tdata, iter, inst.GetExt().GetDelta().Get()) {
+            if ( (*iter)->IsLoc() ) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -3239,6 +3257,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/09/23 13:26:32  shomrat
+* Check DeltaLitOnly and allow test for terminal Ns
+*
 * Revision 1.46  2003/09/22 20:24:32  shomrat
 * IsMicroRNA feature test for molinfo-biomol.other
 *
