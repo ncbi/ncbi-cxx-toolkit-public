@@ -35,8 +35,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -182,6 +184,13 @@ bool IsBlankStringList(const list< string >& str_list);
 int GetGIForSeqId(const CSeq_id& id);
 list< CRef< CSeq_id > > GetSeqIdsForGI(int gi);
 
+CSeqVector GetSequenceFromLoc(const CSeq_loc& loc, CScope& scope,
+    CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac);
+
+CSeqVector GetSequenceFromFeature(const CSeq_feat& feat, CScope& scope,
+    CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac,
+    bool product = false);
+
 inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
 
@@ -195,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/10/27 14:15:51  shomrat
+* added utility functions for retrieving sequence under Seq-loc or Seq-feat
+*
 * Revision 1.12  2003/06/16 16:17:30  shomrat
 * IsResidue added as an inline function
 *

@@ -38,11 +38,13 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/scope.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -1096,6 +1098,36 @@ list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
 }
 
 
+CSeqVector GetSequenceFromLoc
+(const CSeq_loc& loc,
+ CScope& scope,
+ CBioseq_Handle::EVectorCoding coding)
+{
+    CConstRef<CSeqMap> map = 
+        CSeqMap::CreateSeqMapForSeq_loc(loc, &scope);
+    ENa_strand strand = sequence::GetStrand(loc, &scope);
+
+    return CSeqVector(map, scope, coding, strand);
+}
+
+
+CSeqVector GetSequenceFromFeature
+(const CSeq_feat& feat,
+ CScope& scope,
+ CBioseq_Handle::EVectorCoding coding,
+ bool product)
+{
+    
+    if ( (product   &&  !feat.CanGetProduct())  ||
+         (!product  &&  !feat.CanGetLocation()) ) {
+        return CSeqVector();
+    }
+    
+    const CSeq_loc* loc = product ? &feat.GetProduct() : &feat.GetLocation();
+    return GetSequenceFromLoc(*loc, scope, coding);
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -1105,6 +1137,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/10/27 14:15:57  shomrat
+* added utility functions for retrieving sequence under Seq-loc or Seq-feat
+*
 * Revision 1.16  2003/07/22 16:35:35  shomrat
 * Added Kerguelen Archipelago to the countries list
 *
