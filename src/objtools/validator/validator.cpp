@@ -270,6 +270,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_GiWithoutAccession",
     "SEQ_INST_MultipleAccessions",
     "SEQ_INST_HistAssemblyMissing",
+    "eErr_SEQ_INST_TerminalNs",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -541,6 +542,8 @@ accession identifier.",
 "The Bioseq has a TPA identifier but does not have a Seq-hist.assembly alignment. \
 This should be annotated or calculated by the database, resulting in a PRIMARY \
 block visible in the flatfile.",
+
+"The Bioseq has one or more N bases at the end.",
 
 /* SEQ_DESCR */
 
@@ -1008,6 +1011,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/02/07 21:10:55  shomrat
+* Added eErr_SEQ_INST_TerminalNs
+*
 * Revision 1.7  2003/01/24 21:17:19  shomrat
 * Added missing verbose strings
 *
