@@ -29,17 +29,69 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+#include <list>
+#include <string>
+
+#include <app/project_tree_builder/msvc_project_context.hpp>
+#include <app/project_tree_builder/proj_item.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
-//TODO
+class CMsvcPrjFilesCollector
+{
+public:
+    //no value type	semantics
+    CMsvcPrjFilesCollector(const CMsvcPrjProjectContext& project_context,
+                           const CProjItem&              project);
+
+    ~CMsvcPrjFilesCollector(void);
+
+    //All path are relative from ProjectDir
+    const list<string>& SourceFiles   (void) const;
+    const list<string>& HeaderFiles   (void) const;
+    const list<string>& InlineFiles   (void) const;
+    const list<string>& ResourceFiles (void) const;
+
+private:
+    // Prohibited to:
+    CMsvcPrjFilesCollector(void);
+    CMsvcPrjFilesCollector(const CMsvcPrjFilesCollector&);
+    CMsvcPrjFilesCollector&	operator= (const CMsvcPrjFilesCollector&);
+
+    list<string> m_SourceFiles;
+    list<string> m_HeaderFiles;
+    list<string> m_InlineFiles;
+    list<string> m_ResourceFiles;
+
+
+    static void CollectSources  (const CProjItem&              project,
+                                 const CMsvcPrjProjectContext& context,
+                                 list<string>*                 rel_pathes);
+
+
+    static void CollectHeaders  (const CProjItem&              project,
+                                 const CMsvcPrjProjectContext& context,
+                                 list<string>*                 rel_pathes);
+
+    static void CollectInlines  (const CProjItem&              project,
+                                 const CMsvcPrjProjectContext& context,
+                                 list<string>*                 rel_pathes);
+
+    static void CollectResources (const CProjItem&              project,
+                                 const CMsvcPrjProjectContext& context,
+                                 list<string>*                 rel_pathes);
+};
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/05 20:36:20  gorelenk
+ * Added declarations of class CMsvcPrjFilesCollector member-functions.
+ *
  * Revision 1.1  2004/03/05 18:11:06  gorelenk
  * Initial revision.
  *
