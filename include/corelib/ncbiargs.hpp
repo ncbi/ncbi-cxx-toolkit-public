@@ -212,7 +212,7 @@ public:
     /// If it is a value of a flag argument, then return either "true"
     /// or "false".
     /// @sa
-    ///  AsInteger(), AsDouble(), AsBoolean()
+    ///   AsInteger(), AsDouble(), AsBoolean()
     virtual const string& AsString(void) const = 0;
 
     /// Get the argument's integer value.
@@ -220,7 +220,7 @@ public:
     /// If you request a wrong value type, such as a call to "AsInteger()"
     /// for a "boolean" argument, an exception is thrown.
     /// @sa
-    ///  AsString(), AsDouble, AsBoolean()
+    ///   AsString(), AsDouble, AsBoolean()
     virtual int    AsInteger(void) const = 0;
 
     /// Get the argument's double value.
@@ -228,7 +228,7 @@ public:
     /// If you request a wrong value type, such as a call to "AsDouble()"
     /// for a "boolean" argument, an exception is thrown.
     /// @sa
-    ///  AsString(), AsInteger, AsBoolean()
+    ///   AsString(), AsInteger, AsBoolean()
     virtual double AsDouble (void) const = 0;
 
     /// Get the argument's boolean value.
@@ -236,7 +236,7 @@ public:
     /// If you request a wrong value type, such as a call to "AsBoolean()"
     /// for a "integer" argument, an exception is thrown.
     /// @sa
-    ///  AsString(), AsInteger, AsDouble()
+    ///   AsString(), AsInteger, AsDouble()
     virtual bool   AsBoolean(void) const = 0;
 
     /// Get the argument as an input file stream.
@@ -1008,6 +1008,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/07/24 11:48:02  siyan
+ * Made @sa text indentation consistent.
+ *
  * Revision 1.31  2003/07/10 14:59:09  siyan
  * Documentation changes.
  *
