@@ -47,7 +47,7 @@
 #ifdef HAVE_GOOD_IOS_CALLBACKS
 #  undef  HAVE_GOOD_IOS_CALLBACKS
 #endif
-#if defined(HAVE_IOS_REGISTER_CALLBACK)  &&  defined(HAVE_XALLOC)  &&  \
+#if defined(HAVE_IOS_REGISTER_CALLBACK)  &&  \
   (!defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(_MT))
 #  define HAVE_GOOD_IOS_CALLBACKS 1
 #endif
@@ -491,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.41  2004/02/03 13:13:46  lavr
+ * ios::xalloc() is universal; HAVE_XALLOC is deprecated and removed
+ *
  * Revision 1.40  2004/01/21 15:34:14  lavr
  * Use proper macro HAVE_IOS_REGISTER_CALLBACK
  *
