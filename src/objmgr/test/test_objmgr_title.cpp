@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/27 22:08:46  ucko
+* Use high-level GB loader instead of low-level ID1 reader.
+*
 * Revision 1.5  2002/02/21 19:27:08  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -67,10 +70,10 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
-#include <objects/objmgr1/reader_id1.hpp>
 #include <objects/objmgr1/object_manager.hpp>
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/gbloader.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -103,32 +106,13 @@ int CTitleTester::Run(void)
 {
     const CArgs&   args = GetArgs();
     CObjectManager objmgr;
-    CScope&         scope = *(new CScope(objmgr));
+    CScope         scope(objmgr);
     CSeq_id        id;
-    CId1Reader     reader;
     
     id.SetGi(args["gi"].AsInteger());
 
-#if 0 // DataLoader != Loader
-    objmgr.AddLoader(reader, &scope);
-#else
-    bool first = true;
-    for(CIStream srs(reader.SeqrefStreamBuf(id)); ! srs.Eof(); first = false)
-    {
-      CSeqref *seqRef = reader.RetrieveSeqref(srs);
-      if(first)
-      {
-        CBlobClass cl;
-        for(CIStream bs(seqRef->BlobStreamBuf(0, 0, cl)); ! bs.Eof(); )
-        {
-          CId1Blob *blob = static_cast<CId1Blob *>(seqRef->RetrieveBlob(bs));
-          scope.AddTopLevelSeqEntry(*blob->Seq_entry());
-          delete blob;
-        }
-      }
-      delete seqRef;
-    }
-#endif
+    objmgr.RegisterDataLoader(*(new CGBDataLoader), CObjectManager::eDefault);
+    scope.AddDefaults();
 
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
     CBioseq_Handle::TGetTitleFlags flags  = 0;
