@@ -1,4 +1,4 @@
---$Revision: 4.1 $
+--$Revision: 4.2 $
 --********************************************************************
 --
 --  Network MEDLINE Archive message formats
@@ -17,7 +17,6 @@ NCBI-MedArchive DEFINITIONS ::=
 BEGIN
 
 IMPORTS Medline-entry FROM NCBI-Medline
-        Medline-si FROM NCBI-Medline
         Pub FROM NCBI-Pub
         Title FROM NCBI-Biblio;
 
@@ -26,14 +25,12 @@ IMPORTS Medline-entry FROM NCBI-Medline
         --
 
 Mla-request ::= CHOICE {
-    init [1] NULL ,             -- DlInit
-    getmle [2] INTEGER ,        -- get MedlineEntry
-    getpub [3] INTEGER ,        -- get citation by muid
-    gettitle [4] Title-msg ,    -- match titles
-    citmatch [5] Pub ,          --
-    fini [6] NULL ,             -- DlFini
-    getmriuids [7] INTEGER ,    -- Get MUIDs for an MRI
-    getaccuids [8] Medline-si   -- Get MUIDs for an Accessions
+    init NULL ,                     -- DlInit
+    getmle INTEGER ,                -- get MedlineEntry
+    getpub INTEGER ,                -- get citation by muid
+    gettitle Title-msg ,            -- match titles
+    citmatch Pub ,                  --
+    fini NULL                       -- DlFini
     }
 
 --**********************************************************************
@@ -53,7 +50,7 @@ Mla-request ::= CHOICE {
 --**********************************************************************
 
 Title-type ::= ENUMERATED {
-    not-set (0) ,               -- request=ml-jta (default), reply=not-found
+    not-set (0) ,                   -- request=ml-jta (default), reply=not-found
     name (1) ,
     tsub (2) ,
     trans (3) ,
@@ -64,33 +61,28 @@ Title-type ::= ENUMERATED {
     issn (8),
     abr (9),
     isbn (10),
-    all (255)
-    }
+    all (255) }
 
-Title-msg ::= SEQUENCE {         -- Title match request/response
-    type Title-type    ,         -- type to get, or type returned
-    title Title                  -- title(s) to look up, or title(s) found
-    }
+Title-msg ::= SEQUENCE {            -- Title match request/response
+    type Title-type    ,            -- type to get, or type returned
+    title Title }                   -- title(s) to look up, or title(s) found
 
 Title-msg-list ::= SEQUENCE {
-    num INTEGER ,                -- number of titles
-    titles SEQUENCE OF Title-msg
-    }
+    num INTEGER ,                   -- number of titles
+    titles SEQUENCE OF Title-msg }
 
 Error-val ::= ENUMERATED {
-    not-found (0) ,              -- Entry was not found
-    operational-error (1)        -- A run-time operation error was occurred
-    }
+    not-found (0) ,                 -- Entry was not found
+    operational-error (1) }         -- A run-time operation error was occurred
 
 Mla-back ::= CHOICE {
-    init [1] NULL ,                  -- DlInit
-    error [2] Error-val ,            -- not found for getmle/getpub/citmatch
-    getmle [3] Medline-entry ,       -- got Medline Entry
-    getpub [4] Pub ,
-    gettitle [5] Title-msg-list ,    -- match titles
-    citmatch [6] INTEGER ,           -- citation lookup muid or 0
-    fini [7] NULL ,                  -- DlFini
-    getuids [8] SEQUENCE OF INTEGER  -- got a set of MUIDs
+    init NULL ,                     -- DlInit
+    error Error-val ,               -- not found for getmle/getpub/citmatch
+    getmle Medline-entry ,          -- get Medline Entry
+    getpub Pub ,
+    gettitle Title-msg-list ,       -- match titles
+    citmatch INTEGER ,              -- citation lookup muid or 0
+    fini NULL                       -- DlFini
     }
 
 END
