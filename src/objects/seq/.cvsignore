@@ -1,8 +1,6 @@
 .cvsignore
 [A-Z]*_.cpp
 *__.cpp
-Makefile.in
-Makefile.*.lib
 *.files
 *.dtd
 *.mod
