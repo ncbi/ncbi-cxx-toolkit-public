@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/01/10 18:22:59  clausen
+ * Added IsValid
+ *
  * Revision 1.2  2001/06/25 18:52:02  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -58,6 +61,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CScope;
+
 class CSeq_interval : public CSeq_interval_Base
 {
     typedef CSeq_interval_Base Tparent;
@@ -69,6 +74,13 @@ public:
 
     // Get the length of the interval
     int GetLength(void) const;
+    
+    // Checks from and to values of the CSeq_interval. Checks from <= to,
+    // from >= 0, and to < length of the CBioseq this is an interval for.
+    // scope is used to determine length. If scope is 0, length is assumed
+    // to be the maximum value of an int
+    bool IsValid(CScope* scope = 0) const;
+    
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_interval(const CSeq_interval&);
