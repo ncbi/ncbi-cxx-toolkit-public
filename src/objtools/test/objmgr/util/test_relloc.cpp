@@ -119,7 +119,9 @@ int CRelLocTester::Run(void)
                 cout << sep << (*r)->GetFrom() << "-" << (*r)->GetTo();
                 sep = ", ";
             }
-            cout << endl;
+            label.erase();
+            rl.Resolve(&scope)->GetLabel(&label);
+            cout << endl << "... and back to " << label << endl;
         }
     }
     return 0;
@@ -139,6 +141,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/10/15 19:53:11  ucko
+* Also display the result of resolving the relative location, if non-empty.
+*
 * Revision 1.4  2003/06/02 16:06:40  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
