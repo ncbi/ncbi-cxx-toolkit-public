@@ -1,0 +1,303 @@
+<package>
+	<job id="import-project-wsh-js">
+		
+		<script language="JScript" src="project_utilits.js">
+		</script>
+		
+		<script language="JScript">
+		// Framework
+		
+		// Create usage string
+		function Usage()
+		{
+			var usage_str;
+			usage_str  = "Usage:\n";
+			usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
+			return usage_str;
+		}
+		// Verify command line arguments
+		function VerifyArguments(oArgs)
+		{
+			if (oArgs.Length < 2) {
+				return false;
+			}
+			if (oArgs.Length == 3) {
+				var build_mode = oArgs.Item(2);
+				if (build_mode != "-dll" && build_mode != "-static") {
+					return false;
+				}
+			}
+			if (oArgs.Length > 3) {
+				return false;
+			}
+			
+			return true;
+		}
+		// Verify task object
+		function VerifyTask(oTask)
+		{
+			//Project name
+			var oRe = /^[a-z]([a-z]|\d|[_]|[/])*$/g;
+			if (oTask.ProjectName.match(oRe) == null) {
+				WScript.Echo("Invalid project name: \'" + oTask.ProjectName + "\'");
+				WScript.Echo("Project name should starts from lower-case letter");
+				WScript.Echo("             and containts lower-case letter(s),");
+				WScript.Echo("                           underscore(s),");
+				WScript.Echo("                           digit(s)");
+				WScript.Echo("                        or slashe(s)");
+				WScript.Quit(1);
+			}
+			
+			//Path to C++ Toolkit
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			if ( !oFso.FolderExists(oTask.ToolkitPath) ) {
+				WScript.Echo("Path to Pre-built C++ Toolkit: " + oTask.ToolkitPath + " does not exist");
+				WScript.Quit(1);	
+			}
+		}		
+		// Task object constructor
+		function Task()
+		{
+			var oArgs = WScript.Arguments;
+			if ( !VerifyArguments(oArgs) ) {
+				WScript.Echo(Usage());
+				WScript.Quit(1);
+			}
+			this.ProjectName     = WScript.Arguments.Item(0);
+			this.ToolkitPath     = WScript.Arguments.Item(1);
+			if (WScript.Arguments.Length == 2) {
+				this.DllBuild    = false; // default is static build
+			} else {
+				this.DllBuild    = WScript.Arguments.Item(2).toLowerCase() == "-dll";
+			}
+		}
+		// Diagnostic dump of task object
+		function DumpTask(oTask)
+		{
+			WScript.Echo(oTask.ProjectName        );
+			WScript.Echo(oTask.ToolkitPath        );
+			WScript.Echo(oTask.DllBuild.toString());
+		}
+		
+		// Fill local tree
+		function FillTree(oShell, oTree, oTask)
+		{
+			var temp_dir = oTree.TreeRoot + "\\temp";
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			
+			RemoveTempFolder(oShell, oFso, oTree);
+			
+			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.in");
+			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.mk.in");
+			execute(oShell, "cvs checkout -d temp internal/c++/src/Makefile.mk.in.msvc");
+			execute(oShell, "copy /Y temp\\*.* " + oTree.SrcRootBranch);
+			RemoveTempFolder(oShell, oFso, oTree);
+			
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/Makefile.FLTK.app.msvc");
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/ncbi.rc");
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/ncbilogo.ico");
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/project_tree_builder.ini");
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/winmain.cpp");
+			execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranch);
+			RemoveTempFolder(oShell, oFso, oTree);
+			
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/dll_info.ini");
+			execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/dll_main.cpp");
+			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/Makefile.mk");
+			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/third_party_dll_install.mak");
+			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/dll/third_party_dll_install.vcproj");
+			execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranchDll);
+			RemoveTempFolder(oShell, oFso, oTree);
+
+			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/Makefile.mk");
+			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/third_party_static_install.mak");
+			//execute(oShell, "cvs checkout -d temp internal/c++/compilers/msvc710_prj/static/third_party_static_install.vcproj");
+			//execute(oShell, "copy /Y temp\\*.* " + oTree.CompilersBranchStatic);
+			//RemoveTempFolder(oShell, oFso, oTree);
+			
+			execute(oShell, "cvs checkout -d temp internal/c++/include/corelib/config/ncbiconf_msvc_site.h");
+			execute(oShell, "copy /Y temp\\*.* " + oTree.IncludeConfig);
+			RemoveTempFolder(oShell, oFso, oTree);
+			
+			var include_dir = "include/" + oTask.ProjectName;
+			var src_dir     = "src/"     + oTask.ProjectName;
+			CheckoutSubDir(oShell, oTree, include_dir);
+			CheckoutSubDir(oShell, oTree, src_dir);
+			
+		}
+		// Project will require pre-built C++ Toolkit		
+		function AdjustProject(oShell, oTree, oTask)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			
+			// Makefile.in - open for appending
+			var makefile = oFso.OpenTextFile(oTree.SrcProjectBranch + "\\Makefile.in", 8);
+			makefile.WriteLine("REQUIRES = CXX_Toolkit");
+			makefile.Close();
+		}
+		// Local site should contain C++ Toolkit information as a third-party library
+		// this one is for dll build
+		function AdjustLocalSiteDll(oShell, oTree, oTask)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			// open for appending
+			var file = oFso.OpenTextFile(oTree.CompilersBranch + "\\project_tree_builder.ini", 8)
+			file.WriteLine("[CXX_Toolkit]");
+			file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
+			file.WriteLine("LIBPATH = ");
+
+			file.WriteLine("LIB     = \\");
+			file.WriteLine("        dbapi_driver_odbc.lib     \\");
+			file.WriteLine("        ncbi_core.lib             \\"); 
+			file.WriteLine("        ncbi_dbapi.lib            \\");
+			file.WriteLine("        ncbi_dbapi_driver.lib     \\");
+			file.WriteLine("        ncbi_general.lib          \\");
+			file.WriteLine("        ncbi_pub.lib              \\");
+			file.WriteLine("        ncbi_seq.lib              \\");
+			file.WriteLine("        ncbi_seqext.lib           \\");
+			file.WriteLine("        ncbi_web.lib              \\");
+			file.WriteLine("        ncbi_xloader_genbank.lib  \\");
+			file.WriteLine("        ncbi_xreader.lib          \\");
+			file.WriteLine("        ncbi_xreader_id1.lib      \\");
+			file.WriteLine("        ncbi_xreader_pubseqos.lib"); 
+
+			file.WriteLine("CONFS   = DebugDLL ReleaseDLL");
+			file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
+			file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\ReleaseDLL"));
+
+			file.Close();		
+		}
+		// for static build
+		function AdjustLocalSiteStatic(oShell, oTree, oTask)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			// open for appending
+			var file = oFso.OpenTextFile(oTree.CompilersBranch + "\\project_tree_builder.ini", 8)
+			file.WriteLine("[CXX_Toolkit]");
+			file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
+			file.WriteLine("LIBPATH = ");
+			
+			file.WriteLine("LIB     = \\");
+			file.WriteLine("        biblio.lib                \\");
+			file.WriteLine("        bz2.lib                   \\");
+			file.WriteLine("        dbapi.lib                 \\");
+			file.WriteLine("        dbapi_driver.lib          \\");
+			file.WriteLine("        dbapi_driver_odbc.lib     \\");
+			file.WriteLine("        general.lib               \\");
+			file.WriteLine("        id1.lib                   \\");
+			file.WriteLine("        id2.lib                   \\");
+			file.WriteLine("        medline.lib               \\");
+			file.WriteLine("        ncbi_xloader_genbank.lib  \\");
+			file.WriteLine("        ncbi_xreader.lib          \\");
+			file.WriteLine("        ncbi_xreader_id1.lib      \\");
+			file.WriteLine("        ncbi_xreader_pubseqos.lib \\");
+			file.WriteLine("        pub.lib                   \\");
+			file.WriteLine("        seq.lib                   \\");
+			file.WriteLine("        seqcode.lib               \\");
+			file.WriteLine("        seqset.lib                \\");
+			file.WriteLine("        sequtil.lib               \\");
+			file.WriteLine("        tables.lib                \\");
+			file.WriteLine("        xalnmgr.lib               \\");
+			file.WriteLine("        xcgi.lib                  \\");
+			file.WriteLine("        xcompress.lib             \\");
+			file.WriteLine("        xconnect.lib              \\");
+			file.WriteLine("        xhtml.lib                 \\");
+			file.WriteLine("        xncbi.lib                 \\");
+			file.WriteLine("        xobjmgr.lib               \\");
+			file.WriteLine("        xser.lib                  \\");
+			file.WriteLine("        xutil.lib");
+
+			file.WriteLine("CONFS   = Debug DebugDLL Release ReleaseDLL");
+			file.WriteLine("[CXX_Toolkit.debug.Debug]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Debug"));
+			file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
+			file.WriteLine("[CXX_Toolkit.release.Release]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Release"));
+			file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\ReleaseDLL"));
+
+			file.Close();		
+		}
+		// Add C++ Toolkit to local site
+		function AdjustLocalSite(oShell, oTree, oTask)
+		{
+			if ( oTask.DllBuild ) {
+				AdjustLocalSiteDll(oShell, oTree, oTask);
+			} else {
+				AdjustLocalSiteStatic(oShell, oTree, oTask);
+			}
+		}
+		// Generate solution name. Must be the same as we can import more projects
+		function SolutionName(oTask)
+		{
+			if ( oTask.DllBuild ) {
+				return "imported_projects_dll";
+			} else {
+				return "imported_projects_static";
+			}
+		}
+		// Run project tree builder
+		function RunPtb(oShell, oTree, oTask)
+		{
+			var conf = GetConfigs(oTask)[0];
+			var target_path = oTree.BinPathStatic + "\\" + conf;
+			var ptb_command_line = target_path + "\\project_tree_builder.exe";
+			if ( oTask.DllBuild ) {
+				ptb_command_line += " -dll";
+			}
+			ptb_command_line += " -logfile out.log";
+			ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
+			ptb_command_line += " " + oTree.TreeRoot;
+			ptb_command_line += " src\\";
+			if ( oTask.DllBuild ) {
+				ptb_command_line += " " + oTree.CompilersBranchDll   + "\\build\\" +  SolutionName(oTask) + ".sln";
+			} else {
+				ptb_command_line += " " + oTree.CompilersBranchStatic + "\\build\\" + SolutionName(oTask) + ".sln";
+			}
+			WScript.Echo(ptb_command_line);
+			execute(oShell, ptb_command_line);
+		}
+		// Open (re-)generated solution in  MSVC IDE
+		function LoadSolution(oShell, oTree, oTask)
+		{
+			var sln_path = " ";
+			if ( oTask.DllBuild ) {
+				sln_path += oTree.CompilersBranchDll;
+			} else {
+				sln_path += oTree.CompilersBranchStatic;
+			}
+			sln_path += "\\build\\" + SolutionName(oTask) + ".sln";
+
+			execute(oShell, "start " + sln_path);
+		}
+				
+		</script>
+		
+		<script language="JScript">
+		// Main script line:
+		var oShell = WScript.CreateObject("WScript.shell");
+		
+		var oTask  = new Task();
+		VerifyTask(oTask);
+		//DumpTask(oTask);
+		
+		var oTree  = new Tree(oShell, oTask);
+		//DumpTree(oTree);
+		
+		CreateTreeStructure(oTree, oTask);
+		FillTree           (oShell, oTree, oTask);
+		CopyPtb            (oShell, oTree, oTask);
+		CopyDatatool       (oShell, oTree, oTask);
+		AdjustProject      (oShell, oTree, oTask);
+		AdjustLocalSite    (oShell, oTree, oTask);
+		
+ 		RunPtb             (oShell, oTree, oTask);
+ 		LoadSolution       (oShell, oTree, oTask);
+ 		
+	 	</script>
+	</job>
+</package>
+ 
