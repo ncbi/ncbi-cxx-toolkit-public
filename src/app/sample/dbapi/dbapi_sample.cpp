@@ -66,16 +66,20 @@ void CDbapiTest::Init()
                              "DBAPI test program");
 
 
-    argList->AddDefaultKey("s", "string",
-                           "Server name",
-                           CArgDescriptions::eString, "STRAUSS");
-
 #ifdef WIN32
-    argList->AddDefaultKey("d", "string",
+   argList->AddDefaultKey("s", "string",
+                           "Server name",
+                           CArgDescriptions::eString, "MSSQL2");
+
+   argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds|odbc>",
                            CArgDescriptions::eString, 
                            "odbc");
 #else
+    argList->AddDefaultKey("s", "string",
+                           "Server name",
+                           CArgDescriptions::eString, "STRAUSS");
+
     argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds>",
                            CArgDescriptions::eString, 
@@ -473,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/10/02 15:06:58  kholodov
+* Modified: default connection settings for UNIX and NT platforms
+*
 * Revision 1.4  2002/10/01 18:57:45  kholodov
 * Added: bulk insert test
 *
