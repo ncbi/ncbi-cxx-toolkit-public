@@ -1107,11 +1107,9 @@ CSeq_id::CSeq_id( const string& the_id )
         if (dot != NPOS) {
             ver = NStr::StringToNumeric(the_id.substr(dot + 1));
         }
-        E_Choice type = GetAccType(info);
-        if (type == e_not_set) {
-            type = e_Local;
+        if (GetAccType(info) != e_not_set) {
+            x_Init(GetAccType(info), acc_in, kEmptyStr, ver);
         }
-        x_Init(type, acc_in, kEmptyStr, ver);
         return;
     }
 
@@ -1508,6 +1506,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.84  2004/06/07 20:12:17  ucko
+ * Revert previous change, as some code was relying on getting e_not_set
+ * for unrecognized IDs.
+ *
  * Revision 6.83  2004/06/07 19:00:34  ucko
  * CSeq_id::CSeq_id(const string&): if we can't identify the string at
  * all, turn it into a local ID.
