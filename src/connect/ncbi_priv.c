@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/06/18 18:39:38  ucko
+ * Explicitly initialize global variables to avoid a MacOS X linker bug.
+ *
  * Revision 6.2  2002/03/22 19:52:17  lavr
  * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
  *
@@ -44,9 +47,9 @@
 #include <string.h>
 
 
-MT_LOCK g_CORE_MT_Lock;
-LOG     g_CORE_Log;
-REG     g_CORE_Registry;
+MT_LOCK g_CORE_MT_Lock = 0;
+LOG     g_CORE_Log = 0;
+REG     g_CORE_Registry = 0;
 
 
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
