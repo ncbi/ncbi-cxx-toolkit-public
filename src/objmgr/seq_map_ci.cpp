@@ -90,19 +90,11 @@ CSeqMap_CI::CSeqMap_CI(void)
 CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
                        EPosition /*byPos*/, TSeqPos pos,
                        size_t maxResolveCount)
-    : m_Scope(scope),
+    : m_Position(0),
+      m_Scope(scope),
       m_MaxResolveCount(maxResolveCount)
 {
-    TSegmentInfo push;
-    push.m_SeqMap = seqMap;
-    push.m_LevelRangePos = 0;
-    push.m_LevelRangeEnd = seqMap->GetLength(scope);
-    push.m_MinusStrand = false;
-    push.m_Index = seqMap->x_FindSegment(pos, scope);
-    seqMap->x_GetSegmentLength(push.m_Index, scope);
-    m_Stack.push_back(push);
-    m_Position = x_GetSegment().m_Position;
-    m_Length = x_GetSegmentInfo().x_CalcLength();
+    x_Push(seqMap, 0, seqMap->GetLength(scope), false, pos);
     x_Resolve(pos);
 }
 
@@ -114,15 +106,7 @@ CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
       m_Scope(scope),
       m_MaxResolveCount(maxResolveCount)
 {
-    TSegmentInfo push;
-    push.m_SeqMap = seqMap;
-    push.m_LevelRangePos = 0;
-    push.m_LevelRangeEnd = seqMap->GetLength(scope);
-    push.m_MinusStrand = false;
-    push.m_Index = 0;
-    seqMap->x_GetSegmentLength(0, scope);
-    m_Stack.push_back(push);
-    m_Length = x_GetSegmentInfo().x_CalcLength();
+    x_Push(seqMap, 0, seqMap->GetLength(scope), false, 0);
     x_Resolve(0);
 }
 
@@ -131,16 +115,16 @@ CSeqMap_CI::CSeqMap_CI(CConstRef<CSeqMap> seqMap, CScope* scope,
                        EEnd /*toEnd*/,
                        size_t maxResolveCount)
     : m_Position(seqMap->GetLength(scope)),
+      m_Length(0),
       m_Scope(scope),
       m_MaxResolveCount(maxResolveCount)
 {
     TSegmentInfo push;
     push.m_SeqMap = seqMap;
     push.m_LevelRangePos = 0;
-    push.m_LevelRangeEnd = seqMap->GetLength(scope);
+    push.m_LevelRangeEnd = m_Position;
     push.m_MinusStrand = false;
     push.m_Index = seqMap->x_GetSegmentsCount();
-    m_Length = 0;
     m_Stack.push_back(push);
 }
 
@@ -230,58 +214,6 @@ TSeqPos CSeqMap_CI::x_GetTopOffset(void) const
     return x_GetSegmentInfo().x_GetTopOffset();
 }
 
-#if 0
-bool CSeqMap_CI::x_Push(TSeqPos pos)
-{
-    const TSegmentInfo& info = x_GetSegmentInfo();
-    const CSeqMap::CSegment& seg = info.x_GetSegment();
-    TSegmentInfo push;
-    if ( seg.m_RefObjectType == CSeqMap::eSeqMap ) {
-        // internal SeqMap -> no resolution
-        push.m_SeqMap.Reset(
-            reinterpret_cast<const CSeqMap*>(seg.m_RefObject.GetPointer()));
-    }
-    else if ( seg.m_RefObjectType == CSeqMap::eSeq_id && m_MaxResolveCount > 0 ) {
-        // external reference -> resolution
-        push.m_SeqMap.Reset(&info.m_SeqMap->x_GetBioseqHandle(seg, GetScope()).GetSeqMap());
-        --m_MaxResolveCount;
-    }
-    else {
-        return false;
-    }
-
-    push.m_LevelRangePos = seg.m_RefPosition;
-    push.m_LevelRangeEnd = push.m_LevelRangePos + seg.m_Length;
-
-    TSeqPos skipBefore = info.x_GetSkipBefore();
-    TSeqPos skipAfter = info.x_GetSkipAfter();
-
-    if ( !seg.m_RefMinusStrand ) {
-        push.m_LevelRangePos += skipBefore;
-        push.m_LevelRangeEnd -= skipAfter;
-        push.m_MinusStrand = info.m_MinusStrand;
-    }
-    else {
-        push.m_LevelRangePos += skipAfter;
-        push.m_LevelRangeEnd -= skipBefore;
-        push.m_MinusStrand = !info.m_MinusStrand;
-    }
-
-    TSeqPos findPos = !push.m_MinusStrand?
-        push.m_LevelRangePos + pos: push.m_LevelRangeEnd - 1 - pos;
-    push.m_Index = push.x_GetSeqMap().x_FindSegment(findPos, GetScope());
-
-    _ASSERT(push.m_Index < push.x_GetSeqMap().x_GetSegmentsCount());
-    // update position of next segment
-    push.x_GetSeqMap().x_GetSegmentLength(push.m_Index, GetScope());
-
-    m_Stack.push_back(push);
-    m_Position += x_GetTopOffset();
-    m_Length = push.x_CalcLength();
-    // position is not changed
-    return true;
-}
-#endif
 
 bool CSeqMap_CI::x_Push(TSeqPos pos)
 {
@@ -321,8 +253,14 @@ void CSeqMap_CI::x_Push(CConstRef<CSeqMap> seqMap,
     push.m_MinusStrand = minusStrand;
     TSeqPos findOffset = !minusStrand? pos: length - 1 - pos;
     push.m_Index = seqMap->x_FindSegment(from + findOffset, GetScope());
-    _ASSERT(push.m_Index < push.x_GetSeqMap().x_GetSegmentsCount());
-    // update position of next segment
+    if ( push.m_Index == size_t(-1) ) {
+	_ASSERT(length == 0);
+	push.m_Index = !minusStrand? seqMap->x_GetSegmentsCount(): 0;
+    }
+    else {
+	_ASSERT(push.m_Index < seqMap->x_GetSegmentsCount());
+    }
+    // update length of current segment
     seqMap->x_GetSegmentLength(push.m_Index, GetScope());
     m_Stack.push_back(push);
     // update position
@@ -434,6 +372,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/01/24 20:14:08  vasilche
+* Fixed processing zero length references.
+*
 * Revision 1.2  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
