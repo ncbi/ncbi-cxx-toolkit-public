@@ -656,15 +656,34 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
     case eFormatExonTable: {
         const char* p1 = m_Seq1;
         const char* p2 = m_Seq2;
-        int tr_idx_hi = m_Transcript.size() - 1;
-        int tr_idx_lo = 0;
-        while(m_esf_L1 && m_Transcript[tr_idx_hi] == eInsert) {
-            --tr_idx_hi;
-            ++p2;
-        };
-        while(m_esf_R1 && m_Transcript[tr_idx_lo] == eInsert) {
-            ++tr_idx_lo;
-        };
+        int tr_idx_hi0 = m_Transcript.size() - 1, tr_idx_hi = tr_idx_hi0;
+        int tr_idx_lo0 = 0, tr_idx_lo = tr_idx_lo0;
+
+        if(m_esf_L1 && m_Transcript[tr_idx_hi0] == eInsert) {
+            while(m_esf_L1 && m_Transcript[tr_idx_hi] == eInsert) {
+                --tr_idx_hi;
+                ++p2;
+            }
+        }
+
+        if(m_esf_L2 && m_Transcript[tr_idx_hi0] == eDelete) {
+            while(m_esf_L2 && m_Transcript[tr_idx_hi] == eDelete) {
+                --tr_idx_hi;
+                ++p1;
+            }
+        }
+
+        if(m_esf_R1 && m_Transcript[tr_idx_lo0] == eInsert) {
+            while(m_esf_R1 && m_Transcript[tr_idx_lo] == eInsert) {
+                ++tr_idx_lo;
+            }
+        }
+
+        if(m_esf_R2 && m_Transcript[tr_idx_lo0] == eDelete) {
+            while(m_esf_R2 && m_Transcript[tr_idx_lo] == eDelete) {
+                ++tr_idx_lo;
+            }
+        }
 
         for(int tr_idx = tr_idx_hi; tr_idx >= tr_idx_lo;) {
             const char* p1_beg = p1;
@@ -719,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/04/30 18:12:42  kapustin
+ * Account for second sequence's esf hwen formatting output exon table
+ *
  * Revision 1.15  2003/04/30 16:06:17  kapustin
  * Fix error in guide generation routine
  *
