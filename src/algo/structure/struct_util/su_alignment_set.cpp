@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
-#include <corelib/ncbi_limits.hpp>
 
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
@@ -328,6 +327,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/26 01:58:05  ucko
+* Move #include <corelib/ncbi_limits.hpp> to su_alignment_set.hpp.
+*
 * Revision 1.4  2004/05/25 21:23:03  ucko
 * Remove definition of MasterSlaveAlignment::UNALIGNED (now part of an enum)
 *
