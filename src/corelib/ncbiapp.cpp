@@ -758,7 +758,7 @@ string CNcbiApplication::FindProgramExecutablePath
 #  if defined (NCBI_OS_MSWIN)
     // MS Windows: Try more accurate method of detection
     try {
-        // Load PSAPI dynamic library -- it should exists on MS-Win NT/2000/XP
+        // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
         CDll dll_psapi("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
 
         // Get function entry-point from DLL
@@ -797,7 +797,7 @@ string CNcbiApplication::FindProgramExecutablePath
     catch (CException) {
         ; // Just catch an all exceptions from CDll
     }
-    // This method don't work -- use standard method
+    // This method didn't work -- use standard method
 #  endif
 
 #  if defined(NCBI_OS_LINUX) && 0
@@ -811,7 +811,7 @@ string CNcbiApplication::FindProgramExecutablePath
             return buf;
         }
     }}
-    // This method don't work -- use standard method
+    // This method didn't work -- use standard method
 #  endif
 
     if ( !CDirEntry::IsAbsolutePath(app_path) ) {
@@ -947,6 +947,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2004/07/08 14:10:11  lavr
+ * Some comment spellings
+ *
  * Revision 1.90  2004/07/04 18:34:30  vakatov
  * HonorDebugSettings() --> x_HonorStandardSettings()
  * the latter also allows to limit max CPU usage and max heap size
