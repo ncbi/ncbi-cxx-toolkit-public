@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/11/07 23:24:43  vakatov
+ * [MIME]  In-sync with the C Toolkit "connutil.c:R6.15"
+ *
  * Revision 6.3  2000/04/12 15:22:07  vakatov
  * Always #undef NDEBUG
  *
@@ -161,63 +164,93 @@ static void TEST_URL_Encoding(void)
  */
 
 
-static int/*bool*/ TEST_Misc_MIME
+static int/*bool*/ s_Try_MIME
 (const char*    str,
+ EMIME_Type     type,
  EMIME_SubType  subtype,
  EMIME_Encoding encoding)
 {
+    EMIME_Type     x_type;
     EMIME_SubType  x_subtype;
     EMIME_Encoding x_encoding;
 
-    if (!MIME_ParseContentType(str, &x_subtype, 0)   || x_subtype  != subtype)
+    if (type == eMIME_T_NcbiData) {
+        if (!MIME_ParseContentType(str, &x_subtype, 0)  ||
+            x_subtype  != subtype) {
+            return 0/*false*/;
+        }
+        if (!MIME_ParseContentType(str, 0, &x_encoding)  ||
+            x_encoding != encoding) {
+            return 0/*false*/;
+        }
+        if (!MIME_ParseContentType(str, &x_subtype, &x_encoding)  ||
+            x_subtype != subtype  ||  x_encoding != encoding) {
+            return 0/*false*/;
+        }
+    }
+
+    if (!MIME_ParseContentTypeEx(str, &x_type, &x_subtype, 0)  ||
+        x_type != type  ||  x_subtype != subtype) {
         return 0/*false*/;
-    if (!MIME_ParseContentType(str, 0, &x_encoding)  || x_encoding != encoding)
-        return 0/*false*/;    
-    if (!MIME_ParseContentType(str, &x_subtype, &x_encoding)  ||
-        x_subtype != subtype  ||  x_encoding != encoding)
-        return 0/*false*/;    
+    }
+    if (!MIME_ParseContentTypeEx(str, &x_type, 0, &x_encoding)  ||
+        x_type != type  ||  x_encoding != encoding) {
+        return 0/*false*/;
+    }
+    if (!MIME_ParseContentTypeEx(str, &x_type, &x_subtype, &x_encoding)  ||
+        x_type != type  ||  x_subtype != subtype  ||  x_encoding != encoding) {
+        return 0/*false*/;
+    }
 
     str = strchr(str, ':');
     if ( str ) {
         str++;
-        return TEST_Misc_MIME(str, subtype, encoding);
+        return s_Try_MIME(str, type, subtype, encoding);
     }
 
     return 1/*true*/;
 }
 
 
-static void TEST_Misc(void)
+static void TEST_MIME(void)
 {
-    int i,j;
-
     /* MIME API */
+    EMIME_Type     type;
     EMIME_SubType  subtype;
     EMIME_Encoding encoding;
-    char           str[MAX_CONTENT_TYPE_LEN];
+    char str[MAX_CONTENT_TYPE_LEN];
+    int i,j,k;
+
     *str = '\0';
-    for (i = 0, subtype = (EMIME_SubType) i;
-         i <= (int)eMIME_Unknown;  i++, subtype = (EMIME_SubType) i) {
-        for (j = 0, encoding = (EMIME_Encoding) j; 
-             j <= (int)eENCOD_None;  j++, encoding = (EMIME_Encoding) j) {
-            assert(!TEST_Misc_MIME(str, subtype, encoding));
-            MIME_ComposeContentType(subtype, encoding, str, sizeof(str));
-            assert(TEST_Misc_MIME(str, subtype, encoding));
+    for (k = 0, type = (EMIME_Type) k;
+         k <= (int) eMIME_T_Unknown;  k++, type = (EMIME_Type) k) {
+        for (i = 0, subtype = (EMIME_SubType) i;
+             i <= (int) eMIME_Unknown;  i++, subtype = (EMIME_SubType) i) {
+            for (j = 0, encoding = (EMIME_Encoding) j; 
+                 j <= (int) eENCOD_None;  j++, encoding = (EMIME_Encoding) j) {
+                assert(!s_Try_MIME(str, type, subtype, encoding));
+                MIME_ComposeContentTypeEx(type, subtype, encoding,
+                                          str, sizeof(str));
+                assert(s_Try_MIME(str, type, subtype, encoding));
+            }
         }
     }
 
-    assert(TEST_Misc_MIME("content-type:  x-ncbi-data/x-asn-binary ",
-                          eMIME_AsnBinary, eENCOD_None));
-    assert(TEST_Misc_MIME("content-TYPE:"
-                          " \t x-ncbi-data/x-asn-text-url-encoded\r",
-                          eMIME_AsnText, eENCOD_Url));
-    assert(TEST_Misc_MIME("x-ncbi-data/x-eeee",
-                          eMIME_Unknown, eENCOD_None));
+    assert(s_Try_MIME("content-type:  x-ncbi-data/x-asn-binary ",
+                      eMIME_T_NcbiData, eMIME_AsnBinary, eENCOD_None));
+    assert(s_Try_MIME("content-type:  application/x-www-form-urlencoded ",
+                      eMIME_T_Application, eMIME_WwwForm, eENCOD_Url));
+    assert(s_Try_MIME("content-TYPE: \t x-ncbi-data/x-asn-text-urlencoded\r",
+                      eMIME_T_NcbiData, eMIME_AsnText, eENCOD_Url));
+    assert(s_Try_MIME("x-ncbi-data/x-eeee",
+                      eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
 
-    assert(!TEST_Misc_MIME("content-TYPE : x-ncbi-data/x-unknown\r",
-                           eMIME_Unknown, eENCOD_None));
-    assert(!TEST_Misc_MIME("", eMIME_Unknown, eENCOD_None));
-    assert(!TEST_Misc_MIME(0, eMIME_Unknown, eENCOD_None));
+    assert(!s_Try_MIME("content-TYPE : x-ncbi-data/x-unknown\r",
+                       eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
+    assert(s_Try_MIME("text/html",
+                      eMIME_T_Text, eMIME_Html, eENCOD_None));
+    assert(!s_Try_MIME("", eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
+    assert(!s_Try_MIME(0, eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
 }
 
 
@@ -232,7 +265,7 @@ int main(void)
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     TEST_URL_Encoding();
-    TEST_Misc();
+    TEST_MIME();
 
     CORE_SetLOG(0);
     return 0;
