@@ -305,7 +305,7 @@ private:
     CFeat_CI& operator++ (int);
     CFeat_CI& operator-- (int);
 
-    mutable CMappedFeat m_OriginalSeq_feat; // current feature object returned by operator->()
+    CMappedFeat m_MappedFeat;// current feature object returned by operator->()
 };
 
 
@@ -314,10 +314,10 @@ inline
 void CFeat_CI::Update(void)
 {
     if ( IsValid() ) {
-        m_OriginalSeq_feat.Set(GetCollector(), GetIterator());
+        m_MappedFeat.Set(GetCollector(), GetIterator());
     }
     else {
-        m_OriginalSeq_feat.Reset();
+        m_MappedFeat.Reset();
     }
 }
 
@@ -358,14 +358,14 @@ void CFeat_CI::Rewind(void)
 inline
 const CMappedFeat& CFeat_CI::operator* (void) const
 {
-    return m_OriginalSeq_feat;
+    return m_MappedFeat;
 }
 
 
 inline
 const CMappedFeat* CFeat_CI::operator-> (void) const
 {
-    return &**this;
+    return &m_MappedFeat;
 }
 
 
@@ -399,6 +399,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/10/07 13:59:35  vasilche
+* Better name for member of CFeat_CI. Removed mutable.
+*
 * Revision 1.43  2004/09/30 23:43:32  kononenk
 * Added doxygen formatting
 *
