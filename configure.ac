@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.34 2002/02/19 05:02:52 vakatov Exp $
+#  $Id: configure.ac,v 1.35 2002/03/07 01:20:15 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2265,7 +2265,10 @@ esac
 
 if test -n "$with_check"  -a  "$with_check" != "no" ; then
    check="check"
-   test "$with_check" != "yes"  &&  CHECK_ARG="$with_check"
+   if test "$with_check" != "yes" ; then
+      CHECK_ARG=`echo "$with_check" | sed 's/%/ /g'`
+   fi
+   WithFeatures="$WithFeatures check"
 fi
 
 
