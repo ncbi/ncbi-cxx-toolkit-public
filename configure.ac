@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.87 2002/06/06 21:09:31 ucko Exp $
+#  $Id: configure.ac,v 1.88 2002/06/10 17:07:46 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -442,6 +442,8 @@ fi
 CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
+LINK='$(CXX)'
+
 ### Which of these is better?
 #compiler_root=`dirname CXX_PATH`
 compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
@@ -573,9 +575,15 @@ case "$host_os:$compiler" in
  *:Compaq)
    CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
    CXXFLAGS="-tweak $CXXFLAGS"
-   # Suppress link warnings; otherwise, we get "weak symbol multiply defined"
-   # all over the place.
-   case "$host_os" in osf*) LDFLAGS="-Wl,-S $LDFLAGS" ;; esac
+   case "$host_os" in
+      osf*)
+        # Suppress link warnings; otherwise, we get "weak symbol multiply
+        # defined" all over the place.
+        LDFLAGS="-Wl,-S $LDFLAGS"
+        # The linker sometimes needs a LOT of memory.
+        LINK="ulimit -d \`ulimit -H -d\` && $LINK"
+        ;;
+   esac
    ;;
 
  darwin*:GCC)
@@ -2587,6 +2595,7 @@ AC_SUBST(CXX)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(STRIP)
+AC_SUBST(LINK)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(FAST_CFLAGS)
