@@ -113,6 +113,7 @@ public:
 
     // end character is ' ' by default
     void     SetEndChar(TResidue gap_char);
+    void     UnsetEndChar();
     bool     IsSetEndChar()                const;
     TResidue GetEndChar()                  const;
 
@@ -164,9 +165,9 @@ public:
 
     /// which algorithm to choose
     enum EAlgorithm {
-        eUseSeqString,         // memory ineficient
-        eUseAlnSeqString,      // memory efficient, recommended for large alns
-        eUseWholeAlnSeqString  // memory ineficient, but very fast
+        eUseSeqString,         /// memory ineficient
+        eUseAlnSeqString,      /// memory efficient, recommended for large alns
+        eUseWholeAlnSeqString  /// memory ineficient, but very fast
     };
 
     /// Printing methods
@@ -177,7 +178,18 @@ public:
                       EAlgorithm algorithm  = eUseAlnSeqString);
 
 private:
+    void x_SetChars();
+    void x_UnsetChars();
+
     const CAlnVec& m_AlnVec;
+
+    typedef CSeqVector::TResidue            TResidue;
+
+    bool     m_OrigSetGapChar;
+    TResidue m_OrigGapChar;
+
+    bool     m_OrigSetEndChar;
+    TResidue m_OrigEndChar;
 };
 
 
@@ -316,6 +328,12 @@ void CAlnVec::SetEndChar(TResidue end_char)
 }
 
 inline
+void CAlnVec::UnsetEndChar()
+{
+    m_set_EndChar = false;
+}
+
+inline
 bool CAlnVec::IsSetEndChar() const
 {
     return m_set_EndChar;
@@ -384,6 +402,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2005/03/16 19:31:21  todorov
+ * Added independent (from CAlnVec) default end & gap characters for the printers.
+ *
  * Revision 1.34  2005/03/15 17:44:24  todorov
  * Added a printer class
  *
