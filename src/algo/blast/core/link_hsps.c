@@ -40,23 +40,71 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
+/** BLAST_NUMBER_OF_ORDERING_METHODS tells how many methods are used
+ * to "order" the HSP's.
+*/
+#define BLAST_NUMBER_OF_ORDERING_METHODS 2
+
+/* Forward declaration */
+struct LinkHSPStruct;
+
+/** The following structure is used in "link_hsps" to decide between
+ * two different "gapping" models.  Here link is used to hook up
+ * a chain of HSP's (this is a void* as _blast_hsp is not yet
+ * defined), num is the number of links, and sum is the sum score.
+ * Once the best gapping model has been found, this information is
+ * transferred up to the BlastHSP.  This structure should not be
+ * used outside of the function link_hsps.
+*/
+typedef struct BlastHSPLink {
+   struct LinkHSPStruct* link[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Used to order the HSPs
+                                           (i.e., hook-up w/o overlapping). */
+   Int2 num[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< number of HSP in the
+                                                  ordering. */
+   Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP. */
+   double xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
+                                     multiplied by the appropriate Lambda. */
+   Int4 changed; /**< Has the link (best choice of HSP to link with) been
+                    changed since previous access? */
+} BlastHSPLink;
+
+/** Structure containing all information internal to the process of linking
+ * HSPs.
+ */
+typedef struct LinkHSPStruct {
+   BlastHSP* hsp;      /**< Specific HSP this structure corresponds to */
+   struct LinkHSPStruct* prev;         /**< Previous HSP in a set, if any */
+   struct LinkHSPStruct* next;         /**< Next HSP in a set, if any */ 
+   BlastHSPLink  hsp_link; /**< Auxiliary structure for keeping track of sum
+                              scores, etc. */
+   Boolean linked_set;     /**< Is this HSp part of a linked set? */
+   Boolean start_of_chain; /**< If TRUE, this HSP starts a chain along the
+                              "link" pointer. */
+   Int4 linked_to;         /**< Where this HSP is linked to? */
+   Int4 sumscore;          /**< Sumscore of a set of "linked" HSP's. */
+   Int4 q_offset_trim;     /**< Start of trimmed hsp in query */
+   Int4 q_end_trim;        /**< End of trimmed HSP in query */
+   Int4 s_offset_trim;     /**< Start of trimmed hsp in subject */
+   Int4 s_end_trim;        /**< End of trimmed HSP in subject */
+} LinkHSPStruct;
+
 #define WINDOW_SIZE 20
 static double 
 SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    const BlastHitSavingParameters* hit_params, 
-   BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
+   LinkHSPStruct* head_hsp, LinkHSPStruct* hsp, Int4* sumscore)
 {
    double gap_prob, gap_decay_rate, sum_evalue, score_prime;
    Int2 num;
    Int4 subject_eff_length, query_eff_length, length_adjustment;
-   Int4 context = head_hsp->context;
+   Int4 context = head_hsp->hsp->context;
    double eff_searchsp;
 
    gap_prob = hit_params->gap_prob;
    gap_decay_rate = hit_params->gap_decay_rate;
 
-   num = head_hsp->num + hsp->num;
+   num = head_hsp->hsp->num + hsp->hsp->num;
 
    length_adjustment = query_info->length_adjustments[context];
 
@@ -69,8 +117,8 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
    query_eff_length = 
       MAX(BLAST_GetQueryLength(query_info, context) - length_adjustment, 1);
    
-   *sumscore = MAX(hsp->score, hsp->sumscore) + 
-      MAX(head_hsp->score, head_hsp->sumscore);
+   *sumscore = MAX(hsp->hsp->score, hsp->sumscore) + 
+      MAX(head_hsp->hsp->score, head_hsp->sumscore);
    score_prime = *sumscore * sbp->kbp_gap[context]->Lambda;
 
    sum_evalue =  
@@ -94,12 +142,12 @@ static int
 fwd_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 
 	if (h1->context < h2->context)
       return -1;
@@ -126,13 +174,13 @@ static int
 fwd_compare_hsps_transl(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
    Int4 context1, context2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 
    context1 = h1->context/3;
    context2 = h2->context/3;
@@ -160,12 +208,12 @@ static int
 end_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 
    if (h1->context < h2->context)
       return 1;
@@ -188,20 +236,20 @@ end_compare_hsps(const void* v1, const void* v2)
 static int
 sumscore_compare_hsps(const void* v1, const void* v2)
 {
-	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct* h1,* h2;
+	LinkHSPStruct** hp1,** hp2;
    Int4 score1, score2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
 	if (h1 == NULL || h2 == NULL)
 		return 0;
 
-   score1 = MAX(h1->sumscore, h1->score);
-   score2 = MAX(h2->sumscore, h2->score);
+   score1 = MAX(h1->sumscore, h1->hsp->score);
+   score2 = MAX(h2->sumscore, h2->hsp->score);
 
 	if (score1 < score2) 
 		return 1;
@@ -263,7 +311,7 @@ FindSpliceJunction(Uint1* subject_seq, BlastHSP* hsp1,
 
 /* Find an HSP with offset closest, but not smaller/larger than a given one.
  */
-static Int4 hsp_binary_search(BlastHSP** hsp_array, Int4 size, 
+static Int4 hsp_binary_search(LinkHSPStruct** hsp_array, Int4 size, 
                               Int4 offset, Boolean right)
 {
    Int4 index, begin, end, coord;
@@ -273,9 +321,9 @@ static Int4 hsp_binary_search(BlastHSP** hsp_array, Int4 size,
    while (begin < end) {
       index = (begin + end) / 2;
       if (right) 
-         coord = hsp_array[index]->query.offset;
+         coord = hsp_array[index]->hsp->query.offset;
       else
-         coord = hsp_array[index]->query.end;
+         coord = hsp_array[index]->hsp->query.end;
       if (coord >= offset) 
          end = index;
       else
@@ -290,12 +338,12 @@ rev_compare_hsps(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 	
    if (h1->context > h2->context)
       return 1;
@@ -314,13 +362,13 @@ rev_compare_hsps_transl(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
    Int4 context1, context2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 	
    context1 = h1->context/3;
    context2 = h2->context/3;
@@ -342,12 +390,12 @@ rev_compare_hsps_tbn(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 
    if (h1->context > h2->context)
       return 1;
@@ -374,13 +422,13 @@ rev_compare_hsps_tbx(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+	LinkHSPStruct** hp1,** hp2;
    Int4 context1, context2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+	hp1 = (LinkHSPStruct**) v1;
+	hp2 = (LinkHSPStruct**) v2;
+	h1 = (*hp1)->hsp;
+	h2 = (*hp2)->hsp;
 
    context1 = h1->context/3;
    context2 = h2->context/3;
@@ -405,14 +453,28 @@ rev_compare_hsps_tbx(const void *v1, const void *v2)
 	return 0;
 }
 
+/** The helper array contains the info used frequently in the inner 
+ * for loops of the HSP linking algorithm.
+ * One array of helpers will be allocated for each thread.
+ */
+typedef struct LinkHelpStruct {
+  LinkHSPStruct* ptr;
+  Int4 q_off_trim;
+  Int4 s_off_trim;
+  Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS];
+  Int4 maxsum1;
+  Int4 next_larger;
+} LinkHelpStruct;
+
 static Int2
 link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
    BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
-	BlastHSP* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
-	BlastHSP hp_start;
+	LinkHSPStruct* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
+	LinkHSPStruct hp_start;
+   BlastHSP* hsp;
    BlastHSP** hsp_array;
 	BLAST_KarlinBlk** kbp;
 	Int4 maxscore, cutoff[2];
@@ -423,7 +485,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	Int4 *hp_frame_number;
 	Int4 gap_size, number_of_hsps, total_number_of_hsps;
    Int4 query_length, subject_length, length_adjustment;
-	void* link;
+	LinkHSPStruct* link;
 	Int4 H2_index,H_index;
 	Int4 i;
 	Int4 max_q_diff;
@@ -433,6 +495,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    Int4 lh_helper_size;
 	Int4 query_context; /* AM: to support query concatenation. */
    Boolean translated_query;
+   LinkHSPStruct** link_hsp_array;
 
 	if (hsp_list == NULL)
 		return -1;
@@ -463,12 +526,19 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    else
       num_subject_frames = 1;
 
+   link_hsp_array = 
+      (LinkHSPStruct**) malloc(total_number_of_hsps*sizeof(LinkHSPStruct*));
+   for (index = 0; index < total_number_of_hsps; ++index) {
+      link_hsp_array[index] = (LinkHSPStruct*) calloc(1, sizeof(LinkHSPStruct));
+      link_hsp_array[index]->hsp = hsp_array[index];
+   }
+
    /* Sort by (reverse) position. */
    if (translated_query) {
-      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+      qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
             rev_compare_hsps_tbx);
    } else {
-      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+      qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
             rev_compare_hsps_tbn);
    }
 
@@ -481,26 +551,27 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	else
 		num_query_frames = query_info->num_queries;
    
-    hp_frame_start = calloc(num_subject_frames*num_query_frames, sizeof(BlastHSP*));
+   hp_frame_start = 
+       calloc(num_subject_frames*num_query_frames, sizeof(LinkHSPStruct*));
    hp_frame_number = calloc(num_subject_frames*num_query_frames, sizeof(Int4));
 
 /* hook up the HSP's */
-	hp_frame_start[0] = hsp_array[0];
+	hp_frame_start[0] = link_hsp_array[0];
 
 	/* Put entries with different frame parity into separate 'query_frame's. -cfj */
 	{
 	  Int4 cur_frame=0;
      for (index=0;index<number_of_hsps;index++) 
      {
-        H=hsp_array[index];
+        H=link_hsp_array[index];
         H->start_of_chain = FALSE;
         hp_frame_number[cur_frame]++;
 
-        H->prev= index ? hsp_array[index-1] : NULL;
-        H->next= index<(number_of_hsps-1) ? hsp_array[index+1] : NULL;
+        H->prev= index ? link_hsp_array[index-1] : NULL;
+        H->next= index<(number_of_hsps-1) ? link_hsp_array[index+1] : NULL;
         if (H->prev != NULL && 
-            ((H->context/3) != (H->prev->context/3) ||
-             (SIGN(H->subject.frame) != SIGN(H->prev->subject.frame))))
+            ((H->hsp->context/3) != (H->prev->hsp->context/3) ||
+             (SIGN(H->hsp->subject.frame) != SIGN(H->prev->hsp->subject.frame))))
         { /* If frame switches, then start new list. */
            hp_frame_number[cur_frame]--;
            hp_frame_number[++cur_frame]++;
@@ -516,21 +587,24 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	/* This is used to break out of H2 loop early */
    for (index=0;index<number_of_hsps;index++) 
    {
-		H=hsp_array[index];
-		H->query.offset_trim = H->query.offset + MIN(((H->query.length)/4), 5);
-		H->query.end_trim = H->query.end - MIN(((H->query.length)/4), 5);
-		H->subject.offset_trim = H->subject.offset + MIN(((H->subject.length)/4), 5);
-		H->subject.end_trim = H->subject.end - MIN(((H->subject.length)/4), 5);
+      H = link_hsp_array[index];
+		hsp = H->hsp;
+		H->q_offset_trim = hsp->query.offset + MIN(((hsp->query.length)/4), 5);
+		H->q_end_trim = hsp->query.end - MIN(((hsp->query.length)/4), 5);
+		H->s_offset_trim = 
+         hsp->subject.offset + MIN(((hsp->subject.length)/4), 5);
+		H->s_end_trim = hsp->subject.end - MIN(((hsp->subject.length)/4), 5);
    }	    
    max_q_diff = 5;
 
 	for (frame_index=0; frame_index<num_query_frames; frame_index++)
 	{
       memset(&hp_start, 0, sizeof(hp_start));
+      hp_start.hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
       hp_start.next = hp_frame_start[frame_index];
       hp_frame_start[frame_index]->prev = &hp_start;
       number_of_hsps = hp_frame_number[frame_index];
-      query_context = hp_start.next->context;
+      query_context = hp_start.next->hsp->context;
       length_adjustment = query_info->length_adjustments[query_context];
       query_length = BLAST_GetQueryLength(query_info, query_context);
       query_length = MAX(query_length - length_adjustment, 1);
@@ -547,7 +621,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       lh_helper[0].maxsum1  = -10000;
       lh_helper[0].next_larger  = 0;
       
-      /* lh_helper[0]  = empty     = end marker that I added
+      /* lh_helper[0]  = empty     = additional end marker
        * lh_helper[1]  = hsp_start = empty entry used in original code
        * lh_helper[2]  = hsp_array->next = hsp_array[0]
        * lh_helper[i]  = ... = hsp_array[i-2] (for i>=2) 
@@ -629,9 +703,9 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
           */
          if(!use_current_max){
             for (H=&hp_start,H_index=1; H!=NULL; H=H->next,H_index++) {
-               Int4 s_frame = H->subject.frame;
-               Int4 s_off_t = H->subject.offset_trim;
-               Int4 q_off_t = H->query.offset_trim;
+               Int4 s_frame = H->hsp->subject.frame;
+               Int4 s_off_t = H->s_offset_trim;
+               Int4 q_off_t = H->q_offset_trim;
                lh_helper[H_index].ptr = H;
                lh_helper[H_index].q_off_trim = q_off_t;
                lh_helper[H_index].s_off_trim = s_off_t;
@@ -669,10 +743,10 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   Int4 H_hsp_num=0;
                   Int4 H_hsp_sum=0;
                   double H_hsp_xsum=0.0;
-                  void* H_hsp_link=NULL;
-                  if (H->score > cutoff[index]) {
-                     Int4 H_query_etrim = H->query.end_trim;
-                     Int4 H_sub_etrim = H->subject.end_trim;
+                  LinkHSPStruct* H_hsp_link=NULL;
+                  if (H->hsp->score > cutoff[index]) {
+                     Int4 H_query_etrim = H->q_end_trim;
+                     Int4 H_sub_etrim = H->s_end_trim;
                      Int4 H_q_et_gap = H_query_etrim+gap_size;
                      Int4 H_s_et_gap = H_sub_etrim+gap_size;
                      
@@ -717,8 +791,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                      } /* end for H2... */
                   }
                   { 
-                     Int4 score=H->score;
-                     double new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
+                     Int4 score=H->hsp->score;
+                     double new_xsum = H_hsp_xsum + (score*(kbp[H->hsp->context]->Lambda));
                      Int4 new_sum = H_hsp_sum + (score - cutoff[index]);
                      
                      H->hsp_link.sum[index] = new_sum;
@@ -732,7 +806,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                      }
                      H->hsp_link.xsum[index] = new_xsum;
                      if(H_hsp_link)
-                        ((BlastHSP*)H_hsp_link)->linked_to++;
+                        ((LinkHSPStruct*)H_hsp_link)->linked_to++;
                   }
                } /* end for H=... */
             }
@@ -745,7 +819,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                Int4 H_hsp_num=0;
                Int4 H_hsp_sum=0;
                double H_hsp_xsum=0.0;
-               void* H_hsp_link=NULL;
+               LinkHSPStruct* H_hsp_link=NULL;
                
                H->hsp_link.changed=1;
                H2 = H->hsp_link.link[index];
@@ -761,20 +835,21 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   }
                   H_hsp_link=H2;
                   H->hsp_link.changed=0;
-               } else if (H->score > cutoff[index]) {
-                  Int4 H_query_etrim = H->query.end_trim;
-                  Int4 H_sub_etrim = H->subject.end_trim;
+               } else if (H->hsp->score > cutoff[index]) {
+                  Int4 H_query_etrim = H->q_end_trim;
+                  Int4 H_sub_etrim = H->s_end_trim;
                   
 
-                  /* Here we look at what was the best choice last time (if it's still around)
-                   * and set this to the initial choice.  By setting the best score to 
-                   * a (potentially) large value initially, we can reduce the number of 
-                   * hsps checked.  -cfj
+                  /* Here we look at what was the best choice last time, if it's
+                   * still around, and set this to the initial choice. By
+                   * setting the best score to a (potentially) large value
+                   * initially, we can reduce the number of hsps checked. 
                    */
                   
-                  /* Currently we set the best score to a value just less than the real value. This 
-                   * is not really necessary, but doing this ensures that in the case of a tie, we 
-                   * make the same selection the original code did.
+                  /* Currently we set the best score to a value just less than
+                   * the real value. This is not really necessary, but doing
+                   * this ensures that in the case of a tie, we make the same
+                   * selection the original code did.
                    */
                   
                   if(!first_pass&&H2&&H2->linked_to>=0){
@@ -829,8 +904,9 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   } /* end for H2_index... */
                } /* end if(H->score>cuttof[]) */
                { 
-                  Int4 score=H->score;
-                  double new_xsum = H_hsp_xsum + (score*(kbp[H->context]->Lambda));
+                  Int4 score=H->hsp->score;
+                  double new_xsum = 
+                     H_hsp_xsum + (score*(kbp[H->hsp->context]->Lambda));
                   Int4 new_sum = H_hsp_sum + (score - cutoff[index]);
                   
                   H->hsp_link.sum[index] = new_sum;
@@ -857,7 +933,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   }
                   H->hsp_link.xsum[index] = new_xsum;
                   if(H_hsp_link)
-                     ((BlastHSP*)H_hsp_link)->linked_to++;
+                     ((LinkHSPStruct*)H_hsp_link)->linked_to++;
                }
             }
             path_changed=0;
@@ -903,9 +979,10 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          
          /* AM: Support for query concatenation. */
          prob[ordering_method] *= 
-            ((double)query_info->eff_searchsp_array[query_context]/((double)subject_length*query_length));
+            ((double)query_info->eff_searchsp_array[query_context] /
+             ((double)subject_length*query_length));
          
-         best[ordering_method]->evalue = prob[ordering_method];
+         best[ordering_method]->hsp->evalue = prob[ordering_method];
          
          /* remove the links that have been ordered already. */
          if (best[ordering_method]->hsp_link.link[ordering_method])
@@ -923,10 +1000,10 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             /* record whether this is part of a linked set. */
             H->linked_set = linked_set;
             if (ordering_method == 0)
-               H->ordering_method = BLAST_SMALL_GAPS;
+               H->hsp->ordering_method = BLAST_SMALL_GAPS;
             else
-               H->ordering_method = BLAST_LARGE_GAPS;
-            H->evalue = prob[ordering_method];
+               H->hsp->ordering_method = BLAST_LARGE_GAPS;
+            H->hsp->evalue = prob[ordering_method];
             if (H->next)
                (H->next)->prev=H->prev;
             if (H->prev)
@@ -941,14 +1018,14 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    sfree(hp_frame_number);
 
    if (translated_query) {
-      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+      qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
             rev_compare_hsps_transl);
-      qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSP*), 
+      qsort(link_hsp_array, total_number_of_hsps,sizeof(LinkHSPStruct*), 
             fwd_compare_hsps_transl);
    } else {
-      qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), 
+      qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
             rev_compare_hsps);
-      qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSP*), 
+      qsort(link_hsp_array, total_number_of_hsps,sizeof(LinkHSPStruct*), 
             fwd_compare_hsps);
    }
 
@@ -957,7 +1034,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 
 	for (index=0, last_hsp=NULL;index<total_number_of_hsps; index++) 
 	{
-		H = hsp_array[index];
+		H = link_hsp_array[index];
 		H->prev = NULL;
 		H->next = NULL;
 	}
@@ -966,7 +1043,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	first_hsp = NULL;
 	for (index=0, last_hsp=NULL;index<total_number_of_hsps; index++) 
    {
-		H = hsp_array[index];
+		H = link_hsp_array[index];
 
       /* If this is not a single piece or the start of a chain, then Skip it. */
       if (H->linked_set == TRUE && H->start_of_chain == FALSE)
@@ -977,18 +1054,18 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 		if (last_hsp == NULL)
 			first_hsp = H;
 		H->prev = last_hsp;
-		ordering_method = H->ordering_method;
+		ordering_method = H->hsp->ordering_method;
 		if (H->hsp_link.link[ordering_method] == NULL)
 		{
          /* Grab the next HSP that is not part of a chain or the start of a chain */
          /* The "next" pointers are not hooked up yet in HSP's further down array. */
          index1=index;
-         H2 = index1<(total_number_of_hsps-1) ? hsp_array[index1+1] : NULL;
+         H2 = index1<(total_number_of_hsps-1) ? link_hsp_array[index1+1] : NULL;
          while (H2 && H2->linked_set == TRUE && 
                 H2->start_of_chain == FALSE)
          {
             index1++;
-		     	H2 = index1<(total_number_of_hsps-1) ? hsp_array[index1+1] : NULL;
+		     	H2 = index1<(total_number_of_hsps-1) ? link_hsp_array[index1+1] : NULL;
          }
          H->next= H2;
 		}
@@ -999,9 +1076,9 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 			link = H->hsp_link.link[ordering_method];
 			while (link)
 			{
-				H->num = num_links;
+				H->hsp->num = num_links;
 				H->sumscore = H->hsp_link.sum[ordering_method];
-				H->next = (BlastHSP*) link;
+				H->next = (LinkHSPStruct*) link;
 				H->prev = last_hsp;
 				last_hsp = H;
 				H = H->next;
@@ -1011,16 +1088,16 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 				    break;
 			}
 			/* Set these for last link in chain. */
-			H->num = num_links;
+			H->hsp->num = num_links;
 			H->sumscore = H->hsp_link.sum[ordering_method];
          /* Grab the next HSP that is not part of a chain or the start of a chain */
          index1=index;
-         H2 = index1<(total_number_of_hsps-1) ? hsp_array[index1+1] : NULL;
+         H2 = index1<(total_number_of_hsps-1) ? link_hsp_array[index1+1] : NULL;
          while (H2 && H2->linked_set == TRUE && 
                 H2->start_of_chain == FALSE)
 		   {
             index1++;
-            H2 = index1<(total_number_of_hsps-1) ? hsp_array[index1+1] : NULL;
+            H2 = index1<(total_number_of_hsps-1) ? link_hsp_array[index1+1] : NULL;
 			}
          H->next= H2;
 			H->prev = last_hsp;
@@ -1031,10 +1108,13 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    /* The HSP's may be in a different order than they were before, 
       but first_hsp contains the first one. */
    for (index = 0, H = first_hsp; index < hsp_list->hspcnt; index++) {
-      hsp_list->hsp_array[index] = H;
-      H = H->next;
+      hsp_list->hsp_array[index] = H->hsp;
+      /* Free the wrapper structure */
+      H2 = H->next;
+      sfree(H);
+      H = H2;
    }
-   
+   sfree(link_hsp_array);
    sfree(lh_helper);
 
    return 0;
@@ -1046,35 +1126,39 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params)
 {
    BlastHSP** hsp_array;
-   BlastHSP** score_hsp_array,** offset_hsp_array,** end_hsp_array;
-   BlastHSP* hsp,* head_hsp,* best_hsp,* var_hsp;
+   LinkHSPStruct** score_hsp_array,** offset_hsp_array,** end_hsp_array;
+   LinkHSPStruct* hsp,* head_hsp,* best_hsp,* var_hsp;
    Int4 hspcnt, index, index1, i;
    double best_evalue, evalue;
    Int4 sumscore, best_sumscore = 0;
    Boolean reverse_link;
    Uint1* subject_seq = NULL;
    Int4 longest_intron = hit_params->options->longest_intron;
+   LinkHSPStruct** link_hsp_array;
 
    hspcnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
 
-   for (index=0; index<hspcnt; index++) {
+   link_hsp_array = (LinkHSPStruct**) malloc(hspcnt*sizeof(LinkHSPStruct*));
+   for (index = 0; index < hspcnt; ++index) {
+      link_hsp_array[index] = (LinkHSPStruct*) calloc(1, sizeof(LinkHSPStruct));
+      link_hsp_array[index]->hsp = hsp_array[index];
+      link_hsp_array[index]->linked_set = FALSE;
       hsp_array[index]->num = 1;
-      hsp_array[index]->linked_set = FALSE;
       hsp_array[index]->ordering_method = 3;
    }
 
-   score_hsp_array = (BlastHSP**) malloc(hspcnt*sizeof(BlastHSP*));
-   offset_hsp_array = (BlastHSP**) malloc(hspcnt*sizeof(BlastHSP*));
-   end_hsp_array = (BlastHSP**) malloc(hspcnt*sizeof(BlastHSP*));
+   score_hsp_array = (LinkHSPStruct**) malloc(hspcnt*sizeof(LinkHSPStruct*));
+   offset_hsp_array = (LinkHSPStruct**) malloc(hspcnt*sizeof(LinkHSPStruct*));
+   end_hsp_array = (LinkHSPStruct**) malloc(hspcnt*sizeof(LinkHSPStruct*));
 
-   memcpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSP*));
-   memcpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSP*));
-   memcpy(end_hsp_array, hsp_array, hspcnt*sizeof(BlastHSP*));
-   qsort(offset_hsp_array, hspcnt, sizeof(BlastHSP*), fwd_compare_hsps);
-   qsort(end_hsp_array, hspcnt, sizeof(BlastHSP*), end_compare_hsps);
+   memcpy(score_hsp_array, link_hsp_array, hspcnt*sizeof(LinkHSPStruct*));
+   memcpy(offset_hsp_array, link_hsp_array, hspcnt*sizeof(LinkHSPStruct*));
+   memcpy(end_hsp_array, link_hsp_array, hspcnt*sizeof(LinkHSPStruct*));
+   qsort(offset_hsp_array, hspcnt, sizeof(LinkHSPStruct*), fwd_compare_hsps);
+   qsort(end_hsp_array, hspcnt, sizeof(LinkHSPStruct*), end_compare_hsps);
 
-   qsort(score_hsp_array, hspcnt, sizeof(BlastHSP*), 
+   qsort(score_hsp_array, hspcnt, sizeof(LinkHSPStruct*), 
             sumscore_compare_hsps);
       
    head_hsp = NULL;
@@ -1087,54 +1171,56 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             break;
          head_hsp = score_hsp_array[index];
       }
-      best_evalue = head_hsp->evalue;
+      best_evalue = head_hsp->hsp->evalue;
       best_hsp = NULL;
       reverse_link = FALSE;
       
       if (head_hsp->linked_set)
-         for (var_hsp = head_hsp, i=1; i<head_hsp->num; 
+         for (var_hsp = head_hsp, i=1; i<head_hsp->hsp->num; 
               var_hsp = var_hsp->next, i++);
       else
          var_hsp = head_hsp;
 
       index1 = hsp_binary_search(offset_hsp_array, hspcnt,
-                                 var_hsp->query.end - WINDOW_SIZE, TRUE);
-      while (index1 < hspcnt && offset_hsp_array[index1]->query.offset < 
-             var_hsp->query.end + WINDOW_SIZE) {
+                                 var_hsp->hsp->query.end - WINDOW_SIZE, TRUE);
+      while (index1 < hspcnt && offset_hsp_array[index1]->hsp->query.offset < 
+             var_hsp->hsp->query.end + WINDOW_SIZE) {
          hsp = offset_hsp_array[index1++];
          /* If this is already part of a linked set, disregard it */
          if (hsp == var_hsp || hsp == head_hsp || 
              (hsp->linked_set && !hsp->start_of_chain))
             continue;
          /* Check if the subject coordinates are consistent with query */
-         if (hsp->subject.offset < var_hsp->subject.end - WINDOW_SIZE || 
-             hsp->subject.offset > var_hsp->subject.end + longest_intron)
+         if ((hsp->hsp->subject.offset < 
+             var_hsp->hsp->subject.end - WINDOW_SIZE) || 
+             (hsp->hsp->subject.offset > 
+              var_hsp->hsp->subject.end + longest_intron))
             continue;
          /* Check if the e-value for the combined two HSPs is better than for
             one of them */
          if ((evalue = SumHSPEvalue(program_number, sbp, query_info, subject, 
                                     hit_params, head_hsp, hsp, &sumscore)) < 
-             MIN(best_evalue, hsp->evalue)) {
+             MIN(best_evalue, hsp->hsp->evalue)) {
             best_hsp = hsp;
             best_evalue = evalue;
             best_sumscore = sumscore;
          }
       }
       index1 = hsp_binary_search(end_hsp_array, hspcnt,
-                                 head_hsp->query.offset - WINDOW_SIZE, FALSE);
-      while (index1 < hspcnt && end_hsp_array[index1]->query.end < 
-             head_hsp->query.offset + WINDOW_SIZE) {
+                                 head_hsp->hsp->query.offset - WINDOW_SIZE, FALSE);
+      while (index1 < hspcnt && end_hsp_array[index1]->hsp->query.end < 
+             head_hsp->hsp->query.offset + WINDOW_SIZE) {
          hsp = end_hsp_array[index1++];
 
          /* Check if the subject coordinates are consistent with query */
          if (hsp == head_hsp || 
-             hsp->subject.end > head_hsp->subject.offset + WINDOW_SIZE || 
-             hsp->subject.end < head_hsp->subject.offset - longest_intron)
+             hsp->hsp->subject.end > head_hsp->hsp->subject.offset + WINDOW_SIZE || 
+             hsp->hsp->subject.end < head_hsp->hsp->subject.offset - longest_intron)
             continue;
          if (hsp->linked_set) {
             for (var_hsp = hsp, i=1; var_hsp->start_of_chain == FALSE; 
                  var_hsp = var_hsp->prev, i++);
-            if (i<var_hsp->num || var_hsp == head_hsp)
+            if (i<var_hsp->hsp->num || var_hsp == head_hsp)
                continue;
          } else
             var_hsp = hsp;
@@ -1142,7 +1228,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             one of them */
          if ((evalue = SumHSPEvalue(program_number, sbp, query_info, subject, 
                           hit_params, var_hsp, head_hsp, &sumscore)) < 
-             MIN(var_hsp->evalue, best_evalue)) {
+             MIN(var_hsp->hsp->evalue, best_evalue)) {
             best_hsp = hsp;
             best_evalue = evalue;
             best_sumscore = sumscore;
@@ -1155,16 +1241,16 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          if (!reverse_link) {
             head_hsp->start_of_chain = TRUE;
             head_hsp->sumscore = best_sumscore;
-            head_hsp->evalue = best_evalue;
+            head_hsp->hsp->evalue = best_evalue;
             best_hsp->start_of_chain = FALSE;
             if (head_hsp->linked_set) 
-               for (var_hsp = head_hsp, i=1; i<head_hsp->num; 
+               for (var_hsp = head_hsp, i=1; i<head_hsp->hsp->num; 
                     var_hsp = var_hsp->next, i++);
             else 
                var_hsp = head_hsp;
             var_hsp->next = best_hsp;
             best_hsp->prev = var_hsp;
-            head_hsp->num += best_hsp->num;
+            head_hsp->hsp->num += best_hsp->hsp->num;
          } else {
             best_hsp->next = head_hsp;
             head_hsp->prev = best_hsp;
@@ -1176,8 +1262,8 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   var_hsp = best_hsp;
             var_hsp->start_of_chain = TRUE;
             var_hsp->sumscore = best_sumscore;
-            var_hsp->evalue = best_evalue;
-            var_hsp->num += head_hsp->num;
+            var_hsp->hsp->evalue = best_evalue;
+            var_hsp->hsp->num += head_hsp->hsp->num;
             head_hsp->start_of_chain = FALSE;
          }
          
@@ -1190,26 +1276,26 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       }
    }
    
-   qsort(score_hsp_array, hspcnt, sizeof(BlastHSP*), sumscore_compare_hsps);
+   qsort(score_hsp_array, hspcnt, sizeof(LinkHSPStruct*), sumscore_compare_hsps);
    /* Get the nucleotide subject sequence in Seq_code_ncbi4na */
    subject_seq = subject->sequence;
 
    hsp = head_hsp = score_hsp_array[0];
    for (index=0; index<hspcnt; hsp = hsp->next) {
       if (hsp->linked_set) {
-         index1 = hsp->num;
+         index1 = hsp->hsp->num;
          for (i=1; i < index1; i++, hsp = hsp->next) {
-            hsp->next->evalue = hsp->evalue; 
-            hsp->next->num = hsp->num;
+            hsp->next->hsp->evalue = hsp->hsp->evalue; 
+            hsp->next->hsp->num = hsp->hsp->num;
             hsp->next->sumscore = hsp->sumscore;
-            if (FindSpliceJunction(subject_seq, hsp, hsp->next)) {
+            if (FindSpliceJunction(subject_seq, hsp->hsp, hsp->next->hsp)) {
                /* Kludge: ordering_method here would indicate existence of
                   splice junctions(s) */
-               hsp->ordering_method++;
-               hsp->next->ordering_method++;
+               hsp->hsp->ordering_method++;
+               hsp->next->hsp->ordering_method++;
             } else {
-               hsp->ordering_method--;
-               hsp->next->ordering_method--;
+               hsp->hsp->ordering_method--;
+               hsp->next->hsp->ordering_method--;
             }
          }
       } 
@@ -1228,11 +1314,15 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    sfree(offset_hsp_array);
    sfree(end_hsp_array);
 
+   /* Place HSPs in the original HSP array in their new order */
    for (index=0; index<hsp_list->hspcnt; index++) {
-      hsp_list->hsp_array[index] = head_hsp;
-      head_hsp = head_hsp->next;
+      hsp_list->hsp_array[index] = head_hsp->hsp;
+      var_hsp = head_hsp->next;
+      sfree(head_hsp);
+      head_hsp = var_hsp;
    }
 
+   sfree(link_hsp_array);
    return 0;
 }
 
