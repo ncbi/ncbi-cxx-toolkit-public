@@ -300,6 +300,9 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     case eKindObject:
         is_class = true;
         break;
+    default:
+        is_class = false;
+        break;
     }
     if ( !is_class ) {
         // Generate type convertions
@@ -459,6 +462,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/04/01 16:17:48  gouriano
+* Fixed compiler warnings
+*
 * Revision 1.9  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *

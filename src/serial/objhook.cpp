@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/04/01 16:15:24  gouriano
+* Fixed compiler warnings
+*
 * Revision 1.10  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -505,6 +508,8 @@ void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
                 info.ResetGlobalCopyHook();
             }
             break;
+        default:
+            break;
         }
         break;
     case eHook_Member:
@@ -542,6 +547,8 @@ void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
             else {
                 member.ResetGlobalCopyHook();
             }
+            break;
+        default:
             break;
         }
         break;
@@ -582,10 +589,14 @@ void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
                 variant.ResetGlobalCopyHook();
             }
             break;
+        default:
+            break;
         }
         break;
     }
     case eHook_Element:
+    case eHook_Null:
+    default:
         break;
     }
     m_HookMode = eHook_None;
