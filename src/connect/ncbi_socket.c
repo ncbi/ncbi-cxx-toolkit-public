@@ -462,13 +462,15 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
  * Return other error code to indicate failure.
  */
 static EIO_Status s_Select(size_t                n,
-                           SSOCK_Poll            socks[],
+                           SSOCK_Poll            polls[],
                            const struct timeval* timeout)
 {
     size_t i;
     int n_fds;
+    int/*bool*/ some_bad = 0;
     int/*bool*/ read_only = 1;
     int/*bool*/ write_only = 1;
+    int/*bool*/ some_closed = 0;
     fd_set r_fds, w_fds, e_fds;
 
     for (;;) { /* (optionally) auto-resume if interrupted by a signal */
@@ -479,42 +481,54 @@ static EIO_Status s_Select(size_t                n,
         FD_ZERO(&w_fds);
         FD_ZERO(&e_fds);
         for (i = 0; i < n; i++) {
-            if ( !socks[i].sock )
+            if ( !polls[i].sock ) {
+                polls[i].revent = eIO_Open/*0*/;
                 continue;
-            if (socks[i].sock->sock != SOCK_INVALID  &&  socks[i].event  &&
-                (EIO_Event)(socks[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
-                switch (socks[i].event) {
-                case eIO_ReadWrite:
-                case eIO_Write:
-                    read_only = 0;
-                    FD_SET(socks[i].sock->sock, &w_fds);
-                    if (socks[i].event == eIO_Write
-                        && (socks[i].sock->r_status == eIO_Closed ||
-                            socks[i].sock->is_eof                 ||
-                            socks[i].sock->r_on_w == eOff         ||
-                            (socks[i].sock->r_on_w == eDefault
-                             && s_ReadOnWrite != eOn)))
+            }
+            if (polls[i].event  &&
+                (EIO_Event)(polls[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
+                if (polls[i].sock->sock != SOCK_INVALID) {
+                    polls[i].revent = eIO_Open/*0*/;
+                    switch (polls[i].event) {
+                    case eIO_ReadWrite:
+                    case eIO_Write:
+                        read_only = 0;
+                        FD_SET(polls[i].sock->sock, &w_fds);
+                        if (polls[i].event == eIO_Write
+                            && (polls[i].sock->r_status == eIO_Closed ||
+                                polls[i].sock->is_eof                 ||
+                                polls[i].sock->r_on_w == eOff         ||
+                                (polls[i].sock->r_on_w == eDefault
+                                 && s_ReadOnWrite != eOn)))
+                            break;
+                        /*FALLTHRU*/
+                    case eIO_Read:
+                        write_only = 0;
+                        FD_SET(polls[i].sock->sock, &r_fds);
                         break;
-                    /*FALLTHRU*/
-                case eIO_Read:
-                    write_only = 0;
-                    FD_SET(socks[i].sock->sock, &r_fds);
-                    break;
-                default:
-                    /* should never get here */
-                    assert(0);
-                    break;
+                    default:
+                        /* should never get here */
+                        assert(0);
+                        break;
+                    }
+                    FD_SET(polls[i].sock->sock, &e_fds);
+                    if (n_fds < (int) polls[i].sock->sock)
+                        n_fds = (int) polls[i].sock->sock;
+                } else {
+                    polls[i].revent = eIO_Close;
+                    some_closed = 1;
                 }
-                FD_SET(socks[i].sock->sock, &e_fds);
-                if (n_fds < (int) socks[i].sock->sock)
-                    n_fds = (int) socks[i].sock->sock;
-                socks[i].revent = eIO_Open/*0*/;
-            } else
-                socks[i].revent = eIO_Close;
+            } else {
+                polls[i].revent = eIO_Close;
+                some_bad = 1;
+            }
         }
 
-        if (n_fds == 0  &&  !FD_ISSET(0, &e_fds))
-            return eIO_Success/*none given or all bad*/;
+        if ( some_bad )
+            return eIO_InvalidArg;
+
+        if ( some_closed )
+            return eIO_Success;
 
         if ( timeout )
             tmo = *timeout;
@@ -537,25 +551,25 @@ static EIO_Status s_Select(size_t                n,
             return eIO_Unknown;
         }
 
-        if ((n != 1 && s_InterruptOnSignal == eOn) ||
-            (n == 1 && (socks[0].sock->i_on_sig == eOn ||
-                        (socks[0].sock->i_on_sig == eDefault &&
-                         s_InterruptOnSignal == eOn)))) {
+        if ((n != 1  &&  s_InterruptOnSignal == eOn)  ||
+            (n == 1  &&  (polls[0].sock->i_on_sig == eOn
+                          ||  (polls[0].sock->i_on_sig == eDefault
+                               &&  s_InterruptOnSignal == eOn)))) {
             return eIO_Interrupt;
         }
     }
 
     n_fds = 0;
     for (i = 0; i < n; i++) {
-        if (socks[i].sock  &&  socks[i].revent == eIO_Open) {
-            if (!FD_ISSET(socks[i].sock->sock, &e_fds)) {
-                if (FD_ISSET(socks[i].sock->sock, &r_fds))
-                    socks[i].revent = (EIO_Event)(socks[i].revent | eIO_Read);
-                if (FD_ISSET(socks[i].sock->sock, &w_fds))
-                    socks[i].revent = (EIO_Event)(socks[i].revent | eIO_Write);
+        if (polls[i].sock  &&  polls[i].revent == eIO_Open) {
+            if (!FD_ISSET(polls[i].sock->sock, &e_fds)) {
+                if (FD_ISSET(polls[i].sock->sock, &r_fds))
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
+                if (FD_ISSET(polls[i].sock->sock, &w_fds))
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
             } else
-                socks[i].revent = eIO_Close;
-            if (socks[i].revent != eIO_Open)
+                polls[i].revent = eIO_Close;
+            if (polls[i].revent != eIO_Open)
                 n_fds++;
         }
     }
@@ -1136,84 +1150,78 @@ static EIO_Status s_Recv(SOCK        sock,
 
 
 /* Stall protection: try pull incoming data from sockets.
- * If only eIO_Read events requested in "socks" array or
+ * If only eIO_Read events requested in "polls" array or
  * read-on-write disabled for all sockets in question, or if
  * EOF was reached in all read streams, this function is almost
  * equivalent to s_Select().
  */
 static EIO_Status s_SelectStallsafe(size_t                n,
-                                    SSOCK_Poll            socks[],
+                                    SSOCK_Poll            polls[],
                                     const struct timeval* timeout,
-                                    size_t*               ready)
+                                    size_t*               n_ready)
 {
+    int/*bool*/ r_pending;
     EIO_Status status;
-    size_t i, j, k;
+    size_t i, j;
 
-    if ((status = s_Select(n, socks, timeout)) != eIO_Success) {
-        if ( ready )
-            *ready = 0;
+    if ((status = s_Select(n, polls, timeout)) != eIO_Success) {
+        if ( n_ready )
+            *n_ready = 0;
         return status;
     }
 
-    k = j = 0;
+    j = 0;
+    r_pending = 0;
     for (i = 0; i < n; i++) {
-        if ( socks[i].sock ) {
-            if (socks[i].revent == eIO_Close)
-                break;
-            if (socks[i].revent & socks[i].event)
-                break;
-            if (socks[i].revent != eIO_Open) {
-                if (!k++)
-                    j = i;
-            }
+        if (polls[i].revent == eIO_Close)
+            break;
+        if (polls[i].revent & polls[i].event)
+            break;
+        if (polls[i].revent != eIO_Open  &&  !r_pending) {
+            r_pending++;
+            j = i;
         }
     }
-    if (i >= n  &&  k) {
+    if (i >= n  &&  r_pending) {
         /* all sockets are not ready for the requested events */
         for (i = j; i < n; i++) {
             /* try to find an immediately readable socket */
-            if (socks[i].sock  &&  socks[i].revent != eIO_Close
-                &&  socks[i].event  == eIO_Write
-                &&  socks[i].revent == eIO_Read) {
-                ESwitch save_r_on_w = socks[i].sock->r_on_w;
+            if (polls[i].sock  &&  polls[i].revent != eIO_Close
+                &&  polls[i].event  == eIO_Write
+                &&  polls[i].revent == eIO_Read) {
+                ESwitch save_r_on_w = polls[i].sock->r_on_w;
                 SSOCK_Poll poll;
                 /* try upread as mush as possible data into internal buffer */
-                s_NCBI_Recv(socks[i].sock, 0, 1000000000, 1/*peek*/);
+                s_NCBI_Recv(polls[i].sock, 0, 1000000000, 1/*peek*/);
 
-                socks[i].sock->r_on_w = eOff;
-                poll.sock  = socks[i].sock;
+                polls[i].sock->r_on_w = eOff;
+                poll.sock  = polls[i].sock;
                 poll.event = eIO_Write;
                 status = s_Select(1, &poll, timeout);
-                socks[i].sock->r_on_w = save_r_on_w;
+                polls[i].sock->r_on_w = save_r_on_w;
 
                 if (status == eIO_Success  &&  poll.revent == eIO_Write) {
-                    socks[i].revent = poll.revent;
+                    polls[i].revent = poll.revent;
                     break; /*can write now!*/
                 }
             }
         }
     }
 
-    j = k = 0;
+    j = 0;
     for (i = 0; i < n; i++) {
-        if ( socks[i].sock ) {
-            if (socks[i].revent != eIO_Close) {
-                socks[i].revent= (EIO_Event)(socks[i].revent & socks[i].event);
-                if (socks[i].revent)
-                    k++;
-            } else
-                k++;
+        if (polls[i].revent != eIO_Close) {
+            polls[i].revent = (EIO_Event)(polls[i].revent & polls[i].event);
+            if (polls[i].revent != eIO_Open)
+                j++;
+        } else
             j++;
-        }
     }
 
-    if ( ready )
-        *ready = k;
+    if ( n_ready )
+        *n_ready = j;
 
-    if (k != 0  ||  j == 0)
-        return eIO_Success;
-
-    return eIO_Timeout;
+    return j ? eIO_Success : eIO_Timeout;
 }
 
 
@@ -1544,36 +1552,36 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
 
 
 extern EIO_Status SOCK_Poll(size_t          n,
-                            SSOCK_Poll      socks[],
+                            SSOCK_Poll      polls[],
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
-    SSOCK_Poll xx_socks[2];
-    SSOCK_Poll* x_socks;
+    SSOCK_Poll xx_polls[2];
+    SSOCK_Poll* x_polls;
     struct timeval tv;
     EIO_Status status;
     size_t x_n;
 
-    if ((n == 0) != (socks == 0)) {
+    if ((n == 0) != (polls == 0)) {
         if ( n_ready )
             *n_ready = 0;
         return eIO_InvalidArg;
     }
 
     if (n == 1) {
-        xx_socks[0] = socks[0];
-        memset(&xx_socks[1], 0, sizeof(xx_socks[1]));
-        x_socks = xx_socks;
+        xx_polls[0] = polls[0];
+        memset(&xx_polls[1], 0, sizeof(xx_polls[1]));
+        x_polls = xx_polls;
         x_n = 2;
     } else {
-        x_socks = socks;
+        x_polls = polls;
         x_n = n;
     }
 
-    status = s_SelectStallsafe(x_n, x_socks, s_to2tv(timeout, &tv), n_ready);
+    status = s_SelectStallsafe(x_n, x_polls, s_to2tv(timeout, &tv), n_ready);
 
     if (n == 1)
-        socks[0].revent = xx_socks[0].revent;
+        polls[0].revent = xx_polls[0].revent;
 
     return status;
 }
@@ -1987,6 +1995,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2002/08/15 18:46:52  lavr
+ * s_Select(): do not return immediately if given all NULL sockets in "polls"
+ *
  * Revision 6.58  2002/08/13 19:51:44  lavr
  * Fix letter case in s_SetNonblock() call
  *
