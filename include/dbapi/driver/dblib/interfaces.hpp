@@ -71,6 +71,7 @@ class CDBL_RowResult;
 class CDBL_ParamResult;
 class CDBL_ComputeResult;
 class CDBL_StatusResult;
+class CDBL_CursorResult;
 class CDBL_BlobResult;
 
 
@@ -116,7 +117,8 @@ public:
     // DBLIB specific functionality
     //
 
-    // the following methods are optional (driver will use the default values if not called)
+    // the following methods are optional (driver will use the default
+    // values if not called)
     // the values will affect the new connections only
 
     virtual void DBLIB_SetApplicationName(const string& a_name);
@@ -318,7 +320,8 @@ private:
 //  CDBL_CursorCmd::
 //
 
-class CDBL_CursorCmd : public I_CursorCmd {
+class CDBL_CursorCmd : public I_CursorCmd
+{
     friend class CDBL_Connection;
 protected:
     CDBL_CursorCmd(CDBL_Connection* con, DBPROCESS* cmd,
@@ -343,17 +346,17 @@ private:
     bool x_AssignParams();
     I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
 
-    CDBL_Connection* m_Connect;
-    DBPROCESS*       m_Cmd;
-    string           m_Name;
-    CDB_LangCmd*     m_LCmd;
-    string           m_Query;
-    CDB_Params       m_Params;
-    bool             m_IsOpen;
-    bool             m_HasFailed;
-    bool             m_IsDeclared;
-    I_Result*        m_Res;
-    int              m_RowCount;
+    CDBL_Connection*   m_Connect;
+    DBPROCESS*         m_Cmd;
+    string             m_Name;
+    CDB_LangCmd*       m_LCmd;
+    string             m_Query;
+    CDB_Params         m_Params;
+    bool               m_IsOpen;
+    bool               m_HasFailed;
+    bool               m_IsDeclared;
+    CDBL_CursorResult* m_Res;
+    int                m_RowCount;
 };
 
 
@@ -659,6 +662,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/03/28 00:39:49  vakatov
+ * CDBL_CursorCmd::  use CDBL_CursorResult rather than I_Result (to fix access)
+ *
  * Revision 1.8  2002/03/26 15:26:23  soussov
  * new image/text operations added
  *
@@ -669,7 +675,8 @@ END_NCBI_SCOPE
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *
  * Revision 1.5  2002/01/08 15:58:00  sapojnik
- * Moved to const_syb2ms.hpp: Sybase dblib constants translations to Microsoft-compatible ones
+ * Moved to const_syb2ms.hpp: Sybase dblib constants translations to
+ * Microsoft-compatible ones
  *
  * Revision 1.4  2002/01/03 17:07:53  sapojnik
  * fixing CR/LF mixup
