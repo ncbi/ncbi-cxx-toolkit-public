@@ -10,39 +10,6 @@
 USING_NCBI_SCOPE;
 
 inline
-string replace(string s, char from, char to)
-{
-    replace(s.begin(), s.end(), from, to);
-    return s;
-}
-
-inline
-string Identifier(const string& typeName)
-{
-    return replace(typeName, '-', '_');
-}
-
-inline
-string ClassName(const CNcbiRegistry& reg, const string& typeName)
-{
-    const string& className = reg.Get(typeName, "_class");
-    if ( className.empty() )
-        return Identifier(typeName);
-    else
-        return className;
-}
-
-inline
-string FileName(const CNcbiRegistry& reg, const string& typeName)
-{
-    const string& fileName = reg.Get(typeName, "_file");
-    if ( fileName.empty() )
-        return Identifier(typeName);
-    else
-        return fileName;
-}
-
-inline
 string MkDir(const string& s)
 {
     SIZE_TYPE length = s.size();
@@ -73,7 +40,7 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
     string headersPath = MkDir(def.Get("-", "headers_path"));
     string sourcesPath = MkDir(def.Get("-", "sources_path"));
     string headersPrefix = MkDir(def.Get("-", "headers_prefix"));
-    string ns = def.Get("-", "namespace");
+    string fileListName = def.Get("-", "file_list");
 
     typedef list<const ASNType*> TClasses;
     typedef map<string, TClasses> TOutputFiles;
@@ -87,10 +54,11 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
                   module.definitions.begin();
               defp != module.definitions.end();
               ++defp ) {
-            if ( ClassName(def, (*defp)->name) == "-" )
+            const ASNType* type = defp->get();
+            if ( type->ClassName(def) == "-" )
                 continue;
 
-            outputFiles[FileName(def, (*defp)->name)].push_back(defp->get());
+            outputFiles[type->FileName(def)].push_back(type);
         }
     }
     
@@ -100,122 +68,23 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
     for ( TOutputFiles::const_iterator filei = outputFiles.begin();
           filei != outputFiles.end();
           ++filei ) {
-        CCode code(filei->first, headersPrefix, ns);
+        CFileCode code(def, filei->first, headersPrefix);
         for ( TClasses::const_iterator typei = filei->second.begin();
               typei != filei->second.end();
               ++typei ) {
-            code.AddType(*typei, def);
+            code.AddType(*typei);
         }
-        code.GenerateHeader(headersPath);
+        code.GenerateHPP(headersPath);
         code.GenerateCPP(sourcesPath);
     }
-/*
-        TClasses::const_iterator typei;
 
-        set<string> includes;
-        { // collect needed include files
-            // collect used types
-            set<string> usedTypes;
-            for ( typei = filei->second.begin();
-                  typei != filei->second.end();
-                  ++typei ) {
-                (*typei)->CollectUserTypes(usedTypes);
-                string inc = def.Get((*typei)->name, "_include");
-                if ( !inc.empty() )
-                    includes.insert(inc);
-            }
-
-            // collect include file names
-            for ( set<string>::const_iterator usedi = usedTypes.begin();
-                  usedi != usedTypes.end();
-                  ++usedi ) {
-                includes.insert('<' + includeAdd +
-                                FileName(def, *usedi) + ".hpp>");
-            }
+    if ( !fileListName.empty() ) {
+        ofstream fileList(fileListName.c_str());
+        
+        for ( TOutputFiles::const_iterator filei = outputFiles.begin();
+              filei != outputFiles.end();
+              ++filei ) {
+            fileList << filei->first;
         }
-
-        string mainInclude = '<' + includeAdd + outFileName + ".hpp>";
-        code << endl << "// generated includes" << endl <<
-            "#include " << mainInclude << endl;
-        includes.erase(mainInclude);
-
-        header << endl << "// generated includes" << endl;
-        for ( set<string>::const_iterator includei = includes.begin();
-              includei != includes.end();
-              ++includei ) {
-            header <<
-                "#include " << *includei << endl;
-        }
-
-        if ( !ns.empty() ) {
-            header << endl <<
-                "namespace " << ns << " {" << endl;
-            code << endl <<
-                "namespace " << ns << " {" << endl;
-        }
-        header << endl << "// forward declarations" << endl;
-        for ( typei = filei->second.begin();
-              typei != filei->second.end();
-              ++typei ) {
-            const ASNType* type = *typei;
-            string className = ClassName(def, (*typei)->name);
-
-            header <<
-                "class " << className << ';' << endl <<
-                "class " << className << "_Base;" << endl;
-        }
-
-        header << endl << "// generated classes" << endl;
-        code << endl << "// generated definitions" << endl;
-        for ( typei = filei->second.begin();
-              typei != filei->second.end();
-              ++typei ) {
-            string className = ClassName(def, (*typei)->name);
-
-            header <<
-                "class " << className << "_Base ";
-            string baseType = def.Get((*typei)->name, "_parent");
-            string baseClass = def.Get((*typei)->name, "_parent_class");
-            if ( !baseType.empty() ) {
-                header << " : public " << ClassName(def, baseType);
-            }
-            else if ( !baseClass.empty() ) {
-                header << " : public " << baseClass;
-            }
-            header << endl <<
-                '{' << endl <<
-                "public:" << endl <<
-                "    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);" << endl <<
-                "private:" << endl <<
-                "    friend class " << className << ';' << endl << endl;
-
-            code <<
-                "BEGIN_CLASS_INFO3(\"" << (*typei)->name << "\", " <<
-                className << ", " << className << "_Base)" << endl <<
-                '{' << endl;
-            if ( !baseType.empty() ) {
-                code <<
-                    "    SET_PARENT_CLASS(" <<
-                    ClassName(def, baseType) << ")->SetOptional();" << endl;
-            }
-            
-            (*typei)->GenerateCode(code, (*typei)->name, def);
-
-            header << "};" << endl << endl;
-
-            code <<
-                '}' << endl <<
-                "END_CLASS_INFO" << endl << endl;
-        }
-
-        if ( !ns.empty() ) {
-            header << endl <<
-                "};" << endl;
-            code << endl <<
-                "};" << endl;
-        }
-        header << endl <<
-            "#endif // " << filei->first << "_Base_HPP" << endl;
     }
-*/
 }

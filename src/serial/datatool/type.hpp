@@ -5,6 +5,7 @@
 #include <corelib/ncbistre.hpp>
 #include <list>
 #include <set>
+#include <map>
 #include "autoptr.hpp"
 #include "value.hpp"
 
@@ -19,38 +20,60 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 class ASNModule;
-class CCode;
+class CClassCode;
 
-struct CTypeStrings {
+class CTypeStrings {
+public:
+    typedef set<string> TIncludes;
+    typedef map<string, string> TForwards;
+
     enum ETypeType {
         eStdType,
         eClassType,
-        eComplexType
+        eComplexType,
+        ePointerType
     };
-    CTypeStrings(const string& c)
-        : type(eStdType), cType(c)
-        {}
-    CTypeStrings(ETypeType t, const string& c)
-        : type(t), cType(c)
-        {}
-    CTypeStrings(const string& c, const string& m)
-        : type(eComplexType), cType(c), macro(m)
-        {}
+    void SetStd(const string& c);
+    void SetClass(const string& c);
+    void SetComplex(const string& c, const string& m);
+    void SetComplex(const string& c, const string& m,
+                    const CTypeStrings& arg);
+    void SetComplex(const string& c, const string& m,
+                    const CTypeStrings& arg1, const CTypeStrings& arg2);
+
     ETypeType type;
     string cType;
     string macro;
 
-    bool IsSimple(void) const
-        { return type == eStdType; }
-
-    CTypeStrings ToSimple(void) const;
+    void ToSimple(void);
         
     string GetRef(void) const;
 
-    void AddMember(CNcbiOstream& header, CNcbiOstream& code,
+    void AddHPPInclude(const string& s)
+        {
+            m_HPPIncludes.insert(s);
+        }
+    void AddCPPInclude(const string& s)
+        {
+            m_CPPIncludes.insert(s);
+        }
+    void AddForwardDeclaration(const string& s, const string& ns)
+        {
+            m_ForwardDeclarations[s] = ns;
+        }
+    void AddIncludes(const CTypeStrings& arg);
+
+    void AddMember(CClassCode& code,
                    const string& member) const;
-    void AddMember(CNcbiOstream& header, CNcbiOstream& code,
+    void AddMember(CClassCode& code,
                    const string& name, const string& member) const;
+private:
+    void x_AddMember(CClassCode& code,
+                     const string& name, const string& member) const;
+
+    TIncludes m_HPPIncludes;
+    TIncludes m_CPPIncludes;
+    TForwards m_ForwardDeclarations;
 };
 
 class ASNType {
@@ -66,6 +89,14 @@ public:
             return m_Module;
         }
 
+    string ClassName(const CNcbiRegistry& registry) const;
+    string FileName(const CNcbiRegistry& registry) const;
+    string Namespace(const CNcbiRegistry& registry) const;
+    string ParentClass(const CNcbiRegistry& registry) const;
+    const ASNType* ParentType(const CNcbiRegistry& registry) const;
+    const string& GetVar(const CNcbiRegistry& registry,
+                         const string& value) const;
+
     virtual ostream& Print(ostream& out, int indent) const = 0;
 
     virtual bool Check(void);
@@ -78,17 +109,11 @@ public:
 
     void Warning(const string& mess) const;
 
-    virtual void GenerateCode(CCode& code) const;
-    virtual void CollectUserTypes(set<string>& types) const;
-    virtual void GenerateCode(ostream& header, ostream& code,
-                              const string& name,
-                              const CNcbiRegistry& def) const;
+    virtual void GenerateCode(CClassCode& code) const;
 
-    virtual CTypeStrings GetCType(const CNcbiRegistry& def,
-                                  const string& section,
-                                  const string& key) const;
-    virtual string GetDefaultCType(void) const;
-    virtual bool SimpleType(void) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
+    //    virtual bool SimpleType(void) const;
 
     int line;
     string name; // for named type
@@ -107,7 +132,12 @@ public:
 
     ostream& Print(ostream& out, int indent) const;
 
-    bool SimpleType(void) const;
+    //    bool SimpleType(void) const;
+
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
+    virtual string GetDefaultCType(void) const;
+
 private:
     string keyword;
 };
@@ -120,9 +150,7 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
-    void GenerateCode(ostream& , ostream& ,
-                      const string& ,
-                      const CNcbiRegistry& ) const;
+    virtual void GenerateCode(CClassCode& code) const;
 };
 
 class ASNBooleanType : public ASNFixedType {
@@ -178,9 +206,8 @@ public:
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
-    CTypeStrings GetCType(const CNcbiRegistry& def,
-                          const string& section,
-                          const string& key) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
 };
 
 class ASNEnumeratedType : public ASNType {
@@ -209,8 +236,9 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
-    string GetDefaultCType(void) const;
-    bool SimpleType(void) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
+    //    bool SimpleType(void) const;
 
 private:
     string keyword;
@@ -242,14 +270,12 @@ public:
 
     const CTypeInfo* GetTypeInfo(void);
 
-    virtual void CollectUserTypes(set<string>& types) const;
-    CTypeStrings GetCType(const CNcbiRegistry& def,
-                          const string& section,
-                          const string& key) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
 
     string userTypeName;
 
-    ASNType* Resolve(void);
+    ASNType* Resolve(void) const;
 };
 
 class ASNOfType : public ASNType {
@@ -261,8 +287,6 @@ public:
     bool Check(void);
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
-
-    virtual void CollectUserTypes(set<string>& types) const;
 
     AutoPtr<ASNType> type;
 
@@ -276,9 +300,8 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
     
-    CTypeStrings GetCType(const CNcbiRegistry& def,
-                          const string& section,
-                          const string& key) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
 };
 
 class ASNSequenceOfType : public ASNOfType {
@@ -287,9 +310,8 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
 
-    CTypeStrings GetCType(const CNcbiRegistry& def,
-                          const string& section,
-                          const string& key) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
 };
 
 class ASNMember {
@@ -326,8 +348,6 @@ public:
 
     TObjectPtr CreateDefault(const ASNValue& value);
     
-    virtual void CollectUserTypes(set<string>& types) const;
-
     TMembers members;
 
 private:
@@ -341,10 +361,11 @@ public:
     
     CTypeInfo* CreateTypeInfo(void);
     
-    void GenerateCode(ostream& header, ostream& code,
-                      const string& name,
-                      const CNcbiRegistry& def) const;
-
+    virtual void GenerateCode(CClassCode& code) const;
+/*
+    void GetCType(CTypeStrings& tType,
+                  CClassCode& code, const string& key) const;
+*/
 protected:
     virtual CClassInfoTmpl* CreateClassInfo(void);
 };
@@ -376,9 +397,9 @@ public:
     bool CheckValue(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
-    void GenerateCode(ostream& header, ostream& code,
-                      const string& name,
-                      const CNcbiRegistry& def) const;
+    virtual void GenerateCode(CClassCode& code) const;
+    virtual void GetCType(CTypeStrings& tType,
+                          CClassCode& code, const string& key) const;
 };
 
 #endif
