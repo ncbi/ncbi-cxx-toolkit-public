@@ -111,6 +111,123 @@ static string s_GetDefaultPreprocessorDefinitions
     return defines;
 }
 
+
+
+static string s_GetLibsPrefixesPreprocessorDefinitions
+                             (const CProjKey&                      project_id,
+                              CMsvcPrjGeneralContext::TTargetType  target_type,
+                              const list<CProjKey>&                depends)
+{
+
+    string defines;
+
+    // Handling only dlls
+    if (GetApp().GetBuildType().GetType() != CBuildType::eDll)
+        return defines;
+    
+    // Project itself
+    list<string> self;
+    if (project_id.Type() == CProjKey::eLib && 
+        GetApp().GetDllsInfo().IsDllHosted(project_id.Id()) ) {
+
+        list<string> prefixes;
+        GetApp().GetDllsInfo().GetLibPrefixes(project_id.Id(), &prefixes);
+        ITERATE(list<string>, p, prefixes) {
+            string define;
+            const string& prefix = *p;
+            define += prefix;
+            define += "=";
+            define += "__declspec(dllexport)";
+            define += ';';
+            self.push_back(define);
+        }
+    } 
+
+
+    // Imports from dll
+    list<string> dll_imports;
+    ITERATE(list<CProjKey>, p, depends) {
+    
+        const CProjKey& lib_id = *p;
+        if (lib_id.Type() == CProjKey::eApp)
+            continue;
+        if (GetApp().GetDllsInfo().IsDllHosted(lib_id.Id())) {
+
+            list<string> prefixes;
+            GetApp().GetDllsInfo().GetLibPrefixes(lib_id.Id(), &prefixes);
+            ITERATE(list<string>, n, prefixes) {
+                string define;
+                const string& prefix = *n;
+                define += prefix;
+                define += "=";
+                define += "__declspec(dllimport)";
+                define += ';';
+                dll_imports.push_back(define);
+            }
+        }
+    }
+    // Links to static libs
+    list<string> static_links;
+
+#if 0
+    ITERATE(list<CProjKey>, p, depends) {
+    
+        const CProjKey& lib_id = *p;
+        if (lib_id.Type() == CProjKey::eApp)
+            continue;
+
+        if ( !dll_build ||
+             !GetApp().GetDllsInfo().IsDllHosted(lib_id.Id()) ) {
+
+            list<string> prefixes;
+            GetApp().GetDllsInfo().GetLibPrefixes(lib_id.Id(), &prefixes);
+            ITERATE(list<string>, n, prefixes) {
+                string define;
+                const string& prefix = *n;
+                define += prefix;
+                define += "=";
+                define += ';';
+                static_links.push_back(define);
+            }            
+        }
+    }
+    if ( !dll_build && project_id.Type() == CProjKey::eLib ) {
+
+        set<string> depend_host_ids;
+        GetApp().GetDllsInfo().GetHostDependsFromHosts
+            ( GetApp().GetDllsInfo().GetDllHost(project_id.Id()), 
+              &depend_host_ids);
+        ITERATE(set<string>, n, depend_host_ids) {
+            const string& host_id = *n;
+            CMsvcDllsInfo::SDllInfo host_info;
+            GetApp().GetDllsInfo().GelDllInfo(host_id, &host_info);
+            ITERATE(list<string>, m, host_info.m_Hosting) {
+
+                const string& depend_lib_id = *m;
+
+                list<string> prefixes;
+                GetApp().GetDllsInfo().GetLibPrefixes(depend_lib_id, &prefixes);
+                ITERATE(list<string>, k, prefixes) {
+                    string define;
+                    const string& prefix = *k;
+                    define += prefix;
+                    define += "=";
+                    define += ';';
+                    static_links.push_back(define);
+                }
+            }
+        }
+    }
+
+#endif
+    // Finalizing
+    defines += NStr::Join(self,"");
+    defines += NStr::Join(dll_imports,"");
+    defines += NStr::Join(static_links,"");
+
+    return defines;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CCompilerToolImpl --
@@ -121,20 +238,26 @@ static string s_GetDefaultPreprocessorDefinitions
 class CCompilerToolImpl : public ICompilerTool
 {
 public:
+    typedef CMsvcPrjGeneralContext::TTargetType TTargetType;
+
     CCompilerToolImpl(const string&               additional_include_dirs,
                       const CMsvcProjectMakefile& project_makefile,
                       const string&               runtimeLibraryOption,
                       const CMsvcMetaMakefile&    meta_makefile,
                       const SConfigInfo&          config,
-                      CMsvcPrjGeneralContext::TTargetType target_type,
-                      const list<string>&         defines)
+                      TTargetType                 target_type,
+                      const list<string>&         defines,
+                      const CProjKey&             project_id,
+                      const list<CProjKey>&       depends)
 	    :m_AdditionalIncludeDirectories(additional_include_dirs),
          m_MsvcProjectMakefile         (project_makefile),
          m_RuntimeLibraryOption        (runtimeLibraryOption),
          m_MsvcMetaMakefile            (meta_makefile),
          m_Config                      (config),
          m_TargetType                  (target_type),
-         m_Defines                     (defines)
+         m_Defines                     (defines),
+         m_ProjectId                   (project_id),
+         m_Depends                     (depends)
     {
     }
 
@@ -164,6 +287,11 @@ public:
     {
         string defines = 
             s_GetDefaultPreprocessorDefinitions(m_Config, m_TargetType);
+
+       defines += 
+            s_GetLibsPrefixesPreprocessorDefinitions(m_ProjectId, 
+                                                     m_TargetType, 
+                                                     m_Depends);
 
         ITERATE(list<string>, p, m_Defines) {
             const string& define = *p;
@@ -219,8 +347,10 @@ private:
     const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
     SConfigInfo                 m_Config;
     list<string>                m_Defines;
+    CProjKey                    m_ProjectId;
+    list<CProjKey>              m_Depends;
 
-    CMsvcPrjGeneralContext::TTargetType m_TargetType;
+    TTargetType                 m_TargetType;
 
     // No value-type semantics
     CCompilerToolImpl(void);
@@ -697,6 +827,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/08 23:30:29  gorelenk
+ * Added static helper function s_GetLibsPrefixesPreprocessorDefinitions.
+ * Changed declaration of class CCompilerToolImpl.
+ *
  * Revision 1.8  2004/02/23 20:43:43  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *
