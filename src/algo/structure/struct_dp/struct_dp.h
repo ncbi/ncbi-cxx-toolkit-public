@@ -84,8 +84,8 @@ extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
         if cutoff > 0, max will be truncated to be <= cutoff
 */
 extern unsigned int DP_CalculateMaxLoopLength(
-        unsigned int nLoops, const unsigned int *loopLengths,   /* based on existing alignment */
-        double percentile, unsigned int extension, unsigned int cutoff);
+    unsigned int nLoops, const unsigned int *loopLengths,   /* based on existing alignment */
+    double percentile, unsigned int extension, unsigned int cutoff);
 
 /* callback function to get the score for a block at a specified position; should
    return DP_NEGATIVE_INFINITY if the block can't be aligned at this position. For
@@ -104,7 +104,7 @@ typedef struct {
 extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
 
 /* global alignment routine */
-extern int                              /* returns an above STRUCT_DP_ error code */
+extern int                              /* returns an above STRUCT_DP_ status code */
 DP_GlobalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -114,7 +114,7 @@ DP_GlobalBlockAlign(
 );
 
 /* local alignment routine */
-extern int                              /* returns an above STRUCT_DP_ error code */
+extern int                              /* returns an above STRUCT_DP_ status code */
 DP_LocalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -133,7 +133,7 @@ typedef struct {
 extern void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments);
 
 /* local alignment routine returning sorted list of highest-scoring alignments */
-extern int                              /* returns an above STRUCT_DP_ error code */
+extern int                              /* returns an above STRUCT_DP_ status code */
 DP_MultipleLocalBlockAlign(
     const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -147,7 +147,7 @@ DP_MultipleLocalBlockAlign(
 typedef unsigned int (*DP_LoopPenaltyFunction)(unsigned int loopNumber, unsigned int loopLength);
 
 /* global alignment routine for generic loop scoring function */
-extern int                              /* returns an above STRUCT_DP_ error code */
+extern int                              /* returns an above STRUCT_DP_ status code */
 DP_GlobalBlockAlignGeneric(
     const DP_BlockInfo *blocks,         /* blocks on subject; note that maxLoops are ignored! */
     DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
@@ -155,6 +155,29 @@ DP_GlobalBlockAlignGeneric(
     unsigned int queryFrom,             /* range of query to search */
     unsigned int queryTo,
     DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
+);
+
+/* local alignment routine for generic loop scoring */
+extern int                              /* returns an above STRUCT_DP_ status code */
+DP_LocalBlockAlignGeneric(
+    const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
+    DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
+    DP_LoopPenaltyFunction LoopScore,   /* loop scoring function */
+    unsigned int queryFrom,             /* range of query to search */
+    unsigned int queryTo,
+    DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
+);
+
+/* local generic alignment routine returning sorted list of highest-scoring alignments */
+extern int                              /* returns an above STRUCT_DP_ status code */
+DP_MultipleLocalBlockAlignGeneric(
+    const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
+    DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
+    DP_LoopPenaltyFunction LoopScore,   /* loop scoring function */
+    unsigned int queryFrom,             /* range of query to search */
+    unsigned int queryTo,
+    DP_MultipleAlignmentResults **alignments,   /* alignments, if any found; caller should destroy */
+    unsigned int maxAlignments          /* max # alignments to return, 0 == unlimited (all) */
 );
 
 #ifdef __cplusplus
@@ -166,6 +189,9 @@ DP_GlobalBlockAlignGeneric(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/12/19 14:37:50  thiessen
+* add local generic loop function alignment routines
+*
 * Revision 1.11  2003/12/08 16:33:59  thiessen
 * fix signed/unsigned mix
 *
