@@ -514,6 +514,12 @@ void CBDB_Cache::Open(const char* cache_path,
     m_Env->SetDirectDB(true);
     m_Env->SetDirectLog(true);
 
+    m_Env->SetLockTimeout(30 * 1000000); // 30 sec
+
+    if (m_Env->IsTransactional()) {
+        m_Env->SetTransactionTimeout(30 * 1000000); // 30 sec
+    }
+
     m_Env->CleanLog();
 
     m_CacheDB = new SCacheDB();
@@ -1601,6 +1607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2004/08/10 11:53:20  kuznets
+ * Set locking and transaction timeouts
+ *
  * Revision 1.64  2004/08/09 16:30:54  kuznets
  * Remove log files when opening cache db
  *
