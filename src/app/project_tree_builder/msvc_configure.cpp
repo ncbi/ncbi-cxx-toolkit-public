@@ -266,7 +266,11 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
 
 
     ITERATE(TConfigSite, p, m_ConfigSite) {
-        ofs << "#define " << p->first << " " << p->second << endl;
+        if (p->second == '1') {
+            ofs << "#define " << p->first << " " << p->second << endl;
+        } else {
+            ofs << "/* #undef " << p->first << " */" << endl;
+        }
     }
     ofs << endl;
     ofs << "#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__H" << endl;
@@ -278,6 +282,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/04 17:06:02  gouriano
+ * Leave defines that do not meet definition criteria undefined
+ * instead of defining them as 0
+ *
  * Revision 1.14  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *
