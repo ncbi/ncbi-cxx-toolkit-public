@@ -58,6 +58,8 @@ private:
     size_t m_offset;
   };
   map<string, SIdxTarget> m_idx;
+
+  size_t m_min_idx;
   
 };
 
@@ -66,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/03 19:45:33  kapustin
+ * Keep min index value to support non-zero based index
+ *
  * Revision 1.3  2003/11/05 20:32:11  kapustin
  * Include source information into the index
  *

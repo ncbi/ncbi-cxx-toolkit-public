@@ -63,6 +63,7 @@ void CSeqLoader::Open(const string& filename_index)
     vector<string> filenames;
     vector<size_t> indices;
     found_start = false;
+    m_min_idx = kMax_UInt;
     while(idxstream.good()) {
       buf[0] = 0;
       idxstream.getline(buf, sizeof buf, '\n');
@@ -83,13 +84,16 @@ void CSeqLoader::Open(const string& filename_index)
       }
       filenames.push_back(name);
       indices.push_back(idx);
+      if(idx < m_min_idx) {
+	m_min_idx = idx;
+      }
     }
     if(!found_start) goto throw_file_corrupt;
 
     const size_t fndim = filenames.size();
     m_filenames.resize(fndim);
     for(size_t i = 0; i < fndim; ++i) {
-      m_filenames[indices[i]] = filenames[i];
+      m_filenames[indices[i] - m_min_idx] = filenames[i];
     }
 
     m_idx.clear();
@@ -149,7 +153,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 	       msg.c_str());
   }
   else {
-    const string& filename = m_filenames[im->second.m_filename_idx];
+    const string& filename = m_filenames[im->second.m_filename_idx-m_min_idx];
     input.reset(new ifstream (filename.c_str()));
     input->seekg(im->second.m_offset);
   }
@@ -236,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/03 19:45:33  kapustin
+ * Keep min index value to support non-zero based index
+ *
  * Revision 1.7  2003/11/20 17:58:20  kapustin
  * Make the code msvc6.0-friendly
  *
