@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/07 17:25:41  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.15  2000/10/13 20:22:56  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -122,6 +128,26 @@ void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type)
 void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 {
     in.Read(object, type.Get());
+}
+
+static set<string>* sx_Modules = 0;
+
+static const string& GetModuleName(const char* moduleName)
+{
+    set<string>* modules = sx_Modules;
+    if ( !modules )
+        sx_Modules = modules = new set<string>;
+    return *modules->insert(moduleName).first;
+}
+
+void SetModuleName(CTypeInfo* info, const char* moduleName)
+{
+    info->SetModuleName(GetModuleName(moduleName));
+}
+
+void SetModuleName(CEnumeratedTypeValues* info, const char* moduleName)
+{
+    info->SetModuleName(GetModuleName(moduleName));
 }
 
 // add member functions

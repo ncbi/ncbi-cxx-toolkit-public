@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/11/07 17:25:40  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.16  2000/10/20 15:51:38  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -100,6 +106,13 @@ CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
 
 CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
 {
+}
+
+void CEnumeratedTypeValues::SetModuleName(const string& name)
+{
+    if ( !m_ModuleName.empty() )
+        THROW1_TRACE(runtime_error, "cannot change module name");
+    m_ModuleName = name;
 }
 
 long CEnumeratedTypeValues::FindValue(const CLightString& name) const
@@ -182,6 +195,8 @@ CEnumeratedTypeInfo::CEnumeratedTypeInfo(size_t size,
       m_Values(*values)
 {
     _ASSERT(m_ValueType->GetPrimitiveValueType() == ePrimitiveValueInteger);
+    if ( !values->GetModuleName().empty() )
+        SetModuleName(values->GetModuleName());
     SetCreateFunction(&CreateEnum);
     SetReadFunction(&ReadEnum);
     SetWriteFunction(&WriteEnum);

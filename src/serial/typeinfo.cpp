@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/07 17:25:42  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.28  2000/10/20 15:51:44  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -206,6 +212,23 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
 
 CTypeInfo::~CTypeInfo(void)
 {
+}
+
+const string& CTypeInfo::GetModuleName(void) const
+{
+    return m_ModuleName;
+}
+
+void CTypeInfo::SetModuleName(const string& name)
+{
+    if ( !m_ModuleName.empty() )
+        THROW1_TRACE(runtime_error, "cannot change module name");
+    m_ModuleName = name;
+}
+
+void CTypeInfo::SetModuleName(const char* name)
+{
+    SetModuleName(string(name));
 }
 
 void CTypeInfo::Delete(TObjectPtr /*object*/) const

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/11/07 17:25:13  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.54  2000/10/13 20:22:47  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -272,7 +278,7 @@ public:
         {
             return CStlClassInfoUtil::Get_auto_ptr(dataType, &CreateTypeInfo);
         }
-    static TTypeInfo CreateTypeInfo(TTypeInfo dataType)
+    static CTypeInfo* CreateTypeInfo(TTypeInfo dataType)
         {
             CPointerTypeInfo* typeInfo =
                 new CPointerTypeInfo(sizeof(TObjectType), dataType);
@@ -306,7 +312,7 @@ public:
         {
             return CStlClassInfoUtil::Get_CRef(dataType, &CreateTypeInfo);
         }
-    static TTypeInfo CreateTypeInfo(TTypeInfo dataType)
+    static CTypeInfo* CreateTypeInfo(TTypeInfo dataType)
         {
             CPointerTypeInfo* typeInfo =
                 new CPointerTypeInfo(sizeof(TObjectType), dataType);
@@ -340,7 +346,7 @@ public:
         {
             return CStlClassInfoUtil::Get_AutoPtr(dataType, &CreateTypeInfo);
         }
-    static TTypeInfo CreateTypeInfo(TTypeInfo dataType)
+    static CTypeInfo* CreateTypeInfo(TTypeInfo dataType)
         {
             CPointerTypeInfo* typeInfo =
                 new CPointerTypeInfo(sizeof(TObjectType), dataType);
@@ -607,7 +613,7 @@ public:
 
     static TTypeInfo GetTypeInfo(TTypeInfo elementType)
         {
-            return CStlClassInfoUtil::Get_list(elementType, &CreateTypeInfoC);
+            return CStlClassInfoUtil::Get_list(elementType, &CreateTypeInfo);
         }
     static CTypeInfo* CreateTypeInfo(TTypeInfo elementType)
         {
@@ -617,15 +623,11 @@ public:
             SetFunctions(info);
             return info;
         }
-    static TTypeInfo CreateTypeInfoC(TTypeInfo elementType)
-        {
-            return CreateTypeInfo(elementType);
-        }
 
     static TTypeInfo GetSetTypeInfo(TTypeInfo elementType)
         {
             return CStlClassInfoUtil::GetSet_list(elementType,
-                                                  &CreateSetTypeInfoC);
+                                                  &CreateSetTypeInfo);
         }
     static CTypeInfo* CreateSetTypeInfo(TTypeInfo elementType)
         {
@@ -634,10 +636,6 @@ public:
                                        true);
             SetFunctions(info);
             return info;
-        }
-    static TTypeInfo CreateSetTypeInfoC(TTypeInfo elementType)
-        {
-            return CreateSetTypeInfo(elementType);
         }
 
     static void SetFunctions(CStlOneArgTemplate* info)
@@ -658,7 +656,7 @@ public:
     static TTypeInfo GetTypeInfo(TTypeInfo elementType)
         {
             return CStlClassInfoUtil::Get_vector(elementType,
-                                                 &CreateTypeInfoC);
+                                                 &CreateTypeInfo);
         }
     static CTypeInfo* CreateTypeInfo(TTypeInfo elementType)
         {
@@ -673,10 +671,6 @@ public:
 
             return info;
         }
-    static TTypeInfo CreateTypeInfoC(TTypeInfo elementType)
-        {
-            return CreateTypeInfo(elementType);
-        }
 };
 
 template<typename Data>
@@ -687,7 +681,7 @@ public:
 
     static TTypeInfo GetTypeInfo(TTypeInfo elementType)
         {
-            return CStlClassInfoUtil::Get_set(elementType, &CreateTypeInfoC);
+            return CStlClassInfoUtil::Get_set(elementType, &CreateTypeInfo);
         }
     static CTypeInfo* CreateTypeInfo(TTypeInfo elementType)
         {
@@ -702,10 +696,6 @@ public:
 
             return info;
         }
-    static TTypeInfo CreateTypeInfoC(TTypeInfo elementType)
-        {
-            return CreateTypeInfo(elementType);
-        }
 };
 
 template<typename Data>
@@ -717,7 +707,7 @@ public:
     static TTypeInfo GetTypeInfo(TTypeInfo elementType)
         {
             return CStlClassInfoUtil::Get_multiset(elementType,
-                                                   &CreateTypeInfoC);
+                                                   &CreateTypeInfo);
         }
     static CTypeInfo* CreateTypeInfo(TTypeInfo elementType)
         {
@@ -731,10 +721,6 @@ public:
             CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
 
             return info;
-        }
-    static TTypeInfo CreateTypeInfoC(TTypeInfo elementType)
-        {
-            return CreateTypeInfo(elementType);
         }
 };
 
@@ -748,7 +734,7 @@ public:
     static TTypeInfo GetTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
         {
             return CStlClassInfoUtil::Get_map(keyType, valueType,
-                                              &CreateTypeInfoC);
+                                              &CreateTypeInfo);
         }
 
     static CTypeInfo* CreateTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
@@ -768,10 +754,6 @@ public:
             
             return info;
         }
-    static TTypeInfo CreateTypeInfoC(TTypeInfo keyType, TTypeInfo valueType)
-        {
-            return CreateTypeInfo(keyType, valueType);
-        }
 };
 
 template<typename Key, typename Value>
@@ -784,7 +766,7 @@ public:
     static TTypeInfo GetTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
         {
             return CStlClassInfoUtil::Get_multimap(keyType, valueType,
-                                                   &CreateTypeInfoC);
+                                                   &CreateTypeInfo);
         }
 
     static CTypeInfo* CreateTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
@@ -803,11 +785,6 @@ public:
             CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
             
             return info;
-        }
-    static TTypeInfo CreateTypeInfoC(TTypeInfo keyType, TTypeInfo valueType)
-        {
-            return CreateTypeInfo(keyType, valueType);
-
         }
 };
 

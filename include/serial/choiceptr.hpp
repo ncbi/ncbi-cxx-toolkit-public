@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/07 17:25:11  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.22  2000/10/13 16:28:29  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -156,7 +162,7 @@ public:
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
-    static TTypeInfo CreateTypeInfo(TTypeInfo base);
+    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
 
 protected:
     static TMemberIndex GetPtrIndex(const CChoiceTypeInfo* choiceType,

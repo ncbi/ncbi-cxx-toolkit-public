@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.14  2000/10/17 18:45:26  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -118,6 +124,9 @@ typedef const CTypeInfo* TTypeInfo;
 typedef TTypeInfo (*TTypeInfoGetter)(void);
 typedef TTypeInfo (*TTypeInfoGetter1)(TTypeInfo);
 typedef TTypeInfo (*TTypeInfoGetter2)(TTypeInfo, TTypeInfo);
+typedef CTypeInfo* (*TTypeInfoCreator)(void);
+typedef CTypeInfo* (*TTypeInfoCreator1)(TTypeInfo);
+typedef CTypeInfo* (*TTypeInfoCreator2)(TTypeInfo, TTypeInfo);
 
 enum ESerialDataFormat {
     eSerial_None         = 0,

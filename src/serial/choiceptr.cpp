@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/07 17:25:40  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.24  2000/10/20 15:51:37  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -169,7 +175,7 @@ TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TTypeInfo base)
     return s_ChoicePointerTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
 }
 
-TTypeInfo CChoicePointerTypeInfo::CreateTypeInfo(TTypeInfo base)
+CTypeInfo* CChoicePointerTypeInfo::CreateTypeInfo(TTypeInfo base)
 {
     return new CChoicePointerTypeInfo(base);
 }

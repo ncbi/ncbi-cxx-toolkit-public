@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.1  2000/09/18 20:00:07  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -43,18 +49,6 @@
 */
 
 inline
-void CObjectOStreamXml::OpenTagEnd(void)
-{
-    m_Output.PutChar('>');
-}
-
-inline
-void CObjectOStreamXml::CloseTagEnd(void)
-{
-    m_Output.PutChar('>');
-}
-
-inline
 void CObjectOStreamXml::OpenStackTag(size_t level)
 {
     OpenTagStart();
@@ -63,9 +57,12 @@ void CObjectOStreamXml::OpenStackTag(size_t level)
 }
 
 inline
-void CObjectOStreamXml::CloseStackTag(size_t level, bool forceEolBefore)
+void CObjectOStreamXml::CloseStackTag(size_t level)
 {
-    if ( CloseTagStart(forceEolBefore) ) {
+    if ( m_LastTagAction == eTagSelfClosed )
+        m_LastTagAction = eTagClose;
+    else {
+        CloseTagStart();
         PrintTagName(level);
         CloseTagEnd();
     }
@@ -80,9 +77,12 @@ void CObjectOStreamXml::OpenTag(const string& name)
 }
 
 inline
-void CObjectOStreamXml::CloseTag(const string& name, bool forceEolBefore)
+void CObjectOStreamXml::CloseTag(const string& name)
 {
-    if ( CloseTagStart(forceEolBefore) ) {
+    if ( m_LastTagAction == eTagSelfClosed )
+        m_LastTagAction = eTagClose;
+    else {
+        CloseTagStart();
         m_Output.PutString(name);
         CloseTagEnd();
     }
@@ -96,10 +96,10 @@ void CObjectOStreamXml::OpenTag(TTypeInfo type)
 }
 
 inline
-void CObjectOStreamXml::CloseTag(TTypeInfo type, bool forceEolBefore)
+void CObjectOStreamXml::CloseTag(TTypeInfo type)
 {
     _ASSERT(!type->GetName().empty());
-    CloseTag(type->GetName(), forceEolBefore);
+    CloseTag(type->GetName());
 }
 
 inline
@@ -110,10 +110,10 @@ void CObjectOStreamXml::OpenTagIfNamed(TTypeInfo type)
 }
 
 inline
-void CObjectOStreamXml::CloseTagIfNamed(TTypeInfo type, bool forceEolBefore)
+void CObjectOStreamXml::CloseTagIfNamed(TTypeInfo type)
 {
     if ( !type->GetName().empty() )
-        CloseTag(type->GetName(), forceEolBefore);
+        CloseTag(type->GetName());
 }
 
 #endif /* def OBJOSTRXML__HPP  &&  ndef OBJOSTRXML__INL */

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/07 17:25:40  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.14  2000/10/20 15:51:36  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -121,12 +127,17 @@ CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
     SetSkipFunction(&SkipAutoPtr);
 }
 
+const string& CAutoPointerTypeInfo::GetModuleName(void) const
+{
+    return GetPointedType()->GetModuleName();
+}
+
 TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
 {
     return s_AutoPointerTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
 }
 
-TTypeInfo CAutoPointerTypeInfo::CreateTypeInfo(TTypeInfo base)
+CTypeInfo* CAutoPointerTypeInfo::CreateTypeInfo(TTypeInfo base)
 {
     return new CAutoPointerTypeInfo(base);
 }

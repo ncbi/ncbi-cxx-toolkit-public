@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/11/07 17:25:11  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.3  2000/09/18 20:00:01  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -72,6 +78,12 @@ public:
         {
             return m_Name;
         }
+    const string& GetModuleName(void) const
+        {
+            return m_ModuleName;
+        }
+    void SetModuleName(const string& name);
+
     bool IsInteger(void) const
         {
             return m_Integer;
@@ -96,6 +108,8 @@ public:
 
 private:
     string m_Name;
+    string m_ModuleName;
+
     bool m_Integer;
     TValues m_Values;
     mutable auto_ptr<TNameToValue> m_NameToValue;

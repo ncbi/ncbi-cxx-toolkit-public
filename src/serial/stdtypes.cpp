@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/07 17:25:41  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.24  2000/10/20 15:51:43  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -467,8 +473,13 @@ void CPrimitiveTypeInfoBool::SetValueBool(TObjectPtr object, bool value) const
 
 TTypeInfo CStdTypeInfo<bool>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoBool();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoBool();
 }
 
 class CNullBoolFunctions : public CPrimitiveTypeFunctions<bool>
@@ -500,13 +511,16 @@ public:
 
 TTypeInfo CStdTypeInfo<bool>::GetTypeInfoNullBool(void)
 {
-    static CPrimitiveTypeInfo* info = 0;
-    if ( !info ) {
-        info = new CPrimitiveTypeInfoBool;
-        typedef CNullBoolFunctions TFunctions;
-        info->SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
-                             &TFunctions::Copy, &TFunctions::Skip);
-    }
+    static TTypeInfo info = CreateTypeInfoNullBool();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfoNullBool(void)
+{
+    CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoBool;
+    typedef CNullBoolFunctions TFunctions;
+    info->SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
+                         &TFunctions::Copy, &TFunctions::Skip);
     return info;
 }
 
@@ -543,8 +557,13 @@ void CPrimitiveTypeInfoChar::SetValueString(TObjectPtr object,
 
 TTypeInfo CStdTypeInfo<char>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoChar();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<char>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoChar();
 }
 
 template<typename T>
@@ -553,7 +572,7 @@ class CPrimitiveTypeInfoLongFunctions : public CPrimitiveTypeFunctions<T>
 public:
     typedef T TObjectType;
     
-    static const CPrimitiveTypeInfoLong* CreateTypeInfo(void)
+    static CPrimitiveTypeInfoLong* CreateTypeInfo(void)
         {
             CPrimitiveTypeInfoLong* info =
                 new CPrimitiveTypeInfoLong(sizeof(TObjectType), x_IsSigned());
@@ -689,9 +708,12 @@ void CPrimitiveTypeInfoLong::SetValueULong(TObjectPtr objectPtr,
 #define DECLARE_STD_LONG_TYPE(Type) \
 TTypeInfo CStdTypeInfo<Type>::GetTypeInfo(void) \
 { \
-    static const CPrimitiveTypeInfo* info = \
-        CPrimitiveTypeInfoLongFunctions<Type>::CreateTypeInfo(); \
+    static TTypeInfo info = CreateTypeInfo(); \
     return info; \
+} \
+CTypeInfo* CStdTypeInfo<Type>::CreateTypeInfo(void) \
+{ \
+    return CPrimitiveTypeInfoLongFunctions<Type>::CreateTypeInfo(); \
 }
 DECLARE_STD_LONG_TYPE(signed char)
 DECLARE_STD_LONG_TYPE(unsigned char)
@@ -747,8 +769,13 @@ void CPrimitiveTypeInfoDouble::SetValueDouble(TObjectPtr objectPtr, double value
 
 TTypeInfo CStdTypeInfo<double>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoDouble();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<double>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoDouble();
 }
 
 CPrimitiveTypeInfoFloat::CPrimitiveTypeInfoFloat(void)
@@ -774,8 +801,13 @@ void CPrimitiveTypeInfoFloat::SetValueDouble(TObjectPtr objectPtr, double value)
 
 TTypeInfo CStdTypeInfo<float>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoFloat();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<float>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoFloat();
 }
 
 class CStringFunctions : public CPrimitiveTypeFunctions<string>
@@ -841,8 +873,13 @@ void CPrimitiveTypeInfoString::SetValueChar(TObjectPtr object,
 
 TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoString();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<string>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoString();
 }
 
 class CStringStoreFunctions : public CStringFunctions
@@ -869,13 +906,16 @@ public:
 
 TTypeInfo CStdTypeInfo<string>::GetTypeInfoStringStore(void)
 {
-    static CPrimitiveTypeInfo* info = 0;
-    if ( !info ) {
-        info = new CPrimitiveTypeInfoString;
-        typedef CStringStoreFunctions TFunctions;
-        info->SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
-                             &TFunctions::Copy, &TFunctions::Skip);
-    }
+    static TTypeInfo info = CreateTypeInfoStringStore();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<string>::CreateTypeInfoStringStore(void)
+{
+    CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoString;
+    typedef CStringStoreFunctions TFunctions;
+    info->SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
+                         &TFunctions::Copy, &TFunctions::Skip);
     return info;
 }
 
@@ -956,16 +996,24 @@ void CPrimitiveTypeInfoCharPtr<T>::SetValueString(TObjectPtr objectPtr,
 
 TTypeInfo CStdTypeInfo<char*>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info =
-        new CPrimitiveTypeInfoCharPtr<char*>();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<char*>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoCharPtr<char*>();
 }
 
 TTypeInfo CStdTypeInfo<const char*>::GetTypeInfo(void)
 {
-    static const CPrimitiveTypeInfo* info =
-        new CPrimitiveTypeInfoCharPtr<const char*>();
+    static TTypeInfo info = CreateTypeInfo();
     return info;
+}
+
+CTypeInfo* CStdTypeInfo<const char*>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoCharPtr<const char*>();
 }
 
 void ThrowIncompatibleValue(void)
@@ -1128,20 +1176,35 @@ void CCharVectorTypeInfo<Char>::SetValueOctetString(TObjectPtr objectPtr,
 
 TTypeInfo CStdTypeInfo< vector<char> >::GetTypeInfo(void)
 {
-    static TTypeInfo typeInfo = new CCharVectorTypeInfo<char>;
+    static TTypeInfo typeInfo = CreateTypeInfo();
     return typeInfo;
 }
 
 TTypeInfo CStdTypeInfo< vector<signed char> >::GetTypeInfo(void)
 {
-    static TTypeInfo typeInfo = new CCharVectorTypeInfo<signed char>;
+    static TTypeInfo typeInfo = CreateTypeInfo();
     return typeInfo;
 }
 
 TTypeInfo CStdTypeInfo< vector<unsigned char> >::GetTypeInfo(void)
 {
-    static TTypeInfo typeInfo = new CCharVectorTypeInfo<unsigned char>;
+    static TTypeInfo typeInfo = CreateTypeInfo();
     return typeInfo;
+}
+
+CTypeInfo* CStdTypeInfo< vector<char> >::CreateTypeInfo(void)
+{
+    return new CCharVectorTypeInfo<char>;
+}
+
+CTypeInfo* CStdTypeInfo< vector<signed char> >::CreateTypeInfo(void)
+{
+    return new CCharVectorTypeInfo<signed char>;
+}
+
+CTypeInfo* CStdTypeInfo< vector<unsigned char> >::CreateTypeInfo(void)
+{
+    return new CCharVectorTypeInfo<unsigned char>;
 }
 
 END_NCBI_SCOPE

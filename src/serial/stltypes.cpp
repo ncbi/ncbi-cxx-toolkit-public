@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/11/07 17:25:42  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.33  2000/10/13 20:22:56  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -191,54 +197,54 @@ static CTypeInfoMap s_TypeMap_vector;
 static CTypeInfoMap s_TypeMap_set;
 static CTypeInfoMap s_TypeMap_multiset;
 
-TTypeInfo CStlClassInfoUtil::Get_auto_ptr(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_auto_ptr.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::Get_CRef(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_CRef(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_CRef.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::Get_AutoPtr(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_AutoPtr(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_AutoPtr.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::Get_list(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_list(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_list.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::GetSet_list(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::GetSet_list(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMapSet_list.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::Get_vector(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_vector(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_vector.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::Get_set(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_set(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_set.GetTypeInfo(arg, f);
 }
 
-TTypeInfo CStlClassInfoUtil::Get_multiset(TTypeInfo arg, TTypeInfoGetter1 f)
+TTypeInfo CStlClassInfoUtil::Get_multiset(TTypeInfo arg, TTypeInfoCreator1 f)
 {
     return s_TypeMap_multiset.GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_map(TTypeInfo arg1, TTypeInfo arg2,
-                                     TTypeInfoGetter2 f)
+                                     TTypeInfoCreator2 f)
 {
     return f(arg1, arg2);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_multimap(TTypeInfo arg1, TTypeInfo arg2,
-                                          TTypeInfoGetter2 f)
+                                          TTypeInfoCreator2 f)
 {
     return f(arg1, arg2);
 }

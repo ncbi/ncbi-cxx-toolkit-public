@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/07 17:25:13  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.22  2000/10/13 16:28:32  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -215,7 +221,9 @@ class CStdTypeInfo<bool>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
     static TTypeInfo GetTypeInfoNullBool(void);
+    static CTypeInfo* CreateTypeInfoNullBool(void);
 };
 
 template<>
@@ -223,6 +231,7 @@ class CStdTypeInfo<char>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -230,6 +239,7 @@ class CStdTypeInfo<signed char>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -237,6 +247,7 @@ class CStdTypeInfo<unsigned char>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -244,6 +255,7 @@ class CStdTypeInfo<short>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -251,6 +263,7 @@ class CStdTypeInfo<unsigned short>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -258,6 +271,7 @@ class CStdTypeInfo<int>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -265,6 +279,7 @@ class CStdTypeInfo<unsigned>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -272,6 +287,7 @@ class CStdTypeInfo<long>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -279,6 +295,7 @@ class CStdTypeInfo<unsigned long>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 #if HAVE_LONG_LONG
@@ -287,6 +304,7 @@ class CStdTypeInfo<long long>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -294,6 +312,7 @@ class CStdTypeInfo<unsigned long long>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 #endif
 
@@ -302,6 +321,7 @@ class CStdTypeInfo<float>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -309,6 +329,7 @@ class CStdTypeInfo<double>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -316,7 +337,9 @@ class CStdTypeInfo<string>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
     static TTypeInfo GetTypeInfoStringStore(void);
+    static CTypeInfo* CreateTypeInfoStringStore(void);
 };
 
 template<>
@@ -324,6 +347,7 @@ class CStdTypeInfo<char*>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -331,6 +355,7 @@ class CStdTypeInfo<const char*>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -338,6 +363,7 @@ class CStdTypeInfo< vector<char> >
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -345,6 +371,7 @@ class CStdTypeInfo< vector<signed char> >
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 template<>
@@ -352,6 +379,7 @@ class CStdTypeInfo< vector<unsigned char> >
 {
 public:
     static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
 };
 
 #include <serial/stdtypes.inl>

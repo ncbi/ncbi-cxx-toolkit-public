@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/07 17:25:14  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.1  2000/10/13 16:28:34  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -53,9 +59,10 @@ class CTypeInfoMapData
 {
 public:
     TTypeInfo GetTypeInfo(TTypeInfo key, TTypeInfoGetter1 func);
+    TTypeInfo GetTypeInfo(TTypeInfo key, TTypeInfoCreator1 func);
 
 private:
-    map<TTypeInfo, pair<TTypeInfo, TTypeInfoGetter1> > m_Map;
+    map<TTypeInfo, TTypeInfo> m_Map;
 };
 
 class CTypeInfoMap2Data
@@ -63,9 +70,11 @@ class CTypeInfoMap2Data
 public:
     TTypeInfo GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
                           TTypeInfoGetter2 func);
+    TTypeInfo GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
+                          TTypeInfoCreator2 func);
 
 private:
-    map<TTypeInfo, map<TTypeInfo, pair<TTypeInfo, TTypeInfoGetter2> > > m_Map;
+    map<TTypeInfo, map<TTypeInfo, TTypeInfo> > m_Map;
 };
 
 

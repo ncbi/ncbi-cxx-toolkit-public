@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.11  2000/10/20 15:51:27  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -195,27 +201,28 @@ protected:
                                     const CMemberId& id);
     virtual void EndChoiceVariant(void);
 
-	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
-	virtual void EndBytes(const ByteBlock& block);
 
 private:
     void WriteString(const char* str, size_t length);
 
     void OpenTagStart(void);
     void OpenTagEnd(void);
-    bool CloseTagStart(bool forceEolBefore);
+    void OpenTagEndBack(void);
+    void SelfCloseTagEnd(void);
+    void CloseTagStart(void);
     void CloseTagEnd(void);
 
     void OpenTag(const string& name);
-    void CloseTag(const string& name, bool forceEolBefore = false);
+    void EolIfEmptyTag(void);
+    void CloseTag(const string& name);
     void OpenStackTag(size_t level);
-    void CloseStackTag(size_t level, bool forceEolBefore = false);
+    void CloseStackTag(size_t level);
     void OpenTag(TTypeInfo type);
-    void CloseTag(TTypeInfo type, bool forceEolBefore = false);
+    void CloseTag(TTypeInfo type);
     void OpenTagIfNamed(TTypeInfo type);
-    void CloseTagIfNamed(TTypeInfo type, bool forceEolBefore = false);
+    void CloseTagIfNamed(TTypeInfo type);
     void PrintTagName(size_t level);
     bool WillHaveName(TTypeInfo elementType);
     enum ETagAction {

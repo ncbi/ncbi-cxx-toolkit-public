@@ -343,6 +343,19 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define BEGIN_BASE_CLASS_INFO(ClassName) \
 	BEGIN_NAMED_BASE_CLASS_INFO(#ClassName, ClassName)
 
+#define SET_CLASS_IMPLICIT() info->SetImplicit()
+#define BEGIN_NAMED_IMPLICIT_CLASS_INFO(ClassAlias,ClassName) \
+    BEGIN_NAMED_CLASS_INFO(ClassAlias,ClassName); SET_CLASS_IMPLICIT();
+#define BEGIN_IMPLICIT_CLASS_INFO(ClassName) \
+    BEGIN_CLASS_INFO(ClassName); SET_CLASS_IMPLICIT();
+#define BEGIN_NAMED_BASE_IMPLICIT_CLASS_INFO(ClassAlias,ClassName) \
+    BEGIN_NAMED_BASE_CLASS_INFO(ClassAlias,ClassName); SET_CLASS_IMPLICIT();
+#define BEGIN_BASE_IMPLICIT_CLASS_INFO(ClassName) \
+    BEGIN_BASE_CLASS_INFO(ClassName); SET_CLASS_IMPLICIT();
+
+#define SET_CLASS_MODULE(ModuleName) \
+    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,ClassName) \
@@ -382,6 +395,13 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
 #define BEGIN_BASE_CHOICE_INFO(ClassName) \
     BEGIN_NAMED_BASE_CHOICE_INFO(#ClassName, ClassName)
+
+#define SET_CHOICE_MODULE(ModuleName) \
+    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+
+#define SET_CHOICE_DELAYED() \
+    info->SetSelectDelay(&NCBI_NS_NCBI::CClassInfoHelper<CClass>::SelectDelayBuffer)
+
 #define END_CHOICE_INFO END_TYPE_INFO
 
 // sub class definition
@@ -414,11 +434,17 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define BEGIN_ENUM_INFO(EnumName, IsInteger) \
     BEGIN_NAMED_ENUM_INFO(#EnumName, EnumName, IsInteger)
 
+#define SET_ENUM_MODULE(ModuleName) \
+    NCBI_NS_NCBI::SetModuleName(enumInfo, ModuleName)
+
 #define ADD_ENUM_VALUE(EnumValueName, EnumValueValue) \
     enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue)
 
 #define END_ENUM_IN_INFO END_ENUM_INFO_METHOD
 #define END_ENUM_INFO END_ENUM_INFO_METHOD
+
+void SetModuleName(CTypeInfo* info, const char* name);
+void SetModuleName(CEnumeratedTypeValues* info, const char* name);
 
 // internal methods
 // add member

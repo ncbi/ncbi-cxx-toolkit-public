@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/07 17:25:40  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.14  2000/10/20 15:51:41  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -413,9 +419,10 @@ string CObjectIStreamXml::ReadFileHeader(void)
         default:
             m_Input.UngetChar('<');
             Back_lt();
-            return NcbiEmptyString;
+            ThrowError(eFormatError, "unknown DOCTYPE");
         }
     }
+    return NcbiEmptyString;
 }
 
 int CObjectIStreamXml::ReadEscapedChar(char endingChar)
@@ -532,7 +539,8 @@ bool CObjectIStreamXml::ReadBool(void)
         }
         value = false;
     }
-    EndOpeningTagSelfClosed();
+    if ( !EndOpeningTagSelfClosed() )
+        ThrowError(eFormatError, "boolean tag must have empty contents");
     return value;
 }
 
@@ -582,22 +590,26 @@ double CObjectIStreamXml::ReadDouble(void)
 
 void CObjectIStreamXml::ReadNull(void)
 {
-    string s;
-    ReadTagData(s);
-    if ( s != "null" )
-        ThrowError(eFormatError, "'null' contents expected");
-/*
-    CLightString attr = ReadAttributeName();
-    if ( attr != "null" )
-        ThrowError(eFormatError, "attribute 'null' expected");
-    EndOpeningTagSelfClosed();
-*/
+    if ( !EndOpeningTagSelfClosed() )
+        ThrowError(eFormatError, "empty tag expected");
 }
 
 void CObjectIStreamXml::ReadString(string& str)
 {
     str.erase();
+    if ( !EndOpeningTagSelfClosed() )
+        ReadTagData(str);
+}
+
+char* CObjectIStreamXml::ReadCString(void)
+{
+    if ( EndOpeningTagSelfClosed() ) {
+        // null pointer string
+        return 0;
+    }
+    string str;
     ReadTagData(str);
+	return strdup(str.c_str());
 }
 
 void CObjectIStreamXml::ReadTagData(string& str)
@@ -663,6 +675,10 @@ long CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 
 CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
 {
+    if ( InsideOpeningTag() && EndOpeningTagSelfClosed() ) {
+        // self closed tag
+        return eNullPointer;
+    }
     return eThisPointer;
 }
 
@@ -1081,9 +1097,6 @@ void CObjectIStreamXml::SkipChoiceContents(const CChoiceTypeInfo* choiceType)
 void CObjectIStreamXml::BeginBytes(ByteBlock& )
 {
     BeginData();
-    if ( m_Input.PeekChar() != '\'' )
-        ThrowError(eFormatError, "' expected");
-    m_Input.SkipChar();
 }
 
 int CObjectIStreamXml::GetHexChar(void)
@@ -1098,9 +1111,10 @@ int CObjectIStreamXml::GetHexChar(void)
     else if ( c >= 'a' && c <= 'z' ) {
         return c - 'a' + 10;
     }
-    else if ( c != '\'' ) {
+    else {
         m_Input.UngetChar(c);
-        ThrowError(eFormatError, "bad char in octet string");
+        if ( c != '<' )
+            ThrowError(eFormatError, "bad char in octet string");
     }
     return -1;
 }
@@ -1128,13 +1142,6 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
         }
 	}
 	return count;
-}
-
-void CObjectIStreamXml::EndBytes(const ByteBlock& )
-{
-	if ( m_Input.PeekChar() != 'H' )
-        ThrowError(eFormatError, "'H' expected");
-    m_Input.SkipChar();
 }
 
 void CObjectIStreamXml::SkipBool(void)
@@ -1171,7 +1178,8 @@ void CObjectIStreamXml::SkipString(void)
 
 void CObjectIStreamXml::SkipNull(void)
 {
-    ReadNull();
+    if ( !EndOpeningTagSelfClosed() )
+        ThrowError(eFormatError, "empty tag expected");
 }
 
 void CObjectIStreamXml::SkipByteBlock(void)

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/07 17:25:42  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.1  2000/10/13 16:28:41  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -63,19 +69,29 @@ TTypeInfo CTypeInfoMap::GetTypeInfo(TTypeInfo key, TTypeInfoGetter1 func)
     return data->GetTypeInfo(key, func);
 }
 
+TTypeInfo CTypeInfoMap::GetTypeInfo(TTypeInfo key, TTypeInfoCreator1 func)
+{
+    CTypeInfoMapData* data = m_Data;
+    if ( !data )
+        m_Data = data = new CTypeInfoMapData;
+    return data->GetTypeInfo(key, func);
+}
+
 TTypeInfo CTypeInfoMapData::GetTypeInfo(TTypeInfo key, TTypeInfoGetter1 func)
 {
-    pair<TTypeInfo, TTypeInfoGetter1>& slot = m_Map[key];
-    TTypeInfo ret = slot.first;
-    if ( !ret ) {
-        _ASSERT(slot.second == 0);
-        slot.second = func;
-        slot.first = ret = func(key);
-    }
-    else {
-        // cannot check because there could be several instances of function
-        //_ASSERT(slot.second == func);
-    }
+    TTypeInfo& slot = m_Map[key];
+    TTypeInfo ret = slot;
+    if ( !ret )
+        slot = ret = func(key);
+    return ret;
+}
+
+TTypeInfo CTypeInfoMapData::GetTypeInfo(TTypeInfo key, TTypeInfoCreator1 func)
+{
+    TTypeInfo& slot = m_Map[key];
+    TTypeInfo ret = slot;
+    if ( !ret )
+        slot = ret = func(key);
     return ret;
 }
 
@@ -98,20 +114,32 @@ TTypeInfo CTypeInfoMap2::GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
     return data->GetTypeInfo(arg1, arg2, func);
 }
 
+TTypeInfo CTypeInfoMap2::GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
+                                     TTypeInfoCreator2 func)
+{
+    CTypeInfoMap2Data* data = m_Data;
+    if ( !data )
+        m_Data = data = new CTypeInfoMap2Data;
+    return data->GetTypeInfo(arg1, arg2, func);
+}
+
 TTypeInfo CTypeInfoMap2Data::GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
                                          TTypeInfoGetter2 func)
 {
-    pair<TTypeInfo, TTypeInfoGetter2>& slot = m_Map[arg1][arg2];
-    TTypeInfo ret = slot.first;
-    if ( !ret ) {
-        _ASSERT(slot.second == 0);
-        slot.second = func;
-        slot.first = ret = func(arg1, arg2);
-    }
-    else {
-        // cannot check because there could be several instances of function
-        //_ASSERT(slot.second == func);
-    }
+    TTypeInfo& slot = m_Map[arg1][arg2];
+    TTypeInfo ret = slot;
+    if ( !ret )
+        slot = ret = func(arg1, arg2);
+    return ret;
+}
+
+TTypeInfo CTypeInfoMap2Data::GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
+                                         TTypeInfoCreator2 func)
+{
+    TTypeInfo& slot = m_Map[arg1][arg2];
+    TTypeInfo ret = slot;
+    if ( !ret )
+        slot = ret = func(arg1, arg2);
     return ret;
 }
 

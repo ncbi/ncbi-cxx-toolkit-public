@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/11/07 17:25:13  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.33  2000/10/03 17:22:36  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -217,6 +223,11 @@ public:
     // name of this type
     const string& GetName(void) const;
 
+    // name of module
+    virtual const string& GetModuleName(void) const;
+    void SetModuleName(const string& name);
+    void SetModuleName(const char* name);
+
     // size of data object in memory (like sizeof in C)
     size_t GetSize(void) const;
 
@@ -287,6 +298,7 @@ private:
     ETypeFamily m_TypeFamily;
     size_t m_Size;
     string m_Name;
+    string m_ModuleName;
 
 protected:
     void SetCreateFunction(TTypeCreate func);

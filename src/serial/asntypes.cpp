@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/11/07 17:25:39  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.51  2000/10/20 15:51:36  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -272,7 +278,7 @@ TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
     return s_SequenceOfTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
 }
 
-TTypeInfo CSequenceOfTypeInfo::CreateTypeInfo(TTypeInfo base)
+CTypeInfo* CSequenceOfTypeInfo::CreateTypeInfo(TTypeInfo base)
 {
     return new CSequenceOfTypeInfo(base);
 }
@@ -612,7 +618,7 @@ TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
     return s_SetOfTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
 }
 
-TTypeInfo CSetOfTypeInfo::CreateTypeInfo(TTypeInfo base)
+CTypeInfo* CSetOfTypeInfo::CreateTypeInfo(TTypeInfo base)
 {
     return new CSetOfTypeInfo(base);
 }

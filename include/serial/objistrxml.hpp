@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.9  2000/10/03 17:22:35  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -119,6 +125,7 @@ protected:
     virtual double ReadDouble(void);
     virtual void ReadNull(void);
     virtual void ReadString(string& s);
+    virtual char* ReadCString(void);
     long ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void SkipBool(void);
@@ -190,7 +197,6 @@ protected:
     void BeginBytes(ByteBlock& );
     int GetHexChar(void);
     size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
-    void EndBytes(const ByteBlock& );
 
 private:
     bool OutsideTag(void) const;

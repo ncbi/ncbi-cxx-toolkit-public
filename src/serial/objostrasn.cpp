@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/11/07 17:25:40  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.55  2000/10/20 15:51:42  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -511,7 +517,7 @@ void CObjectOStreamAsn::WriteId(const string& str)
 
 void CObjectOStreamAsn::WriteNullPointer(void)
 {
-    WriteNull();
+    m_Output.PutString("NULL");
 }
 
 void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/11/07 17:25:13  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.2  2000/10/13 20:22:47  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -57,18 +63,18 @@ BEGIN_NCBI_SCOPE
 class CStlClassInfoUtil
 {
 public:
-    static TTypeInfo Get_auto_ptr(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo Get_CRef(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo Get_AutoPtr(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo Get_list(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo GetSet_list(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo Get_vector(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo Get_set(TTypeInfo arg, TTypeInfoGetter1 f);
-    static TTypeInfo Get_multiset(TTypeInfo arg, TTypeInfoGetter1 f);
+    static TTypeInfo Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_CRef(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_AutoPtr(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_list(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo GetSet_list(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_vector(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_set(TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo Get_multiset(TTypeInfo arg, TTypeInfoCreator1 f);
     static TTypeInfo Get_map(TTypeInfo arg1, TTypeInfo arg2,
-                             TTypeInfoGetter2 f);
+                             TTypeInfoCreator2 f);
     static TTypeInfo Get_multimap(TTypeInfo arg1, TTypeInfo arg2,
-                                  TTypeInfoGetter2 f);
+                                  TTypeInfoCreator2 f);
 
     // throw exceptions
     static void ThrowDuplicateElementError(void);

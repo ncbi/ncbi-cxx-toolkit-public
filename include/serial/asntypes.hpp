@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/11/07 17:25:11  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.35  2000/10/13 16:28:28  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -238,7 +244,7 @@ public:
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
-    static TTypeInfo CreateTypeInfo(TTypeInfo base);
+    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual void SetDefault(TObjectPtr dst) const;
@@ -270,7 +276,7 @@ public:
     CSetOfTypeInfo(const string& name, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
-    static TTypeInfo CreateTypeInfo(TTypeInfo base);
+    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
 };
 
 class COctetStringTypeInfo : public CPrimitiveTypeInfo {

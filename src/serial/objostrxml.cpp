@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/11/07 17:25:41  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.19  2000/10/20 15:51:43  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -153,7 +159,6 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut), m_LastTagAction(eTagClose)
 {
     m_Output.SetBackLimit(1);
-    m_Output.PutString("<?xml version=\"1.0\"?>\n");
 }
 
 CObjectOStreamXml::~CObjectOStreamXml(void)
@@ -170,60 +175,91 @@ string CObjectOStreamXml::GetPosition(void) const
     return "line "+NStr::UIntToString(m_Output.GetLine());
 }
 
+static string GetPublicModuleName(TTypeInfo type)
+{
+    const string& s = type->GetModuleName();
+    string name;
+    for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
+        char c = *i;
+        if ( !isalnum(c) )
+            name += ' ';
+        else
+            name += c;
+    }
+    return name;
+}
+
+static string GetModuleName(TTypeInfo type)
+{
+    const string& s = type->GetModuleName();
+    string name;
+    for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
+        char c = *i;
+        if ( c == '-' )
+            name += '_';
+        else
+            name += c;
+    }
+    return name;
+}
+
 void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
 {
-    if ( true || m_Output.ZeroIndentLevel() ) {
-        m_Output.PutString("<!DOCTYPE ");
-        m_Output.PutString(type->GetName());
-        m_Output.PutString(" SYSTEM \"ncbi.dtd\">");
-    }
+    m_Output.PutString("<?xml version=\"1.0\"?>");
+    m_Output.PutEol();
+    m_Output.PutString("<!DOCTYPE ");
+    m_Output.PutString(type->GetName());
+    m_Output.PutString(" PUBLIC \"-//NCBI//");
+    m_Output.PutString(GetPublicModuleName(type));
+    m_Output.PutString("/EN\" \"");
+    m_Output.PutString(GetModuleName(type));
+    m_Output.PutString(".dtd\">");
+    m_Output.PutEol();
+    m_LastTagAction = eTagClose;
 }
 
 void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
-                                  long value, const string& name)
+                                  long value, const string& valueName)
 {
     if ( !values.GetName().empty() ) {
         // global enum
-        m_Output.PutEol();
-        m_Output.PutChar('<');
+        OpenTagStart();
         m_Output.PutString(values.GetName());
-        if ( !name.empty() ) {
+        if ( !valueName.empty() ) {
             m_Output.PutString(" value=\"");
-            m_Output.PutString(name);
+            m_Output.PutString(valueName);
             m_Output.PutChar('\"');
         }
         if ( values.IsInteger() ) {
-            m_Output.PutChar('>');
+            OpenTagEnd();
             m_Output.PutLong(value);
-            m_Output.PutString("</");
+            CloseTagStart();
             m_Output.PutString(values.GetName());
-            m_Output.PutChar('>');
-            m_LastTagAction = eTagClose;
+            CloseTagEnd();
         }
         else {
-            _ASSERT(!name.empty());
-            m_Output.PutString("/>");
+            _ASSERT(!valueName.empty());
+            SelfCloseTagEnd();
             m_LastTagAction = eTagClose;
         }
     }
     else {
         // local enum (member, variant or element)
-        _ASSERT(m_LastTagAction == eTagOpen);
-        if ( name.empty() ) {
+        if ( valueName.empty() ) {
             _ASSERT(values.IsInteger());
             m_Output.PutLong(value);
         }
         else {
-            m_Output.BackChar('>');
+            OpenTagEndBack();
             m_Output.PutString(" value=\"");
-            m_Output.PutString(name);
+            m_Output.PutString(valueName);
+            m_Output.PutChar('"');
             if ( values.IsInteger() ) {
-                m_Output.PutString("\">");
+                OpenTagEnd();
                 m_Output.PutLong(value);
             }
             else {
-                m_LastTagAction = eTagSelfClosed;
-                m_Output.PutString("\"/>");
+                SelfCloseTagEnd();
             }
         }
     }
@@ -268,12 +304,12 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
 
 void CObjectOStreamXml::WriteBool(bool data)
 {
-    m_Output.BackChar('>');
+    OpenTagEndBack();
     if ( data )
-        m_Output.PutString(" value=\"true\"/>");
+        m_Output.PutString(" value=\"true\"");
     else
-        m_Output.PutString(" value=\"false\"/>");
-    m_LastTagAction = eTagSelfClosed;
+        m_Output.PutString(" value=\"false\"");
+    SelfCloseTagEnd();
 }
 
 void CObjectOStreamXml::WriteChar(char data)
@@ -341,13 +377,15 @@ void CObjectOStreamXml::WriteFloat(float data)
 
 void CObjectOStreamXml::WriteNull(void)
 {
-    m_Output.PutString("null");
+    OpenTagEndBack();
+    SelfCloseTagEnd();
 }
 
 void CObjectOStreamXml::WriteCString(const char* str)
 {
     if ( str == 0 ) {
-        WriteNull();
+        OpenTagEndBack();
+        SelfCloseTagEnd();
     }
     else {
 		while ( *str ) {
@@ -390,7 +428,8 @@ void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamXml::WriteNullPointer(void)
 {
-    WriteNull();
+    OpenTagEndBack();
+    SelfCloseTagEnd();
 }
 
 void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
@@ -407,30 +446,57 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 
 void CObjectOStreamXml::OpenTagStart(void)
 {
-    m_Output.PutEol();
+    if ( m_LastTagAction == eTagOpen )
+        m_Output.PutEol(false);
+    m_Output.PutIndent();
     m_Output.PutChar('<');
-    m_Output.IncIndentLevel();
     m_LastTagAction = eTagOpen;
 }
 
-bool CObjectOStreamXml::CloseTagStart(bool forceEolBefore)
+void CObjectOStreamXml::OpenTagEnd(void)
 {
+    m_Output.PutChar('>');
+    m_Output.IncIndentLevel();
+}
+
+void CObjectOStreamXml::OpenTagEndBack(void)
+{
+    _ASSERT(m_LastTagAction == eTagOpen);
+    m_Output.BackChar('>');
     m_Output.DecIndentLevel();
-    switch ( m_LastTagAction ) {
-    case eTagSelfClosed:
+}
+
+void CObjectOStreamXml::SelfCloseTagEnd(void)
+{
+    _ASSERT(m_LastTagAction == eTagOpen);
+    m_Output.PutString("/>");
+    m_Output.PutEol(false);
+    m_LastTagAction = eTagSelfClosed;
+}
+
+void CObjectOStreamXml::EolIfEmptyTag(void)
+{
+    _ASSERT(m_LastTagAction != eTagSelfClosed);
+    if ( m_LastTagAction == eTagOpen ) {
+        m_Output.PutEol(false);
         m_LastTagAction = eTagClose;
-        return false;
-    case eTagOpen:
-        if ( forceEolBefore )
-            m_Output.PutEol();
-        break;
-    default:
-        m_Output.PutEol();
-        break;
-    }        
+    }
+}
+
+void CObjectOStreamXml::CloseTagStart(void)
+{
+    _ASSERT(m_LastTagAction != eTagSelfClosed);
+    m_Output.DecIndentLevel();
+    if ( m_LastTagAction == eTagClose )
+        m_Output.PutIndent();
     m_Output.PutString("</");
     m_LastTagAction = eTagClose;
-    return true;
+}
+
+void CObjectOStreamXml::CloseTagEnd(void)
+{
+    m_Output.PutChar('>');
+    m_Output.PutEol(false);
 }
 
 void CObjectOStreamXml::PrintTagName(size_t level)
@@ -531,7 +597,8 @@ void CObjectOStreamXml::WriteContainer(const CContainerTypeInfo* cType,
 
         WriteContainerContents(cType, containerPtr);
 
-        CloseTag(cType, true);
+        EolIfEmptyTag();
+        CloseTag(cType);
         END_OBJECT_FRAME();
     }
     else {
@@ -620,7 +687,8 @@ void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 
 void CObjectOStreamXml::EndClass(void)
 {
-    CloseTagIfNamed(TopFrame().GetTypeInfo(), true);
+    EolIfEmptyTag();
+    CloseTagIfNamed(TopFrame().GetTypeInfo());
 }
 
 void CObjectOStreamXml::BeginClassMember(const CMemberId& /*id*/)
@@ -645,7 +713,8 @@ void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
             classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
         }
         
-        CloseTag(classType, true);
+        EolIfEmptyTag();
+        CloseTag(classType);
         END_OBJECT_FRAME();
     }
     else {
@@ -734,11 +803,6 @@ void CObjectOStreamXml::WriteChoiceContents(const CChoiceTypeInfo* choiceType,
 
 static const char* const HEX = "0123456789ABCDEF";
 
-void CObjectOStreamXml::BeginBytes(const ByteBlock& )
-{
-    m_Output.PutChar('\'');
-}
-
 void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
@@ -747,11 +811,6 @@ void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
 		m_Output.PutChar(HEX[(c >> 4) & 0xf]);
         m_Output.PutChar(HEX[c & 0xf]);
 	}
-}
-
-void CObjectOStreamXml::EndBytes(const ByteBlock& )
-{
-    m_Output.PutString("\'H");
 }
 
 END_NCBI_SCOPE
