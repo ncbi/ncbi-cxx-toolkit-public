@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/06 22:20:09  kholodov
+* Connections are cloned for CallableStatement and Cursor
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -153,7 +156,7 @@ ICallableStatement*
 CConnection::PrepareCall(const string& proc,
 			 int nofArgs)
 {
-  CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, this);
+  CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, Clone());
   AddListener(cstmt);
   return cstmt;
 }
@@ -163,7 +166,7 @@ ICursor* CConnection::CreateCursor(const string& name,
 				   int nofArgs,
 				   int batchSize)
 {
-  CCursor *c = new CCursor(name, sql, nofArgs, batchSize, this);
+  CCursor *c = new CCursor(name, sql, nofArgs, batchSize, Clone());
   AddListener(c);
   return c;
 }
