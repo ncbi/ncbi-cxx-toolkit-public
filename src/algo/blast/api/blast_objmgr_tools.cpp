@@ -246,8 +246,6 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     iter.SetRandomizeAmbiguities();
     iter.SetCoding(CSeq_data::e_Ncbi2na);
 
-    // ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
-
 
     for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
         Uint1 a, b, c, d;
@@ -968,6 +966,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/07/15 14:50:09  madden
+* removed commented out ASSERT
+*
 * Revision 1.9  2004/07/06 15:48:40  dondosha
 * Use EBlastProgramType enumeration type instead of EProgram when calling C code
 *
