@@ -32,6 +32,7 @@
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq_entry.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq_params.h>
+#include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 

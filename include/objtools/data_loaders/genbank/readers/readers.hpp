@@ -35,12 +35,15 @@
 
 BEGIN_NCBI_SCOPE
 
-extern void GenBankReaders_Register_Id1     (void);
-extern void GenBankReaders_Register_Id2     (void);
-extern void GenBankReaders_Register_Pubseq  (void);
-extern void GenBankReaders_Register_Cache   (void);
-extern void GenBankWriters_Register_Cache   (void);
+extern "C" {
 
+extern void NCBI_XREADER_ID1_EXPORT      GenBankReaders_Register_Id1   (void);
+extern void NCBI_XREADER_ID2_EXPORT      GenBankReaders_Register_Id2   (void);
+extern void NCBI_XREADER_PUBSEQOS_EXPORT GenBankReaders_Register_Pubseq(void);
+extern void NCBI_XREADER_CACHE_EXPORT    GenBankReaders_Register_Cache (void);
+extern void NCBI_XREADER_CACHE_EXPORT    GenBankWriters_Register_Cache (void);
+
+}
 
 END_NCBI_SCOPE
 
@@ -48,6 +51,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/11 00:02:50  vasilche
+ * Register functions made exported from their dlls.
+ *
  * Revision 1.2  2005/03/10 20:55:06  vasilche
  * New CReader/CWriter schema of CGBDataLoader.
  *

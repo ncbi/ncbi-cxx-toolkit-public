@@ -31,6 +31,7 @@
 #include <objtools/data_loaders/genbank/readers/cache/writer_cache.hpp>
 #include <objtools/data_loaders/genbank/readers/cache/writer_cache_entry.hpp>
 #include <objtools/data_loaders/genbank/readers/cache/reader_cache_params.h>
+#include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
 #include <util/cache/icache.hpp>

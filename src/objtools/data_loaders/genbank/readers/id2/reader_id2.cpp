@@ -35,6 +35,7 @@
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2_entry.hpp>
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2_params.h>
+#include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 

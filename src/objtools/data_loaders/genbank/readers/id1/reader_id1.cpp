@@ -34,6 +34,7 @@
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_entry.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_params.h>
+#include <objtools/data_loaders/genbank/readers/readers.hpp> // for entry point
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
