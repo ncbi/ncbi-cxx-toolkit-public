@@ -122,8 +122,10 @@ public:
     // Return the default compression level for current compression algorithm
     virtual ELevel GetDefaultLevel(void) const = 0;
 
-    // Get compressor's internal status/error code for the last operation
-    int GetLastError(void) const;
+    // Get compressor's internal status/error code and description
+    // for the last operation.
+    int    GetErrorCode(void) const;
+    string GetErrorDescription(void) const;
 
     //
     // Utility functions 
@@ -159,8 +161,8 @@ public:
     ) = 0;
 
 protected:
-    // Set last compressor's action error/status
-    void SetLastError(int status);
+    // Set last compressor's action error/status code and description
+    void SetError(int status, const char* description = 0);
 
 protected:
     // Universal file compression/decompression functions.
@@ -177,8 +179,9 @@ protected:
     );
 
 private:
-    ELevel  m_Level;       // Compression level
-    int     m_LastError;   // Last compressor action error/status
+    ELevel  m_Level;      // Compression level
+    int     m_ErrorCode;  // Last compressor action error/status
+    string  m_ErrorMsg;   // Last compressor action error message
 
     // Friend classes
     friend class CCompressionStreambuf;
@@ -251,6 +254,10 @@ public:
     enum EStatus {
         // Everything is fine, no errors occurred
         eStatus_Success,
+        // Special case of eStatus_Success.
+        // Logical end of (compressed) stream is detected, no errors occurred.
+        // All subsequent inquiries about data processing should be ignored.
+        eStatus_EndOfData,
         // Error has occured. The error code can be acquired by GetLastError() 
         eStatus_Error,
         // Output buffer overflow - not enough output space.
@@ -335,14 +342,20 @@ inline void CCompression::SetLevel(ELevel level)
     m_Level = level;
 }
 
-inline int CCompression::GetLastError(void) const
+inline int CCompression::GetErrorCode(void) const
 {
-    return m_LastError;
+    return m_ErrorCode;
 }
 
-inline void CCompression::SetLastError(int errcode)
+inline string CCompression::GetErrorDescription(void) const
 {
-    m_LastError = errcode;
+    return m_ErrorMsg;
+}
+
+inline void CCompression::SetError(int errcode, const char* description)
+{
+    m_ErrorCode = errcode;
+    m_ErrorMsg  = description ? description : kEmptyStr;
 }
 
 inline bool CCompressionProcessor::IsBusy(void) const
@@ -366,6 +379,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/15 15:50:00  ivanov
+ * Improved error diagnostics. Renamed GetLastError() -> GetErrorCode().
+ * Added GetErrorDescription(). Added second parameter for SetError().
+ * Added new status value - eStatus_EndOfData.
+ *
  * Revision 1.5  2003/07/10 16:19:25  ivanov
  * Added kCompressionDefaultBufSize definition from stream.hpp.
  * Added auxiliary file compression/decompression functions.
