@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/01/30 21:41:05  vasilche
+* Fixed dealing with unsigned enums.
+*
 * Revision 1.26  2000/12/15 15:38:46  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -928,17 +931,34 @@ DECLARE_STD_INT_TYPE(unsigned long)
 DECLARE_STD_INT_TYPE(Int8)
 DECLARE_STD_INT_TYPE(Uint8)
 
-const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size)
+const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size,
+                                                                 bool sign)
 {
     TTypeInfo info;
-    if ( size == sizeof(int) )
-        info = CStdTypeInfo<int>::GetTypeInfo();
-    else if ( size == sizeof(short) )
-        info = CStdTypeInfo<short>::GetTypeInfo();
-    else if ( size == sizeof(signed char) )
-        info = CStdTypeInfo<signed char>::GetTypeInfo();
-    else if ( size == sizeof(Int8) )
-        info = CStdTypeInfo<Int8>::GetTypeInfo();
+    if ( size == sizeof(int) ) {
+        if ( sign )
+            info = CStdTypeInfo<int>::GetTypeInfo();
+        else
+            info = CStdTypeInfo<unsigned>::GetTypeInfo();
+    }
+    else if ( size == sizeof(short) ) {
+        if ( sign )
+            info = CStdTypeInfo<short>::GetTypeInfo();
+        else
+            info = CStdTypeInfo<unsigned short>::GetTypeInfo();
+    }
+    else if ( size == sizeof(signed char) ) {
+        if ( sign )
+            info = CStdTypeInfo<signed char>::GetTypeInfo();
+        else
+            info = CStdTypeInfo<unsigned char>::GetTypeInfo();
+    }
+    else if ( size == sizeof(Int8) ) {
+        if ( sign )
+            info = CStdTypeInfo<Int8>::GetTypeInfo();
+        else
+            info = CStdTypeInfo<Uint8>::GetTypeInfo();
+    }
     else {
         string message("Illegal enum size: ");
         message += NStr::UIntToString(size);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/01/30 21:40:58  vasilche
+* Fixed dealing with unsigned enums.
+*
 * Revision 1.24  2000/12/15 15:38:01  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -209,7 +212,8 @@ public:
     virtual void SetValueOctetString(TObjectPtr objectPtr,
                                      const vector<char>& value) const;
 
-    static const CPrimitiveTypeInfo* GetIntegerTypeInfo(size_t size);
+    static const CPrimitiveTypeInfo* GetIntegerTypeInfo(size_t size,
+                                                        bool sign = true);
 
     void SetMemFunctions(TTypeCreate,
                          TIsDefaultFunction, TSetDefaultFunction,

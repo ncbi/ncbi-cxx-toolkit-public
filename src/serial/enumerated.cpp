@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/01/30 21:41:04  vasilche
+* Fixed dealing with unsigned enums.
+*
 * Revision 1.18  2000/12/15 15:38:42  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -191,9 +194,10 @@ void CEnumeratedTypeValues::AddValue(const char* name, TEnumValueType value)
 }
 
 CEnumeratedTypeInfo::CEnumeratedTypeInfo(size_t size,
-                                         const CEnumeratedTypeValues* values)
-    : CParent(size, values->GetName(), ePrimitiveValueEnum),
-      m_ValueType(CPrimitiveTypeInfo::GetIntegerTypeInfo(size)),
+                                         const CEnumeratedTypeValues* values,
+                                         bool sign)
+    : CParent(size, values->GetName(), ePrimitiveValueEnum, sign),
+      m_ValueType(CPrimitiveTypeInfo::GetIntegerTypeInfo(size, sign)),
       m_Values(*values)
 {
     _ASSERT(m_ValueType->GetPrimitiveValueType() == ePrimitiveValueInteger);

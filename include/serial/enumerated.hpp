@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/01/30 21:40:57  vasilche
+* Fixed dealing with unsigned enums.
+*
 * Revision 1.12  2000/12/15 15:37:59  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -101,7 +104,8 @@ class CEnumeratedTypeInfo : public CPrimitiveTypeInfo
     typedef CPrimitiveTypeInfo CParent;
 public:
     // values should exist for all live time of our instance
-    CEnumeratedTypeInfo(size_t size, const CEnumeratedTypeValues* values);
+    CEnumeratedTypeInfo(size_t size, const CEnumeratedTypeValues* values,
+                        bool sign = false);
 
     const CEnumeratedTypeValues& Values(void) const
         {
@@ -149,7 +153,7 @@ inline
 CEnumeratedTypeInfo* CreateEnumeratedTypeInfo(const T& ,
                                               const CEnumeratedTypeValues* values)
 {
-    return new CEnumeratedTypeInfo(sizeof(T), values);
+    return new CEnumeratedTypeInfo(sizeof(T), values, T(-1) < 0);
 }
 
 END_NCBI_SCOPE
