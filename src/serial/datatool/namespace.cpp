@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/03/28 20:41:24  gouriano
+* Fixed namespace string parsing in CNamespace ctor
+*
 * Revision 1.7  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -87,7 +90,7 @@ CNamespace::CNamespace(const string& ns)
 
     SIZE_TYPE end = ns.find("::", pos);
     while ( end != NPOS ) {
-        m_Namespaces.push_back(ns.substr(pos, end));
+        m_Namespaces.push_back(ns.substr(pos, end-pos));
         pos = end + 2;
         end = ns.find("::", pos);
     }
