@@ -3399,7 +3399,7 @@ static Int2 BLAST_ProtGappedAlignment(EBlastProgramType program,
    BlastScoringOptions *score_options = score_params->options;
     
    if (gap_align == NULL)
-      return FALSE;
+      return -1;
    
    if (score_options->is_ooframe) {
       q_length = init_hsp->q_off;
