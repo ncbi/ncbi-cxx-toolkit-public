@@ -39,6 +39,7 @@
 #include <algo/blast/api/tblastn_options.hpp>
 #include <algo/blast/api/tblastx_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/blast/blast__.hpp>
@@ -107,6 +108,12 @@ public:
     CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastn", "megablast");
+    }
+    
+    // PSIBlast = blastp/psi
+    CRemoteBlast(CPSIBlastOptionsHandle * algo_opts)
+    {
+        x_Init(algo_opts, "blastp", "psi");
     }
     
 //     // Prot PHI = blastp/phi
@@ -334,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 18:07:19  bealer
+ * - Add PSI Blast support.
+ *
  * Revision 1.5  2004/05/05 15:28:19  bealer
  * - Add GetWarnings() mechanism.
  * - Add PSSM queries (for PSI-Blast).

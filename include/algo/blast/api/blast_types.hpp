@@ -53,6 +53,7 @@ enum EProgram {
     eRPSTblastn,        //< nucleotide-pssm (RPS blast with translated query)
     eMegablast,         //< Nucl-Nucl (traditional megablast)
     eDiscMegablast,	//< Nucl-Nucl using discontiguous megablast
+    ePSIBlast,          //< PSI Blast
     eBlastProgramMax    //< Undefined program
 };
 
@@ -84,6 +85,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/05/17 18:07:19  bealer
+* - Add PSI Blast support.
+*
 * Revision 1.10  2004/04/16 14:32:54  papadopo
 * add eRPSBlast and eRPSTblastn, moved the megablast enums so that the list of enums still corresponds to the list in blast_def.h
 *

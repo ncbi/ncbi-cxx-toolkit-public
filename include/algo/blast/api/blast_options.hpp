@@ -115,7 +115,9 @@ enum EBlastOptIdx {
     eBlastOpt_UseRealDbSize,
     eBlastOpt_DbGeneticCode,
     eBlastOpt_PHIPattern,
-    eBlastOpt_SkipTraceback
+    eBlastOpt_SkipTraceback,
+    eBlastOpt_InclusionThreshold,
+    eBlastOpt_PseudoCount
 };
 
 
@@ -322,6 +324,13 @@ public:
     /// Allows to dump a snapshot of the object
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
+    /******************** PSIBlast options *******************/
+    double GetInclusionThreshold() const;
+    void SetInclusionThreshold(double incthr);
+    
+    short GetPseudoCount() const;
+    void SetPseudoCount(short ps);
+    
     QuerySetUpOptions * GetQueryOpts() const
     {
         return m_QueryOpts;
@@ -347,9 +356,9 @@ public:
         return m_HitSaveOpts;
     }
     
-    PSIBlastOptions * GetProtOpts() const
+    PSIBlastOptions * GetPSIBlastOpts() const
     {
-        return m_ProtOpts;
+        return m_PSIBlastOpts;
     }
     
     BlastDatabaseOptions * GetDbOpts() const
@@ -388,7 +397,7 @@ protected:
     CBlastHitSavingOptions        m_HitSaveOpts;
 
     /// PSI-Blast settings
-    CPSIBlastOptions              m_ProtOpts;
+    CPSIBlastOptions              m_PSIBlastOpts;
 
     /// Blast database settings
     CBlastDatabaseOptions         m_DbOpts;
@@ -1566,6 +1575,42 @@ public:
 //             m_Remote->SetService("phi");
         }
     }
+
+    /******************** PSIBlast options *******************/
+    double GetInclusionThreshold() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetInclusionThreshold() not available.");
+        }
+        return m_Local->GetInclusionThreshold();
+    }
+    void SetInclusionThreshold(double u)
+    {
+        if (m_Local) {
+            m_Local->SetInclusionThreshold(u);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_InclusionThreshold, u);
+        }
+    }
+
+    short GetPseudoCount() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetPseudoCount() not available.");
+        }
+        return m_Local->GetPseudoCount();
+    }
+    void SetPseudoCount(short u)
+    {
+        if (m_Local) {
+            m_Local->SetPseudoCount(u);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_PseudoCount, u);
+        }
+    }
+    
     
     /// Allows to dump a snapshot of the object
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const
@@ -1645,9 +1690,9 @@ protected:
         return m_Local ? m_Local->GetHitSaveOpts() : 0;
     }
     
-    PSIBlastOptions * GetProtOpts() const
+    PSIBlastOptions * GetPSIBlastOpts() const
     {
-        return m_Local ? m_Local->GetProtOpts() : 0;
+        return m_Local ? m_Local->GetPSIBlastOpts() : 0;
     }
     
     BlastDatabaseOptions * GetDbOpts() const
@@ -2338,6 +2383,30 @@ CBlastOptionsLocal::GetPHIPattern() const
     return m_LutOpts->phi_pattern;
 }
 
+inline double
+CBlastOptionsLocal::GetInclusionThreshold() const
+{
+    return m_PSIBlastOpts->inclusion_ethresh;
+}
+
+inline void
+CBlastOptionsLocal::SetInclusionThreshold(double incthr)
+{
+    m_PSIBlastOpts->inclusion_ethresh = incthr;
+}
+
+inline short
+CBlastOptionsLocal::GetPseudoCount() const
+{
+    return m_PSIBlastOpts->pseudo_count;
+}
+
+inline void
+CBlastOptionsLocal::SetPseudoCount(short pc)
+{
+    m_PSIBlastOpts->pseudo_count = pc;
+}
+
 inline void 
 CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
 {
@@ -2363,6 +2432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/05/17 18:07:19  bealer
+* - Add PSI Blast support.
+*
 * Revision 1.57  2004/05/17 15:28:24  madden
 * Int algorithm_type replaced with enum EBlastPrelimGapExt
 *

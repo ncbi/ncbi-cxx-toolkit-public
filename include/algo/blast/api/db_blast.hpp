@@ -107,7 +107,7 @@ protected:
     BlastHitSavingOptions * GetHitSaveOpts() const;
     QuerySetUpOptions * GetQueryOpts() const;
     BlastDatabaseOptions * GetDbOpts() const;
-    PSIBlastOptions * GetProtOpts() const;    
+    PSIBlastOptions * GetPSIBlastOpts() const;    
     RPSInfo * GetRPSInfo() const;    
 
     /// Internal data structures used in this and all derived classes 
@@ -258,9 +258,9 @@ inline BlastDatabaseOptions * CDbBlast::GetDbOpts() const
 {
     return m_OptsHandle->GetOptions().GetDbOpts();
 }
-inline PSIBlastOptions * CDbBlast::GetProtOpts() const
+inline PSIBlastOptions * CDbBlast::GetPSIBlastOpts() const
 {
-    return m_OptsHandle->GetOptions().GetProtOpts();
+    return m_OptsHandle->GetOptions().GetPSIBlastOpts();
 }
 
 END_SCOPE(blast)
@@ -270,6 +270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/05/17 18:07:19  bealer
+* - Add PSI Blast support.
+*
 * Revision 1.17  2004/05/14 17:15:59  dondosha
 * BlastReturnStat structure changed to BlastDiagnostics and refactored
 *
