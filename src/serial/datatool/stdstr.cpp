@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/01/15 21:38:27  grichenk
+* Fixed NULL type initialization/reading/writing
+*
 * Revision 1.10  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -168,7 +171,7 @@ string CNullTypeStrings::GetRef(const CNamespace& /*ns*/) const
 
 string CNullTypeStrings::GetInitializer(void) const
 {
-    return "false";
+    return "true";
 }
 
 CStringTypeStrings::CStringTypeStrings(const string& type)

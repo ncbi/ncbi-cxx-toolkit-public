@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/01/15 21:38:26  grichenk
+* Fixed NULL type initialization/reading/writing
+*
 * Revision 1.28  2001/05/17 15:07:09  lavr
 * Typos corrected
 *
@@ -574,10 +577,12 @@ public:
     static void Write(CObjectOStream& out, TTypeInfo ,
                       TConstObjectPtr object)
         {
+/*
             if ( !Get(object) )
                 THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
+*/
             out.WriteNull();
-        }
+    }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
             copier.In().ReadNull();
