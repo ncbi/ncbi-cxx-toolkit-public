@@ -50,9 +50,6 @@ static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
 static Int4 BLAST_AlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M, 
    Int4* pej, Int4* pei, BlastGapAlignStruct* gap_align,
    const BlastScoringOptions* score_options, Boolean reverse_sequence);
-static Int2
-BLAST_GapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start, 
-   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapEditScript* esp);
 static Int2 
 BLAST_SaveHsp(BlastGapAlignStruct* gap_align, BlastInitHSP* init_hsp, 
    BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options, 
@@ -2366,6 +2363,42 @@ MBToGapEditScript (MBGapEditScript* ed_script)
 
 }
 
+/** Fills the BlastGapAlignStruct structure with the results of a gapped 
+ * extension.
+ * @param gap_align the initialized gapped alignment structure [in] [out]
+ * @param q_start The starting offset in query [in]
+ * @param s_start The starting offset in subject [in]
+ * @param q_end The ending offset in query [in]
+ * @param s_end The ending offset in subject [in]
+ * @param query_length Length of the query sequence [in]
+ * @param subject_length Length of the subject sequence [in]
+ * @param score The alignment score [in]
+ * @param esp The edit script containing the traceback information [in]
+ */
+static Int2
+BLAST_GapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start, 
+   Int4 s_start, Int4 q_end, Int4 s_end, Uint4 query_length, 
+   Uint4 subject_length, Int4 score, GapEditScript* esp)
+{
+   gap_align->query_start = q_start;
+   gap_align->query_stop = q_end;
+   gap_align->subject_start = s_start;
+   gap_align->subject_stop = s_end;
+   gap_align->score = score;
+
+   if (esp) {
+      gap_align->edit_block = GapEditBlockNew(q_start, s_start);
+      gap_align->edit_block->start1 = q_start;
+      gap_align->edit_block->start2 = s_start;
+      gap_align->edit_block->length1 = query_length;
+      gap_align->edit_block->length2 = subject_length;
+      gap_align->edit_block->frame1 = gap_align->edit_block->frame2 = 1;
+      gap_align->edit_block->reverse = 0;
+      gap_align->edit_block->esp = esp;
+   }
+   return 0;
+}
+
 Int2 
 BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
@@ -2448,41 +2481,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
    
    BLAST_GapAlignStructFill(gap_align, q_off-q_ext_l, 
       s_off-s_ext_l, q_off+q_ext_r, 
-      s_off+s_ext_r, score, esp);
-   return 0;
-}
-
-/** Fills the BlastGapAlignStruct structure with the results of a gapped 
- * extension.
- * @param gap_align the initialized gapped alignment structure [in] [out]
- * @param q_start The starting offset in query [in]
- * @param s_start The starting offset in subject [in]
- * @param q_end The ending offset in query [in]
- * @param s_end The ending offset in subject [in]
- * @param score The alignment score [in]
- * @param esp The edit script containing the traceback information [in]
- */
-static Int2
-BLAST_GapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start, 
-   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapEditScript* esp)
-{
-
-   gap_align->query_start = q_start;
-   gap_align->query_stop = q_end;
-   gap_align->subject_start = s_start;
-   gap_align->subject_stop = s_end;
-   gap_align->score = score;
-
-   if (esp) {
-      gap_align->edit_block = GapEditBlockNew(q_start, s_start);
-      gap_align->edit_block->start1 = q_start;
-      gap_align->edit_block->start2 = s_start;
-      gap_align->edit_block->length1 = q_end - q_start + 1;
-      gap_align->edit_block->length2 = s_end - s_start + 1;
-      gap_align->edit_block->frame1 = gap_align->edit_block->frame2 = 1;
-      gap_align->edit_block->reverse = 0;
-      gap_align->edit_block->esp = esp;
-   }
+      s_off+s_ext_r, query_length, subject_length, score, esp);
    return 0;
 }
 
