@@ -157,7 +157,7 @@ public:
           ETimeZonePrecision tzp  = eNone);
 
     // Construct object from UTC time_t value (assuming it is eGMT)
-    CTime(time_t t, ETimeZonePrecision tzp = eNone);
+    explicit CTime(time_t t, ETimeZonePrecision tzp = eNone);
 
     // NOTE: "day" and "month" here are starting from 1 (one)
     CTime(int year, int month, int day,
@@ -171,8 +171,8 @@ public:
     // Read from the string "str" using format "fmt".
     // If "fmt" is empty, then use the current format - as set by SetFormat().
     // Default format is "M/D/Y h:m:s".
-    CTime(const string& str, const string& fmt = kEmptyStr,
-          ETimeZone tz = eLocal, ETimeZonePrecision tzp = eNone);
+    explicit CTime(const string& str, const string& fmt = kEmptyStr,
+                   ETimeZone tz = eLocal, ETimeZonePrecision tzp = eNone);
 
     // Copy constructor
     CTime(const CTime& t);
@@ -622,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/02/10 22:36:55  ucko
+ * Make string- and time_t-based constructors explicit, to avoid weird surprises.
+ *
  * Revision 1.17  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
