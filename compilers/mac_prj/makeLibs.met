@@ -1,4 +1,6 @@
 
+
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -353,14 +355,6 @@ on SetProjectData()
 			ObjectFileData("seqres", {})}
 		AddProject(ProjectData("seq", {}, seqFileData))
 		
-		(* 
-		AddObject("seqalign")
-		AddObject("seqblock")
-		AddProject(ObjectData("seqfeat", {"readfeat"}))
-		AddObject("seqloc")
-		AddObject("seqres")
-		*)
-		
 		AddObject("seqset")
 		AddObject("seqcode")
 		AddObject("submit")
@@ -369,7 +363,8 @@ on SetProjectData()
 	end if
 	
 	if pCreateObjToolsLibs then
-		AddSimpleProjectExceptFiles("xobjmgr", {}, "objmgr", {"reader_id1_cache.cpp"})
+		AddSimpleProject("xobjmgr", {}, "objmgr")
+		--AddSimpleProjectExceptFiles("xobjmgr", {}, "objmgr", {"reader_id1_cache.cpp"})
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
@@ -435,9 +430,9 @@ on SetProjectData()
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
 		set SeqObjects to {"seq", "seqcode", "seqset"}
-		set SomeObjects to {"biblio", "general", "medline", "pub"}
+		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
-			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
+			{"dbapi_driver", "id1", "id2", "xobjmgr", "xobjutil"}
 		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		set CompressLibs to {"z", "bz2", "xcompress"}
@@ -463,7 +458,7 @@ on SetProjectData()
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"w_fltable", "entrez2", "entrez2cli", "w_table"})
+			{"w_fltable", "w_table"})
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
@@ -480,9 +475,6 @@ on SetProjectData()
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xflat"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
-		
-		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {}) -- empty
-		-- AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {}) -- broke
 		
 	end if
 	
