@@ -79,6 +79,7 @@ BEGIN_NCBI_SCOPE
 extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 
 /// "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW.
+NCBI_XNCBI_EXPORT
 extern void DoThrowTraceAbort(void);
 
 /// Print the specified debug message.
@@ -1115,6 +1116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/03/10 19:57:40  gorelenk
+ * Added NCBI_XNCBI_EXPORT prefix to function DoThrowTraceAbort.
+ *
  * Revision 1.49  2003/12/22 20:20:12  ivanov
  * Made all CException protected methods virtual
  *
