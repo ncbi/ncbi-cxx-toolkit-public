@@ -375,7 +375,8 @@ CNWAligner::TScore CNWAligner::x_Run()
                 NON_CONST_ITERATE(TDataVector, ii, vdata) {
                     *jj++ = &(*ii);
                 }
-                sort(vdata_p.begin(), vdata_p.end(), SAlignInOut::PSpace);
+                stable_sort(vdata_p.begin(), vdata_p.end(),
+                            SAlignInOut::PSpace);
             }}
             
             // align over the segments
@@ -391,7 +392,8 @@ CNWAligner::TScore CNWAligner::x_Run()
                     
                     SAlignInOut& data = **ii;
 
-                    if(data.GetSpace() >= 10000000 && NW_RequestNewThread(m_maxthreads)) {
+                    if(data.GetSpace() >= 10000000 &&
+                       NW_RequestNewThread(m_maxthreads)) {
                         
                         CNWAlignerThread_Align* thread = 
                             new CNWAlignerThread_Align(this, &data);
@@ -1106,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/08/18 21:48:56  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.52  2004/07/07 21:38:30  kapustin
  * Check space before starting new thread
  *
