@@ -598,7 +598,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     /* Fills in block for gapped blast. */
     if (hit_options->phi_align) {
        PHIScoreBlkFill(sbp, scoring_options, blast_message);
-    } else {
+    } else if (scoring_options->gapped_calculation) {
        status = BlastScoreBlkGappedFill(sbp, scoring_options, 
                                         program_number, query_info);
        if (status) {
@@ -611,18 +611,22 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
     if (program_number == blast_type_blastx ||
         program_number == blast_type_tblastx) {
+        /* Adjust the ungapped Karlin parameters */
         sbp->kbp = sbp->kbp_std;
         BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                     query_info->last_context);
-        /* Adjust the Karlin parameters for ungapped blastx/tblastx. */
-        sbp->kbp = sbp->kbp_gap;
-        BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
-                                    query_info->last_context);
+        /* Adjust the gapped Karlin parameters, if it is a gapped search */
+        if (scoring_options->gapped_calculation) {
+           sbp->kbp = sbp->kbp_gap_std;
+           BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
+                                       query_info->last_context);
+        }
     }
 
     /* Why are there so many Karlin block names?? */
     sbp->kbp = sbp->kbp_std;
-    sbp->kbp_gap = sbp->kbp_gap_std;
+    if (scoring_options->gapped_calculation)
+       sbp->kbp_gap = sbp->kbp_gap_std;
 
     return 0;
 }
@@ -689,7 +693,7 @@ Int8 ComputeEffectiveSearchSpace(BLAST_KarlinBlk* kbp, /* [in] */
 
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
-   const BlastEffectiveLengthsOptions* eff_len_options, 
+   BlastEffectiveLengthsParameters* eff_len_params, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
 {
    double alpha=0, beta=0; /*alpha and beta for new scoring system */
@@ -701,17 +705,33 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    Int4 query_length;   /* length of an individual query sequence */
    Int8 effective_search_space = 0; /* Effective search space for a given 
                                    sequence/strand/frame */
+   BlastEffectiveLengthsOptions* eff_len_options;
 
-   if (sbp == NULL || eff_len_options == NULL)
+   if (sbp == NULL || eff_len_params == NULL)
       return 1;
 
-   /* use values in BlastEffectiveLengthsOptions* */
-   db_length = eff_len_options->db_length;
+   eff_len_options = eff_len_params->options; 
+
+   /* use overriding value from effective lengths options or the real value
+      from effective lengths parameters. */
+   if (eff_len_options->db_length > 0)
+      db_length = eff_len_options->db_length;
+   else
+      db_length = eff_len_params->real_db_length;
+
+   /* If database (subject) length is not available at this stage, 
+      do nothing */
+   if (db_length == 0)
+      return 0;
+
    if (program_number == blast_type_tblastn || 
        program_number == blast_type_tblastx)
       db_length = db_length/3;	
    
-   db_num_seqs = eff_len_options->dbseq_num;
+   if (eff_len_options->dbseq_num > 0)
+      db_num_seqs = eff_len_options->dbseq_num;
+   else
+      db_num_seqs = eff_len_params->real_num_seqs;
    
    if (program_number != blast_type_blastn) {
       if (scoring_options->gapped_calculation) {
@@ -767,20 +787,42 @@ BLAST_GapAlignSetUp(Uint1 program_number,
                     BlastScoreBlk* sbp, Uint4 subject_length, 
                     BlastExtensionParameters** ext_params,
                     BlastHitSavingParameters** hit_params,
+                    BlastEffectiveLengthsParameters** eff_len_params,
                     BlastGapAlignStruct** gap_align)
 {
    Int2 status = 0;
    Uint4 max_subject_length;
+   Int8 total_length = 0;
+   Int4 num_seqs;
+
+   if (seq_src)
+     total_length = BLASTSeqSrcGetTotLen(seq_src);
+   else
+     total_length = subject_length;
+   
+   if (total_length > 0 && seq_src) {
+      num_seqs = BLASTSeqSrcGetNumSeqs(seq_src);
+   } else {
+      /* Not a database search; each subject sequence is considered
+         individually */
+      num_seqs = 1;
+   }
+
+   /* Initialize the effective length parameters with real values of
+      database length and number of sequences */
+   BlastEffectiveLengthsParametersNew(eff_len_options, total_length, num_seqs, 
+                                      eff_len_params);
+
 
    if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
-                    eff_len_options, sbp, query_info)) != 0)
+                    *eff_len_params, sbp, query_info)) != 0)
       return status;
 
    BlastExtensionParametersNew(program_number, ext_options, sbp, 
                                query_info, ext_params);
 
-   BlastHitSavingParametersNew(program_number, hit_options, NULL, sbp, 
-                               query_info, hit_params);
+   BlastHitSavingParametersNew(program_number, hit_options, *ext_params, 
+                               NULL, sbp, query_info, hit_params);
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */
@@ -796,5 +838,32 @@ BLAST_GapAlignSetUp(Uint1 program_number,
       return status;
    }
 
+   return status;
+}
+
+Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
+                    Uint4 subject_length,
+                    const BlastScoringOptions* scoring_options,
+                    BlastQueryInfo* query_info, 
+                    BlastScoreBlk* sbp, 
+                    BlastExtensionParameters* ext_params,
+                    BlastHitSavingParameters* hit_params,
+                    BlastInitialWordParameters* word_params,
+                    BlastEffectiveLengthsParameters* eff_len_params)
+{
+   Int2 status = 0;
+   eff_len_params->real_db_length = subject_length;
+   if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
+                                      eff_len_params, sbp, query_info)) != 0)
+      return status;
+   /* Update cutoff scores in hit saving parameters */
+   BlastHitSavingParametersUpdate(program_number, ext_params,
+                                  sbp, query_info, hit_params);
+   
+   if (word_params) {
+      /* Update cutoff scores in initial word parameters */
+      BlastInitialWordParametersUpdate(program_number, hit_params, ext_params,
+         sbp, query_info, subject_length, word_params);
+   }
    return status;
 }
