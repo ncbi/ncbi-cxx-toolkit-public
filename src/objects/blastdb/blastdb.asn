@@ -1,4 +1,4 @@
---$Id: blastdb.asn,v 6.1 2000/09/14 20:05:00 shavirin Exp $
+--$Id: blastdb.asn,v 6.2 2001/03/29 19:03:40 madden Exp $
 --
 -- Notes:
 --
@@ -21,9 +21,12 @@
 -- indicate a link that could be established based upon the gi of the 
 -- database sequence.
 --
--- $Revision: 6.1 $
+-- $Revision: 6.2 $
 --
 -- $Log: blastdb.asn,v $
+-- Revision 6.2  2001/03/29 19:03:40  madden
+-- Minor change for consistency
+--
 -- Revision 6.1  2000/09/14 20:05:00  shavirin
 -- Initial revision.
 --
@@ -31,13 +34,13 @@
 NCBI-BlastDL DEFINITIONS ::=
 BEGIN
 
-EXPORTS Blast-defline-set, Blast-defline;
+EXPORTS Blast-def-line-set, Blast-def-line;
         
 IMPORTS Seq-id FROM NCBI-Seqloc;
 
-Blast-defline-set ::= SEQUENCE OF Blast-defline  -- all deflines for an entry
+Blast-def-line-set ::= SEQUENCE OF Blast-def-line  -- all deflines for an entry
 
-Blast-defline ::= SEQUENCE {
+Blast-def-line ::= SEQUENCE {
 	title VisibleString ,                     -- simple title
 	seqid SEQUENCE OF Seq-id,                 -- Regular NCBI Seq-Id
 	taxid  INTEGER ,                          -- taxonomy id
