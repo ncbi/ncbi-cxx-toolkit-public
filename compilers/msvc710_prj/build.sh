@@ -15,7 +15,7 @@ cfgs="${1:-DebugDLL Debug ReleaseDLL Release}"
 dirs='static dll'
 sol_static="ncbi_cpp.sln gui\ncbi_gui.sln"
 sol_dll="ncbi_cpp_dll.sln gui\ncbi_gui_dll.sln gbench\ncbi_gbench.sln"
-
+timer="date +'%H:%M'"
 
 ########## Functions
 
@@ -75,11 +75,14 @@ for dir in $dirs ; do
    sols=`eval echo $"sol_${dir}"`
    for sol in $sols ; do
      alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
+     start=`eval $timer`
+     echo Start time: $start
      echo "INFO: Configure \"$dir\\$alias\""
      $build_dir/build_exec.bat "$dir\\build\\$sol" rebuild $cfg_configure "-CONFIGURE-"
      if [ $? -ne 0 ] ; then
        exit 3
      fi
+     echo "Build time: $start - `eval $timer`"
    done
 done
 
@@ -100,10 +103,13 @@ for cfg in $cfgs ; do
      sols=`eval echo $"sol_${dir}"`
      for sol in $sols ; do
        alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
+       start=`eval $timer`
+       echo Start time: $start
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
        $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg "-BUILD-ALL-" >/tmp/build.$$ 2>&1
        status=$?
        cat /tmp/build.$$
+       echo "Build time: $start - `eval $timer`"
        if [ $status -ne 0 ] ; then
          # Check on errors (skip expendable projects)
          failed="1"
