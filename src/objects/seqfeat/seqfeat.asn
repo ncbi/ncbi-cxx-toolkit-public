@@ -1,4 +1,4 @@
---$Revision: 6.10 $
+--$Revision: 6.11 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -483,8 +483,10 @@ SubSource ::= SEQUENCE {
         collection-date (30) ,  -- DD-MMM-YYYY format
         collected-by (31) ,     -- name of person who collected the sample
         identified-by (32) ,    -- name of person who identified the sample
-        left-primer (33) ,      -- sequence (possibly more than one; semicolon-separated)
-        right-primer (34) ,     -- sequence (possibly more than one; semicolon-separated)
+        fwd-primer-seq (33) ,   -- sequence (possibly more than one; semicolon-separated)
+        rev-primer-seq (34) ,   -- sequence (possibly more than one; semicolon-separated)
+        fwd-primer-name (35) ,
+        rev-primer-name (36) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
