@@ -268,6 +268,7 @@ void CreateUtilityProject(const string&            name,
 string CreateProjectName(const CProjKey& project_id);
 
 
+/// Utility class for distinguish between static and dll builds
 class CBuildType
 {
 public:
@@ -291,11 +292,52 @@ private:
 };
 
 
+/// Distribution if source files by lib projects
+/// Uses in dll project to separate source files to groups by libs
+class CDllSrcFilesDistr
+{
+public:
+    CDllSrcFilesDistr(void);
+
+
+    // Register .cpp .c files during DLL creation
+    void RegisterSource  (const string&   src_file_path, 
+                          const CProjKey& dll_project_id,
+                          const CProjKey& lib_project_id);
+    // Register .hpp .h files during DLL creation
+    void RegisterHeader  (const string&   hrd_file_path, 
+                          const CProjKey& dll_project_id,
+                          const CProjKey& lib_project_id);
+
+    
+    // Retrive original lib_id for .cpp .c file
+    CProjKey GetSourceLib(const string&   src_file_path, 
+                          const CProjKey& dll_project_id) const;
+    // Retrive original lib_id for .cpp .c file
+    CProjKey GetHeaderLib(const string&   hdr_file_path, 
+                          const CProjKey& dll_project_id) const;
+private:
+
+    typedef pair<string,    CProjKey> TDllSrcKey;
+    typedef map<TDllSrcKey, CProjKey> TDistrMap;
+    TDistrMap m_SourcesMap;
+    TDistrMap m_HeadersMap;
+
+    //prohibited to
+    CDllSrcFilesDistr(const CDllSrcFilesDistr&);
+    CDllSrcFilesDistr& operator= (const CDllSrcFilesDistr&);
+};
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/05/17 16:13:44  gorelenk
+ * Added declaration of class CDllSrcFilesDistr .
+ *
  * Revision 1.18  2004/05/10 14:25:47  gorelenk
  * + CSourceFileToProjectInserter .
  *
