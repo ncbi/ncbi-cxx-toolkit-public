@@ -1397,7 +1397,7 @@ Blast_HSPInclusionTest(BlastHSP* hsp1, BlastHSP* hsp2)
        hsp1->query.end <= hsp2->query.end &&  
        hsp1->subject.offset >= hsp2->subject.offset && 
        hsp1->subject.end <= hsp2->subject.end && 
-       hsp1->score < hsp2->score) { 
+       hsp1->score <= hsp2->score) { 
       return eFirstInSecond;
    } else if (hsp1->query.offset <= hsp2->query.offset &&  
               hsp1->query.end >= hsp2->query.end &&  
