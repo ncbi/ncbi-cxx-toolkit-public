@@ -1,7 +1,7 @@
 # $Id$
 
-APP = id1_fetch
-OBJ = id1_fetch
+APP = id1_fetch_simple
+OBJ = id1_fetch_simple
 LIB = id1 seqset seq seqres seqloc seqalign seqfeat seqblock \
       pub medline biblio seqcode general \
       xser  xutil xconnect xncbi

@@ -1,9 +1,6 @@
 # $Id$
 
-# Fetch Seq-entry by GI
-#################################
-
-APP_PROJ = id1_fetch
+APP_PROJ = id1_fetch_simple
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
