@@ -215,7 +215,8 @@ CBDB_Field::GetCompareFunction(bool /*byte_swapped*/) const
 
 
 CBDB_BufferManager::CBDB_BufferManager()
-  : m_BufferSize(0),
+  : m_Buffer(0),
+    m_BufferSize(0),
     m_PackedSize(0),
     m_Packable(false),
     m_ByteSwapped(false),
@@ -223,6 +224,11 @@ CBDB_BufferManager::CBDB_BufferManager()
     m_NullSetSize(0),
     m_CompareLimit(0)
 {
+}
+
+CBDB_BufferManager::~CBDB_BufferManager()
+{
+    delete [] m_Buffer;
 }
 
 void CBDB_BufferManager::Bind(CBDB_Field* field, ENullable is_nullable)
@@ -287,11 +293,12 @@ void CBDB_BufferManager::Construct()
         m_BufferSize += m_NullSetSize;
     }
 
-    m_Buffer.reset(new char[m_BufferSize]);
-    ::memset(m_Buffer.get(), 0, m_BufferSize);
+    delete [] m_Buffer; m_Buffer = 0;
+    m_Buffer = new char[m_BufferSize];
+    ::memset(m_Buffer, 0, m_BufferSize);
 
     // Record construction: set element offsets(pointers)
-    char*  buf_ptr = (char*) m_Buffer.get();
+    char*  buf_ptr = (char*) m_Buffer;
     buf_ptr += m_NullSetSize;
 
     for (size_t i = 0;  i < m_Fields.size();  ++i) {
@@ -327,7 +334,7 @@ void CBDB_BufferManager::ArrangePtrsPacked()
         return;
     }
 
-    char* buf_ptr = m_Buffer.get();
+    char* buf_ptr = m_Buffer;
     buf_ptr += m_NullSetSize;
     m_PackedSize = m_NullSetSize;
 
@@ -351,7 +358,7 @@ unsigned int CBDB_BufferManager::Pack()
         return (unsigned)m_PackedSize;
     }
 
-    char* new_ptr = m_Buffer.get();
+    char* new_ptr = m_Buffer;
     new_ptr += m_NullSetSize;
     m_PackedSize = m_NullSetSize;
 
@@ -415,13 +422,13 @@ unsigned int CBDB_BufferManager::Unpack()
 void CBDB_BufferManager::PrepareDBT_ForWrite(DBT* dbt)
 {
     Pack();
-    dbt->data = m_Buffer.get();
+    dbt->data = m_Buffer;
     dbt->size = (unsigned)m_PackedSize;
 }
 
 void CBDB_BufferManager::PrepareDBT_ForRead(DBT* dbt)
 {
-    dbt->data = m_Buffer.get();
+    dbt->data = m_Buffer;
     dbt->size = dbt->ulen = (unsigned)m_BufferSize;
     dbt->flags = DB_DBT_USERMEM;
 }
@@ -467,6 +474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/11/06 14:06:02  kuznets
+ * Removing auto_ptr from CBDB_BufferManager
+ *
  * Revision 1.14  2003/10/16 19:25:38  kuznets
  * Added field comparison limit to the fields manager
  *
