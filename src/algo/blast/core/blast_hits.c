@@ -267,7 +267,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    Int2 factor = 1;
    const Uint1 kResidueMask = 0x0f;
 
-   matrix = sbp->matrix;
+   matrix = sbp->matrix->data;
 
    /* For a non-affine greedy case, calculate the real value of the gap 
       extension penalty. Multiply all scores by 2 if it is not integer. */
@@ -431,7 +431,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    Int4 index;
    const Uint1 kResidueMask = (translated ? 0xff : 0x0f);
 
-   matrix = sbp->matrix;
+   matrix = sbp->matrix->data;
 
    query = query_start + hsp->query.offset; 
    subject = subject_start + hsp->subject.offset;
@@ -1479,15 +1479,13 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
 
    if (gap_decay_rate != 0.)
       gap_decay_divisor = BLAST_GapDecayDivisor(gap_decay_rate, 1);
-  
+
    for (index=0; index<hsp_cnt; index++) {
       hsp = hsp_array[index];
 
       ASSERT(hsp != NULL);
-      
-      /* Prevent division by 0. */
-      if (scaling_factor == 0.0)
-         scaling_factor = 1.0;
+      ASSERT(scaling_factor != 0.0);
+
       /* Divide Lambda by the scaling factor, so e-value is 
          calculated correctly from a scaled score. This is needed only
          for RPS BLAST, where scores are scaled, but Lambda is not. */
