@@ -51,6 +51,7 @@ XDLL_LIB    = @f_runpath@$(rundir) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%
 XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
 
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
+	-$(RM) $(XLIB)
 	$(LINK_DLL) $(XLIB) $(XLIBOBJ) $(XLOBJ) $(XDLL_LIB) $(LIBS)
 	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)

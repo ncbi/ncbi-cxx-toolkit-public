@@ -38,6 +38,7 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 XLIBDEP = .$(LIB).dep
 
 $(XLIB): $(XLIBOBJ)
+	-$(RM) $(XLIB)
 	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XLOBJ)
 	@$(RANLIB) $(XLIB)
 	$(TOUCH) -r $(XLIB) $(XLIBDEP)
