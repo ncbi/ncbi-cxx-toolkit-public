@@ -30,10 +30,6 @@
 *
 * File Description:
 *   Class creation factory
-*
-* ---------------------------------------------------------------------------
-*
-* ===========================================================================
 */
 
 #include <cgi/ncbicgi.hpp>
@@ -55,18 +51,19 @@ struct SFactoryList {
 template <class Type>
 class CFactory {
 public:
-    int CgiFactory(TCgiEntries& Cgi, SFactoryList<Type>* List);
+    int CgiFactory(const TCgiEntries& Cgi, SFactoryList<Type>* List);
 };
 
 template <class Type>
-int CFactory<Type>::CgiFactory(TCgiEntries& Cgi, SFactoryList<Type>* List)
+int CFactory<Type>::CgiFactory(const TCgiEntries& Cgi,
+                               SFactoryList<Type>* List)
     // - List should always end with the m_MatchString = ""
     // (visual C 6.0 doesn't allow templates to find the size
     // of arrays).
 {
     int i = 0;
-    multimap<string, string>::iterator iRange, iPageCgi;
-    pair<multimap<string, string>::iterator, multimap<string, string>::iterator> Range;
+    TCgiEntriesCI iRange, iPageCgi;
+    pair<TCgiEntriesCI, TCgiEntriesCI> Range;
     TCgiEntries PageCgi;
 
     while ( !string(List[i].MatchString).empty() ) {
@@ -78,7 +75,7 @@ int CFactory<Type>::CgiFactory(TCgiEntries& Cgi, SFactoryList<Type>* List)
             for ( iRange = Range.first; iRange != Range.second; iRange++ ) {
                 if ( iRange->second == iPageCgi->second)
                     goto equality;
-                if ( iPageCgi->second == "")
+                if ( iPageCgi->second.empty())
                     goto equality;  // wildcard
             }
             ThisPage = false;
@@ -95,4 +92,33 @@ int CFactory<Type>::CgiFactory(TCgiEntries& Cgi, SFactoryList<Type>* List)
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.7  2002/07/10 18:42:59  ucko
+* Use proper typedefs in order to work with CCgiEntry.
+*
+* Revision 1.6  1999/05/11 02:53:42  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
+* Revision 1.5  1998/12/28 23:29:02  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
+* Revision 1.4  1998/12/28 21:48:11  vasilche
+* Made Lewis's 'tool' compilable
+*
+* Revision 1.3  1998/12/23 14:28:06  vasilche
+* Most of closed HTML tags made via template.
+*
+* Revision 1.2  1998/12/09 23:02:54  lewisg
+* update to new cgiapp class
+*
+* Revision 1.1  1998/12/01 19:09:07  lewisg
+* uses CCgiApplication and new page factory
+*
+* ===========================================================================
+*/
+
 #endif
