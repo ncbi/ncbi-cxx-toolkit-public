@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/04/06 19:33:41  vasilche
+* Added defalut page size.
+*
 * Revision 1.5  1999/02/17 22:03:17  vasilche
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
@@ -68,8 +71,9 @@ const string CPager::KParam_NextPagesX = KParam_NextPages + KParam_x;
 
 string CPagerView::sm_DefaultImagesDir = "/images/";
 
-CPager::CPager(CCgiRequest& request, int pageBlockSize)
-    : m_PageBlockSize(max(1, pageBlockSize)), m_PageSize(GetPageSize(request)),
+CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
+    : m_PageBlockSize(max(1, pageBlockSize)),
+      m_PageSize(GetPageSize(request, defaultPageSize)),
       m_PageChanged(false)
 {
     const TCgiEntries& entries = request.GetEntries();
@@ -187,7 +191,7 @@ int CPager::GetDisplayPage(CCgiRequest& request)
     return 0;
 }
 
-int CPager::GetPageSize(CCgiRequest& request)
+int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
 {
     const TCgiEntries& entries = request.GetEntries();
     TCgiEntriesCI entry = entries.find(KParam_DisplayPage);
@@ -204,7 +208,7 @@ int CPager::GetPageSize(CCgiRequest& request)
         }
     }
     // use default page size
-    return 20;
+    return defaultPageSize;
 }
 
 void CPager::SetItemCount(int itemCount)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/04/06 19:33:46  vasilche
+* Added defalut page size.
+*
 * Revision 1.2  1999/01/21 21:12:56  vasilche
 * Added/used descriptions for HTML submit/select/text.
 * Fixed some bugs in paging.
@@ -58,7 +61,7 @@ class CPager : public CNCBINode
     typedef CHTML_table CParent;
 
 public:
-    CPager(CCgiRequest& request, int pageBlockSize = 10);
+    CPager(CCgiRequest& request, int pageBlockSize = 10, int defaultPageSize = 10);
 
     static bool IsPagerCommand(const CCgiRequest& request);
 
@@ -77,7 +80,7 @@ public:
     //    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out);
 
     // methods to retrieve page size and current page
-    static int GetPageSize(CCgiRequest& request);
+    static int GetPageSize(CCgiRequest& request, int defaultPageSize = 10);
     static int GetDisplayPage(CCgiRequest& request);
 
     // name of hidden value holding page size
