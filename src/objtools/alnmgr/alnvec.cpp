@@ -716,7 +716,7 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
 }
 
 
-int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
+int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2) const
 {
     TNumrow       numrows = m_NumRows;
     TNumrow       index1 = row1, index2 = row2;
@@ -778,6 +778,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2003/12/10 17:17:39  todorov
+* CalcScore now const
+*
 * Revision 1.53  2003/10/21 14:41:35  grichenk
 * Fixed type convertion
 *

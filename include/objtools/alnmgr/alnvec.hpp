@@ -113,7 +113,7 @@ public:
     CRef<CDense_seg> CreateConsensus(int& consensus_row) const;
 
     // utilities
-    int CalculateScore(TNumrow row1, TNumrow row2);
+    int CalculateScore(TNumrow row1, TNumrow row2) const;
 
     // static utilities
     static void TranslateNAToAA(const string& na, string& aa);
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2003/12/10 17:17:40  todorov
+ * CalcScore now const
+ *
  * Revision 1.27  2003/10/15 21:18:57  yazhuk
  * Made TResidue declaration public
  *
