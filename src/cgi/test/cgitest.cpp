@@ -31,6 +31,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/01 22:19:58  vakatov
+* CCgiRequest::GetRandomProperty() -- allow to retrieve value of
+* properties whose names are not prefixed by "HTTP_" (optional).
+* Get rid of the aux.methods GetServerPort() and GetRemoteAddr() which
+* are obviously not widely used (but add to the volume of API).
+*
 * Revision 1.6  2000/01/20 17:55:46  vakatov
 * Fixes to follow the "CNcbiApplication" change.
 *
@@ -283,12 +289,6 @@ static void TestCgi_Request_Full(CNcbiIstream* istr,
     NcbiCout << "\n\nCCgiRequest::\n";
 
     try {
-        NcbiCout << "GetServerPort(): " << CCR.GetServerPort() << NcbiEndl;
-    } STD_CATCH ("TestCgi_Request_Full");
-    // try {
-    //     NcbiCout << "GetRemoteAddr(): " << CCR.GetRemoteAddr() << NcbiEndl;
-    // } STD_CATCH ("TestCgi_Request_Full");
-    try {
         NcbiCout << "GetContentLength(): "
                  << CCR.GetContentLength() << NcbiEndl;
     } STD_CATCH ("TestCgi_Request_Full");
@@ -296,6 +296,13 @@ static void TestCgi_Request_Full(CNcbiIstream* istr,
              << CCR.GetRandomProperty("USER_AGENT").c_str() << NcbiEndl;
     NcbiCout << "GetRandomProperty(\"MY_RANDOM_PROP\"): "
              << CCR.GetRandomProperty("MY_RANDOM_PROP").c_str() << NcbiEndl;
+
+    NcbiCout << "GetRandomProperty(\"HTTP_MY_RANDOM_PROP\"): "
+             << CCR.GetRandomProperty("HTTP_MY_RANDOM_PROP").c_str()
+             << NcbiEndl;
+    NcbiCout << "GetRandomProperty(\"HTTP_MY_RANDOM_PROP\", false): "
+             << CCR.GetRandomProperty("HTTP_MY_RANDOM_PROP", false).c_str()
+             << NcbiEndl;
 
     NcbiCout << "\nCCgiRequest::  All properties:\n";
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {

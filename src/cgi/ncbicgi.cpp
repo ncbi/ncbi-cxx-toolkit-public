@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/02/01 22:19:57  vakatov
+* CCgiRequest::GetRandomProperty() -- allow to retrieve value of
+* properties whose names are not prefixed by "HTTP_" (optional).
+* Get rid of the aux.methods GetServerPort() and GetRemoteAddr() which
+* are obviously not widely used (but add to the volume of API).
+*
 * Revision 1.37  2000/02/01 16:53:29  vakatov
 * CCgiRequest::x_Init() -- parse "$QUERY_STRING"(or cmd.-line arg) even
 * in the case of "POST" method, in order to catch possible "ACTION" args.
@@ -937,31 +943,15 @@ const string& CCgiRequest::GetProperty(ECgiProp property) const
 }
 
 
-Uint2 CCgiRequest::GetServerPort(void) const
+const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
+const
 {
-    long l = -1;
-    const string& str = GetProperty(eCgi_ServerPort);
-    if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0  ||  kMax_UI2 < l) {
-        throw runtime_error("CCgiRequest:: Bad server port: \"" + str + "\"");
+    if ( http ) {
+        return x_GetPropertyByName("HTTP_" + key);
+    } else {
+        return x_GetPropertyByName(key);
     }
-    return (Uint2)l;
 }
-
-
-// Uint4 CCgiRequest::GetRemoteAddr(void) const
-// {
-//     /////  These definitions are to be removed as soon as we have
-//     /////  a portable network header!
-//     const Uint4 INADDR_NONE = (Uint4)(-1);
-//     extern unsigned long inet_addr(const char *);
-//     /////
-// 
-//     const string& str = GetProperty(eCgi_RemoteAddr);
-//     Uint4 addr = inet_addr(str.c_str());
-//     if (addr == INADDR_NONE)
-//         throw runtime_error("CCgiRequest:: Invalid client address: " + str);
-//     return addr;
-// }
 
 
 size_t CCgiRequest::GetContentLength(void) const
@@ -970,7 +960,7 @@ size_t CCgiRequest::GetContentLength(void) const
     const string& str = GetProperty(eCgi_ContentLength);
     if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0)
         throw runtime_error("CCgiRequest:: Invalid content length: " + str);
-    return (size_t)l;
+    return (size_t) l;
 }
 
 

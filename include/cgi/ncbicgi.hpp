@@ -36,6 +36,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/02/01 22:19:53  vakatov
+* CCgiRequest::GetRandomProperty() -- allow to retrieve value of
+* properties whose names are not prefixed by "HTTP_" (optional).
+* Get rid of the aux.methods GetServerPort() and GetRemoteAddr() which
+* are obviously not widely used (but add to the volume of API).
+*
 * Revision 1.41  2000/01/20 17:52:05  vakatov
 * Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
 * and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
@@ -425,13 +431,20 @@ public:
 
     // Get name(not value!) of a "standard" property
     static const string& GetPropertyName(ECgiProp prop);
-    // Get value of a "standard" property(empty string if not specified)
+
+    // Get value of a "standard" property (return empty string if not defined)
     const string& GetProperty(ECgiProp prop) const;
-    // Get value of a random client propertiy("$HTTP_<key>")
-    const string& GetRandomProperty(const string& key) const;
-    // Auxiliaries(to convert from the "string" representation)
-    Uint2  GetServerPort(void) const;
-    // Uint4  GetRemoteAddr(void) const;  // (in the network byte order)
+
+    // Get value of a random client property;  if "http" is TRUE then add
+    // prefix "HTTP_" to the property name.
+    // NOTE:  usually, the value is extracted from the environment variable
+    //        named "$[HTTP]_<key>". Be advised, however, that in the case of
+    //        FastCGI application, the set (and values) of env.variables change
+    //        from request to request, and they differ from those returned
+    //        by CNcbiApplication::GetEnvironment()!
+    const string& GetRandomProperty(const string& key, bool http=true) const;
+
+    // Get content length (using value of the property 'eCgi_ContentLength')
     size_t GetContentLength(void) const;
 
     // Retrieve the request cookies
