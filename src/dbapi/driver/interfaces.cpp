@@ -62,6 +62,11 @@ CDB_BaseEnt::~CDB_BaseEnt()
         *m_BR = 0;
 }
 
+CDB_Result* CDB_BaseEnt::Create_Result(I_Result& result)
+{
+    return new CDB_Result(&result);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 //  I_BaseCmd::
@@ -183,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/24 19:48:49  vakatov
+ * + implementation for CDB_BaseEnt::Create_Result
+ *
  * Revision 1.1  2001/09/21 23:39:59  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
