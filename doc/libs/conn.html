@@ -949,7 +949,8 @@ set of servers <i>not</i> to be seen from the iterator (excluded server descript
 <p>
 There is also an advanced version of <b><i>SERV_GetNextInfo()</i></b>, called
 <a href="../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>, which via its second
-argument allows to get a so called <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a>,
+argument allows to get many host parameters, among which is a so called host environment
+<a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a>,
 a <tt>'\0'</tt>-terminated string, consisting of set of lines
 separated by <tt>'\n'</tt> characters, and specified in the configuration file of
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>
@@ -957,11 +958,13 @@ of the host, where the returned server was found. The typical line within the se
 and resembles very much the shell environment, where its name comes from. The host environment could be
 very handy for passing additional information to applications if the host has some limitations or requires special
 handling should the server be selected and used on this host. <a href="#ref_Example">Example below</a> should give an idea.<br>
-At the time of writing, getting the host environment is only implemented when the service is obtained via <a href="#ref_DirectIndirect">direct access</a> to
-the load-balancing daemon. Unlike returned server descriptors, the returned host environment is not a constant object i.e. it
-could be modified, and it must be explicitly freed by the application when no longer needed.
+At the time of writing, getting the host information is only implemented when the service is obtained via
+<a href="#ref_DirectIndirect">direct access</a> to the load-balancing daemon. Unlike returned server descriptors,
+the returned host information handle is not a constant object and must be explicitly freed by the application when
+no longer needed. All operations (getter methods) that are defined on the host information handle are declared in
+<a href="../lxr/source/include/connect/ncbi_host_info.h"><b><i>connect/ncbi_host_info.h</i></b></a>.
 If the server descriptor was obtained using dispatching CGI (<a href="#ref_DirectIndirect">indirect dispatching</a>),
-then the host enrivonment is always returned as <tt>NULL</tt> (no host environment available).
+then the host information handle is always returned as <tt>NULL</tt> (no host information available).
 
 <p>
 <a name="ref_DirectIndirect"></a>The back end of the service mapping API is split into 2 independent parts: <i><u>direct</u></i> access to
@@ -1029,11 +1032,12 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
     const char* db_name = (const char*) data;
     size_t len = strlen(db_name);
     <a href="../lxr/ident?i=SSERV_Info">SSERV_Info</a>* info;
+    HOST_INFO hinfo;
     int reset = 0;
-    char* env;
 
     for (;;) {
-        while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &amp;env)) != 0) {
+        while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &amp;hinfo)) != 0) {
+            const char* env = <a href="../lxr/ident?i=HINFO_Environment">HINFO_Environment</a>(hinfo);
             const char* c;
             for (c = env; c; c = strchr(c, '\n')) {
                 if (strncmp(c == env ? c : ++c, ENV_DB_KEY,
@@ -1045,13 +1049,13 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
                         c++;
                     if (strncmp(c, db_name, len) == 0 && !isalnum(c + len)) {
                         /* Database match */
-                        free(env); /* must be freed explicitly */
+                        free(hinfo); /* must be freed explicitly */
                         return info;
                     }
                 }
             }
-            if (env)
-                free(env); /* must be freed explicitly */
+            if (hinfo)
+                free(hinfo); /* must be freed explicitly */
         }
         if (reset)
             break; /* coming to reset 2 times in a row means no server fit */
