@@ -362,7 +362,6 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
     SIntervalNode *next_node;
     Int4 tmp_index;
     Int4 target_offset;
-    BlastHSP* match_hsp;
 
     if (which_end == eIntervalTreeLeft)
         target_offset = query_info->contexts[in_hsp->context].query_offset +
