@@ -124,6 +124,9 @@ void CDemoApp::Init(void)
 
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
+    arg_desc->AddFlag("get_mapped_location", "get mapped location");
+    arg_desc->AddFlag("get_original_feature", "get original location");
+    arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
     arg_desc->AddFlag("reverse", "reverse order of features");
     arg_desc->AddFlag("no_sort", "do not sort features");
     arg_desc->AddFlag("split", "split record");
@@ -615,6 +618,8 @@ void CSplit::Save(const string& prefix)
 #endif
 }
 
+extern CAtomicCounter newCObjects;
+
 int CDemoApp::Run(void)
 {
     // Process command line args: get GI to load
@@ -652,6 +657,9 @@ int CDemoApp::Run(void)
     int pause = args["pause"].AsInteger();
     bool only_features = args["only_features"];
     bool print_features = args["print_features"];
+    bool get_mapped_location = args["get_mapped_location"];
+    bool get_original_feature = args["get_original_feature"];
+    bool get_mapped_feature = args["get_mapped_feature"];
     bool split = args["split"];
     SAnnotSelector::ESortOrder order =
         args["reverse"] ?
@@ -805,9 +813,18 @@ int CDemoApp::Run(void)
             if ( feat_subtype >= 0 ) {
                 sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
             }
+            //int cnt0 = newCObjects.Get();
             CFeat_CI it(scope, loc, sel);
+            //int cnt1 = newCObjects.Get();
             for ( ; it;  ++it) {
                 count++;
+                if ( get_mapped_location )
+                    it->GetLocation();
+                if ( get_original_feature )
+                    it->GetOriginalFeature();
+                if ( get_mapped_feature )
+                    it->GetMappedFeature();
+                
                 // Get seq-annot containing the feature
                 if ( print_features ) {
                     NcbiCout << "Feature:";
@@ -818,11 +835,18 @@ int CDemoApp::Run(void)
                     auto_ptr<CObjectOStream>
                         out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                     *out << it->GetMappedFeature();
-                    NcbiCout << "Location:\n";
-                    *out << it->GetLocation();
+                    if ( 0 ) {
+                        NcbiCout << "Original location:\n";
+                        *out << it->GetOriginalFeature().GetLocation();
+                    }
+                    else {
+                        NcbiCout << "Location:\n";
+                        *out << it->GetLocation();
+                    }
                 }
                 CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
             }
+            //int cnt2 = newCObjects.Get();
             if ( feat_type >= 0 || feat_subtype >= 0 ) {
                 NcbiCout << "Feat count (whole, requested): ";
             }
@@ -830,6 +854,7 @@ int CDemoApp::Run(void)
                 NcbiCout << "Feat count (whole, any):       ";
             }
             NcbiCout << count << NcbiEndl;
+            //NcbiCout << "Init new: " << (cnt1 - cnt0) << " iteratr new: " << (cnt2-cnt1) << NcbiEndl;
             _ASSERT(count == (int)it.GetSize());
         }}
 
@@ -952,6 +977,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/08/27 14:22:01  vasilche
+* Added options get_mapped_location, get_mapped_feature and get_original_feature
+* to test feature iterator speed.
+*
 * Revision 1.36  2003/08/15 19:19:16  vasilche
 * Fixed memory leak in string packing hooks.
 * Fixed processing of 'partial' flag of features.
