@@ -61,6 +61,27 @@ CBlastOptions::~CBlastOptions()
 {
 }
 
+#define GENCODE_STRLEN 64
+
+void 
+CBlastOptions::SetDbGeneticCode(int gc)
+{
+    const unsigned char* gc_str = FindGeneticCode(gc).get();
+
+    if (!gc_str)
+        return;
+
+    m_DbOpts->genetic_code = gc;
+
+    if (m_DbOpts->gen_code_string) 
+        sfree(m_DbOpts->gen_code_string);
+
+    m_DbOpts->gen_code_string =
+        (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
+
+    memcpy(m_DbOpts->gen_code_string, gc_str, GENCODE_STRLEN);
+}
+
 bool
 CBlastOptions::Validate() const
 {
@@ -254,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/12/03 16:41:16  dondosha
+* Added SetDbGeneticCode implementation, to set both integer and string
+*
 * Revision 1.30  2003/11/26 19:37:59  camacho
 * Fix windows problem with std::memcmp
 *
