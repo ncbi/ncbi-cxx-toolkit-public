@@ -91,10 +91,15 @@ enum EReadFastaFlags {
     fReadFasta_NoParseID  = 0x8,  // treat name as local ID regardless of |s
     fReadFasta_ParseGaps  = 0x10, // make a delta sequence if gaps found
     fReadFasta_OneSeq     = 0x20, // just read the first sequence found
-    fReadFasta_Redund     = 0x40, // keep going past the first ^A in deflines
+    fReadFasta_AllSeqIds  = 0x40, // read Seq-ids past the first ^A (see note)
     fReadFasta_NoSeqData  = 0x80  // parse the deflines but skip the data
 };
 typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
+
+// Note on fReadFasta_AllSeqIds: some databases (notably nr) have
+// merged identical sequences, stringing their deflines together with
+// control-As.  Normally, the reader stops at the first control-A;
+// however, this flag makes it parse all the IDs.
 
 // keeps going until EOF or parse error (-> CParseException) unless
 // fReadFasta_OneSeq is set
@@ -129,6 +134,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2003/05/09 16:08:06  ucko
+ * Rename fReadFasta_Redund to fReadFasta_AllSeqIds.
+ *
  * Revision 1.11  2003/05/09 15:47:11  ucko
  * +fReadFasta_{Redund,NoSeqData} (suggested by Michel Dumontier)
  *

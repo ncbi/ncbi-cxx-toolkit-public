@@ -304,7 +304,7 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
             title.assign(line, space + 1,
                          (start == NPOS) ? NPOS : (start - space - 1));
         }
-    } while (start != NPOS  &&  (flags & fReadFasta_Redund));
+    } while (start != NPOS  &&  (flags & fReadFasta_AllSeqIds));
     return mol;
 }
 
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.20  2003/05/09 16:08:35  ucko
+ * Rename fReadFasta_Redund to fReadFasta_AllSeqIds.
+ *
  * Revision 6.19  2003/05/09 15:48:59  ucko
  * +fReadFasta_{Redund,NoSeqData} (suggested by Michel Dumontier)
  * Split off s_ParseFastaDefline.
