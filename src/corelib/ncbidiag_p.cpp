@@ -296,7 +296,7 @@ CDiagLexParser::CDiagLexParser()
 // Takes next lexical symbol from the stream
 CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
 {
-    char symbol;
+    CT_INT_TYPE symbol0;
     enum EState { 
         eStart, 
         eExpectColon, 
@@ -307,9 +307,11 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
     EState state = eStart;
 
     while( true ){
-        symbol = in.get();
-        if(!in)
+        symbol0 = in.get();
+        if (CT_EQ_INT_TYPE(symbol0, CT_EOF)) {
             break;
+        }
+        CT_CHAR_TYPE symbol = CT_TO_CHAR_TYPE(symbol0);
         m_Pos++;
 
         switch( state ) {
@@ -640,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2004/09/23 21:27:41  ucko
+ * CDiagLexParser::Parse: properly detect end of input.
+ *
  * Revision 1.3  2004/09/22 14:52:48  ucko
  * Unbroke non-MSVC compilation.
  *
