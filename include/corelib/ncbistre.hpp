@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/11/09 20:57:03  vasilche
+* Fixed exception with conversion empty strstream to string.
+*
 * Revision 1.15  1999/10/21 15:44:18  vasilche
 * Added helper class CNcbiOstreamToString to convert CNcbiOstrstream buffer
 * to string.
@@ -221,9 +224,12 @@ public:
 
     operator string(void) const
         {
+            SIZE_TYPE length = m_Out.pcount();
+            if ( length == 0 )
+                return string();
             const char* str = m_Out.str();
             m_Out.freeze(false);
-            return string(str, m_Out.pcount());
+            return string(str, length);
         }
 
 private:
