@@ -81,7 +81,7 @@ CSeqMap_CI::CSeqMap_CI(void)
 {
     m_Selector.SetPosition(kInvalidSeqPos)
         .SetResolveCount(0)
-        .SetFlags(SSeqMapSelector::fDefaultFlags);
+        .SetFlags(CSeqMap::fDefaultFlags);
 }
 
 CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
@@ -429,8 +429,8 @@ bool CSeqMap_CI::x_Found(void) const
 {
     switch ( x_GetSegment().m_SegType ) {
     case CSeqMap::eSeqRef:
-        if ( (GetFlags() & SSeqMapSelector::fFindLeafRef) != 0 ) {
-            if ( (GetFlags() & SSeqMapSelector::fFindInnerRef) != 0 ) {
+        if ( (GetFlags() & CSeqMap::fFindLeafRef) != 0 ) {
+            if ( (GetFlags() & CSeqMap::fFindInnerRef) != 0 ) {
                 // both
                 return true;
             }
@@ -440,7 +440,7 @@ bool CSeqMap_CI::x_Found(void) const
             }
         }
         else {
-            if ( (GetFlags() & SSeqMapSelector::fFindInnerRef) != 0 ) {
+            if ( (GetFlags() & CSeqMap::fFindInnerRef) != 0 ) {
                 // inner only
                 return x_CanResolve(x_GetSegment());
             }
@@ -450,9 +450,9 @@ bool CSeqMap_CI::x_Found(void) const
             }
         }
     case CSeqMap::eSeqData:
-        return (GetFlags() & SSeqMapSelector::fFindData) != 0;
+        return (GetFlags() & CSeqMap::fFindData) != 0;
     case CSeqMap::eSeqGap:
-        return (GetFlags() & SSeqMapSelector::fFindGap) != 0;
+        return (GetFlags() & CSeqMap::fFindGap) != 0;
     case CSeqMap::eSeqSubMap:
         return false; // always skip submaps
     default:
@@ -507,6 +507,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/11/10 18:12:09  grichenk
+* Removed extra EFlags declaration from seq_map_ci.hpp
+*
 * Revision 1.19  2003/09/30 16:22:04  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

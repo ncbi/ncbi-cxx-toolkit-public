@@ -975,7 +975,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
         .SetLimitTSE(&handle.GetTopLevelSeqEntry())
         .SetResolveCount(kInvalidSeqPos)
-        .SetFlags(SSeqMapSelector::fFindAny));
+        .SetFlags(CSeqMap::fFindAny));
     vector<CSeqMap::const_iterator> itrs;
     for ( ; seg != seq_map->end(&scope); ++seg ) {
         _ASSERT(seg);
@@ -1383,6 +1383,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/11/10 18:12:09  grichenk
+* Removed extra EFlags declaration from seq_map_ci.hpp
+*
 * Revision 1.45  2003/11/04 16:21:37  grichenk
 * Updated CAnnotTypes_CI to map whole features instead of splitting
 * them by sequence segments.

@@ -93,23 +93,13 @@ private:
 
 struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
 {
-    enum EFlags {
-        fFindData     = (1<<0),
-        fFindGap      = (1<<1),
-        fFindLeafRef  = (1<<2),
-        fFindInnerRef = (1<<3),
-        fFindRef      = (fFindLeafRef | fFindInnerRef),
-        fFindAny      = fFindData | fFindGap | fFindRef,
-        fFindAnyLeaf  = fFindData | fFindGap | fFindLeafRef,
-        fDefaultFlags = fFindAnyLeaf
-    };
-    typedef int TFlags;
+    typedef CSeqMap::TFlags TFlags;
 
     SSeqMapSelector()
         : m_Position(0), m_Length(kInvalidSeqPos),
           m_MaxResolveCount(0),
           m_TSE(0),
-          m_Flags(fDefaultFlags)
+          m_Flags(CSeqMap::fDefaultFlags)
         {
         }
 
@@ -187,13 +177,13 @@ public:
                CScope* scope,
                TSeqPos position,
                size_t maxResolveCount = 0,
-               TFlags flags = SSeqMapSelector::fDefaultFlags);
+               TFlags flags = CSeqMap::fDefaultFlags);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                CScope* scope,
                TSeqPos position,
                ENa_strand strand,
                size_t maxResolveCount,
-               TFlags flags = SSeqMapSelector::fDefaultFlags);
+               TFlags flags = CSeqMap::fDefaultFlags);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
                CScope* scope,
                SSeqMapSelector& selector);
@@ -309,6 +299,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/11/10 18:12:09  grichenk
+* Removed extra EFlags declaration from seq_map_ci.hpp
+*
 * Revision 1.10  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
