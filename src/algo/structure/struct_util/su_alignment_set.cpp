@@ -200,8 +200,6 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(
 
 ///// MasterSlaveAlignment methods /////
 
-const unsigned int MasterSlaveAlignment::UNALIGNED = kMax_UInt;
-
 MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqAlign,
     const Sequence *masterSequence, const SequenceSet& sequenceSet) :
         m_master(masterSequence), m_slave(NULL)
@@ -330,6 +328,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/25 21:23:03  ucko
+* Remove definition of MasterSlaveAlignment::UNALIGNED (now part of an enum)
+*
 * Revision 1.3  2004/05/25 16:12:30  thiessen
 * fix GCC warnings
 *
