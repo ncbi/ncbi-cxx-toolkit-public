@@ -250,6 +250,20 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
         BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
+/** Convert initial HSP list to an HSP list: to be used in ungapped search.
+ * Ungapped data must be available in the initial HSP list for this function 
+ * to work.
+ * @param init_hitlist List of initial HSPs with ungapped extension 
+ *                     information [in]
+ * @param subject Subject sequence block containing frame information [in]
+ * @param hit_options Hit saving options [in]
+ * @param hsp_list_ptr HSPs in the final form [out]
+ */
+Int2 BLAST_GetUngappedHSPList(BlastInitHitListPtr init_hitlist, 
+        BLAST_SequenceBlkPtr subject, 
+        BlastHitSavingOptionsPtr hit_options, 
+        BlastHSPListPtr PNTR hsp_list_ptr);
+
 #ifdef __cplusplus
 }
 #endif

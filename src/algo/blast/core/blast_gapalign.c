@@ -1956,25 +1956,37 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
 
    hsp_array = hsp_list->hsp_array;
 
-   score = gap_align->score;
-
    new_hsp = (BlastHSPPtr) MemNew(sizeof(BlastHSP));
-   new_hsp->score = score;
-   new_hsp->query.offset = gap_align->query_start;
-   new_hsp->subject.offset = gap_align->subject_start;
-   new_hsp->query.length = 
-      gap_align->query_stop - gap_align->query_start;
-   new_hsp->subject.length = 
-      gap_align->subject_stop - gap_align->subject_start;
-   new_hsp->subject.frame = frame;
 
-   new_hsp->query.end = gap_align->query_stop;
-   new_hsp->subject.end = gap_align->subject_stop;
+   if (gap_align) {
+      score = gap_align->score;
+      new_hsp->query.offset = gap_align->query_start;
+      new_hsp->subject.offset = gap_align->subject_start;
+      new_hsp->query.length = 
+         gap_align->query_stop - gap_align->query_start;
+      new_hsp->subject.length = 
+         gap_align->subject_stop - gap_align->subject_start;
+
+      new_hsp->query.end = gap_align->query_stop;
+      new_hsp->subject.end = gap_align->subject_stop;
+      new_hsp->gap_info = gap_align->edit_block;
+      gap_align->edit_block = NULL;
+   } else if (init_hsp->ungapped_data) {
+      score = init_hsp->ungapped_data->score;
+      new_hsp->query.offset = init_hsp->ungapped_data->q_start;
+      new_hsp->query.end = 
+         init_hsp->ungapped_data->q_start + init_hsp->ungapped_data->length;
+      new_hsp->subject.offset = init_hsp->ungapped_data->s_start;
+      new_hsp->subject.end = 
+         init_hsp->ungapped_data->s_start + init_hsp->ungapped_data->length;
+      new_hsp->query.length = init_hsp->ungapped_data->length;
+      new_hsp->subject.length = init_hsp->ungapped_data->length;
+   }
+
+   new_hsp->score = score;
+   new_hsp->subject.frame = frame;
    new_hsp->query.gapped_start = init_hsp->q_off;
    new_hsp->subject.gapped_start = init_hsp->s_off;
-
-   new_hsp->gap_info = gap_align->edit_block;
-   gap_align->edit_block = NULL;
 
    /* If we are saving ALL HSP's, simply save and sort later. */
    if (hsp_list->do_not_reallocate == FALSE)
@@ -2697,4 +2709,32 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     gap_align->score = score_right+score_left;
     
     return status;
+}
+
+Int2 BLAST_GetUngappedHSPList(BlastInitHitListPtr init_hitlist, 
+        BLAST_SequenceBlkPtr subject, 
+        BlastHitSavingOptionsPtr hit_options, 
+        BlastHSPListPtr PNTR hsp_list_ptr)
+{
+   BlastHSPListPtr hsp_list = NULL;
+   Int4 index;
+   BlastInitHSPPtr init_hsp;
+
+   if (!init_hitlist) {
+      *hsp_list_ptr = NULL;
+      return 0;
+   }
+
+   for (index = 0; index < init_hitlist->total; ++index) {
+      init_hsp = &init_hitlist->init_hsp_array[index];
+      if (!init_hsp->ungapped_data) 
+         continue;
+      if (!hsp_list)
+         hsp_list = BlastHSPListNew();
+      BLAST_SaveHsp(NULL, init_hsp, hsp_list, hit_options, 
+                    subject->frame);
+   }
+
+   *hsp_list_ptr = hsp_list;
+   return 0;
 }
