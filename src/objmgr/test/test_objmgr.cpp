@@ -218,7 +218,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 2, 2, 1, 0, 0, 1, 1, 0, 0);
+            1, 1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
@@ -256,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/03/31 22:35:17  grichenk
+* Fixed number of features found
+*
 * Revision 1.38  2004/02/03 17:58:51  vasilche
 * Always test CScope::RemoveEntry() in single thread.
 *
