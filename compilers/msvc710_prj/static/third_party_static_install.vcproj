@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="third_party_static_install"
+	Keyword="MakeFileProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="DebugMT|Win32"
+			OutputDirectory="DebugMT"
+			IntermediateDirectory="DebugMT"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="DebugDLL"
+			IntermediateDirectory="DebugDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseMT|Win32"
+			OutputDirectory="ReleaseMT"
+			IntermediateDirectory="ReleaseMT"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="ReleaseDLL"
+			IntermediateDirectory="ReleaseDLL"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				ReBuildCommandLine="nmake -f $(InputDir)\third_party_static_install.mak all IntDir=$(IntDir)"
+				CleanCommandLine="nmake -f $(InputDir)\third_party_static_install.mak clean IntDir=$(IntDir)"
+				Output="dlls-install.exe"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\third_party_static_install.mak">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
