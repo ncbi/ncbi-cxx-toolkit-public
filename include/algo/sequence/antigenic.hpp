@@ -61,9 +61,6 @@ public:
     static void PredictSites(const objects::CSeqVector& seq,
                              TLocVec& results,
                              unsigned int min_len = 6);
-
-    /// a table of antigenic propensities by ncbistdaa
-    static const double sm_Pa_table[26];
 };
 
 
@@ -75,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/09 16:08:20  dicuccio
+ * Moved lookup table to implementation file
+ *
  * Revision 1.1  2003/09/02 14:53:11  jcherry
  * Initial version
  *
