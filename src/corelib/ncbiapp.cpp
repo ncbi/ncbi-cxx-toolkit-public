@@ -404,7 +404,7 @@ int CNcbiApplication::AppMain
                 SetupArgDescriptions(arg_desc.release());
             }
         }
-        catch (CArgHelpException& ) {
+        catch (CArgHelpException& e) {
             if ( !m_DisableArgDesc ) {
                 if ((m_HideArgs & fHideHelp) != 0) {
                     if (m_ArgDesc->Exist("h")) {
@@ -434,7 +434,8 @@ int CNcbiApplication::AppMain
             }
             // Print USAGE
             string str;
-            LOG_POST(m_ArgDesc->PrintUsage(str));
+            LOG_POST(m_ArgDesc->PrintUsage(str,
+                e.GetErrCode() == CArgHelpException::eHelpFull));
             exit_code = 0;
         }
         catch (CArgException& e) {
@@ -1249,6 +1250,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2005/02/11 16:04:11  gouriano
+ * Distinguish short and detailed help message
+ * print detailed one only when requested
+ *
  * Revision 1.103  2005/01/10 21:44:21  ucko
  * Add one more tweak required by WorkShop.
  *
