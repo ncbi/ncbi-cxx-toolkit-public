@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/06/11 16:22:53  kholodov
+* Fixed the incorrect declaration of GetMetaData() method
+*
 * Revision 1.3  2002/05/14 19:53:17  kholodov
 * Modified: Read() returns 0 to signal end of column
 *
@@ -78,7 +81,7 @@ public:
   
     virtual size_t Read(void* buf, size_t size);
     virtual void Close();
-    virtual IResultSetMetaData* GetMetaData();
+    virtual const IResultSetMetaData* GetMetaData();
     virtual istream& GetBlobIStream(size_t buf_size);
     virtual ostream& GetBlobOStream(size_t blob_size, 
                                     size_t buf_size);

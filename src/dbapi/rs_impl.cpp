@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/06/11 16:22:54  kholodov
+* Fixed the incorrect declaration of GetMetaData() method
+*
 * Revision 1.6  2002/05/16 22:09:19  kholodov
 * Fixed: incorrect start of BLOB column
 *
@@ -97,7 +100,7 @@ CResultSet::~CResultSet()
     delete m_ostr;
 }
 
-IResultSetMetaData* CResultSet::GetMetaData() 
+const IResultSetMetaData* CResultSet::GetMetaData() 
 {
     CheckValid();
     CResultSetMetaData *md = new CResultSetMetaData(m_rs);
