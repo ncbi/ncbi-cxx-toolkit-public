@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  1999/12/17 17:25:15  vakatov
+ * Typo fixed
+ *
  * Revision 1.1  1999/12/17 03:55:03  vakatov
  * Initial revision
  *
@@ -39,9 +42,9 @@
 
 #include <cgi/cgiapp.hpp>
 
-BEGIN_NCBI_SCOPE
+#if !defined(HAVE_LIBFASTCGI)
 
-#if !defined(HAVE_FASTCGI)
+BEGIN_NCBI_SCOPE
 
 bool CCgiApplication::RunFastCGI(unsigned)
 {
@@ -49,7 +52,7 @@ bool CCgiApplication::RunFastCGI(unsigned)
     return false;
 }
 
-#else  /* HAVE_FASTCGI */
+#else  /* HAVE_LIBFASTCGI */
 
 # include "fcgibuf.hpp"
 # include <corelib/ncbienv.hpp>
@@ -60,6 +63,7 @@ bool CCgiApplication::RunFastCGI(unsigned)
 # include <sys/stat.h>
 # include <errno.h>
 
+BEGIN_NCBI_SCOPE
 
 static time_t s_GetModTime(const char* filename)
 {
@@ -168,6 +172,6 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
     return true;
 }
 
-#endif /* HAVE_FASTCGI */
+#endif /* HAVE_LIBFASTCGI */
 
 END_NCBI_SCOPE
