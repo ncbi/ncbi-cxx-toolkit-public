@@ -30,15 +30,12 @@
  *
  */
 
-
 #include <corelib/ncbireg.hpp>
-
+#include <corelib/ncbienv.hpp>
 #include <app/project_tree_builder/msvc71_project__.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
-
 #include <set>
 
-#include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -115,6 +112,8 @@ struct SConfigInfo
 void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
                            const list<string>&  config_names, 
                            list<SConfigInfo>*   configs);
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// SCustomBuildInfo --
@@ -148,6 +147,7 @@ struct SCustomBuildInfo
         m_AdditionalDependencies.erase();
     }
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -197,6 +197,7 @@ void EraseIf(C& cont, const P& pred)
             ++p;
     }
 }
+
 
 /// Get option fron registry from  
 ///     [<section>.debug.<ConfigName>] section for debug configuratios
@@ -267,6 +268,11 @@ private:
 
     TPch DefinePchUsage(const string&     project_dir,
                         const string&     rel_source_file);
+
+    void InsertFile    (CRef<CFilter>&    filter, 
+                        const string&     rel_source_file,
+                        const string&     enable_cfg = kEmptyStr);
+
     // Prohibited to:
     CSrcToFilterInserterWithPch(void);
     CSrcToFilterInserterWithPch(const CSrcToFilterInserterWithPch&);
@@ -454,12 +460,14 @@ private:
 };
 
 
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/10/12 16:19:53  ivanov
+ * + CSrcToFilterInserterWithPch::InsertFile()
+ *
  * Revision 1.24  2004/06/14 19:18:43  gorelenk
  * Changed definition of enum in CBuildType .
  *
