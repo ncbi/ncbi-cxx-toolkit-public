@@ -94,9 +94,8 @@ CDustMasker::TMaskList * CDustMasker::operator()( const string & data )
 
     while( blast_loc )
     {
-        result->push_back( 
-                          make_pair< unsigned, unsigned >( blast_loc->ssr->left, 
-                                                                blast_loc->ssr->right ) );
+        result->push_back(TMaskedInterval( blast_loc->ssr->left, 
+                                           blast_loc->ssr->right ) );
         blast_loc = blast_loc->next;
     }
 
@@ -114,6 +113,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/01 16:07:42  ucko
+ * Fix 64-bit builds by using TMaskedInterval rather than a hard-coded
+ * type that may not be correct.
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *
