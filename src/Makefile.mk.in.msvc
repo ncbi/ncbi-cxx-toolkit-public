@@ -109,6 +109,6 @@ util           = ncbi_pch.hpp
 internal/structure/CDTree2 = cdtree2_pch.hpp
 internal/structure/PubChem/PCView = PCView_pch.hpp
 
-DoNotUsePch    = test_mt
+DoNotUsePch    = test_mt test_ncbidiag_p
 PchUsageDefine = NCBI_USE_PCH
 
