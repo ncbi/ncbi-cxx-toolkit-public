@@ -30,6 +30,9 @@
  */
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <stdlib.h>
 
 #if defined NCBI_OS_MSWIN
@@ -65,7 +68,21 @@ static MyTZDLS sTZDLS = MyReadLocation();
 #	define Daylight() daylight
 #endif
 
+
 BEGIN_NCBI_SCOPE
+
+
+// Protective mutex
+static CFastMutex s_TimeMutex;
+static CFastMutex s_TimeAdjustMutex;
+
+// Store global time format in TLS
+static CRef< CTls<string> > s_TlsFormat(new CTls<string>);
+
+static void s_TlsFormatCleanup(string* fmt, void* /* data */)
+{
+    delete fmt;
+}
 
 
 //============================================================================
@@ -78,10 +95,8 @@ BEGIN_NCBI_SCOPE
 // Day's count in months
 static int s_DaysInMonth[] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-
 // Default value for time format
-string CTime::sm_Format = "M/D/Y h:m:s";
-
+const string kDefaultFormat = "M/D/Y h:m:s";
 
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
@@ -325,7 +340,7 @@ CTime::CTime(const string& str, const string& fmt,
     m_TzPrecision = tzp;
 
     if (fmt.empty()) {
-        x_Init(str, sm_Format);
+        x_Init(str, GetFormat());
     } else {
         x_VerifyFormat(fmt);
         x_Init(str, fmt);
@@ -355,6 +370,23 @@ int CTime::DayOfWeek(void) const
 }
 
 
+void CTime::SetFormat(const string& fmt)
+{
+    x_VerifyFormat(fmt);
+    string* format = new string(fmt);
+    s_TlsFormat->SetValue(format, s_TlsFormatCleanup);
+}
+
+
+string CTime::GetFormat(void)
+{
+    string* format = s_TlsFormat->GetValue();
+    if ( !format ) {
+        return kDefaultFormat;
+    }
+    return *format;
+}
+
 static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
 {
     string s_value = NStr::IntToString(value);
@@ -368,7 +400,7 @@ static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
 string CTime::AsString(const string& fmt) const
 {
     if ( fmt.empty() ) {
-        return AsString(sm_Format);
+        return AsString(GetFormat());
     }
 
     x_VerifyFormat(fmt);
@@ -411,14 +443,17 @@ string CTime::AsString(const string& fmt) const
 
 time_t CTime::GetTimeT(void) const
 {
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+
     struct tm t;
-#ifndef HAVE_TIMEGM
+#if !defined(HAVE_TIMEGM)
     struct tm *ttemp;
     time_t timer;
 #endif
 
     // Convert time to time_t value at base local time
-#ifdef HAVE_TIMEGM
+#if defined(HAVE_TIMEGM)
     t.tm_sec   = Second();
 #else
     t.tm_sec   = Second() + (int) (IsGmtTime() ? -TimeZone() : 0);
@@ -429,14 +464,35 @@ time_t CTime::GetTimeT(void) const
     t.tm_mon   = Month()-1;
     t.tm_year  = Year()-1900;
     t.tm_isdst = -1;
-#ifdef HAVE_TIMEGM
+#if defined(HAVE_TIMEGM)
     return IsGmtTime() ? timegm(&t) : mktime(&t);
 #else
     timer = mktime(&t);
 
     // Correct timezone for GMT time
     if ( IsGmtTime() ) {
-        if ((ttemp = localtime(&timer)) == NULL)
+
+       // Callmktime second time for GMT time !!!  
+       // 1st - to get correct value of TimeZone().
+       // 2nd - to get value "timer". 
+
+        t.tm_sec   = Second() - (int)TimeZone();
+        t.tm_min   = Minute();
+        t.tm_hour  = Hour();
+        t.tm_mday  = Day();
+        t.tm_mon   = Month()-1;
+        t.tm_year  = Year()-1900;
+        t.tm_isdst = -1;
+        timer = mktime(&t);
+
+#  if defined(HAVE_LOCALTIME_R)
+        struct tm temp;
+        localtime_r(&timer, &temp);
+        ttemp = &temp;
+#  else
+        ttemp = localtime(&timer);
+#  endif
+        if (ttemp == NULL)
             return -1;
         if (ttemp->tm_isdst > 0  &&  Daylight())
             timer += 3600;
@@ -510,6 +566,9 @@ CTime& CTime::x_SetTime(const time_t* value)
     long ns = 0;
     time_t timer;
 
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+
     // Get time with nanoseconds
 #if defined NCBI_OS_MSWIN
 
@@ -524,13 +583,15 @@ CTime& CTime::x_SetTime(const time_t* value)
     }
 #elif defined NCBI_OS_UNIX
 
-    timer = value ? *value : time(0);
-    //    struct timespec tp;
-    //    ns = !clock_gettime(CLOCK_REALTIME,&tp) ? tp.tv_nsec : 0;
-    struct timeval tp;
-    ns = (gettimeofday(&tp,0) == -1) ? 0 : 
-        (long) tp.tv_usec * 
-        (long) (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    if (value) {
+        timer = *value;
+    } else {
+        timer = time(0);
+        struct timeval tp;
+        ns = (gettimeofday(&tp,0) == -1) ? 0 : 
+            (long) tp.tv_usec * 
+            (long) (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    }
 
 #else // NCBI_OS_MAC
 
@@ -540,7 +601,18 @@ CTime& CTime::x_SetTime(const time_t* value)
 
     // Bind values to internal variables
     struct tm *t;
+
+#ifdef HAVE_LOCALTIME_R
+    struct tm temp;
+    if ( GetTimeZoneFormat() == eLocal ) {
+        localtime_r(&timer, &temp);
+    } else {
+        gmtime_r(&timer, &temp);
+    }
+    t = &temp;
+#else
     t = ( GetTimeZoneFormat() == eLocal ) ? localtime(&timer) : gmtime(&timer);
+#endif
     m_AdjustTimeDiff = 0;
     m_Year           = t->tm_year + 1900;
     m_Month          = t->tm_mon + 1;
@@ -710,14 +782,17 @@ bool CTime::IsValid(void) const
     if ( IsEmpty() ) 
         return true;
 
-    s_DaysInMonth[1] = IsLeap() ? 29 : 28;
-  
     if (Year() < 1755) // first Gregorian date
         return false;
     if (Month()  < 1  ||  Month()  > 12)
         return false;
-    if (Day()    < 1  ||  Day()    > s_DaysInMonth[Month() - 1])
-        return false;
+    if (Month() == 2) {
+        if (Day() < 1 ||  Day() > (IsLeap() ? 29 : 28))
+            return false;
+    } else {
+        if (Day() < 1 ||  Day() > s_DaysInMonth[Month() - 1])
+            return false;
+    }
     if (Hour()   < 0  ||  Hour()   > 23)
         return false;
     if (Minute() < 0  ||  Minute() > 59)
@@ -739,7 +814,18 @@ CTime& CTime::ToTime(ETimeZone tz)
         timer = GetTimeT();
         if (timer == -1) 
             return *this;
+
+#if defined(HAVE_LOCALTIME_R)
+        struct tm temp;
+        if ( tz == eLocal ) {
+            localtime_r(&timer, &temp);
+        } else {
+            gmtime_r(&timer, &temp);
+        }
+        t = &temp;
+#else
         t = ( tz == eLocal ) ? localtime(&timer) : gmtime(&timer);
+#endif
         m_Year   = t->tm_year + 1900;
         m_Month  = t->tm_mon + 1;
         m_Day    = t->tm_mday;
@@ -878,11 +964,13 @@ int CTime::DiffSecond(const CTime& t) const
 
 void CTime::x_AdjustDay()
 {
-    s_DaysInMonth[1] = IsLeap() ? 29 : 28;
-
-    if ( Day() > s_DaysInMonth[Month() - 1] ) 
-        m_Day = s_DaysInMonth[Month() - 1];
-
+    int DaysInMonth = s_DaysInMonth[Month()-1];
+    if ( DaysInMonth == 0 ) {
+        DaysInMonth = IsLeap() ? 29 : 28;
+    }
+    if ( Day() > DaysInMonth ) {
+        m_Day = DaysInMonth;
+    }
 }
 
 
@@ -920,6 +1008,9 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Must be > 3 (Linux distinction). On other platforms may be == 3.
     const int kShift = 4;
 
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeAdjustMutex);
+
     // Special conversion from <const CTime> to <CTime>
     CTime tmp(from); 
     int sign = 0;
@@ -946,6 +1037,9 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     if ( from.GetTimeZoneFormat() == eLocal )
         tn.ToLocalTime();
     tn.SetTimeZonePrecision(GetTimeZonePrecision());
+
+    // Release adjust time mutex
+    LOCK.Release();
 
     // Primary procedure call
     if ( shift_time ) {
@@ -1055,6 +1149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/05/13 13:56:46  ivanov
+ * Added MT-Safe support
+ *
  * Revision 1.16  2002/04/11 21:08:04  ivanov
  * CVS log moved to end of the file
  *

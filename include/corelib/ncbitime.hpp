@@ -1,5 +1,5 @@
-#ifndef NCBITIME_HPP
-#define NCBITIME_HPP
+#ifndef CORELIB__NCBITIME__HPP
+#define CORELIB__NCBITIME__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -191,11 +191,12 @@ public:
     //   "w" - day of week (short format - 3 first letters)
     //   "W" - day of week (long format  - full name)
     static void SetFormat(const string& fmt);
+    static string GetFormat(void);
 
-    // Transform time to string (use format "sm_Format" if "fmt" not defined)
+    // Transform time to string (use format GetFormat() if "fmt" not defined)
     string AsString(const string& fmt = kEmptyStr) const;
 
-    // Return time as string (use format "sm_Format")
+    // Return time as string (use format GetFormat())
     operator string(void) const;
 
     // Get various constituents of the time
@@ -319,9 +320,6 @@ private:
     // as stored during the last call to x_AdjustTime***().
     int m_AdjustTimeDiff;
 
-    // Global default string date format
-    static string sm_Format;
-
     // Friend operators
     friend CTime operator + (int days, const CTime& t);
     friend CTime operator + (const CTime& t, int days);
@@ -431,7 +429,7 @@ CTime CTime::operator -- (int)
 inline 
 CTime& CTime::operator = (const string& str)
 {
-    x_Init(str, sm_Format);
+    x_Init(str, GetFormat());
     return *this;
 }
 
@@ -477,13 +475,6 @@ inline
 CTime& CTime::AddHour(int hours, EDaylight use_daylight)
 {
     return x_AddHour(hours, use_daylight, true);
-}
-
-inline 
-void CTime::SetFormat(const string& fmt)
-{
-    x_VerifyFormat(fmt);
-    CTime::sm_Format = fmt;
 }
 
 inline 
@@ -596,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/05/13 13:56:30  ivanov
+ * Added MT-Safe support
+ *
  * Revision 1.11  2002/04/11 20:39:20  ivanov
  * CVS log moved to end of the file
  *
@@ -638,4 +632,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* NCBITIME__HPP */
+#endif /* CORELIB__NCBITIME__HPP */
