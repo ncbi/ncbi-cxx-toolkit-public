@@ -48,25 +48,25 @@ CMySQLContext::~CMySQLContext()
 
 bool CMySQLContext::IsAbleTo(ECapability /*cpb*/) const
 {
-  return false;
+    return false;
 }
 
 
 bool CMySQLContext::SetLoginTimeout(unsigned int /*nof_secs*/)
 {
-  return false;
+    return false;
 }
 
 
 bool CMySQLContext::SetTimeout(unsigned int /*nof_secs*/)
 {
-  return false;
+    return false;
 }
 
 
 bool CMySQLContext::SetMaxTextImageSize(size_t /*nof_bytes*/)
 {
-  return false;
+    return false;
 }
 
 
@@ -77,14 +77,37 @@ CDB_Connection* CMySQLContext::Connect(const string&   srv_name,
                                        bool            /*reusable*/,
                                        const string&   /*pool_name*/)
 {
-  return Create_Connection
-      (*new CMySQL_Connection(this, srv_name, user_name, passwd));
+    return Create_Connection
+        (*new CMySQL_Connection(this, srv_name, user_name, passwd));
 }
 
 
 unsigned int CMySQLContext::NofConnections(const string& /*srv_name*/) const
 {
-  return 0;
+    return 0;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////
+// DriverManager related functions
+//
+
+static I_DriverContext* MYSQL_CreateContext(map<string,string>* /*attr*/)
+{
+    return new CMySQLContext();
+}
+
+void DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("mysql", MYSQL_CreateContext);
+}
+
+extern "C" {
+    void* DBAPI_E_mysql()
+    {
+        return (void*) DBAPI_RegisterDriver_MYSQL;
+    }
 }
 
 
@@ -95,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/02/19 03:38:13  vakatov
+ * Added DriverMgr related entry point and registration function
+ *
  * Revision 1.2  2003/01/06 20:30:26  vakatov
  * Get rid of some redundant header(s).
  * Formally reformatted to closer meet C++ Toolkit/DBAPI style.
