@@ -188,7 +188,7 @@ CDB_Exception* CDB_ClientEx::Clone() const
 //
 
 CDB_MultiEx::CDB_MultiEx(const string& originated_from, unsigned int capacity)
-    : CDB_Exception(eMulti, eDB_Unknown, 0, originated_from, 0)
+    : CDB_Exception(eMulti, eDB_Unknown, 0, originated_from, kEmptyStr)
 {
     m_Bag = new CDB_MultiExStorage(capacity);
 }
@@ -456,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/09/20 20:58:41  vakatov
+ * CDB_MultiEx::CDB_MultiEx() -- fix passing zero to "string&"
+ *
  * Revision 1.8  2002/09/04 21:46:12  vakatov
  * Added missing 'const' to CDB_Exception::SeverityString()
  *
