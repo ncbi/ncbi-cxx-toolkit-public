@@ -80,10 +80,12 @@ BEGIN_SCOPE(Cn3D)
 #define PRINT_PSSM // for testing/debugging
 #endif
 
+//#define DEBUG_BLAST // for testing/debugging blast calls
+
 static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
 {
     BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
-    bob->db_length = 2717223;    // size of CDD database v1.62
+    bob->db_length = 1000000;
     bob->scalingFactor = 1.0;
     return bob;
 }
@@ -375,6 +377,15 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     masterSeqInt->to = uaBlocks.back()->GetRangeOfRow(0)->to + excess;
     if (masterSeqInt->to >= masterSeq->Length()) masterSeqInt->to = masterSeq->Length() - 1;
 
+#ifdef DEBUG_BLAST
+    CNcbiOfstream ofs("blast.txt", IOS_BASE::out);
+    if (ofs) {
+        ofs << "master interval: " << masterSeqInt->from << " - " << masterSeqInt->to << '\n'
+            << "options->db_length: " << options->db_length << '\n'
+            << "options->scalingFactor: " << options->scalingFactor << '\n';
+    }
+#endif
+
     SeqLocPtr slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
     slaveSeqLoc->choice = SEQLOC_INT;
     SeqIntPtr slaveSeqInt = SeqIntNew();
@@ -400,6 +411,10 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
 //        TESTMSG("for BLAST: master range " <<
 //                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
 //                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
+#ifdef DEBUG_BLAST
+        if (ofs && row > 0)
+            ofs << "slave " << (row-1) << " interval: " << slaveSeqInt->from << " - " << slaveSeqInt->to << '\n';
+#endif
 
         // set search space size
         SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
@@ -483,6 +498,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/03/25 15:10:45  thiessen
+* matched self-hit E-values with CDTree2
+*
 * Revision 1.36  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

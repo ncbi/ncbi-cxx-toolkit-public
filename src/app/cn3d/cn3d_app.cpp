@@ -331,7 +331,7 @@ void Cn3DApp::InitRegistry(void)
     );
 #endif
     RegistrySetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, 10);
-    RegistrySetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, 15);
+    RegistrySetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, 0);
 
     // default stereo options
     RegistrySetDouble(REG_ADVANCED_SECTION, REG_STEREO_SEPARATION, 5.0);
@@ -644,6 +644,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/03/25 15:10:45  thiessen
+* matched self-hit E-values with CDTree2
+*
 * Revision 1.23  2005/01/04 16:06:59  thiessen
 * make MultiTextDialog remember its position+size
 *

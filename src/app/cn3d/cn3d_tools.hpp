@@ -118,7 +118,7 @@ extern char LookupCharacterFromNCBIStdaaNumber(unsigned char n);
 extern int GetBLOSUM62Score(char a, char b);
 
 // standard probability for a residue (by character)
-extern float GetStandardProbability(char ch);
+extern double GetStandardProbability(char ch);
 
 // global program registry manipulation
 extern void LoadRegistry(void);
@@ -271,6 +271,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/03/25 15:10:45  thiessen
+* matched self-hit E-values with CDTree2
+*
 * Revision 1.37  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

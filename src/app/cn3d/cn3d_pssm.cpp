@@ -38,10 +38,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
+#include <serial/serial.hpp>
+#include <serial/objostrasn.hpp>
 
 #include <algo/blast/api/pssm_input.hpp>
 #include <algo/blast/api/blast_psi.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/core/blast_encoding.h>
 
 #include <objects/scoremat/scoremat__.hpp>
 
@@ -60,6 +63,8 @@ USING_SCOPE(blast);
 
 
 BEGIN_SCOPE(Cn3D)
+
+//#define DEBUG_PSSM // for testing/debugging PSSM data
 
 #define PTHROW(stream) NCBI_THROW(CException, eUnknown, stream)
 
@@ -204,6 +209,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
                     else
                         cell.letter = LookupNCBIStdaaNumberFromCharacter(
                             seq->sequenceString[slaveStart + slaveWidth - masterWidth + column]);
+                    cell.is_aligned = true;
                 }
 
                 // test to see if query row is used at all:
@@ -212,16 +218,33 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
             }
         }
     }
+}
 
-    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out);
-    if (ofs) {
-        ofs << "num_seqs: " << data->dimensions->num_seqs << ", query_length: " << data->dimensions->query_length << '\n';
-        for (row=0; row<=data->dimensions->num_seqs; ++row) {
-            for (column=0; column<data->dimensions->query_length; ++column)
-                ofs << LookupCharacterFromNCBIStdaaNumber(data->data[row][column].letter);
-            ofs << '\n';
+double GetStandardProbability(char ch)
+{
+    typedef map < char, double > CharDoubleMap;
+    static CharDoubleMap standardProbabilities;
+
+    if (standardProbabilities.size() == 0) {  // initialize static stuff
+        if (BLASTAA_SIZE != 26) {
+            ERRORMSG("GetStandardProbability() - confused by BLASTAA_SIZE != 26");
+            return 0.0;
         }
+        double *probs = BLAST_GetStandardAaProbabilities();
+        for (unsigned int i=0; i<26; ++i) {
+            standardProbabilities[LookupCharacterFromNCBIStdaaNumber(i)] = probs[i];
+#ifdef DEBUG_PSSM
+            TRACEMSG("standard probability " << LookupCharacterFromNCBIStdaaNumber(i) << " : " << probs[i]);
+#endif
+        }
+        sfree(probs);
     }
+
+    CharDoubleMap::const_iterator f = standardProbabilities.find(toupper(ch));
+    if (f != standardProbabilities.end())
+        return f->second;
+    WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
+    return 0.0;
 }
 
 static double CalculateInformationContent(const PSIMsa *data)
@@ -233,34 +256,57 @@ static double CalculateInformationContent(const PSIMsa *data)
     ColumnProfile::iterator p, pe;
     unsigned int nRes;
 
+#ifdef DEBUG_PSSM
+    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
+#endif
+
     for (unsigned int c=0; c<data->dimensions->query_length; ++c) {
 
         profile.clear();
         nRes = 0;
 
         // build profile
-        for (unsigned int r=0; r<=data->dimensions->num_seqs; ++r) {    // always include master row for now
-            p = profile.find(data->data[r][c].letter);                  // and include gaps for now
-            if (p == profile.end())
-                profile[data->data[r][c].letter] = 1;
-            else
-                ++(p->second);
-            ++nRes;
+        for (unsigned int r=1; r<=data->dimensions->num_seqs; ++r) {    // don't include master row
+            if (data->data[r][c].letter != gap) {                       // and don't include gaps
+                p = profile.find(data->data[r][c].letter);
+                if (p == profile.end())
+                    profile[data->data[r][c].letter] = 1;
+                else
+                    ++(p->second);
+                ++nRes;
+            }
         }
+
+#ifdef DEBUG_PSSM
+        if (ofs)
+            ofs << "column " << (c+1) << ", total " << nRes;
+        double columnContent = 0.0;
+#endif
+
 
         // do info content
         static const double ln2 = log(2.0), threshhold = 0.0001;
         for (p=profile.begin(), pe=profile.end(); p!=pe; ++p) {
-            if (p->first != gap) {
-                double expFreq = GetStandardProbability(LookupCharacterFromNCBIStdaaNumber(p->first));
-                if (expFreq > threshhold) {
-                    double obsFreq = 1.0 * p->second / nRes,
-                          freqRatio = obsFreq / expFreq;
-                    if (freqRatio > threshhold)
-                        infoContent += obsFreq * log(freqRatio) / ln2;
+            double expFreq = GetStandardProbability(LookupCharacterFromNCBIStdaaNumber(p->first));
+            if (expFreq > threshhold) {
+                double obsFreq = 1.0 * p->second / nRes,
+                       freqRatio = obsFreq / expFreq;
+                if (freqRatio > threshhold) {
+                    infoContent += obsFreq * log(freqRatio) / ln2;
+
+#ifdef DEBUG_PSSM
+                    columnContent += obsFreq * log(freqRatio) / ln2;
+                    if (ofs)
+                        ofs << ", " << LookupCharacterFromNCBIStdaaNumber(p->first) << '(' << p->second << ") "
+                            << setprecision(3) << (obsFreq * log(freqRatio) / ln2);
+#endif
                 }
             }
         }
+#ifdef DEBUG_PSSM
+        if (ofs)
+            ofs << ", sum info: " << setprecision(6) << columnContent << '\n';
+#endif
     }
 
     TRACEMSG("information content: " << infoContent);
@@ -288,7 +334,7 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     diag.information_content = false;
     diag.residue_frequencies = false;
     diag.weighted_residue_frequencies = false;
-    diag.frequency_ratios = false;
+    diag.frequency_ratios = true;
     diag.gapless_column_weights = false;
 
     // create PSIBlastOptions
@@ -302,6 +348,41 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     else if (infoContent > 40  ) options->pseudo_count =  3;
     else if (infoContent > 39  ) options->pseudo_count =  2;
     else                         options->pseudo_count =  1;
+
+#ifdef DEBUG_PSSM
+    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
+    if (ofs) {
+        diag.residue_frequencies = true;
+        ofs << "information content: " << setprecision(6) << infoContent << '\n'
+            << "pseudocount: " << options->pseudo_count << '\n'
+            << "query length: " << GetQueryLength() << '\n'
+            << "query: ";
+        for (unsigned int i=0; i<GetQueryLength(); ++i)
+            ofs << LookupCharacterFromNCBIStdaaNumber(GetQuery()[i]);
+        ofs << "\nmatrix name: " << GetMatrixName() << '\n'
+            << "options->pseudo_count: " << options->pseudo_count << '\n'
+            << "options->inclusion_ethresh: " << options->inclusion_ethresh << '\n'
+            << "options->use_best_alignment: " << (int) options->use_best_alignment << '\n'
+            << "options->nsg_compatibility_mode: " << (int) options->nsg_compatibility_mode << '\n'
+            << "options->impala_scaling_factor: " << options->impala_scaling_factor << '\n'
+            << "diag->information_content: " << (int) GetDiagnosticsRequest()->information_content << '\n'
+            << "diag->residue_frequencies: " << (int) GetDiagnosticsRequest()->residue_frequencies << '\n'
+            << "diag->weighted_residue_frequencies: " << (int) GetDiagnosticsRequest()->weighted_residue_frequencies << '\n'
+            << "diag->frequency_ratios: " << (int) GetDiagnosticsRequest()->frequency_ratios << '\n'
+            << "diag->gapless_column_weights: " << (int) GetDiagnosticsRequest()->gapless_column_weights << '\n'
+            << "num_seqs: " << data->dimensions->num_seqs << ", query_length: " << data->dimensions->query_length << '\n';
+        for (unsigned int row=0; row<=data->dimensions->num_seqs; ++row) {
+            for (unsigned int column=0; column<data->dimensions->query_length; ++column)
+                ofs << LookupCharacterFromNCBIStdaaNumber(data->data[row][column].letter);
+            ofs << '\n';
+        }
+        for (unsigned int row=0; row<=data->dimensions->num_seqs; ++row) {
+            for (unsigned int column=0; column<data->dimensions->query_length; ++column)
+                ofs << (data->data[row][column].is_aligned ? 'A' : 'U');
+            ofs << '\n';
+        }
+    }
+#endif
 }
 
 Cn3DPSSMInput::~Cn3DPSSMInput(void)
@@ -329,7 +410,10 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
     matrix->rows = pssm.GetPssm().GetNumColumns() + 1;  // rows and columns are reversed in pssm vs BLAST_Matrix
     matrix->columns = pssm.GetPssm().GetNumRows();
     matrix->posFreqs = NULL;
-    matrix->karlinK = pssm.GetPssm().GetFinalData().GetKappa();
+    if (pssm.GetPssm().GetFinalData().IsSetKappa())
+        matrix->karlinK = pssm.GetPssm().GetFinalData().GetKappa();
+    else
+        ERRORMSG("ConvertPSSMToBLASTMatrix() - missing Kappa");
     matrix->original_matrix = NULL;
 
     // allocate matrix
@@ -365,16 +449,128 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
     for (i=0; i<matrix->columns; i++)
         matrix->matrix[matrix->rows - 1][i] = BLAST_SCORE_MIN;
 
+#ifdef DEBUG_PSSM
+    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
+    if (ofs) {
+        ofs << "matrix->is_prot: " << (int) matrix->is_prot << '\n'
+            << "matrix->name: " << (matrix->name ? matrix->name : "(none)") << '\n'
+            << "matrix->rows: " << matrix->rows << '\n'
+            << "matrix->columns: " << matrix->columns << '\n';
+        for (r=0; r<matrix->rows; ++r) {
+            for (c=0; c<matrix->columns; ++c)
+                ofs << matrix->matrix[r][c] << ' ';
+            ofs << '\n';
+        }
+    }
+#endif
+
     return matrix;
 }
 
 BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
 {
+#ifdef DEBUG_PSSM
+    {{
+        CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out);
+    }}
+#endif
+
     BLAST_Matrix *matrix = NULL;
     try {
         Cn3DPSSMInput input(bma);
         CPssmEngine engine(&input);
         CRef < CPssmWithParameters > pssm = engine.Run();
+
+#ifdef DEBUG_PSSM
+        CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
+        if (ofs) {
+            CObjectOStreamAsn oosa(ofs, false);
+            oosa << *pssm;
+
+/*
+            if (pssm->GetPssm().IsSetIntermediateData() && pssm->GetPssm().GetIntermediateData().IsSetResFreqsPerPos()) {
+                vector < int >
+                    freqs(pssm->GetPssm().GetIntermediateData().GetResFreqsPerPos().size()),
+                    nNonGap(pssm->GetPssm().GetNumColumns(), 0);
+                unsigned int i;
+                CPssmIntermediateData::TResFreqsPerPos::const_iterator
+                    l = pssm->GetPssm().GetIntermediateData().GetResFreqsPerPos().begin();
+                for (i=0; i<pssm->GetPssm().GetIntermediateData().GetResFreqsPerPos().size(); ++i, ++l)
+                    freqs[i] = *l;
+                int freq, n;
+                ofs << "observed frequencies:\n";
+                for (unsigned int c=0; c<pssm->GetPssm().GetNumColumns(); ++c) {
+                    ofs << "column " << (c+1) << ": ";
+                    n = 0;
+                    for (unsigned int r=0; r<pssm->GetPssm().GetNumRows(); ++r) {
+                        if (pssm->GetPssm().GetByRow())
+                            freq = freqs[r * pssm->GetPssm().GetNumColumns() + c];
+                        else
+                            freq = freqs[c * pssm->GetPssm().GetNumRows() + r];
+                        if (freq > 0) {
+                            ofs << LookupCharacterFromNCBIStdaaNumber(r) << '(' << freq << ") ";
+                            n += freq;
+                            if (r != 0)
+                                nNonGap[c] += freq;
+                        }
+                    }
+                    ofs << "total: " << n << " non-gap: " << nNonGap[c] << '\n';
+                }
+
+                if (pssm->GetPssm().IsSetIntermediateData() && pssm->GetPssm().GetIntermediateData().IsSetWeightedResFreqsPerPos()) {
+                    vector < double > wfreqs(pssm->GetPssm().GetIntermediateData().GetWeightedResFreqsPerPos().size());
+                    CPssmIntermediateData::TWeightedResFreqsPerPos::const_iterator
+                        m = pssm->GetPssm().GetIntermediateData().GetWeightedResFreqsPerPos().begin();
+                    for (i=0; i<pssm->GetPssm().GetIntermediateData().GetWeightedResFreqsPerPos().size(); ++i, ++m)
+                        wfreqs[i] = *m;
+                    double wfreq, s;
+                    ofs << "weighted frequencies:\n";
+                    for (unsigned int c=0; c<pssm->GetPssm().GetNumColumns(); ++c) {
+                        ofs << "column " << (c+1) << ": ";
+                        s = 0.0;
+                        for (unsigned int r=0; r<pssm->GetPssm().GetNumRows(); ++r) {
+                            if (pssm->GetPssm().GetByRow())
+                                wfreq = wfreqs[r * pssm->GetPssm().GetNumColumns() + c];
+                            else
+                                wfreq = wfreqs[c * pssm->GetPssm().GetNumRows() + r];
+                            if (wfreq != 0.0) {
+                                ofs << LookupCharacterFromNCBIStdaaNumber(r) << '(' << wfreq << ") ";
+                                s += wfreq;
+                            }
+                        }
+                        ofs << "sum: " << s << '\n';
+                    }
+                }
+
+                if (pssm->GetPssm().IsSetIntermediateData() && pssm->GetPssm().GetIntermediateData().IsSetFreqRatios()) {
+                    vector < double > ratios(pssm->GetPssm().GetIntermediateData().GetFreqRatios().size());
+                    CPssmIntermediateData::TFreqRatios::const_iterator
+                        n = pssm->GetPssm().GetIntermediateData().GetFreqRatios().begin();
+                    for (i=0; i<pssm->GetPssm().GetIntermediateData().GetFreqRatios().size(); ++i, ++n)
+                        ratios[i] = *n;
+                    double ratio, s;
+                    ofs << "frequency ratios:\n";
+                    for (unsigned int c=0; c<pssm->GetPssm().GetNumColumns(); ++c) {
+                        ofs << "column " << (c+1) << ": ";
+                        s = 0.0;
+                        for (unsigned int r=0; r<pssm->GetPssm().GetNumRows(); ++r) {
+                            if (pssm->GetPssm().GetByRow())
+                                ratio = ratios[r * pssm->GetPssm().GetNumColumns() + c];
+                            else
+                                ratio = ratios[c * pssm->GetPssm().GetNumRows() + r];
+                            if (ratio != 0.0) {
+                                ofs << LookupCharacterFromNCBIStdaaNumber(r) << '(' << ratio << ") ";
+                                s += ratio;
+                            }
+                        }
+                        ofs << "sum: " << s << '\n';
+                    }
+                }
+            }
+*/
+        }
+#endif
+
         matrix = ConvertPSSMToBLASTMatrix(*pssm);
     } catch (exception& e) {
         ERRORMSG("CreateBlastMatrix() failed with exception: " << e.what());
@@ -387,6 +583,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/03/25 15:10:45  thiessen
+* matched self-hit E-values with CDTree2
+*
 * Revision 1.2  2005/03/08 22:09:51  thiessen
 * use proper default options
 *

@@ -45,8 +45,6 @@
 #include "cn3d_tools.hpp"
 #include "cn3d_blast.hpp"
 
-#include <blastkar.h>           // for BLAST standard probability routines
-#include <objseq.h>
 #include <math.h>
 
 USING_NCBI_SCOPE;
@@ -93,64 +91,6 @@ static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
     if (ch == 'B' || ch == 'Z')     // by current calculations, B and Z have "infinite" negative scores in PSSM
         ch = 'X';
     return pssm->matrix[masterIndex][LookupNCBIStdaaNumberFromCharacter(ch)];
-}
-
-float GetStandardProbability(char ch)
-{
-    typedef map < char, float > CharFloatMap;
-    static CharFloatMap StandardProbabilities;
-
-    if (StandardProbabilities.size() == 0) {  // initialize static stuff
-
-        static const char ncbistdaa2char[26] = {
-            'X', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
-            'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z', 'X', 'X'
-        };
-
-        // calculate expected residue frequencies (standard probabilities)
-        // (code borrowed from SeqAlignInform() in cddutil.c)
-        BLAST_ScoreBlkPtr sbp = BLAST_ScoreBlkNew(Seq_code_ncbistdaa, 1);
-        BLAST_ResFreqPtr stdrfp = NULL;
-        int a;
-        if (!sbp) goto on_error;
-        sbp->read_in_matrix = TRUE;
-        sbp->protein_alphabet = TRUE;
-        sbp->posMatrix = NULL;
-        sbp->number_of_contexts = 1;
-        Nlm_Char BLOSUM62[20];
-        Nlm_StrCpy(BLOSUM62, "BLOSUM62");
-
-        // test C-toolkit data directory registry - which BlastScoreBlkMatFill() uses
-        Nlm_Char dataPath[255];
-        if (Nlm_FindPath("ncbi", "ncbi", "data", dataPath, 255))
-            TRACEMSG("FindPath() returned '" << dataPath << "'");
-        else
-            WARNINGMSG("FindPath() failed!");
-
-        if (BlastScoreBlkMatFill(sbp, BLOSUM62) != 0) goto on_error;
-        stdrfp = BlastResFreqNew(sbp);
-        if (!stdrfp) goto on_error;
-        if (BlastResFreqStdComp(sbp, stdrfp) != 0) goto on_error;
-        for (a=1; a<24; ++a) // from 'A' to 'Z'
-            StandardProbabilities[ncbistdaa2char[a]] = (float) stdrfp->prob[a];
-//        for (a=1; a<24; ++a)
-//            TRACEMSG("std prob '" << ncbistdaa2char[a] << "' = "
-//                << setprecision(10) << StandardProbabilities[ncbistdaa2char[a]]);
-        goto cleanup;
-
-on_error:
-        ERRORMSG("error initializing standard residue probabilities");
-
-cleanup:
-        if (stdrfp) BlastResFreqDestruct(stdrfp);
-        if (sbp) BLAST_ScoreBlkDestruct(sbp);
-    }
-
-    CharFloatMap::const_iterator f = StandardProbabilities.find(toupper(ch));
-    if (f != StandardProbabilities.end())
-        return f->second;
-    WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
-    return 0.0f;
 }
 
 ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
@@ -533,6 +473,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/03/25 15:10:45  thiessen
+* matched self-hit E-values with CDTree2
+*
 * Revision 1.38  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *
