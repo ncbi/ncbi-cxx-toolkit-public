@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.8  2003/07/30 21:52:57  camacho
+* Follow conventional structure definition
+*
 * Revision 1.7  2003/07/30 19:43:07  camacho
 * Remove PNTRs
 *
@@ -328,7 +331,7 @@ extern Uint1 blastna_to_ncbi4na[BLASTNA_SIZE];
 	karlin.h.
 **************************************************************************/
 
-typedef struct {
+typedef struct BLAST_KarlinBlk {
 		Nlm_FloatHi	Lambda; /* Lambda value used in statistics */
 		Nlm_FloatHi	K, logK; /* K value used in statistics */
 		Nlm_FloatHi	H; /* H value used in statistics */
@@ -370,7 +373,7 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 #endif
 #define BLAST_SCORE_RANGE_MAX	(BLAST_SCORE_1MAX - BLAST_SCORE_1MIN)
 
-typedef struct _blast_score_freq {
+typedef struct BLAST_ScoreFreq {
 		BLAST_Score	score_min, score_max;
 		BLAST_Score	obs_min, obs_max;
 		Nlm_FloatHi	score_avg;
@@ -379,12 +382,12 @@ typedef struct _blast_score_freq {
 
 #define BLAST_MATRIX_SIZE 32
 
-typedef struct _blast_matrix_struct {
+typedef struct BLASTMatrixStructure {
 		BLAST_ScorePtr matrix[BLAST_MATRIX_SIZE];
 		BLAST_Score long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
 	} BLASTMatrixStructure,* BLASTMatrixStructurePtr;
 
-typedef struct _blast_scoreblk {
+typedef struct BLAST_ScoreBlk {
 	Boolean		protein_alphabet; /* TRUE if alphabet_code is for a 
 protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Uint1		alphabet_code;	/* NCBI alphabet code. */
@@ -429,7 +432,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	} BLAST_ScoreBlk,* BLAST_ScoreBlkPtr;
 
 /* Used for communicating between BLAST and other applications. */
-typedef struct _blast_matrix {
+typedef struct BLAST_Matrix {
 		Boolean is_prot;	/* Matrix is for proteins */
 		CharPtr name;		/* Name of Matrix (i.e., BLOSUM62). */
 		/* Position-specific BLAST rows and columns are different, otherwise they are the
@@ -442,13 +445,13 @@ typedef struct _blast_matrix {
                 Int4Ptr* original_matrix;
 } BLAST_Matrix,* BLAST_MatrixPtr;
 
-typedef struct _blast_rescomp {
+typedef struct BLAST_ResComp {
                 Uint1	alphabet_code;
                 Int4Ptr	comp, 	/* composition of alphabet, array starts at beginning of alphabet. */
 			comp0;	/* Same array as above, starts at zero. */
         } BLAST_ResComp,* BLAST_ResCompPtr;
 
-typedef struct _blast_resfreq {
+typedef struct BLAST_ResFreq {
 		Uint1		alphabet_code;
                 Nlm_FloatHi* prob;	/* probs, (possible) non-zero offset. */
 		Nlm_FloatHi* prob0; /* probs, zero offset. */

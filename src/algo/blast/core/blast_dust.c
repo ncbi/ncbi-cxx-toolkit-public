@@ -42,12 +42,12 @@ static char const rcsid[] = "$Id";
 
 /* local, file scope, structures and variables */
 
-typedef struct endpoints {
-	struct	endpoints*	next;
+typedef struct DREGION { /* endpoints */
+	struct	DREGION*	next;
 	Int4	from, to;
 } DREGION;
 
-typedef struct localcurrents {
+typedef struct DCURLOC { /* localcurrents */
 	Int4	curlevel, curstart, curend;
 } DCURLOC;
 

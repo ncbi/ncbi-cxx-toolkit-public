@@ -71,7 +71,7 @@ enum {         /* half of the (fixed) match score */
 #define ICEIL(x,y) ((((x)-1)/(y))+1)
 
 /* ----- pool allocator ----- */
-typedef struct _three_val_ {
+typedef struct ThreeVal {
     Int4 I, C, D;
 } ThreeVal,* ThreeValPtr;
 

@@ -53,14 +53,14 @@ extern "C" {
 
 /*--------------------------------------------------------------(structs)---*/
 
-typedef struct segm
+typedef struct Seg
   {
    int begin;
    int end;
-   struct segm *next;
+   struct Seg *next;
   } Seg,* SegPtr;
 
-typedef struct alpha
+typedef struct Alpha
   {
    Int4 alphabet;
    Int4 alphasize;
@@ -70,7 +70,7 @@ typedef struct alpha
    CharPtr alphachar;
   } Alpha,* AlphaPtr;
 
-typedef struct segparams
+typedef struct SegParameters
   {
    Int4 window;
    FloatHi locut;
@@ -83,9 +83,9 @@ typedef struct segparams
    AlphaPtr palpha;
   } SegParameters,* SegParametersPtr;
 
-typedef struct sequence
+typedef struct Sequence
   {
-   struct sequence* parent;
+   struct Sequence* parent;
    CharPtr seq;
    AlphaPtr palpha;
    Int4 start;

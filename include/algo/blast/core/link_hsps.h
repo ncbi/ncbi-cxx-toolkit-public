@@ -51,7 +51,7 @@ extern "C" {
  * One array of helpers will be allocated for each thread. See comments 
  * preceding link_hsps in link_hsps.c for more info.
  */
-typedef struct link_help_struct{
+typedef struct LinkHelpStruct {
   BlastHSPPtr ptr;
   Int4 q_off_trim;
   Int4 s_off_trim;

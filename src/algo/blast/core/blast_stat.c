@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.20  2003/07/30 21:52:41  camacho
+ * Follow conventional structure definition
+ *
  * Revision 1.19  2003/07/30 19:39:14  camacho
  * Remove PNTRs
  *
@@ -222,7 +225,7 @@ typedef FloatHi array_of_8[8];
 
 /* Used to temporarily store matrix values for retrieval. */
 
-typedef struct _matrix_info {
+typedef struct MatrixInfo {
 	CharPtr		name;			/* name of matrix (e.g., BLOSUM90). */
 	array_of_8 	*values;		/* The values (below). */
 	Int4		*prefs;			/* Preferences for display. */
@@ -1798,7 +1801,7 @@ BlastScoreFreqCalc(BLAST_ScoreBlkPtr sbp, BLAST_ScoreFreqPtr sfp, BLAST_ResFreqP
 	return 0;
 }
 
-typedef struct {
+typedef struct BLAST_LetterProb {
 		Char	ch;
 		FloatHi	p;
 	} BLAST_LetterProb;
