@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/11/14 15:14:58  ucko
+* Revise diagnostic handling to be more object-oriented.
+*
 * Revision 1.34  2001/10/29 15:37:29  ucko
 * Rewrite dummy new/delete bodies to avoid GCC warnings.
 *
@@ -365,7 +368,7 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 //          from different threads.
 // NOTE 2:  By default, the errors will be written to standard error stream.
 struct SDiagMessage {
-    SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
+    SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
                  TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
                  int err_code = 0, int err_subcode = 0);
@@ -373,7 +376,6 @@ struct SDiagMessage {
     EDiagSev       m_Severity;
     const char*    m_Buffer;  // not guaranteed to be '\0'-terminated!
     size_t         m_BufferLen;
-    void*          m_Data;
     const char*    m_File;
     size_t         m_Line;
     int            m_ErrCode;
@@ -393,9 +395,20 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
 }
 
 
+class CDiagHandler
+{
+public:
+    virtual ~CDiagHandler(void) {}
+    virtual void Post(const SDiagMessage& mess) = 0;
+};
+
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 
 typedef void (*FDiagCleanup)(void* data);
+
+extern void          SetDiagHandler(CDiagHandler* handler,
+                                    bool can_delete = true);
+extern CDiagHandler* GetDiagHandler(void);
 
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
@@ -405,17 +418,43 @@ extern void SetDiagHandler(FDiagHandler func,
 extern bool IsSetDiagHandler(void);
 
 
+class CStreamDiagHandler : public CDiagHandler
+{
+public:
+    // This does *not* own the stream; users will need to clean it up
+    // themselves if appropriate.
+    CStreamDiagHandler(CNcbiOstream* os, bool quick_flush = true)
+        : m_Stream(os), m_QuickFlush(quick_flush) {}
+    virtual void Post(const SDiagMessage& mess);
+
+    friend bool IsDiagStream(const CNcbiOstream* os);
+
+
+protected:
+    CNcbiOstream* m_Stream;
+
+private:
+    bool          m_QuickFlush;
+};
+
 // Write the error diagnostics to output stream "os"
 // (this uses the SetDiagHandler() functionality)
 extern void SetDiagStream
 (CNcbiOstream* os,
- bool          quick_flush  = true,  // do stream flush after every message
- FDiagCleanup  cleanup      = 0,     // call "cleanup(cleanup_data)" if diag.
- void*         cleanup_data = 0      // stream is changed (see SetDiagHandler)
+ bool          quick_flush  = true,// do stream flush after every message
+ FDiagCleanup  cleanup      = 0,   // call "cleanup(cleanup_data)" if diag.
+ void*         cleanup_data = 0    // stream is changed (see SetDiagHandler)
  );
 
 // Return TRUE if "os" is the current diag. stream
 extern bool IsDiagStream(const CNcbiOstream* os);
+
+
+class CDiagFactory
+{
+public:
+    virtual CDiagHandler* New(const string& s) = 0;
+};
 
 
 // Auxiliary class to limit the duration of changes to diagnostic settings.
@@ -439,9 +478,8 @@ private:
     EDiagSev       m_DieSeverity;
     EDiagTrace     m_TraceDefault;
     bool           m_TraceEnabled;
-    FDiagHandler   m_HandlerFunc;
-    void*          m_HandlerData;
-    FDiagCleanup   m_HandlerCleanup;
+    CDiagHandler*  m_Handler;
+    bool           m_CanDeleteHandler;
 };
 
 

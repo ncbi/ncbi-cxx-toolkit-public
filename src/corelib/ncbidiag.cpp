@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/11/14 15:15:00  ucko
+* Revise diagnostic handling to be more object-oriented.
+*
 * Revision 1.38  2001/10/29 15:16:13  ucko
 * Preserve default CGI diagnostic settings, even if customized by app.
 *
@@ -205,13 +208,9 @@ const char*  CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
 
-static void s_DefaultHandlerFunc(const SDiagMessage& mess) {
-    NcbiCerr << mess << NcbiFlush;
-}
-
-FDiagHandler CDiagBuffer::sm_HandlerFunc    = s_DefaultHandlerFunc;
-void*        CDiagBuffer::sm_HandlerData    = 0;
-FDiagCleanup CDiagBuffer::sm_HandlerCleanup = 0;
+static CStreamDiagHandler s_DefaultHandler(&NcbiCerr);
+CDiagHandler* CDiagBuffer::sm_Handler          = &s_DefaultHandler;
+bool          CDiagBuffer::sm_CanDeleteHandler = false;
 
 
 CDiagBuffer::CDiagBuffer(void)
@@ -232,13 +231,12 @@ CDiagBuffer::~CDiagBuffer(void)
 
 void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 {
-    if ( CDiagBuffer::sm_HandlerFunc ) {
+    if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
-        if ( CDiagBuffer::sm_HandlerFunc ) {
-            mess.m_Data   = CDiagBuffer::sm_HandlerData;
+        if ( CDiagBuffer::sm_Handler ) {
             mess.m_Prefix = GetDiagBuffer().m_PostPrefix.empty() ?
                 0 : GetDiagBuffer().m_PostPrefix.c_str();
-            CDiagBuffer::sm_HandlerFunc(mess);
+            CDiagBuffer::sm_Handler->Post(mess);
         }
     }
 }
@@ -275,7 +273,7 @@ void CDiagBuffer::Flush(void)
         const char* message = ostr->str();
         ostr->rdbuf()->freeze(0);
         SDiagMessage mess
-            (sev, message, ostr->pcount(), 0,
+            (sev, message, ostr->pcount(),
              m_Diag->GetFile(), m_Diag->GetLine(),
              m_Diag->GetPostFlags() | (sev == eDiag_Trace || sev == eDiag_Fatal
                                        ? eDPF_Trace : 0),
@@ -511,20 +509,23 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 }
 
 
-extern void SetDiagHandler(FDiagHandler func, void* data,
-                           FDiagCleanup cleanup)
+extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
 {
     CMutexGuard LOCK(s_DiagMutex);
-    if ( CDiagBuffer::sm_HandlerCleanup )
-        CDiagBuffer::sm_HandlerCleanup(CDiagBuffer::sm_HandlerData);
-    CDiagBuffer::sm_HandlerFunc    = func;
-    CDiagBuffer::sm_HandlerData    = data;
-    CDiagBuffer::sm_HandlerCleanup = cleanup;
+    if ( CDiagBuffer::sm_CanDeleteHandler )
+        delete CDiagBuffer::sm_Handler;
+    CDiagBuffer::sm_Handler          = handler;
+    CDiagBuffer::sm_CanDeleteHandler = can_delete;
 }
 
 extern bool IsSetDiagHandler(void)
 {
-    return (CDiagBuffer::sm_HandlerFunc != s_DefaultHandlerFunc);
+    return (CDiagBuffer::sm_Handler != &s_DefaultHandler);
+}
+
+extern CDiagHandler* GetDiagHandler(void)
+{
+    return CDiagBuffer::sm_Handler;
 }
 
 
@@ -565,74 +566,22 @@ extern CDiagBuffer& GetDiagBuffer(void)
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-// A common-use case:  direct all messages to an output stream (C++ "ostream")
-//
-
-struct SToStream_Data {
-    CNcbiOstream* os;
-    bool          quick_flush;
-    FDiagCleanup  cleanup;
-    void*         cleanup_data;
-};
-
-static void s_ToStream_Handler(const SDiagMessage& mess)
-{ // (it is MT-protected by the caller, "CDiagBuffer::DiagHandler()")
-    SToStream_Data* x_data = static_cast<SToStream_Data*>(mess.m_Data);
-    if ( !x_data )
-        return;
-
-    CNcbiOstream& os = *x_data->os;
-    os << mess;
-    if ( x_data->quick_flush ) {
-        os << NcbiFlush;
-    }
-}
-
-static void s_ToStream_Cleanup(void* data)
+void CStreamDiagHandler::Post(const SDiagMessage& mess)
 {
-    SToStream_Data* x_data = static_cast<SToStream_Data*>(data);
-    if ( x_data->cleanup ) {
-        x_data->cleanup(x_data->cleanup_data);
+    if (m_Stream) {
+        (*m_Stream) << mess;
+        if (m_QuickFlush) {
+            (*m_Stream) << NcbiFlush;
+        }
     }
-    delete static_cast<SToStream_Data*>(data);
-}
-
-
-extern void SetDiagStream
-(CNcbiOstream* os,
- bool          quick_flush,
- FDiagCleanup  cleanup,
- void*         cleanup_data)
-{
-    if ( !os ) {
-        SetDiagHandler(0, 0, 0);
-        return;
-    }
-
-    s_DiagRecycler.Get();
-    SToStream_Data* data = new SToStream_Data;
-    data->os           = os;
-    data->quick_flush  = quick_flush;
-    data->cleanup      = cleanup;
-    data->cleanup_data = cleanup_data;
-    SetDiagHandler(s_ToStream_Handler, data, s_ToStream_Cleanup);
 }
 
 
 extern bool IsDiagStream(const CNcbiOstream* os)
 {
-    bool res;
-    CMutexGuard LOCK(s_DiagMutex);
-    if ( !CDiagBuffer::sm_HandlerData ) {
-        res = (os == 0);
-    } else {
-        res =
-            CDiagBuffer::sm_HandlerFunc == s_ToStream_Handler  &&
-            ((SToStream_Data*) CDiagBuffer::sm_HandlerData)->os == os;
-    }
-    return res;
+    CStreamDiagHandler* sdh
+        = dynamic_cast<CStreamDiagHandler*>(CDiagBuffer::sm_Handler);
+    return (sdh  &&  sdh->m_Stream == os);
 }
 
 
@@ -676,17 +625,16 @@ CDiagRestorer::CDiagRestorer(void)
 {
     CMutexGuard LOCK(s_DiagMutex);
     const CDiagBuffer& buf = GetDiagBuffer();
-    m_PostPrefix     = buf.m_PostPrefix;
-    m_PrefixList     = buf.m_PrefixList;
-    m_PostFlags      = buf.sm_PostFlags;
-    m_PostSeverity   = buf.sm_PostSeverity;
-    m_DieSeverity    = buf.sm_DieSeverity;
-    m_TraceDefault   = buf.sm_TraceDefault;
-    m_TraceEnabled   = buf.sm_TraceEnabled;
-    m_HandlerFunc    = buf.sm_HandlerFunc;
-    m_HandlerData    = buf.sm_HandlerData;
-    m_HandlerCleanup = buf.sm_HandlerCleanup;
-    buf.sm_HandlerCleanup = NULL; // avoid premature cleanup
+    m_PostPrefix       = buf.m_PostPrefix;
+    m_PrefixList       = buf.m_PrefixList;
+    m_PostFlags        = buf.sm_PostFlags;
+    m_PostSeverity     = buf.sm_PostSeverity;
+    m_DieSeverity      = buf.sm_DieSeverity;
+    m_TraceDefault     = buf.sm_TraceDefault;
+    m_TraceEnabled     = buf.sm_TraceEnabled;
+    m_Handler          = buf.sm_Handler;
+    m_CanDeleteHandler = buf.sm_CanDeleteHandler;
+    buf.sm_CanDeleteHandler = false; // avoid premature cleanup
 }
 
 CDiagRestorer::~CDiagRestorer(void)
@@ -702,7 +650,70 @@ CDiagRestorer::~CDiagRestorer(void)
         buf.sm_TraceDefault   = m_TraceDefault;
         buf.sm_TraceEnabled   = m_TraceEnabled;
     }}
-    SetDiagHandler(m_HandlerFunc, m_HandlerData, m_HandlerCleanup);
+    SetDiagHandler(m_Handler, m_CanDeleteHandler);
 }
+
+
+//////////////////////////////////////////////////////
+//  internal diag. handler classes for compatibility:
+
+class CCompatDiagHandler : public CDiagHandler
+{
+public:
+    CCompatDiagHandler(FDiagHandler func, void* data, FDiagCleanup cleanup)
+        : m_Func(func), m_Data(data), m_Cleanup(cleanup)
+        { }
+    ~CCompatDiagHandler(void)
+        {
+            if (m_Cleanup) {
+                m_Cleanup(m_Data);
+            }
+        }
+    virtual void Post(const SDiagMessage& mess) { m_Func(mess); }
+
+private:
+    FDiagHandler m_Func;
+    void*        m_Data;
+    FDiagCleanup m_Cleanup;
+};
+
+extern void SetDiagHandler(FDiagHandler func,
+                           void*        data,
+                           FDiagCleanup cleanup)
+{
+    SetDiagHandler(new CCompatDiagHandler(func, data, cleanup));
+}
+
+
+class CCompatStreamDiagHandler : public CStreamDiagHandler
+{
+public:
+    CCompatStreamDiagHandler(CNcbiOstream* os, bool quick_flush = true,
+                             FDiagCleanup cleanup = 0,
+                             void* cleanup_data = 0)
+        : CStreamDiagHandler(os, quick_flush),
+          m_Cleanup(cleanup), m_CleanupData(cleanup_data)
+        {
+        }
+
+    ~CCompatStreamDiagHandler(void)
+        {
+            if (m_Cleanup) {
+                m_Cleanup(m_CleanupData);
+            }
+        }
+
+private:
+    FDiagCleanup m_Cleanup;
+    void*        m_CleanupData;
+};
+
+extern void SetDiagStream(CNcbiOstream* os, bool quick_flush,
+                          FDiagCleanup cleanup, void* cleanup_data)
+{
+    SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
+                                                cleanup, cleanup_data));
+}
+
 
 END_NCBI_SCOPE

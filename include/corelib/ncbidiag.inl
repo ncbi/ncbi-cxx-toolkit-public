@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/11/14 15:14:59  ucko
+* Revise diagnostic handling to be more object-oriented.
+*
 * Revision 1.24  2001/10/29 15:16:11  ucko
 * Preserve default CGI diagnostic settings, even if customized by app.
 *
@@ -150,8 +153,8 @@ class CDiagBuffer
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
-    friend void SetDiagHandler(FDiagHandler func, void* data,
-                               FDiagCleanup cleanup);
+    friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
+    friend CDiagHandler* GetDiagHandler(void);
     friend bool IsDiagStream(const CNcbiOstream* os);
     friend bool IsSetDiagHandler(void);
 private:
@@ -223,10 +226,9 @@ private:
     // Symbolic name for the severity levels(used by CNcbiDiag::SeverityName)
     static const char* sm_SeverityName[eDiag_Trace+1];
 
-    // Application-wide diagnostic handler & Co.
-    static FDiagHandler sm_HandlerFunc;
-    static void*        sm_HandlerData;
-    static FDiagCleanup sm_HandlerCleanup;
+    // Application-wide diagnostic handler
+    static CDiagHandler* sm_Handler;
+    static bool          sm_CanDeleteHandler;
 };
 
 
@@ -417,14 +419,13 @@ bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags) {
 inline
 SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* buf, size_t len,
-                           void* data, const char* file, size_t line,
+                           const char* file, size_t line,
                            TDiagPostFlags flags, const char* prefix,
                            int err_code, int err_subcode)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
     m_BufferLen  = len;
-    m_Data       = data;
     m_File       = file;
     m_Line       = line;
     m_Flags      = flags;
@@ -432,5 +433,6 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_ErrCode    = err_code;
     m_ErrSubCode = err_subcode;
 }
+
 
 #endif /* def NCBIDIAG__HPP  &&  ndef NCBIDIAG__INL */
