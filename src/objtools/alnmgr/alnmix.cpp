@@ -247,6 +247,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                         match->m_AlnSeq2 = aln_seq2;
                         match->m_Start2 = start2;
                         match->m_Len = len;
+                        match->m_DSIndex = m_InputDSs.size();
 
                         // determine the strand
                         match->m_StrandsDiffer = false;
@@ -342,6 +343,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                     match->m_Start2 = 0;
                     match->m_Len = len;
                     match->m_StrandsDiffer = false;
+                    match->m_DSIndex = m_InputDSs.size();
                     m_Matches.push_back(match);
                 }
             }
@@ -455,13 +457,36 @@ void CAlnMix::x_Merge()
             match->m_Start1 = start1;
             match->m_AlnSeq2 = seq2;
             match->m_Start2 = start2;
-            
+
             // this match is used erase from seq1 list
             if ( !first_refseq ) {
                 seq1->m_MatchList.erase(match_list_iter1);
             }
 
-            CAlnMixSeq::TStarts& starts = refseq->m_Starts;
+            // if a subect sequence place it in the proper row
+            if ( !first_refseq  &&  m_MergeFlags & fQuerySeqMergeOnly) {
+                bool proper_row_found = false;
+                while (true) {
+                    if (seq1->m_DSIndex == match->m_DSIndex) {
+                        proper_row_found = true;
+                        break;
+                    } else {
+                        if (seq1->m_ExtraRow) {
+                            seq1 = match->m_AlnSeq2 = seq1->m_ExtraRow;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if ( !proper_row_found ) {
+                    NCBI_THROW(CAlnException, eMergeFailure,
+                               "CAlnMix::x_Merge(): "
+                               "Proper row not found for the match. "
+                               "Cannot use fQuerySeqMergeOnly?");
+                }
+            }
+            
+            CAlnMixSeq::TStarts& starts = seq1->m_Starts;
             if (seq2) {
                 // mark it, it is linked to the refseq
                 seq2->m_RefBy = refseq;
@@ -642,6 +667,9 @@ void CAlnMix::x_Merge()
                         row->m_BioseqHandle = seq2->m_BioseqHandle;
                         row->m_Factor = seq2->m_Factor;
                         row->m_SeqIndex = seq2->m_SeqIndex;
+                        if (m_MergeFlags & fQuerySeqMergeOnly) {
+                            row->m_DSIndex = match->m_DSIndex;
+                        }
                         m_ExtraRows.push_back(row);
                         seq2->m_ExtraRow = row;
                         seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow;
@@ -749,6 +777,20 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
     const TSeqPos&                start2  = match->m_Start2;
     const TSeqPos&                len     = match->m_Len;
     CAlnMixSeq::TStarts::iterator start_i;
+
+    // subject sequences go on separate rows if requested
+    if (m_MergeFlags & fQuerySeqMergeOnly) {
+        if (seq2->m_DSIndex) {
+            if (seq2->m_DSIndex == match->m_DSIndex) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            seq2->m_DSIndex = match->m_DSIndex;
+            return true;
+        }
+    }
 
     if ( !starts2.empty() ) {
 
@@ -970,16 +1012,16 @@ void CAlnMix::x_CreateSegmentsVector()
                     gapped_segs.push_back(seg);
                     
                     // inc/dec iterators for each row of the gapped seg
-                    ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
+                    ITERATE (CAlnMixSegment::TStartIterators, row_i,
                              seg->m_StartIts) {
-                        CAlnMixSeq * row = start_its_i->first;
-                        if (row->m_PositiveStrand) {
-                            row->m_StartIt++;
+                        CAlnMixSeq * r = row_i->first;
+                        if (r->m_PositiveStrand) {
+                            r->m_StartIt++;
                         } else {
-                            if (row->m_StartIt == row->m_Starts.begin()) {
-                                row->m_StartIt = row->m_Starts.end();
+                            if (r->m_StartIt == r->m_Starts.begin()) {
+                                r->m_StartIt = r->m_Starts.end();
                             } else {
-                                row->m_StartIt--;
+                                r->m_StartIt--;
                             }
                         }
                     }
@@ -1356,6 +1398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/05/09 16:41:27  todorov
+* Optional mixing of the query sequence only
+*
 * Revision 1.44  2003/04/24 16:15:57  vasilche
 * Added missing includes and forward class declarations.
 *

@@ -77,7 +77,9 @@ public:
         fTryOtherMethodOnFail = 0x08,
         fGapJoin              = 0x10, // join equal len segs gapped on refseq
         fMinGap               = 0x20, // minimize segs gapped on refseq
-        fSortSeqsByScore      = 0x40  // Seqs with better scoring aligns on top
+        fSortSeqsByScore      = 0x40, // Seqs with better scoring aligns on top
+        fQuerySeqMergeOnly    = 0x80  // Only put the query seq on same row, 
+                                      // other seqs from diff densegs go to diff rows
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
 
@@ -172,7 +174,8 @@ public:
           m_Score(0),
           m_Factor(1),
           m_RefBy(0),
-          m_ExtraRow(0)
+          m_ExtraRow(0),
+          m_DSIndex(0)
     {};
 
     typedef CAlnMixSegment::TStarts TStarts;
@@ -189,6 +192,7 @@ public:
     CAlnMixSeq *          m_ExtraRow;
     int                   m_RowIndex;
     int                   m_SeqIndex;
+    int                   m_DSIndex;
     TStarts::iterator     m_StartIt;
     TMatchList            m_MatchList;
 
@@ -209,13 +213,14 @@ class CAlnMixMatch : public CObject
 public:
     CAlnMixMatch(void)
         : m_Score(0), m_Start1(0), m_Start2(0),
-          m_Len(0), m_StrandsDiffer(false)
+          m_Len(0), m_StrandsDiffer(false), m_DSIndex(0)
     {};
         
     int                              m_Score;
     CAlnMixSeq                       * m_AlnSeq1, * m_AlnSeq2;
     TSeqPos                          m_Start1, m_Start2, m_Len;
     bool                             m_StrandsDiffer;
+    int                              m_DSIndex;
     CAlnMixSeq::TMatchList::iterator m_MatchIter1, m_MatchIter2;
 };
 
@@ -296,6 +301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/05/09 16:41:46  todorov
+* Optional mixing of the query sequence only
+*
 * Revision 1.21  2003/03/28 16:47:22  todorov
 * Introduced TAddFlags (fCalcScore for now)
 *
