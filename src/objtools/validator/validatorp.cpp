@@ -215,7 +215,7 @@ void CValidError_imp::PostErr
     string loc_label;
     if (m_SuppressContext) {
         CSeq_loc loc;
-        SerialAssign(loc, ft.GetLocation());
+        loc.Assign(ft.GetLocation());
         ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
         loc.GetLabel(&loc_label);
     } else {
@@ -247,7 +247,7 @@ void CValidError_imp::PostErr
     if (ft.IsSetProduct()) {
         if (m_SuppressContext) {
             CSeq_loc loc;
-            SerialAssign(loc, ft.GetProduct());
+            loc.Assign(ft.GetProduct());
             ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
             loc.GetLabel(&loc_label);
         } else {
@@ -1802,6 +1802,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/02/24 18:58:13  vasilche
+* Use faster version of CSeq_id::Assign().
+*
 * Revision 1.17  2003/02/14 21:47:13  shomrat
 * Added methods to report Bioseqs with no MolInfo
 *

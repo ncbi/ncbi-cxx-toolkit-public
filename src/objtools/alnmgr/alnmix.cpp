@@ -1172,8 +1172,7 @@ void CAlnMix::x_CreateDenseg()
     // ids
     for (numrow = 0;  numrow < numrows;  numrow++) {
         CRef<CSeq_id> seq_id(new CSeq_id);
-        SerialAssign(*seq_id,
-                     *(m_Rows[numrow]->m_BioseqHandle->GetSeqId()));
+        seq_id->Assign(*(m_Rows[numrow]->m_BioseqHandle->GetSeqId()));
         ids[numrow] = seq_id;
     }
 
@@ -1243,6 +1242,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/02/24 19:01:31  vasilche
+* Use faster version of CSeq_id::Assign().
+*
 * Revision 1.30  2003/02/24 18:46:38  todorov
 * Fixed a - strand row info creation bug
 *
