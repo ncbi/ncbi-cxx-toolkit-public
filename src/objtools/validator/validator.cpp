@@ -112,10 +112,14 @@ CValidError::CValidError(void)
 {
 }
 
-
-void CValidError::AddValidErrItem(const CValidErrItem* item)
+void CValidError::AddValidErrItem
+(EDiagSev sev,
+ unsigned int ec,
+ const string& msg,
+ const CSerialObject& obj)
 {
-    m_ErrItems.push_back(CConstRef<CValidErrItem>(item));
+    CConstRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, obj));
+    m_ErrItems.push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
 
@@ -129,14 +133,14 @@ CValidError::~CValidError()
 
 
 CValidErrItem::CValidErrItem
-(EDiagSev sev,
- unsigned int         ei,
+(EDiagSev             sev,
+ unsigned int         ec,
  const string&        msg,
  const CSerialObject& obj)
-  : m_Severity (sev),
-    m_ErrIndex (ei),
-    m_Message (msg),
-    m_Object (&obj, obj.GetThisTypeInfo())
+  : m_Severity(sev),
+    m_ErrIndex(ec),
+    m_Message(msg),
+    m_Object(&obj)
 {
 }
 
@@ -190,9 +194,10 @@ const string& CValidErrItem::GetVerbose(void) const
 }
 
 
-const CConstObjectInfo& CValidErrItem::GetObject(void) const
+//const CConstObjectInfo& CValidErrItem::GetObject(void) const
+const CSerialObject& CValidErrItem::GetObject(void) const
 {
-    return m_Object;
+    return *m_Object;
 }
 
 
@@ -484,6 +489,8 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_LocusTagProblem",
     "SEQ_FEAT_AltStartCodon",
     "SEQ_FEAT_GenesInconsistent",
+    "SEQ_FEAT_DuplicateTranslExcept",
+    "SEQ_FEAT_TranslExceptAndRnaEditing",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1068,6 +1075,14 @@ confirmatory evidence will be cited.",
 //  SEQ_FEAT_GenesInconsistent
 "The gene on the genomic sequence of a genomic product set should be the \
 same as the gene on the cDNA product of the mRNA feature.",
+//  SEQ_FEAT_DuplicateTranslExcept
+"There are multiple /transl_except qualifiers at the same location on this \
+CDS but with different amino acids indicated.",
+//  SEQ_FEAT_TranslExceptAndRnaEditing
+"A CDS has both /exception=RNA editing and /transl_except qualifiers.  RNA \
+editing indicates post-transcriptional changes prior to translation.  Use \
+/transl_except for individual codon exceptions such as selenocysteine or \
+other nonsense suppressors.",
 
 /* SEQ_ALIGN */
 
@@ -1167,6 +1182,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/06/25 14:55:59  shomrat
+* changes to CValidError and CValidErrorItem; +SEQ_FEAT_DuplicateTranslExcept,SEQ_FEAT_TranslExceptAndRnaEditing
+*
 * Revision 1.45  2004/06/17 17:03:53  shomrat
 * Added CollidingPublications check
 *
