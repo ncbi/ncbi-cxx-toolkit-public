@@ -233,6 +233,128 @@ string CNetScheduleClient::SubmitJob(const string& input)
     return m_Tmp;
 }
 
+CNetScheduleClient::EJobStatus 
+CNetScheduleClient::SubmitJobAndWait(const string&  input,
+                                     string*        job_key,
+                                     int*           ret_code,
+                                     string*        output, 
+                                     unsigned       wait_time,
+                                     unsigned short udp_port)
+{
+    _ASSERT(job_key);
+    _ASSERT(ret_code);
+    _ASSERT(output);
+    _ASSERT(wait_time);
+    _ASSERT(udp_port);
+
+    if (input.length() > kNetScheduleMaxDataSize) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+            "Input data too long.");
+    }
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+    *output = kEmptyStr;
+
+    {{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "SUBMIT \"");
+    m_Tmp.append(input);
+    m_Tmp.append("\" ");
+    m_Tmp.append(NStr::UIntToString(udp_port));
+    m_Tmp.append(" ");
+    m_Tmp.append(NStr::UIntToString(wait_time));
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    }}
+    TrimPrefix(&m_Tmp);
+
+    if (m_Tmp.empty()) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Invalid server response. Empty key.");
+    }
+
+    *job_key = m_Tmp;
+
+    m_JobKey.id = 0;
+    CNetSchedule_ParseJobKey(&m_JobKey, *job_key);
+
+    WaitJobNotification(wait_time, udp_port, m_JobKey.id);
+
+    return GetStatus(*job_key, ret_code, output);
+}
+
+void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
+                                             unsigned short udp_port,
+                                             unsigned       job_id)
+{
+    _ASSERT(wait_time);
+
+    EIO_Status status;
+    int    sig_buf[4];
+    const char* sig = "DONE";
+    memcpy(sig_buf, sig, 4);
+
+    int    buf[1024/sizeof(int)];
+    char*  chr_buf = (char*) buf;
+
+    STimeout to;
+    to.sec = wait_time;
+    to.usec = 0;
+
+    CDatagramSocket  udp_socket;
+    udp_socket.SetReuseAddress(eOn);
+    STimeout rto;
+    rto.sec = rto.usec = 0;
+    udp_socket.SetTimeout(eIO_Read, &rto);
+
+    status = udp_socket.Bind(udp_port);
+    if (eIO_Success != status) {
+        return;
+    }
+    time_t curr_time, start_time, end_time;
+
+    start_time = time(0);
+    end_time = start_time + wait_time;
+
+    for (;true;) {
+
+        curr_time = time(0);
+        to.sec = end_time - curr_time;  // remaining
+        if (to.sec <= 0) {
+            break;
+        }
+        status = udp_socket.Wait(&to);
+        if (eIO_Success != status) {
+            continue;
+        }
+        size_t msg_len;
+        status = udp_socket.Recv(buf, sizeof(buf), &msg_len, &m_Tmp);
+        _ASSERT(status != eIO_Timeout); // because we Wait()-ed
+        if (eIO_Success == status) {
+            if (buf[0] != sig_buf[0]) {
+                continue;
+            }
+
+            const char* job = chr_buf + 5;
+            unsigned notif_job_id = (unsigned)::atoi(job);
+            if (notif_job_id == job_id) {
+                return;
+            }
+        } 
+    } // for
+
+}
+
+
+
 void CNetScheduleClient::CancelJob(const string& job_key)
 {
     if (m_RequestRateControl) {
@@ -450,7 +572,7 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
         return true;
     }
 
-    WaitJobNotification(wait_time, udp_port);
+    WaitQueueNotification(wait_time, udp_port);
 
     // no matter is WaitResult we re-try the request
     // using reliable comm.level and notify server that
@@ -460,8 +582,8 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
 }
 
 
-void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
-                                             unsigned short udp_port)
+void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
+                                               unsigned short udp_port)
 {
     _ASSERT(wait_time);
 
@@ -778,6 +900,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/15 20:13:07  kuznets
+ * +SubmitJobAndWait()
+ *
  * Revision 1.9  2005/03/15 14:48:56  kuznets
  * +DropJob()
  *

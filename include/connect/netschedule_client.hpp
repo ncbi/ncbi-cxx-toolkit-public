@@ -158,6 +158,47 @@ public:
     virtual
     string SubmitJob(const string& input);
 
+    /// Submit job to server and wait for the result.
+    /// This function should be used if we expect that job execution
+    /// infrastructure is capable of finishing job in the specified 
+    /// time frame. This method can save a lot of roundtrips with the 
+    /// netschedule server (comparing to series of GetStatus calls).
+    ///
+    /// @param input
+    ///    Input data. Arbitrary string (cannot exceed 1K). This string
+    ///    encodes input data for the job. It is suggested to use NetCache
+    ///    to keep the actual data and pass NetCache key as job input.
+    ///
+    /// @param job_key
+    ///    Job key
+    ///
+    /// @param ret_code
+    ///    Job return code (if job finished in the specified timeout.
+    ///
+    /// @param output
+    ///    Job result data. Empty, if job not finished in the specified
+    ///    timeout (wait_time).
+    /// @param wait_time
+    ///    Time in seconds function waits for the job to finish.
+    ///    If job does not finish in the output parameter will hold the empty
+    ///    string.
+    ///
+    /// @param udp_port
+    ///    UDP port to listen for queue notifications. Try to avoid many 
+    ///    client programs (or threads) listening on the same port. Message
+    ///    is going to be delivered to just only one listener.
+    ///
+    /// @return job status
+    ///
+    virtual
+    EJobStatus SubmitJobAndWait(const string&  input,
+                                string*        job_key,
+                                int*           ret_code,
+                                string*        output, 
+                                unsigned       wait_time,
+                                unsigned short udp_port);
+
+
     /// Cancel job
     ///
     /// @param job_key
@@ -320,9 +361,12 @@ protected:
                              string*        input, 
                              const string&  response);
 
-    void WaitJobNotification(unsigned       wait_time,
-                             unsigned short udp_port);
+    void WaitQueueNotification(unsigned       wait_time,
+                               unsigned short udp_port);
 
+    void WaitJobNotification(unsigned       wait_time,
+                             unsigned short udp_port,
+                             unsigned       job_id);
 
 private:
     CNetScheduleClient(const CNetScheduleClient&);
@@ -519,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/15 20:12:58  kuznets
+ * +SubmitJobAndWait()
+ *
  * Revision 1.10  2005/03/15 14:48:14  kuznets
  * +DropJob()
  *
