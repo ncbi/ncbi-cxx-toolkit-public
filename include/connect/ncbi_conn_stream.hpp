@@ -53,7 +53,6 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <connect/ncbi_connector.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_memory_connector.h>
 #include <connect/ncbi_service_connector.h>
@@ -226,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/01/17 19:44:20  lavr
+ * Reduce dependencies
+ *
  * Revision 6.16  2002/12/19 14:51:48  dicuccio
  * Added export specifier for Win32 DLL builds.
  *

@@ -34,9 +34,6 @@
  *    explicitly labeled as such.
  */
 
-#include <connect/connect_export.h>
-
-
 #ifdef _LIB
 #  undef NCBI_DLL_BUILD
 #endif
@@ -595,6 +592,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2003/01/17 19:44:28  lavr
+ * Reduce dependencies
+ *
  * Revision 1.8  2003/01/16 19:53:13  dicuccio
  * Add NCBI_GUIDIALOGS_EXPORT to the null define list...
  *

@@ -36,8 +36,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_socket.h>
-#include <connect/ncbi_buffer.h>
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -895,6 +893,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2003/01/17 19:44:46  lavr
+ * Reduce dependencies
+ *
  * Revision 6.41  2003/01/15 20:27:29  lavr
  * Fix breeding of NCBIHttpConnector token in User-Agent: header tag
  *

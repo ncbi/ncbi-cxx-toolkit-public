@@ -33,7 +33,7 @@
  *
  */
 
-#include <connect/ncbi_core.h>
+#include <connect/ncbi_types.h>
 
 
 #ifdef __cplusplus
@@ -121,6 +121,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/01/17 19:44:20  lavr
+ * Reduce dependencies
+ *
  * Revision 6.10  2003/01/08 01:59:33  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

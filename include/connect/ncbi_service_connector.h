@@ -36,7 +36,6 @@
  *
  */
 
-#include <connect/ncbi_server_info.h>
 #include <connect/ncbi_service.h>
 
 
@@ -76,6 +75,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/01/17 19:44:20  lavr
+ * Reduce dependencies
+ *
  * Revision 6.8  2003/01/08 01:59:33  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

@@ -34,7 +34,6 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connection.h>
-#include <connect/ncbi_connector.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -697,6 +696,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/01/17 19:44:46  lavr
+ * Reduce dependencies
+ *
  * Revision 6.28  2003/01/15 19:51:17  lavr
  * +CONN_PushBack()
  *

@@ -77,7 +77,6 @@
  *
  */
 
-#include <connect/ncbi_core.h>
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_connection.h>
@@ -626,6 +625,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/01/17 19:44:20  lavr
+ * Reduce dependencies
+ *
  * Revision 6.27  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

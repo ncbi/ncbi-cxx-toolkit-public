@@ -31,7 +31,6 @@
  */
 
 #include "ncbi_lbsmd.h"
-#include "ncbi_host_infop.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -119,6 +118,9 @@ const char* HINFO_Environment(HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/01/17 19:44:46  lavr
+ * Reduce dependencies
+ *
  * Revision 6.5  2002/10/29 22:19:07  lavr
  * Fix typo in the file description
  *
