@@ -53,39 +53,33 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
-                   EProgram p)
-    : mi_bQuerySetUpDone(false), m_pSeqSrc(bssp) 
+void CDbBlast::x_InitFields()
 {
-    m_tQueries = queries;
-    mi_pScoreBlock = NULL;
-    mi_pLookupTable = NULL;
-    mi_pLookupSegments = NULL;
-    mi_pFilteredRegions = NULL;
-    mi_pResults = NULL;
-    mi_pReturnStats = NULL;
-    m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
-    // Set the database length and number of sequences here
-    m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(bssp));
-    m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
+    m_ibQuerySetUpDone = false;
+    m_ipScoreBlock = NULL;
+    m_ipLookupTable = NULL;
+    m_ipLookupSegments = NULL;
+    m_ipFilteredRegions = NULL;
+    m_ipResults = NULL;
+    m_ipReturnStats = NULL;
+    m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(m_pSeqSrc));
+    m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(m_pSeqSrc));
 }
 
-CDbBlast::CDbBlast(const TSeqLocVector& queries, 
-                   BlastSeqSrc* bssp, CBlastOptionsHandle& opts)
-    : mi_bQuerySetUpDone(false), m_pSeqSrc(bssp) 
+CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
+                   EProgram p, RPSInfo* rps_info=0)
+    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info) 
 {
-    m_tQueries = queries;
-    mi_pScoreBlock = NULL;
-    mi_pLookupTable = NULL;
-    mi_pLookupSegments = NULL;
-    mi_pFilteredRegions = NULL;
-    mi_pResults = NULL;
-    mi_pReturnStats = NULL;
+    m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
+    x_InitFields();
+}
+
+CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
+                   CBlastOptionsHandle& opts, RPSInfo* rps_info=0)
+    : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info) 
+{
     m_OptsHandle.Reset(&opts);    
-    // Set the database length and number of sequences here, since 
-    // these are calculated, and might not be filled in the passed argument
-    m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(bssp));
-    m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
+    x_InitFields();
 }
 
 CDbBlast::~CDbBlast()
@@ -98,19 +92,19 @@ CDbBlast::~CDbBlast()
 void
 CDbBlast::x_ResetQueryDs()
 {
-    mi_bQuerySetUpDone = false;
+    m_ibQuerySetUpDone = false;
     // should be changed if derived classes are created
-    mi_clsQueries.Reset(NULL);
-    mi_clsQueryInfo.Reset(NULL);
-    mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
-    mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
-    mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
+    m_iclsQueries.Reset(NULL);
+    m_iclsQueryInfo.Reset(NULL);
+    m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
+    m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
+    m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
 
-    mi_pFilteredRegions = BlastMaskLocFree(mi_pFilteredRegions);
-    mi_pResults = BLAST_ResultsFree(mi_pResults);
+    m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
+    m_ipResults = BLAST_ResultsFree(m_ipResults);
     
-    sfree(mi_pReturnStats);
-    NON_CONST_ITERATE(TBlastError, itr, mi_vErrors) {
+    sfree(m_ipReturnStats);
+    NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
         *itr = Blast_MessageFree(*itr);
     }
 
@@ -121,17 +115,17 @@ int CDbBlast::SetupSearch()
     int status = 0;
     EProgram x_eProgram = m_OptsHandle->GetOptions().GetProgram();
 
-    if ( !mi_bQuerySetUpDone ) {
+    if ( !m_ibQuerySetUpDone ) {
         x_ResetQueryDs();
         bool translated_query = (x_eProgram == eBlastx || 
                                  x_eProgram == eTblastx);
 
         SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), 
-                       &mi_clsQueryInfo);
+                       &m_iclsQueryInfo);
         SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), 
-                     mi_clsQueryInfo, &mi_clsQueries);
+                     m_iclsQueryInfo, &m_iclsQueries);
 
-        mi_pScoreBlock = 0;
+        m_ipScoreBlock = 0;
 
         Blast_Message* blast_message = NULL;
 
@@ -139,30 +133,32 @@ int CDbBlast::SetupSearch()
                                  m_OptsHandle->GetOptions().GetQueryOpts(),
                                  m_OptsHandle->GetOptions().GetScoringOpts(),
                                  m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                                 mi_clsQueries, mi_clsQueryInfo,
-                                 &mi_pLookupSegments, &mi_pFilteredRegions,
-                                 &mi_pScoreBlock, &blast_message);
+                                 m_iclsQueries, m_iclsQueryInfo,
+                                 &m_ipLookupSegments, &m_ipFilteredRegions,
+                                 &m_ipScoreBlock, &blast_message);
         if (status != 0) {
             string msg = blast_message ? blast_message->message : 
                 "BLAST_MainSetUp failed";
             NCBI_THROW(CBlastException, eInternal, msg.c_str());
         } else if (blast_message) {
-            mi_vErrors.push_back(blast_message);
+            // Non-fatal error message; just save it.
+            m_ivErrors.push_back(blast_message);
         }
         
         if (translated_query) {
             /* Filter locations were returned in protein coordinates; 
                convert them back to nucleotide here */
-            BlastMaskLocProteinToDNA(&mi_pFilteredRegions, m_tQueries);
+            BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
-        BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
-        LookupTableWrapInit(mi_clsQueries, 
+        BLAST_ResultsInit(m_iclsQueryInfo->num_queries, &m_ipResults);
+
+        LookupTableWrapInit(m_iclsQueries, 
             m_OptsHandle->GetOptions().GetLutOpts(), 
-            mi_pLookupSegments, mi_pScoreBlock, &mi_pLookupTable, NULL);
+            m_ipLookupSegments, m_ipScoreBlock, &m_ipLookupTable, m_pRpsInfo);
         
-        mi_bQuerySetUpDone = true;
-        mi_pReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
+        m_ibQuerySetUpDone = true;
+        m_ipReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
     }
     return status;
 }
@@ -220,9 +216,9 @@ CDbBlast::TrimBlastHSPResults()
     BlastHSPList** hsplist_array;
     int query_index, subject_index, hsp_index;
     
-    for (query_index = 0; query_index < mi_pResults->num_queries; 
+    for (query_index = 0; query_index < m_ipResults->num_queries; 
          ++query_index) {
-        if (!(hit_list = mi_pResults->hitlist_array[query_index]))
+        if (!(hit_list = m_ipResults->hitlist_array[query_index]))
             continue;
         /* The count of HSPs is separate for each query. */
         total_hsps = 0;
@@ -258,30 +254,41 @@ CDbBlast::TrimBlastHSPResults()
         Blast_Message* blast_message = NULL;
         Blast_MessageWrite(&blast_message, BLAST_SEV_INFO, 0, 0, 
                            "Too many HSPs to save all");
-        mi_vErrors.push_back(blast_message);
+        m_ivErrors.push_back(blast_message);
     }
 }
 
 void 
 CDbBlast::RunSearchEngine()
 {
-    BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
-         mi_clsQueries, mi_clsQueryInfo, 
-         m_pSeqSrc, mi_pScoreBlock, 
-         m_OptsHandle->GetOptions().GetScoringOpts(), 
-         mi_pLookupTable, m_OptsHandle->GetOptions().GetInitWordOpts(), 
-         m_OptsHandle->GetOptions().GetExtnOpts(), 
-         m_OptsHandle->GetOptions().GetHitSaveOpts(), 
-         m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
-         m_OptsHandle->GetOptions().GetDbOpts(),
-         mi_pResults, mi_pReturnStats);
-
-    mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
-    mi_clsQueries = BlastSequenceBlkFree(mi_clsQueries);
+    if (m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) {
+        BLAST_RPSSearchEngine(m_OptsHandle->GetOptions().GetProgram(), 
+            m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock,
+            m_OptsHandle->GetOptions().GetScoringOpts(), 
+            m_ipLookupTable, m_OptsHandle->GetOptions().GetInitWordOpts(), 
+            m_OptsHandle->GetOptions().GetExtnOpts(), 
+            m_OptsHandle->GetOptions().GetHitSaveOpts(),
+            m_OptsHandle->GetOptions().GetEffLenOpts(),
+            m_OptsHandle->GetOptions().GetProtOpts(), 
+            m_OptsHandle->GetOptions().GetDbOpts(),
+            m_ipResults, m_ipReturnStats);
+    } else {
+        BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
+            m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock, 
+            m_OptsHandle->GetOptions().GetScoringOpts(), 
+            m_ipLookupTable, m_OptsHandle->GetOptions().GetInitWordOpts(), 
+            m_OptsHandle->GetOptions().GetExtnOpts(), 
+            m_OptsHandle->GetOptions().GetHitSaveOpts(), 
+            m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
+            m_OptsHandle->GetOptions().GetDbOpts(),
+            m_ipResults, m_ipReturnStats);
+    }
+    m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
+    m_iclsQueries = BlastSequenceBlkFree(m_iclsQueries);
 
     /* The following works because the ListNodes' data point to simple
        double-integer structures */
-    mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
+    m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
 
     /* If a limit is provided for number of HSPs to return, trim the extra
        HSPs here */
@@ -293,11 +300,11 @@ CDbBlast::x_Results2SeqAlign()
 {
     TSeqAlignVector retval;
 
-    retval = BLAST_Results2CSeqAlign(mi_pResults, 
+    retval = BLAST_Results2CSeqAlign(m_ipResults, 
                  m_OptsHandle->GetOptions().GetProgram(),
                  m_tQueries, m_pSeqSrc, 
                  m_OptsHandle->GetOptions().GetScoringOpts(), 
-                 mi_pScoreBlock);
+                 m_ipScoreBlock);
 
     return retval;
 }
@@ -309,6 +316,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2004/03/16 23:32:28  dondosha
+ * Added capability to run RPS BLAST seach; added function x_InitFields; changed mi_ to m_i in member field names
+ *
  * Revision 1.18  2004/03/16 14:45:28  dondosha
  * Removed doxygen comments for nonexisting parameters
  *
