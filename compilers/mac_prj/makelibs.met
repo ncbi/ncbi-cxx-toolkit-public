@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.3 2000/07/27 17:15:24 thiessen Exp $
+	$Id: makelibs.met,v 1.4 2000/11/17 00:32:40 vakatov Exp $
 	
 	Revision History:
 	----------------
@@ -26,7 +26,6 @@ property BUILDRELEASELIBS : "FALSE" (* whether to compile optimized release libr
 property DOOBJECTS : "TRUE" (* whether to create/compile object libraries *)
 property DOSOCKETS : "TRUE" (* whether to create/compile socket libs *)
 property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
-property NCSASOCKDIR : "ncbi:connect:ncsasock:" (* location of ncsasock files within CodeWarrior folder *)
 
 
 (* ==== These symbols will be derived ==== *)
@@ -44,7 +43,6 @@ global LIBRARIES
 
 global DODEBUG
 global DOOPENTPT
-global NCSASOCK
 
 (* ==== These subroutines set paths and other preferences during population ==== *)
 
@@ -63,7 +61,6 @@ on DoSetGlobals()
 		set LIBRARIES to NCBICPP & "compilers:mac_prj:lib:" as string
 		
 		if DOSOCKETS = "TRUE" then
-			set NCSASOCK to METRO & NCSASOCKDIR as string
 			if (exists (folder OTLIB)) then
 				set DOOPENTPT to "TRUE"
 			else
@@ -321,11 +318,11 @@ on DoCreateProjects()
 					, Exception Handling:false Â
 					, RTTI:false Â
 					, Require Function Prototypes:false}
-			Set Preferences of panel "Access Paths" to {System Paths:{{name:NCSASOCK, origin:absolute}}}
+			Set Preferences of panel "Access Paths" to {System Paths:{{name:SOURCEFILES & "connect:ncsasock:", origin:absolute}}}
 			my DoSetPaths2()
 			
 			repeat with i in {"dprintf", "netdb", "rexec", "socket", "sock_std", "sock_tcp", "sock_udp", "sock_utl", "syslog", "tcpglue", "unixlib"}
-				Add Files {NCSASOCK & i & ".c"} To Segment 1
+				Add Files {SOURCEFILES & "connect:ncsasock:" & i & ".c"} To Segment 1
 			end repeat
 			Add Files {METROWERKSCW & "MacOS Support:Headers:MacTCP Headers:dnr.c"} To Segment 1
 			
@@ -342,11 +339,11 @@ on DoCreateProjects()
 					, Exception Handling:false Â
 					, RTTI:false Â
 					, Require Function Prototypes:false}
-			Set Preferences of panel "Access Paths" to {System Paths:{{name:NCSASOCK, origin:absolute}}}
+			Set Preferences of panel "Access Paths" to {System Paths:{{name:SOURCEFILES & "connect:ncsasock:", origin:absolute}}}
 			my DoSetPaths2()
 			
 			repeat with i in {"dprintf", "OTnetdb", "rexec", "socket", "sock_std", "sock_tcp", "sock_udp", "OTsock_utl", "syslog", "OTtcpglue", "unixlib"}
-				Add Files {NCSASOCK & i & ".c"} To Segment 1
+				Add Files {SOURCEFILES & "connect:ncsasock:" & i & ".c"} To Segment 1
 			end repeat
 			Add Files {METROWERKSCW & "MacOS Support:Universal:Libraries:StubLibraries:ThreadsLib"} To Segment 1
 			repeat with i in {"OpenTransportAppPPC.o", "OpenTptInetPPC.o", "OpenTransportLib", "OpenTptInternetLib"}
@@ -367,7 +364,7 @@ on DoCreateProjects()
 					, RTTI:false Â
 					, Require Function Prototypes:false}
 			Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & "connect:", origin:absolute}}}
-			Set Preferences of panel "Access Paths" to {System Paths:{{name:NCSASOCK, origin:absolute}}}
+			Set Preferences of panel "Access Paths" to {System Paths:{{name:SOURCEFILES & "connect:ncsasock:", origin:absolute}}}
 			my DoSetPaths2()
 			
 			-- can't do "ncbi_lbsm_ipc", "ncbi_server_info", "ncbi_service_lbsmd"
@@ -386,7 +383,7 @@ on DoCreateProjects()
 		
 		my DoCreateDefaultProject("corelib", "corelib", Â
 			{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", Â
-				"ncbiobj", "ncbireg", "ncbistd", "ncbistre"})
+				"ncbiobj", "ncbireg", "ncbistd", "ncbistre", "ncbithr"})
 		
 		my DoCreateDefaultProject("serial", "serial", Â
 			{"asntypes", "autoptrinfo", "bytesrc", "choice", Â
