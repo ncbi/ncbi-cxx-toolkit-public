@@ -1,3 +1,4 @@
+#if 0
 /*  $Id$
 * ===========================================================================
 *
@@ -506,6 +507,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/01/23 19:32:02  vasilche
+* Commented out unused code. Prepared for removal.
+*
 * Revision 1.3  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
@@ -524,3 +528,4 @@ END_NCBI_SCOPE
 *
 * ===========================================================================
 */
+#endif
