@@ -863,6 +863,7 @@ _handleNeitherAligned(_PSIAlignmentTraits* traits, _EPSIPurgeFsmState* state,
                     int rv = _PSIPurgeAlignedRegion(msa, seq_index, 
                                                     traits->start, align_stop);
                     ASSERT(rv == PSI_SUCCESS);
+                    rv += 0;  /* dummy code to avoid warning in release mode */
                 }
             }
         }
@@ -2370,6 +2371,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/12/15 16:19:27  camacho
+ * Remove compiler warning
+ *
  * Revision 1.44  2004/12/15 03:17:11  ucko
  * Revert previous change, as VERIFY is not necessarily #defined.
  *
