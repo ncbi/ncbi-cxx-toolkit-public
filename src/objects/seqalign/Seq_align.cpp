@@ -37,7 +37,10 @@
 // standard includes
 #include <objects/seqalign/seqalign_exception.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <serial/iterator.hpp>
@@ -223,6 +226,49 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
     // return CSeq_id();
 }
 
+///---------------------------------------------------------------------------
+/// PRE : name of score to return
+/// POST: whether or not we found that score; score converted to int
+bool CSeq_align::GetNamedScore(const string &id, int &score) const
+{
+    if (IsSetScore()) {
+        const TScore &scores = GetScore();
+        ITERATE (TScore, scoreI, scores) {
+            if ((*scoreI)->IsSetId()  &&  (*scoreI)->GetId().IsStr()  &&
+                (*scoreI)->GetId().GetStr() == id) {
+                if ((*scoreI)->GetValue().IsInt()) {
+                    score = (*scoreI)->GetValue().GetInt();
+                } else {
+                    score = (int) (*scoreI)->GetValue().GetReal();
+                }
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+///---------------------------------------------------------------------------
+/// PRE : name of score to return
+/// POST: whether or not we found that score; score converted to double
+bool CSeq_align::GetNamedScore(const string &id, double &score) const
+{
+    if (IsSetScore()) {
+        const TScore &scores = GetScore();
+        ITERATE (TScore, scoreI, scores) {
+            if ((*scoreI)->IsSetId()  &&  (*scoreI)->GetId().IsStr()  &&
+                (*scoreI)->GetId().GetStr() == id) {
+                if ((*scoreI)->GetValue().IsInt()) {
+                    score = (double) (*scoreI)->GetValue().GetInt();
+                } else {
+                    score = (*scoreI)->GetValue().GetReal();
+                }
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 void CSeq_align::Validate(bool full_test) const
 {
@@ -563,6 +609,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/04/27 19:17:13  johnson
+* Added GetNamedScore helper function
+*
 * Revision 1.13  2004/04/19 17:27:22  grichenk
 * Added GetSeq_id(TDim row)
 *

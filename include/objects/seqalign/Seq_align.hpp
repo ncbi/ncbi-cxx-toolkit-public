@@ -71,6 +71,11 @@ public:
     // Throw exception if row is invalid.
     const CSeq_id&  GetSeq_id(TDim row) const;
 
+    // Get score
+    bool GetNamedScore(const string& id, int &score) const;
+    bool GetNamedScore(const string& id, double &score) const;
+
+
     /// Reverse the segments' orientation
     /// NOTE: currently *only* works for dense-seg
     void Reverse(void);
@@ -133,6 +138,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/27 19:17:13  johnson
+* Added GetNamedScore helper function
+*
 * Revision 1.11  2004/04/19 17:27:22  grichenk
 * Added GetSeq_id(TDim row)
 *
