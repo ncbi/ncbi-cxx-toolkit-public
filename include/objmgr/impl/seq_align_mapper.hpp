@@ -120,7 +120,7 @@ private:
     // Used for e_Disc alignments
     typedef vector<CSeq_align_Mapper>  TSubAligns;
 
-    static bool x_IsValidAlign(TSegments segments);
+    bool x_IsValidAlign(TSegments segments) const;
 
     CConstRef<CSeq_align>        m_OrigAlign;
     mutable CRef<CSeq_align>     m_DstAlign;
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/07 18:36:12  grichenk
+* Fixed std-seg mapping
+*
 * Revision 1.1  2004/03/30 15:40:34  grichenk
 * Initial revision
 *

@@ -213,7 +213,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
                     }
                 }
             }
-            seglens[seg.AddRow(*id, len, m_HaveStrands, strand, 0).m_Id] = len;
+            seglens[seg.AddRow(*id, start, m_HaveStrands, strand, 0).m_Id] = len;
         }
         seg.m_Len = seg_len;
         if ( multi_width ) {
@@ -222,6 +222,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
             for (size_t i = 0; i < seg.m_Rows.size(); ++i) {
                 if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
                     seg.m_Rows[i].m_Width = 3;
+                    seg.m_Rows[i].m_Start *= 3;
                 }
             }
         }
@@ -290,7 +291,7 @@ void CSeq_align_Mapper::x_Init(const CSeq_align_set& align_set)
 }
 
 
-bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments)
+bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments) const
 {
     // Each segment must contain the same set of IDs,
     // in the same order. If width is set for an ID,
@@ -312,9 +313,11 @@ bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments)
         }
 
         for (size_t nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
-            // skip for dendiags
-            if (seg0.m_Rows[nrow].m_Id != segments[nseg].m_Rows[nrow].m_Id) {
-                return false;
+            // skip for dendiags and std-segs
+            if ( !m_OrigAlign->GetSegs().IsStd() ) {
+                if (seg0.m_Rows[nrow].m_Id != segments[nseg].m_Rows[nrow].m_Id) {
+                    return false;
+                }
             }
             if (seg0.m_Rows[nrow].m_Width != 0) {
                 if (wid[nrow] == 0) {
@@ -617,8 +620,14 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
                     else {
                         // interval
                         loc->SetInt().SetId(*id);
-                        loc->SetInt().SetFrom(row->m_Start);
-                        loc->SetInt().SetTo(row->m_Start + seg_it->m_Len);
+                        TSeqPos from = row->m_Start;
+                        TSeqPos to = row->m_Start + seg_it->m_Len - 1;
+                        if (row->m_Width) {
+                            from /= row->m_Width;
+                            to /= row->m_Width;
+                        }
+                        loc->SetInt().SetFrom(from);
+                        loc->SetInt().SetTo(to);
                         if (row->m_IsSetStrand) {
                             loc->SetInt().SetStrand(row->m_Strand);
                         }
@@ -676,6 +685,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/07 18:36:12  grichenk
+* Fixed std-seg mapping
+*
 * Revision 1.2  2004/04/01 20:11:17  rsmith
 * add missing break to switch on seq-id types.
 *
