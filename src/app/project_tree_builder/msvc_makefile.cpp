@@ -97,6 +97,9 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
     case CProjKey::eLib:
         name += "lib.";
         break;
+    case CProjKey::eDll:
+        name += "dll.";
+        break;
     default:
         NCBI_THROW(CProjBulderAppException, 
                    eProjectType, 
@@ -286,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/10 16:38:00  gorelenk
+ * Added dll processing to function CreateMsvcProjectMakefileName.
+ *
  * Revision 1.8  2004/02/23 20:42:57  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *
