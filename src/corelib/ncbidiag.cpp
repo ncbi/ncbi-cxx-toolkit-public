@@ -779,7 +779,8 @@ void CNcbiDiag::DiagAssert(const char* file, size_t line,
 }
 
 void CNcbiDiag::DiagValidate(const char* file, size_t line,
-                             const char* expression, const char* message)
+                             const char* _DEBUG_ARG(expression),
+                             const char* message)
 {
 #ifdef _DEBUG
     if ( xncbi_GetValidateAction() != eValidate_Throw ) {
@@ -1100,6 +1101,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.73  2003/05/19 21:12:46  vakatov
+ * CNcbiDiag::DiagValidate() -- get rid of "unused func arg" compilation warning
+ *
  * Revision 1.72  2003/04/25 20:54:15  lavr
  * Introduce draft version of IgnoreDiagDieLevel()
  *
