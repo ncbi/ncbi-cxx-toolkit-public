@@ -36,15 +36,21 @@
 
 
 #ifndef HAVE_STRDUP
+
 extern char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
-    return (char*) memcpy(malloc(size), str, size);
+    char*  res  = (char*) malloc(size);
+    if (res)
+        memcpy(res, str, size);
+    return res;
 }
-#endif
+
+#endif /*HAVE_STRDUP*/
 
 
 #ifndef HAVE_STRCASECMP
+
 /* We assume that we're using ASCII-based charsets */
 extern int strcasecmp(const char* s1, const char* s2)
 {
@@ -88,7 +94,8 @@ extern int strncasecmp(const char* s1, const char* s2, size_t n)
 
     return c1 - c2;
 }
-#endif
+
+#endif /*HAVE_STRCASECMP*/
 
 
 extern char* strupr(char* s)
@@ -125,6 +132,9 @@ extern char* strncpy0(char* s1, const char* s2, size_t n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/10/29 22:18:29  lavr
+ * Comply with man strdup(2) in the implementation of strdup() here
+ *
  * Revision 6.13  2002/10/28 18:55:26  lavr
  * Fix change log to remove duplicate log entry for R6.12
  *
