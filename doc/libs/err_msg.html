@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>NCBI C++ error handling and diagnostics</title>
+  </head>
+
+  <body>
+	 <h1>NCBI C++ error handling and diagnostics</h1>
+
+	 <ul>
+		<li> <a href="#ref_Assert">
+		  Debug-mode(internal use) checks and diagnostics</a>
+		<li> <a href="#ref_Exception">
+		  C++ exceptions</a>
+		<li> <a href="#ref_Message">
+		  Standard NCBI C++ message posting</a>
+	 </ul>
+
+
+	 <br></br>
+	 <a name="ref_Assert"><h2>Debug-mode(internal use) checks and diagnostics</h2></a>
+
+	 <p>
+	 There are 4 preprocessor macros
+	 (<i>_TROUBLE</i>, <i>_ASSERT</i>, <i>_VERIFY</i> and <i>_TRACE</i>)
+	 to help the developer to catch some (logical) errors on the
+	 early stages of code development and to hardcode some
+	 assertions on the code and data behaviour for internal use.
+	 All these macros gets disabled in the non-debug versions lest
+	 to affect the application performance and functionality;  to
+	 turn them on, one must <i>#define</i> the <i>"_DEBUG"</i> preprocessor
+	 variable. Also, the developer must be careful and not use
+	 any code with side effects in <i>_ASSERT</i> as this will cause
+	 a discrepancy in functionality between debug and non-debug code
+	 (e.g.,  <i>ASSERT(a++);</i> would increment <i>"a"</i> in debug version but
+	 do nothing in the non-debug one).
+	 <ul>
+		<li> <b><i>_TROUBLE</i></b> --
+		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
+		otherwise, unconditionally halt the application.
+
+		<li> <b><i>_ASSERT(expr)</i></b> --
+		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
+		otherwise, evaluate logical expression
+		<b><i>expr</i></b> and halt the application if
+		<b><i>expr</i></b> resulted in <i>"false"</i>.
+
+		<li> <b><i>_VERIFY(expr)</i></b> --
+		Evaluate logical expression <b><i>expr</i></b> and, if
+		<i>"_DEBUG"</i> is defined and <b><i>expr</i></b> resulted
+		in <i>"false"</i> then halt the application.
+		
+		<li> <b><i>_TRACE(message)</i></b> --
+		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
+		otherwise, it outputs the <b><i>message</i></b> using
+		<a href="#ref_Message">Standard NCBI C++ message posting</a>:
+		<ul>#define _TRACE(message)
+		{{CNcbiDiag xxx;  xxx &lt;&lt; Trace &lt;&lt; message; }}</ul> </ul>
+
+
+	 <br></br>
+	 <a name="ref_Exception"><h2>C++ exceptions</h2></a>
+
+	 <p>
+
+
+
+	 <br></br>
+	 <a name="ref_Message"><h2>Standard NCBI C++ message posting</h2></a>
+
+	 <p>
+
+
+
+	 <br></br>
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+		  <td align=right>($Revision$)</td></tr>
+	 </table>
+  </body>
+</html>
