@@ -146,6 +146,8 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_cds", "print CDS");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
+    arg_desc->AddFlag("count_types",
+                      "print counts of different feature types");
     arg_desc->AddOptionalKey("range_from", "RangeFrom",
                              "features starting at this point on the sequence",
                              CArgDescriptions::eInteger);
@@ -188,6 +190,7 @@ void CDemoApp::Init(void)
                             "Subtype of features to select",
                             CArgDescriptions::eInteger, "-1");
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
+    arg_desc->AddFlag("reset_scope", "reset scope before exiting");
 
 #ifdef HAVE_BERKELEY_DB
     arg_desc->AddFlag("cache",
@@ -255,6 +258,7 @@ int CDemoApp::Run(void)
     int repeat_count = args["count"].AsInteger();
     int pause = args["pause"].AsInteger();
     bool only_features = args["only_features"];
+    bool count_types = args["count_types"];
     bool print_tse = args["print_tse"];
     bool print_descr = args["print_descr"];
     bool print_cds = args["print_cds"];
@@ -302,6 +306,8 @@ int CDemoApp::Run(void)
         exclude_named.insert(names);
     }
     bool scan_seq_map = args["seq_map"];
+
+    vector<int> types_counts;
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
@@ -385,7 +391,7 @@ int CDemoApp::Run(void)
         }
 
         gb_loader.Reset(CGBDataLoader::RegisterInObjectManager(*pOm,
-            id1_reader.release()).GetLoader());
+                                                               id1_reader.release()).GetLoader());
     }
 #endif
     if ( !gb_loader ) {
@@ -393,7 +399,7 @@ int CDemoApp::Run(void)
         // The last argument "eDefault" informs the OM that the loader
         // must be included in scopes during the CScope::AddDefaults() call
         gb_loader.Reset(CGBDataLoader::RegisterInObjectManager
-            (*pOm).GetLoader());
+                        (*pOm).GetLoader());
     }
 
     // Create a new scope.
@@ -664,8 +670,14 @@ int CDemoApp::Run(void)
         }
 
         {{
+            if ( count_types ) {
+                types_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
+            }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
-                count++;
+                if ( count_types ) {
+                    ++types_counts[it->GetData().GetSubtype()];
+                }
+                ++count;
                 if ( get_mapped_location )
                     it->GetLocation();
                 if ( get_original_feature )
@@ -701,6 +713,15 @@ int CDemoApp::Run(void)
             }
             NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
                      << count << NcbiEndl;
+            if ( count_types ) {
+                ITERATE ( vector<int>, it, types_counts ) {
+                    if ( *it ) {
+                        int subtype = it-types_counts.begin();
+                        NcbiCout << "  subtype " << subtype <<
+                            ": " << *it << NcbiEndl;
+                    }
+                }
+            }
         }}
 
         if ( !only_features ) {
@@ -767,44 +788,48 @@ int CDemoApp::Run(void)
         NcbiCout << "Feat count (bh range, " << sel_msg << "):\t"
                  << count << NcbiEndl;
 
-        if ( only_features )
-            continue;
-
-        // The same way may be used to iterate aligns and graphs,
-        // except that there is no type filter for both of them.
-        count = 0;
-        for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
-            count++;
-            // Get seq-annot containing the feature
-            if ( get_mapped_location )
-                it->GetLoc();
-            if ( get_original_feature )
-                it->GetOriginalGraph();
-            if ( get_mapped_feature )
-                it->GetMappedGraph();
-            if ( print_features ) {
-                NcbiCout << MSerial_AsnText <<
-                    it->GetMappedGraph() << it->GetLoc();
-            }
-            CSeq_annot_Handle annot = it.GetAnnot();
-        }
-        NcbiCout << "Graph count (loc range):\t" << count << NcbiEndl;
-
-        if ( !skip_alignments ) {
+        if ( !only_features ) {
+            // The same way may be used to iterate aligns and graphs,
+            // except that there is no type filter for both of them.
             count = 0;
-            // Create CAlign_CI using the current scope and location.
-            for (CAlign_CI it(scope, *range_loc, base_sel); it;  ++it) {
+            for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 count++;
-                if ( get_mapped_alignments ) {
-                    *it;
+                // Get seq-annot containing the feature
+                if ( get_mapped_location )
+                    it->GetLoc();
+                if ( get_original_feature )
+                    it->GetOriginalGraph();
+                if ( get_mapped_feature )
+                    it->GetMappedGraph();
+                if ( print_features ) {
+                    NcbiCout << MSerial_AsnText <<
+                        it->GetMappedGraph() << it->GetLoc();
                 }
-                if ( print_alignments ) {
-                    NcbiCout << MSerial_AsnText << *it;
-                }
+                CSeq_annot_Handle annot = it.GetAnnot();
             }
-            NcbiCout << "Align count (loc range):\t" <<count<<NcbiEndl;
+            NcbiCout << "Graph count (loc range):\t" << count << NcbiEndl;
+
+            if ( !skip_alignments ) {
+                count = 0;
+                // Create CAlign_CI using the current scope and location.
+                for (CAlign_CI it(scope, *range_loc, base_sel); it;  ++it) {
+                    count++;
+                    if ( get_mapped_alignments ) {
+                        *it;
+                    }
+                    if ( print_alignments ) {
+                        NcbiCout << MSerial_AsnText << *it;
+                    }
+                }
+                NcbiCout << "Align count (loc range):\t" <<count<<NcbiEndl;
+            }
         }
+
         if ( used_memory_check ) {
+            if ( args["reset_scope"] ) {
+                scope.ResetHistory();
+                handle.Reset();
+            }
             exit(0);
         }
     }
@@ -834,6 +859,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2004/08/31 14:15:46  vasilche
+* Added options -count_types and -reset_scope
+*
 * Revision 1.81  2004/08/24 16:43:53  vasilche
 * Removed TAB symbols from sources.
 * Seq-id cache is put in the same directory as blob cache.
