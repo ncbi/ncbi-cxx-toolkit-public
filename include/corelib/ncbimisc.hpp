@@ -359,21 +359,8 @@ extern char* strdup(const char* str);
 // a variable.
 //
 
-/// iterate macro to sequence through container elements.
-///
-/// This version is deprecated. Use equivalent ITERATE instead.
-/// @sa
-///   ITERATE
-#define iterate(Type, Var, Cont) \
-    for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
-
-/// Non constant version of iterate macro.
-#define non_const_iterate(Type, Var, Cont) \
-    for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
-
 /// ITERATE macro to sequence through container elements.
 ///
-/// This upper case style is prefered over the "iterate" macro.
 /// @sa
 ///   iterate
 #define ITERATE(Type, Var, Cont) \
@@ -381,7 +368,6 @@ extern char* strdup(const char* str);
 
 /// Non constant version of iterate macro.
 ///
-/// This upper case style is prefered over the "non_const_iterate" macro.
 /// @sa
 ///   non_const_iterate
 #define NON_CONST_ITERATE(Type, Var, Cont) \
@@ -452,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2004/11/08 13:04:35  dicuccio
+ * Removed definitions for lower-case iterate() and non_const_iterate()
+ *
  * Revision 1.73  2004/09/27 13:48:42  ivanov
  * + ERound enum
  *
