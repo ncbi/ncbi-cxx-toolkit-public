@@ -49,7 +49,6 @@
  * 6) Convert residue frequencies to PSSM
  * 7) Scale the resulting PSSM
  * </pre>
- * @todo FIXME so that matrix dimensions are no longer querySize+1
  */
 
 #include <algo/blast/core/blast_psi.h>
@@ -110,6 +109,13 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
 void
 _PSICopyMatrix(double** dest, const double** src, 
                unsigned int ncols, unsigned int nrows);
+
+/** Auxiliary function to populate multiple alignment data structure with query
+ * sequence information.
+ * @param alignment Multiple alignment data structure [in|out]
+ */
+void
+_PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment);
 
 /****************************************************************************/
 /* Structure declarations */
@@ -265,8 +271,8 @@ _PSIUpdatePositionCounts(PsiAlignmentData* alignment);
 
 /** Checks for any positions in sequence seq_index still considered for PSSM 
  * construction. If none is found, the entire sequence is marked as unused.
- * @param alignment Alignment data
- * @param seq_idnex index of the sequence of interest
+ * @param alignment Multiple alignment data structure [in|out]
+ * @param seq_index index of the sequence of interest
  */
 void
 _PSIDiscardIfUnused(PsiAlignmentData* alignment, unsigned int seq_index);
@@ -357,6 +363,9 @@ _PSICalculateInformationContentFromResidueFreqs(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/07/29 19:16:02  camacho
+ * Moved PSIExtractQuerySequenceInfo
+ *
  * Revision 1.9  2004/07/22 19:05:58  camacho
  * 1. Removed information content from PsiSequenceWeights structure.
  * 2. Added functions to calculate information content.

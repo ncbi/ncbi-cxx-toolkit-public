@@ -316,7 +316,7 @@ _PSIUpdatePositionCounts(PsiAlignmentData* alignment)
 
     ASSERT(alignment);
 
-    for (s = kQueryIndex + 1; s < alignment->dimensions->num_seqs + 1; s++) {
+    for (s = 0; s < alignment->dimensions->num_seqs + 1; s++) {
 
         if ( !alignment->use_sequences[s] ) {
             continue;
@@ -409,8 +409,7 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
         /* percentage of similarity of an aligned region between seq1 and 
            seq2 */
         {
-            double percent_identity = (double) nidentical / align_length;
-
+            double percent_identity = ((double)nidentical) / align_length;
             if (percent_identity >= max_percent_identity) {
                 const unsigned int align_stop = 
                     align_start + align_length + nXresidues;
@@ -1669,9 +1668,34 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
     return retval;
 }
 
+/****************************************************************************/
+/* Auxiliary functions to populate PsiAlignmentData structure */
+void
+_PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment)
+{
+    Uint4 i = 0;
+
+    ASSERT(alignment);
+
+    for (i = 0; i < alignment->dimensions->query_sz; i++) {
+        const Uint1 kResidue = alignment->query[i];
+
+        alignment->desc_matrix[kQueryIndex][i].letter = kResidue;
+        alignment->desc_matrix[kQueryIndex][i].used = TRUE;
+        alignment->desc_matrix[kQueryIndex][i].e_value = 
+            PSI_INCLUSION_ETHRESH / 2;
+        alignment->desc_matrix[kQueryIndex][i].extents.left = 0;
+        alignment->desc_matrix[kQueryIndex][i].extents.right =
+            alignment->dimensions->query_sz;
+    }
+}
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/07/29 19:16:02  camacho
+ * Moved PSIExtractQuerySequenceInfo
+ *
  * Revision 1.18  2004/07/22 19:06:18  camacho
  * 1. Fix in _PSICheckSequenceWeights.
  * 2. Added functions to calculate information content.

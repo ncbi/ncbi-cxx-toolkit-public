@@ -90,12 +90,6 @@ PSICreatePSSM(PsiAlignmentData* alignment,      /* [in] */
 
 /****************************************************************************/
 
-/** Initializes the alignment data structure with the query sequence
- * information. 
- */
-static void
-PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment);
-
 PsiAlignmentData*
 PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
 {
@@ -117,7 +111,7 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
     }
     memcpy((void*) retval->dimensions, (void*) info, sizeof(*info));
 
-    /* This doesn't need to be query_sz + 1 (posC) */
+    /* This doesn't need to be query_sz + 1 as posSearchItems.posC */
     retval->res_counts = (Uint4**) _PSIAllocateMatrix(info->query_sz,
                                                       BLASTAA_SIZE,
                                                       sizeof(Uint4));
@@ -162,8 +156,6 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
         return PSIAlignmentDataFree(retval);
     }
     memcpy((void*) retval->query, (void*) query, info->query_sz);
-
-    PSIExtractQuerySequenceInfo(retval);
 
     return retval;
 }
@@ -309,30 +301,3 @@ PSIDiagnosticsFree(PsiDiagnostics* diags)
     return NULL;
 }
 
-/****************************************************************************/
-/* Auxiliary functions to populate PsiAlignmentData structure */
-static void
-PSIExtractQuerySequenceInfo(PsiAlignmentData* alignment)
-{
-    Uint4 i = 0;
-
-    ASSERT(alignment);
-
-    for (i = 0; i < alignment->dimensions->query_sz; i++) {
-        const Uint1 kResidue = alignment->query[i];
-
-        alignment->desc_matrix[kQueryIndex][i].letter = kResidue;
-        alignment->desc_matrix[kQueryIndex][i].used = TRUE;
-        alignment->desc_matrix[kQueryIndex][i].e_value = 
-            PSI_INCLUSION_ETHRESH / 2;
-        alignment->desc_matrix[kQueryIndex][i].extents.left = 0;
-        alignment->desc_matrix[kQueryIndex][i].extents.right =
-            alignment->dimensions->query_sz;
-
-        alignment->res_counts[i][kResidue]++;
-        alignment->match_seqs[i]++;
-
-        ASSERT(alignment->res_counts[i][kResidue] == (Uint4)1);
-        ASSERT(alignment->match_seqs[i] == (Uint4)1);
-    }
-}
