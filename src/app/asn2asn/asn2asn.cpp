@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/10/13 16:29:40  vasilche
+* Fixed processing of optional -o argument.
+*
 * Revision 1.24  2000/10/03 17:23:50  vasilche
 * Added code for CSeq_entry as choice pointer.
 *
@@ -174,11 +177,13 @@ int main(int argc, char** argv)
 static
 void SeqEntryProcess(CSeq_entry& entry);  /* dummy function */
 
+#if CSEQ_ENTRY_REF_CHOICE
 static
 void SeqEntryProcess(CRef<CSeq_entry>& entry)
 {
     SeqEntryProcess(*entry);
 }
+#endif
 
 class CReadSeqSetHook : public CReadClassMemberHook
 {
@@ -251,7 +256,7 @@ int CAsn2Asn::Run(void)
     else if ( args->Exist("X") )
         inFormat = eSerial_Xml;
 
-    bool haveOutput = args->Exist("o");
+    bool haveOutput = args->IsProvided("o");
     string outFile;
     ESerialDataFormat outFormat = eSerial_AsnText;
     if ( haveOutput ) {
