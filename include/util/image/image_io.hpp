@@ -78,7 +78,7 @@ public:
 
         eCompress_Min     = eCompress_None,
         eCompress_Max     = eCompress_High,
-        eCompress_Default = eCompress_Medium,
+        eCompress_Default = eCompress_Medium
     };
 
     // retrieve an image type from its magic number
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/27 20:54:49  vakatov
+ * Remove an extraneous comma in enum to get rid of a warning
+ *
  * Revision 1.5  2003/12/16 15:49:38  dicuccio
  * Large re-write of image handling.  Added improved error-handling and support
  * for streams-based i/o (via hooks into each client library).

@@ -45,7 +45,7 @@ public:
         eRowNotFound,          ///< Row not found
         eColumnNotFound,       ///< Column not found
         eRowAlreadyExists,     ///< Row id has been assigned before
-        eColumnAlreadyExists,  ///< Column id has been assigned before
+        eColumnAlreadyExists   ///< Column id has been assigned before
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -463,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/12/27 20:58:34  vakatov
+ * Remove an extraneous comma in enum to get rid of a warning
+ *
  * Revision 1.4  2004/09/14 18:34:21  kuznets
  * ASSERT protection replaced with exception throw
  *
