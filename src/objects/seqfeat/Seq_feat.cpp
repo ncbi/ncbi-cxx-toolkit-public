@@ -78,13 +78,13 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
     CSeqFeatData::E_Choice type1 = data1.Which();
     CSeqFeatData::E_Choice type2 = data2.Which();
 
-    {{ // order by feature type
+    if ( type1 != type2 ) { // order by feature type
         int order1 = GetTypeSortingOrder(type1);
         int order2 = GetTypeSortingOrder(type2);
         int diff = order1 - order2;
         if ( diff != 0 )
             return diff;
-    }}
+    }
 
     // compare internal intervals
     if ( loc1.IsMix()  &&  loc2.IsMix() ) {
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.18  2004/02/09 14:45:07  vasilche
+ * Do not check type order if types are equal.
+ *
  * Revision 6.17  2004/01/05 19:16:57  dicuccio
  * Added APIs to ease adding qualifiers and dbxrefs
  *
