@@ -67,9 +67,6 @@ double GetProteinWeight(CSeqVector& v, TSeqPos start, TSeqPos end)
 {
     v.SetCoding(CSeq_data::e_Ncbistdaa);
 
-    if (start < 0) {
-        start = 0;
-    }
     if (end >= v.size()) {
         end = v.size() - 1;
     }
@@ -187,6 +184,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/05/10 14:54:12  ucko
+* Dropped test for negative start positions, which are now impossible.
+*
 * Revision 1.7  2002/05/06 17:12:29  ucko
 * Take advantage of new eResolve_TSE option.
 *
