@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/22 23:20:30  vakatov
+* + CObjectInfo::GetMember(), CConstObjectInfo::GetMember()
+*
 * Revision 1.2  2000/12/15 15:37:59  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -240,6 +243,7 @@ public:
     void GetPrimitiveValueOctetString(vector<char>& value) const;
 
     // class interface
+    CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
     CMemberIterator BeginMembers(void) const;
     CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
     CMemberIterator FindClassMember(const string& memberName) const;
@@ -314,6 +318,7 @@ public:
     void SetPrimitiveValueOctetString(const vector<char>& value);
 
     // class interface
+    CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
     CMemberIterator BeginMembers(void) const;
     CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
     CMemberIterator FindClassMember(const string& memberName) const;

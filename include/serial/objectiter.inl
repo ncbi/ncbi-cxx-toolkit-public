@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/22 23:20:30  vakatov
+* + CObjectInfo::GetMember(), CConstObjectInfo::GetMember()
+*
 * Revision 1.1  2000/10/20 15:51:26  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -878,6 +881,13 @@ CObjectTypeInfoVI CObjectTypeInfo::FindVariantByTag(int tag) const
 }
 
 inline
+CConstObjectInfoMI CConstObjectInfo::GetMember(CObjectTypeInfoMI member) const
+{
+    return CMemberIterator(*this, member.GetMemberIndex());
+}
+
+
+inline
 CConstObjectInfoMI CConstObjectInfo::BeginMembers(void) const
 {
     return CMemberIterator(*this);
@@ -899,6 +909,12 @@ inline
 CConstObjectInfoMI CConstObjectInfo::FindClassMemberByTag(int tag) const
 {
     return GetClassMemberIterator(FindMemberIndex(tag));
+}
+
+inline
+CObjectInfoMI CObjectInfo::GetMember(CObjectTypeInfoMI member) const
+{
+    return CMemberIterator(*this, member.GetMemberIndex());
 }
 
 inline
