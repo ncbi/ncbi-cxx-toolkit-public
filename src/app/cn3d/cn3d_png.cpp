@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/10/25 17:16:43  thiessen
+* add PNG output to Mac version
+*
 * Revision 1.7  2001/10/25 14:19:44  thiessen
 * move png.h to top
 *
@@ -441,6 +444,13 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     Display *display;
     int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
 
+#elif defined(__WXMAC__)
+	unsigned char *base = NULL;
+    GLint attrib[20], glSize;
+    int na = 0;
+    AGLPixelFormat fmt = NULL;
+    AGLContext ctx = NULL, currentCtx;
+
 #else
     ERR_POST("PNG export not (yet) implemented on this platform");
     return false;
@@ -580,6 +590,46 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx))
                 throw "failed to make GLXPixmap rendering context without shared display lists";
         }
+
+#elif defined(__WXMAC__)
+    	currentCtx = aglGetCurrentContext();
+
+    	// Mac pixels seem to always be 32-bit
+    	bytesPerPixel = 4;
+
+    	base = new unsigned char[outputWidth * bufferHeight * bytesPerPixel];
+    	if (!base) throw "failed to allocate image buffer";
+
+    	// create an off-screen rendering context (NOT doublebuffered)
+    	attrib[na++] = AGL_OFFSCREEN;
+    	attrib[na++] = AGL_RGBA;
+    	glGetIntegerv(GL_RED_BITS, &glSize);
+        attrib[na++] = AGL_RED_SIZE;
+        attrib[na++] = glSize;
+        attrib[na++] = AGL_GREEN_SIZE;
+        attrib[na++] = glSize;
+        attrib[na++] = AGL_BLUE_SIZE;
+        attrib[na++] = glSize;
+    	glGetIntegerv(GL_DEPTH_BITS, &glSize);
+        attrib[na++] = AGL_DEPTH_SIZE;
+        attrib[na++] = glSize;
+        attrib[na++] = AGL_NONE;
+
+        if ((fmt=aglChoosePixelFormat(NULL, 0, attrib)) == NULL)
+        	throw "aglChoosePixelFormat failed";
+        // try to share display lists with current "regular" context
+        if ((ctx=aglCreateContext(fmt, currentCtx)) == NULL) {
+        	ERR_POST(Warning << "aglCreateContext with shared lists failed");
+        	shareDisplayLists = false;
+        	if ((ctx=aglCreateContext(fmt, NULL)) == NULL)
+        	    throw "aglCreateContext without shared lists failed";
+        }
+
+        // attach off-screen buffer to this context 
+        if (!aglSetOffScreen(ctx, outputWidth, bufferHeight, bytesPerPixel * outputWidth, base))
+        	throw "aglSetOffScreen failed";
+        if (!aglSetCurrentContext(ctx))
+        	throw "aglSetCurrentContext failed";
 #endif
 
         TESTMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
@@ -726,6 +776,12 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     if (localVI && visinfo) XFree(visinfo);
     if (gotAnXError) ERR_POST(Warning << "Got an X error destroying GLXPixmap context");
     XSetErrorHandler(currentXErrHandler);
+
+#elif defined(WIN_MAC)
+	aglSetCurrentContext(currentCtx);
+	if (ctx) aglDestroyContext(ctx);
+	if (fmt) aglDestroyPixelFormat(fmt);
+	if (base) delete base;
 #endif
 
     // reset font after "regular" context restore
