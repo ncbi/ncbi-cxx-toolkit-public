@@ -176,9 +176,20 @@ FASTCGI_LIBS    = @FASTCGI_LIBS@
 # Fast-CGI lib:  (module to add to the "xcgi" library)
 FASTCGI_OBJS    = @FASTCGI_OBJS@
 
-# NCBI SSS:  headers and library path
+# NCBI SSS:  headers, library path, libraries
 NCBI_SSS_INCLUDE = @NCBI_SSS_INCLUDE@
 NCBI_SSS_LIBPATH = @NCBI_SSS_LIBPATH@
+LIBSSSUTILS      = @LIBSSSUTILS@
+LIBSSSDB         = @LIBSSSDB@
+
+# NCBI GEO:  headers, library path, libraries
+NCBI_GEO_INCLUDE = @NCBI_GEO_INCLUDE@
+NCBI_GEO_LIBPATH = @NCBI_GEO_LIBPATH@
+LIBGEODB         = @LIBGEODB@
+
+# SP:  headers, libraries
+SP_INCLUDE = @SP_INCLUDE@
+SP_LIBS    = @SP_LIBS@
 
 # Path to the root of PubMed tree -- sources, headers and precompiled libs
 NCBI_PM_PATH = @NCBI_PM_PATH@
