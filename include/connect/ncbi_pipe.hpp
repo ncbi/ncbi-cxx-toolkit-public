@@ -125,7 +125,7 @@ public:
         fStdOut_Open     =    0,  ///< do     open child stdout (default)
         fStdOut_Close    = 0x02,  ///< do not open child's stdout
         fStdErr_Open     = 0x04,  ///< do     open child stderr
-        fStdErr_Close    =    0,  ///< do not open child stderr (default)
+        fStdErr_Close    =    0   ///< do not open child stderr (default)
     };
     typedef unsigned int TCreateFlags;  ///< bit-wise OR of "ECreateFlags"
 
@@ -355,6 +355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/09/16 14:55:49  ivanov
+ * Removed extra comma in the enum definition
+ *
  * Revision 1.15  2003/09/09 19:23:16  ivanov
  * Comment changes
  *
