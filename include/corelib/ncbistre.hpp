@@ -110,6 +110,12 @@
 #include <string>
 
 
+/** @addtogroup Stream
+ *
+ * @{
+ */
+
+
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
@@ -293,6 +299,10 @@ public:
     const char* m_String;
 };
 
+
+/* @} */
+
+
 inline
 char Upcase(char c)
 {
@@ -379,6 +389,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/04/01 19:18:29  siyan
+ * Added doxygen support
+ *
  * Revision 1.31  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp

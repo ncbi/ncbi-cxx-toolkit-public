@@ -36,6 +36,12 @@
 #include <corelib/ncbistd.hpp>
 
 
+/** @addtogroup Version
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -74,9 +80,15 @@ protected:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/01 19:19:52  siyan
+ * Added doxygen support
+ *
  * Revision 1.2  2002/12/26 19:18:07  dicuccio
  * Added empty virtual destructor
  *

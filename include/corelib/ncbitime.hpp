@@ -48,6 +48,12 @@
 #include <time.h>
 
 
+/** @addtogroup Time
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -360,6 +366,8 @@ private:
 };
 
 
+/* @} */
+
 
 //=============================================================================
 //
@@ -392,7 +400,6 @@ extern CTime CurrentTime(CTime::ETimeZone          tz  = CTime::eLocal,
 // Truncate the time to days (see CTime::Truncate)
 NCBI_XNCBI_EXPORT 
 extern CTime Truncate(const CTime& t);
-
 
 
 
@@ -622,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/04/01 19:18:43  siyan
+ * Added doxygen support
+ *
  * Revision 1.18  2003/02/10 22:36:55  ucko
  * Make string- and time_t-based constructors explicit, to avoid weird surprises.
  *

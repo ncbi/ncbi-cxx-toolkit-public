@@ -42,6 +42,13 @@
 
 #include <ncbiconf.h>
 
+
+/** @addtogroup Portability
+ *
+ * @{
+ */
+
+
 // threads configuration
 #undef NCBI_NO_THREADS
 #undef NCBI_THREADS
@@ -143,9 +150,15 @@ typedef BIG_TYPE Ncbi_BigScalar;
 #undef INT8_TYPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/04/01 19:19:03  siyan
+ * Added doxygen support
+ *
  * Revision 1.11  2003/03/03 20:34:50  vasilche
  * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
  * Avoid using _REENTRANT macro - use NCBI_THREADS instead.

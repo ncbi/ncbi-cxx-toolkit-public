@@ -39,6 +39,13 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
+
+/** @addtogroup MTWrappers
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -97,9 +104,16 @@ private:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/01 19:19:44  siyan
+ * Added doxygen support
+ *
  * Revision 1.3  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp

@@ -40,6 +40,12 @@
 #include <map>
 
 
+/** @addtogroup Utility Template Utilities
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -234,9 +240,15 @@ FindBestChoice(const C& container, F score_func)
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/04/01 19:19:23  siyan
+ * Added doxygen support
+ *
  * Revision 1.30  2003/03/10 17:43:45  kuznets
  * iterate -> ITERATE cleanup
  *
