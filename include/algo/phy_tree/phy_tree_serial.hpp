@@ -36,12 +36,16 @@
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <serial/serialimpl.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class NCBI_XALGOPHYTREE_EXPORT CPhyTreeSerial : public CSerialObject
 {
 public:
+    /// Seq-ids of terminal nodes
+    typedef vector<CRef<objects::CSeq_id> > TIds;
+    
     CPhyTreeSerial(void) {}
 
     CPhyTreeSerial(const TPhyTreeNode& val)
@@ -53,10 +57,19 @@ public:
 
     void SetTree(const TPhyTreeNode& val) {m_Tree = val;}
 
+    /// Getters and setters for optional Seq-ids 
+    /// associated with terminal nodes.
+    /// For this to make sense, the integer ids of the terminal
+    /// nodes must be indexes into this.
+    const TIds& GetIds(void) const {return m_Ids;}
+    TIds& SetIds(void) {return m_Ids;}
+    void SetIds(const TIds& val) {m_Ids = val;}
+
     DECLARE_INTERNAL_TYPE_INFO();
 
 private:
     TPhyTreeNode m_Tree;
+    TIds m_Ids;
 };
 
 END_NCBI_SCOPE
@@ -66,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/17 16:52:47  jcherry
+ * Added optional Seq-ids
+ *
  * Revision 1.2  2004/02/10 17:02:29  dicuccio
  * Formatting changes.  Added export specifiers
  *
