@@ -234,7 +234,7 @@ void CValidError_imp::PostErr
     string msg(message + " DESCRIPTOR: ");
     ds.GetLabel (&msg, CSeqdesc::eBoth);
 
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, ds));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, ds);
 }
 
 
@@ -299,7 +299,7 @@ void CValidError_imp::PostErr
             msg += loc_label;
         }
     }
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, ft));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, ft);
 }
 
 
@@ -316,7 +316,7 @@ void CValidError_imp::PostErr
     } else {
         sq.GetLabel(&msg, CBioseq::eBoth, false);
     }
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, sq));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, sq);
 }
 
 
@@ -347,7 +347,7 @@ void CValidError_imp::PostErr
     } else {
         set.GetLabel(&msg, CBioseq_set::eBoth);
     }
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, set));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, set);
 }
 
 
@@ -376,7 +376,7 @@ void CValidError_imp::PostErr
 
     // !!! need to decide on the message
 
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, an));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, an);
 }
 
 
@@ -396,7 +396,7 @@ void CValidError_imp::PostErr
     msg += " ";
     graph.GetLoc().GetLabel(&msg);
 
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, graph));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, graph);
 }
 
 
@@ -435,7 +435,7 @@ void CValidError_imp::PostErr
     msg+= " SEGS: ";
     msg += align.GetSegs().SelectionName(align.GetSegs().Which());
 
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, align));
+    m_ErrRepository->AddValidErrItem(sv, et, msg, align);
 }
 
 
@@ -445,7 +445,7 @@ void CValidError_imp::PostErr
  const string& message,
  TEntry entry)
 {
-    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, message, entry));
+    m_ErrRepository->AddValidErrItem(sv, et, message, entry);
 }
 
 
@@ -2436,6 +2436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2004/06/25 14:56:41  shomrat
+* Use modified CValidError API
+*
 * Revision 1.52  2004/05/26 14:52:59  shomrat
 * trans-splice exception supress subsequent error messages
 *
