@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/02/15 15:27:12  thiessen
+* on Mac, use meta for MouseDown events
+*
 * Revision 1.39  2002/02/15 01:02:17  thiessen
 * ctrl+click keeps edit modes
 *
@@ -521,7 +524,14 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     }
 
     shiftDown = ((controls & ViewableAlignment::eShiftDown) > 0);
-    controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
+    controlDown = ((controls &
+#ifdef __WXMAC__
+        // on Mac, can't do ctrl-clicks, so use meta instead
+        ViewableAlignment::eAltOrMetaDown 
+#else
+        ViewableAlignment::eControlDown 
+#endif
+            ) > 0);
     if (!shiftDown && !controlDown && column == -1)
         GlobalMessenger()->RemoveAllHighlights(true);
 
