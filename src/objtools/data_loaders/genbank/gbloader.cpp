@@ -105,6 +105,8 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
     m_Driver(driver)
 {
   GBLOG_POST( "CGBDataLoader");
+  CORE_SetLOG(LOG_cxx2c());
+  CORE_SetLOCK(MT_LOCK_cxx2c());
 
 #if 0
   //#if defined(HAVE_LIBSYBASE) && defined(HAVE_LIBDL) 
@@ -759,7 +761,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
               else
                 {
                   tse_up->m_mode   = CTSEUpload::eDone;
-                  LOG_POST( "GetBlob(" << s << ") " << "- retrieval of the whole blob failed - no data available");
+                  LOG_POST( "GetBlob(" <<  ") " << "- retrieval of the whole blob failed - no data available");
                 }
             }
           else
@@ -796,6 +798,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/04/30 18:56:54  gouriano
+* added multithreading-related initialization
+*
 * Revision 1.31  2002/04/28 03:36:47  vakatov
 * Temporarily turn off R1.30(b) unconditionally -- until it is buildable
 *
