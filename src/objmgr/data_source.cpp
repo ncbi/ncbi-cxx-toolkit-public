@@ -1040,7 +1040,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 minus_strand);
             seg->m_RefSeq =
                 GetIdMapper().GetHandle(loc.GetInt().GetId());
-            seg->m_RefPos = loc.GetInt().GetFrom();
+            seg->m_RefPos = min(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
             seg->m_Length = loc.GetInt().GetLength();
             seqmap.Add(*seg);
             pos += loc.GetInt().GetLength();
@@ -1069,7 +1069,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                     CSeqMap::eSeqRef, pos, (*ii)->GetLength(), minus_strand);
                 seg->m_RefSeq =
                     GetIdMapper().GetHandle((*ii)->GetId());
-                seg->m_RefPos = (*ii)->GetFrom();
+                seg->m_RefPos = min((*ii)->GetFrom(), (*ii)->GetTo());
                 seg->m_Length = (*ii)->GetLength();
                 seqmap.Add(*seg);
                 pos += (*ii)->GetLength();
@@ -2029,6 +2029,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2002/12/19 20:16:39  grichenk
+* Fixed locations on minus strand
+*
 * Revision 1.71  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *
