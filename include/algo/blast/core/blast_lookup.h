@@ -225,7 +225,6 @@ BlastLookupTable* LookupTableDestruct(BlastLookupTable* lookup);
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
  * @param unmasked_regions an array of BlastSeqLoc*s, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
- * @param num_queries the number of queries [in]
  * @return Zero.
  */
 Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,

@@ -62,6 +62,11 @@ static char const rcsid[] = "$Id$";
  * @{
  */
 
+/** Parses a filter string option and retrieves part of it dealing with 
+ * repeats filtering.
+ * @param filter_string Filter string option [in]
+ * @return Filter string corresponding to repeats filtering only.
+ */
 char* GetRepeatsFilterOption(const char* filter_string)
 {
     if (!filter_string)
@@ -89,8 +94,13 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
+/** Convert a list of mask locations to a CSeq_loc object.
+ * @param query Query sequence location [in]
+ * @param loc_list List of mask locations [in]
+ * @return List of mask locations in a CSeq_loc form.
+ */
 static CSeq_loc* 
-BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
+s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
 {
    CSeq_loc* seqloc = new CSeq_loc();
    BlastSeqLoc* loc;
@@ -107,7 +117,13 @@ BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
 
 #define MASK_LINK_VALUE 5
 
-/* FIXME, is this functions correct, how does it work?? */
+/** Fills the mask locations in the query SSeqLoc structures, as if it was a 
+ * lower case mask, given the results of a BLAST search against a database of 
+ * repeats.
+ * @param query Vector of query sequence locations structures [in] [out]
+ * @param results Internal results structure, returned from a BLAST search
+ *                against a repeats database [in]
+ */
 static void
 FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
 {
@@ -159,11 +175,16 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
 
         /* Create a CSeq_loc with these locations and fill it for the 
            respective query */
-        query[query_index].mask.Reset(BlastSeqLoc2CSeqloc(query[query_index],
+        query[query_index].mask.Reset(s_BlastSeqLoc2CSeqloc(query[query_index],
                                                           ordered_loc_list));
     }
 }
 
+/** Parses repeat filtering option string and retrieves the repeats database 
+ * name.
+ * @param repeat_options Repeat filtering option string [in]
+ * @param dbname Repeats database name [out]
+ */
 static void ParseRepeatOptions(char* repeat_options, char** dbname)
 {
     if (!dbname)
@@ -186,6 +207,11 @@ static void ParseRepeatOptions(char* repeat_options, char** dbname)
 
 }
 
+/** Given a repeats filtering option, performs a BLAST search against a repeats 
+ * database and fills repeats locations into the query SSeqLoc structures.
+ * @param query Vector of query sequence location structures [in] [out]
+ * @param repeats_filter_string Repeats filtering option string [in]
+ */
 void
 FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 {
@@ -224,6 +250,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.10  2004/11/24 16:06:47  dondosha
+ *  Added and/or fixed doxygen comments
+ *
  *  Revision 1.9  2004/11/17 20:26:33  camacho
  *  Use new BlastSeqSrc initialization function names and check for initialization errors
  *

@@ -3209,7 +3209,6 @@ BLAST_SmallGapSumE(
  * sequence are possibly large (up to 4000 bp.)  This routine is used
  * for linking HSPs representing exons in the DNA sequence that are
  * separated by introns.
- * @param kbp Statistical parameters [in]
  * @param query_start_points  the number of starting points in
  *                            the query sequence permitted
  *                            between adjacent alignments [in]
@@ -3622,6 +3621,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.101  2004/11/24 16:02:51  dondosha
+ * Added and/or fixed doxygen comments
+ *
  * Revision 1.100  2004/11/23 21:47:56  camacho
  * Changed signature of Blast_KarlinBlkIdealCalc so that it is used only
  * to initialize kbp_ideal field of BlastScoreBlk.

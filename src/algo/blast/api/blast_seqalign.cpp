@@ -51,9 +51,11 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 #ifndef SMALLEST_EVALUE
+/// Threshold below which e-values are saved as 0
 #define SMALLEST_EVALUE 1.0e-180
 #endif
 #ifndef GAP_VALUE
+/// Value in the Dense-seg indicating a gap
 #define GAP_VALUE -1
 #endif
 
@@ -1200,6 +1202,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/11/24 16:06:47  dondosha
+* Added and/or fixed doxygen comments
+*
 * Revision 1.50  2004/11/22 16:08:54  dondosha
 * Minor fix to make sure that "evalue" score type is always used when hsp is not part of a linked set
 *

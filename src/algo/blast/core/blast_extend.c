@@ -44,6 +44,7 @@ static char const rcsid[] =
 #include "blast_inline.h"
 #include "blast_extend_priv.h"
 
+/** Minimal size of an array of initial word hits, allocated up front. */
 #define MIN_INIT_HITLIST_SIZE 100
 
 /* Description in blast_extend.h */
@@ -739,6 +740,10 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
    return (score < cutoff);
 }
 
+/** Mask for encoding in one integer a hit offset and whether that hit has 
+ * already been extended and saved. The latter is put in the top bit of the
+ * integer.
+ */
 #define LAST_HIT_MASK 0x7fffffff
 
 /** Perform ungapped extension given an offset pair, and save the initial 
@@ -852,7 +857,7 @@ s_BlastnExtendInitialHit(BLAST_SequenceBlk* query,
  *                 performed, e.g. for contiguous megablast. [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
- * @param ewp The structure containing word extension information [in]
+ * @param stack_table Structure containing stacks of initial hits [in] [out]
  * @param q_off The offset in the query sequence [in]
  * @param s_end The offset in the subject sequence where this hit ends [in]
  * @param s_off The offset in the subject sequence [in]

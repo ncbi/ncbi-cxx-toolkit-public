@@ -280,6 +280,9 @@ s_CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
    return retval;
 }
 
+/** Minimal size of a chunk for state array allocation. */
+#define	CHUNKSIZE	2097152
+
 /** Retrieve the state structure corresponding to a given length
  * @param head Pointer to the first element of the state structures 
  *        array [in]
@@ -287,7 +290,6 @@ s_CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
  *        found [in]
  * @return The found or created state structure
  */
-#define	CHUNKSIZE	2097152
 static GapStateArrayStruct*
 s_GapGetState(GapStateArrayStruct** head, Int4 length)
 

@@ -90,9 +90,10 @@ typedef struct Blast_ScoreFreq {
     double*      sprob;     /**< arrays for frequency of given score, shifted down by score_min. */
 } Blast_ScoreFreq;
 
+/** Nearest power of 2 greater than the protein BLAST matrix size. */
 #define BLAST_MATRIX_SIZE 32
 
-/* Remove me */
+/** @todo FIXME: Remove me */
 typedef struct SBLASTMatrixStructure {
     Int4 *matrix[BLAST_MATRIX_SIZE];
     Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE]; /* not used */
@@ -369,7 +370,6 @@ double BLAST_UnevenGapSumE (Int4 query_start_points, Int4 subject_start_points,
 
 /** Calculates the e-value if a collection of distinct alignments with
  *   arbitrarily large gaps between the alignments
- * @param kbp statistical parameters [in]
  * @param num number of distinct alignments in the collection [in]
  * @param xsum the sum of the scores of these alignments each individually
  *     normalized using an appropriate value of Lambda and logK [in]
