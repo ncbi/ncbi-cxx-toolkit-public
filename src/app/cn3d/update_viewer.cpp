@@ -242,7 +242,7 @@ void UpdateViewer::SaveAlignments(void)
 
             // add a text comment
             CUpdate_comment *comment = new CUpdate_comment();
-            comment->SetComment("Created by demotion or import in Cn3D 4.0");
+            comment->SetComment("Created by demotion or import in Cn3D");
             updateAlign->SetDescription().resize(updateAlign->GetDescription().size() + 1);
             updateAlign->SetDescription().back().Reset(comment);
 
@@ -1139,6 +1139,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/06/02 14:56:22  thiessen
+* remove version number from import comment
+*
 * Revision 1.73  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
