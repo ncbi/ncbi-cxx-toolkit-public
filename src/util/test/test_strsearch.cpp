@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
 #include <stdio.h>
 
@@ -90,7 +89,7 @@ void s_TEST_BoyerMooreMatcher(void)
                                CBoyerMooreMatcher::eWholeWordMatch);
     size_t pos = matcher.Search(str, 0, len);
 
-    assert(pos == -1);
+    assert((int)pos == -1l);
     }}
 
     {{
@@ -99,7 +98,7 @@ void s_TEST_BoyerMooreMatcher(void)
                                CBoyerMooreMatcher::eWholeWordMatch);
     size_t pos = matcher.Search(str, 0, len);
 
-    assert(pos == -1);
+    assert((int)pos == -1l);
     }}
 
     {{    
@@ -108,7 +107,7 @@ void s_TEST_BoyerMooreMatcher(void)
                                CBoyerMooreMatcher::eWholeWordMatch);
     size_t pos = matcher.Search(str, 0, len);
 
-    assert(pos == -1);
+    assert((int)pos == -1l);
     }}
 
     {{
@@ -159,7 +158,7 @@ void s_TEST_BoyerMooreMatcher(void)
     int    len = strlen(str1);
     int    pos = matcher.Search(str1, 0, len);
 
-    assert(pos != -1);
+    assert((int)pos != -1l);
     }}
 
     cout << "======== String search test (Boyer-Moore) ok." << endl;
@@ -220,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/15 13:46:49  kuznets
+ * Minor compilation warning fixes
+ *
  * Revision 1.5  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
