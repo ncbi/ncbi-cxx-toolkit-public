@@ -51,9 +51,12 @@ class NCBI_XBLAST_EXPORT CDbBlast : public CObject
 {
 public:
 
-    /// Contructor to allow query concatenation
+    /// Contructor, creating default options for a given program
     CDbBlast(const TSeqLocVector& queries, 
              BlastSeqSrc* bssp, EProgram p);
+    // Constructor using a prebuilt options handle
+    CDbBlast(const TSeqLocVector& queries, 
+             BlastSeqSrc* bssp, CBlastOptionsHandle& opts);
 
     virtual ~CDbBlast();
 
@@ -199,6 +202,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/12/15 15:52:29  dondosha
+* Added constructor with options handle argument
+*
 * Revision 1.5  2003/12/10 20:08:59  dondosha
 * Added function to retrieve the query info structure
 *

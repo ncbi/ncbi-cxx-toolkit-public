@@ -71,6 +71,20 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
+CDbBlast::CDbBlast(const TSeqLocVector& queries, 
+                   BlastSeqSrc* bssp, CBlastOptionsHandle& opts)
+    : m_pSeqSrc(bssp), mi_bQuerySetUpDone(false) 
+{
+    m_tQueries = queries;
+    mi_pScoreBlock = NULL;
+    mi_pLookupTable = NULL;
+    mi_pLookupSegments = NULL;
+    mi_pFilteredRegions = NULL;
+    mi_pResults = NULL;
+    mi_pReturnStats = NULL;
+    m_OptsHandle.Reset(&opts);    
+}
+
 CDbBlast::~CDbBlast()
 { 
     x_ResetQueryDs();
@@ -209,6 +223,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2003/12/15 15:56:42  dondosha
+ * Added constructor with options handle argument
+ *
  * Revision 1.5  2003/12/03 17:41:19  camacho
  * Fix incorrect member initializer list
  *
