@@ -149,6 +149,8 @@ check:
 check_add:
 	@$(CHECK_ADD_BRA)  $(CHECK_ADD_KET)
 
+status_dir = @status_dir@
+requirements: $(REQUIRES:%=$(status_dir)/%.enabled)
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
@@ -159,9 +161,13 @@ SUB_BRA = \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(MAKE) $(MFLAGS)
+          cd $$i  &&  if $(MAKE) $(MFLAGS) -q requirements ; then \
+            $(MAKE) $(MFLAGS)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
+          else \
+            echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
+          fi \
         else \
           echo "Warning:  non-existent sub-project \"$$i\"" ; \
         fi ) || $(NOTK_BRA)  exit 5 $(NOTK_KET) ; \
