@@ -1804,24 +1804,22 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
+        const CSeq_loc& loc = fi->GetLocation();
+        if ( !IsOneBioseq(loc) ) {  // skip segmented 
+            continue;
+        }
         CSeq_loc_CI si(fi->GetLocation());
         if ( !(++si) ) {  // if only a single interval
             continue;
         }
-        
-        EDiagSev sev = eDiag_Error;
-        if ( m_Imp.IsNC() ) {
-            sev = eDiag_Warning;
-        }
         if ( seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular ) {
-            sev = eDiag_Info;
+            continue;
         }
 
-        if ( sev != eDiag_Info ) {
-            PostErr(sev, eErr_SEQ_FEAT_MultiIntervalGene,
-              "Gene feature on non-segmented sequence should not "
-              "have multiple intervals", fi->GetMappedFeature());
-        }
+        EDiagSev sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
+        PostErr(sev, eErr_SEQ_FEAT_MultiIntervalGene,
+            "Gene feature on non-segmented sequence should not "
+            "have multiple intervals", fi->GetMappedFeature());
     }
 }
 
@@ -3053,6 +3051,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/05/14 21:48:18  shomrat
+* Bug fix in ValidateMultiIntervalGene
+*
 * Revision 1.33  2003/05/14 20:35:11  shomrat
 * Bug fixes
 *
