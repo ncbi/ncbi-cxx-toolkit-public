@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.5 2001/01/03 23:32:11 vakatov Exp $
+	$Id: maketests.met,v 1.6 2001/01/04 21:27:39 vakatov Exp $
 	
    ================================================================================ *)
 
@@ -358,9 +358,9 @@ on DoCreateProjects()
 				"blocktype", "choicetype", "typestr", "ptrstr", "stdstr", "classstr", Â
 				"enumstr", "stlstr", "choicestr", "choiceptrstr", "value", "mcontainer", Â
 				"module", "moduleset", "generate", "filecode", "code", "fileutil", Â
-				"alexer", "aparser", "parser", "lexer", "exceptions", "checksum", Â
+				"alexer", "aparser", "parser", "lexer", "exceptions", Â
 				"comments", "srcutil"}, Â
-			{"corelib", "serial"})
+			{"corelib", "serial", "util"})
 		
 		my DoCreateDefaultProject("test_ncbitime", "corelib:test", Â
 			{"test_ncbitime"}, {"corelib"})
@@ -402,25 +402,25 @@ on DoCreateProjects()
 			{"ncbi_conntest", "test_ncbi_service_connector"}, {"ncsasock", "connect"})
 		
 		my DoCreateDefaultProject("serialtest", "serial:test", Â
-			{"serialobject", "serialobject_Base", "testserial", "cppwebenv"}, {"corelib", "serial"})
+			{"serialobject", "serialobject_Base", "testserial", "cppwebenv"}, {"corelib", "serial", "util"})
 		
 		my DoCreateDefaultProject("asn2asn", "objects:asn2asn", Â
-			{"asn2asn"}, {"corelib", "serial", "object_seqset", "object_seq", "object_seqres", Â
+			{"asn2asn"}, {"corelib", "serial", "util", "object_seqset", "object_seq", "object_seqres", Â
 			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", Â
 			"object_medline", "object_biblio", "object_general"})
 		
 		my DoCreateDefaultProject("testmedline", "objects:testmedline", Â
-			{"testmedline"}, {"corelib", "serial", "object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
+			{"testmedline"}, {"corelib", "serial", "util", "object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
 			"object_seqset", "object_seq", "object_seqres", "object_seqloc", "object_seqalign", "object_seqfeat", Â
-			"object_seqblock", "object_pub", "object_medline"})
+			"object_seqblock", "object_pub", "object_medline", "object_medlars", "object_biblio", "object_general"})
 		
 		my DoCreateDefaultProject("testobjmgr", "objects:objmgr:test", Â
-			{"testobjmgr"}, {"corelib", "serial", "objmgr", "object_seqset", "object_seq", "object_seqres", Â
+			{"testobjmgr"}, {"corelib", "serial", "util", "objmgr", "object_seqset", "object_seq", "object_seqres", Â
 			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", "object_medline", Â
 			"object_biblio", "object_general"})
 		
-		my DoCreateDefaultProject("testrangemap", "objects:objmgr:test", Â
-			{"testrangemap"}, {"corelib"})
+		my DoCreateDefaultProject("testrangemap", "util:test", Â
+			{"testrangemap"}, {"corelib", "util"})
 		
 	end tell
 end DoCreateProjects

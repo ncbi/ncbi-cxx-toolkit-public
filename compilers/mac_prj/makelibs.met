@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.7 2001/01/03 23:32:10 vakatov Exp $
+	$Id: makelibs.met,v 1.8 2001/01/04 21:27:39 vakatov Exp $
 	
 	Revision History:
 	----------------
@@ -387,8 +387,11 @@ on DoCreateProjects()
 			{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", Â
 				"ncbiobj", "ncbireg", "ncbistd", "ncbistre", "ncbithr", "ncbitime"})
 		
+		my DoCreateDefaultProject("util", "util", Â
+			{"bytesrc", "strbuffer", "checksum"})
+		
 		my DoCreateDefaultProject("serial", "serial", Â
-			{"asntypes", "autoptrinfo", "bytesrc", "choice", Â
+			{"asntypes", "autoptrinfo", "choice", Â
 				"choiceptr", "classinfo", "classinfob", "continfo", Â
 				"delaybuf", "enumerated", "exception", "hookdata", "item", "iterator", Â
 				"member", "memberid", "memberlist", "object", "objectinfo", Â
@@ -396,7 +399,7 @@ on DoCreateProjects()
 				"objistrxml", "objlist", "objostr", "objostrasn", "objostrasnb", Â
 				"objostrxml", "objstack", "objstrb", "ptrinfo", Â
 				"rtti", "serial", "serialasn", "stdtypes", Â
-				"stltypes", "strbuffer", "typeinfo", "typemap", "typeref", "variant"})
+				"stltypes", "typeinfo", "typemap", "typeref", "variant"})
 		
 		my DoCreateDefaultProject("html", "html", Â
 			{"components", "html", "htmlhelper", "linkbar", Â
@@ -514,6 +517,7 @@ on DoCompileLibraries()
 	end if
 	
 	my DoCompileLibrary("corelib")
+	my DoCompileLibrary("util")
 	my DoCompileLibrary("serial")
 	my DoCompileLibrary("html")
 	
