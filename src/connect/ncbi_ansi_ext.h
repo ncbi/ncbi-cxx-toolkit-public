@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/10/06 16:39:22  lavr
+ * <string.h> included and #defines now take care of functions declared
+ * through macros (needed on Linux to prevent macro redefinitions)
+ *
  * Revision 6.5  2000/10/05 21:26:07  lavr
  * ncbiconf.h removed
  *
@@ -52,12 +56,16 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
+#ifdef strdup
+#  undef strdup
+#endif
 #define strdup      NCBI_strdup
 
 /* Create a copy of string "str".
@@ -66,7 +74,10 @@ extern "C" {
  */
 char *strdup(const char* str);
 
-
+#ifdef strcasecmp
+#  undef strcasecmp
+#  undef strncasecmp
+#endif
 #define strcasecmp  NCBI_strcasecmp
 #define strncasecmp NCBI_strncasecmp
 
