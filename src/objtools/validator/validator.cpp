@@ -58,40 +58,40 @@ CValidator::~CValidator(void)
 }
 
 
-auto_ptr<CValidError> CValidator::Validate
+CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry& se,
  CScope* scope,
  Uint4 options)
 {
-    auto_ptr<CValidError> errors(new CValidError());
-    CValidError_imp imp(*m_ObjMgr, errors.get(), options);
+    CRef<CValidError> errors(new CValidError());
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(se, 0, scope) ) {
-        errors.reset();
+        errors.Reset();
     }
     return errors;
 }
 
 
-auto_ptr<CValidError> CValidator::Validate
+CConstRef<CValidError> CValidator::Validate
 (const CSeq_submit& ss,
  CScope* scope,
  Uint4 options)
 {
-    auto_ptr<CValidError> errors(new CValidError());
-    CValidError_imp imp(*m_ObjMgr, errors.get(), options);
+    CRef<CValidError> errors(new CValidError());
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.Validate(ss, scope);
     return errors;
 }
 
 
-auto_ptr<CValidError> CValidator::Validate
+CConstRef<CValidError> CValidator::Validate
 (const CSeq_annot& sa,
  CScope* scope,
  Uint4 options)
 {
-    auto_ptr<CValidError> errors(new CValidError());
-    CValidError_imp imp(*m_ObjMgr, errors.get(), options);
+    CRef<CValidError> errors(new CValidError());
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.Validate(sa, scope);
     return errors;
 }
@@ -1111,6 +1111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/05/14 20:33:31  shomrat
+* Using CRef instead of auto_ptr
+*
 * Revision 1.22  2003/05/05 15:32:16  shomrat
 * Added SEQ_FEAT_MissingCDSproduct
 *
