@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.11  2003/02/12 16:43:39  vasilche
 * Use CTypeRef instead of TTypeInfo.
 *
@@ -70,6 +73,7 @@
 
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/exception.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -175,7 +179,7 @@ TTypeInfo CTypeRef::sx_GetAbort(const CTypeRef& typeRef)
     CMutexGuard guard(s_TypeRefMutex);
     if (typeRef.m_Getter != sx_GetAbort)
         return typeRef.m_Getter(typeRef);
-    THROW1_TRACE(runtime_error, "uninitialized type ref");
+    NCBI_THROW(CSerialException,eFail, "uninitialized type ref");
 }
 
 TTypeInfo CTypeRef::sx_GetReturn(const CTypeRef& typeRef)
@@ -190,7 +194,7 @@ TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
         return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_GetProcData();
     if ( !typeInfo )
-        THROW1_TRACE(runtime_error, "cannot resolve type ref");
+        NCBI_THROW(CSerialException,eFail, "cannot resolve type ref");
     const_cast<CTypeRef&>(typeRef).m_ReturnData = typeInfo;
     const_cast<CTypeRef&>(typeRef).m_Getter = sx_GetReturn;
     return typeInfo;
@@ -203,7 +207,7 @@ TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
         return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_ResolveData->GetTypeInfo();
     if ( !typeInfo )
-        THROW1_TRACE(runtime_error, "cannot resolve type ref");
+        NCBI_THROW(CSerialException,eFail, "cannot resolve type ref");
     if ( typeRef.m_ResolveData->m_RefCount.Add(-1) <= 0 ) {
         delete typeRef.m_ResolveData;
         const_cast<CTypeRef&>(typeRef).m_ResolveData = 0;

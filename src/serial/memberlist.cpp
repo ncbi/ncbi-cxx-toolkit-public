@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.32  2002/12/26 19:28:52  gouriano
 * elaborated FindDeep method
 *
@@ -162,6 +165,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/exception.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
@@ -234,7 +238,8 @@ const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
                 const string& name = itemInfo->GetId().GetName();
                 if ( !items->insert(TItemsByName::value_type(name, *i)).second ) {
                     if ( !name.empty() )
-                        THROW1_TRACE(runtime_error, "duplicated member name");
+                        NCBI_THROW(CSerialException,eInvalidData,
+                            string("duplicate member name: ")+name);
                 }
             }
             m_ItemsByName = keep;
@@ -258,7 +263,7 @@ CItemsInfo::GetItemsByOffset(void) const
                 const CItemInfo* itemInfo = GetItemInfo(i);
                 size_t offset = itemInfo->GetOffset();
                 if ( !items->insert(TItemsByOffset::value_type(offset, *i)).second ) {
-                    THROW1_TRACE(runtime_error, "conflict member offset");
+                    NCBI_THROW(CSerialException,eInvalidData, "conflict member offset");
                 }
             }
 /*
@@ -268,7 +273,7 @@ CItemsInfo::GetItemsByOffset(void) const
               m != members->end(); ++m ) {
             size_t offset = m->first;
             if ( offset < nextOffset ) {
-                THROW1_TRACE(runtime_error,
+                NCBI_THROW(CSerialException,eInvalidData,
                              "overlapping members");
             }
             nextOffset = offset + m_Members[m->second]->GetSize();
@@ -310,7 +315,7 @@ CItemsInfo::GetItemsByTagInfo(void) const
                     const CItemInfo* itemInfo = GetItemInfo(i);
                     TTag tag = itemInfo->GetId().GetTag();
                     if ( !items->insert(TItemsByTag::value_type(tag, *i)).second ) {
-                        THROW1_TRACE(runtime_error, "duplicated member tag");
+                        NCBI_THROW(CSerialException,eInvalidData, "duplicate member tag");
                     }
                 }
                 ret.second = items.get();

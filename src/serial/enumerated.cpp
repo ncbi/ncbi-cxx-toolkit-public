@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.24  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -137,7 +140,7 @@ CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
 void CEnumeratedTypeValues::SetModuleName(const string& name)
 {
     if ( !m_ModuleName.empty() )
-        THROW1_TRACE(runtime_error, "cannot change module name");
+        NCBI_THROW(CSerialException,eFail,"cannot change module name");
     m_ModuleName = name;
 }
 
@@ -146,7 +149,8 @@ TEnumValueType CEnumeratedTypeValues::FindValue(const CLightString& name) const
     const TNameToValue& m = NameToValue();
     TNameToValue::const_iterator i = m.find(name);
     if ( i == m.end() ) {
-        THROW1_TRACE(runtime_error, "invalid value of enumerated type");
+        NCBI_THROW(CSerialException,eInvalidData,
+                   "invalid value of enumerated type");
     }
     return i->second;
 }
@@ -161,7 +165,8 @@ const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
             return NcbiEmptyString;
         }
         else {
-            THROW1_TRACE(runtime_error, "invalid value of enumerated type");
+            NCBI_THROW(CSerialException,eInvalidData,
+                       "invalid value of enumerated type");
         }
     }
     return *i->second;
@@ -169,8 +174,10 @@ const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
 
 void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)
 {
-    if ( name.empty() )
-        THROW1_TRACE(runtime_error, "empty enum value name");
+    if ( name.empty() ) {
+        NCBI_THROW(CSerialException,eInvalidData,
+                   "empty enum value name");
+    }
     m_Values.push_back(make_pair(name, value));
     m_ValueToName.reset(0);
     m_NameToValue.reset(0);
@@ -210,7 +217,8 @@ CEnumeratedTypeValues::NameToValue(void) const
                 pair<TNameToValue::iterator, bool> p =
                     m->insert(TNameToValue::value_type(s, i->second));
                 if ( !p.second ) {
-                    THROW1_TRACE(runtime_error, "duplicated enum value name");
+                    NCBI_THROW(CSerialException,eInvalidData,
+                               "duplicate enum value name");
                 }
             }
             m_NameToValue = keep;
@@ -295,8 +303,9 @@ void CEnumeratedTypeInfo::SetValueUint4(TObjectPtr objectPtr,
         // check value for acceptance
         _ASSERT(sizeof(TEnumValueType) == sizeof(value));
         TEnumValueType v = TEnumValueType(value);
-        if ( v < 0 )
-            THROW1_TRACE(runtime_error, "overflow error");
+        if ( v < 0 ) {
+            NCBI_THROW(CSerialException,eOverflow,"overflow error");
+        }
         Values().FindName(v, false);
     }
     m_ValueType->SetValueUint4(objectPtr, value);
@@ -319,7 +328,7 @@ void CEnumeratedTypeInfo::SetValueInt8(TObjectPtr objectPtr, Int8 value) const
         _ASSERT(sizeof(TEnumValueType) < sizeof(value));
         TEnumValueType v = TEnumValueType(value);
         if ( v != value )
-            THROW1_TRACE(runtime_error, "overflow error");
+            NCBI_THROW(CSerialException,eOverflow,"overflow error");
         Values().FindName(v, false);
     }
     m_ValueType->SetValueInt8(objectPtr, value);
@@ -333,7 +342,7 @@ void CEnumeratedTypeInfo::SetValueUint8(TObjectPtr objectPtr,
         _ASSERT(sizeof(TEnumValueType) < sizeof(value));
         TEnumValueType v = TEnumValueType(value);
         if ( v < 0 || Uint8(v) != value )
-            THROW1_TRACE(runtime_error, "overflow error");
+            NCBI_THROW(CSerialException,eOverflow,"overflow error");
         Values().FindName(v, false);
     }
     m_ValueType->SetValueUint8(objectPtr, value);
@@ -368,14 +377,11 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
         enumType->m_ValueType->SetValueInt(objectPtr,
                                            in.ReadEnum(enumType->Values()));
     }
-    catch ( exception& e ) {
-        CNcbiDiag() << Error << "[ReadEnum] Exception: " << e.what();
-        in.ThrowError(in.fFormatError, "invalid enum value");
-        throw;
+    catch ( CException& e ) {
+        NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
         in.ThrowError(in.fFormatError, "invalid enum value");
-        throw;
     }
 }
 
@@ -389,14 +395,11 @@ void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
         out.WriteEnum(enumType->Values(),
                       enumType->m_ValueType->GetValueInt(objectPtr));
     }
-    catch ( exception& e ) {
-        CNcbiDiag() << Error << "[WriteEnum] Exception: " << e.what();
-        out.ThrowError(out.fFormatError, "invalid enum value");
-        throw;
+    catch ( CException& e ) {
+        NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
         out.ThrowError(out.fInvalidData, "invalid enum value");
-        throw;
     }
 }
 
@@ -408,14 +411,11 @@ void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
     try {
         copier.Out().CopyEnum(enumType->Values(), copier.In());
     }
-    catch ( exception& e ) {
-        CNcbiDiag() << Error << "[CopyEnum] Exception: " << e.what();
-        copier.ThrowError(CObjectIStream::fFormatError, "invalid enum value");
-        throw;
+    catch ( CException& e ) {
+        NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
         copier.ThrowError(CObjectIStream::fFormatError, "invalid enum value");
-        throw;
     }
 }
 
@@ -427,14 +427,11 @@ void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
     try {
         in.ReadEnum(enumType->Values());
     }
-    catch ( exception& e ) {
-        CNcbiDiag() << Error << "[SkipEnum] Exception: " << e.what();
-        in.ThrowError(in.fFormatError, "invalid enum value");
-        throw;
+    catch ( CException& e ) {
+        NCBI_RETHROW_SAME(e,"invalid enum value");
     }
     catch ( ... ) {
         in.ThrowError(in.fFormatError, "invalid enum value");
-        throw;
     }
 }
 

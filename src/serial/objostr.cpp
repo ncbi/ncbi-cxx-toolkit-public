@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.73  2003/01/22 18:53:27  gouriano
 * corrected stream destruction
 *
@@ -363,12 +366,12 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                           IOS_BASE::out | IOS_BASE::binary);
             break;
         default:
-            THROW1_TRACE(runtime_error,
-                         "CObjectOStream::Open: unsupported format");
+            NCBI_THROW(CSerialException,eFail,
+                       "CObjectOStream::Open: unsupported format");
         }
         if ( !*outStream ) {
             delete outStream;
-            THROW1_TRACE(runtime_error, "cannot open file");
+            NCBI_THROW(CSerialException,eFail, "cannot open file");
         }
         deleteStream = true;
     }
@@ -390,8 +393,8 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
     default:
         break;
     }
-    THROW1_TRACE(runtime_error,
-                 "CObjectOStream::Open: unsupported format");
+    NCBI_THROW(CSerialException,eFail,
+               "CObjectOStream::Open: unsupported format");
 }
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
@@ -470,30 +473,33 @@ string CObjectOStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-void CObjectOStream::ThrowError1(TFailFlags fail, const char* message)
-{
-    SetFailFlags(fail, message);
-    THROW1_TRACE(runtime_error, message);
-}
-
-void CObjectOStream::ThrowError1(TFailFlags fail, const string& message)
-{
-    SetFailFlags(fail, message.c_str());
-    THROW1_TRACE(runtime_error, message);
-}
-
 void CObjectOStream::ThrowError1(const char* file, int line, 
                                  TFailFlags fail, const char* message)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << message;
-    ThrowError1(fail, message);
+    ThrowError1(file,line,fail,string(message));
 }
 
 void CObjectOStream::ThrowError1(const char* file, int line, 
                                  TFailFlags fail, const string& message)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << message;
-    ThrowError1(fail, message);
+    CSerialException::EErrCode err;
+    SetFailFlags(fail, message.c_str());
+    switch(fail)
+    {
+    case fNoError:
+        CNcbiDiag(file, line, eDiag_Trace) << message;
+        return;
+    case fEOF:         err = CSerialException::eEOF;         break;
+    default:
+    case fWriteError:  err = CSerialException::eIoError;     break;
+    case fFormatError: err = CSerialException::eFormatError; break;
+    case fOverflow:    err = CSerialException::eOverflow;    break;
+    case fInvalidData: err = CSerialException::eInvalidData; break;
+    case fIllegalCall: err = CSerialException::eIllegalCall; break;
+    case fFail:        err = CSerialException::eFail;        break;
+    case fNotOpen:     err = CSerialException::eNotOpen;     break;
+    }
+    throw CSerialException(file,line,0,err,GetPosition()+": "+message);
 }
 
 void CObjectOStream::EndOfWrite(void)

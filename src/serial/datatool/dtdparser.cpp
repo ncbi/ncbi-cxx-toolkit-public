@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/dtdparser.hpp>
 #include <serial/datatool/tokens.hpp>
 #include <serial/datatool/module.hpp>
@@ -147,6 +148,9 @@ void DTDParser::BuildDocumentTree(void)
                 ParseError("Invalid keyword", "keyword");
                 return;
             }
+        }
+        catch (CException& e) {
+            NCBI_RETHROW_SAME(e,"DTDParser::BuildDocumentTree: failed");
         }
         catch (exception& e) {
             ERR_POST(e.what());
@@ -993,6 +997,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2003/03/10 18:55:18  gouriano
+ * use new structured exceptions (based on CException)
+ *
  * Revision 1.10  2003/02/10 17:56:15  gouriano
  * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
  *

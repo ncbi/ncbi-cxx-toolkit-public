@@ -51,22 +51,6 @@ void CObjectStreamCopier::CopyObject(TTypeInfo type)
 }
 
 inline
-void CObjectStreamCopier::ThrowError1(TFailFlags flags,
-                                      const char* message)
-{
-    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
-    In().ThrowError1(flags, message);
-}
-
-inline
-void CObjectStreamCopier::ThrowError1(TFailFlags flags,
-                                      const string& message)
-{
-    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
-    In().ThrowError1(flags, message);
-}
-
-inline
 void CObjectStreamCopier::ThrowError1(const char* file, int line,
                                       TFailFlags flags,
                                       const char* message)
@@ -155,6 +139,9 @@ void CObjectStreamCopier::CopyChoice(const CChoiceTypeInfo* choiceType)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.7  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

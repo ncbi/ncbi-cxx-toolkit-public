@@ -42,6 +42,7 @@
 #endif
 
 #include <corelib/ncbistd.hpp>
+#include <serial/exception.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
 
@@ -77,6 +78,7 @@ public:
 #if defined(NCBI_SERIAL_IO_TRACE)
     const char* GetFrameTypeName(void) const;
 #endif
+    string GetFrameInfo(void) const;
 
 private:
     friend class CObjectStack;
@@ -84,7 +86,6 @@ private:
     EFrameType m_FrameType;
     TTypeInfo m_TypeInfo;
     const CMemberId* m_MemberId;
-    bool m_SkipTag;
     bool m_Notag;
 };
 
@@ -142,12 +143,15 @@ private:
 #define BEGIN_OBJECT_FRAME_OFx(Stream, Args) \
     (Stream).PushFrame Args; \
     try {
+
 #define END_OBJECT_FRAME_OF(Stream) \
-    } catch (...) { \
+    } catch (CException& expt) { \
+        std::string msg((Stream).TopFrame().GetFrameInfo()); \
         (Stream).PopErrorFrame(); \
-        throw; \
+        NCBI_RETHROW_SAME(expt,msg); \
     } \
     (Stream).PopFrame()
+
 
 #define BEGIN_OBJECT_FRAME_OF(Stream, Type) \
     BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type))
@@ -163,15 +167,18 @@ private:
     (Stream).In().PushFrame Args; \
     (Stream).Out().PushFrame Args; \
     try {
+
 #define END_OBJECT_2FRAMES_OF(Stream) \
-    } catch (...) { \
+    } catch (CException& expt) { \
+        std::string msg((Stream).In().TopFrame().GetFrameInfo()); \
         (Stream).Out().PopFrame(); \
         (Stream).Out().SetFailFlagsNoError(CObjectOStream::fInvalidData); \
         (Stream).In().PopErrorFrame(); \
-        throw; \
+        NCBI_RETHROW_SAME(expt,msg); \
     } \
     (Stream).Out().PopFrame(); \
     (Stream).In().PopFrame()
+
 
 #define BEGIN_OBJECT_2FRAMES_OF(Stream, Type) \
     BEGIN_OBJECT_2FRAMES_OFx(Stream, (CObjectStackFrame::Type))
@@ -189,6 +196,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.17  2002/12/26 19:27:31  gouriano
 * removed Get/SetSkipTag and eFrameAttlist - not needed any more
 *

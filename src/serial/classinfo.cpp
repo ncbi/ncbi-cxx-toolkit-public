@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/03/10 18:54:24  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.63  2002/11/14 20:56:21  gouriano
 * moved AddMember method into the base class
 *
@@ -391,7 +394,9 @@ const CClassTypeInfo* CClassTypeInfo::GetParentClassInfo(void) const
 void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
 {
     if ( parentType->GetTypeFamily() != eTypeFamilyClass )
-        THROW1_TRACE(runtime_error, "invalid parent class type");
+        NCBI_THROW(CSerialException,eInvalidData,
+                   string("invalid parent class type: ") +
+                   parentType->GetName());
     const CClassTypeInfo* parentClass =
         CTypeConverter<CClassTypeInfo>::SafeCast(parentType);
     _ASSERT(parentClass != 0);

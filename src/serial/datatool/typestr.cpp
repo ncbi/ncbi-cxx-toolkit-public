@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/10 18:55:19  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.19  2000/11/07 17:26:26  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -108,6 +111,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/typestr.hpp>
 #include <serial/datatool/classctx.hpp>
 #include <serial/datatool/ptrstr.hpp>
@@ -136,7 +140,7 @@ const CNamespace& CTypeStrings::GetNamespace(void) const
 
 const string& CTypeStrings::GetEnumName(void) const
 {
-    THROW1_TRACE(runtime_error, "illegal call");
+    NCBI_THROW(CDatatoolException,eIllegalCall,"illegal call");
 }
 
 string CTypeStrings::GetInitializer(void) const
@@ -204,7 +208,7 @@ string CTypeStrings::NewInstance(const string& init) const
 
 string CTypeStrings::GetIsSetCode(const string& /*var*/) const
 {
-    THROW1_TRACE(runtime_error, "illegal call");
+    NCBI_THROW(CDatatoolException,eIllegalCall, "illegal call");
 }
 
 void CTypeStrings::AdaptForSTL(AutoPtr<CTypeStrings>& type)

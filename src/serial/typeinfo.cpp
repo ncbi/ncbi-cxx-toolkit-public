@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.35  2002/12/23 18:42:22  dicuccio
 * Added #include to avoid warnings in Wn32 about deletion of incomplete types
 *
@@ -261,7 +264,7 @@ const string& CTypeInfo::GetModuleName(void) const
 void CTypeInfo::SetModuleName(const string& name)
 {
     if ( !m_ModuleName.empty() )
-        THROW1_TRACE(runtime_error, "cannot change module name");
+        NCBI_THROW(CSerialException,eFail, "cannot change module name");
     m_ModuleName = name;
 }
 
@@ -272,7 +275,8 @@ void CTypeInfo::SetModuleName(const char* name)
 
 void CTypeInfo::Delete(TObjectPtr /*object*/) const
 {
-    THROW1_TRACE(runtime_error, "This type cannot be allocated on heap");
+    NCBI_THROW(CSerialException,eIllegalCall,
+        "This type cannot be allocated on heap");
 }
 
 void CTypeInfo::DeleteExternalObjects(TObjectPtr /*object*/) const

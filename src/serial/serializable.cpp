@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.3  2001/05/21 14:38:32  kholodov
 * Added: method WriteAsString() for string representation of an object.
 *
@@ -53,39 +56,39 @@ BEGIN_NCBI_SCOPE
 void CSerializable::WriteAsFasta(ostream& /*out*/)
     const
 {
-    THROW1_TRACE(CSerialNotImplemented,
-                 "CSerializable::WriteAsFasta() not implemented");
+    NCBI_THROW(CSerialException,eNotImplemented,
+        "CSerializable::WriteAsFasta: not implemented");
 }
 
 
 void CSerializable::WriteAsAsnText(ostream& /*out*/)
     const
 {
-    THROW1_TRACE(CSerialNotImplemented,
-                 "CSerializable::WriteAsAsnText() not implemented");
+    NCBI_THROW(CSerialException,eNotImplemented,
+                 "CSerializable::WriteAsAsnText: not implemented");
 }
 
 
 void CSerializable::WriteAsAsnBinary(ostream& /*out*/)
     const
 {
-    THROW1_TRACE(CSerialNotImplemented,
-                 "CSerializable::WriteAsAsnBinary() not implemented");
+    NCBI_THROW(CSerialException,eNotImplemented,
+                 "CSerializable::WriteAsAsnBinary: not implemented");
 }
 
 
 void CSerializable::WriteAsXML(ostream& /*out*/)
     const
 {
-    THROW1_TRACE(CSerialNotImplemented,
-                 "CSerializable::WriteAsXML() not implemented");
+    NCBI_THROW(CSerialException,eNotImplemented,
+                 "CSerializable::WriteAsXML: not implemented");
 }
 
 void CSerializable::WriteAsString(ostream& /*out*/)
     const
 {
-    THROW1_TRACE(CSerialNotImplemented,
-                 "CSerializable::WriteAsString() not implemented");
+    NCBI_THROW(CSerialException,eNotImplemented,
+                 "CSerializable::WriteAsString: not implemented");
 }
 
 
@@ -108,8 +111,8 @@ ostream& operator << (ostream& out, const CSerializable& src)
         src.WriteAsString(out);
         break;
     default:
-        THROW1_TRACE(runtime_error,
-                     "operator<<(ostream&,CSerializable&): wrong output type");
+        NCBI_THROW(CSerialException,eFail,
+                   "operator<<(ostream&,CSerializable&): wrong output type");
     }
 
     return out;

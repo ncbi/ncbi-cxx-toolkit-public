@@ -155,14 +155,15 @@ CDataType* CCodeGenerator::ExternalResolve(const string& module,
                                            const string& name,
                                            bool exported) const
 {
+    string loc("CCodeGenerator::ExternalResolve: failed");
     try {
         return m_MainFiles.ExternalResolve(module, name, exported);
     }
-    catch ( CAmbiguiousTypes& _DEBUG_ARG(exc) ) {
+    catch ( CAmbiguiousTypes& exc) {
         _TRACE(exc.what());
-        throw;
+        NCBI_RETHROW_SAME(exc,loc);
     }
-    catch ( CTypeNotFound& _DEBUG_ARG(exc) ) {
+    catch ( CNotFoundException& _DEBUG_ARG(exc)) {
         _TRACE(exc.what());
         return m_ImportFiles.ExternalResolve(module, name, exported);
     }
@@ -172,14 +173,15 @@ CDataType* CCodeGenerator::ExternalResolve(const string& module,
 CDataType* CCodeGenerator::ResolveInAnyModule(const string& name,
                                               bool exported) const
 {
+    string loc("CCodeGenerator::ResolveInAnyModule: failed");
     try {
         return m_MainFiles.ResolveInAnyModule(name, exported);
     }
-    catch ( CAmbiguiousTypes& _DEBUG_ARG(exc) ) {
+    catch ( CAmbiguiousTypes& exc) {
         _TRACE(exc.what());
-        throw;
+        NCBI_RETHROW_SAME(exc,loc);
     }
-    catch ( CTypeNotFound& _DEBUG_ARG(exc) ) {
+    catch ( CNotFoundException& _DEBUG_ARG(exc)) {
         _TRACE(exc.what());
         return m_ImportFiles.ResolveInAnyModule(name, exported);
     }
@@ -455,7 +457,7 @@ bool CCodeGenerator::Imported(const CDataType* type) const
                                     true);
         return false;
     }
-    catch ( CTypeNotFound& /* ignored */ ) {
+    catch ( CNotFoundException& /* ignored */) {
     }
     return true;
 }
@@ -486,7 +488,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext /*context*/)
         try {
             resolved = user->Resolve();
         }
-        catch (CTypeNotFound& exc) {
+        catch ( CNotFoundException& exc) {
             ERR_POST(Warning <<
                      "Skipping type: " << user->GetUserTypeName() <<
                      ": " << exc.what());
@@ -541,7 +543,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         try {
             resolved = user->Resolve();
         }
-        catch (CTypeNotFound& exc) {
+        catch ( CNotFoundException& exc) {
             ERR_POST(Warning <<
                      "Skipping type: " << user->GetUserTypeName() <<
                      ": " << exc.what());
@@ -638,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.47  2003/02/24 21:57:46  gouriano
 * added odw flag - to issue a warning about missing DEF file
 *

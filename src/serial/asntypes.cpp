@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/03/10 18:54:24  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.58  2002/10/25 15:23:16  vasilche
 * Fixed warning about name hiding.
 *
@@ -513,7 +516,7 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
                 msg << "CSequenceOfTypeInfo: incompatible type: " <<
                     type->GetName() << ": " << typeid(*type).name() <<
                     " size: " << type->GetSize();
-                THROW1_TRACE(runtime_error, CNcbiOstrstreamToString(msg));
+                NCBI_THROW(CSerialException,eInvalidData, CNcbiOstrstreamToString(msg));
             }
             m_NextOffset = 0;
             m_DataOffset = 0;
@@ -533,7 +536,7 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
             msg << "CSequenceOfTypeInfo: incompatible type: " <<
                 type->GetName() << ": " << typeid(*type).name() <<
                 " size: " << type->GetSize();
-            THROW1_TRACE(runtime_error, CNcbiOstrstreamToString(msg));
+            NCBI_THROW(CSerialException,eInvalidData, CNcbiOstrstreamToString(msg));
 		}
     }
     else if ( type->GetSize() <= sizeof(dataval) ) {
@@ -545,7 +548,7 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
         msg << "CSequenceOfTypeInfo: incompatible type: " <<
             type->GetName() << ": " << typeid(*type).name() <<
             " size: " << type->GetSize();
-		THROW1_TRACE(runtime_error, CNcbiOstrstreamToString(msg));
+		NCBI_THROW(CSerialException,eInvalidData, CNcbiOstrstreamToString(msg));
 	}
 
     {
@@ -708,8 +711,9 @@ void COctetStringTypeInfo::SetDefault(TObjectPtr dst) const
 
 void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-	if ( Get(src) == 0 )
-		THROW1_TRACE(runtime_error, "null bytestore pointer");
+	if ( Get(src) == 0 ) {
+		NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
+    }
 	BSFree(Get(dst));
 	Get(dst) = BSDup(Get(src));
 }
@@ -768,8 +772,9 @@ void COctetStringTypeInfo::GetValueOctetString(TConstObjectPtr objectPtr,
                                                vector<char>& value) const
 {
 	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
-	if ( bs == 0 )
-		THROW1_TRACE(runtime_error, "null bytestore pointer");
+	if ( bs == 0 ) {
+		NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
+    }
 	Int4 len = BSLen(bs);
     value.resize(len);
 	BSSeek(bs, 0, SEEK_SET);
@@ -836,7 +841,7 @@ void COldAsnTypeInfo::SetDefault(TObjectPtr dst) const
 
 void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
 {
-    THROW1_TRACE(runtime_error, "cannot assign non default value");
+    NCBI_THROW(CSerialException,eInvalidData, "cannot assign non default value");
 }
 
 void COldAsnTypeInfo::ReadOldAsnStruct(CObjectIStream& in,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.38  2003/02/12 21:39:52  gouriano
 * corrected code generator so primitive data types (bool,int,etc)
 * are returned by value, not by reference
@@ -203,6 +206,7 @@
 */
 
 #include <corelib/ncbiutil.hpp>
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/code.hpp>
@@ -1054,12 +1058,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             // Save member info
             if ( i->memberTag >= 0 ) {
                 if ( hasUntagged ) {
-                    THROW1_TRACE(runtime_error,
+                    NCBI_THROW(CDatatoolException,eInvalidData,
                         "No explicit tag for some members in " +
                         GetModuleName());
                 }
                 if ( tag_map[i->memberTag] ) {
-                    THROW1_TRACE(runtime_error,
+                    NCBI_THROW(CDatatoolException,eInvalidData,
                         "Duplicate tag: " + i->cName +
                         " [" + NStr::IntToString(i->memberTag) + "] in " +
                         GetModuleName());
@@ -1070,7 +1074,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 hasUntagged = true;
                 if ( useTags ) {
-                    THROW1_TRACE(runtime_error,
+                    NCBI_THROW(CDatatoolException,eInvalidData,
                         "No explicit tag for " + i->cName + " in " +
                         GetModuleName());
                 }

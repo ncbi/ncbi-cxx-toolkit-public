@@ -31,6 +31,7 @@
 */
 
 #include <corelib/ncbifile.hpp>
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/generate.hpp>
 #include <serial/datatool/filecode.hpp>
 #include <serial/datatool/type.hpp>
@@ -133,8 +134,9 @@ string CFileCode::GetUserHPPDefine(void) const
 
 string CFileCode::Include(const string& s, bool addExt) const
 {
-    if ( s.empty() )
-        THROW1_TRACE(runtime_error, "Empty file name");
+    if ( s.empty() ) {
+        NCBI_THROW(CDatatoolException,eInvalidData,"Empty file name");
+    }
 
     switch ( s[0] ) {
     case '<':
@@ -591,8 +593,9 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
 
     // get code length
     size_t count = code.pcount();
-    if ( count == 0 )
-        THROW1_TRACE(runtime_error, "empty generated code");
+    if ( count == 0 ) {
+        NCBI_THROW(CDatatoolException,eInvalidData,"empty generated code");
+    }
 
     // get code string pointer
     const char* codePtr = code.str();
@@ -602,8 +605,10 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
     while ( count > 0 ) {
         // find end of next line
         const char* eolPtr = (const char*)memchr(codePtr, '\n', count);
-        if ( !eolPtr )
-            THROW1_TRACE(runtime_error, "unended line in generated code");
+        if ( !eolPtr ) {
+            NCBI_THROW(CDatatoolException,eInvalidData,
+                       "unended line in generated code");
+        }
 
         // add next line to list
         lines.push_back(kEmptyStr);
@@ -737,6 +742,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.39  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.38  2002/12/17 16:22:48  gouriano
 * separated class name from the name of the file in which it will be written
 *

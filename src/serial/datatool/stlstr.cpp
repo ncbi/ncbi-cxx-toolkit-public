@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/03/10 18:55:19  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.13  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -114,6 +117,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/stlstr.hpp>
 #include <serial/datatool/classctx.hpp>
 #include <serial/datatool/namespace.hpp>
@@ -236,6 +240,10 @@ string CSetTypeStrings::GetDestructionCode(const string& expr) const
         iter = "setIter"+NStr::IntToString(level);
         code = Tabbed(GetArg1Type()->GetDestructionCode('*'+iter), "        ");
     }
+    catch (CDatatoolException& exp) {
+        level--;
+        NCBI_RETHROW_SAME(exp,"CSetTypeStrings::GetDestructionCode: failed");
+    }
     catch (...) {
         level--;
         throw;
@@ -285,6 +293,10 @@ string CListTypeStrings::GetDestructionCode(const string& expr) const
         iter = "listIter"+NStr::IntToString(level);
         code = Tabbed(GetArg1Type()->GetDestructionCode('*'+iter), "        ");
     }
+    catch (CDatatoolException& exp) {
+        level--;
+        NCBI_RETHROW_SAME(exp,"CListTypeStrings::GetDestructionCode: failed");
+    }
     catch (...) {
         level--;
         throw;
@@ -327,6 +339,10 @@ string CMapTypeStrings::GetDestructionCode(const string& expr) const
         code = Tabbed(GetArg1Type()->GetDestructionCode(iter+"->first")+
                       GetArg2Type()->GetDestructionCode(iter+"->second"),
                       "        ");
+    }
+    catch (CDatatoolException& exp) {
+        level--;
+        NCBI_RETHROW_SAME(exp,"CMapTypeStrings::GetDestructionCode: failed");
     }
     catch (...) {
         level--;

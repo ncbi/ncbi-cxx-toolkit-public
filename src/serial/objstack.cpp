@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.9  2002/12/26 19:28:00  gouriano
 * removed Get/SetSkipTag and eFrameAttlist - not needed any more
 *
@@ -208,6 +211,18 @@ void CObjectStack::TracePushFrame(bool push) const
 }
 
 #endif
+
+string CObjectStackFrame::GetFrameInfo(void) const
+{
+    string info;
+    if (m_TypeInfo) {
+        info = " Type= " + m_TypeInfo->GetName();
+    }
+    if (m_MemberId) {
+        info = " Member= " + m_MemberId->GetName();
+    }
+    return info;
+}
 
 
 END_NCBI_SCOPE

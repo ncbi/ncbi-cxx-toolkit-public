@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.25  2001/12/03 14:49:04  juran
 * Eliminate warning.
 *
@@ -165,10 +168,10 @@ bool CReferenceDataType::CheckType(void) const
         ResolveLocal(m_UserTypeName);
         return true;
     }
-    catch ( CTypeNotFound& exc ) {
+    catch ( CNotFoundException& exc) {
         Warning("Unresolved type: " + m_UserTypeName + ": " + exc.what());
-        return false;
     }
+    return false;
 }
 
 bool CReferenceDataType::CheckValue(const CDataValue& value) const
@@ -229,9 +232,9 @@ CDataType* CReferenceDataType::ResolveOrNull(void) const
     try {
         return ResolveLocal(m_UserTypeName);
     }
-    catch (CTypeNotFound& /* ignored */) {
-        return 0;
+    catch ( CNotFoundException& /* ignored */) {
     }
+    return 0;
 }
 
 CDataType* CReferenceDataType::ResolveOrThrow(void) const
@@ -239,8 +242,8 @@ CDataType* CReferenceDataType::ResolveOrThrow(void) const
     try {
         return ResolveLocal(m_UserTypeName);
     }
-    catch (CTypeNotFound& exc) {
-        THROW1_TRACE(CTypeNotFound, LocationString()+": "+exc.what());
+    catch ( CNotFoundException& exc) {
+        NCBI_RETHROW_SAME(exc, LocationString());
     }
     // ASSERT("Not reached" == 0);
     return static_cast<CDataType*>(NULL);  // Happy compiler fix

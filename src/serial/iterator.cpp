@@ -31,6 +31,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/exception.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/iterator.hpp>
 
@@ -261,7 +262,7 @@ CTreeLevelIterator::Create(const CObjectInfo& obj)
 
 void CTreeLevelIterator::Erase(void)
 {
-    THROW1_TRACE(runtime_error, "cannot erase");
+    NCBI_THROW(CSerialException,eIllegalCall, "cannot erase");
 }
 
 /////////////////
@@ -374,6 +375,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.19  2002/12/23 19:00:26  dicuccio
 * Moved template function bodies into header.  Log to end.
 *

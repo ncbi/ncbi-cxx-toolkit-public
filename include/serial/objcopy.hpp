@@ -93,25 +93,13 @@ public:
     void CopyChoice(const CChoiceTypeInfo* choiceType);
 
     typedef CObjectIStream::TFailFlags TFailFlags;
-    void ThrowError1(TFailFlags fail, const char* message);
-    void ThrowError1(TFailFlags fail, const string& message);
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const string& message);
+#define ThrowError(flag, mess) ThrowError1(__FILE__, __LINE__,flag,mess)
     void ExpectedMember(const CMemberInfo* memberInfo);
     void DuplicatedMember(const CMemberInfo* memberInfo);
-
-#ifndef FILE_LINE
-# ifdef _DEBUG
-#  define FILE_LINE __FILE__, __LINE__, 
-# else
-#  define FILE_LINE
-# endif
-# define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
-# define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
-# define CheckIOError(in) CheckIOError1(FILE_LINE in)
-#endif
 
 private:
     CObjectIStream& m_In;
@@ -134,6 +122,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.8  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.17  2002/05/06 19:56:12  ucko
 * Check for EOF at the beginning of AbstractLexer::FillChar() to handle
 * Compaq's iostream implementation.
@@ -81,6 +84,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/alexer.hpp>
 #include <serial/datatool/atoken.hpp>
 #include <serial/datatool/comments.hpp>
@@ -104,7 +108,7 @@ AbstractLexer::~AbstractLexer(void)
 
 void AbstractLexer::LexerError(const char* error)
 {
-    THROW1_TRACE(runtime_error,
+    NCBI_THROW(CDatatoolException,eWrongInput,
                  "LINE " + NStr::IntToString(CurrentLine()) +
                  ", TOKEN " + m_TokenText +
                  " -- lexer error: " + error);

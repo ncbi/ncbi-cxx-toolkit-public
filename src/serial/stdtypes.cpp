@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.32  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -292,7 +295,7 @@ void CVoidTypeFunctions::ThrowException(const char* operation,
     message += operation;
     message += " object of type: ";
     message += objectType->GetName();
-    THROW1_TRACE(runtime_error, message);
+    NCBI_THROW(CSerialException,eIllegalCall, message);
 }
 
 bool CVoidTypeFunctions::IsDefault(TConstObjectPtr )
@@ -978,7 +981,7 @@ const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size,
     else {
         string message("Illegal enum size: ");
         message += NStr::UIntToString(size);
-        THROW1_TRACE(runtime_error, message);
+        NCBI_THROW(CSerialException,eInvalidData, message);
     }
     _ASSERT(info->GetSize() == size);
     _ASSERT(info->GetTypeFamily() == eTypeFamilyPrimitive);
@@ -1298,17 +1301,17 @@ CTypeInfo* CStdTypeInfo<const char*>::CreateTypeInfo(void)
 
 void ThrowIncompatibleValue(void)
 {
-    THROW1_TRACE(runtime_error, "incompatible value");
+    NCBI_THROW(CSerialException,eInvalidData, "incompatible value");
 }
 
 void ThrowIllegalCall(void)
 {
-    THROW1_TRACE(runtime_error, "illegal call");
+    NCBI_THROW(CSerialException,eIllegalCall, "illegal call");
 }
 
 void ThrowIntegerOverflow(void)
 {
-    THROW1_TRACE(runtime_error, "integer overflow");
+    NCBI_THROW(CSerialException,eOverflow, "integer overflow");
 }
 
 class CCharVectorFunctionsBase

@@ -482,6 +482,7 @@ END_NCBI_SCOPE
 int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
+    CException::EnableBackgroundReporting(false);
     return CDataTool().AppMain(argc, argv, 0, eDS_Default, 0, "datatool");
 }
 
@@ -489,6 +490,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.60  2003/02/24 21:57:46  gouriano
 * added odw flag - to issue a warning about missing DEF file
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.36  2001/09/04 14:08:28  ucko
 * Handle CConstRef analogously to CRef in type macros
 *
@@ -188,6 +191,7 @@
 */
 
 #include <serial/stltypesimpl.hpp>
+#include <serial/exception.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/classinfohelper.hpp>
 #include <serial/typemap.hpp>
@@ -263,12 +267,12 @@ TTypeInfo CStlClassInfoUtil::Get_multimap(TTypeInfo arg1, TTypeInfo arg2,
 
 void CStlClassInfoUtil::CannotGetElementOfSet(void)
 {
-    THROW1_TRACE(runtime_error, "cannot get pointer to element of set");
+    NCBI_THROW(CSerialException,eFail, "cannot get pointer to element of set");
 }
 
 void CStlClassInfoUtil::ThrowDuplicateElementError(void)
 {
-    THROW1_TRACE(runtime_error, "duplicate element of unique container");
+    NCBI_THROW(CSerialException,eFail, "duplicate element of unique container");
 }
 
 CStlOneArgTemplate::CStlOneArgTemplate(size_t size,

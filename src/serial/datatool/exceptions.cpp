@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.5  2000/09/26 17:38:26  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -70,40 +73,6 @@
 
 BEGIN_NCBI_SCOPE
 
-CTypeNotFound::CTypeNotFound(const string& msg)
-    THROWS_NONE
-    : runtime_error(msg)
-{
-}
-
-CTypeNotFound::~CTypeNotFound(void)
-    THROWS_NONE
-{
-}
-
-CModuleNotFound::CModuleNotFound(const string& msg)
-    THROWS_NONE
-    : CTypeNotFound(msg)
-{
-}
-
-CModuleNotFound::~CModuleNotFound(void)
-    THROWS_NONE
-{
-}
-
-CAmbiguiousTypes::CAmbiguiousTypes(const string& msg,
-                                   const list<CDataType*>& types)
-    THROWS_NONE
-    : CTypeNotFound(msg), m_Types(types)
-{
-}
-
-CAmbiguiousTypes::~CAmbiguiousTypes(void)
-    THROWS_NONE
-{
-}
-
 CResolvedTypeSet::CResolvedTypeSet(const string& name)
     : m_Name(name)
 {
@@ -130,8 +99,7 @@ void CResolvedTypeSet::Add(const CAmbiguiousTypes& types)
     }
 }
 
-CDataType* CResolvedTypeSet::GetType(void) const
-    THROWS((CTypeNotFound))
+CDataType* CResolvedTypeSet::GetType(void) const throw(CDatatoolException)
 {
     if ( m_Types.empty() ) {
         string msg = "type not found: ";
@@ -139,7 +107,7 @@ CDataType* CResolvedTypeSet::GetType(void) const
             msg += m_Module;
             msg += '.';
         }
-        THROW1_TRACE(CTypeNotFound, msg+m_Name);
+        NCBI_THROW(CNotFoundException,eType,msg+m_Name);
     }
 
     {
@@ -162,7 +130,7 @@ CDataType* CResolvedTypeSet::GetType(void) const
         msg += ':';
         msg += NStr::IntToString((*i)->GetSourceLine());
     }
-    THROW_TRACE(CAmbiguiousTypes, (msg, m_Types));
+    NCBI_THROW2(CAmbiguiousTypes,eAmbiguious,msg, m_Types);
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.25  2002/08/30 16:22:21  vasilche
 * Removed excessive _TRACEs
 *
@@ -143,6 +146,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/exception.hpp>
 #include <serial/objlist.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
@@ -198,7 +202,7 @@ CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
             if ( !ins.second ) {
                 // not inserted -> already have the same object pointer
                 // as reference counter is one -> error
-                THROW1_TRACE(runtime_error,
+                NCBI_THROW(CSerialException,eIllegalCall,
                              "double write of CObject with counter == 1");
             }
 #endif
@@ -211,7 +215,7 @@ CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
         }
         else {
             // not referenced -> error
-            THROW1_TRACE(runtime_error,
+            NCBI_THROW(CSerialException,eIllegalCall,
                          "registering non referenced CObject");
         }
     }
@@ -237,14 +241,14 @@ CWriteObjectList::RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo)
         --check;
         if ( EndOf(check->first,
                    m_Objects[check->second].GetTypeInfo()) > object )
-            THROW1_TRACE(runtime_error, "overlapping objects");
+            NCBI_THROW(CSerialException,eFail, "overlapping objects");
     }
 
     // check for overlapping with next object
     check = ins.first;
     if ( ++check != m_ObjectsByPtr.end() ) {
         if ( EndOf(object, typeInfo) > check->first )
-            THROW1_TRACE(runtime_error, "overlapping objects");
+            NCBI_THROW(CSerialException,eFail, "overlapping objects");
     }
 #endif
 
@@ -292,7 +296,7 @@ const CReadObjectInfo&
 CReadObjectList::GetRegisteredObject(TObjectIndex index) const
 {
     if ( index >= GetObjectCount() )
-        THROW1_TRACE(runtime_error, "invalid object index");
+        NCBI_THROW(CSerialException,eFail, "invalid object index");
     return m_Objects[index];
 }
 

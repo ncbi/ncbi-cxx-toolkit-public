@@ -33,53 +33,8 @@
 
 BEGIN_NCBI_SCOPE
 
-CSerialException::CSerialException(const string& msg) THROWS_NONE
-    : runtime_error(msg)
-{
-}
-
-CSerialException::~CSerialException(void) THROWS_NONE
-{
-}
-
-
-CSerialOverflowException::CSerialOverflowException(const string& msg)
-    THROWS_NONE
-    : CSerialException(msg)
-{
-}
-
-CSerialOverflowException::~CSerialOverflowException(void) THROWS_NONE
-{
-}
-
-
-CSerialFormatException::CSerialFormatException(const string& msg) THROWS_NONE
-    : CSerialException(msg)
-{
-}
-
-CSerialFormatException::~CSerialFormatException(void) THROWS_NONE
-{
-}
-
-
-CSerialNotImplemented::CSerialNotImplemented(const string& msg) THROWS_NONE
-    : CSerialException(msg)
-{
-    return;
-}
-
-
-CSerialNotImplemented::~CSerialNotImplemented(void) THROWS_NONE
-{
-    return;
-}
-
-
 CInvalidChoiceSelection::CInvalidChoiceSelection(const string& current,
-                                                 const string& mustBe)
-    THROWS_NONE
+                                                 const string& mustBe) throw()
     : runtime_error("Invalid choice selection: "+current+". "
                     "Expected: "+mustBe)
 {
@@ -88,7 +43,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(const string& current,
 CInvalidChoiceSelection::CInvalidChoiceSelection(size_t currentIndex,
                                                  size_t mustBeIndex,
                                                  const char* const names[],
-                                                 size_t namesCount) THROWS_NONE
+                                                 size_t namesCount) throw()
     : runtime_error(string("Invalid choice selection: ")+
                     GetName(currentIndex, names, namesCount)+". "
                     "Expected: "+
@@ -106,7 +61,7 @@ const char* CInvalidChoiceSelection::GetName(size_t index,
     
 }
 
-CInvalidChoiceSelection::~CInvalidChoiceSelection(void) THROWS_NONE
+CInvalidChoiceSelection::~CInvalidChoiceSelection(void) throw()
 {
 }
 
@@ -114,6 +69,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.8  2002/12/23 18:59:52  dicuccio
 * Fixed an 80-chr boundary violation.  Log to end.
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.7  2002/10/08 18:59:38  grichenk
 * Check for null pointers in containers (assert in debug mode,
 * warning in release).
@@ -135,7 +138,7 @@ public:
 
     static void Throw(const char* message)
         {
-            THROW1_TRACE(runtime_error, message);
+            NCBI_THROW(CSerialException,eFail, message);
         }
     static TNewIteratorResult InitIteratorConst(const CContainerTypeInfo* ,
                                                 TConstObjectPtr )

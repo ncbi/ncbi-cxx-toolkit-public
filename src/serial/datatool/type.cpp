@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2003/03/10 18:55:19  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.68  2003/02/12 21:39:51  gouriano
 * corrected code generator so primitive data types (bool,int,etc)
 * are returned by value, not by reference
@@ -576,7 +579,8 @@ TTypeInfo CDataType::GetRealTypeInfo(void)
 
 CTypeInfo* CDataType::CreateTypeInfo(void)
 {
-    THROW1_TRACE(runtime_error, "cannot create type info of "+IdName());
+    NCBI_THROW(CDatatoolException,eIllegalCall,
+        "cannot create type info of "+IdName());
 }
 
 CTypeInfo* CDataType::UpdateModuleName(CTypeInfo* typeInfo) const
@@ -631,7 +635,8 @@ AutoPtr<CTypeStrings> CDataType::GetRefCType(void) const
 
 AutoPtr<CTypeStrings> CDataType::GetFullCType(void) const
 {
-    THROW1_TRACE(runtime_error, LocationString() + ": C++ type undefined");
+    NCBI_THROW(CDatatoolException,eInvalidData,
+        LocationString() + ": C++ type undefined");
 }
 
 string CDataType::GetDefaultString(const CDataValue& ) const

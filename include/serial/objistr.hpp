@@ -302,23 +302,11 @@ public:
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
 
-    void ThrowError1(TFailFlags fail, const char* message);
-    void ThrowError1(TFailFlags fail, const string& message);
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const string& message);
-
-#ifndef FILE_LINE
-# ifdef _DEBUG
-#  define FILE_LINE __FILE__, __LINE__, 
-# else
-#  define FILE_LINE
-# endif
-# define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
-# define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
-# define CheckIOError(in) CheckIOError1(FILE_LINE in)
-#endif
+#define ThrowError(flag, mess) ThrowError1(__FILE__, __LINE__,flag,mess)
 
     enum EFlags {
         fFlagNone                = 0,
@@ -558,6 +546,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.79  2003/01/28 15:26:23  vasilche
 * Added low level CObjectIStream::EndDelayBuffer(void);
 *

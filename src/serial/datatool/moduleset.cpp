@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.31  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -227,7 +230,7 @@ CDataType* CFileModules::ExternalResolve(const string& moduleName,
     TModulesByName::const_iterator mi = m_ModulesByName.find(moduleName);
     if ( mi == m_ModulesByName.end() ) {
         // no such module
-        THROW1_TRACE(CModuleNotFound,
+        NCBI_THROW(CNotFoundException,eModule,
                      "module not found: "+moduleName+" for type "+typeName);
     }
     return mi->second->ExternalResolve(typeName, allowInternal);
@@ -244,7 +247,7 @@ CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
         catch ( CAmbiguiousTypes& exc ) {
             types.Add(exc);
         }
-        catch ( CTypeNotFound& /* ignored */ ) {
+        catch ( CNotFoundException& /* ignored */) {
         }
     }
     return types.GetType();
@@ -305,7 +308,7 @@ CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
         catch ( CAmbiguiousTypes& exc ) {
             types.Add(exc);
         }
-        catch ( CTypeNotFound& /* ignored */ ) {
+        catch ( CNotFoundException& /* ignored */) {
         }
     }
     return types.GetType();
@@ -322,7 +325,7 @@ CDataType* CFileSet::ResolveInAnyModule(const string& name,
         catch ( CAmbiguiousTypes& exc ) {
             types.Add(exc);
         }
-        catch ( CTypeNotFound& /* ignored */ ) {
+        catch ( CNotFoundException& /* ignored */) {
         }
     }
     return types.GetType();

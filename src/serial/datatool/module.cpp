@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.30  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -411,10 +414,10 @@ CDataType* CDataTypeModule::ExternalResolve(const string& typeName,
 
     if ( !allowInternal &&
          m_LocalTypes.find(typeName) != m_LocalTypes.end() ) {
-        THROW1_TRACE(CTypeNotFound, "not exported type: "+typeName);
+        NCBI_THROW(CNotFoundException,eType, "not exported type: "+typeName);
     }
 
-    THROW1_TRACE(CTypeNotFound, "undefined type: "+typeName);
+    NCBI_THROW(CNotFoundException,eType, "undefined type: "+typeName);
 }
 
 CDataType* CDataTypeModule::Resolve(const string& typeName) const
@@ -425,7 +428,7 @@ CDataType* CDataTypeModule::Resolve(const string& typeName) const
     TImportsByName::const_iterator i = m_ImportedTypes.find(typeName);
     if ( i != m_ImportedTypes.end() )
         return GetModuleContainer().InternalResolve(i->second, typeName);
-    THROW1_TRACE(CTypeNotFound, "undefined type: "+typeName);
+    NCBI_THROW(CNotFoundException,eType, "undefined type: "+typeName);
 }
 
 string CDataTypeModule::GetFileNamePrefix(void) const

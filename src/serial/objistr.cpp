@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.101  2003/02/10 20:09:43  vasilche
 * Restored _TRACE in CObjectIStream.
 *
@@ -453,8 +456,8 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
             binary = true;
             break;
         default:
-            THROW1_TRACE(runtime_error,
-                         "CObjectIStream::Open: unsupported format");
+            NCBI_THROW(CSerialException,eFail,
+                       "CObjectIStream::Open: unsupported format");
         }
         
         if ( (openFlags & eSerial_UseFileForReread) )  {
@@ -491,8 +494,8 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format)
     default:
         break;
     }
-    THROW1_TRACE(runtime_error,
-                 "CObjectIStream::Open: unsupported format");
+    NCBI_THROW(CSerialException,eFail,
+               "CObjectIStream::Open: unsupported format");
 }
 
 CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
@@ -603,30 +606,33 @@ string CObjectIStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-void CObjectIStream::ThrowError1(TFailFlags fail, const char* message)
-{
-    SetFailFlags(fail, message);
-    THROW1_TRACE(runtime_error, message);
-}
-
-void CObjectIStream::ThrowError1(TFailFlags fail, const string& message)
-{
-    SetFailFlags(fail, message.c_str());
-    THROW1_TRACE(runtime_error, message);
-}
-
 void CObjectIStream::ThrowError1(const char* file, int line, 
                                  TFailFlags fail, const char* message)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << message;
-    ThrowError1(fail, message);
+    ThrowError1(file,line,fail,string(message));
 }
 
 void CObjectIStream::ThrowError1(const char* file, int line, 
                                  TFailFlags fail, const string& message)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << message;
-    ThrowError1(fail, message);
+    CSerialException::EErrCode err;
+    SetFailFlags(fail, message.c_str());
+    switch(fail)
+    {
+    case fNoError:
+        CNcbiDiag(file, line, eDiag_Trace) << message;
+        return;
+    case fEOF:         err = CSerialException::eEOF;         break;
+    default:
+    case fReadError:   err = CSerialException::eIoError;     break;
+    case fFormatError: err = CSerialException::eFormatError; break;
+    case fOverflow:    err = CSerialException::eOverflow;    break;
+    case fInvalidData: err = CSerialException::eInvalidData; break;
+    case fIllegalCall: err = CSerialException::eIllegalCall; break;
+    case fFail:        err = CSerialException::eFail;        break;
+    case fNotOpen:     err = CSerialException::eNotOpen;     break;
+    }
+    throw CSerialException(file,line,0,err,GetPosition()+": "+message);
 }
 
 static inline
@@ -1502,7 +1508,7 @@ char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
         CNcbiDiag(eDiag_Error, eDPF_Default) << message << Endm;
         break;
     case eFNP_Throw:
-        throw runtime_error(message);
+        NCBI_THROW(CSerialException,eFormatError,message);
     case eFNP_Abort:
         CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
         break;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/10 18:54:25  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.3  2001/05/17 15:07:07  lavr
 * Typos corrected
 *
@@ -47,6 +50,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/exception.hpp>
 #include <serial/objectinfo.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -55,7 +59,7 @@ BEGIN_NCBI_SCOPE
 
 void CObjectTypeInfo::WrongTypeFamily(ETypeFamily /*needFamily*/) const
 {
-    THROW1_TRACE(runtime_error, "wrong type family");
+    NCBI_THROW(CSerialException,eInvalidData, "wrong type family");
 }
 
 const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const

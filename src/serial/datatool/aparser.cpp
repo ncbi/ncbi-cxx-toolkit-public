@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.15  2002/12/17 16:24:43  gouriano
 * replaced _ASSERTs by throwing an exception
 *
@@ -79,6 +82,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/aparser.hpp>
 #include <serial/datatool/comments.hpp>
 
@@ -96,7 +100,7 @@ AbstractParser::~AbstractParser(void)
 void AbstractParser::ParseError(const char* error, const char* expected,
                                 const AbstractToken& token)
 {
-    THROW1_TRACE(runtime_error,
+    NCBI_THROW(CDatatoolException,eWrongInput,
                  "LINE " + NStr::IntToString(token.GetLine())+
                  ", TOKEN " + token.GetText() +
                  " -- parse error: " + error +

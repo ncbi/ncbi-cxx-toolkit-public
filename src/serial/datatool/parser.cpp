@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.28  2002/01/28 17:00:15  coremake
 * Fixed MIPSpro 7.3.1.2m SEGVs on throw/catch
 *
@@ -214,7 +217,10 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
                 return;
             }
         }
-        catch (runtime_error e) {
+        catch (CException& e) {
+            NCBI_RETHROW_SAME(e,"ASNParser::ModuleBody: failed");
+        }
+        catch (exception& e) {
             ERR_POST(e.what());
         }
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.10  2002/09/09 18:14:02  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -229,8 +232,10 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
 
 CVariantInfo* CVariantInfo::SetPointer(void)
 {
-    if ( !IsInline() )
-        THROW1_TRACE(runtime_error, "SetPointer() is not first call");
+    if ( !IsInline() ) {
+        NCBI_THROW(CSerialException,eIllegalCall,
+                   "SetPointer() is not first call");
+    }
     m_VariantType = eNonObjectPointerVariant;
     UpdateFunctions();
     return this;
@@ -238,8 +243,10 @@ CVariantInfo* CVariantInfo::SetPointer(void)
 
 CVariantInfo* CVariantInfo::SetObjectPointer(void)
 {
-    if ( !IsInline() )
-        THROW1_TRACE(runtime_error, "SetObjectPointer() is not first call");
+    if ( !IsInline() ) {
+        NCBI_THROW(CSerialException,eIllegalCall,
+                   "SetObjectPointer() is not first call");
+    }
     m_VariantType = eObjectPointerVariant;
     UpdateFunctions();
     return this;
@@ -247,10 +254,14 @@ CVariantInfo* CVariantInfo::SetObjectPointer(void)
 
 CVariantInfo* CVariantInfo::SetSubClass(void)
 {
-    if ( !IsInline() )
-        THROW1_TRACE(runtime_error, "SetSubClass() is not first call");
-    if ( CanBeDelayed() )
-        THROW1_TRACE(runtime_error, "sub class cannot be delayed");
+    if ( !IsInline() ) {
+        NCBI_THROW(CSerialException,eIllegalCall,
+                   "SetSubClass() is not first call");
+    }
+    if ( CanBeDelayed() ) {
+        NCBI_THROW(CSerialException,eIllegalCall,
+                  "sub class cannot be delayed");
+    }
     m_VariantType = eSubClassVariant;
     UpdateFunctions();
     return this;
@@ -258,8 +269,10 @@ CVariantInfo* CVariantInfo::SetSubClass(void)
 
 CVariantInfo* CVariantInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
-    if ( IsSubClass() )
-        THROW1_TRACE(runtime_error, "sub class cannot be delayed");
+    if ( IsSubClass() ) {
+        NCBI_THROW(CSerialException,eIllegalCall,
+                   "sub class cannot be delayed");
+    }
     m_DelayOffset = TPointerOffsetType(buffer);
     UpdateFunctions();
     return this;

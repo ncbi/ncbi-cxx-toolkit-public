@@ -38,7 +38,6 @@ void CObjectStackFrame::Reset(void)
     m_FrameType = eFrameOther;
     m_TypeInfo = 0;
     m_MemberId = 0;
-    m_SkipTag = false;
     m_Notag = false;
 }
 
@@ -215,6 +214,9 @@ const CObjectStack::TFrame& CObjectStack::FetchFrameFromBottom(size_t index) con
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.14  2002/12/26 19:27:31  gouriano
 * removed Get/SetSkipTag and eFrameAttlist - not needed any more
 *

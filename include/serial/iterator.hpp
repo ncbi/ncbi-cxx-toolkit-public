@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/exception.hpp>
 #include <serial/objecttype.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/serialbase.hpp>
@@ -279,8 +280,8 @@ protected:
     // have to make these methods protected instead of private due to
     // bug in GCC
 #ifdef NCBI_OS_MSWIN
-    CTreeIteratorTmpl(const TThis&) { THROW1_TRACE(runtime_error, "cannot copy"); }
-    TThis& operator=(const TThis&) { THROW1_TRACE(runtime_error, "cannot copy"); }
+    CTreeIteratorTmpl(const TThis&) { NCBI_THROW(CSerialException,eIllegalCall, "cannot copy"); }
+    TThis& operator=(const TThis&) { NCBI_THROW(CSerialException,eIllegalCall, "cannot copy"); }
 #else
     CTreeIteratorTmpl(const TThis&);
     TThis& operator=(const TThis&);
@@ -804,6 +805,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.24  2003/02/04 16:05:48  dicuccio
 * Header file clean-up - removed redundant includes
 *

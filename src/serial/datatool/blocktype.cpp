@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.41  2003/02/10 17:56:16  gouriano
 * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
 *
@@ -184,6 +187,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/statictype.hpp>
@@ -322,7 +326,7 @@ bool CDataMemberContainerType::CheckType(void) const
 
 TObjectPtr CDataMemberContainerType::CreateDefault(const CDataValue& ) const
 {
-    THROW1_TRACE(runtime_error,
+    NCBI_THROW(CDatatoolException,eNotImplemented,
                  GetASNKeyword() + string(" default not implemented"));
 }
 
@@ -548,7 +552,7 @@ CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
 
 {
     if ( m_Name.empty() ) {
-        THROW1_TRACE(runtime_error,
+        NCBI_THROW(CDatatoolException,eInvalidData,
                      string("Unnamed member in ASN.1 specification"));
     }
     m_Type->SetDataMember(this);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/03/10 18:55:19  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.22  2003/02/10 17:56:14  gouriano
 * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
 *
@@ -117,6 +120,7 @@
 
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/statictype.hpp>
@@ -139,7 +143,8 @@ const char* CUniSequenceDataType::GetASNKeyword(void) const
 void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
 {
     if ( GetElementType() )
-        THROW1_TRACE(runtime_error, "double element type " + LocationString());
+        NCBI_THROW(CDatatoolException,eInvalidData,
+            "double element type " + LocationString());
     m_ElementType = type;
 }
 
@@ -223,7 +228,8 @@ bool CUniSequenceDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 {
-    THROW1_TRACE(runtime_error, "SET/SEQUENCE OF default not implemented");
+    NCBI_THROW(CDatatoolException,eNotImplemented,
+        "SET/SEQUENCE OF default not implemented");
 }
 
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.2  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -43,6 +46,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/exception.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/delaybuf.hpp>
 
@@ -201,7 +205,7 @@ void CObjectInfoMI::Erase(void)
 {
     const CMemberInfo* mInfo = GetMemberInfo();
     if ( !mInfo->Optional() || mInfo->GetDefault() )
-        THROW1_TRACE(runtime_error, "cannot reset non OPTIONAL member");
+        NCBI_THROW(CSerialException,eIllegalCall, "cannot reset non OPTIONAL member");
     
     TObjectPtr objectPtr = m_Object.GetObjectPtr();
     // check 'set' flag

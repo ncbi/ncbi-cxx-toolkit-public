@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/10 18:54:24  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.17  2002/11/14 20:56:46  gouriano
 * added AddMember method
 *
@@ -232,7 +235,9 @@ CClassTypeInfoBase::TClassesById& CClassTypeInfoBase::ClassesById(void)
                     if ( !classes->insert(
                         TClassesById::value_type(&info->GetId(),
                                                  info)).second ) {
-                        THROW1_TRACE(runtime_error, "duplicated class ids");
+                        NCBI_THROW(CSerialException,eInvalidData,
+                                   string("duplicate class id: ")+
+                                   info->GetId().name());
                     }
                 }
             }
@@ -258,7 +263,8 @@ CClassTypeInfoBase::TClassesByName& CClassTypeInfoBase::ClassesByName(void)
                     if ( !classes->insert(
                         TClassesByName::value_type(info->GetName(),
                                                    info)).second ) {
-                        THROW1_TRACE(runtime_error, "duplicated class names");
+                        NCBI_THROW(CSerialException,eInvalidData,
+                            string("duplicate class name: ")+info->GetName());
                     }
                 }
             }
@@ -299,7 +305,7 @@ TTypeInfo CClassTypeInfoBase::GetClassInfoById(const type_info& id)
     if ( i == types.end() ) {
         string msg("class not found: ");
         msg += id.name();
-        THROW1_TRACE(runtime_error, msg);
+        NCBI_THROW(CSerialException,eInvalidData, msg);
     }
     return i->second;
 }
@@ -311,7 +317,7 @@ TTypeInfo CClassTypeInfoBase::GetClassInfoByName(const string& name)
     if ( i == classes.end() ) {
         string msg("class not found: ");
         msg += name;
-        THROW1_TRACE(runtime_error, msg);
+        NCBI_THROW(CSerialException,eInvalidData, msg);
     }
     return i->second;
 }

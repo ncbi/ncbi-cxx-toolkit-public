@@ -255,23 +255,11 @@ public:
     TFlags SetFlags(TFlags flags);
     TFlags ClearFlags(TFlags flags);
 
-    void ThrowError1(TFailFlags fail, const char* message);
-    void ThrowError1(TFailFlags fail, const string& message);
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const string& message);
-
-#ifndef FILE_LINE
-# ifdef _DEBUG
-#  define FILE_LINE __FILE__, __LINE__, 
-# else
-#  define FILE_LINE
-# endif
-# define ThrowError(flag, mess) ThrowError1(FILE_LINE flag, mess)
-# define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
-# define CheckIOError(in) CheckIOError1(FILE_LINE in)
-#endif
+#define ThrowError(flag, mess) ThrowError1(__FILE__, __LINE__,flag,mess)
 
     class ByteBlock;
     friend class ByteBlock;
@@ -481,6 +469,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.68  2003/02/04 18:15:22  gouriano
 * added reference to corelib/ncbifloat.h
 *

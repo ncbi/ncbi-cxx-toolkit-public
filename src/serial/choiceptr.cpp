@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/03/10 18:54:24  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.27  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -194,19 +197,19 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
     m_NullPointerIndex = kEmptyChoice;
 
     if ( base->GetTypeFamily() != eTypeFamilyPointer )
-        THROW1_TRACE(runtime_error,
+        NCBI_THROW(CSerialException,eInvalidData,
                      "invalid argument: must be CPointerTypeInfo");
     const CPointerTypeInfo* ptrType =
         CTypeConverter<CPointerTypeInfo>::SafeCast(base);
     m_PointerTypeInfo = ptrType;
 
     if ( ptrType->GetPointedType()->GetTypeFamily() != eTypeFamilyClass )
-        THROW1_TRACE(runtime_error,
+        NCBI_THROW(CSerialException,eInvalidData,
                      "invalid argument: data must be CClassTypeInfo");
     const CClassTypeInfo* classType =
         CTypeConverter<CClassTypeInfo>::SafeCast(ptrType->GetPointedType());
     if ( !classType->IsCObject() )
-        THROW1_TRACE(runtime_error,
+        NCBI_THROW(CSerialException,eInvalidData,
                      "invalid argument:: choice ptr type must be CObject");
     const CClassTypeInfo::TSubClasses* subclasses =
         classType->SubClasses();
@@ -234,8 +237,8 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
         else {
             const type_info* id = &CTypeConverter<CClassTypeInfo>::SafeCast(variantType)->GetId();
             if ( !m_VariantsByType.insert(TVariantsByType::value_type(id, index)).second ) {
-                THROW1_TRACE(runtime_error,
-                             "conflict subclasses: "+variantType->GetName());
+                NCBI_THROW(CSerialException,eInvalidData,
+                           "conflict subclasses: "+variantType->GetName());
             }
         }
     }
@@ -258,8 +261,8 @@ CChoicePointerTypeInfo::GetPtrIndex(const CChoiceTypeInfo* choiceType,
     TVariantsByType::const_iterator v =
         variants.find(classType->GetCPlusPlusTypeInfo(classPtr));
     if ( v == variants.end() )
-        THROW1_TRACE(runtime_error,
-                     "incompatible CChoicePointerTypeInfo type");
+        NCBI_THROW(CSerialException,eInvalidData,
+                   "incompatible CChoicePointerTypeInfo type");
     return v->second;
 }
 

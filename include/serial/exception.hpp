@@ -37,44 +37,44 @@
 BEGIN_NCBI_SCOPE
 
 // root class for all serialization exceptions
-class NCBI_XSERIAL_EXPORT CSerialException : public runtime_error
+class NCBI_XSERIAL_EXPORT CSerialException : public CException
 {
 public:
-    CSerialException(const string& msg) THROWS_NONE;
-    ~CSerialException(void) THROWS_NONE;
-};
-
-// this exception is thrown when value doesn't fit in place
-class NCBI_XSERIAL_EXPORT CSerialOverflowException : public CSerialException
-{
-public:
-    CSerialOverflowException(const string& msg) THROWS_NONE;
-    ~CSerialOverflowException(void) THROWS_NONE;
-};
-
-// this exception is thrown when some functionality is not implemented
-class NCBI_XSERIAL_EXPORT CSerialNotImplemented : public CSerialException
-{
-public:
-    CSerialNotImplemented(const string& msg) THROWS_NONE;
-    ~CSerialNotImplemented(void) THROWS_NONE;
-};
-
-// this exception is thrown when file format is bad
-class NCBI_XSERIAL_EXPORT CSerialFormatException : public CSerialException
-{
-public:
-    CSerialFormatException(const string& msg) THROWS_NONE;
-    ~CSerialFormatException(void) THROWS_NONE;
+    enum EErrCode {
+        eNotImplemented,
+        eEOF,
+        eIoError,
+        eFormatError,
+        eOverflow,
+        eInvalidData,
+        eIllegalCall,
+        eFail,
+        eNotOpen
+    };
+    virtual const char* GetErrCodeString(void) const {
+        switch ( GetErrCode() ) {
+        case eNotImplemented: return "eNotImplemented";
+        case eEOF:            return "eEOF";
+        case eIoError:        return "eIoError";
+        case eFormatError:    return "eFormatError";
+        case eOverflow:       return "eOverflow";
+        case eInvalidData:    return "eInvalidData";
+        case eIllegalCall:    return "eIllegalCall";
+        case eFail:           return "eFail";
+        case eNotOpen:        return "eNotOpen";
+        default:              return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
 };
 
 class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public runtime_error
 {
 public:
-    CInvalidChoiceSelection(const string& current, const string& mustBe) THROWS_NONE;
+    CInvalidChoiceSelection(const string& current, const string& mustBe) throw();
     CInvalidChoiceSelection(size_t currentIndex, size_t mustBeIndex,
-                            const char* const names[], size_t namesCount) THROWS_NONE;
-    ~CInvalidChoiceSelection(void) THROWS_NONE;
+                            const char* const names[], size_t namesCount) throw();
+    ~CInvalidChoiceSelection(void) throw();
 
     static const char* GetName(size_t index,
                                const char* const names[], size_t namesCount);
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/10 18:52:37  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.8  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/rpcgen.hpp>
 
 #include <serial/datatool/choicetype.hpp>
@@ -81,7 +82,7 @@ const CChoiceDataType* s_ChoiceType(const CDataType* dtype,
         const CDataContainerType* dct
             = dynamic_cast<const CDataContainerType*>(dtype);
         if ( !dct ) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CDatatoolException, eInvalidData,
                        dtype->GlobalName() + " is not a container type");
         }
         bool found = false;
@@ -93,14 +94,14 @@ const CChoiceDataType* s_ChoiceType(const CDataType* dtype,
             }
         }
         if (!found) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CDatatoolException, eInvalidData,
                        dtype->GlobalName() + " has no element " + element);
         }
     }
     const CChoiceDataType* choicetype
         = dynamic_cast<const CChoiceDataType*>(dtype2);
     if ( !choicetype ) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CDatatoolException, eInvalidData,
                    dtype2->GlobalName() + " is not a choice type");
     }
     return choicetype;
@@ -122,10 +123,10 @@ CClientPseudoDataType::CClientPseudoDataType(const CCodeGenerator& generator,
     s_SplitName(generator.GetConfig().Get("client", "reply"),
                 m_ReplyType, m_ReplyElement);
     if (m_RequestType.empty()) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CDatatoolException, eInvalidData,
                    "No request type supplied for " + m_ClassName);
     } else if (m_ReplyType.empty()) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CDatatoolException, eInvalidData,
                    "No reply type supplied for " + m_ClassName);
     }
 
@@ -385,7 +386,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         }
         TChoiceMap::const_iterator rm = reply_map.find(reply);
         if (rm == reply_map.end()) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CDatatoolException, eInvalidData,
                        "Invalid reply type " + reply + " for " + name);
         }
 
@@ -450,6 +451,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/03/10 18:55:19  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.4  2002/11/18 19:48:46  grichenk
 * Removed "const" from datatool-generated setters
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/03/10 18:55:19  gouriano
+* use new structured exceptions (based on CException)
+*
 * Revision 1.23  2003/02/10 17:56:15  gouriano
 * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
 *
@@ -126,6 +129,7 @@
 * ===========================================================================
 */
 
+#include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/statictype.hpp>
 #include <serial/datatool/stdstr.hpp>
 #include <serial/datatool/stlstr.hpp>
@@ -141,7 +145,7 @@ BEGIN_NCBI_SCOPE
 
 TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
 {
-    THROW1_TRACE(runtime_error,
+    NCBI_THROW(CDatatoolException, eNotImplemented,
                  GetASNKeyword() + string(" default not implemented"));
 }
 
@@ -182,7 +186,8 @@ bool CNullDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
 {
-    THROW1_TRACE(runtime_error, "NULL cannot have DEFAULT");
+    NCBI_THROW(CDatatoolException, eNotImplemented,
+        "NULL cannot have DEFAULT");
 }
 
 CTypeRef CNullDataType::GetTypeInfo(void)
