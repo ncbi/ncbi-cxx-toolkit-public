@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/07/03 18:42:57  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+*
 * Revision 1.19  2000/06/16 16:31:37  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -109,10 +112,10 @@
 
 BEGIN_NCBI_SCOPE
 
-class CContainerTypeInfo : public CClassTypeInfo
+class CAnyTypeClassInfo : public CClassTypeInfo
 {
 public:
-    CContainerTypeInfo(const string& name, size_t memberCount)
+    CAnyTypeClassInfo(const string& name, size_t memberCount)
         : CClassTypeInfo(name, typeid(void), 0),
           m_MemberCount(memberCount), m_IsSetCount(0)
         {
@@ -229,8 +232,8 @@ CTypeInfo* CDataContainerType::CreateTypeInfo(void)
 
 CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
 {
-    auto_ptr<CContainerTypeInfo>
-        typeInfo(new CContainerTypeInfo(GlobalName(), GetMembers().size()));
+    auto_ptr<CAnyTypeClassInfo>
+        typeInfo(new CAnyTypeClassInfo(GlobalName(), GetMembers().size()));
     int index = 0;
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i, ++index ) {

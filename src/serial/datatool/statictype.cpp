@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/07/03 18:42:57  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+*
 * Revision 1.11  2000/05/24 20:09:29  vasilche
 * Implemented DTD generation.
 *
@@ -143,7 +146,7 @@ TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
 
 CTypeRef CNullDataType::GetTypeInfo(void)
 {
-    return &CNullBoolTypeInfo::GetTypeInfo;
+    return &GetTypeInfoNullBool;
 }
 
 AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
@@ -325,7 +328,7 @@ const char* CStringStoreDataType::GetASNKeyword(void) const
 
 TTypeInfo CStringStoreDataType::GetRealTypeInfo(void)
 {
-    return CStringStoreTypeInfo::GetTypeInfo();
+    return GetTypeInfoStringStore();
 }
 
 bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
@@ -386,7 +389,7 @@ TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
 
 TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
 {
-    return CStlClassInfoChar_vector<char>::GetTypeInfo();
+    return CCharVectorTypeInfo<char>::GetTypeInfo();
 }
 
 bool COctetStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const

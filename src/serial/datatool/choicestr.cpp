@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/07/03 18:42:57  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+*
 * Revision 1.19  2000/06/27 16:34:48  vasilche
 * Fixed generated comments.
 * Fixed class names conflict. Now internal classes' names begin with "C_".
@@ -609,14 +612,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName("STATE_ENUM" index)\n"
             "{\n"
-            "    if ( unsigned(index) > "<<m_Variants.size()<<" )\n"
-            "        return \"?unknown?\";\n"
-            "    return sm_SelectionNames[index];\n"
+            "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n"
             "void "<<methodPrefix<<"ThrowInvalidSelection("STATE_ENUM" index) const\n"
             "{\n"
-            "    throw NCBI_NS_STD::runtime_error(\""<<GetExternalName()<<": invalid selection \"+SelectionName("STATE_MEMBER")+\". Expected: \"+SelectionName(index));\n"
+            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n";
     }

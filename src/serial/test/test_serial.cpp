@@ -6,6 +6,12 @@
 #include <serial/iterator.hpp>
 #include "cppwebenv.hpp"
 
+#include <serial/stdtypes.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/ptrinfo.hpp>
+#include <serial/continfo.hpp>
+
 #if HAVE_NCBI_C
 # include <asn.h>
 # include "twebenv.h"
@@ -16,6 +22,8 @@ int main(int argc, char** argv)
     CTestSerial().AppMain(argc, argv);
 	return 0;
 }
+
+void PrintAsn(CNcbiOstream& out, const CConstObjectInfo& object);
 
 int CTestSerial::Run(void)
 {
@@ -45,6 +53,12 @@ int CTestSerial::Run(void)
                                                                   eSerial_AsnText));
                 out->Write(&env, GetSequenceTypeRef(&env));
             }
+            {
+                CNcbiOfstream out("webenv.ento2");
+                PrintAsn(out,
+                         CConstObjectInfo(&env,
+                                          GetSequenceTypeRef(&env).Get()));
+            }
         }
 #endif
 
@@ -57,6 +71,7 @@ int CTestSerial::Run(void)
                long(static_cast<CSerialObject*>(&write1)));
 
         write.m_Name = "name";
+        write.m_HaveName = false;
         //        write.m_NamePtr = &write1.m_Name;
         write.m_Size = -1;
         write.m_Attributes.push_back("m_Attributes");
@@ -77,6 +92,7 @@ int CTestSerial::Run(void)
 #endif
 
         write1.m_Name = "write1";
+        write1.m_HaveName = true;
         write1.m_NamePtr = new string("test");
         write1.m_Size = 0x7fff;
         write1.m_Attributes.push_back("write1");
@@ -92,7 +108,7 @@ int CTestSerial::Run(void)
         CTypeIterator<CSerialObject> j2(Begin(write));
         CTypeIterator<CSerialObject> j3 = Begin(write);
 
-        j1.Erase();
+        //j1.Erase();
 
         CTypeConstIterator<CSerialObject> k1; k1 = Begin(write);
         CTypeConstIterator<CSerialObject> k2(Begin(write));
@@ -203,6 +219,12 @@ int CTestSerial::Run(void)
                                                                   eSerial_AsnText));
                 *out << write;
             }
+#if 0
+            {
+                CNcbiOfstream out("test.asno2");
+                PrintAsn(out, ConstObjectInfo(write));
+            }
+#endif
             CSerialObject read;
             {
                 auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
@@ -271,4 +293,209 @@ int CTestSerial::Run(void)
     }
     SetDiagStream(&NcbiCerr);
     return 0;
+}
+
+void PrintAsnValue(CNcbiOstream& out, const CConstObjectInfo& object);
+static int asnIndentLevel;
+
+void ResetAsnIndent(void)
+{
+    asnIndentLevel = 0;
+}
+
+void IncAsnIndent(void)
+{
+    asnIndentLevel++;
+}
+
+void DecAsnIndent(void)
+{
+    _ASSERT(asnIndentLevel > 0);
+    asnIndentLevel--;
+}
+
+void PrintAsnIndent(CNcbiOstream& out)
+{
+    for ( int i = 0; i < asnIndentLevel; ++i )
+        out << "  ";
+}
+
+void PrintAsn(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    _ASSERT(object);
+    _ASSERT(!object.GetTypeInfo()->GetName().empty());
+    ResetAsnIndent();
+    out << object.GetTypeInfo()->GetName() << " ::= ";
+    PrintAsnValue(out, object);
+}
+
+class AsnBlock
+{
+public:
+    AsnBlock(CNcbiOstream& out)
+        : m_Out(out), m_Empty(true)
+        {
+            out << "{\n";
+            IncAsnIndent();
+        }
+    ~AsnBlock(void)
+        {
+            if ( !m_Empty )
+                m_Out << '\n';
+            DecAsnIndent();
+            PrintAsnIndent(m_Out);
+            m_Out << '}';
+        }
+
+    void NextElement(void)
+        {
+            if ( m_Empty )
+                m_Empty = false;
+            else
+                m_Out << ",\n";
+            PrintAsnIndent(m_Out);
+        }
+
+private:
+    CNcbiOstream& m_Out;
+    bool m_Empty;
+};
+
+void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object);
+void PrintAsnClassValue(CNcbiOstream& out, const CConstObjectInfo& object);
+void PrintAsnChoiceValue(CNcbiOstream& out, const CConstObjectInfo& object);
+void PrintAsnContainerValue(CNcbiOstream& out, const CConstObjectInfo& object);
+void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object);
+
+void PrintAsnValue(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    _ASSERT(object);
+    switch ( object.GetTypeFamily() ) {
+    case CTypeInfo::eTypePrimitive:
+        PrintAsnPrimitiveValue(out, object);
+        break;
+    case CTypeInfo::eTypeClass:
+        PrintAsnClassValue(out, object);
+        break;
+    case CTypeInfo::eTypeChoice:
+        PrintAsnChoiceValue(out, object);
+        break;
+    case CTypeInfo::eTypeContainer:
+        PrintAsnContainerValue(out, object);
+        break;
+    case CTypeInfo::eTypePointer:
+        PrintAsnPointerValue(out, object);
+        break;
+    }
+}
+
+static const char Hex[] = "0123456789ABCDEF";
+
+void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    const CPrimitiveTypeInfo* info = object.GetPrimitiveTypeInfo();
+
+    switch ( info->GetValueType() ) {
+    case CPrimitiveTypeInfo::eBool:
+        if ( info->GetValueBool(object.GetObjectPtr()) )
+            out << "TRUE";
+        else
+            out << "FALSE";
+        break;
+    case CPrimitiveTypeInfo::eChar:
+        out << '\'' << info->GetValueChar(object.GetObjectPtr()) << '\'';
+        break;
+    case CPrimitiveTypeInfo::eInteger:
+        if ( info->IsSigned() )
+            out << info->GetValueLong(object.GetObjectPtr());
+        else
+            out << info->GetValueULong(object.GetObjectPtr());
+        break;
+    case CPrimitiveTypeInfo::eReal:
+        out << info->GetValueDouble(object.GetObjectPtr());
+        break;
+    case CPrimitiveTypeInfo::eString:
+        out << '"';
+        {
+            string s;
+            info->GetValueString(object.GetObjectPtr(), s);
+            out << s;
+        }
+        out << '"';
+        break;
+    case CPrimitiveTypeInfo::eEnum:
+        {
+            string s;
+            info->GetValueString(object.GetObjectPtr(), s);
+            if ( !s.empty() )
+                out << s;
+            else if ( info->IsSigned() )
+                out << info->GetValueLong(object.GetObjectPtr());
+            else
+                out << info->GetValueULong(object.GetObjectPtr());
+        }
+        break;
+    case CPrimitiveTypeInfo::eOctetString:
+        out << '\'';
+        {
+            vector<char> s;
+            info->GetValueOctetString(object.GetObjectPtr(), s);
+            iterate ( vector<char>, i, s ) {
+                char c = *i;
+                out << Hex[(c >> 4) & 15] << Hex[c & 15];
+            }
+        }
+        out << "'H";
+        break;
+    default:
+        out << "...";
+        break;
+    }
+}
+
+void PrintAsnClassValue(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    AsnBlock block(out);
+
+    for ( CConstObjectInfo::CMemberIterator i(object); i; i.Next() ) {
+        if ( i.IsSet() ) {
+            // print member separator
+            block.NextElement();
+
+            // print member id if any
+            const CMemberId& id = i.GetId();
+            if ( !id.GetName().empty() )
+                out << id.GetName() << ' ';
+
+            // print member value
+            PrintAsnValue(out, *i);
+        }
+    }
+}
+
+void PrintAsnChoiceValue(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    int index = object.WhichChoice();
+    _ASSERT(index >= 0);
+    out << object.GetMemberId(index).GetName() << ' ';
+    PrintAsnValue(out, object.GetCurrentChoiceVariant());
+}
+
+void PrintAsnContainerValue(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    AsnBlock block(out);
+    
+    for ( CConstObjectInfo::CElementIterator i(object); i; i.Next() ) {
+        block.NextElement();
+        
+        PrintAsnValue(out, *i);
+    }
+}
+
+void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
+{
+    const CPointerTypeInfo* info = object.GetPointerTypeInfo();
+    CConstObjectInfo pointedObject(object);
+    info->GetPointedObject(pointedObject);
+    PrintAsnValue(out, object.GetPointedObject());
 }
