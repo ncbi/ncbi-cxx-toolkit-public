@@ -25,95 +25,124 @@
  *
  * Author:  Anton Butanayev
  *
- * File Description:  Driver for MySQL server
+ * File Description
+ *    Driver for MySQL server
  *
  */
 
-#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
+
 CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
-                               const string& lang_query,
-                               unsigned int nof_params) :
-m_Connect(conn), m_Query(lang_query), m_HasResults(false)
+                               const string&      lang_query,
+                               unsigned int       /*nof_params*/)
+    : m_Connect(conn),
+      m_Query(lang_query),
+      m_HasResults(false)
 {
 }
+
 
 CMySQL_LangCmd::~CMySQL_LangCmd()
-{}
-
-bool CMySQL_LangCmd::More(const string& query_text)
 {
-  return false;
 }
 
-bool CMySQL_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
+
+bool CMySQL_LangCmd::More(const string& /*query_text*/)
 {
-  return false;
+    return false;
 }
 
-bool CMySQL_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
+
+bool CMySQL_LangCmd::BindParam(const string& /*param_name*/,
+                               CDB_Object*   /*param_ptr*/)
 {
-  return false;
+    return false;
 }
+
+
+bool CMySQL_LangCmd::SetParam(const string& /*param_name*/,
+                              CDB_Object*   /*param_ptr*/)
+{
+    return false;
+}
+
 
 bool CMySQL_LangCmd::Send()
 {
-  if(0 != mysql_real_query(&m_Connect->m_MySQL, m_Query.c_str(), m_Query.length()))
-    throw CDB_ClientEx(eDB_Warning, 800003,
-                       "CMySQL_LangCmd::Send",
-                       "Failed: mysql_real_query");
-  m_HasResults = true;
-  return false;
+    if (mysql_real_query
+        (&m_Connect->m_MySQL, m_Query.c_str(), m_Query.length()) != 0) {
+        throw CDB_ClientEx(eDB_Warning, 800003,
+                           "CMySQL_LangCmd::Send",
+                           "Failed: mysql_real_query");
+    }
+    m_HasResults = true;
+    return false;
 }
+
 
 bool CMySQL_LangCmd::WasSent() const
 {
-  return false;
+    return false;
 }
+
 
 bool CMySQL_LangCmd::Cancel()
 {
-  return false;
+    return false;
 }
+
 
 bool CMySQL_LangCmd::WasCanceled() const
 {
-  return false;
+    return false;
 }
+
 
 CDB_Result *CMySQL_LangCmd::Result()
 {
-  m_HasResults = false;
-  return Create_Result(*new CMySQL_RowResult(m_Connect));
+    m_HasResults = false;
+    return Create_Result(*new CMySQL_RowResult(m_Connect));
 }
+
 
 bool CMySQL_LangCmd::HasMoreResults() const
 {
-  return m_HasResults;
+    return m_HasResults;
 }
+
 
 bool CMySQL_LangCmd::HasFailed() const
 {
-  return false;
+    return false;
 }
+
 
 int CMySQL_LangCmd::RowCount() const
 {
-  return false;
+    return false;
 }
+
 
 void CMySQL_LangCmd::Release()
 {
 }
 
+
 END_NCBI_SCOPE
+
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/01/06 20:30:26  vakatov
+ * Get rid of some redundant header(s).
+ * Formally reformatted to closer meet C++ Toolkit/DBAPI style.
+ *
  * Revision 1.2  2002/08/28 17:18:20  butanaev
  * Improved error handling, demo app.
  *

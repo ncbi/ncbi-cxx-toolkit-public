@@ -25,61 +25,80 @@
  *
  * Author:  Anton Butanayev
  *
- * File Description:  Driver for MySQL server
+ * File Description:
+ *    Driver for MySQL server
  *
  */
 
-#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
+
 CMySQLContext::CMySQLContext()
-{}
+{
+}
+
 
 CMySQLContext::~CMySQLContext()
-{}
+{
+}
 
-bool CMySQLContext::IsAbleTo(ECapability cpb) const
+
+bool CMySQLContext::IsAbleTo(ECapability /*cpb*/) const
 {
   return false;
 }
 
-bool CMySQLContext::SetLoginTimeout (unsigned int nof_secs)
+
+bool CMySQLContext::SetLoginTimeout(unsigned int /*nof_secs*/)
 {
   return false;
 }
 
-bool CMySQLContext::SetTimeout(unsigned int nof_secs)
+
+bool CMySQLContext::SetTimeout(unsigned int /*nof_secs*/)
 {
   return false;
 }
 
-bool CMySQLContext::SetMaxTextImageSize(size_t nof_bytes)
+
+bool CMySQLContext::SetMaxTextImageSize(size_t /*nof_bytes*/)
 {
   return false;
 }
 
-CDB_Connection *CMySQLContext::Connect(const string &srv_name,
-                                       const string &user_name,
-                                       const string &passwd,
-                                       TConnectionMode mode,
-                                       bool reusable,
-                                       const string &pool_name)
+
+CDB_Connection* CMySQLContext::Connect(const string&   srv_name,
+                                       const string&   user_name,
+                                       const string&   passwd,
+                                       TConnectionMode /*mode*/,
+                                       bool            /*reusable*/,
+                                       const string&   /*pool_name*/)
 {
-  return Create_Connection(*new CMySQL_Connection(this, srv_name, user_name, passwd));
+  return Create_Connection
+      (*new CMySQL_Connection(this, srv_name, user_name, passwd));
 }
 
-unsigned int CMySQLContext::NofConnections(const string &srv_name) const
+
+unsigned int CMySQLContext::NofConnections(const string& /*srv_name*/) const
 {
   return 0;
 }
 
+
 END_NCBI_SCOPE
+
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/01/06 20:30:26  vakatov
+ * Get rid of some redundant header(s).
+ * Formally reformatted to closer meet C++ Toolkit/DBAPI style.
+ *
  * Revision 1.1  2002/08/13 20:23:14  butanaev
  * The beginning.
  *

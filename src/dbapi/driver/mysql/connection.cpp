@@ -29,148 +29,175 @@
  *
  */
 
-#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
-                                     const string &srv_name,
-                                     const string &user_name,
-                                     const string &passwd) :
-m_Context(cntx)
-{
-  if(NULL == mysql_init(&m_MySQL))
-    throw CDB_ClientEx(eDB_Warning, 800001,
-                       "CMySQL_Connection::CMySQL_Connection",
-                       "Failed: mysql_init");
 
-  if(NULL == mysql_real_connect(&m_MySQL,
-                                srv_name.c_str(),
-                                user_name.c_str(), passwd.c_str(),
-                                NULL, 0, NULL, 0))
-    throw CDB_ClientEx(eDB_Warning, 800002,
-                       "CMySQL_Connection::CMySQL_Connection",
-                       "Failed: mysql_real_connect");
+CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
+                                     const string&  srv_name,
+                                     const string&  user_name,
+                                     const string&  passwd)
+    : m_Context(cntx)
+{
+    if ( !mysql_init(&m_MySQL) ) {
+        throw CDB_ClientEx(eDB_Warning, 800001,
+                           "CMySQL_Connection::CMySQL_Connection",
+                           "Failed: mysql_init");
+    }
+
+    if ( !mysql_real_connect(&m_MySQL,
+                             srv_name.c_str(),
+                             user_name.c_str(), passwd.c_str(),
+                             NULL, 0, NULL, 0)) {
+        throw CDB_ClientEx(eDB_Warning, 800002,
+                           "CMySQL_Connection::CMySQL_Connection",
+                           "Failed: mysql_real_connect");
+    }
 }
+
 
 CMySQL_Connection::~CMySQL_Connection()
 {
-  mysql_close(&m_MySQL);
+    mysql_close(&m_MySQL);
 }
+
 
 bool CMySQL_Connection::IsAlive()
 {
-  return false;
+    return false;
 }
+
 
 void CMySQL_Connection::Release()
 {
 }
 
-CDB_SendDataCmd *CMySQL_Connection::SendDataCmd(I_ITDescriptor &descr_in,
-                                                size_t data_size, bool log_it)
+
+CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
+                                                size_t          /*data_size*/,
+                                                bool            /*log_it*/)
 {
-  return 0;
+    return 0;
 }
 
 
-bool CMySQL_Connection::SendData(I_ITDescriptor &desc,
-                                 CDB_Image &img, bool log_it)
+bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
+                                 CDB_Image&      /*img*/,
+                                 bool            /*log_it*/)
 {
-  return true;
+    return true;
 }
 
-bool CMySQL_Connection::SendData(I_ITDescriptor &desc,
-                                 CDB_Text &txt, bool log_it)
+
+bool CMySQL_Connection::SendData(I_ITDescriptor& /*desc*/,
+                                 CDB_Text&       /*txt*/,
+                                 bool            /*log_it*/)
 {
-  return true;
+    return true;
 }
+
 
 bool CMySQL_Connection::Refresh()
 {
-  return true;
+    return true;
 }
 
-static const string empty = "";
 
-const string &CMySQL_Connection::ServerName() const
+const string& CMySQL_Connection::ServerName() const
 {
-  return empty;
+    return kEmptyStr;
 }
 
-const string &CMySQL_Connection::UserName() const
+
+const string& CMySQL_Connection::UserName() const
 {
-  return empty;
+    return kEmptyStr;
 }
 
-const string &CMySQL_Connection::Password() const
+
+const string& CMySQL_Connection::Password() const
 {
-  return empty;
+    return kEmptyStr;
 }
+
 
 I_DriverContext::TConnectionMode CMySQL_Connection::ConnectMode() const
 {
-  return 0;
+    return 0;
 }
+
 
 bool CMySQL_Connection::IsReusable() const
 {
-  return false;
+    return false;
 }
 
-const string &CMySQL_Connection::PoolName() const
+
+const string& CMySQL_Connection::PoolName() const
 {
-  return empty;
+    return kEmptyStr;
 }
+
 
 I_DriverContext* CMySQL_Connection::Context() const
 {
-  return m_Context;
+    return m_Context;
 }
 
-void CMySQL_Connection::PushMsgHandler(CDB_UserHandler *h)
+void CMySQL_Connection::PushMsgHandler(CDB_UserHandler* /*h*/)
 {
 }
 
-void CMySQL_Connection::PopMsgHandler (CDB_UserHandler *h)
+
+void CMySQL_Connection::PopMsgHandler (CDB_UserHandler* /*h*/)
 {
 }
 
-CDB_LangCmd* CMySQL_Connection::LangCmd(const string &lang_query,
-                                        unsigned int nof_parms)
+
+CDB_LangCmd* CMySQL_Connection::LangCmd(const string& lang_query,
+                                        unsigned int  nof_parms)
 {
-  return Create_LangCmd(*new CMySQL_LangCmd(this, lang_query, nof_parms));
+    return Create_LangCmd(*new CMySQL_LangCmd(this, lang_query, nof_parms));
 
 }
 
-CDB_RPCCmd *CMySQL_Connection::RPC(const string &rpc_name,
-                                   unsigned int nof_args)
+
+CDB_RPCCmd *CMySQL_Connection::RPC(const string& /*rpc_name*/,
+                                   unsigned int  /*nof_args*/)
 {
-  return 0;
+    return 0;
 }
 
 
-CDB_BCPInCmd *CMySQL_Connection::BCPIn(const string &table_name,
-                                       unsigned int nof_columns)
+CDB_BCPInCmd* CMySQL_Connection::BCPIn(const string& /*table_name*/,
+                                       unsigned int  /*nof_columns*/)
 {
-  return 0;
+    return 0;
 }
 
 
-CDB_CursorCmd *CMySQL_Connection::Cursor(const string &cursor_name,
-                                         const string &query,
-                                         unsigned int nof_params,
-                                         unsigned int batch_size )
+CDB_CursorCmd *CMySQL_Connection::Cursor(const string& /*cursor_name*/,
+                                         const string& /*query*/,
+                                         unsigned int  /*nof_params*/,
+                                         unsigned int  /*batch_size*/)
 {
-  return 0;
+    return 0;
 }
+
 
 END_NCBI_SCOPE
+
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/01/06 20:30:26  vakatov
+ * Get rid of some redundant header(s).
+ * Formally reformatted to closer meet C++ Toolkit/DBAPI style.
+ *
  * Revision 1.2  2002/08/28 17:18:20  butanaev
  * Improved error handling, demo app.
  *
