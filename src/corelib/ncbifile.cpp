@@ -693,6 +693,30 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 }
 
 
+bool CDirEntry::GetTime(time_t *creation, time_t *modification,
+                        time_t *last_access) const
+{
+#if defined(NCBI_OS_MAC)
+    ???
+#else
+    struct stat st;
+    if (stat(GetPath().c_str(), &st) != 0) {
+        return false;
+    }
+    if (creation) {
+        *creation = st.st_ctime; 
+    }
+    if (modification) {
+        *modification = st.st_mtime; 
+    }
+    if (last_access) {
+        *last_access = st.st_atime; 
+    }
+#  endif
+    return true;
+}
+
+ 
 CDirEntry::EType CDirEntry::GetType(void) const
 {
 #if defined(NCBI_OS_MAC)
@@ -747,7 +771,7 @@ CDirEntry::EType CDirEntry::GetType(void) const
     return eUnknown;
 #endif
 }
- 
+
 
 bool CDirEntry::Rename(const string& newname)
 {
@@ -1317,6 +1341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/06/07 15:21:06  ivanov
+ * Added CDirEntry::GetTime()
+ *
  * Revision 1.22  2002/05/01 22:59:00  vakatov
  * A couple of (size_t) type casts to avoid compiler warnings in 64-bit
  *

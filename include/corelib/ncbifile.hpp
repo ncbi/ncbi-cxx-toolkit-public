@@ -171,6 +171,9 @@ public:
     // NOTE: On error (e.g. if the entry does not exist), return "eUnknown".
     EType GetType(void) const;
 
+    // Get time of entry. Returns TRUE if time was acquired or FALSE otherwise.
+    bool GetTime(time_t *creation, time_t *modification = 0, 
+                 time_t *last_access = 0) const;
 
     //
     // Access permissions
@@ -516,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/06/07 15:20:41  ivanov
+ * Added CDirEntry::GetTime()
+ *
  * Revision 1.11  2002/04/11 20:39:18  ivanov
  * CVS log moved to end of the file
  *
