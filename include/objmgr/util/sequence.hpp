@@ -352,21 +352,23 @@ struct NCBI_XOBJUTIL_EXPORT SRelLoc
     };
     typedef int TFlags; ///< binary OR of EFlags
 
+    /// For relative ranges (ONLY), id is irrelevant and normally unset.
+    typedef CSeq_interval         TRange;
+    typedef vector<CRef<TRange> > TRanges;
+
     /// Beware: treats locations corresponding to different sequences as
     /// disjoint, even if one is actually a segment of the other. :-/
     SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope = 0,
             TFlags flags = 0);
-    CRef<CSeq_loc> Resolve(CScope* scope = 0, TFlags flags = 0) const;
-
-    /// The only fields we use are from, to, and strand, and maybe
-    /// eventually also fuzz-*.  In particular, id is irrelevant and
-    /// normally unset.
-    typedef CSeq_interval         TRange;
-    typedef vector<CRef<TRange> > TRanges;
 
     /// For manual work.  As noted above, ranges need not contain any IDs.
     SRelLoc(const CSeq_loc& parent, const TRanges& ranges)
         : m_ParentLoc(&parent), m_Ranges(ranges) { }
+
+    CRef<CSeq_loc> Resolve(CScope* scope = 0, TFlags flags = 0) const
+        { return Resolve(*m_ParentLoc, scope, flags); }
+    CRef<CSeq_loc> Resolve(const CSeq_loc& new_parent, CScope* scope = 0,
+                           TFlags flags = 0) const;
 
     CConstRef<CSeq_loc> m_ParentLoc;
     TRanges             m_Ranges;
@@ -506,6 +508,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2003/10/15 19:51:13  ucko
+* More adjustments to SRelLoc: rearrange so that the constructors appear
+* next to each other, and support resolving against an alternate parent.
+*
 * Revision 1.32  2003/10/09 18:53:24  ucko
 * SRelLoc: clarified and doxygen-ized comments
 *
