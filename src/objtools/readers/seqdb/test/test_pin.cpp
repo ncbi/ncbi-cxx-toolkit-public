@@ -942,6 +942,46 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-xlate4]";
         
+        if (s == "-gilist") {
+            string dbname("genomes/barley_est");
+            CSeqDB db(dbname, '-');
+            
+            vector<Uint4> oids;
+            oids.resize(10000);
+            Uint4 obegin(0), oend(0);
+            
+            Uint4 numseq = 0;
+            
+            Uint4 z1 = 0;
+            
+            while(1) {
+                CSeqDB::EOidListType range_type =
+                    db.GetNextOIDChunk(obegin, oend, oids);
+                
+                Uint4 num_found(0);
+                
+                if (range_type == CSeqDB::eOidList) {
+                    num_found = oids.size();
+                } else {
+                    num_found = oend-obegin;
+                }
+                
+                if (! num_found) {
+                    break;
+                }
+                
+                numseq += num_found;
+                
+                if (numseq > z1) {
+                    z1 = (numseq + numseq / 10);
+                }
+            }
+            
+            cout << "Found " << numseq << " oids in [" << dbname << "], title = " << db.GetTitle() << endl;
+            
+            return 0;
+        } else desc += " [-gilist]";
+        
         if (s == "-xlate2") {
             string dbname1("prot_dbs");
             
@@ -1738,6 +1778,8 @@ int test1(int argc, char ** argv)
             cout << "\nTitle:       " << phil.GetTitle();
             cout << "\nDate:        " << phil.GetDate();
             cout << "\nNumSeqs:     " << phil.GetNumSeqs();
+            cout << "\nNumOIDs:     " << phil.GetNumOIDs();
+            cout << "\nTotalLength: " << phil.GetVolumeLength();
             cout << "\nTotalLength: " << phil.GetTotalLength();
             cout << "\nMax Length:  " << phil.GetMaxLength() << endl;
             cout << endl;
@@ -2233,6 +2275,30 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-num <seqs to get]";
         
+        if (s == "-oid-at-offset") {
+            cout << "What db?" << endl;
+            
+            string dbname1;
+            cin >> dbname1;
+            
+            CSeqDB db(dbname1, '-');
+            
+            while(1) {
+                Uint4 indx(0);
+                cout << "\nWhat index (0 to end): " << flush;
+                cin >> indx;
+                
+                if (cin && (indx != 0)) {
+                    Uint4 oid = db.GetOidAtOffset(0, indx);
+                    cout << "get at " << indx << " is " << oid << endl;
+                } else {
+                    break;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-oid-at-offset]";
+        
         if ((s == "-splitp") || (s == "-splitn")) {
             string db;
             char st;
@@ -2388,7 +2454,9 @@ int test1(int argc, char ** argv)
                 cout << "at line " << __LINE__ << endl;
             
             Uint4 nseqs = dbi.GetNumSeqs();
+            Uint4 noids = dbi.GetNumOIDs();
             Uint8 tleng = dbi.GetTotalLength();
+            Uint8 vleng = dbi.GetVolumeLength();
             
             if ((num_display <= 0) || (Uint4(num_display) > nseqs)) {
                 num_display = nseqs;
@@ -2400,8 +2468,10 @@ int test1(int argc, char ** argv)
             double dend = sw.Elapsed();
             
             if (show_progress) {
-                cout << "NR seq count: " << (Int4)nseqs   << endl;
-                cout << "Total length: " << tleng   << endl;
+                cout << "DB seq count: " << (Int4)nseqs     << endl;
+                cout << "DB oid count: " << (Int4)noids     << endl;
+                cout << "Total length: " << tleng           << endl;
+                cout << "Volume len  : " << vleng           << endl;
                 cout << "Compute time: " << (dend - dstart) << endl;
             }
             
