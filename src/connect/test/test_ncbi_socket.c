@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/01/26 23:55:10  vakatov
+ * [NCBI_OS_MAC]  Do not do server write shutdown for MAC client
+ *
  * Revision 6.8  2000/11/15 18:51:44  vakatov
  * Add tests for SOCK_Shutdown() and SOCK_Status().
  * Use SOCK_Status() instead of SOCK_Eof().
@@ -114,6 +117,7 @@ static FILE* log_fp;
  */
 
 static const char s_C1[] = "C1";
+static const char s_M1[] = "M1";
 static const char s_S1[] = "S1";
 
 #define N_SUB_BLOB    10
@@ -131,8 +135,20 @@ static void TEST__client_1(SOCK sock)
 
     /* Send a short string */
     SOCK_SetDataLoggingAPI(eOn);
-    n_io = strlen(s_C1) + 1;
-    status = SOCK_Write(sock, s_C1, n_io, &n_io_done);
+    {{
+#if defined(NCBI_OS_MAC)
+        /* Special treatment for MAC clients -- server not to
+         * shutdown the socket on writing. MAC library
+         * mistakingly assumes that if server is shutdown on writing then
+         * it is shutdown on reading, too (?!). 
+         */
+        const char* x_C1 = s_M1;
+#else
+        const char* x_C1 = s_C1;
+#endif
+        n_io = strlen(x_C1) + 1;
+        status = SOCK_Write(sock, x_C1, n_io, &n_io_done);
+    }}
     assert(status == eIO_Success  &&  n_io == n_io_done);
 
     /* Read the string back (it must be bounced by the server) */
@@ -158,13 +174,14 @@ static void TEST__client_1(SOCK sock)
     SOCK_SetDataLogging(sock, eDefault);
 
     /* Try to read more data (must hit EOF as the peer is shutdown) */
+#if !defined(NCBI_OS_MAC)
     assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Peek)
            == eIO_Closed);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
     assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Plain)
            == eIO_Closed);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
-    
+#endif
 
     /* Shutdown on read */
     assert(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);
@@ -225,7 +242,7 @@ static void TEST__server_1(SOCK sock)
     n_io = strlen(s_C1) + 1;
     status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
     assert(status == eIO_Success  &&  n_io == n_io_done);
-    assert(strcmp(buf, s_C1) == 0);
+    assert(strcmp(buf, s_C1) == 0  ||  strcmp(buf, s_M1) == 0);
 
 #ifdef TEST_SRV1_SHUTDOWN
     return 212;
@@ -239,11 +256,13 @@ static void TEST__server_1(SOCK sock)
     SOCK_SetDataLoggingAPI(eOff);
 
     /* Shutdown on write */
-    assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
-    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
-    assert(SOCK_Write   (sock, 0, 0, &n_io_done) == eIO_Closed);
-    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
-    assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
+    if (strcmp(buf, s_C1) == 0) {
+        assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
+        assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+        assert(SOCK_Write   (sock, 0, 0, &n_io_done) == eIO_Closed);
+        assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+        assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
+    }
 
     /* Receive a very big binary blob, and check its content */
     {{
