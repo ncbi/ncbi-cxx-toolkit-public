@@ -29,8 +29,7 @@ File name: blast_traceback.h
 
 Author: Ilya Dondoshansky
 
-Contents: Functions to do gapped alignment with traceback and/or convert 
-          results to the SeqAlign form
+Contents: Functions to do gapped alignment with traceback
 
 ******************************************************************************
  * $Revision$
