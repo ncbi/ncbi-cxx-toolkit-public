@@ -205,8 +205,8 @@ private:
                                   string& featP, string& qualP, string& valP, Int4 offset);
 
     bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
-                                 const string& seqid, Int4 start,
-                                 Int4 stop, bool partial5, bool partial3);
+                                 const string& seqid, Int4 start, Int4 stop,
+                                 bool partial5, bool partial3, bool ispoint);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
@@ -1396,7 +1396,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
 
 bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
                                                         const string& seqid, Int4 start, Int4 stop,
-                                                        bool partial5, bool partial3)
+                                                        bool partial5, bool partial3, bool ispoint)
 
 {
     CSeq_interval::TStrand strand = eNa_strand_plus;
@@ -1408,25 +1408,41 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
         strand = eNa_strand_minus;
     }
 
-    if (start == stop) {
-        // just a point
+    if (ispoint) {
+        // between two bases
         CRef<CSeq_loc> loc(new CSeq_loc);
-        CSeq_point& point = loc->SetPnt();
-        point.SetPoint(start);
-        point.SetStrand(strand);
-        CSeq_id seq_id(seqid);
+        CSeq_point& point = loc->SetPnt ();
+        point.SetPoint (start);
+        point.SetStrand (strand);
+        point.SetRightOf (true);
+        CSeq_id seq_id (seqid);
         point.SetId().Assign (seq_id);
         mix->Set().push_back(loc);
+    } else if (start == stop) {
+        // just a point
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        CSeq_point& point = loc->SetPnt ();
+        point.SetPoint (start);
+        point.SetStrand (strand);
+        CSeq_id seq_id (seqid);
+        point.SetId().Assign (seq_id);
+        mix->Set().push_back (loc);
     } else {
         // interval
         CRef<CSeq_loc> loc(new CSeq_loc);
-        CSeq_interval& ival = loc->SetInt();
-        ival.SetFrom(start);
-        ival.SetTo(stop);
-        ival.SetStrand(strand);
-        CSeq_id seq_id(seqid);
+        CSeq_interval& ival = loc->SetInt ();
+        ival.SetFrom (start);
+        ival.SetTo (stop);
+        ival.SetStrand (strand);
+        if (partial5) {
+            ival.SetPartialLeft (true);
+        }
+        if (partial3) {
+            ival.SetPartialRight (true);
+        }
+        CSeq_id seq_id (seqid);
         ival.SetId().Assign (seq_id);
-        mix->Set().push_back(loc);
+        mix->Set().push_back (loc);
     }
 
     if (partial5 || partial3) {
@@ -1558,7 +1574,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                             // and add first interval
 
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3);
+                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint);
 
                         }
                     } else {
@@ -1580,7 +1596,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             CRef<CSeq_loc> location (new CSeq_loc);
                             mix = &(location->SetMix ());
                             sfp->SetLocation (*location);
-                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3);
+                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint);
                         }
                     }
 
@@ -1588,7 +1604,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // process start - stop multiple interval line
 
-                    x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3);
+                    x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3, ispoint);
 
                 } else if ((! qual.empty ()) && (! val.empty ())) {
 
