@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -21,7 +21,8 @@ MMDB-Features DEFINITIONS ::=
 BEGIN
 
 EXPORTS Biostruc-feature-set, Chem-graph-pntrs, Atom-pntrs,
-	Chem-graph-alignment, Sphere, Cone, Cylinder, Brick, Transform;
+	Chem-graph-alignment, Sphere, Cone, Cylinder, Brick, Transform,
+	Biostruc-feature-set-id, Biostruc-feature-id;
 
 IMPORTS Biostruc-id FROM MMDB
 	Molecule-id, Residue-id, Atom-id FROM MMDB-Chemical-graph
