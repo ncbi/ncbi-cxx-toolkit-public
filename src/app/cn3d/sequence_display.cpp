@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/06/05 13:21:08  thiessen
+* fix structure alignment list problems
+*
 * Revision 1.24  2001/06/04 14:58:00  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -1039,8 +1042,8 @@ bool SequenceDisplay::ProximitySort(int displayRow)
         j = -j;
         if (j > 0) i++;
         if (N > 0 && N < sortedByScore.size() && !arrangedByProximity[N]) {
-            arrangedByProximity[N] = sortedByScore[R++];
             if (R == M) R++;
+            arrangedByProximity[N] = sortedByScore[R++];
         }
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/06/05 13:21:08  thiessen
+* fix structure alignment list problems
+*
 * Revision 1.61  2001/06/02 17:22:45  thiessen
 * fixes for GCC
 *
@@ -494,8 +497,9 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
         ERR_POST(Warning << "Don't know master MMDB ID");
     } else {
 
-        masterMol->parentSet->ClearStructureAlignments(masterSeq->mmdbLink);
+        masterMol->parentSet->InitStructureAlignments(masterSeq->mmdbLink);
 
+        int nStructureAlignments = 0;
         for (int i=1; i<multiple->NRows(); i++) {
             slaveSeq = multiple->GetSequenceOfRow(i);
             if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
@@ -517,7 +521,11 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
             TESTMSG("realigning slave " << slaveSeq->pdbID << " against master " << masterSeq->pdbID);
             (const_cast<StructureObject*>(slaveObj))->
                 RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
+            nStructureAlignments++;
         }
+
+        // if no structure alignments, remove the list entirely
+        if (nStructureAlignments == 0) masterMol->parentSet->RemoveStructureAlignments();
     }
 
     delete masterSeqIndexes;

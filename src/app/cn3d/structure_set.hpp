@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/06/05 13:21:17  thiessen
+* fix structure alignment list problems
+*
 * Revision 1.45  2001/05/31 18:46:27  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -305,10 +308,11 @@ private:
 public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
 
-    // empty the structure alignment data, in preparation for recomputing
-    void ClearStructureAlignments(int masterMMDBID);
+    // for manipulating structure alignment features
+    void InitStructureAlignments(int masterMMDBID);
     void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature,
         int masterDomainID, int slaveDomainID);
+    void RemoveStructureAlignments(void);
 };
 
 class ChemicalGraph;

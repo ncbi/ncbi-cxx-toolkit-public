@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/06/05 13:21:08  thiessen
+* fix structure alignment list problems
+*
 * Revision 1.61  2001/05/31 18:47:09  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -549,7 +552,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
                          << (*s)->GetTitle() << ") is assumed to be the master structure");
                     masterMMDBID = (*s)->mmdbLink;
                     // create a new (empty) "features" area for the structure alignments
-                    ClearStructureAlignments(masterMMDBID);
+                    InitStructureAlignments(masterMMDBID);
                     break;
                 }
             }
@@ -632,7 +635,7 @@ StructureSet::~StructureSet(void)
 
 static const int NO_DOMAIN = -1, MULTI_DOMAIN = 0;
 
-void StructureSet::ClearStructureAlignments(int masterMMDBID)
+void StructureSet::InitStructureAlignments(int masterMMDBID)
 {
     // create or empty the Biostruc-annot-set that will contain these alignments
     // in the asn data, erasing any structure alignments currently stored there
@@ -667,6 +670,11 @@ void StructureSet::ClearStructureAlignments(int masterMMDBID)
 void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     int masterDomainID, int slaveDomainID)
 {
+    if (!structureAlignments) {
+        ERR_POST(Error << "StructureSet::AddStructureAlignment() - no structure alignment list present");
+        return;
+    }
+
     // check master domain ID, to see if alignments have crossed master's domain boundaries
     int *currentMasterDomainID = &(structureAlignments->SetFeatures().front().GetObject().SetId().Set());
     if (*currentMasterDomainID == NO_DOMAIN)
@@ -687,7 +695,21 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     CRef<CBiostruc_feature> featureRef(feature);
     structureAlignments->SetFeatures().front().GetObject().SetFeatures().resize(
         structureAlignments->GetFeatures().front().GetObject().GetFeatures().size() + 1, featureRef);
+
+    // flag a change in data
     dataChanged |= eStructureAlignmentData;
+}
+
+// remove feature list from a CDD
+void StructureSet::RemoveStructureAlignments(void)
+{
+    if (cddData) {
+        cddData->ResetFeatures();
+        structureAlignments = NULL;
+
+        // flag a change in data
+        dataChanged |= eStructureAlignmentData;
+    }
 }
 
 void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
@@ -756,6 +778,7 @@ void StructureSet::RemoveUnusedSequences(void)
     // update the asn sequences, keeping only those used in the multiple alignment and updates
     seqEntries->clear();
     std::map < const CBioseq *, bool > usedSeqs;
+    int nStructuredSeqs = 0;
 
 // macro to add the sequence to the list if not already present;
 // if the sequence has structure, always add it, since repeated chains require duplicate Sequences
@@ -764,7 +787,8 @@ void StructureSet::RemoveUnusedSequences(void)
         seqEntries->resize(seqEntries->size() + 1); \
         seqEntries->back().Reset(new CSeq_entry); \
         seqEntries->back().GetObject().SetSeq((seq)->bioseqASN); \
-        usedSeqs[(seq)->bioseqASN.GetPointer()] = true; } } while (0)
+        usedSeqs[(seq)->bioseqASN.GetPointer()] = true; \
+        if (seq->molecule) nStructuredSeqs++; } } while (0)
 
     // always add master first
     CONDITIONAL_ADD_SEQENTRY(alignmentSet->master);
@@ -783,6 +807,17 @@ void StructureSet::RemoveUnusedSequences(void)
         CONDITIONAL_ADD_SEQENTRY((*s));
 
     dataChanged |= eSequenceData;
+
+    // warn user if # structured seqs != # structure alignments
+    if (cddData) {
+        if ((nStructuredSeqs < 2 && structureAlignments) ||
+            (nStructuredSeqs >= 2 && (!structureAlignments || nStructuredSeqs !=
+                structureAlignments->GetFeatures().front().GetObject().GetFeatures().size() + 1))) {
+            ERR_POST(Error << "Warning: Structure alignment list does not contain one alignment per "
+                "structured sequence!\nYou should recompute structure alignments before saving "
+                "in order to sync the lists.");
+        }
+    }
 }
 
 bool StructureSet::SaveASNData(const char *filename, bool doBinary)
