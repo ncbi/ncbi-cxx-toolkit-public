@@ -38,13 +38,13 @@
 BEGIN_NCBI_SCOPE
 
 
-CMsvcSolutionGenerator::CMsvcSolutionGenerator(const list<string>& configs)
+CMsvcSolutionGenerator::CMsvcSolutionGenerator(const list<SConfigInfo>& configs)
     :m_Configs(configs)
 {
 }
 
 
-CMsvcSolutionGenerator::~CMsvcSolutionGenerator()
+CMsvcSolutionGenerator::~CMsvcSolutionGenerator(void)
 {
 }
 
@@ -65,7 +65,7 @@ CMsvcSolutionGenerator::AddMasterProject(const string& base_name)
 
 
 bool 
-CMsvcSolutionGenerator::IsSetMasterProject() const
+CMsvcSolutionGenerator::IsSetMasterProject(void) const
 {
     return !m_MasterProject.first.empty() && !m_MasterProject.second.empty();
 }
@@ -79,7 +79,7 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     // Create dir for output sln file
     CDir(m_SolutionDir).CreatePath();
 
-    CNcbiOfstream  ofs(file_path.c_str(), ios::out | ios::trunc);
+    CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
@@ -98,9 +98,9 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
 	
     //Write all configurations
     ofs << '\t' << "GlobalSection(SolutionConfiguration) = preSolution" << endl;
-    ITERATE(list<string>, p, m_Configs)
-    {
-        ofs << '\t' << '\t' << *p << " = " << *p << endl;
+    ITERATE(list<SConfigInfo>, p, m_Configs) {
+        const string& config = (*p).m_Name;
+        ofs << '\t' << '\t' << config << " = " << config << endl;
     }
     ofs << '\t' << "EndGlobalSection" << endl;
     
@@ -260,9 +260,9 @@ void
 CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs, 
                                                    const CPrjContext& project)
 {
-    ITERATE(list<string>, p, m_Configs) {
+    ITERATE(list<SConfigInfo>, p, m_Configs) {
 
-        const string& config = *p;
+        const string& config = (*p).m_Name;
         ofs << '\t' 
             << '\t' 
             << project.m_GUID 
@@ -289,9 +289,9 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
 void 
 CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
 {
-    ITERATE(list<string>, p, m_Configs) {
+    ITERATE(list<SConfigInfo>, p, m_Configs) {
 
-        const string& config = *p;
+        const string& config = (*p).m_Name;
         ofs << '\t' 
             << '\t' 
             << m_MasterProject.second // project.m_GUID 
@@ -320,6 +320,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/26 19:27:29  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.4  2004/01/22 17:57:54  gorelenk
  * first version
  *

@@ -70,11 +70,64 @@ string GenerateSlnGUID(void);
 string SourceFileExt(const string& file_path);
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SConfigInfo --
+///
+/// Abstraction of configuration informaion.
+///
+/// Configuration name, debug/release flag, runtime library 
+/// 
+
+struct SConfigInfo
+{
+    SConfigInfo(void);
+    SConfigInfo(const string& name, 
+                bool debug, 
+                const string& runtime_library);
+
+    string m_Name;
+    bool   m_Debug;
+    string m_RuntimeLibrary;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CMsvc7RegSettings --
+///
+/// Abstraction of [msvc7] section in app registry.
+///
+/// Settings for generation of msvc 7.10 projects
+/// 
+
+class CMsvc7RegSettings
+{
+public:
+    CMsvc7RegSettings(void);
+
+    string            m_Version;
+    list<SConfigInfo> m_ConfigInfo;
+    string            m_ProjectEngineName;
+    string            m_Encoding;
+    string            m_CompilersSubdir;
+    string            m_MakefilesExt;
+
+private:
+    CMsvc7RegSettings(const CMsvc7RegSettings&);
+    CMsvc7RegSettings& operator= (const CMsvc7RegSettings&);
+};
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/26 19:25:41  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.3  2004/01/22 17:57:08  gorelenk
  * first version
  *

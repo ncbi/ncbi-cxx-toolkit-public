@@ -32,6 +32,7 @@
 
 
 #include <app/project_tree_builder/msvc_project_context.hpp>
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
@@ -48,8 +49,8 @@ BEGIN_NCBI_SCOPE
 class CMsvcSolutionGenerator
 {
 public:
-    CMsvcSolutionGenerator(const list<string>& configs);
-    ~CMsvcSolutionGenerator();
+    CMsvcSolutionGenerator(const list<SConfigInfo>& configs);
+    ~CMsvcSolutionGenerator(void);
     
     void AddProject(const CProjItem& project);
     
@@ -58,13 +59,13 @@ public:
     void SaveSolution(const string& file_path);
     
 private:
-    list<string> m_Configs;
+    list<SConfigInfo> m_Configs;
 
     string m_SolutionDir;
 
     /// Basename / GUID
     pair<string, string> m_MasterProject;
-    bool IsSetMasterProject() const;
+    bool IsSetMasterProject(void) const;
 
     class CPrjContext
     {
@@ -114,6 +115,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/26 19:25:42  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.4  2004/01/22 17:57:09  gorelenk
  * first version
  *

@@ -67,14 +67,15 @@ public:
               const string& id,
               const string& sources_base,
               const list<string>& sources, 
-              const list<string>& depends);
+              const list<string>& depends,
+              const list<string>& requires);
 
     ~CProjItem(void);
 
-    /// Name of atomic project
+    /// Name of atomic project.
     string       m_Name;
 
-    /// ID of atomic project
+    /// ID of atomic project.
     string       m_ID;
 
     /// Type of the project.
@@ -83,11 +84,14 @@ public:
     /// Base directory of source files (....c++/src/a/ )
     string       m_SourcesBaseDir;
 
-    /// List of source files without extension ( *.cpp ) - with full pathes
+    /// List of source files without extension ( *.cpp ) - with full pathes.
     list<string> m_Sources;
     
-    /// what projects this project is depend upon (IDs)
+    /// What projects this project is depend upon (IDs).
     list<string> m_Depends;
+
+    /// What this project requires to have.
+    list<string> m_Requires;
 
 private:
     void Clear(void);
@@ -233,6 +237,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/26 19:25:42  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.4  2004/01/22 17:57:09  gorelenk
  * first version
  *

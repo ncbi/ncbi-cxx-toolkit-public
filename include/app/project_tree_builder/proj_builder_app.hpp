@@ -37,6 +37,9 @@
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/resolver.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include <app/project_tree_builder/msvc_site.hpp>
+#include <app/project_tree_builder/msvc_makefile.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,7 +61,7 @@ public:
     int EnumOpt(const string& enum_name, const string& enum_val) const;
 
     /// Singleton
-    friend CProjBulderApp& GetApp();
+    friend CProjBulderApp& GetApp(void);
 
 
 private:
@@ -92,17 +95,30 @@ private:
 
     typedef map<string, CSimpleMakeFileContents> TFiles;
     void DumpFiles(const TFiles& files, const string& filename) const;
+    
+    auto_ptr<CMsvc7RegSettings> m_MsvcRegSettings;
+    auto_ptr<CMsvcSite>         m_MsvcSite;
+    auto_ptr<CMsvcMetaMakefile> m_MsvcMetaMakefile;
 
 public:
 
-    void GetMetaDataFiles (list<string>* files)   const;
-    void GetBuildConfigs  (list<string>* configs) const;
+    void    GetMetaDataFiles    (list<string>*      files)   const;
+
+
+    const CMsvc7RegSettings& GetRegSettings(void);
+    
+    const CMsvcSite&         GetSite(void);
+
+    const CMsvcMetaMakefile& GetMetaMakefile(void);
+
+private:
+    void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
 };
 
 
 /// access to App singleton
 
-CProjBulderApp& GetApp();
+CProjBulderApp& GetApp(void);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -121,7 +137,8 @@ public:
         eEnumValue,
         eFileOpen,
         eProjectType,
-        eBuildConfiguration
+        eBuildConfiguration,
+        eMetaMakefile
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -135,6 +152,8 @@ public:
             return "Unknown project type";
         case eBuildConfiguration:
             return "Unknown build configuration";
+        case eMetaMakefile:
+            return "Bad or missed metamakefile";
         default:
             return CException::GetErrCodeString();
         }
@@ -148,6 +167,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/26 19:25:42  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.5  2004/01/22 17:57:09  gorelenk
  * first version
  *

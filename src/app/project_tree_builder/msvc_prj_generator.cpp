@@ -26,13 +26,13 @@ static void s_CollectRelPathes(const string&       path_from,
                                list<string>*       rel_pathes);
 
 
-CMsvcProjectGenerator::CMsvcProjectGenerator(const list<string>& configs)
+CMsvcProjectGenerator::CMsvcProjectGenerator(const list<SConfigInfo>& configs)
+    :m_Configs(configs)
 {
-    m_Configs = configs;
 }
 
 
-CMsvcProjectGenerator::~CMsvcProjectGenerator()
+CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 {
 }
 
@@ -57,13 +57,13 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
          xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
-    ITERATE(list<string>, p , m_Configs) {
+    ITERATE(list<SConfigInfo>, p , m_Configs) {
 
-        const string& config = *p;
+        const string& config = (*p).m_Name; 
 
         //contexts:
         
-        CMsvcPrjGeneralContext general_context(config, project_context);
+        CMsvcPrjGeneralContext general_context(*p, project_context);
 
         //MSVC Tools
         CMsvcTools msvc_tool(general_context, project_context);
@@ -154,6 +154,32 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             //EnableFunctionLevelLinking
             BIND_TOOLS(tool, msvc_tool.Compiler(), EnableFunctionLevelLinking);
 
+            //OptimizeForProcessor
+            BIND_TOOLS(tool, msvc_tool.Compiler(), OptimizeForProcessor);
+            //StructMemberAlignment 
+            BIND_TOOLS(tool, msvc_tool.Compiler(), StructMemberAlignment);
+            //CallingConvention
+            BIND_TOOLS(tool, msvc_tool.Compiler(), CallingConvention);
+            //IgnoreStandardIncludePath
+            BIND_TOOLS(tool, msvc_tool.Compiler(), IgnoreStandardIncludePath);
+            //ExceptionHandling
+            BIND_TOOLS(tool, msvc_tool.Compiler(), ExceptionHandling);
+            //BufferSecurityCheck
+            BIND_TOOLS(tool, msvc_tool.Compiler(), BufferSecurityCheck);
+            //DisableSpecificWarnings
+            BIND_TOOLS(tool, msvc_tool.Compiler(), DisableSpecificWarnings);
+            //UndefinePreprocessorDefinitions
+            BIND_TOOLS(tool, msvc_tool.Compiler(), UndefinePreprocessorDefinitions);
+            //AdditionalOptions
+            BIND_TOOLS(tool, msvc_tool.Compiler(), AdditionalOptions);
+            //GlobalOptimizations
+            BIND_TOOLS(tool, msvc_tool.Compiler(), GlobalOptimizations);
+            //FavorSizeOrSpeed
+            BIND_TOOLS(tool, msvc_tool.Compiler(), FavorSizeOrSpeed);
+            //BrowseInformation
+            BIND_TOOLS(tool, msvc_tool.Compiler(), BrowseInformation);
+
+
             conf->SetTool().push_back(tool);
         }}
 
@@ -194,6 +220,13 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             //EnableCOMDATFolding
             BIND_TOOLS(tool, msvc_tool.Linker(), EnableCOMDATFolding);
 
+            //IgnoreAllDefaultLibraries
+            BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreAllDefaultLibraries);
+            //IgnoreDefaultLibraryNames
+            BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreDefaultLibraryNames);
+            //AdditionalLibraryDirectories
+            BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalLibraryDirectories);
+
             conf->SetTool().push_back(tool);
         }}
 
@@ -215,6 +248,9 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //IgnoreDefaultLibraryNames
             BIND_TOOLS(tool, msvc_tool.Librarian(), IgnoreDefaultLibraryNames);
+
+            //AdditionalLibraryDirectories
+            BIND_TOOLS(tool, msvc_tool.Librarian(), AdditionalLibraryDirectories);
 
             conf->SetTool().push_back(tool);
         }}
@@ -518,6 +554,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/26 19:27:28  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.6  2004/01/22 17:57:54  gorelenk
  * first version
  *

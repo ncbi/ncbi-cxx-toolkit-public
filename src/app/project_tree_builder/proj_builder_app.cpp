@@ -92,12 +92,10 @@ int CProjBulderApp::Run(void)
                                           m_RootSrc, 
                                           &projects_tree);
 
-    // Get configurations
-    list<string> configs;
-    GetBuildConfigs(&configs);
+    // MSVC specific part:
     
     // Projects
-    CMsvcProjectGenerator prj_gen(configs);
+    CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
 
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         prj_gen.Generate(p->second);
@@ -105,12 +103,12 @@ int CProjBulderApp::Run(void)
 
     // MasterProject
     CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
-                                               configs,
+                                               GetRegSettings().m_ConfigInfo,
                                                CDirEntry(m_Solution).GetDir());
     master_prj_gen.SaveProject("_MasterProject");
 
     // Solution
-    CMsvcSolutionGenerator sln_gen(configs);
+    CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         sln_gen.AddProject(p->second);
     }
@@ -161,7 +159,7 @@ int CProjBulderApp::EnumOpt(const string& enum_name,
 void CProjBulderApp::DumpFiles(const TFiles& files, 
 							   const string& filename) const
 {
-    CNcbiOfstream  ofs(filename.c_str(), ios::out | ios::trunc);
+    CNcbiOfstream  ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs ) {
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
     }
@@ -183,15 +181,89 @@ void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 }
 
 
-void CProjBulderApp::GetBuildConfigs(list<string>* configs) const
+void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
 {
     configs->clear();
     string config_str = GetConfig().GetString("msvc7", "Configurations", "");
-    NStr::Split(config_str, " \t,", *configs);
+    list<string> configs_list;
+    NStr::Split(config_str, " \t,", configs_list);
+    ITERATE(list<string>, p, configs_list) {
+
+        const string& config_name = *p;
+        SConfigInfo config;
+        config.m_Name  = config_name;
+        config.m_Debug = GetConfig().GetString(config_name, 
+                                               "Debug",
+                                               "FALSE") != "FALSE";
+        config.m_RuntimeLibrary = GetConfig().GetString(config_name, 
+                                                        "runtimeLibraryOption",
+                                                        "0");
+        configs->push_back(config);
+    }
 }
 
 
-CProjBulderApp& GetApp()
+const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
+{
+    if ( !m_MsvcRegSettings.get() ) {
+        m_MsvcRegSettings = auto_ptr<CMsvc7RegSettings>(new CMsvc7RegSettings());
+    
+        m_MsvcRegSettings->m_Version = 
+            GetConfig().GetString("msvc7", "Version", "7.10");
+
+        GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
+
+        m_MsvcRegSettings->m_ProjectEngineName = 
+            GetConfig().GetString("msvc7", "Name", "VisualStudioProject");
+    
+        m_MsvcRegSettings->m_Encoding = 
+            GetConfig().GetString("msvc7", "encoding","Windows-1252");
+
+        m_MsvcRegSettings->m_CompilersSubdir  = 
+            GetConfig().GetString("msvc7", "compilers", "msvc7_prj");
+    
+        m_MsvcRegSettings->m_MakefilesExt = 
+            GetConfig().GetString("msvc7", "MakefilesExt", "msvc");
+    }
+    return *m_MsvcRegSettings;
+}
+
+
+const CMsvcSite& CProjBulderApp::GetSite(void)
+{
+    if ( !m_MsvcSite.get() ) 
+        m_MsvcSite = auto_ptr<CMsvcSite>(new CMsvcSite(GetConfig()));
+    
+    return *m_MsvcSite;
+}
+
+
+const CMsvcMetaMakefile& CProjBulderApp::GetMetaMakefile(void)
+{
+    if ( !m_MsvcMetaMakefile.get() ) {
+        //Get metamakefile file name from the registry
+        string meta_makefile_fname = 
+            GetConfig().GetString("Common", 
+                                  "MetaMakefile", "Makefile.mk.in.msvc");
+        
+        //Metamakefile must be in RootSrc directory
+        m_MsvcMetaMakefile = 
+            auto_ptr<CMsvcMetaMakefile>
+                (new CMsvcMetaMakefile
+                        (CDirEntry::ConcatPath(m_RootSrc,
+                                               meta_makefile_fname)));
+        
+        //Metamakefile must present and must not be empty
+        if ( m_MsvcMetaMakefile->Empty() )
+            NCBI_THROW(CProjBulderAppException, 
+                       eMetaMakefile, meta_makefile_fname);
+    }
+
+    return *m_MsvcMetaMakefile;
+}
+
+
+CProjBulderApp& GetApp(void)
 {
     static CProjBulderApp theApp;
     return theApp;
@@ -212,6 +284,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/26 19:27:30  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.5  2004/01/22 17:57:55  gorelenk
  * first version
  *

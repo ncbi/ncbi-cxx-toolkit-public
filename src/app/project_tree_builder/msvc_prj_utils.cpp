@@ -57,7 +57,7 @@ void SaveToXmlFile  (const string&               file_path,
     CDirEntry::SplitPath(file_path, &dir);
     CDir(dir).CreatePath();
 
-    CNcbiOfstream  ofs(file_path.c_str(), ios::out | ios::trunc);
+    CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if (!ofs) {
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
     }
@@ -155,11 +155,37 @@ string SourceFileExt(const string& file_path)
 }
 
 
+SConfigInfo::SConfigInfo(void)
+    :m_Debug(false)
+{
+}
+
+SConfigInfo::SConfigInfo(const string& name, 
+                         bool debug, 
+                         const string& runtime_library)
+    :m_Name          (name),
+     m_Debug         (debug),
+     m_RuntimeLibrary(runtime_library)
+{
+}
+
+
+CMsvc7RegSettings::CMsvc7RegSettings(void)
+{
+    //TODO
+}
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/26 19:27:28  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.3  2004/01/22 17:57:54  gorelenk
  * first version
  *

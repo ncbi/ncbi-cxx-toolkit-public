@@ -45,6 +45,8 @@
 
 #include <set>
 
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
+
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
@@ -63,13 +65,13 @@ class CMsvcMasterProjectGenerator
 {
 public:
     CMsvcMasterProjectGenerator(const CProjectItemsTree& tree,
-                                const list<string>& configs,
-                                const string& project_dir);
+                                const list<SConfigInfo>& configs,
+                                const string&            project_dir);
 
     ~CMsvcMasterProjectGenerator(void);
 
     const CProjectItemsTree& m_Tree;
-    list<string> m_Configs;
+    list<SConfigInfo> m_Configs;
 
     // base name
     void SaveProject(const string& base_name);
@@ -118,6 +120,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/26 19:25:41  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.2  2004/01/22 17:57:08  gorelenk
  * first version
  *

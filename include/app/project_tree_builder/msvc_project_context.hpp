@@ -35,6 +35,8 @@
 #include<map>
 
 #include <app/project_tree_builder/proj_item.hpp>
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include <app/project_tree_builder/msvc_makefile.hpp>
 
 #include <corelib/ncbienv.hpp>
 
@@ -102,13 +104,17 @@ public:
         return m_IncludeDirsAbs;
     }
 
+    const CMsvcProjectMakefile& GetMsvcProjectMakefile(void) const;
+
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
     CMsvcPrjProjectContext(const CMsvcPrjProjectContext&);
     CMsvcPrjProjectContext&	operator= (const CMsvcPrjProjectContext&);
 
+
     string m_ProjectName;
+
     string m_AdditionalIncludeDirectories;
     string m_AdditionalLinkerOptions;
     string m_AdditionalLibrarianOptions;
@@ -121,6 +127,8 @@ private:
 
     string       m_IncludeDirsRoot;
     list<string> m_IncludeDirsAbs;
+
+    auto_ptr<CMsvcProjectMakefile> m_MsvcProjectMakefile;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -137,7 +145,7 @@ class CMsvcPrjGeneralContext
 {
 public:
     //no value type semantics
-    CMsvcPrjGeneralContext(const string& config, 
+    CMsvcPrjGeneralContext(const SConfigInfo& config, 
                            const CMsvcPrjProjectContext& prj_context);
 
     typedef enum { 
@@ -147,16 +155,7 @@ public:
         eOther } TTargetType;
     TTargetType m_Type;
 
-    typedef enum { 
-        eStatic, 
-        eStaticMT, 
-        eDynamicMT } TRunTimeLibType;
-    TRunTimeLibType m_RunTime;
-
-    typedef enum { 
-        eDebug, 
-        eRelease } TBuildType;
-    TBuildType m_BuildType;
+    SConfigInfo m_Config;
 
     //Configuration::General
     string OutputDirectory(void) const
@@ -166,7 +165,12 @@ public:
 
     string ConfigurationName(void) const
     {
-        return m_ConfigurationName;
+        return m_Config.m_Name;
+    }
+
+    const CMsvcMetaMakefile& GetMsvcMetaMakefile(void) const
+    {
+        return m_MsvcMetaMakefile;
     }
 
 private:
@@ -177,6 +181,8 @@ private:
 
     string m_OutputDirectory;
     string m_ConfigurationName;
+
+    const CMsvcMetaMakefile& m_MsvcMetaMakefile;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -241,23 +247,38 @@ struct ICompilerTool : public ITool
     //                                    (project_name(uppercase)+"_EXPORTS")
 
     // All configurations:
-    virtual string PreprocessorDefinitions(void)		const = 0;
+    virtual string PreprocessorDefinitions(void)		 const = 0;
 
-    virtual string MinimalRebuild(void)					const = 0;
-    virtual string BasicRuntimeChecks(void)				const = 0;
-    virtual string RuntimeLibrary(void)					const = 0;
-    virtual string RuntimeTypeInfo(void)                const = 0;
-    virtual string UsePrecompiledHeader(void)			const = 0;
-    virtual string WarningLevel(void)					const = 0;
-    virtual string Detect64BitPortabilityProblems(void) const = 0;
-    virtual string DebugInformationFormat(void)			const = 0;
-    virtual string CompileAs(void)                      const = 0;
+    virtual string MinimalRebuild(void)					 const = 0;
+    virtual string BasicRuntimeChecks(void)				 const = 0;
+    virtual string RuntimeLibrary(void)					 const = 0;
+    virtual string RuntimeTypeInfo(void)                 const = 0;
+    virtual string UsePrecompiledHeader(void)			 const = 0;
+    virtual string WarningLevel(void)					 const = 0;
+    virtual string Detect64BitPortabilityProblems(void)  const = 0;
+    virtual string DebugInformationFormat(void)			 const = 0;
+    virtual string CompileAs(void)                       const = 0;
 
     //For release - EXE DLL LIB
-    virtual string InlineFunctionExpansion(void)		const = 0;
-    virtual string OmitFramePointers(void)				const = 0;
-    virtual string StringPooling(void)					const = 0;
-    virtual string EnableFunctionLevelLinking(void)		const = 0;
+    virtual string InlineFunctionExpansion(void)		 const = 0;
+    virtual string OmitFramePointers(void)				 const = 0;
+    virtual string StringPooling(void)					 const = 0;
+    virtual string EnableFunctionLevelLinking(void)		 const = 0;
+
+    //Latest additions
+    virtual string OptimizeForProcessor(void)		     const = 0;
+    virtual string StructMemberAlignment(void)		     const = 0; 
+    virtual string CallingConvention(void)		         const = 0;
+    virtual string IgnoreStandardIncludePath(void)	     const = 0;
+    virtual string ExceptionHandling(void)		         const = 0;
+    virtual string BufferSecurityCheck(void)		     const = 0;
+    virtual string DisableSpecificWarnings(void)		 const = 0;
+    virtual string UndefinePreprocessorDefinitions(void) const = 0;
+    virtual string AdditionalOptions(void)		         const = 0;
+
+    virtual string GlobalOptimizations(void)		     const = 0;
+    virtual string FavorSizeOrSpeed(void)		         const = 0;
+    virtual string BrowseInformation(void)		         const = 0;
 };
 
 
@@ -272,18 +293,23 @@ struct ICompilerTool : public ITool
 struct ILinkerTool : public ITool
 {
     //string Name : "VCLinkerTool"
-    virtual string AdditionalOptions(void)			const = 0;
-    virtual string OutputFile(void)					const = 0;
-    virtual string LinkIncremental(void)			const = 0;
-    virtual string GenerateDebugInformation(void)	const = 0;
-    virtual string ProgramDatabaseFile(void)		const = 0;
-    virtual string SubSystem(void)					const = 0;
-    virtual string ImportLibrary(void)				const = 0;
-    virtual string TargetMachine(void)				const = 0;
+    virtual string AdditionalOptions(void)			  const = 0;
+    virtual string OutputFile(void)					  const = 0;
+    virtual string LinkIncremental(void)			  const = 0;
+    virtual string GenerateDebugInformation(void)	  const = 0;
+    virtual string ProgramDatabaseFile(void)		  const = 0;
+    virtual string SubSystem(void)					  const = 0;
+    virtual string ImportLibrary(void)				  const = 0;
+    virtual string TargetMachine(void)				  const = 0;
 
     //release - EXE DLL +=
-    virtual string OptimizeReferences(void)			const = 0;
-    virtual string EnableCOMDATFolding(void)		const = 0;
+    virtual string OptimizeReferences(void)			  const = 0;
+    virtual string EnableCOMDATFolding(void)		  const = 0;
+
+    //Latest additions
+    virtual string IgnoreAllDefaultLibraries(void)	  const = 0;
+    virtual string IgnoreDefaultLibraryNames(void)	  const = 0;
+    virtual string AdditionalLibraryDirectories(void) const = 0;
 };
 
 
@@ -298,10 +324,13 @@ struct ILinkerTool : public ITool
 struct ILibrarianTool : public ITool
 {
     //string Name : "VCLibrarianTool"
-    virtual string AdditionalOptions(void)			const = 0;
-    virtual string OutputFile(void)					const = 0;
-    virtual string IgnoreAllDefaultLibraries(void)	const = 0;
-    virtual string IgnoreDefaultLibraryNames(void)	const = 0;
+    virtual string AdditionalOptions(void)			  const = 0;
+    virtual string OutputFile(void)					  const = 0;
+    virtual string IgnoreAllDefaultLibraries(void)	  const = 0;
+    virtual string IgnoreDefaultLibraryNames(void)	  const = 0;
+    
+    //Latest additions
+    virtual string AdditionalLibraryDirectories(void) const = 0;
 };
 
 /// Dummies - Name - only tools. Must present in msvc proj:
@@ -443,6 +472,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/26 19:25:41  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.3  2004/01/22 17:57:08  gorelenk
  * first version
  *

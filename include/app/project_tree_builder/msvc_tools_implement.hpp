@@ -98,14 +98,18 @@ private:
 ///
 /// Accepts trait classes as a template parameters.
 
-template <  class CRTTrait, 
-            class DebugReleaseTrait,
-            class ConfTrait > 
+template < class DebugReleaseTrait > 
 class CCompilerToolImpl : public ICompilerTool
 {
 public:
-    CCompilerToolImpl( const string& additional_include_directories )
-	    :m_AdditionalIncludeDirectories(additional_include_directories)
+    CCompilerToolImpl(const string&               additional_include_dirs,
+                      const CMsvcProjectMakefile& project_makefile,
+                      const string&               runtimeLibraryOption,
+                      const CMsvcMetaMakefile&    meta_makefile)
+	    :m_AdditionalIncludeDirectories(additional_include_dirs),
+         m_MsvcProjectMakefile         (project_makefile),
+         m_RuntimeLibraryOption        (runtimeLibraryOption),
+         m_MsvcMetaMakefile            (meta_makefile)
     {
     }
 
@@ -113,75 +117,63 @@ public:
     {
 	    return "VCCLCompilerTool";
     }
-    virtual string Optimization(void) const
-    {
-	    return DebugReleaseTrait::Optimization();
+
+#define SUPPORT_COMPILER_OPTION(opt) \
+    virtual string opt(void) const \
+    { \
+        return GetCompilerOpt(m_MsvcMetaMakefile, \
+                              m_MsvcProjectMakefile, \
+                              #opt, \
+                              DebugReleaseTrait::debug() ); \
     }
+
+    SUPPORT_COMPILER_OPTION(Optimization)
+
     virtual string AdditionalIncludeDirectories(void) const
     {
 	    return m_AdditionalIncludeDirectories;
     }
-    virtual string PreprocessorDefinitions(void) const
-    {
-	    return DebugReleaseTrait::PreprocessorDefinitions() + 
-		       ConfTrait::PreprocessorDefinitions();
-    }
-    virtual string MinimalRebuild(void) const
-    {
-	    return "FALSE";
-    }
-    virtual string BasicRuntimeChecks(void) const
-    {
-	    return DebugReleaseTrait::BasicRuntimeChecks();
-    }
+
+    SUPPORT_COMPILER_OPTION(PreprocessorDefinitions)
+    SUPPORT_COMPILER_OPTION(MinimalRebuild)
+    SUPPORT_COMPILER_OPTION(BasicRuntimeChecks)
+
     virtual string RuntimeLibrary(void) const
     {
-	    return CRTTrait::RuntimeLibrary();
-    }
-    virtual string RuntimeTypeInfo(void) const
-    {
-        return "TRUE";
-    }
-    virtual string UsePrecompiledHeader(void) const
-    {
-	    return "0";
-    }
-    virtual string WarningLevel(void) const
-    {
-	    return "3";
-    }
-    virtual string Detect64BitPortabilityProblems(void) const
-    {
-	    return "FALSE";
-    }
-    virtual string DebugInformationFormat(void) const
-    {
-	    return DebugReleaseTrait::DebugInformationFormat();
-    }
-    virtual string CompileAs(void) const
-    {
-        return "0";
+	    return m_RuntimeLibraryOption;
     }
 
-    virtual string InlineFunctionExpansion(void) const
-    {
-	    return DebugReleaseTrait::InlineFunctionExpansion();
-    }
-    virtual string OmitFramePointers(void) const
-    {
-	    return DebugReleaseTrait::OmitFramePointers();
-    }
-    virtual string StringPooling(void) const
-    {
-	    return DebugReleaseTrait::StringPooling();
-    }
-    virtual string EnableFunctionLevelLinking(void) const
-    {
-	    return DebugReleaseTrait::EnableFunctionLevelLinking();
-    }
+    SUPPORT_COMPILER_OPTION(RuntimeTypeInfo)
+    SUPPORT_COMPILER_OPTION(UsePrecompiledHeader)
+    SUPPORT_COMPILER_OPTION(WarningLevel)
+    SUPPORT_COMPILER_OPTION(Detect64BitPortabilityProblems)
+    SUPPORT_COMPILER_OPTION(DebugInformationFormat)
+    SUPPORT_COMPILER_OPTION(CompileAs)
+    SUPPORT_COMPILER_OPTION(InlineFunctionExpansion)
+    SUPPORT_COMPILER_OPTION(OmitFramePointers)
+    SUPPORT_COMPILER_OPTION(StringPooling)
+    SUPPORT_COMPILER_OPTION(EnableFunctionLevelLinking)
+
+
+    //Latest additions
+    SUPPORT_COMPILER_OPTION(OptimizeForProcessor)
+    SUPPORT_COMPILER_OPTION(StructMemberAlignment)
+    SUPPORT_COMPILER_OPTION(CallingConvention)
+    SUPPORT_COMPILER_OPTION(IgnoreStandardIncludePath)
+    SUPPORT_COMPILER_OPTION(ExceptionHandling)
+    SUPPORT_COMPILER_OPTION(BufferSecurityCheck)
+    SUPPORT_COMPILER_OPTION(DisableSpecificWarnings)
+    SUPPORT_COMPILER_OPTION(UndefinePreprocessorDefinitions)
+    SUPPORT_COMPILER_OPTION(AdditionalOptions)
+    SUPPORT_COMPILER_OPTION(GlobalOptimizations)
+    SUPPORT_COMPILER_OPTION(FavorSizeOrSpeed)
+    SUPPORT_COMPILER_OPTION(BrowseInformation)
 
 private:
-    string m_AdditionalIncludeDirectories;
+    string                      m_AdditionalIncludeDirectories;
+    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
+    string                      m_RuntimeLibraryOption;
+    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
 
     CCompilerToolImpl(void);
     CCompilerToolImpl(const CCompilerToolImpl&);
@@ -203,9 +195,13 @@ class CLinkerToolImpl : public ILinkerTool
 {
 public:
     CLinkerToolImpl(const string& additional_options,
-                    const string& project_name)
-	    :m_AdditionalOptions(additional_options),
-		    m_ProjectName(project_name)
+                    const string& project_name,
+                    const CMsvcProjectMakefile& project_makefile,
+                    const CMsvcMetaMakefile&    meta_makefile)
+	    :m_AdditionalOptions    (additional_options),
+		 m_ProjectName          (project_name),
+         m_MsvcProjectMakefile  (project_makefile),
+         m_MsvcMetaMakefile     (meta_makefile)
     {
     }
     virtual string Name(void) const
@@ -220,47 +216,56 @@ public:
     {
 	    return string("$(OutDir)/") + m_ProjectName + ConfTrait::TargetExtension();
     }
-    virtual string LinkIncremental(void) const
-    {
-	    return "2";
+
+#define SUPPORT_LINKER_OPTION(opt) \
+    virtual string opt(void) const \
+    { \
+        return GetLinkerOpt(m_MsvcMetaMakefile, \
+                            m_MsvcProjectMakefile, \
+                            #opt, \
+                            DebugReleaseTrait::debug() ); \
     }
-    virtual string GenerateDebugInformation(void) const
-    {
-	    return DebugReleaseTrait::GenerateDebugInformation();
-    }
+    
+    SUPPORT_LINKER_OPTION(LinkIncremental)
+    SUPPORT_LINKER_OPTION(GenerateDebugInformation)
+
     virtual string ProgramDatabaseFile(void) const
     {
 	    return string("$(OutDir)/") + m_ProjectName + ".pdb";
     }
-    virtual string SubSystem(void) const
-    {
-	    return ConfTrait::SubSystem();
-    }
+
+    SUPPORT_LINKER_OPTION(SubSystem)
+    
     virtual string ImportLibrary(void) const
     {
 	    return string("$(OutDir)/") + m_ProjectName + ".lib";
     }
-    virtual string TargetMachine(void) const
-    {
-	    return "1";
-    }
-    virtual string OptimizeReferences(void) const
-    {
-	    return DebugReleaseTrait::OptimizeReferences();
-    }
-    virtual string EnableCOMDATFolding(void) const
-    {
-	    return DebugReleaseTrait::EnableCOMDATFolding();
-    }
+
+    SUPPORT_LINKER_OPTION(TargetMachine)
+    SUPPORT_LINKER_OPTION(OptimizeReferences)
+    SUPPORT_LINKER_OPTION(EnableCOMDATFolding)
+    SUPPORT_LINKER_OPTION(IgnoreAllDefaultLibraries)
+    SUPPORT_LINKER_OPTION(IgnoreDefaultLibraryNames)
+    SUPPORT_LINKER_OPTION(AdditionalLibraryDirectories)
 
 private:
     string m_AdditionalOptions;
     string m_ProjectName;
 
+    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
+    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
+
     CLinkerToolImpl(void);
     CLinkerToolImpl(const CLinkerToolImpl&);
     CLinkerToolImpl& operator= (const CLinkerToolImpl&);
 };
+
+
+#define SUPPORT_DUMMY_OPTION(opt) \
+    virtual string opt(void) const \
+    { \
+        return ""; \
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -270,7 +275,6 @@ private:
 /// Implementation of ILinkerTool interface.
 ///
 /// Dummy (name-only) implementation.
-
 class CLinkerToolDummyImpl : public ILinkerTool // for LIB targets:
 {
 public:
@@ -281,46 +285,27 @@ public:
     {
 	    return "VCLinkerTool";
     }
-    virtual string AdditionalOptions(void) const
+    SUPPORT_DUMMY_OPTION(AdditionalOptions)
+    SUPPORT_DUMMY_OPTION(OutputFile)
+    SUPPORT_DUMMY_OPTION(LinkIncremental)
+    SUPPORT_DUMMY_OPTION(GenerateDebugInformation)
+    SUPPORT_DUMMY_OPTION(ProgramDatabaseFile)
+    SUPPORT_DUMMY_OPTION(SubSystem)
+    SUPPORT_DUMMY_OPTION(ImportLibrary)
+    SUPPORT_DUMMY_OPTION(TargetMachine)
+    SUPPORT_DUMMY_OPTION(OptimizeReferences)
+    SUPPORT_DUMMY_OPTION(EnableCOMDATFolding)
+
+    virtual string IgnoreAllDefaultLibraries(void) const
     {
-	    return "";
+        return "FALSE";
     }
-    virtual string OutputFile(void) const
+    virtual string IgnoreDefaultLibraryNames(void) const
     {
-	    return "";
+        return "FALSE";
     }
-    virtual string LinkIncremental(void) const
-    {
-	    return "";
-    }
-    virtual string GenerateDebugInformation(void) const
-    {
-	    return "";
-    }
-    virtual string ProgramDatabaseFile(void) const
-    {
-	    return "";
-    }
-    virtual string SubSystem(void) const
-    {
-	    return "";
-    }
-    virtual string ImportLibrary(void) const
-    {
-	    return "";
-    }
-    virtual string TargetMachine(void) const
-    {
-	    return "";
-    }
-    virtual string OptimizeReferences(void) const
-    {
-	    return "";
-    }
-    virtual string EnableCOMDATFolding(void) const
-    {
-	    return "";
-    }
+
+    SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
 
 private:
     CLinkerToolDummyImpl(const CLinkerToolDummyImpl&);
@@ -335,13 +320,18 @@ private:
 ///
 /// Implementation for LIB targets.
 
+template <  class DebugReleaseTrait > 
 class CLibrarianToolImpl : public ILibrarianTool
 {
 public:
     CLibrarianToolImpl( const string& additional_options,
-                        const string& project_name)
-	    :m_AdditionalOptions(additional_options),
-	     m_ProjectName(project_name)
+                        const string& project_name,
+                        const CMsvcProjectMakefile& project_makefile,
+                        const CMsvcMetaMakefile&    meta_makefile)
+	    :m_AdditionalOptions    (additional_options),
+	     m_ProjectName          (project_name),
+         m_MsvcProjectMakefile  (project_makefile),
+         m_MsvcMetaMakefile     (meta_makefile)
     {
     }
     virtual string Name(void) const
@@ -357,17 +347,26 @@ public:
     {
 	    return string("$(OutDir)/") + m_ProjectName + ".lib";
     }
-    virtual string IgnoreAllDefaultLibraries(void) const
-    {
-	    return "TRUE";
+
+#define SUPPORT_LIBRARIAN_OPTION(opt) \
+    virtual string opt(void) const \
+    { \
+        return GetLinkerOpt(m_MsvcMetaMakefile, \
+                            m_MsvcProjectMakefile, \
+                            #opt, \
+                            DebugReleaseTrait::debug() ); \
     }
-    virtual string IgnoreDefaultLibraryNames(void) const
-    {
-	    return "";
-    }
+    
+    SUPPORT_LIBRARIAN_OPTION(IgnoreAllDefaultLibraries)
+    SUPPORT_LIBRARIAN_OPTION(IgnoreDefaultLibraryNames)
+    SUPPORT_LIBRARIAN_OPTION(AdditionalLibraryDirectories)
+
 private:
     string m_AdditionalOptions;
     string m_ProjectName;
+   
+    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
+    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
 
     CLibrarianToolImpl(void);
     CLibrarianToolImpl(const CLibrarianToolImpl&);
@@ -395,22 +394,12 @@ public:
 	    return "VCLibrarianTool";
     }
 
-    virtual string AdditionalOptions(void) const
-    {
-	    return "";
-    }
-    virtual string OutputFile(void) const
-    {
-	    return "";
-    }
-    virtual string IgnoreAllDefaultLibraries(void) const
-    {
-	    return "";
-    }
-    virtual string IgnoreDefaultLibraryNames(void) const
-    {
-	    return "";
-    }
+    SUPPORT_DUMMY_OPTION(AdditionalOptions)
+    SUPPORT_DUMMY_OPTION(OutputFile)
+    SUPPORT_DUMMY_OPTION(IgnoreAllDefaultLibraries)
+    SUPPORT_DUMMY_OPTION(IgnoreDefaultLibraryNames)
+    SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
+
 private:
 	CLibrarianToolDummyImpl(const CLibrarianToolDummyImpl&);
 	CLibrarianToolDummyImpl& operator= (const CLibrarianToolDummyImpl&);
@@ -513,18 +502,10 @@ public:
     {
         return "VCResourceCompilerTool";
     }
-    virtual string PreprocessorDefinitions(void) const
-    {
-	    return "";
-    }
-    virtual string Culture(void) const
-    {
-        return "";
-    }
-    virtual string AdditionalIncludeDirectories(void) const
-    {
-        return "";
-    }
+
+    SUPPORT_DUMMY_OPTION(PreprocessorDefinitions)
+    SUPPORT_DUMMY_OPTION(Culture)
+    SUPPORT_DUMMY_OPTION(AdditionalIncludeDirectories)
 
 private:
     CResourceCompilerToolDummyImpl
@@ -559,6 +540,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/26 19:25:42  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.3  2004/01/22 17:57:09  gorelenk
  * first version
  *

@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
     ( const CProjectItemsTree& tree,
-      const list<string>&      configs,
+      const list<SConfigInfo>& configs,
       const string&            project_dir)
     :m_Tree          (tree),
      m_Configs       (configs),
@@ -91,9 +91,9 @@ CMsvcMasterProjectGenerator::SaveProject(const string& base_name)
          xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
-    ITERATE(list<string>, p , m_Configs) {
+    ITERATE(list<SConfigInfo>, p , m_Configs) {
         // Iterate all configurations
-        const string& config = *p;
+        const string& config = (*p).m_Name;
         
         CRef<CConfiguration> conf(new CConfiguration());
 
@@ -283,9 +283,9 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter,
         
         CreateProjectFileItem(project);
 
-        ITERATE(list<string>, n , m_Configs) {
+        ITERATE(list<SConfigInfo>, n , m_Configs) {
             // Iterate all configurations
-            const string& config = *n;
+            const string& config = (*n).m_Name;
 
             CRef<CFileConfiguration> file_config(new CFileConfiguration());
             file_config->SetAttlist().SetName(ConfigName(config));
@@ -315,7 +315,7 @@ CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjItem& project)
     string file_path = CDirEntry::ConcatPath(m_ProjectDir, project.m_ID);
     file_path += m_ProjectItemExt;
 
-    CNcbiOfstream  ofs(file_path.c_str(), ios::out | ios::trunc);
+    CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 }
@@ -326,6 +326,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/26 19:27:28  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.2  2004/01/22 17:57:54  gorelenk
  * first version
  *

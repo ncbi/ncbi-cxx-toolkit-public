@@ -1,6 +1,5 @@
-#ifndef MSVC_PRJ_GENERATOR_HEADER
-#define MSVC_PRJ_GENERATOR_HEADER
-
+#ifndef MSVC_SITE_HEADER
+#define MSVC_SITE_HEADER
 /* $Id$
  * ===========================================================================
  *
@@ -29,74 +28,51 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
-
-#include <app/project_tree_builder/proj_item.hpp>
-#include "VisualStudioProject.hpp"
-#include <app/project_tree_builder/msvc_project_context.hpp>
-#include <app/project_tree_builder/msvc_prj_utils.hpp>
+#include <corelib/ncbireg.hpp>
+#include <set>
 
 #include <corelib/ncbienv.hpp>
-
-
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CMsvcProjectGenerator --
+/// CMsvcSite --
 ///
-/// Generator MSVC 7.10 project (*.vcproj file).
+/// Abstraction of user site for building of C++ projects.
 ///
-/// Generates MSVC 7.10 C++ project from the project tree item and save this
-/// project to the appropriate place in "compilers" branch of the build tree.
+/// Provides information about libraries availability as well as implicit
+/// exclusion of some project tree branches from build.
 
-class CMsvcProjectGenerator
+class CMsvcSite
 {
-public:
-    CMsvcProjectGenerator(const list<SConfigInfo>& configs);
-    ~CMsvcProjectGenerator();
-    
-    bool Generate(const CProjItem& prj);
+public:    
+    CMsvcSite(const CNcbiRegistry& registry);
+
+    bool IsProvided(const string& thing) const;
+
+    bool IsImplicitExclude(const string& node) const;
 
 private:
 
-    list<SConfigInfo> m_Configs;
+    set<string> m_NotProvidedThing;
+    set<string> m_ImplicitExcludeNodes;
 
-    /// Helpers:
-    static void CollectSources(const CProjItem&              project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string>*                 rel_pathes);
-
-
-    static void CollectHeaders(const CProjItem&              project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string>*                 rel_pathes);
-
-
-    static void CollectInlines(const CProjItem&              project,
-                               const CMsvcPrjProjectContext& context,
-                               list<string>*                 rel_pathes);
-
-    /// Prohibited to.
-    CMsvcProjectGenerator(void);
-    CMsvcProjectGenerator(const CMsvcProjectGenerator&);
-    CMsvcProjectGenerator& operator= (const CMsvcProjectGenerator&);
-
+    /// Prohibited to:
+    CMsvcSite(void);
+    CMsvcSite(const CMsvcSite&);
+    CMsvcSite& operator= (const CMsvcSite&);
 };
-
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2004/01/26 19:25:41  gorelenk
+ * Revision 1.1  2004/01/26 19:25:41  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support
- *
- * Revision 1.5  2004/01/22 17:57:08  gorelenk
- * first version
  *
  * ===========================================================================
  */
 
-#endif // MSVC_PRJ_GENERATOR_HEADER
+#endif // MSVC_SITE_HEADER

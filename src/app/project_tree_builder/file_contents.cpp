@@ -86,7 +86,7 @@ void CSimpleMakeFileContents::LoadFrom(const string&            path,
     CSimpleMakeFileContents::SParser parser(fc);
     fc->Clear();
 
-    CNcbiIfstream ifs(path.c_str());
+    CNcbiIfstream ifs(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs )
         NCBI_THROW(CProjBulderAppException, eFileOpen, path);
 
@@ -227,6 +227,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/26 19:27:27  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.4  2004/01/22 17:57:53  gorelenk
  * first version
  *

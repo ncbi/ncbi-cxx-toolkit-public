@@ -61,13 +61,15 @@ CProjItem::CProjItem(TProjType type,
                      const string& id,
                      const string& sources_base,
                      const list<string>& sources, 
-                     const list<string>& depends)
+                     const list<string>& depends,
+                     const list<string>& requires)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
     m_SourcesBaseDir(sources_base),
     m_Sources (sources), 
-    m_Depends (depends)
+    m_Depends (depends),
+    m_Requires(requires)
 {
 }
 
@@ -93,6 +95,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_SourcesBaseDir = item.m_SourcesBaseDir;
     m_Sources        = item.m_Sources;
     m_Depends        = item.m_Depends;
+    m_Requires       = item.m_Requires;
 }
 
 
@@ -208,6 +211,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     if (k != m->second.m_Contents.end())
                         depends = k->second;
 
+                    //requires
+                    list<string> requires;
+                    k = m->second.m_Contents.find("REQUIRES");
+                    if (k != m->second.m_Contents.end())
+                        requires = k->second;
+
                     //project name
                     k = m->second.m_Contents.find("APP");
                     if (k == m->second.m_Contents.end()  ||  
@@ -226,7 +235,8 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                                                proj_id,
                                                                source_base_dir,
                                                                sources, 
-                                                               depends);
+                                                               depends,
+                                                               requires);
 
                 }
                 else if (info.m_ProjType == CProjItem::eLib) {
@@ -256,6 +266,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     // depends - TODO
                     list<string> depends;
 
+                    //requires
+                    list<string> requires;
+                    k = m->second.m_Contents.find("REQUIRES");
+                    if (k != m->second.m_Contents.end())
+                        requires = k->second;
+
                     //project name
                     k = m->second.m_Contents.find("LIB");
                     if (k == m->second.m_Contents.end()  ||  
@@ -274,7 +290,8 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                                                proj_id,
                                                                source_base_dir,
                                                                sources, 
-                                                               depends);
+                                                               depends,
+                                                               requires);
                 }
             }
         }
@@ -613,6 +630,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/26 19:27:30  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.4  2004/01/22 17:57:55  gorelenk
  * first version
  *

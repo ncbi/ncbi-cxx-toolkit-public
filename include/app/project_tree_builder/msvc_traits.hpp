@@ -136,6 +136,10 @@ typedef enum {
 
 struct SDebug
 {
+    static bool debug(void)
+    {
+        return true;
+    }
     static string Optimization(void)
     {
 	    return "0";
@@ -180,11 +184,28 @@ struct SDebug
     {
 	    return "";
     }
+
+    static string GlobalOptimizations(void)
+    {
+	    return "FALSE";
+    }
+    static string FavorSizeOrSpeed(void)
+    {
+	    return "0";
+    }
+    static string BrowseInformation(void)
+    {
+	    return "1";
+    }
 };
 
 
 struct SRelease
 {
+    static bool debug(void)
+    {
+        return false;
+    }
     static string Optimization(void)
     {
 	    return "2"; //VG: MaxSpeed
@@ -228,6 +249,19 @@ struct SRelease
     static string EnableCOMDATFolding(void)
     {
 	    return "2";
+    }
+
+    static string GlobalOptimizations(void)
+    {
+	    return "TRUE";
+    }
+    static string FavorSizeOrSpeed(void)
+    {
+	    return "1";
+    }
+    static string BrowseInformation(void)
+    {
+	    return "0";
     }
 };
 
@@ -324,6 +358,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/26 19:25:42  gorelenk
+ * += MSVC meta makefile support
+ * += MSVC project makefile support
+ *
  * Revision 1.3  2004/01/22 17:57:09  gorelenk
  * first version
  *
