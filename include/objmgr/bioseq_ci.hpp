@@ -49,7 +49,7 @@ class CBioseq_Handle;
 class CSeq_entry;
 
 
-class CBioseq_CI : public CBioseq_CI_Base
+class NCBI_XOBJMGR_EXPORT CBioseq_CI : public CBioseq_CI_Base
 {
 public:
     // 'ctors
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/10/01 19:24:36  vasilche
+* Added export specifier to CBioseq_CI as it's not completely inlined anymore.
+*
 * Revision 1.12  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
