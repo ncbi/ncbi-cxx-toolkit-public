@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/11/14 20:52:55  gouriano
+* added support of attribute lists
+*
 * Revision 1.21  2002/10/18 14:25:52  gouriano
 * added possibility to enable/disable/set public identifier
 *
@@ -257,6 +260,8 @@ protected:
     virtual void BeginClassMember(const CMemberId& id);
     virtual void EndClassMember(void);
 
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
+    virtual void EndChoice(void);
     virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                     const CMemberId& id);
     virtual void EndChoiceVariant(void);
@@ -279,12 +284,12 @@ private:
     void CloseTagStart(void);
     void CloseTagEnd(void);
 
-    void OpenTag(const string& name);
+    void OpenTag(const string& name, bool close=false);
     void EolIfEmptyTag(void);
     void CloseTag(const string& name);
     void OpenStackTag(size_t level);
     void CloseStackTag(size_t level);
-    void OpenTag(TTypeInfo type);
+    void OpenTag(TTypeInfo type, bool close=false);
     void CloseTag(TTypeInfo type);
     void OpenTagIfNamed(TTypeInfo type);
     void CloseTagIfNamed(TTypeInfo type);
@@ -295,9 +300,11 @@ private:
     enum ETagAction {
         eTagOpen,
         eTagClose,
-        eTagSelfClosed
+        eTagSelfClosed,
+        eAttlistTag
     };
     ETagAction m_LastTagAction;
+    bool m_EndTag;
 
     // DTD file name and prefix
     bool   m_UseDefaultDTDFilePrefix;

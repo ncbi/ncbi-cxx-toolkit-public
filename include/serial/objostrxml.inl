@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/11/14 20:52:55  gouriano
+* added support of attribute lists
+*
 * Revision 1.5  2002/10/18 14:25:51  gouriano
 * added possibility to enable/disable/set public identifier
 *
@@ -61,6 +64,7 @@
 inline
 void CObjectOStreamXml::OpenStackTag(size_t level)
 {
+    OpenTagEnd();
     OpenTagStart();
     PrintTagName(level);
     OpenTagEnd();
@@ -69,9 +73,12 @@ void CObjectOStreamXml::OpenStackTag(size_t level)
 inline
 void CObjectOStreamXml::CloseStackTag(size_t level)
 {
-    if ( m_LastTagAction == eTagSelfClosed )
+    if ( m_LastTagAction == eTagSelfClosed ) {
         m_LastTagAction = eTagClose;
-    else {
+    } else if ( m_LastTagAction == eAttlistTag ) { 
+        m_Output.PutChar('\"');
+        m_LastTagAction = eTagOpen;
+    } else {
         CloseTagStart();
         PrintTagName(level);
         CloseTagEnd();
@@ -79,19 +86,22 @@ void CObjectOStreamXml::CloseStackTag(size_t level)
 }
 
 inline
-void CObjectOStreamXml::OpenTag(const string& name)
+void CObjectOStreamXml::OpenTag(const string& name, bool close)
 {
+    OpenTagEnd();
     OpenTagStart();
     m_Output.PutString(name);
-    OpenTagEnd();
+    if (close) {
+        OpenTagEnd();
+    }
 }
 
 inline
 void CObjectOStreamXml::CloseTag(const string& name)
 {
-    if ( m_LastTagAction == eTagSelfClosed )
+    if ( m_LastTagAction == eTagSelfClosed ) {
         m_LastTagAction = eTagClose;
-    else {
+    } else {
         CloseTagStart();
         m_Output.PutString(name);
         CloseTagEnd();
@@ -99,10 +109,10 @@ void CObjectOStreamXml::CloseTag(const string& name)
 }
 
 inline
-void CObjectOStreamXml::OpenTag(TTypeInfo type)
+void CObjectOStreamXml::OpenTag(TTypeInfo type, bool close)
 {
     _ASSERT(!type->GetName().empty());
-    OpenTag(type->GetName());
+    OpenTag(type->GetName(), close);
 }
 
 inline

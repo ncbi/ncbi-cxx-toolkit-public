@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/11/14 20:51:27  gouriano
+* added support of attribute lists
+*
 * Revision 1.15  2002/10/15 13:45:15  gouriano
 * added "UndoClassMember" function
 *
@@ -160,6 +163,8 @@ protected:
     CLightString SkipStackTagName(CLightString tag, size_t level);
     CLightString SkipStackTagName(CLightString tag, size_t level, char c);
 
+    bool HasAttlist(void);
+    bool NextIsTag(void);
     bool NextTagIsClosing(void);
     void OpenTag(const string& e);
     void CloseTag(const string& e);
@@ -209,6 +214,8 @@ protected:
     void EndClassMember(void);
     virtual void UndoClassMember(void);
 
+    virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
+    virtual void EndChoice(void);
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
     virtual void EndChoiceVariant(void);
 
@@ -266,6 +273,7 @@ private:
     ETagState m_TagState;
     string m_LastTag;
     string m_RejectedTag;
+    bool m_Attlist;
 };
 
 #include <serial/objistrxml.inl>

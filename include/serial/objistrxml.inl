@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/11/14 20:51:27  gouriano
+* added support of attribute lists
+*
 * Revision 1.1  2000/09/18 20:00:06  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -63,7 +66,7 @@ bool CObjectIStreamXml::InsideClosingTag(void) const
 inline
 bool CObjectIStreamXml::OutsideTag(void) const
 {
-    return m_TagState == eTagOutside;
+    return (m_TagState == eTagOutside) || m_Attlist;
 }
 
 inline
