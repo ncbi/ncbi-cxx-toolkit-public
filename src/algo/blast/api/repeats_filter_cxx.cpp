@@ -125,7 +125,7 @@ s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
  *                against a repeats database [in]
  */
 static void
-FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
+s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
 {
     BlastSeqLoc* loc_list = NULL, *ordered_loc_list = NULL;
     BlastSeqLoc* last_loc = NULL;
@@ -173,10 +173,12 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
         /* Make the intervals unique */
         CombineMaskLocations(loc_list, &ordered_loc_list, MASK_LINK_VALUE);
 
+        BlastSeqLocFree(loc_list);
         /* Create a CSeq_loc with these locations and fill it for the 
            respective query */
         query[query_index].mask.Reset(s_BlastSeqLoc2CSeqloc(query[query_index],
                                                           ordered_loc_list));
+        BlastSeqLocFree(ordered_loc_list);
     }
 }
 
@@ -241,7 +243,10 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
     CDbBlast blaster(query, seq_src, opts);
     blaster.PartialRun();
 
-    FillMaskLocFromBlastResults(query, blaster.GetResults());
+    seq_src = BlastSeqSrcFree(seq_src);
+    sfree(dbname);
+
+    s_FillMaskLocFromBlastHSPResults(query, blaster.GetResults());
 }
 
 /* @} */
@@ -250,6 +255,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.11  2004/12/20 15:13:58  dondosha
+ *  Two small memory leak fixes
+ *
  *  Revision 1.10  2004/11/24 16:06:47  dondosha
  *  Added and/or fixed doxygen comments
  *
