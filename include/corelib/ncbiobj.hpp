@@ -1,5 +1,5 @@
-#ifndef NCBIREF__HPP
-#define NCBIREF__HPP
+#ifndef NCBIOBJ__HPP
+#define NCBIOBJ__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/13 16:25:43  vasilche
+* Added heuristic for detection of CObject allocation in heap.
+*
 * Revision 1.12  2000/09/01 13:14:25  vasilche
 * Fixed throw() declaration in CRef/CConstRef
 *
@@ -92,6 +95,49 @@ public:
 
 class CObject
 {
+public:
+    // main constructors for static/automatic/enclosed objects
+    CObject(void);
+    CObject(const CObject& src);
+
+    // flag enum to indicate allocation in heap
+    enum ECanDelete {
+        eCanDelete = 0,
+        eAllocatedInHeap = eCanDelete
+    };
+
+protected:
+    // special constructor for objects allocated in heap
+    CObject(ECanDelete);
+    CObject(ECanDelete, const CObject& src);
+
+public:
+    // virtual destructor
+    virtual ~CObject(void);
+
+    // copy
+    CObject& operator=(const CObject& src) THROWS_NONE;
+
+    // checks state of reference counter
+    bool CanBeDeleted(void) const THROWS_NONE;
+    bool Referenced(void) const THROWS_NONE;
+    bool ReferencedOnlyOnce(void) const THROWS_NONE;
+
+
+    // change state of object
+    void AddReference(void) const;
+    void RemoveReference(void) const;
+
+    // remove reference without deleting object
+    void ReleaseReference(void) const;
+
+    // set flag eCanDelete meaning that object was allocated in heap
+    void SetCanDelete(void);
+
+    // operators new/delete for additional checking in debug mode
+    void* operator new(size_t size);
+    void operator delete(void* ptr);
+
 private:
     typedef unsigned TCounter; // TCounter must be unsigned
 
@@ -100,138 +146,52 @@ private:
     // 1c...cc0 - valid object in stack
     // 1c...cc1 - valid object in heap
     enum EObjectState {
-        eObjectCounterBits    = (sizeof(TCounter) * 8), // bits in TCounter
-        eObjectCounterHighBit = int(1 << (eObjectCounterBits - 1)),
-        eObjectInStack        = eObjectCounterHighBit | 0,
-        eObjectInHeap         = eObjectCounterHighBit | 1,
-        eObjectDeletedValue   = int(0x1b4d9f34 & ~eObjectCounterHighBit),
-        eObjectStateMask      = eObjectInHeap | eObjectInStack,
+        eStateBitsInHeap = 1 << 0,
+        eStateBitsUnsure = 1 << 1,
+        eStateBitsValid  = int(1 << (sizeof(TCounter) * 8 - 1)), // high bit
+        eCounterStep     = 1 << 2, // over InHeap and Unsure bits
+        eStateMask = (eStateBitsValid | eStateBitsInHeap | eStateBitsUnsure),
 
-        eMinimumValidCounter  = eObjectCounterHighBit,
-        eMinimumInHeapCounter = eObjectInHeap,
+        eMinimumValidCounter  = eStateBitsValid,
+        eMinimumInHeapCounter = eStateBitsValid | eStateBitsInHeap,
 
-        eObjectCounterStep    = 2
+        eObjectInStack        = eStateBitsValid,
+        eObjectInHeap         = eStateBitsValid | eStateBitsInHeap,
+        eObjectInStackUnsure  = eObjectInStack | eStateBitsUnsure,
+        eObjectInHeapUnsure   = eObjectInHeap | eStateBitsUnsure,
+
+        eObjectDeletedValue   = int((0x5b4d9f34 | ((0xada87e65 << 16) << 16))
+                                    & ~eStateBitsValid),
+        eObjectNewInHeapValue = int((0x3423cb13 | ((0xfe234228 << 16) << 16))
+                                    & ~eStateBitsValid)
     };
 
-    static bool ObjectStateIsValid(TCounter counter)
-        {
-            return counter >= TCounter(eMinimumValidCounter);
-        }
-    static bool ObjectStateIsInvalid(TCounter counter)
-        {
-            return counter < TCounter(eMinimumValidCounter);
-        }
-    static bool ObjectStateCanBeDeleted(TCounter counter)
-        {
-            return counter >= TCounter(eMinimumInHeapCounter);
-        }
-    static bool ObjectStateReferenced(TCounter counter)
-        {
-            return counter >=
-                TCounter(eMinimumValidCounter + eObjectCounterStep);
-        }
-    static bool ObjectStateDoubleReferenced(TCounter counter)
-        {
-            return counter >=
-                TCounter(eMinimumValidCounter + eObjectCounterStep*2);
-        }
-    static bool ObjectStateReferencedOnlyOnce(TCounter counter)
-        {
-            return ObjectStateReferenced(counter) &&
-                !ObjectStateDoubleReferenced(counter);
-        }
+    // special methods for parsing object state number
+    static bool ObjectStateIsValid(TCounter counter);
+    static bool ObjectStateIsInvalid(TCounter counter);
+    static bool ObjectStateCanBeDeleted(TCounter counter);
+    static bool ObjectStateUnsure(TCounter counter);
+    static bool ObjectStateReferenced(TCounter counter);
+    static bool ObjectStateDoubleReferenced(TCounter counter);
+    static bool ObjectStateReferencedOnlyOnce(TCounter counter);
 
-public:
-    inline
-    bool CanBeDeleted(void) const THROWS_NONE
-        {
-            return ObjectStateCanBeDeleted(m_Counter);
-        }
-    inline
-    bool Referenced(void) const THROWS_NONE
-        {
-            return ObjectStateReferenced(m_Counter);
-        }
-    inline
-    bool ReferencedOnlyOnce(void) const THROWS_NONE
-        {
-            return ObjectStateReferencedOnlyOnce(m_Counter);
-        }
+    // initialize
+    void InitInStack(void);
+    void InitInHeap(void);
 
-    // main constructor for static/automatic/enclosed objects
-    CObject(void) THROWS_NONE
-        : m_Counter(eObjectInStack)
-        {
-        }
-    // virtual destructor
-    virtual ~CObject(void);
+    // check special states
+    void RemoveLastReference(void) const;
+    void SetCanDeleteLong(void) const;
 
-    enum ECanDelete {
-        eCanDelete = 0
-    };
-
-    // copy
-    CObject(const CObject& /*src*/) THROWS_NONE
-        : m_Counter(eObjectInStack)
-        {
-        }
-    CObject& operator=(const CObject& /*src*/) THROWS_NONE
-        {
-            if ( ObjectStateIsInvalid(m_Counter) )
-                InvalidObject();
-            return *this;
-        }
-
-protected:
-    // special constructor for objects allocated in heap
-    CObject(ECanDelete) THROWS_NONE
-        : m_Counter(eObjectInHeap)
-        {
-        }
-    CObject(ECanDelete, const CObject& /*src*/) THROWS_NONE
-        : m_Counter(eObjectInHeap)
-        {
-        }
-
-public:
-    inline
-    void AddReference(void) const
-        {
-            TCounter newCounter = m_Counter + TCounter(eObjectCounterStep);
-            if ( ObjectStateReferenced(newCounter) )
-                m_Counter = newCounter;
-            else
-                AddReferenceOverflow();
-        }
-
-    inline
-    void RemoveReference(void) const
-        {
-            TCounter oldCounter = m_Counter;
-            if ( ObjectStateDoubleReferenced(oldCounter) )
-                m_Counter = oldCounter - eObjectCounterStep;
-            else
-                RemoveLastReference();
-        }
-
-    // remove reference without deleting object
-    void ReleaseReference(void) const;
-
-    // set flag eCanDelete meaning that object was allocated in heap
-    void SetCanDelete(void)
-        {
-            if ( m_Counter != TCounter(eObjectInStack) )
-                CannotSetCanDelete();
-            m_Counter = eObjectInHeap;
-        }
-
-private:
-    void RemoveLastReference(void) const; // check special states
     // report different kinds of error
     void InvalidObject(void) const; // using of deleted object
-    void CannotSetCanDelete(void) const; // invalid call to SetCanDelete
     void AddReferenceOverflow(void) const; // counter overflow (or deleted)
 
+    // disable allocation of arrays
+    void* operator new[](size_t size);
+    void operator delete[](void* ptr);
+
+    // counter data
     mutable TCounter m_Counter;
 };
 
@@ -636,6 +596,8 @@ private:
     T m_Data;
 };
 
+#include <corelib/ncbiobj.inl>
+
 END_NCBI_SCOPE
 
-#endif
+#endif /* NCBIOBJ__HPP */

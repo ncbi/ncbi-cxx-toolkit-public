@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2000/10/13 16:26:30  vasilche
+ * Added heuristic for detection of CObject allocation in heap.
+ *
  * Revision 1.12  2000/10/11 21:03:49  vakatov
  * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
  * (reported by Forte6 Patch 109490-01)
@@ -106,6 +109,7 @@ CArgException::CArgException(const string& what, const string& arg_value)
 //  CArgValue::
 
 CArgValue::CArgValue(const string& value, bool isDefault)
+    : CObject(eCanDelete)
 {
   m_String = value;
   m_IsDefaultValue = isDefault;

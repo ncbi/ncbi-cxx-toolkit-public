@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/13 16:26:30  vasilche
+* Added heuristic for detection of CObject allocation in heap.
+*
 * Revision 1.7  2000/08/15 19:41:41  vasilche
 * Changed refernce counter to allow detection of more errors.
 *
@@ -78,6 +81,47 @@ const char* CNullPointerError::what() const
     return "null pointer error";
 }
 
+#if _DEBUG
+static bool PossiblyInStack(const void* object);
+
+// initialization in debug mode
+void CObject::InitInStack(void)
+{
+    if ( m_Counter == eObjectNewInHeapValue && !PossiblyInStack(this) )
+        m_Counter = eObjectInHeapUnsure;
+    else
+        m_Counter = eObjectInStack;
+}
+
+void CObject::InitInHeap(void)
+{
+    if ( m_Counter != eObjectNewInHeapValue || PossiblyInStack(this) ) {
+        THROW1_TRACE(runtime_error,
+                     "heap CObject: it's not allocated in heap");
+    }
+    m_Counter = eObjectInHeap;
+}
+#endif
+
+// CObject local new operator to mark allocation in heap
+void* CObject::operator new(size_t size)
+{
+    void* ptr = ::operator new(size);
+    CObject* objectPtr = static_cast<CObject*>(ptr);
+    objectPtr->m_Counter = eObjectNewInHeapValue;
+    return ptr;
+}
+
+void CObject::operator delete(void* ptr)
+{
+    CObject* objectPtr = static_cast<CObject*>(ptr);
+    if ( objectPtr->m_Counter != TCounter(eObjectDeletedValue) ) {
+        THROW1_TRACE(runtime_error,
+                     "deletion of CObject without destructor call");
+    }
+    ::operator delete(ptr);
+}
+
 CObject::~CObject(void)
 {
 #if _DEBUG
@@ -112,28 +156,46 @@ void CObject::AddReferenceOverflow(void) const
         THROW1_TRACE(runtime_error, "AddReferenceOverflow");
 }
 
-void CObject::CannotSetCanDelete(void) const
+void CObject::SetCanDeleteLong(void) const
 {
     TCounter counter = m_Counter;
     if ( ObjectStateIsInvalid(counter) )
         InvalidObject();
+    else if ( ObjectStateUnsure(counter) ) {
+#if _DEBUG
+        if ( PossiblyInStack(this) )
+            THROW1_TRACE(runtime_error, "SetCanDelete for CObject in stack");
+#endif
+        // reset unsure bit and set inHeap bit
+        m_Counter = TCounter(counter & ~eStateBitsUnsure | eStateBitsInHeap);
+    }
     else
         THROW1_TRACE(runtime_error, "SetCanDelete for used CObject");
 }
 
 void CObject::RemoveLastReference(void) const
 {
-    TCounter counter = m_Counter;
-    if ( counter == TCounter(eObjectInHeap + eObjectCounterStep) ) {
+    switch ( m_Counter ) {
+    case TCounter(eObjectInHeap + eCounterStep):
         // last reference to heap object -> delete
         m_Counter = eObjectInHeap;
-        delete const_cast<CObject*>(this);
-    }
-    else if ( counter == TCounter(eObjectInStack + eObjectCounterStep) ) {
+        delete this;
+        return;
+    case TCounter(eObjectInHeapUnsure + eCounterStep):
+        // last reference to heap object -> delete
+#if _DEBUG
+        ERR_POST("deletion of CObject which is not assured to be in heap");
+#endif
+        m_Counter = eObjectInHeapUnsure;
+        delete this;
+        return;
+    case TCounter(eObjectInStack + eCounterStep):
+    case TCounter(eObjectInStackUnsure + eCounterStep):
         // last reference to stack object
         m_Counter = eObjectInStack;
+        return;
     }
-    else if ( ObjectStateIsInvalid(counter) )
+    if ( ObjectStateIsInvalid(m_Counter) )
         InvalidObject();
     else
         THROW1_TRACE(runtime_error, "RemoveReference of unreferenced CObject");
@@ -142,7 +204,7 @@ void CObject::RemoveLastReference(void) const
 void CObject::ReleaseReference(void) const
 {
     TCounter counter = m_Counter;
-    if ( counter == TCounter(eObjectInHeap + eObjectCounterStep) ) {
+    if ( counter == TCounter(eObjectInHeap + eCounterStep) ) {
         // release reference to object in heap
         m_Counter = eObjectInHeap;
     }
@@ -150,6 +212,17 @@ void CObject::ReleaseReference(void) const
         InvalidObject();
     else
         THROW1_TRACE(runtime_error, "Illegal ReleaseReference to CObject");
+}
+
+static const int KStackThreshold = 16*1024; // 16K
+
+bool PossiblyInStack(const void* object)
+{
+    char stackObject;
+    const char* stackObjectPtr = &stackObject;
+    const char* objectPtr = static_cast<const char*>(object);
+    return objectPtr < stackObjectPtr + KStackThreshold &&
+        objectPtr > stackObjectPtr - KStackThreshold;
 }
 
 END_NCBI_SCOPE
