@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/06/16 16:32:06  vasilche
+* Fixed 'unused variable' warnings.
+*
 * Revision 1.16  2000/06/01 19:07:08  vasilche
 * Added parsing of XML data.
 *
@@ -289,9 +292,9 @@ int CAsn2Asn::Run(void)
             else {
                 CBioseq_set entries;
                 *in >> entries;
-                non_const_iterate ( CBioseq_set::TSeq_set, i,
+                non_const_iterate ( CBioseq_set::TSeq_set, seqi,
                                     entries.SetSeq_set() ) {
-                    SeqEntryProcess(**i);     /* do any processing */
+                    SeqEntryProcess(**seqi);     /* do any processing */
                 }
                 if ( out.get() )
                     *out << entries;
@@ -309,7 +312,7 @@ int CAsn2Asn::Run(void)
 *
 *****************************************************************************/
 static
-void SeqEntryProcess (CSeq_entry& sep)
+void SeqEntryProcess (CSeq_entry& /*sep*/)
 {
 }
 
