@@ -620,7 +620,7 @@ void UpdateViewer::ImportStructure(void)
         if (!LoadStructureViaCache(id.c_str(),
                 (master->parentSet->isAlphaOnly ? eModel_type_ncbi_backbone : eModel_type_ncbi_all_atom),
                 biostruc, &bioseqs)) {
-            ERRORMSG("Failed to load structure " << id);
+            ERRORMSG("Failed to load structure " << id.c_str());
             return;
         }
     }
@@ -1167,6 +1167,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/04/02 18:03:16  thiessen
+* fix wxString/string confusion
+*
 * Revision 1.61  2003/04/02 17:49:18  thiessen
 * allow pdb id's in structure import dialog
 *
