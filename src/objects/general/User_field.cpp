@@ -236,6 +236,11 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
     NStr::Split(str, delim, toks);
 
     CRef<CUser_field> f(this);
+    if ( ! f->GetData().IsFields()  &&  f->GetData().Which() != CUser_field::TData::e_not_set ) {
+        // There is a value here, not a list of User_fields, no place to recurse downward. 
+        _ASSERT(false);
+        NCBI_THROW(CException, eUnknown, "Too many parts in key: \"" + str + "\"");
+    }
     list<string>::const_iterator last = toks.end();
     --last;
     ITERATE (list<string>, iter, toks) {
@@ -243,12 +248,16 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
         NON_CONST_ITERATE (TData::TFields, field_iter, f->SetData().SetFields()) {
             const CUser_field& field = **field_iter;
             if (field.GetLabel().GetStr() == *iter) {
-                if (iter != last  &&  field.GetData().IsFields()) {
+                if (iter == last) {
                     new_f = *field_iter;
                     break;
-                } else if (iter == last) {
+                } else if (field.GetData().IsFields()) {
                     new_f = *field_iter;
                     break;
+                } else {
+                    // There is a value here, not a list of User_fields, no place to recurse downward. 
+                    _ASSERT(false);
+                    NCBI_THROW(CException, eUnknown, "Too many parts in key: \"" + str + "\"");
                 }
             }
         }
@@ -285,6 +294,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/02/22 20:02:45  rsmith
+* Do not allow a subkey to overwrite a leaf key
+*
 * Revision 1.5  2005/02/07 15:51:08  dicuccio
 * Revert previous commit pending review
 *
