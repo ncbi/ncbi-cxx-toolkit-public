@@ -29,6 +29,7 @@
 
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
+#include <app/project_tree_builder/proj_builder_app.hpp>
 
 
 #include <corelib/ncbistr.hpp>
@@ -36,41 +37,20 @@
 BEGIN_NCBI_SCOPE
 
 
-static void s_LoadSet(const CNcbiRegistry& registry, 
-                      const string& section, 
-                      const string& name, set<string>* values)
-{
-    values->clear();
-
-    string vals_str = 
-        registry.GetString(section, name, "");
-    list<string> vals_list;
-    NStr::Split(vals_str, " \t,", vals_list);
-    ITERATE(list<string>, p, vals_list)
-        values->insert(*p);
-}
-
 //-----------------------------------------------------------------------------
 CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     :m_Registry(registry)
 {
-    s_LoadSet(m_Registry, 
-              "ProjectTree", "NotProvidedRequests", &m_NotProvidedThing);
-
-    s_LoadSet(m_Registry, 
-              "ProjectTree", "ImplicitExclude", &m_ImplicitExcludeNodes);
+    ITERATE(list<string>, p, GetApp().GetRegSettings().m_NotProvidedRequests) {
+        const string& request = *p;
+        m_NotProvidedThing.insert(request);
+    }
 }
 
 
 bool CMsvcSite::IsProvided(const string& thing) const
 {
     return m_NotProvidedThing.find(thing) == m_NotProvidedThing.end();
-}
-
-
-bool CMsvcSite::IsImplicitExclude(const string& node) const
-{
-    return m_ImplicitExcludeNodes.find(node) != m_ImplicitExcludeNodes.end();
 }
 
 
@@ -91,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/03 17:16:43  gorelenk
+ * Removed implementation of method IsExplicitExclude from class CMsvcSite.
+ *
  * Revision 1.2  2004/01/28 17:55:49  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
