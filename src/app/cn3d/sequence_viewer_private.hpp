@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/12/21 23:42:24  thiessen
+* load structures from cdd's
+*
 * Revision 1.4  2000/11/30 15:49:09  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -335,7 +338,6 @@ private:
     void UpdateMaxRowWidth(void);
     void UpdateAfterEdit(void);
 
-    BlockMultipleAlignment *alignment;
     bool controlDown;
 
 public:

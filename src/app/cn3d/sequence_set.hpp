@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/21 23:42:24  thiessen
+* load structures from cdd's
+*
 * Revision 1.11  2000/12/20 23:47:52  thiessen
 * load CDD's
 *
@@ -111,7 +114,7 @@ public:
     Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq);
 
     static const int NOT_SET;
-    int gi, pdbChain;
+    int gi, pdbChain, mmdbLink;
     std::string pdbID, sequenceString;
 
     // corresponding protein chain

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/12/21 23:42:16  thiessen
+* load structures from cdd's
+*
 * Revision 1.39  2000/12/20 23:47:48  thiessen
 * load CDD's
 *
@@ -168,6 +171,8 @@
 #include <objects/mmdb3/Trans_matrix.hpp>
 #include <objects/mmdb3/Rot_matrix.hpp>
 
+#include <strstream>
+
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
 #include "cn3d/chemical_graph.hpp"
@@ -180,6 +185,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_colors.hpp"
+#include "cn3d/asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -353,33 +359,72 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     showHideManager->ConstructShowHideArray(this);
 }
 
-StructureSet::StructureSet(const CCdd& cdd) :
+StructureSet::StructureSet(const CCdd& cdd, const char *dataDir) :
     StructureBase(NULL), isMultipleStructure(false)
 {
     Init();
-    StructureObject *object;
 
-//        TESTMSG("Master:");
-//        object = new StructureObject(this, mime.GetAlignstruc().GetMaster(), true);
-//        objects.push_back(object);
-//        const CBiostruc_align::TSlaves& slaves = mime.GetAlignstruc().GetSlaves();
-//        CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
-//        for (i=slaves.begin(); i!=e; i++) {
-//            TESTMSG("Slave:");
-//            object = new StructureObject(this, i->GetObject(), false);
-//            if (!object->SetTransformToMaster(
-//                    mime.GetAlignstruc().GetAlignments(),
-//                    objects.front()->mmdbID))
-//                ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
-//                    << " with master " << objects.front()->pdbID);
-//            objects.push_back(object);
-//        }
+    // read sequences first; these contain links to MMDB id's
     sequenceSet = new SequenceSet(this, cdd.GetSequences());
+
+    // create a list of MMDB ids to try to load
+    vector < int > mmdbIDs;
+    SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
+    for (s=sequenceSet->sequences.begin(); s!=se; s++)
+        if ((*s)->mmdbLink != Sequence::NOT_SET) mmdbIDs.push_back((*s)->mmdbLink);
+
+    // if more than one structure, the Biostruc-annot-set should contain structure alignments
+    // for slaves->master - and thus also the identity of the master. Once that's determined,
+    // then we can load structures and slave structure alignments.
+    if (mmdbIDs.size() > 0) {
+        if (!cdd.IsSetFeatures()) {
+            ERR_POST(Error << "StructureSet::StructureSet() - no slave structure alignments."
+                "Structures not loaded.");
+        } else {
+            CBiostruc_annot_set::TId::const_iterator i, ie = cdd.GetFeatures().GetId().end();
+            for (i=cdd.GetFeatures().GetId().begin(); i!=ie; i++) {
+                if (i->GetObject().IsMmdb_id()) {
+
+                    int masterMMDBID = i->GetObject().GetMmdb_id();
+                    for (int m=0; m<mmdbIDs.size(); m++) {
+
+                        // load Biostrucs from external files
+                        std::string err;
+                        CBiostruc biostruc;
+                        ostrstream biostrucFile;
+                        biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
+                        TESTMSG("trying to read ncbi-backbone model from Biostruc in '" << biostrucFile.str() << "'");
+                        if (ReadASNFromFile(biostrucFile.str(), biostruc, true, err)) {
+
+                            // create new StructureObject
+                            bool isMaster = (mmdbIDs[m] == masterMMDBID);
+                            StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
+                            if (!isMaster) {
+                                if (!object->SetTransformToMaster(cdd.GetFeatures(), masterMMDBID))
+                                    ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
+                                        << " with master " << objects.front()->pdbID);
+                            }
+                            objects.push_back(object);
+
+                        } else {
+                            ERR_POST(Error << "Failed to read Biostruc from " << biostrucFile.str()
+                                << "\nreason: " << err);
+                        }
+                    }
+                    break;
+                }
+            }
+            if (i == ie) {
+                ERR_POST(Error << "StructureSet::StructureSet() - can't get master MMDB id."
+                    "Structures not loaded.");
+            }
+        }
+    }
+
     MatchSequencesToMolecules();
     alignmentSet = new AlignmentSet(this, cdd.GetSeqannot());
     alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
     styleManager->SetToAlignment(StyleSettings::eAligned);
-
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
 }
@@ -551,7 +596,8 @@ void StructureSet::SelectedAtom(unsigned int name)
 
 const int StructureObject::NO_MMDB_ID = -1;
 
-StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
+StructureObject::StructureObject(StructureBase *parent,
+    const CBiostruc& biostruc, bool master, bool doNCBIBackboneOnly) :
     StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL)
 {
     // set numerical id simply based on # objects in parentSet
@@ -585,7 +631,14 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
         CBiostruc::TModel::const_iterator i, ie=biostruc.GetModel().end();
         for (i=biostruc.GetModel().begin(); i!=ie; i++) {
 
-            // assume all models in this set are of same type
+            // don't know how to deal with these...
+            if (i->GetObject().GetType() == eModel_type_ncbi_vector ||
+                i->GetObject().GetType() == eModel_type_other) continue;
+
+            // special case, typically for loading CDD's, when we're only interested in a single model type
+            if (doNCBIBackboneOnly && i->GetObject().GetType() != eModel_type_ncbi_backbone) continue;
+
+            // otherwise, assume all models in this set are of same type
             if (i->GetObject().GetType() == eModel_type_ncbi_backbone)
                 parentSet->isAlphaOnly = true;
             else

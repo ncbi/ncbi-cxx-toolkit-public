@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/21 23:42:16  thiessen
+* load structures from cdd's
+*
 * Revision 1.16  2000/11/02 16:56:02  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -159,7 +162,7 @@ public:
     void SetBackgroundColor(const wxColor& backgroundColor);
     void SetCharacterFont(wxFont *font);
     void SetRubberbandColor(const wxColor& rubberbandColor);
-    
+
     ///// everything else below here is part of the actual implementation /////
 private:
 
@@ -246,10 +249,10 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(
         alignment->GetSize(&areaWidth, &areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return false;
 
-        // "+1" to make sure last real column and row are always visible, even 
+        // "+1" to make sure last real column and row are always visible, even
         // if visible area isn't exact multiple of cell size
         SetScrollbars(
-            cellWidth, cellHeight, 
+            cellWidth, cellHeight,
             areaWidth + 1, areaHeight + 1,
             initX, initY);
 
@@ -328,7 +331,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         }
     }
 
-    // get the update rect list, so that we can draw *only* the cells 
+    // get the update rect list, so that we can draw *only* the cells
     // in the part of the window that needs redrawing; update region
     // coordinates are relative to the visible part of the drawing area
     wxRegionIterator upd(GetUpdateRegion());
@@ -485,7 +488,7 @@ void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, int fromX, int 
 
 // move the rubber band to a new rectangle, erasing only the side(s) of the
 // rectangle that is changing
-void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int fromY, 
+void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int fromY,
     int prevToX, int prevToY, int toX, int toY, int vsX, int vsY)
 {
     int i;
@@ -601,7 +604,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
     }
 
     // do MouseOver if not in the same cell (or outside area) as last time
-    if (MOX >= areaWidth || MOY >= areaHeight) 
+    if (MOX >= areaWidth || MOY >= areaHeight)
         MOX = MOY = -1;
     if (MOX != prevMOX || MOY != prevMOY)
         alignment->MouseOver(MOX, MOY);
@@ -669,7 +672,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             dc.EndDrawing();
         }
     }
-    
+
     // process end of selection, on mouse-up, or if the mouse leaves the window
     else if (dragging && (event.LeftUp() || event.Leaving() || event.Entering())) {
         if (!event.LeftUp()) {
@@ -813,7 +816,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
 
-    int vsX, vsY, 
+    int vsX, vsY,
         updTop, updBottom,
         firstRow, lastRow, row;
 
@@ -830,7 +833,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
         sequenceArea->GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
     }
 
-    // get the update rect list, so that we can draw *only* the cells 
+    // get the update rect list, so that we can draw *only* the cells
     // in the part of the window that needs redrawing; update region
     // coordinates are relative to the visible part of the drawing area
     wxRegionIterator upd(GetUpdateRegion());
@@ -919,7 +922,7 @@ void SequenceViewerWidget::TitleAreaOn(void)
     if (!IsSplit()) {
         titleArea->Show(true);
         SplitVertically(titleArea, sequenceArea, titleArea->GetMaxTitleWidth() + 10);
-    }    
+    }
 }
 
 void SequenceViewerWidget::TitleAreaOff(void)
@@ -983,7 +986,7 @@ void SequenceViewerWidget::ScrollTo(int column, int row)
 {
     sequenceArea->Scroll(column, row);
 }
-   
+
 void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
 {
     sequenceArea->GetViewStart(vsX, vsY);

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/12/21 23:42:15  thiessen
+* load structures from cdd's
+*
 * Revision 1.18  2000/12/20 23:47:47  thiessen
 * load CDD's
 *
@@ -170,6 +173,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/show_hide_dialog.hpp"
+#include "cn3d/asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -588,6 +592,14 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         isBinary = false;
     }
 
+    if (wxIsAbsolutePath(filename))
+        dataDir = wxPathOnly(filename);
+    else if (wxPathOnly(filename) == "")
+        dataDir = workingDir;
+    else
+        dataDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(filename);
+    TESTMSG("data dir: " << dataDir.c_str());
+
     // try to read the file as various ASN types (if it's not clear from the first ascii word)
     bool readOK = false;
     std::string err;
@@ -610,9 +622,10 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
         readOK = ReadASNFromFile(filename, cdd, isBinary, err);
         SetDiagPostLevel(eDiag_Info);
-        if (readOK)
-            glCanvas->structureSet = new StructureSet(cdd);
-        else
+        if (readOK) {
+            wxString cddDir = dataDir + wxFILE_SEP_PATH;
+            glCanvas->structureSet = new StructureSet(cdd, cddDir.c_str());
+        } else
             ERR_POST(Warning << "error: " << err);
     }
     if (!readOK) {
@@ -623,13 +636,6 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
     currentDataFilename = filename;
-    if (wxIsAbsolutePath(filename))
-        dataDir = wxPathOnly(filename);
-    else if (wxPathOnly(filename) == "")
-        dataDir = workingDir;
-    else
-        dataDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(filename);
-    TESTMSG("data dir: " << dataDir.c_str());
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)

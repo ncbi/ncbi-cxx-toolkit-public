@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/12/21 23:42:24  thiessen
+* load structures from cdd's
+*
 * Revision 1.14  2000/11/30 15:49:09  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -143,7 +146,7 @@ private:
 
     typedef std::list < SequenceDisplay * > DisplayStack;
     DisplayStack displayStack;
-    SequenceDisplay * GetDisplay(void) const { return displayStack.back(); }
+    SequenceDisplay * GetCurrentDisplay(void) const { return displayStack.back(); }
 
     void InitStacks(BlockMultipleAlignment *alignment, SequenceDisplay *display);
     void ClearStacks(void);
@@ -152,9 +155,9 @@ private:
 
 public:
 
-    const BlockMultipleAlignment * GetCurrentAlignment(void) const
+    BlockMultipleAlignment * GetCurrentAlignment(void) const
     {
-        const BlockMultipleAlignment *alignment = NULL;
+        BlockMultipleAlignment *alignment = NULL;
         if (alignmentStack.size() > 0) alignment = alignmentStack.back();
         return alignment;
     }

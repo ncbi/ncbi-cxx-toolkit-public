@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/12/21 23:42:25  thiessen
+* load structures from cdd's
+*
 * Revision 1.33  2000/12/20 23:47:53  thiessen
 * load CDD's
 *
@@ -172,7 +175,9 @@ class StructureSet : public StructureBase
 {
 public:
     StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime);
-    StructureSet(const ncbi::objects::CCdd& cdd);
+    // to load in a CDD, need "dataDir" to be pathname to dir. that contains MMDB Biostrucs,
+    // with trailing path separator
+    StructureSet(const ncbi::objects::CCdd& cdd, const char *dataDir);
     ~StructureSet(void);
 
     // public data
@@ -253,7 +258,8 @@ class CoordSet;
 class StructureObject : public StructureBase
 {
 public:
-    StructureObject(StructureBase *parent, const ncbi::objects::CBiostruc& biostruc, bool master);
+    StructureObject(StructureBase *parent,
+        const ncbi::objects::CBiostruc& biostruc, bool master, bool doNCBIBackboneOnly = false);
 
     // public data
 
@@ -291,42 +297,6 @@ public:
     bool IsSlave(void) const { return !isMaster; }
     int NDomains(void) const { return domainMap.size(); }
 };
-
-
-// a utility function for reading different types of ASN data from a file
-template < class ASNClass >
-static bool ReadASNFromFile(const char *filename, ASNClass& ASNobject, bool isBinary, std::string& err)
-{
-    // initialize the binary input stream
-    auto_ptr<ncbi::CNcbiIstream> inStream;
-    inStream.reset(new ncbi::CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
-    if (!(*inStream)) {
-//        ERR_POST(ncbi::Error << "Cannot open file '" << filename << "' for reading");
-        err = "Cannot open file for reading";
-        return false;
-    }
-
-    auto_ptr<ncbi::CObjectIStream> inObject;
-    if (isBinary) {
-        // Associate ASN.1 binary serialization methods with the input
-        inObject.reset(new ncbi::CObjectIStreamAsnBinary(*inStream));
-    } else {
-        // Associate ASN.1 text serialization methods with the input
-        inObject.reset(new ncbi::CObjectIStreamAsn(*inStream));
-    }
-
-    // Read the data
-    try {
-        err.erase();
-        *inObject >> ASNobject;
-    } catch (exception& e) {
-//        ERR_POST(ncbi::Error << "Cannot read file '" << filename << "'\nreason: " << e.what());
-        err = e.what();
-        return false;
-    }
-
-    return true;
-}
 
 END_SCOPE(Cn3D)
 

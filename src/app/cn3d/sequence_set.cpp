@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/21 23:42:15  thiessen
+* load structures from cdd's
+*
 * Revision 1.11  2000/12/20 23:47:48  thiessen
 * load CDD's
 *
@@ -79,6 +82,8 @@
 #include <objects/seq/NCBI8na.hpp>
 #include <objects/seq/NCBI2na.hpp>
 #include <objects/seq/IUPACna.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <strstream>
 
@@ -201,7 +206,7 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
 }
 
 Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), gi(NOT_SET), pdbChain(' '), molecule(NULL)
+    StructureBase(parent), gi(NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(NOT_SET)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
@@ -220,7 +225,28 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
         ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
         return;
     }
-    //TESTMSG("sequence gi " << gi << ", PDB " << pdbID << " chain '" << (char) pdbChain << "'");
+
+    // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately
+    if (bioseq.IsSetAnnot()) {
+        CBioseq::TAnnot::const_iterator a, ae = bioseq.GetAnnot().end();
+        for (a=bioseq.GetAnnot().begin(); a!=ae; a++) {
+            if (a->GetObject().GetData().IsIds()) {
+                CSeq_annot::C_Data::TIds::const_iterator i, ie = a->GetObject().GetData().GetIds().end();
+                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; i++) {
+                    if (i->GetObject().IsGeneral() &&
+                        i->GetObject().GetGeneral().GetDb() == "mmdb" &&
+                        i->GetObject().GetGeneral().GetTag().IsId()) {
+                        mmdbLink = i->GetObject().GetGeneral().GetTag().GetId();
+                        break;
+                    }
+                }
+                if (i != ie) break;
+            }
+        }
+    }
+    if (mmdbLink != NOT_SET)
+        TESTMSG("sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
+            "', is from MMDB id " << mmdbLink);
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
