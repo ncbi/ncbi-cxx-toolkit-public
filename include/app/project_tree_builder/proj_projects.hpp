@@ -58,9 +58,6 @@ public:
 
     typedef CProjectTreeFolders::TPath TPath;
 
-    struct SLstElement;
-    friend struct SLstElement;
-
     struct SLstElement
     {
         TPath m_Path;
