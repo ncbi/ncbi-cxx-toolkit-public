@@ -116,12 +116,12 @@ m4_define([_AS_LINENO_PREPARE],
 # 3. function name
 AC_DEFUN(NCBI_CHECK_LIBS,
 [saved_LIBS=$LIBS
- AC_SEARCH_LIBS($3, $2,
+ AC_SEARCH_LIBS($3, ["[$]$1_LIBS" $2],
   [AC_DEFINE(HAVE_LIB$1, 1,
    [Define to 1 if $1 is available, either in its own library or as part
     of the standard libraries.])
    test "x$ac_cv_search_$3" = "xnone required" || $1_LIBS=$ac_cv_search_$3],
-   [], [$]$1_LIBS)
+   [])
  LIBS=$saved_LIBS
 ])
 
