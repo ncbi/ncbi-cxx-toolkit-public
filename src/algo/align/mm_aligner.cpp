@@ -477,7 +477,7 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             pV[j] = V;
 
             n0 = V + m_Wg;
-            if(E > n0)
+            if(E >= n0)
                 E += m_Ws;      // continue the gap
             else
                 E = n0 + m_Ws;  // open a new gap
@@ -491,7 +491,7 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             else
                 rowF[j] = n0 + ws2;
 
-            V = E >= rowF[j]? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
+            V = (E >= rowF[j])? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
         }
         pV[j] = V;
     }
@@ -512,7 +512,7 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             pV[j] = V;
 
             n0 = V + m_Wg;
-            if(E > n0) {
+            if(E >= n0) {
                 E += m_Ws;      // continue the gap
                 tracer = kMaskEc;
             }
@@ -527,7 +527,7 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             }
 
             n0 = rowV[j] + wg2;
-            if(rowF[j] > n0) {
+            if(rowF[j] >= n0) {
                 rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
@@ -620,7 +620,7 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             pV[j] = V;
 
             n0 = V + m_Wg;
-            if(E > n0)
+            if(E >= n0)
                 E += m_Ws;      // continue the gap
             else
                 E = n0 + m_Ws;  // open a new gap
@@ -635,7 +635,7 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             else
                 rowF[j] = n0 + ws2;
 
-            V = E >= rowF[j]? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
+            V = (E >= rowF[j])? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
         }
 
         pV[j] = V;
@@ -657,7 +657,7 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             pV[j] = V;
 
             n0 = V + m_Wg;
-            if(E > n0) {
+            if(E >= n0) {
                 E += m_Ws;      // continue the gap
                 tracer = kMaskEc;
             }
@@ -672,7 +672,7 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             }
 
             n0 = rowV[j] + wg2;
-            if(rowF[j] > n0) {
+            if(rowF[j] >= n0) {
                 rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
@@ -775,7 +775,7 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
             pV[j] = V;
 
             n0 = V + wg1;
-            if(E > n0) {
+            if(E >= n0) {
                 E += ws1;      // continue the gap
                 tracer = kMaskEc;
             }
@@ -788,7 +788,7 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
                 wg2 = ws2 = 0;
             }
             n0 = rowV[j] + ((right_bottom && j == N2 - 1)? 0: wg2);
-            if(rowF[j] > n0) {
+            if(rowF[j] >= n0) {
                 rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
@@ -869,6 +869,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/05/23 18:26:38  kapustin
+ * Use weak comparisons in core recurrences.
+ *
  * Revision 1.8  2003/04/14 19:01:49  kapustin
  * Run() -> x_Run()
  *
