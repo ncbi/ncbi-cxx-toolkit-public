@@ -145,6 +145,10 @@ LIBS     = $(CONF_LIBS)
 C_LIBS   = $(CONF_C_LIBS) # Libraries for pure-C programs
 PRE_LIBS =
 
+# To add directory /foo to the list to search at runtime, you can add
+# $(RUNPATH_FLAG)/foo to your LDFLAGS.
+RUNPATH_FLAG = @f_runpath@
+
 ### Debug/release suffixes
 # "Debug" for debugging, "Release" for release
 DEBUG_SFX = @DEBUG_SFX@
