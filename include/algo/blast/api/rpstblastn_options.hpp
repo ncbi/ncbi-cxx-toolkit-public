@@ -33,7 +33,7 @@
 /// @file rpstblastn_options.hpp
 /// Declares the CRPSTBlastnOptionsHandle class.
 
-#include <algo/blast/api/blast_prot_options.hpp>
+#include <algo/blast/api/blast_rps_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 /// this type of search.
 
 class NCBI_XBLAST_EXPORT CRPSTBlastnOptionsHandle : 
-                                            public CBlastProteinOptionsHandle
+                                            public CBlastRPSOptionsHandle
 {
 public:
 
@@ -69,9 +69,6 @@ public:
     }
 
 protected:
-    void SetLookupTableDefaults();
-    void SetQueryOptionDefaults();
-    void SetHitSavingOptionsDefaults();
     void SetSubjectSequenceOptionsDefaults();
 };
 
@@ -84,6 +81,9 @@ END_NCBI_SCOPE
 /*
  * =======================================================================
  * $Log$
+ * Revision 1.2  2004/04/23 13:55:47  papadopo
+ * derived from BlastRPSOptionsHandle
+ *
  * Revision 1.1  2004/04/16 14:08:30  papadopo
  * options handle for translated RPS blast
  *
