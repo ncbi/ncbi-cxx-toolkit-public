@@ -50,9 +50,8 @@ class CNetCacheClient_Control : public CNetCacheClient
 {
 public:
     CNetCacheClient_Control(const string&  host,
-                            unsigned short port,
-                            const string&  client_name = kEmptyStr)
-      : CNetCacheClient(host, port, client_name)
+                            unsigned short port)
+      : CNetCacheClient(host, port, "netcache_control")
     {}
 
     void ShutdownServer() { CNetCacheClient::ShutdownServer(); }
@@ -144,6 +143,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/01/05 17:47:13  kuznets
+ * Use correct client name
+ *
  * Revision 1.3  2004/12/27 16:32:36  kuznets
  * + logging control
  *
