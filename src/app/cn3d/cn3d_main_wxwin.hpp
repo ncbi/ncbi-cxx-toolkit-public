@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/09/26 15:27:59  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
 * Revision 1.41  2001/09/24 16:43:10  thiessen
 * add wxGLApp test code
 *
@@ -203,7 +206,10 @@
 #include <wx/glcanvas.h>
 
 // for testing my new wxGLApp class
-//#define TEST_WXGLAPP 1
+#define TEST_WXGLAPP 1
+#if defined(TEST_WXGLAPP) && wxVERSION_NUMBER < 2302
+#undef TEST_WXGLAPP
+#endif
 
 
 BEGIN_SCOPE(Cn3D)
@@ -218,7 +224,7 @@ class StructureSet;
 class Cn3DApp: public wxGLApp
 #else
 class Cn3DApp: public wxApp
-#endif        
+#endif
 {
 public:
     Cn3DApp();

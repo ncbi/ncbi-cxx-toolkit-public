@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/09/26 15:27:54  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
 * Revision 1.27  2001/08/14 17:18:22  thiessen
 * add user font selection, store in registry
 *
@@ -206,7 +209,6 @@ private:
 
     void OnPaint(wxPaintEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
-    void OnResize(wxSizeEvent& event);
 
     SequenceViewerWidget_TitleArea *titleArea;
     ViewableAlignment *alignment;
@@ -253,7 +255,6 @@ public:
 BEGIN_EVENT_TABLE(SequenceViewerWidget_SequenceArea, wxScrolledWindow)
     EVT_PAINT               (SequenceViewerWidget_SequenceArea::OnPaint)
     EVT_MOUSE_EVENTS        (SequenceViewerWidget_SequenceArea::OnMouseEvent)
-    EVT_SIZE                (SequenceViewerWidget_SequenceArea::OnResize)
 END_EVENT_TABLE()
 
 SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
@@ -281,13 +282,6 @@ SequenceViewerWidget_SequenceArea::~SequenceViewerWidget_SequenceArea(void)
 {
     if (currentFont) delete currentFont;
     if (bitmap) delete bitmap;
-}
-
-void SequenceViewerWidget_SequenceArea::OnResize(wxSizeEvent& event)
-{
-    if (bitmap) delete bitmap;
-    bitmap = new wxBitmap(event.GetSize().GetWidth(), event.GetSize().GetHeight());
-    OnSize(event);
 }
 
 bool SequenceViewerWidget_SequenceArea::AttachAlignment(
@@ -357,10 +351,16 @@ void SequenceViewerWidget_SequenceArea::SetRubberbandColor(const wxColor& rubber
 
 void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 {
-//    TESTMSG("entered SequenceViewerWidget_SequenceArea::OnPaint()");
+    // adjust bitmap size to match client area size
+//    ERR_POST(Info << "client size: " << GetClientSize().GetWidth() << 'x' << GetClientSize().GetHeight());
+    if (!bitmap || bitmap->GetWidth() != GetClientSize().GetWidth() ||
+                   bitmap->GetHeight() != GetClientSize().GetHeight()) {
+//        ERR_POST(Info << "creating new bitmap");
+        if (bitmap) delete bitmap;
+        bitmap = new wxBitmap(GetClientSize().GetWidth(), GetClientSize().GetHeight());
+    }
+
     wxMemoryDC memDC;
-    bitmap->SetWidth(GetSize().GetWidth());
-    bitmap->SetHeight(GetSize().GetHeight());
     memDC.SelectObject(*bitmap);
 
     int vsX, vsY,
@@ -381,6 +381,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 
         // get upper left corner of visible area
         GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
+//        ERR_POST(Info << "vsX=" << vsX << " vsY=" << vsY);
         if (vsY != prevVsY) {
             if (titleArea) titleArea->Refresh();
             prevVsY = vsY;
@@ -393,6 +394,8 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
     wxRegionIterator upd(GetUpdateRegion());
 
     for (; upd; upd++) {
+//        ERR_POST(Info << "upd: x=" << upd.GetX() << " y=" << upd.GetY() <<
+//            " w=" << upd.GetW() << " h=" << upd.GetH());
 
         // draw background
         memDC.SetPen(*(wxThePenList->
@@ -441,7 +444,8 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 
     // Blit from memory DC to paintDC to avoid flicker
     wxPaintDC paintDC(this);
-    paintDC.Blit(0, 0, GetSize().GetWidth(), GetSize().GetHeight(), &memDC, 0,0, wxCOPY);
+    paintDC.Blit(0, 0, GetClientSize().GetWidth(), GetClientSize().GetHeight(), &memDC, 0,0, wxCOPY);
+//    ERR_POST(Info << "Blit 0, 0, " << GetClientSize().GetWidth() << ", " << GetClientSize().GetHeight());
 }
 
 void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)

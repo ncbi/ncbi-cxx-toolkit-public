@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/09/26 15:27:53  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
 * Revision 1.7  2001/09/24 14:37:52  thiessen
 * more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
 *
@@ -123,8 +126,9 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_si
 #define ID_R_STRUCTURE 10019
 #define ID_ST_STRUCTURE 10020
 #define ID_T_STRUCTURE 10021
-#define ID_B_EDIT_OK 10022
-#define ID_B_EDIT_CANCEL 10023
+#define ID_B_RERANGE 10022
+#define ID_B_EDIT_OK 10023
+#define ID_B_EDIT_CANCEL 10024
 wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -725,7 +729,7 @@ END_EVENT_TABLE()
 CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFeature_evidence& initial) :
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU), // not resizable
-    changed(false)
+    changed(false), rerange(false)
 {
     // construct the panel
     wxPanel *panel = new wxPanel(this, -1);
@@ -757,8 +761,6 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFea
         rSTRUCTURE->SetValue(true);
         tSTRUCTURE->SetValue(
             initial.GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str());
-        // automatically pick up highlights if structure evidence selected
-        changed = true;
     } else {
         ERR_POST(Error << "CDDEvidenceDialog::CDDEvidenceDialog() - "
             "don't (yet) know how to edit this evidence type");
@@ -783,6 +785,9 @@ void CDDEvidenceDialog::OnButton(wxCommandEvent& event)
         case ID_B_EDIT_CANCEL:
             EndModal(wxCANCEL);
             break;
+        case ID_B_RERANGE:
+            rerange = changed = true;
+            break;
         default:
             event.Skip();
     }
@@ -802,16 +807,18 @@ void CDDEvidenceDialog::SetupGUIControls(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rPMID, ID_R_PMID, wxRadioButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stPMID, ID_ST_PMID, wxStaticText)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tPMID, ID_T_PMID, wxTextCtrl)
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rSTRUCTURE, ID_R_STRUCTURE, wxRadioButton)
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stSTRUCTURE, ID_ST_STRUCTURE, wxStaticText)
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSTRUCTURE, ID_T_STRUCTURE, wxTextCtrl)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(rStructure, ID_R_STRUCTURE, wxRadioButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(stStructure, ID_ST_STRUCTURE, wxStaticText)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tStructure, ID_T_STRUCTURE, wxTextCtrl)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bStructure, ID_B_RERANGE, wxButton)
 
     stComment->Enable(rComment->GetValue());
     tComment->Enable(rComment->GetValue());
     stPMID->Enable(rPMID->GetValue());
     tPMID->Enable(rPMID->GetValue());
-    stSTRUCTURE->Enable(rSTRUCTURE->GetValue());
-    tSTRUCTURE->Enable(rSTRUCTURE->GetValue());
+    stStructure->Enable(rStructure->GetValue());
+    tStructure->Enable(rStructure->GetValue());
+    bStructure->Enable(rStructure->GetValue());
 }
 
 bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
@@ -845,21 +852,26 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
 
     else if (rSTRUCTURE->GetValue()) {
         DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tSTRUCTURE, ID_T_STRUCTURE, wxTextCtrl)
-        CRef < CBiostruc_annot_set > ref(GlobalMessenger()->
-            CreateBiostrucAnnotSetForHighlightsOnSingleObject());
-        if (ref.NotEmpty()) {
-            evidence->SetBsannot(ref);
-            CRef < CBiostruc_descr > descr(new CBiostruc_descr());
-            descr->SetOther_comment(STRUCTURE_EVIDENCE_COMMENT);
-            evidence->SetBsannot().SetDescr().push_front(descr);
-            CRef < CBiostruc_feature_set_descr > name(new CBiostruc_feature_set_descr());
-            name->SetName(tSTRUCTURE->GetValue().c_str());
-            evidence->SetBsannot().SetFeatures().front()->SetDescr().push_front(name);
-            return true;
-        } else {
-            ERR_POST(Error << "CDDEvidenceDialog::GetData() - error setting up structure evidence data");
-            return false;
+        // either leave existing range alone, or use new one if none present or rerange button pressed
+        if (!evidence->IsBsannot() || rerange) {
+            CRef < CBiostruc_annot_set > ref(GlobalMessenger()->
+                CreateBiostrucAnnotSetForHighlightsOnSingleObject());
+            if (ref.NotEmpty())
+                evidence->SetBsannot(ref);
+            else
+                return false;
         }
+        // reset structure evidence tag
+        CRef < CBiostruc_descr > descr(new CBiostruc_descr());
+        descr->SetOther_comment(STRUCTURE_EVIDENCE_COMMENT);
+        evidence->SetBsannot().SetDescr().clear();
+        evidence->SetBsannot().SetDescr().push_front(descr);
+        // reset name
+        CRef < CBiostruc_feature_set_descr > name(new CBiostruc_feature_set_descr());
+        name->SetName(tSTRUCTURE->GetValue().c_str());
+        evidence->SetBsannot().SetFeatures().front()->SetDescr().clear();
+        evidence->SetBsannot().SetFeatures().front()->SetDescr().push_front(name);
+        return true;
     }
 
     ERR_POST(Error << "CDDEvidenceDialog::GetData() - unknown evidence type");
@@ -1013,20 +1025,23 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 
     item1->Add( item13, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
 
+    wxButton *item17 = new wxButton( parent, ID_B_RERANGE, "Reset Residues to Current Highlights", wxDefaultPosition, wxDefaultSize, 0 );
+    item1->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxFlexGridSizer *item17 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    wxFlexGridSizer *item18 = new wxFlexGridSizer( 1, 0, 0, 0 );
 
-    wxButton *item18 = new wxButton( parent, ID_B_EDIT_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
-    item18->SetDefault();
-    item17->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item19 = new wxButton( parent, ID_B_EDIT_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
+    item19->SetDefault();
+    item18->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item17->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item18->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item19 = new wxButton( parent, ID_B_EDIT_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item17->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item20 = new wxButton( parent, ID_B_EDIT_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2001/09/26 15:27:54  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
 * Revision 1.85  2001/09/24 16:43:25  thiessen
 * add wxGLApp test code
 *
@@ -699,7 +702,7 @@ bool Cn3DApp::OnInit(void)
     // show log if set to do so
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
-#ifndef __WXMAC__    
+#ifndef __WXMAC__
     if (showLog) RaiseLogWindow();
 #endif
 
@@ -714,7 +717,7 @@ bool Cn3DApp::OnInit(void)
     // give structure window initial focus
     structureWindow->Raise();
     structureWindow->SetFocus();
-#ifdef __WXMAC__    
+#ifdef __WXMAC__
     if (showLog) RaiseLogWindow();
 #endif
     return true;
@@ -923,12 +926,17 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menuBar->Append(menu, "&CDD");
 
     // accelerators for special keys
-    wxAcceleratorEntry entries[4];
+    wxAcceleratorEntry entries[9];
     entries[0].Set(wxACCEL_NORMAL, WXK_RIGHT, MID_NEXT_FRAME);
     entries[1].Set(wxACCEL_NORMAL, WXK_LEFT, MID_PREV_FRAME);
     entries[2].Set(wxACCEL_NORMAL, WXK_DOWN, MID_FIRST_FRAME);
     entries[3].Set(wxACCEL_NORMAL, WXK_UP, MID_LAST_FRAME);
-    wxAcceleratorTable accel(4, entries);
+    entries[4].Set(wxACCEL_NORMAL, 'z', MID_ZOOM_IN);
+    entries[5].Set(wxACCEL_NORMAL, 'x', MID_ZOOM_OUT);
+    entries[6].Set(wxACCEL_NORMAL, 'a', MID_ALL_FRAMES);
+    entries[7].Set(wxACCEL_NORMAL, 'p', MID_PLAY);
+    entries[8].Set(wxACCEL_NORMAL, 's', MID_STOP);
+    wxAcceleratorTable accel(9, entries);
     SetAcceleratorTable(accel);
 
     SetMenuBar(menuBar);

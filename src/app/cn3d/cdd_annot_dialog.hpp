@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/09/26 15:27:58  thiessen
+* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
+*
 * Revision 1.4  2001/08/27 00:06:35  thiessen
 * add structure evidence to CDD annotation
 *
@@ -120,7 +123,7 @@ public:
     CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFeature_evidence& initial);
 
 private:
-    bool changed;
+    bool changed, rerange;
 
     // event callbacks
     void OnCloseWindow(wxCloseEvent& event);
