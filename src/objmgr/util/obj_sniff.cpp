@@ -68,7 +68,7 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
     const CTypeInfo *type_info = object.GetTypeInfo();
     const string& class_name = type_info->GetName();
 
-    m_Sniffer->OnObjectFoundPre(object, m_Sniffer->GetStreamOffset());
+    m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
      
     DefaultRead(in, object);
 
@@ -201,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2003/05/29 20:41:37  kuznets
+* Fixed an offset bug in COffsetReadHook::ReadObject
+*
 * Revision 1.4  2003/05/22 16:47:22  kuznets
 * ObjectFound methods renamed to OnObjectFound.
 *
