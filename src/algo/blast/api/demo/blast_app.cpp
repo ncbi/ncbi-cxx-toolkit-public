@@ -569,6 +569,7 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
    Int4 num_db_seqs;
    Nlm_MemMapPtr lut_mmap;
    Nlm_MemMapPtr pssm_mmap;
+   char buffer[PATH_MAX];
 
    info = (RPSInfo *)malloc(sizeof(RPSInfo));
    if (info == NULL)
@@ -593,7 +594,8 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
    if (auxfile == NULL)
       ErrPostEx(SEV_FATAL, 1, 0,"Cannot open RPS BLAST parameters file");
 
-   fscanf(auxfile, "%s", info->aux_info.orig_score_matrix);
+   fscanf(auxfile, "%s", buffer);
+   info->aux_info.orig_score_matrix = strdup(buffer);
    fscanf(auxfile, "%d", &info->aux_info.gap_open_penalty);
    fscanf(auxfile, "%d", &info->aux_info.gap_extend_penalty);
    fscanf(auxfile, "%le", &info->aux_info.ungapped_k);
@@ -682,6 +684,7 @@ int CBlastApplication::Run(void)
         Nlm_MemMapFini(rps_mmap);
         Nlm_MemMapFini(rps_pssm_mmap);
         sfree(rps_info->aux_info.karlin_k);
+        sfree(rps_info->aux_info.orig_score_matrix);
         sfree(rps_info);
     }
 
