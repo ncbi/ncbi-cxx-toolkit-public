@@ -151,8 +151,8 @@ int CSampleAlnmgrApplication::Run(void)
         if (chunk->GetType() & CAlnMap::fSeq) {
             cout << "(Seq)";
         }
-        if (chunk->GetType() & CAlnMap::fAlignedToSeqOnAnchor) {
-            cout << "(AlignedToSeqOnAnchor)";
+        if (chunk->GetType() & CAlnMap::fNotAlignedToSeqOnAnchor) {
+            cout << "(NotAlignedToSeqOnAnchor)";
         }
         if (chunk->GetType() & CAlnMap::fUnalignedOnRight) {
             cout << "(UnalignedOnRight)";
@@ -193,6 +193,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/09/26 20:14:27  ucko
+* Update for replacement of fAlignedToSeqOnAnchor by fNotAlignedToSeqOnAnchor.
+*
 * Revision 1.2  2002/08/23 18:57:34  ucko
 * Add CVS log block (accidentally left out at first).
 *
