@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/10/10 16:58:56  thiessen
+* add const where required
+*
 * Revision 1.7  2002/10/07 18:51:53  thiessen
 * add abbreviated taxonomy tree
 *
@@ -234,7 +237,7 @@ static void AppendChildrenToTree(wxTreeCtrl *tree, const TaxonomyTreeMap& treeMa
             wxString name(s->first->identifier->ToString().c_str());
             if (s->second > 1)
                 name.Printf("%s (x%i)", name.c_str(), s->second);
-            wxTreeItemId& child = tree->AppendItem(id, name);
+            const wxTreeItemId& child = tree->AppendItem(id, name);
             tree->SetItemData(child, new NodeData(s->first));
         }
     }
