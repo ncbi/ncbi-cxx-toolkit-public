@@ -1715,19 +1715,53 @@ static void s_PrintCommentBody(string& str, const string& s, SIZE_TYPE width)
 
 static void s_PrintComment(string& str, const CArgDesc& arg, SIZE_TYPE width)
 {
-    // Print synopsis
-    str += "\n ";
-    str += arg.GetUsageSynopsis(true/*name_only*/);
+    string intro = ' ' + arg.GetUsageSynopsis(true/*name_only*/);
 
     // Print type (and value constraint, if any)
     string attr = arg.GetUsageCommentAttr();
     if ( !attr.empty() ) {
-        str += " <";
-        str += attr;
-        str += '>';
+        intro += " <";
+        intro += attr;
+        intro += '>';
     }
 
+    // Wrap intro if necessary...
+    {{
+        SIZE_TYPE pos = 0, indent = intro.find(", ") + 2;
+        if (indent == NPOS + 2) {
+            indent = 1;
+        }
+        string spaces(indent - 1, ' '); // We always get one extra space
+        while (intro.size() > pos + width) {
+            SIZE_TYPE break_pos = NPOS, limit = pos + width;
+            // Check for existing newlines (unlikely!)
+            break_pos = intro.rfind('\n', limit);
+            if (break_pos > pos  &&  break_pos != NPOS) {
+                pos = break_pos + 1;
+                continue;
+            }
+            // Check for breaks between choices
+            break_pos = intro.rfind("', `", limit - 2) + 2;
+            if (break_pos <= pos  ||  break_pos == NPOS + 2) {
+                // Check for spaces within choices
+                break_pos = intro.rfind(' ', limit);
+                if (break_pos <= pos  ||  break_pos == NPOS) {
+                    // Just break anywhere
+                    break_pos = limit - 1;
+                }
+            }
+            if (intro[break_pos] == ' ') {
+                intro.insert(break_pos, "\n" + spaces);
+                pos = break_pos + 2;
+            } else {
+                intro.insert(break_pos, "-\n " + spaces);
+                pos = break_pos + 3;
+            }
+        }
+    }}
+
     // Print description
+    str += '\n' + intro;
     s_PrintCommentBody(str, arg.GetComment(), width);
 
     // Print default value, if any
@@ -2151,6 +2185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2002/06/13 20:41:57  ucko
+ * Improve usage formatting for long choice lists.
+ *
  * Revision 1.35  2002/04/24 04:02:45  vakatov
  * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
  * compilers seem to be supporting in-class template methods.
