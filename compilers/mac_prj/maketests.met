@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.10 2001/03/19 16:31:18 juran Exp $
+	$Id: maketests.met,v 1.11 2001/07/07 01:34:25 juran Exp $
 	
    ================================================================================ *)
 
@@ -30,8 +30,6 @@ property pCreateOptimizedTargets : true
 -- Putting a project tree inside a tool tree is evil.
 property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
 
---property DOSOCKETS : "FALSE" (* whether to create/compile socket libs *)
-
 --
 -- Global variables
 --
@@ -56,9 +54,23 @@ global gProjectData
 -- Routines specific to this project
 --
 
+-- Since we can't put comments even between the lines of multi-line statements,
+-- and since we don't want to move recipes for disabled projects out of context,
+-- instead of "--SimpleProgramData" (which is what we would have liked),
+-- we use "__SimpleProgramData" and pretend it means the same thing.
+-- This handler allows us to do that.
+
+on __SimpleProgramData(projName, section, features)
+	
+	return {}
+	
+end __SimpleProgramData
+
 on SimpleProgramData(projName, section, features)
 	
+	-- By default, the project name is also the name a source file in the project.
 	set myFileList to {projName}
+	-- Remove "ncbi_" from the project name, if present.
 	set infix to "ncbi_"
 	if projName contains infix then
 		set offst to (offset of infix in projName)
@@ -151,9 +163,9 @@ on SetProjectData()
 				SimpleProgramData("test_ncbi_connutil_misc", connect, {"C"}), Â
 				SimpleProgramData("socket_io_bouncer", connect, {"C"}), Â
 				SimpleProgramData("test_ncbi_file_connector", connect, {"C"}), Â
-				SimpleProgramData("test_sock_connutil_misc", connect, {"C++", "sockets"}), Â
-				SimpleProgramData("test_http_connutil_misc", connect, {"C", "sockets"}), Â
-				SimpleProgramData("test_srv_connutil_misc", connect, {"C", "sockets"}), Â
+				__SimpleProgramData("test_sock_connutil_misc", connect, {"C++", "sockets"}), Â
+				__SimpleProgramData("test_http_connutil_misc", connect, {"C", "sockets"}), Â
+				__SimpleProgramData("test_srv_connutil_misc", connect, {"C", "sockets"}), Â
 				DataPlusLibs(SimpleProgramData("test_ncbi_conn_stream", connect, {"C++"}), Â
 					{"corelib"}), Â
 				DataPlusLibs(DataPlusSources(SimpleProgramData("testserial", serial, {"C++"}), Â
@@ -631,6 +643,15 @@ end SetupTarget
 on CreateProject(proj)
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
+		-- This statement doesn't work, because AppleScript is broken.
+		if proj is {} then return
+		
+		try
+			get proj's name
+		on error
+			return
+		end try
+		
 		set projFilename to proj's name & pProjectFileExtension
 		set projPathname to BINARIES & projFilename
 		if pAlwaysCreateProjects or not (exists file projPathname of application "Finder") then
@@ -699,7 +720,12 @@ end BuildProgram
 on BuildAllPrograms()
 	
 	repeat with proj in gProjectData
-		BuildProgram(proj's name)
+		-- This statement doesn't work, because AppleScript is broken.
+		if proj is not {} then
+			try
+				BuildProgram(proj's name)
+			end try
+		end if
 	end repeat
 	
 end BuildAllPrograms
