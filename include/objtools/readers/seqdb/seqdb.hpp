@@ -73,38 +73,52 @@ public:
         x_RetSeq();
     }
     
+    /// Increment operator
+    /// 
+    /// Returns the currently held sequence and gets pointers to the
+    /// next sequence.
     CSeqDBIter & operator++(void);
     
+    /// Get the OID of the currently held sequence.
     TOID GetOID(void)
     {
         return m_OID;
     }
     
+    /// Get the sequence data for the currently held sequence.
     const char * GetData(void)
     {
         return m_Data;
     }
     
+    /// Get the length (in base pairs) of the currently held sequence.
     Uint4 GetLength(void)
     {
         return m_Length;
     }
     
+    /// Returns true if the iterator points to a valid sequence.
     operator bool()
     {
         return m_Length != (Uint4)-1;
     }
     
+    /// Construct one iterator from another.
     CSeqDBIter(const CSeqDBIter &);
     
+    /// Copy one iterator to another.
     CSeqDBIter & operator =(const CSeqDBIter &);
     
 private:
+    /// Get data pointer and length for the current sequence.
     inline void x_GetSeq(void);
+    
+    /// Release hold on current sequence.
     inline void x_RetSeq(void);
     
     friend class CSeqDB;
     
+    /// Build an iterator (called only from CSeqDB).
     CSeqDBIter(const CSeqDB *, TOID oid);
     
     const CSeqDB     * m_DB;
@@ -168,7 +182,6 @@ public:
     ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
     ///   fails, this platform does not support it, the less efficient
     ///   read and write calls are used instead.
-    
     CSeqDB(const string & dbname,
            char           prot_nucl,
            TOID           oid_begin,
@@ -395,8 +408,8 @@ private:
 ///
 /// CSeqDBSequence --
 ///
-/// Small class to manage return of sequence data.
-///
+/// Small class to implement RIAA for sequences.
+/// 
 /// The CSeqDB class requires that sequences be returned at some point
 /// after they are gotten.  This class provides that service via the
 /// destructor.  It also insures that the database itself stays around
@@ -409,6 +422,7 @@ private:
 class CSeqDBSequence {
     typedef CSeqDB::TOID TOID;
 public:
+    /// Get a hold a database sequence.
     CSeqDBSequence(CSeqDB * db, TOID oid)
         : m_DB    (db),
           m_Data  (0),
@@ -417,6 +431,7 @@ public:
         m_Length = m_DB->GetSequence(oid, & m_Data);
     }
     
+    /// Destructor, returns the sequence.
     ~CSeqDBSequence()
     {
         if (m_Data) {
@@ -424,19 +439,23 @@ public:
         }
     }
     
+    /// Get pointer to sequence data.
     const char * GetData(void)
     {
         return m_Data;
     }
     
+    /// Get sequence length.
     Uint4 GetLength(void)
     {
         return m_Length;
     }
     
 private:
-    // Prevent copy for now - would be easy to fix.
+    /// Prevent copy construct.
     CSeqDBSequence(const CSeqDBSequence &);
+    
+    /// Prevent copy.
     CSeqDBSequence & operator=(const CSeqDBSequence &);
     
     CRef<CSeqDB> m_DB;
