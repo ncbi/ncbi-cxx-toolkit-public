@@ -54,8 +54,9 @@ struct BlastHSPStream {
 BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info)
 {
     BlastHSPStream* retval = NULL;
+    BlastHSPStreamFunctionPointerTypes fnptr;
 
-    if (!bhsn_info) {
+    if ( bhsn_info == NULL ) {
         return NULL;
     }
 
@@ -64,7 +65,6 @@ BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info)
     }
 
     /* Save the constructor and invoke it */
-    BlastHSPStreamFunctionPointerTypes fnptr;
     fnptr.ctor = bhsn_info->constructor;
     SetMethod(retval, eConstructor, fnptr);
     if (retval->NewFnPtr) {
