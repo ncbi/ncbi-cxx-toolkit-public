@@ -66,3 +66,4 @@
 #define HAVE_STRSTREAM   1
 #define HAVE_UNISTD_H    1
 #define HAVE_IOS_XALLOC  1
+#define HAVE_DLFCN_H     1
