@@ -100,7 +100,9 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq& seq) const
 
     // Features
     ItemOS() << new CFeatHeaderItem(ctx);
-    x_GatherSourceFeatures();
+    if ( !ctx.HideSourceFeats() ) {
+        x_GatherSourceFeatures();
+    }
     x_GatherFeatures();
     // Base count
     if ( ctx.IsNa()  &&  (ctx.IsModeGBench()  ||  ctx.IsModeDump()) ) {
@@ -121,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 18:06:42  shomrat
+* Skip source-features if flag is set
+*
 * Revision 1.5  2004/02/11 22:50:01  shomrat
 * using types in flag file
 *
