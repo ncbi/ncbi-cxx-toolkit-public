@@ -35,6 +35,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbitype.h>
 #include <corelib/ncbitime.hpp>
 #include <dbapi/driver/types.hpp>
 
@@ -83,29 +84,43 @@ class CVariant
 public:
 
     // Contructors to create CVariant from various primitive types
-#if (SIZE_OF_LONG_LONG > 0)
-    explicit CVariant(long long v);
-#endif
-    explicit CVariant(int v);
-    explicit CVariant(long v);
-    explicit CVariant(short v);
-    explicit CVariant(unsigned char v);
+    explicit CVariant(Int8 v);
+    explicit CVariant(Int4 v);
+    explicit CVariant(Int2 v);
+    explicit CVariant(Uint1 v);
     explicit CVariant(float v);
     explicit CVariant(double v);
     explicit CVariant(bool v);
     explicit CVariant(const string& v);
+    explicit CVariant(const char* s);
 
-    // Make VARBINARY representation 
-    CVariant(const void* buf, size_t size);
+    // Factories for different types
+    // NOTE: pass p = 0 to make NULL value
+    static CVariant BigInt       (Int8 *p);
+    static CVariant Int          (Int4 *p);
+    static CVariant SmallInt     (Int2 *p);
+    static CVariant TinyInt      (Uint1 *p);
+    static CVariant Float        (float *p);
+    static CVariant Double       (double *p);
+    static CVariant Bit          (bool *p);
+    static CVariant VarChar      (const char *p, size_t len = 0);
+    static CVariant Char         (size_t size, const char *p);
+    static CVariant VarBinary    (const void *p, size_t len);
+    static CVariant Binary       (size_t size, const void *p, size_t len);
+    static CVariant SmallDateTime(CTime *p);
+    static CVariant DateTime     (CTime *p);
+    static CVariant Numeric      (unsigned int precision,
+                                  unsigned int scale,
+                                  const char* p);
+
+    // Make "placeholder" CVariant by type, containing NULL value
+    CVariant(EDB_Type type);
 
     // Make DATETIME representation in long and short forms
     CVariant(const class CTime& v, EDateTimeFormat fmt);
 
     // Make CVariant from internal CDB_Object
     explicit CVariant(CDB_Object* obj);
-
-    // Make CVariant of given type with NULL value
-    explicit CVariant(EDB_Type type);
 
     // Copy constructor
     CVariant(const CVariant& v);
@@ -116,14 +131,11 @@ public:
     // Get methods
     EDB_Type GetType() const;
 
-#if (SIZE_OF_LONG_LONG > 0)
-    long long     GetInt8(void) const; 
-#endif
-
+    Int8          GetInt8(void) const; 
     string        GetString(void) const;
-    long          GetInt4(void) const;
-    short         GetInt2(void) const;
-    unsigned char GetByte(void) const;
+    Int4          GetInt4(void) const;
+    Int2          GetInt2(void) const;
+    Uint1         GetByte(void) const;
     float         GetFloat(void) const;
     double        GetDouble(void) const;
     bool          GetBit(void) const;
@@ -174,6 +186,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2002/02/08 15:50:38  kholodov
+ * Modified: integer types used are Int8, Int4, Int2, Uint1
+ * Added: factories for CVariants of a particular type
+ *
  * Revision 1.3  2002/02/06 22:50:49  kholodov
  * Conditionalized the usage of long long
  *

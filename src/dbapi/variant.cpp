@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/02/08 15:50:32  kholodov
+* Modified: integer types used are Int8, Int4, Int2, Uint1
+* Added: factories for CVariants of a particular type
+*
 * Revision 1.3  2002/02/06 22:50:48  kholodov
 * Conditionalized the usage of long long
 *
@@ -50,7 +54,7 @@
 #include <corelib/ncbistre.hpp>
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 const char* CVariantException::what() const throw() 
 {
@@ -58,6 +62,81 @@ const char* CVariantException::what() const throw()
 }
 
 //==================================================================
+CVariant CVariant::BigInt(Int8 *p)
+{
+    return CVariant(p ? new CDB_BigInt(*p) : new CDB_BigInt());
+}
+
+CVariant CVariant::Int(Int4 *p)
+{
+    return CVariant(p ? new CDB_Int(*p) : new CDB_Int());
+}
+
+CVariant CVariant::SmallInt(Int2 *p)
+{
+    return CVariant(p ? new CDB_SmallInt(*p) : new CDB_SmallInt());
+}
+
+CVariant CVariant::TinyInt(Uint1 *p)
+{
+    return CVariant(p ? new CDB_TinyInt(*p) : new CDB_TinyInt());
+}
+
+CVariant CVariant::Float(float *p)
+{
+    return CVariant(p ? new CDB_Float(*p) : new CDB_Float());
+}
+
+CVariant CVariant::Double(double *p)
+{
+    return CVariant(p ? new CDB_Double(*p) : new CDB_Double());
+}
+
+CVariant CVariant::Bit(bool *p)
+{
+    return CVariant(p ? new CDB_Bit(*p) : new CDB_Bit());
+}
+
+CVariant CVariant::VarChar(const char *p, size_t len)
+{
+    return CVariant(p ? (len ? new CDB_VarChar(p, len) : new CDB_VarChar(p))
+                    : new CDB_VarChar());
+}
+
+CVariant CVariant::Char(size_t size, const char *p)
+{
+    return CVariant(p ? new CDB_Char(size, p) : new CDB_Char());
+}
+
+CVariant CVariant::VarBinary(const void *p, size_t len)
+{
+    return CVariant(p ? new CDB_VarBinary(p, len) : new CDB_VarBinary());
+}
+
+CVariant CVariant::Binary(size_t size, const void *p, size_t len)
+{
+    return CVariant(p ? new CDB_Binary(size, p, len) : new CDB_Binary());
+}
+
+CVariant CVariant::SmallDateTime(CTime *p)
+{
+    return CVariant(p ? new CDB_SmallDateTime(*p) : new CDB_SmallDateTime());
+}
+
+CVariant CVariant::DateTime(CTime *p)
+{
+    return CVariant(p ? new CDB_DateTime(*p) : new CDB_DateTime());
+}
+
+CVariant CVariant::Numeric(unsigned int precision,
+                           unsigned int scale,
+                           const char* p)
+{
+    return CVariant(p ? new CDB_Numeric(precision, scale, p) 
+                    : new CDB_Numeric());
+}
+
+
 CVariant::CVariant(EDB_Type type)
   : m_data(0)
 {
@@ -123,21 +202,20 @@ CVariant::CVariant(CDB_Object* o)
 }
 
 
-#if (SIZE_OF_LONG_LONG > 0)
-CVariant::CVariant(long long v) 
+CVariant::CVariant(Int8 v) 
   : m_data(new CDB_BigInt(v)) {}
-#endif
 
-CVariant::CVariant(int v) 
+
+CVariant::CVariant(Int4 v) 
   : m_data(new CDB_Int(v)) {}
 
-CVariant::CVariant(long v) 
-  : m_data(new CDB_Int(v)) {}
+//CVariant::CVariant(int v) 
+//: m_data(new CDB_Int(v)) {}
 
-CVariant::CVariant(short v) 
+CVariant::CVariant(Int2 v) 
   : m_data(new CDB_SmallInt(v)) {}
 
-CVariant::CVariant(unsigned char v) 
+CVariant::CVariant(Uint1 v) 
   : m_data(new CDB_TinyInt(v)) {}
 
 CVariant::CVariant(float v)
@@ -152,8 +230,8 @@ CVariant::CVariant(bool v)
 CVariant::CVariant(const string& v) 
   : m_data(new CDB_VarChar(v)) {}
 
-CVariant::CVariant(const void* buf, size_t size)
-  : m_data(new CDB_VarBinary(buf, size)) {}
+CVariant::CVariant(const char* s) 
+  : m_data(new CDB_VarChar(s)) {}
 
 CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
   : m_data(0)
@@ -249,28 +327,27 @@ string CVariant::GetString(void) const
 
 }
 
-#if (SIZE_OF_LONG_LONG > 0)
-long long CVariant::GetInt8() const
+Int8 CVariant::GetInt8() const
 {
   crash( GetType() == eDB_BigInt );
   return ((CDB_BigInt*)GetData())->Value();
 }
-#endif
 
-long CVariant::GetInt4() const
+
+Int4 CVariant::GetInt4() const
 {
   crash( GetType() == eDB_Int );
   return ((CDB_Int*)GetData())->Value();
 }
 
-short CVariant::GetInt2() const
+Int2 CVariant::GetInt2() const
 {
   crash( GetType() == eDB_SmallInt );
 
   return ((CDB_SmallInt*)GetData())->Value();
 }
 
-unsigned char CVariant::GetByte() const
+Uint1 CVariant::GetByte() const
 {
   crash( GetType() == eDB_TinyInt );
 
@@ -365,3 +442,5 @@ bool CVariant::operator<(const CVariant& v) const
   }
   return less;
 }
+
+END_NCBI_SCOPE
