@@ -1,5 +1,5 @@
-#ifndef CORELIB___NCBISTD__HPP
-#define CORELIB___NCBISTD__HPP
+#ifndef CORELIB___NCBIMISC__HPP
+#define CORELIB___NCBIMISC__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -32,14 +32,10 @@
  */
 
 /// @file ncbistd.hpp
-/// The NCBI C++ standard #include's and #defin'itions
+/// Miscellaneous common-use basic types and functionality
 
 
-#include <corelib/ncbitype.h>
-#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistl.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbidbg.hpp>
 
 
 /** @addtogroup AppFramework
@@ -409,6 +405,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2003/10/02 17:43:43  vakatov
+ * The code extracted from NCBISTD.HPP. -- The latter is a "pure virtual"
+ * header now.
+ *
  * Revision 1.66  2003/09/17 15:17:30  vasilche
  * Fixed self references in template class AutoPtr.
  *
@@ -614,4 +614,4 @@ END_NCBI_SCOPE
  * ==========================================================================
  */
 
-#endif /* NCBISTD__HPP */
+#endif  /* CORELIB___NCBIMISC__HPP */
