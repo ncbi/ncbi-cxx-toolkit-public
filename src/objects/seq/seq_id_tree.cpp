@@ -445,7 +445,24 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
     CSeq_id_Info* info = x_FindInfo(tid);
     if ( !info ) {
         info = CreateInfo(id);
+
         if ( tid.IsSetAccession() ) {
+            if (tid.IsSetVersion()
+                ||  tid.IsSetRelease()
+                ||  tid.IsSetName()) {
+                CRef<CSeq_id> id_nover(new CSeq_id);
+                id_nover->Assign(id);
+                CTextseq_id& tid_nover =
+                    const_cast<CTextseq_id&>(x_Get(*id_nover));
+                tid_nover.ResetVersion();
+                tid_nover.ResetRelease();
+                tid_nover.ResetName();
+                CSeq_id_Handle h_nover = FindOrCreate(*id_nover);
+                _ASSERT(h_nover);
+                info->m_NoVersionId = h_nover.m_Info;
+                info->m_NoVersionId->AddReference();
+            }
+
             TVersions& ver = m_ByAccession[tid.GetAccession()];
             ITERATE(TVersions, vit, ver) {
                 _ASSERT(!x_Get(*(*vit)->GetSeqId()).Equals(tid));
@@ -1453,6 +1470,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/01/07 20:42:02  grichenk
+* Fixed matching of accession to accession.version
+*
 * Revision 1.4  2003/09/30 16:22:03  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

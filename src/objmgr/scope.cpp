@@ -771,21 +771,33 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
     }
     CSeqMatch_Info info;
     {{
+        CSeq_id_Handle found_id = idh;
         CFastMutexGuard guard(ds_info.GetMutex());
         ITERATE(TTSE_LockSet, tse_it, ds_info.GetTSESet()) {
             CTSE_Info::TBioseqs::const_iterator seq =
                 (*tse_it)->m_Bioseqs.find(idh);
+            if (seq == (*tse_it)->m_Bioseqs.end()) {
+                TSeq_id_HandleSet hset;
+                CSeq_id_Mapper::GetSeq_id_Mapper().GetMatchingHandles(idh, hset);
+                ITERATE(TSeq_id_HandleSet, hit, hset) {
+                    seq = (*tse_it)->m_Bioseqs.find(*hit);
+                    if (seq != (*tse_it)->m_Bioseqs.end()) {
+                        found_id = *hit;
+                        break;
+                    }
+                }
+            }
             if (seq != (*tse_it)->m_Bioseqs.end()) {
                 // Use cached TSE (same meaning as from history). If info
                 // is set but not in the history just ignore it.
                 if ( info ) {
-                    CSeqMatch_Info new_info(idh, **tse_it);
+                    CSeqMatch_Info new_info(found_id, **tse_it);
                     // Both are in the history -
                     // can not resolve the conflict
                     if (&info.GetDataSource() == &new_info.GetDataSource()) {
                         CSeqMatch_Info* best_info =
                             info.GetDataSource().ResolveConflict(
-                                idh, info, new_info);
+                                found_id, info, new_info);
                         if (best_info) {
                             info = *best_info;
                             continue;
@@ -793,7 +805,7 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                     }
                     x_ThrowConflict(eConflict_History, info, new_info);
                 }
-                info = CSeqMatch_Info(idh, **tse_it);
+                info = CSeqMatch_Info(found_id, **tse_it);
             }
         }
     }}
@@ -1075,22 +1087,27 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
             if ( info->HasBioseq() ) {
                 ITERATE(CBioseq_Info::TSynonyms, it,
                         info->GetBioseq_Info().m_Synonyms) {
-                    // Check current ID for conflicts, add to the set.
-                    try {
-                        TSeq_idMapValue& seq_id_info = x_GetSeq_id_Info(*it);
-                        if ( x_InitBioseq_Info(seq_id_info) == info ) {
-                            // the same bioseq - add synonym
-                            syn_set->AddSynonym(&seq_id_info);
+                    TSeq_id_HandleSet hset;
+                    CSeq_id_Mapper::GetSeq_id_Mapper().
+                        GetMatchingHandles(*it, hset);
+                    ITERATE(TSeq_id_HandleSet, mit, hset) {
+                        // Check current ID for conflicts, add to the set.
+                        try {
+                            TSeq_idMapValue& seq_id_info = x_GetSeq_id_Info(*mit);
+                            if ( x_InitBioseq_Info(seq_id_info) == info ) {
+                                // the same bioseq - add synonym
+                                syn_set->AddSynonym(&seq_id_info);
+                            }
+                            else {
+                                LOG_POST(Warning << "CScope::GetSynonyms: "
+                                         "one of Bioseq's ids is resolved to another sequence");
+                            }
                         }
-                        else {
+                        catch ( exception& exc ) {
                             LOG_POST(Warning << "CScope::GetSynonyms: "
-                                     "one of Bioseq's ids is resolved to another sequence");
+                                     "one of Bioseq's ids cannot be resolved: " <<
+                                     exc.what());
                         }
-                    }
-                    catch ( exception& exc ) {
-                        LOG_POST(Warning << "CScope::GetSynonyms: "
-                                 "one of Bioseq's ids cannot be resolved: " <<
-                                 exc.what());
                     }
                 }
             }
@@ -1120,6 +1137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2004/01/07 20:42:01  grichenk
+* Fixed matching of accession to accession.version
+*
 * Revision 1.94  2003/12/18 16:38:07  grichenk
 * Added CScope::RemoveEntry()
 *

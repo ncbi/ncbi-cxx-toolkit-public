@@ -73,6 +73,12 @@ CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
 }
 
 
+void CSeq_id_Info::RemoveLastReference(void)
+{
+    CSeq_id_Mapper::GetSeq_id_Mapper().x_RemoveLastReference(this);
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CSeq_id_Handle::
@@ -215,12 +221,6 @@ void CSeq_id_Handle::x_DumpRegister(const char* _DEBUG_ARG(msg))
 }
 
 
-void CSeq_id_Handle::x_RemoveLastReference(void)
-{
-    CSeq_id_Mapper::GetSeq_id_Mapper().x_RemoveLastReference(m_Info);
-}
-
-
 bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
 {
     // Different mappers -- handle can not be equal
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/01/07 20:42:01  grichenk
+* Fixed matching of accession to accession.version
+*
 * Revision 1.16  2003/11/26 17:56:00  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

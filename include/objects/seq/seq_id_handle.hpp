@@ -65,16 +65,21 @@ public:
             return m_Seq_id;
         }
 
+    void AddReference(void);
+    void RemoveReference(void);
+    void RemoveLastReference(void);
+
 protected:
     explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
     ~CSeq_id_Info(void);
 
-    friend class CSeq_id_Handle;     // for counter
-    friend class CSeq_id_Mapper;     // for creation/deletion
-    friend class CSeq_id_Which_Tree; // for creation/deletion
+    friend class CSeq_id_Mapper;       // for creation/deletion
+    friend class CSeq_id_Which_Tree;   // for creation/deletion
+    friend class CSeq_id_Textseq_Tree; // for m_NoVersionId
 
     CAtomicCounter     m_Counter;
     CConstRef<CSeq_id> m_Seq_id;
+    CSeq_id_Info*      m_NoVersionId;
 
 private:
     CSeq_id_Info(const CSeq_id_Info&);
@@ -123,7 +128,6 @@ private:
 
     void x_AddReference(void);
     void x_AddReferenceIfSet(void);
-    void x_RemoveLastReference(void);
     void x_RemoveReference(void);
     void x_RemoveReferenceIfSet(void);
 
@@ -139,6 +143,7 @@ private:
 
     friend class CSeq_id_Mapper;
     friend class CSeq_id_Which_Tree;
+    friend class CSeq_id_Textseq_Tree;
 };
 
 
@@ -157,7 +162,7 @@ private:
 
 inline
 CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
-    : m_Seq_id(seq_id)
+    : m_Seq_id(seq_id), m_NoVersionId(0)
 {
     m_Counter.Set(0);
 }
@@ -167,6 +172,25 @@ inline
 CSeq_id_Info::~CSeq_id_Info(void)
 {
     _ASSERT(m_Counter.Get() == 0);
+    if ( m_NoVersionId ) {
+        m_NoVersionId->RemoveReference();
+    }
+}
+
+
+inline
+void CSeq_id_Info::AddReference(void)
+{
+    m_Counter.Add(1);
+}
+
+
+inline
+void CSeq_id_Info::RemoveReference(void)
+{
+    if ( m_Counter.Add(-1) == 0 ) {
+        RemoveLastReference();
+    }
 }
 
 
@@ -192,7 +216,7 @@ bool CSeq_id_Handle::operator! (void) const
 inline
 void CSeq_id_Handle::x_AddReference(void)
 {
-    m_Info->m_Counter.Add(1);
+    m_Info->AddReference();
 #ifdef _DEBUG
     x_Register();
 #endif
@@ -205,9 +229,7 @@ void CSeq_id_Handle::x_RemoveReference(void)
 #ifdef _DEBUG
     x_Deregister();
 #endif
-    if ( m_Info->m_Counter.Add(-1) == 0 ) {
-        x_RemoveLastReference();
-    }
+    m_Info->RemoveReference();
 }
 
 
@@ -330,6 +352,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/01/07 20:42:00  grichenk
+* Fixed matching of accession to accession.version
+*
 * Revision 1.19  2003/11/26 17:55:54  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

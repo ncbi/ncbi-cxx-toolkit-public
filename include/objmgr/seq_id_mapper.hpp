@@ -92,7 +92,8 @@ private:
     
     friend class CSafeStaticRef<CSeq_id_Mapper>;
     friend class CSeq_id_Handle;
-    
+    friend class CSeq_id_Info;
+
     // References to each handle must be tracked to re-use their values
     // Each CSeq_id_Handle locks itself in the constructor and
     // releases in the destructor.
@@ -144,6 +145,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/01/07 20:42:00  grichenk
+* Fixed matching of accession to accession.version
+*
 * Revision 1.19  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
