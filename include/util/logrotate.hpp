@@ -49,8 +49,8 @@ class CRotatingLogStream;
 class NCBI_XUTIL_EXPORT CRotatingLogStreamBuf : public CNcbiFilebuf {
 public:
     CRotatingLogStreamBuf(CRotatingLogStream* stream, const string& filename,
-                          CT_OFF_TYPE limit, IOS_BASE::openmode mode);
-    void Rotate(void);
+                          CNcbiStreamoff limit, IOS_BASE::openmode mode);
+    CNcbiStreamoff Rotate(void); // returns number of bytes in old log
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c = CT_EOF);
@@ -59,8 +59,8 @@ protected:
 private:
     CRotatingLogStream* m_Stream;
     string              m_FileName;
-    CT_POS_TYPE         m_Size;
-    CT_OFF_TYPE         m_Limit; // in bytes
+    CNcbiStreampos      m_Size;
+    CNcbiStreamoff      m_Limit; // in bytes
     IOS_BASE::openmode  m_Mode;
 };
 
@@ -69,7 +69,7 @@ class NCBI_XUTIL_EXPORT CRotatingLogStream : public CNcbiOstream {
 public:
     // limit is approximate; the actual length may exceed it by a buffer's
     // worth of characters.
-    CRotatingLogStream(const string& filename, CT_OFF_TYPE limit,
+    CRotatingLogStream(const string& filename, CNcbiStreamoff limit,
                        openmode mode = app | ate | out)
         : CNcbiOstream(new CRotatingLogStreamBuf(this, filename, limit, mode))
         { }
@@ -79,8 +79,7 @@ public:
     // Users may call this explicitly to rotate on some basis other
     // than size (such as time since last rotation or a signal from
     // some external process).
-    void Rotate(void)
-        { flush(); dynamic_cast<CRotatingLogStreamBuf*>(rdbuf())->Rotate(); }
+    CNcbiStreamoff Rotate(void); // returns number of bytes in old log
 
 protected:
     // Specifies how to rename old logs.  Returning an empty string
@@ -98,6 +97,14 @@ protected:
 };
 
 
+inline
+CNcbiStreamoff CRotatingLogStream::Rotate(void)
+{
+    flush();
+    return dynamic_cast<CRotatingLogStreamBuf*>(rdbuf())->Rotate();
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -108,6 +115,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/09/01 15:45:25  ucko
+* Use more appropriate typedefs (CNcbiStreamfoo, not CT_FOO_TYPE).
+* Rotate now indicates how much data it rotated.
+*
 * Revision 1.6  2004/02/19 22:57:53  ucko
 * Accommodate stricter implementations of CT_POS_TYPE.
 *
