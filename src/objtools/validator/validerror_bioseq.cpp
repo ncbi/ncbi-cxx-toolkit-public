@@ -3290,8 +3290,9 @@ void CValidError_bioseq::ValidateMinValues(const CByte_graph& graph)
 void CValidError_bioseq::ValidateMaxValues(const CByte_graph& graph)
 {
     char max = graph.GetMax();
-    if ( max < 0  ||  max > 100 ) {
-        PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphMax, 
+    if ( max <= 0  ||  max > 100 ) {
+        EDiagSev sev = (max <= 0) ? eDiag_Error : eDiag_Warning;
+        PostErr(sev, eErr_SEQ_GRAPH_GraphMax, 
             "Graph max (" + NStr::IntToString(max) + ") out of range",
             graph);
     }
@@ -3556,6 +3557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2004/03/31 18:37:40  shomrat
+* Report GraphMax > 100 at WARNING level, <= 0 at ERROR level
+*
 * Revision 1.66  2004/03/25 18:33:07  shomrat
 * + ValidatemRNABioseqContext()
 *
