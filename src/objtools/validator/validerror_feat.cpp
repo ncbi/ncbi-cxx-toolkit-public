@@ -38,6 +38,7 @@
 #include <serial/serialbase.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -111,8 +112,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     }
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    const CBioseq* seq = bsh ? &bsh.GetBioseq() : 0;
-    m_Imp.ValidateSeqLoc(feat.GetLocation(), seq, "Location", feat);
+    m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, "Location", feat);
     
     if ( feat.CanGetProduct() ) {
         ValidateSeqFeatProduct(feat.GetProduct(), feat);
@@ -196,7 +196,7 @@ static bool s_IsLocRefSeqMrna(const CSeq_loc& loc, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     if ( bsh ) {
-        ITERATE (CBioseq::TId, it, bsh.GetBioseq().GetId()) {
+        ITERATE (CBioseq::TId, it, bsh.GetBioseqCore()->GetId()) {
             if ( (*it)->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna ) {
                 return true;
             }
@@ -211,7 +211,7 @@ static bool s_IsLocGEDL(const CSeq_loc& loc, CScope& scope)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     if ( bsh ) {
-        ITERATE (CBioseq::TId, it, bsh.GetBioseq().GetId()) {
+        ITERATE (CBioseq::TId, it, bsh.GetBioseqCore()->GetId()) {
             CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
             if ( acc_info == CSeq_id::eAcc_gb_embl_ddbj  ||
                  acc_info == CSeq_id::eAcc_local ) {
@@ -295,8 +295,7 @@ void CValidError_feat::ValidateSeqFeatProduct
 (const CSeq_loc& prod, const CSeq_feat& feat)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-    const CBioseq* seq = bsh ? &bsh.GetBioseq() : 0;
-    m_Imp.ValidateSeqLoc(feat.GetProduct(), seq, "Product", feat);
+    m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh, "Product", feat);
     
     if ( IsOneBioseq(prod, m_Scope) ) {
         const CSeq_id& sid = GetId(prod, m_Scope);
@@ -860,7 +859,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
             // get the label. if m_SuppressContext flag in true, 
             // get the worst label.
-            const CBioseq& bsq = bsh.GetBioseq();
+            const CBioseq& bsq = *bsh.GetCompleteBioseq();
             bsq.GetLabel(&label, CBioseq::eContent, m_Imp.IsSuppressContext());
 
             last_id = &seq_id;
@@ -1687,10 +1686,10 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
     CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( nuc ) {
-        const CSeq_entry* prod_nps = 
-            m_Imp.GetAncestor(prod.GetBioseq(), CBioseq_set::eClass_nuc_prot);
-        const CSeq_entry* nuc_nps = 
-            m_Imp.GetAncestor(nuc.GetBioseq(), CBioseq_set::eClass_nuc_prot);
+        CSeq_entry_Handle prod_nps = 
+            prod.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+        CSeq_entry_Handle nuc_nps = 
+            nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
 
         if ( (prod_nps != nuc_nps)  &&  (!m_Imp.IsNT())  &&  (!m_Imp.IsGPS()) ) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
@@ -1698,12 +1697,12 @@ void CValidError_feat::ValidateCommonCDSProduct
                 feat);
         }
     }
-    CConstRef<CSeq_feat> sfp = m_Imp.GetCDSGivenProduct(prod.GetBioseq());
-    if ( !sfp ) {
+    const CSeq_feat* sfp = GetCDSForProduct(prod);
+    if ( sfp == 0 ) {
         return;
     }
     
-    if ( &feat != sfp.GetPointer() ) {
+    if ( &feat != sfp ) {
         // if genomic product set, with one cds on contig and one on cdna,
         // do not report.
         if ( m_Imp.IsGPS() ) {
@@ -2673,6 +2672,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/04/23 16:27:09  shomrat
+* Stop using CBioseq_Handle deprecated interface
+*
 * Revision 1.53  2004/04/05 15:56:15  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

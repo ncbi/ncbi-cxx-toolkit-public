@@ -1495,7 +1495,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
             }
 
             string plbl;
-            const CBioseq* nuc = GetNucGivenProt(seq);
+            const CBioseq* nuc = GetNucleotideParent(seq, m_Scope);
             if ( nuc ) {
                 nuc->GetLabel(&plbl, CBioseq::eContent);
             }
@@ -1519,12 +1519,13 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
 // Assumes seq is eRepr_seg or eRepr_ref
 void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
 {
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     const CSeq_inst& inst = seq.GetInst();
 
     // Validate extension data -- wrap in CSeq_loc_mix for convenience
     CSeq_loc loc;
     if ( GetLocFromSeq(seq, &loc) ) {
-        m_Imp.ValidateSeqLoc(loc, &seq, "Segmented Bioseq", seq);
+        m_Imp.ValidateSeqLoc(loc, bsh, "Segmented Bioseq", seq);
     }
 
     // Validate Length
@@ -2109,7 +2110,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             switch ( ftype ) {
             case CSeqFeatData::e_Prot:
                 {
-                    TSeqPos len = bsh.GetBioseq().GetInst().GetLength();
+                    TSeqPos len = bsh.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
                     CSeq_loc::TRange range = fi->GetLocation().GetTotalRange();
                     
                     if ( range.IsWhole()  ||
@@ -2948,20 +2949,6 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
 }
 
 
-const CBioseq* CValidError_bioseq::GetNucGivenProt(const CBioseq& prot)
-{
-    CConstRef<CSeq_feat> cds = m_Imp.GetCDSGivenProduct(prot);
-    if ( cds ) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(cds->GetLocation());
-        if ( bsh ) {
-            return &(bsh.GetBioseq());
-        }
-    }
-
-    return 0;
-}
-
-
 void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 {
     const CSeq_id*  gb_id = 0,
@@ -3570,6 +3557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2004/04/23 16:27:00  shomrat
+* Stop using CBioseq_Handle deprecated interface
+*
 * Revision 1.71  2004/04/23 13:41:33  shomrat
 * InternalNsInSeqLit gives more informative message
 *

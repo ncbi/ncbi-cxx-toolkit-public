@@ -1040,16 +1040,18 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
 {
     CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
     const CSeq_entry& se = bsh.GetTopLevelSeqEntry();
-    const CBioseq& bsq = bsh.GetBioseq();
 
-    if ( bsq.GetInst().GetRepr() == CSeq_inst::eRepr_delta ) {
-        if ( !IsClassInEntry(se, CBioseq_set::eClass_nuc_prot) ) {
-            return true;
+    if ( bsh.IsSetInst_Repr() ) {
+        CBioseq_Handle::TInst::TRepr repr = bsh.GetInst_Repr();
+        if ( repr == CSeq_inst::eRepr_delta ) {
+            if ( !IsClassInEntry(se, CBioseq_set::eClass_nuc_prot) ) {
+                return true;
+            }
         }
-    }
-    if ( bsq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
-        if ( !IsClassInEntry(se, CBioseq_set::eClass_parts) ) {
-            return true;
+        if ( repr == CSeq_inst::eRepr_seg ) {
+            if ( !IsClassInEntry(se, CBioseq_set::eClass_parts) ) {
+                return true;
+            }
         }
     }
     
@@ -1138,6 +1140,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/04/23 16:24:53  shomrat
+* Stop using CBioseq_Handle deprecated interface
+*
 * Revision 1.18  2003/11/12 20:30:23  shomrat
 * added East Timor to the legal country codes
 *

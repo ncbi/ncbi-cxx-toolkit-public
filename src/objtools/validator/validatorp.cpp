@@ -1125,10 +1125,18 @@ void CValidError_imp::ValidateDbxref
  const CSerialObject& obj,
  bool biosource)
 {
+    if ( !xref.CanGetDb() ) {
+        return;
+    }
     const string& db = xref.GetDb();
+    CDbtag::EDbtagType db_type = xref.GetType();
+    bool is_pid = db_type == CDbtag::eDbtagType_PID   ||
+                  db_type == CDbtag::eDbtagType_PIDd  ||
+                  db_type == CDbtag::eDbtagType_PIDe  ||
+                  db_type == CDbtag::eDbtagType_PIDg;
+
     if ( biosource ) {
-        if ( !xref.IsApproved()  ||
-            db == "PIDe"  ||  db == "PIDd"  ||  db == "PIDg"  ||  db == "PID" ) {
+        if ( !xref.IsApproved() || is_pid ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
                 "Illegal db_xref type " + db, obj);
         }
@@ -1137,11 +1145,17 @@ void CValidError_imp::ValidateDbxref
         if ( feat != 0 ) {
             bool is_cdregion = 
                 feat->CanGetData()  &&  feat->GetData().IsCdregion();
-            if ( !xref.IsApproved(IsRefSeq())  ||
-                (!is_cdregion  &&  
-                (db == "PIDe"  ||  db == "PIDd"  ||  db == "PIDg"  ||  db == "PID")) ) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                    "Illegal db_xref type " + db, obj);
+            bool refseq = IsRefSeq();
+            if ( !xref.IsApproved(refseq)  ||  (!is_cdregion  &&  is_pid) ) {
+                const char* legal = xref.IsApprovedNoCase(refseq);
+                if ( legal != 0 ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                        "Illegal db_xref type " + db +
+                        ", legal capitalization is " + legal, obj);
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                        "Illegal db_xref type " + db, obj);
+                }
             }
         }
     }
@@ -1416,15 +1430,12 @@ void CValidError_imp::ValidateCitSub
 
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
- const CBioseq*  seq,
+ const CBioseq_Handle&  seq,
  const string&   prefix,
  const CSerialObject& obj)
 {
     bool circular = false;
-    if ( seq &&  seq->GetInst().IsSetTopology() ) {
-        circular =
-            seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
-    }
+    circular = seq  &&  seq.GetInst_Topology() == CSeq_inst::eTopology_circular;
     
     bool ordered = true, adjacent = false, chk = true,
         unmarked_strand = false, mixed_strand = false;
@@ -1606,12 +1617,14 @@ void CValidError_imp::ValidateSeqLoc
         return;
     }
 
-    if ( seq  &&  seq->GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
+    if ( seq  &&
+         seq.IsSetInst_Repr()  &&
+         seq.GetInst_Repr() != CSeq_inst::eRepr_seg ) {
         return;
     }
 
     // Check for intervals out of order on segmented Bioseq
-    if ( seq  &&  BadSeqLocSortOrder(*seq, loc, m_Scope) ) {
+    if ( seq  &&  BadSeqLocSortOrder(*seq.GetCompleteBioseq(), loc, m_Scope) ) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
         }
@@ -2436,6 +2449,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/04/23 16:25:30  shomrat
+* Stop using CBioseq_Handle deprecated interface
+*
 * Revision 1.47  2004/04/05 15:56:15  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

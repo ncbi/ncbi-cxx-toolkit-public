@@ -34,6 +34,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objmgr/graph_ci.hpp>
 #include "validatorp.hpp"
 
 
@@ -67,17 +68,9 @@ bool s_FindGraph(const CSeq_graph& graph, CBioseq_Handle& bsh)
         return false;
     }
 
-    const CBioseq& seq = bsh.GetBioseq();
-
-    ITERATE (CBioseq::TAnnot, annot_it, seq.GetAnnot()) {
-        if ( !(*annot_it)->CanGetData()  ||  !(*annot_it)->GetData().IsGraph() ) {
-            continue;
-        }
-
-        ITERATE(CSeq_annot::C_Data::TGraph, graph_it, (*annot_it)->GetData().GetGraph()) {
-            if ( (*graph_it) == &graph ) {
-                return true;
-            }
+    for ( CGraph_CI it(bsh, 0, 0); it; ++it ) {
+        if ( &graph == &(it->GetOriginalGraph()) ) {
+            return true;
         }
     }
 
@@ -111,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/23 16:27:21  shomrat
+* Stop using CBioseq_Handle deprecated interface
+*
 * Revision 1.4  2003/12/17 19:16:57  shomrat
 * Implemented test for graph packaging test
 *
