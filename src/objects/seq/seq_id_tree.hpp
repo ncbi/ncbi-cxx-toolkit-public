@@ -583,7 +583,7 @@ private:
 
 
 // Seq-id mapper exception
-class NCBI_XOBJMGR_EXPORT CIdMapperException : public CException
+class NCBI_SEQ_EXPORT CIdMapperException : public CException
 {
 public:
     enum EErrCode {
@@ -609,6 +609,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/07/12 18:17:31  grichenk
+* Fixed export macro
+*
 * Revision 1.8  2004/07/12 17:23:48  grichenk
 * Fixed export name
 *
