@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -98,7 +98,8 @@ MolInfo ::= SEQUENCE {
         peptide (8) ,
         other-genetic (9) ,      -- other genetic material
         genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
-	cRNA (11) ,              -- viral RNA genome copy intermediate
+        cRNA (11) ,              -- viral RNA genome copy intermediate
+        snoRNA (12) ,            -- small nucleolar RNA
         other (255) } DEFAULT unknown ,
     tech INTEGER {
         unknown (0) ,
@@ -118,9 +119,9 @@ MolInfo ::= SEQUENCE {
         htgs-1 (14) ,           -- unordered High Throughput sequence contig
         htgs-2 (15) ,           -- ordered High Throughput sequence contig
         htgs-3 (16) ,           -- finished High Throughput sequence
-	fli-cdna (17) ,         -- full length insert cDNA
-	htgs-0 (18) ,           -- single genomic reads for coordination
-	htc (19) ,              -- high throughput cDNA
+        fli-cdna (17) ,         -- full length insert cDNA
+        htgs-0 (18) ,           -- single genomic reads for coordination
+        htc (19) ,              -- high throughput cDNA
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
@@ -232,7 +233,7 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
 		no-target (3) }         -- nothing specified (EMBL)
 		DEFAULT seq }
 
-Heterogen ::= VisibleString       -- cofactor, prosthetic group, inibitor, etc
+Heterogen ::= VisibleString       -- cofactor, prosthetic group, inhibitor, etc
 
 --*** Instances of sequences *******************************
 --*

@@ -1,4 +1,4 @@
---$Revision: 6.4 $
+--$Revision: 6.5 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -52,7 +52,7 @@ Seq-feat ::= SEQUENCE {
         experimental (1) ,        -- any reasonable experimental check
         not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
     xref SET OF SeqFeatXref OPTIONAL ,   -- cite other relevant features
-	dbxref SET OF Dbtag OPTIONAL ,  -- support for xref to other databases
+    dbxref SET OF Dbtag OPTIONAL ,  -- support for xref to other databases
     pseudo BOOLEAN OPTIONAL ,     -- annotated on pseudogene?
     except-text VisibleString OPTIONAL } -- explain if except=TRUE
 
@@ -112,7 +112,7 @@ SeqFeatData ::= CHOICE {
     het Heterogen ,         -- cofactor, prosthetic grp, etc, bound to seq
     biosrc BioSource }
 
-SeqFeatXref ::= SEQUENCE {		 -- both optional because can have one or both
+SeqFeatXref ::= SEQUENCE {       -- both optional because can have one or both
     id Feat-id OPTIONAL ,        -- the feature copied
     data SeqFeatData OPTIONAL }  -- the specific data
     
@@ -233,13 +233,14 @@ RNA-ref ::= SEQUENCE {
         rRNA (4) ,
         snRNA (5) ,
         scRNA (6) ,
+        snoRNA (7) ,
         other (255) } ,
     pseudo BOOLEAN OPTIONAL ,  
     ext CHOICE {
         name VisibleString ,        -- for naming "other" type
         tRNA Trna-ext } OPTIONAL }  -- for tRNAs
 
-Trna-ext ::= SEQUENCE {                -- tRNA feature extensions
+Trna-ext ::= SEQUENCE {                 -- tRNA feature extensions
     aa CHOICE {                         -- aa this carries
         iupacaa INTEGER ,
         ncbieaa INTEGER ,
@@ -271,13 +272,13 @@ IMPORTS Dbtag FROM NCBI-General;
 --*
 
 Gene-ref ::= SEQUENCE {
-    locus VisibleString OPTIONAL ,     -- Official gene symbol
-    allele VisibleString OPTIONAL ,    -- Official allele designation
-    desc VisibleString OPTIONAL ,      -- descriptive name
-    maploc VisibleString OPTIONAL ,    -- descriptive map location
-    pseudo BOOLEAN DEFAULT FALSE ,          -- pseudogene
-    db SET OF Dbtag OPTIONAL ,      -- ids in other dbases
-    syn SET OF VisibleString OPTIONAL }      -- synonyms for locus
+    locus VisibleString OPTIONAL ,        -- Official gene symbol
+    allele VisibleString OPTIONAL ,       -- Official allele designation
+    desc VisibleString OPTIONAL ,         -- descriptive name
+    maploc VisibleString OPTIONAL ,       -- descriptive map location
+    pseudo BOOLEAN DEFAULT FALSE ,        -- pseudogene
+    db SET OF Dbtag OPTIONAL ,            -- ids in other dbases
+    syn SET OF VisibleString OPTIONAL }   -- synonyms for locus
 
 END
 
@@ -325,7 +326,7 @@ OrgName ::= SEQUENCE {
     lineage VisibleString OPTIONAL ,       -- lineage with semicolon separators
     gcode INTEGER OPTIONAL ,               -- genetic code (see CdRegion)
     mgcode INTEGER OPTIONAL ,              -- mitochondrial genetic code
-	div VisibleString OPTIONAL }           -- GenBank division code
+    div VisibleString OPTIONAL }           -- GenBank division code
     
 
 OrgMod ::= SEQUENCE {
@@ -350,17 +351,17 @@ OrgMod ::= SEQUENCE {
         acronym (19) ,
         dosage (20) ,		-- chromosome dosage of hybrid
         nat-host (21) ,		-- natural host of this specimen
-	sub-species (22) ,
+        sub-species (22) ,
         specimen-voucher (23) ,
-	authority (24) ,
-	forma (25) ,
-	forma-specialis (26) ,
-	ecotype (27) ,
-	synonym (28) ,
-	anamorph (29) ,
-	teleomorph (30) ,
-	breed (31) ,
-	old-lineage (253) ,
+        authority (24) ,
+        forma (25) ,
+        forma-specialis (26) ,
+        ecotype (27) ,
+        synonym (28) ,
+        anamorph (29) ,
+        teleomorph (30) ,
+        breed (31) ,
+        old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
     subname VisibleString ,
@@ -423,15 +424,15 @@ BioSource ::= SEQUENCE {
         plasmid (9) ,
         transposon (10) ,
         insertion-seq (11) ,
-	cyanelle (12) ,
-	proviral (13) ,
-	virion (14) ,
-	nucleomorph (15) ,
-	apicoplast (16) ,
-	leucoplast (17) ,
-	proplastid (18) ,
-	endogenous-virus (19)
-	 } DEFAULT unknown ,
+        cyanelle (12) ,
+        proviral (13) ,
+        virion (14) ,
+        nucleomorph (15) ,
+        apicoplast (16) ,
+        leucoplast (17) ,
+        proplastid (18) ,
+        endogenous-virus (19)
+      } DEFAULT unknown ,
                                        -- 4 more genome values coming
                                        -- nucleomorph (15)
                                        -- apicoplast (16)
@@ -440,7 +441,7 @@ BioSource ::= SEQUENCE {
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
-      natmut (2) ,                     -- naturally occuring mutant
+      natmut (2) ,                     -- naturally occurring mutant
       mut (3) ,                        -- artificially mutagenized
       artificial (4) ,                 -- artificially engineered
       synthetic (5) ,                  -- purely synthetic
@@ -473,9 +474,9 @@ SubSource ::= SEQUENCE {
         transposon-name (20) ,
         insertion-seq-name (21) ,
         plastid-name (22) ,
-	country (23) ,
-	segment (24) ,
-	endogenous-virus-name (25) ,
+        country (23) ,
+        segment (24) ,
+        endogenous-virus-name (25) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
@@ -512,8 +513,8 @@ Prot-ref ::= SEQUENCE {
        not-set (0) ,
        preprotein (1) ,
        mature (2) ,
-	   signal-peptide (3) ,
-	   transit-peptide (4) } DEFAULT not-set }
+       signal-peptide (3) ,
+       transit-peptide (4) } DEFAULT not-set }
 
 
 
