@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.235 2003/11/14 19:15:51 ucko Exp $
+#  $Id: configure.ac,v 1.236 2003/11/14 19:29:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3387,8 +3387,6 @@ if test "$with_internal" = "no"  -o  ! -f ${srcdir}/src/internal/Makefile.in \
    NoConfProjects="$NoConfProjects internal"
    internal=
 else
-   OPT_GROUPS="$OPT_GROUPS internal"
-   internal="internal"
    reason=""
    sep=
    if test "$with_sybase" = "no"; then
@@ -3412,7 +3410,15 @@ else
          AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
       else
          AC_MSG_WARN(["--with-internal:  Cannot build all INTERNAL projects: missing $reason"])
+         OPT_GROUPS="$OPT_GROUPS internal"
+         internal="internal"
       fi
+   elif test -n "$reason"; then
+      NoConfProjects="$NoConfProjects internal"
+      internal=
+   else
+      OPT_GROUPS="$OPT_GROUPS internal"
+      internal="internal"
    fi
 fi
 

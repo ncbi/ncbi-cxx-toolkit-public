@@ -14174,8 +14174,6 @@ if test "$with_internal" = "no"  -o  ! -f ${srcdir}/src/internal/Makefile.in \
    NoConfProjects="$NoConfProjects internal"
    internal=
 else
-   OPT_GROUPS="$OPT_GROUPS internal"
-   internal="internal"
    reason=""
    sep=
    if test "$with_sybase" = "no"; then
@@ -14202,7 +14200,15 @@ echo "$as_me: error: \"--with-internal:  Cannot build INTERNAL projects: missing
       else
          { echo "$as_me:$LINENO: WARNING: \"--with-internal:  Cannot build all INTERNAL projects: missing $reason\"" >&5
 echo "$as_me: WARNING: \"--with-internal:  Cannot build all INTERNAL projects: missing $reason\"" >&2;}
+         OPT_GROUPS="$OPT_GROUPS internal"
+         internal="internal"
       fi
+   elif test -n "$reason"; then
+      NoConfProjects="$NoConfProjects internal"
+      internal=
+   else
+      OPT_GROUPS="$OPT_GROUPS internal"
+      internal="internal"
    fi
 fi
 
