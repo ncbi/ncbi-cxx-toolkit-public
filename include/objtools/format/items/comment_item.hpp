@@ -64,7 +64,21 @@ public:
         eModel,
         eUser
     };
-    typedef EType TType;
+
+    enum ERefTrackStatus {
+        eRefTrackStatus_Unknown,
+        eRefTrackStatus_Inferred,
+        eRefTrackStatus_Provisional,
+        eRefTrackStatus_Predicted,
+        eRefTrackStatus_Validated,
+        eRefTrackStatus_Reviewd,
+        eRefTrackStatus_Model,
+        eRefTrackStatus_WGS
+    };
+
+    // typedefs
+    typedef EType           TType;
+    typedef ERefTrackStatus TRefTrackStatus;
 
     CCommentItem(CFFContext& ctx);
     CCommentItem(const string& comment, CFFContext& ctx,
@@ -81,12 +95,16 @@ public:
 
     static string GetStringForTPA(const CUser_object& uo, CFFContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
-    static string GetStatusForRefTrack(const CUser_object& uo);
+    static string GetStringForRefTrack(const CUser_object& uo);
     static bool NsAreGaps(const CBioseq& seq, CFFContext& ctx);
     static string GetStringForWGS(CFFContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CFFContext& ctx);
     static string GetStringForHTGS(const CMolInfo& mi, CFFContext& ctx);
     static string GetStringForModelEvidance(const SModelEvidance& me);
+    static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
+        string* st = 0);
+
+    static void ResetFirst(void) { sm_FirstComment = true; }
 
 protected:
 
@@ -99,7 +117,6 @@ protected:
         const string& suffix);
     string& x_GetComment(void) { return m_Comment; }
     void x_SetSkip(void);
-
 
 private:
     static bool sm_FirstComment; 
@@ -163,6 +180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/05 18:48:13  shomrat
+* fixed RefTrack comments
+*
 * Revision 1.1  2003/12/17 19:45:14  shomrat
 * Initial revision (adapted from flat lib)
 *
