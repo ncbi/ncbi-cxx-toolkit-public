@@ -328,13 +328,13 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     /* path (NB: can be relative) */
     if (s != url || *s == '/' || !(p = strrchr(info->path, '/'))) {
         /* absolute path */
-        p = info->path - 1;
+        p = info->path;
         if (!*s) {
             s = "/";   /* in case of an empty path we take the root '/' */
             a = s + 1;
         }
-    }
-    p++;
+    } else
+        p++;
     if ((size_t)(a - s) < sizeof(info->path) - (size_t)(p - info->path)) {
         memcpy(p, s, (size_t)(a - s));
         p[(size_t)(a - s)] = '\0';
@@ -1183,6 +1183,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2002/09/24 18:08:34  lavr
+ * Avoid compiler warning in positioning on first but one array element
+ *
  * Revision 6.36  2002/08/12 15:12:01  lavr
  * Use persistent SOCK_Write()
  *
