@@ -228,7 +228,6 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
          if (next_mask_slp && (next_mask_slp->index == index)) {
             mask_slp = next_mask_slp;
             next_mask_slp = mask_slp->next;
-            mask_slp->next = NULL;
          } else {
             mask_slp = NULL;
          }
