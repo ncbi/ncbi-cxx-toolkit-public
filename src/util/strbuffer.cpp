@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/05/10 14:51:13  gouriano
+* Work with unsigned number (division/modulus ops) when writing an integer
+*
 * Revision 1.39  2003/12/31 20:51:33  gouriano
 * added possibility to seek (when possible) in CByteSourceReader
 *
@@ -810,14 +813,15 @@ void COStreamBuffer::PutInt4(Int4 v)
         *--pos = '0';
     }
     else {
+        Uint4 uv = v;
         bool sign = v < 0;
         if ( sign )
-            v = -v;
+            uv = -v;
         
         do {
-            *--pos = char('0' + (v % 10));
-            v /= 10;
-        } while ( v );
+            *--pos = char('0' + (uv % 10));
+            uv /= 10;
+        } while ( uv );
         
         if ( sign )
             *--pos = '-';
