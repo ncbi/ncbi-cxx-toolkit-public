@@ -231,7 +231,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  *
  * This call utilizes eIO_Read timeout as set by CONN_SetTimeout().
  */
-extern EIO_Status CONN_ReadLine
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
 (CONN    conn,
  char*   line,
  size_t  size,
@@ -326,6 +326,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2004/05/24 19:58:29  lavr
+ * +NCBI_XCONNECT_EXPORT for CONN_ReadLine()
+ *
  * Revision 6.18  2004/05/24 19:53:30  lavr
  * +CONN_ReadLine()
  *
