@@ -241,9 +241,7 @@ CDllResolver::CDllResolver(const vector<string>& entry_point_names)
 
 CDllResolver::~CDllResolver()
 {
-    NON_CONST_ITERATE(TEntries, it, m_ResolvedEntries) {
-        delete it->dll;
-    }
+    Unload();
 }
 
 bool CDllResolver::TryCandidate(const string& file_name)
@@ -278,12 +276,24 @@ bool CDllResolver::TryCandidate(const string& file_name)
     return true;
 }
 
+void CDllResolver::Unload()
+{
+    NON_CONST_ITERATE(TEntries, it, m_ResolvedEntries) {
+        delete it->dll;
+    }
+    m_ResolvedEntries.resize(0);    
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/11/12 17:40:54  kuznets
+ * + CDllResolver::Unload()
+ *
  * Revision 1.14  2003/11/10 15:28:46  kuznets
  * Fixed misprint
  *

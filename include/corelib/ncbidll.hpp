@@ -273,7 +273,8 @@ public:
         CDll*    dll;           ///! Loaded DLL instance
         void*    entry_point;   ///! Entry point pointer
 
-        SResolvedEntry(CDll* dll_ptr, void* entry_point_ptr)
+        SResolvedEntry(CDll* dll_ptr = 0, 
+                       void* entry_point_ptr = 0)
         : dll(dll_ptr), 
           entry_point(entry_point_ptr)
         {}
@@ -354,6 +355,9 @@ public:
         return m_ResolvedEntries; 
     }
 
+    /// Unload all resolved DLLs
+    void Unload();
+
 private:
     CDllResolver(const CDllResolver&);
     CDllResolver& operator=(const CDllResolver&);
@@ -373,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/11/12 17:40:36  kuznets
+ * + CDllResolver::Unload()
+ *
  * Revision 1.16  2003/11/10 15:28:24  kuznets
  * Fixed misprint
  *
