@@ -31,8 +31,10 @@
  * Search-related options for remote_blast.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include "search_opts.hpp"
@@ -232,6 +234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/11/02 17:53:02  camacho
+ * Add SKIP_DOXYGEN_PROCESSING to rcsid string
+ *
  * Revision 1.7  2004/06/21 16:36:31  bealer
  * - Adjust scope usage for doxygen's sake.
  *

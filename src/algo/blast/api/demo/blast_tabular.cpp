@@ -31,7 +31,9 @@
 /// @file: blast_tabular.cpp
 /// C++ implementation of the on-the-fly tabular formatting of BLAST results. 
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/core/blast_util.h>
@@ -271,6 +273,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/11/02 17:53:02  camacho
+* Add SKIP_DOXYGEN_PROCESSING to rcsid string
+*
 * Revision 1.8  2004/10/06 14:58:49  dondosha
 * Use IBlastSeqInfoSrc interface for Seq-ids and lengths retrieval in tabular formatting thread
 *

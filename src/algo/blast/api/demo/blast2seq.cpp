@@ -31,8 +31,10 @@
  * Main driver for blast2sequences C++ interface
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -510,6 +512,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/11/02 17:53:02  camacho
+ * Add SKIP_DOXYGEN_PROCESSING to rcsid string
+ *
  * Revision 1.53  2004/10/26 19:22:41  dondosha
  * Set strand to both in query Seq-locs for tblastx
  *

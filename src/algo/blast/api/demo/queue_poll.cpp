@@ -34,7 +34,7 @@
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
-#endif
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 
@@ -589,6 +589,9 @@ QueueAndPoll(string                program,       ///< program name
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/11/02 17:53:02  camacho
+ * Add SKIP_DOXYGEN_PROCESSING to rcsid string
+ *
  * Revision 1.13  2004/11/01 18:25:15  coulouri
  * doxygen fixes
  *
