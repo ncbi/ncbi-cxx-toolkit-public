@@ -42,21 +42,51 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CAnnot_CI --
+///
+///  Searche individual features, alignments and graphs related to 
+///  the specified bioseq or location
+///
+
 class NCBI_XOBJMGR_EXPORT CAnnot_CI : public CAnnotTypes_CI
 {
 public:
+    /// Create an empty iterator
     CAnnot_CI(void);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given seq-loc based on selection
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CAnnot_CI(CScope& scope, const CSeq_loc& loc,
               const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given bioseq based on selection
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               const SAnnotSelector& sel);
-    // Search all TSEs in all datasources
+
+    /// Create an iterator that enumerates CSeq_annot objects
+    /// from all TSEs in all datasources
     CAnnot_CI(CScope& scope, const CSeq_loc& loc,
               SAnnotSelector::EOverlapType overlap_type
               = SAnnotSelector::eOverlap_Intervals,
               SAnnotSelector::EResolveMethod resolve
               = SAnnotSelector::eResolve_TSE);
-    // Search only in TSE, containing the bioseq
+
+    /// Create an iterator that enumerates CSeq_annot objects
+    /// from the only TSE that contains the bioseq
     CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               SAnnotSelector::EOverlapType overlap_type
               = SAnnotSelector::eOverlap_Intervals,
@@ -64,13 +94,21 @@ public:
               = SAnnotSelector::eResolve_TSE);
 
     // Iterate all features from the object regardless of their location
+
+    /// Create an iterator that enumerates CSeq_annot objects
+    /// from the annotation regardless of their location
     CAnnot_CI(const CAnnot_CI& iter);
     virtual ~CAnnot_CI(void);
 
     CAnnot_CI& operator= (const CAnnot_CI& iter);
 
+    /// Move to the next object in iterated sequence
     CAnnot_CI& operator++ (void);
+
+    /// Move to the pervious object in iterated sequence
     CAnnot_CI& operator-- (void);
+
+    /// Check if iterator points to an object
     operator bool (void) const;
 
     CSeq_annot_Handle& operator*(void) const;
@@ -133,12 +171,18 @@ CSeq_annot_Handle* CAnnot_CI::operator->(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/10/01 14:36:44  kononenk
+* Added doxygen formatting
+*
 * Revision 1.27  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
