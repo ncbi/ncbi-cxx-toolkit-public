@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.38 2003/09/22 20:14:58 kholodov Exp $
+-- $Id: docsum.asn,v 1.39 2003/10/15 14:24:33 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.39  2003/10/15 14:24:33  kholodov
+-- Modified: sequences now optional for NSE-rs
+--
 -- Revision 1.38  2003/09/22 20:14:58  kholodov
 -- Added: copyright notice
 --
@@ -323,8 +326,8 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	update-build INTEGER,			-- latest build number when the cluster was updated
 	observed VisibleString,			-- list of all alleles observed in ss-list members, correcting for reverse
 						-- complementation of memebers reported in reverse orientation
-	seq-5 SEQUENCE OF VisibleString,	-- 5' sequence that flanks the variation
-	seq-3 SEQUENCE OF VisibleString,	-- 3' sequence that flanks the variation
+	seq-5 SEQUENCE OF VisibleString OPTIONAL,	-- 5' sequence that flanks the variation
+	seq-3 SEQUENCE OF VisibleString OPTIONAL,	-- 3' sequence that flanks the variation
 						-- all sequences are in forward orientation, complete sequence
 						-- lower case letters indicate repetetitive or low-complexity sequence by RepeatMasker
 						-- flanking sequence is reported in strings of 255 b.p. and multiple strings
