@@ -11,7 +11,7 @@
   	      <ul>
 	        <li><a href="#introduction"> <i>Introduction</i></a> 
 	        <li>The <a href="#ctypeinfo"> <i>CTypeInfo</i></a> class
-	        <li>The <a href="#cobjinfo"> <i>CObjectInfo</i></a> class
+	        <li>The <a href="#cobjinfo"> <i>CObjectInfo</i> and <i>CConstObjectInfo</i></a> classes
 	        <li>The <a href="#objstrs"> <i>CObject[IO]Stream</i></a> classes
 	        <li><a href="#macros"> Preprocessor macros for specifying type information </a>
 	      </ul>
@@ -53,7 +53,11 @@ implement a static <i>GetTypeInfo()</i> method. A set of preprocessor <a href="#
 is available, which greatly simplifies this effort. A pre-requisite to using these macros however,
 is that the class definition must include the following line:<p>
 
-<center><pre>static const CTypeInfo* GetTypeInfo(void);
+<center><pre>DECLARE_INTERNAL_TYPE_INFO();
+</pre></center>
+This pre-processor macro will generate the following in-line statement in the class definition:
+
+<center><pre>static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);
 </pre></center>
 
 Only C++ <i>class</i> (or <i>struct</i>) objects can have methods, and therefore additional
@@ -153,7 +157,7 @@ The <i>CObjectInfo</i> object (<i>info</i>) will contain pointers to <i>myObj</i
 
 <font color="#000080"><pre>
      string myName, myValue;
-     CObjectInfo::TMemberIndex MemberIdx;
+     TMemberIndex MemberIdx;
 
      while (!is.eof()) {
 
@@ -161,7 +165,7 @@ The <i>CObjectInfo</i> object (<i>info</i>) will contain pointers to <i>myObj</i
 
          MemberIdx = info.FindMember(RemoveDelimiter(myName, ':'));
 
-         if (MemberIdx == -1) {
+         if (MemberIdx == kInvalidMember) {
 
             // generate an error message and exit
 
@@ -254,13 +258,13 @@ symbolic name of the struct to the prefix <i>GetTypeInfo_struct_</i>. Similarly,
 implement global type information functions for C++ enumerations; the resulting functions are named
 <i>GetTypeInfo_enum_[EnumName]</i>.<p>
 
-<font color=red>Note:</font> A C++ <i>struct</i> is actually a C++ <i>class</i> with no private or
-protected members; the CLASS_INFO macros should be used for these objects - <i>not</i> the
+<font color=red>Note:</font> A C++ <i>struct</i> is actually a C++ <i>class</i> with default public 
+members; the CLASS_INFO macros should be used for these objects - <i>not</i> the
 ASN_STRUCT_INFO macros.<p>
 
 Most of these macros take two <i>string</i> arguments:
 <ul>
-<li> an external alias for the object, and 
+<li> an external alias for the type, and 
 <li> the internal C++ symbolic class name. 
 </ul>
 
@@ -273,7 +277,7 @@ generates a call to the corresponding "named" macro using a quoted string.  For 
 <i>BEGIN_CLASS_INFO</i> is defined as:
 
 <font color = "#000080"> <pre>
-#define BEGIN_CLASS_INFO(ClassName) \\
+#define BEGIN_CLASS_INFO(ClassName) \
     BEGIN_NAMED_CLASS_INFO(#ClassName, ClassName)
 </pre></font>
 
@@ -464,7 +468,7 @@ for class objects. <p>
 <i>BEGIN_ENUM_INFO(EnumName, IsInteger)</i></a><br>
  takes 2 arguments: 
 
-<ol><li> <i>EnumName</i> - the internal C++ name for the enum object
+<ol><li> <i>EnumName</i> - the internal C++ name for the enum type
     <li> <i>IsInteger</i> - a Boolean value of <i>true</i> or <i>false</i> indicating whether or not 
     the enumeration includes arbitrary integer values or only those specified in the enumeration.
 
@@ -522,7 +526,9 @@ operator (::).
 
 Again, when using the above macros to install type information, the corresponding class definitions
 <i>must</i> include a declaration of the static class member function <i>GetTypeInfo()</i> in the
-class's public section. Similarly, the <i>DECLARE_INTERNAL_ENUM_INFO</i> and
+class's public section. The <i>DECLARE_INTERNAL_TYPE_INFO()</i> macro is provided To ensure that 
+the declaration of this method is correct.
+Similarly, the <i>DECLARE_INTERNAL_ENUM_INFO</i> and
 <i>DECLARE_ENUM_INFO</i> macros should be used in the header files where enumerations are
 defined. The <i>DECLARE_ASN_TYPE_INFO</i> and <i>DECLARE_ASN_CHOICE_INFO</i> macros can be used to
 declare the type information functions for C-style structs and choice nodes.
@@ -573,7 +579,7 @@ macro, ADD_ENUM_VALUE specifies the legitimate values of the enumeration.  <p>
     <td> Add a standard data member to a class</td>    <td>MemberAlias, MemberName</td> </tr>
 
 <tr><td> ADD_NAMED_CLASS_MEMBER </td>
-    <td> Add an internal class member to a class</td>  <td>InternalClassAlias, InternalClassName</td> </tr>
+    <td> Add an internal class member to a class</td>  <td>MemberAlias, MemberName</td> </tr>
 
 <tr><td> ADD_NAMED_SUB_CLASS </td> 
     <td> Add a derived subclass to a class</td> <td>SubClassAlias, SubClassName</td> </tr>
@@ -581,7 +587,7 @@ macro, ADD_ENUM_VALUE specifies the legitimate values of the enumeration.  <p>
 <tr><td> ADD_NAMED_STD_CHOICE_VARIANT</td>
     <td> Add a standard option type to a C++ choice object </td><td> OptionAlias, OptionName</td></tr>
 
-<tr><td> ADD_ASN_CHOICE_STD_VARIANT
+<tr><td> ADD_NAMED_ASN_CHOICE_STD_VARIANT
 </td><td> Add a standard option type to an ASN choice object </td><td> OptionAlias, OptionName</td></tr>
 
 <tr><td> ADD_NAMED_REF_MEMBER </td> 
@@ -637,11 +643,11 @@ along with the additional arguments required for that type, are given in Table 3
 	 <th>Args </th>
   </tr>
 
-  <tr>	 <td> CLASS </td>	 <td> (Name) </td>  </tr>
-  <tr>	 <td> STD   </td>        <td> (Name) </td>  </tr>
+  <tr>	 <td> CLASS </td>	 <td> (ClassName) </td>  </tr>
+  <tr>	 <td> STD   </td>        <td> (C++ type) </td>  </tr>
   <tr>	 <td> StringStore </td>  <td> ()     </td>  </tr>
    <tr>	 <td> null </td>         <td> ()     </td>  </tr>
-  <tr>	 <td> ENUM </td>         <td> (Type, Name) </td>  </tr> 
+  <tr>	 <td> ENUM </td>         <td> (EnumType, EnumName) </td>  </tr> 
   <tr>	 <td> POINTER </td>      <td> (Type,Args) </td>  </tr> 
   <tr>	 <td> STL_multiset </td> <td> (Type,Args) </td>  </tr> 
   <tr>	 <td> STL_set </td>      <td> (Type,Args) </td>  </tr> 
@@ -650,11 +656,9 @@ along with the additional arguments required for that type, are given in Table 3
   <tr>	 <td> STL_list </td>     <td> (Type,Args) </td>  </tr> 
   <tr>	 <td> STL_list_set </td> <td> (Type,Args) </td>  </tr>
   <tr>	 <td> STL_vector </td>   <td> (Type,Args) </td>  </tr>
-  <tr>	 <td> STL_CHAR_vector </td> <td> (Type) </td>  </tr>
+  <tr>	 <td> STL_CHAR_vector </td> <td> (C++ Char type) </td>  </tr>
   <tr>	 <td> STL_auto_ptr </td>   <td> (Type,Args)</td>  </tr>
   <tr>	 <td> CHOICE </td>         <td> (Type,Args) </td>  </tr> 
-  <tr>	 <td> CHOICE_POINTER </td> <td> (Type,Args) </td>  </tr> 
-  <tr>	 <td> CHOICE_STL_auto_ptr </td> <td> (Type,Args) </td>  </tr> 
 
 </table></center>
 <p>
