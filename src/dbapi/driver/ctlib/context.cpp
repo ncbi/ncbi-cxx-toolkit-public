@@ -33,9 +33,12 @@
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
-#if !defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
+#  include <winsock.h>
+#else
 #  include <unistd.h>
 #endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -46,25 +49,25 @@ BEGIN_NCBI_SCOPE
 //
 
 CS_START_EXTERN_C
-	CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context, CS_CLIENTMSG* msg)
-	{
-		return CTLibContext::CTLIB_cserr_handler(context, msg)
-			? CS_SUCCEED : CS_FAIL;
-	}
+    CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context, CS_CLIENTMSG* msg)
+    {
+        return CTLibContext::CTLIB_cserr_handler(context, msg)
+            ? CS_SUCCEED : CS_FAIL;
+    }
 
-	CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
-									  CS_CLIENTMSG* msg)
-	{
-		return CTLibContext::CTLIB_cterr_handler(context, con, msg)
-			? CS_SUCCEED : CS_FAIL;
-	}
+    CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
+                                      CS_CLIENTMSG* msg)
+    {
+        return CTLibContext::CTLIB_cterr_handler(context, con, msg)
+            ? CS_SUCCEED : CS_FAIL;
+    }
 
-	CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
-									   CS_SERVERMSG* msg)
-	{
-		return CTLibContext::CTLIB_srverr_handler(context, con, msg)
-			? CS_SUCCEED : CS_FAIL;
-	}
+    CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
+                                       CS_SERVERMSG* msg)
+    {
+        return CTLibContext::CTLIB_srverr_handler(context, con, msg)
+            ? CS_SUCCEED : CS_FAIL;
+    }
 CS_END_EXTERN_C
 
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
@@ -134,7 +137,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
         if (r != CS_SUCCEED) {
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            delete p_pot;	
+            delete p_pot;   
             throw CDB_ClientEx(eDB_Error, 100002, "CTLibContext::CTLibContext",
                                "ct_init failed");
         }
@@ -145,7 +148,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             ct_exit(m_Context, CS_FORCE_EXIT);
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            delete p_pot;	    	
+            delete p_pot;           
             throw CDB_ClientEx(eDB_Error, 100003, "CTLibContext::CTLibContext",
                                "Can not install the client message callback");
         }
@@ -156,7 +159,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             ct_exit(m_Context, CS_FORCE_EXIT);
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            delete p_pot;	    	
+            delete p_pot;           
             throw CDB_ClientEx(eDB_Error, 100004, "CTLibContext::CTLibContext",
                                "Can not install the server message callback");
         }
@@ -289,9 +292,9 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
     case eBcp:
     case eReturnITDescriptors:
     case eReturnComputeResults:
-	return true;
+    return true;
     default:
-	break;
+    break;
     }
     return false;
 }
@@ -560,12 +563,12 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
     if (ct_con_alloc(m_Context, &con) != CS_SUCCEED)
         return 0;
 
-	char hostname[256];
-	if(gethostname(hostname, 256)) {
-	  strcpy(hostname, "UNKNOWN");
-	}
-	else hostname[255]= '\0';
-	
+    char hostname[256];
+    if(gethostname(hostname, 256)) {
+      strcpy(hostname, "UNKNOWN");
+    }
+    else hostname[255]= '\0';
+    
 
     if (ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
                      CS_NULLTERM, NULL) != CS_SUCCEED  ||
@@ -812,10 +815,10 @@ I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
     CS_INT version= CS_VERSION_110;
 
     if(attr) {
-	reuse_context= (*attr)["reuse_context"] != "false";
-	string vers= (*attr)["version"];
-	if(vers.find("100") != string::npos) 
-	    version= CS_VERSION_100;
+    reuse_context= (*attr)["reuse_context"] != "false";
+    string vers= (*attr)["version"];
+    if(vers.find("100") != string::npos) 
+        version= CS_VERSION_100;
     }
     return new CTLibContext(reuse_context, version);
 }
@@ -828,7 +831,7 @@ void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
 extern "C" {
     void* DBAPI_E_ctlib()
     {
-	return (void*)DBAPI_RegisterDriver_CTLIB;
+    return (void*)DBAPI_RegisterDriver_CTLIB;
     }
 } 
 
@@ -840,8 +843,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/18 14:34:20  ivanov
+ * Fix for Rev 1.18-1.19 -- #include's for gethostname() on NCBI_OS_MSWIN platform
+ *
  * Revision 1.19  2003/03/17 20:57:09  ivanov
- *  * #include <unistd.h> everywhere except NCBI_OS_MSWIN platform
+ * #include <unistd.h> everywhere except NCBI_OS_MSWIN platform
  *
  * Revision 1.18  2003/03/17 19:37:31  ucko
  * #include <unistd.h> for gethostname()
