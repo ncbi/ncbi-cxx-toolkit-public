@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2002/12/06 15:50:29  hurwitz
+ * pulled code I added to this class and moved it to cdt_ccd.[c|h]pp
+ *
  * Revision 1.16  2002/11/21 22:31:25  hurwitz
  * added another delete rows function
  *
@@ -92,15 +95,7 @@
 
 
 // generated includes
-#include <string>
-#include <list>
-#include <deque>
 #include <objects/cdd/Cdd_.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqalign/Dense_diag.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/cdd/Feature_evidence.hpp>
 
 // generated classes
 
@@ -108,108 +103,12 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-const int ALIGN_ANNOTS_ALIGNED_FAILURE = 1;
-
 class CCdd : public CCdd_Base
 {
     typedef CCdd_Base Tparent;
-    typedef list< CRef< CDense_diag > > TDendiag;
 public:
     CCdd(void);                                     // constructor
     ~CCdd(void);                                    // destructor
-    string GetAccession(int& Version);              // get accession and version of CD
-    string GetAccession() {
-      int Dummy;
-      return(GetAccession(Dummy));
-    }
-    string GetParentAccession(int& Version);        // get accession and version of parent
-    string GetParentAccession() {
-      int Dummy;
-      return(GetParentAccession(Dummy));
-    }
-    void   SetAccession(string Accession, int Version);      // set accession and version of CD
-    void   SetAccession(string Accession) {
-      SetAccession(Accession, 1);
-    }
-    void   SetParentAccession(string Parent, int Version);   // set accession and version of parent
-    string GetLongDescription();                      // long description of CD
-    string GetUpdateDate();                           // last update date of CD
-    int    GetNumRows();                              // number of rows in CD
-    int    GetNumSequences();                         // number of sequences in CD
-    int    GetAlignmentLength();                      // total number aligned residues
-    int    GetPSSMLength();                           // number of residues in master, from first to last aligned residue
-    bool   GetGI(int Row, int& GI);                   // get GI of Row
-    int    GetGIFromSequenceList(int SeqIndex);       // get GI from sequence list
-    bool   GetPDB(int Row, const CPDB_seq_id*& pPDB); // get PDB ID of Row
-    int    GetLowerBound(int Row);                    // get Row lower alignment bound
-    int    GetUpperBound(int Row);                    // get Row upper alignment bound
-    int    GetReMasterFailureCode();                  // before re-mastering do this check
-    bool   AlignAnnotsAligned();                      // one of the checks for re-mastering
-    bool   ReMaster(int Row);                         // make Row the new master
-    bool   GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID);               // get SeqID from sequence list
-    bool   GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs);   // get SeqIDs from sequence list
-    bool   GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID);   // get SeqID from alignment
-    bool   GetSeqIDFromAlignment(int RowIndex, CRef<CSeq_id>& SeqID) { // get SeqID from alignment
-      int  Pair = (RowIndex <= 1) ? 0 : RowIndex-1;
-      int  DenDiagRow = (RowIndex == 0) ? 0 : 1;
-      return(GetSeqID(Pair, DenDiagRow, SeqID));
-    }
-    bool   Get_GI_or_PDB_String_FromAlignment(        // get seq-id string for RowIndex of alignment
-      int  RowIndex, std::string& Str, bool Pad, int Len
-    );
-    int    GetSeqIndex(CRef<CSeq_id>& SeqID);         // get index into sequence list
-    bool   GetMmdbId(int SeqIndex, int& id);          // get mmdb-id from sequence list
-    bool   EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
-    bool   EraseRows2(std::deque<int>& TossRows);     // another way to erase rows
-    bool   EraseRow(int RowIndex);                    // erase a row from alignment
-    bool   MoveToTop(int RowIndex);                   // move row to top of alignment
-    bool   MoveToBottom(int RowIndex);                // move row to bottom of alignment
-    void   EraseSequences();                          // erase sequences not in alignment
-    void   EraseSequence(int SeqIndex);               // erase a sequence from the set of seqs
-    bool   SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
-    bool   IsAMatchFor(CRef<CSeq_id>& ID);            // see if ID matches any ID in alignment
-    bool   IsAMatchFor(CRef<CSeq_id>& ID, int& RowIndex);  // same, but return row that matches
-    int    GetNthMatchFor(CRef<CSeq_id>& ID, int N);  // get RowIndex of Nth match
-    int    GetNumMatches(CRef<CSeq_id>& ID);          // get num-times ID matches an ID in alignment
-    void   EraseStructureEvidence();                  // scan structure-evidence, erase missing biostruc-ids
-    void   EraseUID();                                // erase CD's uid
-    string GetDefline(int SeqIndex);                  // get description from sequence list
-    string GetSpecies(int SeqIndex);                  // get species from sequence list
-    // convert sequences to ncbieaa (extended ASCII 1 letter aa code) (return index of master)
-    int    ConvertSequences(std::deque< std::string >& ConvertedSequences);
-    // get dense-diag info for one row
-    bool   GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet);
-    // get corresponding location on other row
-    int    GetSeqPosition(const TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
-    // get the list of Seq-aligns
-    bool   IsSeqAligns();
-    const  list< CRef< CSeq_align > >& GetSeqAligns();
-    string GetCurationStatusStr();                    // curation status of CD
-    int    GetCurationStatus();
-    bool   IsCurationStatus();
-    void   SetCurationStatus(int status);
-    bool   IsOldRoot();                               // old-root of CD
-    void   SetOldRoot(string Accession, int Version);
-    bool   GetOldRoot(int Index, string& Accession, int& Version);
-    int    GetNumIdsInOldRoot();
-    bool   UsesConsensusSequence();
-
-private:
-    // get dense-diag info for one row
-    bool SetDenDiagSet(int Row, TDendiag*& pDenDiagSet);
-    // get either the first or last dense-diag of Row
-    bool GetDenDiag(int Row, bool First, CRef<CDense_diag>& DenDiag);
-    // for erasing biostruc-ids that are no longer valid, from structure-evidence
-    bool IsNoEvidenceFor(list<int>& MmdbIds, list< CRef< CFeature_evidence > >::iterator& FeatureIterator);
-    list< CRef< CFeature_evidence > >& GetFeatureSet(list<int>& MmdbIds);
-    // copied from Paul.  for converting ncbistdaa sequences to ncbieaa sequences
-    static void StringFromStdaa(const std::vector < char >& vec, std::string *str) {
-      static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-      str->resize(vec.size());
-      for (int i=0; i<vec.size(); i++)
-        str->at(i) = stdaaMap[vec[i]];
-    }
-    void  Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad, int Len);
 
 private:
     // Prohibit copy constructor and assignment operator
