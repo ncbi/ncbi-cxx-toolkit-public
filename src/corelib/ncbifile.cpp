@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/11/01 21:02:25  ucko
+ * Fix to work on non-MacOS platforms again.
+ *
  * Revision 1.3  2001/11/01 20:06:48  juran
  * Replace directory streams with Contents() method.
  * Implement and test Mac OS platform.
@@ -198,21 +201,17 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 
 
 
+#ifdef NCBI_OS_MAC
 void CDirEntry::Reset(const string& path)
 {
-#ifdef NCBI_OS_MAC
 	OSErr err = MacPathname2FSSpec(path.c_str(), &m_FSS);
 	if (err != noErr && err != fnfErr) {
 		m_FSS = sNullFSS;
 	}
-#else
-    m_Path = path;
-#endif
 }
 
 string CDirEntry::GetPath(void) const
 {
-#ifdef NCBI_OS_MAC
     OSErr err;
     char *path;
     err = MacFSSpec2FullPathname(&FSS(), &path);
@@ -220,10 +219,8 @@ string CDirEntry::GetPath(void) const
     	return "";
     }
     return string(path);
-#else
-    return m_Path;
-#endif
 }
+#endif
 
 
 CDirEntry::~CDirEntry(void)
@@ -791,11 +788,12 @@ bool CDir::Remove(EDirRemoveMode mode) const
     vector<CDirEntry> contents = dir.Contents();
     iterate(vector<CDirEntry>, entry, contents) {
 #ifndef NCBI_OS_MAC
-        if ( *entry == "."  ||  *entry == ".."  ||  
-             *entry == string(1,GetPathSeparator()) ) {
+        if ( entry->GetName() == "."  ||  entry->GetName() == ".."  ||  
+             entry->GetName() == string(1,GetPathSeparator()) ) {
             continue;
         }
 #endif
+#ifdef NCBI_OS_MAC
         CDirEntry item = *entry;
         // Is it directory ?
         if ( item.IsDir() ) {
@@ -808,6 +806,20 @@ bool CDir::Remove(EDirRemoveMode mode) const
                 return false;
             }
         }
+#else
+        string path = GetPath() + GetPathSeparator() + entry->GetName();
+        CDirEntry item(path);
+        if ( item.IsDir() ) {
+            if ( mode == eRecursive ) {
+                dirlist.push_back(CDir(path));
+            }
+        } else {
+            // It is a file
+            if ( !item.Remove() ) {
+                return false;
+            }
+        }
+#endif
     }
     // If need remove subdirectories
     if ( mode == eRecursive ) {
@@ -820,55 +832,6 @@ bool CDir::Remove(EDirRemoveMode mode) const
     // Remove main directory
     return CParent::Remove();
 }
-
-#ifndef NCBI_OS_MAC
-bool CDir::Remove(EDirRemoveMode mode) const
-{
-    // Remove directory as empty
-    if ( mode == eOnlyEmpty ) {
-        return CParent::Remove();
-    }
-
-    CDir dir(GetPath());
-
-    // List for subdirectories
-    list<string> dirlist;
-
-    // Read and remove all entry in derectory
-    iterate(CDir, entry, dir) {
-#ifndef NCBI_OS_MAC
-        if ( *entry == "."  ||  *entry == ".."  ||  
-             *entry == string(1,GetPathSeparator()) ) {
-            continue;
-        }
-        string name = GetPath() + GetPathSeparator() + *entry;
-#else
-        CDirEntry item = *entry;
-#endif
-        // Is it directory ?
-        if ( CParent(name).IsDir() ) {
-            if ( mode == eRecursive ) {
-                dirlist.push_back(name);
-            }
-        } else {
-            // It is a file
-            if ( !CParent(name).Remove() ) {
-                return false;
-            }
-        }
-    }
-    // If need remove subdirectories
-    if ( mode == eRecursive ) {
-        iterate(list<string>, i, dirlist) {
-            if ( !CDir(*i).Remove(eRecursive) ) {
-                return false;
-            }
-        }
-    }
-    // Remove main directory
-    return CParent(GetPath()).Remove();
-}
-#endif
 
 
 END_NCBI_SCOPE

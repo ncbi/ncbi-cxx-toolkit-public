@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/11/01 21:02:18  ucko
+ * Fix to work on non-MacOS platforms again.
+ *
  * Revision 1.2  2001/11/01 20:06:49  juran
  * Replace directory streams with Contents() method.
  * Implement and test Mac OS platform.
@@ -48,6 +51,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
