@@ -316,6 +316,8 @@ private:
 
     void x_PidLock(ELockMode lm);
 
+    void x_PerformCheckPointNoLock(unsigned bytes_written);
+
 private:
     CBDB_Cache(const CBDB_Cache&);
     CBDB_Cache& operator=(const CBDB_Cache);
@@ -396,6 +398,7 @@ private:
 
     friend class CCacheTransaction;
     friend class CMemAttrStorage;
+    friend class CBDB_CacheIWriter;
 
 
 private:
@@ -419,6 +422,8 @@ private:
     unsigned                m_BatchSleep;
     /// TRUE when Purge processing requested to stop
     bool                    m_PurgeStop;
+    /// Number of bytes stored in cache since last checkpoint
+    unsigned                m_BytesWritten;
 };
 
 
@@ -480,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/10/15 14:02:08  kuznets
+ * Added counter of bytes written in cache
+ *
  * Revision 1.34  2004/10/13 12:52:19  kuznets
  * Changes in Purge processing: more options to allow Purge in a thread
  *
