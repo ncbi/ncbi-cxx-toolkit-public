@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/04/18 20:04:56  vasilche
+ * Use BEGIN_objects_SCOPE
+ *
  * Revision 1.2  2000/04/07 19:27:36  vasilche
  * Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
  *
@@ -54,7 +57,7 @@
 
 BEGIN_NCBI_SCOPE
 
-namespace objects {
+BEGIN_objects_SCOPE
 
 // constructor for static/automatic objects
 CBioseq_set::CBioseq_set(void)
@@ -77,6 +80,6 @@ void CBioseq_set::PostRead(void)
     _TRACE("Bioseq-set loaded");
 }
 
-} // namespace objects
+END_objects_SCOPE
 
 END_NCBI_SCOPE

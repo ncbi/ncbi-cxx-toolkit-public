@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2000/04/18 20:04:36  vasilche
+ * Use BEGIN_objects_SCOPE
+ *
  * Revision 1.11  2000/04/07 19:27:31  vasilche
  * Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
  *
@@ -59,7 +62,7 @@
 
 BEGIN_NCBI_SCOPE
 
-namespace objects {
+BEGIN_objects_SCOPE
 
 // generated classes
 class CBioseq_set : public CBioseq_set_Base
@@ -97,7 +100,7 @@ protected:
 
 NCBISER_HAVE_POST_READ(CBioseq_set)
 
-} // namespace objects
+END_objects_SCOPE
 
 END_NCBI_SCOPE
 
