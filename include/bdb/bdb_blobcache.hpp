@@ -312,6 +312,12 @@ private:
                                  int            version,
                                  const string&  subkey);
 
+    bool x_CheckTimestampExpired(const string&  key,
+                                 int            version,
+                                 const string&  subkey,
+                                 time_t         curr);
+
+
     void x_UpdateReadAccessTime(const string&  key,
                                 int            version,
                                 const string&  subkey);
@@ -521,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/12/28 19:43:40  kuznets
+ * +x_CheckTimeStampExpired
+ *
  * Revision 1.45  2004/12/28 16:46:15  kuznets
  * +DropBlob()
  *
