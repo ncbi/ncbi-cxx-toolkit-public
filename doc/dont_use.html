@@ -22,18 +22,21 @@
 		<li> <a href="#ref_CPP_Malloc">Do not mix malloc and new</a>
 	 </ul> </ul>
 
-	 <br>
+	 <br></br>
 
 	 <a name="ref_STL"></a>
 	 <h2><u>STL and standard C++ library's bad guys</u></h2>
 
-	 <br>
-	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3> 
-<p> 
-<p><i>#include &lt;ncbistre.hpp&gt;</i> 
-<p>Do not use the new iostream library included with Sunpro C++ 5.0 early access 
-  release refresh. It is extremely buggy. Instead we will use the older version 
-  of iostream.h by default.
+	 <br></br>
+	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3>
+
+	 <p> 
+	 <p><i>#include &lt;ncbistre.hpp&gt;</i> 
+
+	 <p>
+	 Do not use the new iostream library included with Sunpro C++ 5.0 early
+	 access release refresh. It is extremely buggy. Instead we will use the
+	 older version of iostream.h by default.
 <p>
 	 It was a big question if we should use "old-fashioned" C++ stream
 	 classes(from <i>#include &lt;iostream.h&gt;, etc.</i>) or
@@ -90,8 +93,8 @@
 	 "<i>NCBI_USE_NEW_IOSTREAM</i>".
 
 
-	 <br>
-	 <br>
+	 <br></br>
+	 <br></br>
 	 <a name="ref_STL_NonStd"></a> <h3>Non-standard STL classes</h3> <p>
 	 Don't use <i>hash</i> or the <i>rope</i> classes from
 	 some versions of the STL.
@@ -100,7 +103,7 @@
 	 <a href="http://www.cygnus.com/misc/wp/dec96pub/">draft standard</a>.</p>
 
 
-	 <br>
+	 <br></br>
 	 <a name="ref_CPP"></a>
 	 <h2><u>C++ bad guys</u></h2>
 
@@ -137,7 +140,19 @@ class CFoo {
 		overloaded assignment operation
 	 </ul>
 
+	 In many cases when you dont want to have the assignment and copy
+	 constructor at all, just add to your class something like:
+<pre>
+class CFoo {
+    .............................
+private: 
+    // Prohibit default initialization and assignment
+    CFooClass(const CFooClass&) { _TROUBLE; }
+    CFooClass& operator=(const CFooClass&) { _TROUBLE;  return *this; }
+};
+</pre>
 
+	 <br></br>
 	 <a name="ref_CPP_Namespace"></a> <h3>Namespaces</h3> <p>
 	 Do not define your own namespaces at all.
 	 Instead, if you want to ensure that you will not get into a name conflict,
@@ -155,7 +170,12 @@ class CFoo {
 	 rather than just <i>"int f()"</i>).
 
 	 <a name="ref_CPP_Malloc"></a> <h3>Do not mix malloc and new</h3> <p>
-	 On some platforms, malloc and new may use completely different memory managers, so never free() what you created using "new" and never "delete" what you created using malloc().  Also, when calling C code from C++ <b>always</b> allocate any structs or other items using malloc().  The C routine may use realloc() or free() on the items, which can cause memory corruption if you allocated using "new."
+	 On some platforms, malloc and new may use completely different memory
+	 managers, so never "free()" what you created using "new" and never "delete"
+	 what you created using "malloc()".  Also, when calling C code from C++
+	 <b>always</b> allocate any structs or other items using "malloc()".
+	 The C routine may use "realloc()" or "free()" on the items, which can cause
+	 memory corruption if you allocated using "new."
 
 	 <br>
 	 <hr>

@@ -202,6 +202,11 @@ private:
     // Friends
     friend bool  SomeFriendFunc(void);
     friend class CSomeFriendClass;
+private:
+    // Prohibit default initialization and assignment -- e.g. when the
+    // member-by-member copying is dangerous
+    CFooClass(const CFooClass&) { _TROUBLE; }
+    CFooClass& operator=(const CFooClass&) { _TROUBLE;  return *this; }
 };
 	 </pre>
 
