@@ -336,14 +336,15 @@
 
 /* Define to 1 if using a local copy of PCRE. */
 /* #undef USE_LOCAL_PCRE */
+#define USE_LOCAL_PCRE
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #define WORDS_BIGENDIAN 1
 
  
-#define HAVE_LIBJPEG 1
-#define HAVE_LIBTIFF 1
+//#define HAVE_LIBJPEG 0
+#define HAVE_LIBTIFF 0
 #define HAVE_LIBPNG  1
-#define HAVE_LIBGIF  1
+//#define HAVE_LIBGIF  0
 #define HAVE_INTPTR_T 1
