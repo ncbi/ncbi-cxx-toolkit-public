@@ -362,7 +362,7 @@ CBlastOptionsLocal::GetProgramType() const
     switch (m_Program) {
     case eBlastn: case eMegablast: case eDiscMegablast:
         return eBlastTypeBlastn;
-    case eBlastp: case ePSIBlast:
+    case eBlastp: 
         return eBlastTypeBlastp;
     case eBlastx:
         return eBlastTypeBlastx;
@@ -374,6 +374,8 @@ CBlastOptionsLocal::GetProgramType() const
         return eBlastTypeRpsBlast;
     case eRPSTblastn:
         return eBlastTypeRpsTblastn;
+    case ePSIBlast:
+        return eBlastTypePsiBlast;
     default:
         return eBlastTypeUndefined;
     }
@@ -610,6 +612,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/11/09 20:07:35  camacho
+* Fix CBlastOptionsLocal::GetProgramType for PSI-BLAST
+*
 * Revision 1.54  2004/10/04 18:24:46  bealer
 * - Add Pseudo Count constant to remote blast switches.
 *
