@@ -219,14 +219,17 @@ if [ $# -eq 0 ]; then
 fi
 
 copy_all="no"
+MAC_BINCOPY=
 if [ $1 = "--copy" ]; then
     copy_all="yes"
     BINCOPY="cp -pf"
+    MAC_BINCOPY="/Developer/Tools/CpMac -p"
     src_dir=$2
     target_dir=$3
 elif [ $1 = "--hardlink" ]; then
     copy_all="yes"
     BINCOPY="ln -f"
+    MAC_BINCOPY="$script_dir/ln_mac.sh"
     src_dir=$2
     target_dir=$3
 else
@@ -235,9 +238,8 @@ else
     target_dir=$2
 fi
 
-if test "`uname`" = Darwin -a -x /Developer/Tools/CpMac \
-    -a "$BINCOPY" != "ln -s"; then
-    BINCOPY="/Developer/Tools/CpMac -p"
+if test "`uname`" = Darwin -a -x "$MAC_BINCOPY"; then
+    BINCOPY=$MAC_BINCOPY
 fi
 
 

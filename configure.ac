@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.268 2004/02/04 02:50:27 ucko Exp $
+#  $Id: configure.ac,v 1.269 2004/02/06 19:48:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1469,10 +1469,9 @@ if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
-BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
-if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
-   BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"/Developer/Tools/CpMac -p\""
-elif test "$with_bincopy" != "yes"; then
+BINCOPY="cp -p"
+MAC_BINCOPY="/Developer/Tools/CpMac -p"
+if test "$with_bincopy" != "yes"; then
    AC_CACHE_CHECK([whether cross-directory hard links work],
       ncbi_cv_sys_xdir_ln,
       [mkdir conftestdir
@@ -1484,8 +1483,15 @@ elif test "$with_bincopy" != "yes"; then
        fi
        rm -rf conftestdir conftestfile])
    if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
-      BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"ln -f\""
+      BINCOPY="ln -f"
+      MAC_BINCOPY="\$(top_srcdir)/scripts/ln_mac.sh"
    fi
+fi
+ifdiff="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh"
+if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
+   BINCOPY="$ifdiff \"$MAC_BINCOPY\""
+else
+   BINCOPY="$ifdiff \"$BINCOPY\""
 fi
 
 
