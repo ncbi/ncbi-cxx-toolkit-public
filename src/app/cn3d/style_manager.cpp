@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/02/13 20:33:50  thiessen
+* add information content coloring
+*
 * Revision 1.23  2001/02/08 23:01:51  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -438,6 +441,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         case StyleSettings::eIdentity:
         case StyleSettings::eVariety:
         case StyleSettings::eWeightedVariety:
+        case StyleSettings::eInformationContent:
         case StyleSettings::eFit:
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
@@ -454,7 +458,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 atomStyle->color = unalignedColor;
                 break;
             }
-            // if eAligned and not aligned, then use eObject coloring
+            // if eAligned and not aligned, then fall through to use eObject coloring
 
         case StyleSettings::eObject:
             atomStyle->color = object->parentSet->colors->Get(Colors::eCycle1, object->id - 1);

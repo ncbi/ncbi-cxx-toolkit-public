@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/02/13 20:31:45  thiessen
+* add information content coloring
+*
 * Revision 1.4  2000/10/16 14:25:20  thiessen
 * working alignment fit coloring
 *
@@ -89,7 +92,7 @@ private:
     std::vector < bool > identities;
 
     typedef std::vector < Vector > ColumnColors;
-    ColumnColors varietyColors, weightedVarietyColors;
+    ColumnColors varietyColors, weightedVarietyColors, informationContentColors;
 
     typedef std::map < char, Vector > ResidueColors;
     typedef std::vector < ResidueColors > FitColors;
@@ -114,13 +117,16 @@ public:
     const Vector *GetWeightedVarietyColor(const UngappedAlignedBlock *block, int blockColumn) const
         { return &(weightedVarietyColors[GetProfileIndex(block, blockColumn)]); }
 
+    const Vector *GetInformationContentColor(const UngappedAlignedBlock *block, int blockColumn) const
+        { return &(informationContentColors[GetProfileIndex(block, blockColumn)]); }
+
     const Vector *GetFitColor(const UngappedAlignedBlock *block, int blockColumn, int row) const
-    { 
+    {
         int profileIndex;
         char residue;
         GetProfileIndexAndResidue(block, blockColumn, row, &profileIndex, &residue);
         return &(fitColors[profileIndex].find(residue)->second);
-    }    
+    }
 };
 
 END_SCOPE(Cn3D)

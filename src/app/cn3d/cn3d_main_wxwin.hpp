@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/02/13 20:31:45  thiessen
+* add information content coloring
+*
 * Revision 1.17  2001/02/08 23:01:13  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -197,6 +200,7 @@ public:
                     MID_IDENT,
                     MID_VARIETY,
                     MID_WGHT_VAR,
+                    MID_INFORM,
                     MID_FIT,
             MID_WIREFRAME,
         // Quality menu

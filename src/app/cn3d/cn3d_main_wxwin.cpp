@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/02/13 20:33:49  thiessen
+* add information content coloring
+*
 * Revision 1.23  2001/02/08 23:01:49  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -368,9 +371,10 @@ Cn3DMainFrame::Cn3DMainFrame(
     menu->Append(MID_WIREFRAME, "&Wireframe");
     menu->Append(MID_ALIGN, "&Alignment");
     wxMenu *subMenu = new wxMenu;
-    subMenu->Append(MID_IDENT, "&Identity");
+    subMenu->Append(MID_IDENT, "I&dentity");
     subMenu->Append(MID_VARIETY, "&Variety");
     subMenu->Append(MID_WGHT_VAR, "&Weighted Variety");
+    subMenu->Append(MID_INFORM, "&Information Content");
     subMenu->Append(MID_FIT, "&Fit");
     menu->Append(MID_CONS, "&Conservation", subMenu);
     menuBar->Append(menu, "&Style");
@@ -536,6 +540,9 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 break;
             case MID_WGHT_VAR:
                 glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eWeightedVariety);
+                break;
+            case MID_INFORM:
+                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eInformationContent);
                 break;
             case MID_FIT:
                 glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eFit);

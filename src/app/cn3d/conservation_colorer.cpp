@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/02/13 20:33:49  thiessen
+* add information content coloring
+*
 * Revision 1.5  2000/11/30 15:49:38  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -48,6 +51,11 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
+#include <blastkar.h>           // for BLAST standard probability routines
+#include <objseq.h>
+#include <math.h>
+
 #include "cn3d/conservation_colorer.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/structure_base.hpp"
@@ -59,11 +67,11 @@ BEGIN_SCOPE(Cn3D)
 
 const Vector ConservationColorer::MinimumConservationColor(100.0/255, 100.0/255, 1.0);
 const Vector ConservationColorer::MaximumConservationColor(1.0, 25.0/255, 25.0/255);
-        
-        
+
+
 #define BLOSUMSIZE 24
 static const char Blosum62Fields[BLOSUMSIZE] =
-   { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 
+   { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M',
      'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X', '*' };
 static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 /*       A,  R,  N,  D,  C,  Q,  E,  G,  H,  I,  L,  K,  M,  F,  P,  S,  T,  W,  Y,  V,  B,  Z,  X,  * */
@@ -94,17 +102,50 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 };
 
 static std::map < char, std::map < char, char > > Blosum62Map;
+static std::map < char, float > StandardProbabilities;
 
-ConservationColorer::ConservationColorer(void) :
-    nColumns(0)
+ConservationColorer::ConservationColorer(void) : nColumns(0)
 {
-    // initialize BLOSUM map for easy access
-    if (Blosum62Map.size() == 0) {
+    if (Blosum62Map.size() == 0) {  // initialize static stuff
+
+        // initialize BLOSUM map for easy access
         for (int row=0; row<BLOSUMSIZE; row++) {
              for (int column=0; column<=BLOSUMSIZE; column++)
                 Blosum62Map[Blosum62Fields[row]][Blosum62Fields[column]] =
                     Blosum62Matrix[row][column];
         }
+
+        // calculate expected residue frequencies (standard probabilities)
+        // (code borrowed from SeqAlignInform() in cddutil.c)
+        static const char ncbistdaa2char[26] = {
+            'X', 'A', 'X', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
+            'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'X', 'X', 'X'
+        };
+        BLAST_ScoreBlkPtr sbp = BLAST_ScoreBlkNew(Seq_code_ncbistdaa, 1);
+        BLAST_ResFreqPtr stdrfp = NULL;
+        int a;
+        if (!sbp) goto on_error;
+        sbp->read_in_matrix = TRUE;
+        sbp->protein_alphabet = TRUE;
+        sbp->posMatrix = NULL;
+        sbp->number_of_contexts = 1;
+        if (BlastScoreBlkMatFill(sbp, "BLOSUM62") != 0) goto on_error;
+        stdrfp = BlastResFreqNew(sbp);
+        if (!stdrfp) goto on_error;
+        if (BlastResFreqStdComp(sbp, stdrfp) != 0) goto on_error;
+        for (a=1; a<23; a++) // from 'A' to 'Y'
+            StandardProbabilities[ncbistdaa2char[a]] = (float) stdrfp->prob[a];
+//        for (a=1; a<23; a++)
+//            TESTMSG("std prob '" << ncbistdaa2char[a] << "' = " << StandardProbabilities[ncbistdaa2char[a]]);
+        goto cleanup;
+
+on_error:
+        ERR_POST(Error << "ConservationColorer::ConservationColorer() - "
+            "error initializing standard residue probabilities");
+
+cleanup:
+        if (stdrfp) BlastResFreqDestruct(stdrfp);
+        if (sbp) BLAST_ScoreBlkDestruct(sbp);
     }
 }
 
@@ -134,6 +175,9 @@ void ConservationColorer::CalculateConservationColors(void)
     identities.resize(nColumns);
     int minVariety, maxVariety, minWeightedVariety, maxWeightedVariety;
 
+    typedef std::vector < float > FloatVector;
+    FloatVector informationContents(nColumns, 0.0f);
+
     int nRows = blocks.begin()->first->NSequences();
     typedef std::map < char, int > CharMap;
     std::vector < CharMap > fitSums(nColumns);
@@ -149,9 +193,9 @@ void ConservationColorer::CalculateConservationColors(void)
             for (row=0; row<nRows; row++) {
                 char ch = toupper(b->first->GetCharacterAt(blockColumn, row));
                 switch (ch) {
-                    case 'A': case 'R': case 'N': case 'D': case 'C': 
-                    case 'Q': case 'E': case 'G': case 'H': case 'I': 
-                    case 'L': case 'K': case 'M': case 'F': case 'P': 
+                    case 'A': case 'R': case 'N': case 'D': case 'C':
+                    case 'Q': case 'E': case 'G': case 'H': case 'I':
+                    case 'L': case 'K': case 'M': case 'F': case 'P':
                     case 'S': case 'T': case 'W': case 'Y': case 'V':
                         break;
                     default:
@@ -199,6 +243,21 @@ void ConservationColorer::CalculateConservationColors(void)
                 else if (weightedVariety > maxWeightedVariety) maxWeightedVariety = weightedVariety;
             }
 
+            // information content for this column (calculated in bits -> logs of base 2)
+            pe = profile.end();
+            float& information = informationContents[profileColumn];
+            for (p=profile.begin(); p!=pe; p++) {
+                static float ln2 = (float) log(2), threshhold = 0.0001f;
+                float expFreq = StandardProbabilities[p->first];
+                if (expFreq > threshhold) {
+                    float obsFreq = 1.0f * p->second / nRows,
+                          freqRatio = obsFreq / expFreq;
+                    if (freqRatio > threshhold)
+                        information += obsFreq * ((float) log(freqRatio)) / ln2;
+                }
+            }
+//            TESTMSG("info prof col " << profileColumn << " = " << information);
+
             // fit for each residue in this column
             for (p=profile.begin(); p!=pe; p++) {
                 int& sum = fitSums[profileColumn][p->first];
@@ -221,6 +280,7 @@ void ConservationColorer::CalculateConservationColors(void)
     // now assign colors
     varietyColors.resize(nColumns);
     weightedVarietyColors.resize(nColumns);
+    informationContentColors.resize(nColumns);
     fitColors.resize(nRows * nColumns);
 
     double scale;
@@ -244,6 +304,15 @@ void ConservationColorer::CalculateConservationColors(void)
             weightedVarietyColors[profileColumn] =
                 MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
         }
+
+        // information content, based on absolute scale
+        static const float minInform = 0.10f, maxInform = 6.24f;
+        scale = (informationContents[profileColumn] - minInform) / (maxInform - minInform);
+        if (scale < 0.0) scale = 0.0;
+        else if (scale > 1.0) scale = 1.0;
+        scale = sqrt(scale);    // apply non-linearity so that lower values are better distinguished
+        informationContentColors[profileColumn] =
+            MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
 
         // fit
         CharMap::const_iterator c, ce = fitSums[profileColumn].end();

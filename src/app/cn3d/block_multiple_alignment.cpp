@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/02/13 20:33:49  thiessen
+* add information content coloring
+*
 * Revision 1.4  2001/02/13 01:03:56  thiessen
 * backward-compatible domain ID's in output; add ability to delete rows
 *
@@ -362,6 +365,10 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
         case StyleSettings::eWeightedVariety:
             alignedColor = conservationColorer->
                 GetWeightedVarietyColor(block, seqIndex - block->GetRangeOfRow(row)->from);
+            break;
+        case StyleSettings::eInformationContent:
+            alignedColor = conservationColorer->
+                GetInformationContentColor(block, seqIndex - block->GetRangeOfRow(row)->from);
             break;
         case StyleSettings::eFit:
             alignedColor = conservationColorer->

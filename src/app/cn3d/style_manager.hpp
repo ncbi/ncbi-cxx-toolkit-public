@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/02/13 20:31:45  thiessen
+* add information content coloring
+*
 * Revision 1.18  2000/12/01 19:34:43  thiessen
 * better domain assignment
 *
@@ -144,6 +147,7 @@ public:
         eIdentity,
         eVariety,
         eWeightedVariety,
+        eInformationContent,
         eFit
     };
 
