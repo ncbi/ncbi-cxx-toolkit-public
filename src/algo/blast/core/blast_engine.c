@@ -408,7 +408,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param query The query sequence block [in]
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
- * @param max_subject_length Length of the longest subject sequence [in]
+ * @param subject_length Length of the subject sequence in two 
+ *                       sequences case [in]
  * @param gap_align Gapped alignment information and allocated memory [out]
  * @param word_params Parameters for initial word processing [out]
  * @param ext_params Parameters for gapped extension [out]
@@ -426,7 +427,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    const BlastExtensionOptionsPtr ext_options,
    const BlastHitSavingOptionsPtr hit_options,
    BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-   BLAST_ScoreBlkPtr sbp, Uint4 max_subject_length,
+   BLAST_ScoreBlkPtr sbp, Uint4 subject_length, 
    BlastGapAlignStructPtr PNTR gap_align, 
    BlastInitialWordParametersPtr PNTR word_params,
    BlastExtensionParametersPtr PNTR ext_params,
@@ -441,6 +442,18 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    Int4 offset_array_size = 0;
    BLAST_ExtendWordPtr ewp;
    BlastCoreAuxStructPtr aux_struct;
+   Uint4 max_subject_length;
+
+   *aux_struct_ptr = aux_struct = (BlastCoreAuxStructPtr)
+      MemNew(sizeof(BlastCoreAuxStruct));
+
+   /* Initialize the BlastSeqSrc */
+   if (bssn_info) {
+      aux_struct->bssp = BlastSeqSrcNew(bssn_info);
+      max_subject_length = BLASTSeqSrcGetMaxSeqLen(aux_struct->bssp);
+   } else {
+      max_subject_length = subject_length;
+   }
 
    if ((status = 
       BLAST_ExtendWordInit(query, word_options, eff_len_options->db_length, 
@@ -466,14 +479,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
       ErrPostEx(SEV_ERROR, 0, 0, 
                 "Cannot allocate memory for gapped extension");
       return status;
-   }
-
-   *aux_struct_ptr = aux_struct = (BlastCoreAuxStructPtr)
-      MemNew(sizeof(BlastCoreAuxStruct));
-
-   /* Initialize the BlastSeqSrc */
-   if (bssn_info) {
-       aux_struct->bssp = BlastSeqSrcNew(bssn_info);
    }
 
    aux_struct->ewp = ewp;
@@ -663,14 +668,12 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr results, BlastReturnStatPtr return_stats)
 {
-   Uint4 max_subject_length = 0; /* Longest subject sequence */
    BlastCoreAuxStructPtr aux_struct = NULL;
    BlastThrInfoPtr thr_info = NULL;
    Int4 oid; /* Subject ordinal id in the database */
    Int4Ptr oid_list = NULL;
    Int4 start = 0, stop = 0, oid_list_length = 0, index;
    Boolean use_oid_list = FALSE;
-   BLAST_SequenceBlkPtr subject = NULL;
    BlastHSPListPtr hsp_list; 
    BlastInitialWordParametersPtr word_params;
    BlastExtensionParametersPtr ext_params;
@@ -683,11 +686,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
        BLAST_SetUpAuxStructures(program_number, bssn_info,
           score_options, eff_len_options, lookup_wrap, word_options, 
           ext_options, hit_options, query, query_info, sbp, 
-          max_subject_length, &gap_align, &word_params, &ext_params, 
+          0, &gap_align, &word_params, &ext_params, 
           &hit_params, &aux_struct)) != 0)
       return status;
-
-   max_subject_length = BLASTSeqSrcGetMaxSeqLen(aux_struct->bssp);
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
 
@@ -721,7 +722,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       if (hsp_list && hsp_list->hspcnt > 0) {
          return_stats->prelim_gap_passed += hsp_list->hspcnt;
          /* Save the HSPs into a hit list */
-         BLAST_SaveHitlist(program_number, query, subject, results, 
+         BLAST_SaveHitlist(program_number, query, seq_arg.seq, results, 
             hsp_list, hit_params, query_info, gap_align->sbp, 
             score_options, aux_struct->bssp, thr_info);
       }
