@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/05/22 17:17:09  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.19  2002/05/17 19:09:24  thiessen
 * undo spin button event workaround for wxmac
 *
@@ -247,7 +250,6 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
 
 StyleDialog::~StyleDialog(void)
 {
-    DestroyChildren();  // must do first, since following are wxEvtHandlers
     delete fpSpaceFill;
     delete fpBallRadius;
     delete fpStickRadius;

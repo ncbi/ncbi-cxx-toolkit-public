@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/22 17:17:09  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.4  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -70,10 +73,11 @@ public:
 
     // creates new pairwise alignments (as two-row BlockMultipleAlignments), each of which has
     // the given master and one of the given sequences. If the alignment algorithm fails to
-    // align the new sequence, it will include a null-alignment for that sequence.
-    void CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
-        const AlignmentList& slaves, AlignmentList *newAlignments,
-        const BlockMultipleAlignment *multipleForPSSM);
+    // align the new sequence, it will include a null-alignment for that sequence. If usePSSM is
+    // true, will do BLAST/PSSM, otherwise, BlastTwoSequences. In both cases, alignment is restricted
+    // to locations based on the multiple and alignTo/From values.
+    void CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
+        const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM);
 };
 
 END_SCOPE(Cn3D)

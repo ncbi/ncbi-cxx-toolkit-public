@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/05/22 17:17:10  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.10  2002/04/27 16:32:16  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -91,6 +94,44 @@ static const int SPIN_CTRL_HEIGHT = 24;
 
 extern const int WX_TOOLS_NOTIFY_CHANGED;
 
+
+/////////////////////////////////////////////////////////////////////////////////////
+// the class from which my custom integer/float spin ctrls are derived
+/////////////////////////////////////////////////////////////////////////////////////
+
+class NotifyingSpinButton;
+
+class CustomSpinCtrl
+{
+    friend class NotifyingSpinButton;
+
+private:
+    virtual void OnSpinButtonUp(wxSpinEvent& event) = 0;
+    virtual void OnSpinButtonDown(wxSpinEvent& event) = 0;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// a spin button that notifies a parent when button pressed
+/////////////////////////////////////////////////////////////////////////////////////
+
+class NotifyingSpinButton : public wxSpinButton
+{
+private:
+    CustomSpinCtrl *notify;
+    void OnSpinButtonUp(wxSpinEvent& event);
+    void OnSpinButtonDown(wxSpinEvent& event);
+
+    DECLARE_EVENT_TABLE()
+
+public:
+    NotifyingSpinButton(CustomSpinCtrl* toNotify,
+            wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition,
+            const wxSize& size = wxDefaultSize, long style = wxSP_HORIZONTAL) :
+        wxSpinButton(parent, id, pos, size, style), notify(toNotify) { }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 // a wxTextCtrl that only accepts valid floating point values (turns red otherwise)
 /////////////////////////////////////////////////////////////////////////////////////
@@ -114,11 +155,12 @@ private:
     DECLARE_EVENT_TABLE()
 };
 
+
 /////////////////////////////////////////////////////////////////////////////////
 // my own special integer spin control - for more control over text box
 /////////////////////////////////////////////////////////////////////////////////
 
-class IntegerSpinCtrl : public wxEvtHandler
+class IntegerSpinCtrl : public CustomSpinCtrl
 {
 public:
     IntegerSpinCtrl(wxWindow* parent,
@@ -131,19 +173,17 @@ public:
 
 private:
     IntegerTextCtrl *iTextCtrl;
-    wxSpinButton *spinButton;
+    NotifyingSpinButton *spinButton;
     int minVal, maxVal, incrVal;
 
     void OnSpinButtonUp(wxSpinEvent& event);
     void OnSpinButtonDown(wxSpinEvent& event);
 
-    DECLARE_EVENT_TABLE()
-
 public:
-
     wxTextCtrl * GetTextCtrl(void) const { return iTextCtrl; }
     wxSpinButton * GetSpinButton(void) const { return spinButton; }
 };
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // a wxTextCtrl that only accepts valid floating point values (turns red otherwise)
@@ -168,11 +208,12 @@ private:
     DECLARE_EVENT_TABLE()
 };
 
+
 /////////////////////////////////////////////////////////////////////////////////
 // like wxSpinCtrl, except works on floating point values
 /////////////////////////////////////////////////////////////////////////////////
 
-class FloatingPointSpinCtrl : public wxEvtHandler
+class FloatingPointSpinCtrl : public CustomSpinCtrl
 {
 public:
     FloatingPointSpinCtrl(wxWindow* parent,
@@ -185,19 +226,17 @@ public:
 
 private:
     FloatingPointTextCtrl *fpTextCtrl;
-    wxSpinButton *spinButton;
+    NotifyingSpinButton *spinButton;
     double minVal, maxVal, incrVal;
 
     void OnSpinButtonUp(wxSpinEvent& event);
     void OnSpinButtonDown(wxSpinEvent& event);
 
-    DECLARE_EVENT_TABLE()
-
 public:
-
     wxTextCtrl * GetTextCtrl(void) const { return fpTextCtrl; }
     wxSpinButton * GetSpinButton(void) const { return spinButton; }
 };
+
 
 /////////////////////////////////////////////////////////////////////////////////
 // dialog that asks user for a floating point value

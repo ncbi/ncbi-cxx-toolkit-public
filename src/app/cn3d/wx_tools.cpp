@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/05/22 17:17:10  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.12  2002/04/27 16:32:16  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -90,6 +93,29 @@ const int WX_TOOLS_NOTIFY_CHANGED = wxEVT_USER_FIRST;
     wxCommandEvent notify(WX_TOOLS_NOTIFY_CHANGED); \
     AddPendingEvent(notify); } while (0)
 
+
+/////////////////////////////////////////////////////////////////////////////////
+// NotifyingSpinButton implementation
+/////////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(NotifyingSpinButton, wxSpinButton)
+    EVT_SPIN_UP  (-1, NotifyingSpinButton::OnSpinButtonUp)
+    EVT_SPIN_DOWN(-1, NotifyingSpinButton::OnSpinButtonDown)
+END_EVENT_TABLE()
+
+void NotifyingSpinButton::OnSpinButtonUp(wxSpinEvent& event)
+{
+    notify->OnSpinButtonUp(event);
+    SEND_CHANGED_EVENT;
+}
+
+void NotifyingSpinButton::OnSpinButtonDown(wxSpinEvent& event)
+{
+    notify->OnSpinButtonDown(event);
+    SEND_CHANGED_EVENT;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////
 // IntegerTextCtrl implementation
 /////////////////////////////////////////////////////////////////////////////////
@@ -142,22 +168,17 @@ bool IntegerTextCtrl::IsValidInteger(void) const
 // IntegerSpinCtrl implementation
 /////////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(IntegerSpinCtrl, wxEvtHandler)
-    EVT_SPIN_UP  (-1, IntegerSpinCtrl::OnSpinButtonUp)
-    EVT_SPIN_DOWN(-1, IntegerSpinCtrl::OnSpinButtonDown)
-END_EVENT_TABLE()
-
 IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
     int min, int max, int increment, int initial,
     const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
-    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) : wxEvtHandler(),
+    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
         minVal(min), maxVal(max), incrVal(increment)
 {
     iTextCtrl = new IntegerTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
     iTextCtrl->SetAllowedRange(min, max, increment);
 
-    spinButton = new wxSpinButton(parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
-    spinButton->PushEventHandler(this);
+    spinButton = new NotifyingSpinButton(this,
+        parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
     spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
 
     // clamp and set initial value
@@ -185,7 +206,6 @@ void IntegerSpinCtrl::OnSpinButtonUp(wxSpinEvent& event)
     value += incrVal;
     if (value > maxVal) value = maxVal;
     SetInteger(value);
-    SEND_CHANGED_EVENT;
 }
 
 void IntegerSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
@@ -195,7 +215,6 @@ void IntegerSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
     value -= incrVal;
     if (value < minVal) value = minVal;
     SetInteger(value);
-    SEND_CHANGED_EVENT;
 }
 
 bool IntegerSpinCtrl::GetInteger(int *value) const
@@ -255,22 +274,17 @@ bool FloatingPointTextCtrl::IsValidDouble(void) const
 // FloatingPointSpinCtrl implementation
 /////////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(FloatingPointSpinCtrl, wxEvtHandler)
-    EVT_SPIN_UP  (-1, FloatingPointSpinCtrl::OnSpinButtonUp)
-    EVT_SPIN_DOWN(-1, FloatingPointSpinCtrl::OnSpinButtonDown)
-END_EVENT_TABLE()
-
 FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
     double min, double max, double increment, double initial,
     const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
-    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) : wxEvtHandler(),
+    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
         minVal(min), maxVal(max), incrVal(increment)
 {
     fpTextCtrl = new FloatingPointTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
     fpTextCtrl->SetAllowedRange(min, max);
 
-    spinButton = new wxSpinButton(parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
-    spinButton->PushEventHandler(this);
+    spinButton = new NotifyingSpinButton(this,
+        parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
     spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
 
     // clamp and set initial value
@@ -298,7 +312,6 @@ void FloatingPointSpinCtrl::OnSpinButtonUp(wxSpinEvent& event)
     value += incrVal;
     if (value > maxVal) value = maxVal;
     SetDouble(value);
-    SEND_CHANGED_EVENT;
 }
 
 void FloatingPointSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
@@ -308,7 +321,6 @@ void FloatingPointSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
     value -= incrVal;
     if (value < minVal) value = minVal;
     SetDouble(value);
-    SEND_CHANGED_EVENT;
 }
 
 bool FloatingPointSpinCtrl::GetDouble(double *value) const
@@ -360,7 +372,6 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
 
 GetFloatingPointDialog::~GetFloatingPointDialog(void)
 {
-    DestroyChildren();  // must do first, since following are wxEvtHandlers
     delete fpSpinCtrl;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/05/22 17:17:09  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.10  2002/04/27 16:32:13  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -218,7 +221,6 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
 
 PreferencesDialog::~PreferencesDialog(void)
 {
-    DestroyChildren();  // must do first, since following are wxEvtHandlers
     delete iWormSegments;
     delete iWormSides;
     delete iBondSides;

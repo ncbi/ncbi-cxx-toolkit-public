@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/05/22 17:17:09  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.34  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -804,13 +807,10 @@ void UpdateViewer::SavePendingStructures(void)
 
 void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple)
 {
-    const BlockMultipleAlignment *multipleForPSSM = NULL;
-    if (usePSSMFromMultiple) {
-        multipleForPSSM = alignmentManager->GetCurrentMultipleAlignment();
-        if (!multipleForPSSM) {
-            ERR_POST(Error << "Can't do BLAST/PSSM when no multiple alignment is present");
-            return;
-        }
+    const BlockMultipleAlignment *multipleForPSSM = alignmentManager->GetCurrentMultipleAlignment();
+    if (usePSSMFromMultiple && !multipleForPSSM) {
+        ERR_POST(Error << "Can't do BLAST/PSSM when no multiple alignment is present");
+        return;
     }
 
     // find alignment, and replace it with BLAST result
@@ -823,7 +823,7 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
         toRealign.push_back(alignment);
         BLASTer::AlignmentList newAlignments;
         alignmentManager->blaster->CreateNewPairwiseAlignmentsByBlast(
-            alignment->GetSequenceOfRow(0), toRealign, &newAlignments, multipleForPSSM);
+            multipleForPSSM, toRealign, &newAlignments, usePSSMFromMultiple);
         if (newAlignments.size() != 1) {
             ERR_POST(Error << "UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
             return;

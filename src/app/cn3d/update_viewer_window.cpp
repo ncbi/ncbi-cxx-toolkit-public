@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/05/22 17:17:10  thiessen
+* progress on BLAST interface ; change custom spin ctrl implementation
+*
 * Revision 1.40  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -518,7 +521,6 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
 
 ThreaderOptionsDialog::~ThreaderOptionsDialog(void)
 {
-    DestroyChildren();  // must do first, since following are wxEvtHandlers
     delete fpWeight;
     delete fpLoops;
     delete iStarts;
@@ -644,7 +646,6 @@ RegionDialog::RegionDialog(wxWindow* parentFrame,
 
 RegionDialog::~RegionDialog(void)
 {
-    DestroyChildren();  // must do first, since following are wxEvtHandlers
     delete iFrom;
     delete iTo;
 }
