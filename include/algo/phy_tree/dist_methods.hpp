@@ -92,6 +92,9 @@ public:
                              EFastMePar btype = eOls,
                              EFastMePar wtype = eOls,
                              EFastMePar ntype = eBalanced);
+
+    /// Check a matrix for NaNs and Infs
+    static bool AllFinite(const TMatrix& mat);
 };
 
 /// Conversion from TPhyTreeNode to CBioTreeContainer
@@ -105,6 +108,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/16 15:42:55  jcherry
+ * Made tree-building methods throw if distance matrix contains
+ * NaNs or Infs.  Added CDistMethods::AllFinite to check this.
+ *
  * Revision 1.7  2004/07/01 21:11:23  jcherry
  * Added export specifier
  *

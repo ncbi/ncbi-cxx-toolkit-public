@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 
-#include <math.h>
+#include <corelib/ncbifloat.h>
 
 #include "fastme/graph.h"
 
@@ -41,6 +41,13 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+void s_ThrowIfNotAllFinite(const CDistMethods::TMatrix &mat)
+{
+    if (!CDistMethods::AllFinite(mat)) {
+        throw invalid_argument("Matrix contained NaN or Inf");
+    }
+}
 
 
 /// d = -3/4 ln(1 - (4/3)p).
@@ -87,6 +94,8 @@ void CDistMethods::KimuraDist(const TMatrix& frac_diff,
 CDistMethods::TTree *CDistMethods::NjTree(const TMatrix& dist_mat,
                                           const vector<string>& labels)
 {
+    s_ThrowIfNotAllFinite(dist_mat);
+
     // prepare initial tree (a star phylogeny)
     TTree *tree = new TTree;
     for (unsigned int i = 0;  i < dist_mat.GetRows();  ++i) {
@@ -264,6 +273,8 @@ CDistMethods::TTree *CDistMethods::FastMeTree(const TMatrix& dist_mat,
                                               EFastMePar ntype)
 {
 
+    s_ThrowIfNotAllFinite(dist_mat);
+
     double **dfme = fastme::initDoubleMatrix(dist_mat.GetRows());
     for (unsigned int i = 0;  i < dist_mat.GetRows();  ++i) {
         for (unsigned int j = 0;  j < dist_mat.GetRows();  ++j) {
@@ -419,12 +430,26 @@ CRef<CBioTreeContainer> MakeBioTreeContainer(const TPhyTreeNode *tree)
     return btc;
 }
 
+bool CDistMethods::AllFinite(const TMatrix& mat)
+{
+    ITERATE (TMatrix::TData, it, mat.GetData()) {
+        if (!finite(*it)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/16 15:42:55  jcherry
+ * Made tree-building methods throw if distance matrix contains
+ * NaNs or Infs.  Added CDistMethods::AllFinite to check this.
+ *
  * Revision 1.9  2004/07/01 19:44:53  jcherry
  * Added function for making CBioTreeContainer from TPhyTreeNode
  *
