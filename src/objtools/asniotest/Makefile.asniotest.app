@@ -10,7 +10,7 @@ SRC = asniotest
 LIB = \
     ncbimime \
     cdd \
-    coremat \
+    scoremat \
 	cn3d \
 	mmdb \
 	seqset $(SEQ_LIBS) \
