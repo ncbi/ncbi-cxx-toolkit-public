@@ -64,7 +64,6 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 
 #include "blast_input.hpp" // From working directory
-#include <objtools/blast_format/blast_format.hpp>
 
 // C include files
 
@@ -200,20 +199,9 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("hitlist", "hitlist_size",
         "How many best matching sequences to find?",
         CArgDescriptions::eInteger, "500");
-    arg_desc->AddDefaultKey("descr", "descriptions",
-        "How many matching sequence descriptions to show?",
-        CArgDescriptions::eInteger, "500");
-    arg_desc->AddDefaultKey("align", "alignments", 
-        "How many matching sequence alignments to show?",
-        CArgDescriptions::eInteger, "250");
     arg_desc->AddDefaultKey("out", "outfile", 
         "File name for writing output",
         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddDefaultKey("format", "format", 
-        "How to format the results?",
-        CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("html", "html", "Produce HTML output?",
-                            CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("gencode", "gencode", "Query genetic code",
                             CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("dbgencode", "dbgencode", "Database genetic code",
@@ -460,72 +448,6 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     return;
 }
 
-static CDisplaySeqalign::TranslatedFrames 
-Context2TranslatedFrame(int context)
-{
-    switch (context) {
-    case 1: return CDisplaySeqalign::ePlusStrand1;
-    case 2: return CDisplaySeqalign::ePlusStrand2;
-    case 3: return CDisplaySeqalign::ePlusStrand3;
-    case 4: return CDisplaySeqalign::eMinusStrand1;
-    case 5: return CDisplaySeqalign::eMinusStrand2;
-    case 6: return CDisplaySeqalign::eMinusStrand3;
-    default: return CDisplaySeqalign::eFrameNotSet;
-    }
-}
-
-static TSeqLocInfoVector
-BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
-    EProgram program)
-{
-    TSeqLocInfoVector retval;
-    int frame, num_frames;
-    bool translated_query;
-    int index;
-
-    translated_query = (program == eBlastx ||
-                        program == eTblastx);
-
-    num_frames = (translated_query ? NUM_FRAMES : 1);
-
-    TSeqLocInfo mask_info_list;
-
-    for (index = 0; index < (int)slp.size(); ++index) {
-        mask_info_list.clear();
-
-/*   FIXME???
-        BlastSeqLoc* loc = mask->seqloc_array[index*num_frames];
-        if (!loc) {
-            retval.push_back(mask_info_list);
-            continue;
-        }
-*/
-        CDisplaySeqalign::SeqlocInfo* seqloc_info =
-            new CDisplaySeqalign::SeqlocInfo;
-
-        for (int tmp_index=0; tmp_index<num_frames; tmp_index++)
-        {
-            frame = (translated_query ? (tmp_index+1) : 0);
-            BlastSeqLoc* loc = mask->seqloc_array[index*num_frames+tmp_index];
-           
-            for ( ; loc; loc = loc->next) {
-                seqloc_info->frame = Context2TranslatedFrame(frame);
-                CRef<CSeq_loc> seqloc(new CSeq_loc());
-                seqloc->SetInt().SetFrom((loc->ssr)->left);
-                seqloc->SetInt().SetTo((loc->ssr)->right);
-                seqloc->SetInt().SetId(*(const_cast<CSeq_id*>(&sequence::GetId(*
-slp[index].seqloc, slp[index].scope))));
-
-                seqloc_info->seqloc = seqloc;
-                mask_info_list.push_back(seqloc_info);
-            }
-        }
-        retval.push_back(mask_info_list);
-    }
-
-    return retval;
-}
-
 void CBlastApplication::FormatResults(const CDbBlast* blaster, 
                                       TSeqAlignVector& seqalignv)
 {
@@ -535,6 +457,7 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
     CArgs args = GetArgs();
 
     if (args["asnout"]) {
+        //CBlastFormatOptions format_options(program, args["out"].AsOutputFile());
         auto_ptr<CObjectOStream> asnout(
             CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
         unsigned int query_index;
@@ -544,54 +467,6 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
                 continue;
             *asnout << *seqalignv[query_index];
         }
-    }
-
-    if (args["out"]) {
-        EProgram program = blaster->GetOptions().GetProgram();
-
-        /* Revert RPS program names to their conventional
-           counterparts, to avoid confusing the C toolkit
-           formatter */
-
-        if (program == eRPSBlast)
-            program = eBlastp;
-        if (program == eRPSTblastn)
-            program = eBlastx;
-
-        CBlastFormatOptions format_options(program, args["out"].AsOutputFile());
-        
-        format_options.SetAlignments(args["align"].AsInteger());
-        format_options.SetDescriptions(args["descr"].AsInteger());
-        format_options.SetAlignView(args["format"].AsInteger());
-        format_options.SetHtml(args["html"].AsBoolean());
-        
-        bool db_is_na = (program == eBlastn || program == eTblastn || 
-                         program == eTblastx);
-
-        /// @todo Print output header here
-        CBlastDbDataLoader::EDbType kDbType = 
-            (db_is_na ? CBlastDbDataLoader::eNucleotide :
-                        CBlastDbDataLoader::eProtein);
-        CBlastDbDataLoader::RegisterInObjectManager(*m_ObjMgr,
-            args["db"].AsString(), kDbType, CObjectManager::eDefault);
-
-        format_options.SetDbLoaderName(
-            CBlastDbDataLoader::GetLoaderNameFromArgs(args["db"].AsString(), 
-                                                      kDbType));
-        /* Format the results */
-        TSeqLocInfoVector maskv =
-            BlastMaskLoc2CSeqLoc(blaster->GetFilteredQueryRegions(), 
-                              blaster->GetQueries(), program);
-        
-        if (BLAST_FormatResults(seqalignv, program, blaster->GetQueries(), 
-                maskv, &format_options, 
-                blaster->GetOptions().GetOutOfFrameMode())) {
-            ERR_POST_EX(CBlastException::eInternal, 2,
-                       "Error in formatting results");
-            exit(CBlastException::eInternal);
-        }
-        
-        /// @todo Print output footer here
     }
 }
 
