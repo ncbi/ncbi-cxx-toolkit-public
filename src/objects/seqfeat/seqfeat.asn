@@ -1,4 +1,4 @@
---$Revision: 1.5 $
+--$Revision: 1.6 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -152,10 +152,11 @@ BEGIN
 
 EXPORTS Rsite-ref;
 
+IMPORTS Dbtag FROM NCBI-General;
+
 Rsite-ref ::= CHOICE {
     str VisibleString ,     -- may be unparsable
-    std VisibleString ,     -- from a standard list of enzyme names
-    id INTEGER }            -- pointer to a database
+    db  Dbtag }             -- pointer to a restriction site database
 
 END
 
@@ -226,7 +227,7 @@ Gene-ref ::= SEQUENCE {
     allele VisibleString OPTIONAL ,    -- Official allele designation
     desc VisibleString OPTIONAL ,      -- descriptive name
     maploc VisibleString OPTIONAL ,    -- descriptive map location
-    pseudo BOOLEAN OPTIONAL ,          -- pseudogene
+    pseudo BOOLEAN DEFAULT FALSE ,          -- pseudogene
     db SET OF Dbtag OPTIONAL }      -- ids in other dbases
 
 END
