@@ -1,3 +1,3 @@
 LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ client client_
+SRC = $(LIB)__ $(LIB)___ blastclient blastclient_
 
