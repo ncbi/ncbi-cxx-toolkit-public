@@ -99,7 +99,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
  * @param results Structure holding all saved results [out]
  * @param return_stats Return statistics numbers [out]
  */
-Int2 BLAST_SearchEngine(CharPtr blast_program, BLAST_SequenceBlkPtr query, 
+Int2 BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query, 
         BlastQueryInfoPtr query_info,
         ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject_blk, 
         BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 

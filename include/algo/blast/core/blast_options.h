@@ -354,12 +354,12 @@ Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options);
 
 /** Fill non-default contents of the QuerySetUpOptions.
  * @param options The options structure [in] [out]  
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param filter_string Parsable string of filtering options [in] 
  * @param strand_option which strand to search [in]
 */
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
-        const char *program, const char *filter_string, Uint1 strand_option);
+        const Uint1 program, const char *filter_string, Uint1 strand_option);
 
 
 /** Deallocate memory for BlastInitialWordOptions. */
@@ -367,16 +367,16 @@ BlastInitialWordOptionsPtr
 BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options);
 
 /** Allocate memory for BlastInitialWordOptions and fill with default values.
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that have are being returned [out] 
 */
 Int2
-BlastInitialWordOptionsNew(const Char *program, 
+BlastInitialWordOptionsNew(const Uint1 program, 
    BlastInitialWordOptionsPtr *options);
 
 /** Fill non-default values in the BlastInitialWordOptions structure.
  * @param options The options structure [in] [out] 
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param greedy Settings should assume greedy alignments [in]
  * @param window_size Size of a largest window between 2 words for the two-hit
  *                    version [in]
@@ -389,7 +389,7 @@ BlastInitialWordOptionsNew(const Char *program,
 */
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options, 
-   const Char *program, Boolean greedy, Int4 window_size, 
+   const Uint1 program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    FloatHi xdrop_ungapped);
 
@@ -421,16 +421,16 @@ BlastExtensionOptionsPtr
 BlastExtensionOptionsFree(BlastExtensionOptionsPtr options);
 
 /** Allocate memory for BlastExtensionOptions and fill with default values.
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
 Int2
-BlastExtensionOptionsNew(const Char *program, 
+BlastExtensionOptionsNew(const Uint1 program, 
    BlastExtensionOptionsPtr *options);
 
 /** Fill non-default values in the BlastExtensionOptions structure.
  * @param options The options structure [in] [out]
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param greedy Settings should assume greedy alignments [in]
  * @param x_dropoff X-dropoff parameter value for preliminary gapped 
  *                  extensions [in]
@@ -439,7 +439,7 @@ BlastExtensionOptionsNew(const Char *program,
 */
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options, 
-   const Char *program, Boolean greedy, FloatHi x_dropoff, 
+   const Uint1 program, Boolean greedy, FloatHi x_dropoff, 
    FloatHi x_dropoff_final);
 
 
@@ -450,14 +450,14 @@ BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options,
 Int2 BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr *blast_msg);
 
 /** Calculate the raw values for the X-dropoff parameters 
- * @param blast_program Program name [in]
+ * @param blast_program Program number [in]
  * @param options Already allocated extension options [in]
  * @param sbp Structure containing statistical information [in]
  * @param query_info Query information, needed only for determining the first 
  *                   context [in]
  * @param parameters Extension parameters [out]
  */
-Int2 BlastExtensionParametersNew(CharPtr blast_program, 
+Int2 BlastExtensionParametersNew(const Uint1 blast_program, 
         BlastExtensionOptionsPtr options, 
         BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
         BlastExtensionParametersPtr *parameters);
@@ -471,15 +471,15 @@ BlastExtensionParametersFree(BlastExtensionParametersPtr parameters);
 BlastScoringOptionsPtr BlastScoringOptionsFree(BlastScoringOptionsPtr options);
 
 /** Allocate memory for BlastScoringOptions and fill with default values. 
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
-Int2 BlastScoringOptionsNew(const Char *program, 
+Int2 BlastScoringOptionsNew(const Uint1 program, 
         BlastScoringOptionsPtr *options);
 
 /** Fill non-default values in the BlastScoringOptions structure. 
  * @param options The options structure [in] [out]
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param greedy_extension Is greedy extension algorithm used? [in]
  * @param penalty Mismatch penalty score (blastn only) [in]
  * @param reward Match reward score (blastn only) [in]
@@ -488,7 +488,7 @@ Int2 BlastScoringOptionsNew(const Char *program,
  * @param gap_extend Cost of a gap [in]
 */
 Int2 
-BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Char *program, 
+BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Uint1 program, 
    Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend);
 
@@ -525,15 +525,15 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
 
 
 /** Allocate memory for lookup table options and fill with default values.
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
  */
-Int2 LookupTableOptionsNew(const Char *program, 
+Int2 LookupTableOptionsNew(const Uint1 program, 
         LookupTableOptionsPtr *options);
 
 /** Allocate memory for lookup table options and fill with default values.
  * @param options The options [in] [out]
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param is_megablast Megablast (instead of blastn) if TRUE [in]
  * @param threshold Threshold value for finding neighboring words [in]
  * @param word_size Number of matched residues in an initial word [in]
@@ -543,7 +543,7 @@ Int2 LookupTableOptionsNew(const Char *program,
  */
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptionsPtr options, 
-   const Char *program, Boolean is_megablast, Int4 threshold,
+   const Uint1 program, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize);
 
 
@@ -579,10 +579,10 @@ BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, Blast_MessagePtr
 
 *************************************************************************/
 /** Allocate memory for BlastHitSavingOptions.
- * @param program Program name (blastn, blastp, etc.) [in]
+ * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
-Int2 BlastHitSavingOptionsNew(const Char *program, 
+Int2 BlastHitSavingOptionsNew(const Uint1 program, 
         BlastHitSavingOptionsPtr *options);
 
 /** Allocate memory for BlastHitSavingOptions.
@@ -615,14 +615,14 @@ Int2 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
         BlastHitSavingParametersPtr *parameters);
 
 /** Initialize the formatting options structure.
- * @param program Name of the BLAST program [in]
+ * @param program Number of the BLAST program [in]
  * @param file_out Name of the file where output is printed [in]
  * @param num_descriptions Number of definition lines to report per query [in]
  * @param num_alignments Number of alignments to show per query [in]
  * @param align_view What kind of formatted output to show? [in]
  * @param format_options_ptr The initialized structure [out]
 */
-Int2 BlastFormattingOptionsNew(CharPtr program, CharPtr file_out, 
+Int2 BlastFormattingOptionsNew(const Uint1 program, CharPtr file_out, 
         Int4 num_descriptions, Int4 num_alignments, Int4 align_view,
         BlastFormattingOptionsPtr PNTR format_options_ptr);
 
@@ -647,7 +647,7 @@ BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options);
  * @param protein_options Protein BLAST options [out]
  * @param db_options BLAST database options [out]
  */
-Int2 BLAST_InitDefaultOptions(CharPtr blast_program,
+Int2 BLAST_InitDefaultOptions(const Uint1 blast_program,
    LookupTableOptionsPtr PNTR lookup_options,
    QuerySetUpOptionsPtr PNTR query_setup_options, 
    BlastInitialWordOptionsPtr PNTR word_options,

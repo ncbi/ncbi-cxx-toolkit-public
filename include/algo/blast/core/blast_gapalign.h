@@ -100,7 +100,7 @@ Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
    ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, Int4 query_length, 
-   const CharPtr program, BLAST_ScoreBlkPtr sbp, 
+   const Uint1 program, BLAST_ScoreBlkPtr sbp, 
    BlastGapAlignStructPtr PNTR gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */

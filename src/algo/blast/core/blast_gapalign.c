@@ -503,19 +503,20 @@ Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
    ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, Int4 query_length, 
-   const CharPtr program, BLAST_ScoreBlkPtr sbp, 
+   const Uint1 program, BLAST_ScoreBlkPtr sbp, 
    BlastGapAlignStructPtr PNTR gap_align_ptr)
 {
    Int2 status = 0;
-   Boolean is_na = (!StrCmp(program, "blastn") || !StrCmp(program, "blastx")
-		    || !StrCmp(program, "tblastx"));
+   Boolean is_na = (program == blast_type_blastn ||
+                    program == blast_type_blastx ||
+                    program == blast_type_tblastx);
    Int4 max_dbseq_length;
    BlastGapAlignStructPtr gap_align = 
       (BlastGapAlignStructPtr) MemNew(sizeof(BlastGapAlignStruct));
 
    *gap_align_ptr = gap_align;
 
-   BlastProgram2Number(program, &gap_align->program);
+   gap_align->program = program;
 
    if (sbp) {
       gap_align->sbp = sbp;

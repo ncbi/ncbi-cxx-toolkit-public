@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.18  2003/05/18 21:57:37  camacho
+* Use Uint1 for program name whenever possible
+*
 * Revision 1.17  2003/05/15 22:01:22  coulouri
 * add rcsid string to sources
 *
@@ -278,14 +281,14 @@ extern Int4 SeqLocTotalLen (CharPtr prog_name, SeqLocPtr slp);
 */
 
 Int2 
-BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr scoring_options, const Char *program_name)
+BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr scoring_options, const Uint1 program)
 {
 
-	if (sbp == NULL || scoring_options == NULL || program_name == NULL)
+	if (sbp == NULL || scoring_options == NULL)
 		return 1;
 
 
-	if (StringCmp(program_name, "blastn") == 0)
+	if (program == blast_type_blastn)
 	{
 		sbp->penalty = scoring_options->penalty;
 		sbp->reward = scoring_options->reward;
@@ -1672,7 +1675,7 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
    return 0;
 }
 
-Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
+Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
         const LookupTableOptionsPtr lookup_options,	
@@ -1704,7 +1707,6 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
                                         masks */
    Int4 counter;
    SeqIdPtr seqid = NULL, mask_seqid = NULL, next_mask_seqid = NULL;
-   Uint1 program_number;
    Int4 buffer_length;
    
    if ((status=
@@ -1718,8 +1720,6 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
    if ((status=
         BlastHitSavingOptionsValidate(hit_options, blast_message)) != 0)
       return status;
-   
-   BlastProgram2Number(program, &program_number);
    
    is_na = ISA_na(SeqLocMol(slp));
    while (tmp_slp) {
@@ -1753,7 +1753,7 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
       }
       
       /* Fills in block for gapped blast. */
-      status = BlastScoreBlkGappedFill(sbp, scoring_options, program);
+      status = BlastScoreBlkGappedFill(sbp, scoring_options, program_number);
       if (status)
          return status;
       
@@ -1890,8 +1890,8 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
       }
       
       if (filter_slp_combined) {
-         if ((frame && StringCmp("blastx", program) == 0) ||
-             StringCmp("tblastx", program) == 0) {
+         if ((frame && program_number == blast_type_blastx) ||
+             program_number == blast_type_tblastx) {
             /* Translated SeqLoc saved for blastx/tblastx. */
             filter_slp_combined = SeqLocSetFree(filter_slp_combined);
          }

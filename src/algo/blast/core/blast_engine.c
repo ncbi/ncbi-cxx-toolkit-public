@@ -393,7 +393,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
  * @param query_info The query information block, which stores the effective
  *                   search spaces for all queries [in] [out]
 */
-static Int2 BLAST_CalcEffLengths (const Char *program, 
+static Int2 BLAST_CalcEffLengths (const Uint1 program_number, 
    const BlastScoringOptionsPtr scoring_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options, 
    const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info)
@@ -414,12 +414,9 @@ static Int2 BLAST_CalcEffLengths (const Char *program,
                                    sequence/strand/frame */
    Int2 i; /* Iteration index for calculating length adjustment */
    Uint1 num_strands;
-   Uint1 program_number;
 
    if (sbp == NULL || eff_len_options == NULL)
       return 1;
-   
-   BlastProgram2Number(program, &program_number);
 
    /* use values in BlastEffectiveLengthsOptionsPtr */
    db_length = eff_len_options->db_length;
@@ -465,7 +462,7 @@ static Int2 BLAST_CalcEffLengths (const Char *program,
          min_query_length = (Int4) 1/(kbp->K);
 
          for (i=0; i<5; i++) {
-            if (StringCmp(program, "blastn") != 0 && 
+            if (program_number != blast_type_blastn && 
                 scoring_options->gapped_calculation) {
                length_adjustment = Nlm_Nint((((kbp->logK)+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
             } else {
@@ -522,7 +519,7 @@ static Int2 BLAST_CalcEffLengths (const Char *program,
  * @param hit_params Parameters for saving hits [out]
  */
 static Int2 
-BLAST_SetUpAuxStructures(Char *program,
+BLAST_SetUpAuxStructures(const Uint1 program,
    const BlastScoringOptionsPtr scoring_options,
    const BlastEffectiveLengthsOptionsPtr eff_len_options,
    const LookupTableOptionsPtr lookup_options,	
@@ -606,7 +603,7 @@ BLAST_SetUpAuxStructures(Char *program,
    return status;
 }
 
-Int2 BLAST_SearchEngine(CharPtr blast_program, BLAST_SequenceBlkPtr query, 
+Int2 BLAST_SearchEngine(const Uint1 blast_program, BLAST_SequenceBlkPtr query, 
         BlastQueryInfoPtr query_info,
         ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
         BLAST_ScoreBlkPtr sbp, BlastScoringOptionsPtr score_options, 

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.19  2003/05/18 21:57:37  camacho
+ * Use Uint1 for program name whenever possible
+ *
  * Revision 1.18  2003/05/15 22:01:22  coulouri
  * add rcsid string to sources
  *
@@ -223,18 +226,18 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
 }
 
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
-        const char *program, const char *filter_string, Uint1 strand_option)
+        const Uint1 program, const char *filter_string, Uint1 strand_option)
 {
    if (options == NULL)
       return 1;
    
-   if (strand_option && !StringCmp("blastn", program)) {
+   if (strand_option && program == blast_type_blastn) {
       options->strand_option = strand_option;
    }
    /* "L" indicates low-complexity (seg for proteins, 
       dust for nucleotides). */
    if (!filter_string || !StringICmp(filter_string, "T")) {
-      if (StringICmp(program, "blastn") == 0)
+      if (program == blast_type_blastn)
          options->filter_string = StringSave("D");
       else
          options->filter_string = StringSave("S");
@@ -268,7 +271,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
 *****************************************************************************/
 
 Int2
-BlastInitialWordOptionsNew(const Char *program, 
+BlastInitialWordOptionsNew(const Uint1 program, 
    BlastInitialWordOptionsPtr *options)
 {
    *options = 
@@ -276,7 +279,7 @@ BlastInitialWordOptionsNew(const Char *program,
    if (*options == NULL)
       return 1;
 
-   if (StringCmp(program, "blastn")) {	/* protein-protein options. */
+   if (program != blast_type_blastn) {	/* protein-protein options. */
       (*options)->window_size = BLAST_WINDOW_SIZE_PROT;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
    } else {
@@ -288,7 +291,7 @@ BlastInitialWordOptionsNew(const Char *program,
 
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options, 
-   const Char *program, Boolean greedy, Int4 window_size, 
+   const Uint1 program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    FloatHi xdrop_ungapped)
 {
@@ -297,7 +300,7 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options,
 
    /* Ungapped extension is performed in all cases except when greedy
       gapped extension is used */
-   if (StringCmp(program, "blastn")) {
+   if (program != blast_type_blastn) {
       options->extend_word_method |= EXTEND_WORD_UNGAPPED;
       options->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
    } else if (!greedy) {
@@ -434,7 +437,7 @@ BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
 *****************************************************************************/
 
 Int2
-BlastExtensionOptionsNew(const Char *program, 
+BlastExtensionOptionsNew(const Uint1 program, 
    BlastExtensionOptionsPtr *options)
 
 {
@@ -444,9 +447,9 @@ BlastExtensionOptionsNew(const Char *program,
 	if (*options == NULL)
 		return 1;
 
-	BlastProgram2Number(program, &((*options)->program_number));
+    (*options)->program_number = program;
 
-	if (StringCmp(program, "blastn")) /* protein-protein options. */
+	if (program != blast_type_blastn) /* protein-protein options. */
 	{
 		(*options)->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
 		(*options)->gap_x_dropoff_final = 
@@ -464,13 +467,13 @@ BlastExtensionOptionsNew(const Char *program,
 
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options, 
-   const Char *program, Boolean greedy, FloatHi x_dropoff, 
+   const Uint1 program, Boolean greedy, FloatHi x_dropoff, 
    FloatHi x_dropoff_final)
 {
    if (!options)
       return 1;
 
-   if (!StringCmp(program, "blastn")) {
+   if (program == blast_type_blastn) {
       if (greedy) {
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
          options->algorithm_type = EXTEND_GREEDY;
@@ -515,7 +518,7 @@ BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr
 	return 0;
 }
 
-Int2 BlastExtensionParametersNew(CharPtr blast_program, 
+Int2 BlastExtensionParametersNew(const Uint1 blast_program, 
         BlastExtensionOptionsPtr options, BLAST_ScoreBlkPtr sbp,
         BlastQueryInfoPtr query_info, BlastExtensionParametersPtr *parameters)
 {
@@ -530,7 +533,7 @@ Int2 BlastExtensionParametersNew(CharPtr blast_program,
       return -1;
    }
 
-   if (StrCmp(blast_program, "blastn") && sbp->kbp_gap) {
+   if ((blast_program != blast_type_blastn) && sbp->kbp_gap) {
       kbp_gap = sbp->kbp_gap[query_info->first_context];
    } else {
       kbp_gap = kbp;
@@ -586,16 +589,16 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 *******************************************************************************/
 
 Int2 
-BlastScoringOptionsNew(const Char *program, BlastScoringOptionsPtr *options)
+BlastScoringOptionsNew(const Uint1 program, BlastScoringOptionsPtr *options)
 {
    *options = (BlastScoringOptionsPtr) MemNew(sizeof(BlastScoringOptions));
 
    if (*options == NULL)
       return 1;
    
-   BlastProgram2Number(program, &((*options)->program_number));
+   (*options)->program_number = program;
    
-   if (StringCmp(program, "blastn")) {	/* protein-protein options. */
+   if (program != blast_type_blastn) {	/* protein-protein options. */
       (*options)->shift_pen = INT2_MAX;
       (*options)->is_ooframe = FALSE;
       (*options)->gap_open = BLAST_GAP_OPEN_PROT;
@@ -611,14 +614,14 @@ BlastScoringOptionsNew(const Char *program, BlastScoringOptionsPtr *options)
 }
 
 Int2 
-BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Char *program, 
+BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Uint1 program, 
    Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend)
 {
    if (!options)
       return 1;
 
-   if (StringCmp(program, "blastn")) {	/* protein-protein options. */
+   if (program != blast_type_blastn) {	/* protein-protein options. */
       if (matrix)
          options->matrix = StringSave(matrix);
       else
@@ -811,28 +814,28 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 *******************************************************************************/
 
 Int2 
-LookupTableOptionsNew(const Char *program, LookupTableOptionsPtr *options)
+LookupTableOptionsNew(const Uint1 program, LookupTableOptionsPtr *options)
 {
    *options = (LookupTableOptionsPtr) MemNew(sizeof(LookupTableOptions));
    
    if (*options == NULL)
       return 1;
    
-   BlastProgram2Number(program, &((*options)->program_number));
+   (*options)->program_number = program;
    
-   if (StringCmp("blastn", program)) {
+   if (program != blast_type_blastn) {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
       (*options)->alphabet_size = 25;
       (*options)->matrixname = StringSave("BLOSUM62");
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
-      if (StringCmp("blastp", program) == 0)
+      if (program == blast_type_blastp)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-      else if (StringCmp("blastx", program) == 0)
+      else if (program == blast_type_blastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-      else if (StringCmp("tblastn", program) == 0)
+      else if (program == blast_type_tblastn)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-      else if (StringCmp("tblastx", program) == 0)
+      else if (program == blast_type_tblastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
       
    } else {
@@ -844,13 +847,13 @@ LookupTableOptionsNew(const Char *program, LookupTableOptionsPtr *options)
 
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptionsPtr options, 
-   const Char *program, Boolean is_megablast, Int4 threshold,
+   const Uint1 program, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize)
 {
    if (!options)
       return 1;
 
-   if (!StringCmp("blastn", program)) {
+   if (program == blast_type_blastn) {
       if (is_megablast)	{
          options->word_size = BLAST_WORDSIZE_MEGABLAST;
          options->lut_type = MB_LOOKUP_TABLE;
@@ -865,7 +868,7 @@ BLAST_FillLookupTableOptions(LookupTableOptionsPtr options,
       options->threshold = threshold;
    if (word_size)
       options->word_size = word_size;
-   if (!StringCmp("blastn", program)) {
+   if (program == blast_type_blastn) {
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;
       } else if (variable_wordsize) {
@@ -970,7 +973,7 @@ BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 
 *****************************************************************************/
 
-Int2 BlastHitSavingOptionsNew(const Char *program, 
+Int2 BlastHitSavingOptionsNew(const Uint1 program, 
         BlastHitSavingOptionsPtr *options)
 {
    *options = (BlastHitSavingOptionsPtr) MemNew(sizeof(BlastHitSavingOptions));
@@ -978,7 +981,7 @@ Int2 BlastHitSavingOptionsNew(const Char *program,
    if (*options == NULL)
       return 1;
 
-   BlastProgram2Number(program, &((*options)->program_number));
+   (*options)->program_number = program;
 
    (*options)->hitlist_size = 500;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
@@ -1096,7 +1099,7 @@ BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
    return 0;
 }
 
-Int2 BlastFormattingOptionsNew(CharPtr program, CharPtr file_out, 
+Int2 BlastFormattingOptionsNew(const Uint1 program, CharPtr file_out, 
         Int4 num_descriptions, Int4 num_alignments, Int4 align_view, 
         BlastFormattingOptionsPtr PNTR format_options_ptr)
 {
@@ -1119,7 +1122,7 @@ Int2 BlastFormattingOptionsNew(CharPtr program, CharPtr file_out,
    
    format_options->align_options += TXALIGN_MATRIX_VAL;
    format_options->align_options += TXALIGN_SHOW_QS;
-   if (StringICmp("blastx", program) == 0)
+   if (program == blast_type_blastx)
       format_options->align_options += TXALIGN_BLASTX_SPECIAL;
    
    format_options->align_view = align_view;
@@ -1136,7 +1139,7 @@ BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options)
 }
 
 
-Int2 BLAST_InitDefaultOptions(CharPtr blast_program,
+Int2 BLAST_InitDefaultOptions(Uint1 program_number,
    LookupTableOptionsPtr PNTR lookup_options,
    QuerySetUpOptionsPtr PNTR query_setup_options, 
    BlastInitialWordOptionsPtr PNTR word_options,
@@ -1149,22 +1152,22 @@ Int2 BLAST_InitDefaultOptions(CharPtr blast_program,
 {
    Int2 status;
 
-   if ((status = LookupTableOptionsNew(blast_program, lookup_options)))
+   if ((status = LookupTableOptionsNew(program_number, lookup_options)))
       return status;
 
    if ((status=BlastQuerySetUpOptionsNew(query_setup_options)))
       return status;
 
-   if ((status=BlastInitialWordOptionsNew(blast_program, word_options)))
+   if ((status=BlastInitialWordOptionsNew(program_number, word_options)))
       return status;
 
-   if ((status = BlastExtensionOptionsNew(blast_program, ext_options)))
+   if ((status = BlastExtensionOptionsNew(program_number, ext_options)))
       return status;
 
-   if ((status=BlastHitSavingOptionsNew(blast_program, hit_options)))
+   if ((status=BlastHitSavingOptionsNew(program_number, hit_options)))
       return status;
 
-   if ((status=BlastScoringOptionsNew(blast_program, score_options)))
+   if ((status=BlastScoringOptionsNew(program_number, score_options)))
       return status;
 
    if ((status=BlastEffectiveLengthsOptionsNew(eff_len_options)))

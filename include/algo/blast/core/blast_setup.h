@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.9  2003/05/18 21:56:04  camacho
+* Use Uint1 for program name whenever possible
+*
 * Revision 1.8  2003/05/06 21:28:09  dondosha
 * Added functions previously static in blast_driver.c
 *
@@ -156,7 +159,7 @@ extern "C" {
 */
 Int2
 BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
-const BlastScoringOptionsPtr scoring_options, const Char *program_name);
+const BlastScoringOptionsPtr scoring_options, const Uint1 program_name);
 
 
 /** BlastSetUp_GetSequence 
@@ -234,7 +237,7 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
-Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
+Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
         const LookupTableOptionsPtr lookup_options,	
