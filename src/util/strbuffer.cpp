@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/10 21:16:47  vasilche
+* Removed EOF workaround code.
+*
 * Revision 1.6  2000/03/10 17:59:21  vasilche
 * Fixed error reporting.
 * Added EOF bug workaround on MIPSpro compiler (not finished).
@@ -165,17 +168,8 @@ char* CStreamBuffer::FillBuffer(char* pos)
     }
     size_t load = m_BufferSize - dataSize;
     while ( load > 0 ) {
-        size_t count;
-#ifdef mips
-        for ( count = 0; count < load; count++ ) {
-            m_DataEndPos[count] = m_Input.get();
-            if ( !m_Input )
-                break;
-        }
-#else
         m_Input.read(m_DataEndPos, load);
-        count = m_Input.gcount();
-#endif
+        size_t count = m_Input.gcount();
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
                 return pos;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/03/10 21:16:47  vasilche
+* Removed EOF workaround code.
+*
 * Revision 1.28  2000/03/10 17:59:20  vasilche
 * Fixed error reporting.
 * Added EOF bug workaround on MIPSpro compiler (not finished).
@@ -262,19 +265,7 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
     }
     m_CurrentPosition++;
 #endif
-#ifdef mips
-    if ( byte == 255 ) {
-        char c = 255;
-        m_Output.write(&c, 1);
-    }
-    else {
-        m_Output.put(char(byte));
-    }
-#else
     m_Output.put(char(byte));
-#endif
-    if ( !m_Output )
-        THROW1_TRACE(runtime_error, "write error");
 }
 
 #if !CHECK_STREAM_INTEGRITY
@@ -293,11 +284,8 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
         EndTag();
 #endif
-    if ( size == 29 && bytes[0] == 'i' ) {
-        size = 29;
-    }
-    if ( size != 0 && !m_Output.write(bytes, size) ) {
-        ERR_POST("write error: " << size << '@' << NStr::PtrToString(bytes) << " = " << m_Output.rdstate());
+    if ( !m_Output.write(bytes, size) ) {
+        ERR_POST("write error: " << size << '@' << NStr::PtrToString(bytes));
         THROW1_TRACE(runtime_error, "write error");
     }
 }
@@ -426,6 +414,8 @@ void CObjectOStreamAsnBinary::WriteEndOfContent(void)
 {
     WriteSysTag(eNone);
     WriteShortLength(0);
+    if ( !m_Output )
+        THROW1_TRACE(runtime_error, "write error");
 }
 
 void CObjectOStreamAsnBinary::WriteNull(void)
@@ -533,22 +523,18 @@ void CObjectOStreamAsnBinary::WriteDouble(double data)
 
 void CObjectOStreamAsnBinary::WriteString(const string& str)
 {
-    _TRACE("WriteString("<<str<<")");
     WriteSysTag(eVisibleString);
     size_t length = str.size();
     WriteLength(length);
     WriteBytes(str.data(), length);
-    _TRACE("OK");
 }
 
 void CObjectOStreamAsnBinary::WriteStringStore(const string& str)
 {
-    _TRACE("WriteStringStore("<<str<<")");
     WriteShortTag(eApplication, false, eStringStore);
     size_t length = str.size();
     WriteLength(length);
     WriteBytes(str.data(), length);
-    _TRACE("OK");
 }
 
 void CObjectOStreamAsnBinary::WriteCString(const char* str)
