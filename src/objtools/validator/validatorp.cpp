@@ -386,6 +386,7 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
         bioseq_validator.ValidateSeqIds(*bi);
         bioseq_validator.ValidateInst(*bi);
         bioseq_validator.ValidateBioseqContext(*bi);
+        bioseq_validator.ValidateHistory(*bi);
     }
 
     CValidError_bioseqset bioseqset_validator(*this);
@@ -1625,6 +1626,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/01/24 20:38:51  shomrat
+* Added call to ValidateHistory for each bioseq
+*
 * Revision 1.7  2003/01/24 19:14:47  ucko
 * Catch exceptions by reference rather than value; fixes a build error
 * with WorkShop in release mode.
