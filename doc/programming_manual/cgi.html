@@ -14,6 +14,7 @@
   <li> <a href="#cookies"> The CCgiCookies class </a>
   <li> <a href="#ccgictx"> The CCgiContext class </a>
   <li> <a href="#xmpl"> Example code using the CGI classes </a>
+  <li> <a href="#cgireg"> CGI Registry configuration </a>  
 </ul>
 
 Although CGI programs are generally run as web applications with HTML interfaces, this section of
@@ -662,6 +663,69 @@ to both the <span class="ncbi_proj">xncbi</span> and <span class="ncbi_proj">xcg
 Additional examples using the CGI classes can be found in
 <a href="../lxr/source/src/cgi/test/" class="ncbi_dir">src/cgi/test</a>.
 <p><br>
+
+<a name="cgireg"></a><h3>CGI Registry configuration</h3>
+<p>Application registry defines CGI related configuration settings, 
+in the <span class="ncbi_reg">[CGI]</span> section.</p>
+
+
+<table border=1 width=550 cellspacing=1>
+  <caption></caption>
+  <tr><th>Field</th><th>Value(s)</th><th>Action</th> </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">TimeStamp</span></td> 
+	<td>true | false</td>
+	<td>"true" - log start time, finish time and total elapsed time
+	</td>
+  </tr>
+  <tr>
+	<td><span class="ncbi_reg_var">PrintEnv</span></td> 
+	<td>all | {comma separated list of variables}</td>
+	<td> "all" - log all environment variables<br>
+		 instead of "all" can be list of variables to be logged
+	</td>
+  </tr>
+  <tr>
+	<td><span class="ncbi_reg_var">Log</span></td> 
+	<td>OnError | OnDebug | On </td>
+	<td>"On" - enable logging <br> 
+	    "OnDebug" - enables logging if program compiled in debug mode<br>
+		"OnError" - enables logging if CGI fails for some reason<br>
+	</td>
+  </tr>
+</table>
+
+<p>Fast CGI settings.<span class="ncbi_reg">[FastCGI]</span> section.</p>
+
+<table border=1 width=550 cellspacing=1>
+  <caption></caption>
+  <tr><th>Field</th><th>Value(s)</th><th>Action</th> </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">StopIfFailed</span></td> 
+	<td>true | false</td>
+	<td>"true" - stop Fast CGI application in case of an error
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">PrintIterNo</span></td> 
+	<td>true | false</td>
+	<td>"true" - log FastCGI iteration(call) number
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">Debug</span></td> 
+	<td>true | false</td>
+	<td>"true" - logs fast CGI debug information into the output context
+	</td>
+  </tr>
+
+
+</table>
+
 
 <a name=appendix></a><h3>Appendix</h3>
 <h4> Restrictions on arguments to the <span class="ncbi_class">CCgiCookie</span> constructor </h4>
