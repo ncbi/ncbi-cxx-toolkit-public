@@ -478,7 +478,7 @@ string NStr::PrintableString(const string& str)
 
 // Determines the end of an HTML <...> tag, accounting for attributes
 // and comments (the latter allowed only within <!...>).
-SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
+static SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
 {
     _ASSERT(start < str.size()  &&  str[start] == '<');
     bool comments_ok = (start + 1 < str.size()  &&  str[start + 1] == '!');
@@ -517,7 +517,7 @@ SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
 
 // Determines the end of an HTML &foo; character/entity reference
 // (which might not actually end with a semicolon :-/)
-SIZE_TYPE s_EndOfReference(const string& str, SIZE_TYPE start)
+static SIZE_TYPE s_EndOfReference(const string& str, SIZE_TYPE start)
 {
     _ASSERT(start < str.size()  &&  str[start] == '&');
 #ifdef NCBI_STRICT_HTML_REFS
@@ -532,6 +532,37 @@ SIZE_TYPE s_EndOfReference(const string& str, SIZE_TYPE start)
         return pos - 1;
     }
 #endif
+}
+
+
+static SIZE_TYPE s_VisibleWidth(const string& str, bool is_html)
+{
+    if (is_html) {
+        SIZE_TYPE width = 0, pos = 0;
+        for (;;) {
+            SIZE_TYPE pos2 = str.find_first_of("<&", pos);
+            if (pos2 == NPOS) {
+                width += str.size() - pos;
+                break;
+            } else {
+                width += pos2 - pos;
+                if (str[pos2] == '&') {
+                    ++width;
+                    pos = s_EndOfReference(str, pos);
+                } else {
+                    pos = s_EndOfTag(str, pos);
+                }
+                if (pos == NPOS) {
+                    break;
+                } else {
+                    ++pos;
+                }
+            }
+        }
+        return width;
+    } else {
+        return str.size();
+    }
 }
 
 
@@ -555,7 +586,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     };
 
     while (pos < len) {
-        SIZE_TYPE column     = pfx->size();
+        SIZE_TYPE column     = s_VisibleWidth(*pfx, flags & fWrap_HTMLPre);
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
@@ -625,56 +656,35 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 {
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
+    SIZE_TYPE     column   = s_VisibleWidth(s,     flags & fWrap_HTMLPre);
+    SIZE_TYPE     delwidth = s_VisibleWidth(delim, flags & fWrap_HTMLPre);
     bool          at_start = true;
     iterate (list<string>, it, l) {
-        SIZE_TYPE term_width;
-        if (flags & fWrap_HTMLPre) {
-            term_width = 0;
-            SIZE_TYPE pos = 0;
-            for (;;) {
-                SIZE_TYPE pos2 = it->find_first_of("<&", pos);
-                if (pos2 == NPOS) {
-                    term_width += it->size() - pos;
-                    break;
-                } else {
-                    term_width += pos2 - pos;
-                    if ((*it)[pos2] == '&') {
-                        ++term_width;
-                        pos = s_EndOfReference(*it, pos);
-                    } else {
-                        pos = s_EndOfTag(*it, pos);
-                    }
-                    if (pos == NPOS) {
-                        break;
-                    } else {
-                        ++pos;
-                    }
-                }
-            }
-        } else {
-            term_width = it->size();
-        }
-
+        SIZE_TYPE term_width = s_VisibleWidth(*it, flags & fWrap_HTMLPre);
         if (at_start) {
-            if (s.size() + term_width <= width) {
+            if (column + term_width <= width) {
                 s += *it;
+                column += term_width;
                 at_start = false;
             } else {
                 // Can't fit, even on its own line; break separately.
                 Wrap(*it, width, arr, flags, prefix, pfx);
                 pfx      = prefix;
                 s        = *prefix;
+                column   = s_VisibleWidth(s, flags & fWrap_HTMLPre);
                 at_start = true;
             }
-        } else if (s.size() + delim.size() + term_width <= width) {
+        } else if (column + delwidth + term_width <= width) {
             s += delim;
             s += *it;
+            column += delwidth + term_width;
             at_start = false;
         } else {
             // Can't fit on this line; break here and try again.
             arr.push_back(s);
             pfx      = prefix;
             s        = *prefix;
+            column   = s_VisibleWidth(s, flags & fWrap_HTMLPre);
             at_start = true;
             --it;
         }
@@ -704,6 +714,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2002/10/17 14:41:20  ucko
+ * * Make s_EndOf{Tag,Reference} actually static (oops).
+ * * Pull width-determination code from WrapList into a separate function
+ *   (s_VisibleWidth) and make Wrap{,List} call it for everything rather
+ *   than assuming prefixes and delimiters to be plain text.
+ * * Add a column variable to WrapList, as it may not equal s.size().
+ *
  * Revision 1.55  2002/10/16 19:30:36  ucko
  * Add support for wrapping HTML <PRE> blocks.  (Not yet tested, but
  * behavior without fWrap_HTMLPre should stay the same.)
