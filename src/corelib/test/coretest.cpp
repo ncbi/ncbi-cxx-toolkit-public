@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2001/10/15 19:48:24  vakatov
+* Use two #if's instead of "#if ... && ..." as KAI cannot handle #if x == y
+*
 * Revision 1.78  2001/09/05 18:47:12  ucko
 * Work around WorkShop 5.3 type-equivalence bug.
 *
@@ -854,13 +857,10 @@ static void TestException_AuxTrace(void)
 
     try {
         try {
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION == 530
+            // BW___WS53
             // Sigh.  WorkShop 5.3 is stupid, and complains about
             // const char* vs. const char[15] without this cast.
-            THROW0_TRACE((const char*)"Throw a string");
-#else
-            THROW0_TRACE("Throw a string");
-#endif
+            THROW0_TRACE((const char*) "Throw a string");
         } catch (const char* _DEBUG_ARG(e)) {
             _TRACE("THROW0_TRACE: " << e);
             RETHROW_TRACE;

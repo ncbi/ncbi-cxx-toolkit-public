@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/10/15 19:48:26  vakatov
+* Use two #if's instead of "#if ... && ..." as KAI cannot handle #if x == y
+*
 * Revision 1.24  2001/09/04 17:04:02  vakatov
 * Extended workaround for the SUN Forte 6 Update 1 compiler internal bug
 * to all higher versions of the compiler, as Update 2 also has this the
@@ -151,10 +154,13 @@ CItemsInfo::CItemsInfo(void)
 
 CItemsInfo::~CItemsInfo(void)
 {
-#if defined(NCBI_COMPILER_WORKSHOP)  &&  (NCBI_COMPILER_VERSION >= 520)
+#if defined(NCBI_COMPILER_WORKSHOP)
+// We have to use two #if's here because KAI C++ cannot handle #if foo == bar
+#  if (NCBI_COMPILER_VERSION == 530)
     // BW_010::  to workaround (already reported to SUN, CASE ID 62563729)
     //           internal bug of the SUN Forte 6 Update 1 and Update 2 compiler
     (void) atoi("5");
+#  endif
 #endif
 }
 

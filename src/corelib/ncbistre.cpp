@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/10/15 19:48:23  vakatov
+* Use two #if's instead of "#if ... && ..." as KAI cannot handle #if x == y
+*
 * Revision 1.13  2001/09/06 19:35:14  ucko
 * WorkShop 5.3's implementation of istream::read is broken; provide one
 * that works.
@@ -238,7 +241,9 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
     return out;
 }
 
-#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION == 530
+#if defined(NCBI_COMPILER_WORKSHOP)
+// We have to use two #if's here because KAI C++ cannot handle #if foo == bar
+#  if (NCBI_COMPILER_VERSION == 530)
 // The version that ships with the compiler is buggy.
 // Here's a working (and simpler!) one.
 template<>
@@ -268,7 +273,8 @@ istream& istream::read(char *s, streamsize n)
 
     return *this;
 }
-#endif
+#  endif  /* NCBI_COMPILER_VERSION == 530 */
+#endif  /* NCBI_COMPILER_WORKSHOP */
 
 END_NCBI_SCOPE
 
