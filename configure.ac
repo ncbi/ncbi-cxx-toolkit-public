@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.248 2003/12/19 21:14:37 ucko Exp $
+#  $Id: configure.ac,v 1.249 2003/12/24 15:25:55 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1160,6 +1160,16 @@ if test -n "$CCACHE" ; then
    CXX_WRAPPER="$CXX_WRAPPER $CCACHE"
 fi
 
+# Note the path, since syntax is version-specific....
+AC_PATH_PROG(TAIL, tail)
+AC_MSG_CHECKING([whether $TAIL accepts modern syntax (-n N)])
+if $TAIL -n 1 config.log >/dev/null 2>&1; then
+   TAIL_N="$TAIL -n "
+   AC_MSG_RESULT(yes)
+else
+   TAIL_N="$TAIL -"
+   AC_MSG_RESULT(no)
+fi
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -3559,6 +3569,7 @@ AC_SUBST(RANLIB)
 AC_SUBST(STRIP)
 AC_SUBST(LINK)
 AC_SUBST(C_LINK)
+AC_SUBST(TAIL_N)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(FAST_CFLAGS)
