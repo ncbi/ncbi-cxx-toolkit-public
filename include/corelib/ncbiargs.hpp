@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/09/18 19:38:59  vasilche
+ * Added CreateArgs() from CNcbiArguments.
+ *
  * Revision 1.2  2000/09/06 18:56:56  butanaev
  * Added stdin, stdout support. Fixed bug in PrintOut.
  *
@@ -48,14 +51,12 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiobj.hpp>
-#ifdef NO_INCLASS_TMPL
-#include <corelib/ncbienv.hpp>
-#endif
 #include <map>
 #include <deque>
 
 BEGIN_NCBI_SCOPE
 
+class CNcbiArguments;
 
 ///////////////////////////////////////////////////////
 //  Parsing and validating command-line arguments according to
@@ -383,6 +384,8 @@ public:
         return args.release();
     }
 #endif /* NO_INCLASS_TMPL */
+
+    CArgs* CreateArgs(const CNcbiArguments& argv) const;
 };
 
 

@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2000/09/18 19:39:02  vasilche
+ * Added CreateArgs() from CNcbiArguments.
+ *
  * Revision 1.3  2000/09/12 15:00:30  butanaev
  * Fixed bug with stdin, stdout caused compilation errors on IRIX.
  *
@@ -46,6 +49,7 @@
  */
 
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbienv.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -1398,5 +1402,10 @@ CArgs* CArgDescriptions::CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv)
 }
 
 #endif /* NO_INCLASS_TMPL */
+
+CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
+{
+    return CreateArgs(args.Size(), args);
+}
 
 END_NCBI_SCOPE
