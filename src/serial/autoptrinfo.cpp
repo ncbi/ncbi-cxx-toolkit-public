@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/03/10 21:47:50  vasilche
+* AutoPointer should write/read data inline.
+*
 * Revision 1.5  2000/03/07 14:06:21  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -87,7 +90,7 @@ void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
     TTypeInfo dataType = GetDataTypeInfo();
     if ( dataType->GetRealTypeInfo(data) != dataType )
         THROW1_TRACE(runtime_error, "auto pointer have different type");
-    out.WriteExternalObject(data, dataType);
+    dataType->WriteData(out, data);
 }
 
 void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
@@ -96,17 +99,17 @@ void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
     TObjectPtr data = const_cast<TObjectPtr>(GetObjectPointer(object));
     TTypeInfo dataType = GetDataTypeInfo();
     if ( data == 0 ) {
-        _TRACE("null auto pointer");
         SetObjectPointer(object, data = dataType->Create());
     }
-    else if ( dataType->GetRealTypeInfo(data) != dataType )
+    else if ( dataType->GetRealTypeInfo(data) != dataType ) {
         THROW1_TRACE(runtime_error, "auto pointer have different type");
-    in.ReadExternalObject(data, dataType);
+    }
+    dataType->ReadData(in, data);
 }
 
 void CAutoPointerTypeInfo::SkipData(CObjectIStream& in) const
 {
-    in.SkipExternalObject(GetDataTypeInfo());
+    GetDataTypeInfo()->SkipData(in);
 }
 
 END_NCBI_SCOPE
