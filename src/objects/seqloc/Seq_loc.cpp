@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/05/31 13:33:02  grichenk
+ * GetLength() -- return 0 for e_Null locations
+ *
  * Revision 6.11  2002/05/06 03:39:12  vakatov
  * OM/OM1 renaming
  *
@@ -122,6 +125,8 @@ TSeqPos CSeq_loc::GetLength(void) const THROWS((CSeq_loc::CException))
         return GetPacked_int().GetLength();
     case e_Mix:
         return GetMix().GetLength();
+    case e_Null:
+        return 0;
     case e_not_set:
     case e_Bond:         /* can't calculate length */
     case e_Feat:
