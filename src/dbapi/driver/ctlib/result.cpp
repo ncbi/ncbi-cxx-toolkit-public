@@ -862,6 +862,18 @@ CTL_CursorResult::~CTL_CursorResult()
 }
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_ITDescriptor::
+//
+
+CTL_ITDescriptor::~CTL_ITDescriptor()
+{
+    return;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -869,6 +881,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/26 23:23:31  vakatov
+ * Moved the err.message handlers' stack functionality (generic storage
+ * and methods) to the "abstract interface" level.
+ *
  * Revision 1.1  2001/09/21 23:40:02  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

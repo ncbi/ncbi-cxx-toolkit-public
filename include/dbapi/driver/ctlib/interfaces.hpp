@@ -35,8 +35,6 @@
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
-#include <dbapi/driver/util/handle_stack.hpp>
-#include <dbapi/driver/util/pointer_pot.hpp>
 
 #include <ctpublic.h>
 #include <bkpublic.h>
@@ -88,11 +86,6 @@ public:
     virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
         const;
 
-    virtual void PushCntxMsgHandler    (CDBUserHandler* h);
-    virtual void PopCntxMsgHandler     (CDBUserHandler* h);
-    virtual void PushDefConnMsgHandler (CDBUserHandler* h);
-    virtual void PopDefConnMsgHandler  (CDBUserHandler* h);
-
     virtual ~CTLibContext();
 
 
@@ -116,10 +109,6 @@ public:
                                     CS_CLIENTMSG* msg);
     static bool CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                                      CS_SERVERMSG* msg);
-
-protected:
-    CDBHandlerStack m_CntxHandlers;
-    CDBHandlerStack m_ConHandlers;
 
 private:
     CS_CONTEXT* m_Context;
@@ -521,7 +510,7 @@ class CTL_ITDescriptor : public ITDescriptor
     friend class CTL_Connection;
 
 public:
-    virtual ~CTL_ITDescriptor() {}
+    virtual ~CTL_ITDescriptor();
 
 protected:
     CTL_ITDescriptor() { return; };
@@ -561,6 +550,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/26 23:23:28  vakatov
+ * Moved the err.message handlers' stack functionality (generic storage
+ * and methods) to the "abstract interface" level.
+ *
  * Revision 1.2  2001/09/24 20:52:19  vakatov
  * Fixed args like "string& s = 0" to "string& s = kEmptyStr"
  *

@@ -122,6 +122,26 @@ I_Result::~I_Result()
 //  I_DriverContext::
 //
 
+void I_DriverContext::PushCntxMsgHandler(CDBUserHandler* h)
+{
+    m_CntxHandlers.Push(h);
+}
+
+void I_DriverContext::PopCntxMsgHandler(CDBUserHandler* h)
+{
+    m_CntxHandlers.Pop(h);
+}
+
+void I_DriverContext::PushDefConnMsgHandler(CDBUserHandler* h)
+{
+    m_ConnHandlers.Push(h);
+}
+
+void I_DriverContext::PopDefConnMsgHandler(CDBUserHandler* h)
+{
+    m_ConnHandlers.Pop(h);
+}
+
 void I_DriverContext::x_Recycle(I_Connection* conn, bool conn_reusable)
 {
     m_InUse.Remove((TPotItem) conn);
@@ -188,6 +208,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/26 23:23:29  vakatov
+ * Moved the err.message handlers' stack functionality (generic storage
+ * and methods) to the "abstract interface" level.
+ *
  * Revision 1.2  2001/09/24 19:48:49  vakatov
  * + implementation for CDB_BaseEnt::Create_Result
  *

@@ -343,7 +343,7 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
     }
 
     CTL_Connection* t_con = new CTL_Connection(this, con, reusable, pool_name);
-    t_con->m_MsgHandlers = m_ConHandlers;
+    t_con->m_MsgHandlers = m_ConnHandlers;
 
     m_InUse.Add((TPotItem) t_con);
 
@@ -374,27 +374,6 @@ unsigned int CTLibContext::NofConnections(const string& srv_name) const
     }
 
     return n;
-}
-
-
-void CTLibContext::PushCntxMsgHandler(CDBUserHandler* h)
-{
-    m_CntxHandlers.Push(h);
-}
-
-void CTLibContext::PopCntxMsgHandler(CDBUserHandler* h)
-{
-    m_CntxHandlers.Pop(h);
-}
-
-void CTLibContext::PushDefConnMsgHandler(CDBUserHandler* h)
-{
-    m_ConHandlers.Push(h);
-}
-
-void CTLibContext::PopDefConnMsgHandler(CDBUserHandler* h)
-{
-    m_ConHandlers.Pop(h);
 }
 
 
@@ -865,6 +844,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/26 23:23:31  vakatov
+ * Moved the err.message handlers' stack functionality (generic storage
+ * and methods) to the "abstract interface" level.
+ *
  * Revision 1.1  2001/09/21 23:40:02  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

@@ -35,6 +35,7 @@
 
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
 
@@ -401,17 +402,17 @@ public:
 
     // Add message handler "h" to process 'context-wide' (not bound 
     // to any particular connection) error messages.
-    virtual void PushCntxMsgHandler(CDBUserHandler* h) = 0;
+    virtual void PushCntxMsgHandler(CDBUserHandler* h);
 
     // Remove message handler "h" and all handlers above it in the stack
-    virtual void PopCntxMsgHandler(CDBUserHandler* h) = 0;
+    virtual void PopCntxMsgHandler(CDBUserHandler* h);
 
     // Add `per-connection' err.message handler "h" to the stack of default
     // handlers which are inherited by all newly created connections.
-    virtual void PushDefConnMsgHandler(CDBUserHandler* h) = 0;
+    virtual void PushDefConnMsgHandler(CDBUserHandler* h);
 
     // Remove `per-connection' mess. handler "h" and all above it in the stack.
-    virtual void PopDefConnMsgHandler(CDBUserHandler* h) = 0;
+    virtual void PopDefConnMsgHandler(CDBUserHandler* h);
 
     virtual ~I_DriverContext();
 
@@ -422,6 +423,10 @@ protected:
     // Used and unused(reserve) connections
     CPointerPot m_NotInUse;
     CPointerPot m_InUse;
+
+    // Stacks of `per-context' and `per-connection' err.message handlers
+    CDBHandlerStack m_CntxHandlers;
+    CDBHandlerStack m_ConnHandlers;
 
 private:
     // Return unused connection "conn" to the driver context for future
@@ -524,6 +529,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/26 23:23:26  vakatov
+ * Moved the err.message handlers' stack functionality (generic storage
+ * and methods) to the "abstract interface" level.
+ *
  * Revision 1.2  2001/09/24 20:52:18  vakatov
  * Fixed args like "string& s = 0" to "string& s = kEmptyStr"
  *
