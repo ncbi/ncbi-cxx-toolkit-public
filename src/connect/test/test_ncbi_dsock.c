@@ -57,13 +57,20 @@
    /* This is the maximal datagram size defined by the UDP standard */
 #  define MAX_DGRAM_SIZE 65535
 #endif
+/* NOTE: x86_64 (AMD) kernel does not allow dgrams bigger than MTU minus
+ * small overhead;  for these we use the script and pass the MTU via argv.
+ */
 
 #define DEFAULT_PORT 55555
 
 
+static unsigned short s_MTU = MAX_DGRAM_SIZE;
+
+
 static int s_Usage(const char* prog)
 {
-    CORE_LOGF(eLOG_Error, ("Usage:\n%s {client|server} [port [seed]]", prog));
+    CORE_LOGF(eLOG_Error, ("Usage:\n%s {client|server} [port [mtu [seed]]]",
+                           prog));
     return 1;
 }
 
@@ -220,7 +227,7 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
 
-    msglen = (size_t)(((double)rand()/(double)RAND_MAX)*(MAX_DGRAM_SIZE - 10));
+    msglen = (size_t)(((double)rand()/(double)RAND_MAX)*(s_MTU - 10));
     if (msglen < sizeof(time_t))
         msglen = sizeof(time_t);
 
@@ -336,17 +343,17 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    if (argc < 2 || argc > 4)
+    if (argc < 2 || argc > 5)
         return s_Usage(argv[0]);
 
-    if (argc <= 3) {
+    if (argc <= 4) {
 #ifdef NCBI_OS_UNIX
         seed = (unsigned long) time(0) + (unsigned long) getpid();
 #else
         seed = (unsigned long) time(0);
 #endif /*NCBI_OS_UNIX*/
     } else
-        sscanf(argv[3], "%lu", &seed);
+        sscanf(argv[4], "%lu", &seed);
     CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
     srand(seed);
 
@@ -356,6 +363,12 @@ int main(int argc, const char* argv[])
                 strcasecmp(env, "some") == 0  ||
                 strcasecmp(env, "data") == 0)) {
         SOCK_SetDataLoggingAPI(eOn);
+    }
+
+    if (argc > 3) {
+        int mtu = atoi(argv[3]);
+        if (mtu > 32  &&  mtu < (int) s_MTU)
+            s_MTU = mtu - 32/*small protocol (IP/UDP) overhead*/;
     }
 
     if (!(env = getenv("CONN_MAX_TRY"))  ||  !(max_try = atoi(env)))
@@ -374,6 +387,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2005/01/05 21:33:58  lavr
+ * Introduce MTU and use it on AMD-64 buggy kernels
+ *
  * Revision 6.14  2003/12/11 15:34:29  lavr
  * Lower maximal datagram size for Linux - 65535 didn't seem to work everywhere
  *
