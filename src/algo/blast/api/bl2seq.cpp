@@ -38,8 +38,8 @@
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_option.hpp>
-#include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_seqalign.hpp>
+#include "blast_setup.hpp"
 
 // NewBlast includes
 #include <algo/blast/core/blast_def.h>
@@ -145,7 +145,7 @@ CBl2Seq::Run()
     if (seqalignv.size()) {
         return seqalignv[0];
     } else {
-        return NULL;
+        return null;
     }
 }
 
@@ -577,21 +577,10 @@ CBl2Seq::Traceback()
 TSeqAlignVector
 CBl2Seq::x_Results2SeqAlign()
 {
-    _TRACE("*** Calling results2seqalign ***");
-
-    vector< CConstRef<CSeq_id> > query_vector;
-    ITERATE(TSeqLocVector, itr, m_tQueries) {
-        CConstRef<CSeq_id> query_id(&sequence::GetId(*itr->seqloc,
-                                                     itr->scope));
-        query_vector.push_back(query_id);
-    }
-
     _ASSERT(mi_vResults.size() == m_tSubjects.size());
-    unsigned int index = 0;
-    
     TSeqAlignVector retval;
 
-    for (index = 0; index < m_tSubjects.size(); ++index)
+    for (unsigned int index = 0; index < m_tSubjects.size(); ++index)
     {
         TSeqAlignVector seqalign =
             BLAST_Results2CSeqAlign(mi_vResults[index], m_eProgram,
@@ -609,8 +598,7 @@ CBl2Seq::x_Results2SeqAlign()
                 // seqaligns from the first subject.
                 retval.swap(seqalign);
             } else {
-                int i;
-                for (i=0; i<retval.size(); ++i) {
+                for (unsigned int i = 0; i < retval.size(); ++i) {
                     retval[i]->Set().splice(retval[i]->Set().end(), 
                                             seqalign[i]->Set());
                 }
@@ -635,6 +623,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2003/09/03 19:36:58  camacho
+ * Fix include path for blast_setup.hpp, code clean up
+ *
  * Revision 1.27  2003/08/28 22:42:54  camacho
  * Change BLASTGetSequence signature
  *
