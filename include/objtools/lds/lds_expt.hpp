@@ -49,6 +49,7 @@ public:
         eWrongEntry,
         eNotImplemented,
         eInvalidDataType,
+        eCannotCreateDir,
         eNull
     };
 
@@ -61,6 +62,7 @@ public:
         case eNotImplemented:    return "eNotImplemented";
         case eWrongEntry:        return "eWrongEntry";
         case eInvalidDataType:   return "eInvalidDataType";
+        case eCannotCreateDir:   return "eCannotCreateDir";
         default:                 return  CException::GetErrCodeString();
         }
     }
@@ -80,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/12 14:07:56  kuznets
+ * Added eCannotCreateDir exception type
+ *
  * Revision 1.3  2003/06/09 16:35:28  kuznets
  * Added new error codes.
  *
