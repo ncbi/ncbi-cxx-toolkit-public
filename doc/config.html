@@ -378,7 +378,10 @@ In order to adjust the MSVC++ project files for your local
 		<li> go to <i>"Tools"/"Options"</i> form
 		<li> goto folder <i>"Directories"</i>
 		<li> choose option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu
-		<li> add "<i><b>C:\foo\include</b></i>" to the shown directory list
+		<li> add "<i><b>C:\foo\include</b></i>" to the shown include directory list
+		<li> if you want to use "internal" parts of the NCBI C++
+		     toolkit(such as <b>xhc</b> library) then add
+           "<i><b>C:\foo\include\internal</b></i>" to the shown include directory list
 	 </ul>
 </ol>
 
@@ -399,6 +402,14 @@ header files accessible from your PC, and you must specify path to them in
 options <i>"Include files"</i>(e.g. <i><b>C:\ncbi\include.32</b></i>),
 <i>"Library files"</i> and <i>"Source files"</i> (e.g. <i><b>C:\ncbi\build_d.m32</b></i>).
 
+<p>
+For example, here in NCBI the paths to the automatically built C toolkit 
+are as follows:
+<ul>
+  <li> <i>\\dizzy\users\coremake\public\<b>include</b></i>
+  <li> <i>\\dizzy\users\coremake\public\<b>dbglib</b></i>
+  <li> <i>\\dizzy\users\coremake\public\<b>altsrc</b></i>
+</ul>
 
 <br></br>
 <hr>
