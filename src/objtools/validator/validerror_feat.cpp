@@ -587,6 +587,17 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneRefHasNoData,
             "There is a gene feature where all fields are empty", feat);
     }
+    if ( gene.CanGetLocus()  &&  !gene.GetLocus().empty() ) {
+        ITERATE (string, it, gene.GetLocus() ) {
+            if ( isspace(*it) != 0 ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagProblem,
+                    "Gene locus_tag '" + gene.GetLocus() + 
+                    "' should be a single word without any spaces", feat);
+                break;
+            }
+        }         
+
+    }
     if ( gene.CanGetDb () ) {
         m_Imp.ValidateDbxref(gene.GetDb(), feat);
     }
@@ -2613,6 +2624,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/01/16 20:09:15  shomrat
+* Implemented check for locus tag problem
+*
 * Revision 1.45  2003/12/16 17:35:39  shomrat
 * catch all exceptions, not just runtime
 *
