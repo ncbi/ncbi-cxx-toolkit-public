@@ -164,7 +164,7 @@ CMsvcMasterProjectGenerator::SaveProject(const string& base_name)
 
     project_path += ".vcproj";
 
-    SaveToXmlFile(project_path, xmlprj);
+    SaveIfNewer(project_path, xmlprj);
 }
 
 
@@ -267,6 +267,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/10 18:21:44  gorelenk
+ * Implemented overwrite only in case when _MasterProject is different from
+ * already present one.
+ *
  * Revision 1.7  2004/02/04 23:59:52  gorelenk
  * Changed log messages generation.
  *
