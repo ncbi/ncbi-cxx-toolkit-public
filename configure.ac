@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.11 2001/10/11 23:14:58 vakatov Exp $
+#  $Id: configure.ac,v 1.12 2001/10/12 19:46:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -826,8 +826,10 @@ fi
 #### Release/Debug
    if test "$with_debug" = "no" ; then
       release_debug="Release"
+      DBG_SFX=
    else
       release_debug="Debug"
+      DBG_SFX=d
    fi
 
 
@@ -2205,6 +2207,8 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(DEPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
+
+AC_SUBST(DBG_SFX)
 
 AC_SUBST(LIB_OR_DLL)
 AC_SUBST(FORCE_STATIC_LIB)
