@@ -2820,7 +2820,11 @@ const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
         return 0;
     }
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle(product);
+    return GetCDSForProduct(scope->GetBioseqHandle(product));
+}
+
+const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
+{
     if ( bsh ) {
         CFeat_CI fi(bsh, 
                     0, 0,
@@ -2847,7 +2851,11 @@ const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope)
         return 0;
     }
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle(product);
+    return GetPROTForProduct(scope->GetBioseqHandle(product));
+}
+
+const CSeq_feat* GetPROTForProduct(const CBioseq_Handle& bsh)
+{
     if ( bsh ) {
         CFeat_CI fi(bsh, 
                     0, 0,
@@ -2873,8 +2881,11 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope)
         return 0;
     }
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle(product);
+    return GetmRNAForProduct(scope->GetBioseqHandle(product));
+}
 
+const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& bsh)
+{
     if ( bsh ) {
         SAnnotSelector as;
         as.SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
@@ -2896,17 +2907,22 @@ const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope)
     if ( scope == 0 ) {
         return 0;
     }
+    CBioseq_Handle bsh = GetNucleotideParent(scope->GetBioseqHandle(product));
+    return bsh ? &(bsh.GetBioseq()) : 0;
+}
 
+CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& bsh)
+{
     // If protein use CDS to get to the encoding Nucleotide.
     // if nucleotide (cDNA) use mRNA feature.
-    const CSeq_feat* sfp = product.IsAa() ? 
-        GetCDSForProduct(product, scope) : GetmRNAForProduct(product, scope);
+    const CSeq_feat* sfp = bsh.GetBioseqMolType() == CSeq_inst::eMol_aa ?
+        GetCDSForProduct(bsh) : GetmRNAForProduct(bsh);
 
-    CBioseq_Handle bsh;
+    CBioseq_Handle ret;
     if ( sfp ) {
-        bsh = scope->GetBioseqHandle(sfp->GetLocation());
+        ret = bsh.GetScope().GetBioseqHandle(sfp->GetLocation());
     }
-    return bsh ? &(bsh.GetBioseq()) : 0;
+    return ret;
 }
 
 
@@ -4064,6 +4080,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.76  2004/03/25 20:02:30  vasilche
+* Added several method variants with CBioseq_Handle as argument.
+*
 * Revision 1.75  2004/03/01 18:28:18  dicuccio
 * Changed sequence::Compare() such that a seq-interval of length 1 and a
 * corresponding seq-point compare as the same

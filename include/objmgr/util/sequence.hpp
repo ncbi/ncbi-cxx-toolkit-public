@@ -353,21 +353,29 @@ CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope = 0);
 // Get the encoding CDS feature of a given protein sequence.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
+NCBI_XOBJUTIL_EXPORT
+const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& product);
 
 
 // Get the mature peptide feature of a protein
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope);
+NCBI_XOBJUTIL_EXPORT
+const CSeq_feat* GetPROTForProduct(const CBioseq_Handle& product);
 
 
 // Get the encoding mRNA feature of a given mRNA (cDNA) bioseq.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope);
+NCBI_XOBJUTIL_EXPORT
+const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& product);
 
 
 // Get the encoding nucleotide sequnce of a protein.
 NCBI_XOBJUTIL_EXPORT
 const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope);
+NCBI_XOBJUTIL_EXPORT
+CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& product);
 
 
 END_SCOPE(sequence)
@@ -642,6 +650,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.40  2004/03/25 20:02:30  vasilche
+* Added several method variants with CBioseq_Handle as argument.
+*
 * Revision 1.39  2004/03/01 18:22:07  shomrat
 * Added alternative start flag to TranslateCdregion
 *
