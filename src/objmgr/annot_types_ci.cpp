@@ -613,12 +613,15 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
         ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
             if ( !bh ) {
+                continue; // Do not crash - just skip unresolvable IDs
+/*
                 // resolve by Seq-id only
                 THROW1_TRACE(runtime_error,
                              "CAnnotTypes_CI::x_Initialize -- "
                              "Cannot resolve master id");
+*/
             }
-            
+
             CHandleRange::TRange idrange = idit->second.GetOverlappingRange();
             const CSeqMap& seqMap = bh.GetSeqMap();
             CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
@@ -732,12 +735,14 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
             continue;
         }
 
-        const CSynonymsSet& syns = *m_Scope->x_GetSynonyms(idit->first);
-        if ( syns.find(idit->first) == syns.end() ) {
+        const CSynonymsSet* syns = m_Scope->x_GetSynonyms(idit->first);
+        if ( !syns  ||  syns->find(idit->first) == syns->end() ) {
             x_Search(idit->first, idit->second, cvt);
         }
-        ITERATE ( CSynonymsSet, synit, syns ) {
-            x_Search(*synit, idit->second, cvt);
+        if ( syns ) {
+            ITERATE ( CSynonymsSet, synit, *syns ) {
+                x_Search(*synit, idit->second, cvt);
+            }
         }
     }
 }
@@ -797,6 +802,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/03/11 20:42:53  grichenk
+* Skip unresolvable IDs and synonym
+*
 * Revision 1.53  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *
