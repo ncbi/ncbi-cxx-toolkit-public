@@ -878,6 +878,7 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     _ASSERT(m_Selector.m_LimitObject);
     
     switch ( m_Selector.m_LimitObjectType ) {
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
     case SAnnotSelector::eLimit_TSE:
     {
         const CSeq_entry* object = CTypeConverter<CSeq_entry>::
@@ -935,6 +936,7 @@ void CAnnot_Collector::x_GetTSE_Info(void)
         m_MappingCollector->m_LimitObjectInfo.Reset(&info);
         break;
     }
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     case SAnnotSelector::eLimit_TSE_Info:
     {
         const CTSE_Info* info = CTypeConverter<CTSE_Info>::
@@ -1854,6 +1856,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/11/04 19:21:18  grichenk
+* Marked non-handle versions of SetLimitXXXX as deprecated
+*
 * Revision 1.37  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

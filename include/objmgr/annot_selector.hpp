@@ -249,9 +249,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return m_LimitObject;
         }
     SAnnotSelector& SetLimitNone(void);
-    SAnnotSelector& SetLimitTSE(const CSeq_entry* limit);
-    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* limit);
-    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* limit);
     SAnnotSelector& SetLimitTSE(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
@@ -358,10 +355,14 @@ protected:
         eLimit_None,
         eLimit_TSE_Info,
         eLimit_Seq_entry_Info,
-        eLimit_Seq_annot_Info,
+        eLimit_Seq_annot_Info
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+        ,
         eLimit_TSE,
         eLimit_Seq_entry,
         eLimit_Seq_annot
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     };
     ELimitObject          m_LimitObjectType;
     EUnresolvedFlag       m_UnresolvedFlag;
@@ -375,6 +376,15 @@ protected:
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesSet        m_AnnotTypesSet;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    SAnnotSelector& SetLimitTSE(const CSeq_entry* limit);
+    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* limit);
+    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* limit);
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -384,6 +394,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/11/04 19:21:17  grichenk
+* Marked non-handle versions of SetLimitXXXX as deprecated
+*
 * Revision 1.35  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

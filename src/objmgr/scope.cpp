@@ -270,7 +270,7 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CSeq_entry& tse)
 {
     //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
-    return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
+    return m_Impl->GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
@@ -278,36 +278,36 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                               const CSeq_entry& tse)
 {
     //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
-    return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
+    return m_Impl->GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
 void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 {
     //ERR_POST_ONCE(Warning<<"CScope::AttachEntry() is deprecated: use class CSeq_entry_EditHandle.");
-    GetSeq_entryHandle(parent).GetSet().GetEditHandle().AttachEntry(entry);
+    m_Impl->GetSeq_entryHandle(parent).GetSet().GetEditHandle().AttachEntry(entry);
 }
 
 
 void CScope::RemoveEntry(CSeq_entry& entry)
 {
     //ERR_POST_ONCE(Warning<<"CScope::RemoveEntry() is deprecated: use class CSeq_entry_EditHandle.");
-    GetSeq_entryHandle(entry).GetEditHandle().Remove();
+    m_Impl->GetSeq_entryHandle(entry).GetEditHandle().Remove();
 }
 
 
 void CScope::AttachAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
     //ERR_POST_ONCE(Warning<<"CScope::AttachAnnot() is deprecated: use class CSeq_annot_EditHandle.");
-    GetSeq_entryHandle(parent).GetEditHandle().AttachAnnot(annot);
+    m_Impl->GetSeq_entryHandle(parent).GetEditHandle().AttachAnnot(annot);
 }
 
 
 void CScope::RemoveAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
     //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle eh = GetSeq_entryHandle(parent).GetEditHandle();
-    CSeq_annot_EditHandle ah = GetSeq_annotHandle(annot).GetEditHandle();
+    CSeq_entry_EditHandle eh = m_Impl->GetSeq_entryHandle(parent).GetEditHandle();
+    CSeq_annot_EditHandle ah = m_Impl->GetSeq_annotHandle(annot).GetEditHandle();
     if ( ah.GetParentEntry() != eh ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::RemoveAnnot: parent doesn't contain annot");
@@ -320,8 +320,8 @@ void CScope::ReplaceAnnot(CSeq_entry& parent,
                           CSeq_annot& old_annot, CSeq_annot& new_annot)
 {
     //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle eh = GetSeq_entryHandle(parent).GetEditHandle();
-    CSeq_annot_EditHandle ah = GetSeq_annotHandle(old_annot).GetEditHandle();
+    CSeq_entry_EditHandle eh = m_Impl->GetSeq_entryHandle(parent).GetEditHandle();
+    CSeq_annot_EditHandle ah = m_Impl->GetSeq_annotHandle(old_annot).GetEditHandle();
     if ( ah.GetParentEntry() != eh ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "CScope::ReplaceAnnot: parent doesn't contain old_annot");
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2004/11/04 19:21:18  grichenk
+* Marked non-handle versions of SetLimitXXXX as deprecated
+*
 * Revision 1.110  2004/09/28 14:30:02  vasilche
 * Implemented CScope::AddSeq_annot().
 *

@@ -35,6 +35,7 @@
 #include <objmgr/seq_graph_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -79,7 +80,7 @@ CConstRef<CSeq_graph> CSeq_graph_Handle::GetSeq_graph(void) const
 CSeq_annot_Handle CSeq_graph_Handle::GetAnnot(void) const
 {
     if ( m_Annot ) {
-        return m_Scope.GetScope().GetSeq_annotHandle(*m_Annot->GetSeq_annotCore());
+        return m_Scope.GetImpl()->GetSeq_annotHandle(*m_Annot->GetSeq_annotCore());
     }
     return CSeq_annot_Handle();
 }
@@ -91,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/11/04 19:21:18  grichenk
+ * Marked non-handle versions of SetLimitXXXX as deprecated
+ *
  * Revision 1.3  2004/08/04 14:53:26  vasilche
  * Revamped object manager:
  * 1. Changed TSE locking scheme
