@@ -76,7 +76,7 @@ PSICreatePSSM(PsiAlignmentData* alignment,      /* [in] */
 
     if (diagnostics) {
         diagnostics = _PSISaveDiagnostics(alignment, aligned_block,
-                                          seq_weights);
+                                          seq_weights, retval);
     } else {
 
         /* FIXME: Deallocate structures selectively as some of these will be
@@ -216,22 +216,23 @@ PSIMatrixNew(Uint4 query_sz, Uint4 alphabet_size)
     if ( !retval ) {
         return NULL;
     }
-    retval->ncols = query_sz + 1;
+    /*retval->ncols = query_sz + 1; extra column not really needed */
+    retval->ncols = query_sz;
 
-    retval->pssm = (int**) _PSIAllocateMatrix(query_sz + 1, alphabet_size,
+    retval->pssm = (int**) _PSIAllocateMatrix(query_sz, alphabet_size,
                                               sizeof(int));
     if ( !(retval->pssm) ) {
         return PSIMatrixFree(retval);
     }
 
-    retval->scaled_pssm = (int**) _PSIAllocateMatrix(query_sz + 1, 
+    retval->scaled_pssm = (int**) _PSIAllocateMatrix(query_sz, 
                                                      alphabet_size,
                                                      sizeof(int));
     if ( !(retval->scaled_pssm) ) {
         return PSIMatrixFree(retval);
     }
 
-    retval->res_freqs = (double**) _PSIAllocateMatrix(query_sz + 1, 
+    retval->res_freqs = (double**) _PSIAllocateMatrix(query_sz, 
                                                       alphabet_size, 
                                                       sizeof(double));
     if ( !(retval->res_freqs) ) {
@@ -275,13 +276,16 @@ PSIDiagnosticsNew(Uint4 query_sz, Uint4 alphabet_size)
         return NULL;
     }
 
-    retval->info_content = (double**) _PSIAllocateMatrix(query_sz,
-                                                         alphabet_size,
-                                                         sizeof(double));
+    retval->info_content = (double*) calloc(query_sz, sizeof(double));
     if ( !(retval->info_content) ) {
         return PSIDiagnosticsFree(retval);
     }
-    retval->ncols = query_sz;
+
+    retval->gapless_column_weights = (double*) 
+        calloc(query_sz, sizeof(double));
+    if ( !(retval->gapless_column_weights) ) {
+        return PSIDiagnosticsFree(retval);
+    }
 
     return retval;
 }
@@ -293,7 +297,11 @@ PSIDiagnosticsFree(PsiDiagnostics* diags)
         return NULL;
 
     if (diags->info_content) {
-        _PSIDeallocateMatrix((void**) diags->info_content, diags->ncols);
+        sfree(diags->info_content);
+    }
+
+    if (diags->gapless_column_weights) {
+        sfree(diags->gapless_column_weights);
     }
 
     sfree(diags);
