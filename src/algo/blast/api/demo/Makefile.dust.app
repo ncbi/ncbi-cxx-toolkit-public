@@ -1,6 +1,7 @@
 APP = dust_app
 SRC = dust_app
-LIB = xblast xobjutil xobjread tables $(OBJMGR_LIBS)
+LIB = xblast xnetblastcli xnetblast scoremat xobjutil xobjread tables \
+      $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
