@@ -160,7 +160,6 @@
 #  define NCBI_XALGOALIGN_EXPORTS
 #  define NCBI_XALGOSEQ_EXPORTS
 #  define NCBI_XALGOGNOMON_EXPORTS
-#  define NCBI_XBLAST_EXPORTS
 #  define NCBI_XALGOPHYTREE_EXPORTS
 #  define NCBI_XALGOSEQQA_EXPORTS
 #endif
@@ -774,15 +773,6 @@
 #endif
 
 /*
- * Export specifier for library cblast
- */
-#ifdef NCBI_XBLAST_EXPORTS
-#  define NCBI_XBLAST_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_XBLAST_EXPORT __declspec(dllimport)
-#endif
-
-/*
  * Export specifier for library xcgi
  */
 #ifdef NCBI_XCGI_EXPORTS
@@ -1111,7 +1101,6 @@
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
-#  define NCBI_XBLAST_EXPORT
 #  define NCBI_XCGI_EXPORT
 #  define NCBI_XCGI_REDIRECT_EXPORT
 #  define NCBI_XHTML_EXPORT
@@ -1163,6 +1152,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.91  2005/01/18 17:59:02  dicuccio
+ * Drop NCBI_XBLAST_EXPORT from main export list - maintained separately in
+ * blast_export.h, duplicated here
+ *
  * Revision 1.90  2004/12/22 21:02:53  grichenk
  * BDB and DBAPI caches split into separate libs.
  * Added entry point registration, fixed driver names.
