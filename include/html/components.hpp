@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/01/19 21:17:37  vasilche
+* Added CPager class
+*
 * Revision 1.15  1999/01/15 20:22:32  volodya
 * syntax fix
 *
@@ -164,35 +167,29 @@ protected:
     virtual CNCBINode* CloneSelf() const;
 };
 
-
 // makes a set of pagination links
 
 class CPageList: public CHTML_table
 {
     // parent class
     typedef CHTML_table CParent;
-
+    
 public:
     CPageList(void);
-
+    
     map<int, string> m_Pages; // number, href
     string m_Forward; // forward url
     string m_Backward; // backward url
     int m_Current; // current page number
-
+    
     virtual void CreateSubNodes(void);
-
-protected:
-    // cloning
-    virtual CNCBINode* CloneSelf() const;
-
+    
 private:
     void x_AddInactiveImageString(CNCBINode* node, const string& name, int number,
-                     const string& imageStart, const string& imageEnd);
+                                  const string& imageStart, const string& imageEnd);
     void x_AddImageString(CNCBINode* node, const string& name, int number,
-                     const string& imageStart, const string& imageEnd);
+                          const string& imageStart, const string& imageEnd);
 };
-
 
 class CPagerBox: public CNCBINode
 {
@@ -217,7 +214,6 @@ protected:
     // cloning
     virtual CNCBINode* CloneSelf() const;
 };
-
 
 class CSmallPagerBox: public CNCBINode
 {

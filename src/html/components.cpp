@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/01/19 21:17:41  vasilche
+* Added CPager class
+*
 * Revision 1.18  1999/01/15 17:47:55  vasilche
 * Changed CButtonList options: m_Name -> m_SubmitName, m_Select ->
 * m_SelectName. Added m_Selected.
@@ -190,33 +193,29 @@ void CButtonList::CreateSubNodes()
     }
 }
 
-
 CPageList::CPageList(void)
     : m_Current(-1)
 {
     SetCellSpacing(2);
 }
 
-CNCBINode* CPageList::CloneSelf(void) const
-{
-    return new CPageList(*this);
-}
-
 void CPageList::x_AddImageString(CNCBINode* node, const string& name, int number,
-                            const string& imageStart, const string& imageEnd)
+                                 const string& imageStart, const string& imageEnd)
 {
     string s = IntToString(number);
-
+    
     for ( int i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_image(name, imageStart + s[i] + imageEnd, 0));
     }
 }
 
-void CPageList::x_AddInactiveImageString(CNCBINode* node, const string& name, int number,
-                            const string& imageStart, const string& imageEnd)
+void CPageList::x_AddInactiveImageString(CNCBINode* node, const string& name,
+                                         int number,
+                                         const string& imageStart,
+                                         const string& imageEnd)
 {
     string s = IntToString(number);
-
+    
     for ( int i = 0; i < s.size(); ++i ) {
         node->AppendChild(new CHTML_img(imageStart + s[i] + imageEnd));
     }
@@ -227,7 +226,7 @@ void CPageList::CreateSubNodes()
     int column = 0;
     if ( !m_Backward.empty() )
         InsertAt(0, column++, new CHTML_image(m_Backward, "/images/prev.gif", 0));
-
+    
     for (map<int, string>::iterator i = m_Pages.begin();
          i != m_Pages.end(); ++i ) {
         if ( i->first == m_Current ) {
@@ -245,7 +244,6 @@ void CPageList::CreateSubNodes()
 }
 
 // Pager box
-
 CPagerBox::CPagerBox(void)
     : m_NumResults(0), m_Width(460)
     , m_TopButton(new CButtonList), m_LeftButton(new CButtonList), m_RightButton(new CButtonList)
@@ -308,6 +306,5 @@ void CSmallPagerBox::CreateSubNodes()
         delete Table;
     }
 }
-
 
 END_NCBI_SCOPE
