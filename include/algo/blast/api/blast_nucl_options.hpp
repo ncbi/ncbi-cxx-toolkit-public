@@ -89,17 +89,17 @@ public:
     /// @param ws WordSize [in]
     void SetWordSize(short ws) 
     { 
-#if 0
-        if (GetLookupTableType() == MB_LOOKUP_TABLE && 
-            ws % COMPRESSION_RATIO != 0)
-            SetVariableWordSize(false);
+        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
+            if (GetLookupTableType() == MB_LOOKUP_TABLE && 
+                ws % COMPRESSION_RATIO != 0)
+                SetVariableWordSize(false);
+            
+            unsigned int s = CalculateBestStride(ws,
+                                                 GetVariableWordSize(), 
+                                                 GetLookupTableType());
 
-        unsigned int s = CalculateBestStride(ws,
-                                             GetVariableWordSize(), 
-                                             GetLookupTableType());
-
-        SetScanStep(s);
-#endif
+            SetScanStep(s);
+        }
         m_Opts->SetWordSize(ws); 
     }
 
@@ -142,20 +142,22 @@ public:
     /// value is used for the eRight seed extension method.
     /// @param sem SeedExtensionMethod [in]
     void SetSeedExtensionMethod(SeedExtensionMethod sem) {
-        switch (sem) {
-        case eRight: case eUpdateDiag:
-            SetScanStep(COMPRESSION_RATIO);
-            break;
-        case eRightAndLeft:
-        {
-            unsigned int s = CalculateBestStride(GetWordSize(), 
-                                                 GetVariableWordSize(), 
-                                                 GetLookupTableType());
-            SetScanStep(s);
-            break;
-        }
-        default:
-            abort();
+        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
+            switch (sem) {
+            case eRight: case eUpdateDiag:
+                SetScanStep(COMPRESSION_RATIO);
+                break;
+            case eRightAndLeft:
+            {
+                unsigned int s = CalculateBestStride(GetWordSize(), 
+                                                     GetVariableWordSize(), 
+                                                     GetLookupTableType());
+                SetScanStep(s);
+                break;
+            }
+            default:
+                abort();
+            }
         }
         m_Opts->SetSeedExtensionMethod(sem);
     }
@@ -197,22 +199,18 @@ public:
     /// @param algo GapExtnAlgorithm [in]
     void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) 
     {
-#if 0
-        if (algo != GetGapExtnAlgorithm() ) {
-            if (algo == eGreedyExt || algo == eGreedyWithTracebackExt) {
-                SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
-                SetGapExtensionCost(BLAST_GAP_EXTN_MEGABLAST);
-            } else {
-                SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
-                SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
+        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
+            if (algo != GetGapExtnAlgorithm() ) {
+                if (algo == eGreedyExt || algo == eGreedyWithTracebackExt) {
+                    SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
+                    SetGapExtensionCost(BLAST_GAP_EXTN_MEGABLAST);
+                } else {
+                    SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
+                    SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
+                }
             }
-#endif
-            
-            m_Opts->SetGapExtnAlgorithm(algo); 
-            
-#if 0
         }
-#endif
+        m_Opts->SetGapExtnAlgorithm(algo); 
     }
 
     /// Returns GapTracebackAlgorithm
@@ -221,12 +219,12 @@ public:
     /// @param algo GapTracebackAlgorithm [in]
     void SetGapTracebackAlgorithm(EBlastTbackExt algo) 
     {
-#if 0
-        if (algo != GetGapTracebackAlgorithm() && algo != eGreedyTbck) {
-            SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
-            SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
+        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
+            if (algo != GetGapTracebackAlgorithm() && algo != eGreedyTbck) {
+                SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
+                SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
+            }
         }
-#endif
         m_Opts->SetGapTracebackAlgorithm(algo); 
     }
 
@@ -339,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/26 20:55:16  dondosha
+ * Allow options dependency logic for local options, but not for remote
+ *
  * Revision 1.17  2004/08/24 15:11:33  bealer
  * - Rollback blast option interaction code to fix bug.
  *
