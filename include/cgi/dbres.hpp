@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/24 15:15:19  golikov
+* class CNcbiRelocateCommand added
+*
 * Revision 1.2  1999/05/11 03:11:45  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -196,6 +199,22 @@ private:
 
     CNcbiDbResource& m_resource;
 };
+
+//
+// class CNcbiRelocateCommand
+//
+
+class CNcbiRelocateCommand :  public CNcbiCommand
+{
+public:
+
+    CNcbiRelocateCommand( CNcbiDbResource& resource );
+
+    virtual ~CNcbiRelocateCommand( void );
+
+    virtual void Execute( CCgiContext& ctx );
+};
+
 
 //
 // class CNcbiDatabaseInfo

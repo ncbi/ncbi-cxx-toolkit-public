@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/24 15:14:56  golikov
+* class CNcbiRelocateCommand added
+*
 * Revision 1.2  1999/05/11 03:11:51  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -184,6 +187,35 @@ bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
     }
 
     return false;
+}
+
+//
+// class CNcbiRelocateCommand
+//
+
+CNcbiRelocateCommand::CNcbiRelocateCommand( CNcbiDbResource& resource )
+    : CNcbiCommand( resource )
+{
+}
+
+CNcbiRelocateCommand::~CNcbiRelocateCommand( void )
+{
+}
+
+void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
+{
+    _TRACE("CNcbiRelocateCommand::Execute -> go");
+    try {
+        string url = GetLink(ctx);
+        _TRACE("CNcbiRelocateCommand::Execute changing location to:" << url);
+        ctx.GetResponse().SetHeaderValue("Location", url);
+        ctx.GetResponse().WriteHeader();
+    }
+    catch (exception e) {
+        ERR_POST("CNcbiRelocateCommand::Execute error getting url");
+        throw;
+    }
+    _TRACE("CNcbiRelocateCommand::Execute Finished");
 }
 
 //
