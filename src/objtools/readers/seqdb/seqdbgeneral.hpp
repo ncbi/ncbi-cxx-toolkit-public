@@ -31,10 +31,10 @@
  */
 
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include <corelib/ncbi_bswap.hpp>
 
 
 BEGIN_NCBI_SCOPE
-
 
 // Temporary development tools/tricks
 
@@ -59,6 +59,7 @@ enum seqdb_debug_bits {
 template<typename T>
 inline T SeqDB_GetStdOrdUnaligned(const T * stdord_obj)
 {
+#ifdef WORDS_BIGENDIAN
     unsigned char * stdord =
 	(unsigned char*)(stdord_obj);
     
@@ -73,6 +74,19 @@ inline T SeqDB_GetStdOrdUnaligned(const T * stdord_obj)
     }
     
     return retval;
+#else
+    if (sizeof(T) == 8) {
+        return CByteSwap::GetInt8((unsigned char *) stdord_obj);
+    } else if (sizeof(T) == 4) {
+        return CByteSwap::GetInt4((unsigned char *) stdord_obj);
+    } else if (sizeof(T) == 2) {
+        return CByteSwap::GetInt2((unsigned char *) stdord_obj);
+    }
+    
+    _ASSERT(sizeof(T) == 1);
+    
+    return *stdord_obj;
+#endif
 }
 
 template<typename T>
@@ -96,7 +110,7 @@ inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 
 // Macro Predicates for binary qualities
 
-#define IS_POWER_OF_TWO(x)    ((x) & ((x)-1))
+#define IS_POWER_OF_TWO(x)    (((x) & ((x)-1)) == 0)
 #define ALIGNED_TO_POW2(x,y)  (! ((x) & (-y)))
 
 #define PTR_ALIGNED_TO_SELF_SIZE(x) \
