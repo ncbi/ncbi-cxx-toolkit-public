@@ -134,7 +134,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
         int xx_errno = x_errno; \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, \
-                  MessagePlusErrno(message, xx_errno, "", buf, sizeof(buf))); \
+                  MessagePlusErrno(message, xx_errno, 0, buf, sizeof(buf))); \
         CORE_UNLOCK; \
     } \
 } while (0)
@@ -146,7 +146,7 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, \
                   MessagePlusErrno(g_CORE_Sprintf fmt_args,\
-                  xx_errno, "", buf, sizeof(buf))); \
+                  xx_errno, 0, buf, sizeof(buf))); \
         CORE_UNLOCK; \
     } \
 } while (0)
@@ -189,6 +189,9 @@ extern char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/12/04 19:51:40  lavr
+ * Enable MessageWithErrno() to print error description
+ *
  * Revision 6.6  2002/09/19 18:08:31  lavr
  * Header file guard macro changed; log moved to end
  *
