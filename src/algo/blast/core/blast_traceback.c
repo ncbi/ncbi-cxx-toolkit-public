@@ -428,6 +428,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    Uint1* nucl_sequence = NULL;
    BLAST_KarlinBlk** kbp;
    Boolean phi_align = (hit_options->phi_align);
+   Boolean greedy_traceback;
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -558,6 +559,9 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
          
          subject = subject_start;
 
+         greedy_traceback = (ext_options->algorithm_type ==
+                             EXTEND_GREEDY_NO_TRACEBACK);
+
          /* Perform the gapped extension with traceback */
          if (phi_align) {
             Int4 pat_length = GetPatternLengthFromBlastHSP(hsp);
@@ -565,9 +569,13 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             PHIGappedAlignmentWithTraceback(program_number, query, subject,
                gap_align, score_options, q_start, s_start, query_length, 
                subject_length);
+         } else if (greedy_traceback) {
+            BLAST_GreedyGappedAlignment(query, subject, 
+                 query_length, subject_length, gap_align, 
+                 score_options, q_start, s_start, FALSE, TRUE);
          } else {
             BLAST_GappedAlignmentWithTraceback(program_number, query, subject, 
-               gap_align, score_options, ext_options, q_start, s_start, 
+               gap_align, score_options, q_start, s_start, 
                query_length, subject_length);
          }
 
@@ -583,6 +591,11 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             
             hsp->gap_info = gap_align->edit_block;
             gap_align->edit_block = NULL;
+
+            if (greedy_traceback) {
+               ReevaluateHSPWithAmbiguities(hsp, query, subject, hit_options,
+                                            score_options, query_info, sbp);
+            }
             
             if (hsp->gap_info) {
                hsp->gap_info->frame1 = hsp->query.frame;

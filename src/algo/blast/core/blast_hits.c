@@ -124,7 +124,6 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    BLAST_KarlinBlk** kbp;
    Int4 hsp_cnt;
    Int4 index;
-   Uint1 factor;
    
    if (hsp_list == NULL)
       return 1;
@@ -134,8 +133,6 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    else
       kbp = sbp->kbp_std;
    
-   factor = ((program == blast_type_blastn) ? 2 : 1);
-
    hsp_cnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
    for (index=0; index<hsp_cnt; index++) {
@@ -151,7 +148,7 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
       } else {
          hsp->evalue = 
             BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-               (double)query_info->eff_searchsp_array[hsp->context/factor]);
+               (double)query_info->eff_searchsp_array[hsp->context]);
       }
    }
    
@@ -461,7 +458,184 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    return 0;
 }
 
-/** Reevaluate the HSPs in an HSP list, using ambiguity information. 
+Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp, 
+           Uint1* query_start, Uint1* subject_start, 
+           const BlastHitSavingOptions* hit_options, 
+           const BlastScoringOptions* score_options, 
+           BlastQueryInfo* query_info, BlastScoreBlk* sbp)
+{
+   Int4 sum, score, gap_open, gap_extend;
+   Int4** matrix;
+   Uint1* query,* subject;
+   Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
+   Int4 index, i;
+   Int2 factor = 1;
+   Uint1 mask = 0x0f;
+   GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
+   Boolean delete_hsp;
+   double searchsp_eff;
+   Int4 last_esp_num = 0;
+   Int2 status = 0;
+   Int4 align_length;
+   BLAST_KarlinBlk* kbp;
+   Boolean gapped_calculation = score_options->gapped_calculation;
+
+   /* NB: this function is called only for BLASTn, so we know where the 
+      Karlin block is */
+   kbp = sbp->kbp_std[hsp->context];
+   searchsp_eff = (double)query_info->eff_searchsp_array[hsp->context];
+
+   if (score_options->gap_open == 0 && score_options->gap_extend == 0) {
+      if (score_options->reward % 2 == 1) 
+         factor = 2;
+      gap_open = 0;
+      gap_extend = 
+         (score_options->reward - 2*score_options->penalty) * factor / 2;
+   } else {
+      gap_open = score_options->gap_open;
+      gap_extend = score_options->gap_extend;
+   }
+
+   matrix = sbp->matrix;
+
+   query = query_start + hsp->query.offset; 
+   subject = subject_start + hsp->subject.offset;
+   score = 0;
+   sum = 0;
+   new_q_start = new_q_end = query;
+   new_s_start = new_s_end = subject;
+   i = 0;
+   
+   if (!gapped_calculation) {
+      for (i = 0; i < hsp->subject.length; ++i) {
+         sum += factor*matrix[*query & mask][*subject];
+         query++;
+         subject++;
+         if (sum < 0) {
+            if (BLAST_KarlinStoE_simple(score, kbp, searchsp_eff)
+                > hit_options->expect_value) {
+               /* Start from new offset */
+               new_q_start = query;
+               new_s_start = subject;
+               score = sum = 0;
+            } else {
+               /* Stop here */
+               break;
+            }
+         } else if (sum > score) {
+            /* Remember this point as the best scoring end point */
+            score = sum;
+            new_q_end = query;
+            new_s_end = subject;
+         }
+      }
+   } else {
+      esp = hsp->gap_info->esp;
+      prev_esp = NULL;
+      last_esp = first_esp = esp;
+      last_esp_num = 0;
+      
+      while (esp) {
+         if (esp->op_type == GAPALIGN_SUB) {
+            sum += factor*matrix[*query & mask][*subject];
+            query++;
+            subject++;
+            i++;
+         } else if (esp->op_type == GAPALIGN_DEL) {
+            sum -= gap_open + gap_extend * esp->num;
+            subject += esp->num;
+            i += esp->num;
+         } else if (esp->op_type == GAPALIGN_INS) {
+            sum -= gap_open + gap_extend * esp->num;
+            query += esp->num;
+            i += esp->num;
+         }
+         
+         if (sum < 0) {
+            if (BLAST_KarlinStoE_simple(score, kbp, searchsp_eff)
+                > hit_options->expect_value) {
+               /* Start from new offset */
+               new_q_start = query;
+               new_s_start = subject;
+               score = sum = 0;
+               if (i < esp->num) {
+                  esp->num -= i;
+                  first_esp = esp;
+                  i = 0;
+               } else {
+                  first_esp = esp->next;
+               }
+               /* Unlink the bad part of the esp chain 
+                  so it can be freed later */
+               if (prev_esp)
+                  prev_esp->next = NULL;
+               last_esp = NULL;
+            } else {
+               /* Stop here */
+               break;
+            }
+         } else if (sum > score) {
+            /* Remember this point as the best scoring end point */
+            score = sum;
+            last_esp = esp;
+            last_esp_num = i;
+            new_q_end = query;
+            new_s_end = subject;
+         }
+         if (i >= esp->num) {
+            i = 0;
+            prev_esp = esp;
+            esp = esp->next;
+         }
+      } /* loop on edit scripts */
+   } /* if (gapped_calculation) */
+
+   score /= factor;
+   
+   delete_hsp = FALSE;
+   hsp->score = score;
+   hsp->evalue = 
+      BLAST_KarlinStoE_simple(score, kbp, searchsp_eff);
+   if (hsp->evalue > hit_options->expect_value) {
+      delete_hsp = TRUE;
+   } else {
+      hsp->query.length = new_q_end - new_q_start;
+      hsp->subject.length = new_s_end - new_s_start;
+      hsp->query.offset = new_q_start - query_start;
+      hsp->query.end = hsp->query.offset + hsp->query.length;
+      hsp->subject.offset = new_s_start - subject_start;
+      hsp->subject.end = hsp->subject.offset + hsp->subject.length;
+      if (gapped_calculation) {
+         /* Make corrections in edit block and free any parts that
+            are no longer needed */
+         if (first_esp != hsp->gap_info->esp) {
+            GapEditScriptDelete(hsp->gap_info->esp);
+            hsp->gap_info->esp = first_esp;
+         }
+         if (last_esp->next != NULL) {
+            GapEditScriptDelete(last_esp->next);
+            last_esp->next = NULL;
+         }
+         last_esp->num = last_esp_num;
+      }
+      BlastHSPGetNumIdentical(query_start, subject_start, hsp, 
+         gapped_calculation, &hsp->num_ident, &align_length);
+      /* Check if this HSP passes the percent identity test */
+      if (((double)hsp->num_ident) / align_length * 100 < 
+          hit_options->percent_identity)
+         delete_hsp = TRUE;
+   }
+   
+   if (delete_hsp) { /* This HSP is now below the cutoff */
+      if (gapped_calculation && first_esp != NULL && 
+          first_esp != hsp->gap_info->esp)
+         GapEditScriptDelete(first_esp);
+   }
+  
+   return delete_hsp;
+} 
+
+/** Reevaluate all HSPs in an HSP list, using ambiguity information. 
  * This is/can only done either for an ungapped search, or if traceback is 
  * already available.
  * Subject sequence is uncompressed and saved here. Number of identities is
@@ -477,27 +651,18 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
  *             sequence) [in]
  */
 static Int2 
-BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
+ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
    const BlastSeqSrc* bssp)
 {
-   Int4 sum, score, gap_open, gap_extend;
-   Int4** matrix;
    BlastHSP** hsp_array,* hsp;
-   Uint1* query,* subject,* query_start,* subject_start = NULL;
-   Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
+   Uint1* query_start,* subject_start = NULL;
    Int4 index, context, hspcnt, i;
-   Int2 factor = 1;
-   Uint1 mask = 0x0f;
-   GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
    Boolean purge, delete_hsp;
-   double searchsp_eff;
-   Int4 last_esp_num = 0;
    Int2 status = 0;
    Int4 align_length;
-   BLAST_KarlinBlk** kbp;
    GetSeqArg seq_arg;
    Boolean gapped_calculation = score_options->gapped_calculation;
 
@@ -517,23 +682,6 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       /* All HSPs have been deleted */
       return status;
 
-   /* NB: this function is called only for BLASTn, so we know where the 
-      Karlin block is */
-   kbp = sbp->kbp_std;
-
-   if (score_options->gap_open == 0 && score_options->gap_extend == 0) {
-      if (score_options->reward % 2 == 1) 
-         factor = 2;
-      gap_open = 0;
-      gap_extend = 
-         (score_options->reward - 2*score_options->penalty) * factor / 2;
-   } else {
-      gap_open = score_options->gap_open;
-      gap_extend = score_options->gap_extend;
-   }
-
-   matrix = sbp->matrix;
-
    /* Retrieve the unpacked subject sequence and save it in the 
       sequence_start element of the subject structure.
       NB: for the BLAST 2 Sequences case, the uncompressed sequence must 
@@ -543,12 +691,6 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       seq_arg.encoding = BLASTNA_ENCODING;
       BLASTSeqSrcGetSequence(bssp, (void*) &seq_arg);
 
-#if 0
-      readdb_get_sequence_ex(rdfp, subject_blk->oid, 
-         &subject_blk->sequence_start, &buf_len, TRUE);
-      subject_blk->sequence = subject_blk->sequence_start + 1;
-      subject_blk->sequence_start_allocated = TRUE;
-#endif
       subject_blk->sequence_start = seq_arg.seq->sequence_start;
       subject_blk->sequence = seq_arg.seq->sequence_start + 1;
    }
@@ -565,141 +707,12 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       context = hsp->context;
 
       query_start = query_blk->sequence + query_info->context_offsets[context];
-      searchsp_eff = (double)query_info->eff_searchsp_array[context/2];
+
+      delete_hsp = 
+         ReevaluateHSPWithAmbiguities(hsp, query_start, subject_start,
+            hit_options, score_options, query_info, sbp);
       
-      query = query_start + hsp->query.offset; 
-      subject = subject_start + hsp->subject.offset;
-      score = 0;
-      sum = 0;
-      new_q_start = new_q_end = query;
-      new_s_start = new_s_end = subject;
-      i = 0;
-
-      if (!gapped_calculation) {
-         for (i = 0; i < hsp->subject.length; ++i) {
-            sum += factor*matrix[*query & mask][*subject];
-            query++;
-            subject++;
-            if (sum < 0) {
-               if (BLAST_KarlinStoE_simple(score, kbp[context],
-                      searchsp_eff) > hit_options->expect_value) {
-                  /* Start from new offset */
-                  new_q_start = query;
-                  new_s_start = subject;
-                  score = sum = 0;
-               } else {
-                  /* Stop here */
-                  break;
-               }
-            } else if (sum > score) {
-               /* Remember this point as the best scoring end point */
-               score = sum;
-               new_q_end = query;
-               new_s_end = subject;
-            }
-         }
-      } else {
-
-         esp = hsp->gap_info->esp;
-         prev_esp = NULL;
-         last_esp = first_esp = esp;
-         last_esp_num = 0;
-         
-         while (esp) {
-            if (esp->op_type == GAPALIGN_SUB) {
-               sum += factor*matrix[*query & mask][*subject];
-               query++;
-               subject++;
-               i++;
-            } else if (esp->op_type == GAPALIGN_DEL) {
-               sum -= gap_open + gap_extend * esp->num;
-               subject += esp->num;
-               i += esp->num;
-            } else if (esp->op_type == GAPALIGN_INS) {
-               sum -= gap_open + gap_extend * esp->num;
-               query += esp->num;
-               i += esp->num;
-            }
-            
-            if (sum < 0) {
-               if (BLAST_KarlinStoE_simple(score, kbp[context],
-                      searchsp_eff) > hit_options->expect_value) {
-                  /* Start from new offset */
-                  new_q_start = query;
-                  new_s_start = subject;
-                  score = sum = 0;
-                  if (i < esp->num) {
-                     esp->num -= i;
-                     first_esp = esp;
-                     i = 0;
-                  } else {
-                     first_esp = esp->next;
-                  }
-                  /* Unlink the bad part of the esp chain 
-                     so it can be freed later */
-                  if (prev_esp)
-                     prev_esp->next = NULL;
-                  last_esp = NULL;
-               } else {
-                  /* Stop here */
-                  break;
-               }
-            } else if (sum > score) {
-               /* Remember this point as the best scoring end point */
-               score = sum;
-               last_esp = esp;
-               last_esp_num = i;
-               new_q_end = query;
-               new_s_end = subject;
-            }
-            if (i >= esp->num) {
-               i = 0;
-               prev_esp = esp;
-               esp = esp->next;
-            }
-         } /* loop on edit scripts */
-      } /* if (gapped_calculation) */
-
-      score /= factor;
-
-      delete_hsp = FALSE;
-      hsp->score = score;
-      hsp->evalue = 
-         BLAST_KarlinStoE_simple(score, kbp[context], searchsp_eff);
-      if (hsp->evalue > hit_options->expect_value) {
-         delete_hsp = TRUE;
-      } else {
-         hsp->query.length = new_q_end - new_q_start;
-         hsp->subject.length = new_s_end - new_s_start;
-         hsp->query.offset = new_q_start - query_start;
-         hsp->query.end = hsp->query.offset + hsp->query.length;
-         hsp->subject.offset = new_s_start - subject_start;
-         hsp->subject.end = hsp->subject.offset + hsp->subject.length;
-         if (gapped_calculation) {
-            /* Make corrections in edit block and free any parts that
-               are no longer needed */
-            if (first_esp != hsp->gap_info->esp) {
-               GapEditScriptDelete(hsp->gap_info->esp);
-               hsp->gap_info->esp = first_esp;
-            }
-            if (last_esp->next != NULL) {
-               GapEditScriptDelete(last_esp->next);
-               last_esp->next = NULL;
-            }
-            last_esp->num = last_esp_num;
-         }
-         BlastHSPGetNumIdentical(query_start, subject_start, hsp, 
-            gapped_calculation, &hsp->num_ident, &align_length);
-         /* Check if this HSP passes the percent identity test */
-         if (((double)hsp->num_ident) / align_length * 100 < 
-             hit_options->percent_identity)
-            delete_hsp = TRUE;
-      }
-
       if (delete_hsp) { /* This HSP is now below the cutoff */
-         if (gapped_calculation && first_esp != NULL && 
-             first_esp != hsp->gap_info->esp)
-            GapEditScriptDelete(first_esp);
          hsp_array[index] = BlastHSPFree(hsp_array[index]);
          purge = TRUE;
       }
@@ -967,7 +980,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
       return 0;
 
    if (program == blast_type_blastn) {
-      status = BLAST_ReevaluateWithAmbiguities(hsp_list, query, subject, 
+      status = ReevaluateHSPListWithAmbiguities(hsp_list, query, subject, 
                   hit_options, query_info, sbp, score_options, bssp);
       context_factor = 2;
    } else if (program == blast_type_blastx || 
