@@ -32,46 +32,18 @@
  *
  */
 
-#ifdef NCBI_OS_MSWIN ////////////////////////////////////////
+#ifdef NCBI_OS_MSWIN
 
 #define DBNTWIN32          // must identify operating system environment
 #include "windows.h"
 #include <sqlfront.h>
 #include <sqldb.h>     // DB-LIB header file (should always be included)
 
-#define SYBINT1 SQLINT1
-#define SYBINT2 SQLINT2
-#define SYBINT4 SQLINT4
-#define SYBIMAGE     SQLIMAGE
-#define SYBTEXT      SQLTEXT
-#define SYBBINARY    SQLBINARY
-#define SYBDATETIME  SQLDATETIME
-#define SYBDATETIME4 SQLDATETIM4
-#define SYBNUMERIC   SQLNUMERIC
-#define SYBCHAR      SQLCHAR
-#define SYBBIT       SQLBIT
-#define SYBDECIMAL   SQLDECIMAL
-#define SYBREAL      SQLFLT4
-#define SYBFLT8      SQLFLT8
-
-#define SYBETIME     SQLETIME
-#define SYBEFCON     SQLECONNFB
-#define SYBECONN     SQLECONN
-
-// DBSETLENCRYPT
-#define DBDATETIME4  DBDATETIM4
-#define DBCOLINFO    DBCOL
-#define DBTYPEINFO   DBTYPEDEFS
-
-#define DBVERSION_UNKNOWN DBUNKNOWN
-
-#define CS_SUCCEED 0
-#define INT_TIMEOUT 1
-#define CS_INT Int4
-
 #define DBDATETIME4_days(x) ((x)->numdays)
 #define DBDATETIME4_mins(x) ((x)->nummins)
 #define DBNUMERIC_val(x) ((x)->val)
+
+#include <dbapi/driver/dblib/const_syb2ms.hpp>
 
 #else
 
@@ -79,7 +51,7 @@
 #define DBDATETIME4_mins(x) ((x)->minutes)
 #define DBNUMERIC_val(x) ((x)->array)
 
-#endif NCBI_OS_MSWIN ////////////////////////////////////////
+#endif
 
 
 #include <dbapi/driver/public.hpp>
@@ -87,11 +59,13 @@
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
-#ifndef NCBI_OS_MSWIN ////////////////////////////////////////
+
+#ifndef NCBI_OS_MSWIN
 #include <sybfront.h>
 #include <sybdb.h>
 #include <syberror.h>
-#endif NCBI_OS_MSWIN ////////////////////////////////////////
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -653,10 +627,10 @@ class CDBL_ITDescriptor : public I_ITDescriptor
 public:
     virtual ~CDBL_ITDescriptor();
 
-#ifndef NCBI_OS_MSWIN ////////////////////////////////////////
+#ifndef NCBI_OS_MSWIN
 private:
     bool x_MakeObjName(DBCOLINFO* col_info);
-#endif NCBI_OS_MSWIN ////////////////////////////////////////
+#endif
 
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
@@ -680,6 +654,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/01/08 15:58:00  sapojnik
+ * Moved to const_syb2ms.hpp: Sybase dblib constants translations to Microsoft-compatible ones
+ *
  * Revision 1.4  2002/01/03 17:07:53  sapojnik
  * fixing CR/LF mixup
  *
