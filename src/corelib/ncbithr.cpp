@@ -40,8 +40,8 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.6  2001/03/26 23:12:51  grichenk
- * CMutex destructor releases the mutex if owned by the calling thread
+ * Revision 1.7  2001/03/27 18:12:35  grichenk
+ * CRWLock destructor releases system resources
  *
  * Revision 1.5  2001/03/26 21:45:29  vakatov
  * Workaround static initialization/destruction traps:  provide better
@@ -191,7 +191,7 @@ inline
 void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
 {
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify(TlsSetValue(key, data) != 0, err_message);
+    s_Verify(TlsSetValue(key, data), err_message);
 #elif defined(NCBI_POSIX_THREADS)
     s_Verify(pthread_setspecific(key, data) == 0, err_message);
 #else
@@ -380,9 +380,9 @@ bool CThread::Run(void)
              "CThread::Run() -- error creating thread");
     s_Verify(DuplicateHandle(GetCurrentProcess(), thread_handle,
                              GetCurrentProcess(), &m_Handle,
-                             0, FALSE, DUPLICATE_SAME_ACCESS) != 0,
+                             0, FALSE, DUPLICATE_SAME_ACCESS),
              "CThread::Run() -- error getting thread handle");
-    s_Verify(CloseHandle(thread_handle) != 0,
+    s_Verify(CloseHandle(thread_handle),
              "CThread::Run() -- error closing thread handle");
 #elif defined(NCBI_POSIX_THREADS)
     s_Verify(pthread_create
@@ -412,7 +412,7 @@ void CThread::Detach(void)
 
     // Detach the thread
 #if defined(NCBI_WIN32_THREADS)
-    s_Verify(CloseHandle(m_Handle) != 0,
+    s_Verify(CloseHandle(m_Handle),
              "CThread::Detach() -- error closing thread handle");
 #elif defined(NCBI_POSIX_THREADS)
     s_Verify(pthread_detach(m_Handle) == 0,
@@ -451,7 +451,7 @@ void CThread::Join(void** exit_data)
     s_Verify(GetExitCodeThread(m_Handle, &status) &&
              status != DWORD(STILL_ACTIVE),
              "CThread::Join() -- thread is still running after join");
-    s_Verify(CloseHandle(m_Handle) != 0,
+    s_Verify(CloseHandle(m_Handle),
              "CThread::Join() -- can not close thread handle");
 #elif defined(NCBI_POSIX_THREADS)
     s_Verify(pthread_join(m_Handle, 0) == 0,
@@ -633,8 +633,8 @@ inline
 CInternalRWLock::~CInternalRWLock(void)
 {
 #if defined(NCBI_WIN32_THREADS)
-    verify(CloseHandle(m_Rsema) != 0);
-    verify(CloseHandle(m_Wsema) != 0);
+    verify(CloseHandle(m_Rsema));
+    verify(CloseHandle(m_Wsema));
 #elif defined(NCBI_POSIX_THREADS)
     verify(pthread_cond_destroy(&m_Rcond) == 0);
     verify(pthread_cond_destroy(&m_Wcond) == 0);
@@ -661,7 +661,29 @@ CRWLock::CRWLock(void)
 
 CRWLock::~CRWLock(void)
 {
-    assert(m_Count == 0);
+    CThread::TID self_id = CThread::GetSelf();
+
+    if (m_Count < 0  &&  m_Owner == self_id) {
+        // Release system resources if W-locked by the calling thread
+#if defined(NCBI_WIN32_THREADS)
+        verify(ReleaseSemaphore(m_RW->m_Rsema, 1, NULL));
+        verify(ReleaseSemaphore(m_RW->m_Wsema, 1, NULL));
+#elif defined(NCBI_POSIX_THREADS)
+        verify(pthread_cond_broadcast(&m_RW->m_Rcond) == 0);
+        verify(pthread_cond_signal(&m_RW->m_Wcond) == 0);
+#endif
+    }
+    else if (m_Count > 0) {
+        // Release system resources if R-locked by any thread
+#if defined(NCBI_WIN32_THREADS)
+        verify(ReleaseSemaphore(m_RW->m_Wsema, 1, NULL));
+#elif defined(NCBI_POSIX_THREADS)
+        verify(pthread_cond_signal(&m_RW->m_Wcond) == 0);
+#endif
+
+    }
+
+    assert(m_Count >= 0  ||  m_Owner == self_id);
     return;
 }
 
@@ -695,7 +717,7 @@ void CRWLock::ReadLock(void)
                  "CRWLock::ReadLock() -- R-lock waiting error");
         // Success, check the semaphore
         LONG prev_sema;
-        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema) != 0,
+        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
                  "CRWLock::ReadLock() -- failed to release R-semaphore");
         s_Verify(prev_sema == 0,
                  "CRWLock::ReadLock() -- invalid R-semaphore state");
@@ -923,11 +945,11 @@ void CRWLock::Unlock(void)
         // unlock the last W-lock
 #if defined(NCBI_WIN32_THREADS)
         LONG prev_sema;
-        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema) != 0,
+        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema),
                  "CRWLock::Unlock() -- error releasing R-semaphore");
         s_Verify(prev_sema == 0,
                  "CRWLock::Unlock() -- invalid R-semaphore state");
-        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema) != 0,
+        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
                  "CRWLock::Unlock() -- error releasing W-semaphore");
         s_Verify(prev_sema == 0,
                  "CRWLock::Unlock() -- invalid W-semaphore state");
@@ -951,7 +973,7 @@ void CRWLock::Unlock(void)
         // unlock the last R-lock
 #if defined(NCBI_WIN32_THREADS)
         LONG prev_sema;
-        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema) != 0,
+        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema),
                  "CRWLock::Unlock() -- error releasing W-semaphore");
         s_Verify(prev_sema == 0,
                  "CRWLock::Unlock() -- invalid W-semaphore state");
