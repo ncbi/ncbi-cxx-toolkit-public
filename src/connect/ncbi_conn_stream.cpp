@@ -272,6 +272,10 @@ CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
 
 CConn_MemoryStream::~CConn_MemoryStream()
 {
+    Cleanup();
+#ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
+    rdbuf(0);
+#endif
     BUF_Destroy(m_Buf);
     MT_LOCK_Delete(m_Lock);
 }
@@ -366,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2005/02/25 16:50:50  lavr
+ * CConn_MemoryStream::dtor() to explicitly call Cleanup() to avoid using dead members
+ *
  * Revision 6.42  2004/12/09 13:36:04  lavr
  * MSVC compilation fix
  *
