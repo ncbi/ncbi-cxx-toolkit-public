@@ -132,7 +132,7 @@ public:
     virtual void SetVersionRetention(EKeepVersions policy) = 0;
 
     /// Get version retention
-    EKeepVersions GetVersionRetention() const = 0;
+    virtual EKeepVersions GetVersionRetention() const = 0;
 
     /// Add or replace BLOB
     ///
@@ -149,8 +149,8 @@ public:
     /// @param flag 
     ///    indicator to keep old BLOBs or drop it from the cache
     virtual void Store(const string&  key,
-                       const string&  subkey,
                        int            version,
+                       const string&  subkey,
                        const void*    data,
                        size_t         size) = 0;
 
@@ -163,10 +163,10 @@ public:
     /// @param version 
     ///    BLOB version
     /// @return 
-    ///    BLOB size or 0 if it doesn't exist
+    ///    BLOB size or 0 if it doesn't exist or expired
     virtual size_t GetSize(const string&  key,
-                           const string&  subkey,
-                           int            version) = 0;
+                           int            version,
+                           const string&  subkey) = 0;
 
     /// Fetch the BLOB
     ///
@@ -181,13 +181,13 @@ public:
     /// @param 
     ///    size buffer size
     /// @return 
-    ///    FALSE if BLOB doesn't exist
+    ///    FALSE if BLOB doesn't exist or expired
     ///
     /// @note Throws an exception if provided memory buffer is insufficient 
     /// to read the BLOB
     virtual bool Read(const string& key, 
-                      const string& subkey,
                       int           version, 
+                      const string& subkey,
                       void*         buf, 
                       size_t        buf_size) = 0;
 
@@ -201,8 +201,8 @@ public:
     ///    BLOB version
     /// @return Interface pointer or NULL if BLOB does not exist
     virtual IReader* GetReadStream(const string&  key, 
-                                   const string&  subkey,
-                                   int   version) = 0;
+                                   int            version,
+                                   const string&  subkey) = 0;
 
     /// Return sequential stream interface to write BLOB data.
     ///
@@ -214,8 +214,8 @@ public:
     ///    BLOB version
     /// @return Interface pointer or NULL if BLOB does not exist
     virtual IWriter* GetWriteStream(const string&    key,
-                                    const string&    subkey,
-                                    int              version) = 0;
+                                    int              version,
+                                    const string&    subkey) = 0;
 
     /// Remove all versions of the specified BLOB
     ///
@@ -238,16 +238,16 @@ public:
     ///    last access time
     /// @sa TimeStampUpdatePolicy
     virtual time_t GetAccessTime(const string&  key,
-                                 const string&  subkey,
-                                 int            version) = 0;
+                                 int            version,
+                                 const string&  subkey) = 0;
 
-    /// Delete all BLOBs with access time older than specified
+    /// Delete all BLOBs older than specified
     ///
-    /// @param access_time 
-    ///    time point (objects newer than that to keep in cache)
+    /// @param access_timeout
+    ///    Time in seconds. All objects older than this are deleted.
     /// @param keep_last_version 
     ///    type of cleaning action
-    virtual void Purge(time_t           access_time,
+    virtual void Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll) = 0;
 
     /// Delete BLOBs with access time older than specified
@@ -258,13 +258,13 @@ public:
     ///    BLOB key
     /// @param subkey
     ///    BLOB identification subkey
-    /// @param access_time 
-    ///    time point (objects newer than that to keep in cache)
+    /// @param access_timeout 
+    ///    Time in seconds. All objects older than this are deleted.
     /// @param keep_last_version 
     ///    type of cleaning action
     virtual void Purge(const string&    key,
                        const string&    subkey,
-                       time_t           access_time,
+                       time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll) = 0;
 
 
@@ -278,6 +278,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/25 17:12:54  kuznets
+ * Reworked cache maintanance methods.
+ * Unified cache items expiration functions.
+ *
  * Revision 1.1  2003/11/21 12:51:31  kuznets
  * Added new refactored interface for local caching.
  * It's supposed after some work to replace the existing BLOB cache and Int
