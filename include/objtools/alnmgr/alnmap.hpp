@@ -248,7 +248,7 @@ public:
         TNumchunk size(void) const { return m_StartSegs.size(); };
 
     private:
-#ifdef NCBI_COMPILER_MSVC // kludge
+#if defined(NCBI_COMPILER_MSVC) ||  defined(NCBI_COMPILER_METROWERKS) // kludge
         friend class CAlnMap;
 #else
         friend
@@ -678,6 +678,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/10/12 19:42:44  rsmith
+* work around compiler bug in Codewarrior
+*
 * Revision 1.39  2004/09/15 20:07:29  todorov
 * Added fUnaligned and fAddUnalignedChunks
 *
