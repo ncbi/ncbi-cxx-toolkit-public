@@ -21,7 +21,7 @@
 # LOBJ     = p1_myobj
 #
 # DLL_LIB  = xncbi
-# DLL_LIBS = $(NETWORK_LIBS)
+# LIBS = $(NETWORK_LIBS)
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 # .....
