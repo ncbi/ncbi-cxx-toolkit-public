@@ -1306,6 +1306,41 @@ private:
     friend class CBDB_FC_Condition;
 };
 
+/// Class factory for BDB field types
+class CBDB_FieldFactory
+{
+public:
+	enum EType 
+	{
+		eUnknown,
+		
+		eString,
+		eLString,
+		eInt4,
+		eUint4,
+		eInt2,
+		eFloat,
+		eDouble,
+		eUChar
+	};
+	
+public:
+	CBDB_FieldFactory();
+	
+	/// Return type enumerator by string type (case insensitive)
+	EType GetType(const string& type) const;
+
+
+	CBDB_Field* Create(EType type) const;
+
+	/// Create field type by string. Caller is responsible for deletion.
+    ///
+	/// @param type
+	///    string type ("string", "int4", "double"). Case insensitive.
+
+	CBDB_Field* Create(const string& type) const;
+};
+
 /* @} */
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1829,6 +1864,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/06/17 13:37:28  kuznets
+ * +CBDB_FieldFactory
+ *
  * Revision 1.36  2004/05/06 15:42:58  rotmistr
  * Changed Char type to UChar
  *

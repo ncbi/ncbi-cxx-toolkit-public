@@ -871,6 +871,81 @@ void CBDB_FieldLString::SetStdString(const string& str)
 
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_FieldFactory::
+//
+
+CBDB_FieldFactory::CBDB_FieldFactory()
+{}
+
+CBDB_FieldFactory::EType CBDB_FieldFactory::GetType(const string& type) const
+{
+	if (NStr::CompareNocase(type, "string")==0) {
+		return eString;
+	} else 
+	if (NStr::CompareNocase(type, "lstring")==0) {
+		return eLString;
+	} else 
+	if (NStr::CompareNocase(type, "int4")==0) {
+		return eInt4;		
+	} else 
+	if (NStr::CompareNocase(type, "uint4")==0) {
+		return eUint4;
+	} else 
+	if (NStr::CompareNocase(type, "int2")==0) {
+		return eInt2;
+	} else 
+	if (NStr::CompareNocase(type, "float")==0) {
+		return eFloat;
+	} else 
+	if (NStr::CompareNocase(type, "double")==0) {
+		return eDouble;
+	} else 
+	if (NStr::CompareNocase(type, "uchar")==0) {
+		return eUChar;
+	} else {
+		return eUnknown;
+	}
+}		
+
+CBDB_Field* CBDB_FieldFactory::Create(EType etype) const
+{
+	switch (etype) 
+	{
+	case eString:
+		return new CBDB_FieldString();
+	case eLString:
+		return new CBDB_FieldLString();
+	case eInt4:
+		return new CBDB_FieldInt4();
+	case eInt2:
+		return new CBDB_FieldInt2();
+	case eFloat:
+		return 	new CBDB_FieldFloat();
+	case eDouble:
+		return new CBDB_FieldDouble();
+	case eUChar:
+		return new CBDB_FieldUChar();
+	default:
+		BDB_THROW(eInvalidType, "Type is not supported.");			
+	};
+	
+	return 0;
+}
+
+CBDB_Field* CBDB_FieldFactory::Create(const string& type) const
+{
+	EType et = GetType(type);	
+	try 
+	{
+		return Create(et);
+	} 
+	catch (CBDB_LibException& ex)
+	{
+		BDB_THROW(eInvalidType, type);
+	}
+}
+
 
 END_NCBI_SCOPE
 
@@ -878,6 +953,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/06/17 13:38:02  kuznets
+ * +CBDB_FieldFactory
+ *
  * Revision 1.23  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
