@@ -52,7 +52,8 @@ public:
         eBadParameter,
         eMemoryLimit,
         eInvalidCharacter,
-        eIncorrectSequenceOrder
+        eIncorrectSequenceOrder,
+        eInvalidSpliceTypeIndex
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -66,6 +67,8 @@ public:
             return "Sequence contains one or more invalid characters";
         case eIncorrectSequenceOrder:
             return "mRna should go first";
+        case eInvalidSpliceTypeIndex:
+            return "Splice type index out of range";
         default:
             return CException::GetErrCodeString();
         }
@@ -80,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/03/25 22:07:09  kapustin
+ * Add eInvalidSpliceTypeIndex exception type
+ *
  * Revision 1.2  2003/03/14 19:15:28  kapustin
  * Add eMemoryLimit exception type
  *
