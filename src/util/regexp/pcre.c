@@ -34,7 +34,7 @@ restrictions:
 
 /* Use a macro for debugging printing */
 
-#if defined(_DEBUG)
+#if defined(PCRE_DEBUG)
 #  define DPRINTF(p) printf p
 #else
 #  define DPRINTF(p) /*nothing*/
