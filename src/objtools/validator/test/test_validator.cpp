@@ -35,6 +35,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <serial/objistr.hpp>
+
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -232,6 +234,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2003/02/05 00:28:07  ucko
+ * +<serial/objistr.hpp> (formerly pulled in via reader_id1.hpp)
+ *
  * Revision 1.8  2003/02/03 20:22:25  shomrat
  * Added flag to supress performance bottlenecks
  *
