@@ -200,7 +200,7 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
                 ranges.push_back(CRef<SRelLoc::TRange>(&range));
                 tentative_stop = SRelLoc(f.GetLoc(), ranges).Resolve(m_Scope);
             }
-            if (tentative_stop  &&  !tentative_stop->IsNull()) {
+            if (tentative_stop.NotEmpty()  &&  !tentative_stop->IsNull()) {
                 string s;
                 CCdregion_translate::TranslateCdregion
                     (s, m_Context->GetHandle(), *tentative_stop, cds);
@@ -348,7 +348,7 @@ void CFlatGFFFormatter::x_AddFeature(list<string>& l, const CSeq_loc& loc,
             CConstRef<CSeq_feat> exon = sequence::GetBestOverlappingFeat
                 (loc2, CSeqFeatData::eSubtype_exon,
                  sequence::eOverlap_Contains, *m_Scope);
-            if (exon  &&  exon->IsSetQual()) {
+            if (exon.NotEmpty()  &&  exon->IsSetQual()) {
                 ITERATE (CSeq_feat::TQual, q, exon->GetQual()) {
                     if ( !NStr::CompareNocase((*q)->GetQual(), "number") ) {
                         int n = NStr::StringToNumeric((*q)->GetVal());
@@ -392,6 +392,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/10/18 01:36:34  ucko
+* Tweak to work around MSVC stupidity.
+*
 * Revision 1.2  2003/10/17 21:06:35  ucko
 * Reworked GTF mode per Wratko's critique:
 *  - Now handles multi-exonic(!) start and stop codons.
