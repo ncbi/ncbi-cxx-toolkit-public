@@ -246,6 +246,15 @@ One of the scalar values defined in the <i><a href="#ref_EType">EType</a></i>&nb
 enumeration, defining the type category of the argument.</dd>
 
 <dt>
+<i><font color="#0000B4">default</font></i></dt>
+
+<dl>
+<dt>
+A default value to be used if the argument is not included on the command
+line - only available for optional program arguments.</dt>
+</dl>
+
+<dt>
 <i><font color="#0000B4">flags</font></i></dt>
 
 <dd>
@@ -255,12 +264,8 @@ eInputFile</i> or
 <i>eOutputFile</i>, and constrains the mode in which
 the file should be opened.</dd>
 
-<dt>
-<i><font color="#0000B4">default</font></i></dt>
-
 <dd>
-A default value to be used if the argument is not included on the command
-line - only available for optional program arguments.</dd>
+</dd>
 
 <dd>
 </dd>
@@ -297,7 +302,7 @@ the argument does not occur in the command line.</dd>
 
 <dd>
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddOptionalKey(key,
-synopsis, comment, value_type, flags, default_value)</a></i></dd>
+synopsis, comment, value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
@@ -331,7 +336,7 @@ in the command line.</dd>
 
 <dd>
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddPlain(key,
-comment, value_type, flags, default_value)</a></i></dd>
+comment, value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
 <dt>
@@ -394,9 +399,9 @@ Further restrictions on the allowed values can be specified using the <i>CArgDes
 </i>method
 with the <i><a href="../docxx/CArgAllow.html">CArgAllow</a></i> class.
 For example:
-<blockquote><font color="#008080">CArgDescriptions args;</font><font color="#008080"></font>
+<blockquote><font color="#008080">CArgDescriptions args;</font>
 <p><font color="#008080">// add descriptions for "firstint" and "nextint"
-using AddXxx( ...)</font><font color="#008080"></font>
+using AddXxx( ...)</font>
 <p><font color="#008080">CArgAllow* constraint = new CArgAllow_Integers(5,
 10);</font>
 <br><font color="#008080">args.SetConstraint("firstInt", constraint);</font>
@@ -551,31 +556,34 @@ class, described below.
 <p>The <i>SetUsageContext()</i> method is used to define the name of the
 program and its description, as it will be displayed by the <i>USAGE</i>
 message. <i>PrintUsage(some_string)</i> writes its message to <i>some_string,
-</i>and returns that <i>string</i>, so that it can be used with an output
-operator. The output generated when an exception occurs might look something
-like:
-<pre><font color="#000080">Must specify mandatory argument:&nbsp; "-i &lt;MyInputFile>"&nbsp;
-SYNOPSIS
+</i>and
+returns that <i>string</i>, so that it can be used with an output operator.
+The output generated when an exception occurs might look something like:
+<pre><font color="#000080">ERROR: Must specify mandatory argument:&nbsp; "-i &lt;MyInputFile>"</font></pre>
+
+<pre>
+<font color="#000080">SYNOPSIS
 &nbsp;&nbsp; myApplic -text -i MyInputFile [-l MyLogFile]&nbsp;
 
 DESCRIPTION&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp; (program description)
 
 OPERANDS&nbsp;&nbsp;&nbsp;
-&nbsp;-text&nbsp;&nbsp;&nbsp; Flag
+&nbsp;-text
 &nbsp;&nbsp; Use text input format
-&nbsp;-i MyInputFile&nbsp;&nbsp;&nbsp; InpFile, mandatory
+&nbsp;-i MyInputFile&nbsp;&nbsp;&nbsp; /InpFile, mandatory/
 &nbsp;&nbsp; Input data file
-&nbsp;[-l MyLogFile]&nbsp;&nbsp;&nbsp; OutFile, optional
+&nbsp;[-l MyLogFile]&nbsp;&nbsp;&nbsp; /OutFile, default=`-'/
 &nbsp;&nbsp; Log errors to &lt;logfile></font></pre>
 The printed <i>USAGE</i> message shows a synopsis of the program and its
 arguments, a description of the program, and a summary of each argument,
 as obtained from its description. In this example, the input file argument's
 description was registered as:
-<pre><font color="#008080">argDesc.AddKey("i", "MyInputFile", "Input data file", CArgDescriptions::eInputFile, 0);</font></pre>
+<pre><font color="#008080">argDesc.AddKey("i", "MyInputFile", "Input data file", CArgDescriptions::eInputFile);</font></pre>
 The information generated for each argument is displayed in the format:
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>-name
-[synopsis] type [, mandatory | optional]</i>
+[synopsis]&nbsp;&nbsp;&nbsp; / type;&nbsp; {mandatory | default=`.....'}
+/</i>
 <br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 comment</i>
 <p><a NAME="ref_CArgs"></a>
@@ -604,11 +612,12 @@ a <i>CArgs</i> object is created.&nbsp; Each argument value is internally
 represented as a <i><a href="#ref_CArgValue">CArgValue</a></i> object,
 and is added to a container managed by the <i>CArgs</i> object.&nbsp; All
 <i>named</i>
-arguments can be accessed&nbsp; using the [] operator, as in: <i>myCArgs["f"]</i>,
+arguments can be accessed&nbsp; using the [ ] operator, as in: <i>myCArgs["f"]</i>,
 where "f" is the name registered for that argument. There are two ways
-to access the <i>Nth</i> <i>unnamed</i> positional argument: <i>myCArgs["#N"]
+to access the <i><b>N</b>th</i> <i>unnamed</i> positional argument: <i>myCArgs["#<b>N</b>"]
 </i>and
-<i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
+<i>myCArgs[<b>N</b>],&nbsp;
+</i>where<i> 1 &lt;= <b>N</b> &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
 <i><a href="../docxx/CArgValue.html">CArgValue </a></i>class:&nbsp; the
@@ -656,11 +665,10 @@ error message.
 Code examples</h3>
 A simple application program, <i><a href="applic_cpp.html">applic.cpp</a></i>
 demonstrates the usage of these classes for argument processing. See also
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
-and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>
+(especially <i>main()</i> and <i>s_Test0() </i>there), and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
 <p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;
-
 <i><a href="registry.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >

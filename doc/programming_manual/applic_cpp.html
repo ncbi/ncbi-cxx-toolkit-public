@@ -21,10 +21,11 @@
 
 </font><font color="#000000">class CTestApp : public CNcbiApplication {
 public:
-&nbsp;&nbsp;&nbsp; virtual int Run ();
-};
+&nbsp;&nbsp;&nbsp; virtual int Run();
+};</font></pre>
 
-int CTestApp::Run() {
+<pre>
+<font color="#000000">int CTestApp::Run() {
 
 &nbsp;&nbsp;&nbsp; auto_ptr&lt;CArgs> args;
 
@@ -33,19 +34,19 @@ int CTestApp::Run() {
 
 &nbsp;&nbsp;&nbsp; //&nbsp; void AddKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType, TFlags);&nbsp;
 &nbsp;&nbsp;&nbsp; //&nbsp; void AddOptionalKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType,
-&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TFlags, string default);
+&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string&amp; default, TFlags);
 &nbsp;&nbsp;&nbsp; //&nbsp; void AddFlag(string&amp; name, string&amp; comment);
 
 </font><font color="#000000">&nbsp;&nbsp;&nbsp; {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDesc;
 
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Required arguments:
-</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("n", "integer", "integer between 1 and 10", argDesc.eInteger, 0);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("f", "float", "float between 0.0 and 1.0", argDesc.eDouble, 0);
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("n", "integer", "integer between 1 and 10", argDesc.eInteger);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("f", "float", "float between 0.0 and 1.0", argDesc.eDouble);
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("i", "inputFile", "data file in", ArgDescriptions::eInputFile);
 
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional arguments:
-</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddOptionalKey("l", "logFile", "log errors to&nbsp;<logFile>",
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddOptionalKey("l", "logFile", "log errors to &lt;logFile>",
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.eOutputFile);
 
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional flags
@@ -70,30 +71,32 @@ int CTestApp::Run() {
 &nbsp;&nbsp;&nbsp; string inFile = (*args)["i"].AsString();
 &nbsp;&nbsp;&nbsp;&nbsp;
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // process optional args
-</font><font color="#000000">&nbsp;&nbsp;&nbsp; if ( args->Exist("l") ) {
+</font><font color="#000000">&nbsp;&nbsp;&nbsp; if ( args->IsProvided("l") ) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetDiagStream(&amp;(*args)["l"].AsOutputFile());
 &nbsp;&nbsp;&nbsp; }
 
-&nbsp;&nbsp;&nbsp; bool textIn = args->Exist("it");
-&nbsp;&nbsp;&nbsp; bool binIn = args->Exist("ib");
+&nbsp;&nbsp;&nbsp; bool textIn = args->IsProvided("it");
+&nbsp;&nbsp;&nbsp; bool binIn = (*args)["ib"].AsBoolean();
 
 &nbsp;&nbsp;&nbsp; if (! (textIn ^ binIn) ) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ERR_POST(Error &lt;&lt; "input type must be specified using -it or -ib");
 &nbsp;&nbsp;&nbsp; }
 
 &nbsp;&nbsp;&nbsp; string InputType;
-&nbsp;&nbsp;&nbsp; if (textIn)&nbsp;
+&nbsp;&nbsp;&nbsp; if ( textIn ) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; InputType = "text";
-&nbsp;&nbsp;&nbsp; else if (binIn)&nbsp;
+&nbsp;&nbsp;&nbsp; } else if ( binIn ) {&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; InputType = "binary";
-&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; }
+
 &nbsp;&nbsp;&nbsp; ERR_POST(Info &lt;&lt; "intIn = " &lt;&lt; intIn &lt;&lt; " floatIn = " &lt;&lt; floatIn &lt;&lt; " inFile = "
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; inFile &lt;&lt; " input type = " &lt;&lt; InputType);
 &nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp; return 0;
-}
+}</font></pre>
 
-int main(int argc, const char* argv[])&nbsp;
+<pre>
+<font color="#000000">int main(int argc, const char* argv[])&nbsp;
 {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNcbiOfstream diag("moreApp.log");
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SetDiagStream(&amp;diag);
