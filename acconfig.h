@@ -13,6 +13,9 @@
 /* There is gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
+/* There is strdup() */
+#undef HAVE_STRDUP
+
 /* Microsoft C++ specific */
 #undef SIZEOF___INT64
 

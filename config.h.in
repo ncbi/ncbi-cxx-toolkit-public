@@ -33,6 +33,9 @@
 /* There is gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
+/* There is strdup() */
+#undef HAVE_STRDUP
+
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
 

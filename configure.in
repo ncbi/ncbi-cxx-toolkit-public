@@ -434,6 +434,16 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(for strdup)
+AC_TRY_COMPILE(
+   [#include <string.h>],
+   [ const char s[] = "abc";
+     char* s1 = strdup(s); ],
+   AC_DEFINE_UNQUOTED(HAVE_STRDUP, 1)
+)
+AC_MSG_RESULT()
+
+
 dnl Check for typedefs, structures, and compiler features.
 dnl ------------------------------------------------------
 AC_CXX_CONST
