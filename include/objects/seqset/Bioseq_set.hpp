@@ -15,9 +15,7 @@ public:
     Bioseq_set();
     ~Bioseq_set();
 
-    typedef NCBI_NS_STD::list< ::Seq_entry* > TSeqEntries;
-
-    const TSeqEntries& GetSeq_set(void) const
+    const TSeq_set& GetSeq_set(void) const
         { return m_Seq_set; }
 };
 

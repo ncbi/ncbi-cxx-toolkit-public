@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/01/10 19:47:20  vasilche
+* Member type typedef now generated in _Base class.
+*
 * Revision 1.3  2000/01/10 14:17:47  vasilche
 * Fixed usage of different types in ?: statement.
 *
@@ -249,7 +252,7 @@ int CAsn2Asn::Run(void)
 	else {              /* read Seq-entry's from a Bioseq-set */
         Bioseq_set entries;
         *inObject >> entries;
-        iterate ( Bioseq_set::TSeqEntries, i, entries.GetSeq_set() ) {
+        iterate ( Bioseq_set::TSeq_set, i, entries.GetSeq_set() ) {
             SeqEntryProcess(*i);     /* do any processing */
         }
         if ( outObject.get() )
