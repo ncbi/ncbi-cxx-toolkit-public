@@ -35,7 +35,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 
-#include <objects/id2/seqsplit__.hpp>
+#include <objects/seqsplit/seqsplit__.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -234,6 +234,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2004/01/22 20:36:43  ucko
+ * Correct path to seqsplit__.hpp.
+ *
  * Revision 1.1  2004/01/22 20:10:35  vasilche
  * 1. Splitted ID2 specs to two parts.
  * ID2 now specifies only protocol.
