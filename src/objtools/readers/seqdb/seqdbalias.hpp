@@ -250,10 +250,6 @@ public:
     void SetMasks(CSeqDBVolSet & volset);
     
 private:
-    
-    // Note: there is a better design for the set<string>: it should
-    // be a "vector<string>&".
-    
     /// Private Constructor
     ///
     /// This constructor is used to build the alias nodes other than
@@ -313,21 +309,14 @@ private:
     /// starts with "#", the function has no effect.  Otherwise, if
     /// there are tabs in the input string, they are silently
     /// converted to spaces, and the part of the string before the
-    /// first space is considered to be the key.  The rest of the line
-    /// (with initial and trailing spaces removed) is the value.
+    /// first space after the first nonspace is considered to be the
+    /// key.  The rest of the line (with initial and trailing spaces
+    /// removed) is taken as the value.
     ///
-    /// @param atlas
-    ///   The memory management layer
-    /// @param dbpath
-    ///   The working directory for relative paths in this node
-    /// @param dbname
-    ///   The name of this node
-    /// @param prot_nucl
-    ///   Indicates whether protein or nucletide sequences will be used
-    /// @param recurse
-    ///   Node history for cycle detection
-    /// @param locked
-    ///   The lock holder object for this thread
+    /// @param bp
+    ///   A pointer to the first character of the line
+    /// @param ep
+    ///   A pointer to (one past) the last character of the line
     void x_ReadLine(const char * bp, const char * ep);
     
     /// Expand a node of the alias node tree recursively
@@ -364,7 +353,7 @@ private:
     ///   The directory name
     /// @param name
     ///   A filename, possibly including directory components
-    /// @prot_nucl
+    /// @param prot_nucl
     ///   Indicates whether this is a protein or nucleotide database
     /// @return
     ///   The combined path
@@ -395,7 +384,7 @@ private:
     /// all names) is found and moved to the dbname_path variable (and
     /// removed from each individual name).
     ///
-    /// @prot_nucl
+    /// @param prot_nucl
     ///   Indicates whether this is a protein or nucleotide database
     void x_ResolveNames(char prot_nucl);
     
@@ -494,6 +483,22 @@ private:
 
 class CSeqDBAliasFile {
 public:
+    /// Constructor
+    ///
+    /// This builds a tree of CSeqDBAliasNode objects from a
+    /// space-seperated list of database names.  Every database
+    /// instance has at least one node, because the top most node is
+    /// an "artificial" node, which serves only to aggregate the list
+    /// of databases specified to the constructor.  The tree is
+    /// constructed in a depth first manner, and will be complete upon
+    /// return from this constructor.
+    ///
+    /// @param atlas
+    ///   The SeqDB memory management layer.
+    /// @param name_list
+    ///   A space seperated list of database names.
+    /// @param prot_nucl
+    ///   Indicates whether the database is protein or nucleotide.
     CSeqDBAliasFile(CSeqDBAtlas    & atlas,
                     const string   & name_list,
                     char             prot_nucl)
@@ -502,55 +507,142 @@ public:
         m_Node.GetVolumeNames(m_VolumeNames);
     }
     
+    /// Get the list of volume names.
+    ///
+    /// This method returns a reference to the vector of volume names.
+    /// The vector will contain all volume names mentioned in any of
+    /// the DBLIST lines in the of the alias node tree.  The volume
+    /// names do not include an extension (such as .pin or .nin).
+    ///
+    /// @return
+    ///   Reference to the internal vector of volume names.
     const vector<string> & GetVolumeNames() const
     {
         return m_VolumeNames;
     }
     
-    // Add our volumes and our subnode's volumes to the end of "vols".
+    /// Get the title
+    ///
+    /// This iterates the alias node tree to build and return a title
+    /// string.  Alias files may override this value (stopping
+    /// traversal at that depth).
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   A string describing the database
     string GetTitle(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetTitle(volset);
     }
     
-    // Add our volumes and our subnode's seq counts.
+    /// Get the number of sequences available
+    ///
+    /// This iterates the alias node tree to compute the number of
+    /// sequences available here.  Alias files may override this value
+    /// (stopping traversal at that depth).  It is normally used to
+    /// provide information on how many OIDs exist after filtering has
+    /// been applied.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The number of included sequences
     Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumSeqs(volset);
     }
     
-    // Add our volumes and our subnode's seq counts.
+    /// Get the size of the OID range
+    ///
+    /// This iterates the alias node tree to compute the number of
+    /// sequences in all volumes as encountered in traversal.  Alias
+    /// files cannot override this value.  Filtering does not affect
+    /// this value.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The number of OIDs found during traversal
     Uint4 GetNumOIDs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumOIDs(volset);
     }
     
-    // Add our volumes and our subnode's base lengths.
+    /// Get the total length of the set of databases
+    ///
+    /// This iterates the alias node tree to compute the total length
+    /// of all sequences in all volumes included in the database.
+    /// This may count volumes several times (depending on alias tree
+    /// structure).  Alias files can override this value (stopping
+    /// traversal at that depth).  It is normally used to describe the
+    /// amount of sequence data remaining after filtering has been
+    /// applied.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The total length of all included sequences
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetTotalLength(volset);
     }
     
-    // Add our volumes and our subnode's base lengths.
+    /// Get the sum of the volume lengths
+    ///
+    /// This iterates the alias node tree to compute the total length
+    /// of all sequences in all volumes as encountered in traversal.
+    /// This may count volumes several times (depending on alias tree
+    /// structure).  Alias files cannot override this value.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The sum of all volumes lengths as traversed
     Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetVolumeLength(volset);
     }
     
-    // Get the membership bit if there is one.
+    /// Get the membership bit
+    ///
+    /// This iterates the alias node tree to find the membership bit,
+    /// if there is one.  If more than one alias node provides a
+    /// membership bit, only one will be used.  This value can only be
+    /// found in alias files (volumes do not have a single internal
+    /// membership bit).
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The membership bit, or zero if none was found.
     Uint4 GetMembBit(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetMembBit(volset);
     }
     
+    /// Set filtering options for all volumes
+    ///
+    /// This method applies the filtering options found in the alias
+    /// node tree to all associated volumes (iterating over the tree
+    /// recursively).  The virtual OID lists are not built as a result
+    /// of this process, but the data necessary for virtual OID
+    /// construction is copied to the volume objects.
+    ///
+    /// @param volset
+    ///   The database volume set
     void SetMasks(CSeqDBVolSet & volset)
     {
         m_Node.SetMasks(volset);
     }
     
 private:
+    /// This is the alias node tree's "artificial" topmost node, which
+    /// aggregates the user provided database names.
     CSeqDBAliasNode m_Node;
-    vector<string>  m_VolumeNames;
+    
+    /// The cached output of the topmost node's GetVolumeNames().
+    vector<string> m_VolumeNames;
 };
 
 

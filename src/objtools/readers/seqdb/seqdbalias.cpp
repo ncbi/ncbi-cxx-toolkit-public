@@ -71,10 +71,6 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     NStr::Tokenize(dbname_list, " ", m_DBList, NStr::eMergeDelims);
     x_ResolveNames(prot_nucl);
     
-    if (seqdb_debug_class & debug_alias) {
-        cout << "user list((" << dbname_list << "))<>";
-    }
-    
     set<string> recurse;
     
     x_ExpandAliases("-", prot_nucl, recurse, locked);
@@ -107,20 +103,6 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     : m_Atlas(atlas),
       m_DBPath(dbpath)
 {
-    if (seqdb_debug_class & debug_alias) {
-        bool comma = false;
-        
-        cout << dbname << "<";
-        for(set<string>::iterator i = recurse.begin(); i != recurse.end(); i++) {
-            if (comma) {
-                cout << ",";
-            }
-            comma = true;
-            cout << SeqDB_GetFileName(*i);
-        }
-        cout << ">";
-    }
-    
     string full_filename( x_MkPath(m_DBPath, dbname, prot_nucl) );
     recurse.insert(full_filename);
     
@@ -296,8 +278,6 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
                    string("No database names were ") + situation);
     }
     
-    bool parens = false;
-    
     for(Uint4 i = 0; i<m_DBList.size(); i++) {
         if (m_DBList[i] == SeqDB_GetBaseName(this_name)) {
             // If the base name of the alias file is also listed in
@@ -317,11 +297,6 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
         }
         
         if ( CFile(new_db_loc).Exists() ) {
-            if (parens == false && seqdb_debug_class & debug_alias) {
-                parens = true;
-                cout << " {" << endl;
-            }
-            
             string newpath = SeqDB_GetDirName(new_db_loc);
             string newfile = SeqDB_GetBaseName(new_db_loc);
             
@@ -339,14 +314,6 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
             // considered to be a volume.
             
             m_VolNames.push_back( SeqDB_GetBasePath(new_db_loc) );
-        }
-    }
-    
-    if (seqdb_debug_class & debug_alias) {
-        if (parens) {
-            cout << "}" << endl;
-        } else {
-            cout << ";" << endl;
         }
     }
 }
@@ -410,7 +377,7 @@ public:
     /// used unmodified.  Values from alias node tree siblings are
     /// concatenated with "; " used as a delimiter.
     ///
-    /// @param vol
+    /// @param value
     ///   A database volume
     virtual void AddString(const string & value)
     {
@@ -481,7 +448,7 @@ public:
     /// Values from alias node tree siblings are compared, and the
     /// maximum value is used as the result.
     ///
-    /// @param vol
+    /// @param value
     ///   A database volume
     virtual void AddString(const string & value)
     {
@@ -541,7 +508,7 @@ public:
     /// If the NSEQ field is specified in an alias file, it will be
     /// used.  Values from alias node tree siblings are summed.
     ///
-    /// @param vol
+    /// @param value
     ///   A database volume
     virtual void AddString(const string & value)
     {
@@ -613,7 +580,7 @@ public:
     /// If the LENGTH field is specified in an alias file, it will be
     /// used.  Values from alias node tree siblings are summed.
     ///
-    /// @param vol
+    /// @param value
     ///   A database volume
     virtual void AddString(const string & value)
     {
@@ -685,7 +652,7 @@ public:
     /// be used unmodified.  No attempt is made to combine or collect
     /// bit values - currently, only one can be used at a time.
     ///
-    /// @param vol
+    /// @param value
     ///   A database volume
     virtual void AddString(const string & value)
     {

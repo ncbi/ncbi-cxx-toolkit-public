@@ -172,7 +172,7 @@ public:
     ///   The taxonomic identiifer.
     /// @param tnames
     ///   A container structure in which to return the names.
-    /// @locked
+    /// @param locked
     ///   The lock holder object for this thread.
     /// @return true if the taxonomic id was found
     bool GetTaxNames(Int4             tax_id,

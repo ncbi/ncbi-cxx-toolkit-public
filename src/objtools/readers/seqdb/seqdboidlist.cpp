@@ -134,33 +134,6 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
     while(m_NumOIDs && (! x_IsSet(m_NumOIDs - 1))) {
         -- m_NumOIDs;
     }
-    
-    if (seqdb_debug_class & debug_oid) {
-        cout << "x_Setup: Dumping OID map data." << endl;
-    
-        unsigned cnt = 0;
-    
-        cout << hex;
-    
-        for(TCUC * bp = m_Bits; bp < m_BitEnd; bp ++) {
-            unsigned int ubp = (unsigned int)(*bp);
-        
-            if (ubp >= 16) {
-                cout << ubp << " ";
-            } else {
-                cout << "0" << ubp << " ";
-            }
-        
-            cnt++;
-        
-            if (cnt == 32) {
-                cout << "\n";
-                cnt = 0;
-            }
-        }
-    
-        cout << dec << "\n" << endl;
-    }
 }
 
 void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,

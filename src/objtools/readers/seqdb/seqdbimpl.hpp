@@ -59,19 +59,42 @@ using namespace ncbi::objects;
 
 class CSeqDBImplFlush : public CSeqDBFlushCB {
 public:
+    /// Constructor
     CSeqDBImplFlush()
         : m_Impl(0)
     {
     }
     
+    /// Destructor
+    virtual ~CSeqDBImplFlush()
+    {
+    }
+    
+    /// Specify the implementation layer object.
+    ///
+    /// This method sets the SeqDB implementation layer object
+    /// pointer.  Until this pointer is set, this object will ignore
+    /// attempts to flush unused data.  This pointer should not bet
+    /// set until object construction is complete enough to permit the
+    /// memory lease flushing to happen safely.
+    /// 
+    /// @param impl
+    ///   A pointer to the implementation layer object.
     virtual void SetImpl(class CSeqDBImpl * impl)
     {
         m_Impl = impl;
     }
     
+    /// Flush any held memory leases.
+    ///
+    /// At the beginning of garbage collection, this method is called
+    /// to tell the implementation layer to release any held memory
+    /// leases.  If the SetImpl() method has not been called, this
+    /// method will do nothing.
     virtual void operator()();
     
 private:
+    /// A pointer to the SeqDB implementation layer.
     CSeqDBImpl * m_Impl;
 };
 

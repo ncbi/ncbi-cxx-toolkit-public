@@ -38,10 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// debug tricks/tools
-
-int seqdb_debug_class = 0; // debug_mvol | debug_alias;
-
 string SeqDB_GetFileName(string s)
 {
     size_t off = s.find_last_of(CFile::GetPathSeparator());
