@@ -48,16 +48,6 @@ BEGIN_NCBI_SCOPE
 static const size_t kBufferSize = 1024*1024;
 
 
-static size_t s_Read(iostream& ios, char* buffer, size_t size)
-{
-    if (ios.eof())
-        ios.clear();
-    ios.read(buffer, size);
-    size_t count = ios.gcount();
-    return count;
-}
-
-
 /* NOTE about MSVC compiler and its C++ std. library:
  *
  * The C++ standard is very confusing on the stream's ability to do
@@ -124,8 +114,8 @@ extern int TEST_StreamPushback(iostream&    ios,
         if (buflen + i > kBufferSize + 1)
             i = kBufferSize + 1 - buflen;
         LOG_POST(Info << "Reading " << i << " byte(s)");
-        j = s_Read(ios, &buf2[buflen], i);
-        if (!ios.good() && !ios.eof()) {
+        j = CStreamUtils::Readsome(ios, &buf2[buflen], i);
+        if (!ios.good()) {
             ERR_POST("Error receiving data");
             return 2;
         }
@@ -216,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/03/25 22:14:36  lavr
+ * Take advantage of CStreamUtils::Readsome() instead of custom s_Read()
+ *
  * Revision 1.8  2002/11/27 21:10:33  lavr
  * Change Pushback() methods to be CStreamUtils', not standalone
  *
