@@ -60,11 +60,11 @@ public:
     explicit CHeapScope(CScope* scope);
 
     // check is scope is not null
-    operator bool(void) const
+    bool IsSet(void) const
         {
             return m_Scope;
         }
-    bool operator!(void) const
+    bool IsNull(void) const
         {
             return !m_Scope;
         }
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/12/22 15:56:13  vasilche
+* Removed bool operator to avoid ambiguity on Sun.
+*
 * Revision 1.2  2004/04/12 16:49:16  vasilche
 * Allow null scope in CSeqMap_CI and CSeqVector.
 *
