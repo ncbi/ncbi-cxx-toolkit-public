@@ -10,6 +10,6 @@ REQUIRES = objects
 
 APP = objmgr_demo
 SRC = objmgr_demo
-LIB = bdb_cache $(BDB_LIB) $(OBJMGR_LIBS)
+LIB = $(BDB_CACHE_LIB) $(BDB_LIB) $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)

@@ -378,7 +378,7 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
-#ifdef HAVE_BERKELEY_DB
+#ifdef HAVE_BDB_CACHE
     if ( args["cache"] ) {
         // caching options
         CNcbiRegistry& reg = GetConfig();
@@ -1038,6 +1038,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2004/12/23 17:01:45  grichenk
+* Use BDB_CACHE_LIB and HAVE_BDB_CACHE
+*
 * Revision 1.94  2004/12/22 15:56:45  vasilche
 * Added test for auto-release of TSEs by scope
 *
