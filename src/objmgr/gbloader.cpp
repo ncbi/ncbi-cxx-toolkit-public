@@ -566,11 +566,11 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
                 }
               catch(const CIOException &e)
                 {
-                  LOG_POST("ID conneciton failed: Reconnecting...." << e.what());
+                  LOG_POST("ID connection failed: Reconnecting...." << e.what());
                 }
               catch(const CDB_Exception &e)
                 {
-                  LOG_POST("ID conneciton failed: Reconnecting...." << e.what());
+                  LOG_POST("ID connection failed: Reconnecting...." << e.what());
                 }
               catch (...)
                 {
@@ -656,12 +656,12 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
       catch(const CIOException &e)
         {
           LOG_POST(e.what());
-          LOG_POST("ID conneciton failed: Reconnecting....");
+          LOG_POST("ID connection failed: Reconnecting....");
         }
       catch(const CDB_Exception &e)
         {
           LOG_POST(e.what());
-          LOG_POST("ID conneciton failed: Reconnecting....");
+          LOG_POST("ID connection failed: Reconnecting....");
         }
     }
   if(try_cnt<0)
@@ -820,6 +820,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/09/09 16:12:43  dicuccio
+* Fixed minor typo ("conneciton" -> "connection").
+*
 * Revision 1.40  2002/07/24 20:30:27  ucko
 * Move CTimerGuard out to file scope to fix a MIPSpro compiler core dump.
 *
