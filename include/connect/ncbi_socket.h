@@ -53,7 +53,7 @@
  *  
  * I/O Socket (handle SOCK):
  *
- *  SOCK_Create (see also LSOCK_Accept)
+ *  SOCK_Create[Ex] (see also LSOCK_Accept)
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close
@@ -278,7 +278,13 @@ extern EIO_Status SOCK_CreateEx
  ESwitch         do_log   /* [in]  whether to do logging on this socket   */
  );
 
-#define SOCK_Create(h, p, t, s) SOCK_CreateEx(h, p, t, s, eDefault)
+/* SOCK_CreateEx(host, port, timeout, sock, eDefault) */
+extern EIO_Status SOCK_Create
+(const char*     host,    /* [in]  host to connect to                     */
+ unsigned short  port,    /* [in]  port to connect to                     */
+ const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
+ SOCK*           sock     /* [out] handle of the created socket           */
+ );
 
 
 /* [CLIENT-side]  Close the socket referred by "sock" and then connect
@@ -569,6 +575,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2002/12/05 21:44:50  lavr
+ * Retire SOCK_Create() as a macro; reinstate as a regular call
+ *
  * Revision 6.24  2002/12/04 16:53:12  lavr
  * Introduce SOCK_CreateEx()
  *
