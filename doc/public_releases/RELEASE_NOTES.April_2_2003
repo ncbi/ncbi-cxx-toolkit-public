@@ -10,6 +10,22 @@
 
 
 #############################################################################
+*** CONTENT
+
+Source code archives:
+  ncbi_cxx_unix.tar.gz    -- for UNIX'es (see the list of UNIX flavors below)
+  ncbi_cxx_mac_cw.sit     -- for MacOS 10.X / CodeWarrior 8.0 Update 8.3
+  ncbi_cxx_macosx.tar.gz  -- for MacOS 10.X / GCC
+  ncbi_cxx_win.exe        -- for MS-Windows / MSVC++ 6.0 (self-extracting)
+  ncbi_cxx_win.zip        -- for MS-Windows / MSVC++ 6.0
+
+
+Other:
+  RELEASE_NOTES           -- this file
+  timestamp               -- when the sources were checked out of the CVS
+
+
+#############################################################################
 ***  NEW DEVELOPMENTS -- LIBRARIES
 
 
@@ -497,5 +513,5 @@ but:
 
 
 #############################################################################
-    $Date: 2003/04/16 20:41:09 $
+    $Date: 2003/04/16 20:55:54 $
 #############################################################################
