@@ -205,7 +205,7 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     CNcbiIfstream in(args_fname.c_str());
         
     if ( !in.good() ) {
-        ERR_POST("Mac arguments file not found: " << args_fname);
+        ERR_POST(Info << "Mac arguments file not found: " << args_fname);
         return;
     }
 
@@ -913,6 +913,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2004/03/02 15:57:34  ucko
+ * Downgrade severity of missing Mac arguments file to Info, since Darwin
+ * allows actual command lines.
+ *
  * Revision 1.82  2004/01/06 18:17:49  dicuccio
  * Added APIs for setting environment variables
  *
