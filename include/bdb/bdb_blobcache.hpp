@@ -110,10 +110,10 @@ public:
     virtual bool Read(const string& key, 
                       int           version, 
                       void*         buf, 
-                      size_t        buf_size) = 0;
+                      size_t        buf_size);
 
     virtual IReader* GetReadStream(const string& key, 
-                                   int   version) = 0;
+                                   int   version);
 
     virtual IWriter* GetWriteStream(const string&    key, 
                                     int              version,
@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/01 20:49:41  kuznets
+ * Changed several function prototypes (were marked as pure virual)
+ *
  * Revision 1.3  2003/09/29 15:46:18  kuznets
  * Fixed warning (Sun WorkShop)
  *
