@@ -31,12 +31,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/01/20 17:52:53  vakatov
+ * Fixes to follow the "CNcbiApplication" and "CCgiContext" change.
+ *
  * Revision 1.2  1999/12/17 17:25:15  vakatov
  * Typo fixed
- *
- * Revision 1.1  1999/12/17 03:55:03  vakatov
- * Initial revision
- *
  * ===========================================================================
  */
 
@@ -105,7 +104,7 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
 
 
     // Main Fast-CGI loop
-    time_t mtime = s_GetModTime(m_Argv[0]);
+    time_t mtime = s_GetModTime( GetArguments().GetProgramName().c_str() );
     for (int iteration = 0;  iteration < iterations;  ++iteration) {
         _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
                << " iteration of " << iterations);
@@ -129,7 +128,10 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
             CNcbiOstream ostr(&obuf);
             CCgiIbuffer ibuf(pfin);
             CNcbiIstream istr(&ibuf);
-            auto_ptr<CCgiContext> ctx(CreateContext(&env, &istr, &ostr));
+            CNcbiArguments args(0, 0);  // no cmd.-line ars
+
+            auto_ptr<CCgiContext>
+                ctx(CreateContext(&args, &env, &istr, &ostr));
 
             // checking for exit request
             if (ctx->GetRequest().GetEntries().find("exitfastcgi") !=
@@ -159,7 +161,8 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
         FCGX_Finish();
 
         // check if this CGI executable has been changed
-        time_t mtimeNew = s_GetModTime(m_Argv[0]);    
+        time_t mtimeNew =
+            s_GetModTime( GetArguments().GetProgramName().c_str() );    
         if (mtimeNew != mtime) {
             _TRACE("CCgiApplication::RunFastCGI: "
                    "the program modification date has changed");
