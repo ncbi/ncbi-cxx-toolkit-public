@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/22 20:01:19  vasilche
+* Forgot to uncomment some code.
+*
 * Revision 1.10  2000/09/19 14:10:25  vasilche
 * Added files to MSVC project
 * Updated shell scripts to use new datattool path on MSVC
@@ -92,68 +95,68 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
                          const CMemberId& id, TOffset offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
-      m_ClassType(classType), /*m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&GetConstSimpleMember),
-      m_GetFunction(&GetSimpleMember),*/
+      m_GetFunction(&GetSimpleMember),
       m_ReadHookData(SMemberRead(&ReadSimpleMember, &ReadMissingSimpleMember),
                      SMemberRead(&ReadHookedMember, &ReadMissingHookedMember)),
       m_WriteHookData(&WriteSimpleMember, &WriteHookedMember),
       m_CopyHookData(SMemberCopy(&CopySimpleMember, &CopyMissingSimpleMember),
-                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember))/*,
+                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember)),
       m_SkipFunction(&SkipSimpleMember),
-      m_SkipMissingFunction(&SkipMissingSimpleMember)*/
+      m_SkipMissingFunction(&SkipMissingSimpleMember)
 {
 }
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
                          const CMemberId& id, TOffset offset, TTypeInfo type)
     : CParent(id, offset, type),
-      m_ClassType(classType)/*, m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&GetConstSimpleMember),
-      m_GetFunction(&GetSimpleMember)*/,
+      m_GetFunction(&GetSimpleMember),
       m_ReadHookData(SMemberRead(&ReadSimpleMember, &ReadMissingSimpleMember),
                      SMemberRead(&ReadHookedMember, &ReadMissingHookedMember)),
       m_WriteHookData(&WriteSimpleMember, &WriteHookedMember),
       m_CopyHookData(SMemberCopy(&CopySimpleMember, &CopyMissingSimpleMember),
-                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember))/*,
+                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember)),
       m_SkipFunction(&SkipSimpleMember),
-      m_SkipMissingFunction(&SkipMissingSimpleMember)*/
+      m_SkipMissingFunction(&SkipMissingSimpleMember)
 {
 }
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
                          const char* id, TOffset offset, const CTypeRef& type)
     : CParent(id, offset, type),
-      m_ClassType(classType)/*, m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&GetConstSimpleMember),
-      m_GetFunction(&GetSimpleMember)*/,
+      m_GetFunction(&GetSimpleMember),
       m_ReadHookData(SMemberRead(&ReadSimpleMember, &ReadMissingSimpleMember),
                      SMemberRead(&ReadHookedMember, &ReadMissingHookedMember)),
       m_WriteHookData(&WriteSimpleMember, &WriteHookedMember),
       m_CopyHookData(SMemberCopy(&CopySimpleMember, &CopyMissingSimpleMember),
-                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember))/*,
+                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember)),
       m_SkipFunction(&SkipSimpleMember),
-      m_SkipMissingFunction(&SkipMissingSimpleMember)*/
+      m_SkipMissingFunction(&SkipMissingSimpleMember)
 {
 }
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
                          const char* id, TOffset offset, TTypeInfo type)
     : CParent(id, offset, type),
-      m_ClassType(classType)/*, m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&GetConstSimpleMember),
-      m_GetFunction(&GetSimpleMember)*/,
+      m_GetFunction(&GetSimpleMember),
       m_ReadHookData(SMemberRead(&ReadSimpleMember, &ReadMissingSimpleMember),
                      SMemberRead(&ReadHookedMember, &ReadMissingHookedMember)),
       m_WriteHookData(&WriteSimpleMember, &WriteHookedMember),
       m_CopyHookData(SMemberCopy(&CopySimpleMember, &CopyMissingSimpleMember),
-                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember))/*,
+                     SMemberCopy(&CopyHookedMember, &CopyMissingHookedMember)),
       m_SkipFunction(&SkipSimpleMember),
-      m_SkipMissingFunction(&SkipMissingSimpleMember)*/
+      m_SkipMissingFunction(&SkipMissingSimpleMember)
 {
 }
 
