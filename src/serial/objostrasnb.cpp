@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/10/05 13:17:17  vasilche
+* Added missing #include <stdio.h>
+*
 * Revision 1.46  2000/10/04 19:18:59  vasilche
 * Fixed processing floating point data.
 *
@@ -228,6 +231,7 @@
 #include <serial/continfo.hpp>
 #include <serial/delaybuf.hpp>
 
+#include <stdio.h>
 #include <math.h>
 #include <limits.h>
 #if HAVE_WINDOWS_H
