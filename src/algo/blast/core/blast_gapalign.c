@@ -61,12 +61,10 @@ typedef struct BlastGapDP {
   Int4 best_decline;
 } BlastGapDP;
 
+/** Structure containing all internal traceback information. */
 typedef struct GapData {
-  BlastGapDP* CD;
-  Int4** v;
   Int4* sapp;                 /* Current script append ptr */
   Int4  last;
-  Int4 h,  g;
 } GapData;
 
 /** Append "Delete k" op */
@@ -189,11 +187,10 @@ score_compare_hsp(const void* v1, const void* v2)
  * of have the same final values. 
  * @param hsp_array Pointer to an array of BlastHSP structures [in]
  * @param hsp_count The size of the hsp_array [in]
- * @param frame What frame these HSPs are from? [in]
  * @return The number of valid alignments remaining. 
 */
 static Int4
-CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count, Int2 frame)
+CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
 
 {
    Int4 index1, index, increment;
@@ -207,28 +204,25 @@ CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count, Int2 frame
    while (index < hsp_count-increment) {
       /* Check if both HSP's start on or end on the same digonal. */
       if (hsp_array[index+increment] == NULL) {
-	 increment++;
-	 continue;
+         increment++;
+         continue;
       }
       
-      if (frame != 0 && hsp_array[index+increment]->subject.frame != frame)
-	 break;
-      
       if (hsp_array[index] && hsp_array[index]->query.offset == hsp_array[index+increment]->query.offset &&
-	  hsp_array[index]->subject.offset == hsp_array[index+increment]->subject.offset &&
-	  SIGN(hsp_array[index]->query.frame) == SIGN(hsp_array[index+increment]->query.frame))
+          hsp_array[index]->subject.offset == hsp_array[index+increment]->subject.offset &&
+          hsp_array[index]->context == hsp_array[index+increment]->context)
       {
-	 if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-	   sfree(hsp_array[index+increment]);
-	    increment++;
-	 } else {
-	    sfree(hsp_array[index]);
-	    index++;
-	    increment = 1;
-	 }
+         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
+            sfree(hsp_array[index+increment]);
+            increment++;
+         } else {
+            sfree(hsp_array[index]);
+            index++;
+            increment = 1;
+         }
       } else {
-	 index++;
-	 increment = 1;
+         index++;
+         increment = 1;
       }
    }
    
@@ -239,30 +233,26 @@ CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count, Int2 frame
    { /* Check if both HSP's start on or end on the same digonal. */
       if (hsp_array[index+increment] == NULL)
       {
-	 increment++;
-	 continue;
+         increment++;
+         continue;
       }
       
-      if (frame != 0 && hsp_array[index+increment]->subject.frame != frame)
-	 break;
-      
       if (hsp_array[index] &&
-	  hsp_array[index]->query.end == hsp_array[index+increment]->query.end &&
-	  hsp_array[index]->subject.end == hsp_array[index+increment]->subject.end &&
-	  SIGN(hsp_array[index]->query.frame) == SIGN(hsp_array[index+increment]->query.frame))
+          hsp_array[index]->query.end == hsp_array[index+increment]->query.end &&
+          hsp_array[index]->subject.end == hsp_array[index+increment]->subject.end &&
+          hsp_array[index]->context == hsp_array[index+increment]->context)
       {
-	 if (hsp_array[index]->score > hsp_array[index+increment]->score)
-	 {
-          sfree(hsp_array[index+increment]);
-	    increment++;
-	 } else	{
-	    sfree(hsp_array[index]);
-	    index++;
-	    increment = 1;
-	 }
+         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
+            sfree(hsp_array[index+increment]);
+            increment++;
+         } else	{
+            sfree(hsp_array[index]);
+            index++;
+            increment = 1;
+         }
       } else {
-	 index++;
-	 increment = 1;
+         index++;
+         increment = 1;
       }
    }
 
@@ -272,7 +262,7 @@ CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count, Int2 frame
    for (index=0; index<hsp_count; index++)
    {
       if (hsp_array[index] != NULL)
-	 index1++;
+         index1++;
    }
 
    return index1;
@@ -3097,7 +3087,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Boolean is_prot;
    Int4 max_offset;
    Int2 status = 0;
-   Int2 frame = 0; /* CHANGE!!!!!!!!!!!!!!!!! */
    BlastInitHSP** init_hsp_array = NULL;
    BlastHSPList* hsp_list = NULL;
    const BlastHitSavingOptions* hit_options = hit_params->options;
@@ -3277,7 +3266,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    if (is_prot && program_number != eBlastTypeRpsBlast) {
       hsp_list->hspcnt = 
          CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
-            hsp_list->hspcnt, frame);
+            hsp_list->hspcnt);
    }
    *hsp_list_ptr = hsp_list;
    return status;
