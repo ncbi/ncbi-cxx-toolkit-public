@@ -93,6 +93,8 @@ of these issues, consult the <a href="get_started.html#ref_InstBasics"><i>Gettin
 		    Using pre-built NCBI C++ Toolkit in your projects</a>
 		  <li> <a href="#ref_MsvcProjWxwin">
 		    Using wxWindows</a>
+		  <li> <a href="#ref_MsvcProjFltk">
+		    Using FLTK</a></li>
 		  <li> <a href="#ref_MsvcProjC">
 		    Using NCBI C Toolkit</a>
 		  <li> <a href="#ref_MsvcProjSettings">
@@ -1825,6 +1827,37 @@ Moreover, if a project file is being commited to the CVS, and it has been
 <p>
 As always, don't forget to provide the right <a href="#ref_MsvcProjSettings">compiler settings</a> for your project
 to make sure that it is built compatible with the chosen libraries.
+</dl>
+
+
+<a name="ref_MsvcProjFltk"></a>
+<h4>Using FLTK</h4>
+<dl>
+    <dt>
+    <dd>
+<p>
+<a href="http://www.fltk.org">FLTK</a> is a portable C++ graphical user interface toolkit for X
+(UNIX&reg;), MacOS&reg;, and Microsoft&reg; Windows&reg;, which supports 3D graphics with OpenGL&reg;.
+The pre-built libraries of this toolkit (version 1.1.0rc6)  are installed in <i>\\dizzy\public\fltk</i>.
+The installation includes:
+<ul>
+  <li>Sources (<i>\\dizzy\public\fltk\src</i>),</li>
+  <li>Include files (<i>\\dizzy\public\fltk\include</i>),</li>
+  <li>Documentation (<i>\\dizzy\public\fltk\documentation</i>),</li>
+  <li>Samples (<i>\\dizzy\public\fltk\test</i>),</li>
+  <li>Project files for Microsoft Visual C++ v.6.0 (<i>\\dizzy\public\fltk\visualc</i>).</li>
+</ul>
+There are few changes in the build procedure as compared to the "standard" (recommended by authors) one:
+<ul>
+  <li>Libraries built in debug mode do not have "d" suffix - they are placed in different directories instead,</li>
+  <li>Static libraries are built using <tt>Single-Threaded</tt> or <tt>Multithreaded</tt> run-time libraries
+  (instead of <tt>Multithreaded DLL</tt> ones).
+  The only library which requires <tt>Multithreaded DLL</tt> run-time libraries is the DLL version of
+  FLTK - <var>fltkdll</var>.</li>
+</ul>
+</p>
+    </dd>
+    </dt>
 </dl>
 
 <p>
