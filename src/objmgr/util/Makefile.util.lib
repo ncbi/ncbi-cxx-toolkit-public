@@ -3,5 +3,5 @@
 # Build library "xobjutil"
 ###############################
 
-SRC = genbank gbqual weight sequence feature seqtitle validate
+SRC = genbank gbqual weight sequence feature seqtitle
 LIB    = xobjutil
