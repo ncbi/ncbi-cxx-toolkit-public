@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/12/11 20:42:50  vakatov
+* + NStr::PrintableString()
+*
 * Revision 1.35  2000/11/16 23:52:41  vakatov
 * Porting to Mac...
 *
@@ -450,7 +453,9 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     return str.substr(beg, end - beg + 1);
 }
 
-string& NStr::Replace(const string& src, const string& search, const string& replace,
+
+string& NStr::Replace(const string& src,
+                      const string& search, const string& replace,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
 {
     dst = src;
@@ -469,12 +474,45 @@ string& NStr::Replace(const string& src, const string& search, const string& rep
     return dst;
 }
 
-string NStr::Replace(const string& src, const string& search, const string& replace,
+
+string NStr::Replace(const string& src,
+                     const string& search, const string& replace,
                      SIZE_TYPE start_pos, size_t max_replace)
 {
     string dst;
     return Replace(src, search, replace, dst, start_pos, max_replace);
 }
+
+
+string NStr::PrintableString(const string& str)
+{
+    string s;
+    for (string::const_iterator it = str.begin();  it != str.end();  ++it) {
+        if (*it == '\0') {
+            s += "\\0";
+        } else if (*it == '\\') {
+            s += "\\\\";
+        } else if (*it == '\n') {
+            s += "\\n";
+        } else if (*it == '\t') {
+            s += "\\t";
+        } else if (*it == '\r') {
+            s += "\\r";
+        } else if (*it == '\v') {
+            s += "\\v";
+        } else if ( isprint(*it) ) {
+            s += *it;
+        } else {
+            static const char s_Hex[] = "0123456789ABCDEF";
+            s += "\\x";
+            s += s_Hex[*it / 16];
+            s += s_Hex[*it % 16];
+        }
+    }
+    return s;
+}
+
+
 
 // predicates
 

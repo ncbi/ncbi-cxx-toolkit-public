@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2000/12/11 20:42:52  vakatov
+* + NStr::PrintableString()
+*
 * Revision 1.69  2000/10/24 21:51:23  vakatov
 * [DEBUG] By default, do not print file name and line into the diagnostics
 *
@@ -951,6 +954,15 @@ static void TestUtilities(void)
     NcbiCout << " completed successfully!" << NcbiEndl;
 
 
+    // NStr::PrintableString()
+    _ASSERT(NStr::PrintableString(kEmptyStr).empty());
+    _ASSERT(NStr::PrintableString("AB\\CD\nAB\rCD\vAB\tCD\'AB\"").
+            compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\"") == 0);
+    _ASSERT(NStr::PrintableString("A\020B" + string(1, '\0') + "CD").
+            compare("A\\x10B\\0CD") == 0);
+
+
+    // NStr::Compare()
     NcbiCout << NcbiEndl << "NStr::Compare() tests...";
 
     size_t j;

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/12/11 20:42:48  vakatov
+* + NStr::PrintableString()
+*
 * Revision 1.43  2000/11/07 04:07:19  vakatov
 * kEmptyCStr, kEmptyStr (equiv. to NcbiEmptyCStr,NcbiEmptyString)
 *
@@ -263,20 +266,26 @@ struct NStr {
     };
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 
-    /* starting from position "start_pos", replace no more than "max_replace"
-     * occurencies of substring "search" by string "replace"
-     * if "max_replace" is zero -- then replace all occurences. */
+    // starting from position "start_pos", replace no more than "max_replace"
+    // occurencies of substring "search" by string "replace"
+    // if "max_replace" is zero -- then replace all occurences.
     static string& Replace(const string& src,
                            const string& search,
                            const string& replace,
                            string& dst,
                            SIZE_TYPE start_pos = 0, size_t max_replace = 0);
-    /* the same buit returns new string */
+
+    // the same as the above Replace(), but return new string
     static string Replace(const string& src,
                           const string& search,
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
+
+    // Make a printable version of "str". The non-printable characters will
+    // be represented by '\r', '\n', '\v', '\t', or '\XX' where XX is the
+    // character's code in hexadecimal. Back-slash '\' is represented as '\\'.
+    static string PrintableString(const string& str);
 }; // struct NStr
 
 
