@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/12/04 15:54:29  lavr
+ * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
+ *
  * Revision 6.2  2001/01/23 23:09:18  lavr
  * Flags added to 'Ex' constructor
  *
@@ -46,18 +49,20 @@
  */
 
 #include <connect/ncbi_connector.h>
+#include <connect/ncbi_socket.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-/* This is equivalent to SOCK_CreateConnectorEx(host, port, conn_try, 0,0).
+/* This is equivalent to SOCK_CreateConnectorEx(host, port, max_try, 0,0,0),
+ * see below.
  */
 extern CONNECTOR SOCK_CreateConnector
-(const char*    host,     /* server:  host */
- unsigned short port,     /* server:  service port */
- unsigned int   max_try   /* max.number of attempts to establish conn */
+(const char*    host,   /* server:  host                            */
+ unsigned short port,   /* server:  service port                    */
+ unsigned int   max_try /* max.number of attempts to establish conn */
  );
 
 
@@ -76,12 +81,39 @@ typedef unsigned int TSCC_Flags;  /* binary OR of "ESCC_Flags */
  * Return NULL on error.
  */
 extern CONNECTOR SOCK_CreateConnectorEx
-(const char*    host,      /* server:  host */
- unsigned short port,      /* server:  service port */
+(const char*    host,      /* server:  host                                  */
+ unsigned short port,      /* server:  service port                          */
  unsigned int   max_try,   /* max.number of attempts to establish connection */
- const void*    init_data, /* data to send to server on connect */
- size_t         init_size, /* size of the "init_data" buffer */
- TSCC_Flags     flags
+ const void*    init_data, /* data to send to server on connect              */
+ size_t         init_size, /* size of the "init_data" buffer                 */
+ TSCC_Flags     flags      /* bitwise OR of additional flags: see above      */
+ );
+
+
+/* Equivalent to SOCK_CreateConnectorOnTopEx(sock, max_try, 0,0,0),
+ * see below.
+ */
+extern CONNECTOR SOCK_CreateConnectorOnTop
+(SOCK         sock,   /* socket object                                       */
+ unsigned int max_try /* max.number of tries to re-establish the link if lost*/
+ );
+
+
+/* Create new CONNECTOR structure on top of existing socket object (SOCK),
+ * acquiring the ownership of the socket, and overriding all timeouts
+ * that might have been set already in it. Timeout values will be taken from
+ * connection (CONN), after the connector is used in CONN_Create() call.
+ * Please note that this function revokes all ownership of the socket, and
+ * further assumes the socket being in exclusive use of the connector.
+ * A socket obtained as a result of accepting connection on a listening socket
+ * (aka server-side socket) is not allowed to have reconnects (max_try = 0).
+ */
+extern CONNECTOR SOCK_CreateConnectorOnTopEx
+(SOCK         sock,      /* socket object                                */
+ unsigned int max_try,   /* max.# of tries to reconnect if disconnected  */
+ const void*  init_data, /* initial data to send right away down to link */
+ size_t       init_size, /* size of data to send                         */
+ TSCC_Flags   flags      /* bitwise OR of additional flags: see above    */
  );
 
 
