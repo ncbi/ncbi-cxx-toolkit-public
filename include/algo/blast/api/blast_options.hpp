@@ -1011,6 +1011,7 @@ CBlastOptions::SetPHIPattern(const char* pattern, bool is_dna)
        m_LutOpts->lut_type = PHI_AA_LOOKUP;
 
     m_LutOpts->phi_pattern = strdup(pattern);
+    m_HitSaveOpts->phi_align = TRUE;
 }
 
 
@@ -1021,6 +1022,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/09/25 15:25:22  dondosha
+* Set phi_align in hit saving options for PHI BLAST
+*
 * Revision 1.23  2003/09/11 17:44:39  camacho
 * Changed CBlastOption -> CBlastOptions
 *
