@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include <bdb/bdb_env.hpp>
 #include <db.h>
 
@@ -210,12 +211,31 @@ void CBDB_Env::TransactionCheckpoint()
     }
 }
 
+void CBDB_Env::CleanLog()
+{
+    char **nm_list = 0;
+	int ret = m_Env->log_archive(m_Env, &nm_list, DB_ARCH_ABS);
+    BDB_CHECK(ret, "DB_ENV::CleanLog()");
+
+	if (nm_list != NULL) {
+        for (char** file = nm_list; *file != NULL; ++file) {
+            CDirEntry de(*file);
+            de.Remove();
+        }
+		free(nm_list);
+	}
+    
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/08/09 16:27:49  kuznets
+ * +CBDB_env::CleanLog()
+ *
  * Revision 1.21  2004/06/21 15:05:22  kuznets
  * Added support of recovery open for environment
  *

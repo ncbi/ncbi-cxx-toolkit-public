@@ -138,6 +138,9 @@ public:
 
     /// Turn off buffering of log files (DB_DIRECT_LOG)
     void SetDirectLog(bool on_off);
+
+    /// Remove all non-active log files
+    void CleanLog();
     
 private:
     /// Opens BDB environment returns error code
@@ -160,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/09 16:27:35  kuznets
+ * +CBDB_env::CleanLog()
+ *
  * Revision 1.13  2004/06/21 15:04:44  kuznets
  * Added support of recovery open for environment
  *
