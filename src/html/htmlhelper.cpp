@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/23 15:53:53  ivanov
+* HTMLEncode(): disable numeric characters reference encoding (like &#N;)
+*
 * Revision 1.9  2002/12/09 22:09:53  ivanov
 * Changed "pos" type from int to type_t in CHTMLHelper::StripTags()
 *
@@ -160,7 +163,11 @@ string CHTMLHelper::HTMLEncode(const string& input)
             output.append("&quot;");
             break;
         case '&':
-            output.append("&amp;");
+            output.append("&");
+            // disable numeric characters reference encoding
+            if ( (ptr+1 >= input.length()) || (input[ptr+1] != '#') ) {
+                output.append("amp;");
+            }
             break;
         case '<':
             output.append("&lt;");
