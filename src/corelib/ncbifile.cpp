@@ -102,7 +102,6 @@ BEGIN_NCBI_SCOPE
 #endif
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Static functions
@@ -512,6 +511,7 @@ string CDirEntry::NormalizePath(const string& path)
 #  else
     string xpath = path;
 #  endif
+
     // Remove trailing "/." or "/.."
     string str = string(1,DIR_SEPARATOR) + DIR_CURRENT;
     if ( NStr::EndsWith(xpath, str) ) {
@@ -522,25 +522,36 @@ string CDirEntry::NormalizePath(const string& path)
             xpath.erase(xpath.length() - str.length() + 1);
         }
     }
+
+#  if defined(NCBI_OS_MSWIN)
+    // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\"
+    if ( NStr::StartsWith(xpath, "\\\\?\\") ) {
+        xpath.erase(0, 4);
+    } else if ( NStr::StartsWith(xpath, "\\\\?\\UNC\\") ) {
+        xpath.replace(0, 8, "\\");
+    }
+#  endif
+
     // Replace all "//" with "/"
     string xsearch  = string(2,DIR_SEPARATOR);
     string xreplace = string(1,DIR_SEPARATOR);
 #  if defined(NCBI_OS_MSWIN)
-    // Ignore leading "//" -- name of the machine
-    size_t pos = 1;
+    size_t pos = 1;  // Ignore leading "\\" -- name of the server
 #  else
     size_t pos = 0;
 #  endif
     while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
         xpath.replace(pos, xsearch.length(), xreplace);
     }
-    // Replace all like "/./" with "/"
+
+    // Replace something like "/./" with "/"
     xsearch  = string(1,DIR_SEPARATOR) + DIR_CURRENT + DIR_SEPARATOR;
     xreplace = string(1,DIR_SEPARATOR);
     pos = 0;
     while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
         xpath.replace(pos, xsearch.length(), xreplace);
     }
+
     // Replace something like "../aaa/../bbb" with "../bbb"
     str = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
     size_t start = 0;
@@ -1617,6 +1628,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2003/09/17 20:55:02  ivanov
+ * NormalizePath: added more processing for MS Windows paths
+ *
  * Revision 1.55  2003/09/16 18:54:26  ivanov
  * NormalizePath(): added replacing double dir separators with single one
  *
