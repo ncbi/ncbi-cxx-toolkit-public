@@ -365,7 +365,7 @@ BlastOOFGetNumIdentical(Uint1* query_seq, Uint1* subject_seq,
 
 static Int4 GetPatternLengthFromBlastHSP(BlastHSP* hsp)
 {
-   return hsp->query.end_trim;
+   return hsp->pattern_length;
 }
 
 static void SavePatternLengthInGapAlignStruct(Int4 length,

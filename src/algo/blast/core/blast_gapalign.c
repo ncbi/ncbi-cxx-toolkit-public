@@ -2800,7 +2800,7 @@ static void SavePatternLengthInBlastHSP(BlastInitHSP* init_hsp,
       otherwise unused in PHI BLAST, but have a completely different
       meaning for other program(s). Here we need to save information
    */
-   hsp->query.end_trim = init_hsp->ungapped_data->length;
+   hsp->pattern_length = init_hsp->ungapped_data->length;
    return;
 }
 
