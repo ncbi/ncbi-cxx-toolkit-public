@@ -102,7 +102,7 @@ typedef void (*TVariantCopyFunction)(CObjectStreamCopier& copier,
 typedef void (*TVariantSkipFunction)(CObjectIStream& in,
                                      const CVariantInfo* variantInfo);
 
-/* @}
+/* @} */
 
 
 //#include <serial/hookfunc.inl>
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/15 14:50:09  ucko
+* Add missing close-comment delimiter!
+*
 * Revision 1.4  2003/04/15 14:15:18  siyan
 * Added doxygen support
 *
