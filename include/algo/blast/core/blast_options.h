@@ -744,6 +744,13 @@ Int2 BLAST_InitDefaultOptions(Uint1 blast_program,
    PSIBlastOptions** protein_options,
    BlastDatabaseOptions** db_options);
 
+/** Validate all options */
+Int2 BLAST_ValidateOptions(Uint1 program_number,
+                           const BlastExtensionOptions* ext_options,
+                           const BlastScoringOptions* score_options, 
+                           const LookupTableOptions* lookup_options, 
+                           const BlastHitSavingOptions* hit_options,
+                           Blast_Message* *blast_msg);
 
 
 #ifdef __cplusplus

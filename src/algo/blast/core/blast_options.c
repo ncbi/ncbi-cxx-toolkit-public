@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.83  2004/02/24 17:57:14  dondosha
+ * Added function to combine all options validation functions for the C engine
+ *
  * Revision 1.82  2004/02/19 21:16:48  dondosha
  * Use enum type for severity argument in Blast_MessageWrite
  *
@@ -524,6 +527,11 @@ BlastInitialWordParametersNew(Uint1 program_number,
    double qlen;
    double avglen;
 
+   /* If parameters pointer is NULL, there is nothing to fill, 
+      so don't do anything */
+   if (!parameters)
+      return 0;
+
    if (!word_options || !hit_params || !sbp || !sbp->kbp_std[context])
       return 8;
 
@@ -660,6 +668,11 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
 {
    BLAST_KarlinBlk* kbp,* kbp_gap;
    BlastExtensionParameters* params;
+
+   /* If parameters pointer is NULL, there is nothing to fill, 
+      so don't do anything */
+   if (!parameters)
+      return 0;
 
    if (sbp->kbp) {
       kbp = sbp->kbp[query_info->first_context];
@@ -1221,7 +1234,12 @@ BlastHitSavingParametersNew(Uint1 program_number,
    double evalue = options->expect_value;
    Boolean gapped_calculation = TRUE;
 
-   if (!options || !parameters)
+   /* If parameters pointer is NULL, there is nothing to fill, 
+      so don't do anything */
+   if (!parameters)
+      return 0;
+
+   if (!options)
       return 1;
 
    *parameters = params = (BlastHitSavingParameters*) 
@@ -1347,5 +1365,29 @@ Int2 BLAST_InitDefaultOptions(Uint1 program_number,
 
    return 0;
 
+}
+
+Int2 BLAST_ValidateOptions(Uint1 program_number,
+                           const BlastExtensionOptions* ext_options,
+                           const BlastScoringOptions* score_options, 
+                           const LookupTableOptions* lookup_options, 
+                           const BlastHitSavingOptions* hit_options,
+                           Blast_Message* *blast_msg)
+{
+   Int2 status = 0;
+
+   if ((status = BlastExtensionOptionsValidate(program_number, ext_options,
+                                               blast_msg)) != 0)
+       return status;
+   if ((status = BlastScoringOptionsValidate(program_number, score_options,
+                                               blast_msg)) != 0)
+       return status;
+   if ((status = LookupTableOptionsValidate(program_number, 
+                    lookup_options, blast_msg)) != 0)   
+       return status;
+   if ((status = BlastHitSavingOptionsValidate(program_number, hit_options,
+                                               blast_msg)) != 0)
+       return status;
+   return status;
 }
 
