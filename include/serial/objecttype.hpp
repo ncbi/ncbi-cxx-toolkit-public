@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/09/17 22:26:16  grichenk
+* Type<> -> CType<>
+*
 * Revision 1.3  2001/05/17 14:58:44  lavr
 * Typos corrected
 *
@@ -80,7 +83,7 @@ protected:
 };
 
 template<class C>
-class Type : public CType_Base
+class CType : public CType_Base
 {
     typedef CType_Base CParent;
 public:

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/09/17 22:26:16  grichenk
+* Type<> -> CType<>
+*
 * Revision 1.8  2002/09/09 18:44:53  grichenk
 * Fixed CObjectHookGuard methods for GCC
 *
@@ -252,7 +255,7 @@ CObjectHookGuard<T>::CObjectHookGuard(CReadObjectHook& hook,
       m_HookMode(eHook_Read),
       m_HookType(eHook_Object)
 {
-    Type<T> type;
+    CType<T> type;
     if ( m_Stream ) {
         CObjectTypeInfo(type).SetLocalReadHook(*in, &hook);
     }
@@ -269,7 +272,7 @@ CObjectHookGuard<T>::CObjectHookGuard(CWriteObjectHook& hook,
       m_HookMode(eHook_Write),
       m_HookType(eHook_Object)
 {
-    Type<T> type;
+    CType<T> type;
     if ( m_Stream ) {
         CObjectTypeInfo(type).SetLocalWriteHook(*out, &hook);
     }
@@ -288,7 +291,7 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Member),
       m_Id(id)
 {
-    Type<T> type;
+    CType<T> type;
     if ( m_Stream ) {
         CObjectTypeInfo(type).FindMember(m_Id).SetLocalReadHook(*in, &hook);
     }
@@ -307,7 +310,7 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Member),
       m_Id(id)
 {
-    Type<T> type;
+    CType<T> type;
     if ( m_Stream ) {
         CObjectTypeInfo(type).FindMember(m_Id).SetLocalWriteHook(*out, &hook);
     }
@@ -326,7 +329,7 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Variant),
       m_Id(id)
 {
-    Type<T> type;
+    CType<T> type;
     if ( m_Stream ) {
         CObjectTypeInfo(type).FindVariant(m_Id).SetLocalReadHook(*in, &hook);
     }
@@ -345,7 +348,7 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Variant),
       m_Id(id)
 {
-    Type<T> type;
+    CType<T> type;
     if ( m_Stream ) {
         CObjectTypeInfo(type).FindVariant(m_Id).SetLocalWriteHook(*out, &hook);
     }
@@ -362,7 +365,7 @@ CObjectHookGuard<T>::CObjectHookGuard(CReadContainerElementHook& hook)
       m_HookMode(eHook_Read),
       m_HookType(eHook_Element),
 {
-    Type<T> type;
+    CType<T> type;
     if (m_Stream) {
         CObjectTypeInfo(type).GetElementType().GetContainerTypeInfo()->SetLocalReadHook(*in, hook);
     }
@@ -375,7 +378,7 @@ CObjectHookGuard<T>::CObjectHookGuard(CReadContainerElementHook& hook)
 template <class T>
 CObjectHookGuard<T>::~CObjectHookGuard(void)
 {
-    Type<T> type;
+    CType<T> type;
     switch (m_HookType) {
     case eHook_Object:
         switch (m_HookMode) {

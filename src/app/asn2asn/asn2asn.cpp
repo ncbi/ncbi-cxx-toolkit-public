@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/09/17 22:27:09  grichenk
+* Type<> -> CType<>
+*
 * Revision 1.42  2002/09/05 21:23:22  vasilche
 * Added mutex for arguments
 *
@@ -488,13 +491,13 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
             if ( skip ) {
                 if ( displayMessages )
                     NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
-                in->Skip(Type<CSeq_entry>());
+                in->Skip(CType<CSeq_entry>());
             }
             else if ( convert && haveOutput ) {
                 if ( displayMessages )
                     NcbiCerr << "Copying Seq-entry..." << NcbiEndl;
                 CObjectStreamCopier copier(*in, *out);
-                copier.Copy(Type<CSeq_entry>());
+                copier.Copy(CType<CSeq_entry>());
             }
             else {
                 TSeqEntry entry;
@@ -514,13 +517,13 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
             if ( skip ) {
                 if ( displayMessages )
                     NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
-                in->Skip(Type<CBioseq_set>());
+                in->Skip(CType<CBioseq_set>());
             }
             else if ( convert && haveOutput ) {
                 if ( displayMessages )
                     NcbiCerr << "Copying Bioseq-set..." << NcbiEndl;
                 CObjectStreamCopier copier(*in, *out);
-                copier.Copy(Type<CBioseq_set>());
+                copier.Copy(CType<CBioseq_set>());
             }
             else {
                 CBioseq_set entries;
@@ -528,7 +531,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                 if ( displayMessages )
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
-                    CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
+                    CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
                     bioseqSetType.FindMember("seq-set")
                         .SetLocalReadHook(*in, new CReadSeqSetHook);
                     *in >> entries;
@@ -545,11 +548,11 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                         NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
                     if ( writeHook ) {
 #if 0
-                        CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
+                        CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
                         bioseqSetType.FindMember("seq-set")
                             .SetLocalWriteHook(*out, new CWriteSeqSetHook);
 #else
-                        CObjectTypeInfo seqEntryType = Type<CSeq_entry>();
+                        CObjectTypeInfo seqEntryType = CType<CSeq_entry>();
                         seqEntryType
                             .SetLocalWriteHook(*out, new CWriteSeqEntryHook);
 #endif
@@ -615,11 +618,11 @@ void CWriteSeqEntryHook::WriteObject(CObjectOStream& out,
     CInc inc(m_Level);
     if ( m_Level == 1 ) {
         NcbiCerr << "entry" << NcbiEndl;
-        // const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
+        // const CSeq_entry& entry = *CType<CSeq_entry>::Get(object);
         object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
     }
     else {
-        // const CSeq_entry& entry = *Type<CSeq_entry>::Get(object);
+        // const CSeq_entry& entry = *CType<CSeq_entry>::Get(object);
         object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
     }
 }
@@ -641,9 +644,9 @@ void CWriteSeqSetHook::WriteClassMember(CObjectOStream& out,
         COStreamContainer o(out, member);
 
         typedef CBioseq_set::TSeq_set TSeq_set;
-        // const TSeq_set& cnt = *Type<TSeq_set>::Get(*member);
+        // const TSeq_set& cnt = *CType<TSeq_set>::Get(*member);
         // but as soon as we know for sure that it *is* TSeq_set, so:
-        const TSeq_set& cnt = *Type<TSeq_set>::GetUnchecked(*member);
+        const TSeq_set& cnt = *CType<TSeq_set>::GetUnchecked(*member);
 
         // write elem-by-elem
         for ( TSeq_set::const_iterator i = cnt.begin(); i != cnt.end(); ++i ) {

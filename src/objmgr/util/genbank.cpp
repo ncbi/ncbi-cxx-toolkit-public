@@ -526,25 +526,25 @@ bool CGenbankWriter::WriteAccession(const CBioseq_Handle& handle)
     }
 
     CTypesConstIterator it;
-    Type<CEMBL_block>::AddTo(it);
-    Type<CSP_block>::AddTo(it);
-    Type<CGB_block>::AddTo(it);
+    CType<CEMBL_block>::AddTo(it);
+    CType<CSP_block>::AddTo(it);
+    CType<CGB_block>::AddTo(it);
     for (it = ConstBegin(seq);  it;  ++it) {
-        if (Type<CEMBL_block>::Match(it)) {
+        if (CType<CEMBL_block>::Match(it)) {
             const CEMBL_block::TExtra_acc& accs
-                = Type<CEMBL_block>::Get(it)->GetExtra_acc();
+                = CType<CEMBL_block>::Get(it)->GetExtra_acc();
             iterate (CEMBL_block::TExtra_acc, acc, accs) {
                 accessions += ' ' + *acc;
             }
-        } else if (Type<CSP_block>::Match(it)) {
+        } else if (CType<CSP_block>::Match(it)) {
             const CSP_block::TExtra_acc& accs
-                = Type<CSP_block>::Get(it)->GetExtra_acc();
+                = CType<CSP_block>::Get(it)->GetExtra_acc();
             iterate (CSP_block::TExtra_acc, acc, accs) {
                 accessions += ' ' + *acc;
             }
-        } else if (Type<CGB_block>::Match(it)) {
+        } else if (CType<CGB_block>::Match(it)) {
             const CGB_block::TExtra_accessions& accs
-                = Type<CGB_block>::Get(it)->GetExtra_accessions();
+                = CType<CGB_block>::Get(it)->GetExtra_accessions();
             iterate (CGB_block::TExtra_accessions, acc, accs) {
                 accessions += ' ' + *acc;
             }
@@ -2764,6 +2764,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2002/09/17 22:27:32  grichenk
+* Type<> -> CType<>
+*
 * Revision 1.21  2002/06/07 16:13:11  ucko
 * GetTitle() is now in sequence::.
 *
