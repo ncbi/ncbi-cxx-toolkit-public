@@ -1,6 +1,8 @@
 #
 #  $Id$
 #  ATTENTION!  This is to be 'included' (using ". common.sh'), not executed!
+#              Then, you execute the "COMMON_xxx" function(s) you like inside
+#              your script.
 #
 
 COMMON_AddRunpath()
@@ -22,3 +24,56 @@ COMMON_AddRunpath()
       ;;
     esac    
 }
+
+
+COMMON_PrintDate()
+{
+    echo "[`date`]"
+}
+
+
+COMMON_SetupScriptName()
+{
+    script_name=`basename $0`
+    script_dir=`dirname $0`
+    script_dir=`(cd "${script_dir}" ; pwd)`
+}
+
+
+COMMON_SetupRunDirCmd()
+{
+    run_dir=`pwd`
+    run_cmd="$0 $*"
+}
+
+
+#
+#  Execute a command;  on error, post error message to STDERR and abort.
+#  NOTE:  call "COMMON_SetupScriptName()" beforehand for nicer diagnostics.
+#
+
+COMMON_Exec()
+{
+   "$@"
+
+   if test $? -ne 0 ; then
+      {
+      echo
+      echo  "------------------------------------------------------"
+      echo  "Current dir:  `pwd`"
+      echo
+      echo "[$script_name] FAILED:"
+      err="   $1"
+      shift
+      for arg in "$@" ; do
+         arg=`echo "$arg" | sed "s%'%\\\\\'%g"`
+         err="$err '$arg'"
+      done
+      echo "$err"
+      } 1>&2
+
+      exit 1
+   fi
+}
+
+
