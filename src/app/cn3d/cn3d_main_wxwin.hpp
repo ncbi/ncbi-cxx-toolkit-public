@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/11/18 15:02:40  thiessen
+* set flags on style shortcut menus
+*
 * Revision 1.67  2002/10/11 17:21:39  thiessen
 * initial Mac OSX build
 *
@@ -450,6 +453,9 @@ private:
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
     void OnShowWindow(wxCommandEvent& event);
+
+    void SetRenderingMenuFlag(int which);
+    void SetColoringMenuFlag(int which);
 
     // menu-associated methods
     void OnOpen(wxCommandEvent& event);

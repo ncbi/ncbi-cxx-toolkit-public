@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.165  2002/11/18 15:02:40  thiessen
+* set flags on style shortcut menus
+*
 * Revision 1.164  2002/10/18 17:15:33  thiessen
 * use wxNativeEncodingInfo to store fonts in registry
 *
@@ -1291,33 +1294,33 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_FAVORITES, "&Favorites", favoritesMenu);
     // rendering shortcuts
     subMenu = new wxMenu;
-    subMenu->Append(MID_WORM, "&Worms");
-    subMenu->Append(MID_TUBE, "&Tubes");
-    subMenu->Append(MID_WIRE, "Wir&e");
-    subMenu->Append(MID_BNS, "&Ball and Stick");
-    subMenu->Append(MID_SPACE, "&Space Fill");
+    subMenu->Append(MID_WORM, "&Worms", "", true);
+    subMenu->Append(MID_TUBE, "&Tubes", "", true);
+    subMenu->Append(MID_WIRE, "Wir&e", "", true);
+    subMenu->Append(MID_BNS, "&Ball and Stick", "", true);
+    subMenu->Append(MID_SPACE, "&Space Fill", "", true);
     subMenu->AppendSeparator();
     subMenu->Append(MID_SC_TOGGLE, "&Toggle Sidechains");
     menu->Append(MID_RENDER, "&Rendering Shortcuts", subMenu);
     // coloring shortcuts
     subMenu = new wxMenu;
-    subMenu->Append(MID_SECSTRUC, "&Secondary Structure");
-    subMenu->Append(MID_ALIGNED, "&Aligned");
+    subMenu->Append(MID_SECSTRUC, "&Secondary Structure", "", true);
+    subMenu->Append(MID_ALIGNED, "&Aligned", "", true);
     wxMenu *subMenu2 = new wxMenu;
-    subMenu2->Append(MID_IDENTITY, "I&dentity");
-    subMenu2->Append(MID_VARIETY, "&Variety");
-    subMenu2->Append(MID_WGHT_VAR, "&Weighted Variety");
-    subMenu2->Append(MID_INFO, "&Information Content");
-    subMenu2->Append(MID_FIT, "&Fit");
+    subMenu2->Append(MID_IDENTITY, "I&dentity", "", true);
+    subMenu2->Append(MID_VARIETY, "&Variety", "", true);
+    subMenu2->Append(MID_WGHT_VAR, "&Weighted Variety", "", true);
+    subMenu2->Append(MID_INFO, "&Information Content", "", true);
+    subMenu2->Append(MID_FIT, "&Fit", "", true);
     subMenu->Append(MID_CONS, "Sequence &Conservation", subMenu2);
-    subMenu->Append(MID_OBJECT, "&Object");
-    subMenu->Append(MID_DOMAIN, "&Domain");
-    subMenu->Append(MID_MOLECULE, "&Molecule");
-    subMenu->Append(MID_RAINBOW, "&Rainbow");
-    subMenu->Append(MID_HYDROPHOB, "&Hydrophobicity");
-    subMenu->Append(MID_CHARGE, "Char&ge");
-    subMenu->Append(MID_TEMP, "&Temperature");
-    subMenu->Append(MID_ELEMENT, "&Element");
+    subMenu->Append(MID_OBJECT, "&Object", "", true);
+    subMenu->Append(MID_DOMAIN, "&Domain", "", true);
+    subMenu->Append(MID_MOLECULE, "&Molecule", "", true);
+    subMenu->Append(MID_RAINBOW, "&Rainbow", "", true);
+    subMenu->Append(MID_HYDROPHOB, "&Hydrophobicity", "", true);
+    subMenu->Append(MID_CHARGE, "Char&ge", "", true);
+    subMenu->Append(MID_TEMP, "&Temperature", "", true);
+    subMenu->Append(MID_ELEMENT, "&Element", "", true);
     menu->Append(MID_COLORS, "&Coloring Shortcuts", subMenu);
     //annotate
     menu->AppendSeparator();
@@ -1708,6 +1711,8 @@ void Cn3DMainFrame::OnSelectFavorite(wxCommandEvent& event)
             if (i == index) {
                 TESTMSG("using favorite: " << (*f)->GetName());
                 glCanvas->structureSet->styleManager->SetGlobalStyle(**f);
+                SetRenderingMenuFlag(0);
+                SetColoringMenuFlag(0);
                 break;
             }
         }
@@ -2003,11 +2008,13 @@ void Cn3DMainFrame::OnAlignStructures(wxCommandEvent& event)
     }
 }
 
-#define RENDERING_SHORTCUT(type) \
-    glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::type);\
+#define RENDERING_SHORTCUT(type, menu) \
+    glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::type); \
+    SetRenderingMenuFlag(menu); \
     break
-#define COLORING_SHORTCUT(type) \
-    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::type);\
+#define COLORING_SHORTCUT(type, menu) \
+    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::type); \
+    SetColoringMenuFlag(menu); \
     break
 
 void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
@@ -2018,32 +2025,34 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             case MID_EDIT_STYLE:
                 if (!glCanvas->structureSet->styleManager->EditGlobalStyle(this))
                     return;
+                SetRenderingMenuFlag(0);
+                SetColoringMenuFlag(0);
                 break;
             case MID_ANNOTATE:
                 if (!glCanvas->structureSet->styleManager->EditUserAnnotations(this))
                     return;
                 break;
-            case MID_WORM: RENDERING_SHORTCUT(eWormShortcut);
-            case MID_TUBE: RENDERING_SHORTCUT(eTubeShortcut);
-            case MID_WIRE: RENDERING_SHORTCUT(eWireframeShortcut);
-            case MID_BNS: RENDERING_SHORTCUT(eBallAndStickShortcut);
-            case MID_SPACE: RENDERING_SHORTCUT(eSpacefillShortcut);
-            case MID_SC_TOGGLE: RENDERING_SHORTCUT(eToggleSidechainsShortcut);
-            case MID_SECSTRUC: COLORING_SHORTCUT(eSecondaryStructureShortcut);
-            case MID_ALIGNED: COLORING_SHORTCUT(eAlignedShortcut);
-            case MID_IDENTITY: COLORING_SHORTCUT(eIdentityShortcut);
-            case MID_VARIETY: COLORING_SHORTCUT(eVarietyShortcut);
-            case MID_WGHT_VAR: COLORING_SHORTCUT(eWeightedVarietyShortcut);
-            case MID_INFO: COLORING_SHORTCUT(eInformationContentShortcut);
-            case MID_FIT: COLORING_SHORTCUT(eFitShortcut);
-            case MID_OBJECT: COLORING_SHORTCUT(eObjectShortcut);
-            case MID_DOMAIN: COLORING_SHORTCUT(eDomainShortcut);
-            case MID_MOLECULE: COLORING_SHORTCUT(eMoleculeShortcut);
-            case MID_RAINBOW: COLORING_SHORTCUT(eRainbowShortcut);
-            case MID_HYDROPHOB: COLORING_SHORTCUT(eHydrophobicityShortcut);
-            case MID_CHARGE: COLORING_SHORTCUT(eChargeShortcut);
-            case MID_TEMP: COLORING_SHORTCUT(eTemperatureShortcut);
-            case MID_ELEMENT: COLORING_SHORTCUT(eElementShortcut);
+            case MID_WORM: RENDERING_SHORTCUT(eWormShortcut, MID_WORM);
+            case MID_TUBE: RENDERING_SHORTCUT(eTubeShortcut, MID_TUBE);
+            case MID_WIRE: RENDERING_SHORTCUT(eWireframeShortcut, MID_WIRE);
+            case MID_BNS: RENDERING_SHORTCUT(eBallAndStickShortcut, MID_BNS);
+            case MID_SPACE: RENDERING_SHORTCUT(eSpacefillShortcut, MID_SPACE);
+            case MID_SC_TOGGLE: RENDERING_SHORTCUT(eToggleSidechainsShortcut, 0);
+            case MID_SECSTRUC: COLORING_SHORTCUT(eSecondaryStructureShortcut, MID_SECSTRUC);
+            case MID_ALIGNED: COLORING_SHORTCUT(eAlignedShortcut, MID_ALIGNED);
+            case MID_IDENTITY: COLORING_SHORTCUT(eIdentityShortcut, MID_IDENTITY);
+            case MID_VARIETY: COLORING_SHORTCUT(eVarietyShortcut, MID_VARIETY);
+            case MID_WGHT_VAR: COLORING_SHORTCUT(eWeightedVarietyShortcut, MID_WGHT_VAR);
+            case MID_INFO: COLORING_SHORTCUT(eInformationContentShortcut, MID_INFO);
+            case MID_FIT: COLORING_SHORTCUT(eFitShortcut, MID_FIT);
+            case MID_OBJECT: COLORING_SHORTCUT(eObjectShortcut, MID_OBJECT);
+            case MID_DOMAIN: COLORING_SHORTCUT(eDomainShortcut, MID_DOMAIN);
+            case MID_MOLECULE: COLORING_SHORTCUT(eMoleculeShortcut, MID_MOLECULE);
+            case MID_RAINBOW: COLORING_SHORTCUT(eRainbowShortcut, MID_RAINBOW);
+            case MID_HYDROPHOB: COLORING_SHORTCUT(eHydrophobicityShortcut, MID_HYDROPHOB);
+            case MID_CHARGE: COLORING_SHORTCUT(eChargeShortcut, MID_CHARGE);
+            case MID_TEMP: COLORING_SHORTCUT(eTemperatureShortcut, MID_TEMP);
+            case MID_ELEMENT: COLORING_SHORTCUT(eElementShortcut, MID_ELEMENT);
             default:
                 return;
         }
@@ -2051,6 +2060,34 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }
+}
+
+void Cn3DMainFrame::SetRenderingMenuFlag(int which)
+{
+    menuBar->Check(MID_WORM, (which == MID_WORM));
+    menuBar->Check(MID_TUBE, (which == MID_TUBE));
+    menuBar->Check(MID_WIRE, (which == MID_WIRE));
+    menuBar->Check(MID_BNS, (which == MID_BNS));
+    menuBar->Check(MID_SPACE, (which == MID_SPACE));
+}
+
+void Cn3DMainFrame::SetColoringMenuFlag(int which)
+{
+    menuBar->Check(MID_SECSTRUC, (which == MID_SECSTRUC));
+    menuBar->Check(MID_ALIGNED, (which == MID_ALIGNED));
+    menuBar->Check(MID_IDENTITY, (which == MID_IDENTITY));
+    menuBar->Check(MID_VARIETY, (which == MID_VARIETY));
+    menuBar->Check(MID_WGHT_VAR, (which == MID_WGHT_VAR));
+    menuBar->Check(MID_INFO, (which == MID_INFO));
+    menuBar->Check(MID_FIT, (which == MID_FIT));
+    menuBar->Check(MID_OBJECT, (which == MID_OBJECT));
+    menuBar->Check(MID_DOMAIN, (which == MID_DOMAIN));
+    menuBar->Check(MID_MOLECULE, (which == MID_MOLECULE));
+    menuBar->Check(MID_RAINBOW, (which == MID_RAINBOW));
+    menuBar->Check(MID_HYDROPHOB, (which == MID_HYDROPHOB));
+    menuBar->Check(MID_CHARGE, (which == MID_CHARGE));
+    menuBar->Check(MID_TEMP, (which == MID_TEMP));
+    menuBar->Check(MID_ELEMENT, (which == MID_ELEMENT));
 }
 
 void Cn3DMainFrame::LoadFile(const char *filename)
@@ -2144,6 +2181,27 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     SetWorkingTitle(glCanvas->structureSet);
     GlobalMessenger()->SetAllWindowTitles();
+
+    // set default rendering style and view
+    glCanvas->structureSet->SetCenter();
+    if (glCanvas->structureSet->alignmentSet) {
+        glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+        SetRenderingMenuFlag(MID_TUBE);
+        if (glCanvas->structureSet->IsCDD()) {
+            glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
+            SetColoringMenuFlag(MID_INFO);
+        } else {
+            glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
+            SetColoringMenuFlag(MID_IDENTITY);
+        }
+        // alignments always start with aligned domains only
+        glCanvas->structureSet->showHideManager->ShowAlignedDomains(glCanvas->structureSet);
+    } else {
+        glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
+        SetRenderingMenuFlag(MID_WORM);
+        glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
+        SetColoringMenuFlag(MID_SECSTRUC);
+    }
 
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);

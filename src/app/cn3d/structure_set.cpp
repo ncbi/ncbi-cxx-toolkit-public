@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.119  2002/11/18 15:02:40  thiessen
+* set flags on style shortcut menus
+*
 * Revision 1.118  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -899,21 +902,6 @@ void StructureSet::Load(int structureLimit)
 
     // setup show/hide items
     showHideManager->ConstructShowHideArray(this);
-
-    // set default rendering style and view
-    SetCenter();
-    if (alignmentSet) {
-        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-        if (dataManager->IsCDD())
-            styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
-        else
-            styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
-        // alignments always start with aligned domains only
-        showHideManager->ShowAlignedDomains(this);
-    } else {
-        styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
-        styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
-    }
 
     // load user styles and annotations
     const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();
