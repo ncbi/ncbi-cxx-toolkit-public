@@ -1133,7 +1133,7 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
 
   *bestFirstBlock = -1;
   *bestLastBlock = -1;
-  lastAlignBlock = NULL;
+  lastAlignBlock = finalPairsToPrint = NULL;
   if (0 == searchSpaceSize) 
     actualSearchSpace = queryLength * seqLength;
   else
