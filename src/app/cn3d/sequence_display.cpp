@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/06/01 14:05:12  thiessen
+* add float PDB sort
+*
 * Revision 1.21  2001/06/01 13:35:58  thiessen
 * add aligned block number to status line
 *
@@ -887,6 +890,12 @@ static bool CompareRowsByScore(const DisplayRowFromAlignment *a, const DisplayRo
     return (a->alignment->GetRowDouble(a->row) > b->alignment->GetRowDouble(b->row));
 }
 
+static bool CompareRowsFloatPDB(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
+{
+    return (a->alignment->GetSequenceOfRow(a->row)->pdbID.size() > 0 &&
+            b->alignment->GetSequenceOfRow(b->row)->pdbID.size() == 0);
+}
+
 static CompareRows rowComparisonFunction = NULL;
 
 void SequenceDisplay::SortRowsByIdentifier(void)
@@ -895,25 +904,18 @@ void SequenceDisplay::SortRowsByIdentifier(void)
     SortRows();
 }
 
-bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
-{
-    if (isEditable) {
-        SequenceViewer *seqViewer = dynamic_cast<SequenceViewer*>((*viewerWindow)->viewer);
-        if (seqViewer) {
-            seqViewer->alignmentManager->CalculateRowScoresWithThreader(weightPSSM);
-            TESTMSG("calculated row scores");
-            return true;
-        }
-    }
-    return false;
-}
-
 void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
 {
     if (!CalculateRowScoresWithThreader(weightPSSM)) return;
     rowComparisonFunction = CompareRowsByScore;
     SortRows();
     TESTMSG("sorted rows");
+}
+
+void SequenceDisplay::FloatPDBRowsToTop(void)
+{
+    rowComparisonFunction = CompareRowsFloatPDB;
+    SortRows();
 }
 
 void SequenceDisplay::SortRows(void)
@@ -952,6 +954,19 @@ void SequenceDisplay::SortRows(void)
         ERR_POST(Error << "SequenceDisplay::SortRows() - internal inconsistency");
 
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+}
+
+bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
+{
+    if (isEditable) {
+        SequenceViewer *seqViewer = dynamic_cast<SequenceViewer*>((*viewerWindow)->viewer);
+        if (seqViewer) {
+            seqViewer->alignmentManager->CalculateRowScoresWithThreader(weightPSSM);
+            TESTMSG("calculated row scores");
+            return true;
+        }
+    }
+    return false;
 }
 
 void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple)

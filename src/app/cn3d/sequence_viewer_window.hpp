@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/06/01 14:04:54  thiessen
+* add float PDB sort
+*
 * Revision 1.10  2001/05/23 17:43:28  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -98,6 +101,7 @@ private:
         MID_SORT_ROWS,   // sort rows submenu
             MID_SORT_IDENT,
             MID_SORT_THREADER,
+            MID_FLOAT_PDBS,
         // mouse mode
         MID_MOVE_ROW,
         // update menu

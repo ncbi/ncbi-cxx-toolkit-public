@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/06/01 14:04:54  thiessen
+* add float PDB sort
+*
 * Revision 1.11  2001/05/11 02:10:04  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -242,6 +245,7 @@ public:
     bool CalculateRowScoresWithThreader(double weightPSSM);
     void SortRowsByIdentifier(void);
     void SortRowsByThreadingScore(double weightPSSM);
+    void FloatPDBRowsToTop(void);
 
     // create a new copy of this object
     SequenceDisplay * Clone(const Old2NewAlignmentMap& newAlignments) const;

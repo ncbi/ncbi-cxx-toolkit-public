@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/06/01 14:05:13  thiessen
+* add float PDB sort
+*
 * Revision 1.16  2001/05/17 18:34:26  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -112,7 +115,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
     EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
-    EVT_MENU_RANGE(MID_SORT_IDENT, MID_SORT_THREADER,   SequenceViewerWindow::OnSort)
+    EVT_MENU_RANGE(MID_SORT_IDENT, MID_FLOAT_PDBS,      SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
 END_EVENT_TABLE()
@@ -128,6 +131,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
     subMenu->Append(MID_SORT_THREADER, "By &Score");
+    subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
 
@@ -369,6 +373,9 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             }
             break;
         }
+        case MID_FLOAT_PDBS:
+            sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();
+            break;
     }
     SetCursor(wxNullCursor);
 }
