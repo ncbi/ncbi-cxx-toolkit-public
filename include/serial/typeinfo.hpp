@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/09/22 20:11:51  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.17  1999/09/14 18:54:07  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -106,6 +109,7 @@ class CTypeRef;
 class CMemberId;
 class CMemberInfo;
 
+// this structure is used for sorting C++ standard type_info class by pointer
 struct CTypeInfoOrder
 {
     // to avoid warning under MSVS, where type_info::before() erroneously
@@ -119,16 +123,26 @@ struct CTypeInfoOrder
 		{ return ToBool(i1->before(*i2)); }
 };
 
+// CTypeInfo class contains all information about C++ types (both basic and
+// classes): members and layout in memory.
 class CTypeInfo
 {
 public:
     typedef int TMemberIndex;
 
+protected:
+    CTypeInfo(const string& name);
+public:
+    virtual ~CTypeInfo(void);
+
+    // name of this type
     string GetName(void) const
         { return m_Name; }
 
+    // size of data object in memory (like sizeof in C)
     virtual size_t GetSize(void) const = 0;
 
+    // helpers: return end of object
     TObjectPtr EndOf(TObjectPtr object) const
         { return Add(object, GetSize()); }
     TConstObjectPtr EndOf(TConstObjectPtr object) const
@@ -136,64 +150,63 @@ public:
 
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const;
-    // gets default object (will call CreateDefault and save returned value )
-    //virtual TConstObjectPtr GetDefault(void) const;
-    // creates default object (by default will call Create)
-    //virtual TConstObjectPtr CreateDefault(void) const;
 
+    // check, whether object contains default value
     virtual bool IsDefault(TConstObjectPtr object) const = 0;
+    // check if both objects contain the same valuse
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const = 0;
+    // set object to default value
     virtual void SetDefault(TObjectPtr dst) const = 0;
+    // set object to copy of another one
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 
+    // return true CTypeInfo of object (redefined in polimorfic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const;
 
-    virtual ~CTypeInfo(void);
-
+    // object member operating methods:
+    // find member by name
     virtual TMemberIndex FindMember(const string& name) const;
+    // find member by location
     virtual TMemberIndex LocateMember(TConstObjectPtr object,
                                       TConstObjectPtr member,
                                       TTypeInfo memberTypeInfo) const;
-
+    // get member id by index
     virtual const CMemberId* GetMemberId(TMemberIndex index) const;
+    // get member info by index
     virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
-    
-    // collect info about all memory chunks for writing
+
+    // I/O interface:
+    // collect info about all memory chunks for writing of complex grafs
     void CollectObjects(COObjectList& objectList,
                         TConstObjectPtr object) const;
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
-
-protected:
-
-    CTypeInfo(const string& name);
-
-    friend class CObjectOStream;
-    friend class CObjectIStream;
-    friend class CClassInfoTmpl;
-
-public:
     // read object
     virtual void ReadData(CObjectIStream& in,
                           TObjectPtr object) const = 0;
-
     // write object
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
 
+    virtual void CollectExternalObjects(COObjectList& list,
+                                        TConstObjectPtr object) const;
+
 private:
+    friend class CObjectOStream;
+    friend class CObjectIStream;
+    friend class CClassInfoTmpl;
+
     string m_Name;
-    //mutable TConstObjectPtr m_Default;
 };
 
+// helper template for various types:
 template<typename T>
 class CTypeInfoTmpl : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
-    typedef T TObjectType;
+    typedef T TObjectType; // type of object
 
+    // object getters:
     static TObjectType& Get(TObjectPtr object)
         {
             return *static_cast<TObjectType*>(object);
@@ -203,6 +216,7 @@ public:
             return *static_cast<const TObjectType*>(object);
         }
 
+    // define GetSize from CTypeInfo
     virtual size_t GetSize(void) const
         {
             return sizeof(TObjectType);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/09/22 20:11:55  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.26  1999/09/14 18:54:18  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -132,39 +135,24 @@ CObjectIStreamBinary::CObjectIStreamBinary(CNcbiIstream& in)
 {
 }
 
-void CObjectIStreamBinary::CheckError(void)
-{
-    if ( m_Input.eof() ) {
-        SetFailFlags(eEOF);
-        THROW1_TRACE(runtime_error, "unexpected EOF");
-    }
-    else if ( !m_Input ) {
-        SetFailFlags(eReadError);
-        THROW1_TRACE(runtime_error, "read error");
-    }
-}
-
 unsigned char CObjectIStreamBinary::ReadByte(void)
 {
     char c;
     m_Input.get(c);
-    CheckError();
-    //_TRACE("CObjectIStreamBinary::ReadByte: " << NStr::IntToString(c & 0xff));
+    CheckError(m_Input);
     return c;
 }
 
 void CObjectIStreamBinary::ReadBytes(char* mem, size_t count)
 {
-    //_TRACE("CObjectIStreamBinary::ReadBytes: " << NStr::UIntToString(count));
     m_Input.read(mem, count);
-    CheckError();
+    CheckError(m_Input);
 }
 
 void CObjectIStreamBinary::SkipBytes(size_t count)
 {
-    //_TRACE("CObjectIStreamBinary::SkipBytes: " << NStr::UIntToString(count));
     m_Input.seekg(count, ios::cur);
-    CheckError();
+    CheckError(m_Input);
 }
 
 typedef unsigned char TByte;
@@ -332,9 +320,8 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
         // 1111xxxx (xxxxxxxx)*
         size_t size = (code & 0xF) + 4;
         if ( size > 16 ) {
-            in.SetFailFlags(in.eFormatError);
-            THROW1_TRACE(runtime_error,
-                         "reserved number code: " + NStr::IntToString(code));
+            in.ThrowError(in.eFormatError,
+                          "reserved number code: " + NStr::IntToString(code));
         }
         // skip high bytes
         while ( size > sizeof(T) ) {
@@ -435,9 +422,8 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
         // 1111xxxx (xxxxxxxx)*
         size_t size = (code & 0xF) + 4;
         if ( size > 16 ) {
-            in.SetFailFlags(in.eFormatError);
-            THROW1_TRACE(runtime_error,
-                         "reserved number code: " + NStr::IntToString(code));
+            in.ThrowError(in.eFormatError,
+                          "reserved number code: " + NStr::IntToString(code));
         }
         // skip high bytes
         while ( size > sizeof(T) ) {
@@ -473,14 +459,12 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data)
         {
             unsigned char value = in.ReadByte();
             if ( sizeof(T) == 1 && value > 0x7f ) {
-                in.SetFailFlags(in.eOverflow);
-                THROW1_TRACE(runtime_error,
-                             "cannot read unsigned byte to signed type");
+                in.ThrowError(in.eOverflow,
+                              "cannot read unsigned byte to signed type");
             }
             data = value;
             return;
         }
-        return;
     case eStd_sordinal:
         ReadStdSigned(in, data, true);
         return;
@@ -488,9 +472,8 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data)
         ReadStdSigned(in, data, false);
         return;
     default:
-        in.SetFailFlags(in.eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad number code: " + NStr::IntToString(code));
+        in.ThrowError(in.eFormatError,
+                      "bad number code: " + NStr::IntToString(code));
     }
 }
 
@@ -506,9 +489,8 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data)
         {
             signed char value = in.ReadByte();
             if ( value < 0 ) {
-                in.SetFailFlags(in.eOverflow);
-                THROW1_TRACE(runtime_error,
-                             "cannot read signed byte to unsigned type");
+                in.ThrowError(in.eOverflow,
+                              "cannot read signed byte to unsigned type");
             }
             data = value;
             return;
@@ -523,20 +505,9 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data)
         ReadStdUnsigned(in, data, false);
         return;
     default:
-        in.SetFailFlags(in.eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad number code: " + NStr::IntToString(code));
+        in.ThrowError(in.eFormatError,
+                      "bad number code: " + NStr::IntToString(code));
     }
-}
-
-template<typename T>
-inline
-void ReadStdNumber(CObjectIStreamBinary& in, T& data)
-{
-    if ( T(-1) < T(0) )
-        ReadStdSigned(in, data);
-    else
-        ReadStdUnsigned(in, data);
 }
 
 void CObjectIStreamBinary::ReadStd(bool& data)
@@ -550,9 +521,8 @@ void CObjectIStreamBinary::ReadStd(bool& data)
         data = true;
         return;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad number code: " + NStr::UIntToString(code));
+        ThrowError(eFormatError,
+                   "bad number code: " + NStr::UIntToString(code));
     }
 }
 
@@ -567,9 +537,8 @@ void CObjectIStreamBinary::ReadStd(char& data)
         data = ReadByte();
         return;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad number code: " + NStr::UIntToString(code));
+        ThrowError(eFormatError,
+                   "bad number code: " + NStr::UIntToString(code));
     }
 }
 
@@ -586,15 +555,13 @@ void CObjectIStreamBinary::ReadStd(signed char& data)
     case eStd_ubyte:
         if ( (data = ReadByte()) & 0x80 ) {
             // unsigned -> signed overflow
-            SetFailFlags(eOverflow);
-            THROW1_TRACE(runtime_error,
-                         "unsigned char doesn't fit in signed char");
+            ThrowError(eOverflow,
+                       "unsigned char doesn't fit in signed char");
         }
         return;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad number code: " + NStr::UIntToString(code));
+        ThrowError(eFormatError,
+                   "bad number code: " + NStr::UIntToString(code));
     }
 }
 
@@ -611,46 +578,64 @@ void CObjectIStreamBinary::ReadStd(unsigned char& data)
     case eStd_sbyte:
         if ( (data = ReadByte()) & 0x80 ) {
             // signed -> unsigned overflow
-            SetFailFlags(eOverflow);
-            THROW1_TRACE(runtime_error,
-                         "signed char doesn't fit in unsigned char");
+            ThrowError(eOverflow,
+                       "signed char doesn't fit in unsigned char");
         }
         return;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, 
-                     "bad number code: " + NStr::UIntToString(code));
+        ThrowError(eFormatError,
+                   "bad number code: " + NStr::UIntToString(code));
     }
 }
 
 void CObjectIStreamBinary::ReadStd(short& data)
 {
-    ReadStdNumber(*this, data);
+    int i;
+    ReadStdSigned(*this, i);
+    if ( i < SHRT_MIN || i > SHRT_MAX )
+        ThrowError(eOverflow, "short overflow error");
+    data = (short)i;
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned short& data)
 {
-    ReadStdNumber(*this, data);
+    unsigned i;
+    ReadStdUnsigned(*this, i);
+    if ( i > USHRT_MAX )
+        ThrowError(eOverflow, "unsigned short overflow error");
+    data = (unsigned short)i;
 }
 
 void CObjectIStreamBinary::ReadStd(int& data)
 {
-    ReadStdNumber(*this, data);
+    ReadStdSigned(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned int& data)
 {
-    ReadStdNumber(*this, data);
+    ReadStdUnsigned(*this, data);
 }
 
 void CObjectIStreamBinary::ReadStd(long& data)
 {
-    ReadStdNumber(*this, data);
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+    int i;
+    ReadStdSigned(*this, i);
+    data = i;
+#else
+    ReadStdSigned(*this, data);
+#endif
 }
 
 void CObjectIStreamBinary::ReadStd(unsigned long& data)
 {
-    ReadStdNumber(*this, data);
+#if ULONG_MAX == UINT_MAX
+    unsigned i;
+    ReadStdUnsigned(*this, i);
+    data = i;
+#else
+    ReadStdUnsigned(*this, data);
+#endif
 }
 
 void CObjectIStreamBinary::ReadStd(float& )
@@ -665,9 +650,9 @@ void CObjectIStreamBinary::ReadStd(double& )
 
 CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
 {
-    TIndex index;
+    unsigned index;
     ReadStdUnsigned(*this, index, false);
-    return index;
+    return TIndex(index);
 }
 
 unsigned CObjectIStreamBinary::ReadSize(void)
@@ -680,13 +665,12 @@ unsigned CObjectIStreamBinary::ReadSize(void)
 string CObjectIStreamBinary::ReadString(void)
 {
     switch ( ReadByte() ) {
+    default:
+        ThrowError(eFormatError, "invalid string code");
     case eNull:
         return string();
     case eStd_string:
         return ReadStringValue();
-    default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid string code");
     }
 }
 
@@ -708,9 +692,8 @@ const string& CObjectIStreamBinary::ReadStringValue(void)
     }
     else {
         ERR_POST(index);
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "invalid string index: " + NStr::UIntToString(index));
+        ThrowError(eFormatError,
+                   "invalid string index: " + NStr::UIntToString(index));
     }
 }
 
@@ -728,9 +711,8 @@ void CObjectIStreamBinary::FBegin(Block& block)
         SetNonFixed(block, true);
         break;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad block start byte: " + NStr::IntToString(code));
+        ThrowError(eFormatError,
+                   "bad block start byte: " + NStr::IntToString(code));
     }
 }
 
@@ -745,9 +727,8 @@ void CObjectIStreamBinary::VBegin(Block& block)
         SetNonFixed(block, true);
         break;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "bad block start byte: " + NStr::IntToString(code));
+        ThrowError(eFormatError,
+                   "bad block start byte: " + NStr::IntToString(code));
     }
 }
 
@@ -756,30 +737,27 @@ bool CObjectIStreamBinary::VNext(const Block& block)
     if ( block.GetNextIndex() == 0 )
         return true;
     switch ( ReadByte() ) {
+    default:
+        ThrowError(eFormatError, "invalid element type");
     case eElement:
         return true;
     case eEndOfElements:
         return false;
-    default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid element type");
     }
 }
 
 void CObjectIStreamBinary::StartMember(Member& member)
 {
     if ( ReadByte() != eMember ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid element type");
+        ThrowError(eFormatError, "invalid element type");
     }
-    member.SetName(ReadStringValue());
+    member.Id().SetName(ReadStringValue());
 }
 
 void CObjectIStreamBinary::Begin(ByteBlock& block)
 {
 	if ( ReadByte() != eBytes ) {
-        SetFailFlags(eFormatError);
-		THROW1_TRACE(runtime_error, "invalid byte string start");
+        ThrowError(eFormatError, "invalid byte string start");
     }
 	SetBlockLength(block, ReadSize());
 }
@@ -795,6 +773,8 @@ CObjectIStream::EPointerType CObjectIStreamBinary::ReadPointerType(void)
 {
     _TRACE("CObjectIStreamBinary::ReadPointerType");
     switch ( ReadByte() ) {
+    default:
+        ThrowError(eFormatError, "invalid object reference code");
     case eNull:
         return eNullPointer;
     case eMemberReference:
@@ -805,9 +785,6 @@ CObjectIStream::EPointerType CObjectIStreamBinary::ReadPointerType(void)
         return eThisPointer;
     case eOtherClass:
         return eOtherPointer;
-    default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid object reference code");
     }
 }
 
@@ -853,9 +830,8 @@ void CObjectIStreamBinary::SkipValue()
         ReadStringValue();
         return;
     case eStd_float:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "floating point numbers are not supported");
-        return;
+        ThrowError(eFormatError,
+                   "floating point numbers are not supported");
     case eStd_false:
     case eStd_true:
         return;
@@ -892,12 +868,10 @@ void CObjectIStreamBinary::SkipValue()
             case eEndOfElements:
                 return;
             default:
-                SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error,
-                             "invalid value code: " + NStr::IntToString(b));
+                ThrowError(eFormatError,
+                           "invalid value code: " + NStr::IntToString(b));
             }
         }
-        return;
     case eEndOfElements:
         return;
     case eBytes:
@@ -910,9 +884,8 @@ void CObjectIStreamBinary::SkipValue()
         }
         return;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "invalid value code: " + NStr::IntToString(b));
+        ThrowError(eFormatError,
+                   "invalid value code: " + NStr::IntToString(b));
     }
 }
 
@@ -932,8 +905,7 @@ void CObjectIStreamBinary::SkipObjectPointer(void)
         SkipObjectData();
         return;
     default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "invalid value code");
+        ThrowError(eFormatError, "invalid value code");
     }
 }
 
@@ -959,8 +931,7 @@ size_t CObjectIStreamBinary::AsnRead(AsnIo& asn, char* data, size_t length)
 {
     while ( asn.m_Count == 0 ) {
         if ( ReadByte() != eBytes ) {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "bytes block expected");
+            ThrowError(eFormatError, "bytes block expected");
         }
         asn.m_Count = ReadSize();
     }

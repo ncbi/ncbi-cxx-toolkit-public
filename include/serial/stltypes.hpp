@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/22 20:11:51  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.19  1999/09/14 18:54:06  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -350,7 +353,7 @@ protected:
 template<typename Data>
 class CStlClassInfoList : public CStlOneArgTemplateImpl< list<Data> >
 {
-    typedef CStlOneArgTemplateImpl<TObjectType> CParent;
+    typedef CStlOneArgTemplateImpl< list<Data> > CParent;
 public:
     typedef Data TDataType;
 
@@ -384,7 +387,7 @@ protected:
 template<typename Data>
 class CStlClassInfoVector : public CStlOneArgTemplateImpl< vector<Data> >
 {
-    typedef CStlOneArgTemplateImpl<TObjectType> CParent;
+    typedef CStlOneArgTemplateImpl< vector<Data> > CParent;
 public:
     typedef Data TDataType;
 
@@ -437,7 +440,7 @@ protected:
 template<typename Data>
 class CStlClassInfoSet : public CStlOneArgTemplateImpl< set<Data> >
 {
-    typedef CStlOneArgTemplateImpl<TObjectType> CParent;
+    typedef CStlOneArgTemplateImpl< set<Data> > CParent;
 public:
     typedef Data TDataType;
 
@@ -485,7 +488,7 @@ public:
     typedef Key TKeyType;
     typedef Value TValueType;
     typedef map<TKeyType, TValueType> TObjectType;
-    typedef TObjectType::const_iterator TConstIterator;
+    typedef typename TObjectType::const_iterator TConstIterator;
 
     CStlClassInfoMap<Key, Value>(void)
         : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
@@ -602,7 +605,7 @@ public:
     typedef Key TKeyType;
     typedef Value TValueType;
     typedef multimap<TKeyType, TValueType> TObjectType;
-    typedef TObjectType::const_iterator TConstIterator;
+    typedef typename TObjectType::const_iterator TConstIterator;
 
     CStlClassInfoMultiMap<Key, Value>(void)
         : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),

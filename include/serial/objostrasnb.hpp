@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/09/22 20:11:50  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.11  1999/08/16 16:07:44  vasilche
 * Added ENUMERATED type.
 *
@@ -92,6 +95,7 @@ public:
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamAsnBinary(void);
 
+    using CObjectOStream::WriteStd;
     virtual void WriteStd(const bool& data);
     virtual void WriteStd(const char& data);
     virtual void WriteStd(const unsigned char& data);

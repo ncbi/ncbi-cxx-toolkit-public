@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/22 20:11:49  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.20  1999/09/14 18:54:04  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -221,8 +224,7 @@ public:
         // to prevent copying
         Block(const Block&);
         Block& operator=(const Block&);
-        // to prevent allocation in heap
-        void* operator new(size_t size);
+
         friend class CObjectOStream;
 
         bool m_Fixed;

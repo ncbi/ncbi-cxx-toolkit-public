@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/09/22 20:11:55  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.13  1999/09/14 18:54:18  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -100,8 +103,7 @@ CObjectIStreamAsnBinary::~CObjectIStreamAsnBinary(void)
 {
 #if CHECK_STREAM_INTEGRITY
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "CObjectIStreamAsnBinary not finished");
+        ThrowError(eFormatError, "CObjectIStreamAsnBinary not finished");
     }
 #endif
 }
@@ -114,32 +116,17 @@ void CObjectIStreamAsnBinary::StartTag(TByte code)
     m_CurrentTagCode = code;
     m_CurrentTagPosition = m_CurrentPosition;
     m_CurrentTagState = (code & 0x1f) == eLongTag? eTagValue: eLengthStart;
-    //_TRACE("StartTag(" << (unsigned)code << ") @ " << m_CurrentPosition);
 }
 
 inline
 void CObjectIStreamAsnBinary::EndTag(void)
 {
-    //_TRACE("EndTag @ " << (m_CurrentPosition + 1));
     if ( m_Limits.empty() ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "too many tag ends");
+        ThrowError(eFormatError, "too many tag ends");
     }
     m_CurrentTagState = eTagStart;
     m_CurrentTagLimit = m_Limits.top();
     m_Limits.pop();
-}
-
-void CObjectIStreamAsnBinary::CheckError(void)
-{
-    if ( m_Input.eof() ) {
-        SetFailFlags(eEOF);
-        THROW1_TRACE(runtime_error, "unexpected EOF");
-    }
-    else if ( !m_Input ) {
-        SetFailFlags(eReadError);
-        THROW1_TRACE(runtime_error, "read error");
-    }
 }
 
 inline
@@ -147,8 +134,7 @@ void CObjectIStreamAsnBinary::SetTagLength(size_t length)
 {
     size_t limit = m_CurrentPosition + 1 + length;
     if ( limit > m_CurrentTagLimit ) {
-        SetFailFlags(eOverflow);
-        THROW1_TRACE(runtime_error, "tag will overflow enclosing tag");
+        ThrowError(eOverflow, "tag will overflow enclosing tag");
     }
     else
         m_CurrentTagLimit = limit;
@@ -161,17 +147,18 @@ void CObjectIStreamAsnBinary::SetTagLength(size_t length)
 }
 #endif
 
+#if !CHECK_STREAM_INTEGRITY
+inline
+#endif
 unsigned char CObjectIStreamAsnBinary::ReadByte(void)
 {
     char c;
     m_Input.get(c);
-    CheckError();
+    CheckError(m_Input);
 #if CHECK_STREAM_INTEGRITY
     TByte byte = TByte(c);
-    //_TRACE("ReadByte: " << unsigned(byte));
     if ( m_CurrentPosition >= m_CurrentTagLimit ) {
-        SetFailFlags(eOverflow);
-        THROW1_TRACE(runtime_error, "tag size overflow");
+        ThrowError(eOverflow, "tag size overflow");
     }
     switch ( m_CurrentTagState ) {
     case eTagStart:
@@ -189,9 +176,8 @@ unsigned char CObjectIStreamAsnBinary::ReadByte(void)
         }
         else if ( byte == 0x80 ) {
             if ( !(m_CurrentTagCode & 0x20) ) {
-                SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error,
-                             "cannot use indefinite form for primitive tag");
+                ThrowError(eFormatError,
+                           "cannot use indefinite form for primitive tag");
             }
             m_CurrentTagState = eTagStart;
         }
@@ -201,16 +187,14 @@ unsigned char CObjectIStreamAsnBinary::ReadByte(void)
         else {
             m_CurrentTagLengthSize = byte - 0x80;
             if ( m_CurrentTagLengthSize > sizeof(size_t) ) {
-                SetFailFlags(eOverflow);
-                THROW1_TRACE(runtime_error, "too big length");
+                ThrowError(eOverflow, "too big length");
             }
             m_CurrentTagState = eLengthValueFirst;
         }
         break;
     case eLengthValueFirst:
         if ( byte == 0 ) {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "first byte of length is zero");
+            ThrowError(eFormatError, "first byte of length is zero");
         }
         if ( --m_CurrentTagLengthSize == 0 ) {
             SetTagLength(byte);
@@ -241,19 +225,19 @@ signed char CObjectIStreamAsnBinary::ReadSByte(void)
     return ReadByte();
 }
 
+#if !CHECK_STREAM_INTEGRITY
+inline
+#endif
 void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
 {
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    //_TRACE("ReadBytes: " << count);
     if ( m_CurrentTagState != eData ) {
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "ReadBytes only allowed in DATA");
+        ThrowError(eIllegalCall, "ReadBytes only allowed in DATA");
     }
     if ( m_CurrentPosition + count > m_CurrentTagLimit ) {
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "tag DATA overflow");
+        ThrowError(eIllegalCall, "tag DATA overflow");
     }
     if ( (m_CurrentPosition += count) == m_CurrentTagLimit ) {
         m_CurrentPosition--;
@@ -262,22 +246,22 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
     }
 #endif
     m_Input.read(buffer, count);
-    CheckError();
+    CheckError(m_Input);
 }
 
+#if !CHECK_STREAM_INTEGRITY
+inline
+#endif
 void CObjectIStreamAsnBinary::SkipBytes(size_t count)
 {
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    //_TRACE("SkipBytes: " << count);
     if ( m_CurrentTagState != eData ) {
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "SkipBytes only allowed in DATA");
+        ThrowError(eIllegalCall, "SkipBytes only allowed in DATA");
     }
     if ( m_CurrentPosition + count > m_CurrentTagLimit ) {
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "tag DATA overflow");
+        ThrowError(eIllegalCall, "tag DATA overflow");
     }
     if ( (m_CurrentPosition += count) == m_CurrentTagLimit ) {
         m_CurrentTagLimit--;
@@ -286,48 +270,40 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
     }
 #endif
     m_Input.seekg(count, ios::cur);
-    CheckError();
+    CheckError(m_Input);
 }
 
 void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
 {
     if ( ReadByte() != byte ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "expected " + NStr::IntToString(byte));
+        ThrowError(eFormatError, "expected " + NStr::IntToString(byte));
     }
 }
 
 ETag CObjectIStreamAsnBinary::ReadSysTag(void)
 {
-    //_TRACE("ReadSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
         m_LastTagState = eSysTagRead;
         m_LastTagByte = ReadByte();
         break;
     case eSysTagRead:
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "double tag read");
+        ThrowError(eIllegalCall, "double tag read");
     case eSysTagBack:
         m_LastTagState = eSysTagRead;
         break;
     }
-    //_TRACE("ReadSysTag: " << (m_LastTagByte >> 6) << ", " <<
-    //((m_LastTagByte & 0x20) != 0) << ", " << (m_LastTagByte & 0x1f)); 
     return ETag(m_LastTagByte & 0x1f);
 }
 
 inline
 void CObjectIStreamAsnBinary::BackSysTag(void)
 {
-    //_TRACE("BackSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "tag back without read");
+        ThrowError(eIllegalCall, "tag back without read");
     case eSysTagBack:
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "double tag back");
+        ThrowError(eIllegalCall, "double tag back");
     case eSysTagRead:
         m_LastTagState = eSysTagBack;
         break;
@@ -337,26 +313,21 @@ void CObjectIStreamAsnBinary::BackSysTag(void)
 inline
 void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
 {
-    //_TRACE("FlushSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "length read without tag");
+        ThrowError(eIllegalCall, "length read without tag");
     case eSysTagRead:
         break;
     case eSysTagBack:
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "length read with tag back");
+        ThrowError(eIllegalCall, "length read with tag back");
     }
     if ( constructed && (m_LastTagByte & 0x20) == 0 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "non indefinite length on constructed value");
+        ThrowError(eFormatError,
+                   "non indefinite length on constructed value");
     }
     if ( !constructed && (m_LastTagByte & 0x20) != 0 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "indefinite length on primitive value");
+        ThrowError(eFormatError,
+                   "indefinite length on primitive value");
     }
     m_LastTagState = eNoTagRead;
 }
@@ -370,8 +341,7 @@ TTag CObjectIStreamAsnBinary::ReadTag(void)
     TByte byte;
     do {
         if ( tag >= (1 << (sizeof(tag) * 8 - 1 - 7)) ) {
-            SetFailFlags(eOverflow);
-            THROW1_TRACE(runtime_error, "tag number is too big");
+            ThrowError(eOverflow, "tag number is too big");
         }
         byte = ReadByte();
         tag = (tag << 7) | (byte & 0x7f);
@@ -398,15 +368,13 @@ ETag CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
 {
     ETag tag = ReadSysTag();
     if ( tag == eLongTag ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "unexpected long tag");
+        ThrowError(eFormatError, "unexpected long tag");
     }
 
     if ( !LastTagWas(c, constructed) ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "unexpected tag class/type: should be: " +
-                     NStr::IntToString(c) +  (constructed? "C": "p"));
+        ThrowError(eFormatError,
+                   "unexpected tag class/type: should be: " +
+                   NStr::IntToString(c) +  (constructed? "C": "p"));
     }
     return tag;
 }
@@ -426,10 +394,9 @@ TTag CObjectIStreamAsnBinary::ReadTag(EClass c, bool constructed)
 {
     TTag tag = ReadTag();
     if ( !LastTagWas(c, constructed) ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "unexpected tag class/type: should be: " +
-                     NStr::IntToString(c) +  (constructed? "C": "p"));
+        ThrowError(eFormatError,
+                   "unexpected tag class/type: should be: " +
+                   NStr::IntToString(c) +  (constructed? "C": "p"));
     }
     return tag;
 }
@@ -439,10 +406,9 @@ void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
                                            ETag tag)
 {
     if ( ReadSysTag(c, constructed) != tag ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error,
-                     "unexpected tag: should be: " +
-                     NStr::IntToString(tag));
+        ThrowError(eFormatError,
+                   "unexpected tag: should be: " +
+                   NStr::IntToString(tag));
     }
 }
 
@@ -457,8 +423,7 @@ size_t CObjectIStreamAsnBinary::ReadShortLength(void)
     FlushSysTag();
     TByte byte = ReadByte();
     if ( byte >= 0x80 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "short length expected");
+        ThrowError(eFormatError, "short length expected");
     }
     return byte;
 }
@@ -473,22 +438,18 @@ size_t CObjectIStreamAsnBinary::ReadLength(bool allowIndefinite)
     if ( lengthLength == 0 ) {
         if ( allowIndefinite )
             return size_t(-1);
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "unexpected indefinite length");
+        ThrowError(eFormatError, "unexpected indefinite length");
     }
     if ( lengthLength > sizeof(size_t) ) {
-        SetFailFlags(eOverflow);
-        THROW1_TRACE(runtime_error, "length overflow");
+        ThrowError(eOverflow, "length overflow");
     }
     byte = ReadByte();
     if ( byte == 0 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "illegal length start");
+        ThrowError(eFormatError, "illegal length start");
     }
     if ( size_t(-1) < size_t(0) ) {
         if ( lengthLength == sizeof(size_t) && (byte & 0x80) != 0 ) {
-            SetFailFlags(eOverflow);
-            THROW1_TRACE(runtime_error, "length overflow");
+            ThrowError(eOverflow, "length overflow");
         }
     }
     lengthLength--;
@@ -502,8 +463,7 @@ inline
 void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 {
     if ( ReadShortLength() != length ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "length expected");
+        ThrowError(eFormatError, "length expected");
     }
 }
 
@@ -526,16 +486,14 @@ void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
 {
     size_t length = in.ReadShortLength();
     if ( length == 0 ) {
-        in.SetFailFlags(in.eFormatError);
-        THROW1_TRACE(runtime_error, "zero length of number");
+        in.ThrowError(in.eFormatError, "zero length of number");
     }
     T n;
     if ( length > sizeof(data) ) {
         // skip
         signed char c = in.ReadSByte();
         if ( c != 0 || c != -1 ) {
-            in.SetFailFlags(in.eOverflow);
-            THROW1_TRACE(runtime_error, "overflow error");
+            in.ThrowError(in.eOverflow, "overflow error");
         }
         length--;
         while ( length-- > sizeof(data) )
@@ -543,8 +501,7 @@ void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
         length--;
         n = in.ReadSByte();
         if ( ((n ^ c) & 0x80) != 0 ) {
-            in.SetFailFlags(in.eOverflow);
-            THROW1_TRACE(runtime_error, "overflow error");
+            in.ThrowError(in.eOverflow, "overflow error");
         }
     }
     else {
@@ -562,8 +519,7 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
 {
     size_t length = in.ReadShortLength();
     if ( length == 0 ) {
-        in.SetFailFlags(in.eFormatError);
-        THROW1_TRACE(runtime_error, "zero length of number");
+        in.ThrowError(in.eFormatError, "zero length of number");
     }
     T n;
     if ( length > sizeof(data) ) {
@@ -573,16 +529,14 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
         length--;
         n = in.ReadByte();
         if ( (n & 0x80) != 0 ) {
-            in.SetFailFlags(in.eOverflow);
-            THROW1_TRACE(runtime_error, "overflow error");
+            in.ThrowError(in.eOverflow, "overflow error");
         }
     }
     else if ( length == sizeof(data) ) {
         length--;
         n = in.ReadByte();
         if ( (n & 0x80) != 0 ) {
-            in.SetFailFlags(in.eOverflow);
-            THROW1_TRACE(runtime_error, "overflow error");
+            in.ThrowError(in.eOverflow, "overflow error");
         }
     }
     else {
@@ -594,23 +548,49 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
     data = n;
 }
 
-template<typename T>
-inline
-void ReadStdNumberValue(CObjectIStreamAsnBinary& in, T& data)
+static
+void ReadInt(CObjectIStreamAsnBinary& in, int& data)
 {
-    if ( T(-1) < T(0) )
-        ReadStdSigned(in, data);
-    else
-        ReadStdUnsigned(in, data);
+    ReadStdSigned(in, data);
 }
 
-template<typename T>
-inline
-void ReadStdNumber(CObjectIStreamAsnBinary& in, T& data)
+static
+void ReadUInt(CObjectIStreamAsnBinary& in, unsigned& data)
 {
-    in.ExpectSysTag(eInteger);
-    ReadStdNumberValue(in, data);
+    ReadStdUnsigned(in, data);
 }
+
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+inline
+void ReadLong(CObjectIStreamAsnBinary& in, long& data)
+{
+    int i;
+    ReadInt(in, i);
+    data = i;
+}
+#else
+static
+void ReadLong(CObjectIStreamAsnBinary& in, long& data)
+{
+    ReadStdSigned(in, data);
+}
+#endif
+
+#if ULONG_MAX == UINT_MAX
+inline
+void ReadULong(CObjectIStreamAsnBinary& in, unsigned long& data)
+{
+    unsigned i;
+    ReadUInt(in, i);
+    data = i;
+}
+#else
+static
+void ReadULong(CObjectIStreamAsnBinary& in, unsigned long& data)
+{
+    ReadStdUnsigned(in, data);
+}
+#endif
 
 void CObjectIStreamAsnBinary::ReadStd(bool& data)
 {
@@ -628,62 +608,74 @@ void CObjectIStreamAsnBinary::ReadStd(char& data)
 
 void CObjectIStreamAsnBinary::ReadStd(signed char& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    int i;
+    ReadInt(*this, i);
+    if ( i < CHAR_MIN || i > CHAR_MAX )
+        ThrowError(eOverflow, "signed char overflow");
+    data = (signed char)i;
 }
 
 void CObjectIStreamAsnBinary::ReadStd(unsigned char& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    unsigned i;
+    ReadUInt(*this, i);
+    if ( i > UCHAR_MAX )
+        ThrowError(eOverflow, "unsigned char overflow");
+    data = (unsigned char)i;
 }
 
 void CObjectIStreamAsnBinary::ReadStd(short& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    int i;
+    ReadInt(*this, i);
+    if ( i < SHRT_MIN || i > SHRT_MAX )
+        ThrowError(eOverflow, "short overflow");
+    data = (short)i;
 }
 
 void CObjectIStreamAsnBinary::ReadStd(unsigned short& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    unsigned i;
+    ReadUInt(*this, i);
+    if ( i > USHRT_MAX )
+        ThrowError(eOverflow, "unsigned short overflow");
+    data = (unsigned short)i;
 }
 
 void CObjectIStreamAsnBinary::ReadStd(int& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    ReadInt(*this, data);
 }
 
 void CObjectIStreamAsnBinary::ReadStd(unsigned int& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    ReadUInt(*this, data);
 }
 
 void CObjectIStreamAsnBinary::ReadStd(long& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    ReadLong(*this, data);
 }
 
 void CObjectIStreamAsnBinary::ReadStd(unsigned long& data)
 {
-    ReadStdNumber(*this, data);
+    ExpectSysTag(eInteger);
+    ReadULong(*this, data);
 }
 
 void CObjectIStreamAsnBinary::ReadStd(float& data)
 {
-    ExpectSysTag(eReal);
-    size_t length = ReadShortLength();
-    if ( length < 2 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "too short REAL data");
-    }
+    double d;
+    ReadStd(d);
 
-    ExpectByte(eDecimal);
-    length--;
-    char buffer[128];
-    ReadBytes(buffer, length);
-    buffer[length] = 0;
-    if ( sscanf(buffer, "%g", &data) != 1 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "bad REAL data string");
-    }
+    data = d;
 }
 
 void CObjectIStreamAsnBinary::ReadStd(double& data)
@@ -691,8 +683,7 @@ void CObjectIStreamAsnBinary::ReadStd(double& data)
     ExpectSysTag(eReal);
     size_t length = ReadShortLength();
     if ( length < 2 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "too short REAL data");
+        ThrowError(eFormatError, "too short REAL data");
     }
 
     ExpectByte(eDecimal);
@@ -701,8 +692,7 @@ void CObjectIStreamAsnBinary::ReadStd(double& data)
     ReadBytes(buffer, length);
     buffer[length] = 0;
     if ( sscanf(buffer, "%lg", &data) != 1 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "bad REAL data string");
+        ThrowError(eFormatError, "bad REAL data string");
     }
 }
 
@@ -749,7 +739,7 @@ bool CObjectIStreamAsnBinary::VNext(const Block& )
 
 void CObjectIStreamAsnBinary::StartMember(Member& member)
 {
-    member.SetTag(ReadTag(eContextSpecific, true));
+    member.Id().SetTag(ReadTag(eContextSpecific, true));
     ExpectIndefiniteLength();
 }
 
@@ -809,7 +799,7 @@ int CObjectIStreamAsnBinary::ReadEnumValue(void)
 {
     ExpectSysTag(eEnumerated);
     int value;
-    ReadStdNumberValue(*this, value);
+    ReadInt(*this, value);
     return value;
 }
 
@@ -827,7 +817,7 @@ void CObjectIStreamAsnBinary::ReadMemberPointerEnd(void)
 CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
 {
     TIndex index;
-    ReadStdNumberValue(*this, index);
+    ReadUInt(*this, index);
     return index;
 }
 
@@ -875,8 +865,7 @@ bool CObjectIStreamAsnBinary::SkipRealValue(void)
 void CObjectIStreamAsnBinary::SkipValue()
 {
     if ( !SkipRealValue() ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "unexpected end of contents");
+        ThrowError(eFormatError, "unexpected end of contents");
     }
 }
 
@@ -888,8 +877,7 @@ unsigned CObjectIStreamAsnBinary::GetAsnFlags(void)
 void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
 {
     if ( m_LastTagByte == eSysTagRead ) {
-        SetFailFlags(eIllegalCall);
-        THROW1_TRACE(runtime_error, "double tag read");
+        ThrowError(eIllegalCall, "double tag read");
     }
 }
 

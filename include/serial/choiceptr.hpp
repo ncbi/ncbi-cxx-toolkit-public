@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/09/22 20:11:48  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.2  1999/09/14 18:54:02  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -51,6 +54,7 @@
 
 BEGIN_NCBI_SCOPE
 
+// CTypeInfo for pointers which behavelike CHOICE (select one of limited choices)
 class CChoicePointerTypeInfo : public CPointerTypeInfo
 {
     typedef CPointerTypeInfo CParent;

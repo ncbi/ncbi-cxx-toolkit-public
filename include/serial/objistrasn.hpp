@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/09/22 20:11:49  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.16  1999/08/17 15:13:03  vasilche
 * Comments are allowed in ASN.1 text files.
 * String values now parsed in accordance with ASN.1 specification.
@@ -119,11 +122,12 @@ public:
         {
             return m_Line;
         }
-    unsigned SetFailFlags(unsigned flags);
+    virtual unsigned SetFailFlags(unsigned flags);
 
     virtual string ReadTypeName(void);
     virtual string ReadEnumName(void);
 
+    using CObjectIStream::ReadStd;
     virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -141,7 +145,6 @@ public:
 
     TByte ReadByte(void);
     void ReadBytes(TByte* bytes, unsigned size);
-    void CheckError(void);
     TIndex ReadIndex(void);
     virtual string ReadString(void);
     string ReadId(void);

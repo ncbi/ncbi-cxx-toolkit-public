@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/09/22 20:11:49  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.8  1999/08/16 16:07:43  vasilche
 * Added ENUMERATED type.
 *
@@ -66,7 +69,11 @@
 #include <serial/objstrasnb.hpp>
 #include <stack>
 
+#ifdef _DEBUG
 #define CHECK_STREAM_INTEGRITY 1
+#else
+#undef CHECK_STREAM_INTEGRITY
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -81,6 +88,7 @@ public:
     CObjectIStreamAsnBinary(CNcbiIstream& in);
     virtual ~CObjectIStreamAsnBinary(void);
 
+    using CObjectIStream::ReadStd;
     virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -102,7 +110,6 @@ public:
     signed char ReadSByte(void);
     void ReadBytes(char* buffer, size_t count);
     void SkipBytes(size_t count);
-    void CheckError(void);
     virtual string ReadString(void);
     virtual char* ReadCString(void);
 

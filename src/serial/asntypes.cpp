@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/22 20:11:54  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.20  1999/09/14 18:54:14  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -632,7 +635,7 @@ void CChoiceTypeInfo::ReadData(CObjectIStream& in,
     TMemberIndex index = m_Variants.FindMember(id);
     if ( index < 0 ) {
         THROW1_TRACE(runtime_error,
-                     "illegal choice variant: " + id.ToString());
+                     "illegal choice variant: " + id.Id().ToString());
     }
     valnode* node = static_cast<valnode*>(object);
     node->choice = index + 1;

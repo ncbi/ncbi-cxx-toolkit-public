@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/22 20:11:54  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.22  1999/09/16 19:22:15  vasilche
 * Removed some warnings under GCC.
 *
@@ -121,6 +124,35 @@ CObjectIStream::~CObjectIStream(void)
 {
 }
 
+unsigned CObjectIStream::SetFailFlags(unsigned flags)
+{
+    unsigned old = m_Fail;
+    m_Fail |= flags;
+    return old;
+}
+
+void CObjectIStream::ThrowError(EFailFlags fail, const char* message)
+{
+    SetFailFlags(fail);
+    THROW1_TRACE(runtime_error, message);
+}
+
+void CObjectIStream::ThrowError(EFailFlags fail, const string& message)
+{
+    SetFailFlags(fail);
+    THROW1_TRACE(runtime_error, message);
+}
+
+void CObjectIStream::ThrowError(CNcbiIstream& in)
+{
+    if ( in.eof() ) {
+        ThrowError(eEOF, "unexpected EOF");
+    }
+    else {
+        ThrowError(eReadError, "read error");
+    }
+}
+
 // root reader
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
@@ -131,7 +163,7 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
         THROW1_TRACE(runtime_error, "incompatible type " + name + "<>" + typeInfo->GetName());
     TIndex index = RegisterObject(object, typeInfo);
     _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
-           << typeInfo->GetName() << ") @" << index);
+           << typeInfo->GetName() << ") @" << (index = index));
     ReadData(object, typeInfo);
 }
 
@@ -141,7 +173,7 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
            << typeInfo->GetName() << ")");
     TIndex index = RegisterObject(object, typeInfo);
     _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
-           << typeInfo->GetName() << ") @" << index);
+           << typeInfo->GetName() << ") @" << (index = index));
     ReadData(object, typeInfo);
 }
 
@@ -381,7 +413,7 @@ CObjectIStream::Member::Member(CObjectIStream& in)
 }
 
 CObjectIStream::Member::Member(CObjectIStream& in, const CMemberId& id)
-    : CMemberId(id), m_In(in), m_Previous(in.m_CurrentMember)
+    : m_In(in), m_Id(id), m_Previous(in.m_CurrentMember)
 {
     in.m_CurrentMember = this;
 }
@@ -389,9 +421,9 @@ CObjectIStream::Member::Member(CObjectIStream& in, const CMemberId& id)
 CObjectIStream::Member::~Member(void)
 {
     if ( m_In.fail() ) {
-        string stack = ToString();
+        string stack = m_Id.ToString();
         for ( const Member* m = m_Previous; m; m = m->m_Previous ) {
-            stack = m->ToString() + '.' + stack;
+            stack = m->m_Id.ToString() + '.' + stack;
         }
         ERR_POST("Error in CObjectIStream: " << stack);
     }

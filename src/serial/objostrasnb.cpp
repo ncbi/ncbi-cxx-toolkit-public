@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/09/22 20:11:55  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.17  1999/08/16 16:08:31  vasilche
 * Added ENUMERATED type.
 *
@@ -151,7 +154,9 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 }
 #endif
 
+#if !CHECK_STREAM_INTEGRITY
 inline
+#endif
 void CObjectOStreamAsnBinary::WriteByte(TByte byte)
 {
 #if CHECK_STREAM_INTEGRITY
@@ -216,7 +221,9 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
     m_Output.put(byte);
 }
 
+#if !CHECK_STREAM_INTEGRITY
 inline
+#endif
 void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 {
     if ( size == 0 )
@@ -322,9 +329,6 @@ void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
 
 void CObjectOStreamAsnBinary::WriteLength(size_t length)
 {
-    if ( length < 0 )
-        THROW1_TRACE(runtime_error, "negative length");
-
     if ( length <= 127 ) {
         // short form
         WriteShortLength(length);

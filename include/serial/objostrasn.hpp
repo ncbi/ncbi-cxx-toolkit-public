@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/09/22 20:11:50  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.14  1999/08/13 15:53:44  vasilche
 * C++ analog of asntool: datatool
 *
@@ -103,6 +106,7 @@ public:
     virtual void WriteTypeName(const string& name);
     virtual bool WriteEnumName(const string& name);
 
+    using CObjectOStream::WriteStd;
     virtual void WriteStd(const bool& data);
     virtual void WriteStd(const char& data);
     virtual void WriteStd(const unsigned char& data);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/09/22 20:11:48  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.3  1999/07/13 20:18:05  vasilche
 * Changed types naming.
 *
@@ -49,6 +52,10 @@
 
 BEGIN_NCBI_SCOPE
 
+// object of CMemberId class holds information about logical object member access:
+//     name and/or tag (ASN.1)
+// default value of name is empty string
+// default value of tag is -1
 class CMemberId {
 public:
     typedef int TTag;
@@ -58,6 +65,7 @@ public:
     CMemberId(const string& name, TTag tag);
     CMemberId(TTag tag);
 
+    // return visible representation of CMemberId (as in ASN.1)
     string ToString(void) const;
 
     const string& GetName(void) const;

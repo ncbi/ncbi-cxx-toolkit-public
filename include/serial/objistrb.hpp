@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/09/22 20:11:49  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.14  1999/08/13 15:53:44  vasilche
 * C++ analog of asntool: datatool
 *
@@ -94,6 +97,7 @@ public:
 
     CObjectIStreamBinary(CNcbiIstream& in);
 
+    using CObjectIStream::ReadStd;
     virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -143,10 +147,6 @@ private:
     vector<string> m_Strings;
 
     CNcbiIstream& m_Input;
-    
-    void CheckError(void);
-    void Overflow(const string& message);
-    void FormatError(const string& message);
 };
 
 //#include <objistrb.inl>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/09/22 20:11:47  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.12  1999/09/14 18:54:01  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -92,7 +95,7 @@ struct asntype;
 BEGIN_NCBI_SCOPE
 
 class CSequenceOfTypeInfo : public CTypeInfoTmpl<void*> {
-    typedef CTypeInfoTmpl<void*> CParent;
+    typedef CTypeInfoTmpl<TObjectPtr> CParent;
 public:
     CSequenceOfTypeInfo(TTypeInfo type);
 	CSequenceOfTypeInfo(const string& name, TTypeInfo type);
@@ -101,7 +104,7 @@ public:
         {
             return Get(object);
         }
-    static const TConstObjectPtr& First(TConstObjectPtr object)
+    static TConstObjectPtr First(TConstObjectPtr object)
         {
             return Get(object);
         }
@@ -109,7 +112,7 @@ public:
         {
             return Get(Add(object, m_NextOffset));
         }
-    const TConstObjectPtr& Next(TConstObjectPtr object) const
+    TConstObjectPtr Next(TConstObjectPtr object) const
         {
             return Get(Add(object, m_NextOffset));
         }

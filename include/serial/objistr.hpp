@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/22 20:11:48  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.22  1999/09/14 18:54:03  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -189,21 +192,24 @@ public:
         {
             return m_Fail;
         }
-    unsigned SetFailFlags(unsigned flags)
-        {
-            unsigned old = m_Fail;
-            m_Fail |= flags;
-            return old;
-        }
+    virtual unsigned SetFailFlags(unsigned flags);
     unsigned ClearFailFlags(unsigned flags)
         {
             unsigned old = m_Fail;
             m_Fail &= ~flags;
             return old;
         }
+    void ThrowError(EFailFlags flags, const char* message);
+    void ThrowError(EFailFlags flags, const string& message);
+    void ThrowError(CNcbiIstream& in);
+    void CheckError(CNcbiIstream& in)
+        {
+            if ( !in )
+                ThrowError(in);
+        }
 
     // member interface
-    class Member : public CMemberId {
+    class Member {
     public:
         Member(CObjectIStream& in);
         Member(CObjectIStream& in, const CMemberId& id);
@@ -213,8 +219,23 @@ public:
             {
                 return m_Previous;
             }
+
+        CMemberId& Id(void)
+            {
+                return m_Id;
+            }
+        const CMemberId& Id(void) const
+            {
+                return m_Id;
+            }
+        operator const CMemberId&(void) const
+            {
+                return m_Id;
+            }
+
     private:
         CObjectIStream& m_In;
+        CMemberId m_Id;
         Member* m_Previous;
     };
 
@@ -278,8 +299,7 @@ public:
         // to prevent copying
         Block(const Block&);
         Block& operator=(const Block&);
-        // to prevent allocation in heap
-        void* operator new(size_t size);
+
         friend class CObjectIStream;
 
         bool m_Fixed;

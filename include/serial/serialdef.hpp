@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/09/22 20:11:51  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.1  1999/06/24 14:44:44  vasilche
 * Added binary ASN.1 output.
 *
@@ -43,18 +46,24 @@
 
 BEGIN_NCBI_SCOPE
 
+// forward declaration of two main classes
 class CTypeInfo;
 class CTypeRef;
 
+// typedef for object references (constant and nonconstant)
 typedef void* TObjectPtr;
 typedef const void* TConstObjectPtr;
 
+// shortcut typedef: almost everywhere in code we have pointer to const CTypeInfo
 typedef const CTypeInfo* TTypeInfo;
 
+// helper address functions:
+// add offset to object reference (to get object's member)
 inline
 TObjectPtr Add(TObjectPtr object, int offset);
 inline
 TConstObjectPtr Add(TConstObjectPtr object, int offset);
+// calculate offset of member inside object
 inline
 int Sub(TConstObjectPtr first, TConstObjectPtr second);
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/09/22 20:11:50  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.10  1999/07/22 17:33:46  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -82,6 +85,7 @@ public:
     CObjectOStreamBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamBinary(void);
 
+    using CObjectOStream::WriteStd;
     virtual void WriteStd(const bool& data);
     virtual void WriteStd(const char& data);
     virtual void WriteStd(const unsigned char& data);

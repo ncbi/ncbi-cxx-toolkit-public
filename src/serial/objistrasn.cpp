@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/22 20:11:55  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.22  1999/08/17 15:13:06  vasilche
 * Comments are allowed in ASN.1 text files.
 * String values now parsed in accordance with ASN.1 specification.
@@ -148,18 +151,6 @@ unsigned CObjectIStreamAsn::SetFailFlags(unsigned flags)
     return CObjectIStream::SetFailFlags(flags);
 }
 
-void CObjectIStreamAsn::CheckError(void)
-{
-    if ( m_Input.eof() ) {
-        SetFailFlags(eEOF);
-        THROW1_TRACE(runtime_error, "unexpected EOF");
-    }
-    else if ( !m_Input ) {
-        SetFailFlags(eReadError);
-        THROW1_TRACE(runtime_error, "read error");
-    }
-}
-
 inline
 char CObjectIStreamAsn::GetChar(void)
 {
@@ -167,14 +158,12 @@ char CObjectIStreamAsn::GetChar(void)
 	if ( unget >= 0 ) {
         m_UngetChar = m_UngetChar1;
 	    m_UngetChar1 = -1;
-        //_TRACE("GetChar(): '" << char(unget) << "'");
 		return char(unget);
 	}
 	else {
 		char c;
 		m_Input.get(c);
-        CheckError();
-        //_TRACE("GetChar(): '" << c << "'");
+        CheckError(m_Input);
 		return c;
 	}
 }
@@ -183,25 +172,20 @@ inline
 char CObjectIStreamAsn::GetChar0(void)
 {
 	int unget = m_UngetChar;
-	if ( unget >= 0 ) {
-        //_TRACE("GetChar0(): '" << char(unget) << "'");
-        m_UngetChar = m_UngetChar1;
-	    m_UngetChar1 = -1;
-		return char(unget);
-	}
-	else {
-        SetFailFlags(eIllegalCall);
-		throw runtime_error("bad GetChar0 call");
-	}
+	if ( unget < 0 )
+        ThrowError(eIllegalCall, "bad GetChar0 call");
+
+    m_UngetChar = m_UngetChar1;
+    m_UngetChar1 = -1;
+    return char(unget);
 }
 
 inline
 void CObjectIStreamAsn::UngetChar(char c)
 {
-    if ( m_UngetChar1 >= 0 ) {
-        SetFailFlags(eIllegalCall);
-        throw runtime_error("cannot unget");
-    }
+    if ( m_UngetChar1 >= 0 )
+        ThrowError(eIllegalCall, "cannot unget");
+
     //_TRACE("UngetChar(): '" << char(m_GetChar) << "'");
 	m_UngetChar1 = m_UngetChar;
     m_UngetChar = (unsigned char)c;
@@ -253,8 +237,7 @@ inline
 void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
 {
     if ( !GetChar(expect, skipWhiteSpace) ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, string("'") + expect + "' expected");
+        ThrowError(eFormatError, string("'") + expect + "' expected");
     }
 }
 
@@ -282,9 +265,9 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
 		else
 	        UngetChar(c);
 	}
-    SetFailFlags(eFormatError);
-    THROW1_TRACE(runtime_error, string("'") + choiceTrue +
-                 "' or '" + choiceFalse + "' expected");
+    ThrowError(eFormatError, string("'") + choiceTrue +
+               "' or '" + choiceFalse + "' expected");
+    return false;
 }
 
 void CObjectIStreamAsn::ExpectString(const char* s, bool skipWhiteSpace)
@@ -372,8 +355,7 @@ void CObjectIStreamAsn::ReadStd(bool& data)
     else if ( s == "TRUE" )
         data = true;
     else {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "TRUE or FALSE expected");
+        ThrowError(eFormatError, "TRUE or FALSE expected");
     }
 }
 
@@ -381,8 +363,7 @@ void CObjectIStreamAsn::ReadStd(char& data)
 {
     string s = ReadString();
     if ( s.size() != 1 ) {
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "one char string expected");
+        ThrowError(eFormatError, "one char string expected");
     }
     data = s[0];
 }
@@ -406,8 +387,7 @@ void ReadStdSigned(CObjectIStreamAsn& in, T& data)
     }
     c = in.GetChar();
     if ( c < '0' || c > '9' ) {
-        in.SetFailFlags(in.eFormatError);
-        THROW1_TRACE(runtime_error, "bad number");
+        in.ThrowError(in.eFormatError, "bad number");
     }
     T n = c - '0';
     while ( (c = in.GetChar()) >= '0' && c <= '9' ) {
@@ -428,8 +408,7 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
     if ( c == '+' )
         c = in.GetChar();
     if ( c < '0' || c > '9' ) {
-        in.SetFailFlags(in.eFormatError);
-        THROW1_TRACE(runtime_error, "bad number");
+        in.ThrowError(in.eFormatError, "bad number");
     }
     T n = c - '0';
     while ( (c = in.GetChar()) >= '0' && c <= '9' ) {
@@ -440,83 +419,136 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
     data = n;
 }
 
-template<typename T>
-inline
-void ReadStdNumber(CObjectIStreamAsn& in, T& data)
+static
+void ReadInt(CObjectIStreamAsn& in, int& data)
 {
-    if ( T(-1) < T(0) )
-        ReadStdSigned(in, data);
-    else
-        ReadStdUnsigned(in, data);
+    ReadStdSigned(in, data);
+}
+
+static
+void ReadUInt(CObjectIStreamAsn& in, unsigned& data)
+{
+    ReadStdUnsigned(in, data);
+}
+
+#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
+inline
+void ReadLong(CObjectIStreamAsn& in, long& data)
+{
+    int i;
+    ReadInt(in, i);
+    data = i;
+}
+#else
+static
+void ReadLong(CObjectIStreamAsn& in, long& data)
+{
+    ReadStdSigned(in, data);
+}
+#endif
+
+#if ULONG_MAX == UINT_MAX
+inline
+void ReadULong(CObjectIStreamAsn& in, unsigned long& data)
+{
+    unsigned i;
+    ReadUInt(in, i);
+    data = i;
+}
+#else
+static
+void ReadULong(CObjectIStreamAsn& in, unsigned long& data)
+{
+    ReadStdUnsigned(in, data);
+}
+#endif
+
+void ReadStdReal(CObjectIStreamAsn& in, double& data)
+{
+    in.ThrowError(in.eIllegalCall, "REAL format unsupported");
 }
 
 void CObjectIStreamAsn::ReadStd(signed char& data)
 {
     int i;
-    ReadStdNumber(*this, i);
-    if ( i < -128 || i > 127 ) {
-        SetFailFlags(eOverflow);
-        THROW1_TRACE(runtime_error, "signed char overflow error");
+    ReadInt(*this, i);
+    if ( i < CHAR_MIN || i > CHAR_MAX ) {
+        ThrowError(eOverflow, "signed char overflow error");
     }
-    data = i;
+    data = (char)i;
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned char& data)
 {
     unsigned i;
-    ReadStdNumber(*this, i);
-    if ( i > 255 ) {
-        SetFailFlags(eOverflow);
-        THROW1_TRACE(runtime_error, "unsigned char overflow error");
+    ReadUInt(*this, i);
+    if ( i > UCHAR_MAX ) {
+        ThrowError(eOverflow, "unsigned char overflow error");
     }
-    data = i;
+    data = (unsigned char)i;
 }
 
 void CObjectIStreamAsn::ReadStd(short& data)
 {
-    ReadStdNumber(*this, data);
+    int i;
+    ReadInt(*this, i);
+    if ( i < SHRT_MIN || i > SHRT_MAX ) {
+        ThrowError(eOverflow, "short overflow error");
+    }
+    data = (short)i;
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned short& data)
 {
-    ReadStdNumber(*this, data);
+    unsigned i;
+    ReadUInt(*this, i);
+    if ( i > USHRT_MAX ) {
+        ThrowError(eOverflow, "unsigned short overflow error");
+    }
+    data = (unsigned short)i;
 }
 
 void CObjectIStreamAsn::ReadStd(int& data)
 {
-    ReadStdNumber(*this, data);
+    ReadInt(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned int& data)
 {
-    ReadStdNumber(*this, data);
+    ReadUInt(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(long& data)
 {
-    ReadStdNumber(*this, data);
+    ReadLong(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned long& data)
 {
-    ReadStdNumber(*this, data);
+    ReadULong(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(float& data)
 {
-    ReadStdNumber(*this, data);
+    double d;
+    ReadStdReal(*this, d);
+
+    data = (float)d;
 }
 
 void CObjectIStreamAsn::ReadStd(double& data)
 {
-    ReadStdNumber(*this, data);
+    ReadStdReal(*this, data);
 }
 
 CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
 {
-    TIndex index;
-    ReadStdNumber(*this, index);
-    return index;
+    unsigned i;
+    ReadUInt(*this, i);
+    if ( i > TIndex(-1) ) {
+        ThrowError(eOverflow, "index overflow error");
+    }
+    return TIndex(i);
 }
 
 string CObjectIStreamAsn::ReadString(void)
@@ -544,8 +576,7 @@ string CObjectIStreamAsn::ReadString(void)
             break;
         default:
             if ( c < ' ' && c >= 0 ) {
-                SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "bad char in string");
+                ThrowError(eFormatError, "bad char in string");
             }
             else {
                 s += c;
@@ -614,7 +645,7 @@ bool CObjectIStreamAsn::VNext(const Block& block)
 
 void CObjectIStreamAsn::StartMember(Member& member)
 {
-    member.SetName(ReadId());
+    member.Id().SetName(ReadId());
 }
 
 void CObjectIStreamAsn::Begin(ByteBlock& )
@@ -649,8 +680,7 @@ size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& , char* dst, size_t length)
 			cc = (cc << 4) | (c - 'A' + 10);
 		}
 		else {
-            SetFailFlags(eFormatError);
-			THROW1_TRACE(runtime_error, "bad char in octet string");
+            ThrowError(eFormatError, "bad char in octet string");
 		}
 		*dst++ = cc;
 		count++;
@@ -782,10 +812,10 @@ void CObjectIStreamAsn::AsnOpen(AsnIo& )
 size_t CObjectIStreamAsn::AsnRead(AsnIo& , char* data, size_t length)
 {
     m_Input.get(data, length);
-    CheckError();
+    CheckError(m_Input);
     size_t count = m_Input.gcount();
     data[count++] = m_Input.get();
-    CheckError();
+    CheckError(m_Input);
     return count;
 }
 

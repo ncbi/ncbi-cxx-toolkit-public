@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/09/22 20:11:48  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.4  1999/09/14 18:54:03  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -60,6 +63,7 @@ BEGIN_NCBI_SCOPE
 
 class CMemberInfo;
 
+// This class supports sets of members with IDs
 class CMembers {
 public:
     typedef CMemberId::TTag TTag;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/22 20:11:54  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.21  1999/09/14 18:54:16  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -335,13 +338,13 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
             TMemberIndex index = m_Members.FindMember(memberId);
             if ( index < 0 ) {
                 ERR_POST("unknown member: " +
-                         memberId.ToString() + ", skipping");
+                         memberId.Id().ToString() + ", skipping");
                 in.SkipValue();
                 continue;
             }
             if ( !read.insert(index).second ) {
                 ERR_POST("duplicated member: " +
-                         memberId.ToString() + ", skipping");
+                         memberId.Id().ToString() + ", skipping");
                 in.SkipValue();
                 continue;
             }
@@ -384,7 +387,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
             for ( ;; ++currentIndex ) {
                 if ( currentIndex == size ) {
                     THROW1_TRACE(runtime_error,
-                                 "unexpected member: " + memberId.ToString());
+                                 "unexpected member: " + memberId.Id().ToString());
                 }
                 currentId.SetNext(m_Members.GetMemberId(currentIndex));
                 info = m_MembersInfo[currentIndex];

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/09/22 20:11:54  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.2  1999/09/14 18:54:15  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -135,7 +138,7 @@ void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
     CObjectIStream::Member m(in);
     TIndex index = m_Variants.FindMember(m);
     if ( index < 0 )
-        THROW1_TRACE(runtime_error, "incompatible type: " + m.ToString());
+        THROW1_TRACE(runtime_error, "incompatible type: " + m.Id().ToString());
     TTypeInfo dataType = m_VariantTypes[index].Get();
     TObjectPtr data = dataType->Create();
     SetObjectPointer(object, data);

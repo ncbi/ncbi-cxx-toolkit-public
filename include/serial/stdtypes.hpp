@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/09/22 20:11:51  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.11  1999/09/14 18:54:06  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -81,8 +84,7 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 class CObjectOStream;
 
-
-
+// template to standard C types with default value 0 (int, double, char* etc.)
 template<typename T>
 class CStdTypeInfo : public CTypeInfoTmpl<T>
 {
@@ -131,6 +133,7 @@ protected:
         }
 };
 
+// CTypeInfo for C type void
 template<>
 class CStdTypeInfo<void> : public CTypeInfo
 {
@@ -156,6 +159,7 @@ private:
         }
 };
 
+// CTypeInfo for C++ STL type string
 template<>
 class CStdTypeInfo<string> : public CTypeInfoTmpl<string>
 {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/09/22 20:11:50  vasilche
+* Modified for compilation on IRIX native c++ compiler.
+*
 * Revision 1.10  1999/09/14 18:54:05  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -76,6 +79,7 @@
 
 BEGIN_NCBI_SCOPE
 
+// CTypeInfo for pointers
 class CPointerTypeInfo : public CTypeInfoTmpl<void*>
 {
     typedef CTypeInfoTmpl<void*> CParent;
