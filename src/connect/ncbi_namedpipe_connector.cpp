@@ -97,7 +97,7 @@ static EIO_Status s_VT_Open
         }
         xxx->is_open = false;
     }
-    if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
+    if (xxx->pipe->SetTimeout(eIO_Open, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
     // Open new connection
@@ -267,8 +267,11 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
 
 
 /*
- * --------------------------------------------------------------------------
+ * ==========================================================================
  * $Log$
+ * Revision 1.4  2003/08/28 16:01:46  ivanov
+ * Set correct timeout value in the Open()
+ *
  * Revision 1.3  2003/08/21 20:07:37  ivanov
  * Added NAMEDPIPE_CreateConnectorEx
  *
