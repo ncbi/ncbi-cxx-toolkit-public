@@ -2274,6 +2274,7 @@ Int2 Blast_KarlinBlkCopy(Blast_KarlinBlk* kbp_to, Blast_KarlinBlk* kbp_from)
    kbp_to->logK = kbp_from->logK;
    kbp_to->H = kbp_from->H;
    kbp_to->paramC = kbp_from->paramC;
+   return 0;
 }
 
 static SBLASTMatrixStructure*
@@ -3643,6 +3644,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.107  2004/12/09 16:05:36  dondosha
+ * Added return on success in Blast_KarlinBlkCopy
+ *
  * Revision 1.106  2004/12/09 15:56:55  dondosha
  * Return type of Blast_KarlinBlkCopy changed to Int2: check for null arguments; removed no-longer-relevant comments; removed all tabs
  *
