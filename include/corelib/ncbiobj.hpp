@@ -517,6 +517,51 @@ public:
             return ptr;
         }
 
+    /// Reset reference object to new pointer.
+    ///
+    /// This sets the pointer to object to the new pointer, and removes
+    /// reference count to old object and deletes the old object if this is
+    /// the last reference to the old object.
+    /// The new pointer is got from ref argument.
+    /// Operation is atomic on this object, so that AtomicResetFrom() and
+    /// AtomicReleaseTo() called from different threads will work properly.
+    /// Operation is not atomic on ref argument.
+    /// @sa
+    ///   AtomicReleaseTo(CRef& ref);
+    inline
+    void AtomicResetFrom(const CRef& ref)
+        {
+            TObjectType* ptr = ref.m_Ptr;
+            if ( ptr )
+                CRefBase<C>::AddReference(ptr); // for this
+            TObjectType* old_ptr = AtomicSwap(ptr);
+            if ( old_ptr )
+                CRefBase<C>::RemoveReference(old_ptr);
+        }
+    /// Release referenced object to another CRef<> object.
+    ///
+    /// This copies the pointer to object to the argument ref,
+    /// and release reference from this object.
+    /// Old reference object held by argument ref is released and deleted if
+    /// necessary.
+    /// Operation is atomic on this object, so that AtomicResetFrom() and
+    /// AtomicReleaseTo() called from different threads will work properly.
+    /// Operation is not atomic on ref argument.
+    /// @sa
+    ///   AtomicResetFrom(const CRef& ref);
+    inline
+    void AtomicReleaseTo(CRef& ref)
+        {
+            TObjectType* old_ptr = AtomicSwap(0);
+            if ( old_ptr ) {
+                ref.Reset(old_ptr);
+                CRefBase<C>::RemoveReference(old_ptr);
+            }
+            else {
+                ref.Reset();
+            }
+        }
+
     /// Assignment operator for references.
     CRef<C>& operator=(const CRef<C>& ref)
         {
@@ -716,6 +761,15 @@ public:
         }
 
 private:
+    TObjectType* AtomicSwap(TObjectType* ptr)
+        {
+            // MIPSpro won't accept static_cast for some reason.
+            return reinterpret_cast<TObjectType*>
+                (SwapPointers(const_cast<void*volatile*>(
+                                  reinterpret_cast<void**>(&m_Ptr)),
+                              ptr));
+        }
+
     TObjectType* m_Ptr;             ///< Pointer to object
 };
 
@@ -1348,6 +1402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2004/04/06 20:34:23  grichenk
+ * Added atomic release and reset to CRef.
+ *
  * Revision 1.55  2004/03/10 18:40:21  gorelenk
  * Added/Removed NCBI_XNCBI_EXPORT prefixes.
  *
