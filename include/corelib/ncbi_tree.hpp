@@ -143,6 +143,15 @@ public:
     void AddNode(TTreeType* subnode);
 
 
+    /// Add new subnode whose value is (a copy of) val
+    ///
+    /// @param 
+    ///    val value reference
+    ///
+    /// @return pointer to new subtree
+    CTreeNWay<V>* AddNode(const V& val);
+
+
     /// Insert new subnode before the specified location in the subnode list
     ///
     /// @param
@@ -265,6 +274,15 @@ void CTreeNWay<V>::AddNode(TTreeType* subnode)
 
 
 template<class V>
+CTreeNWay<V>* CTreeNWay<V>::AddNode(const V& val)
+{
+    TTreeType* subnode = new TTreeType(val);
+    AddNode(subnode);
+    return subnode;
+}
+
+
+template<class V>
 void CTreeNWay<V>::InsertNode(nodelist_iterator it,
                               TTreeType* subnode)
 {
@@ -279,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/07 21:38:29  jcherry
+ * Added method for adding child node given a value
+ *
  * Revision 1.3  2004/01/07 21:10:58  jcherry
  * Compile fixes
  *
