@@ -81,11 +81,18 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const SBlastDbParam& param);
-
+    
     virtual ~CBlastDbDataLoader(void);
-  
+    
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle  & idh,
+                                    const SRequestDetails & details)
+    {
+        // Without this wrapper, the base class version is hidden.
+        return CDataLoader::GetRecords(idh, details);
+    }
+    
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
-  
+    
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
 private:
@@ -128,6 +135,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.11  2004/10/21 22:46:54  bealer
+ * - Unhide inherited method.
+ *
  * Revision 1.10  2004/10/05 16:44:33  jianye
  * Use CSeqDB
  *
