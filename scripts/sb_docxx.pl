@@ -50,7 +50,7 @@ sub genlists
   print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/\">Text search</a> ";
   print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/\">File search</a> ";
   print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/\">Source code</a> ";
-  print FOOTER "</center>";
+  print FOOTER "</center></body></html>";
   close(FOOTER);
   
   print "File list built...\n";
