@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/04/10 20:01:31  vakatov
+* Typo fixed
+*
 * Revision 1.10  2000/04/10 19:34:02  vakatov
 * Get rid of a minor compiler warning
 *
@@ -255,7 +258,7 @@ string MakeFileName(const string& fname, size_t addLength)
         return name;
     // we'll have to truncate very long filename
 
-    _TRACE("MakeFileName(\""<<s<<"\", "<<addLength<<") remove="<<remove);
+    _TRACE("MakeFileName(\""<<fname<<"\", "<<addLength<<") remove="<<remove);
     // 1st step: parse name dividing by '_' sorting elements by their size
     int removeable = 0; // removeable part of string
     typedef set<SSubString, SSubString::ByLength> TByLength;
