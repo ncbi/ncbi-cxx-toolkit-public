@@ -745,7 +745,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
             out << (*iter)->score_url;
         }
         out << (*iter)->bit_string;
-        if((m_Option & eHtml) && ((*iter)->id_url != NcbiEmptyString)) {
+        if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
         CBlastFormatUtil::AddSpace(out, max_score_len - (*iter)->bit_string.size());
@@ -830,6 +830,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.4  2005/01/31 19:47:31  jianye
+*correct type error
+*
 *Revision 1.3  2005/01/31 17:42:37  jianye
 *change unsigned int to size_t
 *
