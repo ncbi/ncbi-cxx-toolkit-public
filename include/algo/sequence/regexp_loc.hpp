@@ -43,6 +43,8 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
+#include <memory>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -98,6 +100,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.2  2003/07/17 12:27:56  ucko
+* +<memory> for auto_ptr<>
+*
 * Revision 1.1  2003/07/16 19:16:59  clausen
 * Initial version
 *
