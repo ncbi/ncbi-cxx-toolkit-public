@@ -467,32 +467,6 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 #endif
 
 
-// NOTE:  we define a generic ("ftds") driver name here -- in order to
-//        provide a default, but also to prevent from accidental linking
-//        of more than one version of FreeTDS driver to the same application
-
-
-void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
-    mgr.RegisterDriver("ftds",             FTDS_CreateContext);
-}
-
-
-extern "C" {
-    void* NCBI_FTDS_ENTRY_POINT()
-    {
-        if (dbversion())  return 0;  /* to prevent linking to Sybase dblib */
-        return (void*) DBAPI_RegisterDriver_FTDS;
-    }
-
-    NCBI_DBAPIDRIVER_FTDS_EXPORT
-    void* DBAPI_E_ftds()
-    {
-        return NCBI_FTDS_ENTRY_POINT();
-    }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 const string kDBAPI_FTDS_DriverName("ftds");
 
@@ -611,6 +585,38 @@ DBAPI_RegisterDriver_FTDS(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// NOTE:  we define a generic ("ftds") driver name here -- in order to
+//        provide a default, but also to prevent from accidental linking
+//        of more than one version of FreeTDS driver to the same application
+
+NCBI_DBAPIDRIVER_FTDS_EXPORT
+void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
+    mgr.RegisterDriver("ftds",             FTDS_CreateContext);
+    DBAPI_RegisterDriver_FTDS();
+}
+
+void DBAPI_RegisterDriver_FTDS_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_FTDS(mgr);
+}
+extern "C" {
+    void* NCBI_FTDS_ENTRY_POINT()
+    {
+        if (dbversion())  return 0;  /* to prevent linking to Sybase dblib */
+        return (void*) DBAPI_RegisterDriver_FTDS_old;
+    }
+
+    NCBI_DBAPIDRIVER_FTDS_EXPORT
+    void* DBAPI_E_ftds()
+    {
+        return NCBI_FTDS_ENTRY_POINT();
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -618,6 +624,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/03/02 21:19:20  ssikorsk
+ * Explicitly call a new RegisterDriver function from the old one
+ *
  * Revision 1.33  2005/03/02 19:29:54  ssikorsk
  * Export new RegisterDriver function on Windows
  *

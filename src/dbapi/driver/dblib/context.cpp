@@ -471,19 +471,6 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
     return cntx;
 }
 
-void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("dblib", DBLIB_CreateContext);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
-    void* DBAPI_E_dblib()
-    {
-        return (void*)DBAPI_RegisterDriver_DBLIB;
-    }
-}
-
 #else
 
 I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
@@ -491,19 +478,6 @@ I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
     DBINT version= DBVERSION_46;
 
     return new CDBLibContext(version);
-}
-
-void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
-    void* DBAPI_E_msdblib()
-    {
-        return (void*)DBAPI_RegisterDriver_MSDBLIB;
-    }
 }
 
 #endif
@@ -615,6 +589,26 @@ DBAPI_RegisterDriver_DBLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_dblib );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("dblib", DBLIB_CreateContext);
+    DBAPI_RegisterDriver_DBLIB();
+}
+
+void DBAPI_RegisterDriver_DBLIB_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_DBLIB(mgr);
+}
+
+extern "C" {
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
+    void* DBAPI_E_dblib()
+    {
+        return (void*)DBAPI_RegisterDriver_DBLIB_old;
+    }
+}
+
 #else
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -687,6 +681,27 @@ DBAPI_RegisterDriver_MSDBLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
+    DBAPI_RegisterDriver_MSDBLIB();
+}
+
+void DBAPI_RegisterDriver_MSDBLIB_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_MSDBLIB( mgr );
+}
+
+extern "C" {
+    NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
+    void* DBAPI_E_msdblib()
+    {
+        return (void*)DBAPI_RegisterDriver_MSDBLIB_old;
+    }
+}
+
+
 #endif
 
 END_NCBI_SCOPE
@@ -696,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/03/02 21:19:20  ssikorsk
+ * Explicitly call a new RegisterDriver function from the old one
+ *
  * Revision 1.34  2005/03/02 19:29:54  ssikorsk
  * Export new RegisterDriver function on Windows
  *

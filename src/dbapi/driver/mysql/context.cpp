@@ -96,19 +96,6 @@ static I_DriverContext* MYSQL_CreateContext(const map<string,string>* /*attr*/)
     return new CMySQLContext();
 }
 
-void DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("mysql", MYSQL_CreateContext);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_MYSQL_EXPORT
-    void* DBAPI_E_mysql()
-    {
-        return (void*) DBAPI_RegisterDriver_MYSQL;
-    }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 const string kDBAPI_MYSQL_DriverName("mysql");
 
@@ -150,6 +137,26 @@ DBAPI_RegisterDriver_MYSQL(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_mysql );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("mysql", MYSQL_CreateContext);
+    DBAPI_RegisterDriver_MYSQL();
+}
+
+void DBAPI_RegisterDriver_MYSQL_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_MYSQL(mgr);
+}
+
+extern "C" {
+    NCBI_DBAPIDRIVER_MYSQL_EXPORT
+    void* DBAPI_E_mysql()
+    {
+        return (void*) DBAPI_RegisterDriver_MYSQL_old;
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -158,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/02 21:19:20  ssikorsk
+ * Explicitly call a new RegisterDriver function from the old one
+ *
  * Revision 1.10  2005/03/02 19:29:54  ssikorsk
  * Export new RegisterDriver function on Windows
  *

@@ -406,21 +406,6 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
 }
 
 
-NCBI_DBAPIDRIVER_ODBC_EXPORT
-void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("odbc", ODBC_CreateContext);
-}
-
-
-extern "C" {
-    NCBI_DBAPIDRIVER_ODBC_EXPORT
-    void* DBAPI_E_odbc()
-    {
-        return (void*)DBAPI_RegisterDriver_ODBC;
-    }
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 const string kDBAPI_ODBC_DriverName("odbc");
@@ -531,6 +516,27 @@ DBAPI_RegisterDriver_ODBC(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+NCBI_DBAPIDRIVER_ODBC_EXPORT
+void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("odbc", ODBC_CreateContext);
+    DBAPI_RegisterDriver_ODBC();
+}
+
+void DBAPI_RegisterDriver_ODBC_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_ODBC( mgr );
+}
+
+extern "C" {
+    NCBI_DBAPIDRIVER_ODBC_EXPORT
+    void* DBAPI_E_odbc()
+    {
+        return (void*)DBAPI_RegisterDriver_ODBC_old;
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -539,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/02 21:19:20  ssikorsk
+ * Explicitly call a new RegisterDriver function from the old one
+ *
  * Revision 1.17  2005/03/02 19:29:54  ssikorsk
  * Export new RegisterDriver function on Windows
  *

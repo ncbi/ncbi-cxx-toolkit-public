@@ -900,19 +900,6 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
     return cntx;
 }
 
-void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
-{
-    mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
-}
-
-extern "C" {
-    NCBI_DBAPIDRIVER_CTLIB_EXPORT
-    void* DBAPI_E_ctlib()
-    {
-    return (void*)DBAPI_RegisterDriver_CTLIB;
-    }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 const string kDBAPI_CTLIB_DriverName("ctlib");
 
@@ -1028,6 +1015,26 @@ DBAPI_RegisterDriver_CTLIB(void)
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ctlib );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
+    DBAPI_RegisterDriver_CTLIB();
+}
+
+void DBAPI_RegisterDriver_CTLIB_old(I_DriverMgr& mgr)
+{
+    DBAPI_RegisterDriver_CTLIB( mgr );
+}
+
+extern "C" {
+    NCBI_DBAPIDRIVER_CTLIB_EXPORT
+    void* DBAPI_E_ctlib()
+    {
+    return (void*)DBAPI_RegisterDriver_CTLIB_old;
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -1036,6 +1043,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/03/02 21:19:20  ssikorsk
+ * Explicitly call a new RegisterDriver function from the old one
+ *
  * Revision 1.35  2005/03/02 19:29:54  ssikorsk
  * Export new RegisterDriver function on Windows
  *
