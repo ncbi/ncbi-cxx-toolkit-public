@@ -564,6 +564,8 @@ int CBlastApplication::Run(void)
 
     readdb_args.dbname = strdup(args["db"].AsString().c_str());
     readdb_args.is_protein = (program == eBlastp || program == eBlastx);
+    readdb_args.first_db_seq = 0;
+    readdb_args.final_db_seq = 0;
     bssn_info.constructor = &ReaddbSeqSrcNew;
     bssn_info.ctor_argument = (void*) &readdb_args;
     BlastSeqSrc* seq_src = BlastSeqSrcNew(&bssn_info);
