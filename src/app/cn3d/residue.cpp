@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.22  2001/05/15 23:48:37  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -55,7 +58,7 @@
 * minor tweaks
 *
 * Revision 1.14  2000/08/19 02:59:05  thiessen
-* fix tranparent sphere bug
+* fix transparent sphere bug
 *
 * Revision 1.13  2000/08/18 18:57:39  thiessen
 * added transparent spheres

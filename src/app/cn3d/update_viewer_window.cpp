@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.11  2001/05/15 23:48:38  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -146,7 +149,7 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
     ThreaderOptions options;
 
     ThreaderOptionsDialog optDialog(this, options);
-    if (!optDialog.Activate()) return;  // user cancelled
+    if (optDialog.ShowModal() == wxCANCEL) return;  // user cancelled
 
     if (!optDialog.GetValues(&options)) {
         ERR_POST(Error << "Error retrieving options values from dialog");
@@ -220,13 +223,13 @@ bool UpdateViewerWindow::SaveDialog(bool canCancel)
 // ThreaderOptionsDialog implementation
 /////////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(ThreaderOptionsDialog, wxFrame)
+BEGIN_EVENT_TABLE(ThreaderOptionsDialog, wxDialog)
     EVT_BUTTON(-1, ThreaderOptionsDialog::OnButton)
     EVT_CLOSE (    ThreaderOptionsDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions) :
-    wxFrame(parent, -1, "Set Threader Options", wxDefaultPosition, wxDefaultSize,
+    wxDialog(parent, -1, "Set Threader Options", wxDefaultPosition, wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU // not resizable
 //        wxDEFAULT_FRAME_STYLE   // for debugging/testing only - wxStaticBox doesn't work well with resize
 )
@@ -424,30 +427,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     SetClientSize(
         maxTextWidth + 5*margin + 100,
         boxClientHeight + bOK->GetSize().GetHeight() + 3*margin);
-    SetAutoLayout(true);
-}
-
-bool ThreaderOptionsDialog::Activate(void)
-{
-    dialogActive = true;
-    Show(true);
-    MakeModal(true);
-
-#ifdef __WXMSW__
-    // enter the modal loop  (this code snippet borrowed from src/msw/dialog.cpp)
-    while (dialogActive)
-    {
-#if wxUSE_THREADS
-        wxMutexGuiLeaveOrEnter();
-#endif // wxUSE_THREADS
-        while (!wxTheApp->Pending() && wxTheApp->ProcessIdle()) ;
-        // a message came or no more idle processing to do
-        wxTheApp->DoMessage();
-    }
-#endif
-
-    MakeModal(false);
-    return returnOK;
+    Layout();
 }
 
 bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)
@@ -462,29 +442,21 @@ bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)
     );
 }
 
-void ThreaderOptionsDialog::EndEventLoop(void)
-{
-    dialogActive = false;
-}
-
 void ThreaderOptionsDialog::OnCloseWindow(wxCommandEvent& event)
 {
-    returnOK = false;
-    EndEventLoop();
+    EndModal(wxCANCEL);
 }
 
 void ThreaderOptionsDialog::OnButton(wxCommandEvent& event)
 {
     if (event.GetEventObject() == bOK) {
-        returnOK = true;
         ThreaderOptions dummy;
-        if (GetValues(&dummy))  // can't succesfully quit if values aren't valid
-            EndEventLoop();
+        if (GetValues(&dummy))  // can't successfully quit if values aren't valid
+            EndModal(wxOK);
         else
             wxBell();
     } else if (event.GetEventObject() == bCancel) {
-        returnOK = false;
-        EndEventLoop();
+        EndModal(wxCANCEL);
     } else {
         event.Skip();
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/05/17 18:34:01  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.7  2001/05/02 13:46:16  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -131,13 +134,10 @@ class ThreaderOptions;
 class FloatingPointSpinCtrl;
 class IntegerSpinCtrl;
 
-class ThreaderOptionsDialog : public wxFrame
+class ThreaderOptionsDialog : public wxDialog
 {
 public:
     ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions);
-
-    // show the dialog; returns true if user hits "OK" and all values are valid
-    bool Activate(void);
 
     // set the ThreaderOptions from values in the panel; returns true if all values are valid
     bool GetValues(ThreaderOptions *options);
@@ -149,10 +149,6 @@ private:
     IntegerSpinCtrl *iStarts, *iResults;
     wxCheckBox *bMerge, *bFreeze;
 
-    bool dialogActive;
-    bool returnOK;
-
-    void EndEventLoop(void);
     void OnCloseWindow(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.10  2001/05/02 13:46:28  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -144,7 +147,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
     AlignmentList& alignments = alignmentStack.back();
     SequenceDisplay *display = displayStack.back();
 
-    // populate succesive lines of the display with each alignment, with blank lines inbetween
+    // populate successive lines of the display with each alignment, with blank lines inbetween
     AlignmentList::const_iterator a, ae = newAlignments.end();
     for (a=newAlignments.begin(); a!=ae; a++) {
         if ((*a)->NRows() != 2) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 18:34:27  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.2  2001/05/15 23:48:39  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -256,7 +259,7 @@ bool FloatingPointSpinCtrl::GetDouble(double *value) const
 // GetFloatingPointDialog implementation
 /////////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(GetFloatingPointDialog, wxFrame)
+BEGIN_EVENT_TABLE(GetFloatingPointDialog, wxDialog)
     EVT_BUTTON(-1, GetFloatingPointDialog::OnButton)
     EVT_CLOSE (    GetFloatingPointDialog::OnCloseWindow)
 END_EVENT_TABLE()
@@ -264,7 +267,7 @@ END_EVENT_TABLE()
 GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     const wxString& message, const wxString& title,
     double min, double max, double increment, double initial) :
-        wxFrame(parent, -1, title, wxDefaultPosition, wxDefaultSize,
+        wxDialog(parent, -1, title, wxDefaultPosition, wxDefaultSize,
             wxCAPTION | wxSYSTEM_MENU // not resizable
 //            wxDEFAULT_FRAME_STYLE
 )
@@ -320,20 +323,22 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     c->width.AsIs           ();
     fpSpinCtrl->GetSpinButton()->SetConstraints(c);
 
-    SetAutoLayout(true);
+    Layout();
 }
 
 double GetFloatingPointDialog::GetValue(void)
 {
+	double returnValue;
+	fpSpinCtrl->GetDouble(&returnValue);
     return returnValue;
 }
 
 void GetFloatingPointDialog::OnButton(wxCommandEvent& event)
 {
     if (event.GetEventObject() == buttonOK) {
-        returnOK = true;
-        if (fpSpinCtrl->GetDouble(&returnValue))
-            EndEventLoop();
+		double test;
+        if (fpSpinCtrl->GetDouble(&test))
+            EndModal(wxOK);
         else
             wxBell();
     } else {
@@ -341,38 +346,9 @@ void GetFloatingPointDialog::OnButton(wxCommandEvent& event)
     }
 }
 
-bool GetFloatingPointDialog::Activate(void)
-{
-    dialogActive = true;
-    Show(true);
-    MakeModal(true);
-
-#ifdef __WXMSW__
-    // enter the modal loop  (this code snippet borrowed from src/msw/dialog.cpp)
-    while (dialogActive)
-    {
-#if wxUSE_THREADS
-        wxMutexGuiLeaveOrEnter();
-#endif // wxUSE_THREADS
-        while (!wxTheApp->Pending() && wxTheApp->ProcessIdle()) ;
-        // a message came or no more idle processing to do
-        wxTheApp->DoMessage();
-    }
-#endif
-
-    MakeModal(false);
-    return returnOK;
-}
-
-void GetFloatingPointDialog::EndEventLoop(void)
-{
-    dialogActive = false;
-}
-
 void GetFloatingPointDialog::OnCloseWindow(wxCommandEvent& event)
 {
-    returnOK = false;
-    EndEventLoop();
+    EndModal(wxCANCEL);
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/05/17 18:34:01  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.4  2001/03/17 14:06:52  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -64,7 +67,7 @@
 
 BEGIN_SCOPE(Cn3D)
 
-class ShowHideDialog : public wxFrame
+class ShowHideDialog : public wxDialog
 {
 public:
 
@@ -91,21 +94,16 @@ public:
         const wxSize& size = wxDefaultSize
     );
 
-    void Activate(void);
-
 private:
     void OnSelection(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnCloseWindow(wxCommandEvent& event);
-
-    void EndEventLoop(void);
 
     std::vector < bool > *itemsEnabled;
 
     ShowHideCallbackObject *callbackObject;
     wxListBox *listBox;
     wxButton *applyB, *cancelB;
-    bool dialogActive;
     std::vector < bool > beforeChange;
 
     DECLARE_EVENT_TABLE()

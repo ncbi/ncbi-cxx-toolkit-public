@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/05/17 18:34:00  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.25  2001/05/16 00:07:23  thiessen
 * one more minor fix
 *
@@ -58,7 +61,7 @@
 * add primitive highlighting for testing
 *
 * Revision 1.16  2000/08/19 02:58:23  thiessen
-* fix tranparent sphere bug
+* fix transparent sphere bug
 *
 * Revision 1.15  2000/08/18 23:07:03  thiessen
 * minor efficiency tweaks

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/05/17 18:34:01  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.20  2001/05/15 23:49:21  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -119,7 +122,7 @@ public:
     // will store StructureBase-derived children in parent upon construction
     StructureBase(StructureBase *parent);
 
-    // will automatically delete children upon destruction with this desctuctor.
+    // will automatically delete children upon destruction with this destructor.
     // But note that derived classes can have their own constructors that will
     // *also* be called upon deletion; derived class destructors should *not*
     // delete any StructureBase-derived objects.

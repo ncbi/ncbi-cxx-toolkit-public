@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.15  2001/05/15 23:48:37  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -266,7 +269,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
         &visibilities,
         sequenceViewer->alignmentManager,
         NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
-    dialog.Activate();
+    dialog.ShowModal();
 //    delete titleStrs;    // apparently deleted by wxWindows
 }
 
@@ -332,7 +335,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
         &selectedSlaves,
         NULL,   // no "apply" button or callback
         NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
-    dialog.Activate();
+    dialog.ShowModal();
 
     // make list of slave rows to be realigned
     std::vector < int > rowOrder, realignSlaves;
@@ -358,7 +361,7 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             GetFloatingPointDialog fpDialog(NULL,
                 "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
                 0.0, 1.0, 0.05, 0.5);
-            if (fpDialog.Activate()) {
+            if (fpDialog.ShowModal() == wxOK) {
                 double weightPSSM = fpDialog.GetValue();
                 SetCursor(*wxHOURGLASS_CURSOR);
                 sequenceViewer->GetCurrentDisplay()->SortRowsByThreadingScore(weightPSSM);
@@ -375,7 +378,7 @@ void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
     GetFloatingPointDialog fpDialog(NULL,
         "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
         0.0, 1.0, 0.05, 0.5);
-    if (fpDialog.Activate()) {
+    if (fpDialog.ShowModal() == wxOK) {
         double weightPSSM = fpDialog.GetValue();
         SetCursor(*wxHOURGLASS_CURSOR);
         if (sequenceViewer->GetCurrentDisplay()->IsEditable())

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 18:34:01  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.2  2001/04/04 00:54:19  thiessen
 * forgot to add 'public' inheritor
 *
@@ -171,23 +174,18 @@ public:
 // dialog that asks user for a floating point value
 /////////////////////////////////////////////////////////////////////////////////
 
-class GetFloatingPointDialog : public wxFrame
+class GetFloatingPointDialog : public wxDialog
 {
 public:
     GetFloatingPointDialog(wxWindow* parent, const wxString& message, const wxString& title,
         double min, double max, double increment, double initial);
 
-    bool Activate(void);
     double GetValue(void);
 
 private:
     wxButton *buttonOK;
     FloatingPointSpinCtrl *fpSpinCtrl;
-    bool dialogActive;
-    bool returnOK;
-    double returnValue;
 
-    void EndEventLoop(void);
     void OnCloseWindow(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.4  2001/05/15 23:48:38  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -52,7 +55,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-BEGIN_EVENT_TABLE(ShowHideDialog, wxFrame)
+BEGIN_EVENT_TABLE(ShowHideDialog, wxDialog)
     EVT_LISTBOX     (LISTBOX,   ShowHideDialog::OnSelection)
     EVT_BUTTON      (B_APPLY,   ShowHideDialog::OnButton)
     EVT_BUTTON      (B_CANCEL,  ShowHideDialog::OnButton)
@@ -70,7 +73,7 @@ ShowHideDialog::ShowHideDialog(
     const wxPoint& pos,
     const wxSize& size
 ) :
-    wxFrame(parent, id, title, pos, size, wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
+    wxDialog(parent, id, title, pos, size, wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
     itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL)
 {
     SetAutoLayout(true);
@@ -136,7 +139,7 @@ ShowHideDialog::ShowHideDialog(
     c4->bottom.Above        (doneB,                 margin);
     listBox->SetConstraints(c4);
 
-    Layout();   // just to be safe; really only needed if this window isn't made resizable
+    Layout();
 
     // set initial item selection (reverse order, so scroll bar is initially at the top)
     beforeChange.resize(itemsEnabled->size());
@@ -144,34 +147,6 @@ ShowHideDialog::ShowHideDialog(
         listBox->SetSelection(i, (*itemsEnabled)[i]);
         beforeChange[i] = (*itemsEnabled)[i];
     }
-}
-
-void ShowHideDialog::Activate(void)
-{
-    dialogActive = true;
-    Show(true);
-    MakeModal(true);
-
-#ifdef __WXMSW__
-    // enter the modal loop  (this code snippet borrowed from src/msw/dialog.cpp)
-    while (dialogActive)
-    {
-#if wxUSE_THREADS
-        wxMutexGuiLeaveOrEnter();
-#endif // wxUSE_THREADS
-        while (!wxTheApp->Pending() && wxTheApp->ProcessIdle()) ;
-        // a message came or no more idle processing to do
-        wxTheApp->DoMessage();
-    }
-#endif
-
-    MakeModal(false);
-    return;
-}
-
-void ShowHideDialog::EndEventLoop(void)
-{
-    dialogActive = false;
 }
 
 void ShowHideDialog::OnSelection(wxCommandEvent& event)
@@ -212,7 +187,7 @@ void ShowHideDialog::OnButton(wxCommandEvent& event)
         // restore item list to original state
         for (int i=0; i<beforeChange.size(); i++)
             (*itemsEnabled)[i] = beforeChange[i];
-        EndEventLoop();
+        EndModal(wxCANCEL);
     }
 
     else if (event.GetId() == B_DONE || event.GetId() == B_APPLY) {
@@ -226,13 +201,13 @@ void ShowHideDialog::OnButton(wxCommandEvent& event)
         }
 
         if (event.GetId() == B_DONE)
-            EndEventLoop();
+            EndModal(wxOK);
     }
 }
 
 void ShowHideDialog::OnCloseWindow(wxCommandEvent& event)
 {
-    EndEventLoop();
+    EndModal(wxOK);
 }
 
 END_SCOPE(Cn3D)

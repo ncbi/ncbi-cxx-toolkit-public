@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/17 18:34:00  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.23  2001/05/15 17:33:58  thiessen
 * log window stays hidden when closed
 *
@@ -249,8 +252,7 @@ private:
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    Cn3DGLCanvas(wxWindow *parent,
-        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
+    Cn3DGLCanvas(wxWindow *parent, const wxPoint& pos, const wxSize& size, int *attribList);
     ~Cn3DGLCanvas(void);
 
     // public data

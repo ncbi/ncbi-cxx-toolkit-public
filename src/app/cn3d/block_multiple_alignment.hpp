@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/17 18:34:00  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.14  2001/05/11 02:10:04  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -124,7 +127,7 @@ public:
     bool AddUnalignedBlocks(void);
 
     // Fills out the BlockMap for mapping alignment column -> block+column, special colors,
-    // and sets up conservation colors (although they're not caluclated until needed).
+    // and sets up conservation colors (although they're not calculated until needed).
     bool UpdateBlockMapAndColors(bool clearRowInfo = true);
 
     // find out if a residue is aligned, by row
@@ -220,7 +223,7 @@ public:
     bool DeleteBlock(int alignmentIndex);
 
     // shifts (horizontally) the residues in and immediately surrounding an
-    // aligned block; retunrs true if any shift occurs.
+    // aligned block; returns true if any shift occurs.
     bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
 
     // delete a row; returns true if successful

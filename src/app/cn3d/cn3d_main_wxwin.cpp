@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/05/17 18:34:25  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.39  2001/05/15 23:48:36  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -482,7 +485,14 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     SetMenuBar(menuBar);
 
     // Make a GLCanvas
-    glCanvas = new Cn3DGLCanvas(this, wxPoint(0, 0), wxSize(400, 400));
+#if defined(__WXMSW__)
+    int *attribList = NULL;
+#elif defined(__WXGTK__)
+    int attribList[20] = { GLX_RGBA, GLX_DOUBLEBUFFER, NULL };
+#else
+#error need to define GL attrib list
+#endif
+    glCanvas = new Cn3DGLCanvas(this, wxPoint(0, 0), wxSize(400, 400), attribList);
     glCanvas->SetCurrent();
 
     GlobalMessenger()->AddStructureWindow(this);
@@ -582,7 +592,7 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
                 &structureVisibilities,
                 glCanvas->structureSet->showHideManager,
                 NULL, -1, "Show/Hide Structures", wxPoint(400, 50), wxSize(200, 300));
-            dialog.Activate();
+            dialog.ShowModal();
     //        delete titles;    // apparently deleted by wxWindows
             break;
         }
@@ -788,11 +798,13 @@ BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
 
-Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, const wxPoint& pos, const wxSize& size) :
-    wxGLCanvas(parent, -1, pos, size, wxSUNKEN_BORDER),
+Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent,
+        const wxPoint& pos, const wxSize& size, int *attribList) :
+    wxGLCanvas(parent, -1, pos, size, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
     structureSet(NULL)
 {
     renderer = new OpenGLRenderer;
+    parent->Show(true);
     SetCurrent();
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/05/17 18:34:25  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.33  2001/05/15 23:48:37  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -70,7 +73,7 @@
 * add primitive highlighting for testing
 *
 * Revision 1.20  2000/08/19 02:59:04  thiessen
-* fix tranparent sphere bug
+* fix transparent sphere bug
 *
 * Revision 1.19  2000/08/18 23:07:08  thiessen
 * minor efficiency tweaks
@@ -1030,7 +1033,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             V.normalize();
 
             /* finally, the worm circumference points (C) and normals (N) are
-               simple trigonomic combinations of H and V */
+               simple trigonometric combinations of H and V */
             for (j = 0; j < sides; j++) {
                 cosj = cos(2 * PI * j / sides);
                 sinj = sin(2 * PI * j / sides);

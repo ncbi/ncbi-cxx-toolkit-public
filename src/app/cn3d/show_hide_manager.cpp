@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/17 18:34:26  thiessen
+* spelling fixes; change dialogs to inherit from wxDialog
+*
 * Revision 1.9  2001/03/09 15:49:05  thiessen
 * major changes to add initial update viewer
 *
@@ -395,7 +398,7 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
             std::map < int, bool > domains;
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
-            // first pass determins which domains have any aligned residues
+            // first pass determines which domains have any aligned residues
             for (r=m->second->residues.begin(); r!=re; r++)
                 if (set->alignmentManager->IsAligned(m->second->sequence, r->first - 1))
                     domains[m->second->residueDomains[r->first - 1]] = true;
