@@ -14,7 +14,12 @@
  *
  * RCS Modification History:
  * $Log$
- * Revision 1.2  2001/07/07 01:39:30  juran
+ * Revision 1.3  2001/11/07 22:45:02  juran
+ * Phil Churchill's 2001-05-07 changes.
+ * Remove debugging.
+ * Use Idle().
+ *
+ * Revision 1.2  ??  juran
  * Minor edits.
  *
  * Revision 1.1  2001/04/03 20:35:27  juran
@@ -51,7 +56,7 @@
  *		inet_ntoa
  *		inet_addr
  */
- 
+
 #include <stdio.h>
 #include <stdlib.h>				// malloc
 #include <string.h>
@@ -62,16 +67,6 @@
 #include <OSUtils.h>
 #include <OpenTransport.h>
 #include <OpenTptInternet.h>	// for TCP/IP
-
-/* when debugging with the OT debugging libraries,
- *	set this variable to 1 before including the OTDebug header
- */
-#ifndef qDebug
-#define qDebug 1
-#endif
-
-#include <OTDebug.h>			// OTAssert macro
-#include <Threads.h>			// declaration for YieldToAnyThread
 
 #include <netdb.h>
 #include <neterrno.h>
@@ -94,7 +89,7 @@ OTNotifyUPP gDNRYieldNotifyUPP = NULL;
  *	Typically this is used to permit other threads to run while a time
  *	consuming process runs, but it can be used to notify of certain failures.
  *
- *	We handle the case where the user has aborted the action with cmd-.
+ *	You have the ability to handle user abort requests via the Idle() function...
  */
 
 static pascal void DNRYieldNotifier( void* contextPtr, OTEventCode code, 
@@ -107,10 +102,7 @@ static pascal void DNRYieldNotifier( void* contextPtr, OTEventCode code,
   
 	switch (code) {
 	  case kOTSyncIdleEvent:
-		status = YieldToAnyThread();
-#if !TARGET_API_MAC_CARBON
-		OTAssert("YieldingNotifier: YieldToAnyThread failed", status == noErr);
-#endif
+		status = Idle();
 		break;
 	  case kOTProviderWillClose:			// if the dnr service is going away
 	  case kOTProviderIsClosed:				// or already gone...
