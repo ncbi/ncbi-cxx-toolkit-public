@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/28 16:57:41  golikov
+* add string version of case an nocase cmp
+*
 * Revision 1.1  2000/12/15 15:36:30  vasilche
 * Added header corelib/ncbistr.hpp for all string utility functions.
 * Optimized string utility functions.
@@ -97,11 +100,16 @@ struct NStr {
     static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                            const string& pattern);
     static int CompareCase(const char* s1, const char* s2);
+    
+    static int CompareCase(const string& s1, const string& s2);
+    
     static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                              const char* pattern);
     static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                              const string& pattern);
     static int CompareNocase(const char* s1, const char* s2);
+
+    static int CompareNocase(const string& s1, const string& s2);
 
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern, ECase use_case = eCase);
