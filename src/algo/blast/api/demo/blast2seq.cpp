@@ -202,11 +202,9 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("frameshift", "frameshift",
                             "Frame shift penalty (blastx only)",
                             CArgDescriptions::eInteger, "0");
-#ifdef WRITE_SEQALIGNS
     arg_desc->AddOptionalKey("asnout", "seqalignasn", 
         "File name for writing the seqalign results in ASN.1 form",
         CArgDescriptions::eOutputFile);
-#endif
 
     // Debug parameters
     arg_desc->AddFlag("trace", "Tracing enabled?", true);
@@ -264,7 +262,9 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOption& opt)
     if (args["lookup"].AsInteger()) {
         opt.SetLookupTableType(args["lookup"].AsInteger());
     }
-    opt.SetMatrixName(args["matrix"].AsString().c_str());
+    if (args["matrix"]) {
+        opt.SetMatrixName(args["matrix"].AsString().c_str());
+    }
     if (args["mismatch"].AsInteger()) {
         opt.SetMismatchPenalty(args["mismatch"].AsInteger());
     }
@@ -287,16 +287,15 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOption& opt)
         opt.SetWindowSize(args["window"].AsInteger());
     }
 
-    if (args["ag"]) {
-        // applies to nucleotide searches only
+    // The next 3 apply to nucleotide searches only
+    string program = args["program"].AsString();
+    if (args["ag"].AsBoolean() && program == "blastn") {
         opt.SetExtendWordMethod(EXTEND_WORD_AG);
     }
-    if (args["varword"]) {
-        // applies to nucleotide searches only
+    if (args["varword"].AsBoolean() && program == "blastn") {
         opt.SetExtendWordMethod(EXTEND_WORD_VARIABLE_SIZE);
     }
-    // applies to nucleotide searches only
-    if (args["stride"].AsInteger()) {
+    if (args["stride"].AsInteger() && program == "blastn") {
         opt.SetScanStep(args["stride"].AsInteger());
     }
 
@@ -363,7 +362,7 @@ CBlast2seqApplication::GetOutputFilePtr(void)
     else
         retval = fopen((char *)GetArgs()["out"].AsString().c_str(), "a");
 
-    _ASSERT(retval);
+    ASSERT(retval);
     return retval;
 }
 
@@ -400,6 +399,16 @@ int CBlast2seqApplication::Run(void)
     CRef<CSeq_align_set> seqalign = blaster.Run();
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
+    if (!seqalign) {
+        cerr << "Returned NULL SeqAlign!" << endl;
+        exit(1);
+    }
+
+    if (args["asnout"]) {
+        auto_ptr<CObjectOStream> asnout(
+            CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
+        *asnout << *seqalign;
+    }
 #ifdef WRITE_SEQALIGNS
         // Convert CSeq_align_set to linked list of SeqAlign structs
         DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
@@ -476,6 +485,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/09/05 18:24:28  camacho
+ * Restoring printing of SeqAlign, fix setting of default word extension method
+ *
  * Revision 1.15  2003/08/28 23:17:20  camacho
  * Add processing of command-line options
  *
