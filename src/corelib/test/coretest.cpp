@@ -750,6 +750,62 @@ static void TestThrowTrace(void)
     SetDiagTrace(eDT_Default);
 }
 
+#include <corelib/ncbiobj.hpp>
+
+class CObjectInt : public CObject
+{
+public:
+  CObjectInt() : m_Int(0) {}
+  CObjectInt(int i) : m_Int(i) {}
+  int m_Int;
+};
+
+static void TestHeapStack(void)
+{
+    SetDiagTrace(eDT_Enable);
+    {
+      NcbiCerr << "Test CObjectInt in stack:" << NcbiEndl;
+      CObjectInt stackObj;
+      assert(!stackObj.CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test CObjectInt on heap:" << NcbiEndl;
+      CObjectInt* heapObj = new CObjectInt();
+      assert(heapObj->CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test static CObjectInt:" << NcbiEndl;
+      static CObjectInt staticObj;
+      assert(!staticObj.CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test CRef on CObjectInt on heap:" << NcbiEndl;
+      CRef<CObjectInt> objRef(new CObjectInt());
+      assert(objRef->CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test CObject in stack:" << NcbiEndl;
+      CObject stackObj;
+      assert(!stackObj.CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test CObject on heap:" << NcbiEndl;
+      CObject* heapObj = new CObject();
+      assert(heapObj->CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test static CObject:" << NcbiEndl;
+      static CObject staticObj;
+      assert(!staticObj.CanBeDeleted());
+    }
+    {
+      NcbiCerr << "Test CRef on CObject on heap:" << NcbiEndl;
+      CRef<CObject> objRef(new CObject());
+      assert(objRef->CanBeDeleted());
+    }
+    SetDiagTrace(eDT_Default);
+}
+
 
 /////////////////////////////////
 // Test application
@@ -773,6 +829,7 @@ int CTestApplication::Run(void)
     TestIostream();
     TestRegistry();
     TestThrowTrace();
+    TestHeapStack();
 
     NcbiCout << NcbiEndl << "CORETEST execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
@@ -820,6 +877,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2002/08/28 17:06:18  vasilche
+ * Added code for checking heap detection
+ *
  * Revision 1.85  2002/08/16 15:02:32  ivanov
  * Added test for class CDiagAutoPrefix
  *
