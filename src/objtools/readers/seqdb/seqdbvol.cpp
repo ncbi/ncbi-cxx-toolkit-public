@@ -39,6 +39,7 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -853,14 +854,18 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
     return taxonomy;
 }
 
-CRef<CSeqdesc> CSeqDBVol::x_GetAsnDefline(Uint4 oid, CSeqDBLockHold & locked) const
+CRef<CSeqdesc>
+CSeqDBVol::x_GetAsnDefline(Uint4            oid,
+                           bool             have_oidlist,
+                           Uint4            memb_bit,
+                           CSeqDBLockHold & locked) const
 {
     const char * ASN1_DEFLINE_LABEL = "ASN1_BlastDefLine";
     
     CRef<CSeqdesc> asndef;
     
     vector<char> hdr_data;
-    x_GetHdrBinary(oid, hdr_data, locked);
+    x_GetHdrBinaryMembBit(oid, hdr_data, have_oidlist, memb_bit, locked);
     
     if (! hdr_data.empty()) {
         CRef<CUser_object> uobj(new CUser_object);
@@ -1017,7 +1022,7 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
         CRef<CSeqdesc> desc1(new CSeqdesc);
         desc1->SetTitle().swap(description);
         
-        CRef<CSeqdesc> desc2( x_GetAsnDefline(oid, locked) );
+        CRef<CSeqdesc> desc2( x_GetAsnDefline(oid, have_oidlist, memb_bit, locked) );
         
         CSeq_descr & seq_desc_set = bioseq->SetDescr();
         seq_desc_set.Set().push_back(desc1);
@@ -1322,30 +1327,31 @@ CSeqDBVol::x_GetHdrAsn1(Uint4 oid, CSeqDBLockHold & locked) const
     return phil;
 }
 
-void CSeqDBVol::x_GetHdrBinary(Uint4 oid, vector<char> & hdr_data, CSeqDBLockHold & locked) const
+void
+CSeqDBVol::x_GetHdrBinaryMembBit(Uint4            oid,
+                                 vector<char>   & hdr_data,
+                                 bool             have_oidlist,
+                                 Uint4            membership_bit,
+                                 CSeqDBLockHold & locked) const
 {
+    CRef<CBlast_def_line_set> dls =
+        x_GetHdrMembBit(oid, have_oidlist, membership_bit, locked);
+    
+    // Get the data as a string, then as a stringstream, then build
+    // the actual asn.1 object.  How much 'extra' work is done here?
+    // Perhaps a dedicated ASN.1 memory-stream object would be of some
+    // benefit, particularly in the "called 100000 times" cases.
+    
+    ostringstream asndata;
+    
+    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnBinary, asndata));
+    
+    *outpstr << *dls;
+    
     hdr_data.clear();
+    string str = asndata.str();
     
-    TIndx hdr_start = 0;
-    TIndx hdr_end   = 0;
-    
-    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
-        return;
-    }
-    
-    const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end, locked);
-    
-    // If empty, nothing to do.
-    
-    if (! asn_region) {
-        return;
-    }
-    
-    // Return the binary byte data as a string.
-    
-    const char * asn_region_end = asn_region + (hdr_end - hdr_start);
-    
-    hdr_data.assign(asn_region, asn_region_end);
+    hdr_data.assign(str.data(), str.data() + str.length());
 }
 
 bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const

@@ -374,6 +374,24 @@ private:
                         vector<char>   & hdr_data,
                         CSeqDBLockHold & locked) const;
     
+    /// Get binary sequence header information
+    /// 
+    /// This method reads the sequence header information (as binary
+    /// encoded ASN.1) into a supplied char vector.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @return
+    ///   The binary asn.1 of the Blast-def-line-set.
+    /// @param locked
+    ///   The lock holder object for this thread
+    void
+    x_GetHdrBinaryMembBit(Uint4            oid,
+                          vector<char>   & hdr_data,
+                          bool             have_oidlist,
+                          Uint4            membership_bit,
+                          CSeqDBLockHold & locked) const;
+    
     /// Get sequence header information
     /// 
     /// This method returns the set of Blast-def-line objects stored
@@ -398,7 +416,10 @@ private:
                     Uint4            membership_bit,
                     CSeqDBLockHold & locked) const;
     
-    CRef<CSeqdesc> x_GetAsnDefline(Uint4 oid, CSeqDBLockHold & locked) const;
+    CRef<CSeqdesc> x_GetAsnDefline(Uint4            oid,
+                                   bool             have_oidlist,
+                                   Uint4            membership_bit,
+                                   CSeqDBLockHold & locked) const;
     
     char   x_GetSeqType() const;
     
