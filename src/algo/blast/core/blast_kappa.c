@@ -154,11 +154,11 @@ SWResultsNew(Uint1* sequence,
  */ 
 
 struct Kappa_MatchRecord {
-  double  eValue;          /* best evalue of all alignments the record */
-  Int4  score;           /* best score of all alignments the record */  
-  Uint1*     sequence;        /* the subject sequence */
-  Int4         subject_index;   /* the index number of the subject sequence */
-  SWResults   *alignments;      /* a list of query-subject alignments */
+  double  eValue;          /**< best evalue of all alignments the record */
+  Int4  score;           /**< best score of all alignments the record */  
+  Uint1*     sequence;        /**< the subject sequence */
+  Int4         subject_index;   /**< the index number of the subject sequence */
+  SWResults   *alignments;      /**< a list of query-subject alignments */
 };
 typedef struct Kappa_MatchRecord Kappa_MatchRecord;
 
@@ -505,19 +505,18 @@ SWheapifyUp(SWheapRecord * heapArray,
  * properly whichever state the SWheap is in.
  */
 struct SWheap {
-  Int4 n;                       /* The current number of elements */
-  Int4 capacity;                /* The maximum number of elements that may be 
-                                   inserted before the SWheap must be resized 
-                                 */
-  Int4 heapThreshold;           /* see above */
-  double ecutoff;          /* matches with evalue below ecutoff may
+  Int4 n;                       /**< The current number of elements */
+  Int4 capacity;                /**< The maximum number of elements that may be 
+                                   inserted before the SWheap must be resized */
+  Int4 heapThreshold;           /**< see above */
+  double ecutoff;          /**< matches with evalue below ecutoff may
                                    always be inserted in the SWheap */
-  double worstEvalue;      /* the worst (biggest) evalue currently in
+  double worstEvalue;      /**< the worst (biggest) evalue currently in
                                    the heap */
 
-  SWheapRecord *array;          /* the SWheapRecord array if the SWheap is
+  SWheapRecord *array;          /**< the SWheapRecord array if the SWheap is
                                    being represented as an unordered array */
-  SWheapRecord *heapArray;      /* the SWheapRecord array if the SWheap is
+  SWheapRecord *heapArray;      /**< the SWheapRecord array if the SWheap is
                                    being represented as an heap-ordered
                                    array. At least one of (array, heapArray)
                                    is NULL */
@@ -1102,26 +1101,33 @@ static double BLspecialSmithWatermanScoreOnly(Uint1 * matchSeq,
    return(returnEvalue);
 }
 
-/*computes where optimal Smith-Waterman local alignment starts given the
-  ending positions
-  matchSeq is the matchSeq sequence
-  matchSeqLength is the length of matchSeq in amino acids
-  query is the sequence corresponding to some matrix profile
-  queryLength is the length of dbSequnece
-  matrix is the position-specific matrix associated with query
-  gapOpen is the cost of opening a gap
-  gapExtend is the cost of extending an existing gap by 1 position
-  matchSeqEnd is the final position in the matchSeq of an optimal
-   local alignment
-  queryEnd is the final position in query of an optimal
-   local alignment
-  matchSeqEnd and queryEnd can be used to run the local alignment in reverse
-   to find optimal starting positions
-  these are passed back in matchSeqStart and queryStart
-  the optimal score is passed in to check when it has
-   been reached going backwards
-  the score is also returned
-  positionSpecific determines whether matrix is position specific or not*/
+/** computes where optimal Smith-Waterman local alignment starts given the
+ *  ending positions.   matchSeqEnd and queryEnd can be used to run the local alignment in reverse
+ *  to find optimal starting positions
+ * these are passed back in matchSeqStart and queryStart
+ * the optimal score is passed in to check when it has
+ *  been reached going backwards the score is also returned
+ * @param matchSeq is the matchSeq sequence [in]
+ * @param matchSeqLength is the length of matchSeq in amino acids [in]
+ * @param query is the sequence corresponding to some matrix profile [in]
+ * @param queryLength is the length of dbSequnece [in]
+ * @param matrix is the position-specific matrix associated with query [in]
+ * @param gapOpen is the cost of opening a gap [in]
+ * @param gapExtend is the cost of extending an existing gap by 1 position [in]
+ * @param matchSeqEnd is the final position in the matchSeq of an optimal
+ *  local alignment [in]
+ * @param queryEnd is the final position in query of an optimal
+ *  local alignment [in]
+ * @param score optimal score is passed in to check when it has
+ *  been reached going backwards [in]
+ * @param matchSeqStart optimal starting point [in]
+ * @param queryStart optimal starting point [in]
+ * @param numForbidden array of regions not to be aligned. [in]
+ * @param numForbidden array of regions not to be aligned. [in]
+ * @param forbiddenRanges regions not to be aligned. [in]
+ * @param positionSpecific determines whether matrix is position specific or not
+ * @return the score found
+*/
 
 static Int4 BLspecialSmithWatermanFindStart(Uint1 * matchSeq, 
    Int4 matchSeqLength, Uint1 *query, Int4 **matrix, 
@@ -1217,9 +1223,12 @@ static Int4 BLspecialSmithWatermanFindStart(Uint1 * matchSeq,
 }
 
 
-/*converts the list of Smith-Waterman alignments to a corresponding list
-  of HSP's. kbp stores parameters for computing the score
-  Code is adapted from procedure output_hits of pseed3.c */
+/** converts the list of Smith-Waterman alignments to a corresponding list
+ * of HSP's. kbp stores parameters for computing the score
+ * Code is adapted from procedure output_hits of pseed3.c
+ * @param SWAligns List of Smith-Waterman alignments [in]
+ * @param hitlist BlastHitList that is filled in [in|out]
+ */
 static Int2 newConvertSWalignsUpdateHitList(SWResults * SWAligns, BlastHitList* hitList)
 {
     BlastHSPList* hspList=NULL;
@@ -1254,8 +1263,11 @@ static Int2 newConvertSWalignsUpdateHitList(SWResults * SWAligns, BlastHitList* 
 }
 
 
-/*allocate a score matrix with numPositions positions and return
-  the matrix*/
+/** allocates  a score matrix with numPositions positions and initializes some 
+ * positions on the side
+ * @param numPositions length of matrix (or query) [in]
+ * @return matrix (Int4**)  
+ */
 static Int4 **allocateScaledMatrix(Int4 numPositions)
 {
   Int4 **returnMatrix; /*allocated matrix to return*/
@@ -1267,8 +1279,11 @@ static Int4 **allocateScaledMatrix(Int4 numPositions)
   return(returnMatrix);
 }
 
-/*allocate a frequency ratio matrix with numPositions positions and return
-  the matrix*/
+/** allocate a frequency ratio matrix with numPositions positions and initialize
+ *  some positions.
+ * @param numPositions the length of matrix or query [in]
+ * @return frequency matrix (double**)
+ */
 static double **allocateStartFreqs(Int4 numPositions)
 {
   double **returnMatrix; /*allocated matrix to return*/
@@ -1695,15 +1710,15 @@ void scalePosMatrix(Int4 **fillPosMatrix, Int4 **nonposMatrix, char *matrixName,
  * data for a matching sequence, e.g. reading the sequence from a DB
  * or translating it from a nucleotide sequence. */
 struct Kappa_MatchingSequence {
-  Int4      length;             /* length of the sequence */
-  Uint1*  sequence;           /* the sequence data */
-  Uint1*  filteredSequence;   /* a copy of the sequence data that
-                                 * has been filtered */
-  Uint1*  filteredSequenceStart;      /* the address of the chunk of
+  Int4      length;             /**< length of the sequence */
+  Uint1*  sequence;           /**< the sequence data */
+  Uint1*  filteredSequence;   /**< a copy of the sequence data that has 
+                                   been filtered */
+  Uint1*  filteredSequenceStart;      /**< the address of the chunk of
                                            memory that has been
                                            allocated to hold
                                            "filterSequence". */
-  BLAST_SequenceBlk* seq_blk;   /* sequence blk for "database" sequence. */
+  BLAST_SequenceBlk* seq_blk;   /**< sequence blk for "database" sequence. */
 };
 typedef struct Kappa_MatchingSequence Kappa_MatchingSequence;
 
@@ -1711,8 +1726,12 @@ typedef struct Kappa_MatchingSequence Kappa_MatchingSequence;
 #define BLASTP_MASK_RESIDUE 21
 #define BLASTP_MASK_INSTRUCTIONS "S 10 1.8 2.1"
 
-/* Initialize a new matching sequence, obtaining the data from an
- * appropriate location */
+/** Initialize a new matching sequence, obtaining the data from an
+ * appropriate location 
+ * @param self the Kappa_MatchingSequence to be filled in [in|out]
+ * @param seqSrc Used to access match sequences [in]
+ * @param subject_id ordinal ID of matching sequence [in]
+ */
 static void
 Kappa_MatchingSequenceInitialize(Kappa_MatchingSequence * self,
                                  const BlastSeqSrc* seqSrc,
@@ -1759,7 +1778,9 @@ Kappa_MatchingSequenceInitialize(Kappa_MatchingSequence * self,
 }
 
 
-/* Release the data associated with a matching sequence */
+/** Release the data associated with a matching sequence
+ * @param self the Kappa_MatchingSequence whose data will be freed [in|out]
+ */
 static void
 Kappa_MatchingSequenceRelease(Kappa_MatchingSequence * self)
 {
@@ -1776,20 +1797,24 @@ Kappa_MatchingSequenceRelease(Kappa_MatchingSequence * self)
  * aligned.
  */
 
-struct Kappa_ForbiddenRanges { Int4 *numForbidden; /* how many
-  forbidden ranges at each db * position */
-  Int4 **ranges;                /* forbidden ranges for each database
-                                 * position */
-  Int4   queryLength;
+struct Kappa_ForbiddenRanges { 
+  Int4 *numForbidden;           /**< how many forbidden ranges at each db  
+                                  position */
+  Int4 **ranges;                /**< forbidden ranges for each database
+                                  position */
+  Int4   queryLength;           /**< length of query. */
 };
 typedef struct Kappa_ForbiddenRanges Kappa_ForbiddenRanges;
 
 
-/* Initialize a new, empty Kappa_ForbiddenRanges */
+/** Initialize a new, empty Kappa_ForbiddenRanges
+ * @param self object to be initialized [in|out]
+ * @param queryLength length of the query [in]
+ */
 static void
 Kappa_ForbiddenRangesInitialize(
-  Kappa_ForbiddenRanges * self, /* object to be initialized */
-  Int4 queryLength              /* the length of the query */
+  Kappa_ForbiddenRanges * self, 
+  Int4 queryLength              
 ) {
   Int4 f;
   self->queryLength  = queryLength;
@@ -1805,7 +1830,9 @@ Kappa_ForbiddenRangesInitialize(
 }
 
 
-/* Reset self to be empty */
+/** Reset self to be empty 
+ * @param self the object to be reset [in|out]
+ */
 static void
 Kappa_ForbiddenRangesClear(Kappa_ForbiddenRanges * self)
 {
@@ -1816,7 +1843,13 @@ Kappa_ForbiddenRangesClear(Kappa_ForbiddenRanges * self)
 }
 
 
-/* Add some ranges to self */
+/** Add some ranges to self 
+ * @param self object to be be "pushed" [in|out]
+ * @param queryStart start of the alignment in the query sequence [in]
+ * @param queryAlignmentExtent length of the alignment in the query sequence [in]
+ * @param matchStart start of the alignment in the subject sequence [in]
+ * @param matchAlignmentExtent length of the alignment in the subject sequence  [in]
+ */
 static void
 Kappa_ForbiddenRangesPush(
   Kappa_ForbiddenRanges * self,
@@ -1840,8 +1873,10 @@ Kappa_ForbiddenRangesPush(
 }
 
 
-/* Release the storage associated with the fields of self, but do not 
- * delete self */
+/** Release the storage associated with the fields of self, but do not 
+ * delete self 
+ * @param self the object whose storage will be released [in|out]
+ */
 static void
 Kappa_ForbiddenRangesRelease(Kappa_ForbiddenRanges * self)
 {
@@ -1858,7 +1893,32 @@ Kappa_ForbiddenRangesRelease(Kappa_ForbiddenRanges * self)
  * attempts to force the endpoints of the alignment to match the
  * optimal endpoints determined by the Smith-Waterman algorithm.
  * ALIGN is used, so that if the data structures for storing BLAST
- * alignments are changed, the code will not break */
+ * alignments are changed, the code will not break 
+ *
+ * @param query the query sequence [in]
+ * @param queryLength length of the query sequence [in]
+ * @param queryStart start of the alignment in the query sequence [in]
+ * @param queryEnd end of the alignment in the query sequence,
+ *                          as computed by the Smith-Waterman algorithm [in]
+ * @param match the subject (database) sequence [in]
+ * @param matchLength length of the subject sequence [in]
+ * @param matchStart start of the alignment in the subject sequence [in]
+ * @param matchEnd end of the alignment in the query sequence,
+                           as computed by the Smith-Waterman algorithm [in]
+ * @param gap_align parameters for a gapped alignment [in]
+ * @param scoringParams Settings for gapped alignment.[in]
+ * @param score score computed by the Smith-Waterman algorithm [in]
+ * @param localScalingFactor the factor by which the
+ *                 scoring system has been scaled in order to obtain
+ *                 greater precision [in]
+ * @param * queryAlignmentExtent length of the alignment in the query sequence,
+ *                          as computed by the x-drop algorithm [out]
+ * @param * matchAlignmentExtent length of the alignment in the subject sequence,
+ *                          as computed by the x-drop algorithm  [out]
+ * @param ** reverseAlignScript alignment information (script) returned by 
+                            a x-drop alignment algorithm [out]
+ * @param * newScore alignment score computed by the x-drop algorithm [out]
+ */
 static void
 Kappa_SWFindFinalEndsUsingXdrop(
   Uint1* query,       /* the query sequence */
@@ -1920,33 +1980,33 @@ Kappa_SWFindFinalEndsUsingXdrop(
  * RedoAlignmentCore to adjust the parameters of a search, including
  * the original value of these parameters */
 struct Kappa_SearchParameters {
-  Int4          gapOpen;        /* a penalty for the existence of a gap */
-  Int4          gapExtend;      /* a penalty for each residue (or nucleotide) 
+  Int4          gapOpen;        /**< a penalty for the existence of a gap */
+  Int4          gapExtend;      /**< a penalty for each residue (or nucleotide) 
                                  * in the gap */
-  Int4          gapDecline;     /* a penalty for declining to align a pair of 
+  Int4          gapDecline;     /**< a penalty for declining to align a pair of 
                                  * residues */
-  Int4          mRows, nCols;   /* the number of rows an columns in a scoring 
+  Int4          mRows, nCols;   /**< the number of rows an columns in a scoring 
                                  * matrix */
-  double   scaledUngappedLambda;   /* The value of Karlin-Altchul
+  double   scaledUngappedLambda;   /**< The value of Karlin-Altchul
                                          * parameter lambda, rescaled
                                          * to allow scores to have
                                          * greater precision */
   Int4 **startMatrix, **origMatrix;
-  SFreqRatios* sFreqRatios;        /* Stores the frequency ratios along 
+  SFreqRatios* sFreqRatios;        /**< Stores the frequency ratios along 
                                          *  with their bit scale factor */
-  double **startFreqRatios;        /* frequency ratios to start
+  double **startFreqRatios;        /**< frequency ratios to start
                                          * investigating each pair */
-  double  *scoreArray;      /* array of score probabilities */
-  double  *resProb;         /* array of probabilities for each residue in 
+  double  *scoreArray;      /**< array of score probabilities */
+  double  *resProb;         /**< array of probabilities for each residue in 
                                   * a matching sequence */
-  double  *queryProb;       /* array of probabilities for each residue in 
+  double  *queryProb;       /**< array of probabilities for each residue in 
                                   * the query */
   Boolean       adjustParameters;
 
-  Blast_ScoreFreq* return_sfp;        /* score frequency pointers to
+  Blast_ScoreFreq* return_sfp;        /**< score frequency pointers to
                                          * compute lambda */
   Blast_KarlinBlk *kbp_gap_orig, **orig_kbp_gap_array; /* FIXME, AS only had one * on orig_kbp_gap_array, check with him about this. */
-  double scale_factor;      /* The original scale factor (to be restored). */
+  double scale_factor;      /**< The original scale factor (to be restored). */
 };
 typedef struct Kappa_SearchParameters Kappa_SearchParameters;
 
