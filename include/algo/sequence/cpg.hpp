@@ -57,8 +57,8 @@ public:
     typedef list<SCpGIsland> TIsles;
 
     CCpGIslands(const char* seq, TSeqPos seqLength, int window = 200,
-                int minLen = 200, double GC = 0.5, double CpG = 0.6);
-    void Calc(int windowSize, int minLen, double GC, double CpG);
+                int minLen = 200, unsigned int GC = 50, unsigned int CpG = 60);
+    void Calc(int windowSize, int minLen, unsigned int GC, unsigned int CpG);
     void MergeIslesWithin(unsigned int range);
 
     const TIsles& GetIsles(void) const;
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.7  2004/11/01 16:21:03  kskatz
+* Changed CpGIslands constructor arguments "GC" and "CpG" from double to unsigned int
+*
 * Revision 1.6  2003/12/12 20:19:20  ivanov
 * Rollback to 1.4
 *

@@ -38,10 +38,12 @@ BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
 // PRE : const char* of iupac sequence (null-terminated), window size,
-// minimum island length, min GC percentage, min observed/expected CpG ratio
+// minimum island length, min GC percentage (non-decimal: e.g. '60' for 60%),
+// min observed/expected CpG ratio (as non-decimal percentage, 
+// e.g. '60' for 60%)
 // POST: cpg islands calculated for the given bioseq using the given parameters
 CCpGIslands::CCpGIslands(const char *seq, TSeqPos length,
-                         int window, int minLen, double GC, double CpG) :
+                         int window, int minLen, unsigned int GC, unsigned int CpG) :
     m_Seq(seq), m_SeqLength(length)
 {
     Calc(window, minLen, GC, CpG);
@@ -50,14 +52,16 @@ CCpGIslands::CCpGIslands(const char *seq, TSeqPos length,
 ///////////////////////////////////////////////////////////////////////////////
 // PRE : windowsize, min length, %GC, obs/exp CpG ratio
 // POST: islands recalculated for new params
-void CCpGIslands::Calc(int window, int minLen, double GC, double CpG)
+void CCpGIslands::Calc(int window, int minLen, unsigned int GC, unsigned int CpG)
 {
     m_Isles.clear();//clear old islands
 
     m_WindowSize = window;
     m_MinIsleLen = minLen;
-    m_GC = (int) (GC * 100);
-    m_CpG = (int) (CpG * 100);
+    //m_GC = (int) (GC * 100);
+    //m_CpG = (int) (CpG * 100);
+    m_GC = GC;
+    m_CpG = CpG;
     
     SCpGIsland isle;
     isle.m_Start = 0;
@@ -216,6 +220,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.5  2004/11/01 16:19:50  kskatz
+* Changed CpGIslands constructor arguments "GC" and "CpG" from double to unsigned int
+*
 * Revision 1.4  2004/05/21 21:41:04  gorelenk
 * Added PCH ncbi_pch.hpp
 *
