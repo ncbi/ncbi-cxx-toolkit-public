@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/06 21:35:25  golikov
+* some const changes
+*
 * Revision 1.8  2000/08/31 18:44:38  golikov
 * GetDisplayPage renamed to GetDisplayedPage
 * GetDisplayPage return now current page, not previous shown as before
@@ -78,7 +81,7 @@ class CPager : public CNCBINode
     typedef CHTML_table CParent;
 
 public:
-    CPager(CCgiRequest& request, int pageBlockSize = 10, int defaultPageSize = 10);
+    CPager(const CCgiRequest& request, int pageBlockSize = 10, int defaultPageSize = 10);
 
     static bool IsPagerCommand(const CCgiRequest& request);
 
@@ -99,11 +102,13 @@ public:
     //    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out);
 
     // methods to retrieve page size and current page
-    static int GetPageSize(CCgiRequest& request, int defaultPageSize = 10);
+    static int GetPageSize(const CCgiRequest& request, int defaultPageSize = 10);
     // gets page number previously displayed
-    static int GetDisplayedPage(CCgiRequest& request);
+    static int GetDisplayedPage(const CCgiRequest& request);
     // get current page number
     int GetDisplayPage(void)
+        { return m_DisplayPage; }
+    int GetDisplayPage(void) const
         { return m_DisplayPage; }
 
     // name of hidden value holding selected page size

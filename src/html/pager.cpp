@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/03/06 21:35:26  golikov
+* some const changes
+*
 * Revision 1.23  2000/08/31 18:45:08  golikov
 * GetDisplayPage renamed to GetDisplayedPage
 * GetDisplayPage return now current page, not previous shown as before
@@ -121,7 +124,7 @@ const string CPager::KParam_Page = "page ";
 const string CPager::KParam_PreviousPages = "previous pages";
 const string CPager::KParam_NextPages = "next pages";
 
-CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
+CPager::CPager(const CCgiRequest& request, int pageBlockSize, int defaultPageSize)
     : m_PageSize(GetPageSize(request, defaultPageSize)),
       m_PageBlockSize(max(1, pageBlockSize)),
       m_PageChanged(false)
@@ -215,7 +218,7 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
     return false;
 }
 
-int CPager::GetDisplayedPage(CCgiRequest& request)
+int CPager::GetDisplayedPage(const CCgiRequest& request)
 {
     const TCgiEntries& entries = request.GetEntries();
     TCgiEntriesCI entry = entries.find(KParam_DisplayPage);
@@ -235,7 +238,7 @@ int CPager::GetDisplayedPage(CCgiRequest& request)
     return 0;
 }
 
-int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
+int CPager::GetPageSize(const CCgiRequest& request, int defaultPageSize)
 {
     TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
     TCgiEntriesCI entry;
