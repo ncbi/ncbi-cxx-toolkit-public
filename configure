@@ -3939,7 +3939,7 @@ case "$host_os:$compiler" in
    ;;
 
  *:Compaq)
-   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
+   CPPFLAGS="-D__USE_STD_IOSTREAM -D_XOPEN_SOURCE=500 $CPPFLAGS"
    CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
    DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
    case "$host_os" in
