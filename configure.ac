@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.68 2002/05/02 22:40:07 vakatov Exp $
+#  $Id: configure.ac,v 1.69 2002/05/06 20:39:55 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -461,6 +461,7 @@ if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
     solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
     *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
+    *:Compaq                        )  MT_FLAG=${MT_FLAG:="-pthread"} ;;
     *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
     * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
    esac
@@ -576,6 +577,9 @@ case "$host_os:$compiler" in
  *:Compaq)
    CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
    CXXFLAGS="-tweak -nocompress $CXXFLAGS"
+   # Suppress link warnings; otherwise, we get "weak symbol multiply defined"
+   # all over the place.
+   case "$host_os" in osf*) LDFLAGS="-Wl,-S $LDFLAGS" ;; esac
    ;;
 esac
 
