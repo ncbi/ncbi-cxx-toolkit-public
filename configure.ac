@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.181 2003/04/18 20:08:17 ucko Exp $
+#  $Id: configure.ac,v 1.182 2003/04/24 19:36:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -577,6 +577,7 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:WorkShop* )
+   CFLAGS="+w +w2 $CFLAGS"
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
