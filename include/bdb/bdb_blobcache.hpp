@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/29 15:46:18  kuznets
+ * Fixed warning (Sun WorkShop)
+ *
  * Revision 1.2  2003/09/26 20:54:37  kuznets
  * Documentaion change
  *
