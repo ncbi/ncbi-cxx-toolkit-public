@@ -207,7 +207,7 @@ public:
 
     // Deduces information from a bare accession a la WHICH_db_accession;
     // may report false negatives on properties.
-    static EAccessionInfo s_IdentifyAccession(const string& accession);
+    static EAccessionInfo IdentifyAccession(const string& accession);
 
     // Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2002/08/01 20:32:52  ucko
+ * s_IdentifyAccession -> IdentifyAccession; s_ is only for module-static names.
+ *
  * Revision 1.19  2002/07/30 19:41:33  ucko
  * Add s_IdentifyAccession (along with EAccessionInfo and GetAccType).
  * Move CVS log to end.

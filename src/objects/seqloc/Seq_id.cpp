@@ -242,7 +242,7 @@ static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
 }
 
 
-CSeq_id::EAccessionInfo CSeq_id::s_IdentifyAccession(const string& acc)
+CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 {
     SIZE_TYPE digit_pos = acc.find_first_of("0123456789");
     string pfx = acc.substr(0, digit_pos);
@@ -445,7 +445,7 @@ CSeq_id::CSeq_id( const string& the_id )
     if ( !getline(myin, the_type_in, '|') ) {
         SIZE_TYPE dot = the_id.find('.');
         acc_in = the_id.substr(0, dot);
-        EAccessionInfo info = s_IdentifyAccession(acc_in);
+        EAccessionInfo info = IdentifyAccession(acc_in);
         int ver = 0;
         if (dot != NPOS) {
             ver = NStr::StringToNumeric(the_id.substr(dot + 1));
@@ -800,6 +800,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.25  2002/08/01 20:33:10  ucko
+ * s_IdentifyAccession -> IdentifyAccession; s_ is only for module-static names.
+ *
  * Revision 6.24  2002/07/30 19:42:44  ucko
  * Add s_IdentifyAccession, and use it in the string-based constructor if
  * the input isn't FASTA-format.
