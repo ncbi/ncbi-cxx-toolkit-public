@@ -40,11 +40,7 @@ int main()
     try {
         CODBCContext my_context;
 
-#ifdef NCBI_OS_MSWIN
         CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
-#else
-        CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
-#endif
 
         CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
         rcmd->Send();
@@ -94,6 +90,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/08 21:25:08  soussov
+ * adopting to unix based odbc
+ *
  * Revision 1.1  2002/06/20 20:08:35  ivanov
  * Initial revision -- built on base "dbl_sp_who" sample
  *

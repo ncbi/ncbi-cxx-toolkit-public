@@ -39,16 +39,12 @@ USING_NCBI_SCOPE;
 int main()
 {
     try {
-        CODBCContext my_context;
+        CODBCContext my_context(SQL_OV_ODBC3, false);
 
-#ifdef NCBI_OS_MSWIN
         CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
-#else
-        CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
-#endif
 
         CDB_LangCmd* lcmd =
-            con->LangCmd("select name, crdate from sysdatabases");
+            con->LangCmd("select name, crdate from sysobjects");
         lcmd->Send();
 
         while (lcmd->HasMoreResults()) {
@@ -91,6 +87,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/08 21:25:08  soussov
+ * adopting to unix based odbc
+ *
  * Revision 1.1  2002/06/20 20:08:22  ivanov
  * Initial revision -- built on base "dbl_lang" sample
  *
