@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/03/22 17:40:36  vakatov
+ * + SOCK_AllowSigPipeAPI()
+ *
  * Revision 6.19  2001/03/06 23:54:20  lavr
  * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
  * Added:   SOCK_gethostbyaddr
@@ -41,7 +44,8 @@
  * Typos fixed
  *
  * Revision 6.17  2001/02/28 00:55:38  lavr
- * SOCK_gethostaddr: InitAPI added, SOCK_gethostname used instead of gethostname
+ * SOCK_gethostaddr: InitAPI added, SOCK_gethostname used instead of
+ * gethostname
  *
  * Revision 6.16  2001/01/26 23:50:32  vakatov
  * s_NCBI_Recv() -- added check for ENOTCONN to catch EOF (mostly for Mac)
@@ -67,7 +71,8 @@
  * Added SOCK_gethostaddr
  *
  * Revision 6.10  2000/12/04 17:34:19  beloslyu
- * the order of include files is important, especially on other Unixes! Look the man on inet_ntoa
+ * the order of include files is important, especially on other Unixes!
+ * Look the man on inet_ntoa
  *
  * Revision 6.9  2000/11/22 19:29:16  vakatov
  * SOCK_Create() -- pre-set the sock handle to SOCK_INVALID before connect
@@ -355,6 +360,22 @@ extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data)
  */
 
 
+/* Flag to indicate if the API should mask SIGPIPE (during initialization) */
+#if defined(NCBI_OS_UNIX)
+static int/*bool*/ s_AllowSigPipe = 0/*false*/;
+#endif
+
+
+extern EIO_Status SOCK_AllowSigPipeAPI(void)
+{
+#if defined(NCBI_OS_UNIX)
+    s_AllowSigPipe = 1/*true*/;
+#endif
+    return;
+}
+
+
+/* Flag to indicate if the API has been initialized */
 static int/*bool*/ s_Initialized = 0/*false*/;
 
 
@@ -379,7 +400,9 @@ extern EIO_Status SOCK_InitializeAPI(void)
         }
     }}
 #elif defined(NCBI_OS_UNIX)
-    signal(SIGPIPE, SIG_IGN);
+    if ( !s_AllowSigPipe ) {
+        signal(SIGPIPE, SIG_IGN);
+    }
 #endif
 
     s_Initialized = 1/*true*/;

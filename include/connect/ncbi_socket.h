@@ -40,6 +40,8 @@
  *
  *  SOCK, LSOCK
  *
+ *  SOCK_AllowSigPipeAPI
+ *
  *  SOCK_InitializeAPI
  *  SOCK_ShutdownAPI
  *
@@ -78,6 +80,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/03/22 17:44:14  vakatov
+ * + SOCK_AllowSigPipeAPI()
+ *
  * Revision 6.10  2001/03/06 23:54:10  lavr
  * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
  * Added:   SOCK_gethostbyaddr
@@ -194,6 +199,14 @@ extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data);
 /******************************************************************************
  *  API Initialization and Shutdown/Cleanup
  */
+
+
+/* By default (on UNIX platforms) the SOCK API functions automagically call
+ * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature,
+ * you must call SOCK_AllowSigPipeAPI() before you call any other
+ * function from the SOCK API.
+ */
+extern void SOCK_AllowSigPipeAPI(void);
 
 
 /* Initialize all internal/system data & resources to be used by the SOCK API.
