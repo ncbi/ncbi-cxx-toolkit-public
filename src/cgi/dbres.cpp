@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/07 14:23:38  pubmed
+* minor changes for VC++
+*
 * Revision 1.6  1999/06/29 20:02:29  pubmed
 * many changes due to query interface changes
 *
@@ -179,7 +182,7 @@ bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
     TCgiEntries& entries = const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
 
     pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
-    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; ++itEntr ) {
         if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
             return true;
         } // if
@@ -188,8 +191,8 @@ bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
     // if there is no 'cmd' entry
     // check the same for IMAGE value
     p = entries.equal_range( NcbiEmptyString );
-    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
-        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+    for ( TCgiEntriesI iti = p.first; iti != p.second; ++iti ) {
+        if( AStrEquiv( value, iti->second, PNocase() ) ) {
             return true;
         } // if
     }
@@ -236,7 +239,7 @@ bool CNcbiDatabaseInfo::IsRequested( const CCgiContext& ctx ) const
         const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
     pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
   
-    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; ++itEntr ) {
         if( CheckName( itEntr->second ) == true ) {
             return true;
         } // if
@@ -270,7 +273,7 @@ bool CNcbiDataObjectReport::IsRequested( const CCgiContext& ctx ) const
         const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
     pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
 
-    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; ++itEntr ) {
         if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
             return true;
         } // if

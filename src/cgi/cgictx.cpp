@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/07 14:23:37  pubmed
+* minor changes for VC++
+*
 * Revision 1.9  1999/06/29 20:02:29  pubmed
 * many changes due to query interface changes
 *
@@ -81,6 +84,7 @@ CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
     try {
         m_request.reset( new CCgiRequest(argc, argv, env, in) );
     } catch( exception& e ) {
+        _TRACE( "CCgiContext::CCgiContext: " << e.what() );
         PutMsg( "Bad request" );
         string buf;
         CNcbiIstrstream dummy( buf.c_str() );
