@@ -788,6 +788,8 @@ void CSeqDBIsam::x_LoadPage(Uint4             SampleNum1,
     Uint4 begin_offset = m_KeySampleOffset + SampleNum1       * sizeof(Uint4);
     Uint4 end_offset   = m_KeySampleOffset + (SampleNum2 + 1) * sizeof(Uint4);
     
+    m_Atlas.Lock(locked);
+    
     if (! m_IndexLease.Contains(begin_offset, end_offset)) {
         m_Atlas.GetRegion(m_IndexLease, m_IndexFname, begin_offset, end_offset);
     }
