@@ -3095,9 +3095,14 @@ EOF
 
 
 ### Cleanup
-if test "$compiler" = "WorkShop5" ; then
-  test -d SunWS_cache  &&  rm -r SunWS_cache
-fi
+case "$compiler" in
+ WorkShop5 )
+   test -d SunWS_cache  &&  rm -r SunWS_cache
+   ;;
+ MIPSpro73 )
+   test -d ii_files     &&  rm -r ii_files
+   ;;
+esac
 
 
 #############################################################################
