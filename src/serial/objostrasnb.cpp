@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/10/15 17:50:55  vasilche
+* Fixed interger overflow when binary asn output stream excedes 2GB.
+*
 * Revision 1.79  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.
@@ -329,7 +332,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_limits.hpp>
 
 #include <serial/objostrasnb.hpp>
 #include <serial/objistr.hpp>
@@ -367,7 +370,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = INT_MAX;
+    m_CurrentTagLimit = numeric_limits<size_t>::max();
 #endif
 }
 
@@ -379,7 +382,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = INT_MAX;
+    m_CurrentTagLimit = numeric_limits<size_t>::max();
 #endif
 }
 
@@ -425,7 +428,7 @@ inline
 void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 {
     size_t limit = m_CurrentPosition + 1 + length;
-    if ( limit > m_CurrentTagLimit )
+    if ( limit <= m_CurrentPosition || limit > m_CurrentTagLimit )
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
     else
         m_CurrentTagLimit = limit;
@@ -516,9 +519,11 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
         ThrowError(fFormatError, "WriteBytes only allowed in DATA");
-    if ( m_CurrentPosition + size > m_CurrentTagLimit )
+    size_t new_pos = m_CurrentPosition + size;
+    if ( new_pos < m_CurrentPosition || new_pos > m_CurrentTagLimit )
         ThrowError(fFormatError, "tag DATA overflow");
-    if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
+    m_CurrentPosition = new_pos;
+    if ( new_pos == m_CurrentTagLimit )
         EndTag();
 #endif
     m_Output.PutString(bytes, size);
