@@ -43,7 +43,6 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
-#include <algo/blast/core/blast_setup.h>
 
 static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, BlastGapAlignStruct* gap_align,
@@ -1950,6 +1949,17 @@ static Int4 BLAST_AlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
   return best_score;
 }
 
+static void SavePatternLengthInBlastHSP(BlastInitHSP* init_hsp, 
+                                        BlastHSP* hsp)
+{
+   /* Kludge: reuse the variables in the BlastHSP structure that are 
+      otherwise unused in PHI BLAST, but have a completely different
+      meaning for other program(s). Here we need to save information
+   */
+   hsp->query.end_trim = init_hsp->ungapped_data->length;
+   return;
+}
+
 #define BLAST_SAVE_ITER_MAX 20
 
 /** Saves full nucleotide BLAST HSP information into a BlastHSPList 
@@ -2036,6 +2046,10 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStruct* gap_align,
    new_hsp->query.gapped_start = MIN(init_hsp->q_off, new_hsp->query.end-1);
    new_hsp->subject.gapped_start = 
       MIN(init_hsp->s_off, new_hsp->subject.end-1);
+
+   if (hit_options->phi_align) {
+      SavePatternLengthInBlastHSP(init_hsp, new_hsp);
+   }
 
    /* If we are saving ALL HSP's, simply save and sort later. */
    if (hsp_list->do_not_reallocate == FALSE)
@@ -2838,6 +2852,94 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
     return status;
 }
 
+static Int4 
+GetPatternLengthFromGapAlignStruct(BlastGapAlignStruct* gap_align)
+{
+   /* Kludge: pattern lengths are saved in the output structure member 
+      query_stop. Probably should be changed??? */
+   return gap_align->query_stop;
+}
+
+Int2 PHIGappedAlignmentWithTraceback(Uint1 program, 
+        Uint1* query, Uint1* subject, 
+        BlastGapAlignStruct* gap_align, 
+        const BlastScoringOptions* score_options,
+        Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length)
+{
+    Boolean found_end;
+    Int4 score_right, score_left, private_q_length, private_s_length, tmp;
+    Int4 prev;
+    Int4* tback,* tback1,* p = NULL,* q;
+    Boolean is_ooframe = score_options->is_ooframe;
+    Int2 status = 0;
+    Boolean switch_seq = FALSE;
+    Int4 pat_length;
+    
+    if (gap_align == NULL)
+        return -1;
+    
+    found_end = FALSE;
+    
+    tback = tback1 = (Int4*)
+       malloc((subject_length + query_length)*sizeof(Int4));
+
+    score_left = 0; prev = 3;
+        
+    score_left = 
+       SEMI_G_ALIGN_EX(query, subject, q_start, s_start, tback, 
+           &private_q_length, &private_s_length, FALSE, &tback1, 
+          gap_align, score_options, q_start, FALSE, TRUE);
+    gap_align->query_start = q_start - private_q_length;
+    gap_align->subject_start = s_start - private_s_length;
+    
+    for(p = tback, q = tback1-1; p < q; p++, q--)  {
+       tmp = *p;
+       *p = *q;
+       *q = tmp;
+    }
+        
+    pat_length = GetPatternLengthFromGapAlignStruct(gap_align);
+    memset(tback1, 0, pat_length*sizeof(Int4));
+    tback1 += pat_length;
+
+    score_right = 0;
+
+    q_start += pat_length - 1;
+    s_start += pat_length - 1;
+
+    if ((q_start < query_length) && (s_start < subject_length)) {
+       found_end = TRUE;
+       score_right = 
+          SEMI_G_ALIGN_EX(query+q_start, subject+s_start, 
+             query_length-q_start-1, subject_length-s_start-1, 
+             tback1, &private_q_length, &private_s_length, FALSE, 
+             &tback1, gap_align, score_options, q_start, FALSE, FALSE);
+
+       gap_align->query_stop = q_start + private_q_length + 1;
+       gap_align->subject_stop = s_start + private_s_length + 1; 
+    }
+    
+    if (found_end == FALSE) {
+        gap_align->query_stop = q_start;
+        gap_align->subject_stop = s_start;
+    }
+
+    status = BLAST_TracebackToGapEditBlock(tback, 
+                gap_align->query_stop-gap_align->query_start, 
+                gap_align->subject_stop-gap_align->subject_start, 
+                gap_align->query_start, gap_align->subject_start,
+                &gap_align->edit_block);
+
+    gap_align->edit_block->length1 = query_length;
+    gap_align->edit_block->length2 = subject_length;
+
+    sfree(tback);
+
+    gap_align->score = score_right+score_left;
+    
+    return status;
+}
+
 Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist, 
         BLAST_SequenceBlk* subject, 
         const BlastHitSavingOptions* hit_options, 
@@ -2866,3 +2968,158 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    return 0;
 }
 
+/** Performs gapped extension for PHI BLAST, given two
+ * sequence blocks, scoring and extension options, and an initial HSP 
+ * with information from the previously performed ungapped extension
+ * @param program BLAST program [in]
+ * @param query_blk The query sequence block [in]
+ * @param subject_blk The subject sequence block [in]
+ * @param gap_align The auxiliary structure for gapped alignment [in]
+ * @param score_options Options related to scoring [in]
+ * @param init_hsp The initial HSP information [in]
+ */
+static Int2 PHIGappedAlignment(Uint1 program, 
+   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
+   BlastGapAlignStruct* gap_align,
+   const BlastScoringOptions* score_options, BlastInitHSP* init_hsp)
+{
+   Boolean found_start, found_end;
+   Int4 q_length=0, s_length=0, score_right, score_left;
+   Int4 private_q_start, private_s_start;
+   Uint1* query,* subject;
+   Boolean switch_seq = FALSE;
+    
+   if (gap_align == NULL)
+      return FALSE;
+   
+   q_length = init_hsp->q_off;
+   s_length = init_hsp->s_off;
+   query = query_blk->sequence;
+   subject = subject_blk->sequence;
+
+   found_start = FALSE;
+   found_end = FALSE;
+    
+   /* Looking for "left" score */
+   score_left = 0;
+   if (q_length != 0 && s_length != 0) {
+      found_start = TRUE;
+      score_left = 
+         SEMI_G_ALIGN_EX(query, subject, q_length, s_length, NULL,
+            &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
+            score_options, init_hsp->q_off, FALSE, TRUE);
+        
+      gap_align->query_start = q_length - private_q_start + 1;
+      gap_align->subject_start = s_length - private_s_start + 1;
+      
+   } else {
+      q_length = init_hsp->q_off;
+      s_length = init_hsp->s_off;
+   }
+
+   /* Pattern itself is not included in the gapped alignment */
+   q_length += init_hsp->ungapped_data->length - 1;
+   s_length += init_hsp->ungapped_data->length - 1;
+
+   score_right = 0;
+   if (init_hsp->q_off < query_blk->length && 
+       init_hsp->s_off < subject_blk->length) {
+      found_end = TRUE;
+      score_right = SEMI_G_ALIGN_EX(query+q_length,
+         subject+s_length, query_blk->length-q_length, 
+         subject_blk->length-s_length, NULL, &(gap_align->query_stop), 
+         &(gap_align->subject_stop), TRUE, NULL, gap_align, 
+         score_options, q_length, FALSE, FALSE);
+      gap_align->query_stop += q_length;
+      gap_align->subject_stop += s_length;
+   }
+   
+   if (found_start == FALSE) {	/* Start never found */
+      gap_align->query_start = init_hsp->q_off;
+      gap_align->subject_start = init_hsp->s_off;
+   }
+   
+   if (found_end == FALSE) {
+      gap_align->query_stop = init_hsp->q_off - 1;
+      gap_align->subject_stop = init_hsp->s_off - 1;
+   }
+   
+   gap_align->score = score_right+score_left;
+
+   return 0;
+}
+
+Int2 PHIGetGappedScore (Uint1 program_number, 
+        BLAST_SequenceBlk* query, 
+        BLAST_SequenceBlk* subject, 
+        BlastGapAlignStruct* gap_align,
+        const BlastScoringOptions* score_options,
+        BlastExtensionParameters* ext_params,
+        BlastHitSavingParameters* hit_params,
+        BlastInitHitList* init_hitlist,
+        BlastHSPList** hsp_list_ptr)
+
+{
+   Boolean is_prot;
+   BlastHSPList* hsp_list;
+   BlastInitHSP** init_hsp_array;
+   BlastInitHSP* init_hsp;
+   Int4 index;
+   Int4 q_start, s_start, q_end, s_end;
+   Int2 status;
+   BlastHitSavingOptions* hit_options = hit_params->options;
+
+   if (!query || !subject || !gap_align || !score_options || !ext_params ||
+       !hit_params || !init_hitlist || !hsp_list_ptr)
+      return 1;
+
+   if (init_hitlist->total == 0)
+      return 0;
+
+   is_prot = (program_number != blast_type_blastn);
+
+   if (*hsp_list_ptr == NULL)
+      *hsp_list_ptr = hsp_list = BlastHSPListNew();
+   else 
+      hsp_list = *hsp_list_ptr;
+
+   init_hsp_array = (BlastInitHSP**) 
+      malloc(init_hitlist->total*sizeof(BlastInitHSP*));
+
+   for (index = 0; index < init_hitlist->total; ++index)
+      init_hsp_array[index] = &init_hitlist->init_hsp_array[index];
+
+   for (index=0; index<init_hitlist->total; index++)
+   {
+      init_hsp = init_hsp_array[index];
+
+      if (!init_hsp->ungapped_data) {
+         q_start = q_end = init_hsp->q_off;
+         s_start = s_end = init_hsp->s_off;
+      } else {
+         q_start = init_hsp->ungapped_data->q_start;
+         q_end = q_start + init_hsp->ungapped_data->length - 1;
+         s_start = init_hsp->ungapped_data->s_start;
+         s_end = s_start + init_hsp->ungapped_data->length - 1;
+      }
+
+      status =  PHIGappedAlignment(program_number, query, 
+                   subject, gap_align, score_options, init_hsp);
+
+      if (status) {
+         sfree(init_hsp_array);
+         return status;
+      }
+
+      BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, 
+                    subject->frame);
+
+      /* Free ungapped data here - it's no longer needed */
+      sfree(init_hsp->ungapped_data);
+   }   
+
+   sfree(init_hsp_array);
+
+   *hsp_list_ptr = hsp_list;
+   return status;
+}
