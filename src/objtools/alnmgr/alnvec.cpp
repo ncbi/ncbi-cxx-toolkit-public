@@ -244,8 +244,13 @@ void CAlnVec::CreateConsensus(void)
                     TSeqPos start = m_DS->GetStarts()[j*m_DS->GetDim()+i];
                     TSeqPos stop  = start + m_DS->GetLens()[j];
 
-                    x_GetSeqVector(i).GetSeqData(start, stop, segs[i]);
-
+                    if (IsPositiveStrand(i)) {
+                        x_GetSeqVector(i).GetSeqData(start, stop, segs[i]);
+                    } else {
+                        CSeqVector &  seq_vec = x_GetSeqVector(i);
+                        TSignedSeqPos size = seq_vec.size();
+                        seq_vec.GetSeqData(size - stop, size - start, segs[i]);
+                    }
                     for (int c = 0;  c < segs[i].length();  ++c) {
                         segs[i][c] = FromIupac(segs[i][c]);
                     }
@@ -614,6 +619,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/01/27 22:48:41  todorov
+* Changed CreateConsensus accordingly too
+*
 * Revision 1.19  2003/01/27 22:30:30  todorov
 * Attune to seq_vector interface change
 *
