@@ -21,14 +21,16 @@ SYNOPSIS:
 ARGUMENTS:
    <name>      -- name of the project (will be subst. to the makefile name)
    <type>      -- one of the following:
-                  lib         to build a library
-                  app[/basic] to build a simple application
-                  app/cgi     to build a CGI or FastCGI application
-                  app/dbapi   to build a DBAPI application
-                  app/gui     to build an FLTK application
-                  app/objects to build an application using ASN.1 objects
-                  app/objmgr  to build an application using the object manager
-                  app/alnmgr  to build an application using the alignment mgr.
+     lib             to build a library
+     app[/basic]     to build a simple application
+     app/cgi         to build a CGI or FastCGI application
+     app/dbapi       to build a DBAPI application
+     app/gui         to build an FLTK application
+     app/objects     to build an application using ASN.1 objects
+     app/objmgr      to build an application using the object manager
+     app/alnmgr      to build an application using the alignment manager
+     app/soap/client to build a SOAP client
+     app/soap/server to build a SOAP server
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = $def_builddir)
 
@@ -201,8 +203,8 @@ case "${proj_type}" in
     proj_subdir=`echo ${proj_type} | sed -e 's@^app/@@'`
     proj_subtype=`echo ${proj_subdir} | tr / _`
     proj_type=app
-    if test ! -d $src/app/sample/$proj_subtype; then
-      Usage "Unsupported application type ${proj_subtype}"
+    if test ! -d $src/app/sample/$proj_subdir; then
+      Usage "Unsupported application type ${proj_subdir}"
     fi
     ;;
   app)
