@@ -332,7 +332,6 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
                   }
                   sprintf(buffer, "The combination %d for gap opening cost and %d for gap extension is not supported in PHI-BLAST with matrix %s\n", options->gap_open, options->gap_extend, options->matrix);
                   Blast_MessageWrite(blast_message, 1, 2, 1, buffer);
-                  
                }
                else {
                   sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
@@ -342,6 +341,7 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
          }
       }
    }
+return status;
 }
 
 /** Masks the letters in buffer.
