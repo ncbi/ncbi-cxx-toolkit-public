@@ -79,12 +79,20 @@ public:
     // Create a Dense-seg from a Std-seg
     // Used by AlnMgr to handle nucl2prot alignments
     //
-    // The optional ChooseSeqId callback is supposed to choose the 
-    // prefered seq-id (and SerialAssign it to id1) if both ids correspond
-    // to the same sequence or throw an exeption otherwise.
-    // OM is needed to resolve the ids which is the reason for the callback design.
-    typedef void (* TChooseSeqIdCallback)(CSeq_id& id1, const CSeq_id& id2);
-    CRef<CSeq_align> CreateDensegFromStdseg(TChooseSeqIdCallback ChooseSeqId = 0) const;
+
+    // NOTE: Here we assume that the same rows on different segments
+    // contain the same sequence. Without access to OM we can only check
+    // if the ids are the same via SerialEquals, and we throw an exception
+    // if not equal. Since the same sequence can be represented with a 
+    // different type of seq-id, we provide an optional callback mechanism
+    // to compare id1 and id2, and if both resolve to the same sequence 
+    // and id2 is preferred, to SerialAssign it to id1. Otherwise, again,
+    // an exception should be thrown.
+    struct SSeqIdChooser
+    {
+        virtual void ChooseSeqId(CSeq_id& id1, const CSeq_id& id2) = 0;
+    };
+    CRef<CSeq_align> CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser = 0) const;
 
     // Create a Dense-seg with widths from Dense-seg of nucleotides
     // Used by AlnMgr to handle translated nucl2nucl alignments
@@ -122,6 +130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/09 17:14:17  todorov
+* changed the C-style callback to a functor
+*
 * Revision 1.8  2004/02/23 16:17:53  ucko
 * Add forward declaration of CSeq_id.
 *

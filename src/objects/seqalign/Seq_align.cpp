@@ -229,7 +229,7 @@ void CSeq_align::SwapRows(TDim row1, TDim row2)
 /// PRE : the Seq-align has StdSeg segs
 /// POST: Seq_align of type Dense-seg is created with m_Widths if necessary
 CRef<CSeq_align> 
-CSeq_align::CreateDensegFromStdseg(TChooseSeqIdCallback ChooseSeqId) const
+CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser = 0) const
 {
     if ( !GetSegs().IsStd() ) {
         NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
@@ -354,17 +354,17 @@ CSeq_align::CreateDensegFromStdseg(TChooseSeqIdCallback ChooseSeqId) const
                 ds.SetIds().push_back(id);
             } else {
                 CSeq_id& id = *ds.SetIds()[row];
-                if (ChooseSeqId) {
-                    ChooseSeqId(id, *seq_id);
-                } else {
-                    if (!SerialEquals(id, *seq_id)) {
+                if (!SerialEquals(id, *seq_id)) {
+                    if (SeqIdChooser) {
+                        SeqIdChooser->ChooseSeqId(id, *seq_id);
+                    } else {
                         string errstr =
                             string("CreateDensegFromStdseg(): Seq-ids: ") +
                             id.AsFastaString() + " and " +
                             seq_id->AsFastaString() + " are not identical!" +
                             " Without the OM it cannot be determined if they belong to"
                             " the same sequence."
-                            " Use TChooseSeqIdCallback to resolve seq-ids.";
+                            " Define and pass ChooseSeqId to resolve seq-ids.";
                         NCBI_THROW(CSeqalignException, eInvalidInputAlignment, errstr);
                     }
                 }
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/09 17:14:33  todorov
+* changed the C-style callback to a functor
+*
 * Revision 1.9  2004/02/23 15:31:24  todorov
 * +TChooseSeqIdCallback to abstract resolving seq-ids in CreateDensegFromStdseg()
 *
