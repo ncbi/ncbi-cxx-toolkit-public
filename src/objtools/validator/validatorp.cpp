@@ -38,6 +38,7 @@
 #include "utilities.hpp"
 
 #include <serial/iterator.hpp>
+#include <serial/enumvalues.hpp>
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Person_id.hpp>
@@ -207,6 +208,16 @@ void CValidError_imp::PostErr
     const CSeq_graph* graph = dynamic_cast < const CSeq_graph* > (&obj);
     if (graph != 0) {
         PostErr (sv, et, msg, *graph);
+        return;
+    }
+    const CSeq_align* align = dynamic_cast < const CSeq_align* > (&obj);
+    if (align != 0) {
+        PostErr (sv, et, msg, *align);
+        return;
+    }
+    const CSeq_entry* entry = dynamic_cast < const CSeq_entry* > (&obj);
+    if (entry != 0) {
+        PostErr (sv, et, msg, *entry);
         return;
     }
 }
@@ -405,6 +416,34 @@ void CValidError_imp::PostErr
     graph.GetLoc().GetLabel(&msg);
 
     PostErr(sv, et, msg, sq);
+}
+
+
+void CValidError_imp::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& message,
+ TAlign align)
+{
+    // Append Alignment label
+    string msg(message + " ALIGNMENT: ");
+    msg += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
+    msg += ", dim=" + NStr::IntToString(align.GetDim());
+
+    msg+= " SEGS: ";
+    msg += align.GetSegs().SelectionName(align.GetSegs().Which());
+
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, align));
+}
+
+
+void CValidError_imp::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& message,
+ TEntry entry)
+{
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, message, entry));
 }
 
 
@@ -2280,6 +2319,26 @@ void CValidError_base::PostErr
 }
 
 
+void CValidError_base::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& msg,
+ TAlign align)
+{
+    m_Imp.PostErr(sv, et, msg, align);
+}
+
+
+void CValidError_base::PostErr
+(EDiagSev sv,
+ EErrType et,
+ const string& msg,
+ TEntry entry)
+{
+    m_Imp.PostErr(sv, et, msg, entry);
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -2289,6 +2348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/04/29 14:57:09  shomrat
+* Added SeqAlign and SeqEntry error posting methods
+*
 * Revision 1.30  2003/04/15 14:53:57  shomrat
 * Implemented a progress callback mechanism
 *
