@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.180 2003/04/18 16:29:12 ucko Exp $
+#  $Id: configure.ac,v 1.181 2003/04/18 20:08:17 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2445,9 +2445,9 @@ if test "$with_fastcgi" != "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/altlib${bit64_sfx} -lfcgi $NETWORK_LIBS"
    fi
    FASTCGI_OBJS="fcgibuf"
+   LIBS="$FASTCGI_LIBS $orig_LIBS"
    AC_CACHE_CHECK([for FastCGI libraries in $FASTCGI_PATH], ncbi_cv_lib_fcgi,
       [CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
-       LIBS="$FASTCGI_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <fcgiapp.h>]],
           [[ (void) FCGX_IsCGI(); ]])],

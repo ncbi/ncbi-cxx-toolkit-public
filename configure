@@ -11541,13 +11541,13 @@ if test "$with_fastcgi" != "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/altlib${bit64_sfx} -lfcgi $NETWORK_LIBS"
    fi
    FASTCGI_OBJS="fcgibuf"
+   LIBS="$FASTCGI_LIBS $orig_LIBS"
    echo "$as_me:$LINENO: checking for FastCGI libraries in $FASTCGI_PATH" >&5
 echo $ECHO_N "checking for FastCGI libraries in $FASTCGI_PATH... $ECHO_C" >&6
 if test "${ncbi_cv_lib_fcgi+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
-       LIBS="$FASTCGI_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
