@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/04/06 16:11:25  vasilche
+* Removed unneeded calls to Reset().
+*
 * Revision 1.13  2000/04/03 18:47:30  vasilche
 * Added main include file for generated headers.
 * serialimpl.hpp is included in generated sources with GetTypeInfo methods
@@ -687,7 +690,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "}\n"
             "\n";
     }
-    code.AddDestructionCode("Reset();\n");
+
+    // generate destruction code
+    {
+        for ( TMembers::const_reverse_iterator i = m_Members.rbegin();
+              i != m_Members.rend(); ++i ) {
+            code.AddDestructionCode(i->type->GetDestructionCode(i->valueName));
+        }
+    }
 
     // generate type info
     code.Methods() <<
