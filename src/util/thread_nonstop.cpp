@@ -56,11 +56,15 @@ void CThreadNonStop::RequestStop()
 
 void* CThreadNonStop::Main(void)
 {
-    for (bool flag = true; flag; ) {
-
+    while (1) {
+        
         DoJob();
 
-        flag = !m_StopSignal.TryWait(m_RunInterval, 0);
+        bool flag = m_StopSignal.TryWait(m_RunInterval, 0);
+        if (flag) {
+            break; 
+        }       
+    
     } // for flag
 
     return 0;
@@ -73,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/30 16:03:42  kuznets
+ * Code cleanup
+ *
  * Revision 1.2  2005/03/30 13:41:54  kuznets
  * Use semaphore to stop thread
  *
