@@ -32,6 +32,7 @@
 #include <cgi/ncbicgi.hpp>
 #include <html/pager.hpp>
 
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -477,6 +478,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/09/01 21:41:46  ucko
+ * #include <stdio.h> for sprintf() calls introduced in previous commit
+ * (which had no log for some reason, but enabled locale-dependent
+ * numeric display).
+ *
  * Revision 1.42  2004/09/01 17:00:03  golikov
  * *** empty log message ***
  *
