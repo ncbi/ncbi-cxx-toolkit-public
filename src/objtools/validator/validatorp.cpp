@@ -106,11 +106,6 @@ using namespace sequence;
 
 auto_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
 
-bool less_seq_id(const CConstRef<CSeq_id>& id1, const CConstRef<CSeq_id>& id2)
-{
-    return id1->CompareOrdered(*id2) < 0;
-}
-
 
 // =============================================================================
 //                            CValidError_imp Public
@@ -1702,7 +1697,14 @@ bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const
 {
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
         CConstRef<CSeq_id> id(&citer.GetSeq_id());
-        if ( !binary_search(m_InitialSeqIds.begin(), m_InitialSeqIds.end(), id, less_seq_id) ) {
+        bool found = false;
+        ITERATE (vector< CConstRef<CSeq_id> >, it, m_InitialSeqIds ) {
+            if ( id->Match(**it) ) {
+                found = true;
+                break;
+            }
+        }
+        if ( !found ) {
             return true;
         }
     }
@@ -1968,7 +1970,7 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
         const list< CRef< CSeq_id > >& ids = bsi->GetId();
         copy(ids.begin(), ids.end(), back_inserter(m_InitialSeqIds));
     }
-    sort(m_InitialSeqIds.begin(), m_InitialSeqIds.end(), less_seq_id);
+    sort(m_InitialSeqIds.begin(), m_InitialSeqIds.end(), PPtrLess<CConstRef<CSeq_id> >());
 
     // Map features to their enclosing Seq_annot
     for ( CTypeConstIterator<CSeq_annot> ai(se); ai; ++ai ) {
@@ -2340,6 +2342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/12/15 19:09:34  shomrat
+* seq-id ordering not adequate for binary_search algorithm
+*
 * Revision 1.42  2003/11/14 15:56:47  shomrat
 * report TPA assembly problem
 *
