@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/16 14:42:04  grichenk
+* Fixed THROWS()
+*
 * Revision 1.9  2004/06/16 12:03:49  dicuccio
 * throw -> THROWS()
 *
@@ -109,7 +112,7 @@ void CResolvedTypeSet::Add(const CAmbiguiousTypes& types)
     }
 }
 
-CDataType* CResolvedTypeSet::GetType(void) const THROWS(CDatatoolException)
+CDataType* CResolvedTypeSet::GetType(void) const THROWS((CDatatoolException))
 {
     if ( m_Types.empty() ) {
         string msg = "type not found: ";
