@@ -54,13 +54,26 @@ public:
         eBeginIsOne = 1
     } EOffset;
 
-    CUsrFeatDataLoader(const string& input_file,
-                       const string& temp_file,
-                       bool delete_file,
-                       EOffset offset,
-                       const string& type = string(),
-                       const objects::CSeq_id* given_id = 0);
-    
+    static CUsrFeatDataLoader* RegisterInObjectManager(
+        objects::CObjectManager& om,
+        const string& input_file,
+        const string& temp_file,
+        bool delete_file,
+        EOffset offset,
+        const string& type = string(),
+        const objects::CSeq_id* given_id = 0,
+        objects::CObjectManager::EIsDefault is_default =
+        objects::CObjectManager::eNonDefault,
+        objects::CObjectManager::TPriority priority =
+        objects::CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(
+        const string& input_file,
+        const string& temp_file,
+        bool delete_file,
+        EOffset offset,
+        const string& type = string(),
+        const objects::CSeq_id* given_id = 0);
+
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
     virtual void GetRecords(const objects::CSeq_id_Handle& handle,
@@ -68,6 +81,14 @@ public:
     // Request an annot by CSeq_id_Handle
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id_Handle& idh);
 private:
+    CUsrFeatDataLoader(const string& loader_name,
+                       const string& input_file,
+                       const string& temp_file,
+                       bool delete_file,
+                       EOffset offset,
+                       const string& type,
+                       const objects::CSeq_id* given_id);
+
     enum {
         eUnknown = -1,
         eAccession = 0,
@@ -127,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/21 17:45:45  grichenk
+ * Added RegisterInObjectManager() and GetLoaderNameFromArgs()
+ *
  * Revision 1.2  2003/11/28 13:40:40  dicuccio
  * Fixed to match new API in CDataLoader
  *
