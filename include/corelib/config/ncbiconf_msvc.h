@@ -51,7 +51,7 @@
 #define HAVE_SYS_STAT_H  1
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_VSNPRINTF   1
-#define vsprintf _vsprintf
+#define vsnprintf        _vsnprintf
 #define HAVE_WINDOWS_H   1
 #define HAVE_WSTRING     1
 
