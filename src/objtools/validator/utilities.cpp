@@ -1094,11 +1094,6 @@ list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
     //return CID1Client().AskGetseqidsfromgi(gi);
 }
 
-bool IsResidue(unsigned char res)
-{
-    return (res < 250);
-}
-
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -1109,6 +1104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/06/16 16:17:11  shomrat
+* IsResidue moved to .hpp file as an inline function
+*
 * Revision 1.14  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
