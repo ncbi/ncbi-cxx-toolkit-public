@@ -1,0 +1,10 @@
+*.def0
+*.dtd
+*.files
+*.mod
+*_.cpp
+.cvsignore
+Makefile.*.lib
+Makefile.in
+gmon.out
+gprof.out
