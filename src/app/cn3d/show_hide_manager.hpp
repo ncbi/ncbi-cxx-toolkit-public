@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/11/10 20:32:04  thiessen
+* show/hide optimizations, esp. show domains with highlights
+*
 * Revision 1.10  2002/10/28 21:36:01  thiessen
 * add show domains with highlights
 *
@@ -93,10 +96,6 @@ public:
     // set show/hide status of an entity - must be StructureObject, Molecule, or Residue.
     void Show(const StructureBase *entity, bool isShown);
 
-    // special case for StructureObject - if this object* is on the hide list, and isShown
-    // is true, then un-hide this object and all its children
-    void ShowObject(const StructureObject *object, bool isShown);
-
     void MakeAllVisible(void);
 
     // query whether an entity is visible
@@ -124,6 +123,7 @@ private:
     std::vector < const ShowHideInfo * > structureInfo;
 
     void PrivateShowResidues(const StructureSet *set, bool showAligned);
+    void UnHideEntityAndChildren(const StructureBase *entity);
 
 public:
 };

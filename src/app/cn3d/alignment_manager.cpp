@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2002/11/10 20:32:04  thiessen
+* show/hide optimizations, esp. show domains with highlights
+*
 * Revision 1.79  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -667,16 +670,16 @@ void AlignmentManager::ShowHideCallbackFunction(const std::vector < bool >& item
     const StructureObject *object;
 
     if ((*a)->master->molecule) {
-        // Show() redraws whole StructurObject only if necessary
+        // Show() redraws whole StructureObject only if necessary
         if ((*a)->master->molecule->GetParentOfType(&object))
-            object->parentSet->showHideManager->ShowObject(object, true);
+            object->parentSet->showHideManager->Show(object, true);
         // always redraw aligned molecule, in case alignment colors change
         GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
     }
     for (int i=0; a!=ae; a++, i++) {
         if ((*a)->slave->molecule) {
             if ((*a)->slave->molecule->GetParentOfType(&object))
-                object->parentSet->showHideManager->ShowObject(object, slavesVisible[i]);
+                object->parentSet->showHideManager->Show(object, slavesVisible[i]);
             GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
         }
     }

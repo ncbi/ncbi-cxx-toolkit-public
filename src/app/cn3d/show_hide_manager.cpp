@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/11/10 20:32:04  thiessen
+* show/hide optimizations, esp. show domains with highlights
+*
 * Revision 1.18  2002/10/28 21:36:01  thiessen
 * add show domains with highlights
 *
@@ -239,10 +242,51 @@ void ShowHideManager::Show(const StructureBase *entity, bool isShown)
 
     // show an entity that's currently hidden
     else if (isShown && e != entitiesHidden.end()) {
-        entitiesHidden.erase(e);
+        UnHideEntityAndChildren(entity);
         PostRedrawEntity(object, molecule, residue);
         entity->parentSet->renderer->ShowAllFrames();
     }
+}
+
+void ShowHideManager::UnHideEntityAndChildren(const StructureBase *entity)
+{
+    if (!entity || !IsHidden(entity)) return;
+    const StructureObject *object = dynamic_cast<const StructureObject *>(entity);
+    const Molecule *molecule = dynamic_cast<const Molecule *>(entity);
+    const Residue *residue = dynamic_cast<const Residue *>(entity);
+
+    // if entity is residue, just remove it from the list if present
+    if (residue) {
+        EntitiesHidden::iterator h = entitiesHidden.find(residue);
+        if (h != entitiesHidden.end()) entitiesHidden.erase(h);
+        return;
+    }
+
+    // otherwise, make sure entity and its descendents are visible
+    // if it isn't already visible, then unhide this entity and all of its children
+    EntitiesHidden::iterator h, he = entitiesHidden.end();
+    for (h=entitiesHidden.begin(); h!=he; ) {
+
+        const StructureObject *hObj = dynamic_cast<const StructureObject *>(h->first);
+        if (object && !hObj)
+            h->first->GetParentOfType(&hObj);
+        const Molecule *hMol = dynamic_cast<const Molecule *>(h->first);
+        if (molecule && hObj != h->first && !hMol)  // if not StructureObject or Molecule
+            h->first->GetParentOfType(&hMol);       // must be residue
+
+        if (entity == h->first ||               // unhide the entity itself
+            (object && hObj == object) ||       // unhide children of a StructureObject
+            (molecule && hMol == molecule))     // unhide children of a Molecule
+        {
+            EntitiesHidden::iterator d(h);
+            h++;
+            entitiesHidden.erase(d);
+        } else {
+            h++;
+        }
+    }
+    PostRedrawEntity(object, molecule, residue);
+    entity->parentSet->renderer->ShowAllFrames();
 }
 
 bool ShowHideManager::IsHidden(const StructureBase *entity) const
@@ -386,32 +430,6 @@ bool ShowHideManager::SelectionChangedCallback(
     return anyChange;
 }
 
-void ShowHideManager::ShowObject(const StructureObject *object, bool isShown)
-{
-    // hide via normal mechanism
-    if (!isShown) {
-        Show(object, false);
-    }
-
-    // but if to be shown and isn't already visible, then unhide any children of this object
-    else if (IsHidden(object)) {
-        EntitiesHidden::iterator e, ee = entitiesHidden.end();
-        for (e=entitiesHidden.begin(); e!=ee; ) {
-            const StructureObject *eObj = dynamic_cast<const StructureObject *>(e->first);
-            if (!eObj) e->first->GetParentOfType(&eObj);
-            if (eObj == object) {
-                EntitiesHidden::iterator d(e);
-                e++;
-                entitiesHidden.erase(d);
-            } else {
-                e++;
-            }
-        }
-        PostRedrawEntity(object, NULL, NULL);
-        object->parentSet->renderer->ShowAllFrames();
-    }
-}
-
 void ShowHideManager::MakeAllVisible(void)
 {
     while (entitiesHidden.size() > 0) Show(entitiesHidden.begin()->first, true);
@@ -500,13 +518,27 @@ void ShowHideManager::ShowSelectedResidues(const StructureSet *set)
 
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
     for (o=set->objects.begin(); o!=oe; o++) {
+        bool anyResidueInObjectVisible = false;
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
         for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+            bool anyResidueInMoleculeVisible = false;
             for (r=m->second->residues.begin(); r!=re; r++) {
                 if (!GlobalMessenger()->IsHighlighted(m->second, r->first))
                     Show(r->second, false);
+                else
+                    anyResidueInMoleculeVisible = anyResidueInObjectVisible = true;
             }
+            if (!anyResidueInMoleculeVisible) {
+                for (r=m->second->residues.begin(); r!=re; r++)
+                    Show(r->second, true);  // un-flag individual residues
+                Show(m->second, false);     // flag whole molecule as hidden
+            }
+        }
+        if (!anyResidueInObjectVisible) {
+            for (m=(*o)->graph->molecules.begin(); m!=me; m++)
+                Show(m->second, true);      // un-flag individual molecules
+            Show(*o, false);                // flag whole object as hidden
         }
     }
 }
