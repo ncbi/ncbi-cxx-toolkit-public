@@ -60,9 +60,14 @@ CSeqdesc_CI::CSeqdesc_CI(void)
 CSeqdesc_CI::CSeqdesc_CI(const CSeq_descr_CI& desc_it,
                          CSeqdesc::E_Choice choice)
     : m_Outer(desc_it),
-      m_Current(NULL),
-      m_Choice(choice)
+      m_Current(NULL)
 {
+    if (choice != CSeqdesc::e_not_set) {
+        m_Choice.set(choice);
+    }
+    else {
+        m_Choice.set();
+    }
     if ( !m_Outer )
         return;
     m_Inner = desc_it->Get().begin();
@@ -76,9 +81,14 @@ CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
                          CSeqdesc::E_Choice choice,
                          size_t search_depth)
     : m_Outer(handle, search_depth),
-      m_Current(NULL),
-      m_Choice(choice)
+      m_Current(NULL)
 {
+    if (choice != CSeqdesc::e_not_set) {
+        m_Choice.set(choice);
+    }
+    else {
+        m_Choice.set();
+    }
     if ( !m_Outer )
         return;
     m_Inner = m_Outer->Get().begin();
@@ -92,9 +102,50 @@ CSeqdesc_CI::CSeqdesc_CI(const CSeq_entry_Handle& entry,
                          CSeqdesc::E_Choice choice,
                          size_t search_depth)
     : m_Outer(entry, search_depth),
-      m_Current(NULL),
-      m_Choice(choice)
+      m_Current(NULL)
 {
+    if (choice != CSeqdesc::e_not_set) {
+        m_Choice.set(choice);
+    }
+    else {
+        m_Choice.set();
+    }
+    if ( !m_Outer )
+        return;
+    m_Inner = m_Outer->Get().begin();
+    m_InnerEnd = m_Outer->Get().end();
+    // Advance to the first relevant Seqdesc, if any.
+    x_Next();
+}
+
+
+CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
+                         const TDescChoices& choices,
+                         size_t search_depth)
+    : m_Outer(handle, search_depth),
+      m_Current(NULL)
+{
+    ITERATE(TDescChoices, it, choices) {
+        m_Choice.set(*it);
+    }
+    if ( !m_Outer )
+        return;
+    m_Inner = m_Outer->Get().begin();
+    m_InnerEnd = m_Outer->Get().end();
+    // Advance to the first relevant Seqdesc, if any.
+    x_Next();
+}
+
+
+CSeqdesc_CI::CSeqdesc_CI(const CSeq_entry_Handle& entry,
+                         const TDescChoices& choices,
+                         size_t search_depth)
+    : m_Outer(entry, search_depth),
+      m_Current(NULL)
+{
+    ITERATE(TDescChoices, it, choices) {
+        m_Choice.set(*it);
+    }
     if ( !m_Outer )
         return;
     m_Inner = m_Outer->Get().begin();
@@ -137,8 +188,7 @@ void CSeqdesc_CI::x_Next(void)
 {
     while (m_Outer) {
         while (m_Inner != m_InnerEnd) {
-            if (m_Choice == CSeqdesc::e_not_set
-                ||  (*m_Inner)->Which() == m_Choice) {
+            if ( m_Choice[(*m_Inner)->Which()] ) {
                 m_Current = *m_Inner;
                 ++m_Inner;
                 return;
@@ -195,6 +245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/04/28 14:14:39  grichenk
+* Added filtering by several seqdesc types.
+*
 * Revision 1.11  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -36,6 +36,7 @@
 
 #include <objmgr/seq_descr_ci.hpp>
 #include <corelib/ncbistd.hpp>
+#include <bitset>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,6 +45,8 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CSeqdesc_CI
 {
 public:
+    typedef vector<CSeqdesc::E_Choice> TDescChoices;
+
     CSeqdesc_CI(void);
     // Old method, should not be used.
     CSeqdesc_CI(const CSeq_descr_CI& desc_it,
@@ -57,6 +60,13 @@ public:
     // to "search_depth" (0 = unlimited).
     CSeqdesc_CI(const CSeq_entry_Handle& entry,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
+                size_t search_depth = 0);
+    // Search a set of types
+    CSeqdesc_CI(const CBioseq_Handle& handle,
+                const TDescChoices& choices,
+                size_t search_depth = 0);
+    CSeqdesc_CI(const CSeq_entry_Handle& entry,
+                const TDescChoices& choices,
                 size_t search_depth = 0);
 
     CSeqdesc_CI(const CSeqdesc_CI& iter);
@@ -75,6 +85,7 @@ public:
 private:
     CSeqdesc_CI operator++ (int); // prohibit postfix
     typedef list< CRef<CSeqdesc> >::const_iterator TRawIterator;
+    typedef bitset<CSeqdesc::e_MaxChoice> TDescTypeMask;
 
     void x_Next(void);
 
@@ -82,7 +93,7 @@ private:
     TRawIterator        m_Inner;
     TRawIterator        m_InnerEnd;
     CConstRef<CSeqdesc> m_Current;
-    CSeqdesc::E_Choice  m_Choice;
+    TDescTypeMask       m_Choice;
 };
 
 
@@ -93,6 +104,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/04/28 14:14:39  grichenk
+* Added filtering by several seqdesc types.
+*
 * Revision 1.9  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
