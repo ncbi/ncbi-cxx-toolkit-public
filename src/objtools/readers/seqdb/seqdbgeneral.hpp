@@ -184,9 +184,10 @@ string SeqDB_GetBaseName(string s);
 // Find the full name, minus extension, of a ".?al" or ".?in" file,
 // and return it.  If not found, return null.
 
-string SeqDB_FindBlastDBPath(const string & file_name, char dbtype, string * sp);
-
-
+string SeqDB_FindBlastDBPath(const string & file_name,
+                             char           dbtype,
+                             string       * sp,
+                             bool           exact_name);
 
 END_NCBI_SCOPE
 

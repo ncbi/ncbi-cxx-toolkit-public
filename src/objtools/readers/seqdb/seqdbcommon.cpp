@@ -114,7 +114,8 @@ static bool s_SeqDB_DBExists(const string & dbname, char dbtype)
 
 static string s_SeqDB_TryPaths(const string & blast_paths,
                                const string & dbname,
-                               char           dbtype)
+                               char           dbtype,
+                               bool           exact_name)
 {
     vector<string> roads;
     NStr::Tokenize(blast_paths, ":", roads, NStr::eMergeDelims);
@@ -124,16 +125,26 @@ static string s_SeqDB_TryPaths(const string & blast_paths,
     for(Uint4 i = 0; i < roads.size(); i++) {
         string attempt = SeqDB_CombinePath(roads[i], dbname);
         
-        if (s_SeqDB_DBExists(attempt, dbtype)) {
-            result = attempt;
-            break;
+        if (exact_name) {
+            if (CFile(attempt).Exists()) {
+                result = attempt;
+                break;
+            }
+        } else {
+            if (s_SeqDB_DBExists(attempt, dbtype)) {
+                result = attempt;
+                break;
+            }
         }
     }
     
     return result;
 }
 
-string SeqDB_FindBlastDBPath(const string & dbname, char dbtype, string * sp)
+string SeqDB_FindBlastDBPath(const string & dbname,
+                             char           dbtype,
+                             string       * sp,
+                             bool           exact_name)
 {
     // Local directory first;
     
@@ -161,7 +172,7 @@ string SeqDB_FindBlastDBPath(const string & dbname, char dbtype, string * sp)
         *sp = pathology;
     }
     
-    return s_SeqDB_TryPaths(pathology, dbname, dbtype);
+    return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact_name);
 }
 
 END_NCBI_SCOPE
