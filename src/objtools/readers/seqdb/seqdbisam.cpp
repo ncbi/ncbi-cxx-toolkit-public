@@ -1185,7 +1185,7 @@ s_SeqDB_EndOfFastaID(const string & str, size_t pos)
 ///
 /// @param line
 ///   The string to interpret.
-/// @seqids
+/// @param seqids
 ///   The returned set of Seq-id objects.
 /// @return
 ///   true if any Seq-id objects were found.

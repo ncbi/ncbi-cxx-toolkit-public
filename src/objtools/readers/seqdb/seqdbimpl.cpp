@@ -551,7 +551,7 @@ bool CSeqDBImpl::OidToGi(Uint4 oid, Uint4 & gi) const
                "OID not in valid range.");
 }
 
-void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
+void CSeqDBImpl::AccessionToOids(const string & acc, vector<TOID> & oids) const
 {
     CSeqDBLockHold locked(m_Atlas);
     
@@ -584,7 +584,7 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
     }
 }
 
-void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<Uint4> & oids) const
+void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<TOID> & oids) const
 {
     CSeqDBLockHold locked(m_Atlas);
     
