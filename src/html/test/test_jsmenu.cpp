@@ -135,25 +135,29 @@ static void Test_Html(void)
 
     // Add menues to the page
     // !!! We can add Smith's and Kurdin's menu to the BODY only!
-    // !!! We can add Kurdin's side menu to the HEAD only!
     body->AppendChild(menuSM);
     body->AppendChild(menuSH);
     body->AppendChild(menuKP);
+    // !!! We can add Kurdin's Side menu to the HEAD only!
     head->AppendChild(menuKS);
 
     // Add menu calls
-    CHTML_a* anchorSM = new CHTML_a("#","Smith's menu (click me)");
+    CHTML_a* anchorSM  = new CHTML_a("#","Smith's menu (click me)");
     anchorSM->AttachPopupMenu(menuSM, eHTML_EH_Click);
-    CHTML_a* anchorSH = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
+    CHTML_a* anchorSH  = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
     anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
-    CHTML_a* anchorKP = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
+    CHTML_a* anchorKP  = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
     anchorKP->AttachPopupMenu(menuKP);
+    CHTML_a* anchorKPC = new CHTML_a("#","Kurdin's popup menu (click me)");
+    anchorKPC->AttachPopupMenu(menuKP, eHTML_EH_Click);
 
     body->AppendChild(anchorSM);
     body->AppendChild(new CHTML_p(new CHTML_br(2)));
     body->AppendChild(anchorSH);
     body->AppendChild(new CHTML_p(new CHTML_br(2)));
     body->AppendChild(anchorKP);
+    body->AppendChild(new CHTML_p(new CHTML_br(2)));
+    body->AppendChild(anchorKPC);
 
     body->AttachPopupMenu(menuKS);
 
@@ -195,18 +199,22 @@ static void Test_Template(void)
     view_sidemenu->AppendChild(menuKS);
 
     // Add menu calls
-    CHTML_a* anchorSP = new CHTML_a("#","Smith's menu (click me)");
+    CHTML_a* anchorSP  = new CHTML_a("#","Smith's menu (click me)");
     anchorSP->AttachPopupMenu(menuSP, eHTML_EH_Click);
-    CHTML_a* anchorSH = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
+    CHTML_a* anchorSH  = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
     anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
-    CHTML_a* anchorKP = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
+    CHTML_a* anchorKP  = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
     anchorKP->AttachPopupMenu(menuKP);
+    CHTML_a* anchorKPC = new CHTML_a("#","Kurdin's popup menu (click me)");
+    anchorKPC->AttachPopupMenu(menuKP, eHTML_EH_Click);
 
     view_menues->AppendChild(anchorSP);
     view_menues->AppendChild(new CHTML_p(new CHTML_br(2)));
     view_menues->AppendChild(anchorSH);
     view_menues->AppendChild(new CHTML_p(new CHTML_br(2)));
     view_menues->AppendChild(anchorKP);
+    view_menues->AppendChild(new CHTML_p(new CHTML_br(2)));
+    view_menues->AppendChild(anchorKPC);
 
     view_sidemenu->AppendChild(menuKS);
 
@@ -300,6 +308,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2003/12/02 14:29:22  ivanov
+ * Added demo for eKurdin menu with onClick event
+ *
  * Revision 1.7  2003/10/01 15:57:40  ivanov
  * Added support for Sergey Kurdin's side menu
  *
