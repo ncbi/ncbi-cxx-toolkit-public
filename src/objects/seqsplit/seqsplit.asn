@@ -1,4 +1,4 @@
---$Revision: 1.6 $
+--$Revision: 1.7 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -19,6 +19,7 @@ BEGIN
 EXPORTS ID2S-Chunk-Id, ID2S-Seq-annot-Info;
 
 IMPORTS Seq-id                                      FROM NCBI-Seqloc
+        Seq-entry                                   FROM NCBI-Seqset
         Bioseq, Seq-annot, Seq-descr, Seq-literal   FROM NCBI-Sequence
         Seq-align                                   FROM NCBI-Seqalign;
 
@@ -32,7 +33,8 @@ IMPORTS Seq-id                                      FROM NCBI-Seqloc
 
 ID2S-Split-Info ::= SEQUENCE {
         bioseqs-info    SET OF ID2S-Bioseqs-Info OPTIONAL,
-        chunks          SET OF ID2S-Chunk-Info
+        chunks          SET OF ID2S-Chunk-Info,
+        skeleton        Seq-entry OPTIONAL
 }
 
 
