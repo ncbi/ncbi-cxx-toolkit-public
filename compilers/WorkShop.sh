@@ -1,7 +1,7 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:    WorkShop 5.0, 5.1
+#   Compiler:    WorkShop 5.0, 5.1, 5.2
 #   OS:          Solaris 2.6 (or higher)
 #   Processors:  Sparc,  Intel
 #
@@ -11,7 +11,10 @@
 
 ## Path to the compiler
 if test -z "$WS_BIN" ; then
-    WS_BIN=`which CC`
+    WS_BIN="`which CC  2>/dev/null`"
+    if test ! -x "$WS_BIN" ; then
+        WS_BIN="`type CC | sed 's/.* \([^ ]*\)$/\1/'`"
+    fi
     WS_BIN=`dirname $WS_BIN`
 fi
 
@@ -24,7 +27,7 @@ if test ! -x "$CXX" ; then
 fi
 
 
-## 5.0 or 5.1(Forte)?
+## 5.0, 5.1, or 5.2?
 CC_version=`CC -V 2>&1`
 case "$CC_version" in
  "CC: WorkShop Compilers 5"* )
@@ -32,6 +35,9 @@ case "$CC_version" in
     ;;
  "CC: Sun WorkShop 6"* )
     NCBI_COMPILER="WorkShop6"
+    ;;
+ "CC: Sun WorkShop 6 update 1 C\+\+ 5.2"* )
+    NCBI_COMPILER="WorkShop52"
     ;;
  * )
     echo "ERROR:  unknown version of WorkShop C++ compiler:"
