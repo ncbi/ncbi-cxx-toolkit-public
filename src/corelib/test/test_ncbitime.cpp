@@ -254,6 +254,51 @@ static void s_TestFormats(void)
         string t2_str = t2;
         assert(t1_str.compare(t2_str) == 0);
     }
+
+    // Check against well-known dates
+    const char fmtstr[] = "M/D/Y h:m:s Z W";
+    {{
+        CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("02/10/2003 20:40:30 GMT Monday") == 0);
+    }}
+    {{
+        CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("02/10/1998 20:40:30 GMT Tuesday") == 0);
+    }}
+    {{
+        CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("03/13/2003 15:49:30 GMT Thursday") == 0);
+    }}
+    {{
+        CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("03/13/2001 15:49:30 GMT Tuesday") == 0);
+    }}
+    {{
+        CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("12/31/2002 23:59:59 GMT Tuesday") == 0);
+    }}
+    {{
+        CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("01/01/2003 00:00:00 GMT Wednesday") == 0);
+    }}
+    {{
+        CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+        t.SetFormat(fmtstr);
+        string s = t.AsString();
+        assert(s.compare("12/13/2002 12:34:56 GMT Friday") == 0);
+    }}
 }
 
 
@@ -599,6 +644,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2003/02/10 17:46:25  lavr
+ * Added more checks for well-known dates
+ *
  * Revision 6.14  2002/10/17 16:56:03  ivanov
  * Added tests for 'b' and 'B' time format symbols
  *
