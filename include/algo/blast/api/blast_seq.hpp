@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 BEGIN_NCBI_SCOPE
 
 int
-BLAST_SetUpQuery(Uint1 program_number, 
+BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
     TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk);
 
@@ -56,6 +56,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/14 19:08:08  dondosha
+* Use enum type for program argument to BLAST_SetUpQuery
+*
 * Revision 1.2  2003/08/12 19:18:45  dondosha
 * Use TSeqLocVector type in functions
 *
