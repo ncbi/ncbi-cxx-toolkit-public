@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/10/19 13:21:59  vasilche
+* Avoid macros names conflict.
+*
 * Revision 1.35  1999/10/18 20:11:16  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -172,63 +175,64 @@ class CObjectIStream;
 class CObjectOStream;
 class CMemberInfo;
 
-#define NAME2(n1, n2) n1##n2
-#define NAME3(n1, n2, n3) n1##n2##n3
+#define SERIAL_NAME2(n1, n2) n1##n2
+#define SERIAL_NAME3(n1, n2, n3) n1##n2##n3
 
-#define TYPE(Name) NAME2(Name,_TYPE)
-#define REF(Name) NAME2(Name,_REF)
+#define SERIAL_TYPE(Name) SERIAL_NAME2(SERIAL_TYPE_,Name)
+#define SERIAL_REF(Name) SERIAL_NAME2(SERIAL_REF_,Name)
 
-#define CLASS_TYPE(Name) Name
-#define CLASS_REF(Name) Name::GetTypeInfo
+#define SERIAL_TYPE_CLASS(Name) Name
+#define SERIAL_REF_CLASS(Name) Name::GetTypeInfo
 
-#define STD_TYPE(Name) Name
-#define STD_REF(Name) NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
+#define SERIAL_TYPE_STD(Name) Name
+#define SERIAL_REF_STD(Name) NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
 
-#define ENUM_TYPE(Type, Name) Type
-#define ENUM_REF(Type, Name) \
-    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), NAME2(GetEnumInfo_,Name)())
+#define SERIAL_TYPE_ENUM(Type, Name) Type
+#define SERIAL_REF_ENUM(Type, Name) \
+    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), SERIAL_NAME2(GetEnumInfo_,Name)())
 
-#define POINTER_TYPE(Type,Args) TYPE(Type)Args*
-#define POINTER_REF(Type,Args) \
-    NCBI_NS_NCBI::CTypeRef(NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo,REF(Type)Args)
+#define SERIAL_TYPE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
+#define SERIAL_REF_POINTER(Type,Args) \
+    NCBI_NS_NCBI::CTypeRef(NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
 
-#define STL_multiset_TYPE(Type,Args) NCBI_NS_STD::multiset<TYPE(Type)Args>
-#define STL_multiset_REF(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoMultiSet<TYPE(Type)Args>(REF(Type)Args)
+#define SERIAL_TYPE_STL_multiset(Type,Args) \
+    NCBI_NS_STD::multiset<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_multiset(Type,Args) \
+    new NCBI_NS_NCBI::CStlClassInfoMultiSet<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
 
-#define STL_set_TYPE(Type,Args) NCBI_NS_STD::set<TYPE(Type)Args>
-#define STL_set_REF(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args)
+#define SERIAL_TYPE_STL_set(Type,Args) NCBI_NS_STD::set<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_set(Type,Args) \
+    new NCBI_NS_NCBI::CStlClassInfoSet<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
 
-#define STL_multimap_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
-    NCBI_NS_STD::multimap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
-#define STL_multimap_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
-    new NCBI_NS_NCBI::CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
+#define SERIAL_TYPE_STL_multimap(KeyType,KeyArgs,ValueType,ValueArgs) \
+    NCBI_NS_STD::multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>
+#define SERIAL_REF_STL_multimap(KeyType,KeyArgs,ValueType,ValueArgs) \
+    new NCBI_NS_NCBI::CStlClassInfoMultiMap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>(SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs)
 
-#define STL_map_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
-    NCBI_NS_STD::map<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
-#define STL_map_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
-    new NCBI_NS_NCBI::CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
+#define SERIAL_TYPE_STL_map(KeyType,KeyArgs,ValueType,ValueArgs) \
+    NCBI_NS_STD::map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>
+#define SERIAL_REF_STL_map(KeyType,KeyArgs,ValueType,ValueArgs) \
+    new NCBI_NS_NCBI::CStlClassInfoMap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>(SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs)
 
-#define STL_list_TYPE(Type,Args) NCBI_NS_STD::list<TYPE(Type)Args>
-#define STL_list_REF(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoList<TYPE(Type)Args>(REF(Type)Args)
+#define SERIAL_TYPE_STL_list(Type,Args) NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_list(Type,Args) \
+    new NCBI_NS_NCBI::CStlClassInfoList<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
 
-#define STL_vector_TYPE(Type,Args) NCBI_NS_STD::vector<TYPE(Type)Args>
-#define STL_vector_REF(Type,Args) \
-    new NCBI_NS_NCBI::CStlClassInfoVector<TYPE(Type)Args>(REF(Type)Args)
+#define SERIAL_TYPE_STL_vector(Type,Args) NCBI_NS_STD::vector<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_vector(Type,Args) \
+    new NCBI_NS_NCBI::CStlClassInfoVector<SERIAL_TYPE(Type)Args>(SERIAL_REF(Type)Args)
 
-#define STL_CHAR_vector_TYPE(Type) NCBI_NS_STD::vector<Type>
-#define STL_CHAR_vector_REF(Type) \
+#define SERIAL_TYPE_STL_CHAR_vector(Type) NCBI_NS_STD::vector<Type>
+#define SERIAL_REF_STL_CHAR_vector(Type) \
     NCBI_NS_NCBI::CStlClassInfoCharVector<Type>::GetTypeInfo
 
-#define STL_auto_ptr_TYPE(Type,Args) NCBI_NS_STD::auto_ptr<TYPE(Type)Args>
-#define STL_auto_ptr_REF(Type,Args) \
-    NCBI_NS_NCBI::CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo
+#define SERIAL_TYPE_STL_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_auto_ptr(Type,Args) \
+    NCBI_NS_NCBI::CStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
 
-#define STL_CHOICE_auto_ptr_TYPE(Type,Args) NCBI_NS_STD::auto_ptr<TYPE(Type)Args>
-#define STL_CHOICE_auto_ptr_REF(Type,Args) \
-    NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo
+#define SERIAL_TYPE_STL_CHOICE_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_CHOICE_auto_ptr(Type,Args) \
+    NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
 
 template<typename T>
 struct Check
@@ -259,10 +263,10 @@ CMemberInfo* EnumMember(const T* member, const CEnumeratedTypeValues* enumInfo)
 #define CLASS_PTR(Class) static_cast<const Class*>(kObject)
 
 #define M(Name,Type,Args) \
-    NCBI_NS_NCBI::Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
+    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Member(MEMBER_PTR(Name),SERIAL_REF(Type)Args)
 #define STD_M(Name) NCBI_NS_NCBI::Member(MEMBER_PTR(Name))
 #define ENUM_M(Name,Type) \
-    NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name), NAME2(GetEnumInfo_, Type)())
+    NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name), SERIAL_NAME2(GetEnumInfo_, Type)())
     
 #define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
 #define ADD_N_STD_M(Name,Mem) info->AddMember(Name,STD_M(Mem))
@@ -666,8 +670,8 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
 #endif
 
 // type info declaration
-#define ASN_TYPE_INFO_GETTER_NAME(name) NAME2(GetTypeInfo_struct_, name)
-#define ASN_STRUCT_NAME(name) NAME2(struct_, name)
+#define ASN_TYPE_INFO_GETTER_NAME(name) SERIAL_NAME2(GetTypeInfo_struct_, name)
+#define ASN_STRUCT_NAME(name) SERIAL_NAME2(struct_, name)
 
 #define ASN_TYPE_INFO_GETTER_DECL(name) \
 BEGIN_NCBI_SCOPE \
@@ -730,13 +734,13 @@ BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Na
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_STRUCT_INFO2(Name, Class) \
-BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
+BEGIN_TYPE_INFO(SERIAL_NAME2(struct_, Class), SERIAL_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CStructInfo<CClass>, (Name))
 #define BEGIN_STRUCT_INFO(Class) BEGIN_STRUCT_INFO2(#Class, Class)
 #define END_STRUCT_INFO END_TYPE_INFO
 
 #define BEGIN_CHOICE_INFO2(Name, Class) \
-BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
+BEGIN_TYPE_INFO(valnode, SERIAL_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
@@ -786,15 +790,15 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 #define ADD_STL_CLASS_MEMBER(Member) ADD_STL_CLASS_MEMBER2(#Member, Member)
 
 #define ASN_MEMBER(Member, Type) \
-	NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
+	SERIAL_NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
 #define ADD_ASN_MEMBER2(Name, Member, Type) \
 	info->AddMember(Name, ASN_MEMBER(Member, Type))
 #define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
 
 #define OLD_ASN_MEMBER(Member, Name, Type) \
     NCBI_NS_NCBI::OldAsnMemberInfo(MEMBER_PTR(Member), Name, \
-                     &NAME2(Type, New), &NAME2(Type, Free), \
-                     &NAME2(Type, AsnRead), &NAME2(Type, AsnWrite))
+                     &SERIAL_NAME2(Type, New), &SERIAL_NAME2(Type, Free), \
+                     &SERIAL_NAME2(Type, AsnRead), &SERIAL_NAME2(Type, AsnWrite))
 #define ADD_OLD_ASN_MEMBER2(Name, Member, TypeName, Type) \
 	info->AddMember(Name, OLD_ASN_MEMBER(Member, TypeName, Type))
 #define ADD_OLD_ASN_MEMBER(Member, Type) \
@@ -802,16 +806,16 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 
 #define CHOICE_MEMBER(Member, Choices) \
     NCBI_NS_NCBI::ChoiceMemberInfo(MEMBER_PTR(Member), \
-                     NAME2(GetTypeInfo_struct_, Choices))
+                     SERIAL_NAME2(GetTypeInfo_struct_, Choices))
 #define ADD_CHOICE_MEMBER2(Name, Member, Choices) \
     info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
 #define ADD_CHOICE_MEMBER(Member, Choices) \
     ADD_CHOICE_MEMBER2(#Member, Member, Choices)
 
 #define ADD_CHOICE_STD_VARIANT(Name, Member) \
-    info->AddVariant(#Name, GetTypeRef(MEMBER_PTR(data.NAME2(Member, value))))
+    info->AddVariant(#Name, GetTypeRef(MEMBER_PTR(data.SERIAL_NAME2(Member, value))))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \
-    info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
+    info->AddVariant(#Name, SERIAL_NAME3(Get, Type, TypeRef)(reinterpret_cast<const SERIAL_NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
 #define ADD_SUB_CLASS2(Name, SubClass) \
     info->AddSubClass(NCBI_NS_NCBI::CMemberId(Name), NCBI_NS_NCBI::GetTypeRef(CLASS_PTR(SubClass)))
