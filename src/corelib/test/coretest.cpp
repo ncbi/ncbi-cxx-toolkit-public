@@ -456,6 +456,11 @@ static void TestDiag(void)
     PopDiagPostPrefix();
     PopDiagPostPrefix();
     PopDiagPostPrefix();
+    {
+        CDiagAutoPrefix a("AutoPrefix");
+        ERR_POST("Message with auto prefix");
+    }
+    ERR_POST("Message without prefixes");
     ERR_POST_EX(8, 0, "Message without prefix");
     SetDiagPostPrefix(0);
 
@@ -815,6 +820,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2002/08/16 15:02:32  ivanov
+ * Added test for class CDiagAutoPrefix
+ *
  * Revision 1.84  2002/08/01 18:52:27  ivanov
  * Added test for output verbose messages for error codes
  *
