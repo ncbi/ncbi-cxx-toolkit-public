@@ -1,2 +1,2 @@
-LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___
+LIB = mla
+SRC = mla__ mla___

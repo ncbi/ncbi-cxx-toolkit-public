@@ -1,3 +1,3 @@
 #CXXFLAGS = $(ORIG_CXXFLAGS) -DUSE_TEXT_ASN
-LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ taxon1 cache utils ctreecont
+LIB = taxon1
+SRC = taxon1__ taxon1___ taxon1 cache utils ctreecont

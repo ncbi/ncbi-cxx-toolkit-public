@@ -1,3 +1,2 @@
-LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___
-
+LIB = entrez2
+SRC = entrez2__ entrez2___
