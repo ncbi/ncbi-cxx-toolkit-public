@@ -43,28 +43,36 @@ extern "C" {
 #endif
 
 /** Create and initialize a new sequence interval.
+ * @param head existing BlastSeqLoc to add onto, if *head
+ *   is NULL then it will be set to new BlastSeqLoc, may be NULL [in|out]
  * @param from Start of the interval [in]
  * @param to End of the interval [in]
  * @return Pointer to the allocated BlastSeqLoc structure.
  */
 NCBI_XBLAST_EXPORT
-BlastSeqLoc* BlastSeqLocNew(Int4 from, Int4 to);
+BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to);
 
-/** Deallocate a BlastSeqLoc structure */
+/** Deallocate all BlastSeqLoc objects in a chain.
+ * @param loc object to be freed [in]
+ * @return NULL pointer returned.
+ */
 NCBI_XBLAST_EXPORT
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
 
-/** Deallocate memory for a list of BlastMaskLoc structures */
+/** Deallocate memory for a BlastMaskLoc structure
+ * as well as the BlastSeqLoc's pointed to.
+ * @param mask_loc the object to be deleted [in]
+ * @return NULL pointer
+ */
 NCBI_XBLAST_EXPORT
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 
-/** Allocate memory for a BlastMaskLoc.
- * @param index which context (i.e., strand) [in]
- * @param loc_list List of locations on that strand [in]
+/** Allocate memory for a BlastMaskLoc, also allocates array for BlastSeqLoc* of length total.
+ * @param total which context (i.e., strand) [in]
  * @return Pointer to the allocated BlastMaskLoc structure.
 */
 NCBI_XBLAST_EXPORT
-BlastMaskLoc* BlastMaskLocNew(Int4 index, BlastSeqLoc *loc_list);
+BlastMaskLoc* BlastMaskLocNew(Int4 total);
 
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
@@ -127,7 +135,7 @@ BlastSetUp_Filter(EBlastProgramType program_number,
  * @param query_info info on sequence to be filtered [in]
  * @param program_number one of blastn,blastp,blastx,etc. [in]
  * @param filter_string instructions for filtering [in]
- * @param filter_out Resulting locations for filtered region. [out]
+ * @param filter_out resulting locations for filtered region. [out]
  * @param mask_at_hash If TRUE masking is done while making the lookup table
  *                     only. [out] 
  * @param blast_message message that needs to be sent back to user.
@@ -135,7 +143,7 @@ BlastSetUp_Filter(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
-    EBlastProgramType program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
+    EBlastProgramType program_number, const char* filter_string, BlastMaskLoc** filter_out, Boolean* mask_at_hash,
     Blast_Message* *blast_message);
 
 /** Masks the letters in buffer.
@@ -144,7 +152,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
  * @param buffer the sequence to be masked (will be modified). [out]
  * @param length length of the sequence to be masked . [in]
  * @param is_na nucleotide if TRUE [in]
- * @param mask_loc the SeqLoc to use for masking [in] 
+ * @param mask_loc the BlastSeqLoc to use for masking [in] 
  * @param reverse minus strand if TRUE [in]
  * @param offset how far along sequence is 1st residuse in buffer [in]
  *
@@ -152,7 +160,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
 NCBI_XBLAST_EXPORT
 Int2
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na, 
-    ListNode * mask_loc, Boolean reverse, Int4 offset);
+    BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset);
 
 /** Masks the sequence given a BlastMaskLoc
  * @param query_blk sequence to be filtered [in]

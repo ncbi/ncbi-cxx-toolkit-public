@@ -97,7 +97,7 @@ BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
    for (loc = loc_list; loc; loc = loc->next) {
       seqloc->SetPacked_int().AddInterval(
           sequence::GetId(*query.seqloc, query.scope),
-          ((SSeqRange*) loc->ptr)->left, ((SSeqRange*) loc->ptr)->right);
+          loc->ssr->left, loc->ssr->right);
    }
    
    return seqloc;
@@ -105,6 +105,7 @@ BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
 
 #define MASK_LINK_VALUE 5
 
+/* FIXME, is this functions correct, how does it work?? */
 static void
 FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
 {
@@ -113,7 +114,6 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
     Int4 hit_index, hsp_index;
     BlastHSPList* hsp_list;
     BlastHSP* hsp;
-    SSeqRange* seq_range;
     Int4 query_index;
     Int4 query_length;
     BlastHitList* hit_list;
@@ -126,16 +126,12 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
         }
         query_length = sequence::GetLength(*query[query_index].seqloc, 
                                            query[query_index].scope);
-        BlastMaskLoc* mask = 
-            CSeqLoc2BlastMaskLoc(query[query_index].mask, query_index);
-        if (mask) 
-            loc_list = mask->loc_list;
-        else 
-            loc_list = NULL;
+        loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask, query_index);
         last_loc = NULL;
         
         /* Find all HSP intervals in query */
         for (hit_index = 0; hit_index < hit_list->hsplist_count; ++hit_index) {
+            Int4 left, right;
             hsp_list = hit_list->hsplist_array[hit_index];
             /* HSP lists cannot be NULL! */
             ASSERT(hsp_list);
@@ -143,18 +139,17 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
                 hsp = hsp_list->hsp_array[hsp_index];
                 /* HSP cannot be NULL! */
                 ASSERT(hsp);
-                seq_range = (SSeqRange*) calloc(1, sizeof(SSeqRange));
                 if (hsp->query.frame == hsp->subject.frame) {
-                    seq_range->left = hsp->query.offset;
-                    seq_range->right = hsp->query.end - 1;
+                    left = hsp->query.offset;
+                    right = hsp->query.end - 1;
                 } else {
-                    seq_range->left = query_length - hsp->query.end;
-                    seq_range->right = query_length - hsp->query.offset - 1;
+                    left = query_length - hsp->query.end;
+                    right = query_length - hsp->query.offset - 1;
                 }
                 if (!last_loc)
-                    last_loc = ListNodeAddPointer(&loc_list, 0, seq_range);
+                    loc_list = last_loc = BlastSeqLocNew(NULL, left, right);
                 else
-                    last_loc = ListNodeAddPointer(&last_loc, 0, seq_range);
+                    last_loc = BlastSeqLocNew(&last_loc, left, right);
             }
         }
         /* Make the intervals unique */
@@ -164,7 +159,6 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
            respective query */
         query[query_index].mask.Reset(BlastSeqLoc2CSeqloc(query[query_index],
                                                           ordered_loc_list));
-        BlastMaskLocFree(mask);
     }
 }
 
@@ -222,6 +216,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.6  2004/09/13 12:47:06  madden
+ *  Changes for redefinition of BlastSeqLoc and BlastMaskLoc
+ *
  *  Revision 1.5  2004/07/19 14:58:47  dondosha
  *  Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
  *

@@ -311,8 +311,8 @@ CPSIDiagnosticsResponse::DebugDump(CDebugDumpContext ddc,
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-BlastMaskLoc*
-CSeqLoc2BlastMaskLoc(const objects::CSeq_loc* slp, int index)
+BlastSeqLoc*
+CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp, int index)
 {
     if (!slp || slp->IsNull())
         return NULL;
@@ -320,15 +320,14 @@ CSeqLoc2BlastMaskLoc(const objects::CSeq_loc* slp, int index)
     _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
-    BlastMaskLoc* mask = NULL;
 
     if (slp->IsInt()) {
         bsl = 
-            BlastSeqLocNew(slp->GetInt().GetFrom(), slp->GetInt().GetTo());
+            BlastSeqLocNew(NULL, slp->GetInt().GetFrom(), slp->GetInt().GetTo());
     } else if (slp->IsPacked_int()) {
         ITERATE(list< CRef<CSeq_interval> >, itr, 
                 slp->GetPacked_int().Get()) {
-            curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
+            curr = BlastSeqLocNew(NULL, (*itr)->GetFrom(), (*itr)->GetTo());
             if (!bsl) {
                 bsl = tail = curr;
             } else {
@@ -339,10 +338,10 @@ CSeqLoc2BlastMaskLoc(const objects::CSeq_loc* slp, int index)
     } else if (slp->IsMix()) {
         ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
             if ((*itr)->IsInt()) {
-                curr = BlastSeqLocNew((*itr)->GetInt().GetFrom(), 
+                curr = BlastSeqLocNew(NULL, (*itr)->GetInt().GetFrom(), 
                                       (*itr)->GetInt().GetTo());
             } else if ((*itr)->IsPnt()) {
-                curr = BlastSeqLocNew((*itr)->GetPnt().GetPoint(), 
+                curr = BlastSeqLocNew(NULL, (*itr)->GetPnt().GetPoint(), 
                                       (*itr)->GetPnt().GetPoint());
             }
 
@@ -355,11 +354,7 @@ CSeqLoc2BlastMaskLoc(const objects::CSeq_loc* slp, int index)
         }
     }
 
-    mask = (BlastMaskLoc*) calloc(1, sizeof(BlastMaskLoc));
-    mask->index = index;
-    mask->loc_list = (ListNode *) bsl;
-
-    return mask;
+    return bsl;
 }
 
 AutoPtr<Uint1, ArrayDeleter<Uint1> >
@@ -427,6 +422,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2004/09/13 12:47:06  madden
+ * Changes for redefinition of BlastSeqLoc and BlastMaskLoc
+ *
  * Revision 1.48  2004/09/08 14:14:31  camacho
  * Doxygen fixes
  *

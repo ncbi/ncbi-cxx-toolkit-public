@@ -302,7 +302,11 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
 
-    BlastMaskLoc* mask = NULL, *head_mask = NULL, *last_mask = NULL;
+    BlastMaskLoc* mask = NULL;
+    if (translate)
+       mask = BlastMaskLocNew(6*(qinfo->last_context+1));
+    else
+       mask = BlastMaskLocNew(qinfo->last_context+1);
 
     // Unless the strand option is set to single strand, the actual
     // CSeq_locs dictacte which strand to examine during the search
@@ -312,6 +316,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     ITERATE(TSeqLocVector, itr, queries) {
 
         ENa_strand strand;
+        BlastSeqLoc* bsl_tmp=NULL;
 
         if ((is_na || translate) &&
             (strand_opt == eNa_strand_unknown || 
@@ -322,9 +327,9 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             strand = strand_opt;
         }
 
-        mask = CSeqLoc2BlastMaskLoc(itr->mask, index);
+        // mask->seqloc_array[index] = CSeqLoc2BlastSeqLoc(itr->mask, index);
+        bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask, index);
 
-        ++index;
 
         pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf;
 
@@ -367,7 +372,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                    na_length, frame, &buf[offset], gc.get());
             }
             // Translate the lower case mask coordinates;
-            BlastMaskLocDNAToProtein(&mask, *itr->seqloc, itr->scope);
+            BlastMaskLocDNAToProtein(bsl_tmp, mask, index, *itr->seqloc, itr->scope);
 
         } else if (is_na) {
 
@@ -386,6 +391,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 ctx_index + 1 : ctx_index;
             int offset = qinfo->context_offsets[idx];
             memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
+            mask->seqloc_array[index] = bsl_tmp;
 
         } else {
 
@@ -399,19 +405,13 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             }
             int offset = qinfo->context_offsets[ctx_index];
             memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
+            mask->seqloc_array[index] = bsl_tmp;
 
         }
 
+        ++index;
         ctx_index += nframes;
         
-        if (mask) {
-            if ( !last_mask )
-                head_mask = last_mask = mask;
-            else {
-                last_mask->next = mask;
-                last_mask = last_mask->next;
-            }
-        }
     }
 
     if (BlastSeqBlkNew(seqblk) < 0) {
@@ -420,7 +420,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     BlastSeqBlkSetSequence(*seqblk, buf, buflen - 2);
 
-    (*seqblk)->lcase_mask = head_mask;
+    (*seqblk)->lcase_mask = mask;
     (*seqblk)->lcase_mask_allocated = TRUE;
 
     return;
@@ -474,7 +474,8 @@ SetupSubjects(const TSeqLocVector& subjects,
         }
 
         /* Set the lower case mask, if it exists */
-        subj->lcase_mask = CSeqLoc2BlastMaskLoc(itr->mask, index);
+        if (subj->lcase_mask)  /*FIXME?? */
+            subj->lcase_mask->seqloc_array[index] = CSeqLoc2BlastSeqLoc(itr->mask, index);
         ++index;
 
         if (subj_is_na) {
@@ -614,44 +615,32 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
 /** Convert masking locations from nucleotide into protein coordinates.
  *
  */
-void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc, 
-                           CScope* scope)
+void BlastMaskLocDNAToProtein(BlastSeqLoc* dna_seqloc, BlastMaskLoc* prot_maskloc, Int4 start, const objects::CSeq_loc &seqloc, 
+                           objects::CScope* scope)
 {
-   BlastMaskLoc* last_mask = NULL,* head_mask = NULL,* mask_loc; 
    Int4 dna_length;
-   BlastSeqLoc* dna_loc,* prot_loc_head,* prot_loc_last;
-   SSeqRange* dip;
+   BlastSeqLoc** prot_seqloc;
    Int4 context;
-   Int2 frame;
-   Int4 from, to;
 
-   if (!mask_ptr)
+   if (!dna_seqloc)
       return;
 
-   mask_loc = *mask_ptr;
-
-   if (!mask_loc) 
-      return;
+   prot_seqloc = &(prot_maskloc->seqloc_array[NUM_FRAMES*(start)]);
 
    dna_length = sequence::GetLength(seqloc, scope);
    /* Reproduce this mask for all 6 frames, with translated 
       coordinates */
    for (context = 0; context < NUM_FRAMES; ++context) {
-       if (!last_mask) {
-           head_mask = last_mask = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-       } else {
-           last_mask->next = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-           last_mask = last_mask->next;
-       }
-         
-       last_mask->index = NUM_FRAMES * mask_loc->index + context;
-       prot_loc_last = prot_loc_head = NULL;
+       BlastSeqLoc* prot_head=NULL;
+       BlastSeqLoc* seqloc_var;
+       Int2 frame;
        
        frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
        
-       for (dna_loc = mask_loc->loc_list; dna_loc; 
-            dna_loc = dna_loc->next) {
-           dip = (SSeqRange*) dna_loc->ptr;
+       prot_head = NULL;
+       for (seqloc_var = dna_seqloc; seqloc_var; seqloc_var = seqloc_var->next) {
+           Int4 from, to;
+           SSeqRange* dip = seqloc_var->ssr;
            if (frame < 0) {
                from = (dna_length + frame - dip->right)/CODON_LENGTH;
                to = (dna_length + frame - dip->left)/CODON_LENGTH;
@@ -659,20 +648,11 @@ void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc,
                from = (dip->left - frame + 1)/CODON_LENGTH;
                to = (dip->right - frame + 1)/CODON_LENGTH;
            }
-           if (!prot_loc_last) {
-               prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
-           } else { 
-               prot_loc_last->next = BlastSeqLocNew(from, to);
-               prot_loc_last = prot_loc_last->next; 
-           }
+           BlastSeqLocNew(&prot_head, from, to);
        }
-       last_mask->loc_list = prot_loc_head;
+       prot_seqloc[context] = prot_head;
    }
 
-   /* Free the mask with nucleotide coordinates */
-   BlastMaskLocFree(mask_loc);
-   /* Return the new mask with protein coordinates */
-   *mask_ptr = head_mask;
 }
 
 /** Convert masking locations from protein into nucleotide coordinates.
@@ -686,20 +666,23 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
    Int4 dna_length;
    Int2 frame;
    Int4 from, to;
+   Int4 index; /* loop index */
+   Int4 total; /* total number of BlastSeqLoc's in arrays. */
 
    if (!mask_ptr) 
       // Nothing to do - just return
       return;
 
-   for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
+   mask_loc = *mask_ptr;
+   total = mask_loc->total_size;
+   
+   for (index=0; index<total; index++) {
       dna_length = 
-         sequence::GetLength(*slp[mask_loc->index/NUM_FRAMES].seqloc, 
-                             slp[mask_loc->index/NUM_FRAMES].scope);
-      frame = BLAST_ContextToFrame(eBlastTypeBlastx, 
-                                   mask_loc->index % NUM_FRAMES);
+         sequence::GetLength(*slp[index/NUM_FRAMES].seqloc, slp[index/NUM_FRAMES].scope);
+      frame = BLAST_ContextToFrame(eBlastTypeBlastx, index % NUM_FRAMES);
       
-      for (loc = mask_loc->loc_list; loc; loc = loc->next) {
-         dip = (SSeqRange*) loc->ptr;
+      for (loc = mask_loc->seqloc_array[index]; loc; loc = loc->next) {
+         dip = loc->ssr;
          if (frame < 0)	{
             to = dna_length - CODON_LENGTH*dip->left + frame;
             from = dna_length - CODON_LENGTH*dip->right + frame + 1;
@@ -977,6 +960,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/09/13 12:47:06  madden
+* Changes for redefinition of BlastSeqLoc and BlastMaskLoc
+*
 * Revision 1.17  2004/09/08 20:10:35  dondosha
 * Fix for searches against multiple subjects when some query-subject pairs have no hits
 *
