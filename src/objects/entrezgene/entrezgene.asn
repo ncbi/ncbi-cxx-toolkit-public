@@ -1,4 +1,4 @@
---$Revision: 1.20 $ 
+--$Revision: 1.21 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -67,8 +67,9 @@ Gene-track ::= SEQUENCE {
     geneid INTEGER ,     -- required unique document id 
     status INTEGER {
         live (0) ,
-        secondary (1) ,  -- synonym with merged
-        discontinued (2) -- 'deleted', still index and display to public
+        secondary (1) ,   -- synonym with merged
+        discontinued (2), -- 'deleted', still index and display to public
+        newentry (3)      --  for GeneRif submission
     } DEFAULT live ,
     current-id SEQUENCE OF Dbtag OPTIONAL , -- see note 1 below
     create-date Date ,   -- date created in Entrez 
