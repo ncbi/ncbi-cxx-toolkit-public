@@ -158,7 +158,7 @@ public:
 
     double GetRotateSpeed(void) const { return rotateSpeed; }
     
-    void RecreateQuadric(void);
+    void RecreateQuadric(void) const;
 
 private:
 
@@ -231,6 +231,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/12/04 15:58:37  thiessen
+* fix const problem
+*
 * Revision 1.41  2003/12/04 15:49:41  thiessen
 * fix stereo and PNG export problems on Mac
 *

@@ -622,7 +622,7 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     RestoreSavedView(); // load initial view if present
 }
 
-void OpenGLRenderer::RecreateQuadric(void)
+void OpenGLRenderer::RecreateQuadric(void) const
 {
     if (qobj)
         gluDeleteQuadric(qobj);
@@ -1610,6 +1610,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/12/04 15:58:36  thiessen
+* fix const problem
+*
 * Revision 1.73  2003/12/04 15:49:40  thiessen
 * fix stereo and PNG export problems on Mac
 *
