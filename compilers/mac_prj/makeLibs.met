@@ -255,8 +255,6 @@ on SetProjectData()
 	
 	if pCreateCoreLibs then
 		AddSimpleProjectExceptFiles("xncbi", {"libdl"}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
-		AddSimpleProject("xalgoalign", {}, "algo:align")
-		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
 		AddSimpleProject("dbapi", {}, "dbapi")
 		AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
@@ -264,6 +262,7 @@ on SetProjectData()
 		AddSimpleProjectListFiles("xcser", {}, "serial", {"asntypes.cpp", "serialasn.cpp"})
 		AddSimpleProjectExceptFiles("xser", {}, "serial", Â
 			{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"})
+		
 		AddSimpleProject("xutil", {}, "util")
 		AddSimpleProject("regexp", {}, "util:regexp")
 		AddSimpleProject("ximage", {}, "util:image")
@@ -274,8 +273,12 @@ on SetProjectData()
 		AddSimpleProject("xcompress", {}, "util:compress")
 		AddSimpleProjectListFiles("tables", {}, "util:tables", {"raw_scoremat.c"})
 		AddSimpleProject("sequtil", {}, "util:sequtil")
+		
 		AddSimpleProject("bdb", {"bdb"}, "bdb")
 		
+		AddSimpleProject("xalgoalign", {}, "algo:align")
+		AddSimpleProject("xalgoseq", {}, "algo:sequence")
+		-- AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		set xblastfiles to {Â
 			mkFileData(gSourceDir & "algo:blast:api"), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
@@ -404,7 +407,7 @@ on SetProjectData()
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
 		-- AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
 		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
-			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp", "alnmulti_widget_old.cpp"})}))
+			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
 		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
 		
 		
@@ -453,39 +456,41 @@ on SetProjectData()
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
-		-- AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat","xblast", "xnetblast", "xnetblastcli"})
+		-- Basic/Required plugins
+		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
+			{"w_fltable", "w_table", "xflat", "ncbi_xloader_lds", "gbseq"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "w_fltable", "w_table", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
-		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
-		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
+		
+		-- Algorithm plugins
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat", "xblast", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
-		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
 			{mkFileData(gSourceDir & "gui:plugins:algo:external"), Â
 				mkFileDataListFiles(gSourceDir & "gui:plugins:algo:basic", {"output_dlg.cpp"})}), Â
 			{"xalgoseq", "xcgi"}, {"gui_core"}))
+		-- AddPlugin("gui_algo_gnomon", {}, "plugins:algo:gnomon", {"xalgognomon"})
+		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
+		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
+		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		
-		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"w_fltable", "w_table", "xflat", "ncbi_xloader_lds", "gbseq"})
-		
+		-- Document plugins
 		-- until we have sqlite 
 		-- AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
+		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
 			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table"})
-		
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_graphic", "w_fltable"})
-		
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
 			{"w_seq", "w_seq_icon", "w_seq_info"})
-		
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
 			{"w_flek", "w_table", "w_fltable"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
