@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.13 2001/03/23 14:10:22 sherry Exp $
+-- $Id: docsum.asn,v 1.14 2001/03/23 16:17:44 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.14  2001/03/23 16:17:44  sherry
+-- removed unnecessary samplesize from NSE-Pop.. data in NSE-ss-popinfo
+--
 -- Revision 1.13  2001/03/23 14:10:22  sherry
 -- added samplesize to NSE-Pop
 --
@@ -166,7 +169,6 @@ NSE-Pop ::= SEQUENCE {
 	handle VisibleString,
 	batch VisibleString,				-- Submitter (local) batch id
 	batch-id INTEGER,				-- dbSNP batch_id. Use to join population allele data to subsnp data
-	samplesize INTEGER,				-- sample size in # chromosomes for allele frequency estimation
 	method VisibleString,				-- local method id
 	method-ex SEQUENCE OF VisibleString OPTIONAL,	-- description of deviation from/addition to given method
 	citation SEQUENCE OF VisibleString OPTIONAL,
