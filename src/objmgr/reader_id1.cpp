@@ -101,7 +101,14 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
       id1Seqref.Sat() = dbname;
       id1Seqref.SatKey() = number;
       id1Seqref.Flag() = 0;
-      m_Stream << id1Seqref;
+      try {
+        m_Stream << id1Seqref;
+      } catch ( exception e ) {
+        
+        LOG_POST( "TROUBLE: reader_id1:m_stream:: write failed for (" <<
+                  dbname << ":" << number << " - " << gi << ") :: " << e.what() );
+        throw runtime_error("reader_id1 - internal buffer overflow") ;
+      }
       break; // mk - get only the first one
     }
    return m_Stream.rdbuf();
@@ -154,10 +161,10 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
   id1_request.SetGetsefromgi(*params);
   
   STimeout tmout;
-  tmout.sec = 9;
+  tmout.sec = 2;
   tmout.usec = 0;
   m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
-
+  
   m_Server = m_ID1_Server.get();
   {
     CObjectOStreamAsnBinary server_output(*m_Server);
@@ -254,6 +261,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2002/03/25 15:44:47  kimelman
+* proper logging and exception handling
+*
 * Revision 1.6  2002/03/22 21:50:21  kimelman
 * bugfix: avoid history rtequest for nonexistent sequence
 *

@@ -84,7 +84,7 @@ struct CGBDataLoader::SSeqrefs
 CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_threshold)
   : CDataLoader(loader_name)
 {
-  cout << "CGBDataLoader" << endl;
+  LOG_POST( "CGBDataLoader");
   m_Driver=(driver?driver:new CId1Reader);
   m_UseListHead = m_UseListTail = 0;
   
@@ -95,12 +95,12 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
   m_TseCount=0;
   m_TseGC_Threshhold=gc_threshold;
   m_InvokeGC=false;
-  //cout << "CGBDataLoader(" << loader_name <<"::" << gc_threshold << ")" <<endl;
+  //LOG_POST( "CGBDataLoader(" << loader_name <<"::" << gc_threshold << ")" );
 }
 
 CGBDataLoader::~CGBDataLoader(void)
 {
-  cout << "~CGBDataLoader" << endl;
+  LOG_POST( "~CGBDataLoader");
   iterate(TSeqId2Seqrefs,sih_it,m_Bs2Sr)
     {
       if(sih_it->second)
@@ -136,11 +136,11 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
   x_GC();
   iterate (TLocMap, hrange, hrmap.GetMap() )
     {
-      //cout << "GetRecords-0" <<endl;
+      //LOG_POST( "GetRecords-0" );
       TSeq_id_Key  sih       = x_GetSeq_id_Key(hrange->first);
       while(true) if(x_GetRecords(sih,hrange->second,choice)) break;
     }
-  //cout << "GetRecords-end" <<endl;
+  //LOG_POST( "GetRecords-end" );
   return true;
 }
 
@@ -157,7 +157,7 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
     }
   STSEinfo *tse = it->second;
   if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse).Lock();
-  cout << "DropTse(" << tse <<")" <<endl;
+  LOG_POST( "DropTse(" << tse <<")" );
   
   m_Tse2TseInfo.erase(it);
   _VERIFY(tse);
@@ -191,7 +191,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
   CTSE_Info*   best=0;
   bool         conflict=false;
   
-  cout << "ResolveConflict" <<endl;
+  LOG_POST( "ResolveConflict" );
   do m_LookupMutex.Lock();
   while (!x_ResolveHandle(sih,sr));
   iterate(TTSESet, sit, tse_set)
@@ -290,11 +290,11 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
 void
 CGBDataLoader::x_GC(void)
 {
-  // cout << "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC << endl;
+  // LOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
   // dirty read - but that ok for garbage collector
   if(m_TseCount<m_TseGC_Threshhold) return;
   if(!m_InvokeGC) return ;
-  cout << "X_GC " << m_TseCount << endl;
+  LOG_POST( "X_GC " << m_TseCount);
   //GetDataSource()->x_CleanupUnusedEntries();
 
 //#if 0
@@ -320,7 +320,7 @@ CGBDataLoader::x_GC(void)
     }
 //#endif
   m_InvokeGC=false;
-  //cout << "X_GC " << m_TseCount << endl;
+  //LOG_POST( "X_GC " << m_TseCount);
 }
 
 
@@ -356,7 +356,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
   TInt         blob_mask = x_Request2BlobMask(choice);
   SSeqrefs*    sr=0;
   
-  //cout << "x_GetRecords" <<endl;
+  //LOG_POST( "x_GetRecords" );
   m_LookupMutex.Lock();
   if(!x_ResolveHandle(sih,sr))
     return false;// mutex has already been unlocked
@@ -366,19 +366,19 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
       m_LookupMutex.Unlock();
       return true ;
     }
-  //cout << "x_GetRecords-Seqref_iterate" <<endl;
+  //LOG_POST( "x_GetRecords-Seqref_iterate" );
   iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
     {
       // skip TSE which doesn't contain requested type of info
-      //cout << "x_GetRecords-Seqref_iterate_0" <<endl;
+      //LOG_POST( "x_GetRecords-Seqref_iterate_0" );
       if( ((~(*srp)->Flag()) & sr_mask) == 0 ) continue;
-      //cout << "list uploaded TSE" << endl;
+      //LOG_POST( "list uploaded TSE");
+      // char b[100];
       //for(TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.begin(); tsep != m_Sr2TseInfo.end(); ++tsep)
       //  {
-      //     tsep->first.get().print();
+      //     LOG_POST(tsep->first.get().printTSE(b,sizeof(b)));
       //  }
-      //cout << "x_GetRecords-Seqref_iterate_1" << endl;
-      //(*srp)->print(); cout << endl ;
+      // LOG_POST("x_GetRecords-Seqref_iterate_1" << (*srp)->print(b,sizeof(b)) );
       
       // find TSE info for each seqref
       TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
@@ -386,7 +386,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
       if (tsep != m_Sr2TseInfo.end())
         {
           tse = tsep->second;
-          //cout << "x_GetRecords-oldTSE(" << tse << ") mode=" << (tse->m_upload.m_mode) << endl;
+          //LOG_POST( "x_GetRecords-oldTSE(" << tse << ") mode=" << (tse->m_upload.m_mode));
         }
       else
         {
@@ -394,7 +394,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
           tse->key.reset((*srp)->Dup());
           m_Sr2TseInfo[CCmpTSE(tse->key.get())] = tse;
           m_TseCount++;
-          //cout << "x_GetRecords-newTSE(" << tse << ") mode=" << (tse->m_upload.m_mode) << endl;
+          //LOG_POST( "x_GetRecords-newTSE(" << tse << ") mode=" << (tse->m_upload.m_mode));
         }
       
       bool use_global_lock=true;
@@ -410,9 +410,9 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
       
       iterate (CHandleRange::TRanges, lrange , hrange.GetRanges())
         {
-          //cout << "x_GetRecords-range_0" <<endl;
+          //LOG_POST( "x_GetRecords-range_0" );
           // check Data
-          //cout << "x_GetRecords-range_0" <<endl;
+          //LOG_POST( "x_GetRecords-range_0" );
           if(!x_NeedMoreData(&tse->m_upload,
                              *srp,
                              lrange->first.GetFrom(),
@@ -423,7 +423,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
           
           _VERIFY(tse->m_upload.m_mode != CTSEUpload::eDone);
 
-          //cout << "x_GetRecords-range_1" <<endl;
+          //LOG_POST( "x_GetRecords-range_1" );
           // need update
           if(use_global_lock)
             { // switch to local lock mode
@@ -486,7 +486,7 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   m_LookupMutex.Unlock();
   if(!local_lock) m_Pool.GetMutex(sr).Lock();
 
-  cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  LOG_POST( "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   
   bool calibrating = m_Timer.NeedCalibration();
   if(calibrating) m_Timer.Start();
@@ -507,13 +507,13 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   m_SlowTraverseMode--;
   local_lock=m_SlowTraverseMode>0;
   
-  cout << "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  LOG_POST( "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   if(sr->m_Sr)
     {
       iterate(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
         {
           char b[100];
-          cout << (*srp)->print(b,sizeof(b)) << endl;
+          LOG_POST( (*srp)->print(b,sizeof(b)));
         }
     }
   
@@ -525,10 +525,10 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
           SSeqrefs::TSeqrefs *nsr=bsit->second->m_Sr;
           
           // catch dissolving TSE and mark them dead
-          //cout << "old seqrefs" << endl;
+          //LOG_POST( "old seqrefs");
           iterate(SSeqrefs::TSeqrefs,srp,*osr)
             {
-              //(*srp)->print(); cout << endl;
+              //(*srp)->print(); cout);
               bool found=false;
               iterate(SSeqrefs::TSeqrefs,nsrp,*nsr)
                 if(CCmpTSE(*srp)==CCmpTSE(*nsrp)) {found=true; break;}
@@ -568,7 +568,7 @@ CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TI
       // and return from routine if all data already loaded
       // present;
     }
-  //cout << "x_NeedMoreData(" << srp << "," << tse_up << ") need_data " << need_data << " " <<endl;
+  //LOG_POST( "x_NeedMoreData(" << srp << "," << tse_up << ") need_data " << need_data <<);
   return need_data;
 }
 
@@ -580,8 +580,8 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
   m_InvokeGC=true;
   bool new_tse = false;
   char s[100];
-  cout << "GetBlob(" << srp->printTSE(s,sizeof(s)) << "," << tse_up << ") " <<
-    from << ":"<< to << ":=" << tse_up->m_mode << endl;
+  LOG_POST( "GetBlob(" << srp->printTSE(s,sizeof(s)) << "," << tse_up << ") " <<
+    from << ":"<< to << ":=" << tse_up->m_mode);
   _VERIFY(tse_up->m_mode != CTSEUpload::eDone);
   if (tse_up->m_mode == CTSEUpload::eNone)
     {
@@ -591,10 +591,10 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
       for(CIStream bs(srp->BlobStreamBuf(from, to, cl)); ! bs.Eof();count++ )
         {
           CBlob *blob = srp->RetrieveBlob(bs);
-          //cout << "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")" << endl;
+          //LOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
           if (blob->Class()==0)
             {
-              cout << "GetBlob(" << s << ") " << "- whole blob uploaded" << endl;
+              LOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
               tse_up->m_mode = CTSEUpload::eDone;
               tse_up->m_tse    = blob->Seq_entry();
               new_tse=true;
@@ -602,7 +602,7 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
             }
           else
             {
-              cout << "GetBlob(" << s << ") " << "- partial load" << endl;
+              LOG_POST("GetBlob(" << s << ") " << "- partial load");
               _ASSERT(tse_up->m_mode != CTSEUpload::eDone);
               if(tse_up->m_mode != CTSEUpload::ePartial)
                 tse_up->m_mode = CTSEUpload::ePartial;
@@ -615,10 +615,10 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
         {
           tse_up->m_mode = CTSEUpload::eDone;
           // TODO log message
-          cout << "ERROR: can not retrive blob : " << s << endl;
+          LOG_POST("ERROR: can not retrive blob : " << s);
         }
       
-      //cout << "GetData-after:: " << from << to <<  endl;
+      //LOG_POST( "GetData-after:: " << from << to <<  endl;
     }
   else
     {
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/03/25 15:44:46  kimelman
+* proper logging and exception handling
+*
 * Revision 1.11  2002/03/22 18:56:05  kimelman
 * GC list fix
 *

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/25 15:44:47  kimelman
+* proper logging and exception handling
+*
 * Revision 1.5  2002/03/22 21:53:07  kimelman
 * bugfix: skip missed gi's
 *
@@ -88,6 +91,7 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
             pOm->RegisterDataLoader( *(new CGBDataLoader("ID",new CId1Reader,2)), CObjectManager::eDefault);
             
             int i=1;
+	    int ecount=0;
             while(i<1800)
               {
                 CScope scope(*pOm);
@@ -100,18 +104,20 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
                   {
                     CBioseq_Handle h = scope.GetBioseqHandle(x);
                     if(!h)
-                      NcbiCout << "Gi " << i << "):: not found in ID" << endl;
+                      LOG_POST( "Gi (" << i << "):: not found in ID");
                     else 
                       iterate(list< CRef< CSeq_id > >, it, h.GetBioseq().GetId())
                       {
                         //oos << **it;
                         ;//NcbiCout << NcbiEndl;
                       }
-                    NcbiCout << NcbiEndl;
                   }
                 catch (exception e)
                   {
-                    NcbiCout << "TROUBLE(" << i << "):: " << e.what() << endl;
+                    LOG_POST( "TROUBLE(" << i << "):: " << e.what());
+		    ecount++;
+		    if(ecount > 20) 
+                       break;
                   }
                 NcbiCout << NcbiEndl;
                 i++;
