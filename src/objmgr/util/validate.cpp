@@ -3529,7 +3529,7 @@ void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& seq)
 class CNoCaseCompare
 {
 public:
-    bool operator ()(const string& s1, const string& s2)
+    bool operator ()(const string& s1, const string& s2) const
     {
         if (NStr::CompareNocase(s1, s2) < 0) {
             return true;
@@ -4098,6 +4098,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/10/07 18:14:22  clausen
+* Fixed error in CNoCaseCompare that prevent compile on Mac
+*
 * Revision 1.5  2002/10/07 17:11:16  ucko
 * Fix usage of ERR_POST (caught by KCC)
 *
