@@ -33,7 +33,7 @@ purge_all_files:
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(DATATOOL) $(MODULE).def $(IMPDEPS)
-	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' -ocvs
+	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' -ocvs -pch 'ncbi_pch.hpp'
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
