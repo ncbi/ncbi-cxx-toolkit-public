@@ -256,6 +256,74 @@ void BioTreeConvert2Container(TBioTreeContainer&      tree_container,
     
 }
 
+/// Convert ASN.1 BioTree container to dynamic tree
+///
+template<class TBioTreeContainer, class TDynamicTree>
+void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
+		                             const TBioTreeContainer&  tree_container)
+{
+	dyn_tree.Clear();
+	
+    // Convert feature dictionary
+
+    typedef typename TBioTreeContainer::TFdict  TContainerDict;
+
+    CBioTreeFeatureDictionary& dict = dyn_tree.GetFeatureDict();
+    const TContainerDict& fd = tree_container.GetFdict();
+    typename const TContainerDict::Tdata& feat_list = fd.Get();
+
+		ITERATE(typename TContainerDict::Tdata, it, feat_list) {
+        TBioTreeFeatureId fid = (*it)->GetId();
+        const string& fvalue = (*it)->GetName();
+		
+		dict.Register(fid, fvalue);
+    }
+
+	// convert tree data (nodes)
+    typedef typename TBioTreeContainer::TNodes           TCNodeSet;
+    typedef typename TCNodeSet::Tdata                    TNodeList;
+
+    const TNodeList node_list = tree_container.GetNodes().Get();
+
+	ITERATE(TNodeList, it, node_list) {
+
+		const CRef<CNode>& cnode = *it;
+
+        TBioTreeNodeId uid = cnode->GetId();
+
+	    typedef typename TDynamicTree::TBioTreeNode         TDynamicNodeType;
+		typedef typename TDynamicNodeType::TValueType       TDynamicNodeValueType;
+
+		TDynamicNodeValueType v;
+		v.SetId(uid);
+
+		if (cnode->CanGetFeatures()) {
+			const typename CNodeFeatureSet& fset = cnode->GetFeatures();
+
+			const typename CNodeFeatureSet::Tdata& flist = fset.Get();
+
+			ITERATE(typename CNodeFeatureSet::Tdata, fit, flist) {
+				unsigned int fid = (*fit)->GetFeatureid();
+				const string& fvalue = (*fit)->GetValue();
+
+				v.features.SetFeature(fid, fvalue);
+
+			} // ITERATE 
+
+		}
+
+		if (cnode->CanGetParent()) {
+	        TBioTreeNodeId parent_id = cnode->GetParent();
+			/*TDynamicNodeType* dnode = */dyn_tree.AddNode(v, parent_id);
+		} else {
+			TDynamicNodeType* dnode = new TDynamicNodeType(v);
+			dyn_tree.SetTreeNode(dnode);
+		}
+
+
+	} // ITERATE TNodeList
+}
+
 
 
 END_NCBI_SCOPE 
@@ -264,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/06/01 15:20:48  kuznets
+ * + coversion function ASN.1 -> dynamic tree
+ *
  * Revision 1.1  2004/05/26 15:15:19  kuznets
  * Initial revision. Tree conversion algorithms moved from bio_tree.hpp
  *
