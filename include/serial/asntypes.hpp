@@ -142,8 +142,9 @@ public:
 
 class NCBI_XSERIAL_EXPORT COctetStringTypeInfo : public CPrimitiveTypeInfo {
     typedef CPrimitiveTypeInfo CParent;
-    typedef bytestore* TObjectType;
 public:
+    typedef bytestore* TObjectType;
+
     COctetStringTypeInfo(void);
 
     static TObjectType& Get(TObjectPtr object)
@@ -185,8 +186,9 @@ protected:
 class NCBI_XSERIAL_EXPORT COldAsnTypeInfo : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
-    typedef void* TObjectType;
 public:
+    typedef void* TObjectType;
+
     COldAsnTypeInfo(const char* name,
                     TAsnNewProc newProc, TAsnFreeProc freeProc,
                     TAsnReadProc readProc, TAsnWriteProc writeProc);
@@ -241,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.42  2004/04/27 21:44:56  jcherry
+ * Made a couple of typedefs public
+ *
  * Revision 1.41  2004/03/25 15:56:27  gouriano
  * Added possibility to copy and compare serial object non-recursively
  *
