@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/10/18 17:31:10  thiessen
+* fix for gcc
+*
 * Revision 1.39  2002/10/18 17:15:33  thiessen
 * use wxNativeEncodingInfo to store fonts in registry
 *
@@ -151,6 +154,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+
+#include <memory>
 
 #include "cn3d/viewer_window_base.hpp"
 #include "cn3d/viewer_base.hpp"
