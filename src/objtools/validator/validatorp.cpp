@@ -864,19 +864,20 @@ void CValidError_imp::ValidatePubArticle
             "Journal title missing", obj);
         }
 
-        const CImprint& imp = jour.GetImp();
-        if ( imp.IsSetPrepub() ) {
-            if ( imp.GetPrepub() == CImprint::ePrepub_in_press ) {
-                in_press = true;
+        if ( jour.CanGetImp() ) {
+            const CImprint& imp = jour.GetImp();
+
+            if ( imp.CanGetPrepub() ) {
+                in_press =  imp.GetPrepub() == CImprint::ePrepub_in_press;
             }
 
-            if ( !imp.IsSetPrepub()   &&  
-                 imp.IsSetPubstatus() && 
-                 imp.GetPubstatus() != ePubStatus_aheadofprint ) {
-                bool no_vol = imp.IsSetVolume()  &&  
-                    !IsBlankString(imp.GetVolume());
-                bool no_pages = imp.IsSetPages()  &&
-                    !IsBlankString(imp.GetPages());
+            if ( !imp.IsSetPrepub()        &&  
+                 (!imp.CanGetPubstatus()   ||  
+                  imp.GetPubstatus() != ePubStatus_aheadofprint) ) {
+                bool no_vol = !imp.IsSetVolume()  || 
+                              IsBlankString(imp.GetVolume());
+                bool no_pages = !imp.IsSetPages()  ||
+                                IsBlankString(imp.GetPages());
 
                 EDiagSev sev = IsNC() ? eDiag_Warning : eDiag_Error;
 
@@ -2349,6 +2350,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/05/15 18:12:10  shomrat
+* Bug fix in ValidatePubArticle
+*
 * Revision 1.33  2003/05/14 22:10:43  shomrat
 * == -> !=
 *
