@@ -2207,9 +2207,14 @@ Kappa_SequenceGetWindow(
     {{
       BlastSeqLoc* mask_seqloc;
       const EBlastProgramType k_program_name = eBlastTypeBlastp;
+      SBlastFilterOptions* filter_options;
+
+      BlastFilteringOptionsFromString(k_program_name, BLASTP_MASK_INSTRUCTIONS, &filter_options, NULL);
 
       BlastSetUp_Filter(k_program_name, seqData->data, seqData->length,
-                        0, BLASTP_MASK_INSTRUCTIONS, NULL, &mask_seqloc);
+                        0, filter_options, &mask_seqloc);
+
+      filter_options = FilterOptionsFree(filter_options);
 
       Blast_MaskTheResidues(seqData->data, seqData->length,
                             FALSE, mask_seqloc, FALSE, 0);
