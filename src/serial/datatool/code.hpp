@@ -76,6 +76,7 @@ class CClassCode
 public:
     typedef CFileCode::TIncludes TIncludes;
     typedef CFileCode::TForwards TForwards;
+    typedef set<string> TEnums;
 
     CClassCode(CFileCode& file, const ASNType* type);
     ~CClassCode(void);
@@ -141,6 +142,10 @@ public:
         {
             m_Code.AddForwardDeclarations(forwards);
         }
+    void AddEnum(const string& enumDef)
+        {
+            m_Enums.insert(enumDef);
+        }
 
     void AddParentType(CClassCode* parent);
 
@@ -168,6 +173,7 @@ private:
 
     mutable CNcbiOstrstream m_HPP;
     mutable CNcbiOstrstream m_CPP;
+    TEnums m_Enums;
 };
 
 class CNamespace

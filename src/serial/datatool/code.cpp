@@ -326,10 +326,17 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
         '{' << endl <<
         "public:" << endl <<
         "    " << GetClassName() << "_Base();" << endl <<
-        "    ~" << GetClassName() << "_Base();" << endl <<
+        "    " << (IsAbstract()? "virtual ": "") << '~' <<
+        GetClassName() << "_Base();" << endl <<
         endl <<
         "    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);" <<
-        endl << endl <<
+        endl;
+    for ( TEnums::const_iterator ei = m_Enums.begin();
+          ei != m_Enums.end(); ++ei ) {
+        header << endl <<
+            *ei << endl;
+    }
+    header << endl <<
         "private:" << endl <<
         "    friend class " << GetClassName() << ';' << endl <<
         endl <<

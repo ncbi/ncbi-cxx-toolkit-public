@@ -12,6 +12,7 @@
 USING_NCBI_SCOPE;
 
 CCodeGenerator::CCodeGenerator(void)
+    : m_ExcludeAllTypes(false)
 {
 }
 
@@ -154,11 +155,14 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
     
     const ASNOfType* array = dynamic_cast<const ASNOfType*>(type);
     if ( array != 0 ) {
+        // SET OF or SEQUENCE OF
         if ( !array->name.empty() ) {
             if ( !AddType(type) )
                 return;
         }
-
+        if ( m_ExcludeAllTypes )
+            return;
+        // we should add element type
         CollectTypes(array->type.get());
         return;
     }
@@ -169,27 +173,36 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
         return;
     }
 
-    if ( dynamic_cast<const ASNFixedType*>(type) != 0 ) {
+    if ( dynamic_cast<const ASNFixedType*>(type) != 0 ||
+         dynamic_cast<const ASNEnumeratedType*>(type) != 0 ) {
         // STD type
-        if ( type->name.empty() )
-            return;
-        AddType(type);
+        if ( !type->name.empty() ) {
+            AddType(type);
+        }
         return;
     }
 
-    if ( !type->name.empty() && type->ClassName(m_Config) == "-" ) {
-        ERR_POST(Warning << "Skipping type: " << type->name);
-        return;
+    if ( !type->name.empty() ) {
+        if ( type->ClassName(m_Config) == "-" ) {
+            ERR_POST(Warning << "Skipping type: " << type->name);
+            return;
+        }
     }
     
     const ASNChoiceType* choice =
         dynamic_cast<const ASNChoiceType*>(type);
     if ( choice != 0 ) {
-        if ( choice->name.empty() ) {
+        if ( !choice->name.empty() ) {
+            if ( !AddType(type) )
+                return;
+        }
+        else {
             ERR_POST("unknown choice!");
         }
-        if ( !AddType(type) )
+
+        if ( m_ExcludeAllTypes )
             return;
+
         CClassCode* choiceCode = GetClassCode(type);
 
         // collect member's types
@@ -216,11 +229,24 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
                 return;
         }
 
+        if ( m_ExcludeAllTypes )
+            return;
+
         // collect member's types
         for ( ASNMemberContainerType::TMembers::const_iterator mi =
                   cont->members.begin();
               mi != cont->members.end(); ++mi ) {
             const ASNType* memberType = mi->get()->type.get();
+/*
+            if ( dynamic_cast<const ASNEnumeratedType*>(memberType) != 0 ) {
+                // enum type
+                if ( memberType->name.empty() ) {
+                    // set name of unnamed enum to name of field
+                    const_cast<ASNType*>(memberType)->name = mi->get()->name;
+                }
+                continue;
+            }
+*/
 /*
             _TRACE("member: " << mi->get()->name << ": " <<
                    typeid(*memberType).name() << " \"" << memberType->name << '"');

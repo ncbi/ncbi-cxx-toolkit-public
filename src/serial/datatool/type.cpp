@@ -631,11 +631,47 @@ CTypeInfo* ASNEnumeratedType::CreateTypeInfo(void)
 void ASNEnumeratedType::GetCType(CTypeStrings& tType,
                                  CClassCode& code, const string& key) const
 {
+    CNcbiOstrstream b;
     string type = code.GetVar(key + "._type");
-    if ( type.empty() )
-        type = "int";
+    string enumName;
+    if ( type.empty() ) {
+        // generate enum name from ASN type or field name
+        if ( name.empty() ) {
+            // get field name from key (last part after dot)
+            SIZE_TYPE dot = key.rfind('.');
+            if ( dot == NPOS ) {
+                // no dot -> key name is field name
+                enumName = 'E' + Identifier(key);
+            }
+            else {
+                // get field name
+                enumName = 'E' + Identifier(key.substr(dot + 1));
+            }
+        }
+        else {
+            enumName = 'E' + Identifier(name);
+        }
+        // make C++ type name
+        if ( keyword == "ENUMERATED" )
+            type = enumName;
+        else
+            type = "int";
+    }
+    else {
+        enumName = type;
+    }
+    b << "    enum " << enumName << " {";
+    for ( TValues::const_iterator i = values.begin();
+          i != values.end(); ++i ) {
+        if ( i != values.begin() )
+            b << ',';
+        b << endl <<
+            "        " << 'e' + Identifier(i->id) << " = " << i->value;
+    }
+    b << endl <<
+        "    };" << endl;
+    code.AddEnum(string(b.str(), b.pcount()));
     tType.SetStd(type);
-    // TODO: generate enum
 }
 
 ASNIntegerType::ASNIntegerType(ASNModule& module)

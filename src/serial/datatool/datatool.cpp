@@ -146,6 +146,7 @@ static void Help(void)
         "  -oA generate C++ files for all types Optional" << endl <<
         "  -ot generate C++ files for listed types [Types] Optional" << endl <<
         "  -ox exclude listed types from generation [Types] Optional" << endl <<
+        "  -oX exclude all other types from generation Optional" << endl <<
         "  -od C++ code definition file [File In] Optional" << endl <<
         "  -oh Directory for generated C++ headers [Directory] Optional" << endl <<
         "  -oc Directory for generated C++ code [Directory] Optional" << endl <<
@@ -291,6 +292,9 @@ int main(int argc, const char*argv[])
                 case 'x':
                     generator.GetTypes(generator.m_ExcludeTypes,
                                        StringArgument(argv[++i]));
+                    break;
+                case 'X':
+                    generator.m_ExcludeAllTypes = true;
                     break;
                 case 'd':
                     generator.LoadConfig(FileInArgument(argv[++i]));

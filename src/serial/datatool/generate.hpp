@@ -31,6 +31,7 @@ public:
     CModuleSet m_Modules;
     TTypeNames m_GenerateTypes;
     TTypeNames m_ExcludeTypes;
+    bool m_ExcludeAllTypes;
     string m_FileListFileName;
     string m_HeadersDir;
     string m_SourcesDir;
