@@ -180,6 +180,26 @@ private:
     void x_AddExceptionQuals(CFFContext& ctx) const;
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
     void x_CleanQuals(void) const;
+    // feature table quals
+    typedef vector< CRef<CFlatQual> > TQualVec;
+    void x_AddFTableQuals(CFFContext& ctx) const;
+    bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene) const;
+    void x_AddFTableRnaQuals(const CSeq_feat& feat, CFFContext& ctx) const;
+    void x_AddFTableCdregionQuals(const CSeq_feat& feat, CFFContext& ctx) const;
+    void x_AddFTableProtQuals(const CSeq_feat& prot) const;
+    void x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region) const;
+    void x_AddFTableBondQuals(const CSeqFeatData::TBond& bond) const;
+    void x_AddFTableSiteQuals(const CSeqFeatData::TSite& site) const;
+    void x_AddFTablePsecStrQuals(const CSeqFeatData::TPsec_str& psec_str) const;
+    void x_AddFTablePsecStrQuals(const CSeqFeatData::THet& het) const;
+    void x_AddFTableBiosrcQuals(const CBioSource& src) const;
+    void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref) const;
+    void x_AddFTableExtQuals(const CSeq_feat::TExt& ext) const;
+    void x_AddFTableQual(const string& name, const string& val = kEmptyStr) const {
+        CFlatQual::EStyle style = val.empty() ? CFlatQual::eEmpty : CFlatQual::eQuoted;
+        m_FTableQuals.push_back(CRef<CFlatQual>(new CFlatQual(name, val, style)));
+    }
+    
     
     // typdef
     typedef CQualContainer<EFeatureQualifier> TQuals;
@@ -213,6 +233,7 @@ private:
     // data
     mutable CSeqFeatData::ESubtype m_Type;
     mutable TQuals                 m_Quals;
+    mutable TQualVec               m_FTableQuals;
     EMapped                        m_Mapped;
 };
 
@@ -283,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/07 14:25:03  shomrat
+* Added FTable format methods
+*
 * Revision 1.10  2004/03/31 15:59:54  ucko
 * CFeatureItem::x_GetQual: make sure to call the const version of
 * GetQuals to fix WorkShop build errors.
