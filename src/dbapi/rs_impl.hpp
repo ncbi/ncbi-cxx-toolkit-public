@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.11  2002/11/25 15:15:50  kholodov
+* Removed: dynamic array module (array.hpp, array.cpp), using
+* STL vector instead to keep bound column data.
+*
 * Revision 1.10  2002/10/31 22:37:05  kholodov
 * Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
 * Fixed: minor errors, diagnostic messages
@@ -80,9 +84,11 @@
 #include <dbapi/dbapi.hpp>
 
 #include "active_obj.hpp"
-#include "array.hpp"
-#include "dbexception.hpp"
+//#include "array.hpp"
+//#include "dbexception.hpp"
 #include "blobstream.hpp"
+
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -123,6 +129,7 @@ public:
 protected:
     
     int GetColNum(const string& name);
+    void CheckIdx(unsigned int idx);
 
     bool IsBindBlob() {
         return m_bindBlob;
@@ -137,7 +144,7 @@ private:
     class CConnection* m_conn;
     CDB_Result *m_rs;
     //CResultSetMetaDataImpl *m_metaData;
-    CDynArray<CVariant> m_data;
+    vector<CVariant> m_data;
     CBlobIStream *m_istr;
     CBlobOStream *m_ostr;
     int m_column;
@@ -147,17 +154,6 @@ private:
 };
 
 //====================================================================
-inline
-const CVariant& CResultSet::GetVariant(unsigned int idx) 
-{
-    return m_data[idx-1];
-}
-
-inline
-const CVariant& CResultSet::GetVariant(const string& name) 
-{
-    return m_data[GetColNum(name)];
-}
 
 END_NCBI_SCOPE
 

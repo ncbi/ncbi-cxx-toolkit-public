@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.20  2002/11/25 15:15:50  kholodov
+* Removed: dynamic array module (array.hpp, array.cpp), using
+* STL vector instead to keep bound column data.
+*
 * Revision 1.19  2002/11/07 14:50:31  kholodov
 * Fixed: truncate BLOB buffer befor each successful read into CVariant object
 *
@@ -112,6 +116,7 @@
 #include "cursor_impl.hpp"
 #include "rs_impl.hpp"
 #include "rsmeta_impl.hpp"
+#include "dbexception.hpp"
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
@@ -119,6 +124,7 @@
 #include <corelib/ncbistr.hpp>
 
 #include <typeinfo>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -145,8 +151,11 @@ void CResultSet::Init()
     EDB_Type type;
     for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
         type = m_rs->ItemDataType(i);
-        m_data.Add(CVariant(type));
+        m_data.push_back(CVariant(type));
     }
+
+    _TRACE("CResultSet::Init(): Space reserved for " << m_data.size() 
+           << " columns");
 
 }
 
@@ -156,6 +165,22 @@ CResultSet::~CResultSet()
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
+
+const CVariant& CResultSet::GetVariant(unsigned int idx) 
+{
+    CheckIdx(idx - 1);
+    return m_data[idx-1];
+}
+
+const CVariant& CResultSet::GetVariant(const string& name) 
+{
+    int zIdx = GetColNum(name);
+
+    CheckIdx(zIdx);
+
+    return m_data[zIdx];
+}
+
 
 const IResultSetMetaData* CResultSet::GetMetaData() 
 {
@@ -349,6 +374,20 @@ int CResultSet::GetColNum(const string& name) {
     }
 
     throw CDbapiException("CResultSet::GetVariant(): invalid column name");
+}
+
+void CResultSet::CheckIdx(unsigned int idx) 
+{
+    if( idx >= m_data.size() ) {
+#ifdef _DEBUG
+        NcbiCerr << "CResultSet::GetVariant(): Column index " 
+                 << idx << " out of range" << endl;
+        _ASSERT(0);
+#else
+        throw CDbapiException("CResultSet::GetVariant(): Column index" 
+                              + NStr::IntToString(idx) + " out of range");
+#endif
+    }
 }
 
 END_NCBI_SCOPE
