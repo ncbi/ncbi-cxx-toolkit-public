@@ -537,6 +537,7 @@ bool CDirEntry::MatchesMask(const char* name, const char* mask)
             break;
         }
     }
+    /*NOTREACHED*/
     return false;
 }
 
@@ -1386,6 +1387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2002/09/17 20:44:58  lavr
+ * Add comment in unreachable return from CDirEntry::MatchesMask()
+ *
  * Revision 1.30  2002/09/05 18:35:38  vakatov
  * Formal code rearrangement to get rid of comp.warnings;  some nice-ification
  *
