@@ -7,7 +7,7 @@
 #################################
 
 APP = serialtest
-OBJ = serialobject testserial webenv rtti
+OBJ = serialobject testserial webenv
 LIB = xser xncbi xwebenv
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(NCBI_C_INCLUDE) \

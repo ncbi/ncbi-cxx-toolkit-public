@@ -27,6 +27,7 @@ public:
     static const CTypeInfo* GetTypeInfo(void);
 
     string m_Name;
+    bool m_HaveName;
     const string* m_NamePtr;
     int m_Size;
     list<string> m_Attributes;

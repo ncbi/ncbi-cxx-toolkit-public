@@ -8,6 +8,7 @@
 
 BEGIN_CLASS_INFO(CSerialObject)
     ADD_CLASS_MEMBER(m_Name);
+    ADD_CLASS_MEMBER(m_HaveName);
     ADD_PTR_CLASS_MEMBER(m_NamePtr);
     ADD_CLASS_MEMBER(m_Size);
     ADD_STL_CLASS_MEMBER(m_Attributes);

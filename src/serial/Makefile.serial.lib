@@ -10,7 +10,8 @@ LIBOBJ = typeinfo stdtypes ptrinfo \
 	objistr objostr objlist \
 	objistrb objostrb \
 	objostrasn objistrasn \
-	objostrasnb objistrasnb
+	objostrasnb objistrasnb \
+	rtti
 LIB    = xser
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(NCBI_C_INCLUDE)
