@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/05 16:08:14  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.4  2002/03/04 15:07:48  grichenk
 * Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
 * annotations from a single TSE.
@@ -62,9 +65,17 @@ CGraph_CI::CGraph_CI(void)
 
 
 CGraph_CI::CGraph_CI(CScope& scope,
-                     const CSeq_loc& loc, CBioseq_Handle* bioseq)
+                     const CSeq_loc& loc)
     : CAnnotTypes_CI(scope, loc,
-      SAnnotSelector(CSeq_annot::C_Data::e_Graph), bioseq)
+      SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+{
+    return;
+}
+
+
+CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, int start, int stop)
+    : CAnnotTypes_CI(bioseq, start, stop,
+          SAnnotSelector(CSeq_annot::C_Data::e_Graph))
 {
     return;
 }

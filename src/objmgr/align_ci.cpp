@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/05 16:08:13  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.4  2002/03/04 15:07:47  grichenk
 * Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
 * annotations from a single TSE.
@@ -64,10 +67,17 @@ CAlign_CI::CAlign_CI(void)
 
 
 CAlign_CI::CAlign_CI(CScope& scope,
-                     const CSeq_loc& loc,
-                     CBioseq_Handle* bioseq)
+                     const CSeq_loc& loc)
     : CAnnotTypes_CI(scope, loc,
-        SAnnotSelector(CSeq_annot::C_Data::e_Align), bioseq)
+          SAnnotSelector(CSeq_annot::C_Data::e_Align))
+{
+    return;
+}
+
+
+CAlign_CI::CAlign_CI(CBioseq_Handle& bioseq, int start, int stop)
+    : CAnnotTypes_CI(bioseq, start, stop,
+          SAnnotSelector(CSeq_annot::C_Data::e_Align))
 {
     return;
 }

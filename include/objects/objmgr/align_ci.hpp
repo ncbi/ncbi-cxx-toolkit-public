@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/05 16:08:11  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.4  2002/03/04 15:07:46  grichenk
 * Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
 * annotations from a single TSE.
@@ -62,9 +65,10 @@ class CAlign_CI : public CAnnotTypes_CI
 {
 public:
     CAlign_CI(void);
-    // If "bioseq" is not null, only the TSE containing
-    // this bioseq will be used for the search.
-    CAlign_CI(CScope& scope, const CSeq_loc& loc, CBioseq_Handle* bioseq = 0);
+    // Search all TSEs in all datasources
+    CAlign_CI(CScope& scope, const CSeq_loc& loc);
+    // Search only in TSE, containing the bioseq
+    CAlign_CI(CBioseq_Handle& bioseq, int start, int stop);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/05 16:08:12  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.4  2002/03/04 15:07:46  grichenk
 * Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
 * annotations from a single TSE.
@@ -61,9 +64,10 @@ class CGraph_CI : public CAnnotTypes_CI
 {
 public:
     CGraph_CI(void);
-    // If "bioseq" is not null, only the TSE containing
-    // this bioseq will be used for the search.
-    CGraph_CI(CScope& scope, const CSeq_loc& loc, CBioseq_Handle* bioseq = 0);
+    // Search all TSEs in all datasources
+    CGraph_CI(CScope& scope, const CSeq_loc& loc);
+    // Search only in TSE, containing the bioseq
+    CGraph_CI(CBioseq_Handle& bioseq, int start, int stop);
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);

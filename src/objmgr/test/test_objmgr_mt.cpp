@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/05 16:08:16  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.7  2002/03/04 17:07:19  grichenk
 * +Testing feature iterators with single TSE restriction
 *
@@ -943,10 +946,19 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(id);
     count = 0;
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-        tse_feat_test ? &handle : 0); feat_it;  ++feat_it) {
-        count++;
-        //### _ASSERT(feat_it->
+    if ( !tse_feat_test ) {
+        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
+            feat_it;  ++feat_it) {
+            count++;
+            //### _ASSERT(feat_it->
+        }
+    }
+    else {
+        for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
+            feat_it;  ++feat_it) {
+            count++;
+            //### _ASSERT(feat_it->
+        }
     }
     _ASSERT(count == seq_feat_cnt);
 
@@ -956,20 +968,38 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-        tse_feat_test ? &handle : 0); feat_it;  ++feat_it) {
-        count++;
-        //### _ASSERT(feat_it->
+    if ( !tse_feat_test ) {
+        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
+            feat_it;  ++feat_it) {
+            count++;
+            //### _ASSERT(feat_it->
+        }
+    }
+    else {
+        for (CFeat_CI feat_it(handle, 0, 10, CSeqFeatData::e_not_set);
+            feat_it;  ++feat_it) {
+            count++;
+            //### _ASSERT(feat_it->
+        }
     }
     _ASSERT(count == seq_featrg_cnt);
 
     // Test CSeq_align iterator
     loc.SetWhole(id);
     count = 0;
-    for (CAlign_CI align_it(scope, loc, tse_feat_test ? &handle : 0);
-        align_it;  ++align_it) {
-        count++;
-        //### _ASSERT(align_it->
+    if ( !tse_feat_test ) {
+        for (CAlign_CI align_it(scope, loc);
+            align_it;  ++align_it) {
+            count++;
+            //### _ASSERT(align_it->
+        }
+    }
+    else {
+        for (CAlign_CI align_it(handle, 0, 0);
+            align_it;  ++align_it) {
+            count++;
+            //### _ASSERT(align_it->
+        }
     }
     _ASSERT(count == seq_align_cnt);
 
@@ -979,10 +1009,19 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;
-    for (CAlign_CI align_it(scope,loc, tse_feat_test ? &handle : 0);
-        align_it;  ++align_it) {
-        count++;
-        //### _ASSERT(align_it->
+    if ( !tse_feat_test ) {
+        for (CAlign_CI align_it(scope, loc);
+            align_it;  ++align_it) {
+            count++;
+            //### _ASSERT(align_it->
+        }
+    }
+    else {
+        for (CAlign_CI align_it(handle, 10, 20);
+            align_it;  ++align_it) {
+            count++;
+            //### _ASSERT(align_it->
+        }
     }
     _ASSERT(count == seq_alignrg_cnt);
 }

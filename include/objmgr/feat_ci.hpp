@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/05 16:08:12  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.4  2002/03/04 15:07:46  grichenk
 * Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
 * annotations from a single TSE.
@@ -62,12 +65,14 @@ class CFeat_CI : public CAnnotTypes_CI
 {
 public:
     CFeat_CI(void);
-    // If "bioseq" is not null, only the TSE containing
-    // this bioseq will be used for the search.
+    // Search all TSEs in all datasources
     CFeat_CI(CScope& scope,
-             const CSeq_loc&             loc,
-             SAnnotSelector::TFeatChoice feat_choice,
-             CBioseq_Handle* bioseq = 0);
+             const CSeq_loc& loc,
+             SAnnotSelector::TFeatChoice feat_choice);
+    // Search only in TSE, containing the bioseq
+    CFeat_CI(CBioseq_Handle& bioseq,
+             int start, int stop,
+             SAnnotSelector::TFeatChoice feat_choice);
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);

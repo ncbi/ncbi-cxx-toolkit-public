@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/05 16:08:14  grichenk
+* Moved TSE-restriction to new constructors
+*
 * Revision 1.8  2002/03/04 15:07:48  grichenk
 * Added "bioseq" argument to CAnnotTypes_CI constructor to iterate
 * annotations from a single TSE.
@@ -65,6 +68,10 @@
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
 #include <objects/objmgr1/scope.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <serial/typeinfo.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -79,20 +86,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
 
 CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
-                               SAnnotSelector selector,
-                               CBioseq_Handle* bioseq)
+                               SAnnotSelector selector)
     : m_Selector(selector),
       m_Location(new CHandleRangeMap(scope.x_GetIdMapper()))
 {
     m_Location->AddLocation(loc);
-    if ( bioseq ) {
-        // Search only the TSE, containing the bioseq
-        m_Entries.insert(bioseq->m_TSE);
-    }
-    else {
-        // Search all possible TSEs
-        scope.x_PopulateTSESet(*m_Location, m_Entries);
-    }
+    // Search all possible TSEs
+    scope.x_PopulateTSESet(*m_Location, m_Entries);
     non_const_iterate(TTSESet, tse_it, m_Entries) {
         (*tse_it)->Lock();
     }
@@ -102,6 +102,31 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
         if ( m_CurrentAnnot )
             break;
     }
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
+                               int start, int stop,
+                               SAnnotSelector selector)
+    : m_Selector(selector),
+      m_Location(new CHandleRangeMap(bioseq.m_Scope->x_GetIdMapper()))
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    CRef<CSeq_id> id(new CSeq_id);
+    SerialAssign<CSeq_id>(*id, *bioseq.GetSeqId());
+    if ( start == 0  &&  stop == 0 ) {
+        loc->SetWhole(*id);
+    }
+    else {
+        loc->SetInt().SetId(*id);
+        loc->SetInt().SetFrom(start);
+        loc->SetInt().SetTo(stop);
+    }
+    m_Location->AddLocation(*loc);
+    bioseq.m_TSE->Lock();
+    m_Entries.insert(bioseq.m_TSE);
+    m_CurrentTSE = m_Entries.begin();
+    m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE, *m_Location, m_Selector);
 }
 
 
