@@ -65,7 +65,6 @@ enum EBlastOptIdx {
     eBlastOpt_MBTemplateType,
     eBlastOpt_MBMaxPositions,
     eBlastOpt_FilterString,
-    eBlastOpt_LCaseMask,
     eBlastOpt_StrandOption,
     eBlastOpt_QueryGeneticCode,
     eBlastOpt_WindowSize,
@@ -161,9 +160,6 @@ public:
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
     void SetFilterString(const char* f);
-
-    vector< CConstRef<objects::CSeq_loc> >& GetLCaseMask() const;
-    void SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector);
 
     objects::ENa_strand GetStrandOption() const;
     void SetStrandOption(objects::ENa_strand s);
@@ -820,23 +816,6 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_FilterString, f);
-        }
-    }
-
-    vector< CConstRef<objects::CSeq_loc> >& GetLCaseMask() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetLCaseMask() not available.");
-        }
-        return m_Local->GetLCaseMask();
-    }
-    void SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
-    {
-        if (m_Local) {
-            m_Local->SetLCaseMask(sl_vector);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_LCaseMask, sl_vector);
         }
     }
 
@@ -2414,6 +2393,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/01/17 23:03:41  dondosha
+* There is no LCaseMask option any more, so [SG]EtLCaseMask methods removed
+*
 * Revision 1.41  2004/01/17 02:38:23  ucko
 * Initialize variables with = rather than () when possible to avoid
 * confusing MSVC's parser.
