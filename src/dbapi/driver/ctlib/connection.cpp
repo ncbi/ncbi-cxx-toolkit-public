@@ -669,6 +669,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                 break;
             }
             case CS_CMD_FAIL: {
+                ct_cancel(NULL, m_Cmd, CS_CANCEL_ALL);
                 throw CDB_ClientEx(eDB_Error, 190007,
                                    "CTL_SendDataCmd::SendChunk",
                                    "command failed");
@@ -728,6 +729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/09/23 19:38:22  soussov
+ * cancels send_data cmd if it failes while processing results
+ *
  * Revision 1.15  2003/07/08 18:51:38  soussov
  * fixed bug in constructor
  *
