@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/06/01 13:01:00  thiessen
+* fix wx-string problem again...
+*
 * Revision 1.33  2001/05/31 18:47:10  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -132,6 +135,8 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
 #include "cn3d/style_manager.hpp"
