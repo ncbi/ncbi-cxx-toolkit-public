@@ -82,7 +82,7 @@ string CEnumTypeStrings::GetRef(const CNamespace& /*ns*/) const
 
 string CEnumTypeStrings::GetInitializer(void) const
 {
-    return m_EnumName+"(0)";
+    return "(" + m_EnumName + ")(0)";
 }
 
 void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -215,7 +215,7 @@ string CEnumRefTypeStrings::GetRef(const CNamespace& ns) const
 
 string CEnumRefTypeStrings::GetInitializer(void) const
 {
-    return GetCType(CNamespace::KEmptyNamespace) + "(0)";
+    return "(" + GetCType(CNamespace::KEmptyNamespace) + ")(0)";
 }
 
 void CEnumRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -229,6 +229,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/03/16 14:36:42  gouriano
+* Handle custom data types for enums more accurately
+*
 * Revision 1.20  2004/05/24 15:10:33  gouriano
 * Expose method to access named integers (or enums) in generated classes
 *
