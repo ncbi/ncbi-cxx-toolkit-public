@@ -5,6 +5,8 @@ SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
       ncbidbg ncbidll ncbiexec ncbicfg $(ncbicntr) ddumpable version metareg \
       ncbiatomic ncbi_process
 
+UNIX_SRC = ncbi_os_unix
+
 LIB = xncbi
 
 LIBS = $(DL_LIBS)
