@@ -233,11 +233,38 @@ void Test(ContainerType cont)
 #endif
 
 
+#define OK  NcbiCout << " completed successfully!" << NcbiEndl
+
 int CTestApplication::Run(void)
 {
 #ifdef TEST_MEMORY_USAGE
     Test(eRef);
 #endif
+
+    //        CExceptionReporterStream reporter(cerr);
+    //        CExceptionReporter::SetDefault(&reporter);
+    //        CExceptionReporter::EnableDefault(false);
+    //        CExceptionReporter::EnableDefault(true);
+    //        CExceptionReporter::SetDefault(0);
+    
+    SetupDiag(eDS_ToStdout);
+    /*
+    CExceptionReporter::EnableDefault(true);
+    cerr << endl;
+    NCBI_REPORT_EXCEPTION(
+    "****** default reporter (stream) ******",e);
+
+    CExceptionReporter::SetDefault(0);
+    cerr << endl;
+    NCBI_REPORT_EXCEPTION(
+    "****** default reporter (diag) ******",e);
+    */
+
+    //------------------------------------------------------------------------
+    // NStr::StringTo*()
+    //------------------------------------------------------------------------
+
+    NcbiCout << "Test NCBISTR:" << NcbiEndl;
 
     static const string s_Strings[] = {
         "",
@@ -266,30 +293,8 @@ int CTestApplication::Run(void)
         "zzz"
     };
 
-    NcbiCout << "Test NCBISTR:" << NcbiEndl;
-
     const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
 
-    //        CExceptionReporterStream reporter(cerr);
-    //        CExceptionReporter::SetDefault(&reporter);
-    //        CExceptionReporter::EnableDefault(false);
-    //        CExceptionReporter::EnableDefault(true);
-    //        CExceptionReporter::SetDefault(0);
-    
-    SetupDiag(eDS_ToStdout);
-    /*
-      
-    CExceptionReporter::EnableDefault(true);
-    cerr << endl;
-    NCBI_REPORT_EXCEPTION(
-    "****** default reporter (stream) ******",e);
-
-    CExceptionReporter::SetDefault(0);
-    cerr << endl;
-    NCBI_REPORT_EXCEPTION(
-    "****** default reporter (diag) ******",e);
-    */
-    
     for (size_t i = 0;  i < count;  ++i) {
         const string& str = s_Strings[i];
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
@@ -418,6 +423,11 @@ int CTestApplication::Run(void)
             NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
     } 
+    OK;
+
+    //------------------------------------------------------------------------
+    // NStr::Replace()
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "NStr::Replace() tests...";
 
@@ -454,8 +464,13 @@ int CTestApplication::Run(void)
     dst = NStr::Replace(src, search, replace, src.size() - 1);
     assert(dst == "aaabbbaaccczzcccXx");
 
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
 
+    //------------------------------------------------------------------------
+    // NStr::PrintableString/ParseEscapes()
+    //------------------------------------------------------------------------
+
+    NcbiCout << NcbiEndl << "NStr::PrinrableString() tests...";
 
     // NStr::PrintableString()
     assert(NStr::PrintableString(kEmptyStr).empty());
@@ -471,8 +486,12 @@ int CTestApplication::Run(void)
     assert(NStr::ParseEscapes("A\\x10B\\x00CD").
            compare("A\020B" + string(1, '\0') + "CD") == 0);
 
+    OK;
 
+    //------------------------------------------------------------------------
     // NStr::Compare()
+    //------------------------------------------------------------------------
+
     NcbiCout << NcbiEndl << "NStr::Compare() tests...";
 
     size_t j;
@@ -514,8 +533,11 @@ int CTestApplication::Run(void)
     assert(NStr::Compare("0123", 2, 2, "12") >  0);
     assert(NStr::Compare("0123", 3, 2,  "3") == 0);
 
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
 
+    //------------------------------------------------------------------------
+    // NStr::Split()
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "NStr::Split() tests...";
 
@@ -555,11 +577,13 @@ int CTestApplication::Run(void)
         }
     }}
     
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
 
     
-
+    //------------------------------------------------------------------------
     // NStr::Tokenize()
+    //------------------------------------------------------------------------
+
     NcbiCout << NcbiEndl << "NStr::Tokenize() tests...";
 
     static const string s_TokStr[] = {
@@ -607,12 +631,15 @@ int CTestApplication::Run(void)
             assert(NStr::Compare(*it, split_result[i++]) == 0);
         }
     }}
-    NcbiCout << " completed successfully!" << NcbiEndl;
+
+    OK;
 
 
-    // NStr::SplitInTwo()
+    //------------------------------------------------------------------------
+    // NStr::SplitInTo()
+    //------------------------------------------------------------------------
+
     NcbiCout << NcbiEndl << "NStr::SplitInTwo() tests...";
-
 
     static const struct {
         const char* str;
@@ -632,7 +659,6 @@ int CTestApplication::Run(void)
         { "", "", "", "", false }
     };
 
-
     {{
         string  string1, string2;
         bool    result;
@@ -648,8 +674,12 @@ int CTestApplication::Run(void)
         }
     }}
     
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
 
+
+    //------------------------------------------------------------------------
+    // NStr::ToLower/ToUpper()
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests...";
 
@@ -689,7 +719,6 @@ int CTestApplication::Run(void)
         assert(NStr::Compare(s_Indiff, NStr::ToLower(indiff)) == 0);
     }}
 
-
     for (j = 0;  j < sizeof(s_Tri) / sizeof(s_Tri[0]);  j++) {
         assert(NStr::Compare(s_Tri[j].orig, s_Tri[j].x_lower, NStr::eNocase)
                == 0);
@@ -724,7 +753,13 @@ int CTestApplication::Run(void)
             assert(NStr::Compare(x_lower, NStr::ToLower(x_str)) == 0);
         }}
     }
-    NcbiCout << " completed successfully!" << NcbiEndl;
+
+    OK;
+
+
+    //------------------------------------------------------------------------
+    // NStr::AStrEquiv()
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "AStrEquiv tests...";
 
@@ -740,7 +775,12 @@ int CTestApplication::Run(void)
     assert( AStrEquiv(as1, as3, PCase())   == false );
     assert( AStrEquiv(as2, as4, PCase())   == false );
 
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
+
+
+    //------------------------------------------------------------------------
+    // NStr::Equal*()
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "Equal{Case,Nocase} tests...";
 
@@ -751,7 +791,12 @@ int CTestApplication::Run(void)
     assert( NStr::EqualCase(as1, as3)   == false );
     assert( NStr::EqualCase(as2, as4)   == false );
 
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
+
+
+    //------------------------------------------------------------------------
+    // Reference counting
+    //------------------------------------------------------------------------
 
     {{
         NcbiCout << NcbiEndl 
@@ -822,57 +867,90 @@ int CTestApplication::Run(void)
         }
     }}
 
+
+    //------------------------------------------------------------------------
+    // NStr::FindNoCase()
+    //------------------------------------------------------------------------
+
     NcbiCout << NcbiEndl << "NStr::FindNoCase() tests...";
     assert(NStr::FindNoCase(" abcd", " xyz") == NPOS);
     assert(NStr::FindNoCase(" abcd", " xyz", 0, NPOS, NStr::eLast) == NPOS);
     assert(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast) == 0);
-    NcbiCout << " completed successfully!" << NcbiEndl;
 
-    NcbiCout << NcbiEndl << "NStr::SoftStringToUInt() tests...";
+    OK;
 
-    {{
-    const char* k10_1 = "10KB";
-    const char* k10_2 = "10K";
-    unsigned v;
-    v = NStr::StringToUInt_DataSize(k10_1);
-    assert(v == 10 * 1024);
-    v = NStr::StringToUInt_DataSize(k10_2);
-    assert(v == 10 * 1024);
-    }}
+
+    //------------------------------------------------------------------------
+    // NStr::StringToUInt[8]_DataSize()
+    //------------------------------------------------------------------------
+
+    NcbiCout << NcbiEndl << "NStr::StringToUInt_DataSize() tests...";
 
     {{
-    const char* m10_1 = "10MB";
-    const char* m10_2 = "10M";
-    unsigned v;
-    v = NStr::StringToUInt_DataSize(m10_1);
-    assert(v == 10 * 1024 * 1024);
-    v = NStr::StringToUInt_DataSize(m10_2);
-    assert(v == 10 * 1024 * 1024);
-    }}
-
-    {{
-    const char* g10_1 = "1GB";
-    const char* g10_2 = "1G";
-    unsigned v;
-    v = NStr::StringToUInt_DataSize(g10_1);
-    assert(v == 1 * 1024 * 1024 * 1024);
-    v = NStr::StringToUInt_DataSize(g10_2);
-    assert(v == 1 * 1024 * 1024 * 1024);
-    }}
-
-    {{
-    bool err_catch = false;
-    try {
-        const char* g10_1 = "10GBx";
+        const char* k_1 = "10KB";
+        const char* k_2 = "10K";
         unsigned v;
-        v = NStr::StringToUInt_DataSize(g10_1);
-    }
-    catch (exception&)
-    {
-        err_catch = true;
-    }
-    assert(err_catch);
+        v = NStr::StringToUInt_DataSize(k_1);
+        assert(v == 10 * 1024);
+        v = NStr::StringToUInt_DataSize(k_2);
+        assert(v == 10 * 1024);
     }}
+
+    {{
+        const char* m_1 = "10MB";
+        const char* m_2 = "10M";
+        unsigned v;
+        v = NStr::StringToUInt_DataSize(m_1);
+        assert(v == 10 * 1024 * 1024);
+        v = NStr::StringToUInt_DataSize(m_2);
+        assert(v == 10 * 1024 * 1024);
+    }}
+
+    {{
+        const char* g_1 = "1GB";
+        const char* g_2 = "1G";
+        unsigned v;
+        v = NStr::StringToUInt_DataSize(g_1);
+        assert(v == 1 * 1024 * 1024 * 1024);
+        v = NStr::StringToUInt_DataSize(g_2);
+        assert(v == 1 * 1024 * 1024 * 1024);
+    }}
+
+    {{
+        bool err_catch = false;
+        try {
+            const char* g = "1GBx";
+            unsigned v;
+            v = NStr::StringToUInt_DataSize(g);
+        }
+        catch (exception&)
+        {
+            err_catch = true;
+        }
+        assert(err_catch);
+    }}
+
+    {{
+        bool err_catch = false;
+        try {
+            const char* g = "10000GB";
+            unsigned v;
+            v = NStr::StringToUInt_DataSize(g);
+        }
+        catch (exception&)
+        {
+            err_catch = true;
+        }
+        assert(err_catch);
+    }}
+
+    OK;
+
+    //------------------------------------------------------------------------
+    // NStr::str[n]casecmp()
+    //------------------------------------------------------------------------
+
+    NcbiCout << NcbiEndl << "NStr::str[n]casecmp() tests...";
 
     assert(NStr::strncasecmp("ab", "a", 1) == 0);
     assert(NStr::strncasecmp("Ab", "a", 1) == 0);
@@ -887,8 +965,9 @@ int CTestApplication::Run(void)
     assert(NStr::strcasecmp("",   "a") != 0);
     assert(NStr::strcasecmp("",    "") == 0);
 
-    NcbiCout << " completed successfully!" << NcbiEndl;
+    OK;
 
+    //------------------------------------------------------------------------
 
     NcbiCout << NcbiEndl << "TEST_NCBISTR execution completed successfully!"
              << NcbiEndl << NcbiEndl << NcbiEndl;
@@ -911,6 +990,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.34  2004/10/13 13:11:54  ivanov
+ * NStr::StringToUInt_DataSize - added overflow test.
+ * Some cosmetics.
+ *
  * Revision 6.33  2004/10/13 01:07:05  vakatov
  * + NStr::strncasecmp
  * + NStr::strcasecmp
