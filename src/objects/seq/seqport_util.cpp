@@ -854,7 +854,18 @@ private:
         const;
 };
 
-static CSeqportUtil_implementation s_Implementation;
+
+auto_ptr<CSeqportUtil_implementation> CSeqportUtil::sm_Implementation;
+
+void CSeqportUtil::x_InitImplementation(void)
+{
+    static CFastMutex mutex;
+    CFastMutexGuard   LOCK(mutex);
+    if ( !sm_Implementation.get() ) {
+        sm_Implementation.reset(new CSeqportUtil_implementation());
+    }
+}
+
 
 
 
@@ -872,7 +883,7 @@ TSeqPos CSeqportUtil::Convert
  bool                 bAmbig,
  CRandom::TValue      seed)
 {
-    return s_Implementation.Convert
+    return x_GetImplementation().Convert
         (in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig, seed);
 }
 
@@ -882,7 +893,7 @@ TSeqPos CSeqportUtil::Pack
  TSeqPos      uBeginIdx,
  TSeqPos      uLength)
 {
-    return s_Implementation.Pack
+    return x_GetImplementation().Pack
         (in_seq, uBeginIdx, uLength);
 }
 
@@ -892,7 +903,7 @@ bool CSeqportUtil::FastValidate
  TSeqPos            uBeginIdx,
  TSeqPos            uLength)
 {
-    return s_Implementation.FastValidate
+    return x_GetImplementation().FastValidate
         (in_seq, uBeginIdx, uLength);
 }
 
@@ -903,7 +914,7 @@ void CSeqportUtil::Validate
  TSeqPos            uBeginIdx,
  TSeqPos            uLength)
 {
-    s_Implementation.Validate
+    x_GetImplementation().Validate
         (in_seq, badIdx, uBeginIdx, uLength);
 }
 
@@ -916,7 +927,7 @@ TSeqPos CSeqportUtil::GetAmbigs
  TSeqPos              uBeginIdx,
  TSeqPos              uLength)
 {
-    return s_Implementation.GetAmbigs
+    return x_GetImplementation().GetAmbigs
         (in_seq, out_seq, out_indices, to_code, uBeginIdx, uLength);
 }
 
@@ -927,7 +938,7 @@ TSeqPos CSeqportUtil::GetCopy
  TSeqPos            uBeginIdx,
  TSeqPos            uLength)
 {
-    return s_Implementation.GetCopy
+    return x_GetImplementation().GetCopy
         (in_seq, out_seq, uBeginIdx, uLength);
 }
 
@@ -938,7 +949,7 @@ TSeqPos CSeqportUtil::Keep
  TSeqPos      uBeginIdx,
  TSeqPos      uLength)
 {
-    return s_Implementation.Keep
+    return x_GetImplementation().Keep
         (in_seq, uBeginIdx, uLength);
 }
 
@@ -952,7 +963,7 @@ TSeqPos CSeqportUtil::Append
  TSeqPos            uBeginIdx2,
  TSeqPos            uLength2)
 {
-    return s_Implementation.Append
+    return x_GetImplementation().Append
         (out_seq,
          in_seq1, uBeginIdx1, uLength1, in_seq2, uBeginIdx2, uLength2);
 }
@@ -963,7 +974,7 @@ TSeqPos CSeqportUtil::Complement
  TSeqPos      uBeginIdx,
  TSeqPos      uLength)
 {
-    return s_Implementation.Complement
+    return x_GetImplementation().Complement
         (in_seq, uBeginIdx, uLength);
 }
 
@@ -974,7 +985,7 @@ TSeqPos CSeqportUtil::Complement
  TSeqPos            uBeginIdx,
  TSeqPos            uLength)
 {
-    return s_Implementation.Complement
+    return x_GetImplementation().Complement
         (in_seq, out_seq, uBeginIdx, uLength);
 }
 
@@ -984,7 +995,7 @@ TSeqPos CSeqportUtil::Reverse
  TSeqPos      uBeginIdx,
  TSeqPos      uLength)
 {
-    return s_Implementation.Reverse
+    return x_GetImplementation().Reverse
         (in_seq, uBeginIdx, uLength);
 }
 
@@ -995,7 +1006,7 @@ TSeqPos CSeqportUtil::Reverse
  TSeqPos           uBeginIdx,
  TSeqPos           uLength)
 {
-    return s_Implementation.Reverse
+    return x_GetImplementation().Reverse
         (in_seq, out_seq, uBeginIdx, uLength);
 }
 
@@ -1005,7 +1016,7 @@ TSeqPos CSeqportUtil::ReverseComplement
  TSeqPos     uBeginIdx,
  TSeqPos     uLength)
 {
-    return s_Implementation.ReverseComplement
+    return x_GetImplementation().ReverseComplement
         (in_seq, uBeginIdx, uLength);
 }
 
@@ -1016,92 +1027,92 @@ TSeqPos CSeqportUtil::ReverseComplement
  TSeqPos           uBeginIdx,
  TSeqPos           uLength)
 {
-    return s_Implementation.ReverseComplement
+    return x_GetImplementation().ReverseComplement
         (in_seq, out_seq, uBeginIdx, uLength);
 }
 
 
 const string& CSeqportUtil::GetIupacaa3(TIndex ncbistdaa)
 {
-    return s_Implementation.GetIupacaa3(ncbistdaa);
+    return x_GetImplementation().GetIupacaa3(ncbistdaa);
 }
 
 bool CSeqportUtil::IsCodeAvailable(CSeq_data::E_Choice code_type)
 {
-    return s_Implementation.IsCodeAvailable(code_type);
+    return x_GetImplementation().IsCodeAvailable(code_type);
 }
 
 bool CSeqportUtil::IsCodeAvailable(ESeq_code_type code_type)
 {
-    return s_Implementation.IsCodeAvailable(code_type);
+    return x_GetImplementation().IsCodeAvailable(code_type);
 }
 
 CSeqportUtil::TPair CSeqportUtil::GetCodeIndexFromTo
 (CSeq_data::E_Choice code_type)
 {
-    return s_Implementation.GetCodeIndexFromTo(code_type);
+    return x_GetImplementation().GetCodeIndexFromTo(code_type);
 }
 
 CSeqportUtil::TPair CSeqportUtil::GetCodeIndexFromTo
 (ESeq_code_type code_type)
 {
-    return s_Implementation.GetCodeIndexFromTo(code_type);
+    return x_GetImplementation().GetCodeIndexFromTo(code_type);
 }
 
 const string& CSeqportUtil::GetCode
 (CSeq_data::E_Choice code_type, 
  TIndex              idx) 
 {
-    return s_Implementation.GetCodeOrName(code_type, idx, true);
+    return x_GetImplementation().GetCodeOrName(code_type, idx, true);
 }
 
 const string& CSeqportUtil::GetCode
 (ESeq_code_type code_type, 
  TIndex         idx) 
 {
-    return s_Implementation.GetCodeOrName(code_type, idx, true);
+    return x_GetImplementation().GetCodeOrName(code_type, idx, true);
 }
 
 const string& CSeqportUtil::GetName
 (CSeq_data::E_Choice code_type, 
  TIndex              idx) 
 {
-    return s_Implementation.GetCodeOrName(code_type, idx, false);
+    return x_GetImplementation().GetCodeOrName(code_type, idx, false);
 }
 
 const string& CSeqportUtil::GetName
 (ESeq_code_type code_type, 
  TIndex         idx) 
 {
-    return s_Implementation.GetCodeOrName(code_type, idx, false);
+    return x_GetImplementation().GetCodeOrName(code_type, idx, false);
 }
 
 CSeqportUtil::TIndex CSeqportUtil::GetIndex
 (CSeq_data::E_Choice code_type,
  const string&       code)
 {
-    return s_Implementation.GetIndex(code_type, code);
+    return x_GetImplementation().GetIndex(code_type, code);
 }
 
 CSeqportUtil::TIndex CSeqportUtil::GetIndex
 (ESeq_code_type code_type,
  const string&  code)
 {
-    return s_Implementation.GetIndex(code_type, code);
+    return x_GetImplementation().GetIndex(code_type, code);
 }
 
 CSeqportUtil::TIndex CSeqportUtil::GetIndexComplement
 (CSeq_data::E_Choice code_type,
  TIndex        idx)
 {
-    return s_Implementation.GetIndexComplement(code_type, idx);
+    return x_GetImplementation().GetIndexComplement(code_type, idx);
 }
 
 CSeqportUtil::TIndex CSeqportUtil::GetIndexComplement
 (ESeq_code_type code_type,
  TIndex         idx)
 {
-    return s_Implementation.GetIndexComplement(code_type, idx);
+    return x_GetImplementation().GetIndexComplement(code_type, idx);
 }
 
 CSeqportUtil::TIndex CSeqportUtil::GetMapToIndex
@@ -1109,7 +1120,7 @@ CSeqportUtil::TIndex CSeqportUtil::GetMapToIndex
  CSeq_data::E_Choice to_type,
  TIndex              from_idx)
 {
-    return s_Implementation.GetMapToIndex(from_type, to_type, from_idx);
+    return x_GetImplementation().GetMapToIndex(from_type, to_type, from_idx);
 }
 
 CSeqportUtil::TIndex CSeqportUtil::GetMapToIndex
@@ -1117,7 +1128,7 @@ CSeqportUtil::TIndex CSeqportUtil::GetMapToIndex
  ESeq_code_type to_type,
  TIndex         from_idx)
 {
-    return s_Implementation.GetMapToIndex(from_type, to_type, from_idx);
+    return x_GetImplementation().GetMapToIndex(from_type, to_type, from_idx);
 }
 
 CSeqportUtil_implementation::CSeqportUtil_implementation()
@@ -1237,7 +1248,7 @@ CRef<CSeq_code_set> CSeqportUtil_implementation::Init()
     }
 
     // Create an in memory stream on sm_StrAsnData
-    CNcbiIstrstream is(str.c_str(), strlen(str.c_str()));
+    CNcbiIstrstream is(str.c_str(), str.length());
 
     auto_ptr<CObjectIStream>
         asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));
@@ -5587,31 +5598,682 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetMapToIndex
 //  CSeqportUtil_implementation::sm_StrAsnData  --  some very long and ugly string
 //
 
+// local copy of seqcode.prt sequence alphabet and conversion table ASN.1
 const char* CSeqportUtil_implementation::sm_StrAsnData[] =
 {
-    " -- This is the set of NCBI sequence code tables\n-- J.Ostell  10/18/91\n--\n\nSeq-code-set ::= {\n codes {                              -- codes\n {                                -- IUPACna\n code iupacna ,\n num 25 ,                     -- continuous 65-89\n one-letter TRUE ,            -- all one letter codes\n start-at 65 ,                -- starts with A, ASCII 65\n table {\n { symbol \"A\", name \"Adenine\" },\n { symbol \"B\" , name \"G or T or C\" },\n { symbol \"C\", name \"Cytosine\" },\n { symbol \"D\", name \"G or A or T\" },\n                { symbol \"\", name \"\" },\n                { symbol \"\", name \"\" },\n                { symbol \"G\", name \"Guanine\" },\n                { symbol \"H\", name \"A or C or T\" } ,\n                { symbol \"\", name \"\" },\n                { symbol \"\", name \"\" },\n                { symbol \"K\", name \"G or T\" },\n                { symbol \"\", name \"\"},\n                { symbol \"M\", name \"A or C\" },\n                { symbol \"N\", name \"A or G or C or T\" } ,\n                { symbol \"\", name \"\" },\n                { symbol \"\", name \"\" },\n                { symbol \"\", name \"\"},\n                { symbol \"R\", name \"G or A\"},\n                { symbol \"S\", name \"G or C\"},\n                { symbol \"T\", name \"Thymine\"},\n                { symbol \"\", name \"\"},\n                { symbol \"V\", name \"G or C or A\"},\n                { symbol \"W\", name \"A or T\" },\n                { symbol \"\", name \"\"},\n                { symbol \"Y\", name \"T or C\"}\n            } ,                           -- end of table\n            comps {                      -- complements\n                84,\n                86,\n                71,\n                72,\n                69,\n                70,\n                67,\n                68,\n                73,\n                74,",
-        "\n                77,\n                76,\n                75,\n                78,\n                79,\n                80,\n                81,\n                89,\n                87,\n                65,\n                85,\n                66,\n                83,\n                88,\n                82\n            }\n        },\n        {                                -- IUPACaa\n            code iupacaa ,\n            num 26 ,                     -- continuous 65-90\n            one-letter TRUE ,            -- all one letter codes\n            start-at 65 ,                -- starts with A, ASCII 65\n            table {\n                { symbol \"A\", name \"Alanine\" },\n                { symbol \"B\" , name \"Asp or Asn\" },\n                { symbol \"C\", name \"Cysteine\" },\n                { symbol \"D\", name \"Aspartic Acid\" },\n                { symbol \"E\", name \"Glutamic Acid\" },\n                { symbol \"F\", name \"Phenylalanine\" },\n                { symbol \"G\", name \"Glycine\" },\n                { symbol \"H\", name \"Histidine\" } ,\n                { symbol \"I\", name \"Isoleucine\" },\n                { symbol \"\", name \"\" },\n                { symbol \"K\", name \"Lysine\" },\n                { symbol \"L\", name \"Leucine\" },\n                { symbol \"M\", name \"Methionine\" },\n                { symbol \"N\", name \"Asparagine\" } ,\n                { symbol \"\", name \"\" },\n                { symbol \"P\", name \"Proline\" },\n                { symbol \"Q\", name \"Glutamine\"},\n                { symbol \"R\", name \"Arginine\"},\n                { symbol \"S\", name \"Serine\"},\n                { symbol \"T\", name \"Threonine\"},\n                { symbol \"\", name \"\"},\n                { symbol \"V\", name \"Valine\"},\n                { symbol \"W\", name \"Tryptophan\" },\n",
-        "                { symbol \"X\", name \"Undetermined or atypical\"},\n                { symbol \"Y\", name \"Tyrosine\"},\n                { symbol \"Z\", name \"Glu or Gln\" }\n            }                            -- end of table   \n          },         \n     {                                -- IUPACeaa\n            code ncbieaa ,\n            num 49 ,                     -- continuous 42-90\n            one-letter TRUE ,            -- all one letter codes\n            start-at 42 ,                -- starts with *, ASCII 42\n            table {\n                { symbol \"*\", name \"Termination\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"-\", name \"Gap\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"\", name \"\" } ,\n                { symbol \"A\", name \"Alanine\" },\n                { symbol \"B\" , name \"Asp or Asn\" },\n                { symbol \"C\", name \"Cysteine\" },\n                { symbol \"D\", name \"Aspartic Acid\" },\n",
-        "                { symbol \"E\", name \"Glutamic Acid\" },\n                { symbol \"F\", name \"Phenylalanine\" },\n                { symbol \"G\", name \"Glycine\" },\n                { symbol \"H\", name \"Histidine\" } ,\n                { symbol \"I\", name \"Isoleucine\" },\n                { symbol \"\", name \"\" },\n                { symbol \"K\", name \"Lysine\" },\n                { symbol \"L\", name \"Leucine\" },\n                { symbol \"M\", name \"Methionine\" },\n                { symbol \"N\", name \"Asparagine\" } ,\n                { symbol \"\", name \"\" },\n                { symbol \"P\", name \"Proline\" },\n                { symbol \"Q\", name \"Glutamine\"},\n                { symbol \"R\", name \"Arginine\"},\n                { symbol \"S\", name \"Serine\"},\n                { symbol \"T\", name \"Threonine\"},\n                { symbol \"U\", name \"Selenocysteine\"},\n                { symbol \"V\", name \"Valine\"},\n                { symbol \"W\", name \"Tryptophan\" },\n                { symbol \"X\", name \"Undetermined or atypical\"},\n                { symbol \"Y\", name \"Tyrosine\"},\n                { symbol \"Z\", name \"Glu or Gln\" }\n            }                            -- end of table            \n        }, \n      {                                -- IUPACaa3\n            code iupacaa3 ,\n            num 26 ,                     -- continuous 0-25\n            one-letter FALSE ,            -- all 3 letter codes\n            table {\n                { symbol \"---\", name \"Gap\" } ,\n                { symbol \"Ala\", name \"Alanine\" },\n                { symbol \"Asx\" , name \"Asp or Asn\" },\n                { symbol \"Cys\", name \"Cysteine\" },\n                { symbol \"Asp\", name \"Aspartic Acid\" },\n                { symbol \"Glu\", name \"Glutamic Acid\" },\n",
-        "                { symbol \"Phe\", name \"Phenylalanine\" },\n                { symbol \"Gly\", name \"Glycine\" },\n                { symbol \"His\", name \"Histidine\" } ,\n                { symbol \"Ile\", name \"Isoleucine\" },\n                { symbol \"Lys\", name \"Lysine\" },\n                { symbol \"Leu\", name \"Leucine\" },\n                { symbol \"Met\", name \"Methionine\" },\n                { symbol \"Asn\", name \"Asparagine\" } ,\n                { symbol \"Pro\", name \"Proline\" },\n                { symbol \"Gln\", name \"Glutamine\"},\n                { symbol \"Arg\", name \"Arginine\"},\n                { symbol \"Ser\", name \"Serine\"},\n                { symbol \"Thr\", name \"Threonine\"},\n                { symbol \"Val\", name \"Valine\"},\n                { symbol \"Trp\", name \"Tryptophan\" },\n                { symbol \"Xxx\", name \"Undetermined or atypical\"},\n                { symbol \"Tyr\", name \"Tyrosine\"},\n                { symbol \"Glx\", name \"Glu or Gln\" },\n                { symbol \"Sec\", name \"Selenocysteine\"},\n                { symbol \"Ter\", name \"Termination\" } \n            }                            -- end of table            \n        }, \n        {                                -- NCBIstdaa\n            code ncbistdaa ,\n            num 26 ,                     -- continuous 0-25\n            one-letter TRUE ,            -- all one letter codes\n            table {\n                { symbol \"-\", name \"Gap\" } ,                -- 0\n                { symbol \"A\", name \"Alanine\" },             -- 1\n                { symbol \"B\" , name \"Asp or Asn\" },         -- 2\n                { symbol \"C\", name \"Cysteine\" },            -- 3\n                { symbol \"D\", name \"Aspartic Acid\" },       -- 4\n                { symbol \"E\", name \"Glutamic Acid\" },       -- 5\n",
-        "                { symbol \"F\", name \"Phenylalanine\" },       -- 6\n                { symbol \"G\", name \"Glycine\" },             -- 7\n                { symbol \"H\", name \"Histidine\" } ,          -- 8\n                { symbol \"I\", name \"Isoleucine\" },          -- 9\n                { symbol \"K\", name \"Lysine\" },              -- 10\n                { symbol \"L\", name \"Leucine\" },             -- 11\n                { symbol \"M\", name \"Methionine\" },          -- 12\n                { symbol \"N\", name \"Asparagine\" } ,         -- 13\n                { symbol \"P\", name \"Proline\" },             -- 14\n                { symbol \"Q\", name \"Glutamine\"},            -- 15\n                { symbol \"R\", name \"Arginine\"},             -- 16\n                { symbol \"S\", name \"Serine\"},               -- 17\n                { symbol \"T\", name \"Threoine\"},             -- 18\n                { symbol \"V\", name \"Valine\"},               -- 19\n                { symbol \"W\", name \"Tryptophan\" },          -- 20\n                { symbol \"X\", name \"Undetermined or atypical\"},  -- 21\n                { symbol \"Y\", name \"Tyrosine\"},             -- 22\n                { symbol \"Z\", name \"Glu or Gln\" },          -- 23\n                { symbol \"U\", name \"Selenocysteine\"},       -- 24 \n                { symbol \"*\", name \"Termination\" }          -- 25\n            }                            -- end of table            \n        },\n        {                                -- NCBI2na\n            code ncbi2na ,\n            num 4 ,                     -- continuous 0-3\n            one-letter TRUE ,            -- all one letter codes\n            table {\n                { symbol \"A\", name \"Adenine\" },\n",
-        "                { symbol \"C\", name \"Cytosine\" },\n                { symbol \"G\", name \"Guanine\" },\n                { symbol \"T\", name \"Thymine/Uracil\"}\n            } ,                          -- end of table            \n            comps {                      -- complements\n                3,\n                2,\n                1,\n                0\n            }\n        }, \n         {                                -- NCBI4na\n            code ncbi4na ,\n            num 16 ,                     -- continuous 0-15\n            one-letter TRUE ,            -- all one letter codes\n            table {\n                { symbol \"-\", name \"Gap\" } ,\n                { symbol \"A\", name \"Adenine\" },\n                { symbol \"C\", name \"Cytosine\" },\n                { symbol \"M\", name \"A or C\" },\n                { symbol \"G\", name \"Guanine\" },\n                { symbol \"R\", name \"G or A\"},\n                { symbol \"S\", name \"G or C\"},\n                { symbol \"V\", name \"G or C or A\"},\n                { symbol \"T\", name \"Thymine/Uracil\"},\n                { symbol \"W\", name \"A or T\" },\n                { symbol \"Y\", name \"T or C\"} ,\n                { symbol \"H\", name \"A or C or T\" } ,\n                { symbol \"K\", name \"G or T\" },\n                { symbol \"D\", name \"G or A or T\" },\n                { symbol \"B\" , name \"G or T or C\" },\n                { symbol \"N\", name \"A or G or C or T\" }\n            } ,                           -- end of table            \n            comps {                       -- complements\n",
-        "                0 ,\n                8 ,\n                4 ,\n                12,\n                2 ,\n                10,\n                9 ,\n                14,\n                1 ,\n                6 ,\n                5 ,\n                13,\n                3 ,\n                11,\n                7 ,\n                15\n            }\n        } \n      },                                -- end of codes\n      maps {\n        {\n            from iupacna ,\n            to ncbi2na ,\n            num 25 ,\n            start-at 65 ,\n            table {\n                0,     -- A -> A\n                1,     -- B -> C\n                1,     -- C -> C\n                2,     -- D -> G\n                255,\n                255,\n                2,     -- G -> G\n                0,     -- H -> A\n                255,\n                255,\n                2,     -- K -> G\n                255,\n                1,     -- M -> C\n                0,     -- N -> A\n                255,\n                255,\n                255,\n                2,     -- R -> G\n                1,     -- S -> C\n                3,     -- T -> T\n                255,\n                0,     -- V -> A\n                3,     -- W -> T\n                255,\n                3 }    -- Y -> T\n        }, \n        {\n            from iupacna ,\n            to ncbi4na ,\n            num 25 ,\n            start-at 65 ,\n",
-        "            table {\n                1,     -- A\n                14,    -- B\n                2,     -- C\n                13,    -- D\n                255,\n                255,\n                4,     -- G\n                11,    -- H\n                255,\n                255,\n                12,    -- K\n                255,\n                3,     -- M\n                15,    -- N\n                255,\n                255,\n                255,\n                5,     -- R\n                6,     -- S\n                8,     -- T\n                255,\n                7,     -- V\n                9,     -- W\n                255,\n                10 }   -- Y\n        }, \n        {\n            from ncbi2na ,\n            to iupacna ,\n            num 4 ,\n            table {\n                65,     -- A\n                67,     -- C\n                71,     -- G\n                84 }    -- T\n        } ,\n        {\n            from ncbi2na ,\n            to ncbi4na ,\n            num 4 ,\n            table {\n                1,     -- A\n                2,     -- C\n                4,     -- G\n                8 }    -- T\n        } , \n        {\n            from ncbi4na ,\n            to iupacna ,\n            num 16 ,\n            table {\n                78,    -- gap -> N\n                65,    -- A\n                67,    -- C\n                77,    -- M\n                71,    -- G\n                82,    -- R\n                83,    -- S\n                86,    -- V\n                84,    -- T\n                87,    -- W\n                89,    -- Y\n                72,    -- H\n                75,    -- K\n                68,    -- D\n                66,    -- B\n                78 }   -- N\n        } ,\n        {\n            from ncbi4na ,\n            to ncbi2na ,\n            num 16 ,\n            table {\n                3,    -- gap -> T\n",
-        "                0,    -- A -> A\n                1,    -- C -> C\n                1,    -- M -> C\n                2,    -- G -> G\n                2,    -- R -> G\n                1,    -- S -> C\n                0,    -- V -> A\n                3,    -- T -> T\n                3,    -- W -> T\n                3,    -- Y -> T\n                0,    -- H -> A\n                2,    -- K -> G\n                2,    -- D -> G\n                1,    -- B -> C\n                0 }   -- N -> A\n        }  ,\n        {\n            from iupacaa ,\n            to ncbieaa ,\n            num 26 ,\n            start-at 65 ,\n            table {\n                65 ,    -- they map directly\n                66 ,\n                67 ,\n                68,\n                69,\n                70,\n                71,\n                72,\n                73,\n                255,  -- J\n                75,\n                76,\n                77,\n                78,\n                255,  -- O\n                80,\n                81,\n                82,\n                83,\n                84,\n                255,  -- U\n                86,\n                87,\n                88,\n                89,\n                90 }\n        }  ,\n         {\n            from ncbieaa ,\n            to iupacaa ,\n            num 49 ,\n            start-at 42 ,\n            table {\n                88 ,   -- termination -> X\n                255,\n                255,\n                88,    -- Gap -> X\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n",
-        "                255,\n                255,\n                65 ,    -- from here they map directly\n                66 ,\n                67 ,\n                68,\n                69,\n                70,\n                71,\n                72,\n                73,\n                255,  -- J\n                75,\n                76,\n                77,\n                78,\n                255,  -- O\n                80,\n                81,\n                82,\n                83,\n                84,\n                67,  -- U -> C\n                86,\n                87,\n                88,\n                89,\n                90 }\n        } ,\n        {\n            from iupacaa ,\n            to ncbistdaa ,\n            num 26 ,\n            start-at 65 ,\n            table {\n                1 ,    -- they map directly\n                2 ,\n                3 ,\n                4,\n                5,\n                6,\n                7,\n                8,\n                9,\n                255,  -- J\n                10,\n                11,\n                12,\n                13,\n                255,  -- O\n                14,\n                15,\n                16,\n                17,\n                18,\n                255,  -- U\n                19,\n                20,\n                21,\n				22,\n                23 }\n        } ,\n        {\n            from ncbieaa ,\n            to ncbistdaa ,\n            num 49 ,\n            start-at 42 ,\n            table {\n                25,   -- termination\n                255,\n                255,\n                0,    -- Gap\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n",
-        "                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                255,\n                1 ,    -- they map directly\n                2 ,\n                3 ,\n                4,\n                5,\n                6,\n                7,\n                8,\n                9,\n                255,  -- J\n                10,\n                11,\n                12,\n                13,\n                255,  -- O\n                14,\n                15,\n                16,\n                17,\n                18,\n                24,  -- U\n                19,\n                20,\n                21,\n                22,\n                23 }\n        }  ,\n        {\n            from ncbistdaa ,\n            to ncbieaa ,\n            num 26 ,\n            table {\n                45 ,  --   \"-\"\n                65 ,    -- they map directly with holes for O and J\n                66 ,\n                67 ,\n                68,\n                69,\n                70,\n                71,\n                72,\n                73,\n                75,\n                76,\n                77,\n                78,\n                80,\n                81,\n                82,\n                83,\n                84,\n                86,\n                87,\n                88,\n                89,\n                90,\n                85,	 -- U\n                42}  -- *\n        } ,\n        {\n            from ncbistdaa ,\n            to iupacaa ,\n            num 26 ,\n            table {\n                255 ,  --   \"-\"\n                65 ,    -- they map directly with holes for O and J\n                66 ,\n                67 ,\n                68,\n                69,\n                70,\n                71,\n",
-        "                72,\n                73,\n                75,\n                76,\n                77,\n                78,\n                80,\n                81,\n                82,\n                83,\n                84,\n                86,\n                87,\n                88,\n                89,\n                90,\n                255,  -- U\n                255}  -- *\n        } \n \n      }                                  -- end of maps\n}                                        -- end of seq-code-set\n\n\n",
-        0  // to indicate that there is no more data
+    "-- This is the set of NCBI sequence code tables\n",
+    "-- J.Ostell  10/18/91\n",
+    "--\n",
+    "\n",
+    "Seq-code-set ::= {\n",
+    " codes {                              -- codes\n",
+    " {                                -- IUPACna\n",
+    " code iupacna ,\n",
+    " num 25 ,                     -- continuous 65-89\n",
+    " one-letter TRUE ,            -- all one letter codes\n",
+    " start-at 65 ,                -- starts with A, ASCII 65\n",
+    " table {\n",
+    " { symbol \"A\", name \"Adenine\" },\n",
+    " { symbol \"B\" , name \"G or T or C\" },\n",
+    " { symbol \"C\", name \"Cytosine\" },\n",
+    " { symbol \"D\", name \"G or A or T\" },\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"G\", name \"Guanine\" },\n",
+    " { symbol \"H\", name \"A or C or T\" } ,\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"K\", name \"G or T\" },\n",
+    " { symbol \"\", name \"\"},\n",
+    " { symbol \"M\", name \"A or C\" },\n",
+    " { symbol \"N\", name \"A or G or C or T\" } ,\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"\", name \"\"},\n",
+    " { symbol \"R\", name \"G or A\"},\n",
+    " { symbol \"S\", name \"G or C\"},\n",
+    " { symbol \"T\", name \"Thymine\"},\n",
+    " { symbol \"\", name \"\"},\n",
+    " { symbol \"V\", name \"G or C or A\"},\n",
+    " { symbol \"W\", name \"A or T\" },\n",
+    " { symbol \"\", name \"\"},\n",
+    " { symbol \"Y\", name \"T or C\"}\n",
+    " } ,                           -- end of table\n",
+    " comps {                      -- complements\n",
+    " 84,\n",
+    " 86,\n",
+    " 71,\n",
+    " 72,\n",
+    " 69,\n",
+    " 70,\n",
+    " 67,\n",
+    " 68,\n",
+    " 73,\n",
+    " 74,\n",
+    " 77,\n",
+    " 76,\n",
+    " 75,\n",
+    " 78,\n",
+    " 79,\n",
+    " 80,\n",
+    " 81,\n",
+    " 89,\n",
+    " 87,\n",
+    " 65,\n",
+    " 85,\n",
+    " 66,\n",
+    " 83,\n",
+    " 88,\n",
+    " 82\n",
+    " }\n",
+    " },\n",
+    " {                                -- IUPACaa\n",
+    " code iupacaa ,\n",
+    " num 26 ,                     -- continuous 65-90\n",
+    " one-letter TRUE ,            -- all one letter codes\n",
+    " start-at 65 ,                -- starts with A, ASCII 65\n",
+    " table {\n",
+    " { symbol \"A\", name \"Alanine\" },\n",
+    " { symbol \"B\" , name \"Asp or Asn\" },\n",
+    " { symbol \"C\", name \"Cysteine\" },\n",
+    " { symbol \"D\", name \"Aspartic Acid\" },\n",
+    " { symbol \"E\", name \"Glutamic Acid\" },\n",
+    " { symbol \"F\", name \"Phenylalanine\" },\n",
+    " { symbol \"G\", name \"Glycine\" },\n",
+    " { symbol \"H\", name \"Histidine\" } ,\n",
+    " { symbol \"I\", name \"Isoleucine\" },\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"K\", name \"Lysine\" },\n",
+    " { symbol \"L\", name \"Leucine\" },\n",
+    " { symbol \"M\", name \"Methionine\" },\n",
+    " { symbol \"N\", name \"Asparagine\" } ,\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"P\", name \"Proline\" },\n",
+    " { symbol \"Q\", name \"Glutamine\"},\n",
+    " { symbol \"R\", name \"Arginine\"},\n",
+    " { symbol \"S\", name \"Serine\"},\n",
+    " { symbol \"T\", name \"Threonine\"},\n",
+    " { symbol \"\", name \"\"},\n",
+    " { symbol \"V\", name \"Valine\"},\n",
+    " { symbol \"W\", name \"Tryptophan\" },\n",
+    " { symbol \"X\", name \"Undetermined or atypical\"},\n",
+    " { symbol \"Y\", name \"Tyrosine\"},\n",
+    " { symbol \"Z\", name \"Glu or Gln\" }\n",
+    " }                            -- end of table   \n",
+    " },\n",
+    " {                                -- IUPACeaa\n",
+    " code ncbieaa ,\n",
+    " num 49 ,                     -- continuous 42-90\n",
+    " one-letter TRUE ,            -- all one letter codes\n",
+    " start-at 42 ,                -- starts with *, ASCII 42\n",
+    " table {\n",
+    " { symbol \"*\", name \"Termination\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"-\", name \"Gap\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"\", name \"\" } ,\n",
+    " { symbol \"A\", name \"Alanine\" },\n",
+    " { symbol \"B\" , name \"Asp or Asn\" },\n",
+    " { symbol \"C\", name \"Cysteine\" },\n",
+    " { symbol \"D\", name \"Aspartic Acid\" },\n",
+    " { symbol \"E\", name \"Glutamic Acid\" },\n",
+    " { symbol \"F\", name \"Phenylalanine\" },\n",
+    " { symbol \"G\", name \"Glycine\" },\n",
+    " { symbol \"H\", name \"Histidine\" } ,\n",
+    " { symbol \"I\", name \"Isoleucine\" },\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"K\", name \"Lysine\" },\n",
+    " { symbol \"L\", name \"Leucine\" },\n",
+    " { symbol \"M\", name \"Methionine\" },\n",
+    " { symbol \"N\", name \"Asparagine\" } ,\n",
+    " { symbol \"\", name \"\" },\n",
+    " { symbol \"P\", name \"Proline\" },\n",
+    " { symbol \"Q\", name \"Glutamine\"},\n",
+    " { symbol \"R\", name \"Arginine\"},\n",
+    " { symbol \"S\", name \"Serine\"},\n",
+    " { symbol \"T\", name \"Threonine\"},\n",
+    " { symbol \"U\", name \"Selenocysteine\"},\n",
+    " { symbol \"V\", name \"Valine\"},\n",
+    " { symbol \"W\", name \"Tryptophan\" },\n",
+    " { symbol \"X\", name \"Undetermined or atypical\"},\n",
+    " { symbol \"Y\", name \"Tyrosine\"},\n",
+    " { symbol \"Z\", name \"Glu or Gln\" }\n",
+    " }                            -- end of table\n",
+    " },\n",
+    " {                                -- IUPACaa3\n",
+    " code iupacaa3 ,\n",
+    " num 26 ,                     -- continuous 0-25\n",
+    " one-letter FALSE ,            -- all 3 letter codes\n",
+    " table {\n",
+    " { symbol \"---\", name \"Gap\" } ,\n",
+    " { symbol \"Ala\", name \"Alanine\" },\n",
+    " { symbol \"Asx\" , name \"Asp or Asn\" },\n",
+    " { symbol \"Cys\", name \"Cysteine\" },\n",
+    " { symbol \"Asp\", name \"Aspartic Acid\" },\n",
+    " { symbol \"Glu\", name \"Glutamic Acid\" },\n",
+    " { symbol \"Phe\", name \"Phenylalanine\" },\n",
+    " { symbol \"Gly\", name \"Glycine\" },\n",
+    " { symbol \"His\", name \"Histidine\" } ,\n",
+    " { symbol \"Ile\", name \"Isoleucine\" },\n",
+    " { symbol \"Lys\", name \"Lysine\" },\n",
+    " { symbol \"Leu\", name \"Leucine\" },\n",
+    " { symbol \"Met\", name \"Methionine\" },\n",
+    " { symbol \"Asn\", name \"Asparagine\" } ,\n",
+    " { symbol \"Pro\", name \"Proline\" },\n",
+    " { symbol \"Gln\", name \"Glutamine\"},\n",
+    " { symbol \"Arg\", name \"Arginine\"},\n",
+    " { symbol \"Ser\", name \"Serine\"},\n",
+    " { symbol \"Thr\", name \"Threonine\"},\n",
+    " { symbol \"Val\", name \"Valine\"},\n",
+    " { symbol \"Trp\", name \"Tryptophan\" },\n",
+    " { symbol \"Xxx\", name \"Undetermined or atypical\"},\n",
+    " { symbol \"Tyr\", name \"Tyrosine\"},\n",
+    " { symbol \"Glx\", name \"Glu or Gln\" },\n",
+    " { symbol \"Sec\", name \"Selenocysteine\"},\n",
+    " { symbol \"Ter\", name \"Termination\" } \n",
+    " }                            -- end of table\n",
+    " },\n",
+    " {                                -- NCBIstdaa\n",
+    " code ncbistdaa ,\n",
+    " num 26 ,                     -- continuous 0-25\n",
+    " one-letter TRUE ,            -- all one letter codes\n",
+    " table {\n",
+    " { symbol \"-\", name \"Gap\" } ,                -- 0\n",
+    " { symbol \"A\", name \"Alanine\" },             -- 1\n",
+    " { symbol \"B\" , name \"Asp or Asn\" },         -- 2\n",
+    " { symbol \"C\", name \"Cysteine\" },            -- 3\n",
+    " { symbol \"D\", name \"Aspartic Acid\" },       -- 4\n",
+    " { symbol \"E\", name \"Glutamic Acid\" },       -- 5\n",
+    " { symbol \"F\", name \"Phenylalanine\" },       -- 6\n",
+    " { symbol \"G\", name \"Glycine\" },             -- 7\n",
+    " { symbol \"H\", name \"Histidine\" } ,          -- 8\n",
+    " { symbol \"I\", name \"Isoleucine\" },          -- 9\n",
+    " { symbol \"K\", name \"Lysine\" },              -- 10\n",
+    " { symbol \"L\", name \"Leucine\" },             -- 11\n",
+    " { symbol \"M\", name \"Methionine\" },          -- 12\n",
+    " { symbol \"N\", name \"Asparagine\" } ,         -- 13\n",
+    " { symbol \"P\", name \"Proline\" },             -- 14\n",
+    " { symbol \"Q\", name \"Glutamine\"},            -- 15\n",
+    " { symbol \"R\", name \"Arginine\"},             -- 16\n",
+    " { symbol \"S\", name \"Serine\"},               -- 17\n",
+    " { symbol \"T\", name \"Threoine\"},             -- 18\n",
+    " { symbol \"V\", name \"Valine\"},               -- 19\n",
+    " { symbol \"W\", name \"Tryptophan\" },          -- 20\n",
+    " { symbol \"X\", name \"Undetermined or atypical\"},  -- 21\n",
+    " { symbol \"Y\", name \"Tyrosine\"},             -- 22\n",
+    " { symbol \"Z\", name \"Glu or Gln\" },          -- 23\n",
+    " { symbol \"U\", name \"Selenocysteine\"},       -- 24 \n",
+    " { symbol \"*\", name \"Termination\" }          -- 25\n",
+    " }                            -- end of table            \n",
+    " },\n",
+    " {                                -- NCBI2na\n",
+    " code ncbi2na ,\n",
+    " num 4 ,                     -- continuous 0-3\n",
+    " one-letter TRUE ,            -- all one letter codes\n",
+    " table {\n",
+    " { symbol \"A\", name \"Adenine\" },\n",
+    " { symbol \"C\", name \"Cytosine\" },\n",
+    " { symbol \"G\", name \"Guanine\" },\n",
+    " { symbol \"T\", name \"Thymine/Uracil\"}\n",
+    " } ,                          -- end of table\n",
+    " comps {                      -- complements\n",
+    " 3,\n",
+    " 2,\n",
+    " 1,\n",
+    " 0\n",
+    " }\n",
+    " },\n",
+    " {                                -- NCBI4na\n",
+    " code ncbi4na ,\n",
+    " num 16 ,                     -- continuous 0-15\n",
+    " one-letter TRUE ,            -- all one letter codes\n",
+    " table {\n",
+    " { symbol \"-\", name \"Gap\" } ,\n",
+    " { symbol \"A\", name \"Adenine\" },\n",
+    " { symbol \"C\", name \"Cytosine\" },\n",
+    " { symbol \"M\", name \"A or C\" },\n",
+    " { symbol \"G\", name \"Guanine\" },\n",
+    " { symbol \"R\", name \"G or A\"},\n",
+    " { symbol \"S\", name \"G or C\"},\n",
+    " { symbol \"V\", name \"G or C or A\"},\n",
+    " { symbol \"T\", name \"Thymine/Uracil\"},\n",
+    " { symbol \"W\", name \"A or T\" },\n",
+    " { symbol \"Y\", name \"T or C\"} ,\n",
+    " { symbol \"H\", name \"A or C or T\" } ,\n",
+    " { symbol \"K\", name \"G or T\" },\n",
+    " { symbol \"D\", name \"G or A or T\" },\n",
+    " { symbol \"B\" , name \"G or T or C\" },\n",
+    " { symbol \"N\", name \"A or G or C or T\" }\n",
+    " } ,                           -- end of table\n",
+    " comps {                       -- complements\n",
+    " 0 ,\n",
+    " 8 ,\n",
+    " 4 ,\n",
+    " 12,\n",
+    " 2 ,\n",
+    " 10,\n",
+    " 9 ,\n",
+    " 14,\n",
+    " 1 ,\n",
+    " 6 ,\n",
+    " 5 ,\n",
+    " 13,\n",
+    " 3 ,\n",
+    " 11,\n",
+    " 7 ,\n",
+    " 15\n",
+    " }\n",
+    " } \n",
+    " },                                -- end of codes\n",
+    " maps {\n",
+    " {\n",
+    " from iupacna ,\n",
+    " to ncbi2na ,\n",
+    " num 25 ,\n",
+    " start-at 65 ,\n",
+    " table {\n",
+    " 0,     -- A -> A\n",
+    " 1,     -- B -> C\n",
+    " 1,     -- C -> C\n",
+    " 2,     -- D -> G\n",
+    " 255,\n",
+    " 255,\n",
+    " 2,     -- G -> G\n",
+    " 0,     -- H -> A\n",
+    " 255,\n",
+    " 255,\n",
+    " 2,     -- K -> G\n",
+    " 255,\n",
+    " 1,     -- M -> C\n",
+    " 0,     -- N -> A\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 2,     -- R -> G\n",
+    " 1,     -- S -> C\n",
+    " 3,     -- T -> T\n",
+    " 255,\n",
+    " 0,     -- V -> A\n",
+    " 3,     -- W -> T\n",
+    " 255,\n",
+    " 3 }    -- Y -> T\n",
+    " }, \n",
+    " {\n",
+    " from iupacna ,\n",
+    " to ncbi4na ,\n",
+    " num 25 ,\n",
+    " start-at 65 ,\n",
+    " table {\n",
+    " 1,     -- A\n",
+    " 14,    -- B\n",
+    " 2,     -- C\n",
+    " 13,    -- D\n",
+    " 255,\n",
+    " 255,\n",
+    " 4,     -- G\n",
+    " 11,    -- H\n",
+    " 255,\n",
+    " 255,\n",
+    " 12,    -- K\n",
+    " 255,\n",
+    " 3,     -- M\n",
+    " 15,    -- N\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 5,     -- R\n",
+    " 6,     -- S\n",
+    " 8,     -- T\n",
+    " 255,\n",
+    " 7,     -- V\n",
+    " 9,     -- W\n",
+    " 255,\n",
+    " 10 }   -- Y\n",
+    " }, \n",
+    " {\n",
+    " from ncbi2na ,\n",
+    " to iupacna ,\n",
+    " num 4 ,\n",
+    " table {\n",
+    " 65,     -- A\n",
+    " 67,     -- C\n",
+    " 71,     -- G\n",
+    " 84 }    -- T\n",
+    " } ,\n",
+    " {\n",
+    " from ncbi2na ,\n",
+    " to ncbi4na ,\n",
+    " num 4 ,\n",
+    " table {\n",
+    " 1,     -- A\n",
+    " 2,     -- C\n",
+    " 4,     -- G\n",
+    " 8 }    -- T\n",
+    " } , \n",
+    " {\n",
+    " from ncbi4na ,\n",
+    " to iupacna ,\n",
+    " num 16 ,\n",
+    " table {\n",
+    " 78,    -- gap -> N\n",
+    " 65,    -- A\n",
+    " 67,    -- C\n",
+    " 77,    -- M\n",
+    " 71,    -- G\n",
+    " 82,    -- R\n",
+    " 83,    -- S\n",
+    " 86,    -- V\n",
+    " 84,    -- T\n",
+    " 87,    -- W\n",
+    " 89,    -- Y\n",
+    " 72,    -- H\n",
+    " 75,    -- K\n",
+    " 68,    -- D\n",
+    " 66,    -- B\n",
+    " 78 }   -- N\n",
+    " } ,\n",
+    " {\n",
+    " from ncbi4na ,\n",
+    " to ncbi2na ,\n",
+    " num 16 ,\n",
+    " table {\n",
+    " 3,    -- gap -> T\n",
+    " 0,    -- A -> A\n",
+    " 1,    -- C -> C\n",
+    " 1,    -- M -> C\n",
+    " 2,    -- G -> G\n",
+    " 2,    -- R -> G\n",
+    " 1,    -- S -> C\n",
+    " 0,    -- V -> A\n",
+    " 3,    -- T -> T\n",
+    " 3,    -- W -> T\n",
+    " 3,    -- Y -> T\n",
+    " 0,    -- H -> A\n",
+    " 2,    -- K -> G\n",
+    " 2,    -- D -> G\n",
+    " 1,    -- B -> C\n",
+    " 0 }   -- N -> A\n",
+    " }  ,\n",
+    " {\n",
+    " from iupacaa ,\n",
+    " to ncbieaa ,\n",
+    " num 26 ,\n",
+    " start-at 65 ,\n",
+    " table {\n",
+    " 65 ,    -- they map directly\n",
+    " 66 ,\n",
+    " 67 ,\n",
+    " 68,\n",
+    " 69,\n",
+    " 70,\n",
+    " 71,\n",
+    " 72,\n",
+    " 73,\n",
+    " 255,  -- J\n",
+    " 75,\n",
+    " 76,\n",
+    " 77,\n",
+    " 78,\n",
+    " 255,  -- O\n",
+    " 80,\n",
+    " 81,\n",
+    " 82,\n",
+    " 83,\n",
+    " 84,\n",
+    " 255,  -- U\n",
+    " 86,\n",
+    " 87,\n",
+    " 88,\n",
+    " 89,\n",
+    " 90 }\n",
+    " }  ,\n",
+    " {\n",
+    " from ncbieaa ,\n",
+    " to iupacaa ,\n",
+    " num 49 ,\n",
+    " start-at 42 ,\n",
+    " table {\n",
+    " 88 ,   -- termination -> X\n",
+    " 255,\n",
+    " 255,\n",
+    " 88,    -- Gap -> X\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 65 ,    -- from here they map directly\n",
+    " 66 ,\n",
+    " 67 ,\n",
+    " 68,\n",
+    " 69,\n",
+    " 70,\n",
+    " 71,\n",
+    " 72,\n",
+    " 73,\n",
+    " 255,  -- J\n",
+    " 75,\n",
+    " 76,\n",
+    " 77,\n",
+    " 78,\n",
+    " 255,  -- O\n",
+    " 80,\n",
+    " 81,\n",
+    " 82,\n",
+    " 83,\n",
+    " 84,\n",
+    " 67,  -- U -> C\n",
+    " 86,\n",
+    " 87,\n",
+    " 88,\n",
+    " 89,\n",
+    " 90 }\n",
+    " } ,\n",
+    " {\n",
+    " from iupacaa ,\n",
+    " to ncbistdaa ,\n",
+    " num 26 ,\n",
+    " start-at 65 ,\n",
+    " table {\n",
+    " 1 ,    -- they map directly\n",
+    " 2 ,\n",
+    " 3 ,\n",
+    " 4,\n",
+    " 5,\n",
+    " 6,\n",
+    " 7,\n",
+    " 8,\n",
+    " 9,\n",
+    " 255,  -- J\n",
+    " 10,\n",
+    " 11,\n",
+    " 12,\n",
+    " 13,\n",
+    " 255,  -- O\n",
+    " 14,\n",
+    " 15,\n",
+    " 16,\n",
+    " 17,\n",
+    " 18,\n",
+    " 255,  -- U\n",
+    " 19,\n",
+    " 20,\n",
+    " 21,\n",
+    " 22,\n",
+    " 23 }\n",
+    " } ,\n",
+    " {\n",
+    " from ncbieaa ,\n",
+    " to ncbistdaa ,\n",
+    " num 49 ,\n",
+    " start-at 42 ,\n",
+    " table {\n",
+    " 25,   -- termination\n",
+    " 255,\n",
+    " 255,\n",
+    " 0,    -- Gap\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 255,\n",
+    " 1 ,    -- they map directly\n",
+    " 2 ,\n",
+    " 3 ,\n",
+    " 4,\n",
+    " 5,\n",
+    " 6,\n",
+    " 7,\n",
+    " 8,\n",
+    " 9,\n",
+    " 255,  -- J\n",
+    " 10,\n",
+    " 11,\n",
+    " 12,\n",
+    " 13,\n",
+    " 255,  -- O\n",
+    " 14,\n",
+    " 15,\n",
+    " 16,\n",
+    " 17,\n",
+    " 18,\n",
+    " 24,  -- U\n",
+    " 19,\n",
+    " 20,\n",
+    " 21,\n",
+    " 22,\n",
+    " 23 }\n",
+    " }  ,\n",
+    " {\n",
+    " from ncbistdaa ,\n",
+    " to ncbieaa ,\n",
+    " num 26 ,\n",
+    " table {\n",
+    " 45 ,  --   \"-\"\n",
+    " 65 ,    -- they map directly with holes for O and J\n",
+    " 66 ,\n",
+    " 67 ,\n",
+    " 68,\n",
+    " 69,\n",
+    " 70,\n",
+    " 71,\n",
+    " 72,\n",
+    " 73,\n",
+    " 75,\n",
+    " 76,\n",
+    " 77,\n",
+    " 78,\n",
+    " 80,\n",
+    " 81,\n",
+    " 82,\n",
+    " 83,\n",
+    " 84,\n",
+    " 86,\n",
+    " 87,\n",
+    " 88,\n",
+    " 89,\n",
+    " 90,\n",
+    " 85,	 -- U\n",
+    " 42}  -- *\n",
+    " } ,\n",
+    " {\n",
+    " from ncbistdaa ,\n",
+    " to iupacaa ,\n",
+    " num 26 ,\n",
+    " table {\n",
+    " 255 ,  --   \"-\"\n",
+    " 65 ,    -- they map directly with holes for O and J\n",
+    " 66 ,\n",
+    " 67 ,\n",
+    " 68,\n",
+    " 69,\n",
+    " 70,\n",
+    " 71,\n",
+    " 72,\n",
+    " 73,\n",
+    " 75,\n",
+    " 76,\n",
+    " 77,\n",
+    " 78,\n",
+    " 80,\n",
+    " 81,\n",
+    " 82,\n",
+    " 83,\n",
+    " 84,\n",
+    " 86,\n",
+    " 87,\n",
+    " 88,\n",
+    " 89,\n",
+    " 90,\n",
+    " 255,  -- U\n",
+    " 255}  -- *\n",
+    " } \n",
+    " \n",
+    " }                                  -- end of maps\n",
+    "}                                        -- end of seq-code-set\n",
+    "\n",
+    "\n",
+    0  // to indicate that there is no more data
 };
+
 
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
- /*
+/*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/09/13 18:34:40  dicuccio
+ * Fixed problem with static object instantiation and type information.
+ * Broke the Seq-code-set ASN.1 blob into more easily editable lines (kans).
+ *
  * Revision 6.12  2002/05/15 17:57:03  ucko
  * Make the recently introduced tables STL vectors rather than primitive
  * arrays to work around a GCC 3.0.4 optimizer bug.
