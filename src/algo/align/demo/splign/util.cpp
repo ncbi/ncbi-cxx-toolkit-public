@@ -162,14 +162,12 @@ string RLE(const string& in)
   char c0 = p[0];
   out.append(1, c0);
   size_t count = 1;
-  char buf[100];
   for(size_t k = 1; k < dim; ++k) {
     char c = p[k];
     if(c != c0) {
       c0 = c;
       if(count > 1) {
-	sprintf(buf, "%d", count);
-	out += buf;
+        out += NStr::IntToString(count);
       }
       count = 1;
       out.append(1, c0);
@@ -179,8 +177,7 @@ string RLE(const string& in)
     }
   }
   if(count > 1) {
-    sprintf(buf, "%d", count);
-    out += buf;
+    out += NStr::IntToString(count);
   }
   return out;
 }
@@ -222,6 +219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/10 16:07:58  ucko
+ * Use NStr::IntToString rather than sprintf in RLE.
+ *
  * Revision 1.6  2003/12/10 01:16:57  ucko
  * ios_base -> IOS_BASE for portability to GCC 2.95.
  *
