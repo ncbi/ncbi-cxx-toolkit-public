@@ -524,6 +524,8 @@ SetupSubjects(const TSeqLocVector& subjects,
     }
 }
 
+static bool s_IsValidResidue(Uint1 res) { return res < 26; }
+
 SBlastSequence
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope,
@@ -544,7 +546,8 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
     // Protein sequences (query & subject) always have sentinels around sequence
     case BLASTP_ENCODING:
     {
-        vector<TSeqPos> replaced_positions;   // positions replaced by X's
+        vector<TSeqPos> replaced_selenocysteins; // Selenocystein residue positions
+        vector<TSeqPos> invalid_residues;        // Invalid residue positions
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
         if (buflen == 0) {
@@ -556,18 +559,29 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
         for (i = 0; i < sv.size(); i++) {
             // Change Selenocysteine to X
             if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U']) {
-                replaced_positions.push_back(i);
+                replaced_selenocysteins.push_back(i);
                 *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
+            } else if (!s_IsValidResidue(sv[i])) {
+                invalid_residues.push_back(i);
             } else {
                 *buf_var++ = sv[i];
             }
         }
+        if (invalid_residues.size() > 0) {
+            string error("Invalid residues found at positions ");
+            error += NStr::IntToString(invalid_residues[0]);
+            for (i = 1; i < invalid_residues.size(); i++) {
+                error += ", " + NStr::IntToString(invalid_residues[i]);
+            }
+            NCBI_THROW(CBlastException, eInvalidCharacter, error);
+        }
+
         *buf_var++ = GetSentinelByte(encoding);
-        if (warnings && replaced_positions.size() > 0) {
+        if (warnings && replaced_selenocysteins.size() > 0) {
             *warnings += "Selenocysteine (U) replaced by X at positions ";
-            *warnings += NStr::IntToString(replaced_positions[0]);
-            for (i = 1; i < replaced_positions.size(); i++) {
-                *warnings += ", " + NStr::IntToString(replaced_positions[i]);
+            *warnings += NStr::IntToString(replaced_selenocysteins[0]);
+            for (i = 1; i < replaced_selenocysteins.size(); i++) {
+                *warnings += ", " + NStr::IntToString(replaced_selenocysteins[i]);
             }
         }
         break;
@@ -939,6 +953,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2005/03/07 20:55:23  dondosha
+* Detect invalid residues in GetSequence and throw exception: this should never happen in normal circumstances because invalid residues are skipped by ReadFasta API
+*
 * Revision 1.38  2005/03/04 16:53:27  camacho
 * more doxygen fixes
 *
