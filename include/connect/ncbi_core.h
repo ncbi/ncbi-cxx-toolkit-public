@@ -60,61 +60,6 @@
  *    methods:    REG_Create(),  REG_Reset(),  REG_AddRef(),  REG_Delete(),
  *                REG_Get(),  REG_Set()
  *
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.16  2002/08/07 16:28:25  lavr
- * Added EIO_WriteMethod; EIO_ReadMethod enums changed; log moved to end
- *
- * Revision 6.15  2002/05/06 19:07:48  lavr
- * Added notes to EIO_Event enum type
- *
- * Revision 6.14  2002/03/28 13:28:43  kans
- * undef verify if already defined, such as on Mac OS X Darwin (EN)
- *
- * Revision 6.13  2001/09/27 22:29:35  vakatov
- * Always define "NDEBUG" if "_DEBUG" is not defined (mostly for the C Toolkit)
- *
- * Revision 6.12  2001/08/09 16:22:51  lavr
- * Remove last (unneeded) parameter from LOG_Reset()
- *
- * Revision 6.11  2001/06/19 20:16:18  lavr
- * Added #include <connect/ncbi_types.h>
- *
- * Revision 6.10  2001/06/19 19:08:28  lavr
- * STimeout and ESwitch moved to <connect/ncbi_types.h>
- *
- * Revision 6.9  2001/05/17 18:10:22  vakatov
- * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
- * Logging::  always call the logger if severity is eLOG_Fatal.
- *
- * Revision 6.8  2001/03/02 20:06:54  lavr
- * Typos fixed
- *
- * Revision 6.7  2001/01/23 23:07:30  lavr
- * A make-up change
- *
- * Revision 6.6  2001/01/11 16:41:18  lavr
- * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
- *
- * Revision 6.5  2000/10/18 20:29:41  vakatov
- * REG_Get::  pass in the default value (rather than '\0')
- *
- * Revision 6.4  2000/06/23 19:34:41  vakatov
- * Added means to log binary data
- *
- * Revision 6.3  2000/04/07 19:55:14  vakatov
- * Standard indentation
- *
- * Revision 6.2  2000/03/24 23:12:03  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.1  2000/02/23 22:30:40  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_types.h>
@@ -152,7 +97,7 @@ typedef enum {
     eIO_ReadPlain, /* read presently available data only                     */
     eIO_ReadPeek,  /* eIO_ReadPeek but dont discard the data from input queue*/
     eIO_ReadPersist, /* try to read exactly "n" bytes; wait for enough data  */
-    // deprecated
+    /* deprecated */
     eIO_Plain   = eIO_ReadPlain,
     eIO_Peek    = eIO_ReadPeek,
     eIO_Persist = eIO_ReadPersist
@@ -514,5 +459,66 @@ extern void REG_Set
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 6.17  2002/08/08 14:21:11  ucko
+ * Fix C++-style comment; really move CVS log to end.
+ *
+ * Revision 6.16  2002/08/07 16:28:25  lavr
+ * Added EIO_WriteMethod; EIO_ReadMethod enums changed; log moved to end
+ *
+ * Revision 6.15  2002/05/06 19:07:48  lavr
+ * Added notes to EIO_Event enum type
+ *
+ * Revision 6.14  2002/03/28 13:28:43  kans
+ * undef verify if already defined, such as on Mac OS X Darwin (EN)
+ *
+ * Revision 6.13  2001/09/27 22:29:35  vakatov
+ * Always define "NDEBUG" if "_DEBUG" is not defined (mostly for the C Toolkit)
+ *
+ * Revision 6.12  2001/08/09 16:22:51  lavr
+ * Remove last (unneeded) parameter from LOG_Reset()
+ *
+ * Revision 6.11  2001/06/19 20:16:18  lavr
+ * Added #include <connect/ncbi_types.h>
+ *
+ * Revision 6.10  2001/06/19 19:08:28  lavr
+ * STimeout and ESwitch moved to <connect/ncbi_types.h>
+ *
+ * Revision 6.9  2001/05/17 18:10:22  vakatov
+ * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
+ * Logging::  always call the logger if severity is eLOG_Fatal.
+ *
+ * Revision 6.8  2001/03/02 20:06:54  lavr
+ * Typos fixed
+ *
+ * Revision 6.7  2001/01/23 23:07:30  lavr
+ * A make-up change
+ *
+ * Revision 6.6  2001/01/11 16:41:18  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
+ * Revision 6.5  2000/10/18 20:29:41  vakatov
+ * REG_Get::  pass in the default value (rather than '\0')
+ *
+ * Revision 6.4  2000/06/23 19:34:41  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.3  2000/04/07 19:55:14  vakatov
+ * Standard indentation
+ *
+ * Revision 6.2  2000/03/24 23:12:03  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.1  2000/02/23 22:30:40  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
 
 #endif /* NCBI_CORE__H */
