@@ -90,10 +90,12 @@ class NCBI_XUTIL_EXPORT CBZip2Compression : public CCompression
 {
 public:
     // 'ctors
-    CBZip2Compression(ELevel level            = eLevel_Default,
-                      int    verbosity        = 0,              // [0..4]
-                      int    work_factor      = 0,              // [0..250] 
-                      int    small_decompress = 0);             // [0,1]
+    CBZip2Compression(
+        ELevel level            = eLevel_Default,
+        int    verbosity        = 0,              // [0..4]
+        int    work_factor      = 0,              // [0..250] 
+        int    small_decompress = 0               // [0,1]
+    );
     virtual ~CBZip2Compression(void);
 
     // Get compression level.
@@ -102,7 +104,8 @@ public:
     //       "eLevel_Lowest".
     virtual ELevel GetLevel(void) const;
     // Return default compression level for a BZip compression algorithm
-    virtual ELevel GetDefaultLevel(void) const { return eLevel_VeryHigh; };
+    virtual ELevel GetDefaultLevel(void) const
+        { return eLevel_VeryHigh; };
 
     //
     // Utility functions 
@@ -112,17 +115,29 @@ public:
     // Return TRUE if operation was succesfully or FALSE otherwise.
     // Notice that altogether the total size of the destination buffer must
     // be little more then size of the source buffer. 
-    virtual bool CompressBuffer  (const void* src_buf, unsigned int  src_len,
-                                  void*       dst_buf, unsigned int  dst_size,
-                                  /* out */            unsigned int* dst_len);
-    virtual bool DecompressBuffer(const void* src_buf, unsigned int  src_len,
-                                  void*       dst_buf, unsigned int  dst_size,
-                                  /* out */            unsigned int* dst_len);
+    virtual bool CompressBuffer(
+        const void* src_buf, unsigned int  src_len,
+        void*       dst_buf, unsigned int  dst_size,
+        /* out */            unsigned int* dst_len
+    );
+    virtual bool DecompressBuffer(
+        const void* src_buf, unsigned int  src_len,
+        void*       dst_buf, unsigned int  dst_size,
+        /* out */            unsigned int* dst_len
+    );
 
-    // (De)compress file with name "src" and put result to file "dst".
+    // (De)compress file "src_file" and put result to file with name "dst_file".
     // Return TRUE on success, FALSE on error.
-    virtual bool CompressFile  (const string& src, const string& dst);
-     virtual bool DecompressFile(const string& src, const string& dst);
+    virtual bool CompressFile(
+        const string& src_file,
+        const string& dst_file,
+        size_t        buf_size = kCompressionDefaultBufSize
+    );
+    virtual bool DecompressFile(
+        const string& src_file,
+        const string& dst_file, 
+        size_t        buf_size = kCompressionDefaultBufSize
+    );
 
 protected:
     bz_stream  m_Stream;         // Compressor stream
@@ -202,9 +217,11 @@ class NCBI_XUTIL_EXPORT CBZip2Compressor : public CBZip2Compression,
 {
 public:
     // 'ctors
-    CBZip2Compressor(ELevel level       = eLevel_Default,
-                     int    verbosity   = 0,              // [0..4]
-                     int    work_factor = 0);             // [0..250] 
+    CBZip2Compressor(
+        ELevel level       = eLevel_Default,
+        int    verbosity   = 0,              // [0..4]
+        int    work_factor = 0               // [0..250] 
+    );
     virtual ~CBZip2Compressor(void);
 
 protected:
@@ -300,6 +317,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/10 16:22:27  ivanov
+ * Added buffer size parameter into [De]CompressFile() functions.
+ * Cosmetic changes.
+ *
  * Revision 1.3  2003/06/17 15:48:42  ivanov
  * Removed all standalone compression/decompression I/O classes.
  * Added CBZip2Stream[De]compressor classes. Now all bzip2-based I/O stream

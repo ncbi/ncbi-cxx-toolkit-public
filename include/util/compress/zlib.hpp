@@ -87,10 +87,12 @@ class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 {
 public:
     // 'ctors
-    CZipCompression(ELevel level    = eLevel_Default,
-                    int window_bits = MAX_WBITS,             // [8..15]
-                    int mem_level   = DEF_MEM_LEVEL,         // [1..9] 
-                    int strategy    = Z_DEFAULT_STRATEGY);   // [0,1]
+    CZipCompression(
+        ELevel level    = eLevel_Default,
+        int window_bits = MAX_WBITS,             // [8..15]
+        int mem_level   = DEF_MEM_LEVEL,         // [1..9] 
+        int strategy    = Z_DEFAULT_STRATEGY     // [0,1]
+    );
     virtual ~CZipCompression(void);
 
     // Returns default compression level for a compression algorithm
@@ -112,17 +114,29 @@ public:
     // Return TRUE if operation was succesfully or FALSE otherwise.
     // Altogether, the total size of the destination buffer must be little
     // more then size of the source buffer (at least 0.1% larger + 12 bytes).
-    virtual bool CompressBuffer  (const void* src_buf, unsigned int  src_len,
-                                  void*       dst_buf, unsigned int  dst_size,
-                                  /* out */            unsigned int* dst_len);
-    virtual bool DecompressBuffer(const void* src_buf, unsigned int  src_len,
-                                  void*       dst_buf, unsigned int  dst_size,
-                                  /* out */            unsigned int* dst_len);
+    virtual bool CompressBuffer(
+        const void* src_buf, unsigned int  src_len,
+        void*       dst_buf, unsigned int  dst_size,
+        /* out */            unsigned int* dst_len
+    );
+    virtual bool DecompressBuffer(
+        const void* src_buf, unsigned int  src_len,
+        void*       dst_buf, unsigned int  dst_size,
+        /* out */            unsigned int* dst_len
+    );
 
-    // (De)compress file with name "src" and put result to file "dst".
+    // (De)compress file "src_file" and put result to file with name "dst_file".
     // Return TRUE on success, FALSE on error.
-    virtual bool CompressFile  (const string& src, const string& dst);
-    virtual bool DecompressFile(const string& src, const string& dst);
+    virtual bool CompressFile(
+        const string& src_file,
+        const string& dst_file,
+        size_t        buf_size = kCompressionDefaultBufSize
+    );
+    virtual bool DecompressFile(
+        const string& src_file,
+        const string& dst_file, 
+        size_t        buf_size = kCompressionDefaultBufSize
+    );
     
 protected:
     z_stream  m_Stream;         // Compressor stream
@@ -146,7 +160,6 @@ protected:
 // will almost certainly read some of the trailing data before signalling of
 // sequence end.
 //
-
 class NCBI_XUTIL_EXPORT CZipCompressionFile : public CZipCompression,
                                               public CCompressionFile
 {
@@ -205,10 +218,12 @@ class NCBI_XUTIL_EXPORT CZipCompressor : public CZipCompression,
 {
 public:
     // 'ctors
-    CZipCompressor(ELevel level       = eLevel_Default,
-                   int    window_bits = MAX_WBITS,
-                   int    mem_level   = DEF_MEM_LEVEL,
-                   int    strategy    = Z_DEFAULT_STRATEGY);
+    CZipCompressor(
+        ELevel level       = eLevel_Default,
+        int    window_bits = MAX_WBITS,
+        int    mem_level   = DEF_MEM_LEVEL,
+        int    strategy    = Z_DEFAULT_STRATEGY
+    );
     virtual ~CZipCompressor(void);
 
 protected:
@@ -302,6 +317,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/10 16:22:27  ivanov
+ * Added buffer size parameter into [De]CompressFile() functions.
+ * Cosmetic changes.
+ *
  * Revision 1.3  2003/06/17 15:48:59  ivanov
  * Removed all standalone compression/decompression I/O classes.
  * Added CZipStream[De]compressor classes. Now all zlib-based I/O stream
