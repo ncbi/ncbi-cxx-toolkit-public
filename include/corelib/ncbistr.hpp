@@ -28,10 +28,12 @@
  *
  * Authors:  Eugene Vasilchenko, Denis Vakatov
  *
- * File Description:
- *   The NCBI C++ standard methods for dealing with std::string
  *
  */
+
+/// @file ncbistr.hpp
+/// The NCBI C++ standard methods for dealing with std::string
+
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbiexpt.hpp>
@@ -53,285 +55,1131 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Empty "C" string (points to a '\0')
+/// Empty "C" string (points to a '\0').
 NCBI_XNCBI_EXPORT extern const char *const kEmptyCStr;
 #define NcbiEmptyCStr NCBI_NS_NCBI::kEmptyCStr
 
 
-/// Empty "C++" string
+/// Empty "C++" string.
 class NCBI_XNCBI_EXPORT CNcbiEmptyString
 {
 public:
+    /// Get string.
     static const string& Get(void);
 private:
+    /// Helper method to initialize private data member and return
+    /// null string.
     static const string& FirstGet(void);
-    static const string* m_Str;
+    static const string* m_Str;     ///< Null string pointer.
 };
+
+/// Empty string definition.
 #define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
+
+/// Empty string definition.
 #define kEmptyStr       NcbiEmptyString
 
 
 // SIZE_TYPE and NPOS
 
+/// Define size type.
 typedef NCBI_NS_STD::string::size_type SIZE_TYPE;
+
+/// Define NPOS constant as the special value "std::string::npos" which is
+/// returned when a substring search fails, or to indicate an unspecified
+/// string position.
 static const SIZE_TYPE NPOS = NCBI_NS_STD::string::npos;
 
 
+
 /////////////////////////////////////////////////////////////////////////////
-//  NStr::
-//    String-processing utilities
-//
+///
+/// NStr --
+///
+/// Encapuslates class-wide string processing functions.
 
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
-    /// Convert "str" to a (non-negative) "int" value.
-    /// Return "-1" if "str" contains any symbols other than [0-9], or
-    /// if it represents a number that does not fit into "int".
+    /// Convert string to numeric value.
+    ///
+    /// @param str
+    ///   String containing digits.
+    /// @return
+    ///   - Convert "str" to a (non-negative) "int" value and return
+    ///     this value.
+    ///   - -1 if "str" contains any symbols other than [0-9], or
+    ///     if it represents a number that does not fit into "int".
     static int StringToNumeric(const string& str);
 
     /// Whether to prohibit trailing symbols (any symbol but '\0')
-    /// in the StringToXxx() conversion functions below
+    /// in the StringToXxx() conversion functions below.
     enum ECheckEndPtr {
-        eCheck_Need,   /// Check is necessary
-        eCheck_Skip    /// Skip this check
+        eCheck_Need,   ///< Check is necessary
+        eCheck_Skip    ///< Skip this check
     };
 
-    /// String-to-X conversion functions (throw exception on conversion error).
-    /// If "check" is eCheck_Skip then "str" can have trailing symbols
-    /// after the number;  otherwise exception will be thrown if there
-    /// are trailing symbols present after the converted number.
-    static int           StringToInt    (const string& str, int base = 10,
-                                         ECheckEndPtr check = eCheck_Need);
-    static unsigned int  StringToUInt   (const string& str, int base = 10,
-                                         ECheckEndPtr check = eCheck_Need);
-    static long          StringToLong   (const string& str, int base = 10,
-                                         ECheckEndPtr check = eCheck_Need);
-    static unsigned long StringToULong  (const string& str, int base = 10,
-                                         ECheckEndPtr check = eCheck_Need);
-    static double        StringToDouble (const string& str,
-                                         ECheckEndPtr check = eCheck_Need);
-    static Int8          StringToInt8   (const string& str);
-    static Uint8         StringToUInt8  (const string& str, int base = 10);
-    static const void*   StringToPtr    (const string& str);
+    /// Converrt string to int.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an exception will be thrown. If the value is
+    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    static int StringToInt(const string& str, int base = 10,
+                           ECheckEndPtr check = eCheck_Need);
 
-    /// X-to-String conversion functions
-    static string    IntToString   (long value, bool sign = false);
-    static string    UIntToString  (unsigned long value);
-    static string    Int8ToString  (Int8 value, bool sign = false);
-    static string    UInt8ToString (Uint8 value);
-    static string    DoubleToString(double value);
-    /// Note: If precission is more that maximum for current platform,
-    //        then it will be truncated to this maximum.
-    static string    DoubleToString(double value, unsigned int precision);
-    /// Put result of the conversion into buffer "buf" size of "buf_size".
-    /// Return the number of bytes stored in "buf", not counting the
-    /// terminating '\0'.
+    /// Convert string to unsigned int.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an exception will be thrown. If the value is
+    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    static unsigned int StringToUInt(const string& str, int base = 10,
+                                     ECheckEndPtr check = eCheck_Need);
+
+    /// Convert string to long.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an exception will be thrown. If the value is
+    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    static long StringToLong(const string& str, int base = 10,
+                             ECheckEndPtr check = eCheck_Need);
+
+    /// Convert string to unsigned long.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an exception will be thrown. If the value is
+    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    static unsigned long StringToULong(const string& str, int base = 10,
+                                       ECheckEndPtr check = eCheck_Need);
+
+    /// Convert string to double.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an exception will be thrown. If the value is
+    ///   eCheck_Skip, the string can have trailing symbols after the number.
+    static double StringToDouble(const string& str,
+                                 ECheckEndPtr check = eCheck_Need);
+
+    /// Convert string to Int8.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @return
+    ///   Converted Int8 value.
+    static Int8 StringToInt8(const string& str);
+
+    /// Convert string to Uint8.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Radix base. Default is 10. Other values can be 2, 8, and 16.
+    /// @return
+    ///   Converted UInt8 value.
+    static Uint8 StringToUInt8(const string& str, int base = 10);
+
+    /// Convert string to pointer.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @return
+    ///   Pointer value corresponding to its string representation.
+    static const void* StringToPtr(const string& str);
+
+    /// Convert Int to String.
+    ///
+    /// @param value
+    ///   Integer value (long) to be converted.
+    /// @param sign
+    ///   Whether converted value should be preceded by the sign (+-) character.  
+    /// @return
+    ///   Converted string value.
+    static string IntToString(long value, bool sign = false);
+
+    /// Convert UInt to string.
+    ///
+    /// @param value
+    ///   Integer value (unsigned long) to be converted.
+    /// @return
+    ///   Converted string value.
+    static string UIntToString(unsigned long value);
+
+    /// Convert Int8 to string.
+    ///
+    /// @param value
+    ///   Integer value (Int8) to be converted.
+    /// @param sign
+    ///   Whether converted value should be preceded by the sign (+-) character.  
+    /// @return
+    ///   Converted string value.
+    static string Int8ToString(Int8 value, bool sign = false);
+
+    /// Convert UInt8 to string.
+    ///
+    /// @param value
+    ///   Integer value (UInt8) to be converted.
+    /// @return
+    ///   Converted string value.
+    static string UInt8ToString(Uint8 value);
+
+    /// Convert double to string.
+    ///
+    /// @param value
+    ///   Double value to be converted.
+    /// @return
+    ///   Converted string value.
+    static string DoubleToString(double value);
+
+    /// Convert double to string with specified precision.
+    ///
+    /// @param value
+    ///   Double value to be converted.
+    /// @param precision
+    ///   Precision value for conversion. If precision is more that maximum
+    ///   for current platform, then it will be truncated to this maximum.
+    /// @return
+    ///   Converted string value.
+    static string DoubleToString(double value, unsigned int precision);
+
+    /// Convert double to string with specified precision and place the result
+    /// in the specified buffer.
+    ///
+    /// @param value
+    ///   Double value to be converted.
+    /// @param precision
+    ///   Precision value for conversion. If precision is more that maximum
+    ///   for current platform, then it will be truncated to this maximum.
+    /// @param buf
+    ///   Put result of the conversion into this buffer.
+    /// @param buf_size
+    ///   Size of buffer, "buf".
+    /// @return
+    ///   The number of bytes stored in "buf", not counting the
+    ///   terminating '\0'.
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
                                     char* buf, SIZE_TYPE buf_size);
-    static string PtrToString      (const void* ptr);
 
-    /// Return one of: 'true, 'false'
+    /// Convert pointer to string.
+    ///
+    /// @param str
+    ///   Pointer to be converted.
+    /// @return
+    ///   String value representing the pointer.
+    static string PtrToString(const void* ptr);
+
+    /// Convert bool to string.
+    ///
+    /// @param value
+    ///   Boolean value to be converted.
+    /// @return
+    ///   One of: 'true, 'false'
     static const string& BoolToString(bool value);
-    /// Can recognize (case-insensitive) one of:  'true, 't', 'false', 'f'
-    static bool          StringToBool(const string& str);
+
+    /// Convert string to bool.
+    ///
+    /// @param str
+    ///   Boolean string value to be converted.  Can recognize
+    ///   case-insensitive version as one of:  'true, 't', 'yes', 'y'
+    ///   for TRUE; and  'false', 'f', 'no', 'n' for FALSE.
+    /// @return
+    ///   TRUE or FALSE.
+    static bool StringToBool(const string& str);
 
 
-    /// String comparison
+    /// Which type of string comparison.
     enum ECase {
-        eCase,
-        eNocase  /// ignore character case
+        eCase,      ///< Case sensitive compare
+        eNocase     ///< Case insensitive compare
     };
 
-    /// ATTENTION.  Be aware that:
-    ///
-    /// 1) "Compare***(..., SIZE_TYPE pos, SIZE_TYPE n, ...)" functions
-    ///    follow the ANSI C++ comparison rules a la "basic_string::compare()":
-    ///       str[pos:pos+n) == pattern   --> return 0
-    ///       str[pos:pos+n) <  pattern   --> return negative value
-    ///       str[pos:pos+n) >  pattern   --> return positive value
-    ///
-    /// 2) "strn[case]cmp()" functions follow the ANSI C comparison rules:
-    ///       str[0:n) == pattern[0:n)   --> return 0
-    ///       str[0:n) <  pattern[0:n)   --> return negative value
-    ///       str[0:n) >  pattern[0:n)   --> return positive value
+    // ATTENTION.  Be aware that:
+    //
+    // 1) "Compare***(..., SIZE_TYPE pos, SIZE_TYPE n, ...)" functions
+    //    follow the ANSI C++ comparison rules a la "basic_string::compare()":
+    //       str[pos:pos+n) == pattern   --> return 0
+    //       str[pos:pos+n) <  pattern   --> return negative value
+    //       str[pos:pos+n) >  pattern   --> return positive value
+    //
+    // 2) "strn[case]cmp()" functions follow the ANSI C comparison rules:
+    //       str[0:n) == pattern[0:n)   --> return 0
+    //       str[0:n) <  pattern[0:n)   --> return negative value
+    //       str[0:n) >  pattern[0:n)   --> return positive value
 
+
+    /// Case-sensitive compare of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (char*) to be compared with substring.
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern.   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
+    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    /// @sa
+    ///   Other forms of overloaded CompareCase() with differences in argument
+    ///   types: char* vs. string&
     static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                            const char* pattern);
+
+    /// Case-sensitive compare of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (string&) to be compared with substring.
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern.   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
+    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    /// @sa
+    ///   Other forms of overloaded CompareCase() with differences in argument
+    ///   types: char* vs. string&
     static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                            const string& pattern);
+
+    /// Case-sensitive compare of two strings -- char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   CompareNocase(), Compare() versions with same argument types.
     static int CompareCase(const char* s1, const char* s2);
 
+    /// Case-sensitive compare of two strings -- string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   CompareNocase(), Compare() versions with same argument types.
     static int CompareCase(const string& s1, const string& s2);
 
+    /// Case-insensitive compare of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (char*) to be compared with substring.
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern (case-insensitive compare).   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern (case-insensitive
+    ///     compare).
+    ///   - Positive integer, if str[pos:pos+n) >  pattern (case-insensitive
+    ///     compare).
+    /// @sa
+    ///   Other forms of overloaded CompareNocase() with differences in
+    ///   argument types: char* vs. string&
     static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                              const char* pattern);
+
+    /// Case-insensitive compare of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (string&) to be compared with substring.
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern (case-insensitive compare).   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern (case-insensitive
+    ///     compare).
+    ///   - Positive integer, if str[pos:pos+n) >  pattern (case-insensitive
+    ///     compare).
+    /// @sa
+    ///   Other forms of overloaded CompareNocase() with differences in
+    ///   argument types: char* vs. string&
     static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                              const string& pattern);
+
+    /// Case-insensitive compare of two strings -- char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2 (case-insensitive compare).      
+    ///   - Negative integer, if s1 < s2 (case-insensitive compare).      
+    ///   - Positive integer, if s1 > s2 (case-insensitive compare).    
+    /// @sa
+    ///   CompareCase(), Compare() versions with same argument types.
     static int CompareNocase(const char* s1, const char* s2);
 
+    /// Case-insensitive compare of two strings -- string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2 (case-insensitive compare).      
+    ///   - Negative integer, if s1 < s2 (case-insensitive compare).      
+    ///   - Positive integer, if s1 > s2 (case-insensitive compare).    
+    /// @sa
+    ///   CompareCase(), Compare() versions with same argument types.
     static int CompareNocase(const string& s1, const string& s2);
 
+    /// Compare of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (char*) to be compared with substring.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern.   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
+    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    /// @sa
+    ///   Other forms of overloaded Compare() with differences in argument
+    ///   types: char* vs. string&
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern, ECase use_case = eCase);
+
+    /// Compare of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (string&) to be compared with substring.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern.   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
+    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    /// @sa
+    ///   Other forms of overloaded Compare() with differences in argument
+    ///   types: char* vs. string&
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                        const string& pattern, ECase use_case = eCase);
+
+    /// Case-sensitive compare of two strings -- char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   CompareNocase(), Compare() versions with similar argument types.
     static int Compare(const char* s1, const char* s2,
                        ECase use_case = eCase);
+
+    /// Case-sensitive compare of two strings -- string&, char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   CompareNocase(), Compare() versions with similar argument types.
     static int Compare(const string& s1, const char* s2,
                        ECase use_case = eCase);
+
+    /// Case-sensitive compare of two strings -- char*, string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   CompareNocase(), Compare() versions with similar argument types.
     static int Compare(const char* s1, const string& s2,
                        ECase use_case = eCase);
+
+    /// Case-sensitive compare of two strings -- string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   CompareNocase(), Compare() versions with similar argument types.
     static int Compare(const string& s1, const string& s2,
                        ECase use_case = eCase);
 
     // NOTE.  On some platforms, "strn[case]cmp()" can work faster than their
     //        "Compare***()" counterparts.
-    static int strcmp      (const char* s1, const char* s2);
-    static int strncmp     (const char* s1, const char* s2, size_t n);
-    static int strcasecmp  (const char* s1, const char* s2);
-    static int strncasecmp (const char* s1, const char* s2, size_t n);
 
-    // Wrapper for the function strftime() that correct handling %D and %T
-    // time formats on MS Windows
+    /// String compare.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   strncmp(), strcasecmp(), strncasecmp()
+    static int strcmp(const char* s1, const char* s2);
+
+    /// String compare upto specified number of characters.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param n
+    ///   Number of characters in string 
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   strcmp(), strcasecmp(), strncasecmp()
+    static int strncmp(const char* s1, const char* s2, size_t n);
+
+    /// Case-insensitive string compare.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   strcmp(), strncmp(), strncasecmp()
+    static int strcasecmp(const char* s1, const char* s2);
+
+    /// Case-insensitive string compare upto specfied number of characters.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   strcmp(), strcasecmp(), strcasecmp()
+    static int strncasecmp(const char* s1, const char* s2, size_t n);
+
+    /// Wrapper for the function strftime() that corrects handling %D and %T
+    /// time formats on MS Windows.
     static size_t strftime (char* s, size_t maxsize, const char* format,
                             const struct tm* timeptr);
 
-    /// The following 4 methods change the passed string, then return it
-    static string& ToLower(string& str);
-    static char*   ToLower(char*   str);
-    static string& ToUpper(string& str);
-    static char*   ToUpper(char*   str);
-    // ...and these two are just dummies to prohibit passing constant C strings
-private:
-    static void/*dummy*/ ToLower(const char* /*dummy*/);
-    static void/*dummy*/ ToUpper(const char* /*dummy*/);
-public:
+    // The following 4 methods change the passed string, then return it
 
+    /// Convert string to lower case -- string& version.
+    /// 
+    /// @param str
+    ///   String to be converted.
+    /// @return
+    ///   Lower cased string.
+    static string& ToLower(string& str);
+
+    /// Convert string to lower case -- char* version.
+    /// 
+    /// @param str
+    ///   String to be converted.
+    /// @return
+    ///   Lower cased string.
+    static char* ToLower(char*   str);
+
+    /// Convert string to upper case -- string& version.
+    /// 
+    /// @param str
+    ///   String to be converted.
+    /// @return
+    ///   Upper cased string.
+    static string& ToUpper(string& str);
+
+    /// Convert string to upper case -- char* version.
+    /// 
+    /// @param str
+    ///   String to be converted.
+    /// @return
+    ///   Upper cased string.
+    static char* ToUpper(char*   str);
+
+private:
+    /// Privatized ToLower() with const char* parameter to prevent passing of 
+    /// constant strings.
+    static void/*dummy*/ ToLower(const char* /*dummy*/);
+
+    /// Privatized ToUpper() with const char* parameter to prevent passing of 
+    /// constant strings.
+    static void/*dummy*/ ToUpper(const char* /*dummy*/);
+
+public:
+    /// Check if a string starts with a specified prefix value.
+    ///
+    /// @param str
+    ///   String to check.
+    /// @param start
+    ///   Prefix value to check for.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking.
     static bool StartsWith(const string& str, const string& start,
                            ECase use_case = eCase);
+
+    /// Check if a string ends with a specified suffix value.
+    ///
+    /// @param str
+    ///   String to check.
+    /// @param end
+    ///   Suffix value to check for.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking.
     static bool EndsWith(const string& str, const string& end,
                          ECase use_case = eCase);
 
+    /// Whether it is the first or last occurrence.
     enum EOccurrence {
-        eFirst,
-        eLast
+        eFirst,             ///< First occurrence
+        eLast               ///< Last occurrence
     };
 
-    // Return the start of the first or last (depending on WHICH)
-    // occurrence of PATTERN in STR that *starts* within [START, END],
-    // or NPOS if it does not occur.
-    static SIZE_TYPE Find      (const string& str, const string& pattern,
-                                SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
-                                EOccurrence which = eFirst,
-                                ECase use_case = eCase);
+    /// Find the pattern in the specfied range of a string.
+    ///
+    /// @param str
+    ///   String to search.
+    /// @param pattern
+    ///   Pattern to search for in "str". 
+    /// @param start
+    ///   Position in "str" to start search from -- default of 0 means start
+    ///   the search from the beginning of the string.
+    /// @param end
+    ///   Position in "str" to start search up to -- default of NPOS means
+    ///   to search to the end of the string.
+    /// @param which
+    ///   When set to eFirst, this means to find the first occurrence of 
+    ///   "pattern" in "str". When set to eLast, this means to find the last
+    ///    occurrence of "pattern" in "str".
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase) while searching for the pattern.
+    /// @return
+    ///   - The start of the first or last (depending on "which" parameter)
+    ///   occurrence of "pattern" in "str", within the string interval
+    ///   ["start", "end"], or
+    ///   - NPOS if there is no occurrence of the pattern.
+    static SIZE_TYPE Find(const string& str, const string& pattern,
+                          SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                          EOccurrence which = eFirst,
+                          ECase use_case = eCase);
+
+    /// Find the pattern in the specfied range of a string using a case
+    /// sensitive search.
+    ///
+    /// @param str
+    ///   String to search.
+    /// @param pattern
+    ///   Pattern to search for in "str". 
+    /// @param start
+    ///   Position in "str" to start search from -- default of 0 means start
+    ///   the search from the beginning of the string.
+    /// @param end
+    ///   Position in "str" to start search up to -- default of NPOS means
+    ///   to search to the end of the string.
+    /// @param which
+    ///   When set to eFirst, this means to find the first occurrence of 
+    ///   "pattern" in "str". When set to eLast, this means to find the last
+    ///    occurrence of "pattern" in "str".
+    /// @return
+    ///   - The start of the first or last (depending on "which" parameter)
+    ///   occurrence of "pattern" in "str", within the string interval
+    ///   ["start", "end"], or
+    ///   - NPOS if there is no occurrence of the pattern.
     static SIZE_TYPE FindCase  (const string& str, const string& pattern,
                                 SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
+
+    /// Find the pattern in the specfied range of a string using a case
+    /// insensitive search.
+    ///
+    /// @param str
+    ///   String to search.
+    /// @param pattern
+    ///   Pattern to search for in "str". 
+    /// @param start
+    ///   Position in "str" to start search from -- default of 0 means start
+    ///   the search from the beginning of the string.
+    /// @param end
+    ///   Position in "str" to start search up to -- default of NPOS means
+    ///   to search to the end of the string.
+    /// @param which
+    ///   When set to eFirst, this means to find the first occurrence of 
+    ///   "pattern" in "str". When set to eLast, this means to find the last
+    ///    occurrence of "pattern" in "str".
+    /// @return
+    ///   - The start of the first or last (depending on "which" parameter)
+    ///   occurrence of "pattern" in "str", within the string interval
+    ///   ["start", "end"], or
+    ///   - NPOS if there is no occurrence of the pattern.
     static SIZE_TYPE FindNoCase(const string& str, const string& pattern,
                                 SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
+    /// Which end to truncate a string.
     enum ETrunc {
-        eTrunc_Begin,  /// truncate leading  spaces only
-        eTrunc_End,    /// truncate trailing spaces only
-        eTrunc_Both    /// truncate spaces at both begin and end of string
+        eTrunc_Begin,  ///< Truncate leading spaces only
+        eTrunc_End,    ///< Truncate trailing spaces only
+        eTrunc_Both    ///< Truncate spaces at both begin and end of string
     };
+
+    /// Truncate spaces in a string.
+    ///
+    /// @param str
+    ///   String to truncate spaces from.
+    /// @param where
+    ///   Which end of the string to truncate space from. Default is to
+    ///   truncate space from both ends (eTrunc_Both).
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 
-    /// Starting from position "start_pos", replace no more than "max_replace"
-    /// occurrences of substring "search" by string "replace".
-    /// If "max_replace" is zero -- then replace all occurrences.
-    /// Result will be put to string "dst", and it will be returned as well.
+    /// Replace occurrences of a substring within a string.
+    ///
+    /// @param src
+    ///   Source string from which specified substring occurrences are
+    ///   replaced.
+    /// @param search
+    ///   Substring value in "src" that is replaced.
+    /// @param replace
+    ///   Replace "search" substring with this value.
+    /// @param dst
+    ///   Result of replacing the "search" string with "replace" in "src".
+    ///   This value is also returned by the function.
+    /// @param start_pos
+    ///   Position to start search from.
+    /// @param max_replace
+    ///   Replace no more than "max_replace" occurrences of substring "search"
+    ///   If "max_replace" is zero(default), then replace all occurrences with
+    ///   "replace".
+    /// @return
+    ///   Result of replacing the "search" string with "replace" in "src". This
+    ///   value is placed in "dst" as well.
+    /// @sa
+    ///   Version of Replace() that returns a new string.
     static string& Replace(const string& src,
                            const string& search,
                            const string& replace,
                            string& dst,
                            SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
-    /// The same as the above Replace(), but return new string
+    /// Replace occurrences of a substring within a string and returns the
+    /// result as a new string.
+    ///
+    /// @param src
+    ///   Source string from which specified substring occurrences are
+    ///   replaced.
+    /// @param search
+    ///   Substring value in "src" that is replaced.
+    /// @param replace
+    ///   Replace "search" substring with this value.
+    /// @param start_pos
+    ///   Position to start search from.
+    /// @param max_replace
+    ///   Replace no more than "max_replace" occurrences of substring "search"
+    ///   If "max_replace" is zero(default), then replace all occurrences with
+    ///   "replace".
+    /// @return
+    ///   A new string containing the result of replacing the "search" string
+    ///   with "replace" in "src"
+    /// @sa
+    ///   Version of Replace() that has a destination parameter to accept
+    ///   result.
     static string Replace(const string& src,
                           const string& search,
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
-    // Whether to merge adjacent delimiters in Split and Tokenize
+    /// Whether to merge adjacent delimiters in Split and Tokenize.
     enum EMergeDelims {
-        eNoMergeDelims,
-        eMergeDelims
+        eNoMergeDelims,     ///< No merging of delimiters -- default for
+                            ///< Tokenize()
+        eMergeDelims        ///< Merge the delimiters -- default for Split()
     };
 
 
-    /// Split string "str" using symbols from "delim" as delimiters.
-    /// Delimiters which immediately follow each other are treated as one
-    /// delimiter by default (unlike that in Tokenize()).
-    /// Add the resultant tokens to the list "arr". Return "arr".
+    /// Split a string using specified delimiters.
+    ///
+    /// @param str
+    ///   String to be split.
+    /// @param delim
+    ///   Delimiters used to split string "str".
+    /// @param arr
+    ///   The split tokens are added to the list "arr" and also returned
+    ///   by the function. 
+    /// @param merge
+    ///   Whether to merge the delimiters or not. The default setting of
+    ///   eMergeDelims means that delimiters that immediately follow each other
+    ///   are treated as one delimiter.
+    /// @return 
+    ///   The list "arr" is also returned.
+    /// @sa
+    ///   Tokenize()
     static list<string>& Split(const string& str,
                                const string& delim,
                                list<string>& arr,
                                EMergeDelims  merge = eMergeDelims);
 
-    /// Tokenize string "str" using symbols from "delim" as delimeters.
-    /// Add the resultant tokens to the vector "arr". Return ref. to "arr".
-    /// If delimiter is empty, then input string is appended to "arr" as is.
+    /// Tokenize a string using the specified delimiters.
+    ///
+    ///
+    /// @param str
+    ///   String to be tokenized.
+    /// @param delim
+    ///   Delimiters used to tokenize string "str".
+    ///   If delimiter is empty, then input string is appended to "arr" as is.
+    /// @param arr
+    ///   The tokens defined in "str" by using symbols from "delim" are added
+    ///   to the list "arr" and also returned by the function. 
+    /// @param merge
+    ///   Whether to merge the delimiters or not. The default setting of
+    ///   eNoMergeDelims means that delimiters that immediately follow each other
+    ///   are treated as separate delimiters.
+    /// @return 
+    ///   The list "arr" is also returned.
+    /// @sa
+    ///   Split()
     static vector<string>& Tokenize(const string&   str,
                                     const string&   delim,
                                     vector<string>& arr,
                                     EMergeDelims    merge = eNoMergeDelims);
 
-    /// Join the strings in "arr" into a single string, separating
-    /// each pair with "delim".
+    /// Join strings using the specified delimiter.
+    ///
+    /// @param arr
+    ///   Array of strings to be joined.
+    /// @param delim
+    ///   Delimiter used to join the string.
+    /// @return 
+    ///   The strings in "arr" are joined into a single string, separated
+    ///   with "delim".
     static string Join(const list<string>& arr, const string& delim);
 
-    /// Make a printable version of "str". The non-printable characters will
-    /// be represented as "\r", "\n", "\v", "\t", "\0", "\\", or
-    /// "\xDD" where DD is the character's code in hexadecimal.
+    /// How to display new line characters.
+    ///
+    /// Assists in making a printable version of "str".
     enum ENewLineMode {
-        eNewLine_Quote,         // display "\n" instead of actual linebreak
-        eNewLine_Passthru       // break the line on every "\n" occurrance
+        eNewLine_Quote,         ///< Display "\n" instead of actual linebreak
+        eNewLine_Passthru       ///< Break the line on every "\n" occurrance
     };
 
+    /// Get a printable version of the specified string. 
+    ///
+    /// The non-printable characters will be represented as "\r", "\n", "\v",
+    /// "\t", "\0", "\\", or "\xDD" where DD is the character's code in
+    /// hexadecimal.
+    ///
+    /// @param str
+    ///   The string whose printable version is wanted.
+    /// @param nl_mode
+    ///   How to represent the new line character. The default setting of 
+    ///   eNewLine_Quote displays the new line as "\n". If set to
+    ///   eNewLine_Passthru, a line break is used instead.
+    /// @return
+    ///   Return a printable version of "str". 
     static string PrintableString(const string& str,
                                   ENewLineMode  nl_mode = eNewLine_Quote);
 
+    /// How to wrap the words in a string to a new line.
     enum EWrapFlags {
-        fWrap_Hyphenate  = 0x1, // add a hyphen when breaking words?
-        fWrap_HTMLPre    = 0x2  // wrap as preformatted HTML?
+        fWrap_Hyphenate  = 0x1, ///< Add a hyphen when breaking words?
+        fWrap_HTMLPre    = 0x2  ///< Wrap as preformatted HTML?
     };
-    typedef int TWrapFlags; // binary OR of "EWrapFlags"
+    typedef int TWrapFlags;     ///< Binary OR of "EWrapFlags"
 
+    /// Wrap the specified string into lines of a specified width -- prefix,
+    /// prefix1 default version.
+    ///
     /// Split string "str" into lines of width "width" and add the
-    /// resulting lines to the list "arr" (returned).  Normally, all
+    /// resulting lines to the list "arr". Normally, all
     /// lines will begin with "prefix" (counted against "width"),
     /// but the first line will instead begin with "prefix1" if
     /// you supply it.
+    ///
+    /// @param str
+    ///   String to be split into wrapped lines.
+    /// @param width
+    ///   Width of each wrapped line.
+    /// @param arr
+    ///   List of strings containing wrapped lines.
+    /// @param flags
+    ///   How to wrap the words to a new line. See EWrapFlags documentation.
+    /// @param prefix
+    ///   The prefix string added to each wrapped line, except the first line,
+    ///   unless "prefix1" is set.
+    ///   If "prefix" is set to 0(default), do not add a prefix string to the
+    ///   wrapped lines.
+    /// @param prefix1
+    ///   The prefix string for the first line. Use this for the first line
+    ///   instead of "prefix".
+    ///   If "prefix1" is set to 0(default), do not add a prefix string to the
+    ///   first line.
+    /// @return
+    ///   Return "arr", the list of wrapped lines.
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags = 0,
                               const string* prefix = 0,
                               const string* prefix1 = 0);
 
+    /// Wrap the specified string into lines of a specified width -- prefix1
+    /// default version.
+    ///
+    /// Split string "str" into lines of width "width" and add the
+    /// resulting lines to the list "arr". Normally, all
+    /// lines will begin with "prefix" (counted against "width"),
+    /// but the first line will instead begin with "prefix1" if
+    /// you supply it.
+    ///
+    /// @param str
+    ///   String to be split into wrapped lines.
+    /// @param width
+    ///   Width of each wrapped line.
+    /// @param arr
+    ///   List of strings containing wrapped lines.
+    /// @param flags
+    ///   How to wrap the words to a new line. See EWrapFlags documentation.
+    /// @param prefix
+    ///   The prefix string added to each wrapped line, except the first line,
+    ///   unless "prefix1" is set.
+    ///   If "prefix" is set to 0, do not add a prefix string to the wrapped
+    ///   lines.
+    /// @param prefix1
+    ///   The prefix string for the first line. Use this for the first line
+    ///   instead of "prefix".
+    ///   If "prefix1" is set to 0(default), do not add a prefix string to the
+    ///   first line.
+    /// @return
+    ///   Return "arr", the list of wrapped lines.
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags,
                               const string& prefix, const string* prefix1 = 0);
 
+    /// Wrap the specified string into lines of a specified width.
+    ///
+    /// Split string "str" into lines of width "width" and add the
+    /// resulting lines to the list "arr". Normally, all
+    /// lines will begin with "prefix" (counted against "width"),
+    /// but the first line will instead begin with "prefix1" if
+    /// you supply it.
+    ///
+    /// @param str
+    ///   String to be split into wrapped lines.
+    /// @param width
+    ///   Width of each wrapped line.
+    /// @param arr
+    ///   List of strings containing wrapped lines.
+    /// @param flags
+    ///   How to wrap the words to a new line. See EWrapFlags documentation.
+    /// @param prefix
+    ///   The prefix string added to each wrapped line, except the first line,
+    ///   unless "prefix1" is set.
+    ///   If "prefix" is set to 0, do not add a prefix string to the wrapped
+    ///   lines.
+    /// @param prefix1
+    ///   The prefix string for the first line. Use this for the first line
+    ///   instead of "prefix".
+    ///   If "prefix1" is set to 0, do not add a prefix string to the first
+    ///   line.
+    /// @return
+    ///   Return "arr", the list of wrapped lines.
     static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags,
                               const string& prefix, const string& prefix1);
 
-    /// Similar to the above, but tries to avoid splitting any elements of l.
-    /// Delim only applies between elements on the same line; if you want
-    /// everything to end with commas or such, you should add them first.
+
+    /// Wrap the list using the specified criteria -- default prefix, 
+    /// prefix1 version.
+    ///
+    /// WrapList() is similar to Wrap(), but tries to avoid splitting any
+    /// elements of the list to be wrapped. Also, the "delim" only applies
+    /// between elements on the same line; if you want everything to end with
+    /// commas or such, you should add them first.
+    ///
+    /// @param l
+    ///   The list to be wrapped.
+    /// @param width
+    ///   Width of each wrapped line.
+    /// @param delim
+    ///   Delimiters used to split elements on the same line.
+    /// @param arr
+    ///   List containing the wrapped list result.
+    /// @param flags
+    ///   How to wrap the words to a new line. See EWrapFlags documentation.
+    /// @param prefix
+    ///   The prefix string added to each wrapped line, except the first line,
+    ///   unless "prefix1" is set.
+    ///   If "prefix" is set to 0(default), do not add a prefix string to the
+    ///   wrapped lines.
+    /// @param prefix1
+    ///   The prefix string for the first line. Use this for the first line
+    ///   instead of "prefix".
+    ///   If "prefix1" is set to 0(default), do not add a prefix string to the
+    ///   first line.
+    /// @return
+    ///   Return "arr", the wrapped list.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
                                   TWrapFlags flags = 0,
                                   const string* prefix = 0,
                                   const string* prefix1 = 0);
 
+    /// Wrap the list using the specified criteria -- default prefix1 version.
+    ///
+    /// WrapList() is similar to Wrap(), but tries to avoid splitting any
+    /// elements of the list to be wrapped. Also, the "delim" only applies
+    /// between elements on the same line; if you want everything to end with
+    /// commas or such, you should add them first.
+    ///
+    /// @param l
+    ///   The list to be wrapped.
+    /// @param width
+    ///   Width of each wrapped line.
+    /// @param delim
+    ///   Delimiters used to split elements on the same line.
+    /// @param arr
+    ///   List containing the wrapped list result.
+    /// @param flags
+    ///   How to wrap the words to a new line. See EWrapFlags documentation.
+    /// @param prefix
+    ///   The prefix string added to each wrapped line, except the first line,
+    ///   unless "prefix1" is set.
+    ///   If "prefix" is set to 0, do not add a prefix string to the
+    ///   wrapped lines.
+    /// @param prefix1
+    ///   The prefix string for the first line. Use this for the first line
+    ///   instead of "prefix".
+    ///   If "prefix1" is set to 0(default), do not add a prefix string to the
+    ///   first line.
+    /// @return
+    ///   Return "arr", the wrappe list.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
                                   TWrapFlags flags, const string& prefix,
                                   const string* prefix1 = 0);
-
+        
+    /// Wrap the list using the specified criteria.
+    ///
+    /// WrapList() is similar to Wrap(), but tries to avoid splitting any
+    /// elements of the list to be wrapped. Also, the "delim" only applies
+    /// between elements on the same line; if you want everything to end with
+    /// commas or such, you should add them first.
+    ///
+    /// @param l
+    ///   The list to be wrapped.
+    /// @param width
+    ///   Width of each wrapped line.
+    /// @param delim
+    ///   Delimiters used to split elements on the same line.
+    /// @param arr
+    ///   List containing the wrapped list result.
+    /// @param flags
+    ///   How to wrap the words to a new line. See EWrapFlags documentation.
+    /// @param prefix
+    ///   The prefix string added to each wrapped line, except the first line,
+    ///   unless "prefix1" is set.
+    ///   If "prefix" is set to 0, do not add a prefix string to the
+    ///   wrapped lines.
+    /// @param prefix1
+    ///   The prefix string for the first line. Use this for the first line
+    ///   instead of "prefix".
+    ///   If "prefix1" is set to 0, do not add a prefix string to the
+    ///   first line.
+    /// @return
+    ///   Return "arr", the wrapped list.
     static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
                                   const string& delim, list<string>& arr,
                                   TWrapFlags flags, const string& prefix,
@@ -339,39 +1187,64 @@ public:
 }; // class NStr
 
 
+
 /////////////////////////////////////////////////////////////////////////////
-//  CStringUTF8
+///
+/// CStringUTF8 --
+///
+/// Define a UTF-8 String class.
+///
+/// UTF-8 stands for Unicode Transformation Format-8, and is an 8-bit
+/// lossless encoding of Unicode characters.
+/// @sa
+///   RFC 2279
 
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
 {
 public:
-// constructors
+    /// Constructor.
     CStringUTF8(void)
     {
     }
+
+    /// Destructor.
     ~CStringUTF8(void)
     {
     }
+
+    /// Copy constructor.
     CStringUTF8(const CStringUTF8& src)
         : string(src)
     {
     }
+
+    /// Constructor from a string argument.
     CStringUTF8(const string& src)
         : string()
     {
         x_Append(src.c_str());
     }
+
+    /// Constructor from a char* argument.
     CStringUTF8(const char* src)
         : string()
     {
         x_Append(src);
     }
+
 #if defined(HAVE_WSTRING)
+    /// Constructor from a wstring argument.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     CStringUTF8(const wstring& src)
         : string()
     {
         x_Append( src.c_str());
     }
+
+    /// Constructor from a whcar_t* argument.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     CStringUTF8(const wchar_t* src)
         : string()
     {
@@ -379,31 +1252,43 @@ public:
     }
 #endif // HAVE_WSTRING
 
-// operator=
+    /// Assignment operator -- rhs is a CStringUTF8.
     CStringUTF8& operator= (const CStringUTF8& src)
     {
         string::operator= (src);
         return *this;
     }
+
+    /// Assignment operator -- rhs is a string.
     CStringUTF8& operator= (const string& src)
     {
         erase();
         x_Append(src.c_str());
         return *this;
     }
+
+    /// Assignment operator -- rhs is a char*.
     CStringUTF8& operator= (const char* src)
     {
         erase();
         x_Append(src);
         return *this;
     }
+
 #if defined(HAVE_WSTRING)
+    /// Assignment operator -- rhs is a wstring.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     CStringUTF8& operator= (const wstring& src)
     {
         erase();
         x_Append(src.c_str());
         return *this;
     }
+
+    /// Assignment operator -- rhs is a wchar_t*.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     CStringUTF8& operator= (const wchar_t* src)
     {
         erase();
@@ -412,28 +1297,40 @@ public:
     }
 #endif // HAVE_WSTRING
 
-// operator+=
+    /// Append to string operator+= -- rhs is CStringUTF8.
     CStringUTF8& operator+= (const CStringUTF8& src)
     {
         string::operator+= (src);
         return *this;
     }
+
+    /// Append to string operator+= -- rhs is string.
     CStringUTF8& operator+= (const string& src)
     {
         x_Append(src.c_str());
         return *this;
     }
+
+    /// Append to string operator+= -- rhs is char*.
     CStringUTF8& operator+= (const char* src)
     {
         x_Append(src);
         return *this;
     }
+
 #if defined(HAVE_WSTRING)
+    /// Append to string operator+=  -- rhs is a wstring.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     CStringUTF8& operator+= (const wstring& src)
     {
         x_Append(src.c_str());
         return *this;
     }
+
+    /// Append to string operator+=  -- rhs is a wchar_t*.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     CStringUTF8& operator+= (const wchar_t* src)
     {
         x_Append(src);
@@ -441,15 +1338,29 @@ public:
     }
 #endif // HAVE_WSTRING
 
-// conversion
-    string  AsAscii  (void) const;
+    /// Convert to ASCII.
+    ///
+    /// Can throw a StringException with error codes "eFormat" or "eConvert"
+    /// if string has a wrong UTF-8 format or cannot be converted to ASCII.
+    string AsAscii(void) const;
+
 #if defined(HAVE_WSTRING)
+    /// Convert to Unicode.
+    ///
+    /// Defined only if HAVE_STRING is defined.
+    /// Can throw a StringException with error code "eFormat" if string has
+    /// a wrong UTF-8 format.
     wstring AsUnicode(void) const;
 #endif // HAVE_WSTRING
 
 private:
-    void x_Append(const char*    src);
+    /// Helper method to append necessary characters for UTF-8 format.
+    void x_Append(const char* src);
+
 #if defined(HAVE_WSTRING)
+    /// Helper method to append necessary characters for UTF-8 format.
+    ///
+    /// Defined only if HAVE_STRING is defined.
     void x_Append(const wchar_t* src);
 #endif // HAVE_WSTRING
 };
@@ -457,17 +1368,27 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CStringException - exceptions generated by strings
+///
+/// CStringException --
+///
+/// Define exceptions generated by string classes.
+///
+/// CStringException inherits its basic functionality from
+/// CParseTemplException<CCoreException> and defines additional error codes
+/// for string parsing.
 
-
-class NCBI_XNCBI_EXPORT CStringException : public CParseTemplException<CCoreException>
+class NCBI_XNCBI_EXPORT CStringException :
+                        public CParseTemplException<CCoreException>
 {
 public:
+    /// Error types that string classes can generate.
     enum EErrCode {
-        eConvert,
-        eBadArgs,
-        eFormat
+        eConvert,       ///< Failure to convert string
+        eBadArgs,       ///< Bad arguments to string methods 
+        eFormat         ///< Wrong format for any input to string methods
     };
+
+    /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -477,45 +1398,63 @@ public:
         default:    return CException::GetErrCodeString();
         }
     }
+
+    // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT2(CStringException,
-        CParseTemplException<CCoreException>,std::string::size_type);
+        CParseTemplException<CCoreException>, std::string::size_type);
 };
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Predicates
 //
 
 
-/// Case-sensitive string comparison
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Define Case-sensitive string comparison methods.
+///
+/// Used as arguments to template functions for specifying the type of 
+/// comparison.
+
 struct PCase
 {
-    /// Return difference between "s1" and "s2"
+    /// Return difference between "s1" and "s2".
     int Compare(const string& s1, const string& s2) const;
 
-    /// Return TRUE if s1 < s2
+    /// Return TRUE if s1 < s2.
     bool Less(const string& s1, const string& s2) const;
 
-    /// Return TRUE if s1 == s2
+    /// Return TRUE if s1 == s2.
     bool Equals(const string& s1, const string& s2) const;
 
-    /// Return TRUE if s1 < s2
+    /// Return TRUE if s1 < s2.
     bool operator()(const string& s1, const string& s2) const;
 };
 
 
-/// Case-INsensitive string comparison
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Define Case-insensitive string comparison methods.
+///
+/// Used as arguments to template functions for specifying the type of 
+/// comparison.
+
 struct PNocase
 {
-    /// Return difference between "s1" and "s2"
+    /// Return difference between "s1" and "s2".
     int Compare(const string& s1, const string& s2) const;
 
-    /// Return TRUE if s1 < s2
+    /// Return TRUE if s1 < s2.
     bool Less(const string& s1, const string& s2) const;
 
-    /// Return TRUE if s1 == s2
+    /// Return TRUE if s1 == s2.
     bool Equals(const string& s1, const string& s2) const;
 
-    /// Return TRUE if s1 < s2 ignoring case
+    /// Return TRUE if s1 < s2 ignoring case.
     bool operator()(const string& s1, const string& s2) const;
 };
 
@@ -526,7 +1465,7 @@ struct PNocase
 //
 
 
-/// Check equivalence of arguments using predicate
+/// Check equivalence of arguments using predicate.
 template<class Arg1, class Arg2, class Pred>
 inline
 bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
@@ -846,6 +1785,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2003/08/15 18:14:54  siyan
+ * Added documentation.
+ *
  * Revision 1.42  2003/05/22 20:08:00  gouriano
  * added UTF8 strings
  *
