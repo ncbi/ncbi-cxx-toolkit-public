@@ -131,13 +131,13 @@ typedef struct BLAST_ExtendWord {
 /** Initializes the word extension structure
  * @param query_length Length of the query sequence [in]
  * @param word_options Options for initial word extension [in]
- * @param dblen The total length of the database [in]
- * @param dbseq_num The total number of sequences in the database [in]
+ * @param subject_length Average length of a subject sequence, used to 
+ *                       calculate average search space. [in]
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
 Int2 BLAST_ExtendWordInit(Uint4 query_length,
    const BlastInitialWordOptions* word_options,
-   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr);
+   Uint4 subject_length, BLAST_ExtendWord** ewp_ptr);
 
 /** Allocate memory for the BlastInitHitList structure */
 BlastInitHitList* BLAST_InitHitListNew(void);
