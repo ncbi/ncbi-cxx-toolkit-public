@@ -45,6 +45,7 @@ public:
     enum EErrCode {
         eInvalidRequest,
         eConsensusNotPresent,
+        eInvalidSeqId,
         eInvalidRow,
         eInvalidSegment,
         eInvalidDenseg,
@@ -59,6 +60,7 @@ public:
         switch (GetErrCode()) {
         case eInvalidRequest:       return "eInvalidRequest";
         case eConsensusNotPresent:  return "eConsensusNotPresent";
+        case eInvalidSeqId:         return "eInvalidSeqId";
         case eInvalidRow:           return "eInvalidRow";
         case eInvalidSegment:       return "eInvalidSegment";
         case eInvalidDenseg:        return "eInvalidDenseg";
@@ -78,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/15 20:50:40  todorov
+ * +eInvalidSeqId
+ *
  * Revision 1.6  2003/03/05 16:20:13  todorov
  * +eInvalidRequest
  *
