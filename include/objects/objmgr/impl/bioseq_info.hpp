@@ -69,10 +69,6 @@ public:
 
     CBioseq_Info& operator= (const CBioseq_Info& info);
 
-    bool operator== (const CBioseq_Info& info);
-    bool operator!= (const CBioseq_Info& info);
-    bool operator<  (const CBioseq_Info& info);
-
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     CTSE_Info*       m_TSE_Info;  // Top-level seq-entry for the sequence
@@ -95,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2003/04/14 21:31:05  grichenk
+ * Removed operators ==(), !=() and <()
+ *
  * Revision 1.8  2003/03/12 20:09:31  grichenk
  * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
  *
