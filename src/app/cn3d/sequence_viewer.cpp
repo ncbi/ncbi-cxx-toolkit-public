@@ -61,18 +61,19 @@ SequenceViewer::~SequenceViewer(void)
 {
 }
 
-void SequenceViewer::CreateSequenceWindow(void)
+void SequenceViewer::CreateSequenceWindow(bool showNow)
 {
     if (sequenceWindow) {
-        sequenceWindow->Show(true);
-        GlobalMessenger()->PostRedrawSequenceViewer(this);
+        sequenceWindow->Show(showNow);
+        if (showNow)
+            GlobalMessenger()->PostRedrawSequenceViewer(this);
     } else {
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
             sequenceWindow = new SequenceViewerWindow(this);
             sequenceWindow->NewDisplay(display, true);
             sequenceWindow->ScrollToColumn(display->GetStartingColumn());
-            sequenceWindow->Show(true);
+            sequenceWindow->Show(showNow);
             // ScrollTo causes immediate redraw, so don't need a second one
             GlobalMessenger()->UnPostRedrawSequenceViewer(this);
         }
@@ -109,7 +110,7 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
     else
-        CreateSequenceWindow();
+        CreateSequenceWindow(false);
 
     // allow alignment export
     sequenceWindow->EnableExport(true);
@@ -137,7 +138,7 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
     else
-        CreateSequenceWindow();
+        CreateSequenceWindow(false);
 
     // forbid alignment export
     sequenceWindow->EnableExport(false);
@@ -145,7 +146,7 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 
 void SequenceViewer::TurnOnEditor(void)
 {
-    if (!sequenceWindow) CreateSequenceWindow();
+    if (!sequenceWindow) CreateSequenceWindow(false);
     sequenceWindow->TurnOnEditor();
 }
 
@@ -535,6 +536,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/10/13 14:16:31  thiessen
+* add -n option to not show alignment window
+*
 * Revision 1.61  2003/02/05 14:55:22  thiessen
 * always load single structure even if structureLimit == 0
 *

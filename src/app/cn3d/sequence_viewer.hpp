@@ -85,7 +85,7 @@ private:
 
     SequenceViewerWindow *sequenceWindow;
 
-    void CreateSequenceWindow(void);
+    void CreateSequenceWindow(bool showNow);
 };
 
 END_SCOPE(Cn3D)
@@ -95,6 +95,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/10/13 14:16:31  thiessen
+* add -n option to not show alignment window
+*
 * Revision 1.31  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -306,7 +306,9 @@ bool Cn3DApp::OnInit(void)
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
         { wxCMD_LINE_SWITCH, "r", "readonly", "message file is read-only",
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
-        { wxCMD_LINE_SWITCH, "i", "imports", "show import window on startup",
+        { wxCMD_LINE_SWITCH, "i", "imports", "show imports window on startup",
+            wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
+        { wxCMD_LINE_SWITCH, "n", "noalign", "do not show alignment window on startup",
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
         { wxCMD_LINE_SWITCH, "f", "force", "force saves to same file",
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
@@ -412,14 +414,18 @@ bool Cn3DApp::OnInit(void)
         structureWindow->SetupFileMessenger(
             messageFilename.c_str(), commandLine.Found("r"));
 
-    // give structure window initial focus
-    structureWindow->Raise();
-    structureWindow->SetFocus();
+    // optionally show alignment window
+    if (!commandLine.Found("n") && structureWindow->glCanvas->structureSet)
+        structureWindow->glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
 
     // optionally open imports window, but only if any imports present
     if (commandLine.Found("i") && structureWindow->glCanvas->structureSet &&
             structureWindow->glCanvas->structureSet->alignmentManager->NUpdates() > 0)
         structureWindow->glCanvas->structureSet->alignmentManager->ShowUpdateWindow();
+
+    // give structure window initial focus
+    structureWindow->Raise();
+    structureWindow->SetFocus();
 
     return true;
 }
@@ -466,6 +472,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/10/13 14:16:31  thiessen
+* add -n option to not show alignment window
+*
 * Revision 1.6  2003/10/13 13:23:31  thiessen
 * add -i option to show import window
 *

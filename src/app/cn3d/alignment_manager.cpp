@@ -563,7 +563,7 @@ const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int
 
 void AlignmentManager::ShowSequenceViewer(void) const
 {
-    sequenceViewer->CreateSequenceWindow();
+    sequenceViewer->CreateSequenceWindow(true);
 }
 
 void AlignmentManager::ShowUpdateWindow(void) const
@@ -948,6 +948,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2003/10/13 14:16:31  thiessen
+* add -n option to not show alignment window
+*
 * Revision 1.89  2003/10/13 13:23:31  thiessen
 * add -i option to show import window
 *
