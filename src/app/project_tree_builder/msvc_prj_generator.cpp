@@ -659,10 +659,12 @@ static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
     string dir_name;
     CDirEntry::SplitPath(src_path_abs, &dir_name);
 
+    //This files must be inside datatool src dir
     CDir dir(dir_name);
-    if ( dir.GetEntries("*.files").empty() ) 
-        return false;
     if ( dir.GetEntries("*.module").empty() ) 
+        return false;
+    if ( dir.GetEntries("*.asn").empty() ||
+         dir.GetEntries("*.dtd").empty() ) 
         return false;
 
     return true;
@@ -832,6 +834,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/02/25 19:42:35  gorelenk
+ * Changed implementation of function s_IsProducedByDatatool.
+ *
  * Revision 1.20  2004/02/24 21:03:06  gorelenk
  * Added checking of config availability to implementation of
  * member-function Generate of class CMsvcProjectGenerator.
