@@ -121,6 +121,88 @@ CSeq_id_Handle CSeq_id_Which_Tree::x_GetHandleByKey(TSeq_id_Key key) const
 
 
 ////////////////////////////////////////////////////////////////////
+// not-set tree (maximum 1 entry allowed)
+
+
+class CSeq_id_not_set_Tree : public CSeq_id_Which_Tree
+{
+public:
+    virtual TSeq_id_Info FindEqual(const CSeq_id& id) const;
+    virtual void FindMatch(const CSeq_id& id,
+                           TSeq_id_MatchList& id_list) const;
+    virtual void FindMatchStr(string sid,
+                              TSeq_id_MatchList& id_list) const;
+    virtual void AddSeq_idMapping(CSeq_id_Handle& handle);
+
+protected:
+    virtual void x_DropHandle(const CSeq_id_Handle& handle);
+
+    bool x_Check(const CSeq_id& id) const;
+
+private:
+    CSeq_id_Handle m_Handle;
+};
+
+
+inline
+bool CSeq_id_not_set_Tree::x_Check(const CSeq_id& id) const
+{
+    _ASSERT(id.Which() == CSeq_id::e_not_set);
+    return id.Which() == CSeq_id::e_not_set;
+}
+
+
+TSeq_id_Info CSeq_id_not_set_Tree::FindEqual(const CSeq_id& id) const
+{
+    x_Check(id);
+    if (m_Handle) {
+        // Initialized - return the id info
+        return TSeq_id_Info(CConstRef<CSeq_id>(&x_GetSeq_id(m_Handle)),
+                            x_GetKey(m_Handle));
+    }
+    // non-initialized - return empty info
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
+}
+
+
+void CSeq_id_not_set_Tree::FindMatch(const CSeq_id& id,
+                                     TSeq_id_MatchList& id_list) const
+{
+    // Only one instance of each id
+    id_list.push_back(FindEqual(id));
+}
+
+
+void CSeq_id_not_set_Tree::FindMatchStr(string sid,
+                                        TSeq_id_MatchList& id_list) const
+{
+    if (sid.empty()  &&  m_Handle) {
+        id_list.push_back(TSeq_id_Info(
+            CConstRef<CSeq_id>(&x_GetSeq_id(m_Handle)), x_GetKey(m_Handle)));
+    }
+}
+
+
+void CSeq_id_not_set_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
+{
+    x_Check(x_GetSeq_id(handle));
+    _ASSERT(!m_Handle);
+    m_Handle = handle;
+    x_AddToKeyMap(handle);
+}
+
+
+void CSeq_id_not_set_Tree::x_DropHandle(const CSeq_id_Handle& handle)
+{
+    const CSeq_id& id = x_GetSeq_id(handle);
+    x_Check(id);
+    _ASSERT(m_Handle);
+    _ASSERT(m_Handle == handle);
+    m_Handle.Reset();
+}
+
+
+////////////////////////////////////////////////////////////////////
 // Base class for Gi, Gibbsq & Gibbmt trees
 
 
@@ -1486,6 +1568,8 @@ CSeq_id_Mapper::CSeq_id_Mapper(void)
     : m_NextKey(0)
 {
 // same order as in seq-id definition, see seqloc.asn
+    m_IdMap[CSeq_id::e_not_set] = CRef<CSeq_id_Which_Tree>
+        (new CSeq_id_not_set_Tree);
     m_IdMap[CSeq_id::e_Local] = CRef<CSeq_id_Which_Tree>
         (new CSeq_id_Local_Tree);
     m_IdMap[CSeq_id::e_Gibbsq] = CRef<CSeq_id_Which_Tree>
@@ -1529,7 +1613,8 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
                                          bool do_not_create)
 {
     if (id.Which() == CSeq_id::e_not_set) {
-        return CSeq_id_Handle();
+        LOG_POST(Warning <<
+            "CSeq_id_Mapper::GetHandle() -- uninitialized seq-id");
     }
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
@@ -1555,7 +1640,8 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
                                         TSeq_id_HandleSet& h_set)
 {
     if (id.Which() == CSeq_id::e_not_set) {
-        return;
+        LOG_POST(Warning <<
+            "CSeq_id_Mapper::GetMatchingHandles() -- uninitialized seq-id");
     }
     TIdMap::iterator map_it = m_IdMap.find(id.Which());
     _ASSERT(map_it != m_IdMap.end()  &&  map_it->second.GetPointer());
@@ -1705,6 +1791,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/02/21 14:33:51  grichenk
+* Display warning but don't crash on uninitialized seq-ids.
+*
 * Revision 1.27  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *

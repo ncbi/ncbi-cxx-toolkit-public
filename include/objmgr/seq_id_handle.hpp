@@ -125,7 +125,8 @@ inline
 bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
 {
     if (m_Mapper != handle.m_Mapper) {
-        THROW1_TRACE(runtime_error,
+        // THROW1_TRACE(runtime_error,
+        LOG_POST(Warning <<
             "CSeq_id_Handle::operator==() -- "
             "Can not compare seq-id handles from different mappers");
     }
@@ -136,7 +137,8 @@ inline
 bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
 {
     if (m_Mapper != handle.m_Mapper) {
-        THROW1_TRACE(runtime_error,
+        // THROW1_TRACE(runtime_error,
+        LOG_POST(Warning <<
             "CSeq_id_Handle::operator<() -- "
             "Can not compare seq-id handles from different mappers");
     }
@@ -170,6 +172,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/02/21 14:33:50  grichenk
+* Display warning but don't crash on uninitialized seq-ids.
+*
 * Revision 1.10  2002/12/26 20:44:02  dicuccio
 * Added Win32 export specifier.  Added #include for seq_id_mapper - at bottom of
 * file to skirt circular include dependency.
