@@ -133,7 +133,7 @@ void CPub::GetLabel(string*    label,
         GetMan().GetLabel(label);
         break;
     case e_Sub:
-        GetSub().GetLabel(label);
+        GetSub().GetLabel(label, unique);
         break;
     case e_Patent:
         GetPatent().GetLabel(label);
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2004/10/22 14:17:09  shomrat
+ * call CCit_sub::GetLabel with unique
+ *
  * Revision 6.7  2004/05/19 17:24:52  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
