@@ -2,6 +2,7 @@
 
 LIB_PROJ = dbapi_driver_blobstore
 APP_PROJ = blobreader blobwriter
+SUB_PROJ = samples
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
