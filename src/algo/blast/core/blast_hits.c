@@ -950,8 +950,8 @@ static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
    BlastHSPList* new_hsp_list = (BlastHSPList*) 
       BlastMemDup(hsp_list, sizeof(BlastHSPList));
    new_hsp_list->hsp_array = (BlastHSP**) 
-      BlastMemDup(hsp_list->hsp_array, hsp_list->hspcnt*sizeof(BlastHSP*));
-   new_hsp_list->allocated = hsp_list->hspcnt;
+      BlastMemDup(hsp_list->hsp_array, hsp_list->allocated*sizeof(BlastHSP*));
+   new_hsp_list->allocated = hsp_list->allocated;
 
    return new_hsp_list;
 }
@@ -1016,7 +1016,6 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
             new_hsp_array = realloc(tmp_hsp_list->hsp_array, 
                                     new_size*sizeof(BlastHSP*));
             if (!new_hsp_array) {
-               tmp_hsp_list->allocated = tmp_hsp_list->hspcnt;
                tmp_hsp_list->do_not_reallocate = TRUE;
                tmp_hsp_list = NULL;
             } else {
@@ -1411,62 +1410,136 @@ static Boolean BLASTHspContained(BlastHSP* hsp1, BlastHSP* hsp2)
    return (hsp_start_is_contained && hsp_end_is_contained);
 }
 
+
+/** Combine two HSP lists, without altering the individual HSPs, and without 
+ * reallocating the HSP array. 
+ * @param hsp_list New HSP list [in]
+ * @param combined_hsp_list Old HSP list, to which new HSPs are added [in] [out]
+ * @param new_hspcnt How many HSPs to save in the combined list? The extra ones
+ *                   are freed. The best scoring HSPs are saved. This argument
+ *                   cannot be greater than the allocated size of the 
+ *                   combined list's HSP array. [in]
+ */
+static void 
+CombineHSPListsByScore(BlastHSPList* hsp_list, BlastHSPList* combined_hsp_list,
+                       Int4 new_hspcnt)
+{
+   Int4 index, index1, index2;
+   BlastHSP** new_hsp_array;
+
+   ASSERT(new_hspcnt <= combined_hsp_list->allocated);
+
+   if (new_hspcnt >= hsp_list->hspcnt + combined_hsp_list->hspcnt) {
+      /* All HSPs from both arrays are saved */
+      for (index=combined_hsp_list->hspcnt, index1=0; 
+           index1<hsp_list->hspcnt; index1++) {
+         if (hsp_list->hsp_array[index1] != NULL)
+            combined_hsp_list->hsp_array[index++] = hsp_list->hsp_array[index1];
+      }
+   } else {
+      /* Not all HSPs are be saved; sort both arrays by score and save only
+         the new_hspcnt best ones. 
+         For the merged set of HSPs, allocate array the same size as in the 
+         old HSP list. */
+      new_hsp_array = (BlastHSP**) 
+         malloc(combined_hsp_list->allocated*sizeof(BlastHSP*));
+      qsort(combined_hsp_list->hsp_array, combined_hsp_list->hspcnt, 
+           sizeof(BlastHSP*), score_compare_hsps);
+      qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
+            score_compare_hsps);
+      index1 = index2 = 0;
+      for (index = 0; index < combined_hsp_list->allocated; ++index) {
+         if (index1 < combined_hsp_list->hspcnt &&
+             (index2 >= hsp_list->hspcnt ||
+             (combined_hsp_list->hsp_array[index1]->score >= 
+             hsp_list->hsp_array[index2]->score))) {
+            new_hsp_array[index] = combined_hsp_list->hsp_array[index1];
+            ++index1;
+         } else {
+            new_hsp_array[index] = hsp_list->hsp_array[index2];
+            ++index2;
+         }
+      }
+      /* Free the extra HSPs that could not be saved */
+      for ( ; index1 < combined_hsp_list->hspcnt; ++index1) {
+         combined_hsp_list->hsp_array[index1] = 
+            BlastHSPFree(combined_hsp_list->hsp_array[index1]);
+      }
+      for ( ; index2 < hsp_list->hspcnt; ++index2) {
+         hsp_list->hsp_array[index2] = 
+            BlastHSPFree(hsp_list->hsp_array[index2]);
+      }
+      /* Point combined_hsp_list's HSP array to the new one */
+      combined_hsp_list->hsp_array = new_hsp_array;
+   }
+   
+   combined_hsp_list->hspcnt = index;
+   /* Second HSP list now does not own any HSPs */
+   hsp_list->hspcnt = 0;
+}
+
+
+
+Int2 AppendHSPList(BlastHSPList* hsp_list,
+        BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max)
+{
+   BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
+   BlastHSP** new_hsp_array;
+   Int4 new_hspcnt;
+
+   if (!hsp_list || hsp_list->hspcnt == 0)
+      return 0;
+
+   /* If no previous HSP list, just return the new one or its copy */
+   if (!combined_hsp_list) {
+      *combined_hsp_list_ptr = hsp_list;
+      return 0;
+   }
+   /* Just append new list to the end of the old list, in case of 
+      multiple frames of the subject sequence */
+   new_hspcnt = MIN(combined_hsp_list->hspcnt + hsp_list->hspcnt, 
+                    hsp_num_max);
+   if (new_hspcnt > combined_hsp_list->allocated && 
+       !combined_hsp_list->do_not_reallocate) {
+      Int4 new_allocated = MIN(2*new_hspcnt, hsp_num_max);
+      new_hsp_array = (BlastHSP**) 
+         realloc(combined_hsp_list->hsp_array, 
+                 new_allocated*sizeof(BlastHSP*));
+      
+      if (new_hsp_array) {
+         combined_hsp_list->allocated = new_allocated;
+         combined_hsp_list->hsp_array = new_hsp_array;
+      } else {
+         combined_hsp_list->do_not_reallocate = TRUE;
+         new_hspcnt = combined_hsp_list->allocated;
+      }
+   }
+   if (combined_hsp_list->allocated == hsp_num_max)
+      combined_hsp_list->do_not_reallocate = TRUE;
+
+   CombineHSPListsByScore(hsp_list, combined_hsp_list, new_hspcnt);
+   return 0;
+}
+
 Int2 MergeHSPLists(BlastHSPList* hsp_list, 
-        BlastHSPList** combined_hsp_list_ptr, Int4 start,
-        Boolean merge_hsps, Boolean append)
+                   BlastHSPList** combined_hsp_list_ptr,
+                   Int4 hsp_num_max, Int4 start, Boolean merge_hsps)
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
    BlastHSP* hsp,** hspp1,** hspp2;
-   Int4 index, index1, hspcnt1, hspcnt2, new_hspcnt = 0;
+   Int4 index, index1;
+   Int4 hspcnt1, hspcnt2, new_hspcnt = 0;
    BlastHSP** new_hsp_array;
-   Int4* index_array;
+   Int4* index_array1, *index_array2;
    
    if (!hsp_list || hsp_list->hspcnt == 0)
       return 0;
 
    /* If no previous HSP list, just return the new one or its copy */
    if (!combined_hsp_list) {
-      if (!append) {
-         *combined_hsp_list_ptr = BlastHSPListDup(hsp_list);
-         hsp_list->hspcnt = 0;
-      } else {
-         *combined_hsp_list_ptr = hsp_list;
-      }
+      *combined_hsp_list_ptr = BlastHSPListDup(hsp_list);
+      hsp_list->hspcnt = 0;
       return 0;
-   }
-
-   if (append) {
-      /* Just append new list to the end of the old list, in case of 
-         multiple frames of the subject sequence */
-      new_hspcnt = MIN(combined_hsp_list->hspcnt + hsp_list->hspcnt, 
-                       combined_hsp_list->hsp_max);
-      if (new_hspcnt > combined_hsp_list->allocated) {
-         Int4 new_allocated = MIN(2*new_hspcnt, combined_hsp_list->hsp_max);
-         new_hsp_array = (BlastHSP**) 
-            realloc(combined_hsp_list->hsp_array, 
-                    new_allocated*sizeof(BlastHSP*));
-
-         if (new_hsp_array) {
-            combined_hsp_list->allocated = new_allocated;
-            combined_hsp_list->hsp_array = new_hsp_array;
-         } else {
-            combined_hsp_list->do_not_reallocate = TRUE;
-            return -1;
-         }
-      }
-      
-      memcpy(&combined_hsp_list->hsp_array[combined_hsp_list->hspcnt], 
-             hsp_list->hsp_array, 
-             (new_hspcnt - combined_hsp_list->hspcnt)*sizeof(BlastHSP*));
-      for (index = new_hspcnt - combined_hsp_list->hspcnt; 
-           index < hsp_list->hspcnt; ++index)
-         BlastHSPFree(hsp_list->hsp_array[index]);
-      /* This HSP list is not needed any more */
-      sfree(hsp_list->hsp_array);
-      sfree(hsp_list);
-      combined_hsp_list->hspcnt = new_hspcnt;
-
-      return 1;
    }
 
    /* Merge the two HSP lists for successive chunks of the subject sequence */
@@ -1474,22 +1547,22 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    hspp1 = (BlastHSP**) 
       calloc(combined_hsp_list->hspcnt, sizeof(BlastHSP*));
    hspp2 = (BlastHSP**) calloc(hsp_list->hspcnt, sizeof(BlastHSP*));
-   index_array = (Int4*) calloc(combined_hsp_list->hspcnt, sizeof(Int4));
+   index_array1 = (Int4*) calloc(combined_hsp_list->hspcnt, sizeof(Int4));
+   index_array2 = (Int4*) calloc(hsp_list->hspcnt, sizeof(Int4));
 
    for (index=0; index<combined_hsp_list->hspcnt; index++) {
       hsp = combined_hsp_list->hsp_array[index];
       if (hsp->subject.end > start) {
-         index_array[hspcnt1] = index;
+         index_array1[hspcnt1] = index;
          hspp1[hspcnt1++] = hsp;
-         combined_hsp_list->hsp_array[index] = NULL;
       } else
          new_hspcnt++;
    }
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
       if (hsp->subject.offset < start + DBSEQ_CHUNK_OVERLAP) {
+         index_array2[hspcnt2] = index;
          hspp2[hspcnt2++] = hsp;
-         hsp_list->hsp_array[index] = NULL;
       } else
          new_hspcnt++;
    }
@@ -1506,19 +1579,30 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
              OVERLAP_DIAG_CLOSE) {
             if (merge_hsps) {
                if (BLAST_MergeHsps(hspp1[index], hspp2[index1], start)) {
-                  /* Remove the second HSP, as it has been merged with the
-                     first */
-                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
+                  /* Point the corresponding element of the full first HSP
+                     array to the new HSP */
+                  combined_hsp_list->hsp_array[index_array1[index]] = hspp1[index];
+                  /* Free the corresponding element of the full second 
+                     HSP array. */
+                  hsp_list->hsp_array[index_array2[index1]] = 
+                     hspp2[index1] = BlastHSPFree(hspp2[index1]);
                   break;
                }
             } else { /* No gap information available */
                if (BLASTHspContained(hspp1[index], hspp2[index1])) {
-                  hspp1[index] = BlastHSPFree(hspp1[index]);
-                  hspp1[index] = hspp2[index1];
-                  hspp2[index1] = NULL;
-               } else if (BLASTHspContained(hspp2[index1], hspp1[index]))
-                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
-
+                  sfree(hspp1[index]);
+                  /* Point the corresponding element of the full first HSP
+                     array to the new HSP; free the element of the second
+                     array. */
+                  combined_hsp_list->hsp_array[index_array1[index]] = hspp2[index1];
+                  hsp_list->hsp_array[index_array2[index1]] = 
+                     hspp2[index1] = NULL;
+               } else if (BLASTHspContained(hspp2[index1], hspp1[index])) {
+                  /* Just free the corresponding element of the second 
+                     HSP array */
+                  hsp_list->hsp_array[index_array2[index1]] = 
+                     hspp2[index1] = BlastHSPFree(hspp2[index1]);
+               }
             }
          }
       }
@@ -1530,45 +1614,37 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
          new_hspcnt++;
    }
    
-   if (new_hspcnt >= combined_hsp_list->allocated-1 && 
-       combined_hsp_list->do_not_reallocate == FALSE) {
-      new_hsp_array = (BlastHSP**) 
-         realloc(combined_hsp_list->hsp_array, 
-                 new_hspcnt*2*sizeof(BlastHSP*));
-      if (new_hsp_array == NULL) {
-         combined_hsp_list->do_not_reallocate = TRUE; 
-      } else {
-         combined_hsp_list->hsp_array = new_hsp_array;
-         combined_hsp_list->allocated = 2*new_hspcnt;
-      }
-   }
-
-   for (index=0; index<hspcnt1; index++) 
-      combined_hsp_list->hsp_array[index_array[index]] = hspp1[index];
-   for (index=combined_hsp_list->hspcnt, index1=0; 
-        index1<hsp_list->hspcnt && index<combined_hsp_list->allocated; 
-        index1++) {
-      if (hsp_list->hsp_array[index1] != NULL)
-         combined_hsp_list->hsp_array[index++] = hsp_list->hsp_array[index1];
-   }
-   for (index1=0; index1<hspcnt2 && index<combined_hsp_list->allocated;
-        index1++) {
-      if (hspp2[index1] != NULL)
-         combined_hsp_list->hsp_array[index++] = hspp2[index1];
-   }
-   combined_hsp_list->hspcnt = index;
-
-   /* Free the remaining HSPs in the new list, if reallocation failed */
-   if (combined_hsp_list->do_not_reallocate) {
-      for ( ; index1 < hsp_list->hspcnt; ++index1)
-         BlastHSPFree(hsp_list->hsp_array[index]);
-   }
-
    sfree(hspp1);
    sfree(hspp2);
-   sfree(index_array);
+   sfree(index_array1);
+   sfree(index_array2);
    
-   return 1;
+   /* If there is a restriction on the number of HSPs to keep, the new number of
+      HSPs might have to be reduced */
+   new_hspcnt = MIN(new_hspcnt, hsp_num_max);
+
+   if (new_hspcnt >= combined_hsp_list->allocated-1 && 
+       combined_hsp_list->do_not_reallocate == FALSE) {
+      Int4 new_allocated = MIN(2*new_hspcnt, hsp_num_max);
+      if (new_allocated > combined_hsp_list->allocated) {
+         new_hsp_array = (BlastHSP**) 
+            realloc(combined_hsp_list->hsp_array, 
+                    new_allocated*sizeof(BlastHSP*));
+         if (new_hsp_array == NULL) {
+            combined_hsp_list->do_not_reallocate = TRUE; 
+         } else {
+            combined_hsp_list->hsp_array = new_hsp_array;
+            combined_hsp_list->allocated = new_allocated;
+         }
+      } else {
+         combined_hsp_list->do_not_reallocate = TRUE;
+      }
+      new_hspcnt = MIN(new_hspcnt, combined_hsp_list->allocated);
+   }
+
+   CombineHSPListsByScore(hsp_list, combined_hsp_list, new_hspcnt);
+
+   return 0;
 }
 
 void RPSUpdateResults(BlastHSPResults *final_result,

@@ -153,6 +153,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    Int4 orig_length = subject->length, prot_length = 0;
    Uint1* orig_sequence = subject->sequence;
    Int4 **matrix;
+   Int4 hsp_num_max;
 
    translated_subject = (program_number == blast_type_tblastn
                          || program_number == blast_type_tblastx
@@ -184,6 +185,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       matrix = gap_align->sbp->posMatrix;
    else
       matrix = gap_align->sbp->matrix;
+
+   hsp_num_max = (hit_options->hsp_num_max ? hit_options->hsp_num_max : INT4_MAX);
 
    /* Loop over frames of the subject sequence */
    for (context=first_context; context<=last_context; context++) {
@@ -253,7 +256,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
                subject->length = prot_length;
          } else {
             BLAST_GetUngappedHSPList(init_hitlist, query_info, subject,
-                                     hit_params->options, &hsp_list);
+                                     hit_options, &hsp_list);
          }
 
          if (hsp_list->hspcnt == 0)
@@ -270,15 +273,11 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          AdjustOffsetsInHSPList(hsp_list, offset);
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
-         if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
-             (Uint1) (hsp_list->traceback_done || !score_options->gapped_calculation), FALSE)) {
-            /* HSPs from this list are moved elsewhere, reset count to 0 */
-            hsp_list->hspcnt = 0;
-         }
+         MergeHSPLists(hsp_list, &combined_hsp_list, hsp_num_max, offset,
+            (Uint1) (hsp_list->traceback_done || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
       
-      MergeHSPLists(combined_hsp_list, hsp_list_out, 0, 
-                    FALSE, TRUE);
+      AppendHSPList(combined_hsp_list, hsp_list_out, hsp_num_max);
    } /* End loop on frames */
 
    hsp_list = *hsp_list_out;
@@ -679,13 +678,6 @@ BLAST_SearchEngine(Uint1 program_number,
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
-      /* Calculate cutoff scores for linking HSPs */
-      if (hit_params->do_sum_stats) {
-         CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
-                                 hit_params, db_length, seq_arg.seq->length, 
-                                 psi_options);
-      }
-
       if (db_length == 0) {
          /* This is not a database search, hence need to recalculate and save
             the effective search spaces and length adjustments for all 
@@ -696,6 +688,13 @@ BLAST_SearchEngine(Uint1 program_number,
                           sbp, ext_params, hit_params, word_params, 
                           eff_len_params)) != 0)
             return status;
+      }
+
+      /* Calculate cutoff scores for linking HSPs */
+      if (hit_params->do_sum_stats) {
+         CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
+                                 hit_params, db_length, seq_arg.seq->length, 
+                                 psi_options);
       }
 
       BLAST_SearchEngineCore(program_number, query, query_info,

@@ -266,15 +266,25 @@ typedef struct BLASTHSPSegment {
  * computed HSP list.
  * @param hsp_list Contains HSPs from the new chunk [in]
  * @param combined_hsp_list_ptr Contains HSPs from previous chunks [in] [out]
+ * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if 0) [in]
  * @param start Offset where the current subject chunk starts [in]
  * @param merge_hsps Should the overlapping HSPs be merged into one? [in]
- * @param append Just append the new HSP list to the old - TRUE when 
- *               lists are from different frames [in]
- * @return 1 if HSP lists have been merged, 0 otherwise.
+ * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
 Int2 MergeHSPLists(BlastHSPList* hsp_list, 
-        BlastHSPList** combined_hsp_list_ptr, Int4 start,
-        Boolean merge_hsps, Boolean append);
+                   BlastHSPList** combined_hsp_list_ptr, 
+                   Int4 hsp_num_max, Int4 start, Boolean merge_hsps);
+
+/** Append one HSP list to the other. Discard lower scoring HSPs if there is
+ * not enough space to keep all.
+ * @param hsp_list New list of HSPs [in]
+ * @param combined_hsp_list_ptr Pointer to the combined list of HSPs, possibly
+ *                              containing previously saved HSPs [in] [out]
+ * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if 0) [in]
+ * @param return Status: 0 on success, -1 on failure.
+ */ 
+Int2 AppendHSPList(BlastHSPList* hsp_list, BlastHSPList** combined_hsp_list_ptr, 
+                   Int4 hsp_num_max);
 
 /** Deallocate memory for an HSP structure */
 BlastHSP* BlastHSPFree(BlastHSP* hsp);
