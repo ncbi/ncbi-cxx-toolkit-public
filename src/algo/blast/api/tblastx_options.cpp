@@ -88,9 +88,7 @@ CTBlastxOptionsHandle::SetGappedExtensionDefaults()
 void
 CTBlastxOptionsHandle::SetSubjectSequenceOptionsDefaults()
 {
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc_str =
-        FindGeneticCode(BLAST_GENETIC_CODE);
-    m_Opts->SetDbGeneticCodeStr(gc_str.get());
+    m_Opts->SetDbGeneticCode(BLAST_GENETIC_CODE);
 }
 
 END_SCOPE(blast)
@@ -103,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/03 16:42:33  dondosha
+ * SetDbGeneticCode takes care of setting both integer and string now
+ *
  * Revision 1.1  2003/11/26 18:24:01  camacho
  * +Blast Option Handle classes
  *
