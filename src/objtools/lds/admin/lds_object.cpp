@@ -58,16 +58,12 @@ CLDS_Object::CLDS_Object(SLDS_TablesCollection& db,
                          const map<string, int>& obj_map)
 : m_db(db),
   m_ObjTypeMap(obj_map),
-  m_MaxObjRecId(0),
-  m_TSE_Manager(0),
-  m_Scope(0)
+  m_MaxObjRecId(0)
 {}
 
 
 CLDS_Object::~CLDS_Object()
 {
-    delete m_Scope;
-    delete m_TSE_Manager;
 }
 
 void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids, 
@@ -483,8 +479,6 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
     *object_str_id = "";
 
     if (parse_info.is_top_level) {
-        delete m_Scope; m_Scope = 0;
-        delete m_TSE_Manager; m_TSE_Manager = 0;
 
         CSeq_entry* seq_entry = CType<CSeq_entry>().Get(parse_info.info);
 
@@ -563,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/07/29 19:51:49  kuznets
+ * Reflecting changes in the header file
+ *
  * Revision 1.13  2003/07/14 19:45:24  kuznets
  * More detailed LOG_POST message
  *
