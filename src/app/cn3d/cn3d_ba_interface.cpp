@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/09/19 14:09:41  thiessen
+* position options dialog higher up
+*
 * Revision 1.13  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -527,7 +530,7 @@ END_EVENT_TABLE()
 
 BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxWindow* parent, const BlockAligner::BlockAlignerOptions& init) :
-        wxDialog(parent, -1, "Set Block Aligner Options", wxDefaultPosition, wxDefaultSize,
+        wxDialog(parent, -1, "Set Block Aligner Options", wxPoint(100,100), wxDefaultSize,
             wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
     wxPanel *panel = new wxPanel(this, -1);
