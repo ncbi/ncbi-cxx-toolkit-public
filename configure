@@ -864,6 +864,7 @@ Optional Packages:
  --with-profiling        build profiled versions of libs and apps
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
+ --with-static-exe,      build all executables as statically as possible
  --with-mt               compile in a MultiThread-safe manner
  --with-64               compile to 64-bit code
  --without-exe           do not build executables
@@ -1430,6 +1431,12 @@ if test "${with_static+set}" = set; then
 
 fi;
 
+# Check whether --with-static-exe or --without-static-exe was given.
+if test "${with_static_exe+set}" = set; then
+  withval="$with_static_exe"
+
+fi;
+
 # Check whether --with-mt or --without-mt was given.
 if test "${with_mt+set}" = set; then
   withval="$with_mt"
@@ -1732,7 +1739,7 @@ fi;
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check \
+check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds mysql orbacus fltk opengl \
 local-lbsm serial objects dbapi app ctools gui algo internal"
@@ -3357,8 +3364,13 @@ fi
 CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
-C_LINK='$(CC)'
-LINK='$(CXX)'
+if test "$with_static_exe" = "yes"; then
+   C_LINK='$(top_srcdir)/scripts/favor-static $(CC)'
+   LINK='$(top_srcdir)/scripts/favor-static $(CXX)'
+else
+   C_LINK='$(CC)'
+   LINK='$(CXX)'
+fi
 
 ### Which of these is better?
 #compiler_root=`dirname CXX_PATH`

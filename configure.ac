@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.171 2003/03/08 22:58:06 ucko Exp $
+#  $Id: configure.ac,v 1.172 2003/03/12 18:19:39 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -83,6 +83,8 @@ AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
 AC_ARG_WITH(static,
    [ --with-static           build all libraries statically even if --with-dll])
+AC_ARG_WITH(static-exe,
+   [ --with-static-exe,      build all executables as statically as possible])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(64,
@@ -195,7 +197,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check \
+check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds mysql orbacus fltk opengl \
 local-lbsm serial objects dbapi app ctools gui algo internal"
@@ -485,8 +487,13 @@ fi
 CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
-C_LINK='$(CC)'
-LINK='$(CXX)'
+if test "$with_static_exe" = "yes"; then
+   C_LINK='$(top_srcdir)/scripts/favor-static $(CC)'
+   LINK='$(top_srcdir)/scripts/favor-static $(CXX)'
+else
+   C_LINK='$(CC)'
+   LINK='$(CXX)'
+fi
 
 ### Which of these is better?
 #compiler_root=`dirname CXX_PATH`
