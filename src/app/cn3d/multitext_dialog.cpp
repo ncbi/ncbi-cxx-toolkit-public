@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/09/18 19:46:54  thiessen
+* don't use wxTE_RICH for this
+*
 * Revision 1.7  2002/09/18 13:19:32  thiessen
 * use wxTE_RICH style for big textctrls
 *
@@ -77,8 +80,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),
     myOwner(owner)
 {
-    textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize,
-        wxTE_MULTILINE | wxHSCROLL | wxTE_RICH);
+    textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
     bDone = new wxButton(this, -1, "Done");
 
     wxLayoutConstraints *c = new wxLayoutConstraints;
