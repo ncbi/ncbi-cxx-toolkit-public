@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/10/15 13:50:45  gouriano
+* added DTD tokens
+*
 * Revision 1.4  2001/06/11 14:34:58  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -96,6 +99,13 @@ static const TToken K_TRUE = 122;
 static const TToken K_OPTIONAL = 123;
 static const TToken K_DEFAULT = 124;
 static const TToken K_BIGINT = 125;
+
+static const TToken K_ELEMENT = 201;
+static const TToken K_ATTLIST = 202;
+static const TToken K_ENTITY  = 203;
+static const TToken K_PCDATA  = 204;
+static const TToken K_ANY     = 205;
+static const TToken K_EMPTY   = 206;
 
 END_NCBI_SCOPE
 
