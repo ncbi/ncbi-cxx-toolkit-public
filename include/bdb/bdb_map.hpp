@@ -56,37 +56,26 @@ template<> struct CBDB_TypeMapper<string>
     typedef CBDB_FieldString TFieldType;
 };
 
-
 //////////////////////////////////////////////////////////////////
 //
-// db_map template, mimics std::map<> using BerkeleyDB as the underlying
-// Btree mechanism.
-//
-// NOTE: const methods of this template are conditionally thread safe due 
-// to the use of mutable variables.
-// If you access to access one instance of db_map from more than one thread,
-// external syncronization is required.
-//
-template<class K, class T> class db_map
+// db_map_base 
+// 
+
+template<class K, class T> class db_map_base
 {
-public:
+protected:
+
     typedef CBDB_TypeMapper<K>::TFieldType  db_first_type;
     typedef CBDB_TypeMapper<T>::TFieldType  db_second_type;
 
-    typedef K                       key_type;
-    typedef T                       referent_type;
     typedef std::pair<const K, T>   value_type;
-
-    typedef db_map<K, T>   self_type;
-
-protected:
 
     struct File : public CBDB_File
     {
         db_first_type  key;
         db_second_type value;
 
-        File(CBDB_File::EDuplicateKeys dup_keys=CBDB_File::eDuplicatesDisable)
+        File(CBDB_File::EDuplicateKeys dup_keys)
         : CBDB_File(dup_keys)
         {
             BindKey("Key", &key);
@@ -94,9 +83,8 @@ protected:
         }
     };
 
-    typedef self_type::File  map_file_type;
+    typedef db_map_base<K, T>::File  map_file_type;
 
-public:
 
     // Base class for all db_map iterators
     // Class opens its own copy of BerkeleyDB file and cursor on it.
@@ -281,9 +269,6 @@ public:
             if (m_IStatus == eBeforeBegin) return false;
             return true;
         }
-
-    protected:
-        friend class db_map;
     protected:
         const map_file_type*               m_ParentFile;
         mutable map_file_type*             m_CursorFile;
@@ -298,10 +283,11 @@ public:
         // Iterator "navigation" status
         mutable EIteratorStatus         m_IStatus;
     };
+public:
 
     class const_iterator : public iterator_base
     {
-    protected:
+    public:
         const_iterator(const map_file_type* db_file)
         : iterator_base(db_file)
         {
@@ -321,53 +307,111 @@ public:
             return *this;
         }
 
-    public:
-
-        const_iterator()
-        : iterator_base(0)
+        const_iterator() : iterator_base(0) 
         {}
-
-        const_iterator(const const_iterator& it)
-        : iterator_base(it)
-        {
-        }
+        const_iterator(const const_iterator& it) : iterator_base(it)
+        {}
         
-        const_iterator& operator=(const const_iterator& it)
-        {
-            init_from(it);
-            return *this;
+        const_iterator& operator=(const const_iterator& it) 
+        { 
+            init_from(it);return *this;
         }
-
 
         const value_type& operator*() const
         {
             check_open_cursor();
             return m_pair;
         }
-        
-        const_iterator& operator++()
+
+        const value_type* operator->() const
         {
-            fetch_next();
+            check_open_cursor();
+            return &m_pair;
+        }
+        
+        const_iterator& operator++() 
+        { 
+            fetch_next(); 
+            return *this; 
+        }
+
+        const_iterator operator++(int) 
+        {
+            const_iterator tmp(*this);
+            fetch_next(); 
+            return tmp; 
+        }
+
+        const_iterator& operator--() 
+        { 
+            fetch_prev(); 
             return *this;
         }
 
-        bool operator==(const const_iterator& it)
+        const_iterator operator--(int) 
         {
-            return is_equal(it);
+            const_iterator tmp(*this);    
+            fetch_prev(); 
+            return tmp;
         }
 
-        bool operator!=(const const_iterator& it)
-        {
+        bool operator==(const const_iterator& it) 
+        { 
+            return is_equal(it); 
+        }
+        bool operator!=(const const_iterator& it) 
+        { 
             return !is_equal(it);
         }
 
-    private:
-        friend self_type;
     };
 
 public:
+
+    db_map_base(CBDB_File::EDuplicateKeys dup_keys) : m_Dbf(dup_keys) {}
+
     void open(const char* fname, 
               ios_base::openmode mode=ios_base::in|ios_base::out);
+    void open(const char* fname, CBDB_RawFile::EOpenMode db_mode);
+
+    const_iterator begin() const;
+    const_iterator end() const;
+    const_iterator find(const K& key) const;
+
+    size_t  size() const;
+
+protected:
+    mutable File       m_Dbf;
+};
+
+
+
+//////////////////////////////////////////////////////////////////
+//
+// db_map template, mimics std::map<> using BerkeleyDB as the underlying
+// Btree mechanism.
+//
+// NOTE: const methods of this template are conditionally thread safe due 
+// to the use of mutable variables.
+// If you access to access one instance of db_map from more than one thread,
+// external syncronization is required.
+//
+template<class K, class T> class db_map : public db_map_base<K, T>
+{
+public:
+    typedef CBDB_TypeMapper<K>::TFieldType  db_first_type;
+    typedef CBDB_TypeMapper<T>::TFieldType  db_second_type;
+
+    typedef K                       key_type;
+    typedef T                       referent_type;
+    typedef std::pair<const K, T>   value_type;
+
+    typedef db_map<K, T>             self_type;
+    typedef self_type::iterator_base iterator_base_type;
+
+public:
+
+    db_map() : db_map_base<K, T>(CBDB_File::eDuplicatesDisable) {}
 
     //
     // Determines whether an element y exists in the map whose key matches that of x.
@@ -376,15 +420,44 @@ public:
 
     referent_type operator[](const K& key);
 
-    const_iterator begin() const;
-    const_iterator end() const;
-
 protected:
 
     friend const_iterator;
 
-private:
-    mutable File       m_Dbf;
+};
+
+
+
+//////////////////////////////////////////////////////////////////
+//
+// db_multimap template, mimics std::multimap<> using BerkeleyDB as 
+// the underlying Btree mechanism.
+//
+// NOTE: const methods of this template are conditionally thread safe due 
+// to the use of mutable variables.
+// If you access to access one instance of db_map from more than one thread,
+// external syncronization is required.
+//
+template<class K, class T> class db_multimap : public db_map_base<K, T>
+{
+public:
+    typedef CBDB_TypeMapper<K>::TFieldType  db_first_type;
+    typedef CBDB_TypeMapper<T>::TFieldType  db_second_type;
+
+    typedef K                       key_type;
+    typedef T                       referent_type;
+    typedef std::pair<const K, T>   value_type;
+
+    typedef db_multimap<K, T>       self_type;
+    typedef self_type::iterator_base iterator_base_type;
+public:
+    db_multimap() : db_map_base<K, T>(CBDB_File::eDuplicatesEnable) {}
+
+    void insert(const value_type& x);
+
+protected:
+
+    friend const_iterator;
 };
 
 
@@ -393,16 +466,8 @@ private:
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
 
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  db_map
-//
-
-template<class K, class T>
-void db_map<K, T>::open(const char* fname,
-                        ios_base::openmode mode)
+inline 
+CBDB_RawFile::EOpenMode iosbase2BDB(ios_base::openmode mode)
 {
     CBDB_RawFile::EOpenMode db_mode = CBDB_RawFile::eReadWriteCreate;
 
@@ -420,10 +485,63 @@ void db_map<K, T>::open(const char* fname,
             }
         }
     }
-
-    m_Dbf.Open(fname, db_mode);
-
+    return db_mode;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  db_map_base
+//
+
+template<class K, class T>
+void db_map_base<K, T>::open(const char* fname,
+                             ios_base::openmode mode)
+{
+    CBDB_RawFile::EOpenMode db_mode = iosbase2BDB(mode);
+    open(fname, db_mode);
+}
+
+template<class K, class T>
+void db_map_base<K, T>::open(const char* fname, 
+                             CBDB_RawFile::EOpenMode db_mode)
+{
+    m_Dbf.Open(fname, db_mode);
+}
+
+template<class K, class T>
+db_map_base<K, T>::const_iterator  db_map_base<K, T>::begin() const
+{
+    m_Dbf.Sync();
+    return const_iterator(&m_Dbf);
+}
+
+
+template<class K, class T>
+db_map_base<K, T>::const_iterator  db_map_base<K, T>::end() const
+{
+    m_Dbf.Sync();
+    return const_iterator(&m_Dbf).go_end();
+}
+
+
+template<class K, class T>
+db_map_base<K, T>::const_iterator db_map_base<K, T>::find(const K& key) const
+{
+    m_Dbf.Sync();
+    return const_iterator(&m_Dbf, key);
+}
+
+template<class K, class T>
+size_t db_map_base<K, T>::size() const
+{
+    return m_Dbf.CountRecs();
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  db_map
+//
 
 template<class K, class T>
 bool db_map<K, T>::insert(const value_type& x)
@@ -447,20 +565,21 @@ db_map<K, T>::referent_type  db_map<K, T>::operator[](const K& key)
     return (T) m_Dbf.value;
 }
 
-template<class K, class T>
-db_map<K, T>::const_iterator  db_map<K, T>::begin() const
-{
-    m_Dbf.Sync();
-    return const_iterator(&m_Dbf);
-}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  db_multimap
+//
 
 template<class K, class T>
-db_map<K, T>::const_iterator  db_map<K, T>::end() const
+void db_multimap<K, T>::insert(const value_type& x)
 {
-    m_Dbf.Sync();
-    return const_iterator(&m_Dbf).go_end();
-}
+    m_Dbf.key = x.first;
+    m_Dbf.value = x.second;
 
+    EBDB_ErrCode ret = m_Dbf.Insert();
+    BDB_CHECK(ret, m_Dbf.GetFileName().c_str());
+}
 
 
 END_NCBI_SCOPE
@@ -468,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/22 15:15:46  kuznets
+ * Work in progress, multiple changes, added db_multimap template.
+ *
  * Revision 1.1  2003/07/18 20:48:29  kuznets
  * Initial revision
  *
