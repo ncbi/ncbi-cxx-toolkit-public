@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/13 18:06:53  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.17  2000/11/11 21:15:54  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -95,6 +98,8 @@
 #include "cn3d/bond.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/coord_set.hpp"
+#include "cn3d/atom_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -236,6 +241,41 @@ Vector Molecule::GetResidueColor(int sequenceIndex) const
     AtomPntr atom(id, residue->id, residue->alphaID);
     if (!parentSet->styleManager->GetAtomStyle(residue, atom, &style)) return gray;
     return style.color;
+}
+
+bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const
+{
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) return false;
+    if (object->coordSets.size() != 1) {
+        ERR_POST("Can't align structures with multiple CoordSets");
+        return false;
+    }
+
+    for (int i=0; i<nResidues; i++) {
+
+        int rID = seqIndexes[i] + 1;    // residueIDs start at 1
+        ResidueMap::const_iterator r = residues.find(rID);
+        if (r == residues.end()) {
+            ERR_POST(Error << "Can't find residueID " << rID 
+                << " in " << pdbID << " chain '" << (char) pdbChain << "'");
+            return false;
+        }
+
+        int aID = (r->second->alphaID);
+        if (aID == Residue::NO_ALPHA_ID) {
+            ERR_POST(Error << "No alpha atom in residueID " << rID 
+                << " from " << pdbID << " chain '" << (char) pdbChain << "'");
+            return false;
+        }
+
+        AtomPntr atom(id, rID, aID);
+        const AtomCoord* atomCoord = object->coordSets.front()->atomSet->GetAtom(atom);
+        if (!atomCoord) return false;
+        coords[i] = &(atomCoord->site);
+    }
+
+    return true;
 }
 
 END_SCOPE(Cn3D)

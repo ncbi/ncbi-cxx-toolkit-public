@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/11/13 18:05:57  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.20  2000/11/11 21:12:06  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -361,6 +364,10 @@ public:
 
     // change the underlying pairwise alignments to match the given multiple
     void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple);
+
+    // recomputes structure alignments for all slave structures in the current
+    // sequence alignment
+    void RealignAllSlaves(void) const;
 
 private:
     const SequenceSet *sequenceSet;

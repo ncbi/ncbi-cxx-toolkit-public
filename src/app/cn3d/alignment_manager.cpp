@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/11/13 18:06:52  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.25  2000/11/12 04:02:59  thiessen
 * working file save including alignment edits
 *
@@ -262,6 +265,87 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
     }
 
     return multipleAlignment;
+}
+
+static void GetAlignedResidueIndexes(
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& b, 
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& be,
+    int row, int *seqIndexes)
+{
+    int i = 0, c;
+    const Block::Range *range;
+    for (; b!=be; b++) {
+        range = (*b)->GetRangeOfRow(row);
+        for (c=0; c<(*b)->width; c++) {
+            seqIndexes[i++] = range->from + c;
+        }
+    }
+}
+
+void AlignmentManager::RealignAllSlaves(void) const
+{
+    const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
+    if (!multiple) return;
+    BlockMultipleAlignment::UngappedAlignedBlockList *blocks = multiple->GetUngappedAlignedBlocks();
+    if (!blocks) {
+        ERR_POST(Warning << "Can't realign slaves with no aligned residues!");
+        return;
+    }
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    int nResidues = 0;
+    for (b=blocks->begin(); b!=be; b++) nResidues += (*b)->width;
+    if (nResidues <= 2) {
+        ERR_POST(Warning << "Can't realign slaves with < 3 aligned residues!");
+        delete blocks;
+        return;
+    }
+
+    const Sequence *masterSeq = multiple->GetSequenceOfRow(0), *slaveSeq;
+    const Molecule *masterMol, *slaveMol;
+    if (!masterSeq || !(masterMol = masterSeq->molecule)) {
+        ERR_POST(Warning << "Can't realign slaves to non-structured master!");
+        delete blocks;
+        return;
+    }
+
+    int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
+    GetAlignedResidueIndexes(blocks->begin(), blocks->end(), 0, masterSeqIndexes);
+
+    // for now, just use flat weighting
+    double *weights = new double[nResidues];
+    int i;
+    for (i=0; i<nResidues; i++) weights[i] = 1;
+
+    const StructureObject *slaveObj;
+
+    typedef const Vector * CVP;
+    CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
+    if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
+        ERR_POST(Warning << "Can't get master alpha coords");
+    } else {
+
+        for (i=1; i<multiple->NRows(); i++) {
+            slaveSeq = multiple->GetSequenceOfRow(i);
+            if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
+        
+            GetAlignedResidueIndexes(blocks->begin(), blocks->end(), i, slaveSeqIndexes);
+            if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
+
+            if (!slaveMol->GetParentOfType(&slaveObj)) continue;
+
+            TESTMSG("realigning slave " << slaveSeq->pdbID << " against master " << masterSeq->pdbID);
+            (const_cast<StructureObject*>(slaveObj))->
+                RealignStructure(nResidues, masterCoords, slaveCoords, weights);
+        }
+    }
+
+    delete blocks;
+    delete masterSeqIndexes;
+    delete slaveSeqIndexes;
+    delete masterCoords;
+    delete slaveCoords;
+    delete weights;
+    return;
 }
 
 

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/13 18:05:58  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.10  2000/11/12 04:02:22  thiessen
 * working file save including alignment edits
 *
@@ -160,6 +163,8 @@ public:
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
+        // Structure Alignments menu
+            MID_REFIT_ALL,
         // Style menu
             MID_SECSTRUC,
             MID_ALIGN,
@@ -181,6 +186,8 @@ public:
 
     void OnOpen(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
+
+    void OnAlignStructures(wxCommandEvent& event);
 
     void OnAdjustView(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/11/13 18:05:58  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.29  2000/11/12 04:02:22  thiessen
 * working file save including alignment edits
 *
@@ -240,6 +243,7 @@ public:
     StructureObject(StructureBase *parent, const ncbi::objects::CBiostruc& biostruc, bool master);
 
     // public data
+
     static const int NO_MMDB_ID;
     int mmdbID;
     std::string pdbID;
@@ -254,7 +258,13 @@ public:
     CoordSetList coordSets;
 
     // public methods
+
+    // set transform based on asn1 data
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);
+
+    // set transform based on rigid body fit of given coordinates
+    void RealignStructure(int nCoords,
+        const Vector * const *masterCoords, const Vector * const *slaveCoords, const double *weights);
 
 private:
     const bool isMaster;

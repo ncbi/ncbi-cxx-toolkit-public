@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/11/13 18:06:53  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.34  2000/11/12 04:03:00  thiessen
 * working file save including alignment edits
 *
@@ -491,6 +494,7 @@ void StructureSet::SelectedAtom(unsigned int name)
         ApplyTransformation(&rotationCenter, *(object->transformToMaster));
 }
 
+
 const int StructureObject::NO_MMDB_ID = -1;
 
 StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
@@ -577,7 +581,7 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
                     graphAlign.GetBiostruc_ids().back().GetObject().IsMmdb_id() &&
                     graphAlign.GetBiostruc_ids().back().GetObject().GetMmdb_id().Get() == mmdbID) {
 
-                    TESTMSG("Got transform for " << pdbID << "->master");
+                    TESTMSG("got transform for " << pdbID << "->master");
                     // unpack transform into matrix, moves in reverse order;
                     Matrix xform;
                     transformToMaster = new Matrix();
@@ -610,6 +614,30 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
         }
     }
     return false;
+}
+
+void StructureObject::RealignStructure(int nCoords,
+    const Vector * const *masterCoords, const Vector * const *slaveCoords, const double *weights)
+{
+    Vector masterCOM, slaveCOM;
+    Matrix slaveRotation;
+
+    // if this object doesn't already have a transformToMaster, then something weird happened...
+    if (!transformToMaster) {
+        ERR_POST(Error << "StructureObject::RealignStructure() - object doesn't have transformToMaster");
+        return;
+    }
+
+    // do the fit
+    RigidBodyFit(nCoords, masterCoords, slaveCoords, weights, masterCOM, slaveCOM, slaveRotation);
+    
+    // apply the resulting transform elements from the fit to this object's transform Matrix
+    Matrix single, combined;
+    SetTranslationMatrix(&single, -slaveCOM);
+    ComposeInto(transformToMaster, slaveRotation, single);
+    combined = *transformToMaster;
+    SetTranslationMatrix(&single, masterCOM);
+    ComposeInto(transformToMaster, single, combined);
 }
 
 END_SCOPE(Cn3D)

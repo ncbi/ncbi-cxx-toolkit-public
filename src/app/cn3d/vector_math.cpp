@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/11/13 18:06:53  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.2  2000/07/17 22:37:18  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -144,5 +147,167 @@ void InvertInto(Matrix* I, const Matrix& A)
 
     return;
 }
+
+
+//---------------------------------------------------------------------
+// copied from:  /PROGRAMS/SigmaX2.2/SIGLIB/RigidBody.c
+//
+//    S*I*G*M*A - 1996 program
+// revised 1996        J. Hermans, Univ. N. Carolina
+//
+//     perform rigid body fit for two structures
+//         (cf. Ferro&Hermans and McLachlan)
+//
+// inputs:
+//    natx:          number of atoms
+//    xref:          reference coordinates
+//    xvar:          variable coordinates
+//    Inverse_mass:  inverse weights (1 per atom)
+//    do_select:     use the Selection array
+//    selected:      selection array
+//
+// outputs:
+//    cgref:     c.o.mass of xref
+//    cgvar:     c.o.mass of xvar
+//
+//  NEW xvar = cgref + rot * ( OLD xvar - cgvar ).
+//  The new xvar will be the best approximation to xref.
+//---------------------------------------------------------------------
+
+// Adapted for Cn3D++ with Vector, Matrix classes by Paul Thiessen.
+// xvar Vectors are left unchanged; instead, the transformations necessary
+// to superimpose the variable structure onto the reference structure
+// are returned in cgref, cgvar, and rotMat. The transformation process is:
+// 1) translate variable so its center of mass is at origin; 2) apply
+// rotation in rotMat; 3) translate variable so its center of mass is
+// at center of mass of reference.
+
+void RigidBodyFit(
+    int natx, const Vector * const *xref, const Vector * const *xvar, const double *weights,
+    Vector& cgref, Vector& cgvar, Matrix& rotMat)
+{
+    Vector  t, phi, cosin, sine;
+    double  rot[3][3], corlnmatrx[3][3];
+    int     flag1, flag2, flag3;
+    int     i, j, iatv, ix;
+    double  an2, xx, f, fz, sgn, del, phix, phibes;
+    double  tol = .0001;
+
+    // compute centroids
+    cgref *= 0;
+    cgvar *= 0;
+    an2 = 0.;
+    for (iatv=0; iatv<natx; iatv++) {
+        if (weights[iatv] <= 0.) continue;
+        an2 += weights[iatv];
+        cgref += *(xref[iatv]) * weights[iatv];
+        cgvar += *(xvar[iatv]) * weights[iatv];
+    }
+    cgref /= an2;
+    cgvar /= an2;
+
+    // compute correlation matrix
+    for (i=0; i<3; i++) {
+        cosin[i] = 1.;
+        for (j=0; j<3; j++) {
+            corlnmatrx[i][j] = 0.;
+        }
+    }
+    for (iatv=0; iatv<natx; iatv++) {
+        for (i=0; i<3; i++) {
+            xx = ((*(xvar[iatv]))[i] - cgvar[i]) * weights[iatv];
+            for (j=0; j<3; j++) {
+                corlnmatrx[i][j] += xx * ((*(xref[iatv]))[j] - cgref[j]);
+            }
+        }
+    }
+
+    // evaluate rotation matrix iteratively
+    flag1 = flag2 = flag3 = false;
+    ix = 0;
+    del = .5;
+    sgn = 1.;
+    phibes = phix = 0.;
+
+    while (true) {
+        cosin[ix] = cos(phix);
+        sine[ix] = sin(phix);
+        rot[0][0] = cosin[1] * cosin[2];
+        rot[1][0] = cosin[1] * sine[2];
+        rot[0][1] = sine[0] * sine[1] * cosin[2] - cosin[0] * sine[2];
+        rot[1][1] = sine[0] * sine[1] * sine[2] + cosin[0] * cosin[2];
+        rot[2][0] = -sine[1];
+        rot[2][1] = sine[0] * cosin[1];
+        rot[2][2] = cosin[0] * cosin[1];
+        rot[0][2] = cosin[0] * sine[1] * cosin[2] + sine[0] * sine[2];
+        rot[1][2] = cosin[0] * sine[1] * sine[2] - sine[0] * cosin[2];
+
+        // compute the trace of (rot x corlnmatrix)
+        f = 0.;
+        for (i=0; i<3; i++) {
+            for (j=0; j<3; j++) {
+                f += rot[i][j] * corlnmatrx[i][j];
+            }
+        }
+
+        if (!flag3) {
+            fz = f; 
+            flag3 = true;
+            phix = phibes + sgn * del;
+            phi[ix] = phix;
+            continue;
+        }
+        if (f > fz) {
+            // f went down, try again with same difference.
+            fz = f;
+            flag1 = true;
+            phibes = phi[ix];
+            flag2 = false;
+            phix = phibes + sgn * del;
+            phi[ix] = phix;
+            continue;
+        }
+        if (!flag1) {
+            // try in the opposite direction
+            sgn = -sgn;
+            flag1 = true;
+            phix = phibes + sgn * del;
+            phi[ix] = phix;
+            continue;
+        }
+        phi[ix] = phibes;
+        cosin[ix] = cos(phibes);
+        sine[ix] = sin(phibes);
+        flag1 = false;
+        if (ix < 2) {
+            // apply the same del to the next Euler angle
+            ix++;
+            phibes = phi[ix];
+            phi[ix] = phix = phibes + sgn * del;
+            continue;
+        }
+        if (flag2) {
+            // cut del in half
+            flag2 = false;
+            del *= .5;
+            if (del < tol) break;
+        } else {
+            flag2 = true;
+        }
+        ix = 0;
+        phibes = phi[ix];
+        phix = phibes + sgn * del;
+        phi[ix] = phix;
+    }
+    // end iterative evaluation of rotation matrix
+
+    // store computed rotation matrix in rotMat
+    rotMat.SetToIdentity();
+    for (i=0; i<3; i++) {
+        for (j=0; j<3; j++) {
+            rotMat[4*i + j] = rot[j][i];
+        }
+    }
+} // end RigidBodyFit()
 
 END_SCOPE(Cn3D)

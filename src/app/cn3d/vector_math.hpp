@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/13 18:05:58  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.10  2000/09/08 20:16:10  thiessen
 * working dynamic alignment views
 *
@@ -105,7 +108,7 @@ public:
     }
     double& operator [] (SIZE_TYPE i)
     {
-        static double err = 0.0;
+		static double err = 0.0;
         if (i == 0) return x;
         else if (i == 1) return y;
         else if (i == 2) return z;
@@ -119,6 +122,10 @@ public:
         else if (i == 2) return z;
         else ERR_POST(ncbi::Error << "Vector operator [] access out of range : " << i);
         return 0.0;
+    }
+    friend Vector operator - (const Vector& a)
+    {
+        return Vector(-a.x, -a.y, -a.z);
     }
     friend Vector operator + (const Vector& a, const Vector& b)
     {
@@ -212,6 +219,23 @@ public:
         for (int i=0; i<16; i++) m[i]=o.m[i];
         return *this;
     }
+    double& operator [] (SIZE_TYPE i)
+    {
+		static double err = 0.0;
+        if (i > 15 || i < 0) {
+            ERR_POST(ncbi::Error << "Matrix operator [] access out of range : " << i);
+            return err;
+        }
+        return m[i];
+    }
+    double operator [] (SIZE_TYPE i) const
+    {
+        if (i > 15 || i < 0) {
+            ERR_POST(ncbi::Error << "Matrix operator [] access out of range : " << i);
+            return 0.0;
+        }
+        return m[i];
+    }
 };
 
 void SetTranslationMatrix(Matrix* m, const Vector& v, int n =1);
@@ -220,6 +244,11 @@ void SetRotationMatrix(Matrix* m, const Vector& v, double rad, int n =1);
 void ApplyTransformation(Vector* v, const Matrix& m);
 void ComposeInto(Matrix* C, const Matrix& A, const Matrix& B);
 void InvertInto(Matrix* I, const Matrix& A);
+
+// Rigid body fit algorithm
+void RigidBodyFit(
+    int natx, const Vector * const *xref, const Vector * const *xvar, const double *weights,  // inputs
+    Vector& cgref, Vector& cgvar, Matrix& rotMat);                                            // outputs
 
 END_SCOPE(Cn3D)
 

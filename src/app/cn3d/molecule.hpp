@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/13 18:05:58  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.14  2000/10/04 17:40:46  thiessen
 * rearrange STL #includes
 *
@@ -156,6 +159,10 @@ public:
     // residue color method - called by sequence/alignment viewer - note
     // that sequenceIndex is numbered from zero.
     Vector GetResidueColor(int sequenceIndex) const;
+
+    // get coordinates for alpha atoms of residues with given sequence indexes;
+    // returns true if successful, false on failure
+    bool GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const;
 
 private:
 };

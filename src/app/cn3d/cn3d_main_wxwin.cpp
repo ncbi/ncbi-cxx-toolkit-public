@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/13 18:06:52  thiessen
+* working structure re-superpositioning
+*
 * Revision 1.14  2000/11/12 04:02:59  thiessen
 * working file save including alignment edits
 *
@@ -154,6 +157,7 @@
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/chemical_graph.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -270,6 +274,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU(MID_OPEN,                              Cn3DMainFrame::OnOpen)
     EVT_MENU(MID_SAVE,                              Cn3DMainFrame::OnSave)
     EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,      Cn3DMainFrame::OnAdjustView)
+    EVT_MENU(MID_REFIT_ALL,                         Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
@@ -297,6 +302,11 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
     menu->Append(MID_ZOOM_OUT, "Zoom &Out");
     menu->Append(MID_RESET, "&Reset");
     menuBar->Append(menu, "&View");
+
+    // Structure Alignment menu
+    menu = new wxMenu;
+    menu->Append(MID_REFIT_ALL, "Recompute &All");
+    menuBar->Append(menu, "Structure &Alignments");
 
     // Style menu
     menu = new wxMenu;
@@ -377,6 +387,15 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
         default: ;
     }
     glCanvas->Refresh(false);
+}
+
+void Cn3DMainFrame::OnAlignStructures(wxCommandEvent& event)
+{
+    if (glCanvas->structureSet) {
+        glCanvas->structureSet->alignmentManager->RealignAllSlaves();
+        glCanvas->SetCurrent();
+        glCanvas->Refresh(false);
+    }
 }
 
 void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
