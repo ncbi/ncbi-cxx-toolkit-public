@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/12/19 21:31:09  kans
+ * added GetGeneXref and GetProtXref
+ *
  * Revision 1.4  2002/06/07 11:59:10  clausen
  * Added related function comment
  *
@@ -78,6 +81,12 @@ public:
     //
     //   void GetLabel (const CSeq_feat&, string*, ELabelType, CScope*)
     //
+
+    // get gene (if present) from Seq-feat.xref list
+    const CGene_ref* GetGeneXref(void) const;
+
+    // get protein (if present) from Seq-feat.xref list
+    const CProt_ref* GetProtXref(void) const;
 
 private:
     // Prohibit copy constructor and assignment operator

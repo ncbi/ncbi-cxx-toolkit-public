@@ -149,6 +149,28 @@ bool operator<(const CSeq_feat& f1, const CSeq_feat& f2)
     return false; // unknown
 }
 
+const CGene_ref* CSeq_feat::GetGeneXref(void) const
+
+{
+    iterate(CSeq_feat::TXref, it, GetXref ()) {
+        if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()) {
+            return &((*it)->GetData ().GetGene ());
+        }
+    }
+    return 0;
+}
+
+const CProt_ref* CSeq_feat::GetProtXref(void) const
+
+{
+    iterate(CSeq_feat::TXref, it, GetXref ()) {
+        if ((*it)->IsSetData () && (*it)->GetData ().IsProt ()) {
+            return &((*it)->GetData ().GetProt ());
+        }
+    }
+    return 0;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -158,6 +180,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.7  2002/12/19 21:31:29  kans
+ * added GetGeneXref and GetProtXref
+ *
  * Revision 6.6  2002/09/18 18:31:11  ucko
  * operator <: Remove bogus comparison of feature type labels.
  * operator <: Mention content labels in to-do comment.
