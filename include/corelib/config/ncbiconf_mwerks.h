@@ -9,7 +9,7 @@
 #define NCBI_CXX_TOOLKIT  1
 
 #define NCBI_OS_MAC  1
-#define HOST_OS      "MAC"
+#define NCBI_OS      "MAC"
 
 #define HOST         "PowerPC-Apple-MacOS"
 #define HOST_CPU     "PowerPC"
