@@ -44,6 +44,7 @@ static char const rcsid[] =
 #include <algo/blast/core/greedy_align.h>
 #include "blast_gapalign_priv.h"
 #include "blast_hits_priv.h"
+#include "blast_itree.h"
 
 static Int2 s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
@@ -101,15 +102,6 @@ data.last = (data.last > 0) ? (data.sapp[-1] += (k)) : (*data.sapp++ = (k));
 /** Apend "Decline" traceback operation */
 #define REPP_ \
 {*data.sapp++ = MININT; data.last = 0;}
-
-/** Are the two HSPs within a given number of diagonals from each other? */
-#define MB_HSP_CLOSE(q1, q2, s1, s2, c) \
-(ABS((q1-s1) - (q2-s2)) < c)
-
-/** Is one HSP contained in a diagonal strip around another? */
-#define MB_HSP_CONTAINED(qo1,qo2,qe2,so1,so2,se2,c) \
-(qo1>=qo2 && qo1<=qe2 && so1>=so2 && so1<=se2 && \
-MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
 
 /** Callback for sorting HSPs by starting offset in query. The sorting criteria
  * in order of priority: context, starting offset in query, starting offset in 
@@ -199,38 +191,7 @@ s_QueryEndCompareHSPs(const void* v1, const void* v2)
 	return 0;
 }
 
-/** Callback for sorting HSPs in order to move NULL HSPs to the end of
- * the array.
- */
-static int
-s_NullCompareHSPs(const void* v1, const void* v2)
-{
-	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
-
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
-        
-        /* NULL HSPs are moved to the end */
-	if (!h1 && !h2)
-	   return 0;
-	else if (!h1)
-      return 1;
-   else if (!h2)
-      return -1;
-   
-	return 0;
-}
-
-/** Check the gapped alignments for an overlap of two different alignments.
- * A sufficient overlap is when two alignments have the same start values
- * of have the same final values. 
- * @param hsp_array Pointer to an array of BlastHSP structures [in]
- * @param hsp_count The size of the hsp_array [in]
- * @return The number of valid alignments remaining. 
-*/
+/* See blast_gapalign_priv.h for description */
 Int4
 Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count)
 {
@@ -254,10 +215,11 @@ Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count)
           hsp_array[index]->context == hsp_array[index+increment]->context)
       {
          if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-            sfree(hsp_array[index+increment]);
+            hsp_array[index+increment] = 
+                                Blast_HSPFree(hsp_array[index+increment]);
             increment++;
          } else {
-            sfree(hsp_array[index]);
+            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
             index++;
             increment = 1;
          }
@@ -284,10 +246,11 @@ Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count)
           hsp_array[index]->context == hsp_array[index+increment]->context)
       {
          if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-            sfree(hsp_array[index+increment]);
+            hsp_array[index+increment] = 
+                                Blast_HSPFree(hsp_array[index+increment]);
             increment++;
          } else	{
-            sfree(hsp_array[index]);
+            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
             index++;
             increment = 1;
          }
@@ -297,12 +260,11 @@ Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count)
       }
    }
 
-   qsort(hsp_array,hsp_count,sizeof(BlastHSP*), s_NullCompareHSPs);
-   
+   /* squeeze out HSPs that are NULL, count those that are not */
    for (index=0; index<hsp_count; index++)
    {
       if (hsp_array[index] != NULL)
-         retval++;
+         hsp_array[retval++] = hsp_array[index];
    }
 
    return retval;
@@ -2457,61 +2419,59 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
 			    BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats)
 {
    const BlastExtensionOptions* ext_options = ext_params->options;
-   Int4 index, i;
-   Boolean delete_hsp;
+   Int4 index;
    BlastInitHSP* init_hsp;
-   BlastInitHSP** init_hsp_array;
    BlastHSPList* hsp_list;
-   BlastHSP* hsp;
    const BlastHitSavingOptions* hit_options = hit_params->options;
    BLAST_SequenceBlk query_tmp;
    Int4 context;
+   BlastIntervalTree *tree;
    
-   /* To avoid changing order of initial hits and having to sort them again
-      by score at the end of the routine, just introduce an auxiliary array of 
-      pointers, which can then be sorted by hits' diagonals. */
-   init_hsp_array = (BlastInitHSP**) 
-     malloc(init_hitlist->total*sizeof(BlastInitHSP*));
-   for (index=0; index<init_hitlist->total; ++index)
-     init_hsp_array[index] = &init_hitlist->init_hsp_array[index];
-
-   qsort(init_hsp_array, init_hitlist->total, 
-         sizeof(BlastInitHSP*), s_DiagCompareMatch);
-
    if (*hsp_list_ptr == NULL)
       *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
    else 
       hsp_list = *hsp_list_ptr;
 
+   tree = Blast_IntervalTreeInit(0, query->length,
+                                 0, subject->length);
+
    for (index=0; index<init_hitlist->total; index++) {
-      init_hsp = init_hsp_array[index];
+      BlastHSP tmp_hsp;
+      Int4 q_start, q_end, s_start, s_end, score;
+
+      init_hsp = &init_hitlist->init_hsp_array[index];
+
       /* Change query coordinates to relative in the initial HSP right here */
       s_GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, NULL, 
                              &context);
-      delete_hsp = FALSE;
-      for (i = hsp_list->hspcnt - 1; i >= 0; i--) {
-         hsp = hsp_list->hsp_array[i];
-         if (context != hsp->context)
-            continue;
-         if (!MB_HSP_CLOSE(init_hsp->q_off, hsp->query.offset, 
-                           init_hsp->s_off, hsp->subject.offset, MB_DIAG_NEAR))
-             break;
 
-         /* Do not extend an HSP already contained in another HSP, unless
-            its ungapped score is higher than that HSP's gapped score,
-            which indicates wrong starting offset for previously extended HSP.
-         */
-         if (MB_HSP_CONTAINED(init_hsp->q_off, hsp->query.offset, 
-                hsp->query.end, init_hsp->s_off, 
-                hsp->subject.offset, hsp->subject.end, MB_DIAG_CLOSE) &&
-             (!init_hsp->ungapped_data || 
-              init_hsp->ungapped_data->score < hsp->score)) 
-         {
-               delete_hsp = TRUE;
-               break;
-         }
+      if (!init_hsp->ungapped_data) {
+         q_start = q_end = init_hsp->q_off;
+         s_start = s_end = init_hsp->s_off;
+         score = INT4_MIN;
+      } else {
+         q_start = init_hsp->ungapped_data->q_start;
+         q_end = q_start + init_hsp->ungapped_data->length;
+         s_start = init_hsp->ungapped_data->s_start;
+         s_end = s_start + init_hsp->ungapped_data->length;
+         score = init_hsp->ungapped_data->score;
       }
-      if (!delete_hsp) {
+
+      tmp_hsp.score = score;
+      tmp_hsp.context = context;
+      tmp_hsp.query.offset = q_start;
+      tmp_hsp.query.length = q_end - q_start;
+      tmp_hsp.query.end = q_end;
+      tmp_hsp.query.frame = query_info->contexts[context].frame;
+      tmp_hsp.subject.offset = s_start;
+      tmp_hsp.subject.length = s_end - s_start;
+      tmp_hsp.subject.end = s_end;
+      tmp_hsp.subject.frame = 1;
+
+      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp,
+                  query_info->contexts[context].query_offset,
+                  MB_DIAG_CLOSE))
+      {
          Boolean good_hit = TRUE;
          Int4 hsp_length;
 
@@ -2544,17 +2504,19 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
                           gap_align->score, &(gap_align->edit_block), 
                           &new_hsp);
             Blast_HSPListSaveHSP(hsp_list, new_hsp);
+            BlastIntervalTreeAddHSP(new_hsp, tree, query_info);
          }
       }
    }
 
-   sfree(init_hsp_array);
-   
+   tree = Blast_IntervalTreeFree(tree);
+
    /* Sort the HSP array by score */
    Blast_HSPListSortByScore(hsp_list);
 
    return 0;
 }
+
 
 /** Auxiliary function to transform one style of edit script into 
  *  another. 
@@ -3121,6 +3083,7 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
  * @param subject Subject sequence [in]
  * @param gap_align Gapped alignment structure [in]
  * @param score_params Scoring parameters [in]
+ * @param ext_params Gapped extension parameters [in]
  * @param hit_params Hit saving parameters [in]
  * @param init_hitlist Initial hit list obtained by ungapped alignment [in]
  * @param gapped_stats Gapped extension stats [in]
@@ -3245,11 +3208,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
         BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats)
 
 {
-   SSeqRange* helper = NULL;
-   Int4 index, index1, next_offset;
+   Int4 index;
    BlastInitHSP* init_hsp = NULL;
    BlastInitHSP* init_hsp_array;
-   BlastHSP* hsp1 = NULL;
    Int4 q_start, s_start, q_end, s_end;
    Boolean is_prot;
    Int4 max_offset;
@@ -3258,6 +3219,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    const BlastHitSavingOptions* hit_options = hit_params->options;
    BLAST_SequenceBlk query_tmp;
    Int4 context;
+   BlastIntervalTree *tree;
+   Int4 score;
    Int4 **rpsblast_pssms = NULL;   /* Pointer to concatenated PSSMs in
                                        RPS-BLAST database */
 
@@ -3286,12 +3249,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    init_hsp_array = init_hitlist->init_hsp_array;
 
-   /* helper contains most frequently used information to speed up access. */
-   helper = (SSeqRange*) malloc((init_hitlist->total)*sizeof(SSeqRange));
+   tree = Blast_IntervalTreeInit(0, query->length,
+                                 0, subject->length);
 
    for (index=0; index<init_hitlist->total; index++)
    {
-      Boolean delete_hsp = FALSE;  /* Set if HSP is contained within another. */
+      BlastHSP tmp_hsp;
       init_hsp = &init_hsp_array[index];
 
       /* Now adjust the initial HSP's coordinates. */
@@ -3302,88 +3265,32 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms + 
              query_info->contexts[context].query_offset;
 
-      /* This prefetches this value for the test below. */
-      next_offset = init_hsp->q_off;
-
       if (!init_hsp->ungapped_data) {
-         q_start = q_end = next_offset;
+         q_start = q_end = init_hsp->q_off;
          s_start = s_end = init_hsp->s_off;
+         score = INT4_MIN;
       } else {
          q_start = init_hsp->ungapped_data->q_start;
          q_end = q_start + init_hsp->ungapped_data->length;
          s_start = init_hsp->ungapped_data->s_start;
          s_end = s_start + init_hsp->ungapped_data->length;
+         score = init_hsp->ungapped_data->score;
       }
 
-      hsp1 = NULL;
-      for (index1=0; index1<hsp_list->hspcnt; index1++)
-      {
-          BlastContextInfo *cinfo1 = 0, *cinfo2 = 0;
-          
-          delete_hsp = FALSE;
-          hsp1 = hsp_list->hsp_array[index1];
-          
-          cinfo1 = & query_info->contexts[hsp1->context];
-          cinfo2 = & query_info->contexts[context];
-          
-          /* If the HSPs are from different queries, skip. */
-          
-          if (cinfo1->query_index != cinfo2->query_index)
-              continue;
-          
-          /* If not both positive or both negative strands, skip. */
-          
-          if (SIGN(cinfo1->frame) != SIGN(cinfo2->frame))
-              continue;
-          
-          /* Check with the helper array whether further
-            tests are warranted.  Having only two ints
-            in the helper array speeds up access. */
-         if (helper[index1].left <= next_offset &&
-             helper[index1].right >= next_offset)
-         {
-            if (hit_options->min_diag_separation > 0)
-            {
-               if (MB_HSP_CONTAINED(q_start, hsp1->query.offset, hsp1->query.end,
-                   s_start, hsp1->subject.offset, hsp1->subject.end, hit_options->min_diag_separation) &&
-                   (!init_hsp->ungapped_data ||
-                    init_hsp->ungapped_data->score <= hsp1->score))
-               {
-                     delete_hsp = TRUE;
-                     break;
-               }
-            } 
-            else 
-            {
-               Boolean hsp_start_is_contained=FALSE, hsp_end_is_contained=FALSE;
-               
-               if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_start,
-                                    hsp1->subject.offset, hsp1->subject.end, 
-                                    s_start))
-               {
-                     hsp_start_is_contained = TRUE;
-               }
+      tmp_hsp.score = score;
+      tmp_hsp.context = context;
+      tmp_hsp.query.offset = q_start;
+      tmp_hsp.query.length = q_end - q_start;
+      tmp_hsp.query.end = q_end;
+      tmp_hsp.query.frame = query_info->contexts[context].frame;
+      tmp_hsp.subject.offset = s_start;
+      tmp_hsp.subject.length = s_end - s_start;
+      tmp_hsp.subject.end = s_end;
+      tmp_hsp.subject.frame = subject->frame;
 
-               if (hsp_start_is_contained && 
-                   (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_end,
-                                     hsp1->subject.offset, hsp1->subject.end, 
-                                     s_end)))
-               {
-                  hsp_end_is_contained = TRUE;
-               }
-
-               if (hsp_start_is_contained && hsp_end_is_contained &&
-                   (!init_hsp->ungapped_data ||
-                    init_hsp->ungapped_data->score <= hsp1->score))
-               {
-                  delete_hsp = TRUE;
-                  break;
-               }
-            }
-         }
-      }
-      
-      if (!delete_hsp)
+      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp,
+                  query_info->contexts[context].query_offset,
+                  hit_options->min_diag_separation))
       {
          BlastHSP* new_hsp;
 
@@ -3443,17 +3350,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                            query_frame, subject->frame, gap_align->score, 
                            &(gap_align->edit_block), &new_hsp);
              Blast_HSPListSaveHSP(hsp_list, new_hsp);
-
-             /* Fill in the helper structure. */
-             helper[hsp_list->hspcnt - 1].left = gap_align->query_start;
-             helper[hsp_list->hspcnt - 1].right = gap_align->query_stop;
+             BlastIntervalTreeAddHSP(new_hsp, tree, query_info);
          }
       }
-      /* Free ungapped data here - it's no longer needed */
-      sfree(init_hsp->ungapped_data);
    }   
 
-   sfree(helper);
+   tree = Blast_IntervalTreeFree(tree);
    if (rpsblast_pssms) {
        gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
    }
@@ -3964,7 +3866,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
 
 /** Returns length of a pattern in a PHI BLAST search, saved in the gapped
  * alignment structure.
- * @param gap_align The gapped alignment structure [in]
+ * @param The gapped alignment structure [in]
  * @return Pattern length
  */
 static Int4 
