@@ -121,8 +121,12 @@ public:
     // Reads unformatted data, returns bytes actually read.
     // Advances to next column as soon as data is read from the previous one.
     // Returns 0 when the column data is fully read
-    // Valid only for unbound columns (see DisableBind())
+    // Valid only when the column binding is off (see DisableBind())
     virtual size_t Read(void* buf, size_t size) = 0;
+
+    // Return true if the last column read was NULL.
+    // Valid only when the column binding is off (see DisableBind())
+    virtual bool WasNull() = 0;
 
     // Returns current column number (while using Read())
     virtual int GetColumnNo() = 0;
@@ -437,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/02/12 15:53:23  kholodov
+ * Added: WasNull() method
+ *
  * Revision 1.18  2003/02/10 17:17:15  kholodov
  * Modified: made IDataSource::dtor() non-public
  *

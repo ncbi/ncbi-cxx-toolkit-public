@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.22  2003/02/12 15:52:32  kholodov
+* Added: WasNull() method
+*
 * Revision 1.21  2003/02/06 19:59:22  kholodov
 * Fixed: CResultSet::GetColumnNo() never returned 1
 *
@@ -134,7 +137,7 @@ BEGIN_NCBI_SCOPE
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
       m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
-      m_bindBlob(false), m_disableBind(false)
+      m_bindBlob(false), m_disableBind(false), m_wasNull(true)
 {
     SetIdent("CResultSet");
 
@@ -278,9 +281,15 @@ size_t CResultSet::Read(void* buf, size_t size)
         return 0;
     }
     else {
-        return m_rs->ReadItem(buf, size);
+        return m_rs->ReadItem(buf, size, &m_wasNull);
     }
 }
+
+bool CResultSet::WasNull()
+{
+    return m_wasNull;
+}
+
 
 int CResultSet::GetColumnNo()
 {

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2003/02/12 15:52:32  kholodov
+* Added: WasNull() method
+*
 * Revision 1.12  2002/12/16 18:56:50  kholodov
 * Fixed: memory leak in CStatement object
 *
@@ -115,6 +118,7 @@ public:
     virtual void BindBlobToVariant(bool b);
   
     virtual size_t Read(void* buf, size_t size);
+    virtual bool WasNull();
     virtual int GetColumnNo();
     virtual unsigned int GetTotalColumns();
 
@@ -157,6 +161,7 @@ private:
     int m_column;
     bool m_bindBlob;
     bool m_disableBind;
+    bool m_wasNull;
 
 };
 
