@@ -1,4 +1,4 @@
---$Revision: 1.9 $
+--$Revision: 1.10 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -138,7 +138,12 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
     maploc VisibleString OPTIONAL , -- map location reported in paper
     seq-raw StringStore OPTIONAL ,  -- original sequence from paper
     align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
-    index-seqs SET OF Bioseq OPTIONAL }     -- index sequences
+    index-seqs SET OF Bioseq OPTIONAL ,     -- index sequences
+	status ENUMERATED {             -- publication status at this time
+		in-preparation (1) ,
+		submitted (2) ,
+		accepted (3) ,
+		published (4) } OPTIONAL }
 
 PIR-block ::= SEQUENCE {          -- PIR specific descriptions
     had-punct BOOLEAN OPTIONAL ,      -- had punctuation in sequence ?
