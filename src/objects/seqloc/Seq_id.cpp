@@ -564,12 +564,12 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'W':                               return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
-            case 'P':                               return eAcc_gb_genome;
+            case 'P': case 'Y':                     return eAcc_gb_genome;
             case 'Q':                               return eAcc_embl_patent;
             case 'R':                               return eAcc_embl_genome;
                 // no specific assignments for CS-CU yet
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
-            case 'Y': case 'Z':                     return eAcc_gb_other_nuc;
+            case 'Z':                               return eAcc_gb_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1529,6 +1529,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.93  2004/12/01 20:04:04  ucko
+ * IdentifyAccession: CY is now specifically for (flu) genomes.
+ *
  * Revision 6.92  2004/11/22 20:10:24  ucko
  * IdentifyAccession: CX is now specifically assigned to GenBank ESTs.
  *
