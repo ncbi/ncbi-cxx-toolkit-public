@@ -939,6 +939,22 @@ void CDBAPI_Cache::Purge(const string&    key,
 
 }
 
+/// @internal
+struct SDBAPI_CacheDescr
+{
+    string    key;
+    int       version;
+    string    subkey;
+
+    SDBAPI_CacheDescr(string x_key,
+                      int    x_version,
+                      string x_subkey)
+    : key(x_key), version(x_version), subkey(x_subkey)
+    {}
+
+    SDBAPI_CacheDescr() {}
+};
+
 void CDBAPI_Cache::x_CleanOrphantBlobs(IStatement& stmt)
 {
     string sel_sql = 
@@ -953,32 +969,46 @@ void CDBAPI_Cache::x_CleanOrphantBlobs(IStatement& stmt)
             "ca.version   IS NULL AND "
             "ca.cache_key IS NULL";
 
+    vector<SDBAPI_CacheDescr> blist;
+
+    // MSSQL cannot execute two statements at the same time
+    // (connection is busy), here we fetch the BLOB list first
+    // and then delete all in a separate transaction
+
+    {{
     ICursor* cur = m_Conn->GetCursor("sel_cur", sel_sql);
     CDBAPI_CursorGuard cg(cur);
     IResultSet *rs = cur->Open(); 
 
+    string key, subkey;
+
     while (rs->Next()) {
         const CVariant& v1 = rs->GetVariant(1);
-        string key = v1.GetString();
+        key = v1.IsNull()? kEmptyStr : v1.GetString();
 
         const CVariant& v2 = rs->GetVariant(2);
-        int version = v2.GetInt4();
+        int version = v2.IsNull()? 0 : v2.GetInt4();
 
         const CVariant& v3 = rs->GetVariant(3);
-        string subkey = v3.GetString();
+        subkey = v3.IsNull()? kEmptyStr : v3.GetString();
 
+        blist.push_back(SDBAPI_CacheDescr(key, version, subkey));
+    } // while
+    }}
+
+    string del_sql = "DELETE FROM dbo.cache_data WHERE ";
+    ITERATE(vector<SDBAPI_CacheDescr>, it, blist) {
         {{
             CDBAPI_TransGuard tg(&stmt);
-            string del_sql = "DELETE FROM dbo.cache_data WHERE ";
             string del_cond;
-            s_MakeKeyCondition(key, version, subkey, &del_cond);
+            s_MakeKeyCondition(it->key, it->version, it->subkey, &del_cond);
 
             string sql = del_sql + del_cond;
             stmt.ExecuteUpdate(sql);
 
             tg.Commit();
         }}
-    } // while
+    }
 }
 
 
@@ -1128,6 +1158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/20 14:18:25  kuznets
+ * Fixed SQL related bug (busy wire) in removing old BLOBs
+ *
  * Revision 1.6  2004/07/20 00:54:13  ucko
  * Tweak for our patched version of GCC 3.3.3, which is really strict
  * about stream-related types.
