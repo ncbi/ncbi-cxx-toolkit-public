@@ -6,53 +6,58 @@
 
 	 <ol>
 		<li>
-      You may have a pre-installed CVS executable on your PC,
+      You can have a pre-installed CVS executable on your PC,
       for example in <i><b>C:\WINNT\System32\cvs.exe</b></i>.
 		If not, then download it from <i><b>\\Basie\IEB\cvs.exe</b></i>
       (you also can find it at
 		<a href="http://www.cyclic.com/">http://www.cyclic.com/</a>)
 		and copy to <i><b>C:\WINNT\System32\cvs.exe</b></i>.
+                <p>
 
 		<li>
-		Create environment variable CVSROOT:
+		Create environment variable <tt>CVSROOT</tt>:<p>
 	 <ul>
 		<li>
-		Click the right mouse button on the icon of your NT PC name
-		(it is usually located in the upper left corner of NT desktop),
-		and select item <i>"Properties"</i>.
+		Click the right mouse button on the icon of your PC "<i>My Computer</i>"
+		(it is usually situated in the upper left corner of the desktop),
+		and then select "<i>Properties</i>" from the popup menu.<p>
 		<li>
-		Form <i>"System Properties</i> shows up. -- Here, choose folder
-		<i>"Environment"</i> and click on the lower window
-      (<i>"User Variables for Yourname:"</i>) on the string with TEMP variable.
+		Form "<i>System Properties</i>" shows up. Here, choose tab
+		"<i>Advanced</i>" and then press the button "<i>Environment
+                Variables</i>" (users of older NT systems may instead want to choose
+                tab "<i>Environment</i>"). Locate the part of the window titled
+      "<i>User Variables for <tt>Yourname</tt></i>", and then click at the end of the
+                list the line containing variable <tt>TEMP</tt>.<p>
+                <li>
+                Press button "<i>New...</i>".<p>
 		<li>
-		Now, type "CVSROOT" in the <i>"Variable:"</i> text field, then type
-		something like <b>:server:yourlogname@yourworkstation:/am/src/NCBI/vault.ncbi</b> in the
-		<i>"Value:"</i> text field. Here, the <b>yourlogname</b> stands for your
-		NCBI account name with all letter lowercased.
-      <b>:server:beloslyu@ray:/am/src/NCBI/vault.ncbi</b>
+		Now, type <tt>CVSROOT</tt> in the text field "<i>Variable Name</i>",
+                then type <b>:pserver:<i>yourlogname</i>@cvsvault:/src/NCBI/vault.ncbi</b>
+                in the text field "<i>Variable Value</i>". Here, the <b><i>yourlogname</i></b> stands
+                for your NCBI account name with all letter lowercased. For example,<br>
+      <b>:pserver:vakatov@cvsvault:/src/NCBI/vault.ncbi</b><p>
 		<li>
-		Press the "Set" button. The new variable CVSROOT and its value should
-		appear in the lower window(<i>"User Variables for Yourname:"</i>).
+		Press the button "<i>OK</i>" (or "<i>Set</i>"). The new variable
+                <tt>CVSROOT</tt> and its value should appear in the pane
+                "<i>User Variables for <tt>Yourname</tt></i>".<p>
 		<li>
-		Press the "Apply" button.
+		Apply the changes pressing "<i>OK</i>", "<i>Apply</i>", etc
+                buttons until all popup windows open in the previous steps
+                closed.<p>
 		<li>
-		Press the "OK" button.
-		<li>
-		Logout, then login to your PC again.
+		Logout, then login to your PC again.<p>
 	 </ul>
-	   <li> Login to machine <b>"yourworkstation"</b> and add the following two
-      lines to your <i><b>~/.rhosts</b></i> file:
-	 <ul>
-		<li> <b>pcname yourlogname</b> (for example: <b>dnb beloslyu</b>)
-		<li> <b>pcname Yourlogname</b> (for example: <b>dnb Beloslyu</b>)
-	 </ul>
-	 where the <b>pcname</b> stands for your PC name, <b>yourlogname</b> is your
-	 NCBI UNIX domain account name(usually all lowercased),
-	 and <b>Yourlogname</b> is your NCBI NT domain account name(usually it is just
-	 like the UNIX domain account name, but with the first letter uppercased).
-    <br> <b><i>NOTE:</i></b>
-    Make sure that you have <b>ncbi_tools</b> facility activated in
-    your <i><b>~/.ncbi_hints</b></i> file!
+	   <li> Execute exactly once the following command (you can do so
+           by selecting "<i>Run...</i>" from the main menu): <b>cvs login</b><br>
+         You will be asked for a password, and you have to enter the word
+         <b>allowed</b> as a reply.
+         <br>
+         This command creates the file named <tt>.cvspass</tt> in your
+         "home" directory, as defined by the value of the environment variable
+         <tt>HOMEPATH</tt>, which should be pre-assigned for you.
+         <p>
+    <li>
+         After logging in, you can use all usual CVS commands.
     </ol>
 
 
@@ -65,6 +70,9 @@
 			 </address></td>
 		  <td align=right><i>$Date$</i></td></tr>
 		<tr>
+		  <td><address>
+				<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anton Lavrentiev</a>
+			 </address></td></tr>
 		  <td><address>
 				<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Dmitriy  Beloslyudtsev</a>
 			 </address></td></tr>
