@@ -301,7 +301,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 
     if (title.empty()  &&  hnd.GetBioseqMolType() == CSeq_inst::eMol_aa) {
         title = s_TitleFromProtein(hnd, scope, organism,
-                                   flags & fGetTitle_AllProteins);
+                                   (flags & fGetTitle_AllProteins) != 0);
         if ( !title.empty() ) {
             flags |= fGetTitle_Organism;
         }
@@ -867,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.46  2004/11/17 21:25:36  grichenk
+* Fixed warning
+*
 * Revision 1.45  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *
