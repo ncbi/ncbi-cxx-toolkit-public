@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --**********************************************************************
 --
 --  PUBMED data definitions
@@ -24,7 +24,10 @@ Pubmed-entry ::= SEQUENCE {        -- a PubMed entry
     publisher VisibleString OPTIONAL,
 
     -- List of URL to publisher cite
-    urls SET OF Pubmed-url OPTIONAL
+    urls SET OF Pubmed-url OPTIONAL,
+
+    -- Publisher's article identifier
+    pubid VisibleString OPTIONAL
 }
 
 Pubmed-url ::= SEQUENCE {
