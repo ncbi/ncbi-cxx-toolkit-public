@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/07/03 20:53:38  lavr
+ * HEAP_Copy() test added
+ *
  * Revision 6.7  2001/06/19 19:12:04  lavr
  * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
  *
@@ -102,7 +105,7 @@ int main(void)
             CORE_LOG(eLOG_Error, "Cannot create heap");
         while (rand() != 12345) {
             r = rand() & 7;
-            if (r == 2 || r == 4) {
+            if (r == 1 || r == 2) {
                 i = rand() & 0xFF;
                 if (i) {
                     CORE_LOGF(eLOG_Note, ("Allocating %d bytes", i));
@@ -114,7 +117,7 @@ int main(void)
                     while (i--)
                         *c++ = rand();
                 }
-            } else if (r == 1 || r == 3 || r == 5) {
+            } else if (r == 3 || r == 4) {
                 blk = 0;
                 i = 0;
                 do {
@@ -130,7 +133,7 @@ int main(void)
                     HEAP_Free(heap, blk);
                     CORE_LOG(eLOG_Note, "Done");
                 }
-            } else if (r == 7) {
+            } else if (r == 5) {
                 blk = 0;
                 i = 0;
                 CORE_LOG(eLOG_Note, "Walking the heap");
@@ -144,14 +147,21 @@ int main(void)
                 } while (blk);
                 CORE_LOGF(eLOG_Note,
                           ("Total of %d block%s", i, i == 1 ? "" : "s"));
-            } else if (r == 6) {
-                HEAP newheap = HEAP_Attach(/* HACK! */*(char **)heap);
+            } else if (r == 6 || r == 7) {
+                HEAP newheap;
+
+                if (r == 6)
+                    newheap = HEAP_Attach(/* HACK! */*(char **)heap);
+                else
+                    newheap = HEAP_Copy(heap);
 
                 if (!newheap)
-                    CORE_LOG(eLOG_Error, "Attach failed");
+                    CORE_LOGF(eLOG_Error, ("%s failed",
+                                           r == 6 ? "Attach" : "Copy"));
                 blk = 0;
                 i = 0;
-                CORE_LOG(eLOG_Note, "Walking the newheap");
+                CORE_LOGF(eLOG_Note, ("Walking %s heap",
+                                      r == 6 ? "attached" : "copied"));
                 do {
                     blk = HEAP_Walk(newheap, blk);
                     if (blk)
