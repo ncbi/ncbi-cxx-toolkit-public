@@ -42,6 +42,11 @@
 
 #include <stdio.h>
 
+// hack to get around duplicate definition of INT32
+#ifdef NCBI_OS_MSWIN
+#define XMD_H
+#endif
+
 // jpeglib include (not extern'ed already (!))
 extern "C" {
 #include <jpeglib.h>
@@ -75,6 +80,9 @@ CImage* CImageIOJpeg::ReadImage(const string& file)
     jpeg_create_decompress(&cinfo);
     jpeg_stdio_src(&cinfo, fp);
     jpeg_read_header(&cinfo, TRUE);
+
+    // decompression parameters
+    cinfo.dct_method = JDCT_FLOAT;
     jpeg_start_decompress(&cinfo);
 
     // allocate an image to hold our data
@@ -368,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/16 19:20:02  dicuccio
+ * Added guard for libjpeg on Win32
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *
