@@ -1301,7 +1301,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    
    qsort(score_hsp_array, hspcnt, sizeof(LinkHSPStruct*), sumscore_compare_hsps);
    /* Get the nucleotide subject sequence in Seq_code_ncbi4na */
-   subject_seq = subject->sequence;
+   subject_seq = subject->sequence_start;
 
    hsp = head_hsp = score_hsp_array[0];
    for (index=0; index<hspcnt; hsp = hsp->next) {
@@ -1367,6 +1367,11 @@ BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list,
          /* The HSP's may be in a different order than they were before, 
             but hsp contains the first one. */
       } else {
+         /* Calculate individual HSP e-values first - they'll be needed to
+            compare with sum e-values. */
+         BLAST_GetNonSumStatsEvalue(program_number, query_info, 
+                                    hsp_list, gapped_calculation, sbp);
+         
          new_link_hsps(program_number, hsp_list, query_info, subject, sbp, 
                        hit_params);
       }
