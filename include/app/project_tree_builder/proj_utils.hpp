@@ -1,5 +1,5 @@
-#ifndef PROJ_UTILS_01152004_HEADER
-#define PROJ_UTILS_01152004_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_UTILS__HPP
+#define PROJECT_TREE_BUILDER__PROJ_UTILS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/10 15:10:17  gorelenk
+ * Changed function template EraseIf to be comply with standard STL map .
+ *
  * Revision 1.11  2004/06/07 19:13:02  gorelenk
  * + m_Impl in struct SProjectTreeInfo .
  *
@@ -128,4 +131,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif //PROJ_UTILS_01152004_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_UTILS__HPP
