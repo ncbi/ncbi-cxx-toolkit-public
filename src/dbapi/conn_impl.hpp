@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2003/11/18 16:59:45  kholodov
+* Added: CloneConnection() method
+*
 * Revision 1.12  2003/05/16 20:17:28  kholodov
 * Modified: default 0 arguments in PrepareCall()
 *
@@ -104,6 +107,8 @@ public:
                          const string& server,
                          const string& database = kEmptyStr);
 
+    virtual IConnection* CloneConnection();
+
     virtual IStatement* CreateStatement();
     virtual ICallableStatement* PrepareCall(const string& proc,
                                             int nofArgs = 0);
@@ -116,6 +121,7 @@ public:
                                           unsigned int nof_cols);
 
     virtual void Close();
+
 
     CConnection* Clone();
 

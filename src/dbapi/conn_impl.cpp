@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.21  2003/11/18 17:00:01  kholodov
+* Added: CloneConnection() method
+*
 * Revision 1.20  2003/03/07 21:21:15  kholodov
 * Added: IsAlive() method
 *
@@ -253,6 +256,21 @@ CConnection* CConnection::Clone()
     //m_ds->AddListener(conn);
     conn->SetDbName(GetDatabase());
     ++m_connCounter;
+    return conn;
+}
+
+IConnection* CConnection::CloneConnection()
+{
+    CConnection *conn = new CConnection(m_ds);
+
+    conn->m_modeMask = this->m_modeMask;
+    conn->m_forceSingle = this->m_forceSingle;
+    conn->m_connection = CloneCDB_Conn();
+    conn->m_database = this->m_database;
+
+    conn->AddListener(m_ds);
+    m_ds->AddListener(conn);
+
     return conn;
 }
 
