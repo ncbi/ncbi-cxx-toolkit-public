@@ -229,6 +229,21 @@ public:
         }
     }
     
+    const Uint4 GetVolOIDStart(Uint4 i) const
+    {
+        if (m_VolList.empty()) {
+            return 0;
+        }
+        
+        if (i >= m_VolList.size()) {
+            return 0;
+        }
+        
+        m_RecentVol = i;
+        
+        return m_VolList[i].OIDStart();
+    }
+    
 private:
     CSeqDBVolSet(const CSeqDBVolSet &);
     CSeqDBVolSet & operator=(const CSeqDBVolSet &);

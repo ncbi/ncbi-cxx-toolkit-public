@@ -38,6 +38,7 @@
 
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "seqdbfile.hpp"
+#include "seqdbisam.hpp"
 
 #include <sstream>
 
@@ -69,16 +70,16 @@ public:
     Int4 GetSeqLengthApprox(Uint4 oid) const;
     
     // Assumes locked.
-
+    
     Int4 GetSeqLengthExact(Uint4 oid) const;
     
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
     
-    char GetSeqType(void) const;
+    char GetSeqType() const;
     
-    CRef<CBioseq> GetBioseq(Int4 oid,
-                            bool use_objmgr,
-                            bool insert_ctrlA,
+    CRef<CBioseq> GetBioseq(Uint4            oid,
+                            bool             use_objmgr,
+                            bool             insert_ctrlA,
                             CSeqDBLockHold & locked) const;
     
     // Will get (and release) the lock as needed.
@@ -96,33 +97,36 @@ public:
     
     list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) const;
     
-    string GetTitle(void) const;
+    string GetTitle() const;
     
-    string GetDate(void) const;
+    string GetDate() const;
     
-    Uint4  GetNumSeqs(void) const;
+    Uint4  GetNumSeqs() const;
     
-    Uint8  GetTotalLength(void) const;
+    Uint8  GetTotalLength() const;
     
-    Uint4  GetMaxLength(void) const;
+    Uint4  GetMaxLength() const;
     
-    string GetVolName(void) const
+    string GetVolName() const
     {
         return m_VolName;
     }
     
-    void UnLease()
-    {
-        m_Idx.UnLease();
-        m_Seq.UnLease();
-        m_Hdr.UnLease();
-    }
+    void UnLease();
+    
+    bool PigToOid(Uint4 pig, Uint4 & oid, CSeqDBLockHold & locked) const;
+    
+    bool GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const;
+    
+    bool GiToOid(Uint4 gi, Uint4 & oid, CSeqDBLockHold & locked) const;
+    
+    bool GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const;
     
 private:
     CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
-
-    char   x_GetSeqType(void) const;
-
+    
+    char   x_GetSeqType() const;
+    
     bool   x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const;
     
     Int4   x_GetAmbigSeq(Int4               oid,
@@ -147,11 +151,16 @@ private:
                        CSeqDBLockHold & locked,
                        bool             can_release) const;
     
-    CSeqDBAtlas        & m_Atlas;
-    string               m_VolName;
-    CSeqDBIdxFile        m_Idx;
-    CSeqDBSeqFile        m_Seq;
-    CSeqDBHdrFile        m_Hdr;
+    CSeqDBAtlas      & m_Atlas;
+    string             m_VolName;
+    CSeqDBIdxFile      m_Idx;
+    CSeqDBSeqFile      m_Seq;
+    CSeqDBHdrFile      m_Hdr;
+    
+    // These are mutable because they defer initialization.
+    mutable CRef<CSeqDBIsam> m_IsamPig;
+    mutable CRef<CSeqDBIsam> m_IsamGi;
+    mutable CRef<CSeqDBIsam> m_IsamStr;
 };
 
 END_NCBI_SCOPE

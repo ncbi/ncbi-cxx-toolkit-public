@@ -10,7 +10,8 @@ seqdbfile \
 seqdbimpl \
 seqdbvol \
 seqdbvolset \
-seqdboidlist
+seqdboidlist \
+seqdbisam
 
 LIB = seqdb
 

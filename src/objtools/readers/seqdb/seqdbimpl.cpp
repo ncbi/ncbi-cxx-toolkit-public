@@ -411,5 +411,65 @@ void CSeqDBImpl::FlushSeqMemory()
     m_VolSet.UnLease();
 }
 
+bool CSeqDBImpl::PigToOid(Uint4 pig, Uint4 & oid) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    for(Uint4 i = 0; i < m_VolSet.GetNumVols(); i++) {
+        if (m_VolSet.GetVol(i)->PigToOid(pig, oid, locked)) {
+            oid += m_VolSet.GetVolOIDStart(i);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool CSeqDBImpl::OidToPig(Uint4 oid, Uint4 & pig) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    Uint4 vol_oid(0);
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        return vol->GetPig(vol_oid, pig, locked);
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
+    
+    return false;
+}
+
+bool CSeqDBImpl::GiToOid(Uint4 gi, Uint4 & oid) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    for(Uint4 i = 0; i < m_VolSet.GetNumVols(); i++) {
+        if (m_VolSet.GetVol(i)->GiToOid(gi, oid, locked)) {
+            oid += m_VolSet.GetVolOIDStart(i);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool CSeqDBImpl::OidToGi(Uint4 oid, Uint4 & gi) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    Uint4 vol_oid(0);
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        return vol->GetGi(vol_oid, gi, locked);
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "OID not in valid range.");
+    
+    return false;
+}
+
 END_NCBI_SCOPE
 

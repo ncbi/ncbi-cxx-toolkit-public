@@ -93,7 +93,10 @@ Uint4 CSeqDB::GetSequence(TOID oid, const char ** buffer) const
 
 Uint4 CSeqDB::GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code) const
 {
-    return m_Impl->GetAmbigSeq(oid, (char **)buffer, nucl_code, (ESeqDBAllocType) 0);
+    return m_Impl->GetAmbigSeq(oid,
+                               (char **)buffer,
+                               nucl_code,
+                               (ESeqDBAllocType) 0);
 }
 
 Uint4 CSeqDB::GetAmbigSeqAlloc(TOID            oid,
@@ -168,6 +171,48 @@ const string & CSeqDB::GetDBNameList(void) const
 list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(TOID oid) const
 {
     return m_Impl->GetSeqIDs(oid);
+}
+
+bool CSeqDB::PigToOid(TPIG pig, TOID & oid) const
+{
+    return m_Impl->PigToOid(pig, oid);
+}
+
+bool CSeqDB::OidToPig(TOID oid, TPIG & pig) const
+{
+    return m_Impl->OidToPig(oid, pig);
+}
+
+bool CSeqDB::GiToOid(TGI gi, TOID & oid) const
+{
+    return m_Impl->GiToOid(gi, oid);
+}
+
+bool CSeqDB::OidToGi(TOID oid, TGI & gi) const
+{
+    return m_Impl->OidToGi(oid, gi);
+}
+
+bool CSeqDB::PigToGi(TPIG pig, TGI & gi) const
+{
+    Uint4 oid(0);
+    
+    if (m_Impl->PigToOid(pig, oid)) {
+        return m_Impl->OidToGi(oid, gi);
+    }
+    
+    return false;
+}
+
+bool CSeqDB::GiToPig(TGI gi, TPIG & pig) const
+{
+    Uint4 oid(0);
+    
+    if (m_Impl->GiToOid(gi, oid)) {
+        return m_Impl->OidToPig(oid, pig);
+    }
+    
+    return false;
 }
 
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)

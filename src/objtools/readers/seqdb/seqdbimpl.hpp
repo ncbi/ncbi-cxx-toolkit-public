@@ -88,7 +88,7 @@ public:
     
     Uint4 GetSequence(Uint4 oid, const char ** buffer) const;
     
-    Uint4 GetAmbigSeq(Uint4            oid,
+    Uint4 GetAmbigSeq(Uint4           oid,
                       char         ** buffer,
                       Uint4           nucl_code,
                       ESeqDBAllocType strategy) const;
@@ -123,6 +123,18 @@ public:
     }
     
     void FlushSeqMemory(void);
+    
+    /// Translate a PIG to an OID.
+    bool PigToOid(Uint4 pig, Uint4 & oid) const;
+    
+    /// Translate a PIG to an OID.
+    bool OidToPig(Uint4 oid, Uint4 & pig) const;
+    
+    /// Translate a GI to an OID.
+    bool GiToOid(Uint4 gi, Uint4 & oid) const;
+    
+    /// Translate a GI to an OID.
+    bool OidToGi(Uint4 oid, Uint4 & gi) const;
     
 private:
     string x_FixString(const string &) const;

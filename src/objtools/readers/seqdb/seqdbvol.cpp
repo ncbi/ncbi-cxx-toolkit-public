@@ -41,6 +41,40 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas   & atlas,
       m_Seq     (atlas, name, prot_nucl),
       m_Hdr     (atlas, name, prot_nucl)
 {
+    // ISAM files are optional
+    
+    try {
+        m_IsamPig =
+            new CSeqDBIsam(m_Atlas,
+                           name,
+                           prot_nucl,
+                           'p',
+                           CSeqDBIsam::ePig);
+    }
+    catch(CSeqDBException &) {
+    }
+    
+    try {
+        m_IsamGi =
+            new CSeqDBIsam(m_Atlas,
+                           name,
+                           prot_nucl,
+                           'n',
+                           CSeqDBIsam::eGi);
+    }
+    catch(CSeqDBException &) {
+    }
+    
+    try {
+        m_IsamStr =
+            new CSeqDBIsam(m_Atlas,
+                           name,
+                           prot_nucl,
+                           's',
+                           CSeqDBIsam::eStringID);
+    }
+    catch(CSeqDBException &) {
+    }
 }
 
 char CSeqDBVol::GetSeqType(void) const
@@ -587,7 +621,7 @@ void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
 }
 
 CRef<CBioseq>
-CSeqDBVol::GetBioseq(Int4 oid,
+CSeqDBVol::GetBioseq(Uint4 oid,
                      bool /*use_objmgr,*/,
                      bool /*insert_ctrlA*/,
                      CSeqDBLockHold & locked) const
@@ -984,7 +1018,7 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset/*, locked*/);
+    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset);
     
     if (! ok) {
         return false;
@@ -997,7 +1031,11 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
     
     Int4 total = length / 4;
     
-    Int4 * buffer = (Int4*) m_Seq.GetRegion(start_offset, start_offset + (total * 4), false, locked);
+    Int4 * buffer =
+        (Int4*) m_Seq.GetRegion(start_offset,
+                                start_offset + (total * 4),
+                                false,
+                                locked);
     
     // This makes no sense...
     total &= 0x7FFFFFFF;
@@ -1029,6 +1067,117 @@ string CSeqDBVol::GetDate(void) const
 Uint4 CSeqDBVol::GetMaxLength(void) const
 {
     return m_Idx.GetMaxLength();
+}
+
+bool CSeqDBVol::PigToOid(Uint4 pig, Uint4 & oid, CSeqDBLockHold & locked) const
+{
+    if (m_IsamPig.Empty()) {
+        return false;
+    }
+    
+    return m_IsamPig->PigToOid(pig, oid, locked);
+}
+
+bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
+{
+    pig = (Uint4) -1;
+    
+    if (m_IsamPig.Empty()) {
+        return false;
+    }
+    
+    CRef<CBlast_def_line_set> BDLS = x_GetHdr(oid, locked);
+    
+    if (BDLS.Empty() || (! BDLS->CanGet())) {
+        return false;
+    }
+    
+    typedef list< CRef< CBlast_def_line > >::const_iterator TI1;
+    typedef list< int >::const_iterator TI2;
+    
+    TI1 it1 = BDLS->Get().begin();
+    
+    for(; it1 != BDLS->Get().end();  it1++) {
+        if ((*it1)->CanGetOther_info()) {
+            TI2 it2 = (*it1)->GetOther_info().begin();
+            TI2 it2end = (*it1)->GetOther_info().end();
+            
+            for(; it2 != it2end;  it2++) {
+                if (*it2 != -1) {
+                    pig = *it2;
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+
+bool CSeqDBVol::GiToOid(Uint4 gi, Uint4 & oid, CSeqDBLockHold & locked) const
+{
+    if (m_IsamGi.Empty()) {
+        return false;
+    }
+    
+    return m_IsamGi->GiToOid(gi, oid, locked);
+}
+
+bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
+{
+    gi = (Uint4) -1;
+    
+    if (m_IsamGi.Empty()) {
+        return false;
+    }
+    
+    CRef<CBlast_def_line_set> BDLS = x_GetHdr(oid, locked);
+    
+    if (BDLS.Empty() || (! BDLS->CanGet())) {
+        return false;
+    }
+    
+    typedef list< CRef< CBlast_def_line > >::const_iterator TI1;
+    typedef list< CRef< CSeq_id > >::const_iterator TI2;
+    
+    TI1 it1 = BDLS->Get().begin();
+    
+    // Iterate over all blast def lines in the set
+    
+    for(; it1 != BDLS->Get().end();  it1++) {
+        if ((*it1)->CanGetSeqid()) {
+            TI2 it2 = (*it1)->GetSeqid().begin();
+            TI2 it2end = (*it1)->GetSeqid().end();
+            
+            // Iterate within each defline
+            
+            for(; it2 != it2end;  it2++) {
+                if ((*it2)->IsGi()) {
+                    gi = (*it2)->GetGi();
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+
+void CSeqDBVol::UnLease()
+{
+    m_Idx.UnLease();
+    m_Seq.UnLease();
+    m_Hdr.UnLease();
+    
+    if (m_IsamPig.NotEmpty()) {
+        m_IsamPig->UnLease();
+    }
+    if (m_IsamGi.NotEmpty()) {
+        m_IsamGi->UnLease();
+    }
+    if (m_IsamStr.NotEmpty()) {
+        m_IsamStr->UnLease();
+    }
 }
 
 END_NCBI_SCOPE
