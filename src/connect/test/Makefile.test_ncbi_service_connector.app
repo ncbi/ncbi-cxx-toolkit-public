@@ -5,3 +5,4 @@ OBJ = test_ncbi_service_connector
 LIB = xconnect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+#LINK = purify -best-effort $(ORIG_LINK)
