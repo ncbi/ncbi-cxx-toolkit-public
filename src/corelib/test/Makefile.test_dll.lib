@@ -1,0 +1,4 @@
+# $Id$
+
+SRC = test_dll
+LIB = test_dll
