@@ -129,7 +129,7 @@ done
 # Compiler dir (other common stuff)
 makedir "$cldir"/$compiler/static -p
 makedir "$cldir"/$compiler/dll -p
-cp -p "$builddir"/compilers/$compiler/*        "$cldir"
+cp -p "$builddir"/compilers/$compiler/*        "$cldir"/$compiler
 cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
 
