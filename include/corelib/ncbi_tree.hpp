@@ -216,6 +216,7 @@ template <class TId, class TValue> class CTreePairNode
 {
 public:
     typedef TId                                  TIdType;
+    typedef TValue                               TValueType;
     typedef CTreeNode<CTreePair<TId, TValue> >   TParent;
     typedef CTreePair<TId, TValue>               TTreePair;
     typedef CTreePairNode<TId, TValue>           TPairTreeType;
@@ -238,16 +239,16 @@ public:
     CTreePairNode<TId, TValue>* AddNode(const TId& id, const TValue& value);
 
     /// Return node's value
-    const TValue& GetValue() const { return m_Value.value; }
+    const TValueType& GetValue() const { return m_Value.value; }
 
     /// Return node's id
-    const TId& GetId() const { return m_Value.id; }
+    const TIdType& GetId() const { return m_Value.id; }
 
     /// Return node's value
-    TValue& GetValue() { return m_Value.value; }
+    TValueType& GetValue() { return m_Value.value; }
 
     /// Return node's id
-    TId& GetId() { return m_Value.id; }
+    TIdType& GetId() { return m_Value.id; }
 
     /// Set value for the node
     void SetValue(const TValue& value) { m_Value.value = value; }
@@ -278,6 +279,44 @@ public:
 //
 
 
+/// Algorithm to to search for a node with specified id
+///
+/// Tree is traversed back. When searching the upper(parent)
+/// level the algorithm never goes down the hierarchy but tries only 
+/// immediate children.
+///
+template<class TPairTree, class TValue>
+const TPairTree* PairTreeBackTraceNode(const TPairTree& tr, 
+                                       const TValue&    search_id)
+{
+    const TPairTree* ptr = &tr;
+
+    do {
+        const typename TPairTree::TValueType& node_value = ptr->GetValue();
+
+        if (search_id == node_value) {
+            return (TPairTree*) ptr;
+        }
+
+        typename TPairTree::TNodeList_CI it = ptr->SubNodeBegin();
+        typename TPairTree::TNodeList_CI it_end = ptr->SubNodeEnd();
+
+        for (;it != it_end; ++it) {
+            const typename TPairTree::TParent* node = *it;
+            const typename TPairTree::TTreePair& node_pair = node->GetValue();
+
+            if (search_id == node_pair.id) {
+                return (TPairTree*) node;
+            }
+
+        } // for
+
+        ptr = (TPairTree*)ptr->GetParent();
+
+    } while (ptr);
+
+    return 0;
+}
 
 /// Algorithm to trace the pair tree and find specified leaf along the node path
 /// 
@@ -644,6 +683,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/01/14 17:02:32  kuznets
+ * + PairTreeBackTraceNode
+ *
  * Revision 1.17  2004/01/14 16:24:17  kuznets
  * + CTreeNode::RemoveAllSubNodes
  *
