@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/01/02 02:08:29  thiessen
+* go back to viewer.cgi to test http/301 forwarding
+*
 * Revision 1.22  2001/12/15 03:15:59  thiessen
 * adjustments for slightly changed object loader Set...() API
 *
@@ -384,7 +387,7 @@ void UpdateViewer::ImportSequence(void)
             "Input Identifier", "", *viewerWindow);
         if (id.size() > 0) {
             CSeq_entry seqEntry;
-            static const std::string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.fcgi");
+            static const std::string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
             std::string args = std::string("view=0&maxplex=1&save=idf&val=") + id.c_str();
             TESTMSG("Trying to load sequence from " << host << path << '?' << args);
             if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
