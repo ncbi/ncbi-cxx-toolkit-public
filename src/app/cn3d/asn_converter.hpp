@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/06/12 18:45:41  thiessen
+* more linux/gcc fixes
+*
 * Revision 1.6  2002/06/11 16:27:16  thiessen
 * use ncbi::auto_ptr
 *
@@ -68,6 +71,14 @@
 #include <stdio.h>
 #include <asn.h>
 #include <ncbibs.h>
+
+#ifndef NS_AUTO_PTR
+#ifdef HAVE_NO_AUTO_PTR
+#define NS_AUTO_PTR ncbi::auto_ptr
+#else
+#define NS_AUTO_PTR std::auto_ptr
+#endif
+#endif
 
 
 BEGIN_SCOPE(Cn3D)
@@ -131,7 +142,7 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
         ncbi::CObjectOStreamAsnBinary objOstream(asnOstrstream);
         objOstream << from;
 
-        ncbi::auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
+        NS_AUTO_PTR<char> strData(asnOstrstream.str()); // to make sure data gets freed
         aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
         if (!aimp || !(cObject = (*readFunc)(aimp->aip, NULL)))
             throw "AsnIoMem -> C object failed";
@@ -151,7 +162,7 @@ template < class ASNClass >
 static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
     err->erase();
-    ncbi::auto_ptr<ASNClass> newObject;
+    NS_AUTO_PTR<ASNClass> newObject;
 
     try {
         // create output stream and load object into it
