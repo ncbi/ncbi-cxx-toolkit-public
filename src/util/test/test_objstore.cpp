@@ -82,6 +82,24 @@ static void TestCReverseDataStore(void)
     assert(!has);
 }
 
+/// @internal
+struct ITest
+{
+    int  a;
+    ITest() : a(10) {}
+
+    virtual int GetA() const = 0;
+};
+
+void TestPluginManagerStore()
+{
+    CPluginManager<ITest>* pm = CPluginManagerStore::CPMMaker<ITest>::Get();
+    assert(pm);
+
+}
+
+NCBI_DECLARE_INTERFACE_VERSION(ITest,  "itest", 1, 1, 0);
+
 
 /////////////////////////////////
 /// Test application
@@ -98,6 +116,7 @@ public:
 int CTestApplication::Run(void)
 {
     TestCReverseDataStore();
+    TestPluginManagerStore();
 
     return 0;
 }
@@ -121,6 +140,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/08/05 18:15:11  kuznets
+ * +test for plugin manager store
+ *
  * Revision 1.1  2004/08/02 13:47:09  kuznets
  * Initial revision
  *
