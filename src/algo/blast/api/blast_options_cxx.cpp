@@ -377,25 +377,49 @@ CBlastOptionsLocal::SetDbGeneticCode(int gc)
         BlastMemDup(FindGeneticCode(gc).get(), GENCODE_STRLEN);
 }
 
+EBlastProgramType 
+CBlastOptionsLocal::GetProgramType() const
+{
+    switch (m_Program) {
+    case eBlastn: case eMegablast: case eDiscMegablast:
+        return eBlastTypeBlastn;
+    case eBlastp: case ePSIBlast:
+        return eBlastTypeBlastp;
+    case eBlastx:
+        return eBlastTypeBlastx;
+    case eTblastn:
+        return eBlastTypeTblastn;
+    case eTblastx:
+        return eBlastTypeTblastx;
+    case eRPSBlast:
+        return eBlastTypeRpsBlast;
+    case eRPSTblastn:
+        return eBlastTypeRpsTblastn;
+    default:
+        return eBlastTypeUndefined;
+    }
+}
+
 bool
 CBlastOptionsLocal::Validate() const
 {
     Blast_Message* blmsg = NULL;
     string msg;
+    EBlastProgramType program = GetProgramType();
 
-    if (BlastScoringOptionsValidate(m_Program, m_ScoringOpts, &blmsg)) {
+    if (BlastScoringOptionsValidate(program, m_ScoringOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Scoring options validation failed";
     }
 
-    if (LookupTableOptionsValidate(m_Program, m_LutOpts, &blmsg)) {
+    if (LookupTableOptionsValidate(program, m_LutOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Lookup table options validation failed";
     }
 
-    if (BlastHitSavingOptionsValidate(m_Program, m_HitSaveOpts, &blmsg)) {
+    if (BlastHitSavingOptionsValidate(program, m_HitSaveOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Hit saving options validation failed";
     }
 
-    if (BlastExtensionOptionsValidate(m_Program, m_ExtnOpts, &blmsg)) {
+    if (BlastExtensionOptionsValidate(program, m_ExtnOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Extension options validation failed";
     }
 
@@ -589,6 +613,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/07/06 15:48:40  dondosha
+* Use EBlastProgramType enumeration type instead of EProgram when calling C code
+*
 * Revision 1.45  2004/06/08 15:20:22  dondosha
 * Skip traceback option has been moved to the traceback extension method enum
 *

@@ -73,7 +73,14 @@ BLASTHspListToSeqAlign(EProgram program,
     const CSeq_id *subject_id, bool is_ooframe);
 
 
-/// Now allows query concatenation
+/** Allocates the query information structure and fills the context 
+ * offsets, in case of multiple queries, frames or strands. 
+ * NB: effective lengths arrays are allocated here, but will be filled inside
+ * the engine.
+ * @param queries Vector of query locations [in]
+ * @param options BLAST search options [in]
+ * @param qinfo Allocated query info structure [out]
+ */
 void
 SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo)
@@ -228,8 +235,8 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     (*qinfo)->max_length = max_length;
 }
 
-// Compresses sequence data on vector to buffer, which should have been
-// allocated and have the right size.
+/// Compresses sequence data on vector to buffer, which should have been
+/// allocated and have the right size.
 void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 {
     TSeqPos i;                  // loop index of original sequence
@@ -267,6 +274,12 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;
 }
 
+/** Sets up internal query data structure for the BLAST search.
+ * @param queries Vector of query locations [in]
+ * @param options Options for the BLAST search [in]
+ * @param qinfo Query information structure [in]
+ * @param seqblk Query sequences data structure [out]
+ */
 void
 SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk)
@@ -336,6 +349,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             else if (strand == eNa_strand_minus)
                seqbuf_rev = seqbuf.first.get() + 1;
 
+            EBlastProgramType program_type = options.GetProgramType();
             // Populate the sequence buffer
             for (unsigned int i = 0; i < nframes; i++) {
                 if (BLAST_GetQueryLength(qinfo, i) <= 0) {
@@ -343,7 +357,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                 }
 
                 int offset = qinfo->context_offsets[ctx_index + i];
-                short frame = BLAST_ContextToFrame(prog, i);
+                short frame = BLAST_ContextToFrame(program_type, i);
                 BLAST_GetTranslation(seqbuf.first.get() + 1, seqbuf_rev,
                    na_length, frame, &buf[offset], gc.get());
             }
@@ -398,6 +412,12 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     return;
 }
 
+/** Sets up internal subject data structure for the BLAST search.
+ * @param subjects Vector of subject locations [in]
+ * @param prog BLAST program [in]
+ * @param seqblk_vec Vector of subject sequence data structures [out]
+ * @param max_subjlen Maximal length of the subject sequences [out]
+ */
 void
 SetupSubjects(const TSeqLocVector& subjects, 
               EProgram prog,
@@ -470,6 +490,14 @@ SetupSubjects(const TSeqLocVector& subjects,
     }
 }
 
+/** Retrieves a sequence buffer from a CSeq_loc in a given encoding.
+ * @param sl Sequence location [in]
+ * @param encoding What encoding to return buffer in? [in]
+ * @param scope Sequence object scope [in]
+ * @param strand What strand of sequence to return? [in]
+ * @param sentinel Should sentinel bytes be added to buffer? [in]
+ * @return Sequence buffer 
+ */
 pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
             ENa_strand strand, ESentinelType sentinel) 
@@ -569,6 +597,9 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
     return make_pair(safe_buf, buflen);
 }
 
+/** Convert masking locations from nucleotide into protein coordinates.
+ *
+ */
 void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc, 
                            CScope* scope)
 {
@@ -630,6 +661,9 @@ void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc,
    *mask_ptr = head_mask;
 }
 
+/** Convert masking locations from protein into nucleotide coordinates.
+ *
+ */
 void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
 {
    BlastMaskLoc* mask_loc;
@@ -934,6 +968,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/07/06 15:48:40  dondosha
+* Use EBlastProgramType enumeration type instead of EProgram when calling C code
+*
 * Revision 1.8  2004/06/23 14:05:34  dondosha
 * Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer; fixed a memory leak in x_GetSequenceLengthAndId
 *

@@ -206,8 +206,7 @@ CBl2Seq::SetupSearch()
         double scale_factor = 1.0;
         short st;
        
-
-        st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgram(), 
+        st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgramType(), 
                              m_OptsHandle->GetOptions().GetQueryOpts(),
                              m_OptsHandle->GetOptions().GetScoringOpts(),
                              m_OptsHandle->GetOptions().GetHitSaveOpts(),
@@ -258,11 +257,11 @@ CBl2Seq::ScanDB()
     /* Initialize an HSPList stream to collect hits; 
        results should not be sorted for reading from the stream. */
     BlastHSPStream* hsp_stream = 
-        Blast_HSPListCollectorInit(m_OptsHandle->GetOptions().GetProgram(), 
+        Blast_HSPListCollectorInit(m_OptsHandle->GetOptions().GetProgramType(),
             m_OptsHandle->GetOptions().GetHitSaveOpts(),
             mi_clsQueryInfo->num_queries, FALSE);
                   
-    BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
+    BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgramType(),
                        mi_clsQueries, mi_clsQueryInfo, 
                        mi_pSeqSrc, mi_pScoreBlock, 
                        m_OptsHandle->GetOptions().GetScoringOpts(),
@@ -339,6 +338,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2004/07/06 15:48:40  dondosha
+ * Use EBlastProgramType enumeration type instead of EProgram when calling C code
+ *
  * Revision 1.58  2004/06/29 14:17:24  papadopo
  * add PartialRun and GetResults methods to CBl2Seq
  *

@@ -67,7 +67,8 @@ CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries,
 int CDbBlastTraceback::SetupSearch()
 {
     int status = 0;
-    EProgram x_eProgram = GetOptionsHandle().GetOptions().GetProgram();
+    EBlastProgramType x_eProgram = 
+        GetOptionsHandle().GetOptions().GetProgramType();
     
     if ( !m_ibQuerySetUpDone ) {
         double scale_factor;
@@ -81,7 +82,8 @@ int CDbBlastTraceback::SetupSearch()
 
         m_ipScoreBlock = 0;
         
-        if (x_eProgram == eRPSBlast || x_eProgram == eRPSTblastn)
+        if (x_eProgram == eBlastTypeRpsBlast || 
+            x_eProgram == eBlastTypeRpsTblastn)
             scale_factor = GetRPSInfo()->aux_info.scale_factor;
         else
             scale_factor = 1.0;
@@ -114,7 +116,7 @@ CDbBlastTraceback::RunSearchEngine()
     Int2 status;
 
     status = 
-        BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
+        BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgramType(), 
             m_ipHspStream, m_iclsQueries, m_iclsQueryInfo,
             GetSeqSrc(), m_ipGapAlign, m_ipScoringParams, m_ipExtParams, 
             m_ipHitParams, m_ipEffLenParams, GetOptions().GetDbOpts(), NULL, 
@@ -155,6 +157,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/07/06 15:48:40  dondosha
+ * Use EBlastProgramType enumeration type instead of EProgram when calling C code
+ *
  * Revision 1.13  2004/06/24 15:54:59  dondosha
  * Added doxygen file description
  *
