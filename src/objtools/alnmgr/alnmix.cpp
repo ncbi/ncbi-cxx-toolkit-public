@@ -480,6 +480,7 @@ void CAlnMix::x_Merge()
                             } else {
                                 seq->m_Starts[tmp_start_i->first + len2]
                                     = prev_seg;
+                                seq->m_Starts[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
                                 prev_seg->m_StartIts[seq] = ++tmp_start_i;
                             }
@@ -525,6 +526,7 @@ void CAlnMix::x_Merge()
                             } else{
                                 seq->m_Starts[tmp_start_i->first + len1]
                                     = prev_seg;
+                                seq->m_Starts[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
                                 prev_seg->m_StartIts[seq] = ++tmp_start_i;
                             }
@@ -1241,6 +1243,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/02/24 18:46:38  todorov
+* Fixed a - strand row info creation bug
+*
 * Revision 1.29  2003/02/11 21:32:44  todorov
 * fMinGap optional merging algorithm
 *
