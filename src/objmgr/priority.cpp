@@ -32,7 +32,7 @@
 */
 
 #include <objmgr/impl/priority.hpp>
-
+#include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/scope_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/19 19:14:15  vasilche
+* Added include to make MSVC happy.
+*
 * Revision 1.1  2003/06/19 18:23:46  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
