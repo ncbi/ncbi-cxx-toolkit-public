@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/04/14 19:53:29  vakatov
+* + <stdio.h>
+*
 * Revision 1.7  1999/01/04 22:41:43  vakatov
 * Do not use so-called "hardware-exceptions" as these are not supported
 * (on the signal level) by UNIX
@@ -57,6 +60,7 @@
 #include <corelib/ncbiexpt.hpp>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
