@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/04 23:46:35  vakatov
+* Fixed the "ncbidbg/diag" header circular dependencies
+*
 * Revision 1.4  1998/11/03 20:51:24  vakatov
 * Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
 *
@@ -48,7 +51,8 @@
 * ==========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <stdlib.h>
+#include <ncbistre.hpp>
 
 
 class CDiagBuffer;  // (fwd-declaration of internal class)
@@ -107,7 +111,7 @@ private:
     EDiagSev     m_Severity;  // severity level for the current message
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
     // prohibit assignment
-    CNcbiDiag& operator =(const CNcbiDiag&) { _TROUBLE;  return *this; }
+    CNcbiDiag& operator =(const CNcbiDiag&) { return *this; }
 };
 
 

@@ -33,17 +33,8 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/11/03 20:44:53  vakatov
-* Fixed _TRACE macro
-*
-* Revision 1.3  1998/10/30 20:08:15  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.2  1998/10/23 23:15:09  vakatov
-* Specify the diagnostics severity in the class initialization parameter
-*
-* Revision 1.1  1998/10/23 22:35:51  vakatov
-* Initial revision
+* Revision 1.5  1998/11/04 23:46:35  vakatov
+* Fixed the "ncbidbg/diag" header circular dependencies
 *
 * ==========================================================================
 */
@@ -56,18 +47,18 @@
 "{" << __FILE__ << ":" << __LINE__ << "} "
 
 #  define _TRACE(message)  { \
-    CNcbiDiag _trace_diag(eDiag_Trace); \
-    _trace_diag << _FILE_LINE << message; \
+    CNcbiDiag _diag_(eDiag_Trace); \
+    _diag_ << _FILE_LINE << message; \
 }
 
 #  define _TROUBLE  { \
-    CNcbiDiag _trace_diag(eDiag_Fatal); \
-    _trace_diag << _FILE_LINE << "Trouble!"; \
+    CNcbiDiag _diag_(eDiag_Fatal); \
+    _diag_ << _FILE_LINE << "Trouble!"; \
 }
 #  define _ASSERT(expr)  { \
     if ( !expr ) \
         { \
-              CNcbiDiag _trace_diag(eDiag_Fatal); \
+              CNcbiDiag _diag_(eDiag_Fatal); \
               _trace_diag << _FILE_LINE << "Assertion failed: " << #expr; \
         } \
 }

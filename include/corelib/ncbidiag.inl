@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/04 23:46:36  vakatov
+* Fixed the "ncbidbg/diag" header circular dependencies
+*
 * Revision 1.5  1998/11/03 22:28:33  vakatov
 * Renamed Die/Post...Severity() to ...Level()
 *
@@ -228,8 +231,8 @@ inline CDiagBuffer::CDiagBuffer(void) {
 }
 
 inline CDiagBuffer::~CDiagBuffer(void) {
-    _ASSERT( !m_Diag );
-    _ASSERT( !m_Stream.pcount() );
+    if (m_Diag  ||  m_Stream.pcount())
+        abort();
 }
 
 inline void CDiagBuffer::Flush(void) {
@@ -248,8 +251,9 @@ inline void CDiagBuffer::Flush(void) {
 }
 
 inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
-    if (&diag == m_Diag)
-        _VERIFY( !m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out) );
+    if (&diag == m_Diag  &&
+        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out) != 0)
+        abort();
 }
 
 inline void CDiagBuffer::EndMess(const CNcbiDiag& diag) {

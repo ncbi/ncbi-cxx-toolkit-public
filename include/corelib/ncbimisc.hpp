@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/04 23:46:36  vakatov
+* Fixed the "ncbidbg/diag" header circular dependencies
+*
 * Revision 1.6  1998/10/30 20:08:31  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -48,11 +51,8 @@
 * ==========================================================================
 */
 
-#include <stdlib.h>
-
 #include <ncbitype.h>
-#include <ncbistl.hpp>
 #include <ncbidbg.hpp>
-#include <ncbistre.hpp>
+#include <ncbiexpt.hpp>
 
 #endif /* NCBISTD__HPP */
