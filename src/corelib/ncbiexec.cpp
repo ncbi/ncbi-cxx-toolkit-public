@@ -30,7 +30,6 @@
 #include <corelib/ncbiexec.hpp>
 #include <stdio.h>
 #include <stdarg.h>
-#include <vector>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <process.h>
@@ -351,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/05/31 20:49:33  ivanov
+ * Removed excrescent headers
+ *
  * Revision 1.1  2002/05/30 16:29:13  ivanov
  * Initial revision
  *
