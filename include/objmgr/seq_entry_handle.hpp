@@ -44,9 +44,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-/////////////////////////////////////////////////////////////////////////////
-// CSeq_entry_Handle
-/////////////////////////////////////////////////////////////////////////////
+
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
 
 
 class CScope;
@@ -65,27 +67,48 @@ class CTSE_Info;
 
 class CSeqdesc;
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_entry_Handle --
+///
+///  Proxy to access seq-entry objects
+///
+
 class NCBI_XOBJMGR_EXPORT CSeq_entry_Handle
 {
 public:
     // default constructor
     CSeq_entry_Handle(void);
 
-    // Get scope this handle belongs to
+    /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
     // Navigate object tree
+    /// Check if current seq-entry has a parent
     bool HasParentEntry(void) const;
+
+    /// Get parent bioseq-set handle
     CBioseq_set_Handle GetParentBioseq_set(void) const;
+
+    /// Get parent Seq-entry handle
     CSeq_entry_Handle GetParentEntry(void) const;
+
+    /// Get handle of the sub seq-entry
+    /// If current seq-entry is not seq-set or 
+    /// has more than one subentry exception is thrown
     CSeq_entry_Handle GetSingleSubEntry(void) const;
+
+    /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
 
-    // Get 'edit' version of handle
+    /// Get 'edit' version of handle
     CSeq_entry_EditHandle GetEditHandle(void) const;
 
-    // Get controlled object
+    /// Complete and get const reference to the seq-entry
     CConstRef<CSeq_entry> GetCompleteSeq_entry(void) const;
+
+    /// Get const reference to the seq-entry
     CConstRef<CSeq_entry> GetSeq_entryCore(void) const;
 
     // Seq-entry accessors
@@ -115,13 +138,37 @@ public:
     TBlobVersion GetBlobVersion(void) const;
 
     // Utility methods/operators
+
+    /// Check if handle points to a seq-entry
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void) const;
+
+    // Check if handle does not point to a seq-entry
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator!(void) const;
+
     CSeq_entry_Handle& operator=(const CSeq_entry_Handle& seh);
+
+    /// Reset handle and make it not to point to any seq-entry
     void Reset(void);
 
+    /// Check if handles point to the same seq-entry
+    ///
+    /// @sa
+    ///     operator!=()
     bool operator ==(const CSeq_entry_Handle& handle) const;
+
+    // Check if handles point to different seq-entry
+    ///
+    /// @sa
+    ///     operator==()
     bool operator !=(const CSeq_entry_Handle& handle) const;
+
+    /// For usage in containers
     bool operator <(const CSeq_entry_Handle& handle) const;
 
 protected:
@@ -147,6 +194,13 @@ public: // non-public section
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_entry_Handle --
+///
+///  Proxy to access seq-entry objects
+///
+
 class NCBI_XOBJMGR_EXPORT CSeq_entry_EditHandle : public CSeq_entry_Handle
 {
 public:
@@ -154,8 +208,16 @@ public:
     CSeq_entry_EditHandle(void);
 
     // Navigate object tree
+
+    /// Get parent bioseq-set edit handle
     CBioseq_set_EditHandle GetParentBioseq_set(void) const;
+
+    /// Get parent seq-entry edit handle
     CSeq_entry_EditHandle GetParentEntry(void) const;
+
+    /// Get edit handle of the sub seq-entry
+    /// If current seq-entry is not seq-set or 
+    /// has more than one subentry exception is thrown
     CSeq_entry_EditHandle GetSingleSubEntry(void) const;
 
     // Change descriptions
@@ -171,87 +233,219 @@ public:
     TSet SetSet(void) const;
     TSeq SetSeq(void) const;
 
-    // Make this Seq-entry to be empty.
-    // Old contents of the entry will be deleted.
+    /// Make this Seq-entry to be empty.
+    /// Old contents of the entry will be deleted.
     void SelectNone(void) const;
 
-    // Convert the empty Seq-entry to Bioseq-set.
-    // Returns new Bioseq-set handle.
+    /// Convert the empty Seq-entry to Bioseq-set.
+    /// Returns new Bioseq-set handle.
     TSet SelectSet(TClass set_class = CBioseq_set::eClass_not_set) const;
 
-    // Make the empty Seq-entry be in set state with given Bioseq-set object.
-    // Returns new Bioseq-set handle.
+    /// Make the empty Seq-entry be in set state with given Bioseq-set object.
+    /// Returns new Bioseq-set handle.
     TSet SelectSet(CBioseq_set& seqset) const;
 
-    // Make the empty Seq-entry be in set state with given Bioseq-set object.
-    // Returns new Bioseq-set handle.
+    /// Make the empty Seq-entry be in set state with given Bioseq-set object.
+    /// Returns new Bioseq-set handle.
     TSet CopySet(const CBioseq_set_Handle& seqset) const;
 
-    // Make the empty Seq-entry be in set state with moving Bioseq-set object
-    // from the argument seqset.
-    // Returns new Bioseq-set handle which could be different from the argument
-    // is the argument is from another scope.
+    /// Make the empty Seq-entry be in set state with moving Bioseq-set object
+    /// from the argument seqset.
+    /// Returns new Bioseq-set handle which could be different 
+    /// from the argument is the argument is from another scope.
     TSet TakeSet(const TSet& seqset) const;
 
-    // Make the empty Seq-entry be in seq state with specified Bioseq object.
-    // Returns new Bioseq handle.
+    /// Make the empty Seq-entry be in seq state with specified Bioseq object.
+    /// Returns new Bioseq handle.
     TSeq SelectSeq(CBioseq& seq) const;
 
-    // Make the empty Seq-entry be in seq state with specified Bioseq object.
-    // Returns new Bioseq handle.
+    /// Make the empty Seq-entry be in seq state with specified Bioseq object.
+    /// Returns new Bioseq handle.
     TSeq CopySeq(const CBioseq_Handle& seq) const;
 
-    // Make the empty Seq-entry be in seq state with moving bioseq object
-    // from the argument seq.
-    // Returns new Bioseq handle which could be different from the argument
-    // is the argument is from another scope.
+    /// Make the empty Seq-entry be in seq state with moving bioseq object
+    /// from the argument seq.
+    /// Returns new Bioseq handle which could be different from the argument
+    /// is the argument is from another scope.
     TSeq TakeSeq(const TSeq& seq) const;
 
-    // Convert the entry from Bioseq to Bioseq-set.
-    // Old Bioseq will become the only entry of new Bioseq-set.
-    // New Bioseq-set will have the specified class.
-    // If the set_class argument is omitted,
-    // or equals to CBioseq_set::eClass_not_set,
-    // the class field of new Bioseq-set object will not be initialized.
-    // Returns new Bioseq-set handle.
+    /// Convert the entry from Bioseq to Bioseq-set.
+    /// Old Bioseq will become the only entry of new Bioseq-set.
+    /// New Bioseq-set will have the specified class.
+    /// If the set_class argument is omitted,
+    /// or equals to CBioseq_set::eClass_not_set,
+    /// the class field of new Bioseq-set object will not be initialized.
+    /// Returns new Bioseq-set handle.
     TSet ConvertSeqToSet(TClass set_class = CBioseq_set::eClass_not_set) const;
 
-    // Collapse one level of Bioseq-set.
-    // The Bioseq-set should originally contain only one sub-entry.
-    // Current Seq-entry will become the same type as sub-entry.
-    // All Seq-annot and Seq-descr objects from old Bioseq-set
-    // will be moved to new contents (sub-entry).
+    /// Collapse one level of Bioseq-set.
+    /// The Bioseq-set should originally contain only one sub-entry.
+    /// Current Seq-entry will become the same type as sub-entry.
+    /// All Seq-annot and Seq-descr objects from old Bioseq-set
+    /// will be moved to new contents (sub-entry).
     void CollapseSet(void) const;
 
-    // Do the same as CollapseSet() when sub-entry is of type bioseq.
-    // Throws an exception in other cases.
-    // Returns resulting Bioseq handle.
+    /// Do the same as CollapseSet() when sub-entry is of type bioseq.
+    /// Throws an exception in other cases.
+    /// Returns resulting Bioseq handle.
     TSeq ConvertSetToSeq(void) const;
 
     // Attach new Seq-annot to Bioseq or Bioseq-set
+    
+    /// Attach an annotation
+    ///
+    /// @param annot
+    ///  Reference to this annotation will be attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  CopyAnnot()
+    ///  TakeAnnot()
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+
+    /// Attach a copy of the annotation
+    ///
+    /// @param annot
+    ///  Copy of the annotation pointed by this handle will be attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  AttachAnnot()
+    ///  TakeAnnot()
     CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
+
+    /// Remove the annotation from its location and attach to current one
+    ///
+    /// @param annot
+    ///  An annotation  pointed by this handle will be removed and attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  AttachAnnot()
+    ///  CopyAnnot()
+    ///  TakeAllAnnots()
     CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
+
+    /// Remove all the annotation from seq-entry and attach to current one
+    ///
+    /// @param src_entry
+    ///  A seq-entry hanlde where annotations will be taken
+    ///
+    /// @sa
+     ///  TakeAnnot()
     void TakeAllAnnots(const CSeq_entry_EditHandle& src_entry) const;
 
     // Attach new sub objects to Bioseq-set
-    // index < 0 or index >= current number of entries means to add at the end.
+    // index < 0 or index >= current number of entries 
+    // means to add at the end.
+
+    /// Attach an existing bioseq
+    ///
+    /// @param seq
+    ///  Reference to this bioseq will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached bioseq
+    ///
+    /// @sa
+    ///  CopyBioseq()
+    ///  TakeBioseq()
     CBioseq_EditHandle AttachBioseq(CBioseq& seq,
                                     int index = -1) const;
+
+    /// Attach a copy of the existing bioseq
+    ///
+    /// @param seq
+    ///  Copy of this bioseq will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached bioseq
+    ///
+    /// @sa
+    ///  AttachBioseq()
+    ///  TakeBioseq()
     CBioseq_EditHandle CopyBioseq(const CBioseq_Handle& seq,
                                   int index = -1) const;
+
+    /// Remove bioseq from its location and attach to current one
+    ///
+    /// @param seq
+    ///  bioseq pointed by this handle will be removed and attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached bioseq
+    ///
+    /// @sa
+    ///  AttachBioseq()
+    ///  CopyBioseq()
     CBioseq_EditHandle TakeBioseq(const CBioseq_EditHandle& seq,
                                   int index = -1) const;
 
+    /// Attach an existing seq-entry
+    ///
+    /// @param entry
+    ///  Reference to this seq-entry will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  CopyEntry()
+    ///  TakeEntry()
     CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry,
                                       int index = -1) const;
+
+    /// Attach a copy of the existing seq-entry
+    ///
+    /// @param entry
+    ///  Copy of this seq-entry will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  AttachEntry()
+    ///  TakeEntry()
     CSeq_entry_EditHandle CopyEntry(const CSeq_entry_Handle& entry,
                                     int index = -1) const;
+
+    /// Remove seq-entry from its location and attach to current one
+    ///
+    /// @param entry
+    ///  seq-entry pointed by this handle will be removed and attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  AttachEntry()
+    ///  CopyEntry()
     CSeq_entry_EditHandle TakeEntry(const CSeq_entry_EditHandle& entry,
                                     int index = -1) const;
 
-    // Remove this Seq-entry from parent,
-    // or scope if it's top level Seq-entry.
+    /// Remove this Seq-entry from parent,
+    /// or scope if it's top level Seq-entry.
     void Remove(void) const;
 
 protected:
@@ -381,6 +575,8 @@ CSeq_entry_EditHandle::CSeq_entry_EditHandle(CScope& scope,
 {
 }
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -388,6 +584,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/09/29 19:08:08  kononenk
+* Added doxygen formatting
+*
 * Revision 1.13  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *
