@@ -1,0 +1,39 @@
+<!-- Sample-DTD -->
+
+<!ELEMENT note (flags,to,from,heading,body)>
+
+<!ELEMENT flags   EMPTY>
+<!ELEMENT from    (name|number|address)>
+<!ELEMENT to      (name,(number|address)+)+>
+<!ELEMENT name    (#PCDATA)>
+<!ELEMENT number  (#PCDATA)>
+<!ELEMENT address (#PCDATA)>
+<!ELEMENT heading (#PCDATA)>
+<!ELEMENT body    (#PCDATA)>
+
+<!ATTLIST note
+    type (cheque|cash) "cash"
+    text CDATA "deftext"
+    yesno (y|n) #REQUIRED
+    >
+<!ATTLIST flags
+    type CDATA #REQUIRED
+    >
+<!ATTLIST from
+    type CDATA #REQUIRED
+    >
+<!ATTLIST to
+    type CDATA #REQUIRED
+    >
+<!ATTLIST heading
+    type CDATA #REQUIRED
+    >
+<!ATTLIST name
+    type CDATA #REQUIRED
+    >
+<!ATTLIST number
+    type CDATA #REQUIRED
+    >
+<!ATTLIST address
+    type CDATA #REQUIRED
+    >

@@ -17,4 +17,5 @@ LIB = xser xutil xncbi
 
 CHECK_CMD = datatool.sh
 CHECK_CMD = datatool.sh /net/sampson/a/coremake/test_data/objects
+CHECK_CMD = datatool_xml.sh
 CHECK_REQUIRES = unix
