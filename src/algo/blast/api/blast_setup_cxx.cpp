@@ -734,7 +734,7 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
         return retval;
 
     string mtx(matrix_name);
-    transform(mtx.begin(), mtx.end(), mtx.begin(), (int (*)(int))toupper);
+    mtx = NStr::ToUpper(mtx);
 
     // Look for matrix file in local directory
     full_path = mtx;
@@ -864,6 +864,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/03/11 17:26:46  dicuccio
+* Use NStr::ToUpper() instead of transform
+*
 * Revision 1.59  2004/03/09 18:53:25  dondosha
 * Do not set db length and number of sequences options to real values - these are calculated and assigned to parameters structure fields
 *
