@@ -46,7 +46,8 @@ $Revision$
  *	Should be moved to blastkar.c (or it's successor) in the future.
 */
 Int2 
-BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr scoring_options, const Uint1 program)
+BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, 
+   const BlastScoringOptionsPtr scoring_options, Uint1 program)
 {
 
 	if (sbp == NULL || scoring_options == NULL)
@@ -127,7 +128,7 @@ BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
    return status;
 }
 
-Int2 BLAST_MainSetUp(const Uint1 program_number,
+Int2 BLAST_MainSetUp(Uint1 program_number,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
         const LookupTableOptionsPtr lookup_options,	
@@ -155,15 +156,15 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
    Int4 context_offset;
    
    if ((status=
-        BlastScoringOptionsValidate(scoring_options, blast_message)) != 0)
+        BlastScoringOptionsValidate(program_number, scoring_options, blast_message)) != 0)
       return status;
 
    if ((status=
-        LookupTableOptionsValidate(lookup_options, blast_message)) != 0)
+        LookupTableOptionsValidate(program_number, lookup_options, blast_message)) != 0)
       return status;
    
    if ((status =
-        BlastHitSavingOptionsValidate(hit_options, program_number, 
+        BlastHitSavingOptionsValidate(program_number, hit_options, 
                                       blast_message)) != 0)
       return status;
    
