@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/09/29 22:36:33  vakatov
+* Dont forget to #include ncbistd.hpp before #ifdef HAVE_NCBI_C...
+*
 * Revision 1.26  1999/09/24 18:55:58  vasilche
 * ASN.1 types will not be compiled is we don't have NCBI toolkit.
 *
@@ -117,6 +120,8 @@
 *
 * ===========================================================================
 */
+
+#include <corelib/ncbistd.hpp>
 
 #if HAVE_NCBI_C
 #include <corelib/ncbiutil.hpp>
