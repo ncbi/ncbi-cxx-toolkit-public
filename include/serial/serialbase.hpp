@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/05/22 14:03:37  grichenk
+* CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+*
 * Revision 1.11  2002/05/15 20:22:02  grichenk
 * Added CSerialObject -- base class for all generated ASN.1 classes
 *
@@ -138,9 +141,9 @@ class CSerialUserOp
     friend class CChoiceTypeInfo;
 protected:
     // will be called after copying the datatool-generated members
-    virtual void Assign(const CSerialUserOp& source) = 0;
+    virtual void UserOp_Assign(const CSerialUserOp& source) = 0;
     // will be called after comparing the datatool-generated members
-    virtual bool Equals(const CSerialUserOp& object) const = 0;
+    virtual bool UserOp_Equals(const CSerialUserOp& object) const = 0;
 };
 
 

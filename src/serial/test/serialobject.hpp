@@ -52,8 +52,8 @@ public:
 
     string m_Name2;
 protected:
-    virtual void Assign(const CSerialUserOp& source);
-    virtual bool Equals(const CSerialUserOp& object) const;
+    virtual void UserOp_Assign(const CSerialUserOp& source);
+    virtual bool UserOp_Equals(const CSerialUserOp& object) const;
 };
 
 #endif

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/05/22 14:03:36  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
  * Revision 1.5  2001/07/25 19:11:11  grichenk
  * Equals() and Assign() re-declared as protected
  *
@@ -83,8 +86,8 @@ public:
 
 protected:
     // From CSerialUserOp
-    virtual void Assign(const CSerialUserOp& source);
-    virtual bool Equals(const CSerialUserOp& object) const;
+    virtual void UserOp_Assign(const CSerialUserOp& source);
+    virtual bool UserOp_Equals(const CSerialUserOp& object) const;
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_entry(const CSeq_entry& value);

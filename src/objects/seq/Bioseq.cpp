@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/05/22 14:03:38  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
  * Revision 6.10  2002/04/22 20:09:57  grichenk
  * -ConstructExcludedSequence() -- use
  * CBioseq_Handle::GetSequenceView() instead
@@ -91,13 +94,13 @@ CBioseq::~CBioseq(void)
 {
 }
 
-void CBioseq::Assign(const CSerialUserOp& source)
+void CBioseq::UserOp_Assign(const CSerialUserOp& source)
 {
     const CBioseq& src = dynamic_cast<const CBioseq&>(source);
     m_ParentEntry = src.m_ParentEntry;
 }
 
-bool CBioseq::Equals(const CSerialUserOp& object) const
+bool CBioseq::UserOp_Equals(const CSerialUserOp& object) const
 {
     const CBioseq& obj = dynamic_cast<const CBioseq&>(object);
     return m_ParentEntry == obj.m_ParentEntry;

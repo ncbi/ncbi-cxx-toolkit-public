@@ -53,14 +53,14 @@ void CTestSerialObject::Dump(CNcbiOstream& out) const
     out << '}' << endl;
 }
 
-void CTestSerialObject2::Assign(const CSerialUserOp& source)
+void CTestSerialObject2::UserOp_Assign(const CSerialUserOp& source)
 {
     const CTestSerialObject2& src = dynamic_cast<const CTestSerialObject2&>(source);
     m_Name2 = src.m_Name2;
 }
 
 
-bool CTestSerialObject2::Equals(const CSerialUserOp& object) const
+bool CTestSerialObject2::UserOp_Equals(const CSerialUserOp& object) const
 {
     const CTestSerialObject2& obj = dynamic_cast<const CTestSerialObject2&>(object);
     return obj.m_Name2 == m_Name2;

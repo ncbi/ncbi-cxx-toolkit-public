@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/05/22 14:03:42  grichenk
+* CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+*
 * Revision 1.28  2001/07/25 19:13:04  grichenk
 * Check if the object is CObject-derived before dynamic cast
 *
@@ -291,7 +294,7 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
             dynamic_cast<const CSerialUserOp*>
             (static_cast<const CObject*>(object2));
         if ( op1  &&  op2 ) {
-            if ( !op1->Equals(*op2) )
+            if ( !op1->UserOp_Equals(*op2) )
                 return false;
         }
     }
@@ -334,7 +337,7 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
             dynamic_cast<CSerialUserOp*>
             (static_cast<CObject*>(dst));
         if ( opdst  &&  opsrc ) {
-            opdst->Assign(*opsrc);
+            opdst->UserOp_Assign(*opsrc);
         }
     }
 }

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2002/05/22 14:03:33  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
  * Revision 1.10  2002/04/22 20:09:56  grichenk
  * -ConstructExcludedSequence() -- use
  * CBioseq_Handle::GetSequenceView() instead
@@ -115,8 +118,8 @@ public:
 
 protected:
     // From CSerialUserOp
-    virtual void Assign(const CSerialUserOp& source);
-    virtual bool Equals(const CSerialUserOp& object) const;
+    virtual void UserOp_Assign(const CSerialUserOp& source);
+    virtual bool UserOp_Equals(const CSerialUserOp& object) const;
 
 private:
     // Prohibit copy constructor and assignment operator

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2002/05/22 14:03:40  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
  * Revision 6.21  2002/05/06 03:39:12  vakatov
  * OM/OM1 renaming
  *
@@ -743,14 +746,14 @@ const CBioseq* CSeq_id::Resolve(void) const
 }
 
 
-void CSeq_id::Assign(const CSerialUserOp& source)
+void CSeq_id::UserOp_Assign(const CSerialUserOp& source)
 {
     const CSeq_id& src = dynamic_cast<const CSeq_id&>(source);
     m_ObjectManager = src.m_ObjectManager;
 }
 
 
-bool CSeq_id::Equals(const CSerialUserOp& object) const
+bool CSeq_id::UserOp_Equals(const CSerialUserOp& object) const
 {
     const CSeq_id& obj = dynamic_cast<const CSeq_id&>(object);
     return m_ObjectManager == obj.m_ObjectManager;

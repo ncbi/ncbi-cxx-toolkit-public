@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/05/22 14:03:41  grichenk
+ * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
+ *
  * Revision 6.2  2001/07/16 16:22:50  grichenk
  * Added CSerialUserOp class to create Assign() and Equals() methods for
  * user-defind classes.
@@ -86,13 +89,13 @@ void CSeq_entry::Parentize(void)
     m_ParentEntry = this;
 }
 
-void CSeq_entry::Assign(const CSerialUserOp& source)
+void CSeq_entry::UserOp_Assign(const CSerialUserOp& source)
 {
     const CSeq_entry& src = dynamic_cast<const CSeq_entry&>(source);
     m_ParentEntry = src.m_ParentEntry;
 }
 
-bool CSeq_entry::Equals(const CSerialUserOp& object) const
+bool CSeq_entry::UserOp_Equals(const CSerialUserOp& object) const
 {
     const CSeq_entry& obj = dynamic_cast<const CSeq_entry&>(object);
     return m_ParentEntry == obj.m_ParentEntry;
