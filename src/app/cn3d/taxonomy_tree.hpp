@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/10/04 18:45:28  thiessen
+* updates to taxonomy viewer
+*
 * Revision 1.1  2002/09/09 22:51:19  thiessen
 * add basic taxonomy tree viewer
 *
@@ -44,7 +47,10 @@
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/taxon1/Taxon2_data.hpp>
 
+#include <list>
 #include <map>
+
+class wxFrame;
 
 
 BEGIN_SCOPE(Cn3D)
@@ -52,6 +58,7 @@ BEGIN_SCOPE(Cn3D)
 class BlockMultipleAlignment;
 class Sequence;
 class MoleculeIdentifier;
+class TaxonomyWindow;
 
 class TaxonomyTree
 {
@@ -59,7 +66,7 @@ public:
     TaxonomyTree(void);
     ~TaxonomyTree(void);
 
-    void ShowTreeForAlignment(const BlockMultipleAlignment *alignment);
+    void ShowTreeForAlignment(wxFrame *parent, const BlockMultipleAlignment *alignment);
 
 private:
     // cached taxid's by identifier
@@ -79,6 +86,10 @@ private:
 
     // init server connection if not already established
     bool Init(void);
+
+    // tool windows
+    typedef std::list < TaxonomyWindow ** > TaxonomyWindowList;
+    TaxonomyWindowList taxonomyWindows;
 
     // get integer taxid for a sequence
     int GetTaxIDForSequence(const Sequence *seq);

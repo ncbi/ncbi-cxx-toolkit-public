@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/10/04 18:45:28  thiessen
+* updates to taxonomy viewer
+*
 * Revision 1.40  2002/09/09 22:51:19  thiessen
 * add basic taxonomy tree viewer
 *
@@ -564,7 +567,7 @@ void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
 {
     if (!taxonomyTree) taxonomyTree = new TaxonomyTree();
     if (sequenceViewer->GetCurrentAlignments())
-        taxonomyTree->ShowTreeForAlignment(sequenceViewer->GetCurrentAlignments()->front());
+        taxonomyTree->ShowTreeForAlignment(this, sequenceViewer->GetCurrentAlignments()->front());
 }
 
 END_SCOPE(Cn3D)
