@@ -132,10 +132,12 @@ string CFileCode::Include(const string& s, bool addExt) const
     case '"':
         return s[0] + GetStdPath(s.substr(1, s.length()-2)) + s[s.length()-1];
     default:
-        return
-            (m_UseQuotedForm ? '\"' : '<') +
-            GetStdPath(addExt ? (s+ ".hpp") : s) +
-            (m_UseQuotedForm ? '\"' : '>');
+    {
+        string result(1, m_UseQuotedForm ? '\"' : '<');
+        result += GetStdPath(addExt ? (s + ".hpp") : s);
+        result += m_UseQuotedForm ? '\"' : '>';
+        return result;
+    }
     }
 }
 
@@ -724,6 +726,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.37  2002/10/25 16:13:04  ucko
+* Tweak CFileCode::Include to avoid segfaulting when built with KCC
+* (presumably due to a compiler bug)
+*
 * Revision 1.36  2002/10/22 15:06:13  gouriano
 * added possibillity to use quoted syntax form for generated include files
 *
