@@ -40,13 +40,15 @@ Contents: Functions needed for formatting of BLAST results
 #include <corelib/ncbistd.hpp>
 #include <objtools/alnmgr/util/showalign.hpp>
 
-#include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_exception.hpp>
+
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_seqsrc.h>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(blast);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 typedef list<objects::CDisplaySeqalign::SeqlocInfo*> TSeqLocInfo; 
 typedef vector<TSeqLocInfo> TSeqLocInfoVector;
@@ -54,6 +56,35 @@ typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 #define BLAST_NUM_DESCRIPTIONS 500
 #define BLAST_NUM_ALIGNMENTS 250
 #define BLAST_ALIGN_VIEW 0
+
+/** Formatting flags (copy of those in txalign.h */
+#define ALIGN_LOCUS_NAME	((Uint4)0x00000100)	//<display the locus name
+#define ALIGN_MASTER			((Uint4)0x00000002)	//<display the alignment as multiple pairwise alignment
+#define ALIGN_MISMATCH		((Uint4)0x00000004)	//<display the mismatched residue of the sequence
+#define ALIGN_MATRIX_VAL	((Uint4)0x00000008)	//<display the matrix of the alignment
+#define ALIGN_HTML			((Uint4)0x00000010)	//<display the format in a HTML page
+#define ALIGN_HTML_RELATIVE	((Uint4)0x00002000)	//<the HTML (if enabled by ALIGN_HTML) should be relative
+#define ALIGN_SHOW_RULER	((Uint4)0x00000020)	//<display the ruler for the text alignment
+#define ALIGN_COMPRESS		((Uint4)0x00000040)	//<make the space for label smaller
+#define ALIGN_END_NUM		((Uint4)0x00000080)	//<show the number at the end
+#define ALIGN_FLAT_INS		((Uint4)0x00000001)	//<flat the insertions in multiple pairwise alignment
+#define ALIGN_SHOW_GI		((Uint4)0x00000200)	//<show the gi in the defline.
+#define ALIGN_SHOW_NO_OF_SEGS ((Uint4)0x00000400)//<show the number of (sum statistics) segments in the one-line descriptions?
+#define ALIGN_BLASTX_SPECIAL  ((Uint4)0x00000800)	//<display the BLASTX results as protein alignment
+#define	ALIGN_SHOW_QS		((Uint4)0x00001000)	//<show the results as query-subect
+#define ALIGN_SPLIT_ANNOT	((Uint4)0x00004000)	//<for Seq-annot from the same alignment, split the the display into individual panel
+#define ALIGN_SHOW_STRAND	((Uint4)0x00008000)	//<for displaying the stradn even in the compact form
+#define ALIGN_BLUNT_END		((Uint4)0x00010000)	//<showing the blunt-end for the end gaps
+#define ALIGN_DO_NOT_PRINT_TITLE	((Uint4)0x00020000)	//< do not print title before list of deflines
+#define ALIGN_CHECK_BOX		((Uint4)0x00040000)	//< place checkbox before the line (HTML only)
+#define ALIGN_CHECK_BOX_CHECKED	((Uint4)0x00080000)	//< make default value for checkboxes ON (HTML only)
+#define ALIGN_NEW_GIF		((Uint4)0x00100000)	//< print new.gif near new alignments (HTML only)
+#define ALIGN_NO_ENTREZ		((Uint4)0x00200000)	//< Use dumpgnl syntax instead of ENTREZ.
+#define ALIGN_NO_DUMPGNL	((Uint4)0x00400000)	//< No dumpgnl output, even if GNL.
+#define ALIGN_TARGET_IN_LINKS	((Uint4)0x00800000)	//< Put TARGET in Entrez links
+#define ALIGN_SHOW_LINKOUT ((Uint4)0x01000000)	//<print linkout info
+#define ALIGN_BL2SEQ_LINK	((Uint4) 0x02000000)	//< Add link to Blast 2 Sequences
+#define ALIGN_GET_SEQUENCE ((Uint4)0x04000000)	//<get sequence ability
 
 /** Options for formatting BLAST results 
  */
@@ -145,6 +176,10 @@ BLAST_FormatResults(TSeqAlignVector &seqalign,
     EProgram program, const TSeqLocVector &query,
     TSeqLocInfoVector& maskv, const CBlastFormatOptions* format_options, 
     bool is_ooframe);
+
+END_SCOPE(blast)
+
+END_NCBI_SCOPE
 
 #endif /* !__BLAST_FORMAT__ */
 
