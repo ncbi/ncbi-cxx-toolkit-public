@@ -164,6 +164,10 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
         }
     }
     
+    // Everything from here depends on namevec[0] existing.
+    if (namevec.empty())
+        return;
+    
     Uint4 common = namevec[0].size();
     
     // Reduce common length to length of min db path.
