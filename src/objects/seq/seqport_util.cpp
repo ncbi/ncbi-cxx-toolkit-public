@@ -858,10 +858,10 @@ private:
 
 auto_ptr<CSeqportUtil_implementation> CSeqportUtil::sm_Implementation;
 
+DEFINE_STATIC_FAST_MUTEX(init_implementation_mutex); /* put back inside x_InitImplementation after Mac CodeWarrior 9.0 comes out */
 void CSeqportUtil::x_InitImplementation(void)
 {
-    DEFINE_STATIC_FAST_MUTEX(mutex);
-    CFastMutexGuard   LOCK(mutex);
+    CFastMutexGuard   LOCK(init_implementation_mutex);
     if ( !sm_Implementation.get() ) {
         sm_Implementation.reset(new CSeqportUtil_implementation());
     }
@@ -6271,6 +6271,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/06/04 17:03:11  rsmith
+ * Move static mutex out of function to work around CW complex initialization bug.
+ *
  * Revision 6.16  2003/03/11 15:53:25  kuznets
  * iterate -> ITERATE
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/06/04 17:02:13  rsmith
+* Move static mutex out of function to work around CW complex initialization bug.
+*
 * Revision 1.36  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -191,9 +194,9 @@
 
 BEGIN_NCBI_SCOPE
 
+DEFINE_STATIC_MUTEX(s_TypeInfoMutex); /* put back inside GetTypeInfoMutex when Mac CodeWarrior 9 comes out */
 SSystemMutex& GetTypeInfoMutex(void)
 {
-    DEFINE_STATIC_MUTEX(s_TypeInfoMutex);
     return s_TypeInfoMutex;
 }
 
