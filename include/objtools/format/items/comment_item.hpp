@@ -37,6 +37,8 @@
 
 #include <objects/general/User_object.hpp>
 #include <objects/seq/Seq_hist.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objtools/format/items/item_base.hpp>
 
 
@@ -44,7 +46,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CDbtag;
 class CBioseq;
 class CSeqdesc;
 class CSeq_feat;
@@ -130,6 +131,7 @@ private:
     bool    m_First;
 };
 
+// --- CGenomeAnnotComment
 
 class CGenomeAnnotComment : public CCommentItem
 {
@@ -143,6 +145,7 @@ private:
     string m_GenomeBuildNumber;
 };
 
+// --- CHistComment
 
 class CHistComment : public CCommentItem
 {
@@ -162,6 +165,7 @@ private:
     CConstRef<CSeq_hist>    m_Hist;
 };
 
+// --- CGsdbComment
 
 class CGsdbComment : public CCommentItem
 {
@@ -173,6 +177,20 @@ private:
 
     // data
     CConstRef<CDbtag> m_Dbtag;
+};
+
+// --- CLocalIdComment
+
+class CLocalIdComment : public CCommentItem
+{
+public:
+    CLocalIdComment(const CObject_id& oid, CBioseqContext& ctx);
+
+private:
+    void x_GatherInfo(CBioseqContext& ctx);
+
+    // data
+    CConstRef<CObject_id> m_Oid;
 };
 
 
@@ -196,6 +214,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/06 17:40:31  shomrat
+* + CLocalIdComment class
+*
 * Revision 1.5  2004/04/22 15:34:25  shomrat
 * Changes in context
 *
