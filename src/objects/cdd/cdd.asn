@@ -1,4 +1,4 @@
---$Revision: 1.16 $
+--$Revision: 1.17 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -38,7 +38,7 @@ IMPORTS  Date                    FROM NCBI-General
          Score-set               FROM NCBI-Seqalign
          Cn3d-style-dictionary,
          Cn3d-user-annotations   FROM NCBI-Cn3d
-	 Score-matrix-parameters FROM NCBI-Scoremat;
+         Score-matrix-parameters FROM NCBI-ScoreMat;
 
 -- Cdd's should not exist without a unique accession, but alternative id's may
 -- be present as well. It is conceivable that a CD which is created as a merged
