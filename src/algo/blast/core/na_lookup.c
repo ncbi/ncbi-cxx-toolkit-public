@@ -414,6 +414,9 @@ static LookupTable* LookupTableDestruct(LookupTable* lookup)
 /* Description in na_lookup.h */
 LookupTableWrap* BlastLookupTableDestruct(LookupTableWrap* lookup)
 {
+   if (!lookup)
+       return NULL;
+
    if (lookup->lut_type == MB_LOOKUP_TABLE) {
       lookup->lut = (void*) 
          MBLookupTableDestruct((MBLookupTable*)lookup->lut);
