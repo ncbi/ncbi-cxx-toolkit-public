@@ -127,6 +127,11 @@ bool CSeqDB::CheckOrFindOID(TOID & oid)
     return m_Impl->CheckOrFindOID(oid);
 }
 
+const string & CSeqDB::GetDBNameList(void)
+{
+    return m_Impl->GetDBNameList();
+}
+
 list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(TOID oid)
 {
     return m_Impl->GetSeqIDs(oid);

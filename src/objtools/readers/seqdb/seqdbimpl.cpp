@@ -33,8 +33,9 @@
 BEGIN_NCBI_SCOPE
 
 CSeqDBImpl::CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mmap)
-    : m_Aliases (db_name_list, prot_nucl, use_mmap),
-      m_VolSet  (m_MemPool, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
+    : m_DBNames(db_name_list),
+      m_Aliases(db_name_list, prot_nucl, use_mmap),
+      m_VolSet (m_MemPool, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -182,6 +183,11 @@ Uint4 CSeqDBImpl::GetMaxLength(void)
     }
     
     return max_len;
+}
+
+const string & CSeqDBImpl::GetDBNameList(void)
+{
+    return m_DBNames;
 }
 
 END_NCBI_SCOPE

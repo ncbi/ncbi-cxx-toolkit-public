@@ -84,7 +84,10 @@ public:
     
     bool   CheckOrFindOID(Uint4 & next_oid);
     
+    const string & GetDBNameList(void);
+    
 private:
+    string              m_DBNames;
     CSeqDBMemPool       m_MemPool;
     CSeqDBAliasFile     m_Aliases;
     CSeqDBVolSet        m_VolSet;
