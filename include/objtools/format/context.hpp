@@ -51,6 +51,7 @@
 #include <objtools/format/flat_file_flags.hpp>
 #include <objtools/format/items/reference_item.hpp>
 
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1435,6 +1436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/16 19:07:48  vasilche
+* Include <memory> for auto_ptr<>.
+*
 * Revision 1.9  2004/03/16 15:40:21  vasilche
 * Added required include
 *
