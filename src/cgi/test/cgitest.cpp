@@ -31,6 +31,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/12/06 00:31:51  vakatov
+* CCgiRequest::ParseEntries() -- allow leading '&' in the query string (temp.)
+*
 * Revision 1.10  2001/06/19 20:08:31  vakatov
 * CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
 * requests' content body
@@ -264,7 +267,11 @@ static void TestCgi_Request_Static(void)
     _ASSERT(  TestEntries(entries, "rr=") );
     _ASSERT( !TestEntries(entries, "xx&") );
     entries.clear();
-    _ASSERT( !TestEntries(entries, "&zz=qq") );
+
+    // Give a temporary slack to some buggy clients -- allow leading ampersand
+    // _ASSERT( !TestEntries(entries, "&zz=qq") );
+    _ASSERT( TestEntries(entries, "&zz=qq") );
+
     _ASSERT( !TestEntries(entries, "tt=qq=pp") );
     _ASSERT( !TestEntries(entries, "=ggg&ppp=PPP") );
     _ASSERT(  TestEntries(entries, "a=d&eee") );
