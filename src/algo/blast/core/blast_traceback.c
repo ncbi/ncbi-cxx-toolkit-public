@@ -1259,10 +1259,11 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
          one_db_seq.sequence = NULL;
          one_db_seq.length = db_seq_start[1] - db_seq_start[0] - 1;
 
-         /* Set up the QueryInfo structure for this sequence */
+         /* Set up the QueryInfo structure for this sequence. The
+            trailing NULL must be added back */
 
          offsets[0] = 0;
-         offsets[1] = one_db_seq.length;
+         offsets[1] = one_db_seq.length + 1;
 
          memset(&one_db_seq_info, 0, sizeof(one_db_seq_info));
          one_db_seq_info.first_context = 0;
