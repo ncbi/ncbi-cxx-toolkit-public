@@ -28,8 +28,10 @@
  */
 
 /** @file blast2seq.cpp
- * Main driver for blast2sequences C++ interface
- */
+NOTE: This program is NOT intended to replace or provide the functionality of
+the NCBI C toolkit's binaries. This program should NOT be used in a production
+environment.
+*/
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 

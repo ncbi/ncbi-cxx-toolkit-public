@@ -37,6 +37,12 @@ Contents: C++ driver for running BLAST
 
 ******************************************************************************/
 
+/** @file blast_app.cpp
+NOTE: This program is NOT intended to replace or provide the functionality of
+the NCBI C toolkit's binaries. This program should NOT be used in a production
+environment.
+*/
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
