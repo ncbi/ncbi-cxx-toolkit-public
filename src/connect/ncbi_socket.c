@@ -1059,12 +1059,12 @@ static EIO_Status s_Connect(SOCK            sock,
          * (become writable).
          */
         {{
-            EIO_Status status;
+            int            x_errno = 0;
+            EIO_Status     status;
+            SSOCK_Poll     poll;
             struct timeval tv;
-            SSOCK_Poll poll;
-            SOCK_struct s;
+            SOCK_struct    s;
 #if defined(NCBI_OS_UNIX)
-            int x_errno = 0;
 #  if defined(HAVE_SOCKLEN_T)
             typedef socklen_t SOCK_socklen_t;
 #  else
@@ -1072,6 +1072,7 @@ static EIO_Status s_Connect(SOCK            sock,
 #  endif /*HAVE_SOCKLEN_T*/
             SOCK_socklen_t x_len = (SOCK_socklen_t) sizeof(x_errno);
 #endif /*NCBI_OS_UNIX*/
+
             memset(&s, 0, sizeof(s)); /* make it temporary and fill partially*/
             s.sock     = x_sock;
             s.r_on_w   = eOff;        /* to prevent upread inquiry           */
@@ -2246,6 +2247,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.74  2002/12/06 15:06:54  lavr
+ * Add missing x_errno definition in s_Connect() for non-Unix platforms
+ *
  * Revision 6.73  2002/12/05 21:44:12  lavr
  * Implement SOCK_STRERROR() and do more accurate error logging
  *
