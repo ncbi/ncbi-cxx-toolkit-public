@@ -125,7 +125,8 @@ protected:
         ePara,
         eSubp,
         eFeatHead,
-        eFeat
+        eFeat,
+        eBarcode
     };
 
     static const string s_GenbankMol[];
@@ -156,12 +157,16 @@ protected:
     const string& GetFeatIndent(void) const { return m_FeatIndent; }
     void SetFeatIndent(const string& feat_indent) { m_FeatIndent = feat_indent; }
 
+    const string& GetBarcodeIndent(void) const { return m_BarcodeIndent; }
+    void SetBarcodeIndent(const string& barcode_indent) { m_BarcodeIndent = barcode_indent; }
+
     TWrapFlags& SetWrapFlags(void) { return m_WrapFlags; }
 
 private:
     // data
     string                 m_Indent;
     string                 m_FeatIndent;
+    string                 m_BarcodeIndent;
     TWrapFlags             m_WrapFlags;
     CRef<CFlatFileContext> m_Ctx;
 };
@@ -175,6 +180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/03/29 18:15:51  shomrat
+* Barcode comment has special indentation
+*
 * Revision 1.11  2005/02/09 14:53:57  shomrat
 * x_FormatRefJournal take a context instead of config as parameter
 *
