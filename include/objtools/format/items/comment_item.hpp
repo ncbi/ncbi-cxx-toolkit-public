@@ -100,14 +100,22 @@ public:
 
     void AddPeriod(void);
 
+    enum ECommentFormat
+    {
+        eFormat_Text,
+        eFormat_Html
+    };
+
     static const string& GetNsAreGapsStr(void);
     static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
-    static string GetStringForRefTrack(const CUser_object& uo);
+    static string GetStringForRefTrack(const CUser_object& uo,
+        ECommentFormat format = eFormat_Text);
     static string GetStringForWGS(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
-    static string GetStringForModelEvidance(const SModelEvidance& me);
+    static string GetStringForModelEvidance(const SModelEvidance& me,
+        ECommentFormat format = eFormat_Text);
     static string GetStringForBarcode(CBioseqContext& ctx);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
@@ -241,6 +249,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/02/09 14:52:03  shomrat
+* Initial support for HTML output
+*
 * Revision 1.11  2005/02/02 19:35:07  shomrat
 * Added barcode comment
 *
