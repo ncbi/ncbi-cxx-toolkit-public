@@ -143,8 +143,6 @@ private:
                                         const CRef<CAlnMixMatch>& aln_match2);
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
-    static void x_ValidateDenseg       (const CDense_seg& ds);
-
 
 
     CRef<CObjectManager>        m_ObjMgr;
@@ -313,6 +311,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/11/03 14:43:52  todorov
+* Use CDense_seg::Validate()
+*
 * Revision 1.31  2003/08/20 19:35:41  todorov
 * Added x_ValidateDenseg
 *

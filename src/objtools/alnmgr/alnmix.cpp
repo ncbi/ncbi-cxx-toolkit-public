@@ -182,7 +182,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     }
     x_Reset();
 #if _DEBUG
-    x_ValidateDenseg(ds);
+    ds.Validate(true);
 #endif    
 
     if (flags & fDontUseObjMgr  &&  flags & fCalcScore) {
@@ -1774,89 +1774,8 @@ void CAlnMix::x_CreateDenseg()
         }
     }
 #if _DEBUG
-    x_ValidateDenseg(*m_DS);
+    m_DS->Validate(true);
 #endif    
-}
-
-
-void CAlnMix::x_ValidateDenseg(const CDense_seg& ds)
-{
-    const CDense_seg::TIds&     ids     = ds.GetIds();
-    const CDense_seg::TStarts&  starts  = ds.GetStarts();
-    const CDense_seg::TStrands& strands = ds.GetStrands();
-    const CDense_seg::TLens&    lens    = ds.GetLens();
-    const CDense_seg::TWidths&  widths  = ds.GetWidths();
-
-    const size_t& numrows = ds.GetDim();
-    const size_t& numsegs = ds.GetNumseg();
-    const size_t  num     = numrows * numsegs;
-
-    if (ids.size() != numrows) {
-        string errstr = string("CAlnMix::x_ValidateDenseg():")
-            + " ids.size is inconsistent with dim";
-        NCBI_THROW(CAlnException, eMergeFailure, errstr);
-    }
-    if (starts.size() != num) {
-        string errstr = string("CAlnMix::x_ValidateDenseg():")
-            + " starts.size is inconsistent with dim * numseg";
-        NCBI_THROW(CAlnException, eMergeFailure, errstr);
-    }
-    if (lens.size() != numsegs) {
-        string errstr = string("CAlnMix::x_ValidateDenseg():")
-            + " lens.size is inconsistent with numseg";
-        NCBI_THROW(CAlnException, eMergeFailure, errstr);
-    }
-    if (strands.size()  &&  strands.size() != num) {
-        string errstr = string("CAlnMix::x_ValidateDenseg():")
-            + " strands.size is inconsistent with dim * numseg";
-        NCBI_THROW(CAlnException, eMergeFailure, errstr);
-    }
-    if (widths.size()  &&  widths.size() != numrows) {
-        string errstr = string("CAlnMix::x_ValidateDenseg():")
-            + " widths.size is inconsistent with dim";
-        NCBI_THROW(CAlnException, eMergeFailure, errstr);
-    }
-
-    size_t numseg = 0, numrow = 0, offset = 0;
-    bool strands_exist = strands.size() == num;
-    for (numrow = 0;  numrow < numrows;  numrow++) {
-        TSignedSeqPos max_start = -1, start;
-        bool plus = strands_exist ? 
-            strands[numrow] != eNa_strand_minus :
-            true;
-
-        if (plus) {
-            offset = 0;
-        } else {
-            offset = (numsegs -1) * numrows;
-        }
-
-        for (numseg = 0;  numseg < numsegs;  numseg++) {
-            start = starts[offset + numrow];
-            if (start >= 0) {
-                if (start < max_start) {
-                    string errstr = string("CAlnMix::x_ValidateDenseg():")
-                        + " Starts are not consistent!"
-                        + " Row=" + NStr::IntToString(numrow) +
-                        " Seg=" + NStr::IntToString(plus ? numseg :
-                                                    numsegs - 1 - numseg) +
-                        " MaxStart=" + NStr::IntToString(max_start) +
-                        " Start=" + NStr::IntToString(start);
-                    
-                    NCBI_THROW(CAlnException, eMergeFailure, errstr);
-                }
-                max_start = start + 
-                    lens[plus ? numseg : numsegs - 1 - numseg] *
-                    (widths.size() == (size_t) numrows ?
-                     widths[numrow] : 1);
-            }
-            if (plus) {
-                offset += numrows;
-            } else {
-                offset -= numrows;
-            }
-        }
-    }
 }
 
 
@@ -1867,6 +1786,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2003/11/03 14:43:44  todorov
+* Use CDense_seg::Validate()
+*
 * Revision 1.77  2003/10/03 19:22:55  todorov
 * Extended exception msg in case of empty row
 *
