@@ -12,3 +12,7 @@
 
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
+
+/* Can use exception specifications("throw(...)" after func. proto) */
+#undef NCBI_USE_THROW_SPEC
+
