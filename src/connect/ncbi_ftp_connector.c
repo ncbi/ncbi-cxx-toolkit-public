@@ -635,6 +635,7 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 
     xxx->data    = 0;
     xxx->cntl    = 0;
+    xxx->wbuf    = 0;
     xxx->host    = strdup(host);
     xxx->port    = port ? port : 21;
     xxx->user    = strdup(user  &&  *user ? user : "ftp");
@@ -656,6 +657,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/12/07 14:21:55  lavr
+ * Init wbuf in ctor
+ *
  * Revision 1.1  2004/12/06 17:48:38  lavr
  * Initial revision
  *
