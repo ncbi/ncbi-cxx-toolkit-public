@@ -117,6 +117,9 @@ MS Windows</a> and <a href="mac_cvs.html">Mac OS</a>.
             <a href="#ref_UsingSerial">The Object Manager and <i>datatool</i>:  Using Serialized Biological Data Objects</a></li>
 
             <li>
+            <a href="#ref_UsingDebug">Debugging and Diagnostic Aids</a></li>
+
+            <li>
             <a href="#ref_UsingStyle">Coding Standards and Guidelines</a></li>
             <p></p>
         </ul>
@@ -873,7 +876,7 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 
     <a name="ref_UsingSerial"></a>
     <li>
-    <b><tt>datatool</tt> and The Object Manager</b>:  Using Serialized Objects to Access Biological Sequence Data<br>
+    <b> The Object Manager and <tt>datatool</tt></b>:  Using Serialized Objects to Access Biological Sequence Data<br>
 
         <tt><a href="tools/datatool/datatool.html">datatool</a></tt> processes the ASN.1 specifications
         in the src/objects/directories and is the C++ Toolkit's analogue of the C Toolkit's <tt>asntool</tt>.
@@ -902,6 +905,29 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
                 <a href="libs/om/om_start.html">jump-start</a> and
                 <a href="libs/om/om_faq.html"><i>Object Manager</i> FAQ</a> are all available
                 to help new users.
+
+    </li>
+    <p></p>
+
+    <a name="ref_UsingDebug"></a>
+    <li>
+    <b>Debugging and Diagnostic Aids</b><br>
+        The Toolkit has a number of methods for catching, reporting and handling coding bugs
+        and exceptional conditions.  During development, a <a href="libs/err_msg.html#ref_Assert">debug mode</a>
+        exists to allow for assertions, traces and message posting.
+        The standard C++ exception handling (which should be used as much as possible) has
+        been extended by a pair of <a href="programming_manual/exceptions.html">NCBI exception classes</a>,
+        <tt>CErrnoException</tt> and <tt>CParseException</tt> and additional associated macros.
+        <a href="programming_manual/diag.html">Diagnostics</a>, including an
+        <a href="programming_manual/diag.html#errpost">ERR_POST macro</a> available for routine error posting,
+        have been built into the Toolkit infrastructure.
+        <p>
+        For more detailed and extensive reporting
+        of an object's state (including the states of any contained objects), a special
+        <a href="libs/debug_dump.html">debug dump interface</a> has been implemented.  All
+        objects derived from the <tt>CObject</tt> class, which is in turn derived from the
+        abstract base class <a href="libs/debug_dump.html#Architecture"><tt>CDebugDumpable</tt></a>,
+        automatically have this capability.
 
     </li>
     <p></p>
@@ -1036,11 +1062,8 @@ More comprehensive documentation can be found at <a href="config.html">config.ht
 </table>
 
 <br></br>
-<hr>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
-
-<hr>
 
 <table border=0 width="100%" cellspacing=0>
 <script>
