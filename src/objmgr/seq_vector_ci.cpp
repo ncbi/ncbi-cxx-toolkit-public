@@ -180,6 +180,14 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
     TSeqPos segStart = m_Seg.GetPosition();
     TSeqPos segSize = m_Seg.GetLength();
 
+    if ( segSize == 0 ) {
+        // Empty seq-vector, nothing to cache
+        m_CachePos = kInvalidSeqPos;
+        m_CacheData.clear();
+        m_Cache = m_CacheData.end();
+        return;
+    }
+
     _ASSERT(pos >= segStart);
     _ASSERT(pos < segStart + segSize);
 
@@ -245,7 +253,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos count)
     switch ( m_Seg.GetType() ) {
     case CSeqMap::eSeqData:
     {
-        _TRACE("CSeqVector_CI::x_FillCache -- getting seq-data");
+        _TRACE("CSeqVector_CI::x_FillCache -- getting seq-data: "
+            << m_CachePos << " - " << m_CachePos + count);
         const CSeq_data& data = m_Seg.GetRefData();
         TSeqPos dataPos;
         if ( m_Seg.GetRefMinusStrand() ) {
@@ -336,6 +345,11 @@ void CSeqVector_CI::SetPos(TSeqPos pos)
 {
     _TRACE("CSeqVector_CI::SetPos(" << pos << ")");
     pos = min(m_Vector->size() - 1, pos);
+    // If vector size is 0 and pos is kInvalidSqePos, the result will be
+    // kInvalidSeqPos, which is not good.
+    if (pos == kInvalidSeqPos) {
+        pos = 0;
+    }
     if (pos < m_CachePos  ||  pos >= x_CacheEnd()) {
         // Swap caches
         m_CacheData.swap(m_BackupData);
@@ -477,6 +491,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/06/05 20:20:22  grichenk
+* Fixed bugs in assignment functions,
+* fixed minor problems with coordinates.
+*
 * Revision 1.9  2003/06/04 13:48:56  grichenk
 * Improved double-caching, fixed problem with strands.
 *

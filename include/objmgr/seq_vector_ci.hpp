@@ -119,6 +119,7 @@ inline
 CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
     : m_Vector(sv_it.m_Vector),
       m_Coding(sv_it.m_Coding),
+      m_Seg(sv_it.m_Seg),
       m_CachePos(sv_it.m_CachePos),
       m_CacheData(sv_it.m_CacheData),
       m_BackupPos(sv_it.m_BackupPos),
@@ -134,6 +135,7 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
         return *this;
     m_Vector = sv_it.m_Vector;
     m_Coding = sv_it.m_Coding;
+    m_Seg = sv_it.m_Seg;
     m_CachePos = sv_it.m_CachePos;
     m_CacheData = sv_it.m_CacheData;
     m_BackupPos = sv_it.m_BackupPos;
@@ -203,6 +205,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/05 20:20:21  grichenk
+* Fixed bugs in assignment functions,
+* fixed minor problems with coordinates.
+*
 * Revision 1.6  2003/06/04 13:48:53  grichenk
 * Improved double-caching, fixed problem with strands.
 *
