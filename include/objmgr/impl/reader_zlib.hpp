@@ -73,6 +73,7 @@ public:
     };
 
     virtual size_t Read(char* buffer, size_t bufferLength);
+    size_t GetCompressedSize(void) const;
 
 private:
     CResultZBtSrcRdr(const CResultZBtSrcRdr&);
@@ -90,6 +91,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2003/10/14 22:35:09  ucko
+* Add missing declaration of CResultZBtSrcRdr::GetCompressedSize.
+*
 * Revision 1.2  2003/07/24 20:41:43  vasilche
 * Added private constructor to make MSVC-DLL happy.
 *
