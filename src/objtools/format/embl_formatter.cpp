@@ -64,6 +64,18 @@ CEmblFormatter::CEmblFormatter(void)
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// END SECTION
+
+void CEmblFormatter::EndSection(IFlatTextOStream& text_os)
+{
+    list<string> l;
+    l.push_back("//");
+    text_os.AddParagraph(l);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
 // ID (EMBL's locus line)
 //
 
@@ -78,7 +90,7 @@ CEmblFormatter::CEmblFormatter(void)
 
 void CEmblFormatter::FormatLocus
 (const CLocusItem& locus, 
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     static string embl_mol [14] = {
         "xxx", "DNA", "RNA", "RNA", "RNA", "RNA", "RNA",
@@ -116,7 +128,7 @@ void CEmblFormatter::FormatLocus
 
 void CEmblFormatter::FormatAccession
 (const CAccessionItem& acc, 
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     string acc_line = x_FormatAccession(acc, ';');
 
@@ -134,7 +146,7 @@ void CEmblFormatter::FormatAccession
 
 void CEmblFormatter::FormatVersion
 (const CVersionItem& version,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     if ( version.Skip() ) {
         return;
@@ -160,7 +172,7 @@ void CEmblFormatter::FormatVersion
 
 void CEmblFormatter::FormatDate
 (const CDateItem& date,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     string date_str;
     list<string> l;
@@ -196,7 +208,7 @@ void CEmblFormatter::FormatDate
 
 void CEmblFormatter::FormatDefline
 (const CDeflineItem& defline,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     if ( defline.Skip() ) {
         return;
@@ -215,7 +227,7 @@ void CEmblFormatter::FormatDefline
 
 void CEmblFormatter::FormatKeywords
 (const CKeywordsItem& keys,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     if ( keys.Skip() ) {
         return;
@@ -237,7 +249,7 @@ void CEmblFormatter::FormatKeywords
 
 void CEmblFormatter::FormatSource
 (const CSourceItem& source,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     if ( source.Skip() ) {
         return;
@@ -296,7 +308,7 @@ void CEmblFormatter::x_Organelle
 
 void CEmblFormatter::FormatReference
 (const CReferenceItem& ref,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     /*
     CFlatContext& ctx = const_cast<CFlatContext&>(ref.GetContext()); // !!!
@@ -323,7 +335,7 @@ void CEmblFormatter::FormatReference
 void CEmblFormatter::x_Reference
 (list<string>& l,
  const CReferenceItem& ref,
- CFlatContext& ctx) const
+ CFlatContext& ctx)
 {
     CNcbiOstrstream ref_line;
 
@@ -422,7 +434,7 @@ void CEmblFormatter::x_Remark
 
 void CEmblFormatter::FormatComment
 (const CCommentItem& comment,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     /*
     list<string> l;
@@ -446,7 +458,7 @@ void CEmblFormatter::FormatComment
 
 void CEmblFormatter::FormatFeatHeader
 (const CFeatHeaderItem& fh,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     /*
     list<string> l;
@@ -460,7 +472,7 @@ void CEmblFormatter::FormatFeatHeader
 
 void CEmblFormatter::FormatFeature
 (const CFeatureItemBase& f,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 { 
     /*
     const CFlatFeature& feat = *f.Format();
@@ -490,7 +502,7 @@ void CEmblFormatter::FormatFeature
 
 void CEmblFormatter::FormatBasecount
 (const CBaseCountItem& bc,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     /*
     list<string> l;
@@ -517,7 +529,7 @@ void CEmblFormatter::FormatBasecount
 
 void CEmblFormatter::FormatSequence
 (const CSequenceItem& seq,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     /*
     list<string> l;
@@ -546,26 +558,6 @@ void CEmblFormatter::FormatSequence
     */
 }
 
-
-///////////////////////////////////////////////////////////////////////////
-//
-// END SECTION
-
-void CEmblFormatter::FormatEndSection
-(const CEndSectionItem& end,
- IFlatTextOStream& text_os) const
-{
-    /*
-    list<string> l;
-    l.push_back("//");
-    text_os.AddParagraph(l);
-    */
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//
 
 string& CEmblFormatter::Pad(const string& s, string& out,
                                 EPadContext where) const
