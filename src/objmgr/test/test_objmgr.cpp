@@ -113,15 +113,23 @@ int CTestApp::Run(void)
 #endif
         // retrieve data
         CTestHelper::TestDataRetrieval( Scope, 0, 0);
-
-        /*
-        // Find seq_id
-        {
-            set< CConstRef<const CSeq_id> > setId;
-            Scope.FindSeqid(setId, "seq11.3");
-        }
-        */
     }
+
+    // 1.2.3. The same scope twice with the same priority
+    for (idx = 0; idx <= 0; idx++) {
+        CScope Scope1(*m_ObjMgr);
+        CScope Scope(*m_ObjMgr);
+        // populate
+        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        Scope1.AddTopLevelSeqEntry(*entry1);
+        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        Scope1.AddTopLevelSeqEntry(*entry2);
+        Scope.AddScope(Scope1);
+        Scope.AddScope(Scope1);
+        // retrieve data
+        CTestHelper::TestDataRetrieval( Scope, 0, 0);
+    }
+
     // 1.2.4. Scope is an object on the heap
     for (idx = 1; idx <= 1; idx++) {
         CRef<CScope> pScope(new CScope(*m_ObjMgr));
@@ -247,6 +255,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/10/09 14:00:56  vasilche
+* Added test for multiple instances of datasource.
+*
 * Revision 1.35  2003/09/30 20:40:48  vasilche
 * Added test for CScope::AddScope().
 *
