@@ -228,10 +228,12 @@ typedef int TSOCK_Handle;
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
 
-#ifdef HAVE_SOCKLEN_T
-typedef socklen_t  SOCK_socklen_t;
+#if defined(HAVE_SOCKLEN_T)
+        typedef socklen_t  SOCK_socklen_t;
+#elif defined(NCBI_OS_MAC)
+        typedef UInt32     SOCK_socklen_t;
 #else
-typedef int        SOCK_socklen_t;
+        typedef int        SOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T*/
 
 
@@ -1041,7 +1043,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     }}
 
     {{ /* accept next connection */
-        SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
+        SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
         if ((x_sock = accept(lsock->sock, (struct sockaddr*) &addr, &addrlen))
             == SOCK_INVALID) {
             int x_errno = SOCK_ERRNO;
@@ -1225,13 +1227,13 @@ static EIO_Status s_Connect(SOCK            sock,
          * (asynchronous), so wait here for it to succeed (become writable).
          */
         {{
-            int               x_errno = 0;
-            EIO_Status        status;
-            SSOCK_Poll        poll;
-            SOCK_struct       sock;
-            struct timeval    tv;
+            int            x_errno = 0;
+            EIO_Status     status;
+            SSOCK_Poll     poll;
+            SOCK_struct    sock;
+            struct timeval tv;
 #ifdef NCBI_OS_UNIX
-            SOCK_socklen_t    x_len = (SOCK_socklen_t) sizeof(x_errno);
+            SOCK_socklen_t x_len = (SOCK_socklen_t) sizeof(x_errno);
 #endif /*NCBI_OS_UNIX*/
 
             memset(&sock, 0, sizeof(sock));
@@ -2580,13 +2582,6 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
         int                x_errno;
         struct sockaddr_in addr;
-#if defined(HAVE_SOCKLEN_T)
-        typedef socklen_t  SOCK_socklen_t;
-#elif defined(NCBI_OS_MAC)
-        typedef UInt32     SOCK_socklen_t;
-#else
-        typedef int        SOCK_socklen_t;
-#endif /*HAVE_SOCKLEN_T*/
         SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
         int                x_read = recvfrom(sock->sock, x_msg, x_msgsize, 0,
                                              (struct sockaddr*)&addr,&addrlen);
@@ -3031,6 +3026,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.93  2003/04/11 20:59:06  lavr
+ * Aux type SOCK_socklen_t defined centrally
+ *
  * Revision 6.92  2003/04/04 21:00:37  lavr
  * +SOCK_CreateOnTop()
  *
