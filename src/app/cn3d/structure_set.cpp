@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
 * Revision 1.108  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -360,6 +363,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbistl.hpp>
+
+#include <deque>
 
 #include <objects/ncbimime/Biostruc_seq.hpp>
 #include <objects/ncbimime/Biostruc_seqs.hpp>
@@ -866,15 +872,16 @@ void StructureSet::Load(int structureLimit)
     // setup show/hide items
     showHideManager->ConstructShowHideArray(this);
 
-    // set default rendering style
+    // set default rendering style and view
+    SetCenter();
     if (alignmentSet) {
         styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-        if (dataManager->IsCDD()) {
-            // special starting style for CDD's - info. content and aligned domains only
+        if (dataManager->IsCDD())
             styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
-            showHideManager->ShowAlignedDomains(this);
-        } else
+        else
             styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
+        // alignments always start with aligned domains only
+        showHideManager->ShowAlignedDomains(this);
     } else {
         styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
         styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
@@ -1172,6 +1179,42 @@ void StructureSet::SetCenter(const Vector *given)
     }
     TESTMSG("center: " << center << ", maxDistFromCenter " << maxDistFromCenter);
     rotationCenter = center;
+}
+
+void StructureSet::CenterViewOnAlignedResidues(void)
+{
+    const BlockMultipleAlignment *alignment = alignmentManager->GetCurrentMultipleAlignment();
+    if (!alignment || !alignment->GetSequenceOfRow(0) || !alignment->GetSequenceOfRow(0))
+        return;
+    const Molecule *masterMolecule = alignment->GetSequenceOfRow(0)->molecule;
+    const StructureObject *masterObject;
+    if (!masterMolecule->GetParentOfType(&masterObject)) return;
+
+    // get coords of all aligned c-alphas
+    std::deque < Vector > coords;
+    Molecule::ResidueMap::const_iterator r, re = masterMolecule->residues.end();
+    for (r=masterMolecule->residues.begin(); r!=re; r++) {
+        if (r->second->alphaID == Residue::NO_ALPHA_ID) continue;
+        AtomPntr ap(masterMolecule->id, r->first, r->second->alphaID);
+        const AtomCoord* atom = masterObject->coordSets.front()->atomSet->GetAtom(ap, true, true);
+        if (atom) coords.push_back(atom->site);
+    }
+
+    // calculate center
+    int i;
+    Vector alignedCenter;
+    for (i=0; i<coords.size(); i++) alignedCenter += coords[i];
+    alignedCenter /= coords.size();
+
+    // find radius
+    double radius = 0.0, d;
+    for (i=0; i<coords.size(); i++) {
+        d = (coords[i] - alignedCenter).length();
+        if (d > radius) radius = d;
+    }
+
+    // set view
+    renderer->CenterView(alignedCenter, radius);
 }
 
 bool StructureSet::Draw(const AtomSet *atomSet) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
 * Revision 1.61  2002/08/15 22:13:15  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -514,6 +517,30 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 
     glMultMatrixd(viewMatrix);
     glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
+}
+
+void OpenGLRenderer::CenterView(const Vector& viewCenter, double radius)
+{
+    ResetCamera();
+
+    structureSet->rotationCenter = viewCenter;
+
+    Vector cameraLocation(0.0, 0.0, cameraDistance);
+    Vector centerWRTcamera = viewCenter - structureSet->center;
+    Vector direction = centerWRTcamera - cameraLocation;
+    direction.normalize();
+    double cosAngleZ = -direction.z;
+    Vector lookAt = centerWRTcamera + direction * (centerWRTcamera.z / cosAngleZ);
+    cameraLookAtX = lookAt.x;
+    cameraLookAtY = lookAt.y;
+
+    cameraAngleRad = 2.0 * asin(radius / (cameraLocation - centerWRTcamera).length());
+
+    NewView();
+    TESTMSG("looking at " << lookAt << " angle " << RadToDegrees(cameraAngleRad));
+
+    // do this so that this view is used upon restore
+    SaveToASNViewSettings(NULL);
 }
 
 void OpenGLRenderer::PushMatrix(const Matrix* m)
@@ -1584,14 +1611,17 @@ bool OpenGLRenderer::SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations
     initialViewFromASN->SetRotation_center().SetY(structureSet->rotationCenter.y);
     initialViewFromASN->SetRotation_center().SetZ(structureSet->rotationCenter.z);
 
-    // store copy in given annotations
-    std::string err;
-    CRef < CCn3d_view_settings > copy(CopyASNObject(*initialViewFromASN, &err));
-    if (copy.Empty()) {
-        ERR_POST(Error << "OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
-        return false;
+    if (annotations) {
+        // store copy in given annotations
+        std::string err;
+        CRef < CCn3d_view_settings > copy(CopyASNObject(*initialViewFromASN, &err));
+        if (copy.Empty()) {
+            ERR_POST(Error << "OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
+            return false;
+        }
+        annotations->SetView(*copy);
     }
-    annotations->SetView(*copy);
+
     return true;
 }
 

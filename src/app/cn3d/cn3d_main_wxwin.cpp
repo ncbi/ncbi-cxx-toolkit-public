@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.158  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
 * Revision 1.157  2002/09/13 14:21:45  thiessen
 * finish hooking up browser launch on unix
 *
@@ -874,7 +877,7 @@ void Cn3DApp::InitRegistry(void)
     // default advanced options
     RegistrySetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, true);
 #ifdef __WXGTK__
-    RegistrySetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, 
+    RegistrySetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH,
         // for launching netscape in a separate window
         "( netscape -noraise -remote 'openURL(<URL>,new-window)' || netscape '<URL>' ) >/dev/null 2>&1 &"
         // for launching netscape in an existing window
@@ -2128,8 +2131,9 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     GlobalMessenger()->SetAllWindowTitles();
 
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
-    glCanvas->structureSet->SetCenter();
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
+    if (glCanvas->structureSet->alignmentSet && !glCanvas->renderer->HasASNViewSettings())
+        glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
     SetCursor(wxNullCursor);
 }
@@ -2164,8 +2168,6 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     // force a save of any edits to alignment and updates first
     GlobalMessenger()->SequenceWindowsSave(prompt);
-
-    if (!prompt && !glCanvas->structureSet->HasDataChanged()) return;
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;

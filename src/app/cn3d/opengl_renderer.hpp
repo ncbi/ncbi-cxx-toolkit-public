@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
 * Revision 1.36  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -209,6 +212,9 @@ public:
     };
     void ChangeView(eViewAdjust control, int dX = 0, int dY = 0, int X2 = 0, int Y2 = 0);
 
+    // center the view on the given viewCenter point, and zoom the view according to radius
+    void CenterView(const Vector& viewCenter, double radius);
+
     // draws the display lists
     void Display(void);
 
@@ -248,6 +254,7 @@ public:
     // load/save camera angle from/to asn data
     bool SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations *annotations);
     bool LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_annotations& annotations);
+    bool HasASNViewSettings(void) const { return !initialViewFromASN.Empty(); }
 
     // restore to saved view settings
     void RestoreSavedView(void);

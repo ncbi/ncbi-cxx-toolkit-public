@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2002/09/14 17:03:07  thiessen
+* center initial view on aligned residues
+*
 * Revision 1.66  2002/06/05 17:50:09  thiessen
 * title tweaks
 *
@@ -328,6 +331,9 @@ public:
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
+
+    // center rotation and view on aligned residues only
+    void CenterViewOnAlignedResidues(void);
 
     bool Draw(const AtomSet *atomSet) const;
 
