@@ -1,0 +1,4 @@
+# $Id$
+
+LIBOBJ = ncbi_conntest
+LIB    = xconntest
