@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/07/16 15:35:37  thiessen
+* fix unaligned chain identifier ommission
+*
 * Revision 1.27  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -181,13 +184,12 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
         }
     }
 
-    // if no id assigned to biopolymer, assign default PDB identifier from parent, assuming 'name'
+    // if no PDB id assigned to biopolymer, assign default PDB identifier from parent, assuming 'name'
     // is actually the chainID if this is a biopolymer
-    if ((IsProtein() || IsNucleotide()) &&
-        gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
+    if ((IsProtein() || IsNucleotide()) && pdbID.size() == 0) {
         const StructureObject *object;
         if (GetParentOfType(&object)) pdbID = object->pdbID;
-        if (name.size() >= 1) pdbChain = name[0];
+        if (name.size() == 1) pdbChain = name[0];
     }
 
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
