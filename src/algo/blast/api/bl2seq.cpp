@@ -160,372 +160,48 @@ CBl2Seq::MultiQRun()
     return x_Results2SeqAlign();
 }
 
-unsigned int
-x_GetNumberOfFrames(EProgram p)
-{
-    unsigned int retval = 0;
-
-    switch (p) {
-    case eBlastn:
-        retval = 2;
-        break;
-    case eBlastp:
-    case eTblastn: 
-        retval = 1;
-        break;
-    case eBlastx:
-    case eTblastx:
-        retval = 6;
-        break;
-    default:
-        abort();
-    }
-
-    return retval;
-}
-
-/// Now allows query concatenation
-void
-CBl2Seq::x_SetupQueryInfo()
-{
-    unsigned int nframes = x_GetNumberOfFrames(m_eProgram);
-
-    // Allocate and initialize the query info structure
-    mi_clsQueryInfo.Reset((BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)));
-    if ( !(mi_clsQueryInfo.operator->()) ) { // FIXME!
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
-    }
-    mi_clsQueryInfo->num_queries = static_cast<int>(m_tQueries.size());
-    mi_clsQueryInfo->first_context = 0;
-    mi_clsQueryInfo->last_context = mi_clsQueryInfo->num_queries * nframes - 1;
-
-    bool is_na = (m_eProgram == eBlastn) ? true : false;
-    bool translate = ((m_eProgram == eBlastx) ||
-                      (m_eProgram == eTblastx)) ? true : false;
-
-#if 0
-    // Adjust first/last context depending on (first?) query strand
-    // is this really needed? (for kbp assignment in getting dropoff params)
-    // This is inconsistent, as the contexts in the middle of the
-    // context_offsets array are ignored
-    if (m_tQueries.front().IsInt()) {
-        if (m_tQueries.front().GetInt().GetStrand() == eNa_strand_minus) {
-            if (translate) {
-                mi_QueryInfo->first_context = 3;
-            } else {
-                mi_QueryInfo->last_context = 1;
-            }
-        } else if (m_tQueries.front().GetInt().GetStrand() = eNa_strand_plus) {
-            if (translate) {
-                mi_QueryInfo->last_context -= 3;
-            } else {
-                mi_QueryInfo->last_context -= 1;
-            }
-        }
-    }
-#endif
-
-    // Allocate the various arrays of the query info structure
-    int* context_offsets = NULL;
-    if ( !(context_offsets = (int*)
-           malloc(sizeof(int) * (mi_clsQueryInfo->last_context + 2)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
-    }
-    if ( !(mi_clsQueryInfo->eff_searchsp_array = 
-           (Int8*) calloc(mi_clsQueryInfo->last_context + 1, sizeof(Int8)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Search space array");
-    }
-    if ( !(mi_clsQueryInfo->length_adjustments = 
-           (int*) calloc(mi_clsQueryInfo->last_context + 1, sizeof(int)))) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Length adjustments array");
-    }
-
-    mi_clsQueryInfo->context_offsets = context_offsets;
-    context_offsets[0] = 0;
-
-    // Set up the context offsets into the sequence that will be added to the
-    // sequence block structure.
-    unsigned int ctx_index = 0;      // index into context_offsets array
-    ITERATE(TSeqLocVector, itr, m_tQueries) {
-        TSeqPos length = sequence::GetLength(*itr->seqloc, itr->scope);
-        _ASSERT(length != numeric_limits<TSeqPos>::max());
-
-        // Unless the strand option is set to single strand, the actual
-        // CSeq_locs dictacte which strand to examine during the search
-        ENa_strand strand_opt = m_pOptions->GetStrandOption();
-        ENa_strand strand = sequence::GetStrand(*itr->seqloc, itr->scope);
-        if (strand_opt == eNa_strand_minus || strand_opt == eNa_strand_plus) {
-            strand = strand_opt;
-        }
-
-        if (translate) {
-            for (unsigned int i = 0; i < nframes; i++) {
-                unsigned int prot_length = 
-                    (length - i % CODON_LENGTH) / CODON_LENGTH;
-                switch (strand) {
-                case eNa_strand_plus:
-                    if (i < 3) {
-                        context_offsets[ctx_index + i + 1] = 
-                            context_offsets[ctx_index + i] + prot_length + 1;
-                    } else {
-                        context_offsets[ctx_index + i + 1] = 
-                            context_offsets[ctx_index + i];
-                    }
-                    break;
-
-                case eNa_strand_minus:
-                    if (i < 3) {
-                        context_offsets[ctx_index + i + 1] = 
-                            context_offsets[ctx_index + i];
-                    } else {
-                        context_offsets[ctx_index + i + 1] =
-                            context_offsets[ctx_index + i] + prot_length + 1;
-                    }
-                    break;
-
-                case eNa_strand_both:
-                case eNa_strand_unknown:
-                    context_offsets[ctx_index + i + 1] = 
-                        context_offsets[ctx_index + i] + prot_length + 1;
-                    break;
-
-                default:
-                    abort();
-                }
-            }
-        } else if (is_na) {
-            switch (strand) {
-            case eNa_strand_plus:
-                context_offsets[ctx_index + 1] =
-                    context_offsets[ctx_index] + length + 1;
-                context_offsets[ctx_index + 2] =
-                    context_offsets[ctx_index + 1];
-                break;
-
-            case eNa_strand_minus:
-                context_offsets[ctx_index + 1] =
-                    context_offsets[ctx_index];
-                context_offsets[ctx_index + 2] =
-                    context_offsets[ctx_index + 1] + length + 1;
-                break;
-
-            case eNa_strand_both:
-            case eNa_strand_unknown:
-                context_offsets[ctx_index + 1] =
-                    context_offsets[ctx_index] + length + 1;
-                context_offsets[ctx_index + 2] =
-                    context_offsets[ctx_index + 1] + length + 1;
-                break;
-
-            default:
-                abort();
-            }
-        } else {    // protein
-            context_offsets[ctx_index + 1] = length + 1;
-        }
-
-        ctx_index += nframes;
-    }
-
-    mi_clsQueryInfo->total_length = context_offsets[ctx_index];
-}
-
-void
-CBl2Seq::x_SetupQueries()
-{
-    x_ResetQueryDs();
-
-    // Determine sequence encoding
-    Uint1 encoding;
-    if (m_eProgram == eBlastn) {
-        encoding = BLASTNA_ENCODING;
-    } else if (m_eProgram == eBlastn ||
-               m_eProgram == eBlastx ||
-               m_eProgram == eTblastx) {
-        encoding = NCBI4NA_ENCODING;
-    } else {
-        encoding = BLASTP_ENCODING;
-    }
-
-    x_SetupQueryInfo();
-
-    int buflen = mi_clsQueryInfo->total_length;
-    Uint1* buf = (Uint1*) calloc((buflen+1), sizeof(Uint1));
-    if ( !buf ) {
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
-    }
-
-    bool is_na = (m_eProgram == eBlastn) ? true : false;
-    bool translate = ((m_eProgram == eBlastx) ||
-                      (m_eProgram == eTblastx)) ? true : false;
-
-    unsigned int ctx_index = 0;      // index into context_offsets array
-    unsigned int nframes = x_GetNumberOfFrames(m_eProgram);
-    ITERATE(TSeqLocVector, itr, m_tQueries) {
-        if (translate) {
-            Uint1* na_buffer = NULL;
-            int na_length = 0;
-
-            // Get both strands of the original nucleotide sequence with
-            // sentinels
-            na_buffer = BLASTGetSequence(*itr->seqloc, encoding, &na_length, 
-                                         itr->scope, eNa_strand_both, true);
-
-            // Populate the sequence buffer
-            Uint1* gc = 
-                BLASTFindGeneticCode(m_pOptions->GetQueryGeneticCode());
-            for (unsigned int i = 0; i < nframes; i++) {
-                if (BLAST_GetQueryLength(mi_clsQueryInfo, i) == 0) {
-                    continue;
-                }
-
-                int offset = mi_clsQueryInfo->context_offsets[ctx_index + i];
-                short frame = (i < 3) ? (i + 1) : (-i + 2);
-                BLAST_GetTranslation(na_buffer + 1, na_buffer + na_length + 2,
-                                     na_length, frame, &buf[offset], gc);
-            }
-            sfree(na_buffer);
-            delete [] gc;
-
-        } else if (is_na) {
-
-            // Unless the strand option is set to single strand, the actual
-            // CSeq_locs dictacte which strand to examine during the search
-            ENa_strand strand_opt = m_pOptions->GetStrandOption();
-            ENa_strand strand = sequence::GetStrand(*itr->seqloc,
-                                                    itr->scope);
-            if (strand_opt == eNa_strand_minus || 
-                strand_opt == eNa_strand_plus) {
-                strand = strand_opt;
-            }
-            int sbuflen = 0;
-            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, &sbuflen,
-                                           itr->scope, strand, true);
-            int index = (strand == eNa_strand_minus) ? ctx_index + 1 :
-                ctx_index;
-            int offset = mi_clsQueryInfo->context_offsets[index];
-            memcpy(&buf[offset], seqbuf, sbuflen);
-            sfree(seqbuf);
-
-        } else {
-
-            int sbuflen = 0;
-            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, &sbuflen,
-                                             itr->scope, eNa_strand_unknown, 
-                                             true);
-            int offset = mi_clsQueryInfo->context_offsets[ctx_index];
-            memcpy(&buf[offset], seqbuf, sbuflen);
-            sfree(seqbuf);
-
-        }
-
-        ctx_index += nframes;
-    }
-
-    mi_clsQueries.Reset((BLAST_SequenceBlk*) calloc(1,
-                                                    sizeof(BLAST_SequenceBlk)));
-    if ( !(mi_clsQueries.operator->()) ) { // FIXME!
-        sfree(buf);
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query block structure");
-    }
-    // FIXME: is buflen calculated correctly here?
-    BlastSetUp_SeqBlkNew(buf, buflen - 2, 0, &mi_clsQueries, true);
-
-
-    BlastMask* filter_mask = NULL;
-    Blast_Message* blmsg = NULL;
-    short st;
-
-    st = BLAST_MainSetUp(m_eProgram, m_pOptions->GetQueryOpts(),
-                         m_pOptions->GetScoringOpts(),
-                         m_pOptions->GetLookupTableOpts(),
-                         m_pOptions->GetHitSavingOpts(), mi_clsQueries, 
-                         mi_clsQueryInfo, &mi_pLookupSegments, &filter_mask, 
-                         &mi_pScoreBlock, &blmsg);
-    // TODO: Check that lookup_segments are not filtering the whole sequence
-    // (DoubleInt set to -1 -1)
-    if (st != 0) {
-        string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
-        NCBI_THROW(CBlastException, eInternal, msg.c_str());
-    }
-
-    // Convert the BlastMask* into a CSeq_loc
-    // TODO: Implement this! 
-    //mi_vFilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
-    BlastMaskFree(filter_mask); // FIXME, return seqlocs for formatter
-}
-
-void
-CBl2Seq::x_SetupSubjects()
-{
-    x_ResetSubjectDs();
-
-    // Nucleotide subject sequences are stored in ncbi2na format, but the
-    // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
-    // the ambiguities
-    bool subj_is_na = (m_eProgram == eBlastn  ||
-                       m_eProgram == eTblastn ||
-                       m_eProgram == eTblastx);
-
-    Uint1 encoding = (subj_is_na ? NCBI2NA_ENCODING : BLASTP_ENCODING);
-
-    // TODO: Should strand selection on the subject sequences be allowed?
-    //ENa_strand strand = m_pOptions->GetStrandOption(); 
-    ENa_strand strand = eNa_strand_unknown;
-    Int8 dblength = 0;
-
-    ITERATE(TSeqLocVector, itr, m_tSubjects) {
-        Uint1* buf = NULL;  // stores compressed sequence
-        int buflen = 0;     // length of the buffer above
-        BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
-            calloc(1, sizeof(BLAST_SequenceBlk));
-
-        buf = BLASTGetSequence(*itr->seqloc, encoding, &buflen, itr->scope, 
-                strand, false);
-
-        if (subj_is_na) {
-            subj->sequence = buf;
-            subj->sequence_allocated = TRUE;
-
-            encoding = (m_eProgram == eBlastn) ? 
-                BLASTNA_ENCODING : NCBI4NA_ENCODING;
-            bool use_sentinels = (m_eProgram == eBlastn) ?
-                true : false;
-
-            // Retrieve the sequence with ambiguities
-            buf = BLASTGetSequence(*itr->seqloc, encoding, &buflen,
-                                   itr->scope, strand, use_sentinels);
-            subj->sequence_start = buf;
-            subj->length = use_sentinels ? buflen - 2 : buflen;
-            subj->sequence_start_allocated = TRUE;
-        } else {
-            subj->sequence_start_allocated = TRUE;
-            subj->sequence_start = buf;
-            subj->sequence = buf+1;      // skips the sentinel byte
-            subj->length = buflen - 2;   // don't count the sentinel bytes
-        }
-        dblength += subj->length;
-        mi_vSubjects.push_back(subj);
-        mi_iMaxSubjLength = MAX(mi_iMaxSubjLength, 
-                sequence::GetLength(*itr->seqloc, itr->scope));
-    }
-    m_pOptions->SetDbSeqNum(mi_vSubjects.size());
-    m_pOptions->SetDbLength(dblength);
-}
 
 void 
 CBl2Seq::SetupSearch()
 {
     if ( !mi_bQuerySetUpDone ) {
+        x_ResetQueryDs();
         m_eProgram = m_pOptions->GetProgram();  // options might have changed
-        x_SetupQueries();
+        SetupQueryInfo(m_tQueries, *m_pOptions, &mi_clsQueryInfo);
+        SetupQueries(m_tQueries, *m_pOptions, mi_clsQueryInfo, &mi_clsQueries);
+
+        // FIXME
+        BlastMask* filter_mask = NULL;
+        Blast_Message* blmsg = NULL;
+        short st;
+
+        st = BLAST_MainSetUp(m_eProgram, m_pOptions->GetQueryOpts(),
+                             m_pOptions->GetScoringOpts(),
+                             m_pOptions->GetLookupTableOpts(),
+                             m_pOptions->GetHitSavingOpts(), mi_clsQueries, 
+                             mi_clsQueryInfo, &mi_pLookupSegments, 
+                             &filter_mask, &mi_pScoreBlock, &blmsg);
+
+        // TODO: Check that lookup_segments are not filtering the whole 
+        // sequence (DoubleInt set to -1 -1)
+        if (st != 0) {
+            string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
+            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+        }
+
+        // Convert the BlastMask* into a CSeq_loc
+        // TODO: Implement this! 
+        //mi_vFilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
+        BlastMaskFree(filter_mask); // FIXME, return seqlocs for formatter
+
         LookupTableWrapInit(mi_clsQueries, m_pOptions->GetLookupTableOpts(),
                             mi_pLookupSegments, mi_pScoreBlock, 
                             &mi_pLookupTable);
         mi_bQuerySetUpDone = true;
     }
 
-    x_SetupSubjects();
+    x_ResetSubjectDs();
+    SetupSubjects(m_tSubjects, m_pOptions, &mi_vSubjects, &mi_iMaxSubjLength);
 }
 
 void 
@@ -577,7 +253,7 @@ CBl2Seq::Traceback()
 TSeqAlignVector
 CBl2Seq::x_Results2SeqAlign()
 {
-    _ASSERT(mi_vResults.size() == m_tSubjects.size());
+    ASSERT(mi_vResults.size() == m_tSubjects.size());
     TSeqAlignVector retval;
 
     for (unsigned int index = 0; index < m_tSubjects.size(); ++index)
@@ -623,6 +299,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2003/09/09 12:55:09  camacho
+ * Moved setup member functions to blast_setup_cxx.cpp
+ *
  * Revision 1.28  2003/09/03 19:36:58  camacho
  * Fix include path for blast_setup.hpp, code clean up
  *

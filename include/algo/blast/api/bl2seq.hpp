@@ -44,7 +44,6 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
-
 /// Runs the BLAST algorithm between 2 sequences.
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
@@ -112,7 +111,6 @@ private:
     CBl2Seq& operator=(const CBl2Seq& rhs);
 
     /************ Internal data structures (m_i = internal members)***********/
-    //< done once for every query
     bool                                mi_bQuerySetUpDone;
     CBLAST_SequenceBlk                  mi_clsQueries;  // one for all queries
     CBlastQueryInfo                     mi_clsQueryInfo; // one for all queries
@@ -123,12 +121,12 @@ private:
     LookupTableWrap*                    mi_pLookupTable; // one for all queries
     ListNode*                           mi_pLookupSegments;
 
-    CBlastInitialWordParameters      mi_clsInitWordParams;
-    CBlastHitSavingParameters        mi_clsHitSavingParams;
-    CBLAST_ExtendWord                mi_clsExtnWord;
-    CBlastExtensionParameters        mi_clsExtnParams;
-    CBlastGapAlignStruct             mi_clsGapAlign;
-    CBlastDatabaseOptions            mi_clsDbOptions;
+    CBlastInitialWordParameters         mi_clsInitWordParams;
+    CBlastHitSavingParameters           mi_clsHitSavingParams;
+    CBLAST_ExtendWord                   mi_clsExtnWord;
+    CBlastExtensionParameters           mi_clsExtnParams;
+    CBlastGapAlignStruct                mi_clsGapAlign;
+    CBlastDatabaseOptions               mi_clsDbOptions;
 
     /// Vector of result structures, one per subject
     vector<BlastResults*>               mi_vResults;//should use structs?
@@ -136,13 +134,8 @@ private:
     vector<BlastReturnStat>             mi_vReturnStats;
 
     /// Regions filtered out from the query sequence
-    //TSeqLocVector                       mi_vFilteredRegions;
     vector< CConstRef<objects::CSeq_loc> >       mi_vFilteredRegions;
 
-    //void x_SetupQuery();    // FIXME: should be setup_queries
-    void x_SetupQueries();
-    void x_SetupQueryInfo();// FIXME: Allow query concatenation
-    void x_SetupSubjects();
     void x_ResetQueryDs();
     void x_ResetSubjectDs();
 };
@@ -248,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/09/09 12:53:31  camacho
+* Moved setup member functions to blast_setup_cxx.cpp
+*
 * Revision 1.17  2003/08/28 17:36:21  camacho
 * Delete options before reassignment
 *
