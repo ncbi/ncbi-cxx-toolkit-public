@@ -25,7 +25,7 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  Code for CHTMLNode
+ * File Description:  CHTMLNode and tag classes implementation
  *
  */
 
@@ -39,10 +39,17 @@
 BEGIN_NCBI_SCOPE
 
 
+#define CHECK_STREAM_WRITE(out) \
+    if ( !out ) { \
+        NCBI_THROW(CHTMLException, eWrite, "write to stream failed"); \
+    }
+
+
 // CHTMLNode
 
 CHTMLNode::~CHTMLNode(void)
 {
+    return;
 }
 
 CHTMLNode* CHTMLNode::SetClass(const string& class_name)
@@ -142,26 +149,30 @@ CHTMLNode* CHTMLNode::SetStyle(const string& style)
 
 void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
 {
-    if ( !appendstring.empty() )
+    if ( !appendstring.empty() ) {
         AppendChild(new CHTMLPlainText(appendstring, noEncode));
+    }
 }
 
 void CHTMLNode::AppendPlainText(const char* appendstring, bool noEncode)
 {
-    if ( appendstring && *appendstring )
+    if ( appendstring && *appendstring ) {
         AppendChild(new CHTMLPlainText(appendstring, noEncode));
+    }
 }
 
 void CHTMLNode::AppendHTMLText(const string& appendstring)
 {
-    if ( !appendstring.empty() )
+    if ( !appendstring.empty() ) {
         AppendChild(new CHTMLText(appendstring));
+    }
 }
 
 void CHTMLNode::AppendHTMLText(const char* appendstring)
 {
-    if ( appendstring && *appendstring )
+    if ( appendstring && *appendstring ) {
         AppendChild(new CHTMLText(appendstring));
+    }
 }
 
 string CHTMLNode::GetEventHandlerName(const EHTML_EH_Attribute name) const
@@ -211,16 +222,18 @@ string CHTMLNode::GetEventHandlerName(const EHTML_EH_Attribute name) const
 void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute event,
                                 const string& value)
 {
-    if ( value.empty() )
+    if ( value.empty() ) {
         return;
+    }
     SetAttribute(GetEventHandlerName(event), value);
 }
 
 
 void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu, EHTML_EH_Attribute event)
 {
-    if ( !menu )
+    if ( !menu ) {
         return;
+    }
     switch (menu->GetType()) {
     case CHTMLPopupMenu::eSmith: 
         SetEventHandler(event, menu->ShowMenu());
@@ -242,27 +255,31 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu, EHTML_EH_Attribute e
 CHTMLTagNode::CHTMLTagNode(const char* name)
     : CParent(name)
 {
+    return;
 }
 
 CHTMLTagNode::CHTMLTagNode(const string& name)
     : CParent(name)
 {
+    return;
 }
 
 CHTMLTagNode::~CHTMLTagNode(void)
 {
+    return;
 }
 
 CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     CNodeRef node = MapTagAll(GetName(), mode);
-    if ( node )
+    if ( node ) {
         node->Print(out, mode);
+    }
     return out;
 }
 
 
-// dual text node
+// Dual text node.
 
 CHTMLDualNode::CHTMLDualNode(const char* html, const char* plain)
 {
@@ -278,14 +295,18 @@ CHTMLDualNode::CHTMLDualNode(CNCBINode* child, const char* plain)
 
 CHTMLDualNode::~CHTMLDualNode(void)
 {
+    return;
 }
 
 CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText )
-        return out << m_Plain;
-    else
+    if ( mode == ePlainText ) {
+        out << m_Plain;
+        CHECK_STREAM_WRITE(out);
+        return out;
+    } else {
         return CParent::PrintChildren(out, mode);
+    }
 }
 
 
@@ -294,15 +315,18 @@ CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 CHTMLPlainText::CHTMLPlainText(const char* text, bool noEncode)
     : CNCBINode(text), m_NoEncode(noEncode)
 {
+    return;
 }
 
 CHTMLPlainText::CHTMLPlainText(const string& text, bool noEncode)
     : CNCBINode(text), m_NoEncode(noEncode)
 {
+    return;
 }
 
 CHTMLPlainText::~CHTMLPlainText(void)
 {
+    return;
 }
 
 void CHTMLPlainText::SetText(const string& text)
@@ -312,12 +336,14 @@ void CHTMLPlainText::SetText(const string& text)
 
 CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText || NoEncode() ) {
-        return out << GetText();
+    if (mode == ePlainText  ||  NoEncode()) {
+        out << GetText();
     }
     else {
-        return out << CHTMLHelper::HTMLEncode(GetText());
+        out << CHTMLHelper::HTMLEncode(GetText());
     }
+    CHECK_STREAM_WRITE(out);
+    return out;
 }
 
 
@@ -326,15 +352,18 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 CHTMLText::CHTMLText(const string& text)
     : CParent(text)
 {
+    return;
 }
 
 CHTMLText::CHTMLText(const char* text)
     : CParent(text)
 {
+    return;
 }
 
 CHTMLText::~CHTMLText(void)
 {
+    return;
 }
 
 void CHTMLText::SetText(const string& text)
@@ -342,25 +371,39 @@ void CHTMLText::SetText(const string& text)
     m_Name = text;
 }
 
-static const char* KTagStart = "<@";
-static SIZE_TYPE KTagStart_size = 2;
-static const char* KTagEnd = "@>";
-static SIZE_TYPE KTagEnd_size = 2;
+static const char* KTagStart      = "<@";
+static SIZE_TYPE   KTagStart_size = 2;
+static const char* KTagEnd        = "@>";
+static SIZE_TYPE   KTagEnd_size   = 2;
 
 inline
 static SIZE_TYPE s_Find(const string& s, const char* target,
                         SIZE_TYPE start = 0)
 {
-    // return s.find(target);
+    // Return s.find(target);
     // Some implementations of string::find call memcmp at every
     // possible position, which is way too slow.
-    if (start >= s.size()) {
+    if ( start >= s.size() ) {
         return NPOS;
     }
     const char* cstr = s.c_str();
     const char* p    = strstr(cstr + start, target);
     return p ? p - cstr : NPOS;
 }
+
+
+CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
+                                      const string& s) const
+{
+    if ( mode == ePlainText ) {
+        out << CHTMLHelper::StripTags(s);
+    } else {
+        out << s;
+    }
+    CHECK_STREAM_WRITE(out);
+    return out;
+}
+
 
 CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
@@ -377,7 +420,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         SIZE_TYPE tagNameEnd = s_Find(text, KTagEnd, tagNameStart);
         if ( tagNameEnd == NPOS ) {
             // tag not closed
-            NCBI_THROW(CHTMLException,eTextUnclosedTag,"tag not closed");
+            NCBI_THROW(CHTMLException, eTextUnclosedTag, "tag not closed");
         }
         else {
             // tag found
@@ -388,9 +431,9 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
             CNodeRef tag = MapTagAll(text.substr(tagNameStart,
                                                  tagNameEnd - tagNameStart),
                                      mode);
-            if ( tag )
+            if ( tag ) {
                 tag->Print(out, mode);
-
+            }
             last = tagNameEnd + KTagEnd_size;
             tagStart = s_Find(text, KTagStart, last);
         }
@@ -402,45 +445,56 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     return out;
 }
 
+
 CHTMLOpenElement::~CHTMLOpenElement(void)
 {
+    return;
 }
+
 
 CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
-        return out;
-    }
-    else {
+    if ( mode != ePlainText ) {
         out << '<' << m_Name;
         if ( HaveAttributes() ) {
             for ( TAttributes::const_iterator i = Attributes().begin();
                   i != Attributes().end(); ++i ) {
                 out << ' ' << i->first;
+                CHECK_STREAM_WRITE(out);
                 if ( !i->second.IsOptional() ||
                      !i->second.GetValue().empty() ) {
                     out << "=\"" << i->second.GetValue() << '"';
                 }
             }
         }
-        return out << '>';
+        out << '>';
+        CHECK_STREAM_WRITE(out);
     }
-}
-
-CHTMLInlineElement::~CHTMLInlineElement(void)
-{
-}
-
-CNcbiOstream& CHTMLInlineElement::PrintEnd(CNcbiOstream& out, TMode mode)
-{
-    if ( mode != ePlainText )
-        out << "</" << m_Name << '>';
     return out;
 }
 
+
+CHTMLInlineElement::~CHTMLInlineElement(void)
+{
+    return;
+}
+
+
+CNcbiOstream& CHTMLInlineElement::PrintEnd(CNcbiOstream& out, TMode mode)
+{
+    if ( mode != ePlainText ) {
+        out << "</" << m_Name << '>';
+        CHECK_STREAM_WRITE(out);
+    }
+    return out;
+}
+
+
 CHTMLElement::~CHTMLElement(void)
 {
+    return;
 }
+
 
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
@@ -453,24 +507,27 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
             if ( parent && parent->HaveChildren() &&
                  parent->Children().size() > 1 )
                 out << '\n'; // separate child nodes by newline
-        }
-        else {
+        } else {
             out << '\n';
         }
     }
+    CHECK_STREAM_WRITE(out);
     return out;
 }
 
+
 CHTMLBlockElement::~CHTMLBlockElement(void)
 {
+    return;
 }
+
 
 CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
     if ( mode == ePlainText ) {
         // Add a newline iff no node on the path to the last descendant
-        // is also a block element.  (We only need one break.)
+        // is also a block element. We only need one break.
         CNCBINode* node = this;
         while (node->HaveChildren()) {
             node = node->Children().back();
@@ -479,49 +536,50 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
             }
         }
         out << '\n';
+        CHECK_STREAM_WRITE(out);
     }
     return out;
 }
 
 
-// HTML comment class
+// HTML comment.
 
 CHTMLComment::~CHTMLComment(void)
 {
+    return;
 }
 
 CNcbiOstream& CHTMLComment::Print(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
+    if (mode == ePlainText) {
         return out;
     }
-    else {
-        return CParent::Print(out, mode);
-    }
+    return CParent::Print(out, mode);
 }
 
 CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
-        return out;
+    if (mode == ePlainText) {
+        out;
+    } else {
+        out << "<!--";
+        CHECK_STREAM_WRITE(out);
     }
-    else {
-        return out << "<!--";
-    }
+    return out;
 }
 
 CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
-        return out;
-    }
-    else {
+    if (mode == eHTML) {
         return out << "-->";
     }
+    CHECK_STREAM_WRITE(out);
+    return out;
 }
 
 CHTMLListElement::~CHTMLListElement(void)
 {
+    return;
 }
 
 CHTMLListElement* CHTMLListElement::SetType(const char* type)
@@ -542,7 +600,6 @@ CHTMLListElement* CHTMLListElement::SetCompact(void)
     return this;
 }
 
-
 CNcbiOstream& CHTMLListElement::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if (mode == ePlainText) {
@@ -555,7 +612,7 @@ CNcbiOstream& CHTMLListElement::PrintChildren(CNcbiOstream& out, TMode mode)
 }
 
 
-// Special char
+// Special char.
 
 CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain,
                                    int count)
@@ -565,36 +622,43 @@ CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain,
     m_Count = count;
 }
 
+
 CHTMLSpecialChar::~CHTMLSpecialChar(void)
 {
+    return;
 }
+
 
 CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
-        for ( int i = 0; i < m_Count; i++ )
+        for ( int i = 0; i < m_Count; i++ ) {
             out << m_Plain;
+            CHECK_STREAM_WRITE(out);
+        }
     } else {
-        for ( int i = 0; i < m_Count; i++ )
+        for ( int i = 0; i < m_Count; i++ ) {
             out << "&" << m_Name << ";";
+            CHECK_STREAM_WRITE(out);
+        }
     }
     return out;
 }
 
 
-// the <HTML> tag
+// <html> tag.
 
 const char CHTML_html::sm_TagName[] = "html";
 
 CHTML_html::~CHTML_html(void)
 {
+    return;
 }
-
 
 void CHTML_html::Init(void)
 {
+    return;
 }
-
 
 void CHTML_html::EnablePopupMenu(CHTMLPopupMenu::EType type,
                                  const string& menu_script_url,
@@ -603,7 +667,6 @@ void CHTML_html::EnablePopupMenu(CHTMLPopupMenu::EType type,
     SPopupMenuInfo info(menu_script_url, use_dynamic_menu);
     m_PopupMenus[type] = info;
 }
-
 
 static bool s_CheckUsePopupMenus(const CNCBINode* node, 
                                  CHTMLPopupMenu::EType type)
@@ -625,7 +688,6 @@ static bool s_CheckUsePopupMenus(const CNCBINode* node,
     }
     return false;
 }
-
 
 CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
 {
@@ -684,7 +746,7 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
 
 
 
-// TABLE element
+// Table element.
 
 class CHTML_tc_Cache
 {
@@ -692,6 +754,7 @@ public:
     CHTML_tc_Cache(void)
         : m_Used(false), m_Node(0)
     {
+        return;
     }
 
     bool IsUsed(void) const
@@ -716,6 +779,7 @@ private:
     CHTML_tc* m_Node;
 };
 
+
 class CHTML_tr_Cache
 {
 public:
@@ -725,7 +789,9 @@ public:
         : m_Node(0),
           m_CellCount(0), m_CellsSize(0), m_Cells(0), m_FilledCellCount(0)
     {
+        return;
     }
+
     ~CHTML_tr_Cache(void)
     {
         delete[] m_Cells;
@@ -735,6 +801,7 @@ public:
     {
         return m_Node;
     }
+
     void SetRowNode(CHTML_tr* rowNode)
     {
         _ASSERT(!m_Node && rowNode);
@@ -745,6 +812,7 @@ public:
     {
         return m_CellCount;
     }
+
     CHTML_tc_Cache& GetCellCache(TIndex col);
 
     void AppendCell(CHTML_tr* rowNode, TIndex col,
@@ -762,6 +830,7 @@ private:
     CHTML_tc_Cache* m_Cells;
     TIndex m_FilledCellCount;
 };
+
 
 class CHTML_table_Cache
 {
@@ -798,26 +867,30 @@ private:
     CHTML_table_Cache& operator=(const CHTML_table_Cache&);
 };
 
+
 CHTML_tr::CHTML_tr(void)
     : CParent("tr"), m_Parent(0)
 {
+    return;
 }
 
 CHTML_tr::CHTML_tr(CNCBINode* node)
     : CParent("tr", node), m_Parent(0)
 {
+    return;
 }
 
 CHTML_tr::CHTML_tr(const string& text)
     : CParent("tr", text), m_Parent(0)
 {
+    return;
 }
 
 void CHTML_tr::DoAppendChild(CNCBINode* node)
 {
     CHTML_tc* cell = dynamic_cast<CHTML_tc*>(node);
     if ( cell ) {
-        // adding new cell
+        // Adding new cell
         _ASSERT(!cell->m_Parent);
         ResetTableCache();
         cell->m_Parent = this;
@@ -847,6 +920,7 @@ CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
             out << string(GetTextLength(mode), m_Parent->m_RowSepChar)
                 << CHTMLHelper::GetNL();
         }
+        CHECK_STREAM_WRITE(out);
     }
     return out;
 }
@@ -856,21 +930,21 @@ CNcbiOstream& CHTML_tr::PrintChildren(CNcbiOstream& out, TMode mode)
     if ( !HaveChildren() ) {
         return out;
     }
-
     if ( mode != ePlainText ) {
         return CParent::PrintChildren(out, mode);
     }
-
     out << m_Parent->m_ColSepL;
 
     NON_CONST_ITERATE ( TChildren, i, Children() ) {
         if ( i != Children().begin() ) {
             out << m_Parent->m_ColSepM;
+            CHECK_STREAM_WRITE(out);
         }
         Node(i)->Print(out, mode);
     }
 
     out << m_Parent->m_ColSepR;
+    CHECK_STREAM_WRITE(out);
 
     return out;
 }
@@ -904,6 +978,7 @@ size_t CHTML_tr::GetTextLength(TMode mode)
 
 CHTML_tc::~CHTML_tc(void)
 {
+    return;
 }
 
 CHTML_tc* CHTML_tc::SetRowSpan(TIndex span)
@@ -918,22 +993,23 @@ CHTML_tc* CHTML_tc::SetColSpan(TIndex span)
     return this;
 }
 
-static
+static 
 CHTML_table::TIndex x_GetSpan(const CHTML_tc* node,
                               const string& attributeName)
 {
-    if ( !node->HaveAttribute(attributeName) )
+    if ( !node->HaveAttribute(attributeName) ) {
         return 1;
-
+    }
     const string& value = node->GetAttribute(attributeName);
 
     try {
         CHTML_table::TIndex span = NStr::StringToUInt(value);
-        if ( span > 0 )
+        if ( span > 0 ) {
             return span;
+        }
     }
     catch ( exception& ) {
-        // error will be posted later
+        // Error will be posted later
     }
     ERR_POST("Bad attribute: " << attributeName << "=\"" << value << "\"");
     return 1;
@@ -942,21 +1018,25 @@ CHTML_table::TIndex x_GetSpan(const CHTML_tc* node,
 void CHTML_tc::DoSetAttribute(const string& name,
                               const string& value, bool optional)
 {
-    if ( name == "rowspan" || name == "colspan" ) // changing cell size
+    if (name == "rowspan"  ||  name == "colspan") {
+        // Changing cell size
         ResetTableCache();
+    }
     CParent::DoSetAttribute(name, value, optional);
 }
 
 void CHTML_tc::ResetTableCache(void)
 {
-    if ( m_Parent )
+    if ( m_Parent ) {
         m_Parent->ResetTableCache();
+    }
 }
 
 void CHTML_tc_Cache::SetUsed()
 {
-    if ( IsUsed() )
-        NCBI_THROW(CHTMLException,eTableCellUse,"Overlapped table cells");
+    if ( IsUsed() ) {
+        NCBI_THROW(CHTMLException, eTableCellUse, "Overlapped table cells");
+    }
     m_Used = true;
 }
 
@@ -1001,8 +1081,9 @@ CHTML_tc_Cache& CHTML_tr_Cache::GetCellCache(TIndex col)
 
 void CHTML_tr_Cache::SetUsedCells(TIndex colBegin, TIndex colEnd)
 {
-    for ( TIndex col = colBegin; col < colEnd; ++col )
+    for ( TIndex col = colBegin; col < colEnd; ++col ) {
         GetCellCache(col).SetUsed();
+    }
 }
 
 void CHTML_tr_Cache::AppendCell(CHTML_tr* rowNode, TIndex col,
@@ -1023,8 +1104,9 @@ void CHTML_tr_Cache::AppendCell(CHTML_tr* rowNode, TIndex col,
     _ASSERT(x_GetSpan(cellNode, "colspan") == colSpan);
     rowNode->AppendCell(cellNode);
     cellCache.SetCellNode(cellNode);
-    if ( colSpan != 1 )
+    if ( colSpan != 1 ) {
         SetUsedCells(col + 1, col + colSpan);
+    }
     m_FilledCellCount = col + colSpan;
 }
 
@@ -1036,12 +1118,15 @@ void CHTML_tr_Cache::SetUsedCells(CHTML_tc* cellNode,
     m_FilledCellCount = colEnd;
 }
 
+
 CHTML_table_Cache::~CHTML_table_Cache(void)
 {
-    for ( TIndex i = 0; i < GetRowCount(); ++i )
+    for ( TIndex i = 0; i < GetRowCount(); ++i ) {
         delete m_Rows[i];
+    }
     delete[] m_Rows;
 }
+
 
 CHTML_tr_Cache& CHTML_table_Cache::GetRowCache(TIndex row)
 {
@@ -1071,34 +1156,36 @@ void CHTML_table_Cache::InitRow(TIndex row, CHTML_tr* rowNode)
     m_Rows[row]->SetRowNode(rowNode);
     m_FilledRowCount = row + 1;
 
-    // scan all children (which should be <TH> or <TD> tags)
+    // Scan all children (which should be <TH> or <TD> tags)
     if ( rowNode->HaveChildren() ) {
-        // beginning with column 0
+        // Beginning with column 0
         TIndex col = 0;
         for ( CNCBINode::TChildren::iterator iCol = rowNode->ChildBegin(),
-                  iColEnd = rowNode->ChildEnd();
+              iColEnd = rowNode->ChildEnd();
               iCol != iColEnd; ++iCol ) {
             CHTML_tc* cellNode =
                 dynamic_cast<CHTML_tc*>(rowNode->Node(iCol));
 
-            if ( !cellNode )
+            if ( !cellNode ) {
                 continue;
+            }
 
-            // skip all used cells
+            // Skip all used cells
             while ( rowCache.GetCellCache(col).IsUsed() ) {
                 ++col;
             }
 
-            // determine current cell size
+            // Determine current cell size
             TIndex rowSpan = x_GetSpan(cellNode, "rowspan");
             TIndex colSpan = x_GetSpan(cellNode, "colspan");
 
-            // end of new cell in columns
+            // End of new cell in columns
             rowCache.SetUsedCells(cellNode, col, col + colSpan);
-            if ( rowSpan > 1 )
+            if ( rowSpan > 1 ) {
                 SetUsedCells(row + 1, row + rowSpan, col, col + colSpan);
+            }
 
-            // skip this cell's columns
+            // Skip this cell's columns
             col += colSpan;
         }
     }
@@ -1108,16 +1195,16 @@ CHTML_table_Cache::CHTML_table_Cache(CHTML_table* table)
     : m_Node(table),
       m_RowCount(0), m_RowsSize(0), m_Rows(0), m_FilledRowCount(0)
 {
-    // scan all children (which should be <TR> tags)
+    // Scan all children (which should be <TR> tags)
     if ( table->HaveChildren() ) {
-        // beginning with row 0
+        // Beginning with row 0
         TIndex row = 0;
         for ( CNCBINode::TChildren::iterator iRow = table->ChildBegin(),
-                  iRowEnd = table->ChildEnd(); iRow != iRowEnd; ++iRow ) {
+              iRowEnd = table->ChildEnd(); iRow != iRowEnd; ++iRow ) {
             CHTML_tr* rowNode = dynamic_cast<CHTML_tr*>(table->Node(iRow));
-            if( !rowNode )
+            if ( !rowNode ) {
                 continue;
-
+            }
             InitRow(row, rowNode);
             ++row;
         }
@@ -1154,12 +1241,12 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             switch ( type ) {
             case CHTML_table::eHeaderCell:
                 if ( !dynamic_cast<CHTML_th*>(cell) )
-                    NCBI_THROW(CHTMLException,eTableCellType,
+                    NCBI_THROW(CHTMLException, eTableCellType,
                                "wrong cell type: TH expected");
                 break;
             case CHTML_table::eDataCell:
                 if ( !dynamic_cast<CHTML_td*>(cell) )
-                    NCBI_THROW(CHTMLException,eTableCellType,
+                    NCBI_THROW(CHTMLException, eTableCellType,
                                "wrong cell type: TD expected");
                 break;
             default:
@@ -1168,14 +1255,15 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             return cell;
         }
         if ( cellCache.IsUsed() )
-            NCBI_THROW(CHTMLException,eTableCellUse,
+            NCBI_THROW(CHTMLException, eTableCellUse,
                        "invalid use of big table cell");
     }
     CHTML_tc* cell;
-    if ( type == CHTML_table::eHeaderCell )
+    if ( type == CHTML_table::eHeaderCell ) {
         cell = new CHTML_th;
-    else
+    } else {
         cell = new CHTML_td;
+    }
     rowCache.AppendCell(GetRowNode(row), col, cell, 1);
     return cell;
 }
@@ -1192,12 +1280,12 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             switch ( type ) {
             case CHTML_table::eHeaderCell:
                 if ( !dynamic_cast<CHTML_th*>(cell) )
-                    NCBI_THROW(CHTMLException,eTableCellType,
+                    NCBI_THROW(CHTMLException, eTableCellType,
                                "wrong cell type: TH expected");
                 break;
             case CHTML_table::eDataCell:
                 if ( !dynamic_cast<CHTML_td*>(cell) )
-                    NCBI_THROW(CHTMLException,eTableCellType,
+                    NCBI_THROW(CHTMLException, eTableCellType,
                                "wrong cell type: TD expected");
                 break;
             default:
@@ -1205,28 +1293,31 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
             }
             if ( x_GetSpan(cell, "rowspan") != rowSpan ||
                  x_GetSpan(cell, "colspan") != colSpan )
-                NCBI_THROW(CHTMLException,eTableCellUse,
+                NCBI_THROW(CHTMLException, eTableCellUse,
                            "cannot change table cell size");
             return cell;
         }
         if ( cellCache.IsUsed() )
-            NCBI_THROW(CHTMLException,eTableCellUse,
+            NCBI_THROW(CHTMLException, eTableCellUse,
                        "invalid use of big table cell");
     }
 
     CHTML_tc* cell;
-    if ( type == CHTML_table::eHeaderCell )
+    if ( type == CHTML_table::eHeaderCell ) {
         cell = new CHTML_th;
-    else
+    } else {
         cell = new CHTML_td;
-
-    if ( colSpan != 1 )
+    }
+    if ( colSpan != 1 ) {
         cell->SetColSpan(colSpan);
-    if ( rowSpan != 1 )
+    }
+    if ( rowSpan != 1 ) {
         cell->SetRowSpan(rowSpan);
+    }
     rowCache.AppendCell(GetRowNode(row), col, cell, colSpan);
-    if ( rowSpan != 1 )
+    if ( rowSpan != 1 ) {
         SetUsedCells(row + 1, row + rowSpan, col, col + colSpan);
+    }
     return cell;
 }
 
@@ -1235,10 +1326,12 @@ CHTML_table::CHTML_table(void)
       m_ColSepL(kEmptyStr), m_ColSepM(" "), m_ColSepR(kEmptyStr),
       m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
+    return;
 }
 
 CHTML_table::~CHTML_table(void)
 {
+    return;
 }
 
 CHTML_table* CHTML_table::SetCellSpacing(int spacing)
@@ -1261,8 +1354,9 @@ void CHTML_table::ResetTableCache(void)
 CHTML_table_Cache& CHTML_table::GetCache(void) const
 {
     CHTML_table_Cache* cache = m_Cache.get();
-    if ( !cache )
+    if ( !cache ) {
         m_Cache.reset(cache = new CHTML_table_Cache(const_cast<CHTML_table*>(this)));
+    }
     return *cache;
 }
 
@@ -1270,7 +1364,7 @@ void CHTML_table::DoAppendChild(CNCBINode* node)
 {
     CHTML_tr* row = dynamic_cast<CHTML_tr*>(node);
     if ( row ) {
-        // adding new row
+        // Adding new row
         _ASSERT(!row->m_Parent);
         ResetTableCache();
         row->m_Parent = this;
@@ -1285,7 +1379,7 @@ void CHTML_table::AppendRow(CHTML_tr* row)
     CParent::DoAppendChild(row);
 }
 
-CHTML_tr* CHTML_table::Row(TIndex row)  // todo: exception
+CHTML_tr* CHTML_table::Row(TIndex row)
 {
     return GetCache().GetRowNode(row);
 }
@@ -1312,8 +1406,9 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfColumns(void) const
 {
     CHTML_table_Cache& cache = GetCache();
     TIndex columns = 0;
-    for ( TIndex i = 0; i < cache.GetRowCount(); ++i )
+    for ( TIndex i = 0; i < cache.GetRowCount(); ++i ) {
         columns = max(columns, cache.GetRowCache(i).GetCellCount());
+    }
     return columns;
 }
 
@@ -1326,6 +1421,7 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if ( mode == ePlainText ) {
         out << CHTMLHelper::GetNL();
+        CHECK_STREAM_WRITE(out);
         if ( m_IsRowSep == ePrintRowSep ) {
             size_t seplen = 0;
             // Find length of first non-empty row
@@ -1334,8 +1430,11 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
                     break;
                 }
             }
-            if (!seplen) seplen = 1;
+            if ( !seplen ) {
+                seplen = 1;
+            }
             out << string(seplen, m_RowSepChar) << CHTMLHelper::GetNL();
+            CHECK_STREAM_WRITE(out);
         }
     }
     return CParent::PrintBegin(out, mode);
@@ -1355,11 +1454,12 @@ void CHTML_table::SetPlainSeparators(const string& col_left,
 }
 
 
-// form element
+// <form> tag.
 
 CHTML_form::CHTML_form(void)
     : CParent("form")
 {
+    return;
 }
 
 CHTML_form::CHTML_form(const string& url, EMethod method)
@@ -1376,6 +1476,7 @@ CHTML_form::CHTML_form(const string& url, CNCBINode* node, EMethod method)
 
 CHTML_form::~CHTML_form(void)
 {
+    return;
 }
 
 void CHTML_form::Init(const string& url, EMethod method)
@@ -1408,48 +1509,58 @@ void CHTML_form::AddHidden(const string& name, int value)
     AppendChild(new CHTML_hidden(name, value));
 }
 
-// legend element
+
+// <legend> tag.
 
 CHTML_legend::CHTML_legend(const string& legend)
     : CParent("legend", legend)
 {
+    return;
 }
 
 CHTML_legend::CHTML_legend(CHTMLNode* legend)
     : CParent("legend", legend)
 {
+    return;
 }
 
 CHTML_legend::~CHTML_legend(void)
 {
+    return;
 }
 
-// fieldset element
+// <fieldset> tag.
 
 CHTML_fieldset::CHTML_fieldset(void)
     : CParent("fieldset")
 {
+    return;
 }
 
 CHTML_fieldset::CHTML_fieldset(const string& legend)
     : CParent("fieldset", new CHTML_legend(legend))
 {
+    return;
 }
 
 CHTML_fieldset::CHTML_fieldset(CHTML_legend* legend)
     : CParent("fieldset", legend)
 {
+    return;
 }
 
 CHTML_fieldset::~CHTML_fieldset(void)
 {
+    return;
 }
 
-// label element
+
+// <label> tag.
 
 CHTML_label::CHTML_label(const string& text)
     : CParent("label", text)
 {
+    return;
 }
 
 CHTML_label::CHTML_label(const string& text, const string& idRef)
@@ -1460,6 +1571,7 @@ CHTML_label::CHTML_label(const string& text, const string& idRef)
 
 CHTML_label::~CHTML_label(void)
 {
+    return;
 }
 
 void CHTML_label::SetFor(const string& idRef)
@@ -1467,7 +1579,8 @@ void CHTML_label::SetFor(const string& idRef)
     SetAttribute("for", idRef);
 }
 
-// textarea element
+
+// <textarea> tag.
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
     : CParent("textarea")
@@ -1488,9 +1601,11 @@ CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows,
 
 CHTML_textarea::~CHTML_textarea(void)
 {
+    return;
 }
 
-//input tag
+
+// <input> tag.
 
 CHTML_input::CHTML_input(const char* type, const string& name)
     : CParent("input")
@@ -1501,15 +1616,18 @@ CHTML_input::CHTML_input(const char* type, const string& name)
 
 CHTML_input::~CHTML_input(void)
 {
+    return;
 }
 
-// checkbox tag
+
+// <checkbox> tag.
 
 const char CHTML_checkbox::sm_InputType[] = "checkbox";
 
 CHTML_checkbox::CHTML_checkbox(const string& name)
     : CParent(sm_InputType, name)
 {
+    return;
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value)
@@ -1523,7 +1641,8 @@ CHTML_checkbox::CHTML_checkbox(const string& name, bool checked,
     : CParent(sm_InputType, name)
 {
     SetOptionalAttribute("checked", checked);
-    AppendPlainText(description);  // adds the description at the end
+    // Add the description at the end
+    AppendPlainText(description);
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value,
@@ -1532,14 +1651,17 @@ CHTML_checkbox::CHTML_checkbox(const string& name, const string& value,
 {
     SetOptionalAttribute("value", value);
     SetOptionalAttribute("checked", checked);
-    AppendPlainText(description);  // adds the description at the end
+    // Add the description at the end
+    AppendPlainText(description);  
 }
 
 CHTML_checkbox::~CHTML_checkbox(void)
 {
+    return;
 }
 
-// image tag
+
+// <image> tag.
 
 const char CHTML_image::sm_InputType[] = "image";
 
@@ -1562,9 +1684,11 @@ CHTML_image::CHTML_image(const string& name, const string& src, int border,
 
 CHTML_image::~CHTML_image(void)
 {
+    return;
 }
 
-// radio tag
+
+// <radio> tag.
 
 const char CHTML_radio::sm_InputType[] = "radio";
 
@@ -1584,9 +1708,11 @@ CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, 
 
 CHTML_radio::~CHTML_radio(void)
 {
+    return;
 }
 
-// hidden tag
+
+// <hidden> tag.
 
 const char CHTML_hidden::sm_InputType[] = "hidden";
 
@@ -1604,7 +1730,11 @@ CHTML_hidden::CHTML_hidden(const string& name, int value)
 
 CHTML_hidden::~CHTML_hidden(void)
 {
+    return;
 }
+
+
+// <submit> tag.
 
 const char CHTML_submit::sm_InputType[] = "submit";
 
@@ -1622,7 +1752,11 @@ CHTML_submit::CHTML_submit(const string& name, const string& label)
 
 CHTML_submit::~CHTML_submit(void)
 {
+    return;
 }
+
+
+// <reset> tag.
 
 const char CHTML_reset::sm_InputType[] = "reset";
 
@@ -1634,7 +1768,9 @@ CHTML_reset::CHTML_reset(const string& label)
 
 CHTML_reset::~CHTML_reset(void)
 {
+    return;
 }
+
 
 // button tag
 /*
@@ -1694,7 +1830,8 @@ CHTML_reset::~CHTML_reset(void)
   }
 */
 
-// text tag
+
+// <text> tag.
 
 const char CHTML_text::sm_InputType[] = "text";
 
@@ -1721,9 +1858,11 @@ CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string
 
 CHTML_text::~CHTML_text(void)
 {
+    return;
 }
 
-// text tag
+
+// <file> tag.
 
 const char CHTML_file::sm_InputType[] = "file";
 
@@ -1735,12 +1874,17 @@ CHTML_file::CHTML_file(const string& name, const string& value)
 
 CHTML_file::~CHTML_file(void)
 {
+    return;
 }
+
+
+// <select> tag.
 
 const char CHTML_select::sm_TagName[] = "select";
 
 CHTML_select::~CHTML_select(void)
 {
+    return;
 }
 
 CHTML_select* CHTML_select::SetMultiple(void)
@@ -1749,10 +1893,14 @@ CHTML_select* CHTML_select::SetMultiple(void)
     return this;
 }
 
+
+// <option> tag.
+
 const char CHTML_option::sm_TagName[] = "option";
 
 CHTML_option::~CHTML_option(void)
 {
+    return;
 }
 
 CHTML_option* CHTML_option::SetValue(const string& value)
@@ -1767,10 +1915,14 @@ CHTML_option* CHTML_option::SetSelected(void)
     return this;
 }
 
+
+// <a> tag.
+
 const char CHTML_a::sm_TagName[] = "a";
 
 CHTML_a::~CHTML_a(void)
 {
+    return;
 }
 
 CHTML_a* CHTML_a::SetHref(const string& href)
@@ -1780,32 +1932,38 @@ CHTML_a* CHTML_a::SetHref(const string& href)
 }
 
 
-// br tag
+// <br> tag.
 
 const char CHTML_br::sm_TagName[] = "br";
 
 CHTML_br::CHTML_br(int count)
     : CParent(sm_TagName)
 {
-    for ( int i = 1; i < count; ++i )
+    for ( int i = 1; i < count; ++i ) {
         AppendChild(new CHTML_br());
+    }
 }
 
 CHTML_br::~CHTML_br(void)
 {
+    return;
 }
 
 CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
-        return out << CHTMLHelper::GetNL();
+    if ( mode == ePlainText ) {
+        out << CHTMLHelper::GetNL();
+        CHECK_STREAM_WRITE(out);
     }
     else {
-        return CParent::PrintBegin(out,mode);
+        CParent::PrintBegin(out, mode);
     }
+    return out;
+
 }
 
-// img tag
+
+// <img> tag.
 
 CHTML_img::CHTML_img(const string& url, const string& alt)
     : CParent("img")
@@ -1826,15 +1984,17 @@ CHTML_img::CHTML_img(const string& url, int width, int height,
 
 CHTML_img::~CHTML_img(void)
 {
+    return;
 }
 
 
-// dl tag
+// <dl> tag.
 
 const char CHTML_dl::sm_TagName[] = "dl";
 
 CHTML_dl::~CHTML_dl(void)
 {
+    return;
 }
 
 CHTML_dl* CHTML_dl::AppendTerm(const string& term, const string& definition)
@@ -1856,8 +2016,9 @@ CHTML_dl* CHTML_dl::AppendTerm(const string& term, CNCBINode* definition)
 CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, const string& definition)
 {
     AppendChild(new CHTML_dt(term));
-    if ( !definition.empty() )
+    if ( !definition.empty() ) {
         AppendChild(new CHTML_dd(definition));
+    }
     return this;
 }
 
@@ -1875,6 +2036,9 @@ CHTML_dl* CHTML_dl::SetCompact(void)
     return this;
 }
 
+
+// <ol> tag.
+
 const char CHTML_ol::sm_TagName[] = "ol";
 
 CHTML_ol::~CHTML_ol(void)
@@ -1887,29 +2051,45 @@ CHTML_ol* CHTML_ol::SetStart(int start)
     return this;
 }
 
+
+// <ul> tag.
+
 const char CHTML_ul::sm_TagName[] = "ul";
 
 CHTML_ul::~CHTML_ul(void)
 {
+    return;
 }
+
+
+// <dir> tag.
 
 const char CHTML_dir::sm_TagName[] = "dir";
 
 CHTML_dir::~CHTML_dir(void)
 {
+    return;
 }
+
+
+// <menu> tag.
 
 const char CHTML_menu::sm_TagName[] = "menu";
 
 CHTML_menu::~CHTML_menu(void)
 {
+    return;
 }
 
 const char CHTML_font::sm_TagName[] = "font";
 
 CHTML_font::~CHTML_font(void)
 {
+    return;
 }
+
+
+// <font> tag.
 
 CHTML_font* CHTML_font::SetTypeFace(const string& typeface)
 {
@@ -1928,6 +2108,7 @@ const char CHTML_basefont::sm_TagName[] = "basefont";
 
 CHTML_basefont::~CHTML_basefont(void)
 {
+    return;
 }
 
 CHTML_basefont* CHTML_basefont::SetTypeFace(const string& typeface)
@@ -1938,15 +2119,17 @@ CHTML_basefont* CHTML_basefont::SetTypeFace(const string& typeface)
 
 CHTML_color::~CHTML_color(void)
 {
+    return;
 }
 
 
-// hr tag
+// <hr> tag.
 
 const char CHTML_hr::sm_TagName[] = "hr";
 
 CHTML_hr::~CHTML_hr(void)
 {
+    return;
 }
 
 CHTML_hr* CHTML_hr::SetNoShade(void)
@@ -1957,16 +2140,18 @@ CHTML_hr* CHTML_hr::SetNoShade(void)
 
 CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
-        return out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
+    if ( mode == ePlainText ) {
+        out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
+        CHECK_STREAM_WRITE(out);
     }
     else {
-        return CParent::PrintBegin(out, mode);
+        CParent::PrintBegin(out, mode);
     }
+    return out;
 }
 
 
-// meta tag
+// <meta> tag.
 
 const char CHTML_meta::sm_TagName[] = "meta";
 
@@ -1977,12 +2162,14 @@ CHTML_meta::CHTML_meta(EType mtype, const string& var, const string& content)
     SetAttribute("content", content);
 }
 
+
 CHTML_meta::~CHTML_meta(void)
 {
+    return;
 }
 
 
-// script tag
+// <script> tag.
 
 const char CHTML_script::sm_TagName[] = "script";
 
@@ -1992,6 +2179,7 @@ CHTML_script::CHTML_script(const string& stype)
     SetAttribute("type", stype);
 }
 
+
 CHTML_script::CHTML_script(const string& stype, const string& url)
     : CParent(sm_TagName)
 {
@@ -1999,8 +2187,10 @@ CHTML_script::CHTML_script(const string& stype, const string& url)
     SetAttribute("src", url);
 }
 
+
 CHTML_script::~CHTML_script(void)
 {
+    return;
 }
 
 CHTML_script* CHTML_script::AppendScript(const string& script)
@@ -2010,7 +2200,7 @@ CHTML_script* CHTML_script::AppendScript(const string& script)
 }
 
 
-// other tags
+// Other tags.
 
 #define DEFINE_HTML_ELEMENT(Tag) \
 CHTML_NAME(Tag)::~CHTML_NAME(Tag)(void) \
@@ -2080,9 +2270,13 @@ DEFINE_HTML_ELEMENT(area);
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2003/11/03 14:49:16  ivanov
+ * Always check if the write was successful, throw otherwise
+ *
  * Revision 1.87  2003/10/01 15:57:13  ivanov
  * Added support for Sergey Kurdin's side menu
  *
