@@ -1,4 +1,4 @@
---$Revision: 1.6 $
+--$Revision: 1.7 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -31,10 +31,10 @@ IMPORTS  Date                 FROM NCBI-General
          Seq-annot            FROM NCBI-Sequence
          Seq-entry            FROM NCBI-Seqset
          Org-ref              FROM NCBI-Organism
-	 Seq-id               FROM NCBI-Seqloc
+         Seq-id               FROM NCBI-Seqloc
          Seq-interval         FROM NCBI-Seqloc
-	 Seq-loc              FROM NCBI-Seqloc
-	 Seq-feat             FROM NCBI-Seqfeat
+         Seq-loc              FROM NCBI-Seqloc
+         Seq-feat             FROM NCBI-Seqfeat
          Score-set            FROM NCBI-Seqalign;
 
 -- Cdd's should not exist without a unique accession, but alternative id's may
@@ -47,12 +47,12 @@ Global-id ::= SEQUENCE {
   release       VisibleString OPTIONAL, -- to hold CD-Database release number
   version       INTEGER       OPTIONAL, -- version 0 is the seed, version
                                         -- numbers increase with update/curate
-					-- cycles
+                                        -- cycles
   database      VisibleString OPTIONAL  -- this is NOT the source!, rather the
 }                                       -- database the object resides in
 
 Cdd-id ::= CHOICE {
-  uid           INTEGER,                -- for snychronization with Entrez?
+  uid           INTEGER,                -- for synchronization with Entrez?
   gid           Global-id
 }
 
@@ -71,8 +71,8 @@ Cdd-descr ::= CHOICE {
   othername     VisibleString,          -- alternative names for the CDD
                                         -- if domain has several common names
   category      VisibleString,          -- intracellular, extracellular, etc.
-		                        -- to record spatial and or temporal
-					-- expression in free-text format
+                                        -- to record spatial and or temporal
+                                        -- expression in free-text format
   comment       VisibleString,          -- this is where long names go
   reference     Pub,                    -- a citation describing the domain
   create-date   Date,                   -- Date of first creation/dump
@@ -84,12 +84,12 @@ Cdd-descr ::= CHOICE {
                           pending-release(2), -- needs work done
                           other-asis(3),      -- imported as-is
                           matrix-only(4),     -- CD holds a Psi-Blast
-				              -- PSSM, no alignment
-			  update-running(5),  -- has been flagged for
-				              -- update (in queue)
-			  auto-updated(6),    -- update finished, no
-				              -- work necessary
-			  claimed(7),         -- is earmarked for curation
+                                        -- PSSM, no alignment
+                          update-running(5),  -- has been flagged for
+                                              -- update (in queue)
+                          auto-updated(6),    -- update finished, no
+                                              -- work necessary
+                          claimed(7),         -- is earmarked for curation
                           other(255) },       -- for CD production?
   update-date   Date,                         -- Date of last change
   scrapbook     SEQUENCE OF VisibleString     -- for storing curation notes
@@ -109,7 +109,7 @@ Cdd-tree ::= SEQUENCE {
   parents       Cdd-id-set OPTIONAL,    -- CD is the result of a split/merge
   children      Cdd-id-set OPTIONAL,    -- this CD has been split
   siblings      Cdd-id-set OPTIONAL,    -- related CDs (have common hits)
-  neighbors     Cdd-id-set OPTIONAL     -- co-occuring CDs
+  neighbors     Cdd-id-set OPTIONAL     -- co-occurring CDs
 }
 
 Cdd-tree-set ::= SEQUENCE OF Cdd-tree
@@ -128,7 +128,7 @@ Matrix ::= SEQUENCE {
 }
 
 -- definition for matrix of pairwise "distances", stored as the upper 
--- triangle of a sqared n x n matrix (excluding the diagonal), this is
+-- triangle of a squared n x n matrix (excluding the diagonal), this is
 -- supposed to store pairwise percentages of identical residues, pairwise
 -- alignment scores or E-values from pairwise BLAST sequence comparisons
 
@@ -152,10 +152,10 @@ Update-comment ::= CHOICE {
                                         -- to be replaced by the Update-align
   reject-loc    Seq-loc,                -- if used with Reject-id, specify a
                                         -- location on a sequence which should
-					-- not be used
+                                        -- not be used
   reference     Pub                     -- if update alignment imported from
                                         -- citation and for whenever it seems
-					-- necessary to cite
+                                        -- necessary to cite
 }
 
 -- Both fields are optional, as the Update-align may be a Seq-annot without
@@ -167,9 +167,9 @@ Update-align ::= SEQUENCE {
   seqannot      Seq-annot OPTIONAL,     -- contains the SeqAlign
   type          INTEGER { unassigned(0),
                           update(1),
-			  update-3d(2),
-			  demoted(51),
-			  demoted-3d(52),
+                          update-3d(2),
+                        demoted(51),
+                        demoted-3d(52),
                           other(255)}
 }
 
@@ -190,11 +190,11 @@ Feature-evidence ::= CHOICE {
 Align-annot ::= SEQUENCE {
   location      Seq-loc,                -- points to a location in one of the
                                         -- aligned sequences, usually the
-					-- master/representative
+                                        -- master/representative
   description   VisibleString OPTIONAL, -- to hold descriptions/names like
                                         -- "Heme binding site" or "catalytic
-					-- triad" etc., something that should
-					-- be used for labels in visualization
+                                        -- triad" etc., something that should
+                                        -- be used for labels in visualization
   evidence      SEQUENCE OF Feature-evidence OPTIONAL -- evidence we can
                                                       -- compute with
 }
@@ -234,7 +234,7 @@ Cdd ::= SEQUENCE {
                                         -- a split (or merge)
   children      Cdd-id-set OPTIONAL,    -- this CD has been split
   siblings      Cdd-id-set OPTIONAL,    -- related CDs (common hits)
-  neighbors     Cdd-id-set OPTIONAL,    -- co-occuring CDs
+  neighbors     Cdd-id-set OPTIONAL,    -- co-occurring CDs
   pending       SEQUENCE OF Update-align OPTIONAL, -- contains alignments from
                                                    -- update or "lower panel"
   rejects       SEQUENCE OF Reject-id OPTIONAL,    -- SeqIds of rejected CD-
