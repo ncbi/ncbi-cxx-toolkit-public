@@ -44,10 +44,6 @@
 #  include <time.h>
 #endif
 
-#if defined(OS_MSWIN)  &&  defined(COMP_METRO)
-char *_strtime( char *timestr );
-#endif
-
 /* Static function pre-declarations to avoid C++ compiler warnings
  */
 #if defined(__cplusplus)
@@ -171,8 +167,7 @@ extern char* LOG_ComposeMessage
 
     /* Pre-calculate total message length */
     if ((format_flags & fLOG_DateTime) != 0) {
-#if  defined(NCBI_OS_MSWIN)  &&  !defined(COMP_METRO) 
-/*Should be compiler-dependent, but C-Toolkit lacks it*/
+#if  defined(NCBI_OS_MSWIN)  /*Should be compiler-dependent, but C-Toolkit lacks it*/
         _strdate(&datetime[datetime_len]);
         datetime_len += strlen(&datetime[datetime_len]);
         datetime[datetime_len++] = ' ';
@@ -504,6 +499,9 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2003/11/13 19:53:41  rsmith
+ * Took out metrowerks specific #ifdef's (COMP_METRO). Not needed anymore.
+ *
  * Revision 6.29  2003/09/02 21:05:14  lavr
  * Proper indentation of compilation conditionals
  *
