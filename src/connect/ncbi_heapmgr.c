@@ -126,7 +126,7 @@ struct SHEAP_tag {
 };
 
 
-#define _HEAP_ALIGN(a, b)     (((unsigned long) (a) + (b) - 1) & ~((b) - 1))
+#define _HEAP_ALIGN(a, b)     (((unsigned long)(a) + (b) - 1) & ~((b) - 1))
 #define _HEAP_ALIGNMENT       sizeof(double)
 #define HEAP_ALIGN(a)         _HEAP_ALIGN(a, _HEAP_ALIGNMENT)
 #define HEAP_LAST             0x80000000UL
@@ -137,9 +137,8 @@ struct SHEAP_tag {
 #define HEAP_ISLAST(b)        ((b)->flag & HEAP_LAST)
 
 
-HEAP HEAP_Create(void* base, TNCBI_Size size,
-                 TNCBI_Size chunk, FHEAP_Expand expand,
-                 void* arg)
+HEAP HEAP_Create(void* base,       TNCBI_Size   size,
+                 TNCBI_Size chunk, FHEAP_Expand expand, void* arg)
 {
     SHEAP_Block* b;
     HEAP heap;
@@ -206,7 +205,7 @@ HEAP HEAP_Attach(void* base)
     if (!base)
         return 0;
     size = 0;
-    for (b = (SHEAP_Block*) base; ; b = (SHEAP_Block*) ((char*) b + b->size)) {
+    for (b = (SHEAP_Block*) base; ; b = (SHEAP_Block*)((char*) b + b->size)) {
         if (!HEAP_ISUSED(b) && !HEAP_ISFREE(b)) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Attach: Heap corrupted (0x%08X, %u)",
@@ -229,7 +228,7 @@ HEAP HEAP_Attach(void* base)
 static SHEAP_Block* s_HEAP_Join(SHEAP_Block* p, SHEAP_Block* b)
 {
     /* Block following 'b' */
-    SHEAP_Block* n = (SHEAP_Block*) ((char*) b + b->size);
+    SHEAP_Block* n = (SHEAP_Block*)((char*) b + b->size);
 
     if (!HEAP_ISFREE(b))
         CORE_LOG(eLOG_Warning, "Heap Join: Block is not free");
@@ -237,7 +236,7 @@ static SHEAP_Block* s_HEAP_Join(SHEAP_Block* p, SHEAP_Block* b)
         if (!HEAP_ISLAST(b) && HEAP_ISFREE(n)) {
             b->size += n->size;
             b->flag = n->flag;
-            n = (SHEAP_Block*) ((char*) n + n->size);
+            n = (SHEAP_Block*)((char*) n + n->size);
         }
         if (p && HEAP_ISFREE(p)) {
             p->size += b->size;
@@ -265,13 +264,13 @@ static SHEAP_Block* s_HEAP_Collect(HEAP heap)
 
             memmove(f, b, b->size);
             f->flag &= ~HEAP_LAST;
-            f = (SHEAP_Block*) ((char*) f + f->size);
+            f = (SHEAP_Block*)((char*) f + f->size);
             f->flag = HEAP_FREE | last;
             f->size = save;
             b = s_HEAP_Join(0, f);
             continue;
         }
-        b = (SHEAP_Block*) ((char*) b + b->size);
+        b = (SHEAP_Block*)((char*) b + b->size);
     }
     return f;
 }
@@ -294,7 +293,7 @@ static SHEAP_Block* s_HEAP_Take(SHEAP_Block* b, TNCBI_Size size)
         return 0;
     }
     if (b->size >= size + sizeof(*b)) {
-        SHEAP_Block* n = (SHEAP_Block*) ((char*) b + size);
+        SHEAP_Block* n = (SHEAP_Block*)((char*) b + size);
 
         n->flag = HEAP_FREE | last;
         n->size = b->size - size;
@@ -339,7 +338,7 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
             return 0;
         }
         p = b;
-        b = (SHEAP_Block*) ((char*) b + b->size);
+        b = (SHEAP_Block*)((char*) b + b->size);
     }
 
     /* Heap exhausted, no free block found */
@@ -355,13 +354,13 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
 
         if (!(base = (*heap->expand)(heap->base, hsize, heap->arg)))
             return 0;
-        p = (SHEAP_Block*) ((char*) base + dp);
+        p = (SHEAP_Block*)((char*) base + dp);
         if (!HEAP_ISLAST(p))
             CORE_LOG(eLOG_Warning, "Heap Alloc: Last block lost");
         if (HEAP_ISUSED(p)) {
             p->flag &= ~HEAP_LAST;
             /* New block is the very top on the heap */
-            b = (SHEAP_Block*) ((char*) base + heap->size);
+            b = (SHEAP_Block*)((char*) base + heap->size);
             b->size = hsize - heap->size;
             b->flag = HEAP_FREE | HEAP_LAST;
         } else {
@@ -411,7 +410,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
             return;
         }
         p = b;
-        b = (SHEAP_Block*) ((char*) p + p->size);
+        b = (SHEAP_Block*)((char*) p + p->size);
     }
     CORE_LOG(eLOG_Warning, "Heap Free: Block not found");
 }
@@ -428,7 +427,7 @@ SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* p)
     if (!p ||
         ((char*) p >= (char*) heap->base &&
          (char*) p <  (char*) heap->base + heap->size)) {
-        b = (SHEAP_Block*) (p ? (char*) p + p->size : (char*) heap->base);
+        b = (SHEAP_Block*)(p ? (char*) p + p->size : (char*) heap->base);
         if ((char*) b < (char*) heap->base + heap->size) {
             if (b->size >= sizeof(*b) &&
                 b->size == (TNCBI_Size) HEAP_ALIGN(b->size) &&
@@ -492,7 +491,7 @@ TNCBI_Size HEAP_Trim(HEAP heap)
             SHEAP_Block* b = (SHEAP_Block*) heap->base, *p = 0;
             while (b != f) {
                 p = b;
-                b = (SHEAP_Block*) ((char*) b + b->size);
+                b = (SHEAP_Block*)((char*) b + b->size);
             }
             size = heap->size - f->size;
             assert(p);
@@ -532,7 +531,7 @@ HEAP HEAP_CopySerial(const HEAP heap, int serial)
         !(newbase = malloc(HEAP_ALIGN(heap->size) + sizeof(*newheap))))
         return 0;
     memcpy(newbase, heap->base, heap->size);
-    newheap = (HEAP) ((char*) newbase + HEAP_ALIGN(heap->size));
+    newheap = (HEAP)((char*) newbase + HEAP_ALIGN(heap->size));
     newheap->base   = newbase;
     newheap->size   = heap->size;
     newheap->chunk  = 0/*read-only*/;
@@ -585,6 +584,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/08/25 16:53:37  lavr
+ * Add/remove spaces here and there to comply with coding rules...
+ *
  * Revision 6.21  2003/08/25 16:47:08  lavr
  * Fix in pointer arith since the base changed from "char*" to "void*"
  *
