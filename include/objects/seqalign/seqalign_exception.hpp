@@ -37,8 +37,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-class NCBI_SEQALIGN_EXPORT CSeqalignException :
-    EXCEPTION_VIRTUAL_BASE public CException
+class CSeqalignException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -74,6 +73,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/08/19 13:04:59  dicuccio
+* Dropped export specifier on exceptions
+*
 * Revision 1.6  2004/04/27 19:20:23  johnson
 * {BEGIN,END}_objects_SCOPE not defined by includes; replaced with
 * {BEGIN,END}_SCOPE(objects)
