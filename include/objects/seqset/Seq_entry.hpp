@@ -86,60 +86,6 @@ private:
 };
 
 
-enum EReadFastaFlags {
-    fReadFasta_AssumeNuc  = 0x1,  // type to use if no revealing accn found
-    fReadFasta_AssumeProt = 0x2,
-    fReadFasta_ForceType  = 0x4,  // force type regardless of accession
-    fReadFasta_NoParseID  = 0x8,  // treat name as local ID regardless of |s
-    fReadFasta_ParseGaps  = 0x10, // make a delta sequence if gaps found
-    fReadFasta_OneSeq     = 0x20, // just read the first sequence found
-    fReadFasta_AllSeqIds  = 0x40, // read Seq-ids past the first ^A (see note)
-    fReadFasta_NoSeqData  = 0x80  // parse the deflines but skip the data
-};
-typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
-
-// Note on fReadFasta_AllSeqIds: some databases (notably nr) have
-// merged identical sequences, stringing their deflines together with
-// control-As.  Normally, the reader stops at the first control-A;
-// however, this flag makes it parse all the IDs.
-
-// keeps going until EOF or parse error (-> CParseException) unless
-// fReadFasta_OneSeq is set
-// see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
-NCBI_SEQ_EXPORT
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
-                           CSeq_loc* lowercase = 0);
-
-
-
-//////////////////////////////////////////////////////////////////
-//
-// Class - description of multi-entry FASTA file,
-// to keep list of offsets on all molecules in the file.
-//
-struct SFastaFileMap
-{
-    struct SFastaEntry
-    {
-        string  seq_id;        // Sequence Id
-        string  description;   // Molecule description
-        size_t  stream_offset; // Molecule offset in file
-    };
-
-    typedef vector<SFastaEntry>  TMapVector;
-
-    TMapVector   file_map; // vector keeps list of all molecule entries
-};
-
-// Function reads input stream (assumed that it is FASTA format) one
-// molecule entry after another filling the map structure describing and
-// pointing on molecule entries. Fasta map can be used later for quick
-// CSeq_entry retrival
-void NCBI_SEQSET_EXPORT ReadFastaFileMap(SFastaFileMap* fasta_map, 
-                                         CNcbiIfstream& input);
-
-
-
 /////////////////// CSeq_entry inline methods
 
 // constructor
@@ -166,6 +112,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2003/06/04 17:25:18  ucko
+ * Move FASTA reader to objtools/readers.
+ *
  * Revision 1.16  2003/05/23 21:12:42  ucko
  * Predeclare CSeq_loc for ReadFasta.
  *
