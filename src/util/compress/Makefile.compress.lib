@@ -1,0 +1,5 @@
+# $Id$
+
+SRC = compress stream streambuf bzip2 zlib
+
+LIB = xcompress
