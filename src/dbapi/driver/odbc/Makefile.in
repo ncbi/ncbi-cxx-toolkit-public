@@ -1,0 +1,9 @@
+# $Id$
+
+LIB_PROJ = dbapi_driver_odbc
+SUB_PROJ = samples
+
+REQUIRES = ODBC
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
