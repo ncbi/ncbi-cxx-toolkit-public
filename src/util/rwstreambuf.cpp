@@ -40,20 +40,24 @@ BEGIN_NCBI_SCOPE
 static const streamsize kDefaultBufferSize = 4096;
 
 
-CRWStreambuf::CRWStreambuf(IReaderWriter* rw,
-                           streamsize     n,
-                           CT_CHAR_TYPE*  s)
-    : m_Reader(rw), m_Writer(rw), m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
+CRWStreambuf::CRWStreambuf(IReaderWriter*           rw,
+                           streamsize               n,
+                           CT_CHAR_TYPE*            s,
+                           CRWStreambuf::TOwnership o)
+    : m_OwnRW(o), m_Reader(rw), m_Writer(rw),
+      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
 }
 
 
-CRWStreambuf::CRWStreambuf(IReader*       r,
-                           IWriter*       w,
-                           streamsize     n,
-                           CT_CHAR_TYPE*  s)
-    : m_Reader(r), m_Writer(w), m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
+CRWStreambuf::CRWStreambuf(IReader*                 r,
+                           IWriter*                 w,
+                           streamsize               n,
+                           CT_CHAR_TYPE*            s,
+                           CRWStreambuf::TOwnership o)
+    : m_OwnRW(o), m_Reader(r), m_Writer(w),
+      m_ReadBuf(0), m_BufSize(0), m_OwnBuf(false)
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufferSize);
 }
@@ -62,6 +66,23 @@ CRWStreambuf::CRWStreambuf(IReader*       r,
 CRWStreambuf::~CRWStreambuf()
 {
     sync();
+
+    IReaderWriter* r = dynamic_cast<IReaderWriter*> (m_Reader);
+    IReaderWriter* w = dynamic_cast<IReaderWriter*> (m_Writer);
+
+    if ((m_OwnRW & fOwnAll) && r != w) {
+        delete m_Writer;
+        delete m_Reader;
+    } else if (m_OwnRW & fOwnWriter) {
+        if (!r || r != w) {
+            delete m_Writer;
+        }
+    } else if (m_OwnRW & fOwnReader) {
+        if (!w || w != r) {
+            delete m_Reader;
+        }
+    }
+
     if ( m_OwnBuf ) {
         delete[] m_ReadBuf;
     }
@@ -261,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2004/05/17 15:49:39  lavr
+ * Ownership arguments added, stored and processed in dtor
+ *
  * Revision 1.7  2004/01/15 20:06:28  lavr
  * Define kDefaultBufferSize statically in this file
  *
