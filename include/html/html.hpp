@@ -1,7 +1,7 @@
 #ifndef HTML__HPP
 #define HTML__HPP
 
-/*  $Id$
+/*  $RCSfile$  $Revision$  $Date$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,8 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.14  1998/12/28 23:29:03  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
+* Revision 1.15  1999/01/04 20:06:09  vasilche
+* Redesigned CHTML_table.
+* Added selection support to HTML forms (via hidden values).
 *
 * Revision 1.13  1998/12/28 21:48:12  vasilche
 * Made Lewis's 'tool' compilable
@@ -85,8 +86,11 @@
 
 #include <html/node.hpp>
 #include <map>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
+
+class CHTML_form;
 
 // utility functions
 
@@ -95,6 +99,40 @@ class CHTMLHelper
 public:
     // HTML encodes a string. E.g. &lt;
     static string HTMLEncode(const string &);
+
+    typedef map<int, bool> TIDList;
+    typedef multimap<string, string> TCgiEntries;
+
+    // load ID list from CGI request
+    // Args:
+    //   ids            - resulting ID list
+    //   values         - CGI values
+    //   hiddenPrefix   - prefix for hidden values names
+    //   checkboxPrefix - prefix for checkboxes names
+    static void LoadIDList(TIDList& ids,
+                           const TCgiEntries& values,
+                           const string& hiddenPrefix,
+                           const string& checkboxPrefix);
+    // store ID list to HTML form
+    // Args:
+    //   form           - HTML form to fill
+    //   ids            - ID list
+    //   hiddenPrefix   - prefix for hidden values names
+    //   checkboxPrefix - prefix for checkboxes names
+    static void StoreIDList(CHTML_form* form,
+                            const TIDList& ids,
+                            const string& hiddenPrefix,
+                            const string& checkboxPrefix);
+
+private:
+    static string sx_EncodeIDList(const TIDList& ids);
+    static void sx_DecodeIDList(TIDList& ids, const string& value);
+    static void sx_AddID(TIDList& ids, const string& value);
+
+    static string sx_ExtractHidden(const TCgiEntries& values, const string& hiddenPrefix);
+    static void sx_InsertHidden(CHTML_form* form, const string& value, const string& hiddenPrefix);
+    static void sx_SetCheckboxes(CNCBINode* root, TIDList& ids, const string& checkboxName);
+    static void sx_GetCheckboxes(TIDList& ids, const TCgiEntries& values, const string& checkboxName);
 };
 
 
@@ -482,24 +520,49 @@ class CHTML_table : public CHTML_table_Base
 
 public:
     CHTML_table(void);
-    CHTML_table(const string & bgcolor);
-    CHTML_table(const string & bgcolor, const string & width);
-    CHTML_table(int row, int column);
-    CHTML_table(const string & bgcolor, int row, int column);
-    CHTML_table(const string & bgcolor, const string & width, int row, int column);
-    CHTML_table(const string & bgcolor, const string & width, int cellspacing, int cellpadding, int row, int column);
 
+    // returns cell, will add rows/columns if needed
+    // throws exception if it is not left upper corner of cell
     CNCBINode* Cell(int row, int column);
-    CNCBINode* InsertInTable(int row, int column, CNCBINode *);
-    CNCBINode* InsertTextInTable(int row, int column, const string &);
+    // checks table contents for validaty, throws exception if invalid
+    void CheckTable(void) const;
+    // returns width of table in columns. Should call CheckTable before
+    int CalculateNumberOfColumns(void) const;
+    int CalculateNumberOfRows(void) const;
+
+    CNCBINode* InsertAt(int row, int column, CNCBINode* node);
+    CNCBINode* InsertTextAt(int row, int column, const string& text);
 
     void ColumnWidth(CHTML_table*, int column, const string & width);
 
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
 
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
+
 protected:
-    void MakeTable(int, int);
+    // void MakeTable(int, int);
+
+    virtual CNCBINode* CloneSelf(void) const;
+
+    struct CTableInfo
+    {
+        int m_Rows;
+        int m_Columns;
+        int m_FinalRow;
+        vector<int> m_FinalRowSpans;
+        vector<int> m_RowSizes;
+        bool m_BadNode, m_BadRowNode, m_BadCellNode, m_Overlapped, m_BadSpan;
+
+        CTableInfo(void);
+        void AddRowSize(int columns);
+        void SetFinalRowSpans(int rows, const vector<int>& rowSpans);
+    };
+
+    void x_CheckTable(CTableInfo* info) const;
+    static int sx_GetSpan(const CNCBINode* node, const string& attr, CTableInfo* info);
+    static bool sx_IsRow(const CNCBINode* node);
+    static bool sx_IsCell(const CNCBINode* node);
 };
 
 // the form tag

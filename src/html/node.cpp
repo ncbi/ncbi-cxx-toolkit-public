@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/01/04 20:06:14  vasilche
+* Redesigned CHTML_table.
+* Added selection support to HTML forms (via hidden values).
+*
 * Revision 1.6  1998/12/28 20:29:19  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -169,8 +173,17 @@ string CNCBINode::GetAttribute(const string& name) const
     TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
     TAttributes::iterator ptr = Attributes.find(name);
     if ( ptr == Attributes.end() )
-        return 0;
+        return NcbiEmptyString;
     return ptr->second;
+}
+
+const string* CNCBINode::GetAttributeValue(const string& name) const
+{
+    TAttributes& Attributes = const_cast<TAttributes&>(m_Attributes); // SW_01
+    TAttributes::iterator ptr = Attributes.find(name);
+    if ( ptr == Attributes.end() )
+        return 0;
+    return &ptr->second;
 }
 
 void CNCBINode::SetAttribute(const string& name)

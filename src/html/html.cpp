@@ -1,4 +1,4 @@
-/*  $Id$
+/*  $RCSfile$  $Revision$  $Date$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -30,8 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.17  1998/12/28 23:29:09  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
+* Revision 1.18  1999/01/04 20:06:14  vasilche
+* Redesigned CHTML_table.
+* Added selection support to HTML forms (via hidden values).
 *
 * Revision 1.16  1998/12/28 21:48:16  vasilche
 * Made Lewis's 'tool' compilable
@@ -90,7 +91,8 @@
 
 
 #include <html/html.hpp>
-#include <string>
+#include <corelib/ncbicgi.hpp>
+
 BEGIN_NCBI_SCOPE
 
 // HTML element names
@@ -179,6 +181,7 @@ const string KHTMLAttributeName_cellspacing = "CELLSPACING";
 const string KHTMLAttributeName_checked = "CHECKED";
 const string KHTMLAttributeName_color = "COLOR";
 const string KHTMLAttributeName_cols = "COLS";
+const string KHTMLAttributeName_colspan = "COLSPAN";
 const string KHTMLAttributeName_compact = "COMPACT";
 const string KHTMLAttributeName_enctype = "ENCTYPE";
 const string KHTMLAttributeName_face = "FACE";
@@ -189,6 +192,7 @@ const string KHTMLAttributeName_method = "METHOD";
 const string KHTMLAttributeName_multiple = "MULTIPLE";
 const string KHTMLAttributeName_name = "NAME";
 const string KHTMLAttributeName_rows = "ROWS";
+const string KHTMLAttributeName_rowspan = "ROWSPAN";
 const string KHTMLAttributeName_selected = "SELECTED";
 const string KHTMLAttributeName_size = "SIZE";
 const string KHTMLAttributeName_src = "SRC";
@@ -291,6 +295,124 @@ NcbiOstream& CHTMLHelper::PrintEncoded(NcbiOstream& out, const string& input)
     return out;
 }
 */
+
+void CHTMLHelper::LoadIDList(TIDList& ids,
+                const TCgiEntries& values,
+                const string& hiddenPrefix,
+                const string& checkboxName)
+{
+    ids.clear();
+    
+    string value = sx_ExtractHidden(values, hiddenPrefix);
+    if ( !value.empty() ) {
+        sx_DecodeIDList(ids, value);
+    }
+    sx_GetCheckboxes(ids, values, checkboxName);
+}
+
+void CHTMLHelper::StoreIDList(CHTML_form* form,
+                const TIDList& in_ids,
+                const string& hiddenPrefix,
+                const string& checkboxName)
+{
+    TIDList ids = in_ids;
+    sx_SetCheckboxes(form, ids, checkboxName);
+    string value = sx_EncodeIDList(ids);
+    if ( !value.empty() )
+        sx_InsertHidden(form, value, hiddenPrefix);
+}
+
+string CHTMLHelper::sx_EncodeIDList(const TIDList& ids_)
+{
+    string value;
+    TIDList& ids = const_cast<TIDList&>(ids_); // SW_01
+    for ( TIDList::const_iterator i = ids.begin(); i != ids.end(); ++i ) {
+        if ( i->second )
+            value += ',' + IntToString(i->first);
+    }
+    value.erase(0, 1); // remove first comma
+    return value;
+}
+
+void CHTMLHelper::sx_AddID(TIDList& ids, const string& value)
+{
+    ids.insert(TIDList::value_type(StringToInt(value), true));
+}
+
+void CHTMLHelper::sx_DecodeIDList(TIDList& ids, const string& value)
+{
+    SIZE_TYPE pos = 0;
+    SIZE_TYPE commaPos = value.find(',', pos);
+    while ( commaPos != NPOS ) {
+        sx_AddID(ids, value.substr(pos, commaPos));
+        pos = commaPos + 1;
+        commaPos = value.find(',', pos);
+    }
+    sx_AddID(ids, value.substr(pos));
+}
+
+static const int kMaxHiddenCount = 10;
+static const SIZE_TYPE kMaxHiddenSize = 512;
+
+string CHTMLHelper::sx_ExtractHidden(const TCgiEntries& values_,
+                                     const string& hiddenPrefix)
+{
+    string value;
+    TCgiEntries& values = const_cast<TCgiEntries&>(values_); // SW_01
+    for ( int i = 0; i <= kMaxHiddenCount; ++i ) {
+        TCgiEntries::const_iterator pointer = values.find(hiddenPrefix + IntToString(i));
+        if ( pointer == values.end() ) // no more hidden values
+            return value;
+        value += pointer->second;
+    }
+    // what to do in this case?
+    throw runtime_error("Too many hidden values beginning with "+hiddenPrefix);
+}
+
+void CHTMLHelper::sx_InsertHidden(CHTML_form* form, const string& value,
+                                  const string& hiddenPrefix)
+{
+    SIZE_TYPE pos = 0;
+    for ( int i = 0; pos < value.size() && i < kMaxHiddenCount; ++i ) {
+        int end = min(value.size(), pos + kMaxHiddenSize);
+        form->AddHidden(hiddenPrefix + IntToString(i), value.substr(pos, end));
+        pos = end;
+    }
+    if ( pos != value.size() )
+        throw runtime_error("ID list too long to store in hidden values");
+}
+
+void CHTMLHelper::sx_SetCheckboxes(CNCBINode* root, TIDList& ids,
+                                   const string& checkboxName)
+{
+    if ( root->GetName() == KHTMLTagName_input &&
+         root->GetAttribute(KHTMLAttributeName_type) == KHTMLInputTypeName_checkbox &&
+         root->GetAttribute(KHTMLAttributeName_name) == checkboxName) {
+        // found it
+        int id = StringToInt(root->GetAttribute(KHTMLAttributeName_value));
+        TIDList::iterator pointer = ids.find(id);
+        if ( pointer != ids.end() ) {
+            root->SetOptionalAttribute(KHTMLAttributeName_checked, pointer->second);
+            ids.erase(pointer);  // remove id from the list - already set
+        }
+    }
+    for ( CNCBINode::TChildList::iterator i = root->ChildBegin();
+          i != root->ChildEnd(); ++i ) {
+        sx_SetCheckboxes(*i, ids, checkboxName);
+    }
+}
+
+void CHTMLHelper::sx_GetCheckboxes(TIDList& ids, const TCgiEntries& values_,
+                                   const string& checkboxName)
+{
+    TCgiEntries& values = const_cast<TCgiEntries&>(values_); // SW_01
+    for ( TCgiEntries::const_iterator i = values.lower_bound(checkboxName),
+              end = values.upper_bound(checkboxName); i != end; ++i ) {
+        sx_AddID(ids, i->second);
+    }
+}
+
+// CHTMLNode
 
 void CHTMLNode::AppendPlainText(const string& appendstring)
 {
@@ -497,62 +619,9 @@ CHTML_table::CHTML_table(void)
 {
 }
 
-
-CHTML_table::CHTML_table(const string& bgcolor)
+CNCBINode* CHTML_table::CloneSelf(void) const
 {
-     SetBgColor(bgcolor);
-}
-
-
-CHTML_table::CHTML_table(const string& bgcolor, const string& width)
-{
-    SetBgColor(bgcolor);
-    SetWidth(width);
-}
-
-
-// instantiates table rows and cells
-void CHTML_table::MakeTable(int rows, int columns)  // throw(bad_alloc)
-{
-    for(int row = 0; row < rows; row++) {
-        CHTML_tr* tr = new CHTML_tr;
-        AppendChild(tr);
-        for (int column = 0; column < columns; column++) {
-            tr->AppendChild(new CHTML_td);
-        }
-    }
-}
-
-
-// contructors that also instantiate rows and cells
-CHTML_table::CHTML_table(int row, int column)
-{
-     MakeTable(row, column);
-}
-
-
-CHTML_table::CHTML_table(const string & bgcolor, int row, int column)
-{
-    SetBgColor(bgcolor);
-    MakeTable(row, column);
-}
-
-
-CHTML_table::CHTML_table(const string & bgcolor, const string & width, int row, int column)
-{
-    SetBgColor(bgcolor);
-    SetWidth(width);
-    MakeTable(row, column);
-}
-
-
-CHTML_table::CHTML_table(const string & bgcolor, const string & width, int cellspacing, int cellpadding, int row, int column)
-{
-    SetBgColor(bgcolor);
-    SetWidth(width);
-    SetCellSpacing(cellspacing);
-    SetCellPadding(cellpadding);
-    MakeTable(row, column);
+    return new CHTML_table(*this);
 }
 
 CHTML_table* CHTML_table::SetCellSpacing(int spacing)
@@ -567,119 +636,301 @@ CHTML_table* CHTML_table::SetCellPadding(int padding)
     return this;
 }
 
-/*
-CNCBINode* CHTML_table::Cell(int row, int column)  // todo: exception
+int CHTML_table::sx_GetSpan(const CNCBINode* node,
+                            const string& attributeName, CTableInfo* info)
 {
-    return Column(Row(row), column);
-}
+    if ( !node->HaveAttribute(attributeName) )
+        return 1;
 
-// returns row in table, adding rows if nesessary
-CNCBINode* CHTML_table::Row(int needRow)
-{
-    int row = -1; // we didn't scan any row yet
-    // scan all existing rows
-    for ( TChildList::iterator i = ChildBegin(); i != ChildEnd(); ++i ) {
-        // if it's real row
-        if ( (*i)->GetName() == "tr" ) {
-            // if we row number is ok
-            if ( row > needRow ) {
-                // this is the result
-                return *i;
-            }
-            row++;
-        }
-    }
-
-    // we don't have enough rows in our table: allocate some more
-    CHTML_tr* tr;
-    while ( row < needRow ) {
-        tr = new CHTML_tr;
-        AppendChild(tr);
-        row++;
-    }
-    return tr;
-}
-
-*/
-
-CNCBINode* CHTML_table::InsertInTable(int row, int column, CNCBINode * Child)  // todo: exception
-{
-    int iRow, iColumn;
-    list <CNCBINode *>::iterator iChildren;
-    list <CNCBINode *>::iterator iRowChildren;
-
-    if(!Child) return NULL;
-    iRow = 0;
-    iChildren = m_ChildNodes.begin();
-
-    while ( iRow <= row && iChildren != m_ChildNodes.end() ) {
-        if ( (*iChildren)->GetName() == KHTMLTagName_tr )
-            iRow++;
-        iChildren++;
-    }
-
-    if( iChildren == m_ChildNodes.end() && iRow <= row)
-        return NULL;
-    iChildren--;
-
-    iColumn = 0;
-    iRowChildren = (*iChildren)->ChildBegin();
-
-    while ( iColumn <= column && iRowChildren != (*iChildren)->ChildEnd() ) {
-        if ( (*iRowChildren)->GetName() == KHTMLTagName_td )
-            iColumn++;
-        iRowChildren++;
-    }
-
-    if ( iRowChildren == (*iChildren)->ChildEnd() && iColumn <= column )
-        return NULL;
-    else {
-        iRowChildren--;
-        return (*iRowChildren)->AppendChild(Child);
-    }
-}
-
-CNCBINode * CHTML_table::InsertTextInTable(int row, int column, const string & appendstring) // throw(bad_alloc)
-{
-    CHTMLText * text;
+    int span;
     try {
-        text = new CHTMLText(appendstring);
+        span = StringToInt(node->GetAttribute(attributeName));
     }
-    catch (.../*bad_alloc &e*/) {
-        delete text;
-        throw;
+    catch ( runtime_error err ) {
+        if ( info )
+            info->m_BadSpan = true;
+        return 1;
     }
-    return InsertInTable(row, column, text);
+    if ( span <= 0 ) {
+        if ( info )
+            info->m_BadSpan = true;
+        return 1;
+    }
+    return span;
 }
 
-
-void CHTML_table::ColumnWidth(CHTML_table * table, int column, const string & width)
+CNCBINode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
 {
-    int ix, iy;
-    list <CNCBINode *>::iterator iChildren;
-    list <CNCBINode *>::iterator iyChildren;
+    vector<int> rowSpans; // hanging down cells (with rowspan > 1)
 
-    iy = 1;
-    iChildren = m_ChildNodes.begin();
-    
-    while (iChildren != m_ChildNodes.end()) {
-        if ( (*iChildren)->GetName() == KHTMLTagName_tr ) {
-            ix = 1;
-            iyChildren = (*iChildren)->ChildBegin();
-            
-            while ( ix < column && iyChildren != (*iChildren)->ChildEnd() ) {
-                if ( (*iyChildren)->GetName() == KHTMLTagName_td )
-                    ix++;  
-                iyChildren++;
-            }
-            if ( iyChildren != (*iChildren)->ChildEnd() ) {
-                (*iyChildren)->SetAttribute(KHTMLAttributeName_width, width);
-            }
+    // beginning with row 0
+    int row = 0;
+    int needRowCols = 0;
+    CNCBINode* needRowNode = 0;
+    // scan all children (which should be <TR> tags)
+    for ( TChildList::const_iterator iRow = ChildBegin();
+          iRow != ChildEnd(); ++iRow ) {
+        CNCBINode* trNode = *iRow;
+
+        if ( !sx_IsRow(trNode) ) {
+            throw runtime_error("Table contains non <TR> tag");
         }
-        iChildren++;
-    }    
+
+        // beginning with column 0
+        int col = 0;
+        // scan all children (which should be <TH> or <TD> tags)
+        for ( TChildList::iterator iCol = trNode->ChildBegin();
+              iCol != trNode->ChildEnd(); ++iCol ) {
+            CNCBINode* cell = *iCol;
+
+            if ( !sx_IsCell(cell) ) {
+                throw runtime_error("Table row contains non <TH> or <TD> tag");
+            }
+
+            // skip all used cells
+            while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
+                --rowSpans[col++];
+            }
+
+            if ( row == needRow ) {
+                if ( col == needCol )
+                    return cell;
+                if ( col > needCol )
+                    throw runtime_error("Table cells are overlapped");
+            }
+
+            // determine current cell size
+            int rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, 0);
+            int colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, 0);
+
+            // end of new cell in columns
+            const int colEnd = col + colSpan;
+            // check that there is enough space
+            for ( int i = col; i < colEnd && i < rowSpans.size(); ++i ) {
+                if ( rowSpans[i] ) {
+                    throw runtime_error("Table cells are overlapped");
+                }
+            }
+
+            if ( rowSpan > 1 ) {
+                // we should remember space used by this cell
+                // first expand rowSpans vector if needed
+                if ( rowSpans.size() < colEnd )
+                    rowSpans.resize(colEnd);
+
+                // then store span number
+                for ( int i = col; i < colEnd; ++i ) {
+                    rowSpans[i] = max(rowSpans[i], rowSpan - 1);
+                }
+            }
+            // skip this cell's columns
+            col += colSpan;
+        }
+
+        ++row;
+
+        if ( row > needRow ) {
+            needRowCols = col;
+            needRowNode = trNode;
+            break;
+        }
+    }
+
+    while ( row <= needRow ) {
+        // add needed rows
+        AppendChild(needRowNode = new CHTML_tr);
+        ++row;
+        // decrement hanging cell sizes
+        for ( int i = 0; i < rowSpans.size(); ++i ) {
+            if ( rowSpans[i] )
+                --rowSpans[i];
+        }
+    }
+
+    // this row doesn't have enough columns -> add some
+    int addCells = 0;
+
+    do {
+        // skip hanging cells
+        while ( needRowCols < rowSpans.size() && rowSpans[needRowCols] > 0 ) {
+            if ( needRowCols == needCol )
+                throw runtime_error("Table cells are overlapped");
+            ++needRowCols;
+        }
+        // allocate one column cell
+        ++addCells;
+        ++needRowCols;
+    } while ( needRowCols <= needCol );
+
+    // add needed columns
+    CNCBINode* cell;
+    for ( int i = 0; i < addCells; ++i ) {
+        needRowNode->AppendChild(cell = new CHTML_td);
+    }
+    return cell;
 }
 
+bool CHTML_table::sx_IsRow(const CNCBINode* node)
+{
+    return node->GetName() == KHTMLTagName_tr;
+}
+
+bool CHTML_table::sx_IsCell(const CNCBINode* node)
+{
+    return node->GetName() == KHTMLTagName_td ||
+        node->GetName() == KHTMLTagName_th;
+}
+
+void CHTML_table::x_CheckTable(CTableInfo *info) const
+{
+    vector<int> rowSpans; // hanging down cells (with rowspan > 1)
+
+    // beginning with row 0
+    int row = 0;
+    // scan all children (which should be <TR> tags)
+    for ( TChildList::const_iterator iRow = ChildBegin(); iRow != ChildEnd();
+          ++iRow ) {
+        CNCBINode* trNode = *iRow;
+
+        if ( !sx_IsRow(trNode) ) {
+            if ( info ) {
+                // we just gathering info -> skip wrong tag
+                info->m_BadNode = info->m_BadRowNode = true;
+                continue;
+            }
+            throw runtime_error("Table contains non <TR> tag");
+        }
+
+        // beginning with column 0
+        int col = 0;
+        // scan all children (which should be <TH> or <TD> tags)
+        for ( TChildList::iterator iCol = trNode->ChildBegin();
+              iCol != trNode->ChildEnd(); ++iCol ) {
+            CNCBINode* cell = *iCol;
+
+            if ( !sx_IsCell(cell) ) {
+                if ( info ) {
+                    // we just gathering info -> skip wrong tag
+                    info->m_BadNode = info->m_BadCellNode = true;
+                    continue;
+                }
+                throw runtime_error("Table row contains non <TH> or <TD> tag");
+            }
+
+            // skip all used cells
+            while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
+                --rowSpans[col++];
+            }
+
+            // determine current cell size
+            int rowSpan = sx_GetSpan(cell, KHTMLAttributeName_rowspan, info);
+            int colSpan = sx_GetSpan(cell, KHTMLAttributeName_colspan, info);
+
+            // end of new cell in columns
+            const int colEnd = col + colSpan;
+            // check that there is enough space
+            for ( int i = col; i < colEnd && i < rowSpans.size(); ++i ) {
+                if ( rowSpans[i] ) {
+                    if ( info )
+                        info->m_Overlapped = true;
+                    else
+                        throw runtime_error("Table cells are overlapped");
+                }
+            }
+
+            if ( rowSpan > 1 ) {
+                // we should remember space used by this cell
+                // first expand rowSpans vector if needed
+                if ( rowSpans.size() < colEnd )
+                    rowSpans.resize(colEnd);
+
+                // then store span number
+                for ( int i = col; i < colEnd; ++i ) {
+                    rowSpans[i] = max(rowSpans[i], rowSpan - 1);
+                }
+            }
+            // skip this cell's columns
+            col += colSpan;
+        }
+        if ( info )
+            info->AddRowSize(col);
+        ++row;
+    }
+
+    if ( info )
+        info->SetFinalRowSpans(row, rowSpans);
+}
+
+CHTML_table::CTableInfo::CTableInfo(void)
+    : m_Columns(0), m_Rows(0), m_FinalRow(0),
+      m_BadNode(false), m_BadRowNode(false), m_BadCellNode(false),
+      m_Overlapped(false), m_BadSpan(false)
+{
+}
+
+void CHTML_table::CTableInfo::AddRowSize(int columns)
+{
+    m_RowSizes.push_back(columns);
+    m_Columns = max(m_Columns, columns);
+}
+
+void CHTML_table::CTableInfo::SetFinalRowSpans(int row, const vector<int>& rowSpans)
+{
+    m_FinalRow = row;
+    m_FinalRowSpans = rowSpans;
+
+    // check for the rest of rowSpans
+    int addRows = 0;
+    for ( int i = 0; i < rowSpans.size(); ++i ) {
+        addRows = max(addRows, rowSpans[i]);
+    }
+    m_Rows = row + addRows;
+}
+
+int CHTML_table::CalculateNumberOfColumns(void) const
+{
+    CTableInfo info;
+    x_CheckTable(&info);
+    return info.m_Columns;
+}
+
+int CHTML_table::CalculateNumberOfRows(void) const
+{
+    CTableInfo info;
+    x_CheckTable(&info);
+    return info.m_Rows;
+}
+
+CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
+{
+    CTableInfo info;
+    x_CheckTable(&info);
+
+    int row = 0;
+    for ( TChildList::iterator iRow = ChildBegin();
+          iRow != ChildEnd(); ++iRow ) {
+        CNCBINode* rowNode = *iRow;
+        if ( !sx_IsRow(rowNode) )
+            rowNode->Print(out);
+        else {
+            rowNode->PrintBegin(out);
+            rowNode->PrintChildren(out);
+            // determine additional cells to print
+            int addCells = info.m_Columns - info.m_RowSizes[row];
+            // print them
+            for ( int i = 0; i < addCells; ++i )
+                out << "<TD></TD>";
+            rowNode->PrintEnd(out);
+            ++row;
+        }
+    }
+
+    // print implicit rows
+    for ( int i = info.m_FinalRow; i < info.m_Rows; ++i )
+        out << "<TR></TR>";
+
+    return out;
+}
 
 // form element
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/01/04 20:06:11  vasilche
+* Redesigned CHTML_table.
+* Added selection support to HTML forms (via hidden values).
+*
 * Revision 1.7  1998/12/28 20:29:13  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -112,6 +116,7 @@ public:
     // retreive attribute
     bool HaveAttribute(const string& name) const;
     string GetAttribute(const string& name) const;
+    const string* GetAttributeValue(const string& name) const;
 
     // set attribute
     void SetAttribute(const string& name, const string& value);

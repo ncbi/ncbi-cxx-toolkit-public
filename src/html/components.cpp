@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/01/04 20:06:13  vasilche
+* Redesigned CHTML_table.
+* Added selection support to HTML forms (via hidden values).
+*
 * Revision 1.10  1998/12/28 23:29:09  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -100,21 +104,21 @@ void CQueryBox::CreateSubNodes()
         AppendHTMLText(" for<p>");
     }
    
-    CHTML_table* table = new CHTML_table(1, 1);
+    CHTML_table* table = new CHTML_table();
     table->SetCellSpacing(0)->SetCellPadding(5)->SetBgColor(m_BgColor)->SetWidth(m_Width);
     AppendChild(table);
 
-    table->InsertInTable(0, 0, new CHTML_text(m_TermName, (int)(m_Width*0.075))); // todo: the width calculation
-    table->InsertInTable(0, 0, new CHTMLText("&nbsp;"));
-    table->InsertInTable(0, 0, new CHTML_submit("Search"));
-    table->InsertInTable(0, 0, new CHTML_br);
+    table->InsertAt(0, 0, new CHTML_text(m_TermName, (int)(m_Width*0.075))); // todo: the width calculation
+    table->InsertAt(0, 0, new CHTMLText("&nbsp;"));
+    table->InsertAt(0, 0, new CHTML_submit("Search"));
+    table->InsertAt(0, 0, new CHTML_br);
         
     CHTML_select * selectpage = new CHTML_select(m_DispMax);
-    table->InsertInTable(0, 0, selectpage); 
+    table->InsertAt(0, 0, selectpage); 
     for ( list<string>::iterator i = m_Disp.begin(); i != m_Disp.end(); ++i )
         selectpage->AppendOption(*i, *i == m_DefaultDispMax);
         
-    table->InsertTextInTable(0, 0, "documents per page");
+    table->InsertTextAt(0, 0, "documents per page");
 }
 
 CNCBINode* CQueryBox::CreateComments(void)
@@ -181,22 +185,22 @@ void CPagerBox::CreateSubNodes(void)
     CHTML_table* tableTop;
     CHTML_table* tableBot;
 
-    table = new CHTML_table(2, 1);
+    table = new CHTML_table();
     table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width)->SetAttribute("border", "0");
     AppendChild(table);
 
-    tableTop = new CHTML_table(1, 2);
+    tableTop = new CHTML_table();
     tableTop->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width);
-    tableBot = new CHTML_table(1, 3);
+    tableBot = new CHTML_table();
     tableBot->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width);
 
-    table->InsertInTable(0, 0, tableTop);
-    table->InsertInTable(1, 0, tableBot);
-    tableTop->InsertInTable(0, 0, m_TopButton);
-    tableTop->InsertInTable(0, 1, m_PageList);
-    tableBot->InsertInTable(0, 0, m_LeftButton);
-    tableBot->InsertInTable(0, 1, m_RightButton);
-    tableBot->InsertInTable(0, 2, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
+    table->InsertAt(0, 0, tableTop);
+    table->InsertAt(1, 0, tableBot);
+    tableTop->InsertAt(0, 0, m_TopButton);
+    tableTop->InsertAt(0, 1, m_PageList);
+    tableBot->InsertAt(0, 0, m_LeftButton);
+    tableBot->InsertAt(0, 1, m_RightButton);
+    tableBot->InsertAt(0, 2, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
 }
 
 CNCBINode* CPagerBox::CloneSelf(void) const
@@ -219,12 +223,12 @@ void CSmallPagerBox::CreateSubNodes()
     CHTML_table * Table;
 
     try {
-        Table = new CHTML_table(1, 2);
+        Table = new CHTML_table();
         Table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width)->SetAttribute("border", "0");
         AppendChild(Table);
         
-        Table->InsertInTable(0, 0, new CPageList);
-        Table->InsertInTable(0, 1, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
+        Table->InsertAt(0, 0, new CPageList);
+        Table->InsertAt(0, 1, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
     }
     catch (...) {
         delete Table;

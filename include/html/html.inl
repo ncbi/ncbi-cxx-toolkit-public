@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/01/04 20:06:10  vasilche
+* Redesigned CHTML_table.
+* Added selection support to HTML forms (via hidden values).
+*
 * Revision 1.3  1998/12/24 16:15:36  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -184,6 +188,23 @@ inline CHTMLListElementTmpl<TagName>* CHTMLListElementTmpl<TagName>::AppendItem(
 {
     AppendChild(new CHTML_li(item));
     return this;
+}
+
+inline CNCBINode* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
+{
+    CNCBINode* cell = Cell(row, column);
+    cell->AppendChild(node);
+    return cell;
+}
+
+inline CNCBINode* CHTML_table::InsertTextAt(int row, int column, const string& text)
+{
+    return InsertAt(row, column, new CHTMLText(text));
+}
+
+inline void CHTML_table::CheckTable(void) const
+{
+    x_CheckTable(0);
 }
 
 inline CHTML_ol::CHTML_ol(bool compact)
