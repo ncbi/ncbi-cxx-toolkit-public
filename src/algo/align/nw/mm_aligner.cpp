@@ -317,12 +317,17 @@ CNWAligner::TScore CMMAligner::x_FindBestJ (
     TScore score = kMin_Int;
     TScore trans_alts [9];
 
+    bool bFreeGapLeft2  = m_end_space_free && dim == m_SeqLen2 + 1;
+    bool bFreeGapRight2 = m_end_space_free && dim == m_SeqLen2 + 1;
+
     for(size_t i = 0; i < dim ; ++i) {
         trans_alts [0] = vEtop[i] + vEbtm[i] - m_Wg;   // II
         trans_alts [1] = vFtop[i] + vEbtm[i];          // DI
         trans_alts [2] = vGtop[i] + vEbtm[i];          // GI
         trans_alts [3] = vEtop[i] + vFbtm[i];          // ID
-        trans_alts [4] = vFtop[i] + vFbtm[i] - m_Wg;   // DD
+        TScore wg = (bFreeGapLeft2 && i == 0 || bFreeGapRight2 && i == dim -1)?
+                    0: m_Wg;
+        trans_alts [4] = vFtop[i] + vFbtm[i] - wg;     // DD
         trans_alts [5] = vGtop[i] + vFbtm[i];          // GD
         trans_alts [6] = vEtop[i] + vGbtm[i];          // IG
         trans_alts [7] = vFtop[i] + vGbtm[i];          // DG
@@ -432,25 +437,39 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
     const char* seq1 = m_Seq1 - 1 + rect.i1;
     const char* seq2 = m_Seq2 - 1 + rect.j1;
 
+    bool bFreeGapLeft1  = m_end_space_free && rect.i1 == 0;
+    bool bFreeGapLeft2  = m_end_space_free && rect.j1 == 0;
+    bool bFreeGapRight2  = m_end_space_free && rect.j2 == m_SeqLen2 - 1;
+
     // first row
-    rowV[0] = m_Wg;
+
+    TScore wg = bFreeGapLeft1? 0: m_Wg;
+    TScore ws = bFreeGapLeft1? 0: m_Ws;
+
+    rowV[0] = wg;
     size_t i, j;
     for (j = 1; j < N2; ++j) {
-        rowV[j] = pV[j] + m_Ws;
+        rowV[j] = pV[j] + ws;
         rowF[j] = kInfMinus;        
     }
     rowV[0] = 0;
 
     // recurrences
+
+    wg = bFreeGapLeft2? 0: m_Wg;
+    ws = bFreeGapLeft2? 0: m_Ws;
+
     TScore V  = 0;
-    TScore V0 = lt? 0: m_Wg;
+    TScore V0 = lt? 0: wg;
     TScore E, G, n0;
 
     for(i = 1;  i < N1 - 1;  ++i) {
         
-        V = V0 += m_Ws;
+        V = V0 += ws;
         E = kInfMinus;
         char ci = seq1[i];
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
 
         for (j = 1; j < N2; ++j) {
 
@@ -463,11 +482,14 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             else
                 E = n0 + m_Ws;  // open a new gap
 
-            n0 = rowV[j] + m_Wg;
+            if(j == N2 - 1 && bFreeGapRight2)
+                wg2 = ws2 = 0;
+
+            n0 = rowV[j] + wg2;
             if (rowF[j] > n0)
-                rowF[j] += m_Ws;
+                rowF[j] += ws2;
             else
-                rowF[j] = n0 + m_Ws;
+                rowF[j] = n0 + ws2;
 
             V = E >= rowF[j]? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
         }
@@ -477,10 +499,12 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
     // the last row (i == N1 - 1)
     {
         vG[0] = vE[0] = E = kInfMinus;
-        vF[0] = V = V0 += m_Ws;
+        vF[0] = V = V0 += ws;
         trace[0] = kMaskFc;
         char ci = seq1[i];
-        
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
+
         unsigned char tracer;
         for (j = 1; j < N2; ++j) {
 
@@ -498,13 +522,17 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             }
             vE[j] = E;
 
-            n0 = rowV[j] + m_Wg;
+            if(j == N2 - 1 && bFreeGapRight2) {
+                wg2 = ws2 = 0;
+            }
+
+            n0 = rowV[j] + wg2;
             if(rowF[j] > n0) {
-                rowF[j] += m_Ws;
+                rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
             else {
-                rowF[j] = n0 + m_Ws;
+                rowF[j] = n0 + ws2;
             }
             vF[j] = rowF[j];
 
@@ -552,25 +580,39 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
     const char* seq1 = m_Seq1 + rect.i1;
     const char* seq2 = m_Seq2 + rect.j1;
 
+    bool bFreeGapRight1  = m_end_space_free && rect.i2 == m_SeqLen1 - 1;
+    bool bFreeGapRight2  = m_end_space_free && rect.j2 == m_SeqLen2 - 1;
+    bool bFreeGapLeft2  = m_end_space_free && rect.j1 == 0;
+
     // bottom row
-    rowV[N2 - 1] = m_Wg;
+
+    TScore wg = bFreeGapRight1? 0: m_Wg;
+    TScore ws = bFreeGapRight1? 0: m_Ws;
+
+    rowV[N2 - 1] = wg;
     int i, j;
     for (j = N2 - 2; j >= 0; --j) {
-        rowV[j] = pV[j] + m_Ws;
+        rowV[j] = pV[j] + ws;
         rowF[j] = kInfMinus;
     }
     rowV[N2 - 1] = 0;
 
     // recurrences
+
+    wg = bFreeGapRight2? 0: m_Wg;
+    ws = bFreeGapRight2? 0: m_Ws;
+
     TScore V  = 0;
-    TScore V0 = rb? 0: m_Wg;
+    TScore V0 = rb? 0: wg;
     TScore E, G, n0;
 
     for(i = N1 - 2;  i > 0;  --i) {
         
-        V = V0 += m_Ws;
+        V = V0 += ws;
         E = kInfMinus;
         char ci = seq1[i];
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
 
         for (j = N2 - 2; j >= 0; --j) {
 
@@ -583,11 +625,15 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             else
                 E = n0 + m_Ws;  // open a new gap
 
-            n0 = rowV[j] + m_Wg;
+            if(j == 0 && bFreeGapLeft2) {
+                wg2 = ws2 = 0;
+            }
+
+            n0 = rowV[j] + wg2;
             if (rowF[j] > n0)
-                rowF[j] += m_Ws;
+                rowF[j] += ws2;
             else
-                rowF[j] = n0 + m_Ws;
+                rowF[j] = n0 + ws2;
 
             V = E >= rowF[j]? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
         }
@@ -597,10 +643,12 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
 
     // the top row (i == 0)
     {
-        vF[N2-1] = V = V0 += m_Ws;
+        vF[N2-1] = V = V0 += ws;
         vG[N2-1] = vE[N2-1] = E = kInfMinus;
         trace[N2-1] = kMaskFc;
         char ci = seq1[i];
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
 
         unsigned char tracer;
         for (j = N2 - 2; j >= 0; --j) {
@@ -619,13 +667,17 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             }
             vE[j] = E;
 
-            n0 = rowV[j] + m_Wg;
+            if(j == 0 && bFreeGapLeft2) {
+                wg2 = ws2 = 0;
+            }
+
+            n0 = rowV[j] + wg2;
             if(rowF[j] > n0) {
-                rowF[j] += m_Ws;
+                rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
             else {
-                rowF[j] = n0 + m_Ws;
+                rowF[j] = n0 + ws2;
             }
             vF[j] = rowF[j];
 
@@ -674,53 +726,74 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
     const char* seq1 = m_Seq1 + rect.i1 - 1;
     const char* seq2 = m_Seq2 + rect.j1 - 1;
 
+    bool bFreeGapLeft1  = m_end_space_free && rect.i1 == 0;
+    bool bFreeGapRight1 = m_end_space_free && rect.i2 == m_SeqLen1 - 1;
+    bool bFreeGapLeft2  = m_end_space_free && rect.j1 == 0;
+    bool bFreeGapRight2 = m_end_space_free && rect.j2 == m_SeqLen2 - 1;
+
+    TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
+    TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
+    TScore wg1 = m_Wg, ws1 = m_Ws;
+
     // first row
-    rowV[0] = m_Wg;
-    int k;
-    for (k = 1; k < N2; k++) {
-        rowV[k] = pV[k] + m_Ws;
-        rowF[k] = kInfMinus;
-        backtrace[k] = kMaskE | kMaskEc;
+    size_t k;
+    {
+        rowV[0] = wgleft1;
+        for (k = 1; k < N2; k++) {
+            rowV[k] = pV[k] + wsleft1;
+            rowF[k] = kInfMinus;
+            backtrace[k] = kMaskE | kMaskEc;
+        }
+        rowV[0] = 0;
     }
-    rowV[0] = 0;
 
     // recurrences
+    TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
+    TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
     TScore V  = 0;
-    TScore V0 = left_top? 0: m_Wg;
+    TScore V0 = left_top? 0: wgleft2;
     TScore E, G, n0;
     unsigned char tracer;
-    char ci;
 
-    int i, j;
+    size_t i, j;
     for(i = 1;  i < N1;  ++i) {
         
-        V = V0 += m_Ws;
+        V = V0 += wsleft2;
         E = kInfMinus;
         backtrace[k++] = kMaskFc;
-        ci = seq1[i];
-        
+        char ci = seq1[i];
+
+        if(i == N1 - 1 && bFreeGapRight1) {
+                wg1 = ws1 = 0;
+        }
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
+
         for (j = 1; j < N2; ++j, ++k) {
 
             G = pV[j] + m_Matrix[ci][seq2[j]];
             pV[j] = V;
 
-            n0 = V + m_Wg;
+            n0 = V + wg1;
             if(E > n0) {
-                E += m_Ws;      // continue the gap
+                E += ws1;      // continue the gap
                 tracer = kMaskEc;
             }
             else {
-                E = n0 + m_Ws;  // open a new gap
+                E = n0 + ws1;  // open a new gap
                 tracer = 0;
             }
 
-            n0 = rowV[j] + ((right_bottom && j == N2 - 1)? 0: m_Wg);
+            if(j == N2 - 1 && bFreeGapRight2) {
+                wg2 = ws2 = 0;
+            }
+            n0 = rowV[j] + ((right_bottom && j == N2 - 1)? 0: wg2);
             if(rowF[j] > n0) {
-                rowF[j] += m_Ws;
+                rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
             else {
-                rowF[j] = n0 + m_Ws;
+                rowF[j] = n0 + ws2;
             }
 
             if (E >= rowF[j]) {
@@ -746,10 +819,11 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
 
         pV[j] = V;
     }
-    
+
     // fill the subpath
     subpath.clear();
     
+    // run backtrace
     k = N1*N2 - 1;
     while (k != 0) {
         unsigned char Key = backtrace[k];
@@ -788,6 +862,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/03/17 15:30:57  kapustin
+ * Support end-space free alignments
+ *
  * Revision 1.5  2003/01/30 20:32:06  kapustin
  * Call x_LoadScoringMatrix() from the base class constructor.
  *
