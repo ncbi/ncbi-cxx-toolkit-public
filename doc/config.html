@@ -1050,18 +1050,18 @@ which are kept in the CVS repository. Click <a href="msvc_prj.html">here</a> to 
 if you wish to modify and/or add the NCBI C++ Toolkit project files.
 There is a short summary:
 <ul>
-	<li>All project files in the CVS repository contain a single (DebugMT) configuration. This way, you can directly use
+	<li>All project files in the CVS repository contain a single (<tt>DebugMT</tt>) configuration. This way, you can directly use
 	<b><tt>cvs.exe</tt></b> on your PC and have project files checked out and in, just <a href="#ref_MsvcProjSettings">make
-	sure</a> you work with single-configuration project files in DebugMT mode.</li>
+	sure</a> you work with single-configuration project files in <tt>DebugMT</tt> mode.</li>
 	<li>The checked out project files can be checked in back to the CVS only if they contain exactly one configuration
-		(DebugMT).</li>
+		(<tt>DebugMT</tt>).</li>
 	<li>Use script <a href="msvc_prj.html#all2one_sh"><i>all2one.sh</i></a> to convert any multi-configuration
 	project file to a single configuration one.</li>
 	<li>Use script <a href="msvc_prj.html#one2one_sh"><i>one2one.sh</i></a> to change configuration in any
-	single-configuration project file (e.g. from ReleaseDLL to DebugMT).</li>
+	single-configuration project file (e.g. from <tt>ReleaseDLL</tt> to <tt>DebugMT</tt>).</li>
 	<li>Use script <a href="msvc_prj.html#one2all_sh"><i>one2all.sh</i></a> to convert a single configuration
 	(template) project file to the multi-configuration one (contating all of the following configurations:
-	Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL).</li>
+	<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>).</li>
 </ul>
 
 <p>
@@ -1085,7 +1085,8 @@ After the installation is complete you can build the Toolkit projects in two dif
 	file <a href="msvc_prj.html#all_bat"><i><b>all.bat</b></i></a> there (provided that <b><i>msdev.exe</i></b>
 	in your <tt>PATH</tt>).
 	When run without arguments, it builds all available configurations of all available projects. Or,
-	you can pass any combination of Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL as batch file argument(s)
+	you can pass any combination of <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>,
+	<tt>ReleaseDLL</tt> as batch file argument(s)
 	to build all projects in the specified configurations only.</li>
 	<li>Open Microsoft Developer Studio with workspace <i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i> and build the
 		following projects:
@@ -1133,7 +1134,7 @@ You have to specify the used library name(s) in <i>"Project"/"Settings..."</i>, 
 category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
 <br>
 You also have to put the correct path to the libraries (either <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i>
-or <i>\\dizzy\public\cxx\<b>DebugMT</b></i>, depending on the configuration you are going to use)
+or <i>\\dizzy\public\cxx\<b>DebugMT</b></i>, according to the configuration you are tuning)
 in the field <i>"Additional library path"</i>.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
@@ -1153,33 +1154,48 @@ to make sure that it is built compatible with the chosen NCBI C++ libraries.
 </a>
 
 <p>
-The pre-built versions of this library (along with include files, sources and documentation) are
-put to:
+The pre-built versions of this library (along with include files, sources, documentation and project files that we provide)
+are put to:
 <ul>
+  <li> <i>\\dizzy\public\wxwin\<b>Debug</b></i>
   <li> <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>DebugDLL</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>Release</b></i>
   <li> <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>ReleaseDLL</b></i>
   <li> <i>\\dizzy\public\wxwin\<b>include</b></i>
   <li> <i>\\dizzy\public\wxwin\<b>src</b></i>
   <li> <i>\\dizzy\public\wxwin\<b>docs</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>wxwin_prj</b></i>
 </ul>
-Your project has to specify all the library names (<b>tiff jpeg pnm xpm zlib wx</b>) in <i>"Project"/"Settings..."</i>,
-tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>. Please note that although the
-wxWindows documentation instructs you to use *.lib in Release mode and *d.lib in Debug mode, we renamed the libraries to have
-the same names in any configuration, but put them in different directories.
+Your project has to specify all the library names (<b>tiff.lib jpeg.lib pnm.lib xpm.lib zlib.lib wx.lib</b>) in <i>"Project"/"Settings..."</i>, tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
+Please note that although the wxWindows documentation instructs you to use *.lib in Release mode and *d.lib in Debug mode,
+we renamed the libraries to have the same names in any configuration, but put them in separate directories.
+Also note that in both <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations, only one library
+<b>wx.lib</b> is required to link your program dynamically with <b>wx.dll</b>. If conversion
+<a href="msvc_prj.html#scripts">scripts</a> are later applied to your project file, the proper set
+of the libraries is chosen automatically.
 <br>
-You also have to specify the correct path to the libraries (either <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
-or <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>, depending on the configuration you are going to use)
-in the field <i>"Additional library path"</i>.
+You also have to specify the correct path to the libraries (<i>\\dizzy\public\wxwin\</i><tt>[Debug|Release]*</tt>),
+according to the configuration you are adjusting, in the field <i>"Additional library path"</i>.
+<p>
+Note that many programs that use wxWindows may require additional system libraries.
+The list of known libraries includes (but not limited to) the following:
+<b>advapi32.lib</b>, <b>comctl32.lib</b>, <b>comdlg32.lib</b>, <b>gdi32.lib</b>,
+<b>ole32.lib</b>, <b>shell32.lib</b>, <b>user32.lib</b>, <b>winmm.lib</b>, <b>wsock32.lib</b>. And if the program
+uses GL graphics, the following two libraries definitely come in addition: <b>glu32.lib</b> and
+<b>opengl32.lib</b>. All those libraries have to be listed in <i>"Objects/Library modules"</i> of
+linker settings (as described earlier for wxWindows libraries).
+
 <p>
 We recommend that you put the include file directory <i>\\dizzy\public\wxwin\<b>include</b></i>
 in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor"</i>,
-list <i>"Additional include directories"</i>. Note that you <b>should never</i> define <tt>__WXDEBUG__</tt> as
-instructed by wxWindows documentation. The wxWindows configuration file <tt>setup.h</tt> was specifically patched to set this
-symbol automatically when in any Debug configuration. Also, <tt>WXUSINGDLL</tt> <b>should never</b> be
-excplicitly defined. When DLL library is about to be used, MSVC++ compiler defines <tt>_DLL</tt>, which in turn switches
-on the definition of <tt>WXUSINGDLL</tt> in <tt>setup.h</tt>. Any other wxWindows-related preprocessor symbols should be
-defined as described in documentation (using <i>"Project"/"Settings..."</i>,  tab <i>"C/C++"</i>, category <i>"General"</i>,
-list <i>"Preprocessor definitions"</i>), and they will be propagated to any configuration of the project.
+list <i>"Additional include directories"</i>. You have to define all wxWindows-related preprocessor
+symbols as required by wxWindows documentation (using <i>"Project"/"Settings..."</i>,  tab <i>"C/C++"</i>,
+category <i>"General"</i>, list <i>"Preprocessor definitions"</i>). In particular <tt>__WXDEBUG__</tt> must be
+defined in Debug configurations, and <tt>WXUSINGDLL</tt> -- in DLL configurations. Conversion
+<a href="msvc_prj.html#scripts">scripts</a> are aware of these symbols and keep them
+consistent if your project file is ever undergone to conversion.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
 Moreover, if one of conversion <a href="msvc_prj.html#scripts">scripts</a> is then applied to your project,
@@ -1187,6 +1203,40 @@ the proper links to required versions of the libraries are automatically maintai
 <p>
 If, however, you need to trace through the library source code, you have to put <i>\\dizzy\public\wxwin\<b>src</b></i>
 to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, and list <i>"Source files"</i>.
+<p>
+You may have a local copy of wxWindows package, which has to be installed in directory
+<tt>wxwin</tt> at exactly the same level where the NCBI C++ Toolkit is installed (that is the upper level
+directories <tt>wxwin</tt> and <tt>cxx</tt> should appear in the same parent directory).
+When using local copy of the wxWindows for <i>your</i> projects, you have to specify <i>relative</i> paths to include files,
+libraries and sources instead of absolute paths, but excactly the same way was described above.
+Do not use standard project files to build the wxWindows libraries - they are not consistent with our projects.
+Instead,
+<ol>
+	<li>Create directory <tt>wxwin/wxwin_prj</tt> and copy there (preserving the file layout) the
+		contents of directory <i>\\dizzy\public\wxwin\<b>wxwin_prj</b></i>.</li>
+	<li>Make sure that <tt>msdev.exe</tt> is in you <tt>PATH</tt>, then change directory to <tt>wxwin/wxwin_prj</tt>
+	and start batch file <tt>wxwin.bat</tt> there. You have to provide one argument: either <tt>DLL</tt> or <tt>LIB</tt>:</li>
+	<ul>
+		<li><tt>DLL</tt>: DLL version of wxWindows library are built and stored in <tt>wxwin/ReleaseDLL</tt>
+			and <tt>wxwin/DebugDLL</tt> directories (for <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations
+			respectvely).</li>
+		<li><tt>LIB</tt>: Static versions of the wxWindows libraries are created and stored in directories
+			<tt>wxwin/Debug</tt>, <tt>wxwin/DebugMT</tt>, <tt>wxwin/Release</tt>, and <tt>wxwin/ReleaseMT</tt>.</li>
+	</ul>
+	That is the batch file builds libraries in the directories, where our project files
+	<a href="#refWxwinPaths">expect</a> to locate them, when using local copies of toolkit libraries.
+</ol>
+
+
+<p>
+<a name="refWxwinPaths">All <i>our</i> project files</a>, which are provided for the projects,
+using wxWindows, contain both relative and absolute paths to, correspondingly, both local
+(that is installed by you, as described above) and pre-built (<tt>\\DIZZY\public\wxwin</tt>) versions of libraries and
+include files, in this order, i.e. the local copy (if any) takes precedence.
+Moreover, if a project file is being committed to the CVS, and it has been
+<a href="msvc_prj.html#commit_sh">detected</a> that the project refers to wxWindows library, then the paths
+(both to include files and to libraries) are automatically canonicalized to point to these two locations.
+
 <p>
 As always, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
 to make sure that it is built compatible with the chosen libraries.
@@ -1221,6 +1271,17 @@ copies of debug libraries (<b>dbglib</b>) in <i>\\dizzy\public\<b>DebugMT</b></i
 these directories the same way, as explained earlier in <a href="#ref_MsvcProjCXX">"How to use pre-built NCBI C++ libraries"</a>.
 For convenience and uniform, copy of the source code directory (<b>altsrc</b>) is now maintained in
 <i>\\dizzy\public\<b>src</b></i>.
+<p>
+As in case with <a href="#refWxwinPaths">wxWindows</a> library, if the project that we provide
+is using the NCBI C Toolkit, then the include files and libraries are referred by means of both
+relative and absolute paths. If you are going to use your local copy of the NCBI C Toolkit, then
+place it in directory <tt>ncbi</tt>, which must reside in the same directory, where the C++ Tookit does
+(i.e. <tt>ncbi</tt> and <tt>cxx</tt> subdirectories must appear in the same parent directory). Then, when the
+C libraries have been built, you have to copy them to either <tt>ncbi/ReleaseMT</tt> or <tt>ncbi/DebugMT</tt>
+subdirectories (according to the configuration used), where the projects expect them to be.
+Again, if a project file is being committed to the CVS and found to use the NCBI C Toolkit (either
+locally, or via <tt>\\DIZZY\</tt>), then the project <a href="msvc_prj.html#commit_sh">automatically</a> gets
+both paths (relative and absolute) for both include files and libraries.
 <p>
 Please refer to the following section for mandatory project settings.
 

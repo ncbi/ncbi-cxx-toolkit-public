@@ -11,19 +11,20 @@
 cvs_core.sh MSVC++-related options</h2>
 
 When script <i>cvs_core.sh</i> checks out project files, it by default expands them to have
-all 6 configurations (Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL). However for a developer
-this might not be very convenient, as the resulting project file (if modified) <a href="msvc_prj.html#commit_sh">cannot be</a>
+all 6 configurations (<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>,
+<tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>). However for a developer this might not be very convenient,
+as the resulting project file (if modified) <a href="msvc_prj.html#commit_sh">cannot be</a>
 checked in back to the CVS repository. Therefore, we provide an option (to be used by Toolkit developers), which
 allows to check out C++ Toolkit "as is", i.e. without expanding the project files:
 <ol>
 <tt><b>$</b> cvs_core.sh ... --without-vc-cfgs</font></tt></ol>
 
 <p>
-Note that in this case only one configuration, namely DebugMT, will be available in the projects,
+Note that in this case only one configuration, namely <tt>DebugMT</tt>, will be available in the projects,
 and the batch file <a href="msvc_prj.html#all_bat"><i>all.bat</i></a>
 (even if started without arguments) will build only this one configuration.
 <p>
-<a name="note"></a>Suppose that you want to build only one configuration (e.g. ReleaseDLL). You can do it in either
+<a name="note"></a>Suppose that you want to build only one configuration (e.g. <tt>ReleaseDLL</tt>). You can do it in either
 of the following ways:
 <ol>
 	<li>Checkout the Toolkit sources using <i>cvs_core.sh</i> <b>without</b> option <i>--without-vc-cfgs</i>.</li>

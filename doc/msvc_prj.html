@@ -56,25 +56,30 @@ way, and thus ignored. Input file can be in either DOS or UNIX text file format
 (respectively, with or without CR (carriage return) incorporated before LF (life feed) at
 line ends). Output file is always in UNIX text file format, which is suitable for
 CVS repository.</li>
-
-<li>
-<a name="one2all_sh"><i><font color="#3333FF">one2all.sh</font></i></a> - takes a single-configuration
-project file (perhaps the one created by <i><font color="#3333FF">all2one.sh</font></i>)
-and derives multi-configuration project file containing 3 production configurations:
-Release, ReleaseMT, and ReleaseDLL; and 3 debug configurations: Debug,
-DebugMT, DebugDLL. Output file is always produced in DOS text file format (that is suitable
-for immediate consumption by MSVC++), whereas input file can be in either UNIX or DOS format.</li>
 <br>
 <u>Note</u>: Aside the project file name, the second argument can be given to the script. This argument
 is used as a name of configuration to extract without interactive inquiry. If the specified configuration
 is not found, the script aborts with an error message.
 
 <li>
+<a name="one2all_sh"><i><font color="#3333FF">one2all.sh</font></i></a> - takes a single-configuration
+project file (perhaps the one created by <i><font color="#3333FF">all2one.sh</font></i>)
+and derives multi-configuration project file containing 3 production configurations:
+<tt>Release</tt>, <tt>ReleaseMT</tt>, and <tt>ReleaseDLL</tt>; and 3 debug configurations: <tt>Debug</tt>,
+<tt>DebugMT</tt>, and <tt>DebugDLL</tt>. Output file is always produced in DOS text file format (that is suitable
+for immediate consumption by MSVC++), whereas input file can be in either UNIX or DOS format.</li>
+<br>
+<u>Note</u>: There is one additional argument, which is reserved for internal use only.
+When specified as <tt>2</tt>, only <tt>DebugDLL</tt> and <tt>ReleaseDLL</tt> configurations
+are placed to the output file. When specified as <tt>4</tt>, only the following four configurations
+appear: <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>Release</tt>, and <tt>ReleaseMT</tt>.
+
+<li>
 <a name="one2one_sh"><i><font color="#3333FF">one2one.sh</font></i></a> - takes two arguments:
 single-configuration project file name and one of standard configuration names
-(Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL) and replaces the given project file with a new one,
-having the requested configuration. In case of non-standard configuration name, an error results.
-Output file is created in UNIX text file format.</li>
+(<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>) and replaces
+the given project file with a new one, having the requested configuration. In case of non-standard configuration name,
+an error results. Output file is created in UNIX text file format.</li>
 
 <li>
 <a name="include_sh"><i><font color="#3333FF">include.sh</font></i></a> - takes an optional argument list, each entry of
@@ -91,12 +96,22 @@ Therefore, the project files are always produced in UNIX text file format.</li>
 <li>
 <a name="commit_sh"><i><font color="#3333FF">commit.sh</font></i></a> -
 control script for use from inside the CVS upon each commit to ensure
-that the project being checked in contains one fixed configuration only (namely, DebugMT).
+that the project being checked in contains one fixed configuration only (namely, <tt>DebugMT</tt>).
 This script as well checks that the file being committed is in UNIX text file format, and rejects if not.
 The extensions (and only in directories specified in <tt><font color="#3333FF">DIRLIST</font></tt>
 parameter, as described below) checked are: <tt><font color="#3333FF">.dsw</font></tt>,
 <tt><font color="#3333FF">.dsp</font></tt>, <tt><font color="#3333FF">.bat</font></tt>.</li>
 No explicit call to this script is ever necessary: it is entirely internal to CVS and transparent for the user.
+
+<p>
+<b><i>Additional</i></b> functionality has been added to this script: if it detects that the file being committed
+contains paths either to standard NCBI C Toolkit include files/libraries, or wxWindows include files/libraries,
+then the paths are expanded to specify both relative (i.e. local) and absolute (i.e. via
+<tt><font color="#3333FF">\\DIZZY\public</font></tt>) locations, thus making possible to build
+the project using either local or pre-built libraries. We require that if a toolkit is used locally (i.e. not via
+<tt>\\DIZZY</tt>), then the upper-level directory of the toolkit has to be placed
+at the same level as the NCBI C++ Toolkit top-level directory. We reserve that <tt>wxwin</tt> and <tt>ncbi</tt> subdirectories, when appear in the same parent directory as <tt>cxx</tt>, contain wxWindows and NCBI C Toolkit correspondingly.
+Click <a href="config.html#ref_MsvcProjWxwin">here</a> to know how to use the wxWindows package in these requirements.
 
 <br>
 <a name="notes"><br><b><u>Please note</u></b></a> that the above tools are <b><i>not</i></b> project file <i>generation</i>
@@ -108,9 +123,9 @@ all the compiler switches and definitions, as well as other vital environment, h
 DOS batch file <a name="all_bat"><i><tt><font color="#3333FF">all.bat</font></tt></i></a> can
 generate all projects in a batch mode, provided that <tt><font color="#3333FF">msdev.exe</font></tt>
 is in your <tt><font color="#3333FF">PATH</font></tt>.
-As an argument to the batch file you can specify either ALL (or no arguments at all),
-or any combination of Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL to build either
-all available, or particular configuration(s) respectively.
+As an argument to the batch file you can specify either <tt>ALL</tt> (or no arguments at all),
+or any combination of <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>,
+<tt>ReleaseDLL</tt> to build either all available, or particular configuration(s) respectively.
 You can always use MSVC++ Developer Studio (just load workspace file <tt>ncbi_cpp.dsw</tt>)
 to build the Toolkit in the interactive manner.
 
@@ -140,7 +155,7 @@ project files to single-configuration project files:</li>
 For each project file choose the configuration (among available),
 which was tested, and known to work. Note that many project
 files were created automatically by MSVC++, and contain 2 or more configurations,
-but in most cases only one (notably: Debug) was customized to work and
+but in most cases only one (notably: <tt>Debug</tt>) was customized to work and
 to build this particular project, the others are just dummies.
 
 <li>
@@ -153,8 +168,8 @@ Be sure that the process completed successfully and then delete backup copies:</
 
 <li>
 You may wish to use the script <a href="#one2one_sh"><i><tt><font color="#3333FF">one2one.sh</font></tt></i></a>
-for converting all project files to standard single configuration DebugMT, if configurations,
-different from DebugMT, have been chosen in step 2 above:</li>
+for converting all project files to standard single configuration <tt>DebugMT</tt>, if configurations,
+different from <tt>DebugMT</tt>, have been chosen in step 2 above:</li>
 
 <ol>
 <ol><tt><b><font color="#CC33CC">$</font></b><font color="#009900"> find . -name "*.dsp" -print -exec ./one2one.sh
