@@ -75,7 +75,7 @@ sub characters {
     elsif ($current_element eq 'MSPepHit_defline') {
       print "  Peptide found in protein with defline: " . $text . "\n";
     }
-    elsif ($current_element eq 'MSPepHit_pepstring') {
+    elsif ($current_element eq 'MSHits_pepstring') {
       print "  Peptide sequence: " . $text . "\n";
     }
     elsif ($current_element eq 'MSHitSet_ids_E') {
