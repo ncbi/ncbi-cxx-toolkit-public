@@ -44,7 +44,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <algo/blast/api/blast_format.hpp>
+#include <objtools/alnmgr/util/blast_format.hpp>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/api/blast_seq.hpp>
