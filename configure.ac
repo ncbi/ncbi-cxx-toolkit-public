@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.127 2002/09/24 14:20:21 ucko Exp $
+#  $Id: configure.ac,v 1.128 2002/09/24 20:41:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1172,7 +1172,7 @@ if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
-BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
+BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
 if test "$with_bincopy" != "yes"; then
    AC_CACHE_CHECK([whether cross-directory hard links work],
       ncbi_cv_sys_xdir_ln,
@@ -1184,7 +1184,9 @@ if test "$with_bincopy" != "yes"; then
           ncbi_cv_sys_xdir_ln=no
        fi
        rm -rf conftestdir conftestfile])
-   test "$ncbi_cv_sys_xdir_ln" = "yes" && BINCOPY="ln -f"
+   if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
+      BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"ln -f\""
+   fi
 fi
 
 

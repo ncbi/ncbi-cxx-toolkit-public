@@ -4166,7 +4166,7 @@ if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
-BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
+BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
 if test "$with_bincopy" != "yes"; then
    echo "$as_me:$LINENO: checking whether cross-directory hard links work" >&5
 echo $ECHO_N "checking whether cross-directory hard links work... $ECHO_C" >&6
@@ -4184,7 +4184,9 @@ else
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_sys_xdir_ln" >&5
 echo "${ECHO_T}$ncbi_cv_sys_xdir_ln" >&6
-   test "$ncbi_cv_sys_xdir_ln" = "yes" && BINCOPY="ln -f"
+   if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
+      BINCOPY="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh \"ln -f\""
+   fi
 fi
 
 
