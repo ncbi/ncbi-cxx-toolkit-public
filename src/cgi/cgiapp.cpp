@@ -32,7 +32,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
-#include <connect/ncbi_socket.h>
+#if 0
+#  include <connect/ncbi_socket.h>
+#endif
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -672,6 +674,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/02/19 20:57:29  vakatov
+* ...and do not include <connect/ncbi_socket.h> too
+*
 * Revision 1.37  2003/02/19 20:52:33  vakatov
 * Temporarily disable auto-detection of host address
 *
