@@ -52,7 +52,6 @@ Arguments:
                           pre-installed top source dir, or a name of build dir)
    --move              -- remove the original build dir on success
    --without-bin       -- do not install executables (from "bin/" dir)
-   --compress-tests    -- install test and demo executables compressed
    --with-object-files -- install object files (*@obj_ext@) -- necessary for proper
                           debugging when using WorkShop
    --srcdir=DIR        -- required if <install_dir> is an absolute path to a
@@ -84,7 +83,6 @@ shift
 for x_arg in "$@" ; do
   case "$x_arg" in
     --without-bin      )  with_bin="no" ;;
-    --compress-tests   )  compress_tests="yes" ;;
     --with-object-files)  with_object_files="yes" ;;
     --move             )  with_move="yes" ;;
     --srcdir=*         )  new_srcdir=`echo "$x_arg" | sed 's%--srcdir=%%'` ;;
@@ -176,20 +174,16 @@ if test "`uname`" = Darwin -a -x /Developer/Tools/CpMac; then
    for d in $install_dirs ; do
       /Developer/Tools/CpMac -r $build_dir/$d $install_dir/$d
       test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
-      # Don't compress tests, out of concern for resource forks.
+      # Preserve time stamps (CpMac -p -r glitches out)
+      (cd $install_dir/$d  &&  find . -type f \
+          | while read f; do touch -r $build_dir/$d/$f $f; done)
+      test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
    done
 else
    for d in $install_dirs ; do
       ( cd $build_dir  &&  tar cfb - $bs $d ) |  \
         ( cd $install_dir  &&  tar xfb - $bs )
       test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
-      if test "$d" = bin  -a  "$compress_tests" = yes; then
-         gzip -N $install_dir/bin/*test*
-         gzip -N $install_dir/bin/*demo*
-         gzip -N $install_dir/bin/*sample*
-         test -f $install_dir/bin/testipub.gz  && \
-            gunzip -N $install_dir/bin/testipub.gz
-      fi
    done
 fi
 
