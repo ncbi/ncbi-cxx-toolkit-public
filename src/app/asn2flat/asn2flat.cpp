@@ -125,11 +125,11 @@ void CAsn2FlatApp::Init(void)
         arg_desc->AddDefaultKey("flags", "Flags", "Custom flags",
             CArgDescriptions::eInteger, "0");
 
-        // filter (default: proteins)
-        arg_desc->AddDefaultKey("filter", "Filter", "Filter",
-            CArgDescriptions::eString, "prot");
-        arg_desc->SetConstraint("filter", 
-            &(*new CArgAllow_Strings, "none", "prot", "nuc"));
+        // view (default: nucleotide)
+        arg_desc->AddDefaultKey("view", "View", "View",
+            CArgDescriptions::eString, "nuc");
+        arg_desc->SetConstraint("view", 
+            &(*new CArgAllow_Strings, "all", "prot", "nuc"));
         
         // propagate top descriptors
         
@@ -296,13 +296,13 @@ TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
 
 TFilter CAsn2FlatApp::x_GetFilter(const CArgs& args)
 {
-    const string& filter = args["filter"].AsString();
-    if ( filter == "none" ) {
+    const string& view = args["view"].AsString();
+    if ( view == "all" ) {
         return fSkipNone;
-    } else if ( filter == "prot" ) {
-        return fSkipProteins;
-    } else if ( filter == "nuc" ) {
+    } else if ( view == "prot" ) {
         return fSkipNucleotides;
+    } else if ( view == "nuc" ) {
+        return fSkipProteins;
     } 
 
     return fSkipProteins;
@@ -322,6 +322,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/05 18:51:45  shomrat
+* use view instead of filter
+*
 * Revision 1.3  2004/02/11 22:58:26  shomrat
 * using flags from flag file
 *
