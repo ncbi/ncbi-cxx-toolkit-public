@@ -43,7 +43,7 @@ Modify Seq_entry data.
 
 <LI>
 <A HREF="#find_tse">
-Start working with a Seq_entry, load entry if necessary.
+Start working with a Seq_entry (bio.sequence), load entry if necessary.
 </A>
 </LI>
 
@@ -57,7 +57,7 @@ Access bio sequence data.
 
 <LI>
 <A HREF="#descriptions">
-Enumerate sequence desciptions.
+Enumerate sequence descriptions.
 </A>
 </LI>
 
@@ -92,16 +92,16 @@ Include the necessary headers:
 </PRE>
 Create <VAR>Object Manager</VAR> as a referenced object on the heap:
 <PRE>
-    CRef&lt;CObjectManager&gt; pObjMgr = new CObjectManager;
+    CRef&lt;CObjectManager&gt; obj_mgr = new CObjectManager;
 </PRE>
 Create a <VAR>Scope</VAR> of reference resolution. There is a lot
 of freedom in how the <VAR>Scope</VAR>
 can be created: either as an object on the stack, or on the heap, either as
 a referenced or non-referenced object:
 <PRE>
-    CRef&lt;CScope&gt; pScope1 = new CScope(*pObjMgr);
-    CScope Scope2(*pObjMgr);
-    CScope* pScope3 = new CScope(*pObjMgr);
+    CRef&lt;CScope&gt; scope1 = new CScope(*obj_mgr);
+    CScope scope2(*obj_mgr);
+    CScope* scope3 = new CScope(*obj_mgr);
 </PRE>
 </P>
 
@@ -117,8 +117,8 @@ Add externally created top-level Seq_entry to the <VAR>Scope</VAR>.
 Once there is a Seq_entry created somehow, it can be added to the
 <VAR>Scope</VAR> using the following:
 <PRE>
-    CRef&lt;CSeq_entry&gt; entry = YourFunctionCallHere();
-    Scope.AddTopLevelSeqEntry(*entry);
+    CSeq_entry* entry = ...;
+    scope.AddTopLevelSeqEntry(*entry);
 </PRE>
 </P>
 
@@ -143,17 +143,18 @@ loads data from the GenBank. Here is how to create and register it:
 #include &lt;objects/objmgr1/gbloader.hpp&gt;
 #include &lt;objects/objmgr1/reader_id1.hpp&gt;
 ...
-    pObjMgr->RegisterDataLoader(*new CGBDataLoader(),CObjectManager::eDefault);
+    obj_mgr->RegisterDataLoader(*(new CGBDataLoader("GENBANK")),
+                                CObjectManager::eDefault);
 </PRE>
 There are default and non-default data loaders.
 A <VAR>Scope</VAR> can request a data loader from the
 <VAR>Object Manager</VAR> either one at a time - by name:
 <PRE>
-    Scope.AddDataLoader("GENBANK");
+    scope.AddDataLoader("GENBANK");
 </PRE>
 or all default data loaders at once:
 <PRE>
-    Scope.AddDefaults();
+    scope.AddDefaults();
 </PRE>
 </P>
 
@@ -192,16 +193,18 @@ There is no way this modifications can be uploaded to the source database.
 <!-- =================== find_tse =============================== -->
 <H4>
 <A NAME="find_tse">
-Start working with a Seq_entry, load entry if necessary.
+Start working with a Seq_entry (bio.sequence), load entry if necessary.
 </A>
 </H4>
 <P>
-In order to be able to access Seq_entry data, one has to obtain a
+In order to be able to access bio.sequence data, one has to obtain a
 <VAR>Bioseq handle</VAR> from the Scope, based on a known Seq_id:
 <PRE>
-    CBioseq_Handle handle = Scope.GetBioseqHandle(seqid);
+    CSeq_id seqid;
+    seqid.SetGi(3);
+    CBioseq_Handle handle = scope.GetBioseqHandle(seqid);
 </PRE>
-It is possible then to get direct access to the Seq_entry data
+It is possible then to get direct access to the sequence data or Seq_entry
 by calling either one of these functions:
 <PRE>
     const CBioseq&   bioseq = handle.GetBioseq();
@@ -224,7 +227,7 @@ which is created by <VAR>Bioseq handle</VAR>:
 <PRE>
     CSeqVector seq_vec = handle.GetSeqVector();
 </PRE>
-There are basically there functions available:
+There are basically three functions available:
 <PRE>
     // Target sequence coding.
     void SetCoding(TCoding coding);
@@ -236,7 +239,7 @@ There are basically there functions available:
 For example:
 <PRE>
     CSeqVector seq_vec = handle.GetSeqVector();
-    string sout = "";
+    string sout;
     for (size_t i = 0; i < seq_vec.size(); i++) {
         sout += seq_vec[i];
     }
@@ -249,13 +252,11 @@ reference resolution process, send requests to the source database for more data
 There is another useful object, which describes sequence data - <VAR>Sequence map</VAR>.
 It is a collection of <VAR>segments</VAR>, which describe sequence parts in general -
 location and type only, without providing any real data.
-One obtains <VAR>Sequence map</VAR> from a <VAR>Bioseq handle</VAR>:
+To obtain <VAR>Sequence map</VAR> from a <VAR>Bioseq handle</VAR>:
 <PRE>
     const CSeqMap& seqmap = handle.GetSeqMap();
 </PRE>
-It is possible then to enumerate all the segments in the map asking their type, length or position.
-<BR>
-For example:
+It is possible then to enumerate all the segments in the map asking their type, length or position:
 <PRE>
     const CSeqMap& seqmap = handle.GetSeqMap();
     int len = 0;
@@ -283,14 +284,12 @@ For example:
 <!-- =================== descriptions =============================== -->
 <H4>
 <A NAME="descriptions">
-Enumerate sequence desciptions.
+Enumerate sequence descriptions.
 </A>
 </H4>
 <P>
 Description iterator uses <VAR>Bioseq handle</VAR> to access the sequence data.
-It makes it possible to enumerate all CSeq_descr data objects the sequence refers to.
-<BR>
-Example of usage:
+It makes it possible to enumerate all CSeq_descr data objects the sequence refers to:
 <PRE>
     CDesc_CI(const CBioseq_Handle& handle);
     for (CDesc_CI desc_it(handle); desc_it; ++desc_it) {
@@ -311,8 +310,9 @@ Enumerate sequence annotations.
 </A>
 </H4>
 <P>
-One may wish to search all top-level seq. entries in the Scope, or only one of them.
+It is possible to search either all top-level seq. entries in the Scope, or only one of them.
 Accordingly, there are two types of constructors of annotation iterator, one may wish to use:
+<BR>
 <BR>
 Feature iterator:
 <PRE>
@@ -333,8 +333,9 @@ Graph data iterator:
     CGraph_CI(CScope& scope, const CSeq_loc& loc);
     CGraph_CI(CBioseq_Handle& handle, int start, int stop);
 </PRE>
-<VAR>Start</VAR> and <VAR>stop</VAR> parameters here describe Seq_loc.
-This is made to narrow down possible input seq.location descriptions (Seq_loc).
+<VAR>Start</VAR> and <VAR>stop</VAR> parameters are used here instead of Seq_loc
+to describe a continuous interval on the bio sequence.
+<BR>
 <BR>
 Example of usage:
 <PRE>
