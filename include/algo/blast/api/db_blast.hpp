@@ -175,7 +175,6 @@ protected:
     virtual void x_InitRPSFields();
     /// Initialize the RPS database auxiliary structures
     virtual void x_ResetRPSFields();
-
     /// Internal data structures used in this and all derived classes 
     bool                m_ibQuerySetUpDone; ///< Has the query set-up been done?
     CBLAST_SequenceBlk  m_iclsQueries;    ///< one for all queries
@@ -187,6 +186,7 @@ protected:
     BlastHSPResults*    m_ipResults;      /**< Results structure - not private, 
                                              because derived class will need to
                                              set it. */
+
 private:
     /// Data members received from client code
     TSeqLocVector        m_tQueries;      ///< query sequence(s)
@@ -199,6 +199,18 @@ private:
     CDbBlast(const CDbBlast& rhs);
     /// Prohibit assignment operator
     CDbBlast& operator=(const CDbBlast& rhs);
+
+    /// Open and initialize RPS blast structures from disk. Note that
+    /// the output arguments are manually allocated and must be
+    /// explicitly freed; see x_ResetRPSFields.
+    /// @param ppinfo Pointer to initialized RPS data [out]
+    /// @param rps_mmap Pointer to memory-mapped lookup table file [out]
+    /// @param rps_pssm_mmap Pointer to memory-mapped PSSM file [out]
+    /// @param dbname Name of RPS database [in]
+    static void CDbBlast::x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo, 
+                                              CMemoryFile **rps_mmap,
+                                              CMemoryFile **rps_pssm_mmap,
+                                              string dbname);
 
     /************ Internal data structures (m_i = internal members)**********/
     LookupTableWrap*    m_ipLookupTable;   ///< Lookup table, one for all queries
@@ -218,6 +230,8 @@ private:
     BlastRPSInfo*       m_ipRpsInfo;      ///< RPS BLAST database information
     CMemoryFile*        m_ipRpsMmap;      ///< Memory mapped RPS lookup table file
     CMemoryFile*        m_ipRpsPssmMmap;  ///< Memory mapped RPS PSSM file
+
+    friend class ::CRPSTest;              ///< unit test class
 };
 
 inline void
@@ -316,6 +330,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/01/14 17:59:21  papadopo
+* add FillRPSInfo as a private member, to remove some xblast dependencies on SeqDB
+*
 * Revision 1.30  2005/01/11 17:50:19  dondosha
 * Removed TrimBlastHSPResults method: will be a static function in blastsrv4.REAL code
 *
