@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.303 2004/05/17 18:54:16 ucko Exp $
+#  $Id: configure.ac,v 1.304 2004/05/26 15:54:03 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3049,6 +3049,13 @@ with_sssdb=${with_sssdb:="yes"}
 if test "$with_sybase" = "no" ; then
    with_sssdb="no"
 fi
+
+case "$host_os:$compiler:$compiler_version" in
+   linux*:GCC:34*)
+      : ${with_included_sss=yes} 
+      : ${with_included_geo=yes}
+   ;;
+esac
 
 if test "$with_sss" != "no" ; then
    local_sss=${srcdir}/src/internal/sss

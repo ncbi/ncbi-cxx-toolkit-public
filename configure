@@ -17797,6 +17797,13 @@ if test "$with_sybase" = "no" ; then
    with_sssdb="no"
 fi
 
+case "$host_os:$compiler:$compiler_version" in
+   linux*:GCC:34*)
+      : ${with_included_sss=yes}
+      : ${with_included_geo=yes}
+   ;;
+esac
+
 if test "$with_sss" != "no" ; then
    local_sss=${srcdir}/src/internal/sss
    if test "${with_included_sss-no}" = "yes" \
