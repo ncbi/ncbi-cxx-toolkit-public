@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/01/05 19:43:56  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.33  1999/11/18 20:20:24  vakatov
 * Added "inline" to OverflowError() to fix CodeWarrior(MAC) C++ warning
 *
@@ -760,6 +766,12 @@ size_t CObjectIStreamBinary::ReadBytes(const ByteBlock& ,
 {
 	ReadBytes(dst, length);
 	return length;
+}
+
+void CObjectIStreamBinary::ReadNull(void)
+{
+    if ( ReadByte() != eNull )
+        ThrowError(eFormatError, "null expected");
 }
 
 CObjectIStream::EPointerType CObjectIStreamBinary::ReadPointerType(void)

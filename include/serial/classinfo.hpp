@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/01/05 19:43:43  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.21  1999/12/17 19:04:52  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -196,6 +202,8 @@ public:
 
     void AddSubClass(const CMemberId& id, const CTypeRef& type);
     void AddSubClass(const char* id, TTypeInfoGetter getter);
+    void AddSubClassNull(const CMemberId& id);
+    void AddSubClassNull(const char* id);
     const TSubClasses* SubClasses(void) const
         {
             return m_SubClasses.get();

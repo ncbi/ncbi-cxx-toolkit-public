@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/01/05 19:43:52  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.27  1999/12/28 18:55:49  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -208,7 +214,8 @@ CClassInfoTmpl::TClassesById& CClassInfoTmpl::ClassesById(void)
         for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
             const CClassInfoTmpl* info = *i;
             if ( info->GetId() != typeid(void) ) {
-                _TRACE("class by id: " << info->GetId().name() << " : " << info->GetName());
+                _TRACE("class by id: " << info->GetId().name()
+                       << " : " << info->GetName());
                 if ( !classes->insert(
                          TClassesById::value_type(&info->GetId(),
                                                   info)).second ) {
@@ -232,7 +239,8 @@ CClassInfoTmpl::TClassesByName& CClassInfoTmpl::ClassesByName(void)
         for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
             const CClassInfoTmpl* info = *i;
             if ( !info->GetName().empty() ) {
-                _TRACE("ass class by name: " << " : " << info->GetName() << info->GetId().name());
+                _TRACE("class by name: " << " : " <<
+                       info->GetName() << info->GetId().name());
                 if ( !classes->insert(
                          TClassesByName::value_type(info->GetName(),
                                                     info)).second ) {
@@ -265,8 +273,10 @@ void CClassInfoTmpl::RegisterSubClasses(void) const
         for ( TSubClasses::const_iterator i = subclasses->begin();
               i != subclasses->end();
               ++i ) {
-            dynamic_cast<const CClassInfoTmpl*>(i->second.Get())->
-                RegisterSubClasses();
+            const CClassInfoTmpl* classInfo = 
+                dynamic_cast<const CClassInfoTmpl*>(i->second.Get());
+            if ( classInfo )
+                classInfo->RegisterSubClasses();
         }
     }
 }
@@ -327,20 +337,6 @@ CMemberInfo* CClassInfoTmpl::AddMember(const char* name, const void* member,
     return AddMember(name, new CRealMemberInfo(size_t(member), type));
 }
 
-/*
-CMemberInfo* CClassInfoTmpl::AddMember(const string& name,
-                                       CMemberInfo* member)
-{
-    return AddMember(CMemberId(name), member);
-}
-
-CMemberInfo* CClassInfoTmpl::AddMember(const char* name,
-                                       CMemberInfo* member)
-{
-    return AddMember(CMemberId(name), member);
-}
-*/
-
 void CClassInfoTmpl::AddSubClass(const CMemberId& id,
                                  const CTypeRef& type)
 {
@@ -350,9 +346,19 @@ void CClassInfoTmpl::AddSubClass(const CMemberId& id,
     subclasses->push_back(make_pair(id, type));
 }
 
+void CClassInfoTmpl::AddSubClassNull(const CMemberId& id)
+{
+    AddSubClass(id, CTypeRef(TTypeInfo(0)));
+}
+
 void CClassInfoTmpl::AddSubClass(const char* id, TTypeInfoGetter getter)
 {
     AddSubClass(CMemberId(id), getter);
+}
+
+void CClassInfoTmpl::AddSubClassNull(const char* id)
+{
+    AddSubClassNull(CMemberId(id));
 }
 
 void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
@@ -430,6 +436,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                 in.SkipValue();
                 continue;
             }
+            memberId.Id().UpdateName(m_Members.GetMemberId(index));
             if ( !read.insert(index).second ) {
                 ERR_POST("duplicated member: " +
                          memberId.Id().ToString() + ", skipping");
@@ -494,6 +501,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                     info->GetTypeInfo()->Assign(member, info->GetDefault());
             }
             ++currentIndex;
+            memberId.Id().UpdateName(currentId);
             info->GetTypeInfo()->ReadData(in, member);
         }
         for ( ; currentIndex != size; ++currentIndex ) {

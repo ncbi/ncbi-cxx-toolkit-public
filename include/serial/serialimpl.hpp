@@ -450,6 +450,8 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \
     info->AddVariant(#Name, NCBI_NAME3(Get, Type, TypeRef)(reinterpret_cast<const NCBI_NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
+#define ADD_SUB_CLASS2_NULL(Name) \
+    info->AddSubClassNull(Name)
 #define ADD_SUB_CLASS2(Name, SubClass) \
     info->AddSubClass(Name, &SubClass::GetTypeInfo)
 #define ADD_SUB_CLASS(Class) \

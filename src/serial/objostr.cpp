@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/01/05 19:43:56  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.28  1999/12/28 18:55:51  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -177,19 +183,21 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
     _TRACE("CObjectOStream::RegisterAndWrite(" <<
            NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
-    COObjectInfo info(m_Objects, object, typeInfo);
-    if ( info.IsMember() ) {
-        THROW1_TRACE(runtime_error,
-                     "trying to register member");
-    }
-    else {
-        if ( info.GetRootObjectInfo().IsWritten() ) {
+    if ( object != 0 ) {
+        COObjectInfo info(m_Objects, object, typeInfo);
+        if ( info.IsMember() ) {
             THROW1_TRACE(runtime_error,
-                         "trying to write already written object");
+                         "trying to register member");
         }
-        m_Objects.RegisterObject(info.GetRootObjectInfo());
-        _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
-               << " @" << info.GetRootObjectInfo().GetIndex());
+        else {
+            if ( info.GetRootObjectInfo().IsWritten() ) {
+                THROW1_TRACE(runtime_error,
+                             "trying to write already written object");
+            }
+            m_Objects.RegisterObject(info.GetRootObjectInfo());
+            _TRACE("CTypeInfo::Write: " << NStr::PtrToString(object)
+                   << " @" << info.GetRootObjectInfo().GetIndex());
+        }
     }
     WriteData(object, typeInfo);
 }

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/01/05 19:43:51  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.7  1999/12/17 19:05:02  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -68,7 +74,7 @@ BEGIN_NCBI_SCOPE
 //CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo::sm_Map;
 
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo typeInfo)
-    : CPointerTypeInfo(typeInfo)
+    : CPointerTypeInfo(typeInfo->GetName(), typeInfo)
 {
     Init();
 }
@@ -98,8 +104,6 @@ TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TTypeInfo base)
 
 TTypeInfo CChoicePointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 {
-    if ( !object )
-        return 0;
     return m_VariantTypes[FindVariant(object)].Get();
 }
     
@@ -126,10 +130,19 @@ CChoicePointerTypeInfo::VariantsByType(void) const
         for ( TIndex i = 0, size = m_VariantTypes.size();
               i != size; ++i ) {
             TTypeInfo type = m_VariantTypes[i].Get();
-            const type_info* id =
-                &dynamic_cast<const CClassInfoTmpl&>(*type).GetId();
-            _TRACE(GetDataTypeInfo()->GetName()
-                   << ".AddSubClass: " << id->name());
+            const type_info* id;
+            if ( !type ) {
+                // null variant
+                id = &typeid(void);
+                type = CNullTypeInfo::GetTypeInfo();
+                _TRACE(GetDataTypeInfo()->GetName()
+                       << ".AddSubClass: null");
+            }
+            else {
+                id = &dynamic_cast<const CClassInfoTmpl&>(*type).GetId();
+                _TRACE(GetDataTypeInfo()->GetName()
+                       << ".AddSubClass: " << id->name());
+            }
             if ( !variants->insert(TVariantsByType::
                                    value_type(id, i)).second ) {
                 THROW1_TRACE(runtime_error,
@@ -143,13 +156,16 @@ CChoicePointerTypeInfo::VariantsByType(void) const
 CChoicePointerTypeInfo::TIndex
 CChoicePointerTypeInfo::FindVariant(TConstObjectPtr object) const
 {    
-    if ( !object )
-        THROW1_TRACE(runtime_error, "null choice pointer");
-
     const TVariantsByType& variants = VariantsByType();
-    const type_info* id =
-        dynamic_cast<const CClassInfoTmpl*>(GetDataTypeInfo())->
-        GetCPlusPlusTypeInfo(object);
+    const type_info* id;
+    if ( object == 0 ) {
+        // null object: find null subclass
+        id = &typeid(void);
+    }
+    else {
+        id = dynamic_cast<const CClassInfoTmpl*>(GetDataTypeInfo())->
+            GetCPlusPlusTypeInfo(object);
+    }
     TVariantsByType::const_iterator p = variants.find(id);
     if ( p == variants.end() )
         THROW1_TRACE(runtime_error,
@@ -163,7 +179,10 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
     TConstObjectPtr data = GetObjectPointer(object);
     TIndex index = FindVariant(data);
     CObjectOStream::Member m(out, m_Variants.GetCompleteMemberId(index));
-    out.WriteExternalObject(data, m_VariantTypes[index].Get());
+    TTypeInfo dataType = m_VariantTypes[index].Get();
+    if ( !dataType )
+        dataType = CNullTypeInfo::GetTypeInfo();
+    out.WriteExternalObject(data, dataType);
 }
 
 void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
@@ -173,10 +192,58 @@ void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
     TIndex index = m_Variants.FindMember(m);
     if ( index < 0 )
         THROW1_TRACE(runtime_error, "incompatible type: " + m.Id().ToString());
+    m.Id().UpdateName(m_Variants.GetMemberId(index));
     TTypeInfo dataType = m_VariantTypes[index].Get();
+    if ( !dataType )
+        dataType = CNullTypeInfo::GetTypeInfo();
     TObjectPtr data = dataType->Create();
     SetObjectPointer(object, data);
     in.ReadExternalObject(data, dataType);
+}
+
+CNullTypeInfo::CNullTypeInfo(void)
+    : CParent("0")
+{
+}
+
+CNullTypeInfo::~CNullTypeInfo(void)
+{
+}
+
+TObjectPtr CNullTypeInfo::Create(void) const
+{
+    return 0;
+}
+
+TTypeInfo CNullTypeInfo::GetTypeInfo(void)
+{
+    TTypeInfo typeInfo = new CNullTypeInfo();
+    return typeInfo;
+}
+
+void CNullTypeInfo::CollectExternalObjects(COObjectList& list,
+                                           TConstObjectPtr object) const
+{
+    if ( object != 0 ) {
+        THROW1_TRACE(runtime_error, "non null value");
+    }
+}
+
+void CNullTypeInfo::WriteData(CObjectOStream& out,
+                              TConstObjectPtr object) const
+{
+    if ( object != 0 ) {
+        THROW1_TRACE(runtime_error, "non null value");
+    }
+    out.WriteNull();
+}
+
+void CNullTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+    if ( object != 0 ) {
+        THROW1_TRACE(runtime_error, "non null value");
+    }
+    in.ReadNull();
 }
 
 END_NCBI_SCOPE

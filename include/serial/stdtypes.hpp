@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/01/05 19:43:47  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.14  1999/12/28 18:55:40  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -180,10 +186,9 @@ protected:
     virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
 
-    ~CStdTypeInfo(void);
-
-private:
     CStdTypeInfo(void);
+    CStdTypeInfo(const char* typeName);
+    ~CStdTypeInfo(void);
 };
 
 // CTypeInfo for C++ STL type string

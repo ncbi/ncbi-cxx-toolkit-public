@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/01/05 19:43:59  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.4  1999/12/28 18:55:56  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -166,6 +172,9 @@ void CChoiceDataType::GenerateCode(CClassCode& code) const
             code.ClassPublic() <<
                 "    bool Is"<<variantName<<"(void) const"<<NcbiEndl<<
                 "        { return this == 0; }"<<NcbiEndl<<
+                NcbiEndl;
+            code.TypeInfoBody() <<
+                "    ADD_SUB_CLASS2_NULL(\"" << m->GetName() << "\");" <<
                 NcbiEndl;
             continue;
         }

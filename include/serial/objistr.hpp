@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/01/05 19:43:44  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.30  1999/12/20 15:29:31  vasilche
 * Fixed bug with old ASN structures.
 *
@@ -240,6 +246,8 @@ public:
         eOtherPointer
     };
 
+    virtual void ReadNull(void) = 0;
+
     virtual void SkipValue(void);
 
     // low level readers:
@@ -249,7 +257,8 @@ public:
         eReadError = 2,
         eFormatError = 4,
         eOverflow = 8,
-        eIllegalCall = 16
+        eIllegalCall = 16,
+        eFail = 32
     };
     bool fail(void) const
         {

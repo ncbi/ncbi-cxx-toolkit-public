@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/01/05 19:43:57  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.14  1999/12/28 21:04:27  vasilche
 * Removed three more implicit virtual destructors.
 *
@@ -111,6 +117,7 @@ CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
                                          TTypeInfo dataType)
     : CParent(string(templ) + "< " + keyType->GetName() + ", " +
               dataType->GetName() + " >"),
+      m_KeyId(1), m_ValueId(2),
       m_KeyType(keyType), m_ValueType(dataType)
 {
 }
@@ -119,6 +126,7 @@ CStlTwoArgsTemplate::CStlTwoArgsTemplate(const char* templ,
                                          const CTypeRef& keyType,
                                          const CTypeRef& dataType)
     : CParent(string(templ) + "< ?, ? >"),
+      m_KeyId(1), m_ValueId(2),
       m_KeyType(keyType), m_ValueType(dataType)
 {
 }
@@ -135,6 +143,20 @@ void CStlTwoArgsTemplate::SetKeyId(const CMemberId& id)
 void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
 {
     m_ValueId = id;
+}
+
+CStlClassInfoMapImpl::CStlClassInfoMapImpl(const char* templ,
+                                           TTypeInfo keyType,
+                                           TTypeInfo valueType)
+    : CParent(templ, keyType, valueType)
+{
+}
+
+CStlClassInfoMapImpl::CStlClassInfoMapImpl(const char* templ,
+                                           const CTypeRef& keyType,
+                                           const CTypeRef& valueType)
+    : CParent(templ, keyType, valueType)
+{
 }
 
 CStlClassInfoMapImpl::~CStlClassInfoMapImpl(void)
@@ -165,12 +187,12 @@ void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
     CObjectOStream::Block block(2, out);
     block.Next();
     {
-        CObjectOStream::Member m(out, CMemberId(1));
+        CObjectOStream::Member m(out, GetKeyId());
         GetKeyTypeInfo()->WriteData(out, key);
     }
     block.Next();
     {
-        CObjectOStream::Member m(out, CMemberId(2));
+        CObjectOStream::Member m(out, GetValueId());
         GetValueTypeInfo()->WriteData(out, value);
     }
 }
@@ -184,12 +206,26 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
         THROW1_TRACE(runtime_error, "map key expected");
     {
         CObjectIStream::Member m(in);
+        if ( GetKeyId() == m ) {
+            m.Id().UpdateName(GetKeyId());
+        }
+        else {
+            THROW1_TRACE(runtime_error,
+                         "map key expected: " + GetKeyId().ToString());
+        }
         GetKeyTypeInfo()->ReadData(in, key);
     }
     if ( !block.Next() )
         THROW1_TRACE(runtime_error, "map value expected");
     {
         CObjectIStream::Member m(in);
+        if ( GetValueId() == m ) {
+            m.Id().UpdateName(GetValueId());
+        }
+        else {
+            THROW1_TRACE(runtime_error,
+                         "map value expected: " + GetValueId().ToString());
+        }
         GetValueTypeInfo()->ReadData(in, value);
     }
     if ( block.Next() )

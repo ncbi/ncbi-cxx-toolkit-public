@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/01/05 19:43:51  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.2  1999/12/17 19:05:01  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -134,12 +140,13 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CObjectIStream::Member id(in);
-    TMemberIndex index = m_Variants.FindMember(id);
+    CObjectIStream::Member m(in);
+    TMemberIndex index = m_Variants.FindMember(m);
     if ( index < 0 ) {
         THROW1_TRACE(runtime_error,
-                     "illegal choice variant: " + id.Id().ToString());
+                     "illegal choice variant: " + m.Id().ToString());
     }
+    m.Id().UpdateName(m_Variants.GetMemberId(index));
     SetIndex(object, index);
     GetVariantTypeInfo(index)->ReadData(in, GetData(object));
 }

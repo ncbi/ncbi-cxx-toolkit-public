@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/01/05 19:43:54  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.30  1999/12/17 19:05:03  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -298,18 +304,29 @@ void CObjectIStreamAsn::ExpectString(const char* s, bool skipWhiteSpace)
     }
 }
 
+void CObjectIStreamAsn::SkipEndOfLine(char c)
+{
+    m_Line++;
+    if ( c == '\r' ) {
+        GetChar('\n');
+    }
+    else {
+        GetChar('\r');
+    }
+}
+
 char CObjectIStreamAsn::SkipWhiteSpace(void)
 {
     for ( ;; ) {
 		char c = GetChar();
         switch ( c ) {
         case ' ':
-        case '\r':
         case '\t':
-            break;
+            continue;
+        case '\r':
         case '\n':
-            m_Line++;
-            break;
+            SkipEndOfLine(c);
+            continue;
         case '-':
             // check for comments
             c = GetChar();
@@ -320,7 +337,7 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
             }
             // skip comments
             SkipComments();
-            break;
+            continue;
         default:
             UngetChar(c);
             return c;
@@ -333,21 +350,30 @@ void CObjectIStreamAsn::SkipComments(void)
     for ( ;; ) {
         char c = GetChar();
         switch ( c ) {
+        case '\r':
         case '\n':
-            m_Line++;
+            SkipEndOfLine(c);
             return;
         case '-':
             c = GetChar();
             switch ( GetChar() ) {
+            case '\r':
             case '\n':
-                m_Line++;
+                SkipEndOfLine(c);
                 return;
             case '-':
                 return;
             }
-            break;
+            continue;
+        default:
+            continue;
         }
     }
+}
+
+void CObjectIStreamAsn::ReadNull(void)
+{
+    ExpectString("NULL", true);
 }
 
 string CObjectIStreamAsn::ReadTypeName()
@@ -485,21 +511,20 @@ string CObjectIStreamAsn::ReadString(void)
     for ( ;; ) {
         c = GetChar();
         switch ( c ) {
+        case '\r':
         case '\n':
-            m_Line++;
-            break;
+            SkipEndOfLine(c);
+            continue;
         case '\"':
-            c = GetChar();
-            if ( c == '\"' ) {
+            if ( GetChar('\"') ) {
                 // double quote -> one quote
                 s += '\"';
             }
             else {
                 // end of string
-                UngetChar(c);
                 return s;
             }
-            break;
+            continue;
         default:
             if ( c < ' ' && c >= 0 ) {
                 ThrowError(eFormatError,
@@ -508,7 +533,7 @@ string CObjectIStreamAsn::ReadString(void)
             else {
                 s += c;
             }
-            break;
+            continue;
         }
     }
 }
@@ -585,44 +610,55 @@ void CObjectIStreamAsn::Begin(ByteBlock& )
 	Expect('\'', true);
 }
 
-size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& , char* dst, size_t length)
+int CObjectIStreamAsn::GetHexChar(void)
+{
+    for ( ;; ) {
+        char c = GetChar(true);
+        if ( c >= '0' && c <= '9' ) {
+            return c - '0';
+        }
+        else if ( c >= 'A' && c <= 'Z' ) {
+            return c - 'A' + 10;
+        }
+        else if ( c >= 'a' && c <= 'z' ) {
+            return c - 'a' + 10;
+        }
+        else if ( c == '\'' ) {
+            UngetChar(c);
+            return '\'';
+        }
+        else {
+            ThrowError(eFormatError, "bad char in octet string");
+        }
+    }
+}
+
+size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& ,
+                                    char* dst, size_t length)
 {
 	size_t count = 0;
 	while ( length-- > 0 ) {
-		char c = GetChar();
-		char cc;
-		if ( c >= '0' && c <= '9' ) {
-			cc = c - '0';
-		}
-		else if ( c >= 'A' && c <= 'F' ) {
-			cc = c - 'A' + 10;
-		}
-		else if ( c == '\'' ) {
-			UngetChar(c);
-			return count;
-		}
-		else {
-			THROW1_TRACE(runtime_error, "bad char in octet string");
-		}
-		c = GetChar();
-		if ( c >= '0' && c <= '9' ) {
-			cc = (cc << 4) | (c - '0');
-		}
-		else if ( c >= 'A' && c <= 'F' ) {
-			cc = (cc << 4) | (c - 'A' + 10);
-		}
-		else {
-            ThrowError(eFormatError, "bad char in octet string");
-		}
-		*dst++ = cc;
-		count++;
+        int c1 = GetHexChar();
+        if ( c1 == '\'' )
+            return count;
+        int c2 = GetHexChar();
+        if ( c2 == '\'' ) {
+            *dst++ = (c1 << 4) | c2;
+            count++;
+            return count;
+        }
+        else {
+            *dst++ = (c1 << 4) | c2;
+            count++;
+        }
 	}
 	return count;
 }
 
 void CObjectIStreamAsn::End(const ByteBlock& )
 {
-	ExpectString("\'H");
+	Expect('\'', true);
+	Expect('H', true);
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
@@ -706,13 +742,12 @@ void CObjectIStreamAsn::SkipValue()
 
 void CObjectIStreamAsn::SkipBitString(void)
 {
-    char c;
     for ( ;; ) {
-        c = GetChar();
-        if ( c == '\'' ) {
-            c = GetChar();
-            if ( c != 'B' && c != 'H' )
-                UngetChar(c);
+        // scan end of oectet string
+        if ( GetChar('\'', true) ) {
+            // ' -> end
+            // get type symbol: H or B
+            Expect('H', 'B', true);
             return;
         }
     }
@@ -720,13 +755,15 @@ void CObjectIStreamAsn::SkipBitString(void)
 
 void CObjectIStreamAsn::SkipString(void)
 {
-    char c;
     for ( ;; ) {
-        c = GetChar();
-        if ( c == '\"' ) {
-            c = GetChar();
-            if ( c != '\"' ) {
-                UngetChar(c);
+        // scan end of string
+        if ( GetChar('\"', true) ) {
+            // " -> possible and of string
+            if ( GetChar('\"') ) {
+                // double "" not an end
+            }
+            else {
+                // end of string
                 return;
             }
         }

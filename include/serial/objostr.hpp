@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/01/05 19:43:46  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.27  1999/12/20 15:29:31  vasilche
 * Fixed bug with old ASN structures.
 *
@@ -220,6 +226,8 @@ public:
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
+
+    virtual void WriteNull(void) = 0;
 
     class Member {
     public:

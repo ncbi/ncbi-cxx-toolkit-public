@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/05 19:43:43  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.5  1999/12/17 19:04:52  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -75,6 +81,7 @@ public:
 
     const string& GetName(void) const;
     void SetName(const string& name);
+    void UpdateName(const CMemberId& id);
 
     TTag GetTag(void) const;
     CMemberId* SetTag(TTag tag);

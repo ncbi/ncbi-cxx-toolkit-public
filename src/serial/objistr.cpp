@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/01/05 19:43:53  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.36  1999/12/28 18:55:49  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -217,7 +223,8 @@ void CObjectIStream::ThrowError1(const char* file, int line,
     ThrowError1(fail, message);
 }
 
-void CObjectIStream::ThrowIOError1(const char* file, int line, CNcbiIstream& in)
+void CObjectIStream::ThrowIOError1(const char* file, int line,
+                                   CNcbiIstream& in)
 {
     if ( in.eof() ) {
         ThrowError1(file, line, eEOF, "unexpected EOF");
@@ -230,16 +237,26 @@ void CObjectIStream::ThrowIOError1(const char* file, int line, CNcbiIstream& in)
 // root reader
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
-           << typeInfo->GetName() << ")");
-    string name = ReadTypeName();
-    if ( !name.empty() && name != typeInfo->GetName() )
-        THROW1_TRACE(runtime_error,
-                     "incompatible type " + name + "<>" + typeInfo->GetName());
-    TIndex index = RegisterObject(object, typeInfo);
-    _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
-           << typeInfo->GetName() << ") @" << index);
-    ReadData(object, typeInfo);
+    try {
+        _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
+               << typeInfo->GetName() << ")");
+        string name = ReadTypeName();
+        if ( !name.empty() && name != typeInfo->GetName() )
+            THROW1_TRACE(runtime_error,
+                         "incompatible type " + name + "<>" +
+                         typeInfo->GetName());
+        TIndex index = RegisterObject(object, typeInfo);
+        if ( index ) {
+            _TRACE("CObjectIStream::ReadData(" <<
+                   NStr::PtrToString(object) << ", "
+                   << typeInfo->GetName() << ") @" << index);
+        }
+        ReadData(object, typeInfo);
+    }
+    catch (...) {
+        SetFailFlags(eFail);
+        throw;
+    }
 }
 
 void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
@@ -252,16 +269,24 @@ void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
     _TRACE("CObjectIStream::Read(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ")");
     TIndex index = RegisterObject(object, typeInfo);
-    _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
-           << typeInfo->GetName() << ") @" << index);
+    if ( index ) {
+        _TRACE("CObjectIStream::ReadData(" << NStr::PtrToString(object) << ", "
+               << typeInfo->GetName() << ") @" << index);
+    }
     ReadData(object, typeInfo);
 }
 
 CObject CObjectIStream::ReadObject(void)
 {
-    CObject object(MapType(ReadTypeName()));
-    ReadExternalObject(object.GetObject(), object.GetTypeInfo());
-    return object;
+    try {
+        CObject object(MapType(ReadTypeName()));
+        ReadExternalObject(object.GetObject(), object.GetTypeInfo());
+        return object;
+    }
+    catch (...) {
+        SetFailFlags(eFail);
+        throw;
+    }
 }
 
 string CObjectIStream::ReadTypeName(void)
@@ -299,27 +324,75 @@ TTypeInfo CObjectIStream::MapType(const string& name)
 
 TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
-    _TRACE("CObjectIStream::ReadPointer(" << declaredType->GetName() << ")");
-    CObject info;
-    switch ( ReadPointerType() ) {
-    case eNullPointer:
-        _TRACE("CObjectIStream::ReadPointer: null");
-        return 0;
-    case eObjectPointer:
-        {
-            _TRACE("CObjectIStream::ReadPointer: @...");
-            TIndex index = ReadObjectPointer();
-            _TRACE("CObjectIStream::ReadPointer: @" << index);
-            info = GetRegisteredObject(index);
-            break;
+    try {
+        _TRACE("CObjectIStream::ReadPointer(" <<
+               declaredType->GetName() << ")");
+        CObject info;
+        switch ( ReadPointerType() ) {
+        case eNullPointer:
+            _TRACE("CObjectIStream::ReadPointer: null");
+            return 0;
+        case eObjectPointer:
+            {
+                _TRACE("CObjectIStream::ReadPointer: @...");
+                TIndex index = ReadObjectPointer();
+                _TRACE("CObjectIStream::ReadPointer: @" << index);
+                info = GetRegisteredObject(index);
+                break;
+            }
+        case eMemberPointer:
+            {
+                _TRACE("CObjectIStream::ReadPointer: member...");
+                string memberName = ReadMemberPointer();
+                _TRACE("CObjectIStream::ReadPointer: member " << memberName);
+                info = ReadObjectInfo();
+                ReadMemberPointerEnd();
+                CTypeInfo::TMemberIndex index =
+                    info.GetTypeInfo()->FindMember(memberName);
+                if ( index < 0 ) {
+                    SetFailFlags(eFormatError);
+                    THROW1_TRACE(runtime_error, "member not found: " +
+                                 info.GetTypeInfo()->GetName() +
+                                 "." + memberName);
+                }
+                const CMemberInfo* memberInfo =
+                    info.GetTypeInfo()->GetMemberInfo(index);
+                if ( memberInfo->GetTypeInfo() != declaredType ) {
+                    SetFailFlags(eFormatError);
+                    THROW1_TRACE(runtime_error, "incompatible member type: " +
+                                 memberInfo->GetTypeInfo()->GetName() +
+                                 " need: " + declaredType->GetName());
+                }
+                return memberInfo->GetMember(info.GetObject());
+            }
+        case eThisPointer:
+            {
+                _TRACE("CObjectIStream::ReadPointer: new");
+                TObjectPtr object = declaredType->Create();
+                ReadExternalObject(object, declaredType);
+                ReadThisPointerEnd();
+                return object;
+            }
+        case eOtherPointer:
+            {
+                _TRACE("CObjectIStream::ReadPointer: new...");
+                string className = ReadOtherPointer();
+                _TRACE("CObjectIStream::ReadPointer: new " << className);
+                TTypeInfo typeInfo = MapType(className);
+                TObjectPtr object = typeInfo->Create();
+                ReadExternalObject(object, typeInfo);
+                ReadOtherPointerEnd();
+                info = CObject(object, typeInfo);
+                break;
+            }
+        default:
+            SetFailFlags(eFormatError);
+            THROW1_TRACE(runtime_error, "illegal pointer type");
         }
-    case eMemberPointer:
-        {
+        while ( HaveMemberSuffix() ) {
             _TRACE("CObjectIStream::ReadPointer: member...");
-            string memberName = ReadMemberPointer();
+            string memberName = ReadMemberSuffix();
             _TRACE("CObjectIStream::ReadPointer: member " << memberName);
-            info = ReadObjectInfo();
-            ReadMemberPointerEnd();
             CTypeInfo::TMemberIndex index =
                 info.GetTypeInfo()->FindMember(memberName);
             if ( index < 0 ) {
@@ -329,69 +402,30 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             }
             const CMemberInfo* memberInfo =
                 info.GetTypeInfo()->GetMemberInfo(index);
-            if ( memberInfo->GetTypeInfo() != declaredType ) {
+            info = CObject(memberInfo->GetMember(info.GetObject()),
+                           memberInfo->GetTypeInfo());
+        }
+        while ( info.GetTypeInfo() != declaredType ) {
+            // try to check parent class pointer
+            if ( info.GetTypeInfo()->FindMember(NcbiEmptyString) == 0 ) {
+                const CMemberInfo* parent =
+                    info.GetTypeInfo()->GetMemberInfo(0);
+                info = CObject(parent->GetMember(info.GetObject()),
+                               parent->GetTypeInfo());
+            }
+            else {
                 SetFailFlags(eFormatError);
                 THROW1_TRACE(runtime_error, "incompatible member type: " +
-                             memberInfo->GetTypeInfo()->GetName() + " need: " +
+                             info.GetTypeInfo()->GetName() + " need: " +
                              declaredType->GetName());
             }
-            return memberInfo->GetMember(info.GetObject());
         }
-    case eThisPointer:
-        {
-            _TRACE("CObjectIStream::ReadPointer: new");
-            TObjectPtr object = declaredType->Create();
-            ReadExternalObject(object, declaredType);
-            ReadThisPointerEnd();
-            return object;
-        }
-    case eOtherPointer:
-        {
-            _TRACE("CObjectIStream::ReadPointer: new...");
-            string className = ReadOtherPointer();
-            _TRACE("CObjectIStream::ReadPointer: new " << className);
-            TTypeInfo typeInfo = MapType(className);
-            TObjectPtr object = typeInfo->Create();
-            ReadExternalObject(object, typeInfo);
-            ReadOtherPointerEnd();
-            info = CObject(object, typeInfo);
-            break;
-        }
-    default:
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "illegal pointer type");
+        return info.GetObject();
     }
-    while ( HaveMemberSuffix() ) {
-        _TRACE("CObjectIStream::ReadPointer: member...");
-        string memberName = ReadMemberSuffix();
-        _TRACE("CObjectIStream::ReadPointer: member " << memberName);
-        CTypeInfo::TMemberIndex index =
-            info.GetTypeInfo()->FindMember(memberName);
-        if ( index < 0 ) {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "member not found: " +
-                         info.GetTypeInfo()->GetName() + "." + memberName);
-        }
-        const CMemberInfo* memberInfo =
-            info.GetTypeInfo()->GetMemberInfo(index);
-        info = CObject(memberInfo->GetMember(info.GetObject()),
-                       memberInfo->GetTypeInfo());
+    catch (...) {
+        SetFailFlags(eFail);
+        throw;
     }
-    while ( info.GetTypeInfo() != declaredType ) {
-        // try to check parent class pointer
-        if ( info.GetTypeInfo()->FindMember(NcbiEmptyString) == 0 ) {
-            const CMemberInfo* parent = info.GetTypeInfo()->GetMemberInfo(0);
-            info = CObject(parent->GetMember(info.GetObject()),
-                           parent->GetTypeInfo());
-        }
-        else {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "incompatible member type: " +
-                         info.GetTypeInfo()->GetName() + " need: " +
-                         declaredType->GetName());
-        }
-    }
-    return info.GetObject();
 }
 
 CObject CObjectIStream::ReadObjectInfo(void)

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/01/05 19:43:44  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.19  1999/09/24 18:19:13  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -133,6 +139,8 @@ public:
     virtual string ReadTypeName(void);
     virtual string ReadEnumName(void);
 
+    virtual void ReadNull(void);
+
     virtual void SkipValue(void);
 
     TByte ReadByte(void);
@@ -162,6 +170,7 @@ protected:
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member);
 	virtual void Begin(ByteBlock& block);
+    int GetHexChar(void);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
 	virtual void End(const ByteBlock& block);
 
@@ -193,6 +202,7 @@ private:
     static bool FirstIdChar(char c);
     static bool IdChar(char c);
 
+    void SkipEndOfLine(char c);
     char SkipWhiteSpace(void);
     void SkipComments(void);
     void SkipString(void);

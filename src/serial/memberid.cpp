@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/01/05 19:43:53  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.4  1999/12/17 19:05:02  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -75,6 +81,17 @@ void CMemberId::SetName(const string& name)
     m_Name = name;
 }
 
+void CMemberId::UpdateName(const CMemberId& id)
+{
+    if ( GetName().empty() ) {
+        _ASSERT(GetTag() == id.GetTag() || id.GetTag() < 0);
+        m_Name = id.GetName();
+    }
+    else {
+        _ASSERT(GetName() == id.GetName());
+    }
+}
+
 CMemberId* CMemberId::SetTag(TTag tag)
 {
     m_Tag = tag;
@@ -105,7 +122,7 @@ string CMemberId::ToString(void) const
 {
     if ( !m_Name.empty() )
         return m_Name;
-    else if ( m_Tag <= 0 )
+    else if ( m_Tag >= 0 )
         return '[' + NStr::IntToString(m_Tag) + ']';
     else
         return "";

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/05 19:43:53  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.5  1999/12/17 19:05:02  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -147,8 +153,12 @@ bool CEnumeratedTypeValues::WriteEnum(CObjectOStream& out, long value) const
         // non enum value and (isInteger == true)
         return false;
     }
-    if ( !out.WriteEnumName(name) )
-        out.WriteEnumValue(value);
+    if ( out.WriteEnumName(name) )
+        return true;
+    // non text stream
+    if ( IsInteger() )
+        return false;
+    out.WriteEnumValue(value);
     return true;
 }
 

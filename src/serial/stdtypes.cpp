@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/01/05 19:43:57  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.11  1999/12/28 18:55:52  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -104,6 +110,11 @@ INIT_TYPE_INFO(double)
 
 CStdTypeInfo<void>::CStdTypeInfo(void)
     : CParent("void")
+{
+}
+
+CStdTypeInfo<void>::CStdTypeInfo(const char* typeName)
+    : CParent(typeName)
 {
 }
 

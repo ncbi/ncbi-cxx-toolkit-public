@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/01/05 19:43:45  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.12  1999/10/18 20:11:16  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -100,6 +106,7 @@ public:
 
     virtual long ReadEnumValue(void);
 
+    virtual void ReadNull(void);
     virtual void SkipValue(void);
 
     unsigned char ReadByte(void);
@@ -131,8 +138,9 @@ public:
 
     void ExpectSysTag(ETag tag);
     void ExpectSysTag(EClass c, bool constructed, ETag tag);
-    bool LastTagWas(EClass c, bool constructed);
-    bool LastTagWas(EClass c, bool constructed, ETag tag);
+    ETag GetLastTag(void) const;
+    bool LastTagWas(EClass c, bool constructed) const;
+    bool LastTagWas(EClass c, bool constructed, ETag tag) const;
 
     size_t ReadShortLength(void);
     size_t ReadLength(bool allowIndefinite = false);

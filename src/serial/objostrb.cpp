@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/01/05 19:43:56  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.22  1999/10/04 19:39:45  vasilche
 * Fixed bug in CObjectOStreamBinary.
 * Start using of BSRead/BSWrite.
@@ -137,7 +143,6 @@ void CObjectOStreamBinary::WriteBytes(const char* bytes, size_t size)
     m_Output.write(bytes, size);
 }
 
-inline
 void CObjectOStreamBinary::WriteNull(void)
 {
     WriteByte(CObjectStreamBinaryDefs::eNull);

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/01/05 19:43:54  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.22  1999/12/17 19:05:03  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -375,14 +381,21 @@ TTag CObjectIStreamAsnBinary::ReadTag(void)
 }
 
 inline
-bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed)
+ETag CObjectIStreamAsnBinary::GetLastTag(void) const
+{
+    return ETag(m_LastTagByte & 0x1f);
+}
+
+inline
+bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed) const
 {
     return m_LastTagState == eSysTagRead &&
         (m_LastTagByte >> 5) == ((c << 1) | (constructed? 1: 0));
 }
 
 inline
-bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed, ETag tag)
+bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed,
+                                         ETag tag) const
 {
     return m_LastTagState == eSysTagRead &&
         m_LastTagByte == ((c << 6) | (constructed? 0x20: 0) | tag);
@@ -429,8 +442,8 @@ void CObjectIStreamAsnBinary::ExpectSysTag(EClass c, bool constructed,
 {
     if ( ReadSysTag(c, constructed) != tag ) {
         ThrowError(eFormatError,
-                   "unexpected tag: should be: " +
-                   NStr::IntToString(tag));
+                   "unexpected tag: " + NStr::IntToString(GetLastTag()) +
+                   ", should be: " + NStr::IntToString(tag));
     }
 }
 
@@ -705,10 +718,17 @@ void CObjectIStreamAsnBinary::Begin(ByteBlock& block)
 	SetBlockLength(block, ReadLength());
 }
 
-size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& , char* dst, size_t length)
+size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& ,
+                                          char* dst, size_t length)
 {
 	ReadBytes(dst, length);
 	return length;
+}
+
+void CObjectIStreamAsnBinary::ReadNull(void)
+{
+    ExpectSysTag(eNull);
+    ExpectShortLength(0);
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)

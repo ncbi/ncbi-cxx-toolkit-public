@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/01/05 19:43:47  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.27  1999/12/28 21:04:22  vasilche
 * Removed three more implicit virtual destructors.
 *
@@ -551,13 +557,9 @@ class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
 public:
 
     CStlClassInfoMapImpl(const char* templ,
-                         TTypeInfo keyType, TTypeInfo valueType)
-        : CParent(templ, keyType, valueType)
-        { }
+                         TTypeInfo keyType, TTypeInfo valueType);
     CStlClassInfoMapImpl(const char* templ,
-                         const CTypeRef& keyType, const CTypeRef& valueType)
-        : CParent(templ, keyType, valueType)
-        { }
+                         const CTypeRef& keyType, const CTypeRef& valueType);
     ~CStlClassInfoMapImpl(void);
 
 protected:

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/01/05 19:43:45  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.18  1999/10/04 16:22:09  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -107,6 +113,7 @@ public:
     CObjectIStreamBinary(CNcbiIstream& in);
 
 
+    virtual void ReadNull(void);
     virtual void SkipValue(void);
 
     TByte ReadByte(void);

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/01/05 19:43:43  vasilche
+* Fixed error messages when reading from ASN.1 binary file.
+* Fixed storing of integers with enumerated values in ASN.1 binary file.
+* Added TAG support to key/value of map.
+* Added support of NULL variant in CHOICE.
+*
 * Revision 1.9  1999/12/17 19:04:52  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -69,6 +75,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeref.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/stdtypes.hpp>
 #include <serial/memberlist.hpp>
 #include <vector>
 #include <map>
@@ -148,6 +155,26 @@ public:
         {
             return new CChoiceAutoPtrTypeInfo<Data>(type);
         }
+};
+
+class CNullTypeInfo : public CStdTypeInfo<void>
+{
+    typedef CStdTypeInfo<void> CParent;
+public:
+    CNullTypeInfo(void);
+    ~CNullTypeInfo(void);
+
+    static TTypeInfo GetTypeInfo(void);
+
+    TObjectPtr Create(void) const;
+
+protected:
+    void CollectExternalObjects(COObjectList& list,
+                                TConstObjectPtr object) const;
+
+    void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
+
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
 
 //#include <serial/choiceptr.inl>
