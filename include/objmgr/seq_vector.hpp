@@ -84,13 +84,9 @@ public:
     // [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const;
 
-    enum ESequenceType {
-        eType_not_set,  // temporary before initialization
-        eType_na,
-        eType_aa,
-        eType_unknown   // cannot be determined (no data)
-    };
-    ESequenceType GetSequenceType(void) const;
+    typedef CSeq_inst::TMol TMol;
+
+    TMol GetSequenceType(void) const;
 
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
@@ -109,29 +105,25 @@ public:
     bool CanGetRange(TSeqPos from, TSeqPos to) const;
 
 private:
-    enum {
-        kTypeUnknown = 1 << 7
-    };
 
     friend class CBioseq_Handle;
     friend class CSeqVector_CI;
 
     TCoding x_GetCoding(TCoding cacheCoding, TCoding dataCoding) const;
-    TCoding x_UpdateCoding(void) const;
     void x_InitSequenceType(void);
     TResidue x_GetGapChar(TCoding coding) const;
     const CSeqMap& x_GetSeqMap(void) const;
     CSeqVector_CI& x_GetIterator(void) const;
 
-    static const char* sx_GetConvertTable(TCoding src, TCoding dst);
-    static const char* sx_GetComplementTable(TCoding coding);
+    static const char* sx_GetConvertTable(TCoding src, TCoding dst, bool reverse);
 
     CConstRef<CSeqMap>    m_SeqMap;
     CScope*               m_Scope;
     TCoding               m_Coding;
     ENa_strand            m_Strand;
+    TSeqPos               m_Size;
+    TMol                  m_Mol;
 
-    mutable ESequenceType m_SequenceType;
     mutable auto_ptr<CSeqVector_CI> m_Iterator;
 };
 
@@ -144,27 +136,34 @@ private:
 
 
 inline
+CSeqVector_CI& CSeqVector::x_GetIterator(void) const
+{
+    if ( !m_Iterator.get() ) {
+        m_Iterator.reset(new CSeqVector_CI(*this, 0));
+    }
+    return *m_Iterator;
+}
+
+inline
 CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 {
     CSeqVector_CI& it = x_GetIterator();
-    TSeqPos old_pos = it.GetPos();
-    if (pos == old_pos+1) {
-        ++it;
-    }
-    else if (pos == old_pos-1) {
-        --it;
-    }
-    else if (pos != old_pos) {
-        it.SetPos(pos);
-    }
+    it.SetPos(pos);
     return *it;
 }
+
+
+inline
+TSeqPos CSeqVector::size(void) const
+{
+    return m_Size;
+}
+
 
 inline
 CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
-    TCoding coding = m_Coding;
-    return int(coding) & kTypeUnknown? x_UpdateCoding(): coding;
+    return m_Coding;
 }
 
 inline
@@ -180,18 +179,31 @@ const CSeqMap& CSeqVector::x_GetSeqMap(void) const
 }
 
 inline
-CSeqVector_CI& CSeqVector::x_GetIterator(void) const
-{
-    if ( !m_Iterator.get() ) {
-        m_Iterator.reset(new CSeqVector_CI(*this, 0));
-    }
-    return *m_Iterator;
-}
-
-inline
 bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
 {
     return m_SeqMap->CanResolveRange(m_Scope, from, to, m_Strand);
+}
+
+
+inline
+CSeqVector::TMol CSeqVector::GetSequenceType(void) const
+{
+    return m_Mol;
+}
+
+
+inline
+void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
+{
+    x_GetIterator().GetSeqData(start, stop, buffer);
+}
+
+
+inline
+CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding cacheCoding,
+                                            TCoding dataCoding) const
+{
+    return cacheCoding != CSeq_data::e_not_set? cacheCoding: dataCoding;
 }
 
 
@@ -201,6 +213,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/08/21 13:32:04  vasilche
+* Optimized CSeqVector iteration.
+* Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.
+* Remove unsafe bit manipulations with coding.
+*
 * Revision 1.40  2003/07/17 19:10:27  grichenk
 * Added methods for seq-map and seq-vector validation,
 * updated demo.

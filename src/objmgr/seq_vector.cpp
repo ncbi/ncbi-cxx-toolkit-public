@@ -53,6 +53,7 @@ BEGIN_SCOPE(objects)
 
 CSeqVector::CSeqVector(void)
     : m_Scope(0),
+      m_Size(0),
       m_Iterator(0)
 {
 }
@@ -63,7 +64,8 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
       m_Scope(vec.m_Scope),
       m_Coding(vec.m_Coding),
       m_Strand(vec.m_Strand),
-      m_SequenceType(vec.m_SequenceType),
+      m_Size(vec.m_Size),
+      m_Mol(vec.m_Mol),
       m_Iterator(0)
 {
 }
@@ -75,7 +77,8 @@ CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
-      m_SequenceType(eType_not_set),
+      m_Size(seqMap->GetLength(&scope)),
+      m_Mol(seqMap->GetMol()),
       m_Iterator(0)
 {
     SetCoding(coding);
@@ -88,7 +91,8 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
-      m_SequenceType(eType_not_set),
+      m_Size(seqMap.GetLength(&scope)),
+      m_Mol(seqMap.GetMol()),
       m_Iterator(0)
 {
     SetCoding(coding);
@@ -105,19 +109,13 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
     if (&vec != this) {
         m_SeqMap = vec.m_SeqMap;
         m_Scope = vec.m_Scope;
-        m_SequenceType = vec.m_SequenceType;
         m_Coding = vec.m_Coding;
         m_Strand = vec.m_Strand;
+        m_Size = vec.m_Size;
+        m_Mol = vec.m_Mol;
         m_Iterator.reset();
     }
     return *this;
-}
-
-
-TSeqPos CSeqVector::size(void) const
-{
-    // Calculate total sequence size
-    return x_GetSeqMap().GetLength(m_Scope);
 }
 
 
@@ -153,17 +151,19 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding) const
 }
 
 
-DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex);
-DEFINE_STATIC_FAST_MUTEX(s_ComplementTableMutex);
+DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex2);
+//DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex);
+//DEFINE_STATIC_FAST_MUTEX(s_ComplementTableMutex);
+//DEFINE_STATIC_FAST_MUTEX(s_ChainedTableMutex);
 
-
-const char* CSeqVector::sx_GetConvertTable(TCoding src, TCoding dst)
+const char* CSeqVector::sx_GetConvertTable(TCoding src, TCoding dst, bool reverse)
 {
-    CFastMutexGuard guard(s_ConvertTableMutex);
-    typedef map<pair<TCoding, TCoding>, char*> TTables;
+    CFastMutexGuard guard(s_ConvertTableMutex2);
+    typedef pair<pair<TCoding, TCoding>, bool> TKey;
+    typedef map<TKey, char*> TTables;
     static TTables tables;
 
-    pair<TCoding, TCoding> key(src, dst);
+    TKey key(pair<TCoding, TCoding>(src, dst), reverse);
     TTables::iterator it = tables.find(key);
     if ( it != tables.end() ) {
         // already created
@@ -192,99 +192,24 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src, TCoding dst)
     char* table = it->second = new char[COUNT];
     fill(table, table+COUNT, char(255));
     for ( unsigned i = srcIndex.first; i <= srcIndex.second; ++i ) {
-        table[i] = char(min(255u, CSeqportUtil::GetMapToIndex(src, dst, i)));
-    }
-    return table;
-}
-
-
-const char* CSeqVector::sx_GetComplementTable(TCoding key)
-{
-    CFastMutexGuard guard(s_ComplementTableMutex);
-    typedef map<TCoding, char*> TTables;
-    static TTables tables;
-
-    TTables::iterator it = tables.find(key);
-    if ( it != tables.end() ) {
-        // already created
-        return it->second;
-    }
-    it = tables.insert(TTables::value_type(key, 0)).first;
-    if ( !CSeqportUtil::IsCodeAvailable(key) ) {
-        // invalid types
-        return 0;
-    }
-    pair<unsigned, unsigned> index = CSeqportUtil::GetCodeIndexFromTo(key);
-    const size_t COUNT = kMax_UChar+1;
-    if ( index.second >= COUNT ) {
-        // too large range
-        return 0;
-    }
-    try {
-        CSeqportUtil::GetIndexComplement(key, index.first);
-    }
-    catch ( runtime_error& /*badType*/ ) {
-        // incompatible types
-        return 0;
-    }
-    char* table = it->second = new char[COUNT];
-    fill(table, table+COUNT, char(255));
-    for ( unsigned i = index.first; i <= index.second; ++i ) {
+        unsigned code = i;
+        if ( reverse ) {
+            try {
+                code = CSeqportUtil::GetIndexComplement(src, code);
+            }
+            catch ( runtime_error& /*noComplement*/ ) {
+            }
+        }
         try {
-            table[i] = char(min(255u,
-                                CSeqportUtil::GetIndexComplement(key, i)));
+            code = CSeqportUtil::GetMapToIndex(src, dst, code);
+            code = min(255u, code);
         }
-        catch ( runtime_error& /*noComplement*/ ) {
+        catch ( runtime_error& /*noConversion*/ ) {
+            code = 255;
         }
+        table[i] = char(code);
     }
     return table;
-}
-
-
-CSeqVector::TCoding CSeqVector::x_UpdateCoding(void) const
-{
-    TCoding coding = m_Coding;
-    if ( int(coding) & kTypeUnknown ) {
-        GetSequenceType();
-        const_cast<CSeqVector*>(this)->
-            SetCoding(EVectorCoding(coding & ~kTypeUnknown));
-        coding = m_Coding;
-    }
-    return coding;
-}
-
-
-CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding cacheCoding,
-                                            TCoding dataCoding) const
-{
-    if ( int(cacheCoding) & kTypeUnknown ) {
-        TCoding newCoding = CSeq_data::e_not_set;
-        switch ( GetSequenceType() ) {
-        case eType_aa:
-            switch ( cacheCoding & ~kTypeUnknown ) {
-            case CBioseq_Handle::eCoding_Iupac:
-                newCoding = CSeq_data::e_Iupacaa;
-                break;
-            case CBioseq_Handle::eCoding_Ncbi:
-                newCoding = CSeq_data::e_Ncbistdaa;
-                break;
-            }
-            break;
-        case eType_na:
-            switch ( cacheCoding & ~kTypeUnknown ) {
-            case CBioseq_Handle::eCoding_Iupac:
-                newCoding = CSeq_data::e_Iupacna;
-                break;
-            case CBioseq_Handle::eCoding_Ncbi:
-                newCoding = CSeq_data::e_Ncbi4na;
-                break;
-            }
-            break;
-        }
-        cacheCoding = newCoding;
-    }
-
-    return cacheCoding != CSeq_data::e_not_set? cacheCoding: dataCoding;
 }
 
 
@@ -300,14 +225,16 @@ void CSeqVector::SetCoding(TCoding coding)
 void CSeqVector::SetIupacCoding(void)
 {
     switch ( GetSequenceType() ) {
-    case eType_aa:
+    case CSeq_inst::eMol_aa:
         SetCoding(CSeq_data::e_Iupacaa);
         break;
-    case eType_na:
+    case CSeq_inst::eMol_dna:
+    case CSeq_inst::eMol_rna:
+    case CSeq_inst::eMol_na:
         SetCoding(CSeq_data::e_Iupacna);
         break;
     default:
-        SetCoding(TCoding(int(kTypeUnknown) | CBioseq_Handle::eCoding_Iupac));
+        SetCoding(CSeq_data::e_Iupacna);
         break;
     }
 }
@@ -316,14 +243,16 @@ void CSeqVector::SetIupacCoding(void)
 void CSeqVector::SetNcbiCoding(void)
 {
     switch ( GetSequenceType() ) {
-    case eType_aa:
+    case CSeq_inst::eMol_aa:
         SetCoding(CSeq_data::e_Ncbistdaa);
         break;
-    case eType_na:
+    case CSeq_inst::eMol_dna:
+    case CSeq_inst::eMol_rna:
+    case CSeq_inst::eMol_na:
         SetCoding(CSeq_data::e_Ncbi4na);
         break;
     default:
-        SetCoding(TCoding(int(kTypeUnknown) | CBioseq_Handle::eCoding_Ncbi));
+        SetCoding(CSeq_data::e_Ncbi4na);
         break;
     }
 }
@@ -345,38 +274,17 @@ void CSeqVector::SetCoding(EVectorCoding coding)
 }
 
 
-CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
-{
-    if (m_SequenceType == eType_not_set) {
-        switch ( x_GetSeqMap().GetMol() ) {
-        case CSeq_inst::eMol_dna:
-        case CSeq_inst::eMol_rna:
-        case CSeq_inst::eMol_na:
-            m_SequenceType = eType_na;
-            break;
-        case CSeq_inst::eMol_aa:
-            m_SequenceType = eType_aa;
-            break;
-        default:
-            m_SequenceType = eType_unknown;
-        }
-    }
-    return m_SequenceType;
-}
-
-
-void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
-{
-    x_GetIterator().GetSeqData(start, stop, buffer);
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/08/21 13:32:04  vasilche
+* Optimized CSeqVector iteration.
+* Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.
+* Remove unsafe bit manipulations with coding.
+*
 * Revision 1.57  2003/06/24 19:46:43  grichenk
 * Changed cache from vector<char> to char*. Made
 * CSeqVector::operator[] inline.

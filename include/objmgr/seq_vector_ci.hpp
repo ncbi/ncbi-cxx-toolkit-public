@@ -69,6 +69,7 @@ public:
     operator bool(void) const;
 
 private:
+    void x_SetPos(TSeqPos pos);
     void x_InitializeCache(void);
     void x_DestroyCache(void);
     void x_ClearCache(void);
@@ -141,6 +142,20 @@ TSeqPos CSeqVector_CI::GetPos(void) const
 }
 
 inline
+void CSeqVector_CI::SetPos(TSeqPos pos)
+{
+    TCache_I data = m_CacheData;
+    TSeqPos offset = pos - m_CachePos;
+    TSeqPos size = m_CacheEnd - data;
+    if ( offset >= size ) {
+        x_SetPos(pos);
+    }
+    else {
+        m_Cache = data + offset;
+    }
+}
+
+inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
     _ASSERT(m_Cache < m_CacheEnd);
@@ -189,6 +204,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/08/21 13:32:04  vasilche
+* Optimized CSeqVector iteration.
+* Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.
+* Remove unsafe bit manipulations with coding.
+*
 * Revision 1.12  2003/08/19 18:34:11  vasilche
 * Buffer length constant moved to *.cpp file for easier modification.
 *
