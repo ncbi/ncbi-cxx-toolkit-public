@@ -333,10 +333,13 @@ public:
     void SetTreeNode(TBioTreeNode* node)
     {
         _ASSERT(node->GetParent() == 0);
+	m_TreeNode.release();
         m_TreeNode.reset(node);
     }
 
     const TBioTreeNode* GetTreeNode() const { return m_TreeNode.get(); }
+
+    TBioTreeNode* GetTreeNodeNonConst() { return m_TreeNode.get(); }
 
     /// Add node to the tree (node location is defined by the parent id
     TBioTreeNode* AddNode(const TBioNodeType& node_value, 
@@ -414,6 +417,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/21 12:31:21  ckenny
+ * fixed bug in SetTreeNode
+ *
  * Revision 1.12  2004/06/09 13:38:05  kuznets
  * Fixed compile warning (GCC)
  *
