@@ -128,6 +128,7 @@ public:
     const CSeq_entry& GetTSE(const CBioseq_Handle& handle);
 
     TTSE_Lock GetTSEInfo(const CSeq_entry* entry);
+    const CSeq_entry& GetTSEFromInfo(const TTSE_Lock& tse);
 
     /// Get Bioseq core structure
     CBioseq_Handle::TBioseqCore GetBioseqCore(const CBioseq_Handle& handle);
@@ -313,6 +314,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/03/24 21:26:43  grichenk
+* Added support for CTSE_CI
+*
 * Revision 1.47  2003/03/21 19:22:50  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

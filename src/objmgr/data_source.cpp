@@ -159,6 +159,16 @@ TTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
 }
 
 
+const CSeq_entry& CDataSource::GetTSEFromInfo(const TTSE_Lock& tse)
+{
+    if (!tse->m_TSE) {
+        //### Force loader to load the TSE by blob id
+    }
+    _ASSERT(tse->m_TSE);
+    return *tse->m_TSE;
+}
+
+
 CBioseq_Info* CDataSource::GetBioseqHandle(CSeqMatch_Info& info)
 {
     // The TSE is locked by the scope, so, it can not be deleted.
@@ -1402,6 +1412,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2003/03/24 21:26:45  grichenk
+* Added support for CTSE_CI
+*
 * Revision 1.95  2003/03/21 21:08:53  grichenk
 * Fixed TTSE_Lock initialization
 *

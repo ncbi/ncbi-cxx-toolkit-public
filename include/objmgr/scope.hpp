@@ -178,7 +178,6 @@ public:
                           const CSeq_entry* limit_entry = 0);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              CAnnotTypes_CI::TTSESet& tse_set);
-    TTSE_Lock GetTSEInfo(const CSeq_entry* tse);
 
 private:
     void x_DetachFromOM(void);
@@ -189,6 +188,13 @@ private:
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(CSeq_id_Handle idh);
+
+    // GetTSE_Info corresponding to the TSE
+    TTSE_Lock GetTSEInfo(const CSeq_entry* tse);
+
+    // Get seq-entry corresponding to the TSE_Info, load the TSE
+    // if necessary.
+    const CSeq_entry& x_GetTSEFromInfo(const TTSE_Lock& tse);
 
     // Get bioseq handles for sequences from the given TSE using the filter
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
@@ -229,6 +235,7 @@ private:
     friend class CBioseq_CI;
     friend class CAnnotTypes_CI;
     friend class CBioseq_Handle;
+    friend class CTSE_CI;
 };
 
 
@@ -238,6 +245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/03/24 21:26:42  grichenk
+* Added support for CTSE_CI
+*
 * Revision 1.37  2003/03/21 19:22:48  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *

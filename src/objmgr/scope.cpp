@@ -353,6 +353,12 @@ TTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
 }
 
 
+const CSeq_entry& CScope::x_GetTSEFromInfo(const TTSE_Lock& tse)
+{
+    return tse->m_DataSource->GetTSEFromInfo(tse);
+}
+
+
 void CScope::SetFindMode(EFindMode mode)
 {
     m_FindMode = mode;
@@ -512,6 +518,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/03/24 21:26:45  grichenk
+* Added support for CTSE_CI
+*
 * Revision 1.54  2003/03/21 19:22:51  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *
