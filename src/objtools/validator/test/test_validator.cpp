@@ -31,11 +31,14 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <serial/serial.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objectio.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
@@ -46,6 +49,8 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/validator/validator.hpp>
+
+#include <objects/seqset/Bioseq_set.hpp>
 
 // Object Manager includes
 #include <objects/objmgr/object_manager.hpp>
@@ -68,6 +73,7 @@ using namespace validator;
 //
 //  Demo application
 //
+/*
 template<class T>
 void display_object(const T& obj)
 {
@@ -75,61 +81,94 @@ void display_object(const T& obj)
     *os << obj;
     cout << endl;
 }
+*/
 
-
-class CTest_validatorApplication : public CNcbiApplication
+class CTest_validatorApplication : public CNcbiApplication, CReadClassMemberHook
 {
 public:
+    CTest_validatorApplication(void);
+
     virtual void Init(void);
     virtual int  Run (void);
+
+    void ReadClassMember(CObjectIStream& in,
+            const CObjectInfo::CMemberIterator& member);
+
+private:
+
+    void Setup(const CArgs& args);
+    void SetupValidatorOptions(const CArgs& args);
+
+    CObjectIStream* OpenFile(const CArgs& args);
+
+    CValidError* ProcessSeqEntry(void);
+    CValidError* ProcessSeqSubmit(void);
+    void ProcessReleaseFile(const CArgs& args);
+    CRef<CSeq_entry> ReadSeqEntry(void);
+    unsigned int PrintValidError(const CValidError& errors, const CArgs& args);
+    void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os);
+
+
+    CRef<CObjectManager> m_ObjMgr;
+    auto_ptr<CObjectIStream> m_In;
+    unsigned int m_Options;
+    bool m_Continue;
 };
+
+
+CTest_validatorApplication::CTest_validatorApplication(void) :
+    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false)
+{
+}
 
 
 void CTest_validatorApplication::Init(void)
 {
     // Prepare command line descriptions
-    //
 
     // Create
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     
     arg_desc->AddDefaultKey
         ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
-        CArgDescriptions::eString, "current.prt");
+        CArgDescriptions::eInputFile, "current.prt");
     
+
+    arg_desc->AddFlag("s", "Input is Seq-submit");
+    arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
+    arg_desc->AddFlag("b", "Input is in binary format");
+    arg_desc->AddFlag("c", "Continue on ASN.1 error");
+
+    arg_desc->AddFlag("g", "Registers ID loader");
+    
+    arg_desc->AddFlag("nonascii", "Report Non Ascii Error");
+    arg_desc->AddFlag("context", "Suppress context in error msgs");
+    arg_desc->AddFlag("align", "Validate Alignments");
+    arg_desc->AddFlag("exon", "Validate exons");
+    arg_desc->AddFlag("splice", "Report splice error as error");
+    arg_desc->AddFlag("ovlpep", "Report overlapping peptide as error");
+    arg_desc->AddFlag("taxid", "Requires taxid");
+    arg_desc->AddFlag("isojta", "Requires ISO-JTA");
+
+    arg_desc->AddOptionalKey(
+        "x", "OutFile", "Output file for error messages",
+        CArgDescriptions::eOutputFile);
     arg_desc->AddDefaultKey(
-        "o", "UseID", "If true, registers ID loader",
-        CArgDescriptions::eBoolean, "false");
-    
+        "q", "SevLevel", "Lowest severity error to show",
+        CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey(
-        "a", "CheckAlign", "Validate Alignments",
-        CArgDescriptions::eBoolean, "false");
-    
-    arg_desc->AddDefaultKey(
-        "n", "NonAsciiError", "Report Non Ascii Error",
-        CArgDescriptions::eBoolean, "false");
-    
-    arg_desc->AddDefaultKey(
-        "s", "SpliceAsError", "Splice error as error, else warning",
-        CArgDescriptions::eBoolean, "false");
-    
-    arg_desc->AddDefaultKey(
-        "c", "SuppressContext", "Suppress context in error msgs",
-        CArgDescriptions::eBoolean, "false");
-    
-    arg_desc->AddDefaultKey
-        ("e", "SeqEntry", "Input is Seq-entry [T/F]",
-        CArgDescriptions::eBoolean, "false");
-    
-    arg_desc->AddDefaultKey
-        ("b", "SeqSubmit", "Input is Seq-submit [T/F]",
-        CArgDescriptions::eBoolean, "false");
+        "r", "SevCount", "Severity error to count in return code",
+        CArgDescriptions::eInteger, "2");
+    CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
+    arg_desc->SetConstraint("q", constraint);
+    arg_desc->SetConstraint("r", constraint);
+
 
     // !!!
     // { DEBUG
     // This flag should be removed once testing is done. It is intended for
     // performance testing.
-    arg_desc->AddFlag("p", "Disable suspected performance bottlenecks");
+    arg_desc->AddFlag("debug", "Disable suspected performance bottlenecks");
     // }
 
     // Program description
@@ -138,115 +177,228 @@ void CTest_validatorApplication::Init(void)
                               prog_description, false);
 
     // Pass argument descriptions to the application
-    //
-
     SetupArgDescriptions(arg_desc.release());
 }
 
 
-static const string diag_sev[] = {
-    "Info",
-    "Warning",
-    "Error",
-    "Critical",
-    "Fatal",
-    "Trace"
-};
-
-
 int CTest_validatorApplication::Run(void)
 {
+    const CArgs& args = GetArgs();
+    Setup(args);
+    
+    // Open File 
+    m_In.reset(OpenFile(args));
+
+    // Process file based on its content
+    // Unless otherwise specifien we assume the file in hand is
+    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
+    // Release file (batch processing) where we process each Seq-entry
+    // at a time.
+    auto_ptr<CValidError> eval;
+    if ( args["t"] ) {          // Release file
+        ProcessReleaseFile(args);
+        return 0;
+    } else {
+        string header = m_In->ReadFileHeader();
+
+        if ( args["s"]  &&  header != "Seq-submit" ) {
+            NCBI_THROW(CException, eUnknown,
+                "Conflict: '-s' flag is specified but file is not Seq-submit");
+        } 
+        if ( args["s"]  ||  header == "Seq-submit" ) {   // Seq-submit
+            eval.reset(ProcessSeqSubmit());
+        } else {                    // default: Seq-entry
+            eval.reset(ProcessSeqEntry());
+        }
+    }
+
+
+    unsigned int result = 0;
+    result = PrintValidError(*eval, args);
+    
+    return result;
+}
+
+
+void CTest_validatorApplication::ReadClassMember
+(CObjectIStream& in,
+ const CObjectInfo::CMemberIterator& member)
+{
+    // Read each element separately to a local TSeqEntry,
+    // process it somehow, and... not store it in the container.
+    for ( CIStreamContainerIterator i(in, member); i; ++i ) {
+        try {
+            // Get seq-entry to validate
+            CRef<CSeq_entry> se(new CSeq_entry);
+            i >> *se;
+            
+            // Validate Seq-entry
+            auto_ptr<CValidError> eval(new CValidError(*m_ObjMgr, *se, m_Options));
+            PrintValidError(*eval, GetArgs());
+            
+        } catch (exception e) {
+            if ( !m_Continue ) {
+                 throw;
+            }
+            // should we issue some sort of warning?
+        }
+    }
+}
+
+
+void CTest_validatorApplication::ProcessReleaseFile
+(const CArgs& args)
+{
+    CRef<CBioseq_set> seqset(new CBioseq_set);
+
+    // Register the Seq-entry hook
+    CObjectTypeInfo set_type = CType<CBioseq_set>();
+    set_type.FindMember("seq-set").SetLocalReadHook(*m_In, this);
+
+    m_Continue = args["c"];
+
+    // Read the CBioseq_set, it will call the hook object each time we 
+    // encounter a Seq-entry
+    *m_In >> *seqset;
+}
+
+
+CRef<CSeq_entry> CTest_validatorApplication::ReadSeqEntry(void)
+{
+    CRef<CSeq_entry> se(new CSeq_entry);
+    m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+
+    return se;
+}
+
+
+CValidError* CTest_validatorApplication::ProcessSeqEntry(void)
+{
+    // Get seq-entry to validate
+    CRef<CSeq_entry> se(ReadSeqEntry());
+    
+    // Validate Seq-entry
+    return new CValidError(*m_ObjMgr, *se, m_Options);
+}
+
+
+CValidError* CTest_validatorApplication::ProcessSeqSubmit(void)
+{
+    CRef<CSeq_submit> ss(new CSeq_submit);
+    
+    // Get seq-entry to validate
+    m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+    
+    // Validae Seq-entry
+    return new CValidError(*m_ObjMgr, *ss, m_Options);
+}
+
+
+
+void CTest_validatorApplication::Setup(const CArgs& args)
+{    
     // Setup application registry and logs for CONNECT library
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(&GetConfig(), false));
     // Setup MT-safety for CONNECT library
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
-    // Process command line args:  get CSeq_entry
-    const CArgs& args = GetArgs();
-    string fname = args["i"].AsString();
-
     // Create object manager
-    // Use CRef<> here to automatically delete the OM on exit.
-    CRef<CObjectManager> obj_mgr(new CObjectManager);
-
-    if (args["o"].AsBoolean()) {
+    m_ObjMgr.Reset(new CObjectManager);
+    if ( args["g"] ) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
-        obj_mgr->RegisterDataLoader(*new CGBDataLoader("ID"),
-				    CObjectManager::eDefault);
+        m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
+            CObjectManager::eDefault);
     }
 
-    // Set validator options
-    unsigned int options = 0;
-    options |= args["n"].AsBoolean() ? CValidError::eVal_non_ascii : 0;
-    options |= args["s"].AsBoolean() ? CValidError::eVal_splice_err : 0;
-    options |= args["a"].AsBoolean() ? CValidError::eVal_val_align : 0;
-    options |= args["c"].AsBoolean() ? CValidError::eVal_no_context : 0;
-
-    // !!!  DEBUG {
-    // For testing only. Should be removed in the future
-    options |= args["p"] ? CValidError::eVal_perf_bottlenecks : 0;
-    // }
-
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
-    auto_ptr<CValidError> eval;
-
-    if ( args["e"].AsBoolean() ) {
-        // Create CSeq_entry to be validated from file
-        CRef<CSeq_entry> se(new CSeq_entry);
-        
-        // Get seq-entry to validate
-        in->Read(ObjectInfo(*se));
-        
-        // Validae Seq-entry
-        eval.reset(new CValidError(*obj_mgr, *se, options));
-    } else if ( args["b"].AsBoolean() ) {
-        
-        // Create CSeq_submit to be validated from file
-        CRef<CSeq_submit> ss(new CSeq_submit);
-        
-        // Get seq-entry to validate
-        in->Read(ObjectInfo(*ss));
-        
-        // Validae Seq-entry
-        eval.reset(new CValidError(*obj_mgr, *ss, options));
-    }
-    
-    // Display error messages
-    // Display error messages
-    typedef map< string, int> TCodes;
-    typedef map < EDiagSev, int > TSev;
-
-    TCodes codes;
-    TSev sev;
-    if ( eval.get() != 0 ) {
-        if ( eval->size() > 0 ) {
-            for (CValidError_CI vit(*eval); vit; ++vit) {
-                codes[vit->GetErrCode()]++;
-                sev[vit->GetSeverity()]++;
-                cout << diag_sev[vit->GetSeverity()] << "\t\t" << vit->GetErrCode() << endl << endl;
-                cout << "Message: " << vit->GetMsg() << endl << endl;
-                cout << "Verbose: " << vit->GetVerbose() << endl << endl;
-            }
-            cout << "Total number of errors: " << eval->size() << endl;
-            iterate ( TCodes, iter, codes ) {
-                cout << "Error code: " << iter->first << " appears " << iter->second << endl;
-            }
-            iterate ( TSev, iter, sev) {
-                cout << "Severity: " << iter->first << " appears " << iter->second << endl;
-            }
-        }
-        else {
-            cout << "All entries are OK!" << endl;
-        }
-    }
-
-    return 0;
+    SetupValidatorOptions(args);
 }
 
 
+void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
+{
+    // Set validator options
+    m_Options = 0;
+
+    m_Options |= args["nonascii"] ? CValidError::eVal_non_ascii :   0;
+    m_Options |= args["context"]  ? CValidError::eVal_no_context :  0;
+    m_Options |= args["align"]    ? CValidError::eVal_val_align :   0;
+    m_Options |= args["exon"]     ? CValidError::eVal_val_exons :   0;
+    m_Options |= args["splice"]   ? CValidError::eVal_splice_err :  0;
+    m_Options |= args["ovlpep"]   ? CValidError::eVal_ovl_pep_err : 0;
+    m_Options |= args["taxid"]    ? CValidError::eVal_need_taxid :  0;
+    m_Options |= args["isojta"]   ? CValidError::eVal_need_isojta : 0;
+
+    // !!!  DEBUG {
+    // For testing only. Should be removed in the future
+    m_Options |= args["debug"].HasValue() ? CValidError::eVal_perf_bottlenecks : 0;
+    // }
+}
+
+
+CObjectIStream* CTest_validatorApplication::OpenFile
+(const CArgs& args)
+{
+    // file name
+    string fname = args["i"].AsString();
+
+    // file format 
+    ESerialDataFormat format = eSerial_AsnText;
+    if ( args["b"] ) {
+        format = eSerial_AsnBinary;
+    }
+    
+    return CObjectIStream::Open(fname, format);
+}
+
+
+unsigned int CTest_validatorApplication::PrintValidError
+(const CValidError& errors, 
+ const CArgs& args)
+{
+    EDiagSev show = static_cast<EDiagSev>(args["q"].AsInteger());
+    EDiagSev count = static_cast<EDiagSev>(args["r"].AsInteger());
+    
+    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &cout;
+
+    
+
+    if ( errors.size() == 0 ) {
+        *os << "All entries are OK!" << endl;
+        os->flush();
+        return 0;
+    }
+
+    unsigned int result = 0;
+    unsigned int reported = 0;
+
+    for ( CValidError_CI vit(errors); vit; ++vit) {
+        if ( vit->GetSeverity() >= count ) {
+            ++result;
+        }
+        if ( vit->GetSeverity() < show ) {
+            continue;
+        }
+        PrintValidErrItem(*vit, *os);
+        ++reported;
+    }
+    *os << reported << " messages reported" << endl;
+    os->flush();
+
+    return result;
+}
+
+
+void CTest_validatorApplication::PrintValidErrItem
+(const CValidErrItem& item,
+ CNcbiOstream& os)
+{
+    os << item.GetSevAsStr() << ":       " << item.GetErrCode() << endl << endl
+       << "Message: " << item.GetMsg() << endl << endl
+       << "Verbose: " << item.GetVerbose() << endl << endl;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
@@ -264,6 +416,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2003/02/24 20:36:15  shomrat
+ * Added several application flags, including batch processing
+ *
  * Revision 1.11  2003/02/14 21:55:13  shomrat
  * Output the severity of an error
  *
