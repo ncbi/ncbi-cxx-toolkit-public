@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/04/05 22:55:35  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.9  2001/04/04 00:27:14  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -845,14 +848,14 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
 }
 
 static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl, int nResult,
-    const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences)
+    const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences, AlignmentManager *alnMgr)
 {
     if (corDef->sll.n != thdTbl->nsc || nResult >= thdTbl->n) {
         ERR_POST(Error << "CreateAlignmentFromThdTbl() - inconsistent Thd_Tbl");
         return NULL;
     }
 
-    BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(sequences);
+    BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(sequences, alnMgr);
 
     // add blocks from threader result
     for (int block=0; block<corDef->sll.n; block++) {
@@ -872,7 +875,7 @@ static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl,
     }
 
     // finish alignment
-    if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndConservationColors()) {
+    if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors()) {
         ERR_POST(Error << "CreateAlignmentFromThdTbl() - error finishing alignment");
         delete newAlignment;
         return NULL;
@@ -981,7 +984,8 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
                 BlockMultipleAlignment::SequenceList *sequences = new BlockMultipleAlignment::SequenceList(2);
                 sequences->front() = (*p)->GetMaster();
                 sequences->back() = (*p)->GetSequenceOfRow(1);
-                newAlignment = CreateAlignmentFromThdTbl(thdTbl, i, corDef, sequences);
+                newAlignment = CreateAlignmentFromThdTbl(thdTbl, i, corDef,
+                    sequences, masterMultiple->alignmentManager);
                 if (!newAlignment) continue;
 
                 // set scores to show in alignment
@@ -1169,6 +1173,49 @@ cleanup:
     if (rcxPtl) FreeRcxPtl(rcxPtl);
     if (aBlocks) delete aBlocks;
     return retval;
+}
+
+bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
+    GeometryViolationsForRow *violations)
+{
+    Fld_Mtf *fldMtf = NULL;
+
+    // create contact lists
+    if (!multiple->GetMaster()->molecule || multiple->GetMaster()->molecule->parentSet->isAlphaOnly) {
+        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        return false;
+    }
+    if (!(fldMtf = CreateFldMtf(multiple->GetMaster()))) return false;
+
+    violations->clear();
+    violations->resize(multiple->NRows());
+
+    // look for too-short regions between aligned blocks
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> aBlocks(multiple->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks->end(), n;
+    int row, nViolations = 0;
+    const Block::Range *thisRange, *nextRange, *thisMaster, *nextMaster;
+    for (b=aBlocks->begin(); b!=be; b++) {
+        n = b;
+        n++;
+        if (n == be) break;
+        thisMaster = (*b)->GetRangeOfRow(0);
+        nextMaster = (*n)->GetRangeOfRow(0);
+
+        for (row=1; row<multiple->NRows(); row++) {
+            thisRange = (*b)->GetRangeOfRow(row);
+            nextRange = (*n)->GetRangeOfRow(row);
+
+            // violation found
+            if (nextRange->from - thisRange->to - 1 < fldMtf->mll[nextMaster->from][thisMaster->to]) {
+                violations->at(row).push_back(std::make_pair(thisRange->to, nextRange->from));
+                nViolations++;
+            }
+        }
+    }
+
+    ERR_POST(Info << "Found " << nViolations << " geometry violations");
+    return true;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/04/05 22:55:34  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.12  2001/04/04 00:27:14  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -78,14 +81,16 @@
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_colors.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList) :
-    sequences(sequenceList), conservationColorer(NULL)
+BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr) :
+    sequences(sequenceList), conservationColorer(NULL), alignmentManager(alnMgr)
 {
     InitCache();
     rowDoubles.resize(sequenceList->size());
@@ -113,13 +118,14 @@ BlockMultipleAlignment::~BlockMultipleAlignment(void)
 BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
 {
     // must actually copy the list
-    BlockMultipleAlignment *copy = new BlockMultipleAlignment(new SequenceList(*sequences));
+    BlockMultipleAlignment *copy = new BlockMultipleAlignment(new SequenceList(*sequences), alignmentManager);
     BlockList::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++)
         copy->blocks.push_back((*b)->Clone(copy));
-    copy->UpdateBlockMapAndConservationColors();
+    copy->UpdateBlockMapAndColors();
     copy->rowDoubles = rowDoubles;
     copy->rowStrings = rowStrings;
+    copy->geometryViolations = geometryViolations;
 	return copy;
 }
 
@@ -231,7 +237,7 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
     return true;
 }
 
-bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(bool clearRowInfo)
+bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
 {
     int i = 0, j;
     BlockList::iterator b, be = blocks.end();
@@ -254,13 +260,19 @@ bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(bool clearRowIn
         if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
 
-    if (clearRowInfo) ClearRowInfo(); // if alignment changes, any scores/status become invalid
+    // if alignment changes, any scores/status/special colors become invalid
+    if (clearRowInfo) {
+        ClearRowInfo();
+        geometryViolations.clear();
+    }
+
     return true;
 }
 
 bool BlockMultipleAlignment::GetCharacterTraitsAt(
     int alignmentColumn, int row, eUnalignedJustification justification,
-    char *character, Vector *color, bool *isHighlighted) const
+    char *character, Vector *color, bool *isHighlighted,
+    bool *drawBackground, Vector *cellBackgroundColor) const
 {
     const Sequence *sequence;
     int seqIndex;
@@ -289,6 +301,25 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
         *isHighlighted = GlobalMessenger()->IsHighlighted(sequence, seqIndex);
     else
         *isHighlighted = false;
+
+    // add special alignment coloring (but don't override highlight)
+    *drawBackground = false;
+    if (!(*isHighlighted)) {
+
+        // check for unmergeable alignment
+        const BlockMultipleAlignment *referenceAlignment = alignmentManager->GetCurrentMultipleAlignment();
+        if (row == 0 && seqIndex >= 0 && !isAligned && referenceAlignment != this &&
+            referenceAlignment->GetMaster() == sequence && referenceAlignment->IsAligned(row, seqIndex)) {
+            *drawBackground = true;
+            *cellBackgroundColor = GlobalColors()->Get(Colors::eUnalignedInUpdate);
+        }
+
+        // check for geometry violations
+        if (geometryViolations.size() > 0 && seqIndex >= 0 && geometryViolations[row][seqIndex]) {
+            *drawBackground = true;
+            *cellBackgroundColor = GlobalColors()->Get(Colors::eGeometryViolation);
+        }
+    }
 
     return true;
 }
@@ -689,7 +720,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
     }
 
     if (actualShift != 0) {
-        UpdateBlockMapAndConservationColors();
+        UpdateBlockMapAndColors();
         return true;
     } else
         return false;
@@ -783,7 +814,7 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     if (!CheckAlignedBlock(ABlock))
         ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - shift failed to create valid aligned block");
 
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
     return true;
 }
 
@@ -811,7 +842,7 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
     if (!CheckAlignedBlock(info.block) || !CheckAlignedBlock(newAlignedBlock))
         ERR_POST(Error << "BlockMultipleAlignment::SplitBlock() - split failed to create valid blocks");
 
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
     return true;
 }
 
@@ -844,7 +875,7 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
     if (!CheckAlignedBlock(expandedBlock))
         ERR_POST(Error << "BlockMultipleAlignment::MergeBlocks() - merge failed to create valid block");
 
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
     return true;
 }
 
@@ -920,7 +951,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
     if (!CheckAlignedBlock(ABlock))
         ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - failed to create valid block");
 
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
     return true;
 }
 
@@ -985,7 +1016,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     }
 
     RemoveBlock(block);
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
     return true;
 }
 
@@ -1015,7 +1046,7 @@ bool BlockMultipleAlignment::DeleteRow(int row)
     }
 
     // update total alignment width
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
 
     return true;
 }
@@ -1093,7 +1124,7 @@ bool BlockMultipleAlignment::ExtractRows(
         SequenceList *newSeqs = new SequenceList(2);
         (*newSeqs)[0] = (*sequences)[0];
         (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
-        BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs);
+        BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
         for (b=blocks.begin(); b!=be; b++) {
             UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
             if (ABlock) {
@@ -1107,7 +1138,7 @@ bool BlockMultipleAlignment::ExtractRows(
             }
         }
         if (!newAlignment->AddUnalignedBlocks() ||
-            !newAlignment->UpdateBlockMapAndConservationColors()) {
+            !newAlignment->UpdateBlockMapAndColors()) {
             ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
             return false;
         }
@@ -1134,7 +1165,7 @@ bool BlockMultipleAlignment::ExtractRows(
     }
 
     // update total alignment width
-    UpdateBlockMapAndConservationColors();
+    UpdateBlockMapAndColors();
     return true;
 }
 
@@ -1236,8 +1267,26 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     }
 
     // update this alignment, but leave row scores/status alone
-    UpdateBlockMapAndConservationColors(false);
+    UpdateBlockMapAndColors(false);
     return true;
+}
+
+void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForRow& violations)
+{
+    if (violations.size() != NRows()) {
+        ERR_POST(Error << "BlockMultipleAlignment::ShowGeometryViolations() - wrong size list");
+        return;
+    }
+
+    geometryViolations.clear();
+    geometryViolations.resize(NRows());
+    for (int row=0; row<NRows(); row++) {
+        geometryViolations[row].resize(GetSequenceOfRow(row)->sequenceString.size(), false);
+        IntervalList::const_iterator i, ie = violations[row].end();
+        for (i=violations[row].begin(); i!=ie; i++)
+            for (int l=i->first; l<=i->second; l++)
+                geometryViolations[row][l] = true;
+    }
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/04/05 22:54:51  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.6  2001/03/30 14:43:11  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -72,8 +75,6 @@ public:
 
     bool RequestEditorEnable(bool enable);
     void EnableDerivedEditorMenuItems(bool enabled);
-
-    DECLARE_EVENT_TABLE()
 
 private:
     SequenceViewer *sequenceViewer;
@@ -122,6 +123,8 @@ private:
         menuBar->Check(MID_REALIGN_ROW, false);
         SetCursor(wxNullCursor);
     }
+
+    DECLARE_EVENT_TABLE()
 
 public:
     // ask if user wants to save edits; return value indicates whether program should

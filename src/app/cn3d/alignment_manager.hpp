@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.30  2001/04/04 00:27:21  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -154,6 +157,8 @@ public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
     ~AlignmentManager(void);
 
+    Threader *threader; // made public so viewers have access to it
+
     void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
 
     // creates the current multiple alignment from the given pairwise alignments (which are
@@ -201,7 +206,6 @@ public:
 private:
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
-    Threader *threader;
 
     mutable std::vector < bool > slavesVisible;
 

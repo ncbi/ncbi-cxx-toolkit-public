@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/04/05 22:55:37  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.9  2001/03/30 14:43:41  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -67,6 +70,8 @@
 #include "cn3d/viewer_base.hpp"
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_threader.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -93,6 +98,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     viewMenu = new wxMenu;
     viewMenu->Append(MID_SHOW_TITLES, "Show Tit&les");
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
+    viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations");
     menuBar->Append(viewMenu, "&View");
 
     editMenu = new wxMenu;
@@ -307,6 +313,20 @@ void ViewerWindowBase::OnJustification(wxCommandEvent& event)
             currentJustification = BlockMultipleAlignment::eCenter; break;
         case MID_SPLIT:
             currentJustification = BlockMultipleAlignment::eSplit; break;
+    }
+    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
+}
+
+void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
+{
+    const ViewerBase::AlignmentList *alignments = viewer->GetCurrentAlignments();
+    if (!alignments) return;
+
+    Threader::GeometryViolationsForRow violations;
+    ViewerBase::AlignmentList::const_iterator a, ae = alignments->end();
+    for (a=alignments->begin(); a!=ae; a++) {
+        viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
+        (*a)->ShowGeometryViolations(violations);
     }
     GlobalMessenger()->PostRedrawSequenceViewer(viewer);
 }

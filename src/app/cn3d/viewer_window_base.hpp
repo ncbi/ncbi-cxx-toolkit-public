@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/04/05 22:54:52  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.8  2001/04/04 00:27:22  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -84,7 +87,8 @@ class SequenceDisplay;
     EVT_MENU_RANGE(MID_SHOW_TITLES, MID_HIDE_TITLES,    ViewerWindowBase::OnTitleView) \
     EVT_MENU_RANGE(MID_ENABLE_EDIT, MID_SYNC_STRUCS_ON, ViewerWindowBase::OnEditMenu) \
     EVT_MENU_RANGE(MID_SELECT_RECT, MID_DRAG_HORIZ,     ViewerWindowBase::OnMouseMode) \
-    EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          ViewerWindowBase::OnJustification)
+    EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          ViewerWindowBase::OnJustification) \
+    EVT_MENU      (MID_SHOW_GEOM_VLTNS,                 ViewerWindowBase::OnShowGeomVltns)
 
 class ViewerWindowBase : public wxFrame
 {
@@ -114,12 +118,14 @@ public:
     void OnEditMenu(wxCommandEvent& event);
     void OnMouseMode(wxCommandEvent& event);
     void OnJustification(wxCommandEvent& event);
+    void OnShowGeomVltns(wxCommandEvent& event);
 
     // menu identifiers
     enum {
         // view menu
         MID_SHOW_TITLES,
         MID_HIDE_TITLES,
+        MID_SHOW_GEOM_VLTNS,
 
         // edit menu
         MID_ENABLE_EDIT,
@@ -210,6 +216,7 @@ public:
         Destroy();
     }
 
+    bool EditorIsOn(void) const { return menuBar->IsChecked(MID_UNDO); }
     void EnableUndo(bool enabled) { menuBar->Enable(MID_UNDO, enabled); }
 
     bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }

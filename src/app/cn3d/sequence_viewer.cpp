@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/04/05 22:55:36  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.40  2001/04/04 00:27:14  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -169,8 +172,8 @@ BEGIN_SCOPE(Cn3D)
 
 SequenceViewer::SequenceViewer(AlignmentManager *alnMgr) :
     // not sure why this cast is necessary, but MSVC requires it...
-    ViewerBase(reinterpret_cast<ViewerWindowBase**>(&sequenceWindow)),
-    sequenceWindow(NULL), alignmentManager(alnMgr)
+    ViewerBase(reinterpret_cast<ViewerWindowBase**>(&sequenceWindow), alnMgr),
+    sequenceWindow(NULL)
 {
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/04/05 22:55:35  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.4  2001/03/22 00:33:16  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -66,6 +69,7 @@ Colors::Colors(void)
     // default colors
     colors[eHighlight].Set(1, 1, 0);
     colors[eUnalignedInUpdate].Set(1, .8, .8);
+    colors[eGeometryViolation].Set(.6, 1, .6);
 
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.10  2001/04/04 00:27:21  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -78,7 +81,7 @@ BEGIN_SCOPE(Cn3D)
 
 class Sequence;
 class ConservationColorer;
-
+class AlignmentManager;
 class Block;
 class UngappedAlignedBlock;
 class UnalignedBlock;
@@ -89,11 +92,13 @@ class BlockMultipleAlignment
 {
 public:
     typedef std::vector < const Sequence * > SequenceList;
-    BlockMultipleAlignment(SequenceList *sequenceList);   // list will be owned/freed by this object
+    // list will be owned/freed by this object
+    BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr);
 
     ~BlockMultipleAlignment(void);
 
     const SequenceList *sequences;
+    AlignmentManager *alignmentManager;
 
     // add a new aligned block - will be "owned" and deallocated by BlockMultipleAlignment
     bool AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock);
@@ -102,9 +107,9 @@ public:
     // unaligned blocks inbetween aligned blocks (and at ends). Also sets length.
     bool AddUnalignedBlocks(void);
 
-    // Fills out the BlockMap for mapping alignment column -> block+column,
-    // and calculates conservation colors.
-    bool UpdateBlockMapAndConservationColors(bool clearRowInfo = true);
+    // Fills out the BlockMap for mapping alignment column -> block+column, special colors,
+    // and sets up conservation colors (although they're not caluclated until needed).
+    bool UpdateBlockMapAndColors(bool clearRowInfo = true);
 
     // find out if a residue is aligned, by row
     bool IsAligned(int row, int seqIndex) const;
@@ -152,10 +157,10 @@ public:
     // makes a new copy of itself
     BlockMultipleAlignment * Clone(void) const;
 
-    // character query interface - "column" must be in alignment range
-    // 0 ... totalWidth-1
+    // character query interface - "column" must be in alignment range [0 .. totalWidth-1]
     bool GetCharacterTraitsAt(int alignmentColumn, int row, eUnalignedJustification justification,
-        char *character, Vector *color, bool *isHighlighted) const;
+        char *character, Vector *color, bool *isHighlighted,
+        bool *drawBackground, Vector *cellBackgroundColor) const;
 
     // get sequence and index (if any) at given position, and whether that residue is aligned
     bool GetSequenceAndIndexAt(int alignmentColumn, int row, eUnalignedJustification justification,
@@ -218,6 +223,11 @@ public:
     // object's aligned blocks
     bool MergeAlignment(const BlockMultipleAlignment *newAlignment);
 
+    // set geometry violation flags
+    typedef std::list < std::pair < int, int > > IntervalList;  // list of (from, to) seqIndex pairs
+    typedef std::vector < IntervalList > GeometryViolationsForRow;
+    void ShowGeometryViolations(const GeometryViolationsForRow& violations);
+
 private:
     ConservationColorer *conservationColorer;
 
@@ -253,6 +263,10 @@ private:
     // intended for volatile storage of row-associated info (e.g. for alignment scores, etc.)
     mutable std::vector < double > rowDoubles;
     mutable std::vector < std::string > rowStrings;
+
+    // for flagging residues (e.g. for geometry violations)
+    typedef std::vector < std::vector < bool > > RowSeqIndexFlags;
+    RowSeqIndexFlags geometryViolations;
 
 public:
 

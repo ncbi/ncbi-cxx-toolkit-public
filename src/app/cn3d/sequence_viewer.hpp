@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/04/05 22:54:51  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.20  2001/04/04 00:27:22  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -89,7 +92,6 @@ public:
 
 private:
 
-    AlignmentManager *alignmentManager;
     SequenceViewerWindow *sequenceWindow;
 
     void CreateSequenceWindow(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.3  2001/03/22 00:32:35  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -65,6 +68,7 @@ public:
         // sequence viewer colors
         eHighlight = 0,
         eUnalignedInUpdate,
+        eGeometryViolation,
 
         // secondary structures
         eHelix,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/04/05 22:54:51  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.4  2001/04/04 00:27:22  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -80,11 +83,8 @@ public:
     // replace contents of update window with given alignments
     void ReplaceAlignments(const AlignmentList& alignmentList);
 
-    void OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec);
-
 private:
 
-    AlignmentManager *alignmentManager;
     UpdateViewerWindow *updateWindow;
 };
 

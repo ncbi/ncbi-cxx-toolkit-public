@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/04/05 22:54:51  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.4  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -61,14 +64,20 @@ class Messenger;
 class SequenceDisplay;
 class BlockMultipleAlignment;
 class Vector;
+class AlignmentManager;
 
 class ViewerBase
 {
+    friend ViewerWindowBase;
+
 public:
 
     // to update/remove the GUI window
     virtual void Refresh(void) = 0; // must be implemented by derived class
     void DestroyGUI(void);
+
+    // ask whether the editor is enabled for this viewer
+    bool EditorIsOn(void) const;
 
     // to push/pop alignment+display data for undo during editing
     void PushAlignment(void);
@@ -81,15 +90,14 @@ public:
     // tell viewer to save its data (does nothing unless overridden)
     virtual void SaveDialog(void) { }
 
-    // allows the viewer to set its own cell background color
-    virtual void OverrideBackgroundColor(int column, int row, bool *drawBackground, Vector *bgColorVec) { }
-
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 
 protected:
 
+    AlignmentManager *alignmentManager;
+
     // can't instantiate this base class
-    ViewerBase(ViewerWindowBase* *window);
+    ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr);
     virtual ~ViewerBase(void);
 
     // handle to the associated window

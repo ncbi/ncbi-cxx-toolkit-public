@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/04/05 22:54:50  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.6  2001/04/04 00:27:21  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -114,6 +117,12 @@ public:
 
     // calculate scores for each row in the alignment (and store them in the alignment itself)
     bool CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM);
+
+    // geometry violations - for each row of an alignment, get a list of seqIndex
+    // (from, to) pairs for offending regions
+    typedef std::vector < std::list < std::pair < int, int > > > GeometryViolationsForRow;
+    bool GetGeometryViolations(const BlockMultipleAlignment *multiple,
+        GeometryViolationsForRow *violations);
 
     // to hold virtual residue, sidechain positions
     enum { MISSING_COORDINATE = 0, VIRTUAL_RESIDUE, VIRTUAL_PEPTIDE };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/04/05 22:55:35  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.11  2001/04/04 00:27:14  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -120,13 +123,15 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(
     bool *drawBackground, Vector *cellBackgroundColor) const
 {
     bool isHighlighted,
-        result = alignment->GetCharacterTraitsAt(column, row, justification, character, color, &isHighlighted);
+        result = alignment->GetCharacterTraitsAt(
+            column, row, justification, character, color,
+            &isHighlighted, drawBackground, cellBackgroundColor);
 
+    // always apply highlight color, even if alignment has set its own background color
     if (isHighlighted) {
         *drawBackground = true;
         *cellBackgroundColor = GlobalColors()->Get(Colors::eHighlight);
-    } else
-        *drawBackground = false;
+    }
 
     return result;
 }
@@ -323,10 +328,6 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
             (*viewerWindow) ? (*viewerWindow)->GetCurrentJustification() : BlockMultipleAlignment::eLeft,
             character, &colorVec, drawBackground, &bgColorVec))
         return false;
-
-    // don't override highlight color
-    if (bgColorVec != GlobalColors()->Get(Colors::eHighlight))
-        (*viewerWindow)->viewer->OverrideBackgroundColor(column, row, drawBackground, &bgColorVec);
 
     Vector2wxColor(colorVec, color);
     if (*drawBackground) Vector2wxColor(bgColorVec, cellBackgroundColor);

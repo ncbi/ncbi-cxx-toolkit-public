@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/04/05 22:55:34  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.50  2001/04/04 00:27:13  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -310,7 +313,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
     BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
     *(s++) = alignmentSet->master;
     for (a=alignments.begin(); a!=ae; a++, s++) *s = (*a)->slave;
-    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList);
+    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList, this);
 
     // each block is a continuous region on the master, over which each master
     // residue is aligned to a residue of each slave, and where there are no
@@ -358,7 +361,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
     }
 
     if (!multipleAlignment->AddUnalignedBlocks() ||
-        !multipleAlignment->UpdateBlockMapAndConservationColors()) {
+        !multipleAlignment->UpdateBlockMapAndColors()) {
         ERR_POST(Error << "AlignmentManager::CreateMultipleFromPairwiseWithIBM() - "
             "error finalizing alignment");
         return NULL;
@@ -594,6 +597,12 @@ void AlignmentManager::ThreadUpdates(const ThreaderOptions& options)
     const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
     if (!currentAlignments) return;
 
+    // make sure the editor is on in the sequenceViewer
+    if (!sequenceViewer->EditorIsOn() && options.mergeAfterEachSequence) {
+        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
+        return;
+    }
+
     // run the threader on update pairwise alignments
     Threader::AlignmentList newAlignments;
     int nRowsAddedToMultiple;
@@ -619,6 +628,12 @@ void AlignmentManager::MergeUpdates(void)
 
     const ViewerBase::AlignmentList *updates = updateViewer->GetCurrentAlignments();
     if (updates->size() == 0) return;
+
+    // make sure the editor is on in the sequenceViewer
+    if (!sequenceViewer->EditorIsOn()) {
+        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
+        return;
+    }
 
     int nSuccessfulMerges = 0;
     ViewerBase::AlignmentList failedMerges;

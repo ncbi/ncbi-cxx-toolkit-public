@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/04/05 22:55:36  thiessen
+* change bg color handling ; show geometry violations
+*
 * Revision 1.7  2001/04/04 00:27:16  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -73,8 +76,8 @@ BEGIN_SCOPE(Cn3D)
 static const int MAX_UNDO_STACK_SIZE = 50;
 
 
-ViewerBase::ViewerBase(ViewerWindowBase* *window) :
-    viewerWindow(window)
+ViewerBase::ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr) :
+    viewerWindow(window), alignmentManager(alnMgr)
 {
     if (!window) ERR_POST(Error << "ViewerBase::ViewerBase() - got NULL handle");
 }
@@ -210,6 +213,11 @@ void ViewerBase::KeepOnlyStackTop(void)
         delete displayStack.front();
         displayStack.pop_front();
     }
+}
+
+bool ViewerBase::EditorIsOn(void) const
+{
+    return (*viewerWindow && (*viewerWindow)->EditorIsOn());
 }
 
 END_SCOPE(Cn3D)
