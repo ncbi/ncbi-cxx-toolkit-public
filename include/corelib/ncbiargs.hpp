@@ -37,6 +37,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2000/11/24 23:28:31  vakatov
+ * CArgValue::  added CloseFile()
+ * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
+ *
  * Revision 1.13  2000/11/22 22:04:29  vakatov
  * Added special flag "-h" and special exception CArgHelpException to
  * force USAGE printout in a standard manner
@@ -167,15 +171,9 @@ public:
     virtual double AsDouble (void) const;
     virtual bool   AsBoolean(void) const;
 
-    enum EFlags {
-        // for "AsInputFile" and "AsOutputFile"
-        fUnchanged = 0x1, // do not change open mode
-        fToText    = 0x2, // change file open mode to text
-        fToBinary  = 0x4  // change file open mode to binary
-    };
-
-    virtual CNcbiIstream& AsInputFile (EFlags change_mode = fUnchanged) const;
-    virtual CNcbiOstream& AsOutputFile(EFlags change_mode = fUnchanged) const;
+    virtual CNcbiIstream& AsInputFile (void) const;
+    virtual CNcbiOstream& AsOutputFile(void) const;
+    virtual void          CloseFile   (void) const;  // safe close and destroy
 
 protected:
     // Prohibit explicit instantiation of "CArg" objects

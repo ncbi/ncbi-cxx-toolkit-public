@@ -34,6 +34,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2000/11/24 23:28:33  vakatov
+ * CArgValue::  added CloseFile()
+ * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
+ *
  * Revision 1.23  2000/11/22 22:04:31  vakatov
  * Added special flag "-h" and special exception CArgHelpException to
  * force USAGE printout in a standard manner
@@ -185,16 +189,24 @@ bool CArgValue::AsBoolean(void) const
 }
 
 
-CNcbiIstream& CArgValue::AsInputFile(EFlags /*change_mode*/) const
+CNcbiIstream& CArgValue::AsInputFile(void) const
 {
     ARG_THROW("Attempt to cast to a wrong (InputFile) type", AsString());
 }
 
 
-CNcbiOstream& CArgValue::AsOutputFile(EFlags /*change_mode*/) const
+CNcbiOstream& CArgValue::AsOutputFile(void) const
 {
     ARG_THROW("Attempt to cast to a wrong (OutputFile) type", AsString());
 }
+
+
+void CArgValue::CloseFile(void) const
+{
+    ARG_THROW("Attempt to close arg. of a non-file type", AsString());
+}
+
+
 
 
 ///////////////////////////////////////////////////////
@@ -296,6 +308,7 @@ double CArg_Double::AsDouble(void) const
 }
 
 
+
 ///////////////////////////////////////////////////////
 //  CArg_Boolean::
 
@@ -335,6 +348,7 @@ bool CArg_Boolean::AsBoolean(void) const
 }
 
 
+
 ///////////////////////////////////////////////////////
 //  CArg_InputFile::
 
@@ -344,8 +358,10 @@ public:
     CArg_InputFile(const string&       value,
                    IOS_BASE::openmode  openmode,
                    bool                delay_open, bool is_default);
-    ~CArg_InputFile();
-    virtual CNcbiIstream& AsInputFile(EFlags change_mode = fUnchanged) const;
+    virtual ~CArg_InputFile(void);
+
+    virtual CNcbiIstream& AsInputFile(void) const;
+    virtual void CloseFile(void) const;
 
 private:
     void Open(void) const;
@@ -366,10 +382,15 @@ void CArg_InputFile::Open(void) const
     } else if ( !AsString().empty() ) {
         m_InputFile  = new CNcbiIfstream(AsString().c_str(),
                                          IOS_BASE::in | m_OpenMode);
-        m_DeleteFlag = true;
+        if (!m_InputFile  ||  !*m_InputFile) {
+            delete m_InputFile;
+            m_InputFile = 0;
+        } else {
+            m_DeleteFlag = true;
+        }
     }
 
-    if (!m_InputFile  ||  !*m_InputFile) {
+    if ( !m_InputFile ) {
         ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
     }
 }
@@ -396,24 +417,26 @@ CArg_InputFile::~CArg_InputFile()
 }
 
 
-CNcbiIstream& CArg_InputFile::AsInputFile(EFlags change_mode) const
+CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 {
-    if (change_mode != fUnchanged  &&  m_InputFile) {
-        ARG_THROW("Cannot change open mode in non-deffered open file argument",
-                  AsString());
-    }
-
-    if (change_mode == fToText) {
-        m_OpenMode = (IOS_BASE::openmode)
-            (m_OpenMode  &  ~CArgDescriptions::fBinary);
-    } else if (change_mode == fToBinary) {
-        m_OpenMode = (IOS_BASE::openmode)
-            (m_OpenMode  |  ~CArgDescriptions::fBinary);
-    }
-
     Open();
     return *m_InputFile;
 }
+
+
+void CArg_InputFile::CloseFile(void) const
+{
+    if ( !m_InputFile ) {
+        ERR_POST(Warning << "CArg_InputFile::CloseFile() -- file not opened");
+        return;
+    }
+
+    if ( m_DeleteFlag ) {
+        delete m_InputFile;
+        m_InputFile = 0;
+    }
+}
+
 
 
 ///////////////////////////////////////////////////////
@@ -426,9 +449,10 @@ public:
                     IOS_BASE::openmode openmode,
                     bool               delay_open,
                     bool               is_default);
-    ~CArg_OutputFile();
+    virtual ~CArg_OutputFile(void);
 
-    virtual CNcbiOstream& AsOutputFile(EFlags change_mode = fUnchanged) const;
+    virtual CNcbiOstream& AsOutputFile(void) const;
+    virtual void CloseFile(void) const;
 
 private:
     void Open(void) const;
@@ -449,10 +473,15 @@ void CArg_OutputFile::Open(void) const
     } else if ( !AsString().empty() ) {
         m_OutputFile = new CNcbiOfstream(AsString().c_str(),
                                          IOS_BASE::out | m_OpenMode);
-        m_DeleteFlag = true;
+        if (!m_OutputFile  ||  !*m_OutputFile) {
+            delete m_OutputFile;
+            m_OutputFile = 0;
+        } else {
+            m_DeleteFlag = true;
+        }
     }
 
-    if (!m_OutputFile  ||   !*m_OutputFile) {
+    if ( !m_OutputFile ) {
         ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
     }
 }
@@ -479,23 +508,24 @@ CArg_OutputFile::~CArg_OutputFile()
 }
 
 
-CNcbiOstream& CArg_OutputFile::AsOutputFile(EFlags change_mode) const
+CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 {
-    if (change_mode != fUnchanged  &&  !m_OutputFile) {
-        ARG_THROW("Cannot change open mode in non-deffered open file argument",
-                  AsString());
-    }
-
-    if (change_mode == fToText) {
-        m_OpenMode = (IOS_BASE::openmode)
-            (m_OpenMode  &  ~CArgDescriptions::fBinary);
-    } else if (change_mode == fToBinary) {
-        m_OpenMode = (IOS_BASE::openmode)
-            (m_OpenMode  |  ~CArgDescriptions::fBinary);
-    }
-
     Open();
     return *m_OutputFile;
+}
+
+
+void CArg_OutputFile::CloseFile(void) const
+{
+    if ( !m_OutputFile ) {
+        ERR_POST(Warning << "CArg_InputFile::CloseFile() -- file not opened");
+        return;
+    }
+
+    if ( m_DeleteFlag ) {
+        delete m_OutputFile;
+        m_OutputFile = 0;
+    }
 }
 
 
@@ -1334,10 +1364,10 @@ void CArgDescriptions::x_PreCheck(void) const
 
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
-    static const string s_H("-h");
+    static const string s_Help("-h");
     _ASSERT(m_AutoHelp);
 
-    if (s_H.compare(arg) == 0) {
+    if (s_Help.compare(arg) == 0) {
         throw CArgHelpException();
     }
 }
@@ -1446,6 +1476,12 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
         // Nothing to do if the argument was provided in the command-line
         if ( args.Exist(it->first) ) {
+            continue;
+        }
+
+        // Special case for "-h" flag
+        static const string s_Help("h");
+        if (m_AutoHelp  &&  s_Help.compare(it->first) == 0) {
             continue;
         }
 
