@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/09/03 13:15:58  thiessen
+* add A2M export
+*
 * Revision 1.18  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -122,6 +125,7 @@ private:
         MID_SELF_HIT,
         MID_EXPORT,
             MID_EXPORT_FASTA,
+            MID_EXPORT_A2M,
             MID_EXPORT_TEXT,
             MID_EXPORT_HTML,
         // edit menu

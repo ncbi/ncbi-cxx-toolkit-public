@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/09/03 13:15:58  thiessen
+* add A2M export
+*
 * Revision 1.35  2002/08/15 22:13:17  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -191,6 +194,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     viewMenu->Append(MID_SELF_HIT, "Show Se&lf-Hits");
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_EXPORT_FASTA, "&FASTA");
+    subMenu->Append(MID_EXPORT_A2M, "&A2M FASTA");
     subMenu->Append(MID_EXPORT_TEXT, "&Text");
     subMenu->Append(MID_EXPORT_HTML, "&HTML");
     viewMenu->Append(MID_EXPORT, "Export...", subMenu);
@@ -512,10 +516,12 @@ void SequenceViewerWindow::TurnOnEditor(void)
 
 void SequenceViewerWindow::OnExport(wxCommandEvent& event)
 {
-    sequenceViewer->ExportAlignment(
-        event.GetId() == MID_EXPORT_FASTA,
-        event.GetId() == MID_EXPORT_TEXT,
-        event.GetId() == MID_EXPORT_HTML);
+    SequenceViewer::eExportType type;
+    if (event.GetId() == MID_EXPORT_FASTA) type = SequenceViewer::asFASTA;
+    else if (event.GetId() == MID_EXPORT_A2M) type = SequenceViewer::asFASTAa2m;
+    else if (event.GetId() == MID_EXPORT_TEXT) type = SequenceViewer::asText;
+    else if (event.GetId() == MID_EXPORT_HTML) type = SequenceViewer::asHTML;
+    sequenceViewer->ExportAlignment(type);
 }
 
 void SequenceViewerWindow::OnSelfHit(wxCommandEvent& event)

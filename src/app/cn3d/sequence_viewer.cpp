@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2002/09/03 13:15:58  thiessen
+* add A2M export
+*
 * Revision 1.53  2002/08/15 22:13:16  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -334,7 +337,7 @@ void SequenceViewer::TurnOnEditor(void)
     sequenceWindow->TurnOnEditor();
 }
 
-static void DumpFASTA(const BlockMultipleAlignment *alignment,
+static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
 {
     // do whole alignment for now
@@ -386,10 +389,12 @@ static void DumpFASTA(const BlockMultipleAlignment *alignment,
             for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
                 if (alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, row, justification,
                         &ch, &color, &highlighted, &drawBG, &bgColor)) {
-                    if (ch == '~') ch = '-';
-                    os << (char) toupper(ch);
+                    if (ch == '~')
+                        os << (isA2M ? '.' : '-');
+                    else
+                        os << (isA2M ? ch : (char) toupper(ch));
                 } else
-                    os << '?';
+                    ERR_POST(Error << "GetCharacterTraitsAt failed!");
             }
             os << '\n';
         }
@@ -599,53 +604,46 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     }
 }
 
-void SequenceViewer::ExportAlignment(bool asFASTA, bool asTEXT, bool asHTML)
+void SequenceViewer::ExportAlignment(eExportType type)
 {
-    int nOpt = 0;
-    if (asFASTA) nOpt++;
-    if (asTEXT) nOpt++;
-    if (asHTML) nOpt++;
-    if (nOpt != 1) {
-        ERR_POST(Error << "SequenceViewer::ExportAlignment() - exactly one export type must be chosen");
-        return;
-    }
-
     // get filename
     wxString extension, wildcard;
-    if (asFASTA) { extension = ".fasta"; wildcard = "FASTA Files (*.fasta)|*.fasta"; }
-    else if (asTEXT) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
-    else if (asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
-    wxString filename = wxFileSelector("Choose a file for alignment export:",
-        "", "alignment", extension, wildcard, wxSAVE /*| wxOVERWRITE_PROMPT*/, sequenceWindow);
+    if (type == asFASTA) { extension = ".fsa"; wildcard = "FASTA Files (*.fsa)|*.fsa"; }
+    else if (type == asFASTAa2m) { extension = ".a2m"; wildcard = "A2M FASTA (*.a2m)|*.a2m"; }
+    else if (type == asText) { extension = ".txt"; wildcard = "Text Files (*.txt)|*.txt"; }
+    else if (type == asHTML) { extension = ".html"; wildcard = "HTML Files (*.html)|*.html"; }
 
-    if (filename.size() > 0) {
+    wxString outputFolder = wxString(GetUserDir().c_str(), GetUserDir().size() - 1); // remove trailing /
+    wxString baseName, outputFile;
+    wxSplitPath(GetWorkingFilename().c_str(), NULL, &baseName, NULL);
+    wxFileDialog dialog(sequenceWindow, "Choose a file for alignment export:", outputFolder,
+#ifdef __WXGTK__
+        baseName + extension,
+#else
+        baseName,
+#endif
+        wildcard, wxSAVE | wxOVERWRITE_PROMPT);
+    dialog.SetFilterIndex(0);
+    if (dialog.ShowModal() == wxID_OK)
+        outputFile = dialog.GetPath();
 
-        // add extension, check for existence
-        if (asFASTA && filename.Right(6) != ".fasta") filename += ".fasta";
-        else if (asTEXT && filename.Right(4) != ".txt") filename += ".txt";
-        else if (asHTML && filename.Right(5) != ".html") filename += ".html";
-        if (wxFileExists(filename)) {
-            wxString message;
-            message.Printf("The file %s already exists.\nDo you want to overwrite it?", filename.c_str());
-            if (wxMessageBox(message, "Overwrite?", wxYES_NO | wxICON_QUESTION) == wxNO)
-                return;
-        }
+    if (outputFile.size() > 0) {
 
         // create output stream
-        auto_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(filename.c_str(), IOS_BASE::out));
+        auto_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(outputFile.c_str(), IOS_BASE::out));
         if (!(*ofs)) {
-            ERR_POST(Error << "Unable to open output file " << filename.c_str());
+            ERR_POST(Error << "Unable to open output file " << outputFile.c_str());
             return;
         }
 
         // actually write the alignment
-        if (asFASTA) {
-            TESTMSG("exporting FASTA to " << filename.c_str());
-            DumpFASTA(alignmentManager->GetCurrentMultipleAlignment(),
+        if (type == asFASTA || type == asFASTAa2m) {
+            TESTMSG("exporting" << (type == asFASTAa2m ? " A2M " : " ") << "FASTA to " << outputFile.c_str());
+            DumpFASTA((type == asFASTAa2m), alignmentManager->GetCurrentMultipleAlignment(),
                 sequenceWindow->GetCurrentJustification(), *ofs);
         } else {
-            TESTMSG("exporting " << (asTEXT ? "text" : "HTML") << " to " << filename.c_str());
-            DumpText(asHTML, alignmentManager->GetCurrentMultipleAlignment(),
+            TESTMSG("exporting " << (type == asText ? "text" : "HTML") << " to " << outputFile.c_str());
+            DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
                 sequenceWindow->GetCurrentJustification(), *ofs);
         }
     }

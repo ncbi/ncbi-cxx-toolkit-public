@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/09/03 13:15:58  thiessen
+* add A2M export
+*
 * Revision 1.26  2002/06/05 14:28:40  thiessen
 * reorganize handling of window titles
 *
@@ -110,7 +113,13 @@ public:
     void SaveAlignment(void);
 
     // export current alignment
-    void ExportAlignment(bool asFASTA, bool asTEXT, bool asHTML);
+    enum eExportType {
+        asFASTA,    // plain FASTA with gaps and all uppercase
+        asFASTAa2m, // a2m variant of FASTA, lowercase unaligned and '.' as unaligned gap
+        asText,     // plain text with id's and locations
+        asHTML      // HTML, like text but with color
+    };
+    void ExportAlignment(eExportType type);
 
 private:
 
