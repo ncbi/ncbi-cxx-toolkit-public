@@ -425,7 +425,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         if (organism.empty()  &&  org.NotEmpty()  &&  org->IsSetTaxname()) {
             organism = org->GetTaxname();
         }
-        if ( !organism.empty() ) {
+        if ( !organism.empty()  &&  title.find(organism) == NPOS) {
             suffix += " [" + organism + ']';
         }
     }
@@ -815,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2003/02/10 18:33:48  ucko
+* Don't append organism names that are already present.
+*
 * Revision 1.15  2003/02/10 15:54:01  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *
