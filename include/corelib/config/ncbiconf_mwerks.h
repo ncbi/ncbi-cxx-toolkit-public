@@ -66,6 +66,7 @@
 
 /* Define to 1 if Berkeley DB libraries are available. */
 #define HAVE_BERKELEY_DB 1
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
@@ -77,12 +78,6 @@
 
 /* Define to 1 if you have the <fstream.h> header file. */
 #define HAVE_FSTREAM_H 1
-
-/* Define to 1 if you have the `getaddrinfo' function. */
-#define HAVE_GETADDRINFO 1
-
-/* Define to 1 if you have the `getnameinfo' function. */
-#define HAVE_GETNAMEINFO 1
 
 /* Define to 1 if you have the `getpagesize' function. */
 #define HAVE_GETPAGESIZE 1
@@ -175,6 +170,4 @@
 
 /* Define to 1 if you have the `vasprintf' function. */
 #define HAVE_VASPRINTF 1
-
-#define HAVE_STRSTREA_H  1
 
