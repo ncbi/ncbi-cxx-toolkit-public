@@ -153,6 +153,10 @@ public:
 protected:
     virtual TThread* NewThread(void) = 0;
 
+    virtual void Register(TThread& thread)
+    // called by TThread::Main; should detach if not tracking
+        { thread.Detach(); }
+
     typedef CAtomicCounter::TValue TACValue;
 
     CAtomicCounter           m_ThreadCount;
@@ -215,9 +219,15 @@ public:
     // all pending requests, optionally waiting for them to die.
     virtual void KillAllThreads(bool wait);
 
+    virtual void Register(TThread& thread);
+
 protected:
     virtual TThread* NewThread(void)
         { return new CStdThreadInPool(this); }
+
+private:
+    typedef list<CRef<TThread> > TThreads;
+    TThreads                     m_Threads;
 };
 
 
@@ -305,7 +315,7 @@ unsigned int CBlockingQueue<TRequest>::GetSize(void) const
 template <typename TRequest>
 void* CThreadInPool<TRequest>::Main(void)
 {
-    Detach();
+    m_Pool->Register(*this);
     Init();
 
     for (;;) {
@@ -325,6 +335,7 @@ void CThreadInPool<TRequest>::OnExit(void)
     } catch (...) {
         // Ignore exceptions; there's nothing useful we can do anyway
     }
+    m_Pool->m_Delta.Add(-1);
     m_Pool->m_ThreadCount.Add(-1);
 }
 
@@ -384,6 +395,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/09/08 14:21:04  ucko
+* Rework again to eliminate races in KillAllThreads.
+*
 * Revision 1.14  2004/08/24 15:01:38  ucko
 * Tweak to avoid signed/unsigned comparisons.
 *

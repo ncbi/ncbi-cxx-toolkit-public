@@ -30,58 +30,46 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 #include <util/thread_pool.hpp>
+#include <corelib/ncbi_system.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CFatalRequest : public CStdRequest
 {
-public:
-    CFatalRequest(CSemaphore* sem) : m_Sem(sem) {}
-
 protected:
-    // Kill the current thread
-    virtual void Process(void);
-
-private:
-    CSemaphore* m_Sem;
+    void Process(void) { CThread::Exit(0); } // Kill the current thread
 };
-
-
-void CFatalRequest::Process(void)
-{ 
-    if (m_Sem) {
-        m_Sem->Post();
-    }
-    CThread::Exit(0);
-}
 
 
 void CStdPoolOfThreads::KillAllThreads(bool wait)
 {
-    unsigned int   n;
+    TACValue n;
     {{
         CMutexGuard guard(m_Mutex);
         m_MaxThreads = 0;  // Forbid spawning new threads
         n = m_ThreadCount.Get(); // Capture for use without mutex
     }}
 
-    auto_ptr<CSemaphore> sem;
-    if (wait) {
-        sem.reset(new CSemaphore(0, n));
-    }
-    CRef<CStdRequest> poison(new CFatalRequest(sem.get()));
+    CRef<CStdRequest> poison(new CFatalRequest);
 
-    for (unsigned int i = 0;  i < n;  i++) {
+    for (TACValue i = 0;  i < n;  ++i) {
         AcceptRequest(poison);
     }
-    if (wait) {
-        // Wait for all threads to post to the semaphore
-        for (unsigned int i = 0;  i < n  &&  m_ThreadCount.Get();  i++) {
-            sem->Wait();
+    NON_CONST_ITERATE(TThreads, it, m_Threads) {
+        if (wait) {
+            (*it)->Join();
+        } else {
+            (*it)->Detach();
         }
     }
+}
+
+
+void CStdPoolOfThreads::Register(TThread& thread)
+{
+    CMutexGuard guard(m_Mutex);
+    m_Threads.push_back(CRef<TThread>(&thread));
 }
 
 END_NCBI_SCOPE
@@ -90,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/09/08 14:21:20  ucko
+* Rework again to eliminate races in KillAllThreads.
+*
 * Revision 1.4  2004/06/02 17:50:49  ucko
 * CPoolOfThreads: change type of m_Delta and m_ThreadCount to
 * CAtomicCounter to reduce need for m_Mutex.
