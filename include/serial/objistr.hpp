@@ -527,6 +527,8 @@ public:
     bool GetDiscardCurrObject(void) const
         {return m_DiscardCurrObject;}
 
+    bool HaveMoreData(void);
+
 protected:
     friend class CObjectStreamCopier;
 
@@ -641,6 +643,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2003/11/19 15:42:09  vasilche
+* Added CObjectIStream::HaveMoreData().
+*
 * Revision 1.94  2003/11/13 14:06:45  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *

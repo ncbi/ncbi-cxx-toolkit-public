@@ -461,6 +461,13 @@ ESerialVerifyData CObjectIStream::GetVerifyData(void) const
 
 
 inline
+bool CObjectIStream::HaveMoreData(void)
+{
+    return m_Input.PeekChar() != EOF;
+}
+
+
+inline
 CStreamDelayBufferGuard::CStreamDelayBufferGuard(CObjectIStream& istr) 
     : m_ObjectIStream(&istr) 
 {
@@ -499,6 +506,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/11/19 15:42:10  vasilche
+* Added CObjectIStream::HaveMoreData().
+*
 * Revision 1.25  2003/11/13 14:06:45  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *
