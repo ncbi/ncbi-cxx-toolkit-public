@@ -72,7 +72,7 @@ CNWAligner::TScore CSplicedAligner16::GetDefaultWi(unsigned char splice_type)
    switch(splice_type) {
         case 0: return -10; // GT/AG
         case 1: return -15; // GC/AG
-        case 2: return -15; // AT/AC
+        case 2: return -18; // AT/AC
         case 3: return -25; // ??/??
         default: {
             NCBI_THROW(CAlgoAlignException,
@@ -534,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/20 17:54:23  kapustin
+ * Alternative conventional splice penalty adjusted
+ *
  * Revision 1.7  2003/10/31 19:40:13  kapustin
  * Get rid of some WS and GCC complains
  *
