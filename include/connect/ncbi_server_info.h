@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/05/15 19:06:05  lavr
+ * Use home-made ANSI extentions (NCBI_***)
+ *
  * Revision 6.4  2000/05/12 21:42:11  lavr
  * SSERV_Info::  use ESERV_Type, ESERV_Flags instead of TSERV_Type, TSERV_Flags
  *
@@ -167,8 +170,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
 
 
 /* Read full service info (including type) from string "str"
- * (e.g. composed by SERV_WriteInfo).
- * The returned info must be destroyed by SERV_DestroyInfo.
+ * (e.g. composed by SERV_WriteInfo). Result can be later freed by 'free()'.
  * If 'default_host' is not 0, the service info will be assigned this
  * value, and a host address should NOT be specified in the input textual
  * service representation.

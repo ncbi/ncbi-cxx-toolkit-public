@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/15 19:06:09  lavr
+ * Use home-made ANSI extentions (NCBI_***)
+ *
  * Revision 6.2  2000/05/12 21:42:59  lavr
  * Cleaned up for the C++ compilation, etc.
  *
@@ -39,6 +42,7 @@
  * ==========================================================================
  */
 
+#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_service_info.h>
 #include <assert.h>
 #include <ctype.h>
@@ -106,7 +110,7 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
  *  Utilities
  */
 
-static const char kIPLongestAddr[] = {"255.255.255.255"};
+#define MAX_IP_ADDRESS_LEN      15 /* sizeof("255.255.255.255")-1 */
 
 
 /* Utility routine to read host:port from a string.
@@ -118,20 +122,20 @@ static const char kIPLongestAddr[] = {"255.255.255.255"};
 static const char* s_Read_HostPort(const char* str, unsigned int default_host,
                                    unsigned int* host, unsigned short* port)
 {
-    char hostbuf[sizeof(kIPLongestAddr)];
     const char *s = strchr(str, ':');
     unsigned short p;
     unsigned int h;
     int n;
 
     if (!default_host) {
-        size_t hostlen;
+        char addrbuf[MAX_IP_ADDRESS_LEN + 1];
+        size_t addrlen;
 
-        if (!s || (hostlen = (size_t)(s - str)) > sizeof(hostbuf) - 1)
+        if (!s || (addrlen = (size_t)(s - str)) > sizeof(addrbuf) - 1)
             return 0;
-        strncpy(hostbuf, str, hostlen);
-        hostbuf[hostlen] = '\0';
-        if (strchr(hostbuf, ' ') || (h = inet_addr(str)) == (unsigned int)(-1))
+        strncpy(addrbuf, str, addrlen);
+        addrbuf[addrlen] = '\0';
+        if (strchr(addrbuf, ' ') || (h = inet_addr(str)) == (unsigned int)(-1))
             return 0;
     } else if (s && s != str) {
         return 0;
@@ -176,7 +180,7 @@ static const char *k_FlagTag[N_FLAG_TAGS] = {
 char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
 {
     const SSERV_Attr* attr = s_GetAttrByType(info->type);
-    size_t reserve = attr->tag_len+1 + sizeof(kIPLongestAddr) + 5+1 +
+    size_t reserve = attr->tag_len+1 + MAX_IP_ADDRESS_LEN+1 + 5+1 +
         10+1/*time*/ + 10+1/*algorithm*/;
     char* str;
 
@@ -194,7 +198,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         n = strlen(str + reserve);
         memmove(s, str + reserve, n+1);
         s = str + strlen(str);
-        n = sprintf(s, "%s%lu", n ? " " : "", info->time);
+        n = sprintf(s, "%s%lu", n ? " " : "", (unsigned long)info->time);
         s += n;
         assert(info->flag < N_FLAG_TAGS);
         if (k_FlagTag[info->flag])
@@ -236,7 +240,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
         if (*str) {
             char *c;
 
-            if ((c = strdup(str)) != 0) {
+            if ((c = NCBI_strdup(str)) != 0) {
                 /* ... str = time, ... */
                 str = c;
                 while (*c && !isspace(*c))
@@ -258,7 +262,9 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                     free(info);
                     info = 0;
                 } else {
-                    if (sscanf(str, "%lu", &info->time) < 1) {
+                    unsigned long temp;
+
+                    if (sscanf(str, "%lu", &temp) < 1) {
                         if (*s) {
                             /* First optional spec was not a number - error */
                             free(info);
@@ -266,14 +272,15 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                         } else {
                             /* The only optional spec may be a flag tag... */
                             s = str;
-                            info->flag = SERV_DEFAULT_FLAG;
                         }
+                    } else {
+                        info->time = temp;
                     }
                     if (*s) {
                         unsigned short i;
                         
                         for (i = 0; i < N_FLAG_TAGS; i++) {
-                            if (strcasecmp(s, k_FlagTag[i]) == 0)
+                            if (NCBI_strcasecmp(s, k_FlagTag[i]) == 0)
                                 break;
                         }
                         if (i == N_FLAG_TAGS) {
@@ -337,7 +344,7 @@ static SSERV_Info* s_Ncbid_Read(const char** str)
     SSERV_Info    *info;
     char          *args, *c;
     
-    if (!(args = strdup(*str)))
+    if (!(args = NCBI_strdup(*str)))
         return 0;
     for (c = args; *c; c++)
         if (isspace(*c)) {
@@ -462,7 +469,7 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type, const char** str)
     SSERV_Info*    info;
     char           *path, *args, *c;
 
-    if (!(path = strdup(*str)))
+    if (!(path = NCBI_strdup(*str)))
         return 0;
     for (c = path; *c; c++)
         if (isspace(*c)) {

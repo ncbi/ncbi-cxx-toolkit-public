@@ -6,10 +6,11 @@
 # Meta-makefile for project "Connect":
 #  - library:  "xconnect"
 #  - tests:    "test/*.*"
+#  - daemons:  "daemons/*.*"
 #################################
 
 LIB_PROJ = connect
-SUB_PROJ = test
+SUB_PROJ = test daemons
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
