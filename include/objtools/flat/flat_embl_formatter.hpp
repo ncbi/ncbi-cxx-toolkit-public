@@ -74,6 +74,8 @@ private:
     list<string>& Wrap(list<string>& l, const string& tag, const string& body,
                        EPadContext where = ePara);
     void x_AddXX(void);
+
+    list<string> m_XX;
 };
 
 
@@ -84,6 +86,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/10/11 19:28:35  ucko
+* Made the XX paragraph a normal member to avoid trouble when statically
+* linked into multiple plugins.
+*
 * Revision 1.6  2003/10/09 17:01:48  dicuccio
 * Added export specifiers
 *
