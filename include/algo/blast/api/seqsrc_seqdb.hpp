@@ -55,6 +55,8 @@ struct SSeqDbSrcNewArgs {
     Int4 final_db_seq; /**< Ordinal id of the last sequence to search */
 };
 
+extern "C" {
+
 /** SeqDb sequence source constructor 
  * @param bssp BlastSeqSrc structure (already allocated) to populate [in]
  * @param args Pointer to SSeqDbSrcNewArgs structure above [in]
@@ -68,6 +70,8 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* bssp, void* args);
  * @return NULL
  */
 BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* bssp);
+
+}
 
 /** Initialize the sequence source structure.
  * @param dbname BLAST database name [in]
@@ -90,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/04/08 14:46:06  camacho
+ * Added missing extern "C" declarations"
+ *
  * Revision 1.1  2004/04/06 20:43:54  dondosha
  * Sequence source for CSeqDB BLAST database interface
  *
