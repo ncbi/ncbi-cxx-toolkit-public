@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/01/05 21:47:14  vasilche
+* Added 'current page' to CPageList.
+* CPageList doesn't display forward/backward if empty.
+*
 * Revision 1.11  1999/01/04 20:06:13  vasilche
 * Redesigned CHTML_table.
 * Added selection support to HTML forms (via hidden values).
@@ -151,6 +155,7 @@ void CButtonList::CreateSubNodes()
 
 
 CPageList::CPageList(void)
+    : m_Current(1)
 {
 }
 
@@ -161,13 +166,23 @@ CNCBINode* CPageList::CloneSelf(void) const
 
 void CPageList::CreateSubNodes()
 {
-    AppendChild(new CHTML_a(m_Backward, "&lt;&lt;"));
+    if ( !m_Backward.empty() )
+        AppendChild(new CHTML_a(m_Backward, "&lt;&lt;"));
 
     for (map<int, string>::iterator i = m_Pages.begin();
-         i != m_Pages.end(); ++i )
-        AppendChild(new CHTML_a(i->second, IntToString(i->first)));
+         i != m_Pages.end(); ++i ) {
+        if ( i->first == m_Current ) {
+            // current link
+            AppendChild(new CHTML_color("red", new CHTML_u(IntToString(i->first))));
+        }
+        else {
+            // normal link
+            AppendChild(new CHTML_a(i->second, IntToString(i->first)));
+        }
+    }
 
-    AppendChild(new CHTML_a(m_Forward, "&gt;&gt;"));
+    if ( !m_Forward.empty() )
+        AppendChild(new CHTML_a(m_Forward, "&gt;&gt;"));
 }
 
 // Pager box

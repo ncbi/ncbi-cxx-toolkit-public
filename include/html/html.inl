@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/01/05 21:47:11  vasilche
+* Added 'current page' to CPageList.
+* CPageList doesn't display forward/backward if empty.
+*
 * Revision 1.4  1999/01/04 20:06:10  vasilche
 * Redesigned CHTML_table.
 * Added selection support to HTML forms (via hidden values).
@@ -305,6 +309,10 @@ inline CHTML_basefont::CHTML_basefont(const string& typeface, int size)
     SetAttribute(KHTMLAttributeName_size, size);
 }
 
+inline CHTML_font::CHTML_font(void)
+{
+}
+
 inline CHTML_font::CHTML_font(int size, CNCBINode* node)
     : CParent(node)
 {
@@ -341,6 +349,18 @@ inline CHTML_font::CHTML_font(const string& typeface, int size, const string& te
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
     SetAttribute(KHTMLAttributeName_size, size);
+}
+
+inline CHTML_color::CHTML_color(const string& color, const string& text)
+{
+    SetColor(color);
+    AppendHTMLText(text);
+}
+
+inline CHTML_color::CHTML_color(const string& color, CNCBINode* node)
+{
+    SetColor(color);
+    AppendChild(node);
 }
 
 #endif /* def HTML__HPP  &&  ndef HTML__INL */
