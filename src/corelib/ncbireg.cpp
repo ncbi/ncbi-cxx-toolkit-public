@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/06/22 21:49:47  ivanov
+* Added (with Denis Vakatov) ability for read/write the registry file
+* with comments. Also added functions GetComment() and SetComment().
+*
 * Revision 1.16  2001/05/17 15:04:59  lavr
 * Typos corrected
 *
@@ -92,7 +96,6 @@ const char s_Endl[] = "\n";
 #endif
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
@@ -102,6 +105,7 @@ BEGIN_NCBI_SCOPE
                << setiosflags(IOS_BASE::hex) << flags); \
     flags = flags & (TFlags)(allowed_flags); \
 } while (0)
+
 
 
 /* Get the next line taking into account platform specifics of End-of-Line
@@ -141,14 +145,67 @@ static bool s_IsNameSection(const string& str)
     if ( str.empty() )
         return false;
 
-    for (string::const_iterator it = str.begin();  it != str.end();  it++) {
+    iterate (string, it, str) {
         if ( !s_IsNameSectionSymbol(*it) )
             return false;
     }
-
     return true;
 }
 
+
+/* Convert "comment" from plain text to comment
+ */
+static const string s_ConvertComment(const string& comment, 
+                                     bool is_file_comment = false)
+{
+    if ( !comment.length() )
+        return kEmptyStr;
+
+    string x_comment;
+    const char c_comment = is_file_comment ? '#' : ';';
+
+    SIZE_TYPE endl_pos;
+    for (SIZE_TYPE beg = 0;  endl_pos != comment.length();
+         beg = endl_pos + 1) {
+        SIZE_TYPE pos = comment.find_first_not_of(" \t", beg);
+        endl_pos = comment.find_first_of("\n", beg);
+        if (endl_pos == NPOS) {
+            endl_pos = comment.length();
+        }
+        if (((pos != NPOS  &&  comment[pos] != c_comment) ||
+            (pos == NPOS  &&  endl_pos == comment.length())) &&  
+            (is_file_comment  ||  beg != endl_pos) ) {
+            x_comment += c_comment;
+        }
+        x_comment.append(comment, beg, endl_pos - beg);
+        if (is_file_comment  ||  endl_pos != comment.length()) {
+            x_comment += '\n';
+        }
+    }
+    return x_comment;
+}
+
+
+/* Dump the comment to stream "os"
+ */
+static bool s_WriteComment(CNcbiOstream& os, const string& comment)
+{
+    if (!comment.length())
+        return true;
+    if (strcmp(s_Endl, "\n") == 0) {
+        os << comment;
+    } else {
+        iterate(string, i, comment) {
+            if (*i == '\n') {
+                os << s_Endl;
+            } else {
+                os << *i;
+            }
+        }
+    }
+
+    return os.good();
+}
 
 
 // Protective mutex for registry Get() and Set() functions
@@ -171,30 +228,47 @@ bool CNcbiRegistry::Empty(void) const {
 }
 
 
+/* Read data to reqistry from stream
+ */
 void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
     CHECK_FLAGS("Read", flags, eTransient | eNoOverride);
 
     // Adjust flags for Set()
     if (flags & eTransient) {
-        flags &= ~((TFlags)eTransient);
+        flags &= ~((TFlags) eTransient);
     } else {
         flags |= ePersistent;
     }
 
-    string    str;     // the line being parsed
-    SIZE_TYPE line;    // # of the line being parsed
-    string    section; // current section name
+    string    str;          // the line being parsed
+    SIZE_TYPE line;         // # of the line being parsed
+    string    section;      // current section name
+    string    comment;      // current comment
 
     for (line = 1;  s_NcbiGetline(is, str);  line++) {
         SIZE_TYPE len = str.length();
         SIZE_TYPE beg;
-        for (beg = 0;  beg < len  &&  isspace(str[beg]);  beg++) continue;
-        if (beg == len)
+
+        for (beg = 0;  beg < len  &&  isspace(str[beg]);  beg++) 
             continue;
+        if (beg == len) {
+            comment += str;
+            comment += '\n';
+            continue;
+        }
 
         switch ( str[beg] ) {
+
+        case '#':  { // file comment
+            m_Comment += str;
+            m_Comment += '\n';
+            break;
+        }
+
         case ';':  { // comment
+            comment += str;
+            comment += '\n';
             break;
         }
 
@@ -211,7 +285,8 @@ Invalid registry section(']' is missing): `" + str + "'", line);
 Unnamed registry section: `" + str + "'", line);
             }
             
-            for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++) continue;
+            for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++) 
+                continue;
             section = str.substr(beg, end - beg);
 
             // an extra validity check
@@ -221,6 +296,15 @@ Unnamed registry section: `" + str + "'", line);
             if (str[end] != ']')
                 throw CParseException("\
 Invalid registry section name: `" + str + "'", line);
+            // add section comment
+            if ( !comment.empty() ) {
+                _ASSERT( s_IsNameSection(section) );
+                // create section if it not exist
+                TRegSection& reg_section = m_Registry[section];
+                _ASSERT( reg_section.size() >=0 );
+                SetComment(GetComment(section) + comment, section);
+                comment.erase();
+            }
             break;
         }
 
@@ -231,22 +315,26 @@ Invalid registry section name: `" + str + "'", line);
 Invalid registry entry format: '" + str + "'", line);
             // name
             SIZE_TYPE mid;
-            for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++) continue;
+            for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++) 
+                continue;
             string name = str.substr(beg, mid);
 
             // '=' and surrounding spaces
             while ( isspace(str[mid]) )
                 mid++;
             if (str[mid] != '=')
-                 throw CParseException("\
+                throw CParseException("\
 Invalid registry entry name: '" + str + "'", line);
-            for (mid++;  mid < len  &&  isspace(str[mid]);  mid++) continue;
+            for (mid++;  mid < len  &&  isspace(str[mid]);  mid++) 
+                continue;
             _ASSERT( mid <= len );
 
             // ? empty value
             if (mid == len) {
-                if ( !(flags & eNoOverride) )
-                    Set(section, name, NcbiEmptyString, flags);
+                if ( !(flags & eNoOverride) ) {
+                    Set(section, name, kEmptyStr, flags, comment);
+                    comment.erase();
+                }
                 break;
             }
 
@@ -264,8 +352,9 @@ Invalid registry entry name: '" + str + "'", line);
                 if ( str.empty() )
                     break;
                 SIZE_TYPE end;
-                for (end = str.length() - 1;  end > beg  &&  isspace(str[end]);
-                     end--) continue;
+                for (end = str.length() - 1;  
+                     end > beg  &&  isspace(str[end]);  end--) 
+                    continue;
                 if (end < beg  ||  isspace(str[end]) )
                     break;
 
@@ -305,35 +394,64 @@ Badly placed '\\' in the registry value: '" + str + "'", line);
                 }
             } while (read_next_line  &&  s_NcbiGetline(is, str));
 
-            Set(section, name, value, flags);
+            Set(section, name, value, flags, comment);
+            comment.erase();
         }
         }
     }
 
-    if ( !is.eof() )
+    if ( !is.eof() ) {
         throw CParseException("\
 Error in reading the registry: '" + str + "'", line);
+    }
 }
 
 
+/* Write data from reqistry to stream
+ */
 bool CNcbiRegistry::Write(CNcbiOstream& os)
-const
+    const
 {
     CFastMutexGuard LOCK(s_RegMutex);
+
+    // write file comment
+    if ( !s_WriteComment(os, m_Comment) )
+        return false;
+
+    // write data
     for (TRegistry::const_iterator section = m_Registry.begin();
          section != m_Registry.end();  section++) {
+
+        const TRegSection& reg_section = section->second;
+        _ASSERT( !reg_section.empty() );
+
+        // write section comment, if any
+        TRegSection::const_iterator comm_entry = reg_section.find(kEmptyStr);
+        if (comm_entry != reg_section.end()  &&
+            !s_WriteComment(os, comm_entry->second.comment) ) {
+            return false;
+        }
+   
         // write section header
         os << '[' << section->first << ']' << s_Endl;
         if ( !os )
             return false;
+
         // write section entries
-        const TRegSection& reg_section = section->second;
-        _ASSERT( !reg_section.empty() );
         for (TRegSection::const_iterator entry = reg_section.begin();
              entry != reg_section.end();  entry++) {
-            // dump only persistent values
+
+            // if this entry is actually a section comment, then skip it
+            if (entry == comm_entry)
+                continue;
+
+            // dump only persistent entries
             if ( entry->second.persistent.empty() )
                 continue;
+
+            // write entry comment
+            if ( !s_WriteComment(os, entry->second.comment) )
+                return false;
 
             // write next entry;  escape all back-slash and new-line symbols;
             // add "\\i" to the beginning/end of the string if it has
@@ -369,15 +487,17 @@ const
 }
 
 
+
 void CNcbiRegistry::Clear(void)
 {
     m_Registry.clear();
 }
 
 
+
 const string& CNcbiRegistry::Get(const string& section, const string& name,
-                          TFlags flags)
-const
+                                 TFlags flags)
+    const
 {
     CHECK_FLAGS("Get", flags, ePersistent);
 
@@ -386,12 +506,12 @@ const
     string x_section = NStr::TruncateSpaces(section);
     if ( !s_IsNameSection(x_section) ) {
         _TRACE("CNcbiRegistry::Get():  bad or empty section name: " + section);
-        return NcbiEmptyString;
+        return kEmptyStr;
     }
     string x_name = NStr::TruncateSpaces(name);
     if ( !s_IsNameSection(x_name) ) {
         _TRACE("CNcbiRegistry::Get():  bad or empty entry name: " + name);
-        return NcbiEmptyString;
+        return kEmptyStr;
     }
 
     CFastMutexGuard LOCK(s_RegMutex);
@@ -399,14 +519,14 @@ const
     // find section
     TRegistry::const_iterator find_section = m_Registry.find(x_section);
     if (find_section == m_Registry.end())
-        return NcbiEmptyString;
+        return kEmptyStr;
 
     // find entry in the section
     const TRegSection& reg_section = find_section->second;
     _ASSERT( !reg_section.empty() );
     TRegSection::const_iterator find_entry = reg_section.find(x_name);
     if (find_entry == reg_section.end())
-        return NcbiEmptyString;
+        return kEmptyStr;
 
     // ok -- found the requested entry
     const TRegEntry& entry = find_entry->second;
@@ -416,8 +536,10 @@ const
 }
 
 
+
 bool CNcbiRegistry::Set(const string& section, const string& name,
-                        const string& value, TFlags flags)
+                        const string& value, TFlags flags,
+                        const string& comment)
 {
     CHECK_FLAGS("Set", flags, ePersistent | eNoOverride | eTruncate);
 
@@ -429,6 +551,8 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         return false;
     }
     string x_name = NStr::TruncateSpaces(name);
+
+    // is the entry name valid ?
     if ( !s_IsNameSection(x_name) ) {
         _TRACE("CNcbiRegistry::Set():  bad or empty entry name: " + name);
         return false;
@@ -442,7 +566,7 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         if ( value.empty() )  // the "unset" case
             return false;
         // new section, new entry
-        x_SetValue(m_Registry[x_section][x_name], value, flags);
+        x_SetValue(m_Registry[x_section][x_name], value, flags, comment);
         return true;
     }
 
@@ -454,7 +578,7 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         if ( value.empty() )  // the "unset" case
             return false;
         // new entry
-        x_SetValue(reg_section[x_name], value, flags);
+        x_SetValue(reg_section[x_name], value, flags, comment);
         return true;
     }
 
@@ -472,7 +596,7 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         return false;
 
     // modify an existing entry
-    x_SetValue(entry, value, flags);
+    x_SetValue(entry, value, flags, comment);
 
     // unset(remove) the entry, if empty
     if (entry.persistent.empty()  &&  entry.transient.empty()) {
@@ -488,8 +612,98 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
 }
 
 
+
+bool CNcbiRegistry::SetComment(const string& comment, const string& section, 
+                               const string& name)
+{
+    CFastMutexGuard LOCK(s_RegMutex);
+
+    // If "section" is empty string, then set as the registry comment.
+    string x_section = NStr::TruncateSpaces(section);
+    if (x_section == kEmptyStr) {
+        m_Comment = s_ConvertComment(comment, true);
+        return true;
+    }
+
+    // Find section
+    TRegistry::iterator find_section = m_Registry.find(x_section);
+    if (find_section == m_Registry.end()) {
+        return false;
+    }
+    TRegSection& reg_section = find_section->second;
+
+    string x_name    = NStr::TruncateSpaces(name);
+    string x_comment = s_ConvertComment(comment);
+
+    // If "name" is empty string, then set as the "section" comment.
+    if (name == kEmptyStr) {
+        TRegSection::iterator comm_entry = reg_section.find(kEmptyStr);
+        if (comm_entry != reg_section.end()) {
+            // replace old comment
+            comm_entry->second.comment = x_comment;
+        } else {
+            // new comment
+            x_SetValue(m_Registry[x_section][kEmptyStr],
+                       kEmptyStr, 0, x_comment);
+        }
+        return true;
+    }
+
+    // This is an entry comment
+    _ASSERT( !reg_section.empty() );
+    TRegSection::iterator find_entry = reg_section.find(x_name);
+    if ( find_entry == reg_section.end() )
+        return false;
+
+    // (re)set entry comment
+    find_entry->second.comment = x_comment;
+
+    return true;
+}
+
+
+
+const string& CNcbiRegistry::GetComment(const string& section, 
+                                        const string& name)
+{
+    CFastMutexGuard LOCK(s_RegMutex);
+
+    // If "section" is empty string, then get the registry's comment.
+    string x_section = NStr::TruncateSpaces(section);
+    if (x_section == kEmptyStr) {
+        return m_Comment;
+    }
+
+    // Find section
+    TRegistry::iterator find_section = m_Registry.find(x_section);
+    if (find_section == m_Registry.end()) {
+        return kEmptyStr;
+    }
+    TRegSection& reg_section = find_section->second;
+
+    // If "name" is empty string, then get "section"'s comment.
+    string x_name = NStr::TruncateSpaces(name);
+    if (x_name == kEmptyStr) {
+        TRegSection::const_iterator comm_entry = reg_section.find(kEmptyStr);
+        if (comm_entry == reg_section.end()) {
+            return kEmptyStr;
+        }
+        return comm_entry->second.comment;
+    }
+
+    // Get "section:entry"'s comment
+    _ASSERT( !reg_section.empty() );
+    TRegSection::iterator find_entry = reg_section.find(x_name);
+    if (find_entry == reg_section.end()) {
+        return kEmptyStr;
+    }
+    return find_entry->second.comment;
+}
+
+
+
 void CNcbiRegistry::EnumerateSections(list<string>* sections)
-const
+    const
 {
     CFastMutexGuard LOCK(s_RegMutex);
 
@@ -503,7 +717,7 @@ const
 
 void CNcbiRegistry::EnumerateEntries(const string& section,
                                      list<string>* entries)
-const
+    const
 {
     CFastMutexGuard LOCK(s_RegMutex);
 
@@ -526,8 +740,12 @@ const
 
 
 void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
-                               TFlags flags)
+                               TFlags flags, const string& comment)
 {
+    if ( !comment.empty() ) {
+        entry.comment = comment;
+    }
+
     string* to = (flags & ePersistent) ? &entry.persistent : &entry.transient;
 
     if ((flags & eTruncate) == 0  ||  value.empty()) {
@@ -538,7 +756,8 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     SIZE_TYPE beg;
     for (beg = 0;
          beg < value.length()  &&  isspace(value[beg])  &&  value[beg] != '\n';
-         beg++) continue;
+         beg++) 
+        continue;
 
     if (beg == value.length()) {
         to->erase();
@@ -548,10 +767,12 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     SIZE_TYPE end;
     for (end = value.length() - 1;
          isspace(value[end])  &&  value[end] != '\n';
-         end--) continue;
+         end--) 
+        continue;
 
     _ASSERT(beg <= end);
     *to = value.substr(beg, end - beg + 1);
 }
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
+
 END_NCBI_SCOPE

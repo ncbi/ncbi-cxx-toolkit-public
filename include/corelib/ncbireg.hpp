@@ -36,6 +36,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/22 21:50:20  ivanov
+* Added (with Denis Vakatov) ability for read/write the registry file
+* with comments. Also added functions GetComment() and SetComment().
+*
 * Revision 1.12  2001/05/17 14:54:01  lavr
 * Typos corrected
 *
@@ -71,10 +75,12 @@
 #include <map>
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
-/***  EXAMPLE of a Registry File:
+
+/***  EXAMPLE of a registry file:
+# Registry file comment (begin of file)
+..............
 [section1]
 n1.n2 = value11 value12
 n-2.3 = "  this value has two spaces at its very beginning and at the end  "
@@ -85,8 +91,9 @@ name5 = all backslashes and \
 new lines must be \\escaped\\...
 name6 = invalid backslash \in the middle
 ..............
+; This is a section comment...
 [ section2.9-bis ]
-; This is a comment...
+; This is an entry comment...
 name1 = value1
 .............. 
 ***/
@@ -129,7 +136,7 @@ public:
     // transient;  otherwise, store them as persistent.
     CNcbiRegistry(CNcbiIstream& is, TFlags flags = 0);  // also, see Read()
 
-    // Return "true" if the registry contains no entries
+    // Return TRUE if the registry contains no entries
     bool Empty(void) const;
 
     // Parse the stream "is" and merge its content to current entries.
@@ -158,18 +165,33 @@ public:
                       TFlags flags = 0) const;
 
     // Set the configuration parameter value(unset if "value" is empty)
-    // Return "true" if the new "value" is successfully set(or unset)
+    // Return TRUE if the new "value" is successfully set(or unset)
     //
     // Valid flags := { ePersistent, eNoOverride, eTruncate }
     // If there was already an entry with the same <section,name> key:
     //   if "eNoOverride" flag is set then do not override old value
-    //   and return "false";  else override the old value and return "true".
+    //   and return FALSE;  else override the old value and return TRUE.
     // If "ePersistent" flag is set then store the entry as persistent;
     // else store it as transient.
     // If "eTruncate" flag is set then truncate the leading and trailing
     // spaces -- " \r\t\v" (NOTE:  '\n' is not considered a space!).
     bool Set(const string& section, const string& name, const string& value,
-             TFlags flags = 0);
+             TFlags flags = 0, const string& comment = kEmptyStr);
+
+    // Set comment "comment" for the registry entry "section:name".
+    // If "name" is empty string, then set as the "section" comment.
+    // If "section" is empty string, then set as the registry comment.
+    // Return FALSE if "section" and/or "name" do not exist in registry.
+    bool SetComment(const string& comment,  // kEmptyStr to delete the comment
+                    const string& section = kEmptyStr, 
+                    const string& name    = kEmptyStr);
+
+    // Get comment of the registry entry "section:name".
+    // If "name" is empty string, then get "section"'s comment.
+    // If "section" is empty string, then get the registry's comment.
+    // Return empty string if the "section:name" entry not found.
+    const string& GetComment(const string& section = kEmptyStr, 
+                             const string& name    = kEmptyStr);
 
     // These two functions:  first erase the passed list, then fill it out by:
     //    name of sections that comprise the whole registry
@@ -181,23 +203,24 @@ private:
     struct TRegEntry {
         string persistent;  // non-transient
         string transient;   // transient(thus does not get dumped by Write())
+        string comment;     // entry's comment
     };
     typedef map<string, TRegEntry,   PNocase>  TRegSection;
     typedef map<string, TRegSection, PNocase>  TRegistry;
     TRegistry m_Registry;
+    string    m_Comment;    // registry comment
 
 
     // Valid flags := { ePersistent, eTruncate }
     static void x_SetValue(TRegEntry& entry, const string& value,
-                           TFlags flags); 
+                           TFlags flags, const string& comment); 
 
     // prohibit default initialization and assignment
-    CNcbiRegistry(const CNcbiRegistry&) { _TROUBLE; }
-    CNcbiRegistry& operator=(const CNcbiRegistry&) { _TROUBLE;  return *this; }
+    CNcbiRegistry(const CNcbiRegistry&);
+    CNcbiRegistry& operator=(const CNcbiRegistry&);
 };  // CNcbiRegistry
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBIREG__HPP */
