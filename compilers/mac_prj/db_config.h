@@ -4,8 +4,14 @@
 /* Define to 1 if you want to build a version for running the test suite. */
 /* #undef CONFIG_TEST */
 
+/* We use DB_WIN32 much as one would use _WIN32 -- to specify that we're using
+   an operating system environment that supports Win32 calls and semantics. We
+   don't use _WIN32 because Cygwin/GCC also defines _WIN32, even though
+   Cygwin/GCC closely emulates the Unix environment. */
+/* #undef DB_WIN32 */
+
 /* Define to 1 if you want a debugging version. */
-#define DEBUG 1
+/* #undef DEBUG */
 
 /* Define to 1 if you want a version that logs read operations. */
 /* #undef DEBUG_ROP */
@@ -20,7 +26,7 @@
 /* #undef HAVE_CLOCK_GETTIME */
 
 /* Define to 1 if Berkeley DB release includes strong cryptography. */
-#define HAVE_CRYPTO 1
+/* #undef HAVE_CRYPTO */
 
 /* Define to 1 if you have the `directio' function. */
 /* #undef HAVE_DIRECTIO */
@@ -47,11 +53,17 @@
 /* Define to 1 if you have the `getopt' function. */
 #define HAVE_GETOPT 1
 
+/* Define to 1 if you have the `getrusage' function. */
+#define HAVE_GETRUSAGE 1
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the `getuid' function. */
 #define HAVE_GETUID 1
+
+/* Define to 1 if building Hash access method. */
+#define HAVE_HASH 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -95,6 +107,9 @@
 /* Define to 1 to use the GCC compiler and ARM assembly language mutexes. */
 /* #undef HAVE_MUTEX_ARM_GCC_ASSEMBLY */
 
+/* Define to 1 to use the Apple/Darwin _spin_lock_try mutexes. */
+#define HAVE_MUTEX_DARWIN_SPIN_LOCK_TRY 1
+
 /* Define to 1 to use the UNIX fcntl system call mutexes. */
 /* #undef HAVE_MUTEX_FCNTL */
 
@@ -111,18 +126,19 @@
 /* Define to 1 to use the msem_XXX mutexes on systems other than HP-UX. */
 /* #undef HAVE_MUTEX_MSEM_INIT */
 
-/* Define to 1 to use the GCC compiler and Apple PowerPC assembly language. */
-#define HAVE_MUTEX_PPC_APPLE_GCC_ASSEMBLY 1
-
-/* Define to 1 to use the GCC compiler and generic PowerPC assembly language.
+/* Define to 1 to use the GCC compiler and PowerPC assembly language mutexes.
    */
-/* #undef HAVE_MUTEX_PPC_GENERIC_GCC_ASSEMBLY */
+/* #undef HAVE_MUTEX_PPC_GCC_ASSEMBLY */
 
 /* Define to 1 to use POSIX 1003.1 pthread_XXX mutexes. */
-#define HAVE_MUTEX_PTHREADS 1
+/* #undef HAVE_MUTEX_PTHREADS */
 
 /* Define to 1 to use Reliant UNIX initspin mutexes. */
 /* #undef HAVE_MUTEX_RELIANTUNIX_INITSPIN */
+
+/* Define to 1 to use the IBM C compiler and S/390 assembly language mutexes.
+   */
+/* #undef HAVE_MUTEX_S390_CC_ASSEMBLY */
 
 /* Define to 1 to use the GCC compiler and S/390 assembly language mutexes. */
 /* #undef HAVE_MUTEX_S390_GCC_ASSEMBLY */
@@ -154,6 +170,9 @@
 /* Define to 1 to configure mutexes intra-process only. */
 /* #undef HAVE_MUTEX_THREAD_ONLY */
 
+/* Define to 1 to use the CC compiler and Tru64 assembly language mutexes. */
+/* #undef HAVE_MUTEX_TRU64_CC_ASSEMBLY */
+
 /* Define to 1 to use the UNIX International mutexes. */
 /* #undef HAVE_MUTEX_UI_THREADS */
 
@@ -166,8 +185,11 @@
 /* Define to 1 to use VxWorks mutexes. */
 /* #undef HAVE_MUTEX_VXWORKS */
 
-/* Define to 1 to use Windows mutexes. */
+/* Define to 1 to use the MSVC compiler and Windows mutexes. */
 /* #undef HAVE_MUTEX_WIN32 */
+
+/* Define to 1 to use the GCC compiler and Windows mutexes. */
+/* #undef HAVE_MUTEX_WIN32_GCC */
 
 /* Define to 1 to use the GCC compiler and x86 assembly language mutexes. */
 /* #undef HAVE_MUTEX_X86_GCC_ASSEMBLY */
@@ -190,11 +212,14 @@
 /* Define to 1 if building on QNX. */
 /* #undef HAVE_QNX */
 
-/* Define to 1 if you have the `qsort' function. */
-#define HAVE_QSORT 1
+/* Define to 1 if building Queue access method. */
+#define HAVE_QUEUE 1
 
 /* Define to 1 if you have the `raise' function. */
 #define HAVE_RAISE 1
+
+/* Define to 1 if building replication support. */
+#define HAVE_REPLICATION 1
 
 /* Define to 1 if building RPC client/server. */
 /* #undef HAVE_RPC */
@@ -245,6 +270,9 @@
    */
 /* #undef HAVE_SYS_DIR_H */
 
+/* Define to 1 if you have the <sys/fcntl.h> header file. */
+#define HAVE_SYS_FCNTL_H 1
+
 /* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_SYS_NDIR_H */
@@ -267,6 +295,9 @@
 /* Define to 1 if unlink of file with open file descriptors will fail. */
 /* #undef HAVE_UNLINK_WITH_OPEN_FAILURE */
 
+/* Define to 1 if building access method verification support. */
+#define HAVE_VERIFY 1
+
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
 
@@ -279,6 +310,9 @@
 /* Define to 1 if you have the `_fstati64' function. */
 /* #undef HAVE__FSTATI64 */
 
+/* Define to a value if using non-standard mutex alignment. */
+/* #undef MUTEX_ALIGN */
+
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "support@sleepycat.com"
 
@@ -286,13 +320,13 @@
 #define PACKAGE_NAME "Berkeley DB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Berkeley DB 4.1.25"
+#define PACKAGE_STRING "Berkeley DB 4.2.52"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "db-4.1.25"
+#define PACKAGE_TARNAME "db-4.2.52"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.1.25"
+#define PACKAGE_VERSION "4.2.52"
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
@@ -385,4 +419,8 @@
 #endif
 #ifndef	HAVE_VSNPRINTF
 #define	vsnprintf	__db_Cvsnprintf
+#endif
+
+#ifdef DB_WIN32
+#include "win_db.h"
 #endif
