@@ -274,7 +274,6 @@ auto_ptr<CGen_code_table_imp> CGen_code_table::sm_Implementation;
 
 void CGen_code_table::x_InitImplementation()
 {
-    // mutex guarding access to our images
     DEFINE_STATIC_FAST_MUTEX(s_Implementation_mutex);
 
     CFastMutexGuard   LOCK(s_Implementation_mutex);
@@ -477,7 +476,6 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     }
 
     // this mutex is automatically freed when the function exits
-    // mutex guarding access to our images
     DEFINE_STATIC_FAST_MUTEX(mtx);
     CFastMutexGuard   LOCK (mtx);
 
@@ -699,6 +697,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.16  2004/03/24 13:58:59  friedman
+* Fixed mutex comments
+*
 * Revision 6.15  2004/03/23 20:08:10  friedman
 * Replaced 'static CFastMutex' with DEFINE_STATIC_FAST_MUTEX
 *
