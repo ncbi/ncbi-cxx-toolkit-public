@@ -1,4 +1,4 @@
 *.files
 [A-Z]*.cpp
-client.cpp
-client_.cpp
+blast4client.cpp
+blast4client_.cpp
