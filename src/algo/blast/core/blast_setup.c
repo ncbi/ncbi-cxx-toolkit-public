@@ -383,6 +383,7 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     BlastScoreBlk* sbp;
     Int2 status=0;      /* return value. */
     Int4 context; /* loop variable. */
+    Boolean query_valid = FALSE;
 
     if (sbpp == NULL)
        return 1;
@@ -402,43 +403,47 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     if (status != 0)
        return status;
 
-    for (context = query_info->first_context;
-         context <= query_info->last_context; ++context) {
-      
-        Int4 context_offset;
-        Int4 query_length;
-        Uint1 *buffer;              /* holds sequence */
-
-        /* For each query, check if forward strand is present */
-        if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
-            continue;
-
-        context_offset = query_info->context_offsets[context];
-        buffer = &query_blk->sequence[context_offset];
-
-        if (!phi_align &&
-           (status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
-                                        query_length, context))) {
-            Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                   "Query completely filtered; nothing left to search");
-            return status;
-        }
-    }
-
-
     /* Fills in block for gapped blast. */
     if (phi_align) {
        PHIScoreBlkFill(sbp, scoring_options, blast_message);
-    } else if (scoring_options->gapped_calculation) {
-       status = BlastScoreBlkGappedFill(sbp, scoring_options, 
-                                        program_number, query_info);
-       if (status) {
+    } else {
+       for (context = query_info->first_context;
+            context <= query_info->last_context; ++context) {
+      
+          Int4 context_offset;
+          Int4 query_length;
+          Uint1 *buffer;              /* holds sequence */
+
+          /* For each query, check if forward strand is present */
+          if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
+             continue;
+
+          context_offset = query_info->context_offsets[context];
+          buffer = &query_blk->sequence[context_offset];
+
+          if ((status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
+                                           query_length, context)) == 0) {
+             query_valid = TRUE;
+          }
+       }
+
+       if (!query_valid) {
           Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                             "Unable to initialize scoring block");
+             "Query completely filtered; nothing left to search");
           return status;
        }
+
+       if (scoring_options->gapped_calculation) {
+          status = BlastScoreBlkGappedFill(sbp, scoring_options, 
+                                           program_number, query_info);
+          if (status) {
+             Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                                "Unable to initialize scoring block");
+             return status;
+          }
+       }
     }
-   
+
     /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
     if (program_number == blast_type_blastx ||
         program_number == blast_type_tblastx ||
