@@ -173,10 +173,21 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             return eSNP_Bad_WrongTextId;
         }
         const CObject_id& tag = dbtag.GetTag();
-        if ( tag.Which() != CObject_id::e_Id ) {
+        switch ( tag.Which() ) {
+        case CObject_id::e_Id:
+            m_SNP_Id = tag.GetId();
+            break;
+        case CObject_id::e_Str:
+            try {
+                m_SNP_Id = NStr::StringToInt(tag.GetStr());
+            }
+            catch ( ... ) {
+                return eSNP_Bad_WrongMemberSet;
+            }
+            break;
+        default:
             return eSNP_Bad_WrongMemberSet;
         }
-        m_SNP_Id = tag.GetId();
         have_snp_id = true;
     }
     if ( !have_snp_id ) {
@@ -635,6 +646,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.14  2004/06/30 20:53:33  vasilche
+ * Added parsing string dbSNP id for SNP table.
+ *
  * Revision 1.13  2004/05/21 21:42:13  gorelenk
  * Added PCH ncbi_pch.hpp
  *
