@@ -102,7 +102,13 @@ MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
  */
 #define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
 
-/** Callback for sorting HSPs by starting offset in query */ 
+/** Callback for sorting HSPs by starting offset in query. The sorting criteria
+ * in order of priority: context, starting offset in query, starting offset in 
+ * subject. Null HSPs are moved to the end of the array.
+ * @param v1 pointer to first HSP [in]
+ * @param v2 pointer to second HSP [in]
+ * @return Result of comparison.
+ */
 static int
 s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
 {
@@ -114,8 +120,12 @@ s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
 	h1 = *hp1;
 	h2 = *hp2;
 
-	if (h1 == NULL || h2 == NULL)
-		return 0;
+   if (!h1 && !h2)
+      return 0;
+   else if (!h1) 
+      return 1;
+   else if (!h2)
+      return -1;
 
    /* If these are from different contexts, don't compare offsets */
    if (h1->context < h2->context) 
@@ -136,7 +146,13 @@ s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
 	return 0;
 }
 
-/** Callback for sorting HSPs by ending offset in query */
+/** Callback for sorting HSPs by ending offset in query. The sorting criteria
+ * in order of priority: context, ending offset in query, ending offset in 
+ * subject. Null HSPs are moved to the end of the array.
+ * @param v1 pointer to first HSP [in]
+ * @param v2 pointer to second HSP [in]
+ * @return Result of comparison.
+ */
 static int
 s_QueryEndCompareHSPs(const void* v1, const void* v2)
 {
@@ -148,8 +164,12 @@ s_QueryEndCompareHSPs(const void* v1, const void* v2)
 	h1 = *hp1;
 	h2 = *hp2;
 
-	if (h1 == NULL || h2 == NULL)
-		return 0;
+   if (!h1 && !h2)
+      return 0;
+   else if (!h1) 
+      return 1;
+   else if (!h2)
+      return -1;
 
    /* If these are from different contexts, don't compare offsets */
    if (h1->context < h2->context) 
@@ -188,10 +208,10 @@ s_NullCompareHSPs(const void* v1, const void* v2)
 	if (!h1 && !h2)
 	   return 0;
 	else if (!h1)
-           return 1;
-        else if (!h2)
-           return -1;
-
+      return 1;
+   else if (!h2)
+      return -1;
+   
 	return 0;
 }
 
@@ -202,9 +222,8 @@ s_NullCompareHSPs(const void* v1, const void* v2)
  * @param hsp_count The size of the hsp_array [in]
  * @return The number of valid alignments remaining. 
 */
-static Int4
-s_CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
-
+Int4
+Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count)
 {
    Int4 index = 0;
    Int4 increment = 1;
@@ -215,7 +234,7 @@ s_CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
    
    qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryOffsetCompareHSPs);
    while (index < hsp_count-increment) {
-      /* Check if both HSP's start on or end on the same digonal. */
+      /* Check if both HSP's start on the same digonal. */
       if (hsp_array[index+increment] == NULL) {
          increment++;
          continue;
@@ -243,7 +262,7 @@ s_CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
    index=0;
    increment=1;
    while (index < hsp_count-increment)
-   { /* Check if both HSP's start on or end on the same digonal. */
+   { /* Check if both HSP's end on the same digonal. */
       if (hsp_array[index+increment] == NULL)
       {
          increment++;
@@ -3258,8 +3277,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    /* Remove any HSPs that share a starting or ending diagonal
       with a higher-scoring HSP. */
    hsp_list->hspcnt =
-       s_CheckGappedAlignmentsForOverlap(hsp_list->hsp_array,
-                                       hsp_list->hspcnt);
+       Blast_CheckHSPsForCommonEndpoints(hsp_list->hsp_array,
+                                         hsp_list->hspcnt);
       
    /* Sort the HSP array by score */
    Blast_HSPListSortByScore(hsp_list);

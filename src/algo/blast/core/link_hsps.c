@@ -256,8 +256,12 @@ s_XSumCompareHSPs(const void* v1, const void* v2)
     h1 = *hp1;
     h2 = *hp2;
 
-    if (h1 == NULL || h2 == NULL)
+    if (!h1 && !h2)
         return 0;
+    else if (!h1) 
+        return 1;
+    else if (!h2)
+        return -1;
 
     if (h1->xsum < h2->xsum)
         return 1;
