@@ -1,4 +1,4 @@
---$Revision: 3.1 $
+--$Revision: 3.2 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -15,7 +15,7 @@ NCBI-Biblio DEFINITIONS ::=
 BEGIN
 
 EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
-        Cit-proc, Cit-sub, Title;
+        Cit-proc, Cit-sub, Title, Author;
 
 IMPORTS Person-id, Date FROM NCBI-General;
 
