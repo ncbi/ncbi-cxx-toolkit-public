@@ -566,7 +566,7 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
                               CTime::ETimeZonePrecision tzp)
 {
     CTime t(CTime::eCurrent, tz, tzp);
-    clock_t start, finish;
+    CStopWatch timer;
     double duration;
 
 #if defined    NCBI_OS_MSWIN
@@ -583,12 +583,11 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     cout << "Minute add, "<< comment << endl;
     cout << "Iterations  = " << kCount << endl;
 
-    start = clock();
+    timer.Start();
     for (long i = 0; i < kCount; i++) {
         t.AddMinute();
     }
-    finish = clock();
-    duration = (double) (finish - start) / CLOCKS_PER_SEC;
+    duration = timer.Elapsed();
     cout << "Duration    = " << duration << " sec." << endl;
     cout << endl;
 }
@@ -644,6 +643,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2003/04/16 20:29:26  ivanov
+ * Using class CStopWatch instead clock()
+ *
  * Revision 6.15  2003/02/10 17:46:25  lavr
  * Added more checks for well-known dates
  *
