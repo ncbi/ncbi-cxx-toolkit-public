@@ -376,39 +376,30 @@ dnl ---------------------------------
 AC_CHECK_HEADERS(iostream  iostream.h)
 AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
-AC_CHECK_HEADERS(string)
-AC_CHECK_HEADERS(unistd.h windows.h)
-AC_CHECK_HEADERS(limits)
+AC_CHECK_HEADERS(string limits)
+
+
+dnl Check for the platform (very roughly)
+dnl ---------------------------------
+AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
+AC_CHECK_HEADERS(windows.h, x_have_windows="yes")
+
+if test "$x_have_windows" = "yes" ; then
+   AC_DEFINE_UNQUOTED(NCBI_OS_MSWIN, 1)
+   AC_DEFINE_UNQUOTED(NCBI_OS, "MSWIN")
+elif test "$x_have_unistd" = "yes" ; then
+   AC_DEFINE_UNQUOTED(NCBI_OS_UNIX, 1)
+   AC_DEFINE_UNQUOTED(NCBI_OS, "UNIX")
+else
+   AC_DEFINE_UNQUOTED(NCBI_OS_MAC, 1)
+   AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
+fi
 
 
 dnl Check for typedefs, structures, and compiler features.
 dnl ------------------------------------------------------
 AC_CXX_CONST
 AC_TYPE_SIZE_T
-
-AC_MSG_CHECKING(if C++ namespaces are supported)
-AC_TRY_COMPILE(
-   [namespace NS { int i; }  using namespace NS;],
-   ,
-   ,
-   [AC_DEFINE_UNQUOTED(HAVE_NO_NAMESPACE, 1)
-    x_have_no_namespace="yes" ]
-)
-AC_MSG_RESULT()
-
-
-x_std=""
-if test "$x_have_no_namespace" != "yes" ; then
-   AC_MSG_CHECKING(if namespace std:: is used)
-   AC_TRY_COMPILE(
-      [#include <vector>],
-      [std::vector<char> std_vector_char; ],
-      x_std="std",
-      AC_DEFINE_UNQUOTED(HAVE_NO_STD, 1)
-   )
-   AC_MSG_RESULT()
-fi
-
 
 AC_MSG_CHECKING(if in-class template functions are supported)
 AC_TRY_COMPILE(
@@ -436,7 +427,7 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(if have an obsolete basic_string::compare())
 AC_TRY_COMPILE(
    [#include <string>],
-   [$x_std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
+   [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
    AC_DEFINE_UNQUOTED(NCBI_OBSOLETE_STR_COMPARE, 1)
 )
 AC_MSG_RESULT()
@@ -445,7 +436,7 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(if the auto_ptr template class is poor or not implemented)
 AC_TRY_COMPILE(
    [#include <memory>],
-   [int *ip = 0;  $x_std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
+   [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
    ,
    AC_DEFINE_UNQUOTED(HAVE_NO_AUTO_PTR, 1)
 )
@@ -455,7 +446,7 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(if new C++ streams dont have ios_base::)
 AC_TRY_COMPILE(
    [#include <iostream>],
-   [(void)($x_std::ios_base::out != $x_std::ios_base::beg); ],
+   [(void)(std::ios_base::out != std::ios_base::beg); ],
    ,
    AC_DEFINE_UNQUOTED(HAVE_NO_IOS_BASE, 1)
 )
@@ -465,7 +456,7 @@ AC_MSG_RESULT()
 AC_MSG_CHECKING(for std::char_traits::)
 AC_TRY_COMPILE(
    [#include <iostream>],
-   [using namespace $x_std;
+   [using namespace std;
    char_traits<char>::int_type  i = char_traits<char>::eof();
    i = char_traits<char>::not_eof(i);
    char_traits<char>::char_type c = '\0';

@@ -4,6 +4,12 @@
 #undef HOST_VENDOR
 #undef HOST_OS
 
+/* Platform info */
+#undef NCBI_OS
+#undef NCBI_OS_UNIX
+#undef NCBI_OS_MSWIN
+#undef NCBI_OS_MAC
+
 /* Define if C++ namespaces are not supported */
 #undef HAVE_NO_NAMESPACE
 
