@@ -40,11 +40,12 @@
 
 #include <algo/blast/api/blast_types.hpp>
 // NewBlast includes
-#include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_hits.h>
-#include <algo/blast/core/blast_filter.h> // Needed for BlastMask & BlastSeqLoc
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_filter.h> // Needed for BlastMask & BlastSeqLoc
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_hits.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -96,7 +97,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastQueryInfo, BlastQueryInfoFree);
 DECLARE_AUTO_CLASS_WRAPPER(QuerySetUpOptions, BlastQuerySetUpOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(LookupTableOptions, LookupTableOptionsFree);
-DECLARE_AUTO_CLASS_WRAPPER(LookupTableWrap, BlastLookupTableDestruct);
+DECLARE_AUTO_CLASS_WRAPPER(LookupTableWrap, LookupTableWrapFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordOptions,
                            BlastInitialWordOptionsFree);
@@ -131,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/09/10 20:00:49  dondosha
+* BlastLookupTableDestruct renamed to LookupTableWrapFree
+*
 * Revision 1.22  2003/08/27 21:27:58  camacho
 * Fix to previous commit
 *
