@@ -117,6 +117,8 @@ public:
     TSeqPos       GetLen    (             TNumseg seg, int offset = 0) const;
     TSegTypeFlags GetSegType(TNumrow row, TNumseg seg, int offset = 0) const;
     
+    TSegTypeFlags GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const;
+
     static bool IsTypeInsert(TSegTypeFlags type);
 
     TSeqPos GetInsertedSeqLengthOnRight(TNumrow row, TNumseg seg) const;
@@ -455,6 +457,12 @@ CAlnMap::x_GetRawSegType(TNumrow row, TNumseg seg) const
     } else {
         return x_SetRawSegType(row, seg);
     }
+inline static bool CAlnMap::IsTypeInsert(TSegTypeFlags type)
+inline
+bool CAlnMap::IsTypeInsert(TSegTypeFlags type)
+{
+    return (type & fInsert) == fInsert;
+}
 
 inline 
 CAlnMap::TSegTypeFlags 
@@ -468,6 +476,9 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+* changed order of params for GetSeqPosFrom{Seq,Aln}Pos
+*
+* Revision 1.7  2002/09/27 02:26:32  ucko
 * Remove static from the definition of CAlnMap::IsTypeInsert, as
 * (like virtual) it should appear only on the initial declaration.
 *
