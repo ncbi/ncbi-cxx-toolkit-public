@@ -2706,6 +2706,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
             }
             dest << StrandSuffix(b) << ')'; // closes order(...);
         }
+        break;
     }
 
     case CSeq_loc::e_Feat:
@@ -2849,6 +2850,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2003/03/06 20:06:21  vasilche
+* Added missing break.
+*
 * Revision 1.33  2003/02/24 18:57:46  vasilche
 * Use inlined version of feature comparison.
 *
