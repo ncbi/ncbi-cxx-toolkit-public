@@ -255,7 +255,7 @@ void MBSpaceFree(SMBSpace* space)
     a memory pool
 
     @param pool The memory pool [in]
-    @param amount The number of structures to allocate [in]
+    @param num_alloc The number of structures to allocate [in]
     @return Pointer to the allocated memory, or NULL in case of error
 */
 static SThreeVal* 
