@@ -83,9 +83,9 @@
  * Definitions for NCBI_SEQ.DLL
  */
 #ifdef NCBI_SEQ_EXPORTS
+#  define NCBI_BLAST_EXPORTS
 #  define NCBI_FLAT_EXPORTS
 #  define NCBI_ID1_EXPORTS
-#  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
 #  define NCBI_SEQCODE_EXPORTS
@@ -110,6 +110,7 @@
 #  define NCBI_FEATDEF_EXPORTS
 #  define NCBI_GBSEQ_EXPORTS
 #  define NCBI_MIM_EXPORTS
+#  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
 #endif
 
@@ -209,9 +210,9 @@
  * Export specifier for library objects_blast
  */
 #ifdef NCBI_BLAST_EXPORTS
-#  define NCBI_BLAST_EXPORT         __declspec(dllexport)
+#  define NCBI_BLAST_EXPORT        __declspec(dllexport)
 #else
-#  define NCBI_BLAST_EXPORT         __declspec(dllimport)
+#  define NCBI_BLAST_EXPORT        __declspec(dllimport)
 #endif
 
 /*
@@ -663,6 +664,7 @@
 #  define NCBI_ENTREZ2_EXPORT
 #  define NCBI_ENTREZGENE_EXPORT
 #  define NCBI_FEATDEF_EXPORT
+#  define NCBI_FLAT_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICORE_EXPORT
@@ -695,7 +697,6 @@
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGO_EXPORT
-#  define NCBI_FLAT_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XNCBI_EXPORT
@@ -713,6 +714,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.18  2003/04/10 13:31:40  dicuccio
+ * Added BLAST objects to NCBI_SEQ
+ *
  * Revision 1.17  2003/04/09 16:12:05  ivanov
  * Fix for the previous commit
  *
