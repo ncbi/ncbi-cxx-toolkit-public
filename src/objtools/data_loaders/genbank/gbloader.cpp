@@ -369,17 +369,19 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
 {
     vector<string> str_list;
     NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
-    bool need_writer = false;
+    int reader_count = 0;
     for ( size_t i = 0; i < str_list.size(); ++i ) {
         CRef<CReader> reader(x_CreateReader(str_list[i], params));
         if( reader ) {
-            if ( i > 0 ) {
-                need_writer = true;
-            }
             m_Dispatcher->InsertReader(i, reader);
+            ++reader_count;
         }
     }
-    return need_writer;
+    if ( !reader_count ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "no reader available from "+str);
+    }
+    return reader_count > 1;
 }
 
 
@@ -438,37 +440,37 @@ CRef<CPluginManager<CWriter> > CGBDataLoader::x_GetWriterManager(void)
 }
 
 
+static bool s_ForceDriver(const string& names)
+{
+    return !names.empty() && names[names.size()-1] != ':';
+}
+
+
 CReader* CGBDataLoader::x_CreateReader(const string& names,
                                        const TParamTree* params)
 {
-    try {
-        CRef<TReaderManager> manager = x_GetReaderManager();
-        return manager->CreateInstanceFromList(params, names);
+    CRef<TReaderManager> manager = x_GetReaderManager();
+    CReader* ret = manager->CreateInstanceFromList(params, names);
+    if ( !ret && s_ForceDriver(names) ) {
+        // reader is required at this slot
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "no reader available from "+names);
     }
-    catch ( exception& e ) {
-        LOG_POST(names << " readers are not available ::" << e.what());
-    }
-    catch ( ... ) {
-        LOG_POST(names << " reader unable to init ");
-    }
-    return 0;
+    return ret;
 }
 
 
 CWriter* CGBDataLoader::x_CreateWriter(const string& names,
                                        const TParamTree* params)
 {
-    try {
-        CRef<TWriterManager> manager = x_GetWriterManager();
-        return manager->CreateInstanceFromList(params, names);
+    CRef<TWriterManager> manager = x_GetWriterManager();
+    CWriter* ret = manager->CreateInstanceFromList(params, names);
+    if ( !ret && s_ForceDriver(names) ) {
+        // writer is required at this slot
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "no writer available from "+names);
     }
-    catch ( exception& e ) {
-        LOG_POST(names << " writers are not available ::" << e.what());
-    }
-    catch ( ... ) {
-        LOG_POST(names << " writer unable to init ");
-    }
-    return 0;
+    return ret;
 }
 
 
