@@ -562,7 +562,6 @@ BLAST_GapAlignStructNew(const BlastScoringOptions* score_options,
       return -1;
 
    gap_align->positionBased = (sbp->posMatrix != NULL);
-   gap_align->rps_blast = FALSE;
 
    return status;
 }
@@ -3139,6 +3138,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
             sfree(init_hsp_array[index]->ungapped_data);
       }
       sfree(init_hsp_array);
+      gap_align->sbp->posMatrix = orig_pssm;
       return 0;
    }
    
@@ -3245,6 +3245,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
 
          if (status) {
             sfree(init_hsp_array);
+            gap_align->sbp->posMatrix = orig_pssm;
             return status;
          }
 
@@ -3260,7 +3261,6 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    }   
 
    sfree(init_hsp_array);
-
    sfree(helper);
    gap_align->sbp->posMatrix = orig_pssm;
       
@@ -3269,7 +3269,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
       blast, because the alignments can change during the traceback
       and thus may not share any diagonals later */
 
-   if (is_prot && !gap_align->rps_blast) {
+   if (is_prot && program_number != blast_type_rpsblast) {
       hsp_list->hspcnt = 
          CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
             hsp_list->hspcnt, frame);
@@ -3385,7 +3385,8 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
          query = query_blk->oof_sequence + CODON_LENGTH + q_length;
          query_length -= CODON_LENGTH - 1;
          switch_seq = TRUE;
-      } else if (program == blast_type_tblastn) {
+      } else if (program == blast_type_tblastn ||
+                 program == blast_type_rpstblastn) {
          subject = subject_blk->oof_sequence + CODON_LENGTH + s_length;
          query = query_blk->sequence + q_length;
          subject_length -= CODON_LENGTH - 1;
