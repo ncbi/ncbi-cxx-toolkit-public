@@ -27,6 +27,16 @@
 #define HOST_OS      "MacOS"
 #endif
 
+#ifdef NCBI_COMPILER_MW_MSL
+#undef NCBI_COMPILER_MW_MSL
+#endif
+
+#if defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS)
+#if _MSL_USING_MW_C_HEADERS
+#define NCBI_COMPILER_MW_MSL
+#endif
+#endif
+
 #define HOST_CPU     "PowerPC"
 #define HOST_VENDOR  "Apple"
 
