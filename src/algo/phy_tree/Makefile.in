@@ -5,7 +5,7 @@
 
 LIB_PROJ = xalgophytree
 
-SUB_PROJ = fastme
+SUB_PROJ = fastme test
 
 REQUIRES = objects
 
