@@ -39,11 +39,25 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(objects)
+
+
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
+
 
 class CScope;
 class CSeq_annot_Handle;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_align_Handle --
+///
+///  Proxy to access seq-align objects data
+///
 
 class CSeq_align_Handle
 {
@@ -54,11 +68,22 @@ public:
                       size_t index);
     ~CSeq_align_Handle(void);
 
+    /// Check if handle points to a seq-align
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void) const;
+
+    /// Check if handle does not point to a seq-align
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator !(void) const;
 
+    /// Get handle to the seq-annot
     CSeq_annot_Handle GetAnnot(void) const;
 
+    /// Get const reference to current seq-align
     CConstRef<CSeq_align> GetSeq_align(void) const;
 
     // Mappings for CSeq_align methods
@@ -150,12 +175,18 @@ const CSeq_align::TBounds& CSeq_align_Handle::GetBounds(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/09/28 19:41:59  kononenk
+* Added doxygen formatting
+*
 * Revision 1.2  2004/08/25 20:44:52  grichenk
 * Added operator bool() and operator !()
 *
