@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/06/07 11:47:38  clausen
+ * Added relate function comment
+ *
  * Revision 1.9  2002/06/06 20:52:24  clausen
  * Moved GetLength to objects/util/sequence.cpp
  *
@@ -88,6 +91,12 @@ public:
     // destructor
     ~CSeq_loc_mix(void);
     
+    //
+    // See related function in util/sequence.hpp:
+    //
+    //   TSeqPos GetLength(const CSeq_loc_mix&, CScope*)
+    //
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc_mix(const CSeq_loc_mix&);
