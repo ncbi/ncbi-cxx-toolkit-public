@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/05/25 13:27:13  vasilche
+* Fixed error with mixing list<> and set<>.
+*
 * Revision 1.39  2000/05/24 20:50:51  vasilche
 * Fixed compilation error.
 *
@@ -386,6 +389,28 @@ public:
 };
 
 template<typename List>
+class CStlArrayWriter : public CObjectArrayWriter
+{
+public:
+    CStlArrayWriter(TTypeInfo dataTypeInfo, const List& object)
+        : CObjectArrayWriter(object.empty()), m_DataTypeInfo(dataTypeInfo),
+          m_Iterator(object.begin()), m_End(object.end())
+        {
+        }
+
+    virtual void WriteTo(CObjectOStream& out)
+        {
+            m_DataTypeInfo->WriteData(out, &*m_Iterator);
+            m_NoMoreElements = ++m_Iterator == m_End;
+        }
+
+private:
+    TTypeInfo m_DataTypeInfo;
+    typename List::const_iterator m_Iterator;
+    typename List::const_iterator m_End;
+};
+
+template<typename List>
 class CListArrayReader : public CObjectArrayReader
 {
 public:
@@ -404,28 +429,6 @@ public:
 private:
     TTypeInfo m_DataTypeInfo;
     List& m_Object;
-};
-
-template<typename List>
-class CListArrayWriter : public CObjectArrayWriter
-{
-public:
-    CListArrayWriter(TTypeInfo dataTypeInfo, const List& object)
-        : CObjectArrayWriter(object.empty()), m_DataTypeInfo(dataTypeInfo),
-          m_Iterator(object.begin()), m_End(object.end())
-        {
-        }
-
-    virtual void WriteTo(CObjectOStream& out)
-        {
-            m_DataTypeInfo->WriteData(out, &*m_Iterator);
-            m_NoMoreElements = ++m_Iterator == m_End;
-        }
-
-private:
-    TTypeInfo m_DataTypeInfo;
-    typename List::const_iterator m_Iterator;
-    typename List::const_iterator m_End;
 };
 
 template<typename Set>
@@ -599,15 +602,8 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CListArrayWriter<List> writer(dataTypeInfo, Get(object));
-            out.WriteArray(writer, this, RandomOrder(), GetDataTypeInfo());
-        }
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CListArrayReader<List> reader(dataTypeInfo, Get(object));
-            in.ReadArray(reader, this, RandomOrder(), dataTypeInfo);
+            CStlArrayWriter<List> writer(dataTypeInfo, Get(object));
+            out.WriteArray(writer, this, RandomOrder(), dataTypeInfo);
         }
 
     virtual void SkipData(CObjectIStream& in) const
@@ -658,6 +654,13 @@ protected:
             Get(object).clear();
         }
 
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            CListArrayReader< list<Data> > reader(dataTypeInfo, Get(object));
+            in.ReadArray(reader, this, RandomOrder(), dataTypeInfo);
+        }
+
     virtual TObjectPtr AddEmpty(TObjectPtr object, size_t /*index*/) const
         {
             TObjectType& l = Get(object);
@@ -695,6 +698,13 @@ protected:
     virtual void Reserve(TObjectPtr object, size_t length) const
         {
             Get(object).resize(length);
+        }
+
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            CListArrayReader< vector<Data> > reader(dataTypeInfo, Get(object));
+            in.ReadArray(reader, this, RandomOrder(), dataTypeInfo);
         }
 
     virtual TObjectPtr AddEmpty(TObjectPtr object, size_t index) const
