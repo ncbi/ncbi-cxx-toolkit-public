@@ -96,6 +96,8 @@ private:
 
     auto_ptr<CMsvcDllsInfo>     m_DllsInfo;
 
+    auto_ptr<CProjectItemsTree> m_WholeTree;
+
 public:
 
     void GetMetaDataFiles(list<string>* files) const;
@@ -112,6 +114,8 @@ public:
     const CBuildType&        GetBuildType(void);
 
     const CMsvcDllsInfo&     GetDllsInfo (void);
+
+    const CProjectItemsTree& GetWholeTree(void);
 
     string GetDatatoolId          (void) const;
     string GetDatatoolPathForApp  (void) const;
@@ -177,6 +181,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/23 14:33:59  gorelenk
+ * Added member m_WholeTree and member-function GetWholeTree to declaration
+ * of class CProjBulderApp.
+ *
  * Revision 1.12  2004/03/18 17:41:03  gorelenk
  * Aligned classes member-functions parameters inside declarations.
  *
