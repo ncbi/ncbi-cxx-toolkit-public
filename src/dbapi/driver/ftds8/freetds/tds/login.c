@@ -238,12 +238,14 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 			return NULL;
 		}
 
+#ifdef FIONBIO
         ioctl_blocking = 1; /* ~0; //TRUE; */
         if (IOCTL(tds->s, FIONBIO, &ioctl_blocking) < 0) {
 		    tds_free_config(config);
             tds_free_socket(tds);
             return NULL;
         }
+#endif
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && errno == EINPROGRESS) retval = 0;
         if (retval < 0) {
@@ -426,11 +428,13 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     if (connect_timeout) {
         start = time (NULL);
         ioctl_blocking = 1; /* ~0; //TRUE; */
+#ifdef FIONBIO
         if (IOCTL(tds->s, FIONBIO, &ioctl_blocking) < 0) {
             tds_free_config(config);
             tds_free_socket(tds);
             return NULL;
         }
+#endif
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && errno == EINPROGRESS) retval = 0;
         if (retval < 0) {
