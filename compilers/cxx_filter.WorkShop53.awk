@@ -28,14 +28,14 @@ END { if (length(message)) print_if_interesting(); }
 # Set exit status based on the presence of error messages.
 # (Only the last pipeline stage's status counts.)
 BEGIN { status=0 }
-/^".+", line [0-9]+(<\/A>)?: Error:/ { status=1 }
-/^Fatal Error/                       { status=1 }
-/^ >> Assertion:/                    { status=1 }
-/^Error: /                           { status=1 }
-/:error:Error:/                      { status=1 }
-/^compiler\([^)]+\) error:/          { status=1 }
-/^Undefined/                         { status=1 }
-/^Could not open file /              { status=1 }
+/^".+", (line [0-9]+(<\/A>)?: )?Error:/      { status=1 }
+/^Fatal Error/                               { status=1 }
+/^ >> Assertion:/                            { status=1 }
+/^Error: /                                   { status=1 }
+/:error:Error:/                              { status=1 }
+/^compiler\([^)]+\) error:/                  { status=1 }
+/^Undefined/                                 { status=1 }
+/^Could not open file /                      { status=1 }
 END { exit status } # This must be the last END block.
 
 
