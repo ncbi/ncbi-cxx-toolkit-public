@@ -521,13 +521,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                     setters <<
                                         "    void Set"<<i->cName<<"(const "<<
                                         ircType<<"& value);\n";
-                                    inlineMethods <<
-                                        "inline\n"<<
+                                    methods <<
                                         "void "<<methodPrefix<<"Set"<<
                                         i->cName<<"(const "<<ircType<<
                                         "& value)\n"
                                         "{\n";
-                                    inlineMethods <<
+                                    methods <<
                                         "    Set" << i->cName <<
                                         "() = value;\n"
                                         "}\n"
@@ -1093,6 +1092,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2002/12/17 21:51:41  gouriano
+* corrected generation of "simple" members
+*
 * Revision 1.43  2002/12/12 21:04:17  gouriano
 * changed code generation so XML attribute list became random access class
 *
