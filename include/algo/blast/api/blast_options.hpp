@@ -2427,6 +2427,7 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
 
 /// Global function to convert program type enumeration used in the engine
 /// to the program enumeration.
+NCBI_XBLAST_EXPORT
 EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
 
 END_SCOPE(blast)
@@ -2438,6 +2439,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2004/07/08 20:20:02  gorelenk
+* Added missed export spec. to GetProgramFromBlastProgramType
+*
 * Revision 1.68  2004/07/06 15:45:47  dondosha
 * Added GetProgramType method
 *
