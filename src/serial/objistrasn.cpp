@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2000/11/20 17:25:36  vasilche
+* Added prototypes of functions.
+*
 * Revision 1.59  2000/10/20 15:51:41  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -305,7 +308,6 @@
 #endif
 
 BEGIN_NCBI_SCOPE
-
 
 CObjectIStream* CreateObjectIStreamAsn(void)
 {

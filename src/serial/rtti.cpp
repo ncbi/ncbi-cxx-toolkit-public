@@ -3,7 +3,9 @@
 
 using namespace std;
 
-int initRTTI()
+int initRTTI(void);
+
+int initRTTI(void)
 {
 	int r = 0;
 	r += typeid(void).name()[0];
