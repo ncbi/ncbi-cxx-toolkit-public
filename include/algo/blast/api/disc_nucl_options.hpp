@@ -95,9 +95,16 @@ public:
     }
 
     /// Specifies that a byte at a time should be scanned.
+    bool GetFullByteScan() const
+    {
+      return m_Opts->GetFullByteScan();
+    }
+
+    /// Specifies that a byte at a time should be scanned.
+   /// @param val scan one byte at a time if true, one letter if false [in]
     void SetFullByteScan(bool val) 
     {
-      m_Opts->SetFullByteScan(true);
+      m_Opts->SetFullByteScan(val);
     }
 
     /// NOTE: Unavailable for discontiguous megablast, throws a CBlastException
@@ -131,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/01/10 14:57:09  madden
+ * Fix typo for SetFullByteScan, add method GetFullByteScan
+ *
  * Revision 1.13  2005/01/10 13:32:11  madden
  * Removal of calls to SetScanStep, SetSeedExtensionMethod, added calls to SetFullByteScan
  *
