@@ -181,7 +181,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         return; // it has already been added
     }
     x_Reset();
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
     x_ValidateDenseg(ds);
 #endif    
 
@@ -285,7 +285,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 } else {
                     m_ContainsNA = true;
                 }
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
                 // Verify the widths (if exist)
                 if (ds.IsSetWidths()) {
                     const int& width = ds.GetWidths()[row];
@@ -649,7 +649,7 @@ void CAlnMix::x_Merge()
                     CAlnMix::TTruncateSeqPosMap::iterator pos_i =
                         ds_i->second.find(start1);
                     if (pos_i != ds_i->second.end()) {
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
                         CAlnMixMatch * deleted_match = pos_i->second;
                         if (deleted_match->m_AlnSeq1 !=
                             match->m_AlnSeq1) {
@@ -675,7 +675,7 @@ void CAlnMix::x_Merge()
                         ds_i->second.find(start1);
                     if (pos_i != ds_i->second.end()) {
                         CAlnMixMatch * truncated_match = pos_i->second;
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
                         if (truncated_match->m_AlnSeq1 !=
                             match->m_AlnSeq1) {
                             NCBI_THROW(CAlnException, eMergeFailure,
@@ -1209,7 +1209,7 @@ void CAlnMix::x_CreateSegmentsVector()
             }
         } else {
             row->m_StartIt = row->m_Starts.end();
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
             NCBI_THROW(CAlnException, eMergeFailure,
                        "CAlnMix::x_CreateSegmentsVector(): "
                        "Internal error: no starts for this row. ");
@@ -1229,7 +1229,7 @@ void CAlnMix::x_CreateSegmentsVector()
             }
         } else {
             row->m_StartIt = row->m_Starts.end();
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
             NCBI_THROW(CAlnException, eMergeFailure,
                        "CAlnMix::x_CreateSegmentsVector(): "
                        "Internal error: no starts for this row. ");
@@ -1237,7 +1237,7 @@ void CAlnMix::x_CreateSegmentsVector()
         }
     }
 
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
     iterate (TSeqs, row_i, m_Rows) {
         iterate (CAlnMixSegment::TStarts, st_i, (*row_i)->m_Starts) {
             iterate(CAlnMixSegment::TStartIterators,
@@ -1303,7 +1303,7 @@ void CAlnMix::x_CreateSegmentsVector()
                     CAlnMixSeq * row = start_its_i->first;
 
                     if (row->m_StartIt != start_its_i->second) {
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
                         if (row->m_PositiveStrand ?
                             row->m_StartIt->first >
                             start_its_i->second->first :
@@ -1338,7 +1338,7 @@ void CAlnMix::x_CreateSegmentsVector()
                              seg_stack.top()->m_StartIts) {
                         CAlnMixSeq * row = start_its_i->first;
 
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
                         if (row->m_PositiveStrand  &&
                             row->m_StartIt->first > 
                             start_its_i->second->first  ||
@@ -1765,7 +1765,7 @@ void CAlnMix::x_CreateDenseg()
             widths[numrow] = m_Rows[numrow]->m_Width;
         }
     }
-#if OBJECTS_ALNMGR___ALNMIX__DBG
+#if _DEBUG
     x_ValidateDenseg(*m_DS);
 #endif    
 }
@@ -1859,6 +1859,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2003/09/06 02:39:34  todorov
+* OBJECTS_ALNMGR___ALNMIX__DBG -> _DEBUG
+*
 * Revision 1.68  2003/08/28 19:54:58  todorov
 * trailing gap on master fix
 *
