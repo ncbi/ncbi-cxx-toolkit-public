@@ -197,11 +197,26 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
     }
 }
 
-class SeqDB_SortPairBySecondDesc {
+/// Defines a pair of integers and a sort order.
+///
+/// This struct stores a pair of integers, the volume index and the
+/// oid count.  The ordering is by the oid count, descending.
+
+struct SSeqDB_IndexCountPair {
 public:
-    int operator()(const pair<int,int> & lhs, const pair<int,int> & rhs)
+    /// Index of the volume in the volume set.
+    int m_Index;
+    
+    /// Number of OIDs associated with this volume.
+    int m_Count;
+    
+    /// Less than operator, where elements with larger allows sorting.
+    /// Elements are sorted by number of OIDs in descending order.
+    /// @param rhs
+    ///   The right hand side of the less than.
+    bool operator < (const SSeqDB_IndexCountPair & rhs) const
     {
-        return lhs.second > rhs.second;
+        return m_Count > rhs.m_Count;
     }
 };
 
@@ -216,16 +231,18 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
     }
     
     // pair = volume index, number of oids
-    vector< pair<int,int> > OidsPerVolume;
+    //vector< pair<int,int> > OidsPerVolume;
+    typedef SSeqDB_IndexCountPair TIndexCount;
+    vector<TIndexCount> OidsPerVolume;
     
     // Build a list of volumes sorted by OID count.
     
     for(int i = 0; i < volset.GetNumVols(); i++) {
         const CSeqDBVolEntry * vol = volset.GetVolEntry(i);
         
-        pair<int,int> vol_oids;
-        vol_oids.first = i;
-        vol_oids.second = vol->OIDEnd() - vol->OIDStart();
+        TIndexCount vol_oids;
+        vol_oids.m_Index = i;
+        vol_oids.m_Count = vol->OIDEnd() - vol->OIDStart();
         
         OidsPerVolume.push_back(vol_oids);
     }
@@ -236,11 +253,10 @@ void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
     // GIs by the time smaller volumes are searched, thus reducing the
     // total number of lookups.
     
-    SeqDB_SortPairBySecondDesc vol_sorter;
-    sort(OidsPerVolume.begin(), OidsPerVolume.end(), vol_sorter);
+    std::sort(OidsPerVolume.begin(), OidsPerVolume.end());
     
     for(int i = 0; i < (int)OidsPerVolume.size(); i++) {
-        int vol_idx = OidsPerVolume[i].first;
+        int vol_idx = OidsPerVolume[i].m_Index;
         
         const CSeqDBVolEntry * vol = volset.GetVolEntry(vol_idx);
         int vol_start = vol->OIDStart();

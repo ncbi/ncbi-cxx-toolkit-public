@@ -324,7 +324,7 @@ void CSeqDBGiList::x_FindOid(int oid, int & indexB, int & indexE)
     // If each OID had many GIs, two binary searches would be used to
     // find the two boundaries between the three regions (<, =, >).
     
-    int b(0), e(m_GisOids.size());
+    int b(0), e((int)m_GisOids.size());
     
     while(1) {
         int m((b+e) >> 1);
@@ -386,7 +386,7 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
     Int4 * beginp = (Int4*) mfile.GetPtr();
     Int4 * endp   = (Int4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
     
-    Int4 num_gis = endp-beginp-2;
+    Int4 num_gis = (int)(endp-beginp-2);
     
     gis.clear();
     
