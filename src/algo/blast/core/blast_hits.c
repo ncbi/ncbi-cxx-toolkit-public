@@ -913,10 +913,6 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
                                      query_info, sbp, rdfp);
    }
 
-   /* The uncompressed sequence has been saved when hits were reevaluated
-      with ambiguities. We don't need it any more here. */
-   subject->sequence_start = MemFree(subject->sequence_start);
-
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
       BlastHSPListPtr tmp_hsp_list;
