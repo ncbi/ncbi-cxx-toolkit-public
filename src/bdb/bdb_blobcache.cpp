@@ -483,6 +483,7 @@ void CBDB_Cache::Open(const char* cache_path,
     if (m_TimeStampFlag & fPurgeOnStartup) {
         Purge(GetTimeout());
     }
+    m_Env->TransactionCheckpoint();
 }
 
 
@@ -2027,6 +2028,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/03/26 14:54:21  kuznets
+ * Transaction checkpoint after database creation
+ *
  * Revision 1.46  2004/03/26 14:05:39  kuznets
  * Force transaction checkpoints and turn-off buffering
  *
