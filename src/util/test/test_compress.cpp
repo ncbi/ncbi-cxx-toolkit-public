@@ -487,8 +487,7 @@ void CTestCompressor<TCompression, TCompressionFile,
                   unsigned int dst_len,
                   unsigned int out_len)
 {
-    cout << (type == eCompress) ? "Compress   ": 
-                                  "Decompress ";
+    cout << ((type == eCompress) ? "Compress   ": "Decompress ");
     cout << "errcode = ";
     cout << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", ";
     cout << ((src_len == kUnknown) ? '?' : src_len) << " -> ";
@@ -567,6 +566,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/14 17:05:10  ivanov
+ * Added missed brackets in the PrintResult()
+ *
  * Revision 1.9  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
