@@ -51,19 +51,15 @@ CT_INT_TYPE CStrStreamBuf::underflow()
 
 streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 {
-  for(unsigned i = 0; i < 2; i++)
+  try
   {
-    try
-    {
-      return x_SeqrefStreamBuf(seqId, conn);
-    }
-    catch(exception &e)
-    {
-      LOG_POST("Caugth exception " << e.what() << ", reconnecting...");
-      Reconnect(conn);
-    }
+    return x_SeqrefStreamBuf(seqId, conn);
   }
-  throw runtime_error("CId1Reader::SeqrefStreamBuf fatal");
+  catch(const CIOException &e)
+  {
+    Reconnect(conn);
+    throw;
+  }
 }
 
 streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
@@ -212,19 +208,15 @@ CT_INT_TYPE CId1StreamBuf::underflow()
 
 streambuf *CId1Seqref::BlobStreamBuf(int a, int b, const CBlobClass &c, unsigned conn)
 {
-  for(unsigned i = 0; i < 2; i++)
+  try
   {
-    try
-    {
-      return x_BlobStreamBuf(a, b, c, conn);
-    }
-    catch(exception &e)
-    {
-      LOG_POST("Caugth exception " << e.what() << ", reconnectiong...");
-      m_Reader->Reconnect(conn);
-    }
+    return x_BlobStreamBuf(a, b, c, conn);
   }
-  throw runtime_error("CId1Seqref::BlobStreamBuf fatal");
+  catch(const CIOException &e)
+  {
+    m_Reader->Reconnect(conn);
+    throw;
+  }
 }
 
 streambuf *CId1Seqref::x_BlobStreamBuf(int, int, const CBlobClass &, unsigned conn)
@@ -360,6 +352,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.16  2002/04/08 20:52:26  butanaev
+* Added PUBSEQ reader.
+*
 * Revision 1.15  2002/03/29 02:47:05  kimelman
 * gbloader: MT scalability fixes
 *
