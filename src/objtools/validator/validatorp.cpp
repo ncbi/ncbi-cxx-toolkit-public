@@ -95,6 +95,7 @@
 #include <objects/biblio/PubStatus.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Affil.hpp>
 
 #include <algorithm>
 
@@ -805,6 +806,10 @@ void CValidError_imp::ValidatePubdesc
             ValidatePubGen(pub.GetGen(), obj);
             break;
 
+        case CPub::e_Sub:
+            ValidateCitSub(pub.GetSub(), obj);
+            break;
+
         case CPub::e_Muid:
             if ( uid == 0 ) {
                 uid = pub.GetMuid();
@@ -1312,6 +1317,92 @@ void CValidError_imp::ValidateBioSource
             PostErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
                 "BioSource is missing taxon ID", obj);
         }
+    }
+}
+
+
+void CValidError_imp::ValidateCitSub
+(const CCit_sub& cs,
+ const CSerialObject& obj)
+{
+    bool has_name  = false,
+         has_affil = false;
+
+    if ( cs.CanGetAuthors() ) {
+        const CAuth_list& authors = cs.GetAuthors();
+
+        if ( authors.CanGetNames() ) {
+            const CAuth_list::TNames& names = cs.GetAuthors().GetNames();
+            switch ( names.Which() ) {
+            case CAuth_list::TNames::e_Std:
+                has_name = HasName(names.GetStd());
+                break;
+                
+            case CAuth_list::TNames::e_Ml:
+                ITERATE( CAuth_list::TNames::TMl, it, names.GetMl() ) {
+                    if ( !IsBlankString(*it) ) {
+                        has_name = true;
+                        break;
+                    }
+                }
+                break;
+                
+            case CAuth_list::TNames::e_Str:
+                ITERATE( CAuth_list::TNames::TStr, it, names.GetStr() ) {
+                    if ( !IsBlankString(*it) ) {
+                        has_name = true;
+                        break;
+                    }
+                }
+                break;
+                
+            default:
+                break;
+            }
+        }
+
+        if ( authors.CanGetAffil() ) {
+            const CAffil& affil = authors.GetAffil();
+
+            switch ( affil.Which() ) {
+            case CAffil::e_Str:
+                {{
+                    if ( !IsBlankString(affil.GetStr()) ) {
+                        has_affil = true;
+                    }
+                }}
+                break;
+
+            case CAffil::e_Std:
+#define HAS_VALUE(o, x) (o.CanGet##x()  &&  !IsBlankString(o.Get##x()))
+                {{
+                    const CAffil::TStd& std = affil.GetStd();
+                    if ( HAS_VALUE(std, Affil)    ||
+                         HAS_VALUE(std, Div)      ||
+                         HAS_VALUE(std, City)     ||
+                         HAS_VALUE(std, Sub)      ||
+                         HAS_VALUE(std, Country)  ||
+                         HAS_VALUE(std, Street)   ||
+                         HAS_VALUE(std, Email)    ||
+                         HAS_VALUE(std, Fax)      ||
+                         HAS_VALUE(std, Phone)    ||
+                         HAS_VALUE(std, Postal_code) ) {
+                        has_affil = true;
+                    }
+                }}
+#undef HAS_VALUE
+                break;
+            }
+        }
+    }
+
+    if ( !has_name ) {
+        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Submission citation has no author names", obj);
+    }
+    if ( !has_affil ) {
+        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Submission citation has no affiliation", obj);
     }
 }
 
@@ -2350,6 +2441,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/01/12 20:25:23  shomrat
+* ValidateCitSub called from ValidatePubdesc, gives error if no affiliation fields set
+*
 * Revision 1.44  2003/12/17 19:16:15  shomrat
 * Notify graph packaging problem
 *
