@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/10/02 17:58:41  grichenk
+* Added CBioseq_CI sample code
+*
 * Revision 1.7  2002/09/03 21:27:03  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.
@@ -78,6 +81,8 @@
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
 #include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr/bioseq_ci.hpp>
+
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
@@ -154,6 +159,14 @@ int CDemoApp::Run(void)
     if ( !handle ) {
         NcbiCout << "Bioseq not found" << NcbiEndl;
         return 0;
+    }
+
+    // List other sequences in the same TSE
+    NcbiCout << "TSE sequences:" << NcbiEndl;
+    CBioseq_CI bit;
+    bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
+    for ( ; bit; bit++) {
+        NcbiCout << "    " << bit->GetSeqId()->DumpAsFasta() << NcbiEndl;
     }
 
     // Get the bioseq
