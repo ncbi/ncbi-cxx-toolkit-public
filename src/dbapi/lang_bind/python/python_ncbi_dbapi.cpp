@@ -166,7 +166,7 @@ public:
 
 private:
     typedef CPluginManager<I_DriverContext> TContextManager;
-    typedef CPluginManagerStore::CPMMaker<I_DriverContext> TContextManagerStore;
+    typedef CPluginManagerGetter<I_DriverContext> TContextManagerStore;
     typedef map<string, AutoPtr<IDataSource, DataSourceDeleter> > TDSMap;
 
     CRef<TContextManager>   m_ContextManager;
@@ -175,9 +175,7 @@ private:
 
 CDataSourcePool::CDataSourcePool(void)
 {
-    bool created = false;
-
-    m_ContextManager.Reset( TContextManagerStore::Get( &created ) );
+    m_ContextManager.Reset( TContextManagerStore::Get() );
     _ASSERT( m_ContextManager );
 
 #ifdef WIN32
@@ -2383,6 +2381,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/03/23 14:45:42  vasilche
+* Removed non-MT-safe "created" flag.
+* CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.
+*
 * Revision 1.11  2005/03/08 17:14:48  ssikorsk
 * Search for drivers in a module directory
 *

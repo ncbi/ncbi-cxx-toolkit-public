@@ -101,7 +101,7 @@ void TestPluginManagerStore()
 {
 //    string pm_name = CInterfaceVersion<ITest>::GetName();
     
-    CPluginManager<ITest>* pm = ncbi::CPluginManagerStore::CPMMaker<ITest>::Get();
+    CPluginManager<ITest>* pm = ncbi::CPluginManagerGetter<ITest>::Get();
     assert(pm);
 
 }
@@ -146,6 +146,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/23 14:43:48  vasilche
+ * Removed non-MT-safe "created" flag.
+ * CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.
+ *
  * Revision 1.5  2004/12/21 21:40:20  grichenk
  * Moved obj_store and plugin_manager_store to corelib
  *

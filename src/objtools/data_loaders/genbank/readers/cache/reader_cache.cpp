@@ -451,7 +451,7 @@ public:
                         const string& section) const
         {
             typedef CPluginManager<ICache> TCacheManager;
-            typedef CPluginManagerStore::CPMMaker<ICache> TCacheManagerStore;
+            typedef CPluginManagerGetter<ICache> TCacheManagerStore;
             CRef<TCacheManager> CacheManager(TCacheManagerStore::Get());
             _ASSERT(CacheManager);
             const TPluginManagerParamTree* cache_params = params ?

@@ -107,7 +107,7 @@ private:
 
 private:
     typedef CPluginManager<I_DriverContext> TContextManager;
-    typedef CPluginManagerStore::CPMMaker<I_DriverContext> TContextManagerStore;
+    typedef CPluginManagerGetter<I_DriverContext> TContextManagerStore;
 
     CRef<TContextManager>   m_ContextManager;
 };
@@ -119,9 +119,8 @@ C_xDriverMgr::C_xDriverMgr( unsigned int nof_drivers )
     m_NofDrvs= 0;
 
     ///////////////////////////////////
-    bool created = false;
 
-    m_ContextManager.Reset( TContextManagerStore::Get( &created ) );
+    m_ContextManager.Reset( TContextManagerStore::Get() );
 #ifndef NCBI_COMPILER_COMPAQ
     // For some reason, Compaq's compiler thinks m_ContextManager is
     // inaccessible here!
@@ -329,12 +328,11 @@ I_DriverContext*
 Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
 {
     typedef CPluginManager<I_DriverContext> TReaderManager;
-    typedef CPluginManagerStore::CPMMaker<I_DriverContext> TReaderManagerStore;
-    bool created = false;
+    typedef CPluginManagerGetter<I_DriverContext> TReaderManagerStore;
     I_DriverContext* drv = NULL;
     const TPluginManagerParamTree* nd = NULL;
 
-    CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get(&created));
+    CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get());
     _ASSERT(ReaderManager);
 
     try {
@@ -371,6 +369,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/03/23 14:45:42  vasilche
+ * Removed non-MT-safe "created" flag.
+ * CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.
+ *
  * Revision 1.22  2005/03/09 17:06:33  ssikorsk
  * Implemented C_DriverMgr::GetDriver
  *

@@ -403,22 +403,19 @@ void CGBDataLoader::x_CreateWriters(const string& str,
 
 CRef<CPluginManager<CReader> > CGBDataLoader::x_GetReaderManager(void)
 {
-    typedef CPluginManagerStore::CPMMaker<CReader> TManagerStore;
-    
-    bool created = false;
-    CRef<TReaderManager> manager(TManagerStore::Get(&created));
+    CRef<TReaderManager> manager(CPluginManagerGetter<CReader>::Get());
     _ASSERT(manager);
 
-    if ( created ) {
 #ifdef REGISTER_READER_ENTRY_POINTS
+    if ( GetConfigFlag("GENBANK", "REGISTER_READERS", true) ) {
         GenBankReaders_Register_Id1();
         GenBankReaders_Register_Id2();
         GenBankReaders_Register_Cache();
 # ifdef HAVE_PUBSEQ_OS
         GenBankReaders_Register_Pubseq();
 # endif
-#endif
     }
+#endif
 
     return manager;
 }
@@ -426,17 +423,14 @@ CRef<CPluginManager<CReader> > CGBDataLoader::x_GetReaderManager(void)
 
 CRef<CPluginManager<CWriter> > CGBDataLoader::x_GetWriterManager(void)
 {
-    typedef CPluginManagerStore::CPMMaker<CWriter> TManagerStore;
-
-    bool created = false;
-    CRef<TWriterManager> manager(TManagerStore::Get(&created));
+    CRef<TWriterManager> manager(CPluginManagerGetter<CWriter>::Get());
     _ASSERT(manager);
 
-    if ( created ) {
 #ifdef REGISTER_READER_ENTRY_POINTS
+    if ( GetConfigFlag("GENBANK", "REGISTER_READERS", true) ) {
         GenBankWriters_Register_Cache();
-#endif
     }
+#endif
     
     return manager;
 }
