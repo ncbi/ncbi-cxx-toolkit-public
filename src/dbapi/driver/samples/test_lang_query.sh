@@ -22,8 +22,10 @@ sum_list=""
 RunSimpleTest()
 {
   echo
-  $CHECK_EXEC $cmd > $res_file 2>&1
-
+  (
+    cd $1 > /dev/null 2>&1
+    $CHECK_EXEC $cmd > $res_file 2>&1
+  )
   if test $? -eq 0 ; then
       echo "OK:"
       n_ok=`expr $n_ok + 1`
@@ -106,17 +108,17 @@ EOF
       fi
       if test \( $driver = "ftds"  -o  $driver = "ftds7" \)  -a \
                  $server = $server_mssql ; then
-          cmd="dbapi_bcp/dbapi_bcp -d $driver -S $server"
-          RunSimpleTest
-          cmd="dbapi_cursor/dbapi_cursor -d $driver -S $server"
-          RunSimpleTest
-          cmd="dbapi_testspeed/dbapi_testspeed -d $driver -S $server"
-          RunSimpleTest
+          cmd="dbapi_bcp -d $driver -S $server"
+          RunSimpleTest "dbapi_bcp"
+          cmd="dbapi_cursor -d $driver -S $server"
+          RunSimpleTest "dbapi_cursor"
+          cmd="dbapi_testspeed -d $driver -S $server"
+          RunSimpleTest "dbapi_testspeed"
       fi
-      cmd="dbapi_query/dbapi_query -d $driver -S $server"
-      RunSimpleTest
-      cmd="dbapi_send_data/dbapi_send_data -d $driver -S $server"
-      RunSimpleTest
+      cmd="dbapi_query -d $driver -S $server"
+      RunSimpleTest "dbapi_query"
+      cmd="dbapi_send_data -d $driver -S $server"
+      RunSimpleTest "dbapi_send_data"
     done
 
   else
