@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/03/06 23:57:27  lavr
+ * SERV_DISPD_LOCAL_SVC_BONUS used for services running locally
+ *
  * Revision 6.13  2001/03/05 23:10:46  lavr
  * SERV_ReadInfo takes only one argument now
  *
@@ -342,6 +345,7 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
 {
     SDISPD_Data *data = (SDISPD_Data *)iter->data;
+    unsigned int local_host;
     double status, point;
     SSERV_Info* info = 0;
     size_t i;
@@ -352,15 +356,23 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
     if (s_IsUpdateNeeded(data) && !s_Resolve(iter))
         return 0;
     assert(data->n_info != 0);
+    local_host = SOCK_gethostbyname(data->net_info->client_host);
     
     status = 0.0;
-    for (i = 0; i < data->n_info; i++)
-        status += data->s_info[i]->rate;
+    for (i = 0; i < data->n_info; i++) {
+        if (data->s_info[i]->host == local_host)
+            status += SERV_DISPD_LOCAL_SVC_BONUS*data->s_info[i]->rate;
+        else
+            status += data->s_info[i]->rate;
+    }
     
     point = (status * rand()) / (double)RAND_MAX;
     status = 0.0;
     for (i = 0; i < data->n_info; i++) {
-        status += data->s_info[i]->rate;
+        if (data->s_info[i]->host == local_host)
+            status += SERV_DISPD_LOCAL_SVC_BONUS*data->s_info[i]->rate;
+        else
+            status += data->s_info[i]->rate;
         if (point < status)
             break;
     }
