@@ -120,6 +120,12 @@ public:
     ///
     int GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
 
+    enum ESearch {
+	eSearch_Exact,
+	eSearch_TokenSet,
+	eSearch_WildCard, // shell-style wildcards, i.e. *,?,[]
+	eSearch_Phonetic
+    };
     //----------------------------------------------
     // Get tax_id by organism name
     // Returns: tax_id - if organism found
@@ -128,8 +134,27 @@ public:
     //                   (where -tax_id is id of one of the nodes)
     ///
     int GetTaxIdByName(const string& orgname);
+
+    //----------------------------------------------
+    // Get tax_id by organism "unique" name
+    // Returns: tax_id - if organism found
+    //               0 - no organism found
+    //         -tax_id - if multiple nodes found
+    //                   (where -tax_id is id of one of the nodes)
+    ///
     int FindTaxIdByName(const string& orgname);
 
+    //----------------------------------------------
+    // Get tax_id by organism name using fancy search modes. If given a pointer
+    // to the list of names then it'll return all found names (one name per 
+    // tax id). Previous content of name_list_out will be destroyed.
+    // Returns: tax_id - if organism found
+    //               0 - no organism found
+    //              -1 - if multiple nodes found
+    ///
+    int SearchTaxIdByName(const string& orgname,
+			  ESearch mode = eSearch_TokenSet,
+			  list< CRef< CTaxon1_name > >* name_list_out = NULL);
 
     //----------------------------------------------
     // Get ALL tax_id by organism name
@@ -199,6 +224,11 @@ public:
     // Get taxonomic division name by division id
     ///
     bool GetDivisionName(short div_id, string& div_name_out );
+
+    //---------------------------------------------
+    // Get taxonomic name class name by name class id
+    ///
+    bool GetNameClass(short nameclass_id, string& class_name_out );
 
     //---------------------------------------------
     // Get the nearest common ancestor for two nodes
@@ -297,6 +327,20 @@ public:
     // Returns: NULL if node doesn't exist or some other error occured
     ///
     CRef< ITreeIterator > GetTreeIterator( int tax_id );
+
+    //--------------------------------------------------
+    // These functions retreive the "properties" of the taxonomy nodes. Each
+    // "property" is a (name, value) pair where name is a string and value
+    // could be of integer, boolean, or string type.
+    // Returns: true  when success and last parameter is filled with value,
+    //          false when call failed
+    ///
+    bool GetNodeProperty( int tax_id, const string& prop_name,
+			  bool& prop_val );
+    bool GetNodeProperty( int tax_id, const string& prop_name,
+			  int& prop_val );
+    bool GetNodeProperty( int tax_id, const string& prop_name,
+			  string& prop_val );
 
 private:
     friend class COrgRefCache;
@@ -562,6 +606,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.12  2003/07/09 15:41:31  domrach
+// SearchTaxIdByName(), GetNameClass(), and GetNodeProperty() functions added
+//
 // Revision 1.11  2003/05/08 15:56:42  ucko
 // Use kMax_UInt instead of numeric_limits<>, which still seems to have
 // issues on Windows. :-/

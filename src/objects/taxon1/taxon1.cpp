@@ -119,7 +119,8 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
         m_nReconnectAttempts = reconnect_attempts;
         m_pchService = "TaxService";
         const char* tmp;
-        if( (tmp=getenv("NI_TAXONOMY_SERVICE_NAME")) != NULL ) {
+        if( ( (tmp=getenv("NI_TAXONOMY_SERVICE_NAME")) != NULL ) ||
+	    ( (tmp=getenv("NI_SERVICE_NAME_TAXONOMY")) != NULL ) ) {
             m_pchService = tmp;
         }
         auto_ptr<CObjectOStream> pOut;
@@ -771,6 +772,65 @@ CTaxon1::FindTaxIdByName(const string& orgname)
     return id;
 }
 
+//----------------------------------------------
+// Get tax_id by organism name using fancy search modes.
+// Returns: tax_id - if the only organism found
+//               0 - no organism found
+//         -tax_id - if multiple nodes found
+//                   (where -tax_id is id of one of the nodes)
+///
+int
+CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
+			   list< CRef< CTaxon1_name > >* pNameList)
+{
+    // Use fancy searches
+    SetLastError(NULL);
+    if( orgname.empty() ) {
+	return 0;
+    }
+    CRef< CTaxon1_info > pQuery( new CTaxon1_info() );
+    int nMode = 0;
+    switch( mode ) {
+    default:
+    case eSearch_Exact:    nMode = 0; break;
+    case eSearch_TokenSet: nMode = 1; break;
+    case eSearch_WildCard: nMode = 2; break; // shell-style wildcards, i.e. *,?,[]
+    case eSearch_Phonetic: nMode = 3; break;
+    }
+    pQuery->SetIval1( nMode );
+    pQuery->SetIval2( 0 );
+    pQuery->SetSval( orgname );
+    
+    CTaxon1_req  req;
+    CTaxon1_resp resp;
+
+    req.SetSearchname( *pQuery );
+    
+    if( SendRequest( req, resp ) ) {
+	if( resp.IsSearchname() ) {
+	    // Correct response, return object
+	    int retc = 0;
+	    const CTaxon1_resp::TSearchname& lNm = resp.GetSearchname();
+	    if( lNm.size() == 0 ) {
+		retc = 0;
+	    } else if( lNm.size() == 1 ) {
+		retc = lNm.front()->GetTaxid();
+	    } else {
+		retc = -1;
+	    }
+	    // Fill the names list
+	    if( pNameList ) {
+		pNameList->swap( resp.SetSearchname() );
+	    }
+	    return retc;
+	} else { // Internal: wrong respond type
+	    SetLastError( "Response type is not Searchname" );
+	    return 0;
+	}
+    }
+    return 0;
+}
+
 int
 CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
 {
@@ -990,6 +1050,23 @@ CTaxon1::GetDivisionName(short div_id, string& div_name_out )
 	return true;
     } else {
 	SetLastError( "ERROR: GetDivisionName(): Division not found" );
+	return false;
+    }
+}
+
+//---------------------------------------------
+// Get taxonomic name class (scientific name, common name, etc.) by id
+///
+bool
+CTaxon1::GetNameClass(short nameclass_id, string& name_class_out )
+{
+    SetLastError( NULL );
+    const char* pchName = m_plCache->GetNameClassName( nameclass_id );
+    if( pchName ) {
+	name_class_out.assign( pchName );
+	return true;
+    } else {
+	SetLastError( "ERROR: GetNameClass(): Name class not found" );
 	return false;
     }
 }
@@ -1403,6 +1480,147 @@ CTaxon1::GetTreeIterator( int tax_id )
     return pIt;
 }
 
+bool
+CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
+			  string& prop_val )
+{
+    SetLastError(NULL);
+    CTaxon1_req req;
+    CTaxon1_resp resp;
+    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
+
+    CDiagAutoPrefix( "Taxon1::GetNodeProperty" );
+
+    if( !prop_name.empty() ) {
+	pProp->SetIval1( tax_id );
+	pProp->SetIval2( -1 ); // Get string property by name
+	pProp->SetSval( prop_name );
+	
+	req.SetGetorgprop( *pProp );
+	try {
+	    if( SendRequest( req, resp ) ) {
+		if( !resp.IsGetorgprop() ) { // error
+		    ERR_POST( "Response type is not Getorgprop" );
+		} else {
+		    if( resp.GetGetorgprop().size() > 0 ) {
+			CRef<CTaxon1_info> pInfo
+			    ( resp.GetGetorgprop().front() );
+			prop_val.assign( pInfo->GetSval() );
+			return true;
+		    }
+		}
+	    } else if( resp.IsError()
+		       && resp.GetError().GetLevel() 
+		       != CTaxon1_error::eLevel_none ) {
+		string sErr;
+		resp.GetError().GetErrorText( sErr );
+		ERR_POST( sErr );
+	    }
+	} catch( exception& e ) {
+	    ERR_POST( e.what() );
+	    SetLastError( e.what() );
+	}
+    } else {
+	SetLastError( "Empty property name is not accepted" );
+	ERR_POST( GetLastError() );
+    }
+    return false;
+}
+
+bool
+CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
+			  bool& prop_val )
+{
+    SetLastError(NULL);
+    CTaxon1_req req;
+    CTaxon1_resp resp;
+    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
+
+    CDiagAutoPrefix( "Taxon1::GetNodeProperty" );
+
+    if( !prop_name.empty() ) {
+	pProp->SetIval1( tax_id );
+	pProp->SetIval2( -3 ); // Get bool property by name
+	pProp->SetSval( prop_name );
+	
+	req.SetGetorgprop( *pProp );
+	try {
+	    if( SendRequest( req, resp ) ) {
+		if( !resp.IsGetorgprop() ) { // error
+		    ERR_POST( "Response type is not Getorgprop" );
+		} else {
+		    if( resp.GetGetorgprop().size() > 0 ) {
+			CRef<CTaxon1_info> pInfo
+			    = resp.GetGetorgprop().front();
+			prop_val = pInfo->GetIval2() != 0;
+			return true;
+		    }
+		}
+	    } else if( resp.IsError()
+		       && resp.GetError().GetLevel() 
+		       != CTaxon1_error::eLevel_none ) {
+		string sErr;
+		resp.GetError().GetErrorText( sErr );
+		ERR_POST( sErr );
+	    }
+	} catch( exception& e ) {
+	    ERR_POST( e.what() );
+	    SetLastError( e.what() );
+	}
+    } else {
+	SetLastError( "Empty property name is not accepted" );
+	ERR_POST( GetLastError() );
+    }
+    return false;
+}
+
+bool
+CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
+			  int& prop_val )
+{
+    SetLastError(NULL);
+    CTaxon1_req req;
+    CTaxon1_resp resp;
+    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
+
+    CDiagAutoPrefix( "Taxon1::GetNodeProperty" );
+
+    if( !prop_name.empty() ) {
+	pProp->SetIval1( tax_id );
+	pProp->SetIval2( -2 ); // Get int property by name
+	pProp->SetSval( prop_name );
+	
+	req.SetGetorgprop( *pProp );
+	try {
+	    if( SendRequest( req, resp ) ) {
+		if( !resp.IsGetorgprop() ) { // error
+		    ERR_POST( "Response type is not Getorgprop" );
+		} else {
+		    if( resp.GetGetorgprop().size() > 0 ) {
+			CRef<CTaxon1_info> pInfo
+			    = resp.GetGetorgprop().front();
+			prop_val = pInfo->GetIval2();
+			return true;
+		    }
+		}
+	    } else if( resp.IsError()
+		       && resp.GetError().GetLevel() 
+		       != CTaxon1_error::eLevel_none ) {
+		string sErr;
+		resp.GetError().GetErrorText( sErr );
+		ERR_POST( sErr );
+	    }
+	} catch( exception& e ) {
+	    ERR_POST( e.what() );
+	    SetLastError( e.what() );
+	}
+    } else {
+	SetLastError( "Empty property name is not accepted" );
+	ERR_POST( GetLastError() );
+    }
+    return false;
+}
+
 //-----------------------------------
 //  Iterator stuff
 //
@@ -1571,6 +1789,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.18  2003/07/09 15:41:31  domrach
+ * SearchTaxIdByName(), GetNameClass(), and GetNodeProperty() functions added
+ *
  * Revision 6.17  2003/06/23 20:42:08  domrach
  * New treatment of subspecies names introduced
  *
