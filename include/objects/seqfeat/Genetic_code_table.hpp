@@ -139,7 +139,7 @@ private:
 
 // public interface for (single instance) genetic code and translation tables
 
-class CGen_code_table
+class NCBI_SEQFEAT_EXPORT CGen_code_table
 {
 public:
     // return initialized translation table given genetic code
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/01/03 19:17:30  shomrat
+* Added Win32 export specifier
+*
 * Revision 1.7  2002/12/26 12:43:27  dicuccio
 * Added Win32 export specifiers
 *
