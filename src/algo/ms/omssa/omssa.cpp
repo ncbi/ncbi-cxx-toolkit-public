@@ -174,12 +174,12 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 }
 
 #ifdef _DEBUG
-//#define CHECKGI
+#define CHECKGI
 #endif
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if( gi == 6323273){
+    if( gi == 115646){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -218,9 +218,7 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 	    Peaks->SetNumber() = Spectrum->GetNumber();
 		
 	Peaks->Sort();
-	Peaks->SetComputedCharge(MyRequest.GetSettings().GetChargehandling().GetMincharge(),
-							 MyRequest.GetSettings().GetChargehandling().GetMaxcharge(), 
-							 MyRequest.GetSettings().GetChargehandling().GetConsidermult());
+	Peaks->SetComputedCharge(MyRequest.GetSettings().GetChargehandling());
 	Peaks->InitHitList(MyRequest.GetSettings().GetMinhit());
 	Peaks->CullAll(MyRequest.GetSettings().GetCutlo(),
 		       MyRequest.GetSettings().GetSinglewin(),
@@ -237,7 +235,8 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 	PeakSet.AddPeak(Peaks);
 		
     }
-    PeakSet.SortPeaks(static_cast <int> (MyRequest.GetSettings().GetPeptol()*MSSCALE));
+    PeakSet.SortPeaks(static_cast <int> (MyRequest.GetSettings().GetPeptol()*MSSCALE),
+                      MyRequest.GetSettings().GetZdep());
 	
 }
 
@@ -1241,6 +1240,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.36  2005/01/31 17:30:57  lewisg
+adjustable intensity, z dpendence of precursor mass tolerance
+
 Revision 1.35  2005/01/11 21:08:43  lewisg
 average mass search
 

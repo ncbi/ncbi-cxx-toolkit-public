@@ -49,6 +49,7 @@
 
 // added includes
 #include "msms.hpp"
+#include <math.h>
 
 // generated classes
 BEGIN_NCBI_SCOPE
@@ -151,16 +152,19 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
             }
             getline(DTA, Line);
             getline(DTA, Line);
+            TInputPeaks InputPeaks;
 
             while (NStr::Compare(Line, 0, 5, "</dta") != 0) {
                 CNcbiIstrstream istr(Line.c_str());
-                if (!GetDTABody(istr, MySpectrum)) 
+                if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
                 getline(DTA, Line);
             } 
-
-            Set().push_back(MySpectrum);
+            if(GotOne) {
+                Peaks2Spectrum(InputPeaks, MySpectrum);
+                Set().push_back(MySpectrum);
+            }
         } while (DTA && !DTA.eof());
 
     if (!GotOne) {
@@ -215,15 +219,18 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
                     return 1;
             }
 
+            TInputPeaks InputPeaks;
             while (Line != "") {
                 CNcbiIstrstream istr(Line.c_str());
-                if (!GetDTABody(istr, MySpectrum)) 
+                if (!GetDTABody(istr, InputPeaks)) 
                     break;
                 GotOne = true;
                 getline(DTA, Line);
             } 
-
-            Set().push_back(MySpectrum);
+            if(GotOne) {
+                Peaks2Spectrum(InputPeaks, MySpectrum);
+                Set().push_back(MySpectrum);
+            }
         } while (DTA && !DTA.eof());
 
         if (!GotOne) 
@@ -281,24 +288,63 @@ bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
 }
 
 
+//! Convert peak list to spectrum
+/*!
+    \param InputPeaks list of the input m/z and intensity values
+    \param MySpectrum the spectrum to receive the scaled input
+    \return success
+*/
+
+bool CSpectrumSet::Peaks2Spectrum(const TInputPeaks& InputPeaks, CRef <CMSSpectrum>& MySpectrum) const
+{
+    int i;
+
+    float MaxI(0.0);
+
+    // find max peak
+    for (i = 0; i < InputPeaks.size(); ++i) {
+        if(InputPeaks[i].Intensity > MaxI) MaxI = InputPeaks[i].Intensity;
+    }
+
+    // set scale
+    double Scale = 1000000000.0/MaxI;
+    // normalize it to a power of 10
+    Scale = pow(10.0, floor(log10(Scale)));
+    MySpectrum->SetIscale(Scale);
+
+    // loop thru
+    for (i = 0; i < InputPeaks.size(); ++i) {
+        // push back m/z
+        MySpectrum->SetMz().push_back(InputPeaks[i].mz);
+        // convert and push back intensity 
+        MySpectrum->SetAbundance().push_back(static_cast <int> (InputPeaks[i].Intensity*Scale));
+    }
+    return true;
+}
+
 ///
 /// Read in the body of a dta file
 ///
-bool CSpectrumSet::GetDTABody(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+bool CSpectrumSet::GetDTABody(std::istream& DTA, TInputPeaks& InputPeaks)
 {
-    double dummy(0.0L);
+    float dummy(0.0);
+    TInputPeak InputPeak;
 
     DTA >> dummy;
     if (dummy <= 0) 
         return false;
-    MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
-    // attenuate the really big peaks
+    if (dummy > kMax_Int) dummy = kMax_Int/MSSCALE;
+    InputPeak.mz = static_cast <int> (dummy*MSSCALE);
+//    MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
+
     DTA >> dummy;
     if (dummy <= 0) 
         return false;
-    if (dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
-    MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
+//    if (dummy > kMax_Int) dummy = kMax_Int/MSISCALE;
+    InputPeak.Intensity = dummy;
+//    MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSISCALE));
 
+    InputPeaks.push_back(InputPeak);
     return true;
 }
 
@@ -318,12 +364,17 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
         MySpectrum->SetNumber(1);
         if(!GetDTAHeader(DTA, MySpectrum)) return 1;
 
+        TInputPeaks InputPeaks;
         while (DTA) {
-            if (!GetDTABody(DTA, MySpectrum)) break;
+            if (!GetDTABody(DTA, InputPeaks)) break;
             GotOne = true;
         } 
 
-        Set().push_back(MySpectrum);
+        if(GotOne) {
+            Peaks2Spectrum(InputPeaks, MySpectrum);
+            Set().push_back(MySpectrum);
+        }
+
     } catch (NCBI_NS_STD::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadDTA: " << e.what());
         throw;
@@ -393,6 +444,7 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
     string Line;
     bool GotMass(false);
     double dummy;
+    TInputPeaks InputPeaks;
 
     // find the start of the block
     do {
@@ -437,19 +489,12 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
         if(Line.find_first_of("#;/!") == 0) 
             goto skipone;
 
-        istr >> dummy;
-        if (dummy <= 0) 
-            return 1;
-        MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
-        // attenuate the really big peaks
-        istr >> dummy;
-        if (dummy <= 0) 
-            return 1;
-        if (dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
-        MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
+        if(!GetDTABody(istr, InputPeaks)) return 1;
 skipone:
         getline(DTA, Line);
     } 
+    Peaks2Spectrum(InputPeaks, MySpectrum);
+
     return 0;
 }
 
@@ -462,6 +507,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/01/31 17:30:57  lewisg
+ * adjustable intensity, z dpendence of precursor mass tolerance
+ *
  * Revision 1.15  2004/12/06 23:39:28  lewisg
  * add fake charge to mgf
  *

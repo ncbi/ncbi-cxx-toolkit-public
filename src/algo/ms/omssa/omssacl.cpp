@@ -180,10 +180,12 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
-    argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg)",
+    argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg, 2 = N15)",
                 CArgDescriptions::eInteger, "0");
-    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg)",
+    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg, 2 = N15)",
                 CArgDescriptions::eInteger, "0");
+    argDesc->AddDefaultKey("tez", "prozdep", "charge dependency of precursor mass tolerance (0 = none, 1 = linear)",
+                CArgDescriptions::eInteger, "1");
 
     argDesc->AddDefaultKey("i", "ions", 
                "id numbers of ions to search (comma delimited, no spaces)",
@@ -223,7 +225,7 @@ void COMSSA::Init()
 			   "number of peaks allowed in double charge window",
 			   CArgDescriptions::eInteger, "2");
     argDesc->AddDefaultKey("hl", "hitlist", 
-			   "maximum number of hits retained for one spectrum",
+			   "maximum number of hits retained per precursor charge state per spectrum",
 			   CArgDescriptions::eInteger, "30");
     argDesc->AddDefaultKey("ht", "tophitnum", 
 			   "number of m/z values corresponding to the most intense peaks that must include one match to the theoretical peptide",
@@ -266,6 +268,10 @@ void COMSSA::Init()
 				 "minimum precursor charge to start considering multiply charged products",
 				 CArgDescriptions::eInteger, 
 				 "3");
+    argDesc->AddDefaultKey("z1", "plusone", 
+                  "fraction of peaks below precursor used to determine if spectrum is charge 1",
+                  CArgDescriptions::eDouble, 
+                  "0.95");
 
 
     SetupArgDescriptions(argDesc.release());
@@ -384,6 +390,7 @@ int COMSSA::Run()
 	Request.SetSettings().SetProductsearchtype(args["tom"].AsInteger());
 	Request.SetSettings().SetPeptol(args["te"].AsDouble());
 	Request.SetSettings().SetMsmstol(args["to"].AsDouble());
+    Request.SetSettings().SetZdep(args["tez"].AsInteger());
 	InsertList(args["i"].AsString(), Request.SetSettings().SetIonstosearch(), "unknown ion");
 	Request.SetSettings().SetCutlo(args["cl"].AsDouble());
 	Request.SetSettings().SetCuthi(args["ch"].AsDouble());
@@ -413,6 +420,7 @@ int COMSSA::Run()
 	Request.SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
 	Request.SetSettings().SetChargehandling().SetMincharge(args["zl"].AsInteger());
 	Request.SetSettings().SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
+    Request.SetSettings().SetChargehandling().SetPlusone(args["z1"].AsDouble());
 
 	// validate the input
         list <string> ValidError;
@@ -516,6 +524,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.26  2005/01/31 17:30:57  lewisg
+  adjustable intensity, z dpendence of precursor mass tolerance
+
   Revision 1.25  2005/01/11 21:08:43  lewisg
   average mass search
 

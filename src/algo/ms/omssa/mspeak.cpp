@@ -425,10 +425,8 @@ bool CMSPeak::CompareTop(CLadder& Ladder)
 int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
 {
     try {
-//	TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
 	SetTolerance(MSMSTolerance);
-//	Charge = *(Spectrum.GetCharge().begin());
-    Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)Scale);  
+    Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)MSSCALE);  
 	Num[MSORIGINAL] = 0;   
     
 	const CMSSpectrum::TMz& Mz = Spectrum.GetMz();
@@ -438,8 +436,8 @@ int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
 
 	int i;
 	for(i = 0; i < Num[MSORIGINAL]; i++) {
-	    MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/Scale;
-	    MZI[MSORIGINAL][i].Intensity = Abundance[i]/Scale;
+	    MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/MSSCALE;
+	    MZI[MSORIGINAL][i].Intensity = Abundance[i];
 	}
 	Sort(MSORIGINAL);
     } catch (NCBI_NS_STD::exception& e) {
@@ -492,12 +490,17 @@ double CMSPeak::RangeRatio(double Start, double Middle, double Stop)
     return (double)Lo/Hi;
 }
 
-// calculate the charge
-void CMSPeak::SetComputedCharge(int MinChargeIn, int MaxChargeIn, int ConsiderMultIn)
+
+//! calculates charge based on threshold and sets charge value 
+/*!
+\param ChargeHandle contains info on how to deal with charge
+*/
+void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle)
 {
-	ConsiderMult = min(ConsiderMultIn, MSMAXCHARGE);
-	MinCharge = min(MinChargeIn, MSMAXCHARGE);
-	MaxCharge = min(MaxChargeIn, MSMAXCHARGE);
+	ConsiderMult = min(ChargeHandle.GetConsidermult(), MSMAXCHARGE);
+	MinCharge = min(ChargeHandle.GetMincharge(), MSMAXCHARGE);
+	MaxCharge = min(ChargeHandle.GetMaxcharge(), MSMAXCHARGE);
+    PlusOne = ChargeHandle.GetPlusone();
 
     if(IsPlus1(PercentBelow())) {
 		ComputedCharge = eCharge1;
@@ -998,7 +1001,13 @@ CMSPeakSet::~CMSPeakSet()
     }
 }
 
-void CMSPeakSet::SortPeaks(int Peptol)
+
+//! put the pointers into an array sorted by mass
+/*!
+\param Peptol the precursor mass tolerance
+\param Zdep should the tolerance be charge dependent?
+*/
+void CMSPeakSet::SortPeaks(int Peptol, int Zdep)
 {
     int iCharges;
     CMSPeak* Peaks;
@@ -1021,7 +1030,7 @@ void CMSPeakSet::SortPeaks(int Peptol)
     	for(iCharges = 0; iCharges < Peaks->GetNumCharges(); iCharges++) {
     	    // correction for incorrect charge determination.
     	    // see 12/13/02 notebook, pg. 135
-    	    ptol = Peaks->GetCharges()[iCharges] * Peptol;
+    	    ptol = (Zdep * (Peaks->GetCharges()[iCharges] - 1) + 1) * Peptol;
             CalcMass = static_cast <int> (Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
                                           Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
             temp = new TMassPeak;

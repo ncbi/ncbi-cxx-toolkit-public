@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.18 2005/01/11 21:08:43 lewisg Exp $
+-- $Id: omssa.asn,v 1.19 2005/01/31 17:30:57 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -27,9 +27,10 @@ NameValue ::= SEQUENCE {
 MSSpectrum ::= SEQUENCE {
 	number INTEGER, -- unique number of spectrum
 	charge SEQUENCE OF INTEGER,  -- may be more than one if unknown
-	precursormz INTEGER,  -- scaled Da
-	mz SEQUENCE OF INTEGER,  -- scaled Da
-	abundance SEQUENCE OF INTEGER,  -- scaled
+	precursormz INTEGER,  -- scaled precursor m/z, scale is in MSSearchSettings
+	mz SEQUENCE OF INTEGER,  -- scaled product m/z
+	abundance SEQUENCE OF INTEGER,  -- scaled product abundance
+	iscale REAL,                 -- abundance scale, float to integer
 	ids SEQUENCE OF VisibleString OPTIONAL,  -- ids/filenames
         namevalue SEQUENCE OF NameValue OPTIONAL -- extra info: retention times, etc.
 	}
@@ -113,7 +114,8 @@ MSChargeHandle ::= SEQUENCE {
 	calccharge MSCalcCharge DEFAULT 2,    -- how do we handle other charges?
 	mincharge INTEGER DEFAULT 2,          -- if userange, what is the min?
 	maxcharge INTEGER DEFAULT 3,          -- if userange, what is the max?
-	considermult INTEGER DEFAULT 3        -- at which precursor charge to consider +2 ions?
+	considermult INTEGER DEFAULT 3,        -- at which precursor charge to consider +2 ions?
+        plusone REAL   -- what % of peaks below precursor needed to call as +1
 	}
 	
 
@@ -121,9 +123,19 @@ MSChargeHandle ::= SEQUENCE {
 
 MSSearchType ::= INTEGER {
 	monoisotopic(0),
-	average(1)
+	average(1),
+	monon15(2),
+	max(3)
 	}
+	
+-- what is the charge dependence of the mass tolerance?
 
+MSZdependence ::= INTEGER {
+	independent(0),  -- mass tol. invariant with charge
+        linearwithz(1),  -- mass tol. scales with charge
+	max(2)
+        }
+	
 -- Search settings
 
 MSSearchSettings ::= SEQUENCE {
@@ -132,6 +144,7 @@ MSSearchSettings ::= SEQUENCE {
 	ionstosearch SEQUENCE OF MSIonType,  -- which ions to search?
 	peptol REAL,  -- peptide mass tolerance
 	msmstol REAL, -- msms mass tolerance
+	zdep MSZdependence,  -- what is the charge dependence of the mass tolerance?
         cutoff REAL,  -- evalue cutoff
           -- next 3 fields define intensity fraction below
           -- which peaks will be discard
@@ -152,7 +165,7 @@ MSSearchSettings ::= SEQUENCE {
         tophitnum INTEGER, -- number of m/z to consider in first pass
         minhit INTEGER DEFAULT 2, -- minimum number of m/z values for a valid hit
         minspectra INTEGER DEFAULT 4, -- minimum number of m/z for a valid spectra
-        scale INTEGER DEFAULT 100,  -- scale for m/z float to integer
+        scale INTEGER DEFAULT 1000,  -- scale for m/z float to integer
         maxmods INTEGER DEFAULT 64,  -- maximum number of mass ladders per
                                      -- database peptide
 	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search

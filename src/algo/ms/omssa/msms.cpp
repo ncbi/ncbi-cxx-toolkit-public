@@ -488,6 +488,13 @@ void CMassArray::x_Init(const CMSSearchSettings::TProductsearchtype &SearchType)
 		(MonoMass[i]*MSSCALE);
 	}
     }
+    else if(SearchType == eMSSearchType_monon15) {
+     for(i = 0; i < kNumUniqueAA; i++ ) {
+         CalcMass[i] = MonoN15Mass[i];
+         IntCalcMass[i] = static_cast <int>
+         (MonoN15Mass[i]*MSSCALE);
+     }
+     }
 }
 
 // set up the mass array with fixed mods
@@ -509,6 +516,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.16  2005/01/31 17:30:57  lewisg
+  adjustable intensity, z dpendence of precursor mass tolerance
+
   Revision 1.15  2005/01/11 21:08:43  lewisg
   average mass search
 

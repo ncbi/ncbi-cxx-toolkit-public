@@ -593,8 +593,13 @@ public:
     void SetPlusOne(double PlusIn);
     // is the data charge +1?
     bool IsPlus1(double PercentBelowIn);
-    // calculates charge based on threshold and sets charge value 
-    void SetComputedCharge(int MinChargeIn, int MaxChargeIn, int ConsiderMultIn);
+
+    //! calculates charge based on threshold and sets charge value 
+    /*!
+    \param ChargeHandle contains info on how to deal with charge
+    */
+    void SetComputedCharge(const CMSChargeHandle& ChargeHandle);
+
     EChargeState GetComputedCharge(void);
     // return allowed computed charges
     int* GetCharges(void) { return Charges;}
@@ -862,9 +867,14 @@ public:
 
     void AddPeak(CMSPeak *PeakIn);
 
-    // put the pointers into an array sorted by mass
+    //! put the pointers into an array sorted by mass
+    /*!
+    \param Peptol the precursor mass tolerance
+    \param Zdep should the tolerance be charge dependent?
+    */
     void SortPeaks(
-		   int Peptol  // the precursor mass tolerance
+		   int Peptol,
+           int Zdep
 		   );
 
     TPeakSet& GetPeaks(void);
@@ -907,6 +917,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.25  2005/01/31 17:30:57  lewisg
+  adjustable intensity, z dpendence of precursor mass tolerance
+
   Revision 1.24  2004/12/20 20:24:16  lewisg
   fix uncalc ladder bug, cleanup
 

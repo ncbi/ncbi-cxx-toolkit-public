@@ -42,6 +42,7 @@
 #include <objects/omssa/MSSpectrumset.hpp>
 
 #include <iostream>
+#include <deque>
 
 // generated classes
 BEGIN_NCBI_SCOPE
@@ -51,7 +52,23 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // proton mass
 const double kProton = 1.008;
 
+// file types for import
 enum EFileType { eDTA, eDTABlank, eDTAXML, eASC, ePKL, ePKS, eSCIEX, eMGF, eUnknown };
+
+
+//! struct for holding a single peak
+typedef struct _InputPeak
+{
+    //! scaled m/z value for peak
+    int mz;
+    //! unscaled intensity
+    float Intensity;
+} TInputPeak;
+
+//! for holding a spectrum
+typedef deque < TInputPeak > TInputPeaks;
+
+
 
 class NCBI_XOMSSA_EXPORT CSpectrumSet : public CMSSpectrumset {
     //    typedef CMSSpectrumset_Base Tparent;
@@ -115,12 +132,23 @@ protected:
               bool isPKL = false     // pkl formatted?
 		      );
 
-    ///
-    /// Read in the body of a dta file
-    ///
+    //! Convert peak list to spectrum
+    /*!
+    \param InputPeaks list of the input m/z and intensity values
+    \param MySpectrum the spectrum to receive the scaled input
+    \return success
+    */
+    bool Peaks2Spectrum(const TInputPeaks& InputPeaks, CRef <CMSSpectrum>& MySpectrum) const;
+
+    //!Read in the body of a dta like file
+    /*!
+    \param DTA input stream
+    \param InputPeaks list of the input m/z and intensity values
+    \return success
+    */
     bool GetDTABody(
 				  std::istream& DTA,   // input stream
-				  CRef <CMSSpectrum>& MySpectrum   // asn.1 container for spectra
+				  TInputPeaks& InputPeaks   // asn.1 container for spectra
 				  );
 
     ///
@@ -160,6 +188,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/01/31 17:30:57  lewisg
+ * adjustable intensity, z dpendence of precursor mass tolerance
+ *
  * Revision 1.7  2004/12/06 22:57:34  lewisg
  * add new file formats
  *

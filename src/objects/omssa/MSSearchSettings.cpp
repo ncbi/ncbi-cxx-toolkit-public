@@ -63,7 +63,7 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
 
 
     if (CanGetPrecursorsearchtype()) {
-        if (GetPrecursorsearchtype() < 0 || GetPrecursorsearchtype() > 1 ) {
+        if (GetPrecursorsearchtype() < 0 || GetPrecursorsearchtype() >= eMSSearchType_max ) {
             Error.push_back("Invalid precursor search type");
             retval = 1;
         }
@@ -73,7 +73,7 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
     }
 
     if (CanGetProductsearchtype()) {
-        if (GetProductsearchtype() < 0 || GetProductsearchtype() > 1 ) {
+        if (GetProductsearchtype() < 0 || GetProductsearchtype() >= eMSSearchType_max ) {
             Error.push_back("Invalid Product search type");
             retval = 1;
         }
@@ -116,6 +116,18 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
         }
     } else {
         Error.push_back("Product mass tolerance missing");
+        retval = 1;
+    }
+
+
+    if (CanGetZdep()) {
+        if (GetZdep() < eMSZdependence_independent ||
+            GetZdep() >= eMSZdependence_max) {
+            Error.push_back("Precursor mass tolerance charge dependence setting invalid");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Precursor mass tolerance charge dependence missing");
         retval = 1;
     }
 
@@ -330,7 +342,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             !GetChargehandling().CanGetMincharge() ||
             !GetChargehandling().CanGetCalccharge() ||
             !GetChargehandling().CanGetCalcplusone() ||
-            !GetChargehandling().CanGetConsidermult()) {
+            !GetChargehandling().CanGetConsidermult() ||
+            !GetChargehandling().CanGetPlusone()) {
             Error.push_back("unknown chargehandling option");
             retval = 1;
         } else {
@@ -353,6 +366,11 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
                 Error.push_back("invalid 1+ charge calc setting");
                 retval = 1;
             }
+            if (GetChargehandling().GetPlusone() < 0 ||
+                 GetChargehandling().GetPlusone() > 1) {
+                 Error.push_back("invalid 1+ charge determination threshold");
+                 retval = 1;
+             }
         }
     }
 
@@ -369,6 +387,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/01/31 17:30:57  lewisg
+* adjustable intensity, z dpendence of precursor mass tolerance
+*
 * Revision 1.3  2004/09/29 19:43:52  lewisg
 * allow setting of ions
 *
