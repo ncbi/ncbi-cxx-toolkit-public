@@ -42,6 +42,7 @@
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -143,6 +144,18 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
         return CBioseq_Handle();
     x_AddToHistory(*match.m_TSE);
     return match.m_DataSource->GetBioseqHandle(*this, match);
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
+{
+    for (CSeq_loc_CI citer (loc); citer; ++citer) {
+        const CSeq_id & id = citer.GetSeq_id ();
+        CBioseq_Handle bsh = GetBioseqHandle (id);
+        return bsh;
+    }
+
+    NCBI_THROW(CException, eUnknown, "GetBioseqHandle by location failed");
 }
 
 
@@ -384,6 +397,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/10/31 22:25:42  kans
+* added GetBioseqHandle taking CSeq_loc parameter
+*
 * Revision 1.31  2002/10/18 19:12:40  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

@@ -90,6 +90,9 @@ public:
     // Declared "virtual" to avoid circular dependencies with seqloc
     virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
 
+    // Get bioseq handle by seqloc
+    CBioseq_Handle  GetBioseqHandle(const CSeq_loc& loc);
+
     // Find set of CSeq_id by a string identifier
     // The latter could be name, accession, something else
     // which could be found in CSeq_id
@@ -170,6 +173,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/10/31 22:25:09  kans
+* added GetBioseqHandle taking CSeq_loc parameter
+*
 * Revision 1.22  2002/10/18 19:12:39  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
