@@ -3113,8 +3113,11 @@ extern EIO_Status SOCK_Abort(SOCK sock)
 extern EIO_Status SOCK_Status(SOCK      sock,
                               EIO_Event direction)
 {
-    if (direction != eIO_Read  &&  direction != eIO_Write)
+    if (direction != eIO_Read  &&  direction != eIO_Write) {
+        if (direction == eIO_Open)
+            return sock->sock == SOCK_INVALID ? eIO_Closed  : eIO_Success;
         return eIO_InvalidArg;
+    }
 
     return (sock->sock == SOCK_INVALID ? eIO_Closed :
             sock->pending ? eIO_Timeout : s_Status(sock, direction));
@@ -3366,7 +3369,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
         }
     }
     if (!sock->host || !sock->port) {
-        CORE_LOGF(eLOG_Error, ("%s[DSOCK::Connect]  Cannot connect"
+        CORE_LOGF(eLOG_Error, ("%s[DSOCK::Connect]  Cannot connect "
                                "to incomplete address", s_ID(sock, _id)));
         return eIO_InvalidArg;
     }
@@ -3385,7 +3388,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
         if (SOCK_ntoa(sock->host, addr, sizeof(addr)) != 0)
             strcpy(addr, "???");
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("%s[SOCK::Reconnect]  Cannot connect"
+                           ("%s[DSOCK::Connect]  Cannot connect "
                             "datagram socket to %s:%hu", s_ID(sock, _id),
                             addr, ntohs(sock->port)));
         return eIO_Unknown;
@@ -4052,6 +4055,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.143  2003/11/25 15:08:40  lavr
+ * DSOCK_Connect(): fix diag messages
+ *
  * Revision 6.142  2003/11/24 19:21:42  lavr
  * SOCK_SetSelectInternalRestartTimeout() to accept ptr to STimeout
  *
