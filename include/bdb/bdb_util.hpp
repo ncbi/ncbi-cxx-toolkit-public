@@ -75,6 +75,11 @@ CBDB_File::TUnifiedFieldIndex NCBI_BDB_EXPORT
 BDB_find_field(const CBDB_File& dbf, 
                const CBoyerMooreMatcher& matcher);
 
+/// Return record id (integer key)
+///
+/// @return 
+///    record integer key or 0 if it cannot be retrived
+int NCBI_BDB_EXPORT BDB_get_rowid(const CBDB_File& dbf);
 
 /* @} */
 
@@ -83,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/10 14:02:55  kuznets
+ * + BDB_get_rowid
+ *
  * Revision 1.3  2004/03/08 13:33:19  kuznets
  * + BDB_find_field
  *

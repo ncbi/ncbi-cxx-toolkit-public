@@ -115,12 +115,42 @@ CBDB_File::TUnifiedFieldIndex BDB_find_field(const CBDB_File& dbf,
     return fidx;
 }
 
+int BDB_get_rowid(const CBDB_File& dbf)
+{
+    const CBDB_BufferManager* buffer_man;
+    buffer_man =  dbf.GetKeyBuffer();
+    if (!buffer_man) {
+        return 0;
+    }
+    const CBDB_Field& fld = buffer_man->GetField(0);
+    {{
+    const CBDB_FieldInt2* fi = dynamic_cast<const CBDB_FieldInt2*>(&fld);
+    if (fi)
+        return fi->Get();
+    }}
+    {{
+    const CBDB_FieldInt4* fi = dynamic_cast<const CBDB_FieldInt4*>(&fld);
+    if (fi)
+        return fi->Get();
+    }}
+    {{
+    const CBDB_FieldUint4* fi = dynamic_cast<const CBDB_FieldUint4*>(&fld);
+    if (fi)
+        return fi->Get();
+    }}
+
+    return 0;
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/10 14:03:11  kuznets
+ * + BDB_get_rowid
+ *
  * Revision 1.1  2004/03/08 13:34:06  kuznets
  * Initial revision
  *
