@@ -268,6 +268,8 @@ chmod 755 ${target_dir}/bin/run-gbench.sh
 
 COMMON_ExecRB cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
+COMMON_ExecRB cp -p ${source_dir}/news.ini ${target_dir}/etc/
+
 COMMON_ExecRB cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 chmod 755 ${target_dir}/bin/move-gbench.sh
 
