@@ -31,6 +31,10 @@
  * File Description:
  *   NCBI C++ auxiliary debug macros
  *
+ * NOTE: These macros are NOT for use in test applications!!!
+ *       Test applications must use normal assert() and must
+ *       include <test/test_assert.h> as a last header file.
+ *     [ test apps in 'connect' branch include "test/test_assert.h" instead ]
  */
 
 
@@ -89,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.26  2002/04/16 22:03:16  lavr
+ * Added a note about proper use of debug macros
+ *
  * Revision 1.25  2002/04/10 18:28:09  ivanov
  * Moved CVS log to end of file
  *
