@@ -513,17 +513,27 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
         {
             // Exclude intervals from "rlist"
             TSeqPos last_from = 0;
+
+            // Ranges need to be sorted first
+            typedef vector<CHandleRange::TRange> TSortedRanges;
+            TSortedRanges sorted_rg;
             ITERATE (CHandleRange, rit, rlist) {
-                if (last_from < rit->first.GetFrom()) {
+                sorted_rg.push_back(rit->first);
+            }
+            sort(sorted_rg.begin(), sorted_rg.end());
+
+            ITERATE(TSortedRanges, rit, sorted_rg) {
+                if (last_from < rit->GetFrom()) {
                     mode_rlist.MergeRange(
-                        CHandleRange::TRange(last_from, rit->first.GetFrom()-1),
+                        CHandleRange::TRange(last_from, rit->GetFrom()-1),
                         eNa_strand_unknown);
                 }
-                if ( !rit->first.IsWholeTo() ) {
-                    last_from = rit->first.GetTo()+1;
+                if ( !rit->IsWholeTo() ) {
+                    last_from = rit->GetTo()+1;
                 }
                 else {
                     last_from = CHandleRange::TRange::GetWholeTo();
+                    break;
                 }
             }
             TSeqPos total_length = GetSeqMap().GetLength(&GetScope());
@@ -803,6 +813,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/09/03 19:03:02  grichenk
+* Sort ranges for eViewExcluded
+*
 * Revision 1.69  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *
