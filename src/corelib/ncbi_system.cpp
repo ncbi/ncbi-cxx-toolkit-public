@@ -359,12 +359,12 @@ unsigned int GetCpuCount(void)
 # elif defined(_SC_NPROCESSORS_ONLN)
     nproc = sysconf(_SC_NPROCESSORS_ONLN);
 # elif defined(NCBI_OS_BSD) || defined(NCBI_OS_DAWRIN)
-    size_t len = sizeof(nrproc);
+    size_t len = sizeof(nproc);
     int mib[2];
     mib[0] = CTL_HW;
     mib[1] = HW_NCPU;
-    if (sysctl(mib, 2, &nrproc, &len, 0, 0) < 0 || len != sizeof(nrproc))
-        nrproc = -1;
+    if (sysctl(mib, 2, &nproc, &len, 0, 0) < 0 || len != sizeof(nproc))
+        nproc = -1;
 # endif /*UNIX_FLAVOR*/
     return nproc <= 0 ? 1 : (unsigned int) nproc;
 #else
@@ -416,6 +416,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/02/11 18:06:28  lavr
+ * Fix typo (nrproc->nproc)
+ *
  * Revision 1.35  2004/02/11 13:36:14  lavr
  * Added code for figuring out CPU count on *BSD/Darwin
  *
