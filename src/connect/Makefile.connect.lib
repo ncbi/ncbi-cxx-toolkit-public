@@ -8,7 +8,7 @@ LIBOBJ_C = ncbi_buffer ncbi_priv ncbi_core ncbi_util ncbi_socket_ \
       ncbi_sendmail_
 
 LIBOBJ   = $(LIBOBJ_C)
-UNIX_SRC = ncbi_service_lbsmd ncbi_lbsm ncbi_lbsm_ipc
+UNIX_SRC = $(LOCAL_LBSM)
 
 LIB    = connect
 
