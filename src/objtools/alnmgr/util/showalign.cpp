@@ -202,8 +202,8 @@ static const string GetSeqIdStringByFastaOrder(const CSeq_id& id, CScope& sp, bo
 static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
 
 static string MakeURLSafe(char* src);
-static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue);
-template<class container> static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue);
+static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue, int& use_this_gi);
+template<class container> static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue, int& use_this_gi);
 static bool s_canDoMultiAlign(const CSeq_align_set& aln, CScope& scope);
 static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
@@ -260,7 +260,7 @@ static void x_ColorDifferentBases(string& seq, char identityChar, CNcbiOstream& 
 }
 
 
-template<class container> static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
+template<class container> static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue, int& use_this_gi){
   bool hasScore = false;
   ITERATE (typename container, iter, scoreList) {
     const CObject_id& id=(*iter)->GetId();
@@ -274,7 +274,9 @@ template<class container> static bool s_GetBlastScore(const container&  scoreLis
 	
       } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
 	evalue = (*iter)->GetValue().GetReal();
-      } 
+      } else if (id.GetStr()=="use_this_gi"){
+          use_this_gi = (*iter)->GetValue().GetInt();
+      }
     }
   }
   return hasScore;
@@ -383,29 +385,33 @@ static bool s_canDoMultiAlign(const CSeq_align_set& aln, CScope& scope){
 }
 
 
-static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue){
+static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue, int& use_this_gi){
   bool hasScore = false;
+  score = -1;
+  bits = -1;
+  evalue = -1;
+  use_this_gi = 0;
   //look for scores at seqalign level first
-  hasScore = s_GetBlastScore(aln.GetScore(),  score, bits, evalue);
+  hasScore = s_GetBlastScore(aln.GetScore(),  score, bits, evalue, use_this_gi);
 
   //look at the seg level
   if(!hasScore){
     const CSeq_align::TSegs& seg = aln.GetSegs();
     if(seg.Which() == CSeq_align::C_Segs::e_Std){
-      s_GetBlastScore(seg.GetStd().front()->GetScores(),  score, bits, evalue);
+      s_GetBlastScore(seg.GetStd().front()->GetScores(),  score, bits, evalue, use_this_gi);
     } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
-      s_GetBlastScore(seg.GetDendiag().front()->GetScores(),  score, bits, evalue);
+      s_GetBlastScore(seg.GetDendiag().front()->GetScores(),  score, bits, evalue, use_this_gi);
     }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
-       s_GetBlastScore(seg.GetDenseg().GetScores(),  score, bits, evalue);
+       s_GetBlastScore(seg.GetDenseg().GetScores(),  score, bits, evalue, use_this_gi);
     }
   }	
 }
 
-string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int row) const{
+string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int gi, int row) const{
   string urlLink = NcbiEmptyString;
  
   char dopt[32], db[32];
-  int gi = GetGiForSeqIdList(ids);
+  gi = (gi == 0) ? GetGiForSeqIdList(ids):gi;
   string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
   if(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos)){ //use entrez or dbtag specified
     if(m_IsDbNa) {
@@ -691,25 +697,45 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
          //hits for pairwise 
            seqidArray[row]="Sbjct";
          } else {
-           int gi = GetGiForSeqIdList(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
-           if (m_AlignOption&eShowGi && gi > 0){
-             seqidArray[row]=NStr::IntToString(gi);
+           if(m_AlignOption&eShowGi){
+             int gi = 0;
+             if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
+               gi = m_AV->GetSeqId(row).GetGi();
+             }
+             if(!(gi > 0)){
+               gi = GetGiForSeqIdList(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+             }
+             if(gi > 0){
+               seqidArray[row]=NStr::IntToString(gi);
+             } else {
+               const CRef<CSeq_id> wid = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
+               seqidArray[row]=wid->GetSeqIdString();
+             }
            } else {
              const CRef<CSeq_id> wid = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
              seqidArray[row]=wid->GetSeqIdString();
            }           
          }
        }
-
     } else {
-      int gi = GetGiForSeqIdList(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
-      if (m_AlignOption&eShowGi && gi > 0){
-        seqidArray[row]=NStr::IntToString(gi);
+      if(m_AlignOption&eShowGi){
+        int gi = 0;
+        if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
+          gi = m_AV->GetSeqId(row).GetGi();
+        }
+        if(!(gi > 0)){
+          gi = GetGiForSeqIdList(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+        }
+        if(gi > 0){
+          seqidArray[row]=NStr::IntToString(gi);
+        } else {
+          const CRef<CSeq_id> wid = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
+          seqidArray[row]=wid->GetSeqIdString();
+        }
       } else {
-       
         const CRef<CSeq_id> wid = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
         seqidArray[row]=wid->GetSeqIdString();
-      }      
+      }     
     }
 
     //max id length
@@ -792,22 +818,27 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
         string urlLink;
         //setup url link for seqid
         if(row>0&&(m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)){
-        
-          int gi = GetGiForSeqIdList(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
-          if(gi > 0){
-            out<<"<a name="<<gi<<"></a>";
-          } else {
-            out<<"<a name="<<seqidArray[row]<<"></a>";
-          }
-          //get sequence checkbox
-          if(m_AlignOption&eSequenceRetrieval && m_IsDbGi){
-            char checkBoxBuf[512];
-            sprintf(checkBoxBuf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment%d', 'getSeqGi', this.checked)\">", gi, m_QueryNumber);
-            out << checkBoxBuf;        
-          }
-          urlLink = getUrl(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), row);         
-          out << urlLink;
-         
+            int gi = 0;
+            if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
+                gi = m_AV->GetSeqId(row).GetGi();
+            }
+            if(!(gi > 0)){
+                gi = GetGiForSeqIdList(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+            }
+            if(gi > 0){
+                out<<"<a name="<<gi<<"></a>";
+            } else {
+                out<<"<a name="<<seqidArray[row]<<"></a>";
+            }
+            //get sequence checkbox
+            if(m_AlignOption&eSequenceRetrieval && m_IsDbGi){
+                char checkBoxBuf[512];
+                sprintf(checkBoxBuf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment%d', 'getSeqGi', this.checked)\">", gi, m_QueryNumber);
+                out << checkBoxBuf;        
+            }
+            urlLink = getUrl(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), gi, row);         
+            out << urlLink;
+            
         }
         out<<seqidArray[row]; 
         if(row>0&& m_AlignOption&eHtml && m_AlignOption&eMultiAlign && urlLink != NcbiEmptyString){
@@ -1014,7 +1045,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	    }
 	    //save the current alnment regardless
 	    alnInfo* alnvecInfo = new alnInfo;
-	    getAlnScores(**iter, alnvecInfo->score, alnvecInfo->bits, alnvecInfo->eValue);
+	    getAlnScores(**iter, alnvecInfo->score, alnvecInfo->bits, alnvecInfo->eValue, alnvecInfo->use_this_gi);
 	    alnvecInfo->alnVec = avRef;
 	    avList.push_back(alnvecInfo);
 	    int gi = GetGiForSeqIdList(handle.GetBioseqCore()->GetId());
@@ -1189,7 +1220,7 @@ const void CDisplaySeqalign::fillIdentityInfo(const string& sequenceStandard, co
 }
 
 
-const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbiOstream& out) const
+const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, int use_this_gi, CNcbiOstream& out) const
 {
   if(bspHandle){
     const CRef<CSeq_id> wid = FindBestChoice(bspHandle.GetBioseqCore()->GetId(), CSeq_id::WorstRank);
@@ -1209,59 +1240,63 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
       //print each defline 
       for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin(); iter != bdl.end(); iter++){
 	string urlLink;
-	if(isFirst){
-	  out << ">";
-   
-	} else{
-	  out << " ";
-	}
-	const CRef<CSeq_id> wid2 = FindBestChoice((*iter)->GetSeqid(), CSeq_id::WorstRank);
-	int gi =  GetGiForSeqIdList((*iter)->GetSeqid());
-	if(isFirst){
-	  firstGi = gi;
-	}
-	if ((m_AlignOption&eSequenceRetrieval) && (m_AlignOption&eHtml) && m_IsDbGi && isFirst) {
-	  char buf[512];
-	  sprintf(buf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment%d', 'getSeqGi', this.checked)\">", gi, m_QueryNumber);
-	  out << buf;
-	}
- 
-	if(m_AlignOption&eHtml){
-     
-	  urlLink = getUrl((*iter)->GetSeqid(), 1);    
-	  out<<urlLink;
-	}
+        int gi =  GetGiForSeqIdList((*iter)->GetSeqid());
+        if(use_this_gi == 0 || (use_this_gi != 0 && gi == use_this_gi)) {
+         
+            if(isFirst){
+                out << ">";
+                
+            } else{
+                out << " ";
+            }
+            const CRef<CSeq_id> wid2 = FindBestChoice((*iter)->GetSeqid(), CSeq_id::WorstRank);
+
+            if(isFirst){
+                firstGi = gi;
+            }
+            if ((m_AlignOption&eSequenceRetrieval) && (m_AlignOption&eHtml) && m_IsDbGi && isFirst) {
+                char buf[512];
+                sprintf(buf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment%d', 'getSeqGi', this.checked)\">", gi, m_QueryNumber);
+                out << buf;
+            }
+            
+            if(m_AlignOption&eHtml){
+                
+                urlLink = getUrl((*iter)->GetSeqid(), use_this_gi, 1);    
+                out<<urlLink;
+            }
     
-	if(m_AlignOption&eShowGi && gi > 0){
-	  out<<"gi|"<<gi<<"|";
-	}       
-   
-	wid2->WriteAsFasta(out);
-	if(m_AlignOption&eHtml){
-	  if(urlLink != NcbiEmptyString){
-	    out<<"</a>";
-	  }
-	  if(gi != 0){
-	    out<<"<a name="<<gi<<"></a>";
-	  } else {
-	    out<<"<a name="<<wid2->GetSeqIdString()<<"></a>";
-	  }
-	  if(m_AlignOption&eLinkout){
-	    out <<" ";
-	    AddLinkout(*(bspHandle.GetBioseqCore()), (**iter), firstGi, gi, out);
-	    if((int)bspHandle.GetBioseqCore()->GetInst().GetLength() > k_GetSubseqThreshhold){
-	      string dumpGnlUrl = getDumpgnlLink((*iter)->GetSeqid(), 1, k_DumpGnlUrl);
-	      out<<dumpGnlUrl<<"<img border=0 height=16 width=16 src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the HSP\"></a>";
-	    }
-	  }
-	}
+            if(m_AlignOption&eShowGi && gi > 0){
+                out<<"gi|"<<gi<<"|";
+            }       
+            
+            wid2->WriteAsFasta(out);
+            if(m_AlignOption&eHtml){
+                if(urlLink != NcbiEmptyString){
+                    out<<"</a>";
+                }
+                if(gi != 0){
+                    out<<"<a name="<<gi<<"></a>";
+                } else {
+                    out<<"<a name="<<wid2->GetSeqIdString()<<"></a>";
+                }
+                if(m_AlignOption&eLinkout){
+                    out <<" ";
+                    AddLinkout(*(bspHandle.GetBioseqCore()), (**iter), firstGi, gi, out);
+                    if((int)bspHandle.GetBioseqCore()->GetInst().GetLength() > k_GetSubseqThreshhold){
+                        string dumpGnlUrl = getDumpgnlLink((*iter)->GetSeqid(), 1, k_DumpGnlUrl);
+                        out<<dumpGnlUrl<<"<img border=0 height=16 width=16 src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the HSP\"></a>";
+                    }
+                }
+            }
  
-	out <<" ";
-	if((*iter)->IsSetTitle()){
-	  s_WrapOutputLine(out, (*iter)->GetTitle());     
-	}
-	out<<endl;
-	isFirst = false;
+            out <<" ";
+            if((*iter)->IsSetTitle()){
+                s_WrapOutputLine(out, (*iter)->GetTitle());     
+            }
+            out<<endl;
+            isFirst = false;
+        }
       }
     }
   }
@@ -1970,7 +2005,7 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
     m_AV = (*iterAv)->alnVec;
     const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
     if(isFirstAlnInList && (m_AlignOption&eShowBlastInfo)) {
-      PrintDefLine(bsp_handle,  out);
+      PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
       out<<"          Length="<<bsp_handle.GetBioseqCore()->GetInst().GetLength()<<endl<<endl;
       
     }
@@ -1994,6 +2029,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.37  2004/07/12 15:20:45  jianye
+*handles use_this_gi in alignment score structure
+*
 *Revision 1.36  2004/05/21 21:42:51  gorelenk
 *Added PCH ncbi_pch.hpp
 *
