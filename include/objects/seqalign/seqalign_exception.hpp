@@ -43,7 +43,9 @@ class NCBI_SEQALIGN_EXPORT CSeqalignException :
 public:
     enum EErrCode {
         eUnsupported,
+        eInvalidAlignment,
         eInvalidInputAlignment,
+        eInvalidRowNumber,
         eOutOfRange
     };
 
@@ -51,7 +53,9 @@ public:
     {
         switch (GetErrCode()) {
         case eUnsupported:           return "eUnsupported";
+        case eInvalidAlignment:      return "eInvalidAlignment";
         case eInvalidInputAlignment: return "eInvalidInputAlignment";
+        case eInvalidRowNumber:      return "eInvalidRowNumber";
         case eOutOfRange:            return "eOutOfRange";
         default:                     return CException::GetErrCodeString();
         }
@@ -68,6 +72,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/09/16 15:31:59  todorov
+* Added validation methods. Added seq range methods
+*
 * Revision 1.3  2003/08/26 20:28:38  johnson
 * added 'SwapRows' method
 *

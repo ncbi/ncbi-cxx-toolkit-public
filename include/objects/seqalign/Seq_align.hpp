@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqalign/Seq_align_.hpp>
+#include <util/range.hpp>
 
 // generated classes
 
@@ -55,6 +56,16 @@ public:
     CSeq_align(void);
     // destructor
     ~CSeq_align(void);
+
+    // Validatiors
+    TDim CheckNumRows(void)                   const;
+    int  CheckNumSegs(void)                   const;
+    void Validate    (bool full_test = false) const;
+
+    // GetSeqRange
+    CRange<TSeqPos> GetSeqRange(TDim row) const;
+    TSeqPos         GetSeqStart(TDim row) const;
+    TSeqPos         GetSeqStop (TDim row) const;
 
     /// Reverse the segments' orientation
     /// NOTE: currently *only* works for dense-seg
@@ -99,6 +110,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/09/16 15:31:59  todorov
+* Added validation methods. Added seq range methods
+*
 * Revision 1.3  2003/08/26 20:28:38  johnson
 * added 'SwapRows' method
 *

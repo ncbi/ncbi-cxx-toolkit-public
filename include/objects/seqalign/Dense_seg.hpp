@@ -41,6 +41,9 @@
 // generated includes
 #include <objects/seqalign/Dense_seg_.hpp>
 
+#include <objects/seqalign/seqalign_exception.hpp>
+#include <util/range.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -65,6 +68,16 @@ public:
     void ResetWidths(void);
     const TWidths& GetWidths(void) const;
     TWidths& SetWidths(void);
+
+    // Validators
+    TDim    CheckNumRows(void)                   const;
+    TNumseg CheckNumSegs(void)                   const;
+    void    Validate    (bool full_test = false) const;
+
+    // GetSeqRange
+    CRange<TSeqPos> GetSeqRange(TDim row) const;
+    TSeqPos         GetSeqStart(TDim row) const;
+    TSeqPos         GetSeqStop(TDim row) const;
 
     /// Reverse the segments' orientation
     void Reverse(void);
@@ -132,6 +145,25 @@ void CDense_seg::ResetWidths(void)
 }
 
 
+inline
+CRange<TSeqPos> CDense_seg::GetSeqRange(TDim row) const
+{
+    return CRange<TSeqPos>(GetSeqStart(row), GetSeqStop(row));
+}
+
+
+inline
+CDense_seg::TDim CDense_seg::CheckNumRows() const
+{
+    const size_t& dim = GetDim();
+    if (dim != GetIds().size()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumRows()"
+                   " ids.size is inconsistent with dim");
+    }
+    return dim;
+}
+
 
 /////////////////// end of CDense_seg inline methods
 
@@ -145,6 +177,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/09/16 15:31:59  todorov
+* Added validation methods. Added seq range methods
+*
 * Revision 1.3  2003/08/26 20:28:38  johnson
 * added 'SwapRows' method
 *

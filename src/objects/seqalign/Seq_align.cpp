@@ -56,6 +56,113 @@ CSeq_align::~CSeq_align(void)
 {
 }
 
+
+CSeq_align::TDim CSeq_align::CheckNumRows(void) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        return GetSegs().GetDenseg().CheckNumRows();
+    case C_Segs::e_Std:
+        {
+            TDim numrows = 0;
+            ITERATE (C_Segs::TStd, std_i, GetSegs().GetStd()) {
+                const TDim& seg_numrows = (*std_i)->CheckNumRows();
+                if (numrows) {
+                    if (seg_numrows != numrows) {
+                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                                   "CSeq_align::CheckNumRows(): Number of rows "
+                                   "is not the same for each std seg.");
+                    }
+                } else {
+                    numrows = seg_numrows;
+                }
+            }
+            return numrows;
+        }
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::CheckNumRows() currently does not handle "
+                   "this type of alignment");
+    }
+}
+
+
+CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        return GetSegs().GetDenseg().GetSeqRange(row);
+    case C_Segs::e_Std:
+        {
+            CRange<TSeqPos> rng;
+            CSeq_id seq_id;
+            size_t seg_i = 0;
+            ITERATE (C_Segs::TStd, std_i, GetSegs().GetStd()) {
+                TDim row_i = 0;
+                ITERATE (CStd_seg::TLoc, i, (*std_i)->GetLoc()) {
+                    const CSeq_loc& loc = **i;
+                    if (row_i++ == row) {
+                        if (loc.IsInt()) {
+                            if ( !seg_i ) {
+                                seq_id.Assign(loc.GetInt().GetId());
+                            } else if (seq_id.Compare(loc.GetInt().GetId())
+                                       != CSeq_id::e_YES) {
+                                NCBI_THROW(CSeqalignException,
+                                           eInvalidRowNumber,
+                                           "CSeq_align::GetSeqRange():"
+                                           " Row seqids not consistent."
+                                           " Cannot determine range.");
+                            }
+                            rng.CombineWith
+                                (CRange<TSeqPos>
+                                 (loc.GetInt().GetFrom(),
+                                  loc.GetInt().GetTo()));
+                        }
+                    }
+                }
+                if (row < 0  ||  row >= row_i) {
+                    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                               "CSeq_align::GetSeqRange():"
+                               " Invalid row number");
+                }
+                if (CanGetDim()  &&  row_i != GetDim()) {
+                    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                               "CSeq_align::GetSeqRange():"
+                               " loc.size is inconsistent with dim");
+                }
+                seg_i++;
+            }
+            if (rng.Empty()) {
+                NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                           "CSeq_align::GetSeqRange(): Row is empty");
+            }
+            return rng;
+        }
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetSeqRange() currently does not handle "
+                   "this type of alignment.");
+    }
+}
+
+
+void CSeq_align::Validate(bool full_test) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        GetSegs().GetDenseg().Validate(full_test);
+        break;
+    case C_Segs::e_Std:
+        CheckNumRows();
+        break;
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::Validate() currently does not handle "
+                   "this type of alignment");
+    }
+}
+
+
 ///---------------------------------------------------------------------------
 /// PRE : currently only implemented for dense-seg segments
 /// POST: same alignment, opposite orientation
@@ -67,7 +174,7 @@ void CSeq_align::Reverse(void)
         break;
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
-                   "CSeq_align::Reverse currently only handles dense-seg "
+                   "CSeq_align::Reverse() currently only handles dense-seg "
                    "alignments");
     }
 }
@@ -96,7 +203,7 @@ CSeq_align::CreateDensegFromStdseg() const
 {
     if ( !GetSegs().IsStd() ) {
         NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
-                   "CreateDensegFromStdseg(): "
+                   "CSeq_align::CreateDensegFromStdseg(): "
                    "Input Seq-align should have segs of type StdSeg!");
     }
 
@@ -121,7 +228,7 @@ CSeq_align::CreateDensegFromStdseg() const
 
     TNumseg seg = 0;
     TNumrow dim = 0, row = 0;
-    ITERATE (CSeq_align::C_Segs::TStd, std_i, GetSegs().GetStd()) {
+    ITERATE (C_Segs::TStd, std_i, GetSegs().GetStd()) {
 
         const CStd_seg& ss = **std_i;
 
@@ -312,6 +419,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/09/16 15:31:14  todorov
+* Added validation methods. Added seq range methods
+*
 * Revision 1.3  2003/08/26 20:28:38  johnson
 * added 'SwapRows' method
 *

@@ -54,6 +54,175 @@ CDense_seg::~CDense_seg(void)
 {
 }
 
+
+CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
+{
+    const CDense_seg::TStarts&  starts  = GetStarts();
+    const CDense_seg::TStrands& strands = GetStrands();
+    const CDense_seg::TLens&    lens    = GetLens();
+    const CDense_seg::TWidths&  widths  = GetWidths();
+
+    const size_t& numrows = GetDim();
+    const size_t& numsegs = GetNumseg();
+    const size_t  num     = numrows * numsegs;
+
+    if (starts.size() != num) {
+        string errstr = string("CDense_seg::CheckNumSegs():")
+            + " starts.size is inconsistent with dim * numseg";
+        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    }
+    if (lens.size() != numsegs) {
+        string errstr = string("CDense_seg::CheckNumSegs():")
+            + " lens.size is inconsistent with numseg";
+        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    }
+    if (strands.size()  &&  strands.size() != num) {
+        string errstr = string("CDense_seg::CheckNumSegs():")
+            + " strands.size is inconsistent with dim * numseg";
+        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    }
+    if (widths.size()  &&  widths.size() != numrows) {
+        string errstr = string("CDense_seg::CheckNumSegs():")
+            + " widths.size is inconsistent with dim";
+        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    }
+    return numsegs;
+}
+
+
+TSeqPos CDense_seg::GetSeqStart(TDim row) const
+{
+    const TDim&    dim    = GetDim();
+    const TNumseg& numseg = CheckNumSegs();
+    const TStarts& starts = GetStarts();
+
+    if (row < 0  ||  row >= dim) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CDense_seg::GetSeqStop():"
+                   " Invalid row number");
+    }
+
+    TSignedSeqPos start;
+    if (GetStrands().size()  &&  GetStrands()[row] != eNa_strand_minus) {
+        TNumseg seg = -1;
+        int pos = row;
+        while (++seg < numseg) {
+            if ((start = starts[pos]) >= 0) {
+                return start;
+            }
+            pos += dim;
+        }
+    } else {
+        TNumseg seg = numseg;
+        int pos = (seg - 1) * dim + row;
+        while (seg--) {
+            if ((start = starts[pos]) >= 0) {
+                return start;
+            }
+            pos -= dim;
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+               "CDense_seg::GetSeqStart(): Row is empty");
+}
+
+
+TSeqPos CDense_seg::GetSeqStop(TDim row) const
+{
+    const TDim& dim       = GetDim();
+    const TNumseg& numseg = CheckNumSegs();
+    const TStarts& starts = GetStarts();
+
+    if (row < 0  ||  row >= dim) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CDense_seg::GetSeqStop():"
+                   " Invalid row number");
+    }
+
+    TSignedSeqPos start;
+    if (GetStrands().size()  &&  GetStrands()[row] != eNa_strand_minus) {
+        TNumseg seg = numseg;
+        int pos = (seg - 1) * dim + row;
+        while (seg--) {
+            if ((start = starts[pos]) >= 0) {
+                return start + GetLens()[seg] - 1;
+            }
+            pos -= dim;
+        }
+    } else {
+        TNumseg seg = -1;
+        int pos = row;
+        while (++seg < numseg) {
+            if ((start = starts[pos]) >= 0) {
+                return start + GetLens()[seg] - 1;
+            }
+            pos += dim;
+        }
+    }
+    NCBI_THROW(CSeqalignException, eInvalidAlignment,
+               "CDense_seg::GetSeqStop(): Row is empty");
+}
+
+
+void CDense_seg::Validate(bool full_test) const
+{
+    const CDense_seg::TStarts&  starts  = GetStarts();
+    const CDense_seg::TStrands& strands = GetStrands();
+    const CDense_seg::TLens&    lens    = GetLens();
+    const CDense_seg::TWidths&  widths  = GetWidths();
+
+    const size_t& numrows = CheckNumRows();
+    const size_t& numsegs = CheckNumSegs();
+
+    if (full_test) {
+        const size_t  max     = numrows * (numsegs -1);
+
+        bool strands_exist = strands.size();
+
+        size_t numseg = 0, numrow = 0, offset = 0;
+        for (numrow = 0;  numrow < numrows;  numrow++) {
+            TSignedSeqPos min_start = -1, start;
+            bool plus = strands_exist ? 
+                strands[numrow] != eNa_strand_minus:
+                true;
+            
+            if (plus) {
+                offset = 0;
+            } else {
+                offset = max;
+            }
+            
+            for (numseg = 0;  numseg < numsegs;  numseg++) {
+                start = starts[offset + numrow];
+                if (start >= 0) {
+                    if (start < min_start) {
+                        string errstr = string("CDense_seg::Validate():")
+                            + " Starts are not consistent!"
+                            + " Row=" + NStr::IntToString(numrow) +
+                            " Seg=" + NStr::IntToString(plus ? numseg :
+                                                        numsegs - 1 - numseg) +
+                            " MinStart=" + NStr::IntToString(min_start) +
+                            " Start=" + NStr::IntToString(start);
+                        
+                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                                   errstr);
+                    }
+                    min_start = start + 
+                        lens[plus ? numseg : numsegs - 1 - numseg] *
+                        (widths.size() == numrows ?
+                         widths[numrow] : 1);
+                }
+                if (plus) {
+                    offset += numrows;
+                } else {
+                    offset -= numrows;
+                }
+            }
+        }
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 // PRE : none
 // POST: same alignment, opposite orientation
@@ -127,6 +296,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/09/16 15:31:14  todorov
+* Added validation methods. Added seq range methods
+*
 * Revision 1.3  2003/08/26 21:10:49  ucko
 * #include Seq_id.hpp
 *
