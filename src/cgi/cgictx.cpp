@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/12/15 19:19:10  golikov
+* fixes
+*
 * Revision 1.15  1999/11/15 15:54:53  sandomir
 * Registry support moved from CCgiApplication to CNcbiApplication
 *
@@ -105,7 +108,7 @@ CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
         PutMsg( "Bad request" );
         string buf;
         CNcbiIstrstream dummy( buf.data(), buf.size() );
-        m_request.reset( new CCgiRequest( 0, 0, 0, &dummy, 
+        m_request.reset( new CCgiRequest( argc, argv, env, &dummy, 
                                           CCgiRequest::fIgnoreQueryString ) );
     }
 }
