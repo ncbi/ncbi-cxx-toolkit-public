@@ -2183,11 +2183,46 @@ CBDB_CacheHolder::~CBDB_CacheHolder()
     delete m_IdCache;
 }
 
+
+void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
+                        const string&           path,
+                        const string&           name,
+                        unsigned                timeout,
+                        ICache::TTimeStampFlags tflags)
+{
+    if (!tflags) {
+        tflags =
+            ICache::fTimeStampOnCreate         |
+            ICache::fExpireLeastFrequentlyUsed |
+            ICache::fPurgeOnStartup            |
+            ICache::fTrackSubKey               |
+            ICache::fCheckExpirationAlways;
+    }
+    if (timeout == 0) {
+        timeout = 24 * 60 * 60;
+    }
+
+    bdb_cache.SetTimeStampPolicy(tflags, timeout);
+    bdb_cache.SetVersionRetention(ICache::eKeepAll);
+
+    bdb_cache.Open(path.c_str(), 
+                   name.c_str(), 
+                   CBDB_Cache::eNoLock, 
+                   10 * 1024 * 1024,
+                   CBDB_Cache::eUseTrans);
+
+}
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2004/12/16 14:25:20  kuznets
+ * + BDB_ConfigureCache (simple BDB configurator)
+ *
  * Revision 1.93  2004/11/10 15:04:15  kuznets
  * Fixed performance warning(MSVC)
  *

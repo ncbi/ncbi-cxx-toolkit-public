@@ -473,6 +473,27 @@ private:
 };
 
 
+/// Utility for simple cache configuration.
+/// 
+/// @param bdb_cache
+///   Cache instance to configure
+/// @param path
+///   Path to the cache database
+/// @param name
+///   Cache database name
+/// @param timeout
+///   Cache elements time to live value (in seconds)
+///   (when "0" 24hrs value is taken)
+/// @param tflags
+///   Timestamp flags (see ICache)
+///   (when 0 some reasonable default combination is taken)
+///
+void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
+                        const string&           path,
+                        const string&           name,
+                        unsigned                timeout,
+                        ICache::TTimeStampFlags tflags);
+
 
 extern NCBI_BDB_EXPORT const char* kBDBCacheDriverName;
 
@@ -531,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/12/16 14:25:12  kuznets
+ * + BDB_ConfigureCache (simple BDB configurator)
+ *
  * Revision 1.40  2004/11/08 16:00:44  kuznets
  * Implemented individual timeouts
  *
