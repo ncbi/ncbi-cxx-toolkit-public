@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/creaders/creaders_export.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -101,7 +102,7 @@ private:
 
 
 /// Methods for reading alignment files
-class CAlignmentFile
+class NCBI_CREADERS_EXPORT CAlignmentFile
 {
 public:
     static void Read(CNcbiIstream& is, const CSequenceInfo& info,
@@ -118,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/28 18:39:50  dicuccio
+ * Export CAlignmentFile
+ *
  * Revision 1.3  2004/02/19 12:49:39  dicuccio
  * Roll back to version 1.1
  *
