@@ -15,5 +15,5 @@ LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio \
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-#CHECK_CMD = test_objmgr_mt
+CHECK_CMD = test_objmgr_mt
 
