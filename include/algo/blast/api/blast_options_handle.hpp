@@ -171,13 +171,6 @@ public:
     /// @param m MaxNumHspPerSequence [in]
     void SetMaxNumHspPerSequence(int m) { m_Opts->SetMaxNumHspPerSequence(m); }
 
-    // These 2 are never set in core... should they be removed?
-    /// Returns TotalHspLimit
-    int GetTotalHspLimit() const { return m_Opts->GetTotalHspLimit(); }
-    /// Sets TotalHspLimit
-    /// @param l TotalHspLimit [in]
-    void SetTotalHspLimit(int l) { m_Opts->SetTotalHspLimit(l); }
-
     /// Returns EvalueThreshold
     double GetEvalueThreshold() const { return m_Opts->GetEvalueThreshold(); }
     /// Sets EvalueThreshold
@@ -248,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/01/11 17:49:37  dondosha
+ * Removed total HSP limit option
+ *
  * Revision 1.16  2005/01/10 13:31:24  madden
  * Removal of [GS]etAlphabetSize
  *

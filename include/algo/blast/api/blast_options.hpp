@@ -101,7 +101,6 @@ enum EBlastOptIdx {
     eBlastOpt_HitlistSize,
     eBlastOpt_PrelimHitlistSize,
     eBlastOpt_MaxNumHspPerSequence,
-    eBlastOpt_TotalHspLimit,
     eBlastOpt_CullingMode,
     eBlastOpt_RequiredStart,
     eBlastOpt_RequiredEnd,
@@ -223,10 +222,6 @@ public:
 
     int GetMaxNumHspPerSequence() const;
     void SetMaxNumHspPerSequence(int m);
-
-    /// Maximum total number of HSPs to keep
-    int GetTotalHspLimit() const;
-    void SetTotalHspLimit(int l);
 
     bool GetCullingMode() const;
     void SetCullingMode(bool m = true);
@@ -1079,24 +1074,6 @@ public:
         }
         if (m_Remote) {
             m_Remote->SetValue(eBlastOpt_MaxNumHspPerSequence, m);
-        }
-    }
-
-    /// Maximum total number of HSPs to keep
-    int GetTotalHspLimit() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetTotalHspLimit() not available.");
-        }
-        return m_Local->GetTotalHspLimit();
-    }
-    void SetTotalHspLimit(int l)
-    {
-        if (m_Local) {
-            m_Local->SetTotalHspLimit(l);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_TotalHspLimit, l);
         }
     }
 
@@ -2058,18 +2035,6 @@ CBlastOptionsLocal::SetMaxNumHspPerSequence(int m)
     m_HitSaveOpts->hsp_num_max = m;
 }
 
-inline int
-CBlastOptionsLocal::GetTotalHspLimit() const
-{
-    return m_HitSaveOpts->total_hsp_limit;
-}
-
-inline void
-CBlastOptionsLocal::SetTotalHspLimit(int l)
-{
-    m_HitSaveOpts->total_hsp_limit = l;
-}
-
 inline bool
 CBlastOptionsLocal::GetCullingMode() const
 {
@@ -2380,6 +2345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2005/01/11 17:49:37  dondosha
+* Removed total HSP limit option
+*
 * Revision 1.82  2005/01/10 13:29:25  madden
 * Remove [GS]etAlphabetSize as well as [GS]etScanStep
 * Remove [GS]etSeedContainerType as well as [GS]etSeedExtensionMethod

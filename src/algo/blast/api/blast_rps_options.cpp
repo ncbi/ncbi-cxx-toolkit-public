@@ -108,8 +108,6 @@ CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
     m_Opts->SetSumStatisticsMode(false);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
-    // this is never used... altough it could be calculated
-    //SetTotalHspLimit(FIXME);
 
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
@@ -143,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/01/11 17:50:39  dondosha
+ * Removed total HSP limit option
+ *
  * Revision 1.9  2004/09/29 20:47:23  papadopo
  * use the actual underlying score matrix name from the RPS DB, rather than just hardwiring BLOSUM62
  *

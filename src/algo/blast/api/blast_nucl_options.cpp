@@ -203,8 +203,6 @@ CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
-    // this is never used... altough it could be calculated
-    //m_Opts->SetTotalHspLimit(FIXME);
 
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
@@ -238,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/01/11 17:50:39  dondosha
+ * Removed total HSP limit option
+ *
  * Revision 1.18  2005/01/10 13:34:45  madden
  * Calls to SetAlphabetSize, CalculateBestStride, SetScanStep, SetSeedContainerType,
  * and SetSeedExtensionMethod removed as no longe applicable.  Calls to SetVariableWordSize
