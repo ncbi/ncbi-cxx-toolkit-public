@@ -43,7 +43,7 @@ const string kJSMenuDefaultURL_Smith
 
 // Sergey Kurdin's menu
 const string kJSMenuDefaultURL_Kurdin
- = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_1.js";
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_2.js";
 
  
 
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2003/06/30 21:16:50  ivanov
+ * Updated Sergey Kurdin's popup menu to v2.2
+ *
  * Revision 1.14  2003/04/29 18:42:14  ivanov
  * Fix for previous commit
  *
