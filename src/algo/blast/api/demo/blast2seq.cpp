@@ -396,10 +396,17 @@ int CBlast2seqApplication::Run(void)
     sw.Start();
     CBl2Seq blaster(query_loc, subject_loc, prog);
     ProcessCommandLineArgs(blaster.SetOptions());
-    CRef<CSeq_align_set> seqalign = blaster.Run();
+
+    TSeqAlignVector seqalignv;
+
+    if (query_loc.size() > 0)
+        seqalignv = blaster.MultiQRun();
+    else
+        seqalignv.push_back(blaster.Run());
+
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
-    if (!seqalign) {
+    if (seqalignv.size() == 0) {
         cerr << "Returned NULL SeqAlign!" << endl;
         exit(1);
     }
@@ -407,7 +414,9 @@ int CBlast2seqApplication::Run(void)
     if (args["asnout"]) {
         auto_ptr<CObjectOStream> asnout(
             CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
-        *asnout << *seqalign;
+        int index;
+        for (index = 0; index < seqalignv.size(); ++index)
+            *asnout << *seqalignv[index];
     }
 #ifdef WRITE_SEQALIGNS
         // Convert CSeq_align_set to linked list of SeqAlign structs
@@ -485,6 +494,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/09/26 21:36:29  dondosha
+ * Show results for all queries in multi-query case
+ *
  * Revision 1.19  2003/09/26 15:42:23  dondosha
  * Added second argument to SetExtendWordMethod, so bit can be set or unset
  *
