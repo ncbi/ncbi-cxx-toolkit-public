@@ -38,7 +38,7 @@ static char const rcsid[] =
 #include "matrix_freq_ratios.h"
 #include "blast_psi_priv.h"
 
-/*underlying frequency ratios for BLOSUM62 as determined by Stephen Altschul;
+/** Underlying frequency ratios for BLOSUM62 as determined by Stephen Altschul;
   Stephen and Jorja Henikoff used different number for B,Z,X*/
 static const double BLOSUM62_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
  {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
@@ -121,6 +121,7 @@ static const double BLOSUM62_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
   0.250, 0.250, 0.250, 1.333}, 
 };
 
+/** Underlying frequency ratios for PAM30 as determined by Stephen Altschul */
 static const double PAM30_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.003},
 {0.000, 7.789, 0.302, 0.108, 0.317, 0.453, 0.057, 0.576, 0.083, 0.199, 0.095, 0.115, 0.189, 0.285, 0.593, 0.235, 0.091, 0.875, 0.827, 0.477, 0.010, 0.750, 0.070, 0.358, 0.000, 0.003},
@@ -150,6 +151,7 @@ static const double PAM30_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 0.003, 1.333},
 };
 
+/** Underlying frequency ratios for PAM70 as determined by Stephen Altschul */
 static const double PAM70_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.002},
 {0.000, 4.900, 0.605, 0.242, 0.619, 0.771, 0.135, 1.015, 0.221, 0.434, 0.249, 0.250, 0.376, 0.589, 1.030, 0.466, 0.227, 1.350, 1.327, 0.809, 0.043, 0.750, 0.154, 0.638, 0.000, 0.002},
@@ -179,6 +181,7 @@ static const double PAM70_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 1.333},
 };
 
+/** Underlying frequency ratios for BLOSUM45 as determined by Stephen Altschul */
 static const double BLOSUM45_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.290},
 {0.000, 2.950, 0.735, 0.800, 0.689, 0.825, 0.587, 1.080, 0.654, 0.747, 0.786, 0.712, 0.821, 0.789, 0.709, 0.867, 0.700, 1.300, 1.001, 1.010, 0.565, 0.750, 0.639, 0.841, 0.000, 0.290},
@@ -208,6 +211,7 @@ static const double BLOSUM45_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 1.333},
 };
 
+/** Underlying frequency ratios for BLOSUM80 as determined by Stephen Altschul */
 static const double BLOSUM80_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.140},
 {0.000, 4.773, 0.477, 0.732, 0.451, 0.703, 0.397, 0.957, 0.514, 0.543, 0.723, 0.505, 0.625, 0.510, 0.771, 0.696, 0.555, 1.535, 0.980, 0.866, 0.309, 0.750, 0.436, 0.700, 0.000, 0.140},
@@ -237,6 +241,7 @@ static const double BLOSUM80_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 0.140, 1.333},
 };
 
+/** Underlying frequency ratios for BLOSUM50 as determined by Stephen Altschul */
 static const double BLOSUM50_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.290},
 {0.000, 3.273, 0.687, 0.888, 0.660, 0.797, 0.546, 1.101, 0.641, 0.715, 0.748, 0.657, 0.854, 0.720, 0.715, 0.820, 0.668, 1.364, 0.967, 0.982, 0.464, 0.750, 0.596, 0.806, 0.000, 0.290},
@@ -266,6 +271,7 @@ static const double BLOSUM50_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 0.290, 1.333},
 };
 
+/** Underlying frequency ratios for BLOSUM90 as determined by Stephen Altschul */
 static const double BLOSUM90_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.120},
 {0.000, 4.773, 0.477, 0.732, 0.451, 0.703, 0.397, 0.957, 0.514, 0.543, 0.723, 0.505, 0.625, 0.510, 0.771, 0.696, 0.555, 1.535, 0.980, 0.866, 0.309, 0.707, 0.436, 0.700, 0.000, 0.120},
@@ -295,6 +301,7 @@ static const double BLOSUM90_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 0.120, 1.333},
 };
 
+/** Underlying frequency ratios for PAM250 as determined by Stephen Altschul */
 static const double PAM250_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.170},
 {0.000, 1.516, 1.056, 0.627, 1.070, 1.075, 0.446, 1.339, 0.732, 0.889, 0.766, 0.646, 0.770, 1.040, 1.294, 0.903, 0.701, 1.290, 1.317, 1.045, 0.264, 0.750, 0.450, 1.000, 0.000, 0.170},
@@ -324,7 +331,9 @@ static const double PAM250_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 {0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 0.170, 1.333},    
 };
 
+/** Additional bit scale multiplier for BLOSUM62_20A matrix */
 #define BLOSUM62_20A_SCALE_MULTIPLIER 0.9666
+/** Additional bit scale multiplier for BLOSUM62_20B matrix */
 #define BLOSUM62_20B_SCALE_MULTIPLIER 0.9344
 
 SFreqRatios*
@@ -444,6 +453,9 @@ _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/11/05 14:13:44  camacho
+ * + doxygen comments
+ *
  * Revision 1.4  2004/11/02 17:56:48  camacho
  * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *
