@@ -29,7 +29,7 @@
  * Authors:  Mike DiCuccio
  *
  * File Description:
- *     CStaticArraySet<> -- template class to provide convenient access to
+ *     CStaticArrayMap<> -- template class to provide convenient access to
  *                          a statically-defined array, while making sure that
  *                          the order of the array meets sort criteria in
  *                          debug builds.
@@ -37,12 +37,14 @@
  */
 
 
+#include <util/static_set.hpp>
+#include <utility>
+
+
 BEGIN_NCBI_SCOPE
 
-
-
 ///
-/// class CStaticArraySet<> is an array adaptor that provides an STLish
+/// class CStaticArrayMap<> is an array adaptor that provides an STLish
 /// interface to statically-defined arrays, while making efficient use
 /// of the inherent sort order of such arrays.
 ///
@@ -50,10 +52,10 @@ BEGIN_NCBI_SCOPE
 /// and to access a static array cleanly.  The template parameters are
 /// as follows:
 ///
-///   KeyType    -- type of object used for access
-///   KeyComparator -- comparison functor.  This must provide an operator() as
-///                 well as an Equals(const&, const&) function.  This is
-///                 patterned to accept PCase and PNocase and similar objects.
+///   KeyType    -- type of key object used for access
+///   ValueType  -- type of object used for access
+///   KeyCompare -- comparison functor.  This must provide an operator(). 
+///         This is patterned to accept PCase and PNocase and similar objects.
 ///
 /// To use this class, define your static array as follows:
 ///
@@ -80,135 +82,53 @@ BEGIN_NCBI_SCOPE
 ///
 /// or
 ///
-///     size_t idx = sc_Array.FindId(some_value);
+///     size_t idx = sc_Array.index_of(some_value);
 ///     if (idx != TStaticArray::eNpos) {
 ///         ...
 ///     }
 ///
 ///
-template <class KeyType, class KeyComparator>
-class CStaticArraySet
+
+template<class ValueType,
+         class FirstCompare = less<typename ValueType::first_type> >
+class PLessByFirst
 {
 public:
-    enum {
-        eNpos = -1
-    };
+    typedef ValueType                       value_type;
+    typedef typename value_type::first_type first_type;
+    typedef FirstCompare                    first_compare;
 
-    typedef KeyType             key_type;
-    typedef KeyComparator       key_compare;
-    typedef key_type            value_type;
-    typedef const value_type&   const_reference;
-    typedef const value_type*   const_iterator;
-    typedef size_t              size_type;
-    typedef ssize_t             difference_type;
-
-    /// Default constructor.  This will build a set around a given array; the
-    /// storage of the end pointer is based on the supplied array size.  In
-    /// debug mode, this will verify that the array is sorted.
-    CStaticArraySet(const_iterator obj, size_type array_size)
-        : m_Begin(obj)
-        , m_End(obj + array_size / sizeof(key_type))
+    PLessByFirst()
     {
-        x_Validate();
     }
 
-    /// Constructor to initialize comparator object.
-    CStaticArraySet(const_iterator obj, size_type array_size,
-                    KeyComparator comp)
-        : m_Begin(obj)
-        , m_End(obj + array_size / sizeof(key_type))
-        , m_Comparator(comp)
+    PLessByFirst(const first_compare& comp)
+        : m_FirstComp(comp)
     {
-        x_Validate();
     }
 
-    /// Return the start of the controlled sequence.
-    const_iterator begin() const
+    bool operator()(const value_type& v0, const value_type& v1) const
     {
-        return m_Begin;
+        return m_FirstComp(v0.first, v1.first);
     }
 
-    /// Return the end of the controlled sequence.
-    const_iterator end() const
+    bool operator()(const first_type& v0, const value_type& v1) const
     {
-        return m_End;
+        return m_FirstComp(v0, v1.first);
     }
 
-    /// Return a const_iterator pointing to the specified element, or
-    /// to the end if the element is not found.
-    const_iterator find(const key_type& key) const
+    bool operator()(const value_type& v0, const first_type& v1) const
     {
-        const_iterator iter = lower_bound(key);
-        if (iter == m_End  ||  !m_Comparator.Equals(*iter, key)) {
-            return m_End;
-        }
-        return iter;
+        return m_FirstComp(v0.first, v1);
     }
 
-    /// Return the count of the elements in the sequence.  This will be
-    /// either 0 or 1, as this structure holds unique keys.
-    size_type count(const key_type& key) const
+    const first_compare& first_comp() const
     {
-        return (size_type)binary_search(m_Begin, m_End, key, m_Comparator);
-    }
-
-    /// Return a pair of iterators bracketing the given element in
-    /// the controlled sequence.
-    pair<const_iterator, const_iterator> equal_range(const key_type& key) const
-    {
-        const_iterator iter = find(key);
-        const_iterator end  = iter;
-        if (end != m_End) {
-            ++end;
-        }
-        return make_pair(iter, end);
-    }
-
-    /// Return an iterator into the sequence such that the iterator's key
-    /// is less than or equal to the indicated key.
-    const_iterator lower_bound(const key_type& key)
-    {
-        return lower_bound(m_Begin, m_End, key, m_Comparator);
-    }
-
-    /// Return an iterator into the sequence such that the iterator's key
-    /// is greater than the indicated key.
-    const_iterator upper_bound(const key_type& key)
-    {
-        return upper_bound(m_Begin, m_End, key, m_Comparator);
-    }
-
-    /// Return the index of the indicated element, or eNpos if the element is
-    /// not found.
-    difference_type index_of(const key_type& key) const
-    {
-        const_iterator iter = find(key);
-        if (iter == m_End) {
-            return eNpos;
-        }
-        return (iter - m_Begin);
+        return m_FirstComp;
     }
 
 private:
-    const_iterator m_Begin;
-    const_iterator m_End;
-
-    key_compare m_Comparator;
-
-    /// Perform sort-order validation.  This is a no-op in release mode.
-    void x_Validate()
-    {
-#ifdef _DEBUG
-        const_iterator begin = m_Begin;
-        const_iterator prev = begin;
-        ++begin;
-        for ( ;  begin != m_End;  ++begin) {
-            _ASSERT( m_Comparator(*prev, *begin) );
-            prev = begin;
-        }
-#endif
-    }
-
+    first_compare m_FirstComp;
 };
 
 
@@ -218,155 +138,47 @@ private:
 /// binding of a value type to each sorted key, much like an STL map<> would.
 ///
 
-template <class KeyType, class ValueType, class KeyComparator>
+template <class KeyType, class ValueType, class KeyCompare = less<KeyType> >
 class CStaticArrayMap
+    : public CStaticArraySearchBase< KeyType, pair<KeyType, ValueType>,
+                                     PLessByFirst< pair<KeyType, ValueType>,
+                                                    KeyCompare > >
 {
+    typedef CStaticArraySearchBase< KeyType, pair<KeyType, ValueType>,
+                                    PLessByFirst< pair<KeyType, ValueType>,
+                                                  KeyCompare > > TBase;
 public:
-    enum {
-        eNpos = -1
-    };
-
-    typedef KeyType                     key_type;
-    typedef ValueType                   mapped_type;
-    typedef pair<key_type, mapped_type> value_type;
-    typedef const value_type&           const_reference;
-    typedef const value_type*           const_iterator;
-    typedef size_t                      size_type;
-    typedef ssize_t                     difference_type;
-
-    struct SPairComparator
-    {
-        KeyComparator comp;
-        SPairComparator()
-        {
-        }
-
-        SPairComparator(KeyComparator c)
-            : comp(c)
-        {
-        }
-
-        bool Equals(const value_type& v0, const value_type& v1) const
-        {
-            return comp.Equals(v0.first, v1.first);
-        }
-
-        bool operator()(const value_type& v0, const value_type& v1) const
-        {
-            return comp(v0.first, v1.first);
-        }
-    };
-    typedef SPairComparator               key_compare;
+    typedef typename TBase::key_type        key_type;
+    typedef KeyCompare                      key_compare;
+    typedef ValueType                       mapped_type;
+    typedef typename TBase::value_type      value_type;
+    typedef typename TBase::value_compare   value_compare;
+    typedef typename TBase::const_reference const_reference;
+    typedef typename TBase::const_iterator  const_iterator;
+    typedef typename TBase::size_type       size_type;
+    typedef typename TBase::difference_type difference_type;
 
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     CStaticArrayMap(const_iterator obj, size_type array_size)
-        : m_Begin(obj)
-        , m_End(obj + array_size / sizeof(value_type))
+        : TBase(obj, array_size)
     {
-        x_Validate();
     }
 
     /// Constructor to initialize comparator object.
     CStaticArrayMap(const_iterator obj, size_type array_size,
-                    KeyComparator comp)
-        : m_Begin(obj)
-        , m_End(obj + array_size / sizeof(value_type))
-        , m_Comparator(comp)
+                    const key_compare& comp)
+        : TBase(obj, array_size, comp)
     {
-        x_Validate();
     }
 
-    /// Return an iterator to the beginning of the controlled sequence.
-    const_iterator begin() const
+
+    /// Return the key comparison object
+    const key_compare& key_comp() const
     {
-        return m_Begin;
+        return value_comp().first_comp();
     }
-
-    /// Return an iterator to the end of the controlled sequence.
-    const_iterator end() const
-    {
-        return m_End;
-    }
-
-    /// Find an element in the controlled sequence, returning end() if
-    /// the element is not found.
-    const_iterator find(const key_type& key) const
-    {
-        value_type val(key, mapped_type());
-        const_iterator iter =
-            std::lower_bound(m_Begin, m_End, val, m_Comparator);
-        if (iter == m_End  ||  !m_Comparator.Equals(*iter, val)) {
-            return m_End;
-        }
-        return iter;
-    }
-
-    /// Return the count of items in the sequence.  This will return 0 or
-    /// 1 since this container does not manage duplicate keys.
-    size_type count(const key_type& key) const
-    {
-        value_type val(key, mapped_type());
-        return (size_type)binary_search(m_Begin, m_End, val, m_Comparator);
-    }
-
-    /// Return a pair of iterators bracketing the range of the key.
-    pair<const_iterator, const_iterator> equal_range(const key_type& key) const
-    {
-        const_iterator iter = find(key);
-        const_iterator end  = iter;
-        if (end != m_End) {
-            ++end;
-        }
-        return make_pair(iter, end);
-    }
-
-    /// Return an iterator that points to the element whose key is less than
-    /// or equal to the indicated key.
-    const_iterator lower_bound(const key_type& key) const
-    {
-        value_type val(key, mapped_type());
-        return std::lower_bound(m_Begin, m_End, val, m_Comparator);
-    }
-
-    /// Return an iterator that points to the element whose key is greater than
-    /// the indicated key.
-    const_iterator upper_bound(const key_type& key) const
-    {
-        value_type val(key, mapped_type());
-        return std::upper_bound(m_Begin, m_End, val, m_Comparator);
-    }
-
-    /// Return the index of the indicated element, or eNpos if the element is
-    /// not found.
-    difference_type index_of(const key_type& key) const
-    {
-        const_iterator iter = find(key);
-        if (iter == m_End) {
-            return eNpos;
-        }
-        return (iter - m_Begin);
-    }
-
-private:
-    const_iterator m_Begin;
-    const_iterator m_End;
-    key_compare    m_Comparator;
-
-    void x_Validate()
-    {
-#ifdef _DEBUG
-        const_iterator begin = m_Begin;
-        const_iterator prev = begin;
-        ++begin;
-        for ( ;  begin != m_End;  ++begin) {
-            _ASSERT( m_Comparator(*prev, *begin) );
-            prev = begin;
-        }
-#endif
-    }
-
 };
 
 
@@ -377,6 +189,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/23 18:02:23  vasilche
+ * Cleaned implementation of CStaticArraySet & CStaticArrayMap.
+ * Added test utility test_staticmap.
+ *
  * Revision 1.2  2004/01/22 14:51:03  dicuccio
  * Fixed erroneous variable names
  *
