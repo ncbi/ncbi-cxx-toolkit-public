@@ -5,8 +5,9 @@
 
 LIB_PROJ = test_mt
 
-APP_PROJ = test_ncbithr coretest test_ncbiargs test_ncbitime test_ncbi_limits \
-           test_ncbistr test_ncbidiag_mt test_ncbireg_mt
+APP_PROJ = test_ncbithr coretest test_ncbiargs test_ncbiargs_sample \
+		   test_ncbitime test_ncbi_limits test_ncbistr test_ncbidiag_mt \
+		   test_ncbireg_mt
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
