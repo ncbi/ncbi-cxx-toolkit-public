@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/04/28 16:59:39  vasilche
+* Fixed call to CObjectIStream::Open().
+*
 * Revision 1.13  2000/04/13 14:50:59  vasilche
 * Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
 *
@@ -180,9 +183,9 @@ int CAsn2Asn::Run(void)
     string inFile;
     bool skip = false; 
     bool inSeqEntry = false;
-    unsigned inFlags = eSerial_AsnText;
+    ESerialDataFormat inFormat = eSerial_AsnText;
     string outFile;
-    unsigned outFlags = eSerial_AsnText;
+    ESerialDataFormat outFormat = eSerial_AsnText;
     string logFile;
     int count = 1;
     CNcbiDiagStream logStream(&NcbiCerr);
@@ -203,13 +206,13 @@ int CAsn2Asn::Run(void)
                     inSeqEntry = true;
                     break;
                 case 'b':
-                    inFlags = eSerial_AsnBinary;
+                    inFormat = eSerial_AsnBinary;
                     break;
                 case 'o':
                     outFile = StringArgument(GetArguments(), ++i);
                     break;
                 case 's':
-                    outFlags = eSerial_AsnBinary;
+                    outFormat = eSerial_AsnBinary;
                     break;
                 case 'S':
                     skip = true;
@@ -246,13 +249,12 @@ int CAsn2Asn::Run(void)
         }
     }
 
-    inFlags |= eSerial_StdWhenAny;
-    outFlags |= eSerial_StdWhenAny;
-
     for ( int i = 0; i < count; ++i ) {
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFile, inFlags));
+        auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
+                                                         eSerial_StdWhenAny));
         auto_ptr<CObjectOStream> out(outFile.empty()? 0:
-                                     CObjectOStream::Open(outFile, outFlags));
+                                     CObjectOStream::Open(outFormat, outFile,
+                                                          eSerial_StdWhenAny));
 
         if ( inSeqEntry ) { /* read one Seq-entry */
             if ( skip ) {
