@@ -36,13 +36,13 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objtools/format/items/item.hpp>
+#include <objtools/format/formatter.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class IFormatter;
 class IFlatTextOStreamFactory;
 
 
@@ -84,6 +84,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/12 20:25:45  shomrat
+* forward delaration instead of include
+*
 * Revision 1.1  2003/12/17 19:53:49  shomrat
 * Initial revision (adapted from flat lib)
 *
