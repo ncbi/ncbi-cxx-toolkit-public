@@ -37,7 +37,7 @@ located in the
 <i>src/objects</i></a> subtrees of the C++ tree,
 respectively. The header and implementation files for serialized streams and type
 information are in the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/serial/">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/">
 <i>include/serial</i></a> and 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/serial/">
 <i>src/serial</i></a> directories.
@@ -47,7 +47,7 @@ information are in the
 If you have checked out the <i> objects</i> directories, but not explicitly run the 
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/tools/datatool/datatool.html">
 <i>datatool</i></a> code generator, then you will find that your <i>include/objects</i>
-subdirectories are empty, and the source subdirectories contain only ASN.1 specifications.
+subdirectories are (almost) empty, and the source subdirectories contain only ASN.1 specifications.
 However, building your own local copies of these header and implementation files is
 neither necessary nor recommended, as it is simpler to use the pre-generated header files and
 prebuilt libraries. <p>
@@ -93,12 +93,20 @@ ensure automatic destruction of these objects when the function returns or an ex
 
 The streams now need to have <i> CObject[I/O]Stream</i>s associated with them in order to provide
 the proper data serialization mechanisms.
+
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistr.hpp">
 <i> CObjectIStream</i></a> and 
+
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostr.hpp">
 <i> CObjectOStream</i></a> are base classes which provide generic interfaces between the
+
 object-specific type information associated with a serializable object's class and an I/O stream. The object
-stream classes used in this application (<i>CObjectIStreamAsnBinary, CObjectOStreamAsn</i>)
+stream classes used in this application 
+
+(<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistrasnb.hpp">CObjectIStreamAsnBinary</a>, 
+
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostrasn.hpp">
+CObjectOStreamAsn</i></a>)
 are descendants of these base classes with specialized serialization methods for ASN.1 binary 
 input and ASN.1 text output.
 <p>
@@ -164,10 +172,10 @@ Reference Manual.)
 The next four items refer to <i>CObject[I/O]Stream</i> classes - two of which specialize for ASN
 formatted data, so a likely place to search for these is in the 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/">
-<i>serial</i></a>
-directory. Lacking any clues for where to look however, the <i>identifier search</i> tool in
-the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/"> source code
-navigator </a> should allow you to find whatever class you are looking for.<p>
+<i>serial</i></a> directory. Lacking any clues for where to look however, the <a
+href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident">
+<i>identifier search</i></a> tool in the source code
+navigator should allow you to find whatever class you are looking for.<p>
 
 In the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/">
 <i>serial</i></a> directory, we find three files that must be included: 
@@ -181,17 +189,23 @@ In the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/inc
 
 The names of the first two files are self-documenting: the first defines objects associated
 with input streams containing binary ASN data; the second defines objects associated with
-output streams containing ASN text. The last file, <i>serial.hpp</i>, defines the input and
-output operators on the generic object serialization streams <i>CObjectIStreams</i> and <i>
-CObjectOStreams</i> respectively.<p>
+output streams containing ASN text. The last file, 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serial.hpp">
+<i>serial.hpp</i></a>, defines the input and output operators on the generic object serialization streams 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistr.hpp">
+<i>CObjectIStream</i></a> and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostr.hpp">
+<i>CObjectOStream</i></a> respectively.<p>
 
 Finally, we must include headers for the ASN type we are using. The easiest way to locate
-appropriate header files is to use the identifier search tool in
-the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/"> source code
-navigator</a>. Alternatively, you can browse the <i>include/objects</i> directories.
+appropriate header files is to use the source code navigator's
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident">
+identifier search</a> tool. Alternatively, you can browse the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects">
+<i>include/objects</i></a> directories.
 For example, the <i>CBiostruc</i> class is defined in 
 <a href="/netopt/ncbi_tools/c++/include/objects/mmdb1/Biostruc.hpp"> 
-<i> $NCBI/c++/include/objects/mmdb1/Biostruc.hpp</i></a>. In summary, the
+<i> include/objects/mmdb1/Biostruc.hpp</i></a>. In summary, the
 following <i>#include</i> statements appear at the top of <a href="asntrans_cpp.html"><i>asntrans.cpp</i></a>:
 
 <xmp>
