@@ -42,7 +42,7 @@
  */
 int main(int argc, const char* argv[])
 {
-    const char* service = argc > 1 ? argv[1] : "io_bounce";
+    const char* service = argc > 1 ? argv[1] : "bounce";
     int/*bool*/ local = argc > 2;
     const SSERV_Info* info;
     int n_found = 0;
@@ -124,6 +124,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2004/06/21 18:02:45  lavr
+ * Test on service "bounce" by default ("io_bounce" is retired now)
+ *
  * Revision 6.15  2003/05/14 03:58:43  lavr
  * Match changes in respective APIs of the tests
  *
