@@ -30,7 +30,7 @@
  *
  * ===========================================================================
  */
-
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_config.hpp>
@@ -329,7 +329,7 @@ int CConfig::GetInt(const string&         driver_name,
                             kEmptyStr);
 
     if (param.empty()) {
-        if (on_error == eErr_NoThrow) {
+        if (on_error == eErr_Throw) {
             string msg = 
                 "Cannot init " + driver_name 
                                 + ", empty parameter:" + param_name;
@@ -441,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/28 14:06:40  kuznets
+ * Bug fix. Throwing exception when NoThrow requested
+ *
  * Revision 1.7  2004/09/23 16:34:51  kuznets
  * Compilation fixes
  *
