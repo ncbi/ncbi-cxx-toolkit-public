@@ -318,7 +318,7 @@ void CSplign::Run( THits* phits )
     }
 
     THits& hits = *phits;
-  
+
     if(m_sa.IsNull()) {
         NCBI_THROW( CAlgoAlignException,
                     eNotInitialized,
@@ -354,122 +354,12 @@ void CSplign::Run( THits* phits )
     const size_t mrna_size = m_mrna.size();
     const size_t min_coverage = size_t(m_min_query_coverage * mrna_size);
     const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
-    
+ 
     // iterate through compartments
     CCompartmentAccessor comps (hits.begin(), hits.end(),
                                 comp_penalty_bps, min_coverage);
-
-//#define ISOLATED_COMPARTMENTS
-#ifdef  ISOLATED_COMPARTMENTS
-    // space btw compartments divided proprtionally to
-    // the unaligned ends
-
-    size_t smin = 0, smax = kMax_UInt;
-    bool same_strand = false;
-
-    for(size_t i = 0, dim = comps.GetCount(); i < dim; ++i) {
-      
-      // limit the space beyond the compartment
-      // to avoid shared exons
-
-      if(i+1 == dim) {
-        smax = kMax_UInt;
-        same_strand = false;
-      }
-      else {
-        
-        bool strand_this = comps.GetStrand(i);
-        bool strand_next = comps.GetStrand(i+1);
-        same_strand = strand_this == strand_next;
-
-        if(same_strand) {
-
-          const size_t* box0  = comps.GetBox(i);
-          const size_t* box1  = box0 + 4;
-          const size_t  dist  = box1[2] - box0[3];
-          
-          size_t qdim0, qdim1;
-          if(strand_this) {
-            qdim0 = mrna_size - box0[1] - 1;
-            qdim1 = box1[0];
-          }
-          else {
-            qdim0 = box0[0];
-            qdim1 = mrna_size - box1[1] - 1;
-          }
-          
-          const size_t  qdim = qdim0 + qdim1;
-          
-          if(qdim == 0) {
-            smax = box1[2] - 1; 
-          }
-          else {
-            const double a0 = double(qdim0) / qdim;
-            smax = size_t(floor (box0[3] + a0*dist));
-            if(smax == box1[2]) {
-              --smax;
-            }
-          }
-        }
-        else { // !same_strand
-          smax = kMax_UInt;
-        }
-      }
-     
-      try {
-
-        THits comp_hits;
-        comps.Get(i, comp_hits);
-        SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
-        ac.m_id = ++m_model_id;
-        ac.m_segments = m_segments;
-        ac.m_error = false;
-        ac.m_msg = "Ok";
-        m_result.push_back(ac);
-      }
-
-      catch(CException& e) {
-
-        m_result.push_back(SAlignedCompartment(0, true, e.GetMsg().c_str()));
-        ++m_model_id;
-      }
-
-      smin = same_strand? (smax + 1): 0;
-    }
-
-
-    // convert the coordinates back to the originals
-    NON_CONST_ITERATE(TResults, ii, m_result) {
-        
-        if(!ii->m_error) {
-            
-            NON_CONST_ITERATE(TSegments, jj, ii->m_segments) {
-                
-                if(ii->m_QueryStrand) {
-                    jj->m_box[0] += ii->m_qmin;
-                    jj->m_box[1] += ii->m_qmin;
-                }
-                else {
-                    jj->m_box[0] = ii->m_mrnasize - jj->m_box[0] - 1;
-                    jj->m_box[1] = ii->m_mrnasize - jj->m_box[1] - 1;
-                }
-
-                if(jj->m_exon) {
-                    if(ii->m_SubjStrand) {
-                        jj->m_box[2] += ii->m_smin;
-                        jj->m_box[3] += ii->m_smin;
-                    }
-                    else {
-                        jj->m_box[2] = ii->m_smax - jj->m_box[2];
-                        jj->m_box[3] = ii->m_smax - jj->m_box[3];
-                    }
-                }
-            }
-        }
-    }
-
-#else // compartments share the space between them
-
+    
+    // compartments share the space between them
     size_t smin = 0, smax = kMax_UInt;
     bool same_strand = false;
 
@@ -617,8 +507,6 @@ void CSplign::Run( THits* phits )
     }
 */
 
-#endif
-
 }
 
 
@@ -693,17 +581,20 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     --qmin; --qmax; --smin; --smax;
     
     // select terminal genomic extents based on uncovered end sizes
-    {{
-        size_t extent = (qmin >= kMinTermExonSize)? m_max_genomic_ext:
-            (kIntronPerTermExon + 1)* qmin;
-        smin = max(0, int(smin - extent));
-    }}
-    {{
-        size_t qspace = m_mrna.size() - qmax + 1;
-        size_t extent = (qspace >= kMinTermExonSize)? m_max_genomic_ext:
-            (kIntronPerTermExon + 1)* qspace;
-        smax += extent;
-    }}
+    size_t extent_left = (qmin >= kMinTermExonSize)? m_max_genomic_ext:
+        (kIntronPerTermExon + 1)* qmin;
+    size_t qspace = m_mrna.size() - qmax + 1;
+    size_t extent_right = (qspace >= kMinTermExonSize)? m_max_genomic_ext:
+        (kIntronPerTermExon + 1)* qspace;
+
+    if((*hits)[0].IsStraight()) {
+        smin = max(0, int(smin - extent_left));
+        smax += extent_right;
+    }
+    else {
+        smin = max(0, int(smin - extent_right));
+        smax += extent_left;
+    }
     
     // regardless of hits, all cDNA is aligned (without the tail, if any)
     qmin = 0;
@@ -725,7 +616,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     if(ctg_end - 1 < smax) { // perhabs adjust smax
         smax = ctg_end - 1;
     }
-    
+ 
     if(!ctg_strand) {
         // make reverse complementary
         // for the contig's area of interest
@@ -861,7 +752,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
 // for both sequences
 void CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
-    deque<SSegment> segments;
+    typedef deque<SSegment> TSegments;
+    TSegments segments;
     static const char kGap [] = "<GAP>";
 
     for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
@@ -904,7 +796,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             // align
             m_aligner->Run();
 
-// #define DBG_DUMP_TYPE2
+//#define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
             {{
             CNWFormatter fmt (*m_aligner);
@@ -920,7 +812,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             CNWFormatter formatter (*m_aligner);
             string exons;
             formatter.AsText(&exons, CNWFormatter::eFormatExonTableEx);      
-	    
+
             CNcbiIstrstream iss_exons (exons.c_str());
             while(iss_exons) {
                 string id1, id2, txt, repr;
@@ -960,6 +852,17 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         }
     } // zone iterations end
+
+
+//#define DUMP_ORIG_SEGS
+#ifdef DUMP_ORIG_SEGS
+    ITERATE(TSegments, ii, segments) {
+        cout << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
+             << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
+             << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
+             << ii->m_annot << endl;
+    }
+#endif
 
     // segment-level postprocessing
 
@@ -1440,6 +1343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/07/19 13:38:07  kapustin
+ * Remove unused conditional code
+ *
  * Revision 1.18  2004/06/29 20:51:52  kapustin
  * Use CRef to access CObject-derived members
  *
