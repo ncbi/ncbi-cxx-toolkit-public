@@ -60,9 +60,9 @@ public:
   CIntStreamable::TInt &Sat() { return m_Sat.Value(); };
   CIntStreamable::TInt &SatKey() { return m_SatKey.Value(); };
   
-  const CIntStreamable::TInt  Gi()     const { return m_Gi.Value(); };
-  const CIntStreamable::TInt  Sat()    const { return m_Sat.Value(); };
-  const CIntStreamable::TInt  SatKey() const { return m_SatKey.Value(); };
+  CIntStreamable::TInt  Gi()     const { return m_Gi.Value(); };
+  CIntStreamable::TInt  Sat()    const { return m_Sat.Value(); };
+  CIntStreamable::TInt  SatKey() const { return m_SatKey.Value(); };
 
 private:
   friend class CId1Reader;
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.13  2003/03/26 16:11:06  vasilche
+* Removed redundant const modifier from integral return types.
+*
 * Revision 1.12  2003/03/01 22:26:07  kimelman
 * performance fixes
 *

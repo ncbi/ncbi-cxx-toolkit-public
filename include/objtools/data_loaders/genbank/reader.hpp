@@ -52,8 +52,8 @@ public:
     CIntStreamable(TInt value = 0) : m_Value(value) {}
     virtual void Save(ostream &) const;
     virtual void Restore(istream &);
-    TInt      &Value()       { return m_Value; }
-    const TInt Value() const { return m_Value; }
+    TInt &Value()       { return m_Value; }
+    TInt  Value() const { return m_Value; }
   
 private:
     TInt m_Value;
@@ -65,8 +65,8 @@ public:
     CStringStreamable(const string &value = "") : m_Value(value) {}
     virtual void Save(ostream &) const;
     virtual void Restore(istream &);
-    string       &Value()       { return m_Value; }
-    const string &Value() const { return m_Value; }
+    string&       Value()       { return m_Value; }
+    const string& Value() const { return m_Value; }
 
 private:
     string m_Value;
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.19  2003/03/26 16:11:06  vasilche
+* Removed redundant const modifier from integral return types.
+*
 * Revision 1.18  2003/02/25 22:03:31  vasilche
 * Fixed identation.
 *

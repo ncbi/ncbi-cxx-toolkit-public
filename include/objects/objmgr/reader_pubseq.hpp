@@ -55,9 +55,9 @@ public:
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn = 0);
   virtual CBlob *RetrieveBlob(istream &is);
 
-  const CIntStreamable::TInt Gi() const { return m_Gi.Value(); }
-  const CIntStreamable::TInt Sat() const { return m_Sat.Value(); }
-  const CIntStreamable::TInt SatKey() const { return m_SatKey.Value(); }
+  CIntStreamable::TInt Gi() const { return m_Gi.Value(); }
+  CIntStreamable::TInt Sat() const { return m_Sat.Value(); }
+  CIntStreamable::TInt SatKey() const { return m_SatKey.Value(); }
 
   virtual CSeqref *Dup() const { return new CPubseqSeqref(*this); }
   virtual char *print(char*,int) const;
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.11  2003/03/26 16:11:06  vasilche
+* Removed redundant const modifier from integral return types.
+*
 * Revision 1.10  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *
