@@ -357,6 +357,36 @@ void CValidError_bioseq::ValidateSeqIds
             "Multiple accessions on sequence with gi number", seq);
     }
 
+    // Protein specific checks
+    if ( seq.IsAa() ) {
+        ITERATE( CBioseq::TId, id, seq.GetId() ) {
+            switch ( (*id)->Which() ) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                {
+                    const CTextseq_id* tsid = (*id)->GetTextseq_Id();
+                    if ( tsid != NULL ) {
+                        if ( !tsid->IsSetAccession()  &&  tsid->IsSetName() ) {
+                            if ( m_Imp.IsNucAcc(tsid->GetName()) ) {
+                                PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                                    "Protein bioseq has Textseq-id 'name' that"
+                                    "looks like it is derived from a nucleotide"
+                                    "accession", seq);
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
     if ( m_Imp.IsValidateIdSet() ) {
         ValidateIDSetAgainstDb(seq);
     }
@@ -2008,6 +2038,16 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                 severity = eDiag_Warning;
                             }
                         }
+                        if (m_Imp.IsGPS()  ||  m_Imp.IsNT()  ||  m_Imp.IsNC() ) {
+                            severity = eDiag_Warning;
+                        }
+                    }
+
+                    if ( (prev->IsSetDbxref()  &&
+                          IsFlybaseDbxrefs(prev->GetDbxref()))  || 
+                         (curr->IsSetDbxref()  && 
+                          IsFlybaseDbxrefs(curr->GetDbxref())) ) {
+                        severity = eDiag_Error;
                     }
 
                     // Report duplicates
@@ -2066,6 +2106,17 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 }
 
 
+bool CValidError_bioseq::IsFlybaseDbxrefs(const list< CRef< CDbtag > >& dbxrefs)
+{
+    ITERATE( list< CRef< CDbtag > >, db, dbxrefs ) {
+        if ( NStr::CompareNocase((*db)->GetDb(), "FLYBASE") == 0 ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -2091,7 +2142,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     for ( CSeqdesc_CI di(bsh); di; ++ di ) {
-    //iterate ( CSeq_descr::Tdata, dt, seq.GetDescr().Get() ) {
         const CSeqdesc& desc = *di;
 
         switch ( desc.Which() ) {
@@ -2100,7 +2150,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             if ( !org ) {
                 org = &(desc.GetOrg());
             }
-            ValidateOrgContext(desc.GetOrg(), *org, seq, desc);
+            ValidateOrgContext(di, desc.GetOrg(), *org, seq, desc);
             break;
 
         case CSeqdesc::e_Pir:
@@ -2165,10 +2215,18 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             break;
 
         case CSeqdesc::e_Source:
+            if ( desc.GetSource(). IsSetIs_focus()  &&
+                 desc.GetSource().GetIs_focus() ) {
+                if ( !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc) ) {
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
+                        "BioSource descriptor has focus, "
+                        "but no BioSource feature", seq, desc);
+                }
+            }
             if ( !org ) {
                 org = &(desc.GetSource().GetOrg());
             }
-            ValidateOrgContext(desc.GetSource().GetOrg(), *org, seq, desc);
+            ValidateOrgContext(di, desc.GetSource().GetOrg(), *org, seq, desc);
             break;
 
         case CSeqdesc::e_Molinfo:
@@ -2313,7 +2371,8 @@ void CValidError_bioseq::ValidateUpdateDateContext
 
 
 void CValidError_bioseq::ValidateOrgContext
-(const COrg_ref& this_org,
+(const CSeqdesc_CI& curr,
+ const COrg_ref& this_org,
  const COrg_ref& org,
  const CBioseq& seq,
  const CSeqdesc& desc)
@@ -2323,6 +2382,26 @@ void CValidError_bioseq::ValidateOrgContext
             PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
                 "Inconsistent taxnames [" + this_org.GetTaxname() + 
                 "] and [" + org.GetTaxname() + "]", seq, desc);
+        }
+    }
+
+    CSeqdesc_CI iter = curr;
+    for ( ++iter; iter; ++iter ) {
+        const COrg_ref* that_org = 0;
+        if ( iter->IsSource() ) {
+            that_org = &(iter->GetSource().GetOrg());
+        } else if ( iter->IsOrg() ) {
+             that_org = &(iter->GetOrg());
+        }
+        
+        if ( that_org ) {
+            if ( this_org.IsSetTaxname()  &&  that_org->IsSetTaxname() ) {
+                if ( this_org.GetTaxname() == that_org->GetTaxname() ) {
+                    PostErr(eDiag_Error,
+                        eErr_SEQ_DESCR_MultipleBioSources,
+                        "Undesired multiple source descriptors", seq, desc);
+                }
+            }
         }
     }
 }
@@ -2509,6 +2588,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/03/21 21:14:13  shomrat
+* Added check for Seq-ids on proteins; Implemented eErr_SEQ_DESCR_UnnecessaryBioSourceFocus
+*
 * Revision 1.23  2003/03/21 16:27:48  shomrat
 * Added ValidateIDSetAgainstDb
 *
