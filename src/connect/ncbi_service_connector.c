@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/03/07 23:01:07  lavr
+ * fSERV_Any used instead of 0 in SERVICE_CreateConnector
+ *
  * Revision 6.12  2001/03/06 23:55:37  lavr
  * SOCK_gethostaddr -> SOCK_gethostbyname
  *
@@ -552,7 +555,7 @@ static void s_Destroy(CONNECTOR connector)
 extern CONNECTOR SERVICE_CreateConnector
 (const char*          service)
 {
-    return SERVICE_CreateConnectorEx(service, 0, 0);
+    return SERVICE_CreateConnectorEx(service, fSERV_Any, 0);
 }
 
 extern CONNECTOR SERVICE_CreateConnectorEx
@@ -569,7 +572,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc = (SConnector*)        malloc(sizeof(SConnector));
     xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector));
     xxx->name = 0;
-    xxx->serv = strcpy((char *)malloc(strlen(service) + 1), service);
+    xxx->serv = strcpy((char*) malloc(strlen(service) + 1), service);
     xxx->info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create(service);
     if (type & fSERV_StatelessOnly)
         xxx->info->stateless = 1/*true*/;
