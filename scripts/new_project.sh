@@ -188,7 +188,7 @@ case "$builddir" in
 esac
 
 src=`sed -ne 's:^top_srcdir *= *\([^ ]*\):\1/src:p' < $builddir/Makefile.mk \
-     | head -1`
+     | head -n 1`
 test -n $src || src=${NCBI}/c++/src
 
 case "${proj_type}" in

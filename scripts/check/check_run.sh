@@ -58,7 +58,7 @@ echo "Building check script..."
 $make_check_script "$CHECK_RUN_LIST" "$build_dir" "" "$CHECK_RUN_FILE"
 
 # Check script build result
-if test $? -ne 0 -o `tail -2 $CHECK_RUN_FILE | grep -c res_log` -ne 0 ; then
+if test $? -ne 0 -o `tail -n 2 $CHECK_RUN_FILE | grep -c res_log` -ne 0 ; then
    echo "Error in compiling check script."
    exit 255
 fi
