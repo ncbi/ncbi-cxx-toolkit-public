@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/02/07 16:09:22  gouriano
+* correction of GetContainerElementTypeFamily for the case of copying objects
+*
 * Revision 1.36  2003/02/05 17:08:01  gouriano
 * added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
 *
@@ -1235,8 +1238,7 @@ ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
     _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
     const CContainerTypeInfo* ptr =
         dynamic_cast<const CContainerTypeInfo*>(typeInfo);
-    typeInfo = ptr->GetElementType();
-    return typeInfo->GetTypeFamily();
+    return GetRealTypeFamily(ptr->GetElementType());
 }
 
 
