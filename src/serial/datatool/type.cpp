@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/06/27 16:34:47  vasilche
+* Fixed generated comments.
+* Fixed class names conflict. Now internal classes' names begin with "C_".
+*
 * Revision 1.48  2000/05/24 20:09:30  vasilche
 * Implemented DTD generation.
 *
@@ -283,16 +287,6 @@ string CDataType::XmlTagName(void) const
     }
 }
 
-/*
-void CDataType::PrintDTD(CNcbiOstream& out) const
-{
-    out <<
-        "<!ELEMENT "<<XmlTagName()<<" >\n"
-        "\n";
-    
-}
-*/
-
 const string& CDataType::GlobalName(void) const
 {
     if ( !GetParentType() )
@@ -328,7 +322,14 @@ string CDataType::ClassName(void) const
     const string& cls = GetVar("_class");
     if ( !cls.empty() )
         return cls;
-    return 'C'+Identifier(m_MemberName);
+    if ( GetParentType() ) {
+        // local type
+        return "C_"+Identifier(m_MemberName);
+    }
+    else {
+        // global type
+        return 'C'+Identifier(m_MemberName);
+    }
 }
 
 string CDataType::FileName(void) const

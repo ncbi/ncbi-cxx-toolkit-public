@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/06/27 16:34:47  vasilche
+* Fixed generated comments.
+* Fixed class names conflict. Now internal classes' names begin with "C_".
+*
 * Revision 1.20  2000/06/27 13:22:00  vasilche
 * Added const modifier to generated IsSet*() methods.
 *
@@ -403,7 +407,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member types
     {
         code.ClassPublic() <<
-            "    // members types\n";
+            "    // members' types\n";
         iterate ( TMembers, i, m_Members ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
@@ -423,9 +427,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member getters & setters
     {
         code.ClassPublic() <<
-            "    // members getters\n";
+            "    // members' getters\n";
         setters <<
-            "    // members setters\n";
+            "    // members' setters\n";
         iterate ( TMembers, i, m_Members ) {
             // generate IsSet... method
             if ( i->optional ) {
@@ -703,7 +707,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member data
     {
         code.ClassPrivate() <<
-            "    // members data\n";
+            "    // members' data\n";
 		{
 	        iterate ( TMembers, i, m_Members ) {
 		        if ( i->haveFlag ) {

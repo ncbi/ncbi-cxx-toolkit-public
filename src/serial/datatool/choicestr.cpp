@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/06/27 16:34:48  vasilche
+* Fixed generated comments.
+* Fixed class names conflict. Now internal classes' names begin with "C_".
+*
 * Revision 1.18  2000/06/16 16:31:37  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -620,7 +624,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variant types
     {
         code.ClassPublic() <<
-            "    // variants types\n";
+            "    // variants' types\n";
         iterate ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
@@ -633,9 +637,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variant getters & setters
     {
         code.ClassPublic() <<
-            "    // variants getters\n";
+            "    // variants' getters\n";
         setters <<
-            "    // variants setters\n";
+            "    // variants' setters\n";
         iterate ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
@@ -768,7 +772,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variants data
     {
         code.ClassPrivate() <<
-            "    // variants data\n";
+            "    // variants' data\n";
         if ( haveUnion ) {
             code.ClassPrivate() << "    union {\n";
             iterate ( TVariants, i, m_Variants ) {
