@@ -179,7 +179,12 @@ CCgiContext* CCgiApplication::CreateContext
  int               ifd,
  int               ofd)
 {
-    return new CCgiContext(*this, args, env, inp, out, ifd, ofd);
+    int errBufSize =
+        GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 
+                            CNcbiRegistry::eReturn);
+    
+    return new CCgiContext(*this, args, env, inp, out, ifd, ofd,
+                           (errBufSize >= 0) ? (unsigned)errBufSize : 256);
 }
 
 void CCgiApplication::SetCafService(CCookieAffinity* caf)
@@ -684,6 +689,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/03/11 19:17:31  kuznets
+* Improved error diagnostics in CCgiRequest
+*
 * Revision 1.42  2003/03/03 16:36:46  kuznets
 * explicit use of std namespace when reffering exception
 *

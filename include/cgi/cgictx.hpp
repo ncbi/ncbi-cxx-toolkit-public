@@ -122,7 +122,8 @@ public:
                 CNcbiIstream*           inp  = 0 /* see ::CCgiRequest(istr) */,
                 CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */,
                 int                     ifd  = -1,
-                int                     ofd  = -1
+                int                     ofd  = -1,
+                unsigned int            errBufSize = 256 /* see ::CCgiRequest*/
                 );
     virtual ~CCgiContext(void);
 
@@ -312,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2003/03/11 19:17:10  kuznets
+* Improved error diagnostics in CCgiRequest
+*
 * Revision 1.24  2003/03/10 17:46:36  kuznets
 * iterate->ITERATE
 *

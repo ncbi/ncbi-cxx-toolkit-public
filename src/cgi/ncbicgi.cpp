@@ -771,8 +771,10 @@ CCgiRequest::CCgiRequest
  const CNcbiEnvironment* env,
  CNcbiIstream*           istr,
  TFlags                  flags,
- int                     ifd)
-    : m_Env(0)
+ int                     ifd,
+ unsigned int            errBufSize)
+    : m_Env(0),
+      m_errBufSize(errBufSize)
 {
     x_Init(args, env, istr, flags, ifd);
 }
@@ -784,8 +786,10 @@ CCgiRequest::CCgiRequest
  const char* const* envp,
  CNcbiIstream*      istr,
  TFlags             flags,
- int                ifd)
-    : m_Env(0)
+ int                ifd,
+ unsigned int       errBufSize)
+    : m_Env(0),
+      m_errBufSize(errBufSize)
 {
     CNcbiArguments args(argc, argv);
 
@@ -878,12 +882,29 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
             else {
                 str.resize(len);
                 for (size_t pos = 0;  pos < len;  ) {
-                    istr->read(&str[pos], len - pos);
+                    size_t rlen = len - pos;
+                    istr->read(&str[pos], rlen);
                     size_t count = istr->gcount();
                     if ( count == 0 ) {
                         if ( istr->eof() ) {
-                            THROW1_TRACE(runtime_error, "\
-CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
+                            string err =
+"CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF";
+                            string pos_str("(pos=");
+                            pos_str.append(NStr::UIntToString(pos));
+                            pos_str.append(";rlen=");
+                            pos_str.append(NStr::UIntToString(rlen));
+                            pos_str.append(")");
+
+                            if ( m_errBufSize && pos ) {
+                                unsigned min_pos =
+                                    (m_errBufSize < pos) ? m_errBufSize : pos;
+                                pos_str.append(str.c_str(), min_pos);
+                                if (m_errBufSize < pos) {
+                                    pos_str.append("[truncated...]");
+                                }
+                            }
+                            err.append(pos_str);
+                            THROW1_TRACE(runtime_error, err);
                         }
                         else {
                             THROW1_TRACE(runtime_error, "\
@@ -1158,6 +1179,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.67  2003/03/11 19:17:31  kuznets
+* Improved error diagnostics in CCgiRequest
+*
 * Revision 1.66  2003/02/24 20:01:54  gouriano
 * use template-based exceptions instead of errno and parse exceptions
 *

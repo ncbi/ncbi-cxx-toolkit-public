@@ -442,14 +442,16 @@ public:
                 const         CNcbiEnvironment* env  = 0,
                 CNcbiIstream* istr  = 0 /*NcbiCin*/,
                 TFlags        flags = 0,
-                int           ifd   = -1);
+                int           ifd   = -1,
+                unsigned int  errBufSize = 256);
     // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
     CCgiRequest(int                argc,
                 const char* const* argv,
                 const char* const* envp  = 0,
                 CNcbiIstream*      istr  = 0,
                 TFlags             flags = 0,
-                int                ifd   = -1);
+                int                ifd   = -1,
+                unsigned int       errBufSize = 256);
 
     // Destructor
     ~CCgiRequest(void);
@@ -542,6 +544,11 @@ private:
     // input file descriptor, if available.
     int           m_InputFD;
     bool          m_OwnInput;
+    // Request initialization error buffer size;
+    // when initialization code hits unexpected EOF it will try to 
+    // add diagnostics and print out accumulated request buffer 
+    // 0 in this variable means no buffer diagnostics
+    unsigned int  m_errBufSize;
 
     // the real constructor code
     void x_Init(const CNcbiArguments*   args,
@@ -701,6 +708,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.59  2003/03/11 19:17:10  kuznets
+* Improved error diagnostics in CCgiRequest
+*
 * Revision 1.58  2003/02/19 17:50:30  kuznets
 * Added function AddExpTime to CCgiCookie class
 *

@@ -99,7 +99,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          CNcbiIstream*           inp,
                          CNcbiOstream*           out,
                          int                     ifd,
-                         int                     ofd)
+                         int                     ofd,
+                         unsigned int            errBufSize)
     : m_App(app),
       m_Request(0),
       m_Response(out, ofd)
@@ -107,7 +108,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     try {
         m_Request.reset(new CCgiRequest(args ? args : &app.GetArguments(),
                                         env  ? env  : &app.GetEnvironment(),
-                                        inp, 0, ifd));
+                                        inp, 0, ifd, errBufSize));
     }
     catch (exception& _DEBUG_ARG(e)) {
         _TRACE("CCgiContext::CCgiContext: " << e.what());
@@ -116,7 +117,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
         char buf[1];
         CNcbiIstrstream dummy(buf, 0);
         m_Request.reset(new CCgiRequest
-                        (args, env, &dummy, CCgiRequest::fIgnoreQueryString));
+                        (args, env, &dummy, CCgiRequest::fIgnoreQueryString, 
+                         errBufSize));
     }
 }
 
@@ -282,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2003/03/11 19:17:31  kuznets
+* Improved error diagnostics in CCgiRequest
+*
 * Revision 1.29  2003/02/21 19:19:07  vakatov
 * CCgiContext::GetRequestValue() -- added optional arg "is_found"
 *
