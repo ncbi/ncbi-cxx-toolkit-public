@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/09/19 19:03:59  ucko
+* Use SIZE_TYPE to index strings.
+*
 * Revision 1.22  2001/08/31 20:05:46  ucko
 * Fix ICC build.
 *
@@ -351,7 +354,7 @@ string GetStdPath(const string& path)
     }
 #endif
     // Replace each native separator character with the 'standard' one.
-    for (int i = 0; i < stdpath.size(); i++) {
+    for (SIZE_TYPE i = 0; i < stdpath.size(); i++) {
         if ( IsDirSeparator(stdpath[i]) )
             stdpath[i] = '/';
     }
