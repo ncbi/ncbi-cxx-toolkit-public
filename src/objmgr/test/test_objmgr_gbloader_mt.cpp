@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/05/08 22:23:49  kimelman
+* MT fixes
+*
 * Revision 1.12  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -250,6 +253,9 @@ int CTestApplication::Run()
 
   memset(timing,0,sizeof(timing));
   
+  CORE_SetLOCK(MT_LOCK_cxx2c());
+  CORE_SetLOG(LOG_cxx2c());
+  
   LOG_POST("START: " << time(0) );;
   
   for(unsigned thr=tc,i=0 ; thr > 0 ; --thr)
@@ -293,6 +299,6 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+  return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 

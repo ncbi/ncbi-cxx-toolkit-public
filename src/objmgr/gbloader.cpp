@@ -105,9 +105,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
     m_Driver(driver)
 {
   GBLOG_POST( "CGBDataLoader");
-  CORE_SetLOG(LOG_cxx2c());
-  CORE_SetLOCK(MT_LOCK_cxx2c());
-
+  
 #if 0
   //#if defined(HAVE_LIBSYBASE) && defined(HAVE_LIBDL) 
   if(!m_Driver)
@@ -166,20 +164,25 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
     {
       if(!present) {
         get SSeqrefs
-       filter : choose foreign live and 1 with_sequence (either already present or live)
       }
       foreach(CSeqref) {
+        if(!contain the requested type of data) continue
         forech(get_list_of_subtrees to upload for given choice and range)
          {
-          CBlob_I it = CSeqref.getBlobs(range.min,range.max,choice,subtree_id);
+           CBlob_I it = CSeqref.getBlobs(range.min,range.max,choice,subtree_id);
          }
       }
   */
   GC();
 
   bool unreleased_mutex_run;
+  char s[100];
+  {
+    strstream ss(s,sizeof(s));
+    ss << "GetRecords " << choice ;
+  }
   int count=0;
-  m_LookupMutex.Lock("GetRecords");
+  m_LookupMutex.Lock(s);
   do
     {
       unreleased_mutex_run=true;
@@ -798,6 +801,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/05/08 22:23:48  kimelman
+* MT fixes
+*
 * Revision 1.34  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
