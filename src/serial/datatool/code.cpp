@@ -231,12 +231,12 @@ void CFileCode::GenerateCPP(const string& path) const
 bool CFileCode::GenerateUserHPP(const string& path) const
 {
     string fileName = path + GetUserHPPName();
-    CNcbiOfstream header(fileName.c_str(),
-                         IOS_BASE::out | IOS_BASE::ate);
+    CNcbiOfstream header(fileName.c_str(), IOS_BASE::app);
     if ( !header ) {
         ERR_POST("Cannot create file: " << fileName);
         return false;
     }
+	header.seekp(0, IOS_BASE::end);
     if ( streampos(header.tellp()) != streampos(0) ) {
         ERR_POST("Will not overwrite existing user file: " << fileName);
         return false;
@@ -300,11 +300,12 @@ bool CFileCode::GenerateUserHPP(const string& path) const
 bool CFileCode::GenerateUserCPP(const string& path) const
 {
     string fileName = path + GetUserCPPName();
-    CNcbiOfstream code(fileName.c_str(), IOS_BASE::out | IOS_BASE::ate);
+    CNcbiOfstream code(fileName.c_str(), IOS_BASE::app);
     if ( !code ) {
         ERR_POST("Cannot create file: " << fileName);
         return false;
     }
+	code.seekp(0, IOS_BASE::end);
     if ( streampos(code.tellp()) != streampos(0) ) {
         ERR_POST("Will not overwrite existing user file: " << fileName);
         return false;

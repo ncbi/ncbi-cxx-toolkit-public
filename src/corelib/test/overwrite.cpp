@@ -1,6 +1,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include <unistd.h>
+#if NCBI_OS_MSWIN
+# include <stdio.h>
+#else
+# include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -64,7 +68,7 @@ int main()
     }
     {
         // try to overwrite data
-        CNcbiOfstream o(fileName.c_str(), IOS_BASE::in | IOS_BASE::out);
+        CNcbiOfstream o(fileName.c_str(), IOS_BASE::app);
         if ( !o ) {
             ERR_POST("Cannot open file " << fileName);
             return 1;
