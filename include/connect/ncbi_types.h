@@ -47,6 +47,11 @@
  *
  */
 
+/* In the C++ Toolkit, this includes ncbiconf.h and lets us know
+ * whether we need to hack around WorkShop's stupidity.
+ */
+#include <connect/connect_export.h>
+
 #include <stddef.h>
 
 
@@ -68,10 +73,7 @@ typedef struct {
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
-#ifdef CONN_SUPPLY_TIMEOUTS
-       const STimeout *      kDefaultTimeout  = (const STimeout*)(-1);
-       const STimeout *      kInfiniteTimeout = (const STimeout*)( 0);
-#elif defined(__cplusplus)
+#if defined(__cplusplus)  &&  !defined(NCBI_COMPILER_WORKSHOP)
 static const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
 static const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
 #else
@@ -106,6 +108,10 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/08/28 18:47:25  ucko
+ * Go back to previous WorkShop hack, but include connect_export.h (for
+ * ncbiconf.h) so that it actually works reliably this time around.
+ *
  * Revision 6.7  2003/08/27 12:32:25  ucko
  * Yet another attempt to work around the WorkShop lossage with k*Timeout.
  *
