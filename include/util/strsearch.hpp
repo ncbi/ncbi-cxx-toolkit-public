@@ -145,8 +145,7 @@ private:
         
         // Retreive the transition state, give the transition character.
         int GetNextState(char letter) const {
-	    CState::TMapCharInt::const_iterator it = 
-	      m_Transitions.find(letter);
+	    TMapCharInt::const_iterator it = m_Transitions.find(letter);
 	    return it != m_Transitions.end() ?  it->second : sm_FailState;
         }
         
@@ -424,6 +423,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/11/06 15:08:03  ucko
+* Remove extraneous CState:: that caused trouble with MIPSpro.
+*
 * Revision 1.3  2002/11/05 22:58:57  shomrat
 * Coding style changes; Case sensetivity option added to finite state automata; Bug fix in GetNextState
 *
