@@ -42,6 +42,12 @@
 #include <stdexcept>
 
 
+/** @addtogroup Diagnostics
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -240,6 +246,8 @@ private:
     CNcbiDiag& operator= (const CNcbiDiag&);
 };
 
+
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -584,6 +592,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.55  2003/03/31 15:36:51  siyan
+ * Added doxygen support
+ *
  * Revision 1.54  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
