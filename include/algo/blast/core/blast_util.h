@@ -83,7 +83,6 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
  * @param program string name of program [in]
  * @param number Enumerated value of program [out]
 */
-NCBI_XBLAST_EXPORT
 Int2 BlastProgram2Number(const char *program, EBlastProgramType *number);
 
 /** Return string name for program given a number.  Return is zero on success.
