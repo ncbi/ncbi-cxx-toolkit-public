@@ -41,162 +41,163 @@
 extern "C" {
 #endif
 
-/* Defaults for PSI-BLAST options - these are application level options */
-#define PSI_MAX_NUM_PASSES      1
-#define PSI_SCALING_FACTOR      32
-
-/** Percent identity threshold for discarding near-identical matches */
-#define PSI_NEAR_IDENTICAL      0.94
-#define PSI_IDENTICAL           1.0
-
 /** Structure to describe the characteristics of a position in the multiple
  * sequence alignment data structure
  */
-typedef struct PsiMsaCell {
-    Uint1 letter;               /**< Preferred letter at this position */
+typedef struct PSIMsaCell {
+    Uint1   letter;             /**< Preferred letter at this position */
     Boolean is_aligned;         /**< Is this letter being used? */
-    double e_value;             /**< E-value of the highest HSP including this
-                                     position */
-    SSeqRange extents;          /**< Extent of this aligned position */
-} PsiMsaCell;
+} PSIMsaCell;
 
 /** Structure representing the dimensions of the multiple sequence alignment
  * data structure */
-typedef struct PsiMsaDimensions {
+typedef struct PSIMsaDimensions {
     Uint4 query_length; /**< Length of the query */
     Uint4 num_seqs;     /**< Number of distinct sequences aligned with the 
                           query */
-} PsiMsaDimensions;
+} PSIMsaDimensions;
 
-/** This structure is to be populated at the API level from the Seq-aligns */
-typedef struct PsiAlignmentData {
-    Uint4** res_counts;/**< matrix which keeps track of the number of
-                               residues aligned with the query at each query 
-                               position (columns of multiple alignment). Its
-                               dimensions are query_length by alphabet_size */
-    Uint4* match_seqs;/**< Count of how many sequences match the query
-                               at each query position, default value is 1 to 
-                               include the query itself. This dynamically 
-                               allocated array has a length of query_length */
-    PsiMsaCell** desc_matrix;   /**< Matrix of PsiMsaCell structures, each cell
-                                  represents an aligned character with the 
-                                  query. Its dimensions are query_length by
-                                  num_seqs + 1. FIXME: rename to msa?*/
-    Boolean* use_sequences;  /**< Determines if a sequence in the multiple
-                               sequence alignment structure above must be used
-                               or not. This dynamically allocated array has a 
-                               length of dimensions->num_seqs + 1 (the 
-                               additional element is for the query). It is mean
-                               to be used at the API level to inform the PSSM
-                               engine core which sequences to include or if the
-                               PSSM engine determines it no longer needs a
-                               sequence it will flag it so. */
+/** Multiple sequence alignment (msa) data structure containing the raw data 
+ * needed by the PSSM engine to create a PSSM. By convention, the first row of
+ * the data field contains the query sequence */
+typedef struct PSIMsa {
+    PSIMsaDimensions*   dimensions; /**< dimensions of the msa */
+    PSIMsaCell**        data;       /**< msa data */
+} PSIMsa;
 
-    PsiMsaDimensions* dimensions;     /**< Dimensions of the multiple sequence alignment
-                               (query size by number of sequences aligned + 1
-                               (to include the query) */
-    Uint1* query;   /**< Query sequence (aka master, consensus) */
-} PsiAlignmentData;
+/** Allocates and initializes the multiple sequence alignment data structure
+ * for use as input to the PSSM engine.
+ * @param dimensions dimensions of multiple sequence alignment data structure
+ * to allocate [in]
+ * @return allocated PSIMsa structure or NULL if out of memory.
+ */
+PSIMsa*
+PSIMsaNew(const PSIMsaDimensions* dimensions);
 
-/** The functions to create internal structure to store intermediate data 
- * while creating a PSSM */
-PsiAlignmentData*
-PSIAlignmentDataNew(const Uint1* query, const PsiMsaDimensions* info);
+/** Deallocates the PSIMsa structure
+ * @param msa multiple sequence alignment structure to deallocate [in]
+ * @return NULL
+ */
+PSIMsa*
+PSIMsaFree(PSIMsa* msa);
 
-PsiAlignmentData*
-PSIAlignmentDataFree(PsiAlignmentData* align_data);
+/** This is the main return value from the PSSM engine */
+typedef struct PSIMatrix {
+    Uint4   ncols;      /**< Number of columns in PSSM (query_length) */
+    Uint4   nrows;      /**< Number of rows in PSSM (alphabet_size) */
+    int**   pssm;       /**< Position-specific score matrix */
+    double  lambda;     /**< Lambda Karlin-Altschul parameter */
+    double  kappa;      /**< Kappa Karlin-Altschul parameter */
+    double  h;          /**< H Karlin-Altschul parameter */
+} PSIMatrix;
 
-/** This is the return value from all the processing performed in this library.
- * At the API level this information should be copied into an Score-mat ASN.1
- * object */
-typedef struct PsiMatrix {
-    int** pssm;             /**< The PSSM, its dimensions are query_length by 
-                                 BLASTAA_SIZE */
-    int** scaled_pssm;      /**< not to be used by the public ? Dimensions are
-                                 the same as above Needed in the last 2 stages
-                                 of PSI-BLAST */
-    double** res_freqs;     /**< The residue frequencies. Dimensions are
-                              query_length by BLASTAA_SIZE */
-    Uint4 ncols;            /**< Number of columns in the matrices above
-                                 (query size) */
-} PsiMatrix;
-
-/** Allocates a new PsiMatrix structure */
-PsiMatrix*
+/** Allocates a new PSIMatrix structure 
+ * @param query_length number of columns allocated for the PSSM [in]
+ * @param alphabet_size number of rows allocated for the PSSM [in]
+ * @return pointer to allocated PSIMatrix structure or NULL if out of memory
+ */
+PSIMatrix*
 PSIMatrixNew(Uint4 query_length, Uint4 alphabet_size);
 
-/** Deallocates the PsiMatrix structure passed in.
+/** Deallocates the PSIMatrix structure passed in.
  * @param matrix structure to deallocate [in]
  * @return NULL
  */
-PsiMatrix*
-PSIMatrixFree(PsiMatrix* matrix);
+PSIMatrix*
+PSIMatrixFree(PSIMatrix* matrix);
 
 /** Structure to allow requesting various diagnostics data to be collected by
  * PSSM engine */
-typedef struct PsiDiagnosticsRequest {
-    unsigned int information_content      : 1;
-    unsigned int residue_frequencies      : 1;
-    unsigned int raw_residue_counts       : 1;
-    unsigned int sequence_weights         : 1;
-    unsigned int gapless_column_weights   : 1;
-    unsigned int lambda                   : 1;
-    unsigned int kappa                    : 1;
-    unsigned int h                        : 1;
-} PsiDiagnosticsRequest;
+typedef struct PSIDiagnosticsRequest {
+    Boolean information_content;
+    Boolean residue_frequencies;
+    Boolean raw_residue_counts;
+    Boolean sequence_weights;
+    Boolean gapless_column_weights;
+} PSIDiagnosticsRequest;
 
-/** This structure returns the diagnostics information requested using the
- * PsiDiagnosticsRequest structure */
-typedef struct PsiDiagnosticsResponse {
-    double* info_content;           /**< position information content 
-                                      (query_length elements)*/
-    double** res_freqs;             /**< The residue frequencies. Dimensions 
-                                      are query_length by BLASTAA_SIZE */
-    Uint4** res_counts;             /**< copied from PsiAlignmentData */
-    double* sequence_weights;       /**< copied from 
-                                      PsiSequenceWeights::norm_seq_weights */
-    double* gapless_column_weights; /**< collected while calculating sequence
-                                      weights */
-    double lambda;                  /**< Karlin-Altschul parameter */
-    double kappa;                   /**< Karlin-Altschul parameter */
-    double h;                       /**< Karlin-Altschul parameter */
+/** This structure contains the diagnostics information requested using the
+ * PSIDiagnosticsRequest structure */
+typedef struct PSIDiagnosticsResponse {
+    double* information_content;           /**< position information content
+                                             (dimensions->query_length 
+                                             elements)*/
+    double** residue_frequencies;          /**< PSSM's residue frequencies
+                                             (Dimensions are
+                                             dimensions->query_length by
+                                             alphabet_size) */
+    Uint4** raw_residue_counts;            /**< Raw residue counts at each
+                                             position of the query (Dimensions
+                                             are dimensions->query_length by
+                                             alphabet_size) */
+    double* sequence_weights;              /**< Normalized sequence weights
+                                             (dimensions->num_seqs+1 elements)*/
+    double* gapless_column_weights;        /**< Weights for columns without
+                                             gaps (dimensions->query_length
+                                             elements) */
+    PSIMsaDimensions* dimensions;          /**< Dimensions for matrices */
+    Uint4 alphabet_size;                   /**< Specifies length of alphabet */
+} PSIDiagnosticsResponse;
 
-    PsiMsaDimensions* dimensions;
-    Uint4 alphabet_size;
-} PsiDiagnosticsResponse;
-
-/** Allocates a new PSI-BLAST diagnostics structure
+/** Allocates a new PSI-BLAST diagnostics structure based on which fields of
+ * the PSIDiagnosticsRequest structure are TRUE. Note: this is declared
+ * here for consistency - this does not need to be called by client code of
+ * this API, it is called in the PSICreatePssm* functions to allocate the 
+ * diagnostics response structure.
  * @param msa_dimensions dimensions of the multiple alignment [in]
  * @param alphabet_size length of the alphabet [in]
- * @param wants diagnostics to retrieve from PSSM engine [in]
+ * @param request diagnostics to retrieve from PSSM engine [in]
+ * @return pointer to allocated PSIDiagnosticsResponse or NULL if dimensions or
+ * request are NULL
  */
-PsiDiagnosticsResponse*
-PSIDiagnosticsResponseNew(const PsiMsaDimensions* dimensions,
+PSIDiagnosticsResponse*
+PSIDiagnosticsResponseNew(const PSIMsaDimensions* dimensions,
                           Uint4 alphabet_size, 
-                          const PsiDiagnosticsRequest* wants);
+                          const PSIDiagnosticsRequest* request);
 
-/** Deallocates the PsiDiagnosticsResponse structure passed in.
+/** Deallocates the PSIDiagnosticsResponse structure passed in.
  * @param diags structure to deallocate [in]
  * @return NULL
  */
-PsiDiagnosticsResponse*
-PSIDiagnosticsResponseFree(PsiDiagnosticsResponse* diags);
+PSIDiagnosticsResponse*
+PSIDiagnosticsResponseFree(PSIDiagnosticsResponse* diags);
 
 /****************************************************************************/
 
-/* TOP LEVEL FUNCTION FIXME: alignment should contain data from multiple
- * sequence alignment 
- * @param diagnostics If non-NULL this structure will be populated and it is
- *        the caller's responsibility to deallocate this structure.
- * @return The PSSM along with residue frequencies and statistical information
- * (the latter is returned in the sbp)
+/** Main entry point to core PSSM engine to calculate the PSSM.
+ * @param msap multiple sequence alignment data structure [in]
+ * @param options options to the PSSM engine [in]
+ * @param sbp BLAST score block structure [in|out]
+ * @param pssm PSSM and statistical information (the latter is also returned 
+ * in the sbp->kbp_gap_psi[0]) 
+ * @return 0 on success, else failure (FIXME)
  */
-PsiMatrix*
-PSICreatePSSM(PsiAlignmentData* alignment,      /* [in] but modified */
-              const PSIBlastOptions* options,   /* [in] */
-              BlastScoreBlk* sbp,               /* [in] */
-              PsiDiagnosticsResponse* diagnostics);     /* [out] */
+int
+PSICreatePssm(const PSIMsa* msap,
+              const PSIBlastOptions* options,
+              BlastScoreBlk* sbp,
+              PSIMatrix** pssm);
 
+/** Main entry point to core PSSM engine which allows to request diagnostics
+ * information.
+ * @param msap multiple sequence alignment data structure [in]
+ * @param options options to the PSSM engine [in]
+ * @param sbp BLAST score block structure [in|out]
+ * @param request diagnostics information request [in]
+ * @param pssm PSSM and statistical information (the latter is also returned 
+ * in the sbp->kbp_gap_psi[0]) 
+ * @param diagnostics diagnostics information response, expects a pointer to an
+ * uninitialized structure which will be populated with data requested in
+ * requests [in]
+ * @return 0 on success, else failure (FIXME)
+ */
+int
+PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
+                             const PSIBlastOptions* options,        /* [in] */
+                             BlastScoreBlk* sbp,                    /* [in] */
+                             const PSIDiagnosticsRequest* request,  /* [in] */
+                             PSIMatrix** pssm,                      /* [out] */
+                             PSIDiagnosticsResponse** diagnostics); /* [out] */
 #ifdef __cplusplus
 }
 #endif
