@@ -50,7 +50,9 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_RestrictEnd  (oid_end),
       m_NextChunkOID (0),
       m_NumSeqs      (0),
+      m_NumOIDs      (0),
       m_TotalLength  (0),
+      m_VolumeLength (0),
       m_SeqType      (prot_nucl)
 {
     m_Aliases.SetMasks(m_VolSet);
@@ -60,18 +62,20 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     }
     
     if ((oid_begin == 0) && (oid_end == 0)) {
-        m_RestrictEnd = m_VolSet.GetNumSeqs();
+        m_RestrictEnd = m_VolSet.GetNumOIDs();
     } else {
-        if (m_RestrictEnd > m_VolSet.GetNumSeqs()) {
-            m_RestrictEnd = m_VolSet.GetNumSeqs();
+        if (m_RestrictEnd > m_VolSet.GetNumOIDs()) {
+            m_RestrictEnd = m_VolSet.GetNumOIDs();
         }
         if (m_RestrictBegin > m_RestrictEnd) {
             m_RestrictBegin = m_RestrictEnd;
         }
     }
     
-    m_NumSeqs     = x_GetNumSeqs();
-    m_TotalLength = x_GetTotalLength();
+    m_NumSeqs      = x_GetNumSeqs();
+    m_NumOIDs      = x_GetNumOIDs();
+    m_TotalLength  = x_GetTotalLength();
+    m_VolumeLength = x_GetVolumeLength();
     
     try {
         m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
@@ -327,9 +331,19 @@ Uint4 CSeqDBImpl::GetNumSeqs(void) const
     return m_NumSeqs;
 }
 
+Uint4 CSeqDBImpl::GetNumOIDs(void) const
+{
+    return m_NumOIDs;
+}
+
 Uint8 CSeqDBImpl::GetTotalLength(void) const
 {
     return m_TotalLength;
+}
+
+Uint8 CSeqDBImpl::GetVolumeLength(void) const
+{
+    return m_VolumeLength;
 }
 
 Uint4 CSeqDBImpl::x_GetNumSeqs(void) const
@@ -337,9 +351,23 @@ Uint4 CSeqDBImpl::x_GetNumSeqs(void) const
     return m_Aliases.GetNumSeqs(m_VolSet);
 }
 
+Uint4 CSeqDBImpl::x_GetNumOIDs(void) const
+{
+    Uint4 num_oids = m_VolSet.GetNumOIDs();
+    
+    _ASSERT(num_oids == m_Aliases.GetNumOIDs(m_VolSet));
+    
+    return num_oids;
+}
+
 Uint8 CSeqDBImpl::x_GetTotalLength(void) const
 {
     return m_Aliases.GetTotalLength(m_VolSet);
+}
+
+Uint8 CSeqDBImpl::x_GetVolumeLength(void) const
+{
+    return m_Aliases.GetVolumeLength(m_VolSet);
 }
 
 string CSeqDBImpl::GetTitle(void) const
@@ -566,13 +594,13 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<Uint4> & oids) con
 
 Uint4 CSeqDBImpl::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
 {
-    if (first_seq >= m_NumSeqs) {
+    if (first_seq >= m_NumOIDs) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "OID not in valid range.");
     }
     
-    if (residue >= m_TotalLength) {
+    if (residue >= m_VolumeLength) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Residue offset not in valid range.");
@@ -583,8 +611,8 @@ Uint4 CSeqDBImpl::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
     for(Uint4 vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
         const CSeqDBVol * volp = m_VolSet.GetVol(vol_idx);
         
-        Uint4 vol_cnt = volp->GetNumSeqs();
-        Uint8 vol_len = volp->GetTotalLength();
+        Uint4 vol_cnt = volp->GetNumOIDs();
+        Uint8 vol_len = volp->GetVolumeLength();
         
         // Both limits fit this volume, delegate to volume code.
         

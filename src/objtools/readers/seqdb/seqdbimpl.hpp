@@ -114,9 +114,27 @@ public:
     
     string GetDate() const;
     
+    /// Returns the number of sequences available.
     Uint4 GetNumSeqs() const;
     
+    /// Returns the size of the (possibly sparse) OID range.
+    Uint4 GetNumOIDs(void) const;
+    
+    /// Returns the sum of the lengths of all available sequences.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  It provides an exact value, without iterating
+    /// over individual sequences.
     Uint8 GetTotalLength() const;
+    
+    /// Returns the sum of the lengths of all volumes.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// (but not the alias files).  It provides an exact value,
+    /// without iterating over individual sequences.  It includes all
+    /// OIDs regardless of inclusion by the filtering mechanisms of
+    /// the alias files.
+    Uint8 GetVolumeLength(void) const;
     
     Uint4 GetMaxLength() const;
     
@@ -164,7 +182,11 @@ private:
     
     Uint4 x_GetNumSeqs() const;
     
+    Uint4 x_GetNumOIDs() const;
+    
     Uint8 x_GetTotalLength() const;
+    
+    Uint8 x_GetVolumeLength() const;
     
     CSeqDBImplFlush       m_FlushCB;
     mutable CSeqDBAtlas   m_Atlas;
@@ -179,7 +201,9 @@ private:
     Uint4                 m_NextChunkOID;
     
     Uint4                 m_NumSeqs;
+    Uint4                 m_NumOIDs;
     Uint8                 m_TotalLength;
+    Uint8                 m_VolumeLength;
     char                  m_SeqType;
 };
 
