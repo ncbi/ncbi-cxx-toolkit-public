@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.157  2002/09/13 14:21:45  thiessen
+* finish hooking up browser launch on unix
+*
 * Revision 1.156  2002/09/09 22:51:19  thiessen
 * add basic taxonomy tree viewer
 *
@@ -870,6 +873,14 @@ void Cn3DApp::InitRegistry(void)
 
     // default advanced options
     RegistrySetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, true);
+#ifdef __WXGTK__
+    RegistrySetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, 
+        // for launching netscape in a separate window
+        "( netscape -noraise -remote 'openURL(<URL>,new-window)' || netscape '<URL>' ) >/dev/null 2>&1 &"
+        // for launching netscape in an existing window
+//        "( netscape -raise -remote 'openURL(<URL>)' || netscape '<URL>' ) >/dev/null 2>&1 &"
+    );
+#endif
 
     // load program registry - overriding defaults if present
     if (GetPrefsDir().size() > 0)

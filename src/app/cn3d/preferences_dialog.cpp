@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/09/13 14:21:45  thiessen
+* finish hooking up browser launch on unix
+*
 * Revision 1.14  2002/09/13 13:44:34  thiessen
 * add browser launch item to prefs dialog
 *
@@ -127,6 +130,7 @@ wxSizer *SetupQualityPage( wxWindow *parent, bool call_fit = TRUE, bool set_size
 wxSizer *SetupCachePage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_C_ANNOT_RO 10018
+#define ID_T_LAUNCH 10019
 wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +185,17 @@ END_EVENT_TABLE()
             radio->SetStringSelection(value.c_str()); \
     } while (0)
 
+#define SET_TEXTCTRL_FROM_REGISTRY_VALUE(section, name, id) \
+    do { \
+        std::string value; \
+        wxTextCtrl *text = wxDynamicCast(FindWindow(id), wxTextCtrl); \
+        if (!text || !RegistryGetString((section), (name), &value)) \
+            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+        else \
+            text->SetValue(value.c_str()); \
+    } while (0)
+
+
 PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     wxDialog(parent, -1, "Preferences", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU) // not resizable
@@ -208,15 +223,16 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     SET_RADIOBOX_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, ID_RADIOBOX);
 
     SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_ENABLED, ID_C_CACHE_ON);
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
-    std::string folder;
-    RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &folder);
-    tCache->SetValue(folder.c_str());
+    SET_TEXTCTRL_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_FOLDER, ID_T_CACHE_FOLDER);
+    
     SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize);
     wxCommandEvent fakeCheck(wxEVT_COMMAND_CHECKBOX_CLICKED, ID_C_CACHE_ON);
     OnCheckbox(fakeCheck);  // set initial GUI enabled state
 
     SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, ID_C_ANNOT_RO);
+#ifdef __WXGTK__
+    SET_TEXTCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, ID_T_LAUNCH);
+#endif
 
     // call sizer stuff
     topSizer->Fit(this);
@@ -315,6 +331,10 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
         SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize, NULL);
 
         SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, ID_C_ANNOT_RO, NULL);
+#ifdef __WXGTK__
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tLaunch, ID_T_LAUNCH, wxTextCtrl)
+        SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, tLaunch);
+#endif
 
         // Limit cache size to current value now
         int size;
@@ -487,7 +507,7 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
     wxFlexGridSizer *item4 = new wxFlexGridSizer( 1, 0, 0, 0 );
     item4->AddGrowableCol( 0 );
 
-    wxTextCtrl *item5 = new wxTextCtrl( parent, ID_TEXTCTRL, "", wxDefaultPosition, wxSize(80,-1), 0 );
+    wxTextCtrl *item5 = new wxTextCtrl( parent, ID_T_LAUNCH, "", wxDefaultPosition, wxSize(80,-1), 0 );
     item4->Add( item5, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxStaticText *item6 = new wxStaticText( parent, ID_TEXT, "Browser launch", wxDefaultPosition, wxDefaultSize, 0 );

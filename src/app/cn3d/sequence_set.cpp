@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2002/09/13 14:21:45  thiessen
+* finish hooking up browser launch on unix
+*
 * Revision 1.48  2002/09/06 18:56:48  thiessen
 * add taxonomy to description
 *
@@ -732,11 +735,13 @@ void LaunchWebPage(const char *url)
     }
 
 #elif defined(__WXGTK__)
-    CNcbiOstrstream oss;
-    oss << "( netscape -noraise -remote 'openURL(" << url << ",new-window)' || netscape '" << url
-        << "' ) >/dev/null 2>&1 &" << '\0';
-    system(oss.str());
-    delete oss.str();
+    std::string command;
+    RegistryGetString(REG_ADVANCED_SECTION, REG_BROWSER_LAUNCH, &command);
+    size_t pos = 0;
+    while ((pos=command.find("<URL>", pos)) != std::string::npos)
+        command.replace(pos, 5, url);
+    TESTMSG("launching browser: " << command);
+    system(command.c_str());
 
 #elif defined(__WXMAC__)
     Nlm_SendURLAppleEvent (url, "MOSS", NULL);

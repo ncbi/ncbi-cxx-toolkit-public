@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/09/13 14:21:45  thiessen
+* finish hooking up browser launch on unix
+*
 * Revision 1.19  2002/08/28 20:30:33  thiessen
 * fix proximity sort bug
 *
@@ -180,6 +183,9 @@ static const std::string
     REG_CACHE_MAX_SIZE = "CacheSizeMax",
     // advanced options
     REG_ADVANCED_SECTION = "Cn3D-4-Advanced",
+#ifdef __WXGTK__
+    REG_BROWSER_LAUNCH = "BrowserLaunchCommand",
+#endif
     REG_CDD_ANNOT_READONLY = "CDDAnnotationsReadOnly";
 
 
