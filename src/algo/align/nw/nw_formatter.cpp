@@ -38,6 +38,7 @@
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
+#include <iterator>
 
 BEGIN_NCBI_SCOPE
 
@@ -454,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/03 01:19:32  ucko
+ * +<iterator> (needed for ostream_iterator<> with some compilers)
+ *
  * Revision 1.1  2003/09/02 22:34:49  kapustin
  * Initial revision
  *
