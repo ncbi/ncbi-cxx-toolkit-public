@@ -66,6 +66,8 @@ extern "C" {
 
 #ifdef _MSC_VER
 #define NCBI_INLINE __inline
+#elif defined(__sgi)  &&  !defined(__GNUC__)  &&  !defined(__cplusplus)
+#define NCBI_INLINE
 #else
 #define NCBI_INLINE inline
 #endif
