@@ -82,7 +82,7 @@ int CPubseqSeqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
 }
 
 CPubseqReader::CPubseqReader(unsigned noConn,const string& server,const string& user,const string& pswd)
-  : m_Server(server) , m_User(user), m_Password(pswd)
+  : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL)
 {
   for(unsigned i = 0; i < noConn; ++i)
     m_Pool.push_back(NewConn());
@@ -113,11 +113,15 @@ void CPubseqReader::SetParalellLevel(unsigned size)
 
 CDB_Connection *CPubseqReader::NewConn()
 {
-#ifdef CPUBSEQREADER_NO_DB
-  throw runtime_error("No suitable DB API found");
-#else
-  return m_Context.Connect(m_Server,m_User,m_Password, 0);
-#endif
+  C_DriverMgr drvMgr;
+  FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib");
+  if(! createContextFunc)
+    throw runtime_error("No ctlib available");
+
+  if(m_Context.get() != NULL)
+    m_Context.reset((*createContextFunc)(0));
+
+  return m_Context->Connect("PUBSEQ_OS", "anyone", "allowed", 0);
 }
 
 void CPubseqReader::Reconnect(unsigned conn)
@@ -367,6 +371,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2002/04/11 17:47:17  butanaev
+* Switched to using dbapi driver manager.
+*
 * Revision 1.3  2002/04/10 22:47:56  kimelman
 * added pubseq_reader as default one
 *
