@@ -296,6 +296,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_DESCR_ObsoleteSourceQual",
     "SEQ_DESCR_StructuredSourceNote",
     "SEQ_DESCR_MultipleTitles",
+    "eErr_SEQ_DESCR_Obsolete",
 
     "GENERIC_NonAsciiAsn",
     "GENERIC_Spell",
@@ -627,6 +628,8 @@ records.",
 The data should probably be put into the appropriate field instead.",
 
 "There are multiple title descriptors in the same chain.",
+
+"Obsolete descriptor type.",
 
 /* SEQ_GENERIC */
 
@@ -1011,6 +1014,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/02/12 17:38:58  shomrat
+* Added eErr_SEQ_DESCR_Obsolete
+*
 * Revision 1.8  2003/02/07 21:10:55  shomrat
 * Added eErr_SEQ_INST_TerminalNs
 *
