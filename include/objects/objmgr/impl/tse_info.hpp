@@ -104,8 +104,6 @@ public:
     static void x_DropRangeMap(TAnnotSelectorMap& selMap,
                                const SAnnotSelector& selector);
 
-    void CounterOverflow(void) const;
-    void CounterUnderflow(void) const;
     bool CounterLocked(void) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -133,6 +131,8 @@ private:
 
     void LockCounter(void) const;
     void UnlockCounter(void) const;
+    void CounterOverflow(void) const;
+    void CounterUnderflow(void) const;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
@@ -421,6 +421,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/18 14:50:08  grichenk
+* Made CounterOverflow() and CounterUnderflow() private
+*
 * Revision 1.24  2003/03/14 19:10:39  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *
