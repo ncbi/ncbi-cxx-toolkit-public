@@ -13,10 +13,17 @@ To help jump-start your first project utilizing the new C++
 a special CVS folder <tt>c++/src/internal/objmgr_lab</tt>.
 There is already a sub-folder <tt>sample</tt> containing
 a working sample project (makefiles and a source file).
+</p>
+<p>
+In case you have no access to the C++ Toolkit CVS tree
+(that is you are not in the <i>coreprog</i> UNIX group), please
+<a href="#nocvs">click here</a>.
+</p>
 <p>
 We suggest creating your own folder under
 <tt>c++/src/internal/objmgr_lab</tt>,
 and using <tt>sample</tt> as a start-up template for your learning project:
+</p>
 
 <ul>
 <li>extract the the sample project from the C++ tree</li>
@@ -27,12 +34,22 @@ and using <tt>sample</tt> as a start-up template for your learning project:
 <li>now all you have to do is change the sample code into a real one</li>
 </ul>
 
-The detailed step-by-step instructions:
+
+
+
+
+
+
+
+
 <p>
+The detailed step-by-step instructions:
+</p>
 
 <hr>
-<p>
-1. Create a working folder, let's call it <i>omlab</i> in your home dir, and
+<ol>
+<li>
+Create a working folder, let's call it <i>omlab</i> in your home dir, and
 extract the <VAR>Object Manager</VAR> learning task folder
 (including the sample project) from the C++ tree
 <pre>
@@ -40,12 +57,11 @@ mkdir ~/<i>omlab</i>
 cd ~/<i>omlab</i>
 $NCBI/c++/scripts/import_project.sh internal/objmgr_lab/sample
 </pre>
-</p>
+</li>
 
 
-<hr>
-<p>
-2. Make sure the sample project builds and works fine
+<li>
+Make sure the sample project builds and works fine
 <pre>
 cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab/sample
 make
@@ -66,72 +82,125 @@ Sequence:  length=263,  data=MARFLGLCTW
    [whole]           Any:    0
 Done
 </pre>
-</p>
+</li>
 
 
-<hr>
-<p>
-3. Create your own project folder (we suggest using your user name, so let us call it <i>userid</i>),
+<li>
+Create your own project folder (we suggest using your user name, so let us call it <i>userid</i>),
 and add it to the CVS tree
 <pre>
 cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab
 mkdir <i>userid</i>
 cvs add <i>userid</i>
 </pre>
-</p>
+</li>
 
 
-<hr>
-<p>
-4. Copy files from the sample project, and commit them to the CVS tree as well
+<li>
+Copy files from the sample project, and commit them to the CVS tree as well
 <pre>
 cp -p sample/Makefile.in sample/Makefile.task.app sample/task.cpp <i>userid</i>
 cd <i>userid</i>
 cvs add    -m 'C++ Object Manager learning task' *.*
 cvs commit -m 'Initial revision (a copy of the sample application)'
 </pre>
-</p>
+</li>
 
 
-<hr>
-<p>
-5. Generate local makefiles for your project using <i>import_project.sh</i>
+<li>
+Generate local makefiles for your project using <i>import_project.sh</i>
 shell script
 <pre>
 cd ~/omlab
 $NCBI/c++/scripts/import_project.sh internal/objmgr_lab/<i>userid</i>
 </pre>
-</p>
+</li>
 
 
-<hr>
-<p>
-6. Build your project
+<li>
+Build your project
 <pre>
 cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab/<i>userid</i>
 make
 </pre>
-</p>
+</li>
 
 
-<hr>
-<p>
-7. Run your application
+<li>
+Run your application
 <pre>
 ./omtask1 -gi 333
 </pre>
 It must yield the same output as the
 sample application (see <a href="#ref_SampleOutput">above</a>)
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+<a name="nocvs"></a>
+<p>
+If you are <b>not</b> in the <i>coreprog</i> UNIX group and
+have no access to the C++ Toolkit CVS tree, please do the following
+(<i>userid</i> stands here for your name, or whatever you want to call your project folder):
+<ol>
+<li>
+  Create a new project called <i>app</i> using <tt>new_project.sh</tt> shell script:
+  <pre>
+$NCBI/c++/scripts/new_project.sh <i>userid</i> <i>app</i>
+cd <i>userid</i>
+cp -p $NCBI/c++/src/internal/objmgr_lab/sample/task.cpp .
+  </pre>
+</li>
+<li>
+  In your model makefile <tt>Makefile.<i>userid_app</i></tt>, replace the whole
+  <tt>settings</tt> section, exactly this way:
+  <pre>
+#############################################################################
+###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+APP = omtask1
+SRC = task
+LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+      xser xutil xconnect xncbi
+
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
+####################################################################
+  </pre>
+</li>
+<li>
+  Build the sample project and run the application:
+  <pre>
+make -f Makefile.<i>userid_app</i>
+./omtask1 -gi 333
+  </pre>
+</li>
+</ol>
 </p>
+
+
 
 <hr>
 <p>
 <i>CONGRATULATIONS!</i>
-<p>
+<br>
 You are done with setting up the framework. -- Now you can go ahead and
 just convert the sample code in the <tt>task.cpp</tt> into 
 the code that performs your learning task.
-<p>
+<br>
 <b>
 To avoid tempting other participants to go the easy way (i.e. copycat)
 please do NOT commit your own code back into CVS until the very end of
@@ -139,10 +208,9 @@ the learning cycle!
 </b>
 --
 <i>Thank you for your understanding.</i>
+</p>
 
 
-<p>
-<p>
 <hr>
 <table border=0 width="100%" cellspacing=0>
 <tr>
