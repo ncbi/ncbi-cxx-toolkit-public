@@ -556,7 +556,7 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
         if (program == eRPSBlast)
             program = eBlastp;
         if (program == eRPSTblastn)
-            program = eTblastn;
+            program = eBlastx;
 
         CBlastFormatOptions format_options(program, args["out"].AsOutputFile());
         
