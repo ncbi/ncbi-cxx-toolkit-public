@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature Definition Module
@@ -34,6 +34,10 @@ FeatDispGroup ::= SEQUENCE {
     groupname VisibleString }
 
 FeatDispGroupSet ::= SEQUENCE OF FeatDispGroup
+
+FeatDefGroupSet ::= SEQUENCE {
+	groups FeatDispGroupSet ,
+	defs FeatDefSet }
 
 END
 
