@@ -116,12 +116,8 @@ EDB_Type CMySQL_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CMySQL_RowResult::Fetch()
 {
-  bool fetched = (m_Row = mysql_fetch_row(m_Result));
-  if(fetched && m_Row == NULL)
-    throw CDB_ClientEx(eDB_Warning, 800005,
-                       "CMySQL_RowResult::Fetch",
-                       "Failed: mysql_fetch_row");
-  if(fetched)
+  m_Row = mysql_fetch_row(m_Result);
+  if(m_Row)
   {
     m_Lengths = mysql_fetch_lengths(m_Result);
     if(m_Lengths == NULL)
@@ -130,7 +126,7 @@ bool CMySQL_RowResult::Fetch()
                          "Failed: mysql_fetch_lengths");
   }
   m_CurrItem = 0;
-  return fetched;
+  return m_Row;
 }
 
 int CMySQL_RowResult::CurrentItemNo() const
@@ -285,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/01/03 18:12:23  butanaev
+ * Removed unneeded code from Fetch().
+ *
  * Revision 1.2  2002/08/28 17:18:20  butanaev
  * Improved error handling, demo app.
  *
