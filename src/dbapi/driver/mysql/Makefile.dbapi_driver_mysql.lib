@@ -1,0 +1,10 @@
+# $Id$
+
+SRC = connection context lang_cmd result
+LIB = dbapi_driver_mysql
+
+MYSQL_INCLUDE = -I/usr/local/mysql/include/mysql
+MYSQL_LIBS = -L/usr/local/mysql/lib/mysql -lmysqlclient
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(MYSQL_INCLUDE)
+LIBS = $(MYSQL_LIBS) $(ORIG_LIBS)
