@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/08 19:24:17  vasilche
+* Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
+*
 * Revision 1.17  2000/10/20 15:51:23  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -373,6 +376,28 @@ private:
     TTypeInfo m_NeedType;
 };
 
+// template base class for CTypeIterator<> and CTypeConstIterator<>
+// Do not use it directly
+template<class Parent>
+class CLeafTypeIteratorBase : public CTypeIteratorBase<Parent>
+{
+    typedef CTypeIteratorBase<Parent> CParent;
+protected:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
+    CLeafTypeIteratorBase(TTypeInfo needType)
+        : CParent(needType)
+        {
+        }
+    CLeafTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo)
+        : CParent(needType)
+        {
+            Init(beginInfo);
+        }
+
+    virtual bool CanSelect(const CConstObjectInfo& object);
+};
+
 // template base class for CTypesIterator and CTypesConstIterator
 // Do not use it directly
 template<class Parent>
@@ -503,6 +528,80 @@ public:
         }
 
     CTypeConstIterator<C, TypeGetter>& operator=(const TBeginInfo& beginInfo)
+        {
+            Init(beginInfo);
+            return *this;
+        }
+
+    const C& operator*(void) const
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    const C* operator->(void) const
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+};
+
+// template class for iteration on objects of class C
+template<class C>
+class CLeafTypeIterator : public CLeafTypeIteratorBase<CTreeIterator>
+{
+    typedef CLeafTypeIteratorBase<CTreeIterator> CParent;
+public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
+    CLeafTypeIterator(void)
+        : CParent(C::GetTypeInfo())
+        {
+        }
+    CLeafTypeIterator(const TBeginInfo& beginInfo)
+        : CParent(C::GetTypeInfo(), beginInfo)
+        {
+        }
+
+    CLeafTypeIterator<C>& operator=(const TBeginInfo& beginInfo)
+        {
+            Init(beginInfo);
+            return *this;
+        }
+
+    C& operator*(void)
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    const C& operator*(void) const
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    C* operator->(void)
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    const C* operator->(void) const
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+};
+
+// template class for iteration on objects of class C (non-medifiable version)
+template<class C>
+class CLeafTypeConstIterator : public CLeafTypeIteratorBase<CTreeConstIterator>
+{
+    typedef CLeafTypeIteratorBase<CTreeConstIterator> CParent;
+public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
+    CLeafTypeConstIterator(void)
+        : CParent(C::GetTypeInfo())
+        {
+        }
+    CLeafTypeConstIterator(const TBeginInfo& beginInfo)
+        : CParent(C::GetTypeInfo(), beginInfo)
+        {
+        }
+
+    CLeafTypeConstIterator<C>& operator=(const TBeginInfo& beginInfo)
         {
             Init(beginInfo);
             return *this;

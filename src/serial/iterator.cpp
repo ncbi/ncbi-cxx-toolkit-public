@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/08 19:24:39  vasilche
+* Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
+*
 * Revision 1.13  2000/10/20 15:51:38  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -424,6 +427,13 @@ bool CTypeIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
 }
 
 template<class Parent>
+bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
+{
+    return CParent::CanSelect(object) &&
+        !CConstTreeLevelIterator::HaveChildren(object);
+}
+
+template<class Parent>
 bool CTypesIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
     if ( !CParent::CanSelect(object) )
@@ -456,6 +466,8 @@ template class CTreeIteratorTmpl<CTreeLevelIterator>;
 template class CTreeIteratorTmpl<CConstTreeLevelIterator>;
 template class CTypeIteratorBase<CTreeIterator>;
 template class CTypeIteratorBase<CTreeConstIterator>;
+template class CLeafTypeIteratorBase<CTreeIterator>;
+template class CLeafTypeIteratorBase<CTreeConstIterator>;
 template class CTypesIteratorBase<CTreeIterator>;
 template class CTypesIteratorBase<CTreeConstIterator>;
 
