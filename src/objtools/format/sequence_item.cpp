@@ -101,8 +101,7 @@ void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
     x_SetObject(*ctx.GetHandle().GetCompleteBioseq());
 
     const CSeq_loc& loc = ctx.GetLocation();
-    TSeqPos offset = loc.GetStart(kInvalidSeqPos); 
-    TSeqPos len = sequence::GetLength(loc, &ctx.GetScope());
+    TSeqPos offset = loc.GetStart(kInvalidSeqPos);
     TSeqPos start = m_From + offset;
     TSeqPos end   = min(m_To + offset, ctx.GetHandle().GetInst_Length() - 1);
     
@@ -132,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/07 15:23:51  shomrat
+* Removed unreferenced varaible
+*
 * Revision 1.5  2004/04/27 15:14:36  shomrat
 * Bug fix
 *
