@@ -31,7 +31,6 @@
 */
 
 #include <serial/iterator.hpp>
-//#include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seqdesc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
@@ -759,6 +758,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2002/06/07 13:22:09  clausen
+* Removed commented out include for object_manager
+*
 * Revision 1.1  2002/06/06 18:49:45  clausen
 * Initial version
 *
