@@ -65,9 +65,7 @@ BEGIN_SCOPE(objects)
 
 // static variables initialization
 bool CCommentItem::sm_FirstComment = true;
-const string CCommentItem::kNsAreGaps = "The strings of n's in this record " \
-"represent gaps between contigs, and the length of each string corresponds " \
-"to the length of the gap.";
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -106,11 +104,37 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
 }
 
 
+CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx)
+{
+    swap(m_First, sm_FirstComment);
+    x_SetObject(feat);
+    x_GatherInfo(ctx);
+    if ( m_Comment.empty() ) {
+        x_SetSkip();
+    }       
+}
+
+
 void CCommentItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const
 {
     formatter.FormatComment(*this, text_os);
+}
+
+
+void CCommentItem::AddPeriod(void)
+{
+    ncbi::objects::AddPeriod(m_Comment);
+}
+
+
+const string& CCommentItem::GetNsAreGapsStr(void)
+{
+    static const string kNsAreGaps = "The strings of n's in this record represent " \
+        "gaps between contigs, and the length of each string corresponds " \
+        "to the length of the gap.";
+    return kNsAreGaps;
 }
 
 
@@ -553,7 +577,11 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
         text << "Method: " << GetTechString(tech) << ".";
     }
 
-    return CNcbiOstrstreamToString(text);
+    string comment = ExpandTildes(CNcbiOstrstreamToString(text), eTilde_newline);
+    ConvertQuotes(comment);
+    ncbi::objects::AddPeriod(comment);
+
+    return comment;
 }
 
 
@@ -654,9 +682,15 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
 }
 
 
-void CCommentItem::x_GatherFeatInfo(const CSeq_feat&, CBioseqContext&)
+void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx)
 {
-    // !!!
+    if (!feat.GetData().IsComment()  ||
+        !feat.CanGetComment()        ||
+        IsBlankString(feat.GetComment())) {
+        return;
+    }
+
+    x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr);
 }
 
 
@@ -685,7 +719,7 @@ void CCommentItem::x_SetCommentWithURLlinks
         comment += ".";
     }
     
-    m_Comment =  comment;
+    m_Comment = comment;
 }
 
 
@@ -851,6 +885,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/08/19 16:27:48  shomrat
+* Added constructor from Seq-feat
+*
 * Revision 1.9  2004/08/12 15:48:42  shomrat
 * do not force 2 digit day in date format
 *
