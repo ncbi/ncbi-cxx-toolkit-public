@@ -1060,15 +1060,19 @@ BlastHitSavingParametersNew(Uint1 program_number,
 
    /* If sum statistics use is forced by the options, 
       set it in the paramters */
-   params->do_sum_stats = options->do_sum_stats;
-   /* Sum statistics is used anyway for all ungapped searches and all 
-      translated gapped searches (except RPS translated searches) */
-   if (!gapped_calculation || 
-       (program_number != blast_type_blastn && 
-        program_number != blast_type_blastp &&
-        program_number != blast_type_rpsblast &&
-        program_number != blast_type_rpstblastn))
+   if (options->do_sum_stats == eSumStatsTrue) {
       params->do_sum_stats = TRUE;
+   } else if (options->do_sum_stats == eSumStatsNotSet) {
+      /* By default, sum statistics is used for all translated searches 
+       * (except RPS BLAST), and for ungapped blastn.
+       */
+      if ((program_number == blast_type_blastn && !gapped_calculation) ||  
+          (program_number == blast_type_blastx) ||
+          (program_number == blast_type_tblastn) ||
+          (program_number == blast_type_tblastx))
+         params->do_sum_stats = TRUE;
+   }
+
    if (program_number == blast_type_blastn || !gapped_calculation) {
       params->gap_prob = BLAST_GAP_PROB;
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE;
@@ -1335,6 +1339,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.112  2004/06/07 15:44:47  dondosha
+ * do_sum_stats option is now an enum; set do_sum_stats parameter only if option is not set;
+ *
  * Revision 1.111  2004/05/26 16:04:54  papadopo
  * fix doxygen errors
  *
