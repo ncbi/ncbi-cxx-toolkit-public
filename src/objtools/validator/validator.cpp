@@ -67,6 +67,7 @@ CValidError::CValidError
 void CValidError::AddValidErrItem(const CValidErrItem* item)
 {
     m_ErrItems.push_back(CConstRef<CValidErrItem>(item));
+    m_Stats[item->GetSeverity()]++;
 }
 
 
@@ -1045,6 +1046,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/03/10 18:12:50  shomrat
+* Record statistics information for each item
+*
 * Revision 1.11  2003/03/06 19:33:02  shomrat
 * Bug fix and code cleanup in CVAlidError_CI
 *
