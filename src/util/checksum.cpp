@@ -254,20 +254,7 @@ CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     CChecksum cks(method);
 
-    if ( !input.is_open() ) {
-        return cks;
-    }
-
-    while ( !input.eof() ) {
-        char buf[2048];
-        input.read(buf, sizeof(buf));
-        size_t count = input.gcount();
-        if ( count ) {
-            cks.AddChars(buf, count);
-        }
-    }
-    input.close();
-    return cks;
+    return ComputeFileChecksum(path, cks);
 }
 
 
@@ -280,7 +267,7 @@ CChecksum& ComputeFileChecksum(const string& path,
     }
 
     while ( !input.eof() ) {
-        char buf[2048];
+        char buf[1024*4];
         input.read(buf, sizeof(buf));
         size_t count = input.gcount();
         if ( count ) {
@@ -299,6 +286,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/17 20:22:30  kuznets
+ * Minor code clean-up.
+ * Also increased checksum buffer up to 4K
+ * (better performance on Windows and most likely other platforms too)
+ *
  * Revision 1.9  2003/10/01 21:15:15  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *
