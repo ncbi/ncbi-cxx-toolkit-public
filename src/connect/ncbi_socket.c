@@ -2022,7 +2022,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if (sock->r_status == eIO_Closed  &&  sock->w_status == eIO_Closed)
             return eIO_Success;
         if (sock->w_status != eIO_Closed  &&
-            s_WritePending(sock, tv, 0) != eIO_Success  &&
+            s_WritePending(sock, tv, 0) != eIO_Success
             &&  tv  &&  (tv->tv_sec  ||  tv->tv_usec)) {
             CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Shutdown]  Shutting down for "
                                      "read/write with some output pending",
@@ -3579,6 +3579,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.102  2003/05/14 05:24:36  lavr
+ * FIX: Yet another MSVC compilation fix
+ *
  * Revision 6.101  2003/05/14 04:30:58  lavr
  * FIX: MSVC compilation of s_Shutdown()
  *
