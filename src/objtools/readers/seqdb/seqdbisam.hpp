@@ -921,9 +921,7 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     // If the sample is an exact match to one (or more) GIs, apply
     // the translation (if we have it) for those GIs.
     
-    while((index < gis_size) &&
-          (gis[index].gi == key)) {
-        
+    while((index < gis_size) && (gis[index].gi == key)) {
         if (gis[index].oid == -1) {
             if ((data + vol_start) < vol_end) {
                 gis.SetTranslation(index, data + vol_start);
@@ -937,14 +935,14 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     // Continue skipping to eliminate any gi/oid pairs that are
     // already translated.
     
-    while(gis[index].oid != -1) {
+    while((index < gis_size) && (gis[index].oid != -1)) {
         advanced = true;
         index++;
     }
     
     return advanced;
 }
-    
+
 inline bool
 CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
                                int            & index,
@@ -964,7 +962,7 @@ CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
     
     int post_key(0), post_data(0);
     
-    while((index + 1 < num_samples) &&
+    while(((index + 1) < num_samples) &&
           (x_TestNumericSample(index_lease,
                                index + 1,
                                target_gi,
