@@ -135,6 +135,9 @@ public:
 
     // Returns number of records with same key as this cursor refers
     TRecordCount KeyDupCount() const;
+	
+	/// Return database file on which cursor is based
+	CBDB_File& GetDBFile() { return m_Dbf; }
 
 protected:
     /// Test "TO" search criteria. Return "true" if current value satisfies it
@@ -230,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/21 15:07:32  kuznets
+ * + CBDB_Cursor::GetDBFile
+ *
  * Revision 1.10  2004/05/06 19:18:46  rotmistr
  * Cursor KeyDupCount added
  *
